@@ -30,9 +30,20 @@ Body (JSON):
     "signed_upload_url": "https://…signed…",
     "token": null
   },
+  "docling_output": {
+    "bucket": "documents",
+    "key": "converted/<source_uid>/<name>.docling.json",
+    "signed_upload_url": "https://…signed…",
+    "token": null
+  },
   "callback_url": "https://<project>.functions.supabase.co/conversion-complete"
 }
 ```
+
+Notes on `docling_output`:
+
+- Optional debug artifact. If present, the service will also upload Docling's structured document export as JSON.
+- This is not used by Phase 1 ingestion (which remains Markdown -> remark -> blocks).
 
 On completion (success or failure), the service POSTs to `callback_url` with:
 
@@ -49,5 +60,5 @@ On completion (success or failure), the service POSTs to `callback_url` with:
 ## Notes
 
 - Upload uses the provided `signed_upload_url` and sends the markdown body as `text/markdown; charset=utf-8`.
+- When `docling_output` is provided, the JSON is uploaded as `application/json; charset=utf-8`.
 - Conversion uses Docling for `docx/pdf` and a direct decode for `txt`.
-

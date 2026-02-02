@@ -1,12 +1,15 @@
 # Local Claude/Codex settings
 .claude/
 .codex/settings.local.json
+.jon/
 
 # Project-specific ignores
 docling/
 skills/
 src-content/
 refs/
+docs/
+json-schemas/
 
 # Environment files
 .env

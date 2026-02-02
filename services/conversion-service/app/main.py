@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import os
 from typing import Any, Optional
 
@@ -21,6 +22,7 @@ class ConvertRequest(BaseModel):
     source_type: str = Field(pattern=r"^(docx|pdf|txt)$")
     source_download_url: str
     output: OutputTarget
+    docling_output: Optional[OutputTarget] = None
     callback_url: str
 
 
@@ -48,26 +50,33 @@ async def _post_callback(
         )
 
 
-async def _upload_markdown(signed_upload_url: str, markdown_bytes: bytes) -> None:
+async def _upload_bytes(signed_upload_url: str, payload: bytes, content_type: str) -> None:
     # Supabase signed upload URLs sometimes require a token query parameter.
     # If the URL already contains token=, we leave it as-is.
     headers = {
-        "Content-Type": "text/markdown; charset=utf-8",
+        "Content-Type": content_type,
     }
     async with httpx.AsyncClient(timeout=120) as client:
-        resp = await client.put(signed_upload_url, content=markdown_bytes, headers=headers)
+        resp = await client.put(signed_upload_url, content=payload, headers=headers)
         if resp.status_code >= 300:
             raise RuntimeError(f"Upload failed: HTTP {resp.status_code} {resp.text[:500]}")
 
 
-async def _convert_to_markdown(req: ConvertRequest) -> bytes:
+def _append_token_if_needed(url: str, token: Optional[str]) -> str:
+    if not token or "token=" in url:
+        return url
+    join = "&" if "?" in url else "?"
+    return f"{url}{join}token={token}"
+
+
+async def _convert(req: ConvertRequest) -> tuple[bytes, Optional[bytes]]:
     if req.source_type == "txt":
         async with httpx.AsyncClient(timeout=120) as client:
             r = await client.get(req.source_download_url)
             r.raise_for_status()
             # Best-effort UTF-8 decode; keep bytes if already utf-8.
             text = r.content.decode("utf-8", errors="replace")
-            return text.encode("utf-8")
+            return text.encode("utf-8"), None
 
     # docx/pdf via Docling using the signed URL directly.
     try:
@@ -77,8 +86,20 @@ async def _convert_to_markdown(req: ConvertRequest) -> bytes:
 
     converter = DocumentConverter()
     result = converter.convert(req.source_download_url)
-    md = result.document.export_to_markdown()
-    return md.encode("utf-8")
+    doc = result.document
+    md = doc.export_to_markdown()
+
+    debug_json_bytes: Optional[bytes] = None
+    if req.docling_output is not None:
+        export_to_dict = getattr(doc, "export_to_dict", None)
+        if callable(export_to_dict):
+            debug_json_bytes = json.dumps(
+                export_to_dict(),
+                ensure_ascii=False,
+                indent=2,
+            ).encode("utf-8")
+
+    return md.encode("utf-8"), debug_json_bytes
 
 
 @app.post("/convert")
@@ -98,12 +119,26 @@ async def convert(
     }
 
     try:
-        markdown_bytes = await _convert_to_markdown(body)
-        upload_url = body.output.signed_upload_url
-        if body.output.token and "token=" not in upload_url:
-            join = "&" if "?" in upload_url else "?"
-            upload_url = f"{upload_url}{join}token={body.output.token}"
-        await _upload_markdown(upload_url, markdown_bytes)
+        markdown_bytes, debug_json_bytes = await _convert(body)
+
+        md_upload_url = _append_token_if_needed(body.output.signed_upload_url, body.output.token)
+        await _upload_bytes(
+            md_upload_url,
+            markdown_bytes,
+            content_type="text/markdown; charset=utf-8",
+        )
+
+        if body.docling_output is not None and debug_json_bytes is not None:
+            docling_upload_url = _append_token_if_needed(
+                body.docling_output.signed_upload_url,
+                body.docling_output.token,
+            )
+            await _upload_bytes(
+                docling_upload_url,
+                debug_json_bytes,
+                content_type="application/json; charset=utf-8",
+            )
+
         callback_payload["success"] = True
     except Exception as e:
         callback_payload["success"] = False

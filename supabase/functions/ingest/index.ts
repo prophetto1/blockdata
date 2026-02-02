@@ -13,6 +13,13 @@ type IngestResponse = {
   error?: string;
 };
 
+type SignedUploadTarget = {
+  bucket: string;
+  key: string;
+  signed_upload_url: string;
+  token: string | null;
+};
+
 function json(status: number, body: unknown): Response {
   return new Response(JSON.stringify(body, null, 2), {
     status,
@@ -206,6 +213,26 @@ Deno.serve(async (req) => {
       throw new Error(`Create signed upload URL failed: ${ulErr?.message ?? "unknown"}`);
     }
 
+    const enableDoclingDebugExport = getEnv("ENABLE_DOCLING_DEBUG_EXPORT", "false") === "true";
+    let docling_output: SignedUploadTarget | null = null;
+    if (enableDoclingDebugExport) {
+      const docling_key = `converted/${source_uid}/${basenameNoExt(originalFilename)}.docling.json`;
+      const { data: doclingSignedUpload, error: doclingUlErr } = await (supabaseAdmin.storage as any)
+        .from(bucket)
+        .createSignedUploadUrl(docling_key);
+      if (doclingUlErr || !doclingSignedUpload?.signedUrl) {
+        throw new Error(
+          `Create signed upload URL for docling json failed: ${doclingUlErr?.message ?? "unknown"}`,
+        );
+      }
+      docling_output = {
+        bucket,
+        key: docling_key,
+        signed_upload_url: doclingSignedUpload.signedUrl,
+        token: doclingSignedUpload.token ?? null,
+      };
+    }
+
     const origin = new URL(req.url).origin;
     const callback_url = `${origin}/conversion-complete`;
 
@@ -229,6 +256,7 @@ Deno.serve(async (req) => {
           signed_upload_url: signedUpload.signedUrl,
           token: signedUpload.token ?? null,
         },
+        docling_output,
         callback_url,
       }),
     });
