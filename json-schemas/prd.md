@@ -1,0 +1,279 @@
+# PRODUCT REQUIREMENTS DOCUMENT (PRD) — Block Inventory + User-Defined Schemas + Annotation Pipeline
+
+Must define before anyone writes code:
+
+Backend Architecture section (in PRD) — We discussed Supabase/Postgres, blocks as rows, JSONL as export, but the open questions are still hanging. This unblocks everything else. Those questions I asked you about file storage, run linkage, concurrency model, auth, versioning — we need to close those.
+
+Database migration spec — Exact DDL. We drafted SQL but you correctly said "not ready." Once the backend architecture section is locked, this becomes mechanical.
+
+API contract — What operations does the frontend call? Upload doc, trigger ingest, list blocks, select schema, start annotation run, get progress, export JSONL. Supabase gives you REST for free on tables, but the orchestration operations (ingest pipeline, annotation dispatch) need defined endpoints — likely Edge Functions.
+
+Default immutable schema definition — What does md_prose_v1 actually look like as a concrete JSON artifact in the schemas table? Devs need this to build ingest.
+
+Annotation schema spec / example — What does a valid uploaded annotation schema look like? The Strunk 18 one is the first real use case — define its shape concretely and that becomes the reference for the validator.
+
+Prompt template spec — The PRD says "annotator receives content.original + schema template + rules." The actual prompt structure needs to be written so the annotation worker can be built.
+
+Can be defined in parallel with early dev:
+
+Frontend component breakdown — PRD has the three pages (Upload, Schema Select, Run). A wireframe or component spec lets frontend work start while backend is being built.
+Block splitter implementation spec — Which MD parser, how it maps to block types, edge case handling. Dev can start prototyping this against the PRD as-is, but a tighter spec avoids rework.
+
+## Purpose
+
+The product converts an uploaded document into a deterministic block inventory and then applies a user-defined schema (“lens”) to generate annotations per block. The goal is to support multiple use-cases with the same deterministic base (prose editing, legal-case signal extraction, metadata generation for knowledge bases/knowledge graphs), while keeping immutable source content fixed.
+
+## Core Concepts
+
+### Block
+
+A "block" is one extracted unit in reading order (paragraph/equivalent section, and also headings/list items/code/tables as applicable). One JSON record is produced per extracted block.
+
+### Deterministic vs User-Defined Portions
+
+Each record has:
+
+An immutable portion fixed after ingest (includes document-derived fields plus user/system metadata captured at upload).
+
+An annotation portion shaped by a user-defined schema (changes as the AI fills results)
+
+### Two Schema Types (different sources; different orientations)
+
+Immutable schema (system-provided, classification label): the envelope structure is universal and identical regardless of document type. Every block record has the same immutable fields (envelope + content.original). The immutable_schema_ref (e.g., md_prose_v1, law_case_v1, kb_chunk_v1) is a classification label selected at upload that identifies the document type for downstream use. It does not change the envelope's shape or add fields to the immutable portion. All document-type-specific richness (citation counts, legal signals, rhetorical analysis, etc.) belongs in the annotation layer via swappable annotation schemas.
+
+Annotation schema (user-defined, task/requirement-oriented): defines the output fields and structure the AI must fill for a chosen objective. Users upload or select annotation schemas based on their task. Examples:
+
+- Strunk 18 rules schema: for prose editing, gathering edits to produce a revised document.
+- Legal signal extraction schema: for SC cases, checking cited cases for positive/negative signals, flagging strong language, adding examiner notes—enriching analysis for retrieval.
+- KB metadata schema: for knowledge base/graph generation.
+
+## Canonical Record Format (One Block Record)
+
+Each record is a JSON object with exactly two top-level keys: immutable and annotation.
+
+```json
+{
+  "immutable": {
+    "immutable_schema_ref": "md_prose_v1",
+    "envelope": {
+      "doc_uid": "…",
+      "source_type": "md",
+      "source_locator": "…",
+      "doc_title": "…",
+      "uploaded_at": "…",
+
+      "block_uid": "…",
+      "block_type": "paragraph",
+      "block_index": 37,
+      "section_path": ["…"],
+      "char_span": [0, 0]
+    },
+    "content": { "original": "…" }
+  },
+  "annotation": {
+    "schema_ref": "strunk_18",
+    "data": {}
+  }
+}
+```
+
+## Field Reference (In JSON Order)
+
+| L1         | L2       | Field                | Meaning                                                                                             |
+| ---------- | -------- | -------------------- | --------------------------------------------------------------------------------------------------- |
+| immutable  |          | immutable_schema_ref | Which immutable record-kind is being used for this ingest (e.g., prose vs law-case vs KB metadata). |
+| immutable  | envelope | doc_uid              | Document identifier.                                                                                |
+| immutable  | envelope | source_type          | Source format (v0: md).                                                                             |
+| immutable  | envelope | source_locator       | Where the source file is stored.                                                                    |
+| immutable  | envelope | doc_title            | User-provided document title.                                                                       |
+| immutable  | envelope | uploaded_at          | Upload timestamp.                                                                                   |
+| immutable  | envelope | block_uid            | Block identifier within the document.                                                               |
+| immutable  | envelope | block_type           | Block kind (paragraph/heading/etc.).                                                                |
+| immutable  | envelope | block_index          | Block position in reading order.                                                                    |
+| immutable  | envelope | section_path         | Heading stack location of the block.                                                                |
+| immutable  | envelope | char_span            | Character offsets into the raw source string.                                                       |
+| immutable  | content  | original             | The extracted block text (the paragraph itself lives here).                                         |
+| annotation |          | schema_ref           | The user-defined annotation schema (lens) being applied.                                            |
+| annotation |          | data                 | Schema-defined output area; this is what the AI fills.                                              |
+
+## Immutability Rule (Hard Requirement)
+
+After ingest is complete, nothing under immutable may be modified. During annotation, annotation.schema_ref is set during schema binding (before AI execution begins); the AI fills only annotation.data.
+
+## Ingestion Pipeline (Document → Block Inventory)
+
+### Pre-Requisite: Markdown Document
+
+The pipeline requires a Markdown (.md) document as input. The pipeline only executes when a valid Markdown document exists.
+
+**Docling (separate utility):** For users with PDF, DOCX, PPTX, or other non-Markdown documents, we provide Docling (IBM, MIT license) as a separate conversion utility outside the core pipeline. Users run Docling to produce Markdown, then upload the resulting .md to the pipeline. Docling is not part of the pipeline specification; it is an optional pre-processing tool.
+
+### Inputs
+
+Document upload (.md file)
+
+doc_title (user input)
+
+immutable_schema_ref (user selection from system-provided immutable schemas)
+
+Output:
+
+A JSONL file: one line per block record, in reading order
+
+Each line has immutable populated (including content.original)
+
+annotation exists at ingest as: schema_ref: "" and data: {}; after the user selects/uploads an annotation schema, the system sets annotation.schema_ref and initializes annotation.data to the schema template.
+
+Behavior requirements:
+
+The paragraph text is stored inside each record at immutable.content.original (not elsewhere).
+
+The block identity/location fields in immutable.envelope refer to the same paragraph stored in immutable.content.original.
+
+## Ingestion Implementation Details
+
+### Block Splitting Logic (MD → Blocks)
+
+Blocks are produced in a single reading-order pass over the Markdown source.
+
+Block types: any discrete unit supported by the Markdown format (heading, paragraph, list_item, code, table, blockquote, hr, etc.). The system does not control what block types appear in a document; it extracts whatever the Markdown format defines as a block-level element.
+
+Lists: N blocks (one per list item), including nested items (each nested item is its own list_item block). No extra nesting fields in v0; nesting is implied by reading order only.
+
+### UID Generation Strategy (Idempotent)
+
+doc_uid = SHA256(file_bytes) of the uploaded source file.
+
+block_index = 0..N-1 in extraction order.
+
+block_uid = SHA256(doc_uid + ":" + block_index).
+
+No UUID4 in v0 (determinism is required).
+
+### char_span Offset Tracking
+
+char_span is [start, end] character offsets into the exact raw Markdown string used for parsing (half-open is fine as long as consistent).
+
+Ingest must track offsets during extraction (either via a parser that exposes source positions or via a deterministic scanner that records start/end as it emits blocks). Placeholders are not allowed.
+
+### source_locator (Uploaded File)
+
+source_locator is the system storage key/path for the original uploaded file, e.g. uploads/{doc_uid}/{original_filename}.md (or the equivalent object key if using S3/etc.).
+
+It's not derived from content; it's assigned by the upload/storage subsystem.
+
+### Schema Validation ("Schema of Schemas")
+
+v0 validation is simple and explicit: when a user uploads a schema artifact, the system checks it is valid JSON and contains the required top-level keys/types for that schema artifact format.
+
+No "schema-of-schemas" is required in v0; it's just a hard validator function in code that rejects malformed schema uploads.
+
+### section_path Edge Cases
+
+If the document has no headings: section_path = [] for every block.
+
+If content appears before the first heading: [] until the first heading is encountered.
+
+## Annotation Pipeline (Block Inventory → Annotated Output)
+
+Inputs:
+
+JSONL block inventory produced by ingest
+
+annotation schema selection/upload (schema_ref)
+
+Behavior:
+
+annotation.schema_ref is set from user selection; it is not derived from document text.
+
+annotation.data is initialized to the template/shape defined by the chosen schema.
+
+The AI reads each record and fills only annotation.data according to the schema.
+
+Output:
+
+A new JSONL file representing the same blocks in the same order where:
+
+immutable is unchanged
+
+annotation.data is filled for successfully annotated blocks; failed blocks retain the initialized template
+
+### AI Annotation Execution (v0)
+
+v0 is model/provider-agnostic: "LLM model" is a config value, not hardcoded in the PRD.
+
+Prompt construction: the annotator receives (a) content.original, (b) the chosen schema template for annotation.data, and (c) strict rule: do not modify immutable; fill only annotation.data.
+
+Execution: sync block-by-block in v0, with retry-on-failure per block.
+
+Failures do not change immutable; failed blocks keep their annotation template unchanged, and failures are recorded in a run log/report (outside the JSONL).
+
+## Error States (Ingest/Annotation)
+
+Ingest: write output atomically (temp → finalize). If ingest fails, no partial blocks.jsonl is published.
+
+Annotation: if block 37/200 fails, continue; output JSONL still has 200 lines in the same order, with completed blocks filled and failed blocks unchanged; run report lists failed block_uids.
+
+## Example Use-Cases Supported by Swappable Schemas
+
+### Prose / Paper / Essay (Strunk-style lens)
+
+Immutable schema: prose ingest (md_prose_v1) produces blocks with paragraph text and navigation fields.
+
+Annotation schema: Strunk rules schema with fields such as rule hits and (optionally) rewrite_candidate.
+
+### Supreme Court / CAP / Law Cases (signal extraction lens)
+
+Immutable schema: law_case_v1 classification label applied at upload. Same universal envelope; no additional immutable fields. Annotation schema defines outputs for legal objectives (signals, holdings, citations, etc.).
+
+### KB / Knowledge Graph metadata generation
+
+Immutable schema: kb_chunk_v1 classification label applied at upload. Same universal envelope; no additional immutable fields. Annotation schema defines extracted metadata fields used downstream.
+
+## Frontend Requirements (Upload + Run Flow)
+
+### Upload Document Page
+
+Must allow:
+
+Upload document file (.md) — optionally, frontend may offer Docling conversion as a separate step before pipeline entry
+
+Enter doc_title
+
+Select immutable schema from system-provided options (immutable_schema_ref)
+
+Must show:
+
+A preview that confirms blocks were created (block_index, block_type, section_path, snippet of content.original)
+
+### Select Annotation Schema Page
+
+Must allow:
+
+Select/upload annotation schema (schema_ref)
+
+Must show:
+
+The annotation template fields that will appear under annotation.data (read-only preview)
+
+### Run Annotation Page
+
+Must show:
+
+Progress across blocks
+
+Per-block view combining:
+
+immutable.content.original
+
+annotation.data outputs
+
+## Spec Writing Requirements (Process Requirement)
+
+All future spec text and explanations must:
+
+Show the JSON shape first
+
+Explain fields strictly in the same order as the JSON
+
+Avoid introducing new mechanisms or alternate designs midstream
