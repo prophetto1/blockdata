@@ -71,15 +71,16 @@ export default function SchemasPage() {
   };
 
   return (
-    <PageTemplate
-      title="Schemas"
-      description="Upload and manage annotation schemas for document runs."
-      breadcrumbs={[{ label: "Schemas" }]}
-      requireAuth={true}
-      loading={!sessionReady}
-      loadingMessage="Initializing..."
-    >
-      <div className="grid gap-6 lg:grid-cols-2">
+    <div className="px-4 py-6 lg:px-8 lg:py-8">
+      <PageTemplate
+        title="Schemas"
+        description="Upload and manage annotation schemas for document runs."
+        breadcrumbs={[{ label: "Schemas" }]}
+        requireAuth={true}
+        loading={!sessionReady}
+        loadingMessage="Initializing..."
+      >
+        <div className="grid gap-6 lg:grid-cols-2">
         {/* Upload card */}
         <Card>
           <CardHeader>
@@ -149,7 +150,8 @@ export default function SchemasPage() {
             )}
           </CardContent>
         </Card>
-      </div>
-    </PageTemplate>
+        </div>
+      </PageTemplate>
+    </div>
   );
 }

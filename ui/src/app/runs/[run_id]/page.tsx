@@ -18,7 +18,7 @@ type RunRow = {
   total_blocks: number;
   completed_blocks: number;
   failed_blocks: number;
-  created_at: string;
+  started_at: string;
   schemas?: { schema_ref: string; schema_uid: string } | null;
 };
 
@@ -70,7 +70,7 @@ export default function RunPage() {
       const { data, error: selErr } = await supabase
         .from("annotation_runs")
         .select(
-          "run_id, doc_uid, status, total_blocks, completed_blocks, failed_blocks, created_at, schemas(schema_ref, schema_uid)"
+          "run_id, doc_uid, status, total_blocks, completed_blocks, failed_blocks, started_at, schemas(schema_ref, schema_uid)"
         )
         .eq("run_id", run_id)
         .maybeSingle();
@@ -113,7 +113,7 @@ export default function RunPage() {
   return (
     <PageTemplate
       title={run?.schemas?.schema_ref || "Annotation Run"}
-      description={run ? `Created ${new Date(run.created_at).toLocaleString()}` : undefined}
+      description={run ? `Started ${new Date(run.started_at).toLocaleString()}` : undefined}
       breadcrumbs={[
         { label: truncateHash(run?.doc_uid || ""), href: run ? `/documents/${run.doc_uid}` : undefined },
         { label: `Run ${truncateHash(run_id)}` },

@@ -50,7 +50,7 @@ type SchemaRow = {
 type RunRow = {
   run_id: string;
   status: string;
-  created_at: string;
+  started_at: string;
   schemas?: { schema_ref: string; schema_uid: string } | null;
 };
 
@@ -153,9 +153,9 @@ export default function DocumentPage() {
     (async () => {
       const { data } = await supabase
         .from("annotation_runs")
-        .select("run_id, status, created_at, schemas(schema_ref, schema_uid)")
+        .select("run_id, status, started_at, schemas(schema_ref, schema_uid)")
         .eq("doc_uid", doc_uid)
-        .order("created_at", { ascending: false });
+        .order("started_at", { ascending: false });
       if (cancelled) return;
       // Supabase returns schemas as array when joining, extract first element
       const normalized = (data || []).map((r: any) => ({
