@@ -27,3 +27,7 @@ node_modules/
 *.tmp
 *.bak
 ~$*
+
+# Smoke test artifacts
+scripts/export-test.jsonl
+scripts/test-document.md

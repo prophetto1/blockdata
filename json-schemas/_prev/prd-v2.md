@@ -1,4 +1,4 @@
-# PRODUCT REQUIREMENTS DOCUMENT (PRD) — Block Inventory + User-Defined Schemas + Annotation Pipeline
+# PRODUCT REQUIREMENTS DOCUMENT (PRD) — Block Inventory + User-Defined Schemas + Annotation Pipeline version 2
 
 Must define before anyone writes code:
 
@@ -21,7 +21,7 @@ Block splitter implementation spec — Which MD parser, how it maps to block typ
 
 ## Purpose
 
-The product converts an uploaded document into a deterministic block inventory and then applies a user-defined schema (“lens”) to generate annotations per block. The goal is to support multiple use-cases with the same deterministic base (prose editing, legal-case signal extraction, metadata generation for knowledge bases/knowledge graphs), while keeping immutable source content fixed.
+The product converts an uploaded document into a deterministic block inventory and then applies a user-defined schema ("lens") to generate annotations per block. The goal is to support multiple use-cases with the same deterministic base (prose editing, legal-case signal extraction, metadata generation for knowledge bases/knowledge graphs), while keeping immutable source content fixed.
 
 ## Core Concepts
 
@@ -134,11 +134,15 @@ The block identity/location fields in immutable.envelope refer to the same parag
 
 ### Block Splitting Logic (MD → Blocks)
 
-Blocks are produced in a single reading-order pass over the Markdown source.
+Blocks are produced in a single reading-order pass over the Markdown source using remark-parse (unified/remark ecosystem). The parser produces an mdast (Markdown Abstract Syntax Tree) where every node exposes position.start.offset and position.end.offset (providing char_span), a type field (providing block_type), and tree structure (providing section_path via heading nesting).
 
 Block types: any discrete unit supported by the Markdown format (heading, paragraph, list_item, code, table, blockquote, hr, etc.). The system does not control what block types appear in a document; it extracts whatever the Markdown format defines as a block-level element.
 
 Lists: N blocks (one per list item), including nested items (each nested item is its own list_item block). No extra nesting fields in v0; nesting is implied by reading order only.
+
+### doc_title Auto-Extraction
+
+Default doc_title is extracted deterministically: first H1 heading (depth === 1) found in the AST. If no H1 exists, fallback is the filename minus extension. The extracted title is presented to the user as an editable field before ingest confirmation.
 
 ### UID Generation Strategy (Idempotent)
 
@@ -214,6 +218,115 @@ Ingest: write output atomically (temp → finalize). If ingest fails, no partial
 
 Annotation: if block 37/200 fails, continue; output JSONL still has 200 lines in the same order, with completed blocks filled and failed blocks unchanged; run report lists failed block_uids.
 
+## Backend Architecture (Supabase / PostgreSQL)
+
+### Storage Model
+
+The canonical JSON record (immutable + annotation) is the export format, not the storage format. In the database, each block is a row. Immutable envelope fields are fixed Postgres columns (queryable, indexable). Annotation data is stored as JSONB (shape varies per user-defined schema).
+
+JSONL is generated on demand from the database at export time. The database is the source of truth.
+
+### Why JSONB for Annotation
+
+Annotation schemas are user-defined — the field structure changes per schema. JSONB stores this as a pre-parsed binary format that supports indexing, querying (annotation_jsonb->>'field_name'), and containment checks without re-parsing. All annotation columns use JSONB, never JSON.
+
+### Table Design
+
+**documents** — one row per uploaded document
+
+| Column               | Type        | Source                                               |
+| -------------------- | ----------- | ---------------------------------------------------- |
+| doc_uid              | TEXT PK     | SHA256(file_bytes)                                   |
+| source_type          | TEXT        | Format identifier (v0: md)                           |
+| source_locator       | TEXT        | Storage path for uploaded file                       |
+| doc_title            | TEXT        | Auto-extracted from first H1, user-editable          |
+| uploaded_at          | TIMESTAMPTZ | Upload timestamp                                     |
+| immutable_schema_ref | TEXT        | Classification label (e.g. md_prose_v1, law_case_v1) |
+
+**schemas** — one row per schema definition (system-provided immutable or user-uploaded annotation)
+
+| Column       | Type        | Purpose                                                       |
+| ------------ | ----------- | ------------------------------------------------------------- |
+| schema_ref   | TEXT PK     | e.g. strunk_18, legal_signals_v1                              |
+| schema_type  | TEXT        | 'immutable' or 'annotation'                                   |
+| schema_jsonb | JSONB       | Template shape (empty structure AI must fill, for annotation) |
+| created_at   | TIMESTAMPTZ | Creation timestamp                                            |
+
+**blocks** — one row per block, core working table
+
+| Column                | Type        | Source                                                  |
+| --------------------- | ----------- | ------------------------------------------------------- |
+| block_uid             | TEXT PK     | SHA256(doc_uid + ":" + block_index)                     |
+| doc_uid               | TEXT FK     | → documents                                             |
+| block_index           | INTEGER     | Position in reading order (0-based)                     |
+| block_type            | TEXT        | paragraph, heading, list_item, code, table, etc.        |
+| section_path          | TEXT[]      | Heading stack location                                  |
+| char_span             | INTEGER[]   | [start, end] character offsets into raw Markdown        |
+| content_original      | TEXT        | The extracted block text                                |
+| annotation_schema_ref | TEXT        | Which annotation schema is applied                      |
+| annotation_jsonb      | JSONB       | Annotation data (initialized to template, filled by AI) |
+| annotation_status     | TEXT        | pending / claimed / complete / failed                   |
+| claimed_by            | TEXT        | Worker identifier                                       |
+| claimed_at            | TIMESTAMPTZ | When worker claimed the block                           |
+| attempt_count         | INTEGER     | Number of annotation attempts (default 0)               |
+| last_error            | TEXT        | Error message from most recent failure                  |
+
+Constraint: UNIQUE (doc_uid, block_index)
+
+**annotation_runs** — one row per annotation execution run
+
+| Column           | Type        | Purpose                                       |
+| ---------------- | ----------- | --------------------------------------------- |
+| run_id           | TEXT PK     | UUID4 (runs are not content-addressed)        |
+| doc_uid          | TEXT FK     | → documents                                   |
+| schema_ref       | TEXT FK     | → schemas                                     |
+| status           | TEXT        | running / complete / failed / cancelled       |
+| total_blocks     | INTEGER     | Total blocks in document                      |
+| completed_blocks | INTEGER     | Successfully annotated (default 0)            |
+| failed_blocks    | INTEGER     | Failed annotation (default 0)                 |
+| started_at       | TIMESTAMPTZ | Run start time                                |
+| completed_at     | TIMESTAMPTZ | Run completion time                           |
+| failure_log      | JSONB       | Array of failed block_uids with error details |
+
+### How Immutable Maps to Storage
+
+Document-level envelope fields (doc_uid, source_type, source_locator, doc_title, uploaded_at, immutable_schema_ref) are stored once on the documents table. Block-level envelope fields (block_uid, block_index, block_type, section_path, char_span) and content.original are stored as fixed columns on the blocks table. No JSONB on the immutable side — the shape is universal and never changes.
+
+### How Annotation Maps to Storage
+
+The schema definition (template shape) is stored in the schemas table as JSONB. At schema binding, each block row gets annotation_schema_ref set and annotation_jsonb initialized to the empty template from schemas.schema_jsonb. During annotation execution, AI workers fill annotation_jsonb per block. The shape of annotation_jsonb differs per schema — JSONB accommodates this without schema migration.
+
+### Concurrent Annotation Pattern
+
+Workers claim blocks atomically:
+
+```sql
+UPDATE blocks
+SET annotation_status = 'claimed', claimed_by = $worker, claimed_at = now()
+WHERE annotation_status = 'pending' AND doc_uid = $doc
+LIMIT 1
+RETURNING *
+```
+
+Each worker reads content_original and the empty annotation_jsonb template from the claimed row, calls the LLM, writes the filled annotation_jsonb back, and sets status to complete. Failed blocks record the error in last_error and increment attempt_count. Retry policy determines whether failed blocks revert to pending or stay failed.
+
+The frontend subscribes to block status changes via Supabase Realtime for live progress display.
+
+### JSONL Export
+
+JSONL is assembled on demand by querying blocks joined to documents, ordered by block_index. Each row is composed into the canonical JSON record format (immutable envelope from columns + content.original + annotation from JSONB). Export does not modify the database.
+
+### Export Branches
+
+The same annotated block rows support multiple export paths:
+
+- **JSONL file** — portable artifact for archival, sharing, or downstream pipelines
+- **Document reconstruction** — extract updated content across blocks in order → assemble into .md → Pandoc → .docx / .pdf / .html
+- **Knowledge graph ingest** — extract entities, relations, triples from annotation_jsonb across blocks → push to graph database
+- **Vector indexing** — embed content_original per block with metadata from both columns and annotation_jsonb for filtered semantic search
+
+All export paths reference the same block_uid as the universal join key.
+
 ## Example Use-Cases Supported by Swappable Schemas
 
 ### Prose / Paper / Essay (Strunk-style lens)
@@ -238,7 +351,7 @@ Must allow:
 
 Upload document file (.md) — optionally, frontend may offer Docling conversion as a separate step before pipeline entry
 
-Enter doc_title
+Enter doc_title (auto-extracted from first H1 heading or filename, user-editable)
 
 Select immutable schema from system-provided options (immutable_schema_ref)
 
