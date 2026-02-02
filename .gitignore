@@ -2,14 +2,14 @@
 .claude/
 .codex/settings.local.json
 .jon/
+skills/
+docs/
+json-schemas/
 
 # Project-specific ignores
 docling/
-skills/
 src-content/
-refs/
-docs/
-json-schemas/
+
 
 # Environment files
 .env
