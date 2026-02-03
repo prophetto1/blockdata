@@ -36,7 +36,7 @@ Body (JSON):
     "signed_upload_url": "https://…signed…",
     "token": null
   },
-  "callback_url": "https://<project>.functions.supabase.co/conversion-complete"
+  "callback_url": "https://<project-ref>.supabase.co/functions/v1/conversion-complete"
 }
 ```
 

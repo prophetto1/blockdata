@@ -71,24 +71,37 @@ Deno.serve(async (req) => {
 
     const supabaseAdmin = createAdminClient();
 
-    // Idempotency: if the documents row already exists for this source_uid,
-    // return its current status instead of failing on duplicate uploads.
+    // Idempotency + safety:
+    // - If this user already has a documents row for the same source_uid, return it.
+    // - If some other user owns that source_uid, do NOT leak doc_uid/status. Return 409.
+    //
+    // Note: With documents.source_uid as a global primary key, identical bytes cannot be
+    // uploaded by multiple owners. If multi-tenant duplicates become a requirement, the
+    // schema must change (e.g., per-owner document instances).
     {
       const { data: existing, error } = await supabaseAdmin
         .from("documents")
-        .select("source_uid, doc_uid, status, error")
+        .select("source_uid, owner_id, doc_uid, status, error")
         .eq("source_uid", source_uid)
         .maybeSingle();
       if (error) throw new Error(`DB lookup documents failed: ${error.message}`);
       if (existing) {
+        if (existing.owner_id !== ownerId) {
+          return json(409, {
+            error:
+              "This exact file content already exists under a different owner. Current schema uses source_uid as a global primary key, so identical bytes cannot be uploaded by multiple users.",
+            code: "SOURCE_UID_OWNED_BY_OTHER_USER",
+            source_uid,
+          });
+        }
         const resp: IngestResponse = {
           source_uid,
           doc_uid: existing.doc_uid ?? null,
           status: existing.status ?? "uploaded",
           error: existing.error ?? undefined,
-        };
-        return json(200, resp);
-      }
+      };
+      return json(200, resp);
+    }
     }
 
     // Upload original into Storage (service role). Safe to upsert because the key
@@ -233,8 +246,13 @@ Deno.serve(async (req) => {
       };
     }
 
-    const origin = new URL(req.url).origin;
-    const callback_url = `${origin}/conversion-complete`;
+    // Always use the project base URL for callbacks. req.url may be invoked via either:
+    // - https://<project>.supabase.co/functions/v1/ingest (origin is project base)
+    // - https://<project>.functions.supabase.co/ingest (origin is functions subdomain)
+    //
+    // Using SUPABASE_URL keeps callback stable and correct for the deployed gateway.
+    const supabaseUrl = requireEnv("SUPABASE_URL").replace(/\/+$/, "");
+    const callback_url = `${supabaseUrl}/functions/v1/conversion-complete`;
 
     const conversionServiceUrl = requireEnv("CONVERSION_SERVICE_URL").replace(/\/+$/, "");
     const conversionKey = requireEnv("CONVERSION_SERVICE_KEY");

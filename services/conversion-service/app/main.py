@@ -5,7 +5,8 @@ import os
 from typing import Any, Optional
 
 import httpx
-from fastapi import FastAPI, Header, HTTPException
+from fastapi import FastAPI, Header, HTTPException, Request
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
 
@@ -27,6 +28,19 @@ class ConvertRequest(BaseModel):
 
 
 app = FastAPI()
+
+@app.middleware("http")
+async def auth_middleware(request: Request, call_next):
+    # Auth gate must run before request body validation so that missing/wrong
+    # secrets get a 401 even if the JSON body is malformed or incomplete.
+    if request.url.path == "/convert" and request.method.upper() == "POST":
+        expected = os.environ.get("CONVERSION_SERVICE_KEY")
+        if not expected:
+            return JSONResponse(status_code=500, content={"detail": "CONVERSION_SERVICE_KEY is not set"})
+        provided = request.headers.get("x-conversion-service-key")
+        if not provided or provided != expected:
+            return JSONResponse(status_code=401, content={"detail": "Unauthorized"})
+    return await call_next(request)
 
 
 def _require_shared_secret(x_conversion_service_key: Optional[str]) -> None:
