@@ -48,6 +48,7 @@ In Vercel:
 
 - Import the repo
 - Set **Root Directory** to `frontend`
+- Set **Framework Preset** to `Other`
 - Set **Build Command** to `npm run build`
 - Set **Output Directory** to `build`
 - Add env vars:
