@@ -2,7 +2,7 @@ import { PUBLIC_SUPABASE_ANON_KEY, PUBLIC_SUPABASE_URL } from '$env/static/publi
 import { supabase } from '$lib/supabase';
 
 function functionsBaseUrl(): string {
-  return `${PUBLIC_SUPABASE_URL.replace(/\\/+$/, '')}/functions/v1`;
+  return `${PUBLIC_SUPABASE_URL.replace(/\/+$/, '')}/functions/v1`;
 }
 
 async function requireAccessToken(): Promise<string> {
@@ -15,7 +15,7 @@ async function requireAccessToken(): Promise<string> {
 
 export async function edgeFetch(path: string, init: RequestInit = {}): Promise<Response> {
   const token = await requireAccessToken();
-  const url = `${functionsBaseUrl()}/${path.replace(/^\\/+/, '')}`;
+  const url = `${functionsBaseUrl()}/${path.replace(/^\/+/, '')}`;
   const headers = new Headers(init.headers);
   headers.set('Authorization', `Bearer ${token}`);
   headers.set('apikey', PUBLIC_SUPABASE_ANON_KEY);
