@@ -75,6 +75,7 @@ Each record is a JSON object with exactly two top-level keys: immutable and anno
   },
   "annotation": {
     "schema_ref": null,
+    "schema_uid": null,
     "data": {}
   }
 }
@@ -100,6 +101,7 @@ Each record is a JSON object with exactly two top-level keys: immutable and anno
 | immutable  | envelope | char_span            | Character offsets into the stored Markdown string (md_locator target).                              |
 | immutable  | content  | original             | The extracted block text (the paragraph itself lives here).                                         |
 | annotation |          | schema_ref           | Reserved for Phase 2. In Phase 1, this is NULL (or empty string) and is not used.                   |
+| annotation |          | schema_uid           | Reserved for Phase 2. In Phase 1, this is NULL. In Phase 2, SHA256 of canonicalized schema JSON.    |
 | annotation |          | data                 | Reserved for Phase 2. In Phase 1, this is always {}.                                                |
 
 ## Identity Model (Three Hashes)
@@ -148,7 +150,7 @@ Block endpoints use doc_uid. Phase 1 uses this for block inventory preview (list
 
 ## Immutability Rule (Hard Requirement)
 
-After ingest is complete, nothing under immutable may be modified. In Phase 1, annotation is an inert placeholder: annotation.schema_ref is NULL (or empty string) and annotation.data is {}.
+After ingest is complete, nothing under immutable may be modified. In Phase 1, annotation is an inert placeholder: annotation.schema_ref is NULL (or empty string), annotation.schema_uid is NULL, and annotation.data is {}.
 
 ## Ingestion Pipeline (Document → Block Inventory)
 
@@ -255,7 +257,7 @@ If content appears before the first heading: [] until the first heading is encou
 
 Phase 2 is out of scope for this build. Phase 1 keeps annotation inert:
 
-- In JSONL export: annotation.schema_ref is NULL (or empty string) and annotation.data is {}.
+- In JSONL export: annotation.schema_ref is NULL (or empty string), annotation.schema_uid is NULL, and annotation.data is {}.
 - In Postgres (Phase 1): blocks are immutable-only (no per-block annotation storage).
 - In Postgres (Phase 2 planned): annotations live in a separate table keyed by (run_id, block_uid), so the same block can be annotated under multiple schemas without overwriting.
 
@@ -344,17 +346,29 @@ Indexes: blocks(doc_uid), blocks(doc_uid, block_index), documents(uploaded_at DE
 
 | Column       | Type        | Purpose                                                             |
 | ------------ | ----------- | ------------------------------------------------------------------- |
-| schema_ref   | TEXT PK     | Stable identifier (e.g., strunk_18, legal_signals_v1).              |
+| schema_id    | UUID PK     | Internal identifier (surrogate key) referenced by annotation runs.  |
+| owner_id     | UUID        | Owner for RLS (`auth.uid()`).                                       |
+| schema_ref   | TEXT        | User-facing identifier (slug), unique per owner.                    |
+| schema_uid   | TEXT        | SHA256 of canonicalized schema JSON, unique per owner (idempotent). |
 | schema_jsonb | JSONB       | Template/contract for annotation outputs (shape is schema-defined). |
 | created_at   | TIMESTAMPTZ | Creation timestamp                                                  |
+
+**Design rationale:** `schema_id` (UUID) is the primary key instead of `schema_ref` (TEXT) to support multi-tenant schemas and future Tier 2 capabilities. This allows different users to create schemas with the same human-friendly slug (e.g., two users can each have a `strunk_18`). The `owner_id` column enables RLS and prepares for Tier 2 features (schema gallery, community sharing, visibility controls). The `schema_uid` (SHA256 of canonicalized schema JSON) enables idempotent uploads: re-uploading the same schema content for the same user should return the existing row instead of creating a duplicate.
+
+Constraints (Phase 2):
+- `UNIQUE (owner_id, schema_ref)` — schema slugs are unique per owner
+- `UNIQUE (owner_id, schema_uid)` — schema content is unique per owner
+- `CHECK (schema_ref ~ '^[a-z0-9][a-z0-9_-]{0,63}$')` — slug format
+- `CHECK (schema_uid ~ '^[0-9a-f]{64}$')` — SHA256 hex format
 
 **annotation_runs** (Phase 2) — one row per annotation execution run
 
 | Column           | Type        | Purpose                                                    |
 | ---------------- | ----------- | ---------------------------------------------------------- |
 | run_id           | UUID PK     | UUID4 (runs are not content-addressed).                    |
+| owner_id         | UUID        | Owner for RLS (`auth.uid()`).                              |
 | doc_uid          | TEXT FK     | → documents.doc_uid.                                       |
-| schema_ref       | TEXT FK     | → schemas.schema_ref.                                      |
+| schema_id        | UUID FK     | → schemas.schema_id.                                       |
 | status           | TEXT        | running / complete / failed / cancelled.                   |
 | total_blocks     | INTEGER     | Total blocks in document. Required for progress.           |
 | completed_blocks | INTEGER     | Successfully annotated (default 0). Required for progress. |
@@ -419,8 +433,9 @@ The frontend subscribes to block_annotations status changes (scoped to a run_id)
 
 JSONL is assembled on demand by querying blocks joined to documents, ordered by block_index.
 
-- Phase 1 export: annotation is the inert placeholder (schema_ref NULL/empty; data {}).
-- Phase 2 export: export is parameterized by run_id (or by doc_uid+schema_ref mapped to a run). annotation.data is taken from block_annotations.annotation_jsonb for that run.
+- Phase 1 export: annotation is the inert placeholder (schema_ref NULL/empty; schema_uid NULL; data {}).
+- Phase 2 export: export is parameterized by run_id (or by doc_uid+schema_id mapped to a run). annotation.data is taken from block_annotations.annotation_jsonb for that run.
+- Phase 2 export also includes `annotation.schema_ref` and `annotation.schema_uid` from the run’s schema (join `annotation_runs.schema_id` → `schemas`).
 
 Export does not modify the database.
 
@@ -477,7 +492,7 @@ Out of scope for Phase 1.
 
 Must allow:
 
-Select/upload annotation schema (schema_ref)
+Select/upload annotation schema (schema_ref). When creating a run, the system uses schema_id (UUID) as the internal reference.
 
 Must show:
 

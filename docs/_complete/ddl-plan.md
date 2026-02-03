@@ -141,19 +141,33 @@ Phase 2 introduces schema reuse and per-run annotation outputs without duplicati
 
 Columns:
 
-- `schema_ref TEXT PRIMARY KEY`
-  - Stable identifier (e.g., `strunk_18`, `legal_signals_v1`)
+- `schema_id UUID PRIMARY KEY DEFAULT gen_random_uuid()`
+  - Internal identifier (surrogate key) referenced by runs
+- `owner_id UUID NOT NULL`
+  - Owner for RLS (`auth.uid()`)
+- `schema_ref TEXT NOT NULL`
+  - User-facing identifier (slug), unique per owner
+- `schema_uid TEXT NOT NULL`
+  - SHA256 of canonicalized schema JSON, unique per owner (idempotent uploads)
 - `schema_jsonb JSONB NOT NULL`
-  - Template/contract for annotation outputs
+  - Template/contract for annotation outputs (shape is schema-defined)
 - `created_at TIMESTAMPTZ NOT NULL DEFAULT now()`
+
+Constraints (Phase 2):
+
+- `CHECK (schema_ref ~ '^[a-z0-9][a-z0-9_-]{0,63}$')`
+- `CHECK (schema_uid ~ '^[0-9a-f]{64}$')`
+- `UNIQUE (owner_id, schema_ref)`
+- `UNIQUE (owner_id, schema_uid)`
 
 ### 5) `annotation_runs` table (one run per doc+schema)
 
 Columns:
 
 - `run_id UUID PRIMARY KEY` (UUID4)
+- `owner_id UUID NOT NULL`
 - `doc_uid TEXT NOT NULL` FK → `documents(doc_uid)` ON DELETE CASCADE
-- `schema_ref TEXT NOT NULL` FK → `schemas(schema_ref)`
+- `schema_id UUID NOT NULL` FK → `schemas(schema_id)` ON DELETE RESTRICT
 - `status TEXT NOT NULL`
   - `CHECK (status IN ('running','complete','failed','cancelled'))`
 - `started_at TIMESTAMPTZ NOT NULL DEFAULT now()`
@@ -167,7 +181,7 @@ Columns:
 Indexes:
 
 - `annotation_runs(doc_uid, started_at DESC)`
-- `annotation_runs(schema_ref, started_at DESC)`
+- `annotation_runs(owner_id, started_at DESC)`
 
 ### 6) `block_annotations` table (one row per block per run)
 
@@ -201,4 +215,4 @@ Indexes (for claim loop + UI):
 1) Phase 1 migration: extensions (required), `documents`, `blocks`, indexes, constraints, `updated_at` trigger (required).
 2) Configure Storage buckets and Edge Functions (not DDL, but depends on Phase 1 schema).
 3) Phase 2 migration: `schemas`, `annotation_runs`, `block_annotations`, indexes, constraints.
-4) Phase 2 (optional): RLS policies for new tables (schemas visibility, run ownership, per-run annotations visibility).
+4) Phase 2: RLS policies for new tables (schemas visibility, run ownership, per-run annotations visibility).
