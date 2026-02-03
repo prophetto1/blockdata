@@ -84,62 +84,73 @@
   onMount(load);
 </script>
 
-<div class="card">
-  <div class="row" style="justify-content: space-between">
+<div class="card preset-tonal-surface p-6 ring-1 ring-black/10 dark:ring-white/10">
+  <div class="flex flex-wrap items-start justify-between gap-3">
     <div>
-      <h1 style="margin: 0">Runs</h1>
-      <div class="muted">Phase 2 scaffolding: create a run and export JSONL by run_id.</div>
+      <h1 class="text-2xl font-bold tracking-tight">Runs</h1>
+      <div class="mt-1 text-sm text-black/65 dark:text-white/65">Create a run and export JSONL by <code>run_id</code>.</div>
     </div>
-    <button class="btn secondary" disabled={busy} on:click={load}>Refresh</button>
+    <button class="btn btn-sm preset-filled-surface-100-900 disabled:opacity-60" disabled={busy} on:click={load}>Refresh</button>
   </div>
 
-  <div class="row" style="margin-top: 12px">
-    <select bind:value={selectedDocUid}>
+  <div class="mt-6 grid gap-3 md:grid-cols-3">
+    <select class="select" bind:value={selectedDocUid}>
       {#each docs as d}
-        <option value={d.doc_uid}>{d.doc_title} ({d.doc_uid.slice(0, 8)}…)</option>
+        <option value={d.doc_uid}>{d.doc_title} ({d.doc_uid.slice(0, 8)}...)</option>
       {/each}
     </select>
 
-    <select bind:value={selectedSchemaId}>
+    <select class="select" bind:value={selectedSchemaId}>
       {#each schemas as s}
         <option value={s.schema_id}>{s.schema_ref}</option>
       {/each}
     </select>
 
-    <button class="btn" disabled={busy} on:click={createRun}>{busy ? 'Working…' : 'Create run'}</button>
+    <button class="btn preset-filled-primary-500 disabled:opacity-60" disabled={busy} on:click={createRun}>
+      {busy ? 'Working...' : 'Create run'}
+    </button>
   </div>
 
   {#if error}
-    <p style="color: var(--danger)">{error}</p>
+    <div class="mt-4 rounded-lg bg-red-500/10 p-3 text-sm text-red-700 ring-1 ring-red-500/20 dark:text-red-300">
+      {error}
+    </div>
   {/if}
   {#if lastCreate}
-    <pre>{JSON.stringify(lastCreate, null, 2)}</pre>
+    <pre class="mt-4 overflow-auto rounded-xl bg-black/5 p-4 text-xs ring-1 ring-black/10 dark:bg-white/5 dark:ring-white/10"
+      ><code>{JSON.stringify(lastCreate, null, 2)}</code></pre
+    >
   {/if}
 
-  <table style="margin-top: 12px">
-    <thead>
-      <tr>
-        <th>run_id</th>
-        <th>status</th>
-        <th>total_blocks</th>
-        <th>started</th>
-      </tr>
-    </thead>
-    <tbody>
-      {#each runs as r}
+  <div class="table-wrap mt-6">
+    <table class="table">
+      <thead>
         <tr>
-          <td class="muted"><a href={`/app/runs/${r.run_id}`}><code>{r.run_id}</code></a></td>
-          <td class="muted">{r.status}</td>
-          <td class="muted">{r.total_blocks}</td>
-          <td class="muted">{new Date(r.started_at).toLocaleString()}</td>
+          <th>run_id</th>
+          <th>status</th>
+          <th>total_blocks</th>
+          <th>started</th>
         </tr>
-      {/each}
-      {#if !busy && runs.length === 0}
-        <tr>
-          <td colspan="4" class="muted">No runs yet.</td>
-        </tr>
-      {/if}
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+        {#each runs as r}
+          <tr>
+            <td class="font-mono text-xs">
+              <a class="underline decoration-black/20 underline-offset-4 hover:decoration-black/60 dark:decoration-white/20 dark:hover:decoration-white/60" href={`/app/runs/${r.run_id}`}
+                >{r.run_id}</a
+              >
+            </td>
+            <td class="text-black/60 dark:text-white/60">{r.status}</td>
+            <td class="text-black/60 dark:text-white/60">{r.total_blocks}</td>
+            <td class="text-black/60 dark:text-white/60">{new Date(r.started_at).toLocaleString()}</td>
+          </tr>
+        {/each}
+        {#if !busy && runs.length === 0}
+          <tr>
+            <td colspan="4" class="text-black/60 dark:text-white/60">No runs yet.</td>
+          </tr>
+        {/if}
+      </tbody>
+    </table>
+  </div>
 </div>
-

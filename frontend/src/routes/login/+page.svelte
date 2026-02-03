@@ -28,18 +28,33 @@
   }
 </script>
 
-<div class="card" style="max-width: 520px; margin: 0 auto">
-  <h1 style="margin-top: 0">Login</h1>
-  <p class="muted">Sign in with your Supabase Auth user.</p>
+<div class="mx-auto max-w-md">
+  <div class="card preset-tonal-surface p-6 ring-1 ring-black/10 dark:ring-white/10">
+    <h1 class="text-2xl font-bold tracking-tight">Sign in</h1>
+    <p class="mt-2 text-sm text-black/65 dark:text-white/65">Use a Supabase Auth email/password user.</p>
 
-  <div class="row" style="margin-top: 12px">
-    <input class="input" placeholder="Email" bind:value={email} />
-    <input class="input" placeholder="Password" type="password" bind:value={password} />
-    <button class="btn" disabled={busy} on:click={submit}>{busy ? 'Signing in…' : 'Sign in'}</button>
+    <div class="mt-6 space-y-4">
+      <div>
+        <label class="text-sm font-medium text-black/70 dark:text-white/70" for="email">Email</label>
+        <input id="email" class="input mt-2 w-full" placeholder="you@company.com" bind:value={email} />
+      </div>
+      <div>
+        <label class="text-sm font-medium text-black/70 dark:text-white/70" for="password">Password</label>
+        <input id="password" class="input mt-2 w-full" placeholder="••••••••" type="password" bind:value={password} />
+      </div>
+
+      <div class="flex items-center gap-3">
+        <button class="btn preset-filled-primary-500 disabled:opacity-60" disabled={busy} on:click={submit}>
+          {busy ? 'Signing in...' : 'Sign in'}
+        </button>
+        <a class="btn preset-filled-surface-100-900" href="/how-it-works">How it works</a>
+      </div>
+
+      {#if error}
+        <div class="rounded-lg bg-red-500/10 p-3 text-sm text-red-700 ring-1 ring-red-500/20 dark:text-red-300">
+          {error}
+        </div>
+      {/if}
+    </div>
   </div>
-
-  {#if error}
-    <p style="color: var(--danger); margin-bottom: 0">{error}</p>
-  {/if}
 </div>
-

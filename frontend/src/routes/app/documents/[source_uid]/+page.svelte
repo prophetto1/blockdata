@@ -53,34 +53,58 @@
   onMount(load);
 </script>
 
-<div class="card">
-  <div class="row" style="justify-content: space-between">
-    <h1 style="margin: 0">Document</h1>
-    <button class="btn secondary" on:click={load} disabled={busy}>{busy ? 'Loading…' : 'Refresh'}</button>
+<div class="card preset-tonal-surface p-6 ring-1 ring-black/10 dark:ring-white/10">
+  <div class="flex flex-wrap items-start justify-between gap-3">
+    <div>
+      <h1 class="text-2xl font-bold tracking-tight">Document</h1>
+      {#if row}
+        <p class="mt-1 text-sm text-black/65 dark:text-white/65">{row.doc_title}</p>
+      {/if}
+    </div>
+    <button class="btn btn-sm preset-filled-surface-100-900 disabled:opacity-60" on:click={load} disabled={busy}>
+      {busy ? 'Loading...' : 'Refresh'}
+    </button>
   </div>
 
   {#if error}
-    <p style="color: var(--danger)">{error}</p>
+    <div class="mt-4 rounded-lg bg-red-500/10 p-3 text-sm text-red-700 ring-1 ring-red-500/20 dark:text-red-300">
+      {error}
+    </div>
   {/if}
 
   {#if row}
-    <p class="muted" style="margin-bottom: 0"><b>Title:</b> {row.doc_title}</p>
-    <p class="muted" style="margin-bottom: 0"><b>Status:</b> {row.status}</p>
     {#if row.error}
-      <p style="color: var(--danger); margin-bottom: 0"><b>Error:</b> {row.error}</p>
+      <div class="mt-4 rounded-lg bg-red-500/10 p-3 text-sm text-red-700 ring-1 ring-red-500/20 dark:text-red-300">
+        <span class="font-semibold">Error:</span> {row.error}
+      </div>
     {/if}
-    <p class="muted" style="margin-bottom: 0"><b>source_uid:</b> <code>{row.source_uid}</code></p>
-    <p class="muted" style="margin-bottom: 0"><b>doc_uid:</b> <code>{row.doc_uid ?? '—'}</code></p>
-    <p class="muted" style="margin-bottom: 0"><b>md_uid:</b> <code>{row.md_uid ?? '—'}</code></p>
 
-    <div class="row" style="margin-top: 12px">
+    <div class="mt-6 grid gap-4 md:grid-cols-2">
+      <div class="rounded-xl bg-black/5 p-4 ring-1 ring-black/10 dark:bg-white/5 dark:ring-white/10">
+        <div class="text-xs font-medium text-black/60 dark:text-white/60">Status</div>
+        <div class="mt-1 text-sm font-semibold">{row.status}</div>
+      </div>
+      <div class="rounded-xl bg-black/5 p-4 ring-1 ring-black/10 dark:bg-white/5 dark:ring-white/10">
+        <div class="text-xs font-medium text-black/60 dark:text-white/60">Uploaded</div>
+        <div class="mt-1 text-sm font-semibold">{new Date(row.uploaded_at).toLocaleString()}</div>
+      </div>
+      <div class="rounded-xl bg-black/5 p-4 ring-1 ring-black/10 dark:bg-white/5 dark:ring-white/10">
+        <div class="text-xs font-medium text-black/60 dark:text-white/60">source_uid</div>
+        <div class="mt-1 break-all font-mono text-xs">{row.source_uid}</div>
+      </div>
+      <div class="rounded-xl bg-black/5 p-4 ring-1 ring-black/10 dark:bg-white/5 dark:ring-white/10">
+        <div class="text-xs font-medium text-black/60 dark:text-white/60">doc_uid</div>
+        <div class="mt-1 break-all font-mono text-xs">{row.doc_uid ?? '—'}</div>
+      </div>
+    </div>
+
+    <div class="mt-6 flex flex-wrap items-center gap-2">
       {#if row.doc_uid && row.status === 'ingested'}
-        <a class="btn secondary" href={`/app/documents/${row.source_uid}/blocks`}>View blocks</a>
-        <button class="btn" on:click={exportJsonl}>Export JSONL</button>
+        <a class="btn btn-sm preset-filled-surface-100-900" href={`/app/documents/${row.source_uid}/blocks`}>View blocks</a>
+        <button class="btn btn-sm preset-filled-primary-500" on:click={exportJsonl}>Export JSONL</button>
       {:else}
-        <span class="muted">Waiting for ingest to complete…</span>
+        <span class="text-sm text-black/60 dark:text-white/60">Waiting for ingest to complete...</span>
       {/if}
     </div>
   {/if}
 </div>
-

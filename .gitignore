@@ -10,7 +10,7 @@ docling/
 src-content/
 learning-commons-evaluators/
 learning-commons-kg/
-docs/
+doc/
 # Environment files
 .env
 .env.*

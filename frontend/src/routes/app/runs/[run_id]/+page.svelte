@@ -26,6 +26,8 @@
     row = null;
     try {
       const run_id = $page.params.run_id;
+      if (!run_id) throw new Error('Missing run_id');
+
       const { data, error: err } = await supabase
         .from('annotation_runs')
         .select(
@@ -45,32 +47,55 @@
 
   async function exportJsonl() {
     const run_id = $page.params.run_id;
+    if (!run_id) {
+      error = 'Missing run_id';
+      return;
+    }
     await downloadFromEdge(`export-jsonl?run_id=${encodeURIComponent(run_id)}`, `export-${run_id}.jsonl`);
   }
 
   onMount(load);
 </script>
 
-<div class="card">
-  <div class="row" style="justify-content: space-between">
-    <h1 style="margin: 0">Run</h1>
-    <button class="btn secondary" disabled={busy} on:click={load}>{busy ? 'Loading…' : 'Refresh'}</button>
+<div class="card preset-tonal-surface p-6 ring-1 ring-black/10 dark:ring-white/10">
+  <div class="flex flex-wrap items-start justify-between gap-3">
+    <div>
+      <h1 class="text-2xl font-bold tracking-tight">Run</h1>
+      {#if row}
+        <div class="mt-1 text-sm text-black/65 dark:text-white/65">
+          <span class="font-mono text-xs">{row.run_id}</span>
+        </div>
+      {/if}
+    </div>
+    <button class="btn btn-sm preset-filled-surface-100-900 disabled:opacity-60" disabled={busy} on:click={load}>
+      {busy ? 'Loading...' : 'Refresh'}
+    </button>
   </div>
 
   {#if error}
-    <p style="color: var(--danger)">{error}</p>
+    <div class="mt-4 rounded-lg bg-red-500/10 p-3 text-sm text-red-700 ring-1 ring-red-500/20 dark:text-red-300">
+      {error}
+    </div>
   {/if}
 
   {#if row}
-    <p class="muted" style="margin-bottom: 0"><b>run_id:</b> <code>{row.run_id}</code></p>
-    <p class="muted" style="margin-bottom: 0"><b>status:</b> {row.status}</p>
-    <p class="muted" style="margin-bottom: 0"><b>total:</b> {row.total_blocks}</p>
-    <p class="muted" style="margin-bottom: 0"><b>completed:</b> {row.completed_blocks}</p>
-    <p class="muted" style="margin-bottom: 0"><b>failed:</b> {row.failed_blocks}</p>
+    <div class="mt-6 grid gap-4 md:grid-cols-3">
+      <div class="rounded-xl bg-black/5 p-4 ring-1 ring-black/10 dark:bg-white/5 dark:ring-white/10">
+        <div class="text-xs font-medium text-black/60 dark:text-white/60">status</div>
+        <div class="mt-1 text-sm font-semibold">{row.status}</div>
+      </div>
+      <div class="rounded-xl bg-black/5 p-4 ring-1 ring-black/10 dark:bg-white/5 dark:ring-white/10">
+        <div class="text-xs font-medium text-black/60 dark:text-white/60">total</div>
+        <div class="mt-1 text-sm font-semibold">{row.total_blocks}</div>
+      </div>
+      <div class="rounded-xl bg-black/5 p-4 ring-1 ring-black/10 dark:bg-white/5 dark:ring-white/10">
+        <div class="text-xs font-medium text-black/60 dark:text-white/60">completed</div>
+        <div class="mt-1 text-sm font-semibold">{row.completed_blocks} <span class="text-black/50 dark:text-white/50">(+{row.failed_blocks} failed)</span></div>
+      </div>
+    </div>
 
-    <div class="row" style="margin-top: 12px">
-      <button class="btn" on:click={exportJsonl}>Export JSONL (run)</button>
+    <div class="mt-6 flex flex-wrap items-center gap-2">
+      <button class="btn btn-sm preset-filled-primary-500" on:click={exportJsonl}>Export JSONL</button>
     </div>
   {/if}
 </div>
-

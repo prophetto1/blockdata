@@ -1,0 +1,35 @@
+{
+  "immutable": {
+    "content": {
+      "original": "In generative legal systems, speed is one objective among several—and quantization is a one-sided intervention. It optimizes speed and cost (less memory, more throughput, cheaper inference) by cannibalizing the multi-step, structured cognition that legal analysis demands. And it does this while leaving surface fluency intact, making the model seem confident even as its reasoning deteriorates."
+    },
+    "envelope": {
+      "md_uid": "bb2bf9fae0c7cfde5e58fd1b1934a99d37b82555215ce4bbdfa812b9751f2cb4",
+      "doc_uid": "2293b6d1e755728b4a309b7ec8a8eaf4c1c06feaf42b4bbdb2fd8d86c0947fb1",
+      "block_uid": "8a21f9a2d547aa1daf42db09a1466cd154f96cafab970b7338f246a521cd5dc8",
+      "char_span": [
+        7990,
+        8385
+      ],
+      "doc_title": "Test Document",
+      "block_type": "paragraph",
+      "md_locator": "uploads/23bb7993997df17e9309b10a98b05e1b991d0a212626308baac102ff3c39edb1/a2-v4.8-10787.docx.md",
+      "source_uid": "23bb7993997df17e9309b10a98b05e1b991d0a212626308baac102ff3c39edb1",
+      "block_index": 25,
+      "source_type": "md",
+      "uploaded_at": "2026-02-02T13:09:51.478841+00:00",
+      "section_path": [
+        "2. Technical Reality: How Quantization Destroys Reasoning While Preserving Fluency",
+        "2.1 Quantization as a One-Sided Intervention"
+      ],
+      "source_locator": "uploads/23bb7993997df17e9309b10a98b05e1b991d0a212626308baac102ff3c39edb1/a2-v4.8-10787.docx.md"
+    },
+    "immutable_schema_ref": "md_prose_v1"
+  },
+  "annotation": {
+    "data": {},
+    "schema_ref": "prose_optimizer_v1",
+    "schema_uid": "d981fa2ce79f15ada9a64b065dab72ce9fb3427846769c2dac234c1f7ce8a261"
+  }
+}
+

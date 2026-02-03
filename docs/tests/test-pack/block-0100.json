@@ -1,0 +1,36 @@
+{
+  "immutable": {
+    "content": {
+      "original": "Read that again: a developer explicitly requests safer, higher-precision computation. The infrastructure reserves the right to override that request in pursuit of performance."
+    },
+    "envelope": {
+      "md_uid": "bb2bf9fae0c7cfde5e58fd1b1934a99d37b82555215ce4bbdfa812b9751f2cb4",
+      "doc_uid": "2293b6d1e755728b4a309b7ec8a8eaf4c1c06feaf42b4bbdb2fd8d86c0947fb1",
+      "block_uid": "c14b78eb694adb5011c7ec4a6ee356013181eb8516c92030ee3082e3e6c41097",
+      "char_span": [
+        29804,
+        29979
+      ],
+      "doc_title": "Test Document",
+      "block_type": "paragraph",
+      "md_locator": "uploads/23bb7993997df17e9309b10a98b05e1b991d0a212626308baac102ff3c39edb1/a2-v4.8-10787.docx.md",
+      "source_uid": "23bb7993997df17e9309b10a98b05e1b991d0a212626308baac102ff3c39edb1",
+      "block_index": 100,
+      "source_type": "md",
+      "uploaded_at": "2026-02-02T13:09:51.478841+00:00",
+      "section_path": [
+        "3. The Opacity Problem",
+        "3.1 Structural Opacity (Vertical Axis): Who Controls the Parameter?",
+        "3.1.3 Defect 3: Active Override"
+      ],
+      "source_locator": "uploads/23bb7993997df17e9309b10a98b05e1b991d0a212626308baac102ff3c39edb1/a2-v4.8-10787.docx.md"
+    },
+    "immutable_schema_ref": "md_prose_v1"
+  },
+  "annotation": {
+    "data": {},
+    "schema_ref": "prose_optimizer_v1",
+    "schema_uid": "d981fa2ce79f15ada9a64b065dab72ce9fb3427846769c2dac234c1f7ce8a261"
+  }
+}
+
