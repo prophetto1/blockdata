@@ -1,16 +1,21 @@
 # Local Claude/Codex settings
 .claude/
 .codex/settings.local.json
-.jon/
 skills/
 json-schemas/
 
 # Project-specific ignores
 docling/
+AFFiNE/
+pandoc/
 src-content/
 learning-commons-evaluators/
 learning-commons-kg/
 doc/
+frontend/
+
+
+
 # Environment files
 .env
 .env.*
