@@ -1,9 +1,0 @@
-@import 'tailwindcss';
-@import '@skeletonlabs/skeleton';
-@import '@skeletonlabs/skeleton/themes/modern';
-
-@layer base {
-  body {
-    margin: 0;
-  }
-}
