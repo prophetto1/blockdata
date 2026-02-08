@@ -1,10 +1,10 @@
 # Smoke Test: GFM block extraction (tables + footnotes) via ingest -> export-jsonl
 # Run from project root: .\scripts\smoke-test-gfm-blocktypes.ps1
 #
-# Verifies the open-source parser pipeline produces these block types:
+# Verifies the open-source parser pipeline produces these v2 block types:
 # - table (requires remark-gfm)
-# - footnote_definition (requires remark-gfm)
-# - code (fenced code blocks)
+# - footnote (requires remark-gfm; v1 name was footnote_definition)
+# - code_block (fenced code blocks; v1 name was code)
 #
 # This script requires a test user (email/password) and SUPABASE legacy anon key.
 
@@ -55,12 +55,13 @@ if (-not $token) { throw "Auth response did not include access_token." }
 Write-Host "Authenticated as: $TEST_EMAIL" -ForegroundColor Green
 
 # ============================================================================
-# STEP 2: Ingest GFM smoke markdown
+# STEP 2: Ingest GFM smoke markdown (v2: no immutable_schema_ref)
 # ============================================================================
 Write-Host "`n=== STEP 2: Ingesting GFM smoke markdown ===" -ForegroundColor Cyan
 
-$testFile = ".\docs\test-pack\gfm-smoke.md"
-if (-not (Test-Path $testFile)) { throw "Missing test markdown file: $testFile" }
+$testFile = ".\docs\tests\test-pack\gfm-smoke.md"
+if (-not (Test-Path $testFile)) { $testFile = ".\docs\test-pack\gfm-smoke.md" }
+if (-not (Test-Path $testFile)) { throw "Missing test markdown file: gfm-smoke.md" }
 
 Write-Host "Using markdown file: $testFile" -ForegroundColor Gray
 Write-Host "Calling POST /functions/v1/ingest..." -ForegroundColor Gray
@@ -68,23 +69,22 @@ Write-Host "Calling POST /functions/v1/ingest..." -ForegroundColor Gray
 $ingestResult = curl.exe -sS -X POST "$env:SUPABASE_URL/functions/v1/ingest" `
     -H "Authorization: Bearer $token" `
     -H "apikey: $env:SUPABASE_ANON_KEY" `
-    -F "immutable_schema_ref=md_prose_v1" `
     -F "doc_title=GFM Smoke" `
     -F "file=@$testFile;type=text/markdown"
 
 $ingest = $ingestResult | ConvertFrom-Json
 if ($ingest.error) { throw "Ingest error: $($ingest.error)" }
-if (-not $ingest.doc_uid) { throw "Ingest did not return doc_uid (expected for .md uploads)" }
+if (-not $ingest.conv_uid) { throw "Ingest did not return conv_uid (expected for .md uploads)" }
 
-$doc_uid = $ingest.doc_uid
-Write-Host "Ingested doc_uid: $doc_uid (blocks_count=$($ingest.blocks_count))" -ForegroundColor Green
+$conv_uid = $ingest.conv_uid
+Write-Host "Ingested conv_uid: $conv_uid (blocks_count=$($ingest.blocks_count))" -ForegroundColor Green
 
 # ============================================================================
 # STEP 3: Export JSONL and verify block types
 # ============================================================================
 Write-Host "`n=== STEP 3: Exporting JSONL and verifying block types ===" -ForegroundColor Cyan
 
-$export = curl.exe -sS -X GET "$env:SUPABASE_URL/functions/v1/export-jsonl?doc_uid=$doc_uid" `
+$export = curl.exe -sS -X GET "$env:SUPABASE_URL/functions/v1/export-jsonl?conv_uid=$conv_uid" `
     -H "Authorization: Bearer $token" `
     -H "apikey: $env:SUPABASE_ANON_KEY"
 
@@ -94,11 +94,12 @@ if ($lines.Count -lt 1) { throw "Export returned no JSONL lines" }
 $types = New-Object System.Collections.Generic.HashSet[string]
 foreach ($line in $lines) {
     $obj = $line | ConvertFrom-Json
-    $t = $obj.immutable.envelope.block_type
+    $t = $obj.immutable.block.block_type
     if ($t) { [void]$types.Add([string]$t) }
 }
 
-$required = @("heading", "paragraph", "code", "table", "footnote_definition")
+# v2 block_type names: code_block (was code), footnote (was footnote_definition)
+$required = @("heading", "paragraph", "code_block", "table", "footnote")
 $missing = @()
 foreach ($r in $required) {
     if (-not $types.Contains($r)) { $missing += $r }
@@ -107,8 +108,7 @@ foreach ($r in $required) {
 Write-Host "Observed block types: $([string]::Join(', ', ($types | Sort-Object)))" -ForegroundColor Gray
 
 if ($missing.Count -gt 0) {
-    throw "Missing required block types: $([string]::Join(', ', $missing)). If table/footnote_definition are missing, ensure remark-gfm is enabled in the markdown parser and Edge Functions are redeployed."
+    throw "Missing required block types: $([string]::Join(', ', $missing)). If table/footnote are missing, ensure remark-gfm is enabled in the markdown parser and Edge Functions are redeployed."
 }
 
 Write-Host "GFM block-type smoke test PASSED." -ForegroundColor Green
-

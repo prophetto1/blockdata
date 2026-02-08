@@ -1,6 +1,5 @@
 param(
     [string]$FilePath,
-    [string]$ImmutableSchemaRef = "md_prose_v1",
     [string]$DocTitle = "Non-MD Test Document",
     [int]$PollIntervalSeconds = 5,
     [int]$TimeoutSeconds = 900
@@ -93,14 +92,13 @@ ingest -> conversion-service -> conversion-complete -> blocks -> export-jsonl
 $contentType = Get-ContentTypeForFile $FilePath
 
 # ============================================================================
-# STEP 3: Call POST /functions/v1/ingest
+# STEP 3: Call POST /functions/v1/ingest (v2: no immutable_schema_ref)
 # ============================================================================
 Write-Host "`n=== STEP 3: Calling POST /functions/v1/ingest ===" -ForegroundColor Cyan
 
 $ingestResult = curl.exe -sS -i -X POST "$env:SUPABASE_URL/functions/v1/ingest" `
     -H "Authorization: Bearer $token" `
     -H "apikey: $env:SUPABASE_ANON_KEY" `
-    -F "immutable_schema_ref=$ImmutableSchemaRef" `
     -F "doc_title=$DocTitle" `
     -F "file=@$FilePath;type=$contentType"
 
@@ -134,9 +132,9 @@ Write-Host "source_uid: $source_uid" -ForegroundColor Gray
 Write-Host "initial status: $($ingest.status)" -ForegroundColor Gray
 
 # ============================================================================
-# STEP 4: Poll documents row until ingested
+# STEP 4: Poll documents_v2 row until ingested
 # ============================================================================
-Write-Host "`n=== STEP 4: Polling documents status ===" -ForegroundColor Cyan
+Write-Host "`n=== STEP 4: Polling documents_v2 status ===" -ForegroundColor Cyan
 
 $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
 $doc = $null
@@ -145,7 +143,7 @@ while ((Get-Date) -lt $deadline) {
     try {
         $rows = Invoke-RestMethod `
             -Method Get `
-            -Uri "$env:SUPABASE_URL/rest/v1/documents?source_uid=eq.$source_uid&select=source_uid,source_type,status,doc_uid,error,uploaded_at,updated_at" `
+            -Uri "$env:SUPABASE_URL/rest/v1/documents_v2?source_uid=eq.$source_uid&select=source_uid,source_type,status,conv_uid,error,uploaded_at,updated_at" `
             -Headers @{
                 "apikey"        = $env:SUPABASE_ANON_KEY
                 "Authorization" = "Bearer $token"
@@ -153,46 +151,46 @@ while ((Get-Date) -lt $deadline) {
 
         if ($rows -and $rows.Count -gt 0) { $doc = $rows[0] } else { $doc = $null }
     } catch {
-        Write-Host "WARN: failed to query documents via PostgREST: $_" -ForegroundColor Yellow
+        Write-Host "WARN: failed to query documents_v2 via PostgREST: $_" -ForegroundColor Yellow
         $doc = $null
     }
 
     if ($doc) {
-        Write-Host "status=$($doc.status) source_type=$($doc.source_type) doc_uid=$($doc.doc_uid)" -ForegroundColor Gray
+        Write-Host "status=$($doc.status) source_type=$($doc.source_type) conv_uid=$($doc.conv_uid)" -ForegroundColor Gray
 
-        if ($doc.status -eq "ingested" -and $doc.doc_uid) { break }
+        if ($doc.status -eq "ingested" -and $doc.conv_uid) { break }
         if ($doc.status -eq "conversion_failed" -or $doc.status -eq "ingest_failed") {
             Write-Host "FAILED: status=$($doc.status)" -ForegroundColor Red
             if ($doc.error) { Write-Host "error: $($doc.error)" -ForegroundColor Red }
             exit 1
         }
     } else {
-        Write-Host "Waiting for documents row to be visible under RLS..." -ForegroundColor Gray
+        Write-Host "Waiting for documents_v2 row to be visible under RLS..." -ForegroundColor Gray
     }
 
     Start-Sleep -Seconds $PollIntervalSeconds
 }
 
-if (-not $doc -or $doc.status -ne "ingested" -or -not $doc.doc_uid) {
+if (-not $doc -or $doc.status -ne "ingested" -or -not $doc.conv_uid) {
     Write-Host "Timed out after $TimeoutSeconds seconds waiting for ingest to complete." -ForegroundColor Red
     if ($doc) {
-        Write-Host "last status=$($doc.status) doc_uid=$($doc.doc_uid)" -ForegroundColor Yellow
+        Write-Host "last status=$($doc.status) conv_uid=$($doc.conv_uid)" -ForegroundColor Yellow
         if ($doc.error) { Write-Host "error: $($doc.error)" -ForegroundColor Yellow }
     }
     exit 1
 }
 
-$doc_uid = $doc.doc_uid
-Write-Host "Ingest complete! doc_uid=$doc_uid" -ForegroundColor Green
+$conv_uid = $doc.conv_uid
+Write-Host "Ingest complete! conv_uid=$conv_uid" -ForegroundColor Green
 
 # ============================================================================
-# STEP 5: Export JSONL
+# STEP 5: Export JSONL (v2 shape)
 # ============================================================================
 Write-Host "`n=== STEP 5: Exporting JSONL ===" -ForegroundColor Cyan
 
 $exportFile = ".\\scripts\\export-non-md-test.jsonl"
 
-curl.exe -sS -L "$env:SUPABASE_URL/functions/v1/export-jsonl?doc_uid=$doc_uid" `
+curl.exe -sS -L "$env:SUPABASE_URL/functions/v1/export-jsonl?conv_uid=$conv_uid" `
     -H "Authorization: Bearer $token" `
     -H "apikey: $env:SUPABASE_ANON_KEY" `
     -o $exportFile
@@ -206,8 +204,35 @@ Write-Host "Export successful! $($lines.Count) blocks exported" -ForegroundColor
 Write-Host "Saved to: $exportFile" -ForegroundColor Gray
 
 $firstBlock = $lines[0] | ConvertFrom-Json
-if (-not $firstBlock.immutable -or -not $firstBlock.immutable.envelope -or -not $firstBlock.immutable.envelope.doc_uid) {
-    Write-Host "WARN: export-jsonl first block missing expected envelope fields" -ForegroundColor Yellow
+Write-Host "`n=== Verifying v2 export shape ===" -ForegroundColor Cyan
+$valid = $true
+
+if (-not $firstBlock.immutable) {
+    Write-Host "MISSING: immutable" -ForegroundColor Red; $valid = $false
+}
+if (-not $firstBlock.immutable.source_upload.source_uid) {
+    Write-Host "MISSING: immutable.source_upload.source_uid" -ForegroundColor Red; $valid = $false
+}
+if (-not $firstBlock.immutable.conversion.conv_uid) {
+    Write-Host "MISSING: immutable.conversion.conv_uid" -ForegroundColor Red; $valid = $false
+}
+if (-not $firstBlock.immutable.block.block_uid) {
+    Write-Host "MISSING: immutable.block.block_uid" -ForegroundColor Red; $valid = $false
+}
+if ($null -eq $firstBlock.user_defined) {
+    Write-Host "MISSING: user_defined" -ForegroundColor Red; $valid = $false
+}
+
+# Pairing rules for non-MD: still mdast track (true Docling track is future)
+if ($firstBlock.immutable.conversion.conv_parsing_tool -ne "mdast") {
+    Write-Host "WARN: conv_parsing_tool expected 'mdast', got '$($firstBlock.immutable.conversion.conv_parsing_tool)'" -ForegroundColor Yellow
+}
+if ($firstBlock.immutable.block.block_locator.type -ne "text_offset_range") {
+    Write-Host "WARN: block_locator.type expected 'text_offset_range', got '$($firstBlock.immutable.block.block_locator.type)'" -ForegroundColor Yellow
+}
+
+if ($valid) {
+    Write-Host "v2 export shape OK." -ForegroundColor Green
 } else {
-    Write-Host "Export contract looks OK (first block has immutable.envelope.doc_uid)." -ForegroundColor Green
+    throw "v2 export shape validation failed."
 }

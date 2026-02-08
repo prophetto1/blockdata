@@ -1,13 +1,13 @@
 import { corsPreflight, withCorsHeaders } from "../_shared/cors.ts";
 import { getEnv, requireEnv } from "../_shared/env.ts";
-import { concatBytes, sha256Hex, sha256HexOfString } from "../_shared/hash.ts";
+import { concatBytes, sha256Hex } from "../_shared/hash.ts";
 import { extractBlocks } from "../_shared/markdown.ts";
 import { basenameNoExt, sanitizeFilename } from "../_shared/sanitize.ts";
 import { createAdminClient, requireUserId } from "../_shared/supabase.ts";
 
 type IngestResponse = {
   source_uid: string;
-  doc_uid: string | null;
+  conv_uid: string | null;
   status: string;
   blocks_count?: number;
   error?: string;
@@ -27,11 +27,12 @@ function json(status: number, body: unknown): Response {
   });
 }
 
-function detectSourceType(filename: string): "md" | "docx" | "pdf" | "txt" {
+function detectSourceType(filename: string): string {
   const lower = filename.toLowerCase();
   if (lower.endsWith(".md") || lower.endsWith(".markdown")) return "md";
   if (lower.endsWith(".docx")) return "docx";
   if (lower.endsWith(".pdf")) return "pdf";
+  if (lower.endsWith(".pptx")) return "pptx";
   if (lower.endsWith(".txt")) return "txt";
   throw new Error(`Unsupported file type: ${filename}`);
 }
@@ -48,14 +49,6 @@ Deno.serve(async (req) => {
     const file = form.get("file");
     if (!(file instanceof File)) return json(400, { error: "Missing file" });
 
-    const immutableSchemaRefRaw = form.get("immutable_schema_ref");
-    const immutable_schema_ref = typeof immutableSchemaRefRaw === "string"
-      ? immutableSchemaRefRaw.trim()
-      : "";
-    if (!immutable_schema_ref) {
-      return json(400, { error: "Missing immutable_schema_ref" });
-    }
-
     const docTitleRaw = form.get("doc_title");
     const requestedTitle = typeof docTitleRaw === "string" ? docTitleRaw.trim() : "";
 
@@ -71,20 +64,15 @@ Deno.serve(async (req) => {
 
     const supabaseAdmin = createAdminClient();
 
-    // Idempotency + safety:
-    // - If this user already has a documents row for the same source_uid, return it.
-    // - If some other user owns that source_uid, do NOT leak doc_uid/status. Return 409.
-    //
-    // Note: With documents.source_uid as a global primary key, identical bytes cannot be
-    // uploaded by multiple owners. If multi-tenant duplicates become a requirement, the
-    // schema must change (e.g., per-owner document instances).
+    // Idempotency: if this user already has a documents_v2 row for the same source_uid, return it.
+    // If another user owns that source_uid, return 409 (global PK constraint).
     {
       const { data: existing, error } = await supabaseAdmin
-        .from("documents")
-        .select("source_uid, owner_id, doc_uid, status, error")
+        .from("documents_v2")
+        .select("source_uid, owner_id, conv_uid, status, error")
         .eq("source_uid", source_uid)
         .maybeSingle();
-      if (error) throw new Error(`DB lookup documents failed: ${error.message}`);
+      if (error) throw new Error(`DB lookup documents_v2 failed: ${error.message}`);
       if (existing) {
         if (existing.owner_id !== ownerId) {
           return json(409, {
@@ -96,12 +84,12 @@ Deno.serve(async (req) => {
         }
         const resp: IngestResponse = {
           source_uid,
-          doc_uid: existing.doc_uid ?? null,
+          conv_uid: existing.conv_uid ?? null,
           status: existing.status ?? "uploaded",
           error: existing.error ?? undefined,
-      };
-      return json(200, resp);
-    }
+        };
+        return json(200, resp);
+      }
     }
 
     // Upload original into Storage (service role). Safe to upsert because the key
@@ -118,62 +106,82 @@ Deno.serve(async (req) => {
 
     if (source_type === "md") {
       const markdown = new TextDecoder().decode(fileBytes);
-      const md_uid = await sha256Hex(fileBytes);
-      const doc_uid = await sha256HexOfString(`${immutable_schema_ref}\n${md_uid}`);
+
+      // v2 conv_uid: sha256(conv_parsing_tool + "\n" + conv_representation_type + "\n" + conv_representation_bytes)
+      const convPrefix = new TextEncoder().encode("mdast\nmarkdown_bytes\n");
+      const conv_uid = await sha256Hex(concatBytes([convPrefix, fileBytes]));
 
       const extracted = extractBlocks(markdown);
       const fallbackTitle = basenameNoExt(originalFilename);
       const doc_title = requestedTitle || extracted.docTitle || fallbackTitle;
 
-      // Insert documents row (doc_uid is required for blocks FK target).
+      // Compute conv_* summary fields
+      const conv_total_blocks = extracted.blocks.length;
+      const conv_total_characters = extracted.blocks.reduce(
+        (sum, b) => sum + b.block_content.length,
+        0,
+      );
+      const freqMap: Record<string, number> = {};
+      for (const b of extracted.blocks) {
+        freqMap[b.block_type] = (freqMap[b.block_type] || 0) + 1;
+      }
+
+      // Insert documents_v2 row (conv_uid needed for blocks FK).
       {
-        const { error } = await supabaseAdmin.from("documents").insert({
+        const { error } = await supabaseAdmin.from("documents_v2").insert({
           source_uid,
           owner_id: ownerId,
-          md_uid,
-          doc_uid,
           source_type,
+          source_filesize: fileBytes.byteLength,
+          source_total_characters: markdown.length,
           source_locator: source_key,
-          md_locator: source_key,
           doc_title,
-          immutable_schema_ref,
+          conv_uid,
+          conv_status: "success",
+          conv_parsing_tool: "mdast",
+          conv_representation_type: "markdown_bytes",
+          conv_total_blocks,
+          conv_block_type_freq: freqMap,
+          conv_total_characters,
+          conv_locator: source_key,
           status: "uploaded",
           conversion_job_id: null,
           error: null,
         });
-        if (error) throw new Error(`DB insert documents failed: ${error.message}`);
+        if (error) throw new Error(`DB insert documents_v2 failed: ${error.message}`);
       }
 
-      // Insert blocks.
+      // Insert blocks_v2.
       try {
-        const blockRows = await Promise.all(
-          extracted.blocks.map(async (b, idx) => ({
-            block_uid: await sha256HexOfString(`${doc_uid}:${idx}`),
-            doc_uid,
-            block_index: idx,
-            block_type: b.block_type,
-            section_path: b.section_path,
-            char_span: [b.char_span[0], b.char_span[1]],
-            content_original: b.content_original,
-          })),
-        );
+        const blockRows = extracted.blocks.map((b, idx) => ({
+          block_uid: `${conv_uid}:${idx}`,
+          conv_uid,
+          block_index: idx,
+          block_type: b.block_type,
+          block_locator: {
+            type: "text_offset_range",
+            start_offset: b.start_offset,
+            end_offset: b.end_offset,
+          },
+          block_content: b.block_content,
+        }));
 
         if (blockRows.length === 0) {
           throw new Error("No blocks extracted from markdown");
         }
 
-        const { error } = await supabaseAdmin.from("blocks").insert(blockRows);
-        if (error) throw new Error(`DB insert blocks failed: ${error.message}`);
+        const { error } = await supabaseAdmin.from("blocks_v2").insert(blockRows);
+        if (error) throw new Error(`DB insert blocks_v2 failed: ${error.message}`);
 
         const { error: updErr } = await supabaseAdmin
-          .from("documents")
+          .from("documents_v2")
           .update({ status: "ingested", error: null })
           .eq("source_uid", source_uid);
-        if (updErr) throw new Error(`DB update documents failed: ${updErr.message}`);
+        if (updErr) throw new Error(`DB update documents_v2 failed: ${updErr.message}`);
 
         const resp: IngestResponse = {
           source_uid,
-          doc_uid,
+          conv_uid,
           status: "ingested",
           blocks_count: blockRows.length,
         };
@@ -181,34 +189,40 @@ Deno.serve(async (req) => {
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
         await supabaseAdmin
-          .from("documents")
+          .from("documents_v2")
           .update({ status: "ingest_failed", error: msg })
           .eq("source_uid", source_uid);
-        return json(500, { source_uid, doc_uid, status: "ingest_failed", error: msg });
+        return json(500, { source_uid, conv_uid, status: "ingest_failed", error: msg });
       }
     }
 
-    // Non-markdown: create documents row first, then call Python conversion service.
+    // Non-markdown: create documents_v2 row first, then call Python conversion service.
     const conversion_job_id = crypto.randomUUID();
     const fallbackTitle = basenameNoExt(originalFilename);
     const doc_title = requestedTitle || fallbackTitle;
 
     {
-      const { error } = await supabaseAdmin.from("documents").insert({
+      const { error } = await supabaseAdmin.from("documents_v2").insert({
         source_uid,
         owner_id: ownerId,
-        md_uid: null,
-        doc_uid: null,
         source_type,
+        source_filesize: fileBytes.byteLength,
+        source_total_characters: null,
         source_locator: source_key,
-        md_locator: null,
         doc_title,
-        immutable_schema_ref,
+        conv_uid: null,
+        conv_status: null,
+        conv_parsing_tool: null,
+        conv_representation_type: null,
+        conv_total_blocks: null,
+        conv_block_type_freq: null,
+        conv_total_characters: null,
+        conv_locator: null,
         status: "converting",
         conversion_job_id,
         error: null,
       });
-      if (error) throw new Error(`DB insert documents failed: ${error.message}`);
+      if (error) throw new Error(`DB insert documents_v2 failed: ${error.message}`);
     }
 
     const { data: signedDownload, error: dlErr } = await supabaseAdmin.storage
@@ -246,11 +260,7 @@ Deno.serve(async (req) => {
       };
     }
 
-    // Always use the project base URL for callbacks. req.url may be invoked via either:
-    // - https://<project>.supabase.co/functions/v1/ingest (origin is project base)
-    // - https://<project>.functions.supabase.co/ingest (origin is functions subdomain)
-    //
-    // Using SUPABASE_URL keeps callback stable and correct for the deployed gateway.
+    // Always use the project base URL for callbacks.
     const supabaseUrl = requireEnv("SUPABASE_URL").replace(/\/+$/, "");
     const callback_url = `${supabaseUrl}/functions/v1/conversion-complete`;
 
@@ -282,7 +292,7 @@ Deno.serve(async (req) => {
     if (!convertResp.ok) {
       const msg = await convertResp.text().catch(() => "");
       await supabaseAdmin
-        .from("documents")
+        .from("documents_v2")
         .update({
           status: "conversion_failed",
           error: `conversion request failed: HTTP ${convertResp.status} ${msg}`.slice(0, 1000),
@@ -290,7 +300,7 @@ Deno.serve(async (req) => {
         .eq("source_uid", source_uid);
       const resp: IngestResponse = {
         source_uid,
-        doc_uid: null,
+        conv_uid: null,
         status: "conversion_failed",
         error: "conversion request failed",
       };
@@ -299,7 +309,7 @@ Deno.serve(async (req) => {
 
     const resp: IngestResponse = {
       source_uid,
-      doc_uid: null,
+      conv_uid: null,
       status: "converting",
     };
     return json(202, resp);

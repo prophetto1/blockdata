@@ -1,4 +1,4 @@
-# Smoke Test Script for Block Inventory Pipeline
+# Smoke Test Script for Block Inventory Pipeline (v2)
 # Run from project root: .\scripts\smoke-test.ps1
 
 $ErrorActionPreference = "Stop"
@@ -120,12 +120,13 @@ catch {
 }
 
 # ============================================================================
-# STEP 2: Upload a test .md file to /ingest
+# STEP 2: Upload a test .md file to /ingest (v2: no immutable_schema_ref)
 # ============================================================================
 Write-Host "`n=== STEP 2: Uploading test document ===" -ForegroundColor Cyan
 
 # Choose an existing markdown doc (default: PRD) or generate a small test doc.
-$testFile = ".\json-schemas\prd-v4.md"
+$testFile = ".\docs\tests\test-pack\sample-doc.md"
+if (-not (Test-Path $testFile)) { $testFile = ".\json-schemas\prd-v4.md" }
 if (-not (Test-Path $testFile)) {
     $testMd = @"
 # Test Document
@@ -134,7 +135,7 @@ This is the first paragraph of the test document. It contains enough text to ver
 
 ## Section One
 
-Here is another paragraph under section one. The section_path should reflect this heading hierarchy.
+Here is another paragraph under section one.
 
 ### Subsection A
 
@@ -159,7 +160,6 @@ Write-Host "Calling POST /functions/v1/ingest..." -ForegroundColor Gray
 $ingestResult = curl.exe -sS -X POST "$env:SUPABASE_URL/functions/v1/ingest" `
     -H "Authorization: Bearer $token" `
     -H "apikey: $env:SUPABASE_ANON_KEY" `
-    -F "immutable_schema_ref=md_prose_v1" `
     -F "doc_title=Test Document" `
     -F "file=@$testFile;type=text/markdown"
 
@@ -174,18 +174,18 @@ try {
         exit 1
     }
 
-    if (-not $ingest.doc_uid) {
-        Write-Host "Ingest did not return doc_uid (expected for .md uploads)" -ForegroundColor Red
+    if (-not $ingest.conv_uid) {
+        Write-Host "Ingest did not return conv_uid (expected for .md uploads)" -ForegroundColor Red
         exit 1
     }
 
     Write-Host "Ingest successful!" -ForegroundColor Green
     Write-Host "  source_uid: $($ingest.source_uid)" -ForegroundColor Gray
-    Write-Host "  doc_uid: $($ingest.doc_uid)" -ForegroundColor Gray
+    Write-Host "  conv_uid: $($ingest.conv_uid)" -ForegroundColor Gray
     Write-Host "  status: $($ingest.status)" -ForegroundColor Gray
     Write-Host "  blocks_count: $($ingest.blocks_count)" -ForegroundColor Gray
 
-    $doc_uid = $ingest.doc_uid
+    $conv_uid = $ingest.conv_uid
 }
 catch {
     Write-Host "Failed to parse ingest response: $_" -ForegroundColor Red
@@ -194,13 +194,13 @@ catch {
 }
 
 # ============================================================================
-# STEP 3: Export JSONL and verify shape
+# STEP 3: Export JSONL and verify v2 canonical shape
 # ============================================================================
 Write-Host "`n=== STEP 3: Exporting JSONL ===" -ForegroundColor Cyan
 
 $exportFile = ".\scripts\export-test.jsonl"
 
-curl.exe -sS -L "$env:SUPABASE_URL/functions/v1/export-jsonl?doc_uid=$doc_uid" `
+curl.exe -sS -L "$env:SUPABASE_URL/functions/v1/export-jsonl?conv_uid=$conv_uid" `
     -H "Authorization: Bearer $token" `
     -H "apikey: $env:SUPABASE_ANON_KEY" `
     -o $exportFile
@@ -216,46 +216,57 @@ if (Test-Path $exportFile) {
     $firstBlock = $lines[0] | ConvertFrom-Json
     $firstBlock | ConvertTo-Json -Depth 10
 
-    # Verify PRD contract
-    Write-Host "`n=== Verifying PRD contract ===" -ForegroundColor Cyan
+    # Verify v2 canonical export shape
+    Write-Host "`n=== Verifying v2 export contract ===" -ForegroundColor Cyan
     $valid = $true
 
+    # Top-level keys
     if (-not $firstBlock.immutable) {
-        Write-Host "MISSING: immutable" -ForegroundColor Red
-        $valid = $false
+        Write-Host "MISSING: immutable" -ForegroundColor Red; $valid = $false
     }
-    if (-not $firstBlock.immutable.immutable_schema_ref) {
-        Write-Host "MISSING: immutable.immutable_schema_ref" -ForegroundColor Red
-        $valid = $false
-    }
-    if (-not $firstBlock.immutable.envelope) {
-        Write-Host "MISSING: immutable.envelope" -ForegroundColor Red
-        $valid = $false
-    }
-    if (-not $firstBlock.immutable.envelope.doc_uid) {
-        Write-Host "MISSING: immutable.envelope.doc_uid" -ForegroundColor Red
-        $valid = $false
-    }
-    if (-not $firstBlock.immutable.envelope.block_uid) {
-        Write-Host "MISSING: immutable.envelope.block_uid" -ForegroundColor Red
-        $valid = $false
-    }
-    if (-not $firstBlock.immutable.content) {
-        Write-Host "MISSING: immutable.content" -ForegroundColor Red
-        $valid = $false
-    }
-    if ($null -eq $firstBlock.annotation) {
-        Write-Host "MISSING: annotation" -ForegroundColor Red
-        $valid = $false
+    if ($null -eq $firstBlock.user_defined) {
+        Write-Host "MISSING: user_defined" -ForegroundColor Red; $valid = $false
     }
 
-    # Phase 1: annotation should be inert placeholder
-    if ($firstBlock.annotation.schema_ref -ne $null -and $firstBlock.annotation.schema_ref -ne "") {
-        Write-Host "WARN: annotation.schema_ref should be null in Phase 1" -ForegroundColor Yellow
+    # immutable.source_upload
+    if (-not $firstBlock.immutable.source_upload) {
+        Write-Host "MISSING: immutable.source_upload" -ForegroundColor Red; $valid = $false
+    } elseif (-not $firstBlock.immutable.source_upload.source_uid) {
+        Write-Host "MISSING: immutable.source_upload.source_uid" -ForegroundColor Red; $valid = $false
+    }
+
+    # immutable.conversion
+    if (-not $firstBlock.immutable.conversion) {
+        Write-Host "MISSING: immutable.conversion" -ForegroundColor Red; $valid = $false
+    } elseif (-not $firstBlock.immutable.conversion.conv_uid) {
+        Write-Host "MISSING: immutable.conversion.conv_uid" -ForegroundColor Red; $valid = $false
+    }
+
+    # immutable.block
+    if (-not $firstBlock.immutable.block) {
+        Write-Host "MISSING: immutable.block" -ForegroundColor Red; $valid = $false
+    } elseif (-not $firstBlock.immutable.block.block_uid) {
+        Write-Host "MISSING: immutable.block.block_uid" -ForegroundColor Red; $valid = $false
+    }
+
+    # Verify pairing rules (mdast track)
+    if ($firstBlock.immutable.conversion.conv_parsing_tool -ne "mdast") {
+        Write-Host "WARN: conv_parsing_tool expected 'mdast', got '$($firstBlock.immutable.conversion.conv_parsing_tool)'" -ForegroundColor Yellow
+    }
+    if ($firstBlock.immutable.conversion.conv_representation_type -ne "markdown_bytes") {
+        Write-Host "WARN: conv_representation_type expected 'markdown_bytes', got '$($firstBlock.immutable.conversion.conv_representation_type)'" -ForegroundColor Yellow
+    }
+    if ($firstBlock.immutable.block.block_locator.type -ne "text_offset_range") {
+        Write-Host "WARN: block_locator.type expected 'text_offset_range', got '$($firstBlock.immutable.block.block_locator.type)'" -ForegroundColor Yellow
+    }
+
+    # Phase 1: user_defined should be inert placeholder
+    if ($firstBlock.user_defined.schema_ref -ne $null -and $firstBlock.user_defined.schema_ref -ne "") {
+        Write-Host "WARN: user_defined.schema_ref should be null in Phase 1" -ForegroundColor Yellow
     }
 
     if ($valid) {
-        Write-Host "All required fields present!" -ForegroundColor Green
+        Write-Host "All required v2 fields present!" -ForegroundColor Green
     }
 }
 else {
@@ -264,10 +275,10 @@ else {
 }
 
 # ============================================================================
-# STEP 4: Query database directly to verify
+# STEP 4: Summary
 # ============================================================================
 Write-Host "`n=== STEP 4: Verifying database state ===" -ForegroundColor Cyan
-Write-Host "(Check Supabase Dashboard > Table Editor > documents and blocks)" -ForegroundColor Gray
+Write-Host "(Check Supabase Dashboard > Table Editor > documents_v2 and blocks_v2)" -ForegroundColor Gray
 
 Write-Host "`n=== SMOKE TEST COMPLETE ===" -ForegroundColor Green
-Write-Host "doc_uid: $doc_uid" -ForegroundColor Cyan
+Write-Host "conv_uid: $conv_uid" -ForegroundColor Cyan

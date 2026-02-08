@@ -27,91 +27,100 @@ Deno.serve(async (req) => {
 
   const url = new URL(req.url);
   const run_id = (url.searchParams.get("run_id") || "").trim();
-  const doc_uid = (url.searchParams.get("doc_uid") || "").trim();
-  if (!run_id && !doc_uid) return json(400, { error: "Missing run_id or doc_uid" });
+  const conv_uid = (url.searchParams.get("conv_uid") || "").trim();
+  if (!run_id && !conv_uid) return json(400, { error: "Missing run_id or conv_uid" });
 
   const supabase = createUserClient(authHeader);
 
-  let resolvedDocUid = doc_uid;
-  let annotationSchemaRef: string | null = null;
-  let annotationSchemaUid: string | null = null;
-  const annotationsByBlockUid = new Map<string, unknown>();
+  let resolvedConvUid = conv_uid;
+  let schemaRef: string | null = null;
+  let schemaUid: string | null = null;
+  const overlaysByBlockUid = new Map<string, unknown>();
 
   if (run_id) {
     const { data: run, error: runErr } = await supabase
-      .from("annotation_runs")
-      .select("run_id, doc_uid, schemas(schema_ref, schema_uid)")
+      .from("runs_v2")
+      .select("run_id, conv_uid, schemas(schema_ref, schema_uid)")
       .eq("run_id", run_id)
       .maybeSingle();
     if (runErr) return json(500, { error: runErr.message });
     if (!run) return json(404, { error: "Run not found" });
 
-    resolvedDocUid = run.doc_uid;
-    annotationSchemaRef = run.schemas?.schema_ref ?? null;
-    annotationSchemaUid = run.schemas?.schema_uid ?? null;
+    resolvedConvUid = run.conv_uid;
+    schemaRef = run.schemas?.schema_ref ?? null;
+    schemaUid = run.schemas?.schema_uid ?? null;
 
-    const { data: anns, error: annErr } = await supabase
-      .from("block_annotations")
-      .select("block_uid, annotation_jsonb")
+    const { data: overlays, error: ovErr } = await supabase
+      .from("block_overlays_v2")
+      .select("block_uid, overlay_jsonb")
       .eq("run_id", run_id);
-    if (annErr) return json(500, { error: annErr.message });
-    for (const a of anns || []) {
-      annotationsByBlockUid.set(a.block_uid, a.annotation_jsonb ?? {});
+    if (ovErr) return json(500, { error: ovErr.message });
+    for (const o of overlays || []) {
+      overlaysByBlockUid.set(o.block_uid, o.overlay_jsonb ?? {});
     }
   }
 
+  // Fetch document from documents_v2 by conv_uid
   const { data: doc, error: docErr } = await supabase
-    .from("documents")
+    .from("documents_v2")
     .select(
-      "doc_uid, source_uid, md_uid, source_type, source_locator, md_locator, doc_title, uploaded_at, immutable_schema_ref, status",
+      "source_uid, source_type, source_filesize, source_total_characters, uploaded_at, conv_uid, conv_status, conv_parsing_tool, conv_representation_type, conv_total_blocks, conv_block_type_freq, conv_total_characters, status",
     )
-    .eq("doc_uid", resolvedDocUid)
+    .eq("conv_uid", resolvedConvUid)
     .maybeSingle();
   if (docErr) return json(500, { error: docErr.message });
   if (!doc) return json(404, { error: "Document not found" });
   if (doc.status !== "ingested") return json(409, { error: "Document not ingested yet" });
 
+  // Fetch blocks from blocks_v2
   const { data: blocks, error: blkErr } = await supabase
-    .from("blocks")
-    .select("block_uid, block_type, block_index, section_path, char_span, content_original")
-    .eq("doc_uid", doc.doc_uid)
+    .from("blocks_v2")
+    .select("block_uid, block_type, block_index, block_locator, block_content")
+    .eq("conv_uid", doc.conv_uid)
     .order("block_index", { ascending: true });
   if (blkErr) return json(500, { error: blkErr.message });
   if (!blocks || blocks.length === 0) return json(404, { error: "No blocks found" });
 
+  // Assemble v2 canonical export shape: { immutable, user_defined }
   let out = "";
   for (const b of blocks) {
-    const annotationData = run_id ? (annotationsByBlockUid.get(b.block_uid) ?? {}) : {};
+    const overlayData = run_id ? (overlaysByBlockUid.get(b.block_uid) ?? {}) : {};
     const record = {
       immutable: {
-        immutable_schema_ref: doc.immutable_schema_ref,
-        envelope: {
-          doc_uid: doc.doc_uid,
+        source_upload: {
           source_uid: doc.source_uid,
-          md_uid: doc.md_uid,
           source_type: doc.source_type,
-          source_locator: doc.source_locator,
-          md_locator: doc.md_locator,
-          doc_title: doc.doc_title,
-          uploaded_at: doc.uploaded_at,
-          block_uid: b.block_uid,
-          block_type: b.block_type,
-          block_index: b.block_index,
-          section_path: b.section_path,
-          char_span: b.char_span,
+          source_filesize: doc.source_filesize,
+          source_total_characters: doc.source_total_characters,
+          source_upload_timestamp: doc.uploaded_at,
         },
-        content: { original: b.content_original },
+        conversion: {
+          conv_status: doc.conv_status,
+          conv_uid: doc.conv_uid,
+          conv_parsing_tool: doc.conv_parsing_tool,
+          conv_representation_type: doc.conv_representation_type,
+          conv_total_blocks: doc.conv_total_blocks,
+          conv_block_type_freq: doc.conv_block_type_freq,
+          conv_total_characters: doc.conv_total_characters,
+        },
+        block: {
+          block_uid: b.block_uid,
+          block_index: b.block_index,
+          block_type: b.block_type,
+          block_locator: b.block_locator,
+          block_content: b.block_content,
+        },
       },
-      annotation: {
-        schema_ref: run_id ? annotationSchemaRef : null,
-        schema_uid: run_id ? annotationSchemaUid : null,
-        data: annotationData,
+      user_defined: {
+        schema_ref: run_id ? schemaRef : null,
+        schema_uid: run_id ? schemaUid : null,
+        data: overlayData,
       },
     };
     out += JSON.stringify(record) + "\n";
   }
 
   return text(200, out, {
-    "Content-Disposition": `attachment; filename="export-${run_id || doc.doc_uid}.jsonl"`,
+    "Content-Disposition": `attachment; filename="export-${run_id || doc.conv_uid}.jsonl"`,
   });
 });

@@ -5,16 +5,9 @@ skills/
 json-schemas/
 
 # Project-specific ignores
-docling/
-AFFiNE/
-pandoc/
+ref-repos/
+-personal-/
 src-content/
-learning-commons-evaluators/
-learning-commons-kg/
-doc/
-frontend/
-
-
 
 # Environment files
 .env

@@ -6,15 +6,14 @@ import type {
   Content,
   Heading,
   List,
-  ListItem,
   Root,
 } from "npm:@types/mdast@4";
 
 export type BlockDraft = {
   block_type: string;
-  section_path: string[];
-  char_span: [number, number];
-  content_original: string;
+  start_offset: number;
+  end_offset: number;
+  block_content: string;
 };
 
 export type ExtractBlocksResult = {
@@ -29,7 +28,6 @@ export function extractBlocks(markdown: string): ExtractBlocksResult {
 
   let docTitle: string | null = null;
   const blocks: BlockDraft[] = [];
-  const headingStack: string[] = [];
 
   // Note: remark-gfm can introduce mdast node types that aren't in the narrow
   // `Content` union from @types/mdast. We intentionally treat nodes as `any`
@@ -39,21 +37,20 @@ export function extractBlocks(markdown: string): ExtractBlocksResult {
     const contentSlice = markdown.slice(span[0], span[1]);
     blocks.push({
       block_type: blockType,
-      section_path: [...headingStack],
-      char_span: span,
-      content_original: contentSlice,
+      start_offset: span[0],
+      end_offset: span[1],
+      block_content: contentSlice,
     });
   };
 
+  // Block type mapping: mdast node types → v2 platform_block_type enum.
+  // See docs/product-defining-v2.0/0207-blocks.md for the canonical enum.
   const visit = (node: any) => {
     switch (node.type) {
       case "heading": {
         const heading = node as Heading;
         const text = toString(heading).trim();
         if (heading.depth === 1 && !docTitle && text) docTitle = text;
-        const depth = heading.depth ?? 1;
-        headingStack.length = Math.max(0, depth - 1);
-        headingStack.push(text || "(untitled)");
         emit(node, "heading");
         return;
       }
@@ -62,38 +59,33 @@ export function extractBlocks(markdown: string): ExtractBlocksResult {
         for (const child of list.children ?? []) visit(child as Content);
         return;
       }
-      case "listItem": {
-        const item = node as ListItem;
+      case "listItem":
         emit(node, "list_item");
-        for (const child of item.children ?? []) {
-          // For Phase 1 we keep list nesting implied by order; do not emit extra nested blocks.
-          // The list item itself is the block.
-          void child;
-        }
         return;
-      }
       case "paragraph":
         emit(node, "paragraph");
         return;
-      case "blockquote":
-        emit(node, "blockquote");
-        return;
       case "code":
-        emit(node, "code");
+        emit(node, "code_block");
         return;
       case "table":
         emit(node, "table");
         return;
+      case "html":
+        emit(node, "html_block");
+        return;
+      case "definition":
+        emit(node, "definition");
+        return;
       case "footnoteDefinition":
-        emit(node, "footnote_definition");
+        emit(node, "footnote");
         return;
       case "thematicBreak":
-        emit(node, "thematic_break");
+        emit(node, "divider");
         return;
-      default: {
-        // Fallback: treat unknown block-level nodes as their mdast type.
-        emit(node, node.type);
-      }
+      default:
+        emit(node, "other");
+        return;
     }
   };
 

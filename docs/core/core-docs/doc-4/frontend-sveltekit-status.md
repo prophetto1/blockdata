@@ -1,26 +1,25 @@
-# Doc 4 — Frontend (SvelteKit) (Implementation Status, As-Is)
+# Doc 4 — Frontend (Web) (Implementation Status, As-Is)
 
-Purpose: describe the current frontend behavior and how to run it.
+Purpose: describe the current web frontend behavior and how to run it.
 
 ---
 
 ## What Exists
 
-- SvelteKit frontend under `frontend/`
-- Public pages (`/`, `/pricing`, `/how-it-works`)
-- Auth routes (`/login`, `/logout`)
-- Protected dashboard routes under `/app/*`
+- React web app under `web/` (Vite + React Router)
+- Public routes: `/`, `/login`
+- Protected app routes under `/app/*`
 
 ---
 
 ## How to Run (Local)
 
-1) Copy `frontend/.env.example` → `frontend/.env`
+1) Copy `web/.env.example` → `web/.env`
 2) Set:
-   - `PUBLIC_SUPABASE_URL`
-   - `PUBLIC_SUPABASE_ANON_KEY`
+   - `VITE_SUPABASE_URL`
+   - `VITE_SUPABASE_ANON_KEY`
 3) Run:
-   - `cd frontend`
+   - `cd web`
    - `npm install`
    - `npm run dev`
 
@@ -28,6 +27,11 @@ Purpose: describe the current frontend behavior and how to run it.
 
 ## What It Integrates With (As-Is)
 
-- Reads via PostgREST under RLS: `documents`, `blocks`, `schemas`, `annotation_runs`, `block_annotations`
+- Reads via PostgREST under RLS: `documents_v2`, `blocks_v2`, `schemas`, `runs_v2`, `block_overlays_v2`
 - Writes/orchestration via Edge Functions: `/ingest`, `/schemas`, `/runs`, `/export-jsonl`
 
+---
+
+## Note (History)
+
+The prior SvelteKit frontend under `frontend/` has been retired in favor of `web/`.
