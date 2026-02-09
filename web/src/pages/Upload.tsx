@@ -14,7 +14,7 @@ import {
   ThemeIcon,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import {
   IconUpload,
   IconFileText,
@@ -38,6 +38,7 @@ type IngestResponse = {
 };
 
 export default function Upload() {
+  const { projectId } = useParams<{ projectId: string }>();
   const [active, setActive] = useState(0);
   const navigate = useNavigate();
 
@@ -79,6 +80,7 @@ export default function Upload() {
       const form = new FormData();
       form.set('file', file);
       if (docTitle.trim()) form.set('doc_title', docTitle.trim());
+      if (projectId) form.set('project_id', projectId);
       const resp = await edgeJson<IngestResponse>('ingest', { method: 'POST', body: form });
       setUploadResult(resp);
       notifications.show({ color: 'green', title: 'Uploaded', message: `${resp.blocks_count ?? 0} blocks extracted` });
@@ -137,7 +139,13 @@ export default function Upload() {
 
   return (
     <>
-      <PageHeader title="New Annotation" subtitle="Upload a document, choose a schema, and start a run." />
+      <PageHeader title="New Annotation" subtitle="Upload a document, choose a schema, and start a run.">
+        {projectId && (
+          <Button variant="subtle" size="xs" onClick={() => navigate(`/app/projects/${projectId}`)}>
+            Back to project
+          </Button>
+        )}
+      </PageHeader>
 
       <Paper p="lg" withBorder maw={700}>
         <Stepper active={active} onStepClick={(step) => { if (step < active) setActive(step); }}>
@@ -225,7 +233,7 @@ export default function Upload() {
                   {uploadResult?.source_uid && (
                     <Button
                       variant="subtle"
-                      onClick={() => navigate(`/app/documents/${uploadResult.source_uid}`)}
+                      onClick={() => navigate(`/app/projects/${projectId}/documents/${uploadResult.source_uid}`)}
                     >
                       Skip to viewer
                     </Button>
@@ -293,7 +301,7 @@ export default function Upload() {
               <Group>
                 <Button
                   variant="light"
-                  onClick={() => navigate(`/app/documents/${uploadResult?.source_uid}`)}
+                  onClick={() => navigate(`/app/projects/${projectId}/documents/${uploadResult?.source_uid}`)}
                 >
                   Open Block Viewer
                 </Button>

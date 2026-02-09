@@ -1,0 +1,24 @@
+/* MantineHub (Shadcn-inspired) surface + border alignment.
+   Keep this small and focused: layout consistency + dark-mode surfaces. */
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  background: var(--mantine-color-body);
+  color: var(--mantine-color-text);
+}
+
+.mantine-Card-root,
+.mantine-Paper-root {
+  background-color: var(--mantine-color-default);
+}
+
+.mantine-Card-root[data-with-border],
+.mantine-Paper-root[data-with-border] {
+  border-color: var(--mantine-color-default-border);
+}
+

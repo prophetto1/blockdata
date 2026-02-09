@@ -1,7 +1,17 @@
+export type ProjectRow = {
+  project_id: string;
+  owner_id: string;
+  project_name: string;
+  description: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 export type DocumentRow = {
   source_uid: string;
   owner_id: string;
   conv_uid: string | null;
+  project_id: string | null;
   source_type: string;
   source_filesize: number;
   source_total_characters: number | null;
@@ -60,4 +70,12 @@ export type BlockOverlayRow = {
 
 export type BlockWithOverlay = BlockRow & {
   overlay: BlockOverlayRow | null;
+};
+
+export type ProfileRow = {
+  user_id: string;
+  email: string | null;
+  display_name: string | null;
+  created_at: string;
+  updated_at: string;
 };

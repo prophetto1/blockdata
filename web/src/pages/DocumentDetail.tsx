@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
-import { Alert, Badge, Button, Loader, Center, Text, Group, Paper, Stack, Skeleton } from '@mantine/core';
-import { IconInfoCircle, IconDownload, IconFileText } from '@tabler/icons-react';
+import { useParams, Link } from 'react-router-dom';
+import { Alert, Anchor, Badge, Button, Loader, Center, Text, Group, Paper, Stack, Skeleton } from '@mantine/core';
+import { IconInfoCircle, IconDownload, IconFileText, IconArrowLeft } from '@tabler/icons-react';
 import { supabase } from '@/lib/supabase';
 import { downloadFromEdge } from '@/lib/edge';
 import { TABLES } from '@/lib/tables';
@@ -25,7 +25,7 @@ function formatBytes(bytes: number): string {
 }
 
 export default function DocumentDetail() {
-  const { sourceUid } = useParams<{ sourceUid: string }>();
+  const { sourceUid, projectId } = useParams<{ sourceUid: string; projectId: string }>();
   const [doc, setDoc] = useState<DocumentRow | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -71,6 +71,13 @@ export default function DocumentDetail() {
 
   return (
     <>
+      {projectId && (
+        <Group mb="xs">
+          <Anchor component={Link} to={`/app/projects/${projectId}`} size="sm" c="dimmed">
+            <Group gap={4}><IconArrowLeft size={14} />Back to project</Group>
+          </Anchor>
+        </Group>
+      )}
       <PageHeader title={doc.doc_title}>
         <Badge size="lg" color={STATUS_COLOR[doc.status] ?? 'gray'} variant="light">
           {doc.status}

@@ -1,32 +1,62 @@
 import { useState } from 'react';
-import { TextInput, PasswordInput, Button, Title, Stack, Text } from '@mantine/core';
+import { TextInput, PasswordInput, Button, Title, Stack, Text, Anchor } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/auth/AuthContext';
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const { signIn } = useAuth();
+  const [authError, setAuthError] = useState<string | null>(null);
+  const { signIn, resendSignupConfirmation } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
+      setAuthError(null);
       await signIn(email, password);
       navigate('/app');
     } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Unknown error';
+      setAuthError(msg);
       notifications.show({
         color: 'red',
         title: 'Login failed',
+        message: msg,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResend = async () => {
+    if (!email) return;
+    setLoading(true);
+    try {
+      await resendSignupConfirmation(email);
+      notifications.show({
+        color: 'blue',
+        title: 'Confirmation sent',
+        message: 'Check your inbox to confirm your email.',
+      });
+    } catch (err) {
+      notifications.show({
+        color: 'red',
+        title: 'Resend failed',
         message: err instanceof Error ? err.message : 'Unknown error',
       });
     } finally {
       setLoading(false);
     }
   };
+
+  const showResend =
+    !!email &&
+    !!authError &&
+    /confirm|confirmed|verification|verify/i.test(authError);
 
   return (
     <form onSubmit={handleSubmit}>
@@ -50,6 +80,17 @@ export default function Login() {
         <Button type="submit" loading={loading} fullWidth>
           Sign in
         </Button>
+        {showResend && (
+          <Button variant="subtle" size="xs" onClick={handleResend} loading={loading}>
+            Resend confirmation email
+          </Button>
+        )}
+        <Text size="sm" c="dimmed" ta="center">
+          New here?{' '}
+          <Anchor component={Link} to="/register">
+            Create an account
+          </Anchor>
+        </Text>
       </Stack>
     </form>
   );

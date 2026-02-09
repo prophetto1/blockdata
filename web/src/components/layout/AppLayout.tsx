@@ -32,7 +32,7 @@ export function AppLayout() {
   const [opened, { toggle }] = useDisclosure();
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, signOut } = useAuth();
+  const { user, profile, signOut } = useAuth();
   const { setColorScheme } = useMantineColorScheme();
   const computedColorScheme = useComputedColorScheme('dark');
 
@@ -52,12 +52,12 @@ export function AppLayout() {
       padding="md"
       styles={{
         header: {
-          borderBottom: '1px solid var(--mantine-color-header-border)',
+          borderBottom: '1px solid var(--mantine-color-default-border)',
           boxShadow: 'none',
         },
         navbar: {
-          backgroundColor: 'var(--mantine-color-navbar-bg)',
-          borderRight: '1px solid var(--mantine-color-border)',
+          backgroundColor: 'var(--mantine-color-body)',
+          borderRight: '1px solid var(--mantine-color-default-border)',
         },
       }}
     >
@@ -80,7 +80,9 @@ export function AppLayout() {
                   : <IconMoon size={18} />}
               </ActionIcon>
             </Tooltip>
-            <Text size="sm" c="dimmed">{user?.email}</Text>
+            <Text size="sm" c="dimmed">
+              {profile?.display_name || profile?.email || user?.email}
+            </Text>
             <Button variant="subtle" size="xs" onClick={handleSignOut}>
               Sign out
             </Button>
@@ -97,7 +99,7 @@ export function AppLayout() {
               leftSection={<item.icon size={18} />}
               active={
                 item.path === '/app'
-                  ? location.pathname === '/app'
+                  ? location.pathname === '/app' || location.pathname.startsWith('/app/projects')
                   : location.pathname.startsWith(item.path)
               }
               onClick={() => {

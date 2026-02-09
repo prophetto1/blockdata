@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
-import { Card, Group, Text, Badge, Button, SimpleGrid, Loader, Center } from '@mantine/core';
+import { useParams, Link } from 'react-router-dom';
+import { Anchor, Card, Group, Text, Badge, Button, SimpleGrid, Loader, Center } from '@mantine/core';
 import { supabase } from '@/lib/supabase';
 import { downloadFromEdge } from '@/lib/edge';
 import { TABLES } from '@/lib/tables';
@@ -16,7 +16,7 @@ const STATUS_COLOR: Record<string, string> = {
 };
 
 export default function RunDetail() {
-  const { runId } = useParams<{ runId: string }>();
+  const { runId, projectId } = useParams<{ runId: string; projectId: string }>();
   const [row, setRow] = useState<RunRow | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -52,6 +52,13 @@ export default function RunDetail() {
 
   return (
     <>
+      {projectId && (
+        <Group mb="xs">
+          <Anchor component={Link} to={`/app/projects/${projectId}`} size="sm" c="dimmed">
+            Back to project
+          </Anchor>
+        </Group>
+      )}
       <PageHeader title="Run" subtitle={row?.run_id}>
         <Button variant="light" size="xs" onClick={load}>Refresh</Button>
       </PageHeader>
