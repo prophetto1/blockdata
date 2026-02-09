@@ -1,21 +1,31 @@
-import { AppShell, Burger, NavLink, Group, Text, Button, Box } from '@mantine/core';
+import {
+  AppShell,
+  Burger,
+  NavLink,
+  Group,
+  Text,
+  Button,
+  Box,
+  ActionIcon,
+  Tooltip,
+  useMantineColorScheme,
+  useComputedColorScheme,
+} from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import {
-  IconUpload,
-  IconFileText,
+  IconFolderPlus,
   IconSchema,
-  IconPlayerPlay,
-  IconLayoutDashboard,
+  IconPlug,
+  IconSun,
+  IconMoon,
 } from '@tabler/icons-react';
 import { useAuth } from '@/auth/AuthContext';
 
 const NAV_ITEMS = [
-  { label: 'Dashboard', icon: IconLayoutDashboard, path: '/app' },
-  { label: 'Upload', icon: IconUpload, path: '/app/upload' },
-  { label: 'Documents', icon: IconFileText, path: '/app/documents' },
+  { label: 'Projects', icon: IconFolderPlus, path: '/app' },
   { label: 'Schemas', icon: IconSchema, path: '/app/schemas' },
-  { label: 'Runs', icon: IconPlayerPlay, path: '/app/runs' },
+  { label: 'Integrations', icon: IconPlug, path: '/app/integrations' },
 ];
 
 export function AppLayout() {
@@ -23,10 +33,16 @@ export function AppLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, signOut } = useAuth();
+  const { setColorScheme } = useMantineColorScheme();
+  const computedColorScheme = useComputedColorScheme('dark');
 
   const handleSignOut = async () => {
     await signOut();
     navigate('/login');
+  };
+
+  const toggleColorScheme = () => {
+    setColorScheme(computedColorScheme === 'dark' ? 'light' : 'dark');
   };
 
   return (
@@ -34,6 +50,16 @@ export function AppLayout() {
       header={{ height: 56 }}
       navbar={{ width: 240, breakpoint: 'sm', collapsed: { mobile: !opened } }}
       padding="md"
+      styles={{
+        header: {
+          borderBottom: '1px solid var(--mantine-color-header-border)',
+          boxShadow: 'none',
+        },
+        navbar: {
+          backgroundColor: 'var(--mantine-color-navbar-bg)',
+          borderRight: '1px solid var(--mantine-color-border)',
+        },
+      }}
     >
       <AppShell.Header>
         <Group h="100%" px="md" justify="space-between">
@@ -42,8 +68,22 @@ export function AppLayout() {
             <Text fw={700} size="lg">MD-Annotate</Text>
           </Group>
           <Group gap="sm">
+            <Tooltip label={computedColorScheme === 'dark' ? 'Light mode' : 'Dark mode'}>
+              <ActionIcon
+                variant="subtle"
+                size="md"
+                onClick={toggleColorScheme}
+                aria-label="Toggle color scheme"
+              >
+                {computedColorScheme === 'dark'
+                  ? <IconSun size={18} />
+                  : <IconMoon size={18} />}
+              </ActionIcon>
+            </Tooltip>
             <Text size="sm" c="dimmed">{user?.email}</Text>
-            <Button variant="subtle" size="xs" onClick={handleSignOut}>Sign out</Button>
+            <Button variant="subtle" size="xs" onClick={handleSignOut}>
+              Sign out
+            </Button>
           </Group>
         </Group>
       </AppShell.Header>

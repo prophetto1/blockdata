@@ -71,25 +71,41 @@ Write-Host "Authenticated as: $TEST_EMAIL" -ForegroundColor Green
 Write-Host "SUPABASE_URL: $env:SUPABASE_URL" -ForegroundColor Gray
 
 # ============================================================================
-# STEP 2: Choose / create a non-markdown file
+# STEP 2: Choose a non-markdown file (default: .docx for Docling track)
 # ============================================================================
 Write-Host "`n=== STEP 2: Preparing non-markdown upload ===" -ForegroundColor Cyan
 
 if (-not $FilePath) {
-    $FilePath = ".\\scripts\\test-non-md.txt"
-    @"
+    # Default to .docx fixture to test the Docling track
+    $FilePath = ".\docs\tests\test-pack\lorem_ipsum.docx"
+    if (-not (Test-Path $FilePath)) {
+        # Fallback to .txt if docx fixture is missing
+        $FilePath = ".\\scripts\\test-non-md.txt"
+        @"
 Hello from the non-markdown pipeline.
 
 This is a plain text document used to validate:
 ingest -> conversion-service -> conversion-complete -> blocks -> export-jsonl
 "@ | Out-File -FilePath $FilePath -Encoding UTF8
-    Write-Host "Created: $FilePath" -ForegroundColor Gray
+        Write-Host "Created fallback txt: $FilePath" -ForegroundColor Gray
+    }
 } else {
     if (-not (Test-Path $FilePath)) { throw "File not found: $FilePath" }
-    Write-Host "Using: $FilePath" -ForegroundColor Gray
 }
 
+Write-Host "Using: $FilePath" -ForegroundColor Gray
+
 $contentType = Get-ContentTypeForFile $FilePath
+
+# Determine expected track based on file type
+$ext = [System.IO.Path]::GetExtension($FilePath).ToLowerInvariant()
+$expectDoclingTrack = ($ext -eq ".docx" -or $ext -eq ".pdf")
+
+if ($expectDoclingTrack) {
+    Write-Host "Expected track: docling (docling_json_pointer)" -ForegroundColor Gray
+} else {
+    Write-Host "Expected track: mdast fallback (text_offset_range)" -ForegroundColor Gray
+}
 
 # ============================================================================
 # STEP 3: Call POST /functions/v1/ingest (v2: no immutable_schema_ref)
@@ -204,6 +220,9 @@ Write-Host "Export successful! $($lines.Count) blocks exported" -ForegroundColor
 Write-Host "Saved to: $exportFile" -ForegroundColor Gray
 
 $firstBlock = $lines[0] | ConvertFrom-Json
+Write-Host "`n=== First block (sample) ===" -ForegroundColor Cyan
+$firstBlock | ConvertTo-Json -Depth 10
+
 Write-Host "`n=== Verifying v2 export shape ===" -ForegroundColor Cyan
 $valid = $true
 
@@ -223,16 +242,53 @@ if ($null -eq $firstBlock.user_defined) {
     Write-Host "MISSING: user_defined" -ForegroundColor Red; $valid = $false
 }
 
-# Pairing rules for non-MD: still mdast track (true Docling track is future)
-if ($firstBlock.immutable.conversion.conv_parsing_tool -ne "mdast") {
-    Write-Host "WARN: conv_parsing_tool expected 'mdast', got '$($firstBlock.immutable.conversion.conv_parsing_tool)'" -ForegroundColor Yellow
-}
-if ($firstBlock.immutable.block.block_locator.type -ne "text_offset_range") {
-    Write-Host "WARN: block_locator.type expected 'text_offset_range', got '$($firstBlock.immutable.block.block_locator.type)'" -ForegroundColor Yellow
+# ============================================================================
+# STEP 6: Verify pairing rules based on expected track
+# ============================================================================
+Write-Host "`n=== Verifying pairing rules ===" -ForegroundColor Cyan
+
+$tool = $firstBlock.immutable.conversion.conv_parsing_tool
+$repr = $firstBlock.immutable.conversion.conv_representation_type
+$locType = $firstBlock.immutable.block.block_locator.type
+
+Write-Host "conv_parsing_tool: $tool" -ForegroundColor Gray
+Write-Host "conv_representation_type: $repr" -ForegroundColor Gray
+Write-Host "block_locator.type: $locType" -ForegroundColor Gray
+
+if ($expectDoclingTrack) {
+    # Hard assertions for Docling track
+    if ($tool -ne "docling") {
+        Write-Host "FAIL: conv_parsing_tool expected 'docling', got '$tool'" -ForegroundColor Red; $valid = $false
+    }
+    if ($repr -ne "doclingdocument_json") {
+        Write-Host "FAIL: conv_representation_type expected 'doclingdocument_json', got '$repr'" -ForegroundColor Red; $valid = $false
+    }
+    if ($locType -ne "docling_json_pointer") {
+        Write-Host "FAIL: block_locator.type expected 'docling_json_pointer', got '$locType'" -ForegroundColor Red; $valid = $false
+    }
+    # Verify pointer field exists
+    if (-not $firstBlock.immutable.block.block_locator.pointer) {
+        Write-Host "FAIL: block_locator.pointer is missing" -ForegroundColor Red; $valid = $false
+    } else {
+        Write-Host "block_locator.pointer: $($firstBlock.immutable.block.block_locator.pointer)" -ForegroundColor Gray
+    }
+} else {
+    # Assertions for mdast fallback track (txt)
+    if ($tool -ne "mdast") {
+        Write-Host "FAIL: conv_parsing_tool expected 'mdast', got '$tool'" -ForegroundColor Red; $valid = $false
+    }
+    if ($repr -ne "markdown_bytes") {
+        Write-Host "FAIL: conv_representation_type expected 'markdown_bytes', got '$repr'" -ForegroundColor Red; $valid = $false
+    }
+    if ($locType -ne "text_offset_range") {
+        Write-Host "FAIL: block_locator.type expected 'text_offset_range', got '$locType'" -ForegroundColor Red; $valid = $false
+    }
 }
 
 if ($valid) {
-    Write-Host "v2 export shape OK." -ForegroundColor Green
+    Write-Host "v2 export shape + pairing rules OK." -ForegroundColor Green
 } else {
-    throw "v2 export shape validation failed."
+    throw "v2 export shape or pairing rule validation failed."
 }
+
+Write-Host "`n=== SMOKE TEST COMPLETE ===" -ForegroundColor Green

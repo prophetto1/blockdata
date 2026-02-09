@@ -8,7 +8,7 @@ import { TABLES } from '@/lib/tables';
 import type { DocumentRow } from '@/lib/types';
 import { PageHeader } from '@/components/common/PageHeader';
 import { ErrorAlert } from '@/components/common/ErrorAlert';
-import { BlockViewer } from '@/components/blocks/BlockViewer';
+import { BlockViewerGrid } from '@/components/blocks/BlockViewerGrid';
 
 const STATUS_COLOR: Record<string, string> = {
   ingested: 'green',
@@ -126,7 +126,7 @@ export default function DocumentDetail() {
       )}
 
       {doc.status === 'ingested' && doc.conv_uid && (
-        <BlockViewer convUid={doc.conv_uid} />
+        <BlockViewerGrid convUid={doc.conv_uid} />
       )}
     </>
   );

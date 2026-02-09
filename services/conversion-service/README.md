@@ -42,8 +42,9 @@ Body (JSON):
 
 Notes on `docling_output`:
 
-- Optional debug artifact. If present, the service will also upload Docling's structured document export as JSON.
-- This is not used by Phase 1 ingestion (which remains Markdown -> remark -> blocks).
+- Required for `docx` and `pdf` uploads. The ingest function always provides this for Docling-handled types.
+- The service serializes `DoclingDocument.export_to_dict()` as deterministic JSON (`sort_keys=True`, compact separators) for hash-stable `conv_uid` computation.
+- For `txt` uploads, `docling_output` is null (txt uses direct decode, not Docling).
 
 On completion (success or failure), the service POSTs to `callback_url` with:
 
@@ -52,10 +53,13 @@ On completion (success or failure), the service POSTs to `callback_url` with:
   "source_uid": "…",
   "conversion_job_id": "…",
   "md_key": "converted/<source_uid>/<name>.md",
+  "docling_key": "converted/<source_uid>/<name>.docling.json",
   "success": true,
   "error": null
 }
 ```
+
+Note: `docling_key` is null when `docling_output` was not provided or when `export_to_dict()` is not available.
 
 ## Notes
 

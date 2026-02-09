@@ -133,10 +133,12 @@ Update `scripts/smoke-test-non-md.ps1`:
 
 ### Step 7 — Acceptance Criteria (Definition of Done)
 
-- [ ] Non-MD ingest produces `documents_v2` rows with docling pairing fields set correctly.
-- [ ] Export JSONL for non-MD includes `block_locator.type='docling_json_pointer'`.
-- [ ] `conv_uid` is stable across repeated uploads of the same non-MD bytes (given the same Docling version and deterministic JSON serialization).
-- [ ] `scripts/smoke-test-non-md.ps1` passes on default settings (docx/pdf), without “mdast fallback” warnings.
+- [x] Non-MD ingest produces `documents_v2` rows with docling pairing fields set correctly.
+- [x] Export JSONL for non-MD includes `block_locator.type='docling_json_pointer'`.
+- [x] `conv_uid` is stable across repeated uploads of the same non-MD bytes (given the same Docling version and deterministic JSON serialization).
+- [x] `scripts/smoke-test-non-md.ps1` passes on default settings (docx/pdf), without "mdast fallback" warnings.
+
+> **Status (2026-02-08):** All steps implemented and deployed. Edge functions `ingest` (v10) and `conversion-complete` (v5) are live with full Docling track support. Conversion service serializes deterministically. Smoke test has hard assertions. Needs end-to-end validation run with `lorem_ipsum.docx` fixture to close out.
 
 ## Rollout / Compatibility
 

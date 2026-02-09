@@ -103,17 +103,20 @@ async def _convert(req: ConvertRequest) -> tuple[bytes, Optional[bytes]]:
     doc = result.document
     md = doc.export_to_markdown()
 
-    debug_json_bytes: Optional[bytes] = None
+    docling_json_bytes: Optional[bytes] = None
     if req.docling_output is not None:
         export_to_dict = getattr(doc, "export_to_dict", None)
         if callable(export_to_dict):
-            debug_json_bytes = json.dumps(
+            # Deterministic serialization for hash-stable conv_uid computation.
+            # sort_keys + compact separators ensure identical bytes across runs.
+            docling_json_bytes = json.dumps(
                 export_to_dict(),
                 ensure_ascii=False,
-                indent=2,
+                sort_keys=True,
+                separators=(",", ":"),
             ).encode("utf-8")
 
-    return md.encode("utf-8"), debug_json_bytes
+    return md.encode("utf-8"), docling_json_bytes
 
 
 @app.post("/convert")
@@ -128,12 +131,13 @@ async def convert(
         "source_uid": body.source_uid,
         "conversion_job_id": body.conversion_job_id,
         "md_key": body.output.key,
+        "docling_key": None,
         "success": False,
         "error": None,
     }
 
     try:
-        markdown_bytes, debug_json_bytes = await _convert(body)
+        markdown_bytes, docling_json_bytes = await _convert(body)
 
         md_upload_url = _append_token_if_needed(body.output.signed_upload_url, body.output.token)
         await _upload_bytes(
@@ -142,16 +146,17 @@ async def convert(
             content_type="text/markdown; charset=utf-8",
         )
 
-        if body.docling_output is not None and debug_json_bytes is not None:
+        if body.docling_output is not None and docling_json_bytes is not None:
             docling_upload_url = _append_token_if_needed(
                 body.docling_output.signed_upload_url,
                 body.docling_output.token,
             )
             await _upload_bytes(
                 docling_upload_url,
-                debug_json_bytes,
+                docling_json_bytes,
                 content_type="application/json; charset=utf-8",
             )
+            callback_payload["docling_key"] = body.docling_output.key
 
         callback_payload["success"] = True
     except Exception as e:

@@ -240,9 +240,10 @@ Deno.serve(async (req) => {
       throw new Error(`Create signed upload URL failed: ${ulErr?.message ?? "unknown"}`);
     }
 
-    const enableDoclingDebugExport = getEnv("ENABLE_DOCLING_DEBUG_EXPORT", "false") === "true";
+    // Docling JSON output: always create for docx/pdf (Docling-handled types).
+    // txt goes through direct decode, not Docling, so no docling_output needed.
     let docling_output: SignedUploadTarget | null = null;
-    if (enableDoclingDebugExport) {
+    if (source_type === "docx" || source_type === "pdf") {
       const docling_key = `converted/${source_uid}/${basenameNoExt(originalFilename)}.docling.json`;
       const { data: doclingSignedUpload, error: doclingUlErr } = await (supabaseAdmin.storage as any)
         .from(bucket)
