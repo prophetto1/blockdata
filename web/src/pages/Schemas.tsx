@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Table, FileInput, TextInput, Button, Group, Code, Stack } from '@mantine/core';
+import { Table, FileInput, TextInput, Button, Group, Code, Stack, ActionIcon, Tooltip, Modal, Text } from '@mantine/core';
+import { useDisclosure } from '@mantine/hooks';
+import { notifications } from '@mantine/notifications';
+import { IconTrash } from '@tabler/icons-react';
 import { supabase } from '@/lib/supabase';
 import { edgeJson } from '@/lib/edge';
 import { TABLES } from '@/lib/tables';
@@ -14,6 +17,9 @@ export default function Schemas() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastUpload, setLastUpload] = useState<unknown>(null);
+  const [deleteTarget, setDeleteTarget] = useState<SchemaRow | null>(null);
+  const [deleteOpened, { open: openDelete, close: closeDelete }] = useDisclosure(false);
+  const [deleting, setDeleting] = useState(false);
 
   const load = () => {
     supabase
@@ -28,6 +34,24 @@ export default function Schemas() {
   };
 
   useEffect(load, []);
+
+  const handleDeleteSchema = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      const { error: err } = await supabase.rpc('delete_schema', { p_schema_id: deleteTarget.schema_id });
+      if (err) throw new Error(err.message);
+      notifications.show({ color: 'green', title: 'Deleted', message: `Schema "${deleteTarget.schema_ref}" removed` });
+      closeDelete();
+      setDeleteTarget(null);
+      load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+      closeDelete();
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   const upload = async () => {
     if (!file) { setError('Choose a schema JSON file first.'); return; }
@@ -67,6 +91,7 @@ export default function Schemas() {
               <Table.Th>schema_ref</Table.Th>
               <Table.Th>schema_uid</Table.Th>
               <Table.Th>created</Table.Th>
+              <Table.Th w={50} />
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>
@@ -75,16 +100,35 @@ export default function Schemas() {
                 <Table.Td ff="monospace" fz="xs">{r.schema_ref}</Table.Td>
                 <Table.Td ff="monospace" fz="xs">{r.schema_uid.slice(0, 16)}...</Table.Td>
                 <Table.Td>{new Date(r.created_at).toLocaleString()}</Table.Td>
+                <Table.Td>
+                  <Tooltip label="Delete schema">
+                    <ActionIcon variant="subtle" color="red" size="sm" onClick={() => { setDeleteTarget(r); openDelete(); }}>
+                      <IconTrash size={14} />
+                    </ActionIcon>
+                  </Tooltip>
+                </Table.Td>
               </Table.Tr>
             ))}
             {rows.length === 0 && (
               <Table.Tr>
-                <Table.Td colSpan={3} ta="center" c="dimmed">No schemas yet.</Table.Td>
+                <Table.Td colSpan={4} ta="center" c="dimmed">No schemas yet.</Table.Td>
               </Table.Tr>
             )}
           </Table.Tbody>
         </Table>
       </Table.ScrollContainer>
+
+      <Modal opened={deleteOpened} onClose={closeDelete} title="Delete schema" centered>
+        <Stack gap="md">
+          <Text size="sm">
+            Delete schema <Text span fw={600} ff="monospace">{deleteTarget?.schema_ref}</Text>? This will fail if any runs reference it.
+          </Text>
+          <Group justify="flex-end">
+            <Button variant="default" onClick={closeDelete}>Cancel</Button>
+            <Button color="red" onClick={handleDeleteSchema} loading={deleting}>Delete</Button>
+          </Group>
+        </Stack>
+      </Modal>
     </>
   );
 }

@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { Alert, Anchor, Badge, Button, Loader, Center, Text, Group, Paper, Stack, Skeleton } from '@mantine/core';
-import { IconInfoCircle, IconDownload, IconFileText, IconArrowLeft } from '@tabler/icons-react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { Alert, Badge, Button, Loader, Center, Text, Group, Stack, Skeleton, Modal } from '@mantine/core';
+import { useDisclosure } from '@mantine/hooks';
+import { notifications } from '@mantine/notifications';
+import { IconInfoCircle, IconDownload, IconTrash } from '@tabler/icons-react';
 import { supabase } from '@/lib/supabase';
 import { downloadFromEdge } from '@/lib/edge';
 import { TABLES } from '@/lib/tables';
 import type { DocumentRow } from '@/lib/types';
-import { PageHeader } from '@/components/common/PageHeader';
 import { ErrorAlert } from '@/components/common/ErrorAlert';
+import { AppBreadcrumbs } from '@/components/common/AppBreadcrumbs';
 import { BlockViewerGrid } from '@/components/blocks/BlockViewerGrid';
 
 const STATUS_COLOR: Record<string, string> = {
@@ -26,9 +28,13 @@ function formatBytes(bytes: number): string {
 
 export default function DocumentDetail() {
   const { sourceUid, projectId } = useParams<{ sourceUid: string; projectId: string }>();
+  const navigate = useNavigate();
   const [doc, setDoc] = useState<DocumentRow | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [projectName, setProjectName] = useState<string>('');
+  const [deleteOpened, { open: openDelete, close: closeDelete }] = useDisclosure(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (!sourceUid) return;
@@ -38,12 +44,31 @@ export default function DocumentDetail() {
       .eq('source_uid', sourceUid)
       .maybeSingle()
       .then(({ data, error: err }) => {
-        if (err) setError(err.message);
-        else if (!data) setError('Document not found');
-        else setDoc(data as DocumentRow);
+        if (err) { setError(err.message); setLoading(false); return; }
+        if (!data) { setError('Document not found'); setLoading(false); return; }
+        const d = data as DocumentRow;
+        // Route-entity validation: doc's project_id must match route projectId
+        if (projectId && d.project_id !== projectId) {
+          navigate(`/app/projects/${d.project_id}/documents/${sourceUid}`, { replace: true });
+          return;
+        }
+        setDoc(d);
         setLoading(false);
       });
-  }, [sourceUid]);
+  }, [sourceUid, projectId, navigate]);
+
+  // Fetch project name for breadcrumbs
+  useEffect(() => {
+    if (!projectId) return;
+    supabase
+      .from(TABLES.projects)
+      .select('project_name')
+      .eq('project_id', projectId)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) setProjectName((data as { project_name: string }).project_name);
+      });
+  }, [projectId]);
 
   const exportJsonl = async () => {
     if (!doc?.conv_uid) return;
@@ -54,6 +79,21 @@ export default function DocumentDetail() {
       );
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!sourceUid) return;
+    setDeleting(true);
+    try {
+      const { error: err } = await supabase.rpc('delete_document', { p_source_uid: sourceUid });
+      if (err) throw new Error(err.message);
+      notifications.show({ color: 'green', title: 'Deleted', message: 'Document and all related data removed' });
+      navigate(`/app/projects/${projectId}`);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+      setDeleting(false);
+      closeDelete();
     }
   };
 
@@ -71,43 +111,33 @@ export default function DocumentDetail() {
 
   return (
     <>
-      {projectId && (
-        <Group mb="xs">
-          <Anchor component={Link} to={`/app/projects/${projectId}`} size="sm" c="dimmed">
-            <Group gap={4}><IconArrowLeft size={14} />Back to project</Group>
-          </Anchor>
-        </Group>
-      )}
-      <PageHeader title={doc.doc_title}>
-        <Badge size="lg" color={STATUS_COLOR[doc.status] ?? 'gray'} variant="light">
-          {doc.status}
-        </Badge>
-        {doc.conv_uid && (
-          <Button
-            variant="light"
-            size="xs"
-            onClick={exportJsonl}
-            leftSection={<IconDownload size={14} />}
-          >
-            Export JSONL
-          </Button>
-        )}
-      </PageHeader>
-
-      {/* Document metadata bar */}
-      <Paper p="xs" mb="md" withBorder>
-        <Group gap="lg">
-          <Group gap={4}>
-            <IconFileText size={14} color="var(--mantine-color-dimmed)" />
-            <Text size="xs" c="dimmed">{doc.source_type}</Text>
-          </Group>
+      <AppBreadcrumbs items={[
+        { label: 'Projects', href: '/app' },
+        { label: projectName || 'Project', href: `/app/projects/${projectId}` },
+        { label: doc.doc_title },
+      ]} />
+      {/* Compact document header: title + metadata + actions in one row */}
+      <Group justify="space-between" mb="sm" wrap="nowrap">
+        <Group gap="sm" wrap="nowrap" style={{ minWidth: 0 }}>
+          <Text fw={600} size="md" truncate style={{ maxWidth: 300 }}>{doc.doc_title}</Text>
+          <Badge size="sm" color={STATUS_COLOR[doc.status] ?? 'gray'} variant="light">{doc.status}</Badge>
+          <Text size="xs" c="dimmed">{doc.source_type}</Text>
           <Text size="xs" c="dimmed">{formatBytes(doc.source_filesize)}</Text>
           {doc.source_total_characters && (
             <Text size="xs" c="dimmed">{doc.source_total_characters.toLocaleString()} chars</Text>
           )}
-          <Text size="xs" c="dimmed">Uploaded {new Date(doc.uploaded_at).toLocaleString()}</Text>
         </Group>
-      </Paper>
+        <Group gap="xs" wrap="nowrap">
+          {doc.conv_uid && (
+            <Button variant="light" size="xs" onClick={exportJsonl} leftSection={<IconDownload size={14} />}>
+              Export
+            </Button>
+          )}
+          <Button variant="subtle" color="red" size="xs" leftSection={<IconTrash size={14} />} onClick={openDelete}>
+            Delete
+          </Button>
+        </Group>
+      </Group>
 
       {error && <ErrorAlert message={error} />}
 
@@ -135,6 +165,18 @@ export default function DocumentDetail() {
       {doc.status === 'ingested' && doc.conv_uid && (
         <BlockViewerGrid convUid={doc.conv_uid} />
       )}
+
+      <Modal opened={deleteOpened} onClose={closeDelete} title="Delete document" centered>
+        <Stack gap="md">
+          <Text size="sm">
+            This will permanently delete <Text span fw={600}>{doc.doc_title}</Text> and all its blocks, overlays, and runs. This cannot be undone.
+          </Text>
+          <Group justify="flex-end">
+            <Button variant="default" onClick={closeDelete}>Cancel</Button>
+            <Button color="red" onClick={handleDelete} loading={deleting}>Delete</Button>
+          </Group>
+        </Stack>
+      </Modal>
     </>
   );
 }

@@ -11,7 +11,7 @@ export type DocumentRow = {
   source_uid: string;
   owner_id: string;
   conv_uid: string | null;
-  project_id: string | null;
+  project_id: string;
   source_type: string;
   source_filesize: number;
   source_total_characters: number | null;
@@ -60,12 +60,15 @@ export type RunWithSchema = RunRow & {
 export type BlockOverlayRow = {
   run_id: string;
   block_uid: string;
-  overlay_jsonb: Record<string, unknown>;
-  status: 'pending' | 'claimed' | 'complete' | 'failed';
+  overlay_jsonb_staging: Record<string, unknown>;
+  overlay_jsonb_confirmed: Record<string, unknown>;
+  status: 'pending' | 'claimed' | 'ai_complete' | 'confirmed' | 'failed';
   claimed_by: string | null;
   claimed_at: string | null;
   attempt_count: number;
   last_error: string | null;
+  confirmed_at: string | null;
+  confirmed_by: string | null;
 };
 
 export type BlockWithOverlay = BlockRow & {

@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback } from 'react';
+import { useMemo, useState, useCallback, useRef } from 'react';
 import { AgGridReact } from 'ag-grid-react';
 import {
   AllCommunityModule,
@@ -9,7 +9,6 @@ import {
   type ICellRendererParams,
 } from 'ag-grid-community';
 import {
-  Box,
   Badge,
   Group,
   Select,
@@ -19,7 +18,15 @@ import {
   Divider,
   Pagination,
   Tooltip,
+  SegmentedControl,
+  Menu,
+  MultiSelect,
+  ActionIcon,
 } from '@mantine/core';
+import {
+  IconColumns,
+  IconFilter,
+} from '@tabler/icons-react';
 import { useBlocks } from '@/hooks/useBlocks';
 import { useRuns } from '@/hooks/useRuns';
 import { useOverlays } from '@/hooks/useOverlays';
@@ -30,7 +37,11 @@ import { ErrorAlert } from '@/components/common/ErrorAlert';
 // Register AG Grid community modules once
 ModuleRegistry.registerModules([AllCommunityModule]);
 
-const gridTheme = themeQuartz;
+// Density presets: row padding scale + line-height controlled via CSS class
+const DENSITY_THEMES = {
+  compact: themeQuartz.withParams({ rowVerticalPaddingScale: 0.3 }),
+  comfortable: themeQuartz.withParams({ rowVerticalPaddingScale: 0.7 }),
+} as const;
 
 const BLOCK_TYPE_COLOR: Record<string, string> = {
   heading: 'blue',
@@ -50,6 +61,8 @@ const BLOCK_TYPE_COLOR: Record<string, string> = {
 
 const PAGE_SIZES = ['25', '50', '100'];
 
+const VIEW_MODE_KEY = 'blockdata-view-mode';
+
 // ── Cell renderers ──
 
 function BlockTypeCellRenderer(params: ICellRendererParams) {
@@ -57,24 +70,15 @@ function BlockTypeCellRenderer(params: ICellRendererParams) {
   return <Badge size="xs" variant="light" color={BLOCK_TYPE_COLOR[t] ?? 'gray'}>{t}</Badge>;
 }
 
-function ContentCellRenderer(params: ICellRendererParams) {
-  const val = (params.value as string) ?? '';
-  const display = val.replace(/\s+/g, ' ').trim();
-  return (
-    <Tooltip label={display} disabled={display.length <= 100} multiline maw={500} withArrow>
-      <span style={{ fontSize: 'var(--mantine-font-size-xs)' }}>{display}</span>
-    </Tooltip>
-  );
-}
-
 function StatusCellRenderer(params: ICellRendererParams) {
   const status = params.value as string | undefined;
   if (!status) return <Text size="xs" c="dimmed">--</Text>;
   const color =
-    status === 'complete' ? 'green'
-      : status === 'pending' ? 'gray'
-        : status === 'claimed' ? 'blue'
-          : status === 'failed' ? 'red' : 'gray';
+    status === 'confirmed' ? 'green'
+      : status === 'ai_complete' ? 'yellow'
+        : status === 'pending' ? 'gray'
+          : status === 'claimed' ? 'blue'
+            : status === 'failed' ? 'red' : 'gray';
   return <Badge size="xs" variant="light" color={color}>{status}</Badge>;
 }
 
@@ -141,9 +145,18 @@ function SchemaFieldCellRenderer(params: ICellRendererParams) {
 // ── Main component ──
 
 export function BlockViewerGrid({ convUid }: { convUid: string }) {
+  const gridRef = useRef<AgGridReact>(null);
   const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
   const [pageIndex, setPageIndex] = useState(0);
   const [pageSize, setPageSize] = useState(50);
+  const [viewMode, setViewMode] = useState<string>(() => {
+    const stored = typeof localStorage !== 'undefined' ? localStorage.getItem(VIEW_MODE_KEY) : null;
+    // Migrate old 'expanded' value to 'comfortable'
+    if (stored === 'expanded') return 'comfortable';
+    return stored === 'compact' || stored === 'comfortable' ? stored : 'compact';
+  });
+  const [typeFilter, setTypeFilter] = useState<string[]>([]);
+  const [hiddenCols, setHiddenCols] = useState<Set<string>>(new Set());
 
   const { blocks, totalCount, loading: blocksLoading, error: blocksError } = useBlocks(convUid, pageIndex, pageSize);
   const { runs, error: runsError } = useRuns(convUid);
@@ -155,29 +168,49 @@ export function BlockViewerGrid({ convUid }: { convUid: string }) {
     [selectedRun],
   );
 
-  // Client-side join: flatten blocks + overlays into row data
+  // Collect unique block types for the filter
+  const blockTypes = useMemo(() => {
+    const types = new Set<string>();
+    blocks.forEach((b) => types.add(b.block_type));
+    return Array.from(types).sort();
+  }, [blocks]);
+
+  // Client-side join: flatten blocks + overlays into row data, then filter by type
   const rowData = useMemo(() => {
-    return blocks.map((b) => {
-      const overlay = overlayMap.get(b.block_uid) ?? null;
-      const row: Record<string, unknown> = {
-        block_index: b.block_index,
-        block_type: b.block_type,
-        block_content: b.block_content,
-        block_uid: b.block_uid,
-        block_locator: b.block_locator,
-        _overlay_status: overlay?.status ?? null,
-      };
-      // Flatten overlay fields into top-level keys for AG Grid
-      if (overlay?.overlay_jsonb) {
-        for (const field of schemaFields) {
-          row[`field_${field.key}`] = overlay.overlay_jsonb[field.key] ?? null;
+    const rows = blocks
+      .filter((b) => typeFilter.length === 0 || typeFilter.includes(b.block_type))
+      .map((b) => {
+        const overlay = overlayMap.get(b.block_uid) ?? null;
+        const row: Record<string, unknown> = {
+          block_index: b.block_index,
+          block_type: b.block_type,
+          block_content: b.block_content,
+          block_uid: b.block_uid,
+          block_locator: b.block_locator,
+          _overlay_status: overlay?.status ?? null,
+        };
+        if (overlay) {
+          const data = overlay.status === 'confirmed'
+            ? overlay.overlay_jsonb_confirmed
+            : overlay.overlay_jsonb_staging;
+          if (data && Object.keys(data).length > 0) {
+            for (const field of schemaFields) {
+              row[`field_${field.key}`] = data[field.key] ?? null;
+            }
+          }
         }
-      }
-      return row;
-    });
-  }, [blocks, overlayMap, schemaFields]);
+        return row;
+      });
+    return rows;
+  }, [blocks, overlayMap, schemaFields, typeFilter]);
 
   const hasRun = !!selectedRunId;
+
+  // Dynamic AG Grid theme based on density
+  const gridTheme = useMemo(
+    () => DENSITY_THEMES[viewMode as keyof typeof DENSITY_THEMES] ?? DENSITY_THEMES.compact,
+    [viewMode],
+  );
 
   // Progress stats
   const runProgress = selectedRun
@@ -192,7 +225,6 @@ export function BlockViewerGrid({ convUid }: { convUid: string }) {
 
   // Build column definitions dynamically
   const columnDefs = useMemo<(ColDef | ColGroupDef)[]>(() => {
-    // Immutable columns — pinned left
     const immutableCols: ColDef[] = [
       {
         field: 'block_index',
@@ -201,6 +233,7 @@ export function BlockViewerGrid({ convUid }: { convUid: string }) {
         width: 60,
         suppressSizeToFit: true,
         type: 'numericColumn',
+        hide: hiddenCols.has('block_index'),
       },
       {
         field: 'block_type',
@@ -208,26 +241,28 @@ export function BlockViewerGrid({ convUid }: { convUid: string }) {
         pinned: 'left',
         width: 120,
         cellRenderer: BlockTypeCellRenderer,
+        hide: hiddenCols.has('block_type'),
       },
       {
         field: 'block_content',
         headerName: 'Content',
         pinned: 'left',
         width: 350,
-        cellRenderer: ContentCellRenderer,
-        wrapText: false,
+        wrapText: true,
+        autoHeight: true,
+        hide: hiddenCols.has('block_content'),
       },
     ];
 
     if (!hasRun) return immutableCols;
 
-    // User-defined columns — one per schema field
     const userDefinedCols: ColDef[] = [
       {
         field: '_overlay_status',
         headerName: 'Status',
         width: 100,
         cellRenderer: StatusCellRenderer,
+        hide: hiddenCols.has('_overlay_status'),
       },
       ...schemaFields.map((field): ColDef => ({
         field: `field_${field.key}`,
@@ -236,10 +271,12 @@ export function BlockViewerGrid({ convUid }: { convUid: string }) {
         cellRenderer: SchemaFieldCellRenderer,
         cellRendererParams: { fieldMeta: field },
         resizable: true,
+        wrapText: true,
+        autoHeight: true,
+        hide: hiddenCols.has(`field_${field.key}`),
       })),
     ];
 
-    // Wrap in column groups
     return [
       {
         headerName: 'Immutable',
@@ -251,7 +288,7 @@ export function BlockViewerGrid({ convUid }: { convUid: string }) {
         children: userDefinedCols,
       } as ColGroupDef,
     ];
-  }, [hasRun, schemaFields, selectedRun]);
+  }, [hasRun, schemaFields, selectedRun, hiddenCols]);
 
   const defaultColDef = useMemo<ColDef>(() => ({
     resizable: true,
@@ -263,29 +300,129 @@ export function BlockViewerGrid({ convUid }: { convUid: string }) {
   const totalPages = Math.ceil(totalCount / pageSize);
   const error = blocksError || runsError || overlaysError;
 
-  // Grid height: fit content or max 600px
-  const gridHeight = Math.min(600, 44 + rowData.length * 42);
+  // Grid height: compressed layout — AppShell header 56 + breadcrumbs 28 + doc header 40 + toolbar 44 + pagination 40 + margins ~16
+  const gridHeight = 'calc(100vh - 230px)';
 
   const getRowId = useCallback((params: { data: Record<string, unknown> }) => {
     return params.data.block_uid as string;
   }, []);
 
+  const handleViewModeChange = (val: string) => {
+    setViewMode(val);
+    if (typeof localStorage !== 'undefined') localStorage.setItem(VIEW_MODE_KEY, val);
+  };
+
+  // Toggle column visibility
+  const toggleColumn = (colId: string) => {
+    setHiddenCols((prev) => {
+      const next = new Set(prev);
+      if (next.has(colId)) next.delete(colId);
+      else next.add(colId);
+      return next;
+    });
+  };
+
+  // All toggleable columns for the visibility menu
+  const allColumns = useMemo(() => {
+    const cols: { id: string; label: string; group: string }[] = [
+      { id: 'block_index', label: '#', group: 'Immutable' },
+      { id: 'block_type', label: 'Type', group: 'Immutable' },
+      { id: 'block_content', label: 'Content', group: 'Immutable' },
+    ];
+    if (hasRun) {
+      cols.push({ id: '_overlay_status', label: 'Status', group: 'Schema' });
+      schemaFields.forEach((f) => cols.push({ id: `field_${f.key}`, label: f.key, group: 'Schema' }));
+    }
+    return cols;
+  }, [hasRun, schemaFields]);
+
   return (
     <>
-      {/* Toolbar */}
-      <Paper p="sm" mb="md" withBorder>
-        <Group justify="space-between" wrap="wrap" gap="sm">
-          <Group gap="sm" wrap="wrap">
+      {/* Toolbar — single dense row */}
+      <Paper p="xs" mb={4} withBorder>
+        <Group justify="space-between" wrap="wrap" gap="xs">
+          {/* Left: run selector + status + progress */}
+          <Group gap="xs" wrap="wrap">
             <RunSelector runs={runs} value={selectedRunId} onChange={setSelectedRunId} />
             {selectedRun && (
-              <Badge variant="light" color={selectedRun.status === 'complete' ? 'green' : selectedRun.status === 'running' ? 'blue' : 'red'}>
+              <Badge size="xs" variant="light" color={selectedRun.status === 'complete' ? 'green' : selectedRun.status === 'running' ? 'blue' : 'red'}>
                 {selectedRun.status}
               </Badge>
             )}
+            {runProgress && runProgress.total > 0 && (
+              <Group gap={4} wrap="nowrap">
+                <Progress.Root size="xs" w={80}>
+                  <Progress.Section value={runProgress.pctComplete} color="green" />
+                  <Progress.Section value={runProgress.pctFailed} color="red" />
+                </Progress.Root>
+                <Text size="xs" c="dimmed">
+                  {runProgress.completed}/{runProgress.total}
+                </Text>
+              </Group>
+            )}
           </Group>
-          <Group gap="xs">
-            <Text size="xs" c="dimmed">{totalCount} blocks</Text>
+
+          {/* Right: view controls */}
+          <Group gap="xs" wrap="nowrap">
+            {/* Block type filter */}
+            {blockTypes.length > 1 && (
+              <MultiSelect
+                data={blockTypes.map((t) => ({ value: t, label: t }))}
+                value={typeFilter}
+                onChange={setTypeFilter}
+                placeholder="All types"
+                size="xs"
+                w={160}
+                clearable
+                leftSection={<IconFilter size={14} />}
+                comboboxProps={{ withinPortal: true }}
+              />
+            )}
+
+            {/* Density toggle */}
+            <SegmentedControl
+              data={[
+                { value: 'compact', label: 'Compact' },
+                { value: 'comfortable', label: 'Comfortable' },
+              ]}
+              value={viewMode}
+              onChange={handleViewModeChange}
+              size="xs"
+            />
+
+            {/* Column visibility */}
+            <Menu shadow="md" width={200} position="bottom-end" withinPortal>
+              <Menu.Target>
+                <Tooltip label="Toggle columns">
+                  <ActionIcon variant="subtle" size="sm">
+                    <IconColumns size={16} />
+                  </ActionIcon>
+                </Tooltip>
+              </Menu.Target>
+              <Menu.Dropdown>
+                <Menu.Label>Columns</Menu.Label>
+                {allColumns.map((col) => (
+                  <Menu.Item
+                    key={col.id}
+                    onClick={() => toggleColumn(col.id)}
+                    leftSection={
+                      <Text size="xs" fw={500} c={hiddenCols.has(col.id) ? 'dimmed' : undefined}>
+                        {hiddenCols.has(col.id) ? '☐' : '☑'}
+                      </Text>
+                    }
+                  >
+                    <Text size="xs">{col.label}</Text>
+                  </Menu.Item>
+                ))}
+              </Menu.Dropdown>
+            </Menu>
+
             <Divider orientation="vertical" />
+
+            {/* Block count + page size */}
+            <Text size="xs" c="dimmed">
+              {typeFilter.length > 0 ? `${rowData.length} of ${totalCount}` : totalCount} blocks
+            </Text>
             <Select
               data={PAGE_SIZES}
               value={String(pageSize)}
@@ -298,51 +435,37 @@ export function BlockViewerGrid({ convUid }: { convUid: string }) {
         </Group>
       </Paper>
 
-      {/* Progress bar */}
-      {runProgress && runProgress.total > 0 && (
-        <Box mb="sm">
-          <Group justify="space-between" mb={4}>
-            <Text size="xs" c="dimmed">
-              {runProgress.completed} complete, {runProgress.failed} failed of {runProgress.total}
-            </Text>
-            <Text size="xs" c="dimmed">
-              {Math.round(runProgress.pctComplete + runProgress.pctFailed)}%
-            </Text>
-          </Group>
-          <Progress.Root size="sm">
-            <Progress.Section value={runProgress.pctComplete} color="green" />
-            <Progress.Section value={runProgress.pctFailed} color="red" />
-          </Progress.Root>
-        </Box>
-      )}
-
       {error && <ErrorAlert message={error} />}
 
-      {/* AG Grid */}
-      <div style={{ height: gridHeight, width: '100%', opacity: blocksLoading ? 0.5 : 1, transition: 'opacity 0.15s' }}>
-        <AgGridReact
-          theme={gridTheme}
-          rowData={rowData}
-          columnDefs={columnDefs}
-          defaultColDef={defaultColDef}
-          getRowId={getRowId}
-          animateRows={false}
-          suppressColumnVirtualisation={false}
-          domLayout="normal"
-        />
-      </div>
-
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <Group justify="center" mt="md">
-          <Pagination
-            total={totalPages}
-            value={pageIndex + 1}
-            onChange={(p) => setPageIndex(p - 1)}
-            size="sm"
+      {/* Grid + Pagination container */}
+      <div style={{ display: 'flex', flexDirection: 'column', height: gridHeight, minHeight: 300 }}>
+        {/* AG Grid */}
+        <div className={`grid-${viewMode}`} style={{ flex: 1, width: '100%', opacity: blocksLoading ? 0.5 : 1, transition: 'opacity 0.15s' }}>
+          <AgGridReact
+            ref={gridRef}
+            theme={gridTheme}
+            rowData={rowData}
+            columnDefs={columnDefs}
+            defaultColDef={defaultColDef}
+            getRowId={getRowId}
+            animateRows={false}
+            suppressColumnVirtualisation={false}
+            domLayout="normal"
           />
-        </Group>
-      )}
+        </div>
+
+        {/* Pagination — inside container */}
+        {totalPages > 1 && (
+          <Group justify="center" py={6}>
+            <Pagination
+              total={totalPages}
+              value={pageIndex + 1}
+              onChange={(p) => setPageIndex(p - 1)}
+              size="xs"
+            />
+          </Group>
+        )}
+      </div>
     </>
   );
 }

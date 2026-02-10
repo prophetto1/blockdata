@@ -23,9 +23,10 @@ import {
   IconUpload,
   IconFileText,
   IconPlayerPlay,
-  IconArrowLeft,
   IconPencil,
+  IconTrash,
 } from '@tabler/icons-react';
+import { AppBreadcrumbs } from '@/components/common/AppBreadcrumbs';
 import { supabase } from '@/lib/supabase';
 import { TABLES } from '@/lib/tables';
 import type { ProjectRow, DocumentRow, RunRow } from '@/lib/types';
@@ -59,6 +60,10 @@ export default function ProjectDetail() {
   const [editName, setEditName] = useState('');
   const [editDesc, setEditDesc] = useState('');
   const [saving, setSaving] = useState(false);
+
+  // Delete modal state
+  const [deleteOpened, { open: openDeleteProject, close: closeDeleteProject }] = useDisclosure(false);
+  const [deletingProject, setDeletingProject] = useState(false);
 
   const load = async () => {
     if (!projectId) return;
@@ -111,19 +116,30 @@ export default function ProjectDetail() {
     closeEdit();
   };
 
+  const handleDeleteProject = async () => {
+    if (!projectId) return;
+    setDeletingProject(true);
+    try {
+      const { error: err } = await supabase.rpc('delete_project', { p_project_id: projectId });
+      if (err) throw new Error(err.message);
+      notifications.show({ color: 'green', title: 'Deleted', message: 'Project and all contents removed' });
+      navigate('/app');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+      setDeletingProject(false);
+      closeDeleteProject();
+    }
+  };
+
   if (loading) return <Center mt="xl"><Loader /></Center>;
   if (!project) return <ErrorAlert message={error ?? 'Project not found'} />;
 
   return (
     <>
-      <Group mb="xs">
-        <Anchor component={Link} to="/app" size="sm" c="dimmed">
-          <Group gap={4}>
-            <IconArrowLeft size={14} />
-            Projects
-          </Group>
-        </Anchor>
-      </Group>
+      <AppBreadcrumbs items={[
+        { label: 'Projects', href: '/app' },
+        { label: project.project_name },
+      ]} />
 
       <PageHeader title={project.project_name} subtitle={project.description ?? undefined}>
         <Button variant="subtle" size="xs" leftSection={<IconPencil size={14} />} onClick={openEdit}>
@@ -131,6 +147,9 @@ export default function ProjectDetail() {
         </Button>
         <Button leftSection={<IconUpload size={16} />} onClick={() => navigate(`/app/projects/${projectId}/upload`)}>
           Upload document
+        </Button>
+        <Button variant="subtle" color="red" size="xs" leftSection={<IconTrash size={14} />} onClick={openDeleteProject}>
+          Delete project
         </Button>
       </PageHeader>
 
@@ -224,6 +243,18 @@ export default function ProjectDetail() {
           <Group justify="flex-end">
             <Button variant="default" onClick={closeEdit}>Cancel</Button>
             <Button onClick={handleSave} loading={saving} disabled={!editName.trim()}>Save</Button>
+          </Group>
+        </Stack>
+      </Modal>
+
+      <Modal opened={deleteOpened} onClose={closeDeleteProject} title="Delete project" centered>
+        <Stack gap="md">
+          <Text size="sm">
+            This will permanently delete <Text span fw={600}>{project.project_name}</Text> and all its documents, blocks, runs, and overlays. This cannot be undone.
+          </Text>
+          <Group justify="flex-end">
+            <Button variant="default" onClick={closeDeleteProject}>Cancel</Button>
+            <Button color="red" onClick={handleDeleteProject} loading={deletingProject}>Delete project</Button>
           </Group>
         </Stack>
       </Modal>

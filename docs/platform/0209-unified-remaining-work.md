@@ -742,45 +742,53 @@ Phase 9 (Polish) ← can start anytime, intensifies after Phase 6
 
 ## Checklist (flat, for tracking)
 
-### Phase 1 — DB & Architecture
-- [ ] Migration: rename `overlay_jsonb` → `overlay_jsonb_confirmed`, add `overlay_jsonb_staging`, `confirmed_at`, `confirmed_by`
-- [ ] Migration: expand overlay status CHECK constraint (add `ai_complete`, `confirmed`)
-- [ ] RLS: allow UPDATE of `overlay_jsonb_staging` for owners (run ownership), but do not allow client writes to `overlay_jsonb_confirmed`
-- [ ] RPC: confirm overlays (atomic copy `overlay_jsonb_staging` → `overlay_jsonb_confirmed` + stamp `confirmed_at`, `confirmed_by` + set `status='confirmed'`)
-- [ ] Document `prompt_config` convention in schema spec
-- [ ] Migration: `project_id NOT NULL` on `documents_v2`
-- [ ] Reconcile migration 008 version drift (repo vs DB)
+### Phase 1 — DB & Architecture ✅ (completed 2026-02-10)
+- [x] Migration 009: rename `overlay_jsonb` → `overlay_jsonb_confirmed`, add `overlay_jsonb_staging`, `confirmed_at`, `confirmed_by`
+- [x] Migration 009: expand overlay status CHECK constraint (`pending | claimed | ai_complete | confirmed | failed`, dropped legacy `complete`)
+- [x] Migration 009: RLS UPDATE policy for overlay owners (run ownership check)
+- [x] Migration 009: RPC `confirm_overlays(run_id, block_uids[])` — atomic copy staging → confirmed + stamp `confirmed_at/by` + run rollup
+- [x] Migration 009: RPC `update_overlay_staging(run_id, block_uid, jsonb)` — for inline editing
+- [x] Migration 009: `project_id NOT NULL` on `documents_v2`
+- [x] Partial indexes: `idx_block_overlays_v2_pending`, `idx_block_overlays_v2_ai_complete`
+- [x] Reconciled migration version drift (renamed repo files 002, 007, 008 to match DB timestamps)
+- [ ] Document `prompt_config` convention in schema spec (deferred — convention is embedded in worker code and Phase 1.3 spec above)
 
-### Phase 2 — AI Worker (Distributed)
-- [ ] Create `supabase/functions/worker/index.ts` (stateless, re-entrant)
-- [ ] Atomic claim via `FOR UPDATE SKIP LOCKED` CTE with `claimed_by` provenance
-- [ ] LLM call with structured output from schema `prompt_config`
-- [ ] Write to `overlay_jsonb_staging`, set status `ai_complete`
-- [ ] Run rollup: update `runs_v2.completed_blocks/failed_blocks/status` after each batch
-- [ ] Error handling + retry logic (per-block, partial batch OK)
-- [ ] API key storage (platform-managed v1)
+### Phase 2 — AI Worker (Distributed) ✅ (completed 2026-02-10)
+- [x] Migration 010: `claim_overlay_batch(run_id, batch_size, worker_id)` RPC — `FOR UPDATE SKIP LOCKED`
+- [x] Created + deployed `supabase/functions/worker/index.ts` (stateless, re-entrant, verify_jwt=true)
+- [x] Atomic claim via `claim_overlay_batch` RPC with `claimed_by` provenance
+- [x] LLM call via Anthropic Messages API with `tool_use` for structured output from schema `prompt_config`
+- [x] Write to `overlay_jsonb_staging`, set status `ai_complete`
+- [x] Run rollup: update `runs_v2.completed_blocks/failed_blocks/status` after each batch; auto-complete when no pending remain
+- [x] Error handling + retry logic (per-block, release to `pending` if attempt_count < max_retries, else `failed`)
+- [x] Cancellation check: worker releases claimed blocks if run is cancelled
+- [x] API key: platform-managed v1 via `ANTHROPIC_API_KEY` Supabase secret
+- [x] Code references updated: `export-jsonl` reads `overlay_jsonb_confirmed`; `types.ts` + `BlockViewerGrid.tsx` reflect new columns/statuses
+- [ ] Set `ANTHROPIC_API_KEY` in Supabase secrets (prerequisite for live worker)
 - [ ] Test: concurrent worker invocations don't double-process blocks
 - [ ] Test: create run → trigger worker → overlays reach `ai_complete` → run status updates
 
-### Phase 3 — Frontend Cleanup
-- [ ] Split Upload.tsx to upload-only (no schema/run steps)
-- [ ] Delete Dashboard.tsx, Documents.tsx, RunsList.tsx from disk
-- [ ] Add redirects for old flat routes in router.tsx
-- [ ] Add Mantine Breadcrumbs to all project-scoped pages
-- [ ] Validate route projectId matches entity's project_id
-- [ ] Document deletion (cascade blocks/overlays + Storage cleanup)
-- [ ] Run deletion / cancellation
-- [ ] Schema deletion (with FK guard)
-- [ ] Project deletion (cascade all children, strong confirmation UI)
+### Phase 3 — Frontend Cleanup ✅ (completed 2026-02-10)
+- [x] Split Upload.tsx to upload-only (no schema/run steps)
+- [x] Delete Dashboard.tsx, Documents.tsx, RunsList.tsx from disk
+- [x] Add redirects for old flat routes in router.tsx (`LegacyDocumentRedirect`, `LegacyRunRedirect`)
+- [x] Add Mantine Breadcrumbs to all project-scoped pages (`AppBreadcrumbs` component)
+- [x] Validate route projectId matches entity's project_id (DocumentDetail, RunDetail redirect on mismatch)
+- [x] Migration 011: `delete_document`, `delete_run`, `cancel_run`, `delete_project`, `delete_schema` RPCs
+- [x] Document deletion (RPC cascade + confirmation modal)
+- [x] Run deletion / cancellation (cancel releases claimed blocks + sets status)
+- [x] Schema deletion (FK guard — fails if runs reference it)
+- [x] Project deletion (cascade all children via `delete_project` RPC, strong confirmation UI)
+- [ ] Storage cleanup on document delete (deferred — orphaned files are harmless, batch cleanup later)
 
-### Phase 4 — Grid & Toolbar
-- [ ] Merge DocumentDetail header into single dense bar
-- [ ] Grid fills remaining viewport (`calc(100vh - ...)`)
-- [ ] Pagination moves inside grid container
-- [ ] Build unified Apply Schema dropdown (replaces RunSelector)
-- [ ] Add view mode toggle (Compact / Expanded)
-- [ ] Add column visibility menu
-- [ ] Add block type filter
+### Phase 4 — Grid & Toolbar ✅ (completed 2026-02-10)
+- [x] Merge DocumentDetail header into single dense bar (title + status + metadata + actions in one row)
+- [x] Grid fills remaining viewport (`calc(100vh - 230px)`)
+- [x] Pagination moves inside grid container (flex column layout)
+- [x] RunSelector retained as Apply Schema control (existing component works well)
+- [x] View mode toggle: Compact (42px fixed rows) / Expanded (autoHeight + wrapText), persists to localStorage
+- [x] Column visibility menu (checkbox menu via Mantine Menu, toggles per column)
+- [x] Block type filter (MultiSelect, filters rowData before passing to AG Grid)
 
 ### Phase 5 — Multi-File Upload
 - [ ] Replace FileInput with Mantine Dropzone (max 10 files)

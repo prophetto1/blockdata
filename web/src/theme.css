@@ -22,3 +22,19 @@ body {
   border-color: var(--mantine-color-default-border);
 }
 
+/* AG Grid density: Compact — tight line-height, minimal cell padding */
+.grid-compact .ag-cell {
+  line-height: 1.3 !important;
+}
+.grid-compact .ag-cell-wrapper {
+  align-items: flex-start;
+}
+
+/* AG Grid density: Comfortable — relaxed line-height */
+.grid-comfortable .ag-cell {
+  line-height: 1.5 !important;
+}
+.grid-comfortable .ag-cell-wrapper {
+  align-items: flex-start;
+}
+

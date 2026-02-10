@@ -52,11 +52,11 @@ Deno.serve(async (req) => {
 
     const { data: overlays, error: ovErr } = await supabase
       .from("block_overlays_v2")
-      .select("block_uid, overlay_jsonb")
+      .select("block_uid, overlay_jsonb_confirmed")
       .eq("run_id", run_id);
     if (ovErr) return json(500, { error: ovErr.message });
     for (const o of overlays || []) {
-      overlaysByBlockUid.set(o.block_uid, o.overlay_jsonb ?? {});
+      overlaysByBlockUid.set(o.block_uid, o.overlay_jsonb_confirmed ?? {});
     }
   }
 
