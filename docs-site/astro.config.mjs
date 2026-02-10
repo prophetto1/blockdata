@@ -17,35 +17,29 @@ export default defineConfig({
 			],
 			sidebar: [
 				{
-					label: 'Product',
-					autogenerate: { directory: 'product' },
+					label: 'Concepts',
+					autogenerate: { directory: 'concepts' },
+				},
+				{
+					label: 'Workflows',
+					autogenerate: { directory: 'workflows' },
+				},
+				{
+					label: 'Reference',
+					autogenerate: { directory: 'reference' },
 				},
 				{
 					label: 'Architecture',
 					autogenerate: { directory: 'architecture' },
 				},
 				{
-					label: 'Implementation',
-					autogenerate: { directory: 'implementation' },
+					label: 'Integrations',
+					autogenerate: { directory: 'integrations' },
 				},
 				{
-					label: 'Frontend',
+					label: 'Status',
 					collapsed: true,
-					autogenerate: { directory: 'frontend' },
-				},
-				{
-					label: 'Platform Status',
 					autogenerate: { directory: 'status' },
-				},
-				{
-					label: 'Issues',
-					collapsed: true,
-					autogenerate: { directory: 'issues' },
-				},
-				{
-					label: 'Infrastructure',
-					collapsed: true,
-					autogenerate: { directory: 'infrastructure' },
 				},
 			],
 		}),
