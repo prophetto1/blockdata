@@ -186,8 +186,15 @@ export function BlockViewerGrid({ convUid }: { convUid: string }) {
           block_type: b.block_type,
           block_content: b.block_content,
           block_uid: b.block_uid,
-          block_locator: b.block_locator,
+          conv_uid: b.conv_uid,
+          block_locator: b.block_locator ? JSON.stringify(b.block_locator) : null,
           _overlay_status: overlay?.status ?? null,
+          _claimed_by: overlay?.claimed_by ?? null,
+          _claimed_at: overlay?.claimed_at ?? null,
+          _attempt_count: overlay?.attempt_count ?? null,
+          _last_error: overlay?.last_error ?? null,
+          _confirmed_at: overlay?.confirmed_at ?? null,
+          _confirmed_by: overlay?.confirmed_by ?? null,
         };
         if (overlay) {
           const data = overlay.status === 'confirmed'
@@ -252,6 +259,26 @@ export function BlockViewerGrid({ convUid }: { convUid: string }) {
         autoHeight: true,
         hide: hiddenCols.has('block_content'),
       },
+      {
+        field: 'block_uid',
+        headerName: 'Block UID',
+        width: 220,
+        hide: hiddenCols.has('block_uid'),
+      },
+      {
+        field: 'conv_uid',
+        headerName: 'Conv UID',
+        width: 220,
+        hide: hiddenCols.has('conv_uid'),
+      },
+      {
+        field: 'block_locator',
+        headerName: 'Locator',
+        width: 250,
+        wrapText: true,
+        autoHeight: true,
+        hide: hiddenCols.has('block_locator'),
+      },
     ];
 
     if (!hasRun) return immutableCols;
@@ -277,6 +304,15 @@ export function BlockViewerGrid({ convUid }: { convUid: string }) {
       })),
     ];
 
+    const overlayMetaCols: ColDef[] = [
+      { field: '_claimed_by', headerName: 'Claimed By', width: 140, hide: hiddenCols.has('_claimed_by') },
+      { field: '_claimed_at', headerName: 'Claimed At', width: 160, hide: hiddenCols.has('_claimed_at') },
+      { field: '_attempt_count', headerName: 'Attempts', width: 90, type: 'numericColumn', hide: hiddenCols.has('_attempt_count') },
+      { field: '_last_error', headerName: 'Last Error', width: 200, wrapText: true, autoHeight: true, hide: hiddenCols.has('_last_error') },
+      { field: '_confirmed_at', headerName: 'Confirmed At', width: 160, hide: hiddenCols.has('_confirmed_at') },
+      { field: '_confirmed_by', headerName: 'Confirmed By', width: 140, hide: hiddenCols.has('_confirmed_by') },
+    ];
+
     return [
       {
         headerName: 'Immutable',
@@ -286,6 +322,10 @@ export function BlockViewerGrid({ convUid }: { convUid: string }) {
       {
         headerName: `User-Defined — ${selectedRun?.schemas?.schema_ref ?? 'unknown'}`,
         children: userDefinedCols,
+      } as ColGroupDef,
+      {
+        headerName: 'Overlay Metadata',
+        children: overlayMetaCols,
       } as ColGroupDef,
     ];
   }, [hasRun, schemaFields, selectedRun, hiddenCols]);
@@ -328,10 +368,21 @@ export function BlockViewerGrid({ convUid }: { convUid: string }) {
       { id: 'block_index', label: '#', group: 'Immutable' },
       { id: 'block_type', label: 'Type', group: 'Immutable' },
       { id: 'block_content', label: 'Content', group: 'Immutable' },
+      { id: 'block_uid', label: 'Block UID', group: 'Immutable' },
+      { id: 'conv_uid', label: 'Conv UID', group: 'Immutable' },
+      { id: 'block_locator', label: 'Locator', group: 'Immutable' },
     ];
     if (hasRun) {
       cols.push({ id: '_overlay_status', label: 'Status', group: 'Schema' });
       schemaFields.forEach((f) => cols.push({ id: `field_${f.key}`, label: f.key, group: 'Schema' }));
+      cols.push(
+        { id: '_claimed_by', label: 'Claimed By', group: 'Overlay' },
+        { id: '_claimed_at', label: 'Claimed At', group: 'Overlay' },
+        { id: '_attempt_count', label: 'Attempts', group: 'Overlay' },
+        { id: '_last_error', label: 'Last Error', group: 'Overlay' },
+        { id: '_confirmed_at', label: 'Confirmed At', group: 'Overlay' },
+        { id: '_confirmed_by', label: 'Confirmed By', group: 'Overlay' },
+      );
     }
     return cols;
   }, [hasRun, schemaFields]);
