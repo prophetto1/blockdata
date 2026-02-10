@@ -3,26 +3,52 @@ import {
   Text,
   Button,
   ActionIcon,
+  Tooltip,
   Box,
   Container,
   Menu,
+  useMantineColorScheme,
+  useComputedColorScheme,
 } from '@mantine/core';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { IconMenu2, IconArrowRight } from '@tabler/icons-react';
+import { IconMenu2, IconArrowRight, IconMoon, IconSun } from '@tabler/icons-react';
 import { useWindowScroll } from '@mantine/hooks';
 
 export function PublicNavModern() {
   const navigate = useNavigate();
   const location = useLocation();
   const [scroll] = useWindowScroll();
+  const { colorScheme, setColorScheme } = useMantineColorScheme();
+  const computedColorScheme = useComputedColorScheme('dark');
 
   const isScrolled = scroll.y > 20;
+  const isDark = (colorScheme === 'auto' ? computedColorScheme : colorScheme) === 'dark';
+
+  const toggleColorScheme = () => {
+    setColorScheme(isDark ? 'light' : 'dark');
+  };
+
+  const isLoginPage = location.pathname === '/login';
+  const isRegisterPage = location.pathname === '/register';
 
   const links = [
-    { label: 'How it works', to: '/concepts/how-it-works-modern' },
-    { label: 'Use cases', to: '/concepts/use-cases-modern' },
-    { label: 'Integrations', to: '/concepts/integrations-modern' },
+    { label: 'How it works', to: '/how-it-works' },
+    { label: 'Use cases', to: '/use-cases' },
+    { label: 'Integrations', to: '/integrations' },
+    { label: 'Docs', to: '/docs', external: true },
   ];
+
+  // Dynamic colors based on scroll and theme
+  const navBg = isScrolled
+    ? 'var(--mantine-color-body)'
+    : 'transparent';
+    
+  const textColor = isScrolled
+    ? 'var(--mantine-color-text)'
+    : 'var(--mantine-color-text)'; 
+    // ^ Note: If Hero is transparent, we might need to know the Hero's mode.
+    // But since we are making the Hero adaptive (Light bg in light mode), 
+    // 'text' color (Black in light, White in dark) is correct even when transparent.
 
   return (
     <Box
@@ -33,12 +59,10 @@ export function PublicNavModern() {
         right: 0,
         zIndex: 1000,
         transition: 'all 0.3s ease',
-        backgroundColor: isScrolled 
-            ? 'rgba(26, 27, 30, 0.8)' // Dark glass
-            : 'transparent',
+        backgroundColor: navBg,
         backdropFilter: isScrolled ? 'blur(12px)' : 'none',
         borderBottom: isScrolled 
-            ? '1px solid rgba(255,255,255,0.1)' 
+            ? '1px solid var(--mantine-color-default-border)' 
             : '1px solid transparent',
         height: isScrolled ? 60 : 80,
       }}
@@ -57,7 +81,7 @@ export function PublicNavModern() {
                 fw={800}
                 size="xl"
                 style={{ 
-                    color: 'white', 
+                    color: textColor, 
                     letterSpacing: '-0.5px' 
                 }}
             >
@@ -66,18 +90,21 @@ export function PublicNavModern() {
           </Group>
 
           {/* DESKTOP LINKS */}
-            <Group gap={8} visibleFrom="sm" bg="rgba(255,255,255,0.05)" p={4} style={{ borderRadius: 99 }}>
+            <Group gap={8} visibleFrom="sm" bg={isScrolled ? 'transparent' : 'var(--mantine-color-default-hover)'} p={4} style={{ borderRadius: 99 }}>
               {links.map((l) => (
                 <Button
                   key={l.to}
                   size="sm"
                   variant="subtle"
                   radius="xl"
-                  style={{ 
-                      color: 'white',
-                      opacity: location.pathname === l.to ? 1 : 0.7 
+                  color={isDark ? 'gray' : 'dark'}
+                  component={l.external ? 'a' : undefined}
+                  href={l.external ? l.to : undefined}
+                  style={{
+                      // Use default color text, but force opacity for active state
+                      opacity: location.pathname === l.to ? 1 : 0.7
                   }}
-                  onClick={() => navigate(l.to)}
+                  onClick={l.external ? undefined : () => navigate(l.to)}
                 >
                   {l.label}
                 </Button>
@@ -86,41 +113,65 @@ export function PublicNavModern() {
 
           {/* ACTIONS */}
           <Group gap="sm">
-            <Button 
-                variant="subtle" 
-                size="sm" 
-                style={{ color: 'white', opacity: 0.8 }}
+            <Tooltip label={isDark ? 'Light mode' : 'Dark mode'}>
+              <ActionIcon
+                variant="subtle"
+                size="lg"
+                onClick={toggleColorScheme}
+                aria-label="Toggle color scheme"
+                color="gray"
+              >
+                {isDark ? <IconSun size={18} /> : <IconMoon size={18} />}
+              </ActionIcon>
+            </Tooltip>
+            {!isLoginPage && (
+              <Button
+                variant="subtle"
+                size="sm"
+                color="gray"
+                style={{ opacity: 0.8 }}
                 onClick={() => navigate('/login')}
-            >
-              Log in
-            </Button>
-            <Button 
-                size="sm" 
+              >
+                Log in
+              </Button>
+            )}
+            {!isRegisterPage && (
+              <Button
+                size="sm"
                 radius="xl"
                 color="indigo"
                 onClick={() => navigate('/register')}
                 rightSection={<IconArrowRight size={16} />}
-            >
-              Get Started
-            </Button>
+              >
+                Get Started
+              </Button>
+            )}
             
             {/* MOBILE MENU */}
             <Box hiddenFrom="sm">
               <Menu width={200} position="bottom-end">
                 <Menu.Target>
-                  <ActionIcon variant="transparent" size="lg" aria-label="Open menu" style={{ color: 'white' }}>
+                  <ActionIcon variant="transparent" size="lg" aria-label="Open menu" color="gray">
                     <IconMenu2 size={24} />
                   </ActionIcon>
                 </Menu.Target>
                 <Menu.Dropdown>
                   {links.map((l) => (
-                    <Menu.Item key={l.to} onClick={() => navigate(l.to)}>
+                    <Menu.Item
+                      key={l.to}
+                      component={l.external ? 'a' : undefined}
+                      href={l.external ? l.to : undefined}
+                      onClick={l.external ? undefined : () => navigate(l.to)}
+                    >
                       {l.label}
                     </Menu.Item>
                   ))}
                   <Menu.Divider />
-                  <Menu.Item onClick={() => navigate('/login')}>Log in</Menu.Item>
-                  <Menu.Item onClick={() => navigate('/register')}>Sign up</Menu.Item>
+                  <Menu.Item onClick={toggleColorScheme}>
+                    {isDark ? 'Light mode' : 'Dark mode'}
+                  </Menu.Item>
+                  {!isLoginPage && <Menu.Item onClick={() => navigate('/login')}>Log in</Menu.Item>}
+                  {!isRegisterPage && <Menu.Item onClick={() => navigate('/register')}>Sign up</Menu.Item>}
                 </Menu.Dropdown>
               </Menu>
             </Box>

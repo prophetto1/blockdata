@@ -1,0 +1,51 @@
+import { corsPreflight, withCorsHeaders } from "../_shared/cors.ts";
+
+function json(status: number, body: unknown): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: withCorsHeaders({ "Content-Type": "application/json" }),
+  });
+}
+
+Deno.serve(async (req) => {
+  const preflight = corsPreflight(req);
+  if (preflight) return preflight;
+  if (req.method !== "POST") return json(405, { error: "Method not allowed" });
+
+  try {
+    const { api_key, provider } = await req.json();
+    if (!api_key || typeof api_key !== "string") {
+      return json(400, { valid: false, error: "Missing api_key" });
+    }
+
+    if (provider === "anthropic") {
+      const resp = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": api_key,
+          "anthropic-version": "2023-06-01",
+        },
+        body: JSON.stringify({
+          model: "claude-haiku-4-5-20251001",
+          max_tokens: 1,
+          messages: [{ role: "user", content: "ping" }],
+        }),
+      });
+
+      if (resp.ok) {
+        return json(200, { valid: true });
+      }
+
+      const errText = await resp.text().catch(() => "");
+      if (resp.status === 401 || resp.status === 403) {
+        return json(200, { valid: false, error: "Invalid or disabled API key" });
+      }
+      return json(200, { valid: false, error: `API returned ${resp.status}: ${errText.slice(0, 200)}` });
+    }
+
+    return json(400, { valid: false, error: `Unsupported provider: ${provider}` });
+  } catch (e) {
+    return json(500, { valid: false, error: e instanceof Error ? e.message : String(e) });
+  }
+});

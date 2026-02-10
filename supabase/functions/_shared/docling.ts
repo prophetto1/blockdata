@@ -128,6 +128,9 @@ export function extractDoclingBlocks(
   const picturesMap = new Map<string, DoclingPictureItem>();
   for (const item of doc.pictures ?? []) picturesMap.set(item.self_ref, item);
 
+  const groupsMap = new Map<string, DoclingNodeItem>();
+  for (const item of doc.groups ?? []) groupsMap.set(item.self_ref, item);
+
   const kvMap = new Map<string, DoclingTextItem>();
   for (const item of doc.key_value_items ?? []) kvMap.set(item.self_ref, item);
 
@@ -137,8 +140,12 @@ export function extractDoclingBlocks(
   const blocks: DoclingBlockDraft[] = [];
   let docTitle: string | null = null;
 
+  const visited = new Set<string>();
+
   function resolveAndEmit(ref: DoclingRef): void {
     const pointer = ref.$ref;
+    if (visited.has(pointer)) return;
+    visited.add(pointer);
 
     // Try texts
     const textItem = textsMap.get(pointer);
@@ -162,6 +169,13 @@ export function extractDoclingBlocks(
         pointer,
         page_no: pageNo,
       });
+
+      // Always recurse into children — in DoclingDocument, headings/titles act
+      // as container nodes for paragraphs, lists, tables nested under them.
+      // The visited set prevents cycles.
+      if (textItem.children) {
+        for (const child of textItem.children) resolveAndEmit(child);
+      }
       return;
     }
 
@@ -176,6 +190,9 @@ export function extractDoclingBlocks(
         pointer,
         page_no: pageNo,
       });
+      if (tableItem.children) {
+        for (const child of tableItem.children) resolveAndEmit(child);
+      }
       return;
     }
 
@@ -199,6 +216,9 @@ export function extractDoclingBlocks(
         pointer,
         page_no: pageNo,
       });
+      if (picItem.children) {
+        for (const child of picItem.children) resolveAndEmit(child);
+      }
       return;
     }
 
@@ -231,7 +251,7 @@ export function extractDoclingBlocks(
     }
 
     // Groups: recurse into children
-    const group = (doc.groups ?? []).find((g) => g.self_ref === pointer);
+    const group = groupsMap.get(pointer);
     if (group?.children) {
       for (const child of group.children) resolveAndEmit(child);
       return;

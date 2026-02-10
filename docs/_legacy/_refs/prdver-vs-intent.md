@@ -730,7 +730,7 @@ Document → [chunking black box] → Chunks → Vectors → DB
                                     ↓
                             (document gone)
 
-MD-ANNOTATE:
+BLOCKDATA:
 Document → Block Inventory (permanent) → Annotation Schema → Export to Vectors
                     ↓                           ↓
             (always available)         (can run again with different schema)

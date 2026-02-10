@@ -1,0 +1,36 @@
+/* Override body font to Inter (matching web app) */
+:root {
+	--sl-font: 'Inter Variable', 'Inter', -apple-system, BlinkMacSystemFont,
+		'Segoe UI', sans-serif;
+}
+
+/* Right-side desktop TOC hierarchy: keep top-level emphasis, soften nested links. */
+.toc starlight-toc nav > ul > li > a {
+	font-size: 0.875rem;
+	font-weight: 500;
+}
+
+.toc starlight-toc nav > ul > li > ul a {
+	font-size: 0.75rem;
+	font-weight: 400;
+	opacity: 0.9;
+}
+
+/*
+ * Fine-tune zinc values if the theme plugin ever drifts from the web app palette.
+ * starlight-theme-black uses Tailwind zinc, which matches web/src/theme.ts.
+ * Uncomment to override:
+ *
+ * :root[data-theme='dark'] {
+ *   --sl-color-bg: #09090b;
+ *   --sl-color-bg-sidebar: #09090b;
+ *   --sl-color-hairline-light: #27272a;
+ *   --sl-color-text: #fafafa;
+ * }
+ *
+ * :root[data-theme='light'] {
+ *   --sl-color-bg: #ffffff;
+ *   --sl-color-text: #09090b;
+ *   --sl-color-hairline-light: #e4e4e7;
+ * }
+ */

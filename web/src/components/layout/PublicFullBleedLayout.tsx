@@ -6,8 +6,9 @@ export function PublicFullBleedLayout() {
   return (
     <Box>
       <PublicNav />
-      <Outlet />
+      <Box pt={80}>
+        <Outlet />
+      </Box>
     </Box>
   );
 }
-

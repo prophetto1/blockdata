@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Alert, Badge, Button, Loader, Center, Text, Group, Stack, Skeleton, Modal } from '@mantine/core';
+import { Alert, Badge, Button, Loader, Center, Text, Group, Progress, Stack, Skeleton, Modal } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
 import { IconInfoCircle, IconDownload, IconTrash } from '@tabler/icons-react';
@@ -11,6 +11,8 @@ import type { DocumentRow } from '@/lib/types';
 import { ErrorAlert } from '@/components/common/ErrorAlert';
 import { AppBreadcrumbs } from '@/components/common/AppBreadcrumbs';
 import { BlockViewerGrid } from '@/components/blocks/BlockViewerGrid';
+import { RunSelector } from '@/components/blocks/RunSelector';
+import { useRuns } from '@/hooks/useRuns';
 
 const STATUS_COLOR: Record<string, string> = {
   ingested: 'green',
@@ -33,6 +35,7 @@ export default function DocumentDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [projectName, setProjectName] = useState<string>('');
+  const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
   const [deleteOpened, { open: openDelete, close: closeDelete }] = useDisclosure(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -97,6 +100,9 @@ export default function DocumentDetail() {
     }
   };
 
+  // Runs — hook must be called before any early returns
+  const { runs, error: runsError } = useRuns(doc?.conv_uid ?? null);
+
   if (loading) {
     return (
       <Stack gap="md">
@@ -109,6 +115,17 @@ export default function DocumentDetail() {
 
   if (!doc) return <ErrorAlert message={error ?? 'Document not found'} />;
 
+  const selectedRun = runs.find((r) => r.run_id === selectedRunId) ?? null;
+  const runProgress = selectedRun && selectedRun.total_blocks > 0
+    ? {
+        completed: selectedRun.completed_blocks,
+        failed: selectedRun.failed_blocks,
+        total: selectedRun.total_blocks,
+        pctComplete: (selectedRun.completed_blocks / selectedRun.total_blocks) * 100,
+        pctFailed: (selectedRun.failed_blocks / selectedRun.total_blocks) * 100,
+      }
+    : null;
+
   return (
     <>
       <AppBreadcrumbs items={[
@@ -117,7 +134,7 @@ export default function DocumentDetail() {
         { label: doc.doc_title },
       ]} />
       {/* Compact document header: title + metadata + actions in one row */}
-      <Group justify="space-between" mb="sm" wrap="nowrap">
+      <Group justify="space-between" mb="sm" wrap="wrap">
         <Group gap="sm" wrap="nowrap" style={{ minWidth: 0 }}>
           <Text fw={600} size="md" truncate style={{ maxWidth: 300 }}>{doc.doc_title}</Text>
           <Badge size="sm" color={STATUS_COLOR[doc.status] ?? 'gray'} variant="light">{doc.status}</Badge>
@@ -138,6 +155,30 @@ export default function DocumentDetail() {
           </Button>
         </Group>
       </Group>
+
+      {/* Run selector row — separate from grid toolbar */}
+      {doc.status === 'ingested' && doc.conv_uid && (
+        <Group gap="sm" mb="xs" wrap="nowrap">
+          <RunSelector runs={runs} value={selectedRunId} onChange={setSelectedRunId} />
+          {selectedRun && (
+            <Badge size="xs" variant="light" color={selectedRun.status === 'complete' ? 'green' : selectedRun.status === 'running' ? 'blue' : 'red'}>
+              {selectedRun.status}
+            </Badge>
+          )}
+          {runProgress && (
+            <Group gap={4} wrap="nowrap">
+              <Progress.Root size="xs" w={80}>
+                <Progress.Section value={runProgress.pctComplete} color="green" />
+                <Progress.Section value={runProgress.pctFailed} color="red" />
+              </Progress.Root>
+              <Text size="xs" c="dimmed">
+                {runProgress.completed}/{runProgress.total}
+              </Text>
+            </Group>
+          )}
+          {runsError && <Text size="xs" c="red">{runsError}</Text>}
+        </Group>
+      )}
 
       {error && <ErrorAlert message={error} />}
 
@@ -163,7 +204,7 @@ export default function DocumentDetail() {
       )}
 
       {doc.status === 'ingested' && doc.conv_uid && (
-        <BlockViewerGrid convUid={doc.conv_uid} />
+        <BlockViewerGrid convUid={doc.conv_uid} selectedRunId={selectedRunId} selectedRun={selectedRun} />
       )}
 
       <Modal opened={deleteOpened} onClose={closeDelete} title="Delete document" centered>

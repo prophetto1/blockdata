@@ -1,6 +1,6 @@
 import { corsPreflight, withCorsHeaders } from "../_shared/cors.ts";
 import { createAdminClient } from "../_shared/supabase.ts";
-import { requireEnv, getEnv } from "../_shared/env.ts";
+import { getEnv } from "../_shared/env.ts";
 
 function json(status: number, body: unknown): Response {
   return new Response(JSON.stringify(body, null, 2), {
@@ -89,7 +89,7 @@ Deno.serve(async (req) => {
     const maxRetries = Number(getEnv("WORKER_MAX_RETRIES", "3"));
 
     const supabase = createAdminClient();
-    const anthropicKey = requireEnv("ANTHROPIC_API_KEY");
+    const platformKey = getEnv("ANTHROPIC_API_KEY", "");
 
     // ── 1. Claim batch ──
 
@@ -116,7 +116,7 @@ Deno.serve(async (req) => {
     // Run + schema (cached for entire batch)
     const { data: run, error: runErr } = await supabase
       .from("runs_v2")
-      .select("run_id, conv_uid, schema_id, model_config, status, schemas(schema_ref, schema_jsonb)")
+      .select("run_id, owner_id, conv_uid, schema_id, model_config, status, schemas(schema_ref, schema_jsonb)")
       .eq("run_id", runId)
       .single();
 
@@ -140,6 +140,40 @@ Deno.serve(async (req) => {
       return json(500, { error: "Schema not found for run" });
     }
 
+    // ── 2b. Resolve API key: user key → platform env fallback ──
+
+    let anthropicKey = platformKey;
+    let userDefaults: { default_model?: string; default_temperature?: number; default_max_tokens?: number } = {};
+
+    if (run.owner_id) {
+      const { data: keyRow } = await supabase
+        .from("user_api_keys")
+        .select("api_key_encrypted, default_model, default_temperature, default_max_tokens")
+        .eq("user_id", run.owner_id)
+        .eq("provider", "anthropic")
+        .maybeSingle();
+
+      if (keyRow?.api_key_encrypted) {
+        anthropicKey = keyRow.api_key_encrypted;
+        userDefaults = {
+          default_model: keyRow.default_model ?? undefined,
+          default_temperature: keyRow.default_temperature ?? undefined,
+          default_max_tokens: keyRow.default_max_tokens ?? undefined,
+        };
+
+        // Mark key as valid on successful resolution
+        await supabase
+          .from("user_api_keys")
+          .update({ is_valid: true })
+          .eq("user_id", run.owner_id)
+          .eq("provider", "anthropic");
+      }
+    }
+
+    if (!anthropicKey) {
+      return json(500, { error: "No API key configured. Set your Anthropic API key in Settings." });
+    }
+
     const promptConfig = (schemaJsonb.prompt_config ?? {}) as Record<string, unknown>;
     const schemaProperties = (schemaJsonb.properties ?? {}) as Record<string, unknown>;
 
@@ -149,13 +183,15 @@ Deno.serve(async (req) => {
     const blockPrompt =
       (promptConfig.per_block_prompt as string) ??
       "Extract the following fields from this content block:";
+    // Priority: request override > schema prompt_config > run model_config > user defaults > env default
     const model =
       modelOverride ??
       (promptConfig.model as string) ??
       ((run.model_config as Record<string, unknown> | null)?.model as string) ??
+      userDefaults.default_model ??
       getEnv("WORKER_DEFAULT_MODEL", "claude-sonnet-4-5-20250929");
-    const temperature = Number(promptConfig.temperature ?? 0.2);
-    const maxTokensPerBlock = Number(promptConfig.max_tokens_per_block ?? 2000);
+    const temperature = Number(promptConfig.temperature ?? userDefaults.default_temperature ?? 0.2);
+    const maxTokensPerBlock = Number(promptConfig.max_tokens_per_block ?? userDefaults.default_max_tokens ?? 2000);
 
     // Load block content for all claimed blocks
     const { data: blocks, error: blkErr } = await supabase
@@ -222,6 +258,24 @@ Deno.serve(async (req) => {
         succeeded++;
       } catch (err) {
         const errMsg = err instanceof Error ? err.message : String(err);
+
+        // If API key is invalid (401/403), mark it and stop the entire batch
+        if (errMsg.includes("Anthropic API 401") || errMsg.includes("Anthropic API 403")) {
+          if (run.owner_id) {
+            await supabase
+              .from("user_api_keys")
+              .update({ is_valid: false })
+              .eq("user_id", run.owner_id)
+              .eq("provider", "anthropic");
+          }
+          // Release all remaining claimed blocks back to pending
+          await supabase
+            .from("block_overlays_v2")
+            .update({ status: "pending", claimed_by: null, claimed_at: null, last_error: "API key invalid" })
+            .eq("run_id", runId)
+            .in("block_uid", claimedUids);
+          return json(401, { error: "API key is invalid or disabled. Update your key in Settings.", worker_id: workerId });
+        }
 
         // Check attempt_count for retry eligibility
         const { data: overlay } = await supabase

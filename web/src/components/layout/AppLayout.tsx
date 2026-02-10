@@ -17,6 +17,8 @@ import {
   IconFolderPlus,
   IconSchema,
   IconPlug,
+  IconSettings,
+  IconBook,
   IconSun,
   IconMoon,
 } from '@tabler/icons-react';
@@ -26,6 +28,7 @@ const NAV_ITEMS = [
   { label: 'Projects', icon: IconFolderPlus, path: '/app' },
   { label: 'Schemas', icon: IconSchema, path: '/app/schemas' },
   { label: 'Integrations', icon: IconPlug, path: '/app/integrations' },
+  { label: 'Settings', icon: IconSettings, path: '/app/settings' },
 ];
 
 export function AppLayout() {
@@ -108,6 +111,15 @@ export function AppLayout() {
               }}
             />
           ))}
+          <NavLink
+            label="Docs"
+            leftSection={<IconBook size={18} />}
+            component="a"
+            href="/docs"
+            target="_blank"
+            mt="xs"
+            style={{ opacity: 0.7 }}
+          />
         </Box>
       </AppShell.Navbar>
 

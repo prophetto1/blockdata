@@ -82,3 +82,16 @@ export type ProfileRow = {
   created_at: string;
   updated_at: string;
 };
+
+export type UserApiKeyRow = {
+  id: string;
+  user_id: string;
+  provider: string;
+  key_suffix: string;
+  is_valid: boolean | null;
+  default_model: string;
+  default_temperature: number;
+  default_max_tokens: number;
+  created_at: string;
+  updated_at: string;
+};

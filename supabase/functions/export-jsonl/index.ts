@@ -53,7 +53,8 @@ Deno.serve(async (req) => {
     const { data: overlays, error: ovErr } = await supabase
       .from("block_overlays_v2")
       .select("block_uid, overlay_jsonb_confirmed")
-      .eq("run_id", run_id);
+      .eq("run_id", run_id)
+      .eq("status", "confirmed");
     if (ovErr) return json(500, { error: ovErr.message });
     for (const o of overlays || []) {
       overlaysByBlockUid.set(o.block_uid, o.overlay_jsonb_confirmed ?? {});
@@ -84,7 +85,7 @@ Deno.serve(async (req) => {
   // Assemble v2 canonical export shape: { immutable, user_defined }
   let out = "";
   for (const b of blocks) {
-    const overlayData = run_id ? (overlaysByBlockUid.get(b.block_uid) ?? {}) : {};
+    const overlayData = run_id ? (overlaysByBlockUid.get(b.block_uid) ?? null) : null;
     const record = {
       immutable: {
         source_upload: {

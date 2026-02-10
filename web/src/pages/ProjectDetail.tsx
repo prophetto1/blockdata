@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   Card,
@@ -16,20 +16,27 @@ import {
   TextInput,
   Textarea,
   Modal,
+  Select,
+  Progress,
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
+import JSZip from 'jszip';
 import {
   IconUpload,
   IconFileText,
   IconPlayerPlay,
   IconPencil,
   IconTrash,
+  IconBolt,
+  IconCheck,
+  IconDownload,
 } from '@tabler/icons-react';
 import { AppBreadcrumbs } from '@/components/common/AppBreadcrumbs';
 import { supabase } from '@/lib/supabase';
 import { TABLES } from '@/lib/tables';
-import type { ProjectRow, DocumentRow, RunRow } from '@/lib/types';
+import { edgeFetch, edgeJson } from '@/lib/edge';
+import type { ProjectRow, DocumentRow, RunRow, SchemaRow } from '@/lib/types';
 import { PageHeader } from '@/components/common/PageHeader';
 import { ErrorAlert } from '@/components/common/ErrorAlert';
 
@@ -45,6 +52,51 @@ const STATUS_COLOR: Record<string, string> = {
   cancelled: 'gray',
 };
 
+const sortDocumentsByUploadedAt = (rows: DocumentRow[]) =>
+  [...rows].sort((a, b) => new Date(b.uploaded_at).getTime() - new Date(a.uploaded_at).getTime());
+
+async function mapWithConcurrency<T, R>(
+  items: T[],
+  concurrency: number,
+  task: (item: T) => Promise<R>,
+): Promise<R[]> {
+  if (items.length === 0) return [];
+  const results: R[] = new Array(items.length);
+  let cursor = 0;
+  const workerCount = Math.max(1, Math.min(concurrency, items.length));
+
+  const workers = Array.from({ length: workerCount }, async () => {
+    while (cursor < items.length) {
+      const index = cursor++;
+      results[index] = await task(items[index]);
+    }
+  });
+
+  await Promise.all(workers);
+  return results;
+}
+
+function sanitizeFilename(value: string): string {
+  const withoutSpecials = value
+    .trim()
+    .replace(/[<>:"/\\|?*]/g, '_')
+    .replace(/\s+/g, '_');
+  const withoutControls = withoutSpecials
+    .split('')
+    .map((char) => (char.charCodeAt(0) < 32 ? '_' : char))
+    .join('');
+  return withoutControls.slice(0, 80) || 'document';
+}
+
+type ProjectOverlaySummary = {
+  documents: number;
+  totalBlocks: number;
+  confirmed: number;
+  staged: number;
+  pending: number;
+  failed: number;
+};
+
 export default function ProjectDetail() {
   const { projectId } = useParams<{ projectId: string }>();
   const navigate = useNavigate();
@@ -52,6 +104,16 @@ export default function ProjectDetail() {
   const [project, setProject] = useState<ProjectRow | null>(null);
   const [docs, setDocs] = useState<DocumentRow[]>([]);
   const [runs, setRuns] = useState<RunRow[]>([]);
+  const [schemas, setSchemas] = useState<SchemaRow[]>([]);
+  const [selectedSchemaId, setSelectedSchemaId] = useState<string | null>(null);
+  const [summary, setSummary] = useState<ProjectOverlaySummary>({
+    documents: 0,
+    totalBlocks: 0,
+    confirmed: 0,
+    staged: 0,
+    pending: 0,
+    failed: 0,
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -64,16 +126,23 @@ export default function ProjectDetail() {
   // Delete modal state
   const [deleteOpened, { open: openDeleteProject, close: closeDeleteProject }] = useDisclosure(false);
   const [deletingProject, setDeletingProject] = useState(false);
+  const [applyingSchema, setApplyingSchema] = useState(false);
+  const [runningAllPending, setRunningAllPending] = useState(false);
+  const [confirmingAll, setConfirmingAll] = useState(false);
+  const [exportingAll, setExportingAll] = useState(false);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     if (!projectId) return;
 
-    const [projRes, docRes] = await Promise.all([
+    const [projRes, docRes, schemaRes] = await Promise.all([
       supabase.from(TABLES.projects).select('*').eq('project_id', projectId).maybeSingle(),
       supabase.from(TABLES.documents).select('*').eq('project_id', projectId).order('uploaded_at', { ascending: false }),
+      supabase.from(TABLES.schemas).select('*').order('created_at', { ascending: false }),
     ]);
 
     if (projRes.error) { setError(projRes.error.message); setLoading(false); return; }
+    if (docRes.error) { setError(docRes.error.message); setLoading(false); return; }
+    if (schemaRes.error) { setError(schemaRes.error.message); setLoading(false); return; }
     if (!projRes.data) { setError('Project not found'); setLoading(false); return; }
 
     const proj = projRes.data as ProjectRow;
@@ -82,7 +151,14 @@ export default function ProjectDetail() {
     setEditDesc(proj.description ?? '');
 
     const docRows = (docRes.data ?? []) as DocumentRow[];
-    setDocs(docRows);
+    setDocs(sortDocumentsByUploadedAt(docRows));
+
+    const schemaRows = (schemaRes.data ?? []) as SchemaRow[];
+    setSchemas(schemaRows);
+    setSelectedSchemaId((prev) => {
+      if (prev && schemaRows.some((schema) => schema.schema_id === prev)) return prev;
+      return schemaRows[0]?.schema_id ?? null;
+    });
 
     // Fetch runs for all documents in this project
     const convUids = docRows.filter((d) => d.conv_uid).map((d) => d.conv_uid!);
@@ -98,9 +174,367 @@ export default function ProjectDetail() {
     }
 
     setLoading(false);
+  }, [projectId]);
+
+  useEffect(() => { load(); }, [load]);
+
+  useEffect(() => {
+    if (!projectId) return;
+
+    const channel = supabase
+      .channel(`project-documents-${projectId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: TABLES.documents,
+          filter: `project_id=eq.${projectId}`,
+        },
+        (payload) => {
+          if (payload.eventType === 'DELETE') {
+            const oldRow = payload.old as DocumentRow;
+            setDocs((prev) => prev.filter((doc) => doc.source_uid !== oldRow.source_uid));
+            return;
+          }
+
+          const newRow = payload.new as DocumentRow;
+          if (!newRow?.source_uid) return;
+
+          setDocs((prev) => {
+            const existing = prev.filter((doc) => doc.source_uid !== newRow.source_uid);
+            return sortDocumentsByUploadedAt([...existing, newRow]);
+          });
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [projectId]);
+
+  const selectedSchema = useMemo(
+    () => (selectedSchemaId
+      ? schemas.find((schema) => schema.schema_id === selectedSchemaId) ?? null
+      : null),
+    [schemas, selectedSchemaId],
+  );
+
+  const runsInScope = useMemo(
+    () => (selectedSchemaId ? runs.filter((run) => run.schema_id === selectedSchemaId) : runs),
+    [runs, selectedSchemaId],
+  );
+
+  const runIdsInScope = useMemo(
+    () => runsInScope.map((run) => run.run_id),
+    [runsInScope],
+  );
+
+  const schemaRefById = new Map(schemas.map((schema) => [schema.schema_id, schema.schema_ref]));
+
+  useEffect(() => {
+    const documentsInScope = selectedSchemaId
+      ? new Set(runsInScope.map((run) => run.conv_uid)).size
+      : docs.length;
+
+    if (runIdsInScope.length === 0) {
+      setSummary({
+        documents: documentsInScope,
+        totalBlocks: 0,
+        confirmed: 0,
+        staged: 0,
+        pending: 0,
+        failed: 0,
+      });
+      return;
+    }
+
+    let cancelled = false;
+    supabase
+      .from(TABLES.overlays)
+      .select('status, run_id')
+      .in('run_id', runIdsInScope)
+      .then(({ data, error: overlayError }) => {
+        if (cancelled || overlayError) return;
+        let confirmed = 0;
+        let staged = 0;
+        let pending = 0;
+        let failed = 0;
+
+        for (const row of data ?? []) {
+          const status = (row as { status: string }).status;
+          if (status === 'confirmed') confirmed += 1;
+          else if (status === 'ai_complete') staged += 1;
+          else if (status === 'pending' || status === 'claimed') pending += 1;
+          else if (status === 'failed') failed += 1;
+        }
+
+        setSummary({
+          documents: documentsInScope,
+          totalBlocks: (data ?? []).length,
+          confirmed,
+          staged,
+          pending,
+          failed,
+        });
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [docs.length, runIdsInScope, runsInScope, selectedSchemaId]);
+
+  const handleApplySchemaToAll = async () => {
+    if (!selectedSchemaId) {
+      notifications.show({ color: 'yellow', title: 'Select schema', message: 'Choose a schema first.' });
+      return;
+    }
+
+    const ingestedDocs = docs.filter((doc) => doc.status === 'ingested' && !!doc.conv_uid);
+    const alreadyBound = new Set(
+      runs
+        .filter((run) => run.schema_id === selectedSchemaId)
+        .map((run) => run.conv_uid),
+    );
+    const targets = ingestedDocs.filter((doc) => doc.conv_uid && !alreadyBound.has(doc.conv_uid));
+
+    if (targets.length === 0) {
+      notifications.show({
+        color: 'blue',
+        title: 'No new runs needed',
+        message: 'All ingested documents already have a run for this schema.',
+      });
+      return;
+    }
+
+    setApplyingSchema(true);
+    let created = 0;
+    let failed = 0;
+
+    try {
+      await mapWithConcurrency(targets, 5, async (doc) => {
+        try {
+          await edgeJson<{ run_id: string; total_blocks: number }>('runs', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              conv_uid: doc.conv_uid,
+              schema_id: selectedSchemaId,
+            }),
+          });
+          created += 1;
+        } catch {
+          failed += 1;
+        }
+      });
+
+      notifications.show({
+        color: failed === 0 ? 'green' : 'yellow',
+        title: 'Schema applied across project',
+        message: `${created} run(s) created, ${failed} failed.`,
+      });
+      await load();
+    } finally {
+      setApplyingSchema(false);
+    }
   };
 
-  useEffect(() => { load(); }, [projectId]);
+  const handleRunAllPending = async () => {
+    if (!selectedSchemaId) {
+      notifications.show({ color: 'yellow', title: 'Select schema', message: 'Choose a schema first.' });
+      return;
+    }
+
+    const candidateRunIds = runs
+      .filter((run) => run.schema_id === selectedSchemaId && run.status !== 'cancelled')
+      .map((run) => run.run_id);
+
+    if (candidateRunIds.length === 0) {
+      notifications.show({ color: 'blue', title: 'No runs found', message: 'No runs exist for this schema in this project.' });
+      return;
+    }
+
+    setRunningAllPending(true);
+    let totalClaimed = 0;
+    let failedDispatches = 0;
+    let rounds = 0;
+
+    try {
+      let activeRunIds = [...candidateRunIds];
+
+      while (activeRunIds.length > 0 && rounds < 10) {
+        rounds += 1;
+        const results = await mapWithConcurrency(activeRunIds, 5, async (runId) => {
+          try {
+            const result = await edgeJson<{
+              run_id: string;
+              claimed: number;
+              remaining_pending: number;
+            }>('worker', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                run_id: runId,
+                batch_size: 100,
+              }),
+            });
+            return { ...result, ok: true };
+          } catch {
+            return { run_id: runId, claimed: 0, remaining_pending: 0, ok: false };
+          }
+        });
+
+        totalClaimed += results.reduce((sum, result) => sum + (result.claimed ?? 0), 0);
+        failedDispatches += results.filter((result) => !result.ok).length;
+        activeRunIds = results
+          .filter((result) => (result.remaining_pending ?? 0) > 0)
+          .map((result) => result.run_id);
+      }
+
+      notifications.show({
+        color: failedDispatches === 0 ? 'green' : 'yellow',
+        title: 'Run All Pending dispatched',
+        message: `${totalClaimed} block claim(s) dispatched across ${rounds} round(s). ${failedDispatches} run dispatch failures.`,
+      });
+      await load();
+    } finally {
+      setRunningAllPending(false);
+    }
+  };
+
+  const handleConfirmAll = async () => {
+    if (!selectedSchemaId) {
+      notifications.show({ color: 'yellow', title: 'Select schema', message: 'Choose a schema first.' });
+      return;
+    }
+
+    const runIds = runs.filter((run) => run.schema_id === selectedSchemaId).map((run) => run.run_id);
+    if (runIds.length === 0) {
+      notifications.show({ color: 'blue', title: 'No runs found', message: 'No runs to confirm for this schema.' });
+      return;
+    }
+
+    setConfirmingAll(true);
+    let confirmedCount = 0;
+    let failedRuns = 0;
+
+    try {
+      const { data: stagedRows, error: stagedError } = await supabase
+        .from(TABLES.overlays)
+        .select('run_id')
+        .in('run_id', runIds)
+        .eq('status', 'ai_complete');
+
+      if (stagedError) throw new Error(stagedError.message);
+      const runIdsWithStaged = Array.from(
+        new Set((stagedRows ?? []).map((row) => (row as { run_id: string }).run_id)),
+      );
+
+      if (runIdsWithStaged.length === 0) {
+        notifications.show({ color: 'blue', title: 'Nothing to confirm', message: 'No staged overlays found.' });
+        return;
+      }
+
+      await mapWithConcurrency(runIdsWithStaged, 5, async (runId) => {
+        const { data, error: rpcError } = await supabase.rpc('confirm_overlays', {
+          p_run_id: runId,
+          p_block_uids: null,
+        });
+        if (rpcError) {
+          failedRuns += 1;
+          return;
+        }
+        confirmedCount += Number(data ?? 0);
+      });
+
+      notifications.show({
+        color: failedRuns === 0 ? 'green' : 'yellow',
+        title: 'Bulk confirmation complete',
+        message: `${confirmedCount} overlay(s) confirmed. ${failedRuns} run(s) failed.`,
+      });
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setConfirmingAll(false);
+    }
+  };
+
+  const handleExportAllZip = async () => {
+    if (!selectedSchemaId) {
+      notifications.show({ color: 'yellow', title: 'Select schema', message: 'Choose a schema first.' });
+      return;
+    }
+
+    const runsForSchema = runs.filter((run) => run.schema_id === selectedSchemaId);
+    if (runsForSchema.length === 0) {
+      notifications.show({ color: 'blue', title: 'No runs found', message: 'No runs to export for this schema.' });
+      return;
+    }
+
+    // Keep newest run per document (runs are sorted descending by started_at in load()).
+    const latestRunByConvUid = new Map<string, RunRow>();
+    for (const run of runsForSchema) {
+      if (!latestRunByConvUid.has(run.conv_uid)) {
+        latestRunByConvUid.set(run.conv_uid, run);
+      }
+    }
+    const exportRuns = Array.from(latestRunByConvUid.values());
+
+    setExportingAll(true);
+    try {
+      const docsByConvUid = new Map(
+        docs
+          .filter((doc) => !!doc.conv_uid)
+          .map((doc) => [doc.conv_uid as string, doc]),
+      );
+
+      const exportedFiles = await mapWithConcurrency(exportRuns, 3, async (run) => {
+        const resp = await edgeFetch(`export-jsonl?run_id=${encodeURIComponent(run.run_id)}`, {
+          method: 'GET',
+        });
+        if (!resp.ok) {
+          const text = await resp.text().catch(() => '');
+          throw new Error(`Export failed for run ${run.run_id.slice(0, 8)}: HTTP ${resp.status} ${text.slice(0, 200)}`);
+        }
+        const jsonl = await resp.text();
+        const doc = docsByConvUid.get(run.conv_uid);
+        const titleBase = doc?.doc_title ?? doc?.source_uid ?? run.conv_uid;
+        const safeTitle = sanitizeFilename(titleBase);
+        const runSuffix = run.run_id.slice(0, 8);
+        return {
+          filename: `${safeTitle}-${runSuffix}.jsonl`,
+          content: jsonl.endsWith('\n') ? jsonl : `${jsonl}\n`,
+        };
+      });
+
+      const zip = new JSZip();
+      for (const file of exportedFiles) {
+        zip.file(file.filename, file.content);
+      }
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      const blobUrl = URL.createObjectURL(zipBlob);
+      const link = document.createElement('a');
+      const schemaLabel = selectedSchema?.schema_ref ?? selectedSchemaId;
+      link.href = blobUrl;
+      link.download = `project-${projectId}-${sanitizeFilename(schemaLabel)}-exports.zip`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(blobUrl);
+
+      notifications.show({
+        color: 'green',
+        title: 'Export complete',
+        message: `ZIP exported with ${exportRuns.length} per-document JSONL file(s).`,
+      });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setExportingAll(false);
+    }
+  };
 
   const handleSave = async () => {
     if (!projectId || !editName.trim()) return;
@@ -152,6 +586,92 @@ export default function ProjectDetail() {
           Delete project
         </Button>
       </PageHeader>
+
+      <Paper p="sm" withBorder mb="md">
+        <Stack gap="xs">
+          <Group justify="space-between" wrap="wrap">
+            <Group gap="xs" wrap="wrap">
+              <Select
+                label="Schema scope"
+                placeholder={schemas.length > 0 ? 'Select schema' : 'No schemas yet'}
+                data={schemas.map((schema) => ({
+                  value: schema.schema_id,
+                  label: schema.schema_ref,
+                }))}
+                value={selectedSchemaId}
+                onChange={setSelectedSchemaId}
+                searchable
+                clearable
+                w={280}
+              />
+              <Button
+                size="xs"
+                variant="light"
+                leftSection={<IconCheck size={14} />}
+                onClick={handleApplySchemaToAll}
+                loading={applyingSchema}
+                disabled={!selectedSchemaId || docs.length === 0}
+              >
+                Apply Schema to All
+              </Button>
+              <Button
+                size="xs"
+                variant="light"
+                leftSection={<IconBolt size={14} />}
+                onClick={handleRunAllPending}
+                loading={runningAllPending}
+                disabled={!selectedSchemaId || runsInScope.length === 0}
+              >
+                Run All Pending
+              </Button>
+              <Button
+                size="xs"
+                variant="light"
+                leftSection={<IconCheck size={14} />}
+                onClick={handleConfirmAll}
+                loading={confirmingAll}
+                disabled={!selectedSchemaId || runsInScope.length === 0}
+              >
+                Confirm All
+              </Button>
+              <Button
+                size="xs"
+                variant="light"
+                leftSection={<IconDownload size={14} />}
+                onClick={handleExportAllZip}
+                loading={exportingAll}
+                disabled={!selectedSchemaId || runsInScope.length === 0}
+              >
+                Export All (ZIP)
+              </Button>
+            </Group>
+            <Text size="xs" c="dimmed">
+              {selectedSchema ? `Active schema: ${selectedSchema.schema_ref}` : 'Select a schema to use bulk actions'}
+            </Text>
+          </Group>
+
+          <Group justify="space-between" wrap="wrap">
+            <Text size="xs" c="dimmed">
+              {summary.documents} document(s) • {summary.totalBlocks} block overlay(s)
+            </Text>
+            <Group gap={6}>
+              <Badge size="xs" color="green" variant="light">{summary.confirmed} confirmed</Badge>
+              <Badge size="xs" color="yellow" variant="light">{summary.staged} staged</Badge>
+              <Badge size="xs" color="blue" variant="light">{summary.pending} pending</Badge>
+              <Badge size="xs" color="red" variant="light">{summary.failed} failed</Badge>
+            </Group>
+          </Group>
+
+          {summary.totalBlocks > 0 && (
+            <Progress.Root size="sm">
+              <Progress.Section value={(summary.confirmed / summary.totalBlocks) * 100} color="green" />
+              <Progress.Section value={(summary.staged / summary.totalBlocks) * 100} color="yellow" />
+              <Progress.Section value={(summary.pending / summary.totalBlocks) * 100} color="blue" />
+              <Progress.Section value={(summary.failed / summary.totalBlocks) * 100} color="red" />
+            </Progress.Root>
+          )}
+        </Stack>
+      </Paper>
 
       {error && <ErrorAlert message={error} />}
 
@@ -226,7 +746,7 @@ export default function ProjectDetail() {
                     </Badge>
                   </Group>
                   <Text size="xs" c="dimmed" mt={2}>
-                    {r.completed_blocks}/{r.total_blocks} blocks
+                    {(schemaRefById.get(r.schema_id) ?? 'unknown schema')} • {r.completed_blocks}/{r.total_blocks} blocks
                     {r.failed_blocks > 0 && <Text span c="red" size="xs"> ({r.failed_blocks} failed)</Text>}
                   </Text>
                 </Card>

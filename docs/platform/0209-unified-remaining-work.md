@@ -1,6 +1,7 @@
 # Unified Remaining Work: BlockData Platform
 
 **Date:** 2026-02-09
+**Last verified (repo):** 2026-02-10
 **Scope:** Everything between current state and production-ready platform
 **Sources consolidated:** `0209-projects-hierarchy-plan-review.md`, `0209-grid-toolbar-and-layout-plan.md`, `web-frontend-buildout-checklist.md`, session discussions on staging layer / editing track / AI worker
 
@@ -10,23 +11,25 @@
 
 **What works end-to-end today:**
 - Auth (login, register, session, sign-out)
-- Upload single file → mdast parse → blocks in DB → view in AG Grid
+- Multi-file upload (up to 10 files per batch) with drag/drop + per-file status badges
 - Schema registration (JSON upload, SHA256 dedup)
 - Run creation (generates pending overlay rows per block)
 - AG Grid viewer with dynamic schema columns, real-time overlay updates, pagination
 - Export JSONL (canonical v3.0 shape: `{ immutable, user_defined }`)
 - Projects hierarchy (create project → upload within project → scoped navigation)
+- Breadcrumbs + old-route redirects for legacy flat URLs
+- Project-level bulk actions on ProjectDetail: apply schema to all, run all pending, confirm all, export all (ZIP)
+- Project-level status dashboard on ProjectDetail (`confirmed/staged/pending/failed`) scoped by selected schema
+- Realtime document status updates on ProjectDetail via `documents_v2` subscription
+- Review/confirm workflow in DocumentDetail grid: staged indicators, inline staging edits, per-block confirm/reject, and bulk "Confirm All Staged"
+- Run export now includes only confirmed overlays (`user_defined.data` is `null` for unconfirmed blocks)
 - Dark/light theme toggle, Linear-aesthetic design tokens
 
 **What does NOT work:**
-- No AI worker — overlay rows stay `pending` forever; the product's core value loop is broken
-- No staging/confirm — if overlays were filled, they'd go straight to final with no review
-- No multi-file upload — single FileInput, one file at a time
+- AI worker is implemented in-repo, but live runs still require invocation wiring + `ANTHROPIC_API_KEY` secret; otherwise overlays stay `pending`
+- Bulk export currently targets ZIP of per-document JSONL; merged JSONL/CSV variants are still pending
 - No document reconstruction — no way to get a revised document back
-- Docling conversion service blocked (GCP 403) — DOCX/PDF uploads stall at "converting"
-- Grid gets only ~60% of viewport height
-- Upload wizard conflates upload + schema + run into one flow
-- No breadcrumbs, no old-route redirects, dead pages still on disk
+- Non-Markdown conversion (Docling track) blocked by Cloud Run access policy (403 per status doc) — DOCX/PDF uploads stall at "converting"
 
 ---
 
@@ -76,7 +79,7 @@ New statuses:
 
 Migration: Update the check constraint or enum (if one exists) on `block_overlays_v2.status`.
 
-**Current repo note:** `block_overlays_v2` currently has a CHECK constraint that limits status to `pending|claimed|complete|failed`. This must be updated to include at least `ai_complete` and `confirmed` (and ideally deprecate `complete` to avoid ambiguity).
+**Current repo note:** Migration 009 updates `block_overlays_v2_status_check` to `pending|claimed|ai_complete|confirmed|failed` (and drops legacy `complete`).
 
 ### 1.3 Define schema `prompt_config` convention
 
@@ -248,14 +251,9 @@ Fix what's broken or incomplete in the current frontend before adding new featur
 
 ### 3.1 Split Upload.tsx
 
-Current: 3-step wizard (upload + schema + run) — conflates document upload with run creation.
+**Current repo:** Upload is upload-only when accessed via `/app/projects/:projectId/upload`, and now supports multi-file drag/drop with per-file status + retry.
 
-New: Upload page is upload-only when accessed via `/app/projects/:projectId/upload`:
-- Dropzone (multi-file) — see Phase 5
-- Optional doc title per file
-- On completion → navigate back to ProjectDetail
-
-Run creation moves to a separate action (Phase 4's "Apply Schema" control, or a "New Run" button on ProjectDetail).
+Phase 5 upload work is complete in current repo.
 
 ### 3.2 Remove dead pages and flat routes
 
@@ -755,7 +753,7 @@ Phase 9 (Polish) ← can start anytime, intensifies after Phase 6
 
 ### Phase 2 — AI Worker (Distributed) ✅ (completed 2026-02-10)
 - [x] Migration 010: `claim_overlay_batch(run_id, batch_size, worker_id)` RPC — `FOR UPDATE SKIP LOCKED`
-- [x] Created + deployed `supabase/functions/worker/index.ts` (stateless, re-entrant, verify_jwt=true)
+- [x] Created `supabase/functions/worker/index.ts` (stateless, re-entrant, verify_jwt=true)
 - [x] Atomic claim via `claim_overlay_batch` RPC with `claimed_by` provenance
 - [x] LLM call via Anthropic Messages API with `tool_use` for structured output from schema `prompt_config`
 - [x] Write to `overlay_jsonb_staging`, set status `ai_complete`
@@ -786,30 +784,30 @@ Phase 9 (Polish) ← can start anytime, intensifies after Phase 6
 - [x] Grid fills remaining viewport (`calc(100vh - 230px)`)
 - [x] Pagination moves inside grid container (flex column layout)
 - [x] RunSelector retained as Apply Schema control (existing component works well)
-- [x] View mode toggle: Compact (42px fixed rows) / Expanded (autoHeight + wrapText), persists to localStorage
+- [x] View mode toggle: Compact / Comfortable (row density), persists to localStorage
 - [x] Column visibility menu (checkbox menu via Mantine Menu, toggles per column)
 - [x] Block type filter (MultiSelect, filters rowData before passing to AG Grid)
 
-### Phase 5 — Multi-File Upload
-- [ ] Replace FileInput with Mantine Dropzone (max 10 files)
-- [ ] Parallel ingest calls with per-file status display
-- [ ] Migration: add `documents_v2` to Realtime publication
-- [ ] ProjectDetail: live document status (Realtime or polling)
+### Phase 5 — Multi-File Upload ✅ (completed 2026-02-10)
+- [x] Replace FileInput with Mantine Dropzone-style drag/drop uploader (max 10 files)
+- [x] Parallel ingest calls with per-file status display
+- [x] Migration: add `documents_v2` to Realtime publication
+- [x] ProjectDetail: live document status (Realtime subscription)
 
-### Phase 5B — Project-Level Bulk Operations
-- [ ] "Apply Schema to All Documents" button on ProjectDetail
-- [ ] "Run All Pending" with concurrent worker dispatch across project
-- [ ] "Confirm All" project-wide bulk confirm
-- [ ] "Export All" (zip of per-doc JSONL or single merged file)
-- [ ] Project-level aggregate progress dashboard (confirmed/staged/pending/failed)
+### Phase 5B — Project-Level Bulk Operations ✅ (completed 2026-02-10)
+- [x] "Apply Schema to All Documents" button on ProjectDetail
+- [x] "Run All Pending" with concurrent worker dispatch across project
+- [x] "Confirm All" project-wide bulk confirm
+- [x] "Export All (ZIP)" (one JSONL per document)
+- [x] Project-level aggregate progress dashboard (confirmed/staged/pending/failed)
 
-### Phase 6 — Review & Confirm UX
-- [ ] Grid: visual indicator for staged vs confirmed cells
-- [ ] Grid: inline editing of staged overlay values
-- [ ] Toolbar: "Confirm All Staged" bulk action
-- [ ] Per-block accept/reject controls
-- [ ] Export: filter by confirmation status
-- [ ] Wire confirmation path through RPC (no direct client writes to confirmed column)
+### Phase 6 — Review & Confirm UX ✅ (completed 2026-02-10)
+- [x] Grid: visual indicator for staged vs confirmed cells
+- [x] Grid: inline editing of staged overlay values
+- [x] Toolbar: "Confirm All Staged" bulk action
+- [x] Per-block accept/reject controls
+- [x] Export: filter by confirmation status
+- [x] Wire confirmation path through RPC (no direct client writes to confirmed column)
 
 ### Phase 7 — Export & Reconstruction
 - [ ] Enhanced export options (confirmed only, all, CSV, per-doc)

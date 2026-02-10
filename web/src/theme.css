@@ -38,3 +38,10 @@ body {
   align-items: flex-start;
 }
 
+.overlay-staged-cell {
+  background-color: rgba(250, 176, 5, 0.14);
+}
+
+.overlay-confirmed-cell {
+  background-color: rgba(46, 189, 89, 0.12);
+}

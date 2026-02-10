@@ -17,17 +17,10 @@ import Upload from '@/pages/Upload';
 import DocumentDetail from '@/pages/DocumentDetail';
 import Schemas from '@/pages/Schemas';
 import RunDetail from '@/pages/RunDetail';
-import LoginSplit from '@/pages/concepts/LoginSplit';
-import LoginMinimal from '@/pages/concepts/LoginMinimal';
-import RegisterSplit from '@/pages/concepts/RegisterSplit';
-import LandingModern from '@/pages/concepts/LandingModern';
-import LandingV2 from '@/pages/concepts/LandingV2';
-import HowItWorksV2 from '@/pages/concepts/HowItWorksV2';
-import UseCasesV2 from '@/pages/concepts/UseCasesV2';
-import IntegrationsV2 from '@/pages/concepts/IntegrationsV2';
-import HowItWorksModern from '@/pages/concepts/HowItWorksModern';
-import UseCasesModern from '@/pages/concepts/UseCasesModern';
-import IntegrationsModern from '@/pages/concepts/IntegrationsModern';
+import Settings from '@/pages/Settings';
+import LoginSplit from '@/pages/LoginSplit';
+import RegisterSplit from '@/pages/RegisterSplit';
+
 
 export const router = createBrowserRouter([
   // Marketing pages: full-width with PublicNav
@@ -36,8 +29,8 @@ export const router = createBrowserRouter([
     children: [
       { path: '/', element: <Landing /> },
       { path: '/how-it-works', element: <HowItWorks /> },
-      { path: '/use-cases', element: <UseCases /> },
-      { path: '/integrations', element: <MarketingIntegrations /> },
+      { path: '/use-cases', element: <UseCases withNav={false} /> },
+      { path: '/integrations', element: <MarketingIntegrations withNav={false} /> },
     ],
   },
   // Auth pages: full-bleed (use the split concepts)
@@ -56,19 +49,6 @@ export const router = createBrowserRouter([
     ],
   },
   
-  // Concept previews (Standalone, no layout wrapper)
-  { path: '/concepts/login-split', element: <LoginSplit /> },
-  { path: '/concepts/login-minimal', element: <LoginMinimal /> },
-  { path: '/concepts/register-split', element: <RegisterSplit /> },
-  { path: '/concepts/landing-modern', element: <LandingModern /> },
-  { path: '/concepts/landing-v2', element: <LandingV2 /> },
-  { path: '/concepts/how-it-works-v2', element: <HowItWorksV2 /> },
-  { path: '/concepts/use-cases-v2', element: <UseCasesV2 /> },
-  { path: '/concepts/integrations-v2', element: <IntegrationsV2 /> },
-  { path: '/concepts/how-it-works-modern', element: <HowItWorksModern /> },
-  { path: '/concepts/use-cases-modern', element: <UseCasesModern /> },
-  { path: '/concepts/integrations-modern', element: <IntegrationsModern /> },
-
   {
     element: <AuthGuard />,
     children: [
@@ -86,6 +66,9 @@ export const router = createBrowserRouter([
 
           // Global schemas (not project-scoped)
           { path: '/app/schemas', element: <Schemas /> },
+
+          // Settings (API keys, model defaults)
+          { path: '/app/settings', element: <Settings /> },
 
           // Legacy flat routes → redirect to project-scoped equivalents
           { path: '/app/documents/:sourceUid', element: <LegacyDocumentRedirect /> },
