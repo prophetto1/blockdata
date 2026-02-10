@@ -17,24 +17,37 @@ export default defineConfig({
 			],
 			sidebar: [
 				{
-					label: 'Concepts',
-					autogenerate: { directory: 'concepts' },
+					label: 'Getting Started',
+					autogenerate: { directory: 'getting-started' },
 				},
 				{
-					label: 'Workflows',
-					autogenerate: { directory: 'workflows' },
+					label: 'Projects',
+					autogenerate: { directory: 'projects' },
 				},
 				{
-					label: 'Reference',
-					autogenerate: { directory: 'reference' },
+					label: 'Blocks',
+					autogenerate: { directory: 'blocks' },
 				},
 				{
-					label: 'Architecture',
-					autogenerate: { directory: 'architecture' },
+					label: 'Schemas',
+					autogenerate: { directory: 'schemas' },
+				},
+				{
+					label: 'Processing',
+					autogenerate: { directory: 'processing' },
+				},
+				{
+					label: 'Review & Export',
+					autogenerate: { directory: 'review-and-export' },
 				},
 				{
 					label: 'Integrations',
 					autogenerate: { directory: 'integrations' },
+				},
+				{
+					label: 'Architecture',
+					collapsed: true,
+					autogenerate: { directory: 'architecture' },
 				},
 				{
 					label: 'Status',
