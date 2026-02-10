@@ -1,4 +1,4 @@
-# PRD — MD-Annotate v2.0 (name change planned)
+# PRD — BlockData v2.0 (name change planned)
 
 **Purpose:** The envisioned final product — features, users, value, success criteria
 **Time Orientation:** Future (end state)
@@ -16,7 +16,7 @@ Companion documents:
 
 ### 1.1 One-Sentence Definition
 
-> MD-Annotate is a document intelligence platform that decomposes uploaded documents into ordered, typed blocks and lets users apply custom extraction schemas so that AI workers produce structured, per-block metadata at any scale — from a single manuscript to a 28,000-document corpus.
+> BlockData is a document intelligence platform that decomposes uploaded documents into ordered, typed blocks and lets users apply custom extraction schemas so that AI workers produce structured, per-block metadata at any scale — from a single manuscript to a 28,000-document corpus.
 
 ### 1.2 Core Belief
 
@@ -24,7 +24,7 @@ Companion documents:
 
 ### 1.3 Success Vision
 
-> When MD-Annotate succeeds, a legal researcher uploads 28,000 Supreme Court opinions, defines five extraction schemas (paragraph classification, entity extraction, citation graph, rule extraction, topic tagging), and has per-paragraph structured data across the entire corpus — with every extracted field traceable to a specific paragraph in a specific opinion. A general counsel uploads a 45-page contract, applies a clause review schema, and gets an obligation register, a risk heat map, and a deadline tracker — each item linked to the clause that created it. A writer uploads a 39,000-word manuscript, applies a prose editing schema embedding Strunk's 18 rules, and gets a revised manuscript, a narrative flow assessment, and a keyword map — produced paragraph by paragraph at consistent quality, then reassembled in reading order.
+> When BlockData succeeds, a legal researcher uploads 28,000 Supreme Court opinions, defines five extraction schemas (paragraph classification, entity extraction, citation graph, rule extraction, topic tagging), and has per-paragraph structured data across the entire corpus — with every extracted field traceable to a specific paragraph in a specific opinion. A general counsel uploads a 45-page contract, applies a clause review schema, and gets an obligation register, a risk heat map, and a deadline tracker — each item linked to the clause that created it. A writer uploads a 39,000-word manuscript, applies a prose editing schema embedding Strunk's 18 rules, and gets a revised manuscript, a narrative flow assessment, and a keyword map — produced paragraph by paragraph at consistent quality, then reassembled in reading order.
 
 ---
 
@@ -34,7 +34,7 @@ Companion documents:
 
 ### Directive
 
-MD-Annotate is a **web application**, not a data pipeline with a web interface bolted on. The block viewer, schema creation wizard, run management dashboard, and result inspection tools are the primary product experience. Users work in the browser. The platform succeeds when users never need to leave it to accomplish their goals.
+BlockData is a **web application**, not a data pipeline with a web interface bolted on. The block viewer, schema creation wizard, run management dashboard, and result inspection tools are the primary product experience. Users work in the browser. The platform succeeds when users never need to leave it to accomplish their goals.
 
 ### What This Means in Practice
 

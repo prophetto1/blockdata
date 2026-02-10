@@ -35,3 +35,4 @@ scripts/export-test.jsonl
 scripts/test-document.md
 ref-repos/mdast
 ref-repos/remark
+.vercel

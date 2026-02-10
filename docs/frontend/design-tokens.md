@@ -1,4 +1,4 @@
-# MD-Annotate Design Token Specification
+# BlockData Design Token Specification
 
 **Date:** 2026-02-09
 **Style:** shadcn (via MantineHub)

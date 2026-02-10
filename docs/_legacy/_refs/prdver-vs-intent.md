@@ -1,5 +1,5 @@
 Product Vision (What It Is)
-One-Sentence Definition: MD-Annotate is a document intelligence platform that transforms unstructured documents into permanent, identity-bearing block inventories that users can annotate through multiple swappable schemas—enabling parallel AI processing, multi-lens analysis, and document reconstruction.
+One-Sentence Definition: BlockData is a document intelligence platform that transforms unstructured documents into permanent, identity-bearing block inventories that users can annotate through multiple swappable schemas—enabling parallel AI processing, multi-lens analysis, and document reconstruction.
 
 Core Belief: You believe that the "block" (paragraph-level unit) should be a first-class citizen with permanent identity and provenance—not a disposable chunk on the way to a vector store. Same blocks, infinite lenses.
 
@@ -363,7 +363,7 @@ Chunking is arbitrary (token windows, recursive split)
 Metadata is bolted on after the fact, if at all
 Re-chunking = start over from scratch
 No provenance from retrieved chunk back to source
-MD-Annotate Block Architecture in Vector Pipeline
+BlockData Block Architecture in Vector Pipeline
 Document → Block Inventory (permanent) → Annotation Schema(s) → Enriched Blocks → Embedding Strategy → Vectors + Metadata → Vector DB → Filtered Retrieval
 The block is the chunk. But it's a chunk with:
 
@@ -373,7 +373,7 @@ Full provenance (doc_uid → source document)
 Annotation layer (schema-defined metadata)
 Stage-by-Stage Breakdown
 Stage 1: Chunking → Block Inventory
-Traditional	MD-Annotate
+Traditional	BlockData
 Arbitrary token windows (512, 1024)	Semantic units (paragraphs, headings, list items)
 Overlap heuristics to preserve context	section_path preserves hierarchical context
 No chunk identity	block_uid = permanent anchor
@@ -381,7 +381,7 @@ Re-chunk = lose everything	Blocks are permanent; re-embed without re-parsing
 What you gain: Chunks that respect document structure. A heading stays a heading. A paragraph doesn't get split mid-sentence. The section hierarchy travels with every block.
 
 Stage 2: Metadata Enrichment (Annotation Layer)
-This is where MD-Annotate changes everything. Before embedding, you run annotation schemas that enrich blocks with retrieval-relevant metadata.
+This is where BlockData changes everything. Before embedding, you run annotation schemas that enrich blocks with retrieval-relevant metadata.
 
 Example: Annotation Schema for Vector Enrichment
 
@@ -497,7 +497,7 @@ Retrieved block has section_path = ["Opinion", "Analysis", "Fourth Amendment"]
 
 Traditional pipeline: Change your chunking strategy? Start over.
 
-MD-Annotate: Blocks are permanent. You can:
+BlockData: Blocks are permanent. You can:
 
 | Operation | What Happens |
 |-----------|--------------|
@@ -711,8 +711,8 @@ Ephemeral — chunks exist only in the vector DB
 Tangled — enrichment logic mixed with chunking logic
 Non-reusable — change your strategy, re-run everything
 No identity — can't refer back to "chunk X" reliably
-Where MD-Annotate Differs Fundamentally
-Aspect	Current Best Practice	MD-Annotate
+Where BlockData Differs Fundamentally
+Aspect	Current Best Practice	BlockData
 Chunk identity	None or ephemeral ID	Permanent block_uid (content-addressed hash)
 Chunk boundary	Algorithmic (semantic, token-based)	Authorial (paragraph, heading, list item)
 Enrichment	Baked into chunking pipeline	Separate annotation layer, run N schemas
@@ -723,7 +723,7 @@ Structure	Lost or approximated	section_path, block_type, block_index native
 The Key Architectural Insight
 Current pipelines treat chunking as a transformation step — document goes in, chunks come out, document is discarded.
 
-MD-Annotate treats the block inventory as a permanent layer — the canonical representation of the document that all downstream operations reference.
+BlockData treats the block inventory as a permanent layer — the canonical representation of the document that all downstream operations reference.
 
 CURRENT:
 Document → [chunking black box] → Chunks → Vectors → DB
@@ -744,7 +744,7 @@ Re-process all documents
 Re-embed everything
 Re-index vector DB
 Hope it's better
-MD-Annotate:
+BlockData:
 
 Blocks are already there (permanent)
 Design new enrichment schema
@@ -759,7 +759,7 @@ Chunk with metadata A for use case A
 Need metadata B? Re-chunk with different pipeline
 Now you have two separate chunk sets
 Chunks don't align — can't compare or combine
-MD-Annotate:
+BlockData:
 
 Blocks exist (once)
 Run Schema A → annotation layer A
@@ -777,14 +777,14 @@ Metadata extraction	Could be schema-driven, not hard-coded
 Proposition extraction	Useful — but propositions should link back to source block
 They're building increasingly complex chunking pipelines because they don't have a stable intermediate representation.
 
-MD-Annotate is that stable intermediate representation.
+BlockData is that stable intermediate representation.
 
 The Proposition/Atomic Unit Question
 One thing the current landscape does that's genuinely interesting: sub-block decomposition.
 
 A paragraph might contain 3 distinct claims. Current systems extract propositions and embed each separately. That's useful for precise retrieval.
 
-MD-Annotate could handle this as:
+BlockData could handle this as:
 
 Option A: Annotation field
 
@@ -817,7 +817,7 @@ Proposition extraction (atomic claims)
 Agentic chunking (LLM-guided)
 What they all share: Chunks are ephemeral, enrichment is tangled with chunking, no stable identity, hard to iterate.
 
-What MD-Annotate adds: Permanent block inventory with identity, separate annotation layer for enrichment, multiple schemas on same blocks, full provenance.
+What BlockData adds: Permanent block inventory with identity, separate annotation layer for enrichment, multiple schemas on same blocks, full provenance.
 
 The sophisticated chunking strategies are duct tape on a broken abstraction. The block is the right abstraction.
 
@@ -882,7 +882,7 @@ Deterministic, content-addressed, hierarchical.
 Embed small chunks → retrieve → look up parent chunk somehow → return parent
 ```
 
-**MD-Annotate:**
+**BlockData:**
 ```
 Embed sentence blocks → retrieve sentence → SELECT * FROM blocks WHERE block_uid = sentence.parent_block_uid → return paragraph
 ```
@@ -1831,7 +1831,7 @@ two things - what is a better brand product name for this
 1:40 AM
 
 Synthesized naming concepts around document decomposition and structural hierarchy
-Good question. "MD-Annotate" is descriptive but not memorable or brandable. Let me explore directions:
+Good question. "BlockData" is descriptive but not memorable or brandable. Let me explore directions:
 
 Naming Directions
 Direction 1: The Block/Unit Concept

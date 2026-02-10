@@ -12,7 +12,7 @@ Core Pipeline
 
 Product Summary
 
-Internal Name: MD-Annotate
+Internal Name: BlockData
 Real Product Name - TBD 
 Candidates include: Spectrum, Prism, Strata, etc. 
 
@@ -30,7 +30,7 @@ Candidates include: Spectrum, Prism, Strata, etc.
 Product Vision (What It Is)
 
 One-Sentence Definition:
-MD-Annotate  is a document intelligence platform that transforms unstructured documents into permanent, identity-bearing block inventories that users can annotate through multiple swappable schemas—enabling parallel AI processing, multi-lens analysis, and document reconstruction.
+BlockData  is a document intelligence platform that transforms unstructured documents into permanent, identity-bearing block inventories that users can annotate through multiple swappable schemas—enabling parallel AI processing, multi-lens analysis, and document reconstruction.
 Core Belief:
 You believe that the "block" (paragraph-level unit) should be a first-class citizen with permanent identity and provenance—not a disposable chunk on the way to a vector store. Same blocks, infinite lenses.
 

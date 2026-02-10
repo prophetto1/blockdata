@@ -246,7 +246,7 @@
 
 ## Naming Note
 
-The PRD header says "MD-Annotate v2.0 (name change planned)." If you're considering alternatives, here are naming directions derived from the product's actual identity:
+The PRD header says "BlockData v2.0 (name change planned)." If you're considering alternatives, here are naming directions derived from the product's actual identity:
 
 | Direction | Examples | Rationale |
 |---|---|---|
@@ -256,4 +256,4 @@ The PRD header says "MD-Annotate v2.0 (name change planned)." If you're consider
 | **Document intelligence** | DocParse, Stratum, Substrata | Layers of meaning extracted from document substrate |
 | **Graph destination** | GraphSeed, Provenance, Tracepoint | Nods to the KG construction end-state |
 
-The strongest names probably combine the mechanism (blocks, schemas) with the outcome (knowledge, structure, graphs). "MD-Annotate" is accurate but sounds like a Markdown annotation utility — underselling the multi-format, multi-schema, corpus-scale, graph-construction platform it actually is.
+The strongest names probably combine the mechanism (blocks, schemas) with the outcome (knowledge, structure, graphs). "BlockData" is accurate but sounds like a Markdown annotation utility — underselling the multi-format, multi-schema, corpus-scale, graph-construction platform it actually is.

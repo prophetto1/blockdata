@@ -405,7 +405,7 @@
 ### 13.1 Deployment
 
 - [x] `vercel.json` SPA config present
-- [x] Vercel project created and deployed (https://md-annotate.vercel.app)
+- [x] Vercel project created and deployed (https://blockdata.run)
 - [ ] Custom domain configured
 - [x] Environment variables set in Vercel dashboard
 - [ ] Preview deployments for PRs
@@ -444,7 +444,7 @@
 | **Performance** | Needs code-splitting |
 | **Accessibility** | Not audited |
 | **Visual Design** | Functional, not polished |
-| **Deployment** | Live at md-annotate.vercel.app |
+| **Deployment** | Live at blockdata.run |
 | **CI/CD** | Not configured |
 
 **Approximate code:** ~2,000 lines of production React across 31 source files.

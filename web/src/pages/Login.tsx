@@ -61,7 +61,7 @@ export default function Login() {
   return (
     <form onSubmit={handleSubmit}>
       <Stack>
-        <Title order={2} ta="center">MD-Annotate</Title>
+        <Title order={2} ta="center">BlockData</Title>
         <Text size="sm" c="dimmed" ta="center">Sign in to continue</Text>
         <TextInput
           label="Email"

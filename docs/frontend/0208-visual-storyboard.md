@@ -1,4 +1,4 @@
-# Visual Storyboard — MD-Annotate Web Frontend
+# Visual Storyboard — BlockData Web Frontend
 
 **Date:** 2026-02-08
 **Status:** Design draft for review
@@ -50,7 +50,7 @@
 
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
-│  MD-Annotate                                    user@email [Sign out]│
+│  BlockData                                    user@email [Sign out]│
 ├────────────┬─────────────────────────────────────────────────────────┤
 │            │                                                         │
 │  Projects● │  My Projects                          [+ New Project]   │
@@ -120,7 +120,7 @@
 
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
-│  MD-Annotate                                    user@email [Sign out]│
+│  BlockData                                    user@email [Sign out]│
 ├────────────┬─────────────────────────────────────────────────────────┤
 │            │                                                         │
 │  Projects  │  New Project                                            │
@@ -158,7 +158,7 @@
 
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
-│  MD-Annotate                                    user@email [Sign out]│
+│  BlockData                                    user@email [Sign out]│
 ├────────────┬─────────────────────────────────────────────────────────┤
 │            │                                                         │
 │  Projects  │  New Project: SCOTUS Close Reading                      │
@@ -219,7 +219,7 @@
 
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
-│  MD-Annotate                                    user@email [Sign out]│
+│  BlockData                                    user@email [Sign out]│
 ├────────────┬─────────────────────────────────────────────────────────┤
 │            │                                                         │
 │  Projects  │  New Project: SCOTUS Close Reading                      │
@@ -276,7 +276,7 @@
 
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
-│  MD-Annotate                                    user@email [Sign out]│
+│  BlockData                                    user@email [Sign out]│
 ├────────────┬─────────────────────────────────────────────────────────┤
 │            │                                                         │
 │  Projects  │  New Project: SCOTUS Close Reading                      │
@@ -348,7 +348,7 @@
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────┐
-│  MD-Annotate                                      user@email [Sign out] │
+│  BlockData                                      user@email [Sign out] │
 ├────────────┬─────────────────────────────────────────────────────────────┤
 │            │                                                             │
 │  Projects  │  [A] ← Projects / SCOTUS Close Reading                     │
@@ -434,7 +434,7 @@ The Neo4j integration reads the schema's optional `graph_mapping` section (descr
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────────────┐
-│  MD-Annotate                                                user@email [Sign out]│
+│  BlockData                                                user@email [Sign out]│
 ├────────────┬─────────────────────────────────────────────────────────────────────┤
 │            │                                                                     │
 │  Projects  │  [A] ← Projects / SCOTUS Close Reading / Mahanoy_v_BL.md          │
@@ -520,7 +520,7 @@ Cell renderers adapt to data type:
 
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
-│  MD-Annotate                                    user@email [Sign out]│
+│  BlockData                                    user@email [Sign out]│
 ├────────────┬─────────────────────────────────────────────────────────┤
 │            │                                                         │
 │  Projects  │  Schemas                              [+ New Schema]    │
@@ -575,7 +575,7 @@ Cell renderers adapt to data type:
 
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
-│  MD-Annotate                                    user@email [Sign out]│
+│  BlockData                                    user@email [Sign out]│
 ├────────────┬─────────────────────────────────────────────────────────┤
 │            │                                                         │
 │  Projects  │  Integrations                                           │

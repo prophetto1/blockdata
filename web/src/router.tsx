@@ -1,9 +1,13 @@
 import { createBrowserRouter } from 'react-router-dom';
+import { MarketingLayout } from '@/components/layout/MarketingLayout';
 import { PublicLayout } from '@/components/layout/PublicLayout';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { AuthGuard } from '@/auth/AuthGuard';
 
 import Landing from '@/pages/Landing';
+import HowItWorks from '@/pages/HowItWorks';
+import UseCases from '@/pages/UseCases';
+import MarketingIntegrations from '@/pages/MarketingIntegrations';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
 import AuthCallback from '@/pages/AuthCallback';
@@ -15,8 +19,17 @@ import Schemas from '@/pages/Schemas';
 import RunDetail from '@/pages/RunDetail';
 
 export const router = createBrowserRouter([
-  // Landing page has its own full-width layout (hero, sections, footer)
-  { path: '/', element: <Landing /> },
+  // Marketing pages: full-width with PublicNav
+  {
+    element: <MarketingLayout />,
+    children: [
+      { path: '/', element: <Landing /> },
+      { path: '/how-it-works', element: <HowItWorks /> },
+      { path: '/use-cases', element: <UseCases /> },
+      { path: '/integrations', element: <MarketingIntegrations /> },
+    ],
+  },
+  // Auth pages: PublicNav + centered form
   {
     element: <PublicLayout />,
     children: [

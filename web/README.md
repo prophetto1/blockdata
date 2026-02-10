@@ -1,6 +1,6 @@
 # Web App (React)
 
-Primary web UI for MD-Annotate.
+Primary web UI for BlockData.
 
 ## Local setup
 

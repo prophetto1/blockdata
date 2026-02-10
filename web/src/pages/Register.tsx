@@ -62,7 +62,7 @@ export default function Register() {
     <form onSubmit={handleSubmit}>
       <Stack>
         <Title order={2} ta="center">Create account</Title>
-        <Text size="sm" c="dimmed" ta="center">Start a new MD-Annotate workspace</Text>
+        <Text size="sm" c="dimmed" ta="center">Start a new BlockData workspace</Text>
 
         <TextInput
           label="Name"

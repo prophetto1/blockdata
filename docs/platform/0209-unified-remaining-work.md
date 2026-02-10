@@ -1,4 +1,4 @@
-# Unified Remaining Work: MD-Annotate Platform
+# Unified Remaining Work: BlockData Platform
 
 **Date:** 2026-02-09
 **Scope:** Everything between current state and production-ready platform
@@ -34,17 +34,31 @@
 
 These are schema and convention changes that other phases depend on. Do these first.
 
-### 1.1 Add staging column to `block_overlays_v2`
+### 1.1 Staging columns on `block_overlays_v2` (Option A)
+
+Rename the existing `overlay_jsonb` and add staging + audit columns:
 
 ```sql
+-- Rename existing column to be the confirmed store
 ALTER TABLE block_overlays_v2
-  ADD COLUMN staged_overlay_jsonb JSONB;
+  RENAME COLUMN overlay_jsonb TO overlay_jsonb_confirmed;
+
+-- Add staging column (AI writes here)
+ALTER TABLE block_overlays_v2
+  ADD COLUMN overlay_jsonb_staging JSONB NOT NULL DEFAULT '{}'::jsonb;
+
+-- Add confirmation audit columns
+ALTER TABLE block_overlays_v2
+  ADD COLUMN confirmed_at TIMESTAMPTZ,
+  ADD COLUMN confirmed_by UUID REFERENCES auth.users(id);
 ```
 
-- AI worker writes to `staged_overlay_jsonb` (never directly to `overlay_jsonb`)
-- User confirms → `overlay_jsonb` = `staged_overlay_jsonb`, status = `confirmed`
-- Export reads only `overlay_jsonb` (confirmed data)
-- Grid shows `staged_overlay_jsonb` when `ai_complete`, `overlay_jsonb` when `confirmed`
+**Write rules:**
+- AI worker writes ONLY to `overlay_jsonb_staging`
+- User confirm action copies `overlay_jsonb_staging` → `overlay_jsonb_confirmed`, stamps `confirmed_at` + `confirmed_by`
+- Export reads ONLY `overlay_jsonb_confirmed`
+- Grid shows `overlay_jsonb_staging` when reviewing (`ai_complete`), `overlay_jsonb_confirmed` when viewing final (`confirmed`)
+- A bug or re-run can never overwrite confirmed data — only the explicit confirm action touches that column
 
 ### 1.2 Expand overlay status enum
 
@@ -61,6 +75,8 @@ New statuses:
 | `failed` | Worker encountered an error | Worker |
 
 Migration: Update the check constraint or enum (if one exists) on `block_overlays_v2.status`.
+
+**Current repo note:** `block_overlays_v2` currently has a CHECK constraint that limits status to `pending|claimed|complete|failed`. This must be updated to include at least `ai_complete` and `confirmed` (and ideally deprecate `complete` to avoid ambiguity).
 
 ### 1.3 Define schema `prompt_config` convention
 
@@ -137,16 +153,23 @@ Workers can be: multiple invocations of the same edge function, different API ke
 
 **Flow per invocation:**
 
-1. **Claim batch:** Atomically claim N pending overlays:
+1. **Claim batch:** Atomically claim N pending overlays using `FOR UPDATE SKIP LOCKED` (valid Postgres pattern — `UPDATE...LIMIT` is not):
    ```sql
-   UPDATE block_overlays_v2
+   WITH claimable AS (
+     SELECT run_id, block_uid
+     FROM block_overlays_v2
+     WHERE run_id = $1 AND status = 'pending'
+     ORDER BY block_uid
+     LIMIT $batch_size
+     FOR UPDATE SKIP LOCKED
+   )
+   UPDATE block_overlays_v2 bo
    SET status = 'claimed', claimed_by = $worker_id, claimed_at = NOW()
-   WHERE run_id = $1 AND status = 'pending'
-   ORDER BY block_uid
-   LIMIT $batch_size
-   RETURNING *
+   FROM claimable c
+   WHERE bo.run_id = c.run_id AND bo.block_uid = c.block_uid
+   RETURNING bo.*;
    ```
-   If zero rows returned → nothing to do → exit 200.
+   `SKIP LOCKED` ensures concurrent workers never claim the same rows. If zero rows returned → nothing to do → exit 200.
 
 2. **Load context:** For each claimed overlay:
    - Fetch `block_content` and `block_type` from `blocks_v2` via `block_uid`
@@ -157,15 +180,30 @@ Workers can be: multiple invocations of the same edge function, different API ke
    - Use structured output (JSON schema constraint) matching the schema's `properties`
    - Model from `prompt_config.model`, run's `model_config`, or request param `model_override`
 
-4. **Write staged result:**
+4. **Write staged result:** (note: PK is composite `(run_id, block_uid)`, no `overlay_id` column)
    ```sql
    UPDATE block_overlays_v2
-   SET staged_overlay_jsonb = $result, status = 'ai_complete'
-   WHERE overlay_id = $id
+   SET overlay_jsonb_staging = $result, status = 'ai_complete'
+   WHERE run_id = $run_id AND block_uid = $block_uid
    ```
 
-5. **Error handling:**
-   - On LLM failure → `status = 'failed'`, `error = message`, `attempt_count += 1`
+5. **Update run rollup:** After processing each block (or at batch end):
+   ```sql
+   UPDATE runs_v2
+   SET completed_blocks = (
+     SELECT COUNT(*) FROM block_overlays_v2
+     WHERE run_id = $run_id AND status IN ('ai_complete', 'confirmed')
+   ),
+   failed_blocks = (
+     SELECT COUNT(*) FROM block_overlays_v2
+     WHERE run_id = $run_id AND status = 'failed'
+   )
+   WHERE run_id = $run_id;
+   ```
+   When `completed_blocks + failed_blocks = total_blocks`, set `runs_v2.status = 'complete'` and `completed_at = NOW()`.
+
+6. **Error handling:**
+   - On LLM failure → `status = 'failed'`, `last_error = message`, `attempt_count += 1`
    - Each overlay is independent — partial batch success is normal
    - Failed overlays can be retried (re-claim where `status = 'failed' AND attempt_count < max`)
 
@@ -253,6 +291,29 @@ Use Mantine `Breadcrumbs` component. Each segment is a `<Link>`.
 ### 3.5 Verify route-entity membership
 
 In DocumentDetail and RunDetail, confirm the loaded entity's `project_id` matches the route's `:projectId`. If mismatch: redirect to the correct scoped URL or show "Not found in this project."
+
+### 3.6 Deletion & lifecycle operations
+
+Missing from all existing plans. These are in the buildout checklist but never specified:
+
+**Document deletion:**
+- Edge function or RPC: cascade delete `block_overlays_v2` → `blocks_v2` → `documents_v2`
+- UI: delete button on DocumentDetail (with confirmation dialog)
+- Must also clean up Storage bucket files (`uploads/{source_uid}/...`, `converted/{source_uid}/...`)
+
+**Run deletion / cancellation:**
+- Delete: remove `block_overlays_v2` rows for the run, then `runs_v2` row
+- Cancel: set `runs_v2.status = 'cancelled'`, stop claiming new overlays (workers check run status before processing)
+- UI: delete/cancel buttons on run cards in ProjectDetail
+
+**Schema deletion:**
+- Only if no runs reference the schema (FK constraint will enforce this)
+- Or: soft-delete (mark inactive) to preserve history
+- UI: delete option on schema cards in Schemas page
+
+**Project deletion:**
+- Cascade: delete all runs → overlays → blocks → documents → project
+- UI: delete button in ProjectDetail edit modal (with strong confirmation — "This will delete 77 documents and all associated data")
 
 ---
 
@@ -391,7 +452,10 @@ After reviewing samples in the grid, user can bulk-confirm all `ai_complete` ove
 
 ```sql
 UPDATE block_overlays_v2 bo
-SET overlay_jsonb = staged_overlay_jsonb, status = 'confirmed'
+SET overlay_jsonb_confirmed = overlay_jsonb_staging,
+    status = 'confirmed',
+    confirmed_at = NOW(),
+    confirmed_by = $user_id
 FROM runs_v2 r, documents_v2 d
 WHERE bo.run_id = r.run_id
   AND r.conv_uid = d.conv_uid
@@ -441,7 +505,7 @@ When a run is selected and overlays are in `ai_complete` status:
 ### 6.2 Inline editing of staged overlays
 
 - Double-click a staged cell → edit the value
-- Edits write back to `staged_overlay_jsonb` via Supabase update
+- Edits write back to `overlay_jsonb_staging` via Supabase update (never write to `overlay_jsonb_confirmed` directly)
 - Cell renderers handle edit mode per data type (text input, select for enums, etc.)
 
 ### 6.3 Confirm/reject controls
@@ -451,7 +515,10 @@ When a run is selected and overlays are in `ai_complete` status:
 **Bulk:** Toolbar button "Confirm All Staged" → moves all `ai_complete` overlays to `confirmed`:
 ```sql
 UPDATE block_overlays_v2
-SET overlay_jsonb = staged_overlay_jsonb, status = 'confirmed'
+SET overlay_jsonb_confirmed = overlay_jsonb_staging,
+    status = 'confirmed',
+    confirmed_at = NOW(),
+    confirmed_by = $user_id
 WHERE run_id = $1 AND status = 'ai_complete'
 ```
 
@@ -460,6 +527,17 @@ WHERE run_id = $1 AND status = 'ai_complete'
 ### 6.4 Export respects confirmation
 
 `export-jsonl` only includes blocks where `status = 'confirmed'` in the `user_defined` section. Blocks without confirmed overlays export with `"user_defined": null` or an empty `data` object.
+
+### 6.5 RLS + RPC requirements (must-have)
+
+Current repo has **SELECT-only** RLS on `block_overlays_v2`. To support staging edits and confirmation safely:
+
+- Allow users to **UPDATE `overlay_jsonb_staging`** for overlays they own (via run ownership).
+- Prevent any direct client-side updates to `overlay_jsonb_confirmed` (confirmed data) by default.
+- Implement confirmation via an RPC (recommended) so the copy + audit stamp is atomic:
+  - Copy `overlay_jsonb_staging` â†’ `overlay_jsonb_confirmed`
+  - Set `status = 'confirmed'`
+  - Stamp `confirmed_at`, `confirmed_by`
 
 ---
 
@@ -567,7 +645,14 @@ Until fixed, DOCX/PDF uploads stall at "converting." Markdown uploads work fine.
 - Automated Vercel deployments on merge to main
 - Pre-commit hooks (lint-staged + prettier)
 
-### 9.6 Security hardening
+### 9.6 Auth & account lifecycle
+
+- Email confirmation flow (Supabase Auth handles this, but redirect URLs need configuration)
+- "Forgot password" flow (password reset email + reset page)
+- OAuth providers (Google, GitHub — Supabase Auth config + UI buttons on Login page)
+- Account settings page (change password, display name, manage API keys in future)
+
+### 9.7 Security hardening
 
 - CSP headers
 - Rate limiting on auth attempts
@@ -580,8 +665,8 @@ Until fixed, DOCX/PDF uploads stall at "converting." Markdown uploads work fine.
 
 ```
 Phase 1 (DB foundations)
-  ├── 1.1 staged_overlay_jsonb column
-  ├── 1.2 status enum expansion
+  ├── 1.1 staging + audit columns (Option A: overlay_jsonb_staging, overlay_jsonb_confirmed, confirmed_at/by)
+  ├── 1.2 status enum expansion (add ai_complete, confirmed)
   ├── 1.3 prompt_config convention (documentation, no code)
   ├── 1.4 project_id NOT NULL
   └── 1.5 migration drift reconciliation
@@ -598,7 +683,8 @@ Phase 3 (Frontend cleanup) ← independent of Phase 2
   ├── 3.2 remove dead pages
   ├── 3.3 old-route redirects
   ├── 3.4 breadcrumbs
-  └── 3.5 route-entity membership check
+  ├── 3.5 route-entity membership check
+  └── 3.6 deletion/lifecycle ops (doc, run, schema, project delete)
          │
 Phase 4 (Grid & toolbar) ← independent of Phase 2
   ├── 4.1 layout compression
@@ -642,7 +728,8 @@ Phase 9 (Polish) ← can start anytime, intensifies after Phase 6
   ├── 9.3 testing
   ├── 9.4 error handling
   ├── 9.5 CI/CD
-  └── 9.6 security hardening
+  ├── 9.6 auth/account lifecycle (email confirm, forgot password, OAuth)
+  └── 9.7 security hardening
 ```
 
 **Parallelism:** Phases 3 and 4 can run concurrently with Phase 2. Phase 5 can start as soon as 3.1 is done. Phase 9.1 (GCP fix) is independent of everything and should happen whenever possible.
@@ -656,21 +743,24 @@ Phase 9 (Polish) ← can start anytime, intensifies after Phase 6
 ## Checklist (flat, for tracking)
 
 ### Phase 1 — DB & Architecture
-- [ ] Migration: add `staged_overlay_jsonb` to `block_overlays_v2`
-- [ ] Migration: expand overlay status values (`ai_complete`, `confirmed`)
+- [ ] Migration: rename `overlay_jsonb` → `overlay_jsonb_confirmed`, add `overlay_jsonb_staging`, `confirmed_at`, `confirmed_by`
+- [ ] Migration: expand overlay status CHECK constraint (add `ai_complete`, `confirmed`)
+- [ ] RLS: allow UPDATE of `overlay_jsonb_staging` for owners (run ownership), but do not allow client writes to `overlay_jsonb_confirmed`
+- [ ] RPC: confirm overlays (atomic copy `overlay_jsonb_staging` → `overlay_jsonb_confirmed` + stamp `confirmed_at`, `confirmed_by` + set `status='confirmed'`)
 - [ ] Document `prompt_config` convention in schema spec
 - [ ] Migration: `project_id NOT NULL` on `documents_v2`
 - [ ] Reconcile migration 008 version drift (repo vs DB)
 
 ### Phase 2 — AI Worker (Distributed)
 - [ ] Create `supabase/functions/worker/index.ts` (stateless, re-entrant)
-- [ ] Atomic claim with `claimed_by` provenance per block
+- [ ] Atomic claim via `FOR UPDATE SKIP LOCKED` CTE with `claimed_by` provenance
 - [ ] LLM call with structured output from schema `prompt_config`
-- [ ] Write to `staged_overlay_jsonb`, set status `ai_complete`
+- [ ] Write to `overlay_jsonb_staging`, set status `ai_complete`
+- [ ] Run rollup: update `runs_v2.completed_blocks/failed_blocks/status` after each batch
 - [ ] Error handling + retry logic (per-block, partial batch OK)
 - [ ] API key storage (platform-managed v1)
 - [ ] Test: concurrent worker invocations don't double-process blocks
-- [ ] Test: create run → trigger worker → overlays reach `ai_complete`
+- [ ] Test: create run → trigger worker → overlays reach `ai_complete` → run status updates
 
 ### Phase 3 — Frontend Cleanup
 - [ ] Split Upload.tsx to upload-only (no schema/run steps)
@@ -678,6 +768,10 @@ Phase 9 (Polish) ← can start anytime, intensifies after Phase 6
 - [ ] Add redirects for old flat routes in router.tsx
 - [ ] Add Mantine Breadcrumbs to all project-scoped pages
 - [ ] Validate route projectId matches entity's project_id
+- [ ] Document deletion (cascade blocks/overlays + Storage cleanup)
+- [ ] Run deletion / cancellation
+- [ ] Schema deletion (with FK guard)
+- [ ] Project deletion (cascade all children, strong confirmation UI)
 
 ### Phase 4 — Grid & Toolbar
 - [ ] Merge DocumentDetail header into single dense bar
@@ -707,6 +801,7 @@ Phase 9 (Polish) ← can start anytime, intensifies after Phase 6
 - [ ] Toolbar: "Confirm All Staged" bulk action
 - [ ] Per-block accept/reject controls
 - [ ] Export: filter by confirmation status
+- [ ] Wire confirmation path through RPC (no direct client writes to confirmed column)
 
 ### Phase 7 — Export & Reconstruction
 - [ ] Enhanced export options (confirmed only, all, CSV, per-doc)
@@ -725,4 +820,6 @@ Phase 9 (Polish) ← can start anytime, intensifies after Phase 6
 - [ ] Testing framework (Vitest + RTL) + initial test suite
 - [ ] React Error Boundary + Realtime reconnection
 - [ ] CI/CD (GitHub Actions: lint, typecheck, build)
+- [ ] Auth lifecycle: email confirmation, forgot password, OAuth providers
+- [ ] Account settings page
 - [ ] Security audit (CSP, rate limiting, session expiry)

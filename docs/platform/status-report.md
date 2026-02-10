@@ -14,7 +14,7 @@ Docling conversion service — code complete, Docker image built, deployed to GC
 Missing backend piece: The worker/processor edge function — the thing that claims pending overlay rows, sends block content + schema to an LLM, and writes structured results back into overlay_jsonb. Without this, the AI annotation loop doesn't run.
 
 Frontend (functional, needs redesign)
-Live at md-annotate.vercel.app. ~2,000 lines of React across 31 files.
+Live at blockdata.run. ~2,000 lines of React across 31 files.
 
 What works today:
 
