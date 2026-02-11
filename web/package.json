@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build && cd ../docs-site && npm ci && npm run build && mkdir -p ../web/dist/docs && cp -r dist/* ../web/dist/docs/",
+    "build:meta-configurator-embed": "node ../scripts/build-meta-configurator-embed.mjs",
     "lint": "eslint .",
     "preview": "vite preview"
   },
@@ -14,11 +15,15 @@
     "@mantine/form": "^8.3.14",
     "@mantine/hooks": "^8.3.14",
     "@mantine/notifications": "^8.3.14",
+    "@monaco-editor/react": "^4.7.0",
     "@supabase/supabase-js": "^2.95.3",
     "@tabler/icons-react": "^3.36.1",
     "ag-grid-community": "^35.0.1",
     "ag-grid-react": "^35.0.1",
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1",
     "jszip": "^3.10.1",
+    "lodash-es": "^4.17.23",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-router": "^7.13.0",
@@ -26,6 +31,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
+    "@types/lodash-es": "^4.17.12",
     "@types/node": "^24.10.1",
     "@types/react": "^19.2.5",
     "@types/react-dom": "^19.2.3",

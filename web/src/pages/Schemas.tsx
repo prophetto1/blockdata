@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Table, FileInput, TextInput, Button, Group, Code, Stack, ActionIcon, Tooltip, Modal, Text } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
-import { IconTrash } from '@tabler/icons-react';
+import { IconPencil, IconTrash } from '@tabler/icons-react';
 import { supabase } from '@/lib/supabase';
 import { edgeJson } from '@/lib/edge';
 import { TABLES } from '@/lib/tables';
@@ -11,6 +12,7 @@ import { PageHeader } from '@/components/common/PageHeader';
 import { ErrorAlert } from '@/components/common/ErrorAlert';
 
 export default function Schemas() {
+  const navigate = useNavigate();
   const [rows, setRows] = useState<SchemaRow[]>([]);
   const [file, setFile] = useState<File | null>(null);
   const [schemaRef, setSchemaRef] = useState('');
@@ -74,7 +76,11 @@ export default function Schemas() {
 
   return (
     <>
-      <PageHeader title="Schemas" subtitle="Upload and list annotation schemas." />
+      <PageHeader title="Schemas" subtitle="Upload and list annotation schemas.">
+        <Button variant="light" size="xs" onClick={() => navigate('/app/schemas/advanced')}>
+          Advanced editor
+        </Button>
+      </PageHeader>
       <Stack maw={700} gap="sm">
         <Group grow>
           <TextInput placeholder="schema_ref (optional)" value={schemaRef} onChange={(e) => setSchemaRef(e.currentTarget.value)} />
@@ -91,7 +97,7 @@ export default function Schemas() {
               <Table.Th>schema_ref</Table.Th>
               <Table.Th>schema_uid</Table.Th>
               <Table.Th>created</Table.Th>
-              <Table.Th w={50} />
+              <Table.Th w={96} />
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>
@@ -101,11 +107,18 @@ export default function Schemas() {
                 <Table.Td ff="monospace" fz="xs">{r.schema_uid.slice(0, 16)}...</Table.Td>
                 <Table.Td>{new Date(r.created_at).toLocaleString()}</Table.Td>
                 <Table.Td>
-                  <Tooltip label="Delete schema">
-                    <ActionIcon variant="subtle" color="red" size="sm" onClick={() => { setDeleteTarget(r); openDelete(); }}>
-                      <IconTrash size={14} />
-                    </ActionIcon>
-                  </Tooltip>
+                  <Group gap={4} justify="flex-end" wrap="nowrap">
+                    <Tooltip label="Open advanced editor">
+                      <ActionIcon variant="subtle" size="sm" onClick={() => navigate(`/app/schemas/advanced/${r.schema_id}`)}>
+                        <IconPencil size={14} />
+                      </ActionIcon>
+                    </Tooltip>
+                    <Tooltip label="Delete schema">
+                      <ActionIcon variant="subtle" color="red" size="sm" onClick={() => { setDeleteTarget(r); openDelete(); }}>
+                        <IconTrash size={14} />
+                      </ActionIcon>
+                    </Tooltip>
+                  </Group>
                 </Table.Td>
               </Table.Tr>
             ))}

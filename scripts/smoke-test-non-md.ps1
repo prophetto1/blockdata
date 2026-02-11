@@ -243,7 +243,7 @@ curl.exe -sS -L "$env:SUPABASE_URL/functions/v1/export-jsonl?conv_uid=$conv_uid"
 
 if (-not (Test-Path $exportFile)) { throw "Export did not create file: $exportFile" }
 
-$lines = Get-Content $exportFile
+$lines = @(Get-Content $exportFile)
 if (-not $lines -or $lines.Count -lt 1) { throw "Export file is empty: $exportFile" }
 
 Write-Host "Export successful! $($lines.Count) blocks exported" -ForegroundColor Green

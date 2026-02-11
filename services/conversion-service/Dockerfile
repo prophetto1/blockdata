@@ -31,18 +31,24 @@ RUN docling-tools models download
 COPY warmup.py /tmp/warmup.py
 RUN python /tmp/warmup.py ; rm /tmp/warmup.py
 
-# 3. Docling expects RapidOCR torch files under its artifacts tree.
-#    Warmup downloads them into rapidocr's package directory, so copy them
-#    into the canonical Docling path to avoid runtime "file does not exist".
+# 3. Bake RapidOCR assets into Docling's expected artifacts tree.
 RUN mkdir -p /root/.cache/docling/models/RapidOcr/torch/PP-OCRv4/det \
     /root/.cache/docling/models/RapidOcr/torch/PP-OCRv4/cls \
-    /root/.cache/docling/models/RapidOcr/torch/PP-OCRv4/rec && \
+    /root/.cache/docling/models/RapidOcr/torch/PP-OCRv4/rec \
+    /root/.cache/docling/models/RapidOcr/paddle/PP-OCRv4/rec/ch_PP-OCRv4_rec_infer \
+    /root/.cache/docling/models/RapidOcr/fonts && \
     cp /usr/local/lib/python3.11/site-packages/rapidocr/models/ch_PP-OCRv4_det_infer.pth \
       /root/.cache/docling/models/RapidOcr/torch/PP-OCRv4/det/ && \
     cp /usr/local/lib/python3.11/site-packages/rapidocr/models/ch_ptocr_mobile_v2.0_cls_infer.pth \
       /root/.cache/docling/models/RapidOcr/torch/PP-OCRv4/cls/ && \
     cp /usr/local/lib/python3.11/site-packages/rapidocr/models/ch_PP-OCRv4_rec_infer.pth \
-      /root/.cache/docling/models/RapidOcr/torch/PP-OCRv4/rec/
+      /root/.cache/docling/models/RapidOcr/torch/PP-OCRv4/rec/ && \
+    cp /usr/local/lib/python3.11/site-packages/rapidocr/models/ppocr_keys_v1.txt \
+      /root/.cache/docling/models/RapidOcr/paddle/PP-OCRv4/rec/ch_PP-OCRv4_rec_infer/ && \
+    (cp /usr/local/lib/python3.11/site-packages/rapidocr/fonts/FZYTK.TTF \
+      /root/.cache/docling/models/RapidOcr/fonts/ || \
+     cp /usr/local/lib/python3.11/site-packages/rapidocr/models/FZYTK.TTF \
+      /root/.cache/docling/models/RapidOcr/fonts/ || true)
 
 COPY app /app/app
 

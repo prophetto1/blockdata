@@ -16,6 +16,7 @@ import ProjectDetail from '@/pages/ProjectDetail';
 import Upload from '@/pages/Upload';
 import DocumentDetail from '@/pages/DocumentDetail';
 import Schemas from '@/pages/Schemas';
+import SchemaAdvancedEditor from '@/pages/SchemaAdvancedEditor';
 import RunDetail from '@/pages/RunDetail';
 import Settings from '@/pages/Settings';
 import LoginSplit from '@/pages/LoginSplit';
@@ -66,6 +67,8 @@ export const router = createBrowserRouter([
 
           // Global schemas (not project-scoped)
           { path: '/app/schemas', element: <Schemas /> },
+          { path: '/app/schemas/advanced', element: <SchemaAdvancedEditor /> },
+          { path: '/app/schemas/advanced/:schemaId', element: <SchemaAdvancedEditor /> },
 
           // Settings (API keys, model defaults)
           { path: '/app/settings', element: <Settings /> },
