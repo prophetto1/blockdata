@@ -6,4 +6,10 @@ sidebar:
   order: 0
 ---
 
-Placeholder.
+This section is for high-level status that changes over time.
+
+For the current execution queue and gates, see:
+- [Roadmap](/docs/ongoing-work/)
+
+For rules about what belongs in `docs-site` vs working docs, see:
+- [Docs Policy](/docs/docs-policy/)

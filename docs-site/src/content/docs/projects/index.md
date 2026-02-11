@@ -6,4 +6,8 @@ sidebar:
   order: 0
 ---
 
-Placeholder.
+Projects are the top-level container for organizing documents and runs.
+
+Next pages in the end-to-end flow:
+- [Documents](/docs/documents/)
+- [Processing](/docs/processing/)

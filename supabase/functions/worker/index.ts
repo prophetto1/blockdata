@@ -113,12 +113,61 @@ Deno.serve(async (req) => {
       (r: { block_uid: string }) => r.block_uid,
     );
 
-    const releaseClaimed = async (lastError: string) => {
-      await supabase
+    const releaseClaimed = async (
+      lastError?: string,
+      targetBlockUids: string[] = claimedUids,
+    ) => {
+      const target = [...new Set(targetBlockUids)];
+      if (target.length === 0) return;
+
+      const patch: {
+        status: string;
+        claimed_by: null;
+        claimed_at: null;
+        last_error?: string;
+      } = {
+        status: "pending",
+        claimed_by: null,
+        claimed_at: null,
+      };
+      if (typeof lastError === "string") patch.last_error = lastError;
+
+      const { data: strictRows, error: strictErr } = await supabase
         .from("block_overlays_v2")
-        .update({ status: "pending", claimed_by: null, claimed_at: null, last_error: lastError })
+        .update(patch)
         .eq("run_id", runId)
-        .in("block_uid", claimedUids);
+        .eq("claimed_by", workerId)
+        .in("block_uid", target)
+        .select("block_uid");
+
+      if (strictErr) {
+        throw new Error(`Failed to release claimed blocks (strict): ${strictErr.message}`);
+      }
+
+      const strictSet = new Set((strictRows ?? []).map((r: { block_uid: string }) => r.block_uid));
+      const missing = target.filter((uid) => !strictSet.has(uid));
+      if (missing.length === 0) return;
+
+      // Fallback to targeted run+block release in case claimed_by drifted unexpectedly.
+      const { data: fallbackRows, error: fallbackErr } = await supabase
+        .from("block_overlays_v2")
+        .update(patch)
+        .eq("run_id", runId)
+        .in("block_uid", missing)
+        .select("block_uid");
+
+      if (fallbackErr) {
+        throw new Error(`Failed to release claimed blocks (fallback): ${fallbackErr.message}`);
+      }
+
+      const fallbackSet = new Set((fallbackRows ?? []).map((r: { block_uid: string }) => r.block_uid));
+      const unresolved = missing.filter((uid) => !fallbackSet.has(uid));
+      if (unresolved.length > 0) {
+        const sample = unresolved.slice(0, 5).join(", ");
+        throw new Error(
+          `Release incomplete for run ${runId}. unresolved=${unresolved.length}/${target.length}; sample=[${sample}]`,
+        );
+      }
     };
 
     // ── 2. Load context ──
@@ -137,12 +186,7 @@ Deno.serve(async (req) => {
 
     // Check if run is cancelled
     if (run.status === "cancelled") {
-      // Release claimed blocks back to pending
-      await supabase
-        .from("block_overlays_v2")
-        .update({ status: "pending", claimed_by: null, claimed_at: null })
-        .eq("run_id", runId)
-        .in("block_uid", claimedUids);
+      await releaseClaimed(undefined);
       return json(200, { message: "Run cancelled", worker_id: workerId, processed: 0 });
     }
 

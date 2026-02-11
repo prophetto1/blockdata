@@ -13,9 +13,19 @@
    - `docs/ongoing-tasks/0211-admin-config-registry-and-conflicts.md` (deleted)
 3. Core ordered execution queue is:
    - `docs/ongoing-tasks/0211-core-priority-queue-and-optimization-plan.md`
+   - Note: this file is now the canonical pass/fail tracker (dependencies, gate ledger, and evidence contract).
 4. Master sequencing gate doc is:
    - `docs/ongoing-tasks/0211-core-workflows-before-assistant-plan.md`
 5. Assistant work remains deferred until core gates are complete.
+6. Worker reliability evidence doc now exists:
+   - `docs/ongoing-tasks/0211-worker-runtime-reliability.md`
+7. Worker no-key stranded-claim defect was fixed and deployed:
+   - `supabase/functions/worker/index.ts`
+   - deployed `worker` function version `6`
+8. Additional worker reliability checks completed:
+   - no-key path re-verified on fresh run (`ff1905ba-9044-4f40-8d03-232e001c6cf9`)
+   - invalid-key 401 path verified (`e055acca-30c5-4642-beb4-500f591d05ba`)
+   - temporary test key row removed after verification (no Anthropic key rows currently)
 
 ---
 
@@ -37,15 +47,16 @@ Read in this order before making changes:
 
 Current queue says start here:
 
-### Priority 1: Close format reliability gate
+### Priority 2: Lock worker/run reliability baseline
 
-1. Add missing smoke fixtures for `pptx` and `xlsx`.
-2. Run matrix smoke:
-   - `powershell -NoProfile -ExecutionPolicy Bypass -File "scripts/run-format-matrix-smoke.ps1"`
-3. Update results in:
-   - `docs/ongoing-tasks/0211-source-format-reliability-matrix.md`
-   - `docs/ongoing-tasks/0211-source-format-smoke-results.md`
-4. Do not move to Priority 2 until all required formats are verified.
+1. Execute deterministic worker run tests:
+   - happy path (`pending -> claimed -> ai_complete`)
+   - failure/retry path
+   - cancellation behavior (already verified in current evidence doc)
+   - no-key fallback release behavior (already verified in current evidence doc)
+2. Validate run rollups (`completed_blocks`, `failed_blocks`, terminal status) against overlay truth for happy/retry runs.
+3. Capture remaining run evidence in `0211-worker-runtime-reliability.md` and update the gate ledger.
+4. Do not move to Priority 3 until Priority 2 exit criteria are fully `Passed`.
 
 ---
 
@@ -65,8 +76,9 @@ Current queue says start here:
 1. Worker default mismatch risk:
    - worker fallback temp `0.2` vs UI/DB `0.3`
 2. Worker is still Anthropic-specific in runtime path.
-3. Hardcoded policy values are spread across worker/UI/DB and need centralization.
-4. Existing workspace has many unrelated modified/untracked files; treat carefully.
+3. Happy/retry verification is currently blocked until a valid key path is present.
+4. Hardcoded policy values are spread across worker/UI/DB and need centralization.
+5. Existing workspace has many unrelated modified/untracked files; treat carefully.
 
 ---
 
@@ -78,7 +90,8 @@ Current queue says start here:
    - `docs/ongoing-tasks/0211-core-priority-queue-and-optimization-plan.md`
 3. Confirm no stale reference to deleted duplicate file:
    - `rg -n "0211-admin-config-registry-and-conflicts\.md" docs -S`
-4. Start Priority 1 execution and write evidence as you go.
+4. Check Section 7 (`Gate Ledger`) in the core priority tracker and continue from the current non-passed priority.
+5. Start execution and write evidence updates as you go.
 
 ---
 
@@ -101,8 +114,9 @@ Constraints:
 - Assistant development remains deferred.
 - Do not create duplicate planning docs.
 - Do not run destructive git cleanup.
+- Use the pass/fail tracker sections (entry/required evidence/exit) and update the gate ledger.
 
-Now execute Priority 1 (format reliability gate): add pptx/xlsx fixtures, run scripts/run-format-matrix-smoke.ps1, and update matrix/results docs with evidence.
+Now execute Priority 2 (worker/run reliability baseline): finish remaining happy/retry/rollup checks, capture run IDs/evidence, and update the gate ledger and gate docs.
 ```
 
 ---
@@ -112,6 +126,6 @@ Now execute Priority 1 (format reliability gate): add pptx/xlsx fixtures, run sc
 A resumed session is on track only if it:
 
 1. Uses the same canonical docs.
-2. Continues at Priority 1 (unless explicitly changed).
+2. Continues at the first non-passed priority in the gate ledger.
 3. Produces date-stamped evidence updates after each completed step.
 

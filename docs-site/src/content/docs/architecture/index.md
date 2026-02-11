@@ -6,4 +6,7 @@ sidebar:
   order: 0
 ---
 
-Placeholder.
+Architecture pages capture stable system-level contracts and invariants.
+
+Start here:
+- [Canonical Export Contract](/docs/architecture/canonical-export/)

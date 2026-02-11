@@ -6,4 +6,8 @@ sidebar:
   order: 0
 ---
 
-Placeholder.
+Review happens against **staging** overlays, then users **confirm** into the durable **confirmed** overlay layer.
+
+Canonical references:
+- [Overlay Contract](/docs/review-and-export/overlay-contract/)
+- [Canonical Export Contract](/docs/architecture/canonical-export/)

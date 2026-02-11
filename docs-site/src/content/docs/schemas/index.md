@@ -6,4 +6,8 @@ sidebar:
   order: 0
 ---
 
-Placeholder.
+Schemas define the shape of user-defined outputs (overlays) produced during processing.
+
+Canonical references:
+- [Immutable Fields](/docs/schemas/immutable-schema/)
+- [User-Defined Schemas](/docs/schemas/user-defined-schemas/)

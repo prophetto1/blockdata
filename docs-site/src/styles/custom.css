@@ -33,8 +33,8 @@
 
 /* Dark mode (default) — light text on dark bg */
 :root {
-	--sl-color-white: #fafafa;
-	--sl-color-gray-1: #e4e4e7;
+	--sl-color-white: #ffffff;
+	--sl-color-gray-1: #f0f0f2;
 	--sl-color-gray-2: #a1a1aa;
 	--sl-color-gray-3: #71717a;
 	--sl-color-gray-4: #52525b;
@@ -67,6 +67,46 @@
 	--sl-color-accent-low: #e0f2fe;
 	--sl-color-accent: #0284c7;
 	--sl-color-accent-high: #0c4a6e;
+}
+
+/*
+ * Inline code / "boxed text" polish (dark mode)
+ *
+ * Goals:
+ * - Reduce the muddy gray/tan feel of many inline-code pills.
+ * - Keep the look minimal (subtle tint + thin border).
+ * - Use the logo teal as a low-intensity accent (exact RGB from logo-dark.png: 0,216,192).
+ */
+:root:not([data-theme='light']) {
+	--bd-logo-teal: 0, 216, 192;
+	--sl-color-bg-inline-code: rgba(var(--bd-logo-teal), 0.12);
+	--bd-inline-code-border: rgba(var(--bd-logo-teal), 0.26);
+	--bd-inline-code-border-hover: rgba(var(--bd-logo-teal), 0.38);
+	--bd-codeblock-border: rgba(var(--bd-logo-teal), 0.18);
+}
+
+/* Inline code pills */
+.sl-markdown-content :not(pre) > code:not(:where(.not-content *)) {
+	border: 1px solid var(--bd-inline-code-border);
+	border-radius: 0.4rem;
+}
+.sl-markdown-content a:hover > code:not(:where(.not-content *)),
+.sl-markdown-content :not(pre) > code:hover:not(:where(.not-content *)) {
+	border-color: var(--bd-inline-code-border-hover);
+}
+
+/* Code block frames */
+.sl-markdown-content pre:not(:where(.not-content *)) {
+	border-color: var(--bd-codeblock-border);
+}
+
+/* Brighter prose text in dark mode */
+:root:not([data-theme='light']) {
+	--sl-color-text: #f0f0f2;
+	--sl-color-text-accent: #ffffff;
+}
+:root:not([data-theme='light']) .sl-markdown-content {
+	color: #f0f0f2;
 }
 
 /* Widen content area and left-align it */

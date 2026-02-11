@@ -47,6 +47,21 @@ if (-not $token) { throw "Auth response did not include access_token." }
 Write-Host "Authenticated as: $TEST_EMAIL" -ForegroundColor Green
 Write-Host "User ID: $($authResponse.user.id)" -ForegroundColor Gray
 
+# Fetch the user's first project (documents_v2.project_id is required).
+$projects = Invoke-RestMethod `
+    -Method Get `
+    -Uri "$env:SUPABASE_URL/rest/v1/projects?select=project_id,project_name&order=created_at.asc&limit=1" `
+    -Headers @{
+        "apikey"        = $env:SUPABASE_ANON_KEY
+        "Authorization" = "Bearer $token"
+    }
+
+if (-not $projects -or $projects.Count -eq 0) {
+    throw "No projects found for test user. Create a project first."
+}
+$projectId = $projects[0].project_id
+Write-Host "Using project: $($projects[0].project_name) ($projectId)" -ForegroundColor Gray
+
 # ============================================================================
 # STEP 2: Ingest a markdown doc (v2: no immutable_schema_ref)
 # ============================================================================
@@ -63,6 +78,7 @@ $ingestResult = curl.exe -sS -X POST "$env:SUPABASE_URL/functions/v1/ingest" `
     -H "Authorization: Bearer $token" `
     -H "apikey: $env:SUPABASE_ANON_KEY" `
     -F "doc_title=Test Document" `
+    -F "project_id=$projectId" `
     -F "file=@$testFile;type=text/markdown"
 
 $ingest = $ingestResult | ConvertFrom-Json

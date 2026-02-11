@@ -105,11 +105,11 @@ Primary references:
 1. Conversion runtime truth is inconsistent across docs (some entries say "resolved", others "unverified").  
 Action: treat as unverified until fresh smoke matrix passes.
 
-2. Format support widened in code (`pptx`, `xlsx`, `html`, `csv`) but runtime verification is incomplete.  
-Action: verify each format explicitly, not by assumption.
+2. Format support widened in code (`pptx`, `xlsx`, `html`, `csv`) and now has runtime verification from full matrix run (`20260211-124133`).  
+Action: keep full matrix in regression cadence to prevent drift.
 
-3. Worker reliability still depends on live key/config conditions and run dispatch behavior.  
-Action: perform runtime verification with controlled test runs and captured logs.
+3. Worker stranded-claim regression on no-key path is fixed (worker v6), but happy/retry validation still depends on live key/config conditions.  
+Action: run key-enabled reliability checks for happy path and retry semantics, then close worker gate.
 
 ---
 
@@ -117,7 +117,7 @@ Action: perform runtime verification with controlled test runs and captured logs
 
 All must be true:
 
-- [ ] Required source formats pass ingest/conversion smoke matrix.
+- [x] Required source formats pass ingest/conversion smoke matrix.
 - [ ] Worker pipeline is verified live (claim -> ai_complete/failed -> rollup).
 - [ ] Schema core workflow is complete and stable.
 - [ ] Review/export workflows are complete and tested.
@@ -129,11 +129,10 @@ Only after these gates are complete should assistant implementation move from de
 
 ## 5) Immediate Next Actions
 
-1. Execute and maintain `0211-source-format-reliability-matrix.md` as single runtime truth.
-   - Use `scripts/run-format-matrix-smoke.ps1` for repeatable runs and log capture.
-2. Close highest-severity conversion blocker first (currently PDF verification/deploy truth).
-3. Validate worker runtime path with one deterministic test run.
-4. Update this plan and status docs with date-stamped outcomes after each gate.
+1. Provision valid key path (user key or platform fallback key) for deterministic happy/retry tests.
+2. Capture deterministic run evidence for one happy path and one failure/retry path.
+3. Verify rollup counters/status against overlay truth on those runs.
+4. Update gate docs with date-stamped outcomes and close Priority 2 when all scenarios pass.
 
 ---
 
@@ -150,9 +149,22 @@ Completed:
 5. Executed matrix run (timestamp `20260211-101408`) with results:
    - PASS: `md`, `txt`, `docx`, `pdf`, `html`, `csv`
    - SKIPPED (missing fixtures): `pptx`, `xlsx`
+6. Added committed smoke fixtures:
+   - `docs/tests/test-pack/lorem_ipsum.pptx`
+   - `docs/tests/test-pack/lorem_ipsum.xlsx`
+7. Executed matrix run (timestamp `20260211-124133`) with results:
+   - PASS: `md`, `txt`, `docx`, `pdf`, `pptx`, `xlsx`, `html`, `csv`
+8. Format reliability gate marked complete in matrix/runtime truth docs.
+9. Reproduced worker no-key reliability bug (pre-fix): overlays remained `claimed` after worker returned no-key error.
+10. Implemented and deployed worker fix (`supabase/functions/worker/index.ts`, deployed worker version `6`) with strict/fallback claim release helper.
+11. Verified post-fix no-key behavior: claimed overlays now return to `pending` with `last_error` set.
+12. Re-verified cancellation path: overlays are released to `pending` with no claim residue.
+13. Re-verified no-key behavior on a fresh run (`ff1905ba-9044-4f40-8d03-232e001c6cf9`) to confirm repeatable non-stranding behavior.
+14. Verified invalid-key (401) path with controlled temporary test key (`e055acca-30c5-4642-beb4-500f591d05ba`): claims released to `pending`, `last_error` set, key marked invalid.
+15. Removed temporary test key and confirmed no Anthropic key rows remain, preserving the pre-test baseline.
 
 Next:
 
-1. Add `pptx`/`xlsx` smoke fixtures.
-2. Complete matrix verification for those two formats.
-3. Move to worker/run reliability gate once format gate is complete.
+1. Provision key path for worker happy-path execution.
+2. Execute remaining Priority 2 checks (happy path, retry/terminal failure, rollup parity).
+3. Mark worker gate complete only after those scenarios are evidenced.

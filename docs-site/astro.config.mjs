@@ -33,27 +33,25 @@ export default defineConfig({
 			sidebar: [
 				{ label: 'Getting Started', autogenerate: { directory: 'getting-started' } },
 				{
-					label: 'Core Concepts',
-					collapsed: true,
+					label: 'End-to-End',
+					collapsed: false,
 					items: [
 						{ label: 'Projects', autogenerate: { directory: 'projects' } },
+						{ label: 'Documents', autogenerate: { directory: 'documents' } },
+						{ label: 'Ingest & Conversion', autogenerate: { directory: 'ingest-and-conversion' } },
 						{ label: 'Blocks', autogenerate: { directory: 'blocks' } },
 						{ label: 'Schemas', autogenerate: { directory: 'schemas' } },
-					],
-				},
-				{
-					label: 'Workflow',
-					collapsed: true,
-					items: [
 						{ label: 'Processing', autogenerate: { directory: 'processing' } },
 						{ label: 'Review & Export', autogenerate: { directory: 'review-and-export' } },
 						{ label: 'Integrations', autogenerate: { directory: 'integrations' } },
 					],
 				},
+				{ label: 'Roadmap', autogenerate: { directory: 'ongoing-work' } },
 				{
 					label: 'Reference',
 					collapsed: true,
 					items: [
+						{ label: 'Docs Policy', link: '/docs/docs-policy/' },
 						{ label: 'Architecture', autogenerate: { directory: 'architecture' } },
 						{ label: 'Status', autogenerate: { directory: 'status' } },
 					],

@@ -54,14 +54,14 @@ Legend:
 
 | Format | Runtime Status | Last Noted Evidence | Required Next Check |
 |---|---|---|---|
-| `md` | Verified (2026-02-11) | `0211-source-format-smoke-results.md` timestamp `20260211-101408` | Keep as control in smoke suite |
-| `txt` | Verified (2026-02-11) | `0211-source-format-smoke-results.md` timestamp `20260211-101408` | Keep as control in smoke suite |
-| `docx` | Verified (2026-02-11) | `0211-source-format-smoke-results.md` timestamp `20260211-101408` | Keep in regression suite |
-| `pdf` | Verified (2026-02-11) | `0211-source-format-smoke-results.md` timestamp `20260211-101408` | Keep in regression suite |
-| `pptx` | Unverified (fixture missing) | Matrix run skipped due missing test file | Add fixture and run smoke |
-| `xlsx` | Unverified (fixture missing) | Matrix run skipped due missing test file | Add fixture and run smoke |
-| `html` | Verified (2026-02-11) | `0211-source-format-smoke-results.md` timestamp `20260211-101408` | Keep in regression suite |
-| `csv` | Verified (2026-02-11) | `0211-source-format-smoke-results.md` timestamp `20260211-101408` | Keep in regression suite |
+| `md` | Verified (2026-02-11) | `0211-source-format-smoke-results.md` timestamp `20260211-124133` | Keep as control in smoke suite |
+| `txt` | Verified (2026-02-11) | `0211-source-format-smoke-results.md` timestamp `20260211-124133` | Keep as control in smoke suite |
+| `docx` | Verified (2026-02-11) | `0211-source-format-smoke-results.md` timestamp `20260211-124133` | Keep in regression suite |
+| `pdf` | Verified (2026-02-11) | `0211-source-format-smoke-results.md` timestamp `20260211-124133` | Keep in regression suite |
+| `pptx` | Verified (2026-02-11) | `0211-source-format-smoke-results.md` timestamp `20260211-124133` | Keep in regression suite |
+| `xlsx` | Verified (2026-02-11) | `0211-source-format-smoke-results.md` timestamp `20260211-124133` | Keep in regression suite |
+| `html` | Verified (2026-02-11) | `0211-source-format-smoke-results.md` timestamp `20260211-124133` | Keep in regression suite |
+| `csv` | Verified (2026-02-11) | `0211-source-format-smoke-results.md` timestamp `20260211-124133` | Keep in regression suite |
 
 ---
 
@@ -85,7 +85,7 @@ For `mdast`-expected formats (`md`, `txt`):
 
 ## 5) Operational Blockers to Clear First
 
-1. Add committed smoke fixtures for `pptx` and `xlsx` to complete matrix coverage.
+1. Keep committed smoke fixtures for `pptx` and `xlsx` in-repo to prevent coverage regression.
 2. Ensure the matrix run remains repeatable across environments (credentials + fixture parity).
 3. Keep conversion deployment/secrets checks in release checklist so verified status does not regress.
 
@@ -112,8 +112,8 @@ All required formats are marked `Verified` and pass their track assertions in Se
 
 Current gate state (2026-02-11):
 
-1. `md`, `txt`, `docx`, `pdf`, `html`, `csv`: verified.
-2. `pptx`, `xlsx`: pending fixtures + runtime smoke.
+1. `md`, `txt`, `docx`, `pdf`, `pptx`, `xlsx`, `html`, `csv`: verified (run timestamp `20260211-124133`).
+2. Gate status: complete for required formats.
 
 ---
 

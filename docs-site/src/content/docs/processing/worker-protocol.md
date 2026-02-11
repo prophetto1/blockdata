@@ -5,4 +5,7 @@ sidebar:
   order: 1
 ---
 
-Placeholder.
+This page is reserved for a canonical worker/run protocol write-up once the worker/run reliability baseline is locked.
+
+Until then, the working spec lives in (Current repo):
+- `docs/specs/0210-batched-worker-protocol.md`

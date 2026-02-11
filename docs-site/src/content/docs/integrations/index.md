@@ -6,4 +6,7 @@ sidebar:
   order: 0
 ---
 
-Placeholder.
+Integrations consume exported outputs (typically JSONL assembled on demand) and should treat the export format as the contract.
+
+Start here:
+- [Canonical Export Contract](/docs/architecture/canonical-export/)
