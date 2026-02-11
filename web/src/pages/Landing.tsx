@@ -179,8 +179,7 @@ export default function Landing() {
                 size="xl"
                 c="dimmed"
                 maw={520}
-                lh={1.6}
-              >
+                             >
                 Upload any document. Define a schema — metadata labels, revision
                 instructions, or both. AI processes every block independently.
                 You review, confirm, and export.
@@ -383,7 +382,7 @@ export default function Landing() {
             <Group justify="space-between" align="end" mb="lg">
                 <Box>
                     <Text size="sm" fw={700} tt="uppercase" c="dimmed">Use cases</Text>
-                    <Title order={2} fz={32}>Built for scale.</Title>
+                    <Title order={2}>Built for scale.</Title>
                 </Box>
                 <Button variant="outline" color="gray" onClick={() => navigate('/use-cases')}>View all use cases</Button>
             </Group>
@@ -417,7 +416,7 @@ export default function Landing() {
               <Text size="sm" fw={700} tt="uppercase" c="dimmed">
                 Capabilities
               </Text>
-              <Title order={2} ta="center" fz={32} c="white">
+              <Title order={2} ta="center" c="white">
                 Everything you need to work with documents.
               </Title>
             </Stack>

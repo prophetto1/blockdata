@@ -226,7 +226,7 @@ export default function IntegrationsV2({ withNav = true }: { withNav?: boolean }
             >
               Export & Integrate
             </Title>
-            <Text ta="center" c="dimmed" size="xl" maw={700} lh={1.6}>
+            <Text ta="center" c="dimmed" size="xl" maw={700}>
               Once overlays are confirmed, the platform produces canonical JSONL — traceable, auditable, and ready for your stack.
             </Text>
           </Stack>
@@ -262,7 +262,7 @@ export default function IntegrationsV2({ withNav = true }: { withNav?: boolean }
               <Paper p="lg" radius="md" withBorder>
                 <Stack gap="sm">
                   <Text fw={700} size="lg">Immutable</Text>
-                  <Text size="md" c="dimmed" lh={1.6}>
+                  <Text size="md" c="dimmed">
                     The block's identity and provenance. Source file hash, conversion method, block position and content. Same block → same hash → every time. This is what makes outputs joinable, auditable, and reproducible.
                   </Text>
                 </Stack>
@@ -270,7 +270,7 @@ export default function IntegrationsV2({ withNav = true }: { withNav?: boolean }
               <Paper p="lg" radius="md" withBorder>
                 <Stack gap="sm">
                   <Text fw={700} size="lg">User Defined</Text>
-                  <Text size="md" c="dimmed" lh={1.6}>
+                  <Text size="md" c="dimmed">
                     The schema-driven overlay. Whatever fields your schema defines — metadata, revised content, or both — confirmed by a human, appear here. The platform doesn't constrain the shape.
                   </Text>
                 </Stack>
@@ -286,7 +286,7 @@ export default function IntegrationsV2({ withNav = true }: { withNav?: boolean }
           <Stack gap="xl">
             <Stack gap={4} align="center" mb="lg">
               <Text size="sm" fw={700} tt="uppercase" c="dimmed">Formats</Text>
-              <Title order={2} ta="center" fz={32}>JSONL is canonical.</Title>
+              <Title order={2} ta="center">JSONL is canonical.</Title>
             </Stack>
 
             <SimpleGrid cols={{ base: 1, md: 3 }} spacing="lg">
@@ -311,7 +311,7 @@ export default function IntegrationsV2({ withNav = true }: { withNav?: boolean }
                     </Stack>
                     <Stack gap="xs">
                       <Text size="xs" fw={700} c="dimmed" tt="uppercase">Details</Text>
-                      <Text size="sm" c="dimmed" lh={1.6}>{fmt.detail}</Text>
+                      <Text size="sm" c="dimmed">{fmt.detail}</Text>
                     </Stack>
                   </Stack>
                 </Paper>
@@ -327,7 +327,7 @@ export default function IntegrationsV2({ withNav = true }: { withNav?: boolean }
           <Stack gap="xl">
             <Stack gap={4} align="center" mb="lg">
               <Text size="sm" fw={700} tt="uppercase" c="dimmed">Pipelines</Text>
-              <Title order={2} ta="center" fz={32}>Export the right file.</Title>
+              <Title order={2} ta="center">Export the right file.</Title>
             </Stack>
 
             <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg">
@@ -340,7 +340,7 @@ export default function IntegrationsV2({ withNav = true }: { withNav?: boolean }
                       </ThemeIcon>
                       <Text fw={700} size="lg">{p.title}</Text>
                     </Group>
-                    <Text size="md" c="dimmed" lh={1.6}>{p.text}</Text>
+                    <Text size="md" c="dimmed">{p.text}</Text>
                   </Stack>
                 </Paper>
               ))}
@@ -355,7 +355,7 @@ export default function IntegrationsV2({ withNav = true }: { withNav?: boolean }
           <Stack gap="xl">
             <Stack gap={4} align="center" mb="lg">
               <Text size="sm" fw={700} tt="uppercase" c="dimmed">Push integrations</Text>
-              <Title order={2} ta="center" fz={32}>The platform calls you.</Title>
+              <Title order={2} ta="center">The platform calls you.</Title>
             </Stack>
 
             <SimpleGrid cols={{ base: 1, md: 3 }} spacing="lg">
@@ -368,7 +368,7 @@ export default function IntegrationsV2({ withNav = true }: { withNav?: boolean }
                       </ThemeIcon>
                       <Text fw={700} size="lg">{p.title}</Text>
                     </Group>
-                    <Text size="md" c="dimmed" lh={1.6}>{p.text}</Text>
+                    <Text size="md" c="dimmed">{p.text}</Text>
                   </Stack>
                 </Paper>
               ))}
@@ -383,7 +383,7 @@ export default function IntegrationsV2({ withNav = true }: { withNav?: boolean }
           <Stack gap="xl">
             <Stack gap={4} align="center" mb="lg">
               <Text size="sm" fw={700} tt="uppercase" c="dimmed">Downstream</Text>
-              <Title order={2} ta="center" fz={32}>What developers build.</Title>
+              <Title order={2} ta="center">What developers build.</Title>
             </Stack>
 
             <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="lg">
@@ -396,7 +396,7 @@ export default function IntegrationsV2({ withNav = true }: { withNav?: boolean }
                       </ThemeIcon>
                       <Text fw={700} size="lg">{d.title}</Text>
                     </Group>
-                    <Text size="md" c="dimmed" lh={1.6}>{d.text}</Text>
+                    <Text size="md" c="dimmed">{d.text}</Text>
                   </Stack>
                 </Paper>
               ))}
@@ -412,7 +412,7 @@ export default function IntegrationsV2({ withNav = true }: { withNav?: boolean }
             <Title order={2} ta="center" fz={40}>
               Build a dataset you can trust.
             </Title>
-            <Text ta="center" c="dimmed" size="xl" maw={600} lh={1.6}>
+            <Text ta="center" c="dimmed" size="xl" maw={600}>
               Upload documents, define a schema, review results, and export a clean contract downstream.
             </Text>
             <Button

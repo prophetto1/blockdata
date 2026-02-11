@@ -55,9 +55,9 @@ export async function processConversion(ctx: IngestContext): Promise<{ status: n
     throw new Error(`Create signed upload URL failed: ${ulErr?.message ?? "unknown"}`);
   }
 
-  // Docling JSON output: docx/pdf get a Docling JSON alongside the markdown.
+  // Docling JSON output: Docling-handled non-md formats get a sidecar JSON.
   let docling_output: SignedUploadTarget | null = null;
-  if (source_type === "docx" || source_type === "pdf") {
+  if (["docx", "pdf", "pptx", "xlsx", "html", "csv"].includes(source_type)) {
     const docling_key = `converted/${source_uid}/${basenameNoExt(originalFilename)}.docling.json`;
     const { data: doclingUpload, error: doclingErr } = await (supabaseAdmin.storage as any)
       .from(bucket)

@@ -57,7 +57,7 @@ curl -sS -X POST "https://writing-system-conversion-service-862494623920.us-cent
 .\scripts\deploy-cloud-run-conversion-service.ps1 `
   -ProjectId "agchain" `
   -Region us-central1 `
-  -ConversionServiceKey "Rq4T7-GjXhI8iPLn3eexyydOLJ_MkERtcTiXJ0NTT2o"
+  -SecretName "conversion-service-key"
 ```
 
 Or manually:
@@ -167,7 +167,7 @@ Regardless of which layers are fixed, the Supabase Edge Functions need these sec
 | Secret | Value | Set? |
 |--------|-------|------|
 | `CONVERSION_SERVICE_URL` | `https://writing-system-conversion-service-862494623920.us-central1.run.app` | Needs verification |
-| `CONVERSION_SERVICE_KEY` | `Rq4T7-GjXhI8iPLn3eexyydOLJ_MkERtcTiXJ0NTT2o` | Needs verification |
+| `CONVERSION_SERVICE_KEY` | (stored in GCP Secret Manager) | Needs verification |
 
 Dashboard: https://supabase.com/dashboard/project/dbdzzhshmigewyprahej/settings/functions
 

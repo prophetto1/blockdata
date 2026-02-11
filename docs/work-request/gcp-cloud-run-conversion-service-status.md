@@ -72,7 +72,7 @@ This is the **current blocker**.
 | Timeout | 1800s |
 | Port | 8000 |
 | Auth | `CONVERSION_SERVICE_KEY` env var (plain text, not Secret Manager) |
-| CONVERSION_SERVICE_KEY value | `Rq4T7-GjXhI8iPLn3eexyydOLJ_MkERtcTiXJ0NTT2o` |
+| CONVERSION_SERVICE_KEY value | `(stored in GCP Secret Manager)` |
 
 ---
 
@@ -121,7 +121,7 @@ If `agchain` is under a restricted org, create or use a personal project:
 .\scripts\deploy-cloud-run-conversion-service.ps1 `
   -ProjectId "<NEW_PROJECT_ID>" `
   -Region us-central1 `
-  -ConversionServiceKey "Rq4T7-GjXhI8iPLn3eexyydOLJ_MkERtcTiXJ0NTT2o"
+  -ConversionServiceKey "(stored in GCP Secret Manager)"
 ```
 
 5. Verify the URL from the output works (should return 401, not 403).
@@ -137,7 +137,7 @@ Once the Cloud Run URL is reachable (returns 401 not 403), set these secrets in 
 | Secret name | Value |
 |---|---|
 | `CONVERSION_SERVICE_URL` | `https://writing-system-conversion-service-862494623920.us-central1.run.app` (or the new URL if you used Option B) |
-| `CONVERSION_SERVICE_KEY` | `Rq4T7-GjXhI8iPLn3eexyydOLJ_MkERtcTiXJ0NTT2o` |
+| `CONVERSION_SERVICE_KEY` | `(stored in GCP Secret Manager)` |
 
 **Important:** No trailing slash on the URL. The Edge Function appends `/convert`.
 
@@ -153,7 +153,7 @@ curl.exe -sS -X POST "<CLOUD_RUN_URL>/convert" -H "Content-Type: application/jso
 
 # Should return 422 (valid auth, bad payload -- proves the app is reachable):
 curl.exe -sS -X POST "<CLOUD_RUN_URL>/convert" `
-  -H "X-Conversion-Service-Key: Rq4T7-GjXhI8iPLn3eexyydOLJ_MkERtcTiXJ0NTT2o" `
+  -H "X-Conversion-Service-Key: (stored in GCP Secret Manager)" `
   -H "Content-Type: application/json" `
   -d "{}"
 ```

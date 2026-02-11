@@ -1,7 +1,7 @@
-/* Override body font to Inter (matching web app) */
+/* Override body font to Roboto Flex */
 :root {
-	--sl-font: 'Inter Variable', 'Inter', -apple-system, BlinkMacSystemFont,
-		'Segoe UI', sans-serif;
+	--sl-font: 'Roboto Flex Variable', 'Roboto Flex', -apple-system,
+		BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 /* Taller nav to give the horizontal logo more room */

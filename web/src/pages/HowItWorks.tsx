@@ -173,7 +173,7 @@ export default function HowItWorks() {
               Every block. Same instructions.<br />
               <span style={{ color: 'var(--mantine-color-dimmed)' }}> Zero drift.</span>
             </Title>
-            <Text ta="center" c="dimmed" size="xl" maw={680} lh={1.6}>
+            <Text ta="center" c="dimmed" size="xl" maw={680}>
               The platform decomposes documents into blocks, applies your schema per block in parallel, and stages results for human review.
             </Text>
           </Stack>

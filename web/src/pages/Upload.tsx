@@ -46,7 +46,7 @@ export default function Upload() {
   const [projectName, setProjectName] = useState<string>('');
 
   const maxFiles = 10;
-  const allowedExtensions = ['.md', '.docx', '.pdf', '.txt'];
+  const allowedExtensions = ['.md', '.docx', '.pdf', '.pptx', '.xlsx', '.html', '.csv', '.txt'];
   const statusColor: Record<UploadStatus, string> = {
     ready: 'gray',
     uploading: 'blue',

@@ -15,22 +15,58 @@ const zinc: MantineColorsTuple = [
   '#09090b',
 ];
 
+// Brand teal – derived from the logo turquoise (~#2DD4BF).
+const teal: MantineColorsTuple = [
+  '#f0fdfa',
+  '#ccfbf1',
+  '#99f6e4',
+  '#5eead4',
+  '#2dd4bf',
+  '#14b8a6',
+  '#0d9488',
+  '#0f766e',
+  '#115e59',
+  '#134e4a',
+];
+
 export const theme = createTheme({
-  fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif',
-  headings: {
-    fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif',
-    fontWeight: '600',
+  fontFamily: "DM Sans, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif",
+
+  fontSizes: {
+    xs: '0.75rem',
+    sm: '0.875rem',
+    md: '1rem',
+    lg: '1.125rem',
+    xl: '1.25rem',
   },
 
-  // Shadcn-like default radius (0.5rem-ish).
-  defaultRadius: 'md',
+  lineHeights: {
+    xs: '1.5',
+    sm: '1.6',
+    md: '1.6',
+    lg: '1.6',
+    xl: '1.6',
+  },
 
-  // Keep Mantine's standard container sizing to avoid unexpected "mobile" layouts
-  // in existing pages that rely on `Container size="md" | "lg"` defaults.
+  headings: {
+    fontFamily: "DM Sans, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif",
+    fontWeight: '700',
+    sizes: {
+      h1: { fontSize: '2.25rem', lineHeight: '1.2', fontWeight: '800' },
+      h2: { fontSize: '2rem', lineHeight: '1.25', fontWeight: '700' },
+      h3: { fontSize: '1.5rem', lineHeight: '1.3', fontWeight: '600' },
+      h4: { fontSize: '1.25rem', lineHeight: '1.4', fontWeight: '600' },
+      h5: { fontSize: '1rem', lineHeight: '1.5', fontWeight: '600' },
+      h6: { fontSize: '0.875rem', lineHeight: '1.5', fontWeight: '600' },
+    },
+  },
+
+  defaultRadius: 'md',
 
   primaryColor: 'zinc',
   colors: {
     zinc,
+    teal,
     // Make "gray" align with the shadcn-neutral palette so surfaces/borders look consistent.
     gray: zinc,
   },
@@ -54,7 +90,7 @@ export const theme = createTheme({
 
 export const cssVariablesResolver: CSSVariablesResolver = () => ({
   variables: {
-    '--mantine-heading-font-weight': '600',
+    '--mantine-heading-font-weight': '700',
   },
   light: {
     '--mantine-color-body': '#ffffff',

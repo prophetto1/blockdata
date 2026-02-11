@@ -3,21 +3,34 @@ FROM python:3.11-slim
 WORKDIR /app
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1
+    PYTHONUNBUFFERED=1 \
+    DOCLING_ARTIFACTS_PATH=/root/.cache/docling/models
 
-ENV DOCLING_CACHE_DIR=/opt/docling-cache \
-    HF_HOME=/opt/hf
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libxcb1 \
+    libx11-6 \
+    libxext6 \
+    libxrender1 \
+    libsm6 \
+    libglib2.0-0 \
+    libgl1 \
+    libgomp1 \
+    && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt /app/requirements.txt
 
 RUN pip install --no-cache-dir -U pip && \
     pip install --no-cache-dir -r /app/requirements.txt
 
-# Pre-download Docling's PDF pipeline assets into the image.
-# Instantiating DocumentConverter() is not sufficient to pull all HF assets
-# needed for PDF layout/table/OCR; explicitly download Docling's default model set.
-RUN mkdir -p /opt/docling-cache /opt/hf && \
-    python -c "from docling.utils.model_downloader import download_models; download_models()"
+# 1. Download docling model artifacts (layout, tableformer, OCR, etc.)
+#    into $DOCLING_ARTIFACTS_PATH.  This is the reliable, documented CLI.
+RUN docling-tools models download
+
+# 2. Warm up the full PDF pipeline to also pull any HuggingFace Hub
+#    snapshots that docling-tools doesn't cover.  Non-fatal: the build
+#    still succeeds if warmup fails (models from step 1 may suffice).
+COPY warmup.py /tmp/warmup.py
+RUN python /tmp/warmup.py ; rm /tmp/warmup.py
 
 COPY app /app/app
 

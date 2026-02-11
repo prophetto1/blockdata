@@ -29,6 +29,10 @@ function Get-ContentTypeForFile([string]$path) {
     if ($lower.EndsWith(".txt")) { return "text/plain" }
     if ($lower.EndsWith(".pdf")) { return "application/pdf" }
     if ($lower.EndsWith(".docx")) { return "application/vnd.openxmlformats-officedocument.wordprocessingml.document" }
+    if ($lower.EndsWith(".pptx")) { return "application/vnd.openxmlformats-officedocument.presentationml.presentation" }
+    if ($lower.EndsWith(".xlsx")) { return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }
+    if ($lower.EndsWith(".html") -or $lower.EndsWith(".htm")) { return "text/html" }
+    if ($lower.EndsWith(".csv")) { return "text/csv" }
     if ($lower.EndsWith(".md") -or $lower.EndsWith(".markdown")) { return "text/markdown" }
     return "application/octet-stream"
 }
@@ -70,6 +74,21 @@ if (-not $token) { throw "Auth response did not include access_token." }
 Write-Host "Authenticated as: $TEST_EMAIL" -ForegroundColor Green
 Write-Host "SUPABASE_URL: $env:SUPABASE_URL" -ForegroundColor Gray
 
+# Fetch the user's first project (project_id is required by documents_v2).
+$projects = Invoke-RestMethod `
+    -Method Get `
+    -Uri "$env:SUPABASE_URL/rest/v1/projects?select=project_id,project_name&order=created_at.asc&limit=1" `
+    -Headers @{
+        "apikey"        = $env:SUPABASE_ANON_KEY
+        "Authorization" = "Bearer $token"
+    }
+
+if (-not $projects -or $projects.Count -eq 0) {
+    throw "No projects found for test user. Create a project first."
+}
+$projectId = $projects[0].project_id
+Write-Host "Using project: $($projects[0].project_name) ($projectId)" -ForegroundColor Gray
+
 # ============================================================================
 # STEP 2: Choose a non-markdown file (default: .docx for Docling track)
 # ============================================================================
@@ -99,7 +118,15 @@ $contentType = Get-ContentTypeForFile $FilePath
 
 # Determine expected track based on file type
 $ext = [System.IO.Path]::GetExtension($FilePath).ToLowerInvariant()
-$expectDoclingTrack = ($ext -eq ".docx" -or $ext -eq ".pdf")
+$expectDoclingTrack = (
+    $ext -eq ".docx" -or
+    $ext -eq ".pdf" -or
+    $ext -eq ".pptx" -or
+    $ext -eq ".xlsx" -or
+    $ext -eq ".html" -or
+    $ext -eq ".htm" -or
+    $ext -eq ".csv"
+)
 
 if ($expectDoclingTrack) {
     Write-Host "Expected track: docling (docling_json_pointer)" -ForegroundColor Gray
@@ -112,15 +139,18 @@ if ($expectDoclingTrack) {
 # ============================================================================
 Write-Host "`n=== STEP 3: Calling POST /functions/v1/ingest ===" -ForegroundColor Cyan
 
-$ingestResult = curl.exe -sS -i -X POST "$env:SUPABASE_URL/functions/v1/ingest" `
+$tmpBody = [System.IO.Path]::GetTempFileName()
+$httpCode = curl.exe -sS -X POST "$env:SUPABASE_URL/functions/v1/ingest" `
     -H "Authorization: Bearer $token" `
     -H "apikey: $env:SUPABASE_ANON_KEY" `
     -F "doc_title=$DocTitle" `
-    -F "file=@$FilePath;type=$contentType"
+    -F "project_id=$projectId" `
+    -F "file=@$FilePath;type=$contentType" `
+    -o $tmpBody -w "%{http_code}"
 
-$statusLine = (($ingestResult -split "`n")[0]).Trim()
-$body = ($ingestResult -split "`r?`n`r?`n", 2)[1]
-Write-Host "Ingest status line: $statusLine" -ForegroundColor Gray
+$body = Get-Content $tmpBody -Raw
+Remove-Item $tmpBody -ErrorAction SilentlyContinue
+Write-Host "Ingest HTTP status: $httpCode" -ForegroundColor Gray
 
 $ingest = $null
 try {

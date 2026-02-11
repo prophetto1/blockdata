@@ -5,6 +5,9 @@ const MIME_FOR_SOURCE_TYPE: Record<string, string> = {
   docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
   pdf: "application/pdf",
   pptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  html: "text/html",
+  csv: "text/csv",
   txt: "text/plain",
 };
 
@@ -14,6 +17,9 @@ export function detectSourceType(filename: string): string {
   if (lower.endsWith(".docx")) return "docx";
   if (lower.endsWith(".pdf")) return "pdf";
   if (lower.endsWith(".pptx")) return "pptx";
+  if (lower.endsWith(".xlsx")) return "xlsx";
+  if (lower.endsWith(".html") || lower.endsWith(".htm")) return "html";
+  if (lower.endsWith(".csv")) return "csv";
   if (lower.endsWith(".txt")) return "txt";
   throw new Error(`Unsupported file type: ${filename}`);
 }

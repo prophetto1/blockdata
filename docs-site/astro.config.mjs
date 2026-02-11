@@ -21,15 +21,16 @@ export default defineConfig({
 				replacesTitle: true,
 			},
 			customCss: [
-				'@fontsource-variable/inter',
+				'@fontsource-variable/roboto-flex',
 				'./src/styles/custom.css',
 			],
-			sidebar: [
+			head: [
 				{
-					label: 'Back to BlockData',
-					link: '/',
-					attrs: { style: 'font-weight:600;opacity:0.7' },
+					tag: 'script',
+					content: `document.addEventListener('DOMContentLoaded',()=>{const a=document.querySelector('a.site-title');if(a)a.href='/';});`,
 				},
+			],
+			sidebar: [
 				{ label: 'Getting Started', autogenerate: { directory: 'getting-started' } },
 				{
 					label: 'Core Concepts',

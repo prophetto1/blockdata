@@ -73,7 +73,7 @@ export function PublicNavModern() {
           </Box>
 
           {/* DESKTOP LINKS */}
-            <Group gap={8} visibleFrom="sm" bg={isScrolled ? 'transparent' : 'var(--mantine-color-default-hover)'} p={4} style={{ borderRadius: 99 }}>
+            <Group gap={8} visibleFrom="sm">
               {links.map((l) => (
                 <Button
                   key={l.to}
@@ -122,7 +122,7 @@ export function PublicNavModern() {
               <Button
                 size="sm"
                 radius="xl"
-                color="indigo"
+                color="teal"
                 onClick={() => navigate('/register')}
                 rightSection={<IconArrowRight size={16} />}
               >

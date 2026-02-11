@@ -20,7 +20,7 @@ class OutputTarget(BaseModel):
 class ConvertRequest(BaseModel):
     source_uid: str
     conversion_job_id: str
-    source_type: str = Field(pattern=r"^(docx|pdf|txt)$")
+    source_type: str = Field(pattern=r"^(docx|pdf|pptx|xlsx|html|csv|txt)$")
     source_download_url: str
     output: OutputTarget
     docling_output: Optional[OutputTarget] = None
@@ -83,6 +83,43 @@ def _append_token_if_needed(url: str, token: Optional[str]) -> str:
     return f"{url}{join}token={token}"
 
 
+def _build_docling_converter():
+    try:
+        from docling.document_converter import DocumentConverter, PdfFormatOption
+    except Exception as e:  # pragma: no cover
+        raise RuntimeError(f"Docling import failed: {e!r}") from e
+
+    artifacts_path = (os.environ.get("DOCLING_ARTIFACTS_PATH") or "").strip()
+    if not artifacts_path:
+        return DocumentConverter()
+
+    if not os.path.isdir(artifacts_path):
+        raise RuntimeError(f"DOCLING_ARTIFACTS_PATH does not exist: {artifacts_path}")
+
+    # Prefer explicit PDF artifacts path when set. If this version of Docling
+    # does not expose the expected pipeline options API, fall back to default.
+    try:
+        from docling.datamodel.base_models import InputFormat
+        from docling.datamodel.pipeline_options import PdfPipelineOptions
+    except Exception:
+        return DocumentConverter()
+
+    try:
+        pipeline_options = PdfPipelineOptions(artifacts_path=artifacts_path)
+    except TypeError:
+        pipeline_options = PdfPipelineOptions()
+        if hasattr(pipeline_options, "artifacts_path"):
+            setattr(pipeline_options, "artifacts_path", artifacts_path)
+        else:
+            return DocumentConverter()
+
+    return DocumentConverter(
+        format_options={
+            InputFormat.PDF: PdfFormatOption(pipeline_options=pipeline_options),
+        },
+    )
+
+
 async def _convert(req: ConvertRequest) -> tuple[bytes, Optional[bytes]]:
     if req.source_type == "txt":
         async with httpx.AsyncClient(timeout=120) as client:
@@ -93,12 +130,7 @@ async def _convert(req: ConvertRequest) -> tuple[bytes, Optional[bytes]]:
             return text.encode("utf-8"), None
 
     # docx/pdf via Docling using the signed URL directly.
-    try:
-        from docling.document_converter import DocumentConverter
-    except Exception as e:  # pragma: no cover
-        raise RuntimeError(f"Docling import failed: {e!r}") from e
-
-    converter = DocumentConverter()
+    converter = _build_docling_converter()
     result = converter.convert(req.source_download_url)
     doc = result.document
     md = doc.export_to_markdown()

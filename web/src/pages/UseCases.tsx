@@ -181,7 +181,7 @@ export default function UseCases({ withNav = true }: { withNav?: boolean }) {
             >
               Beyond "Chat with PDF"
             </Title>
-            <Text ta="center" c="dimmed" size="xl" maw={720} lh={1.6}>
+            <Text ta="center" c="dimmed" size="xl" maw={720}>
               When you need consistent, schema-driven output across thousands of paragraphs — metadata, revisions, or both — this is the workflow.
             </Text>
           </Stack>
@@ -217,11 +217,11 @@ export default function UseCases({ withNav = true }: { withNav?: boolean }) {
                     </Group>
                     <Stack gap="xs" mt="md">
                       <Text size="xs" fw={700} c={`${uc.color}.6`} tt="uppercase">The Situation</Text>
-                      <Text size="md" c="dimmed" lh={1.6}>{uc.scenario}</Text>
+                      <Text size="md" c="dimmed">{uc.scenario}</Text>
                     </Stack>
                     <Stack gap="xs" mt="sm">
                       <Text size="xs" fw={700} c={`${uc.color}.6`} tt="uppercase">The Workflow</Text>
-                      <Text size="md" c="dimmed" lh={1.6}>{uc.how}</Text>
+                      <Text size="md" c="dimmed">{uc.how}</Text>
                     </Stack>
                   </Stack>
 
@@ -235,7 +235,7 @@ export default function UseCases({ withNav = true }: { withNav?: boolean }) {
                     >
                       <Stack gap="xs">
                         <Text size="xs" fw={700} c={`${uc.color}.6`} tt="uppercase">Output</Text>
-                        <Text size="sm" style={{ fontWeight: 500 }} lh={1.6}>{uc.result}</Text>
+                        <Text size="sm" style={{ fontWeight: 500 }}>{uc.result}</Text>
                       </Stack>
                     </Paper>
                     <Stack gap="xs" mt="md">
@@ -267,7 +267,7 @@ export default function UseCases({ withNav = true }: { withNav?: boolean }) {
       <Box py={100}>
         <Container size="lg">
           <Stack gap="xl">
-            <Title order={2} ta="center" fz={32}>Use cases at scale.</Title>
+            <Title order={2} ta="center">Use cases at scale.</Title>
             <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg">
               {SECONDARY.map((uc) => (
                 <Paper key={uc.title} p="xl" radius="md" withBorder>
@@ -288,7 +288,7 @@ export default function UseCases({ withNav = true }: { withNav?: boolean }) {
                     >
                       {uc.stat}
                     </Badge>
-                    <Text size="md" c="dimmed" lh={1.6}>{uc.description}</Text>
+                    <Text size="md" c="dimmed">{uc.description}</Text>
                   </Stack>
                 </Paper>
               ))}
@@ -304,7 +304,7 @@ export default function UseCases({ withNav = true }: { withNav?: boolean }) {
             <Title order={2} ta="center" fz={40}>
               Try it on a real document.
             </Title>
-            <Text ta="center" c="dimmed" size="xl" maw={520} lh={1.6}>
+            <Text ta="center" c="dimmed" size="xl" maw={520}>
               Upload one file and see blocks populate in the grid.
             </Text>
             <Group gap="md">
