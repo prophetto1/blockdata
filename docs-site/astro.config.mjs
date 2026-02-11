@@ -17,6 +17,11 @@ export default defineConfig({
 			],
 			sidebar: [
 				{
+					label: 'Back to BlockData',
+					link: '/',
+					attrs: { style: 'font-weight:600;opacity:0.7' },
+				},
+				{
 					label: 'Getting Started',
 					autogenerate: { directory: 'getting-started' },
 				},
