@@ -10,11 +10,42 @@ function json(status: number, body: unknown): Response {
   });
 }
 
-type Provider = "anthropic";
+type Provider = "anthropic" | "openai" | "google" | "custom";
+
+const VALID_PROVIDERS: ReadonlySet<string> = new Set<Provider>([
+  "anthropic",
+  "openai",
+  "google",
+  "custom",
+]);
 
 function parseProvider(value: unknown): Provider | null {
-  if (value === "anthropic") return "anthropic";
+  if (typeof value === "string" && VALID_PROVIDERS.has(value)) return value as Provider;
   return null;
+}
+
+function parseBaseUrl(body: Record<string, unknown>, provider: Provider):
+  | { ok: true; base_url: string | null }
+  | { ok: false; error: string } {
+  const raw = typeof body?.base_url === "string" ? body.base_url.trim() || null : null;
+
+  if (provider === "custom" && !raw) {
+    return { ok: false, error: "Custom provider requires base_url" };
+  }
+  if (provider !== "custom" && raw) {
+    return { ok: false, error: "base_url only applies to custom provider" };
+  }
+  if (raw) {
+    try {
+      const parsed = new URL(raw);
+      if (!["http:", "https:"].includes(parsed.protocol)) {
+        return { ok: false, error: "base_url must use http or https" };
+      }
+    } catch {
+      return { ok: false, error: "Invalid base_url" };
+    }
+  }
+  return { ok: true, base_url: raw };
 }
 
 Deno.serve(async (req) => {
@@ -45,6 +76,9 @@ Deno.serve(async (req) => {
         ? body.default_max_tokens
         : null;
 
+      const urlResult = parseBaseUrl(body, provider);
+      if (!urlResult.ok) return json(400, { error: urlResult.error });
+
       const key_suffix = apiKey.slice(-4);
       const encrypted = await encryptApiKey(apiKey, cryptoSecret);
 
@@ -58,6 +92,7 @@ Deno.serve(async (req) => {
           api_key_encrypted: encrypted,
           key_suffix,
           is_valid: null,
+          base_url: urlResult.base_url,
           ...(default_model != null ? { default_model } : {}),
           ...(default_temperature != null ? { default_temperature } : {}),
           ...(default_max_tokens != null ? { default_max_tokens } : {}),
@@ -76,6 +111,7 @@ Deno.serve(async (req) => {
       const default_max_tokens = typeof body?.default_max_tokens === "number"
         ? body.default_max_tokens
         : null;
+      const base_url = typeof body?.base_url === "string" ? body.base_url.trim() || null : null;
 
       const supabase = createUserClient(authHeader);
       const { data, error } = await supabase.rpc("update_api_key_defaults", {
@@ -83,6 +119,7 @@ Deno.serve(async (req) => {
         p_default_model: default_model,
         p_default_temperature: default_temperature,
         p_default_max_tokens: default_max_tokens,
+        p_base_url: base_url,
       });
       if (error) return json(400, { error: error.message });
       return json(200, data ?? { ok: true });
@@ -101,4 +138,3 @@ Deno.serve(async (req) => {
     return json(500, { error: msg });
   }
 });
-
