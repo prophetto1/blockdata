@@ -6,7 +6,8 @@ import { fileURLToPath } from 'node:url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, '..');
 
-const metaConfiguratorDir = path.join(repoRoot, 'ref-repos', 'meta-configurator', 'meta_configurator');
+// Tracked fork: keep build reproducible and not tied to gitignored `ref-repos/`.
+const metaConfiguratorDir = path.join(repoRoot, 'third_party', 'meta-configurator', 'meta_configurator');
 const distDir = path.join(metaConfiguratorDir, 'dist-embed');
 const outDir = path.join(repoRoot, 'web', 'public', 'meta-configurator-embed');
 
@@ -35,6 +36,12 @@ function run(cmd, args, cwd) {
 }
 
 const npmCmd = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+
+// Clean checkouts won't have deps installed.
+if (!fs.existsSync(path.join(metaConfiguratorDir, 'node_modules'))) {
+  console.log('[meta-configurator-embed] Installing deps (npm ci)...');
+  run(npmCmd, ['ci'], metaConfiguratorDir);
+}
 
 console.log('[meta-configurator-embed] Building...');
 run(npmCmd, ['run', 'build:embed'], metaConfiguratorDir);

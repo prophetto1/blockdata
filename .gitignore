@@ -9,6 +9,11 @@ ref-repos/
 -personal-/
 src-content/
 
+# Third-party tracked forks: ignore generated artifacts
+third_party/meta-configurator/.husky/
+third_party/meta-configurator/meta_configurator/dist-embed/
+third_party/meta-configurator/meta_configurator/NUL
+
 # Environment files
 .env
 .env.*

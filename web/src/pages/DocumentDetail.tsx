@@ -129,7 +129,7 @@ export default function DocumentDetail() {
   return (
     <>
       <AppBreadcrumbs items={[
-        { label: 'Projects', href: '/app' },
+        { label: 'Projects', href: '/app/projects' },
         { label: projectName || 'Project', href: `/app/projects/${projectId}` },
         { label: doc.doc_title },
       ]} />

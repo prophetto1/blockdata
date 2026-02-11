@@ -123,7 +123,7 @@ export default function RunDetail() {
   return (
     <>
       <AppBreadcrumbs items={[
-        { label: 'Projects', href: '/app' },
+        { label: 'Projects', href: '/app/projects' },
         { label: projectName || 'Project', href: `/app/projects/${projectId}` },
         { label: `Run ${row?.run_id?.slice(0, 8) ?? ''}...` },
       ]} />

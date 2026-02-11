@@ -11,6 +11,7 @@ import HowItWorks from '@/pages/HowItWorks';
 import UseCases from '@/pages/UseCases';
 import MarketingIntegrations from '@/pages/MarketingIntegrations';
 import AuthCallback from '@/pages/AuthCallback';
+import WorkspaceHome from '@/pages/WorkspaceHome';
 import Projects from '@/pages/Projects';
 import ProjectDetail from '@/pages/ProjectDetail';
 import Upload from '@/pages/Upload';
@@ -56,8 +57,9 @@ export const router = createBrowserRouter([
       {
         element: <AppLayout />,
         children: [
-          // Projects list (replaces old Dashboard)
-          { path: '/app', element: <Projects /> },
+          // Workspace home + projects
+          { path: '/app', element: <WorkspaceHome /> },
+          { path: '/app/projects', element: <Projects /> },
 
           // Project-scoped routes
           { path: '/app/projects/:projectId', element: <ProjectDetail /> },
@@ -76,7 +78,7 @@ export const router = createBrowserRouter([
           // Legacy flat routes → redirect to project-scoped equivalents
           { path: '/app/documents/:sourceUid', element: <LegacyDocumentRedirect /> },
           { path: '/app/runs/:runId', element: <LegacyRunRedirect /> },
-          { path: '/app/upload', element: <Navigate to="/app" replace /> },
+          { path: '/app/upload', element: <Navigate to="/app/projects" replace /> },
         ],
       },
     ],

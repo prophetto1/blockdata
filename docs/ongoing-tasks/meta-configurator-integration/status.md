@@ -44,12 +44,12 @@ Files:
 - Mount API: `mountSchemaEditor(el, { initialSchema, onChange }) -> { getSchemaJson, setSchemaJson, destroy }`.
 - CSS strategy: Tailwind `components` + `utilities` only (no `@tailwind base;` / preflight).
 
-Files (in `ref-repos/`, which is gitignored):
-- `ref-repos/meta-configurator/meta_configurator/vite.embed.config.js` (sets `base: '/meta-configurator-embed/'`)
-- `ref-repos/meta-configurator/meta_configurator/src/embed-entry.ts`
-- `ref-repos/meta-configurator/meta_configurator/src/embed/EmbeddedSchemaEditor.vue`
-- `ref-repos/meta-configurator/meta_configurator/src/embed-style.css`
-- `ref-repos/meta-configurator/meta_configurator/package.json` (script: `build:embed`)
+Files (tracked fork in `third_party/`):
+- `third_party/meta-configurator/meta_configurator/vite.embed.config.js` (sets `base: '/meta-configurator-embed/'`)
+- `third_party/meta-configurator/meta_configurator/src/embed-entry.ts`
+- `third_party/meta-configurator/meta_configurator/src/embed/EmbeddedSchemaEditor.vue`
+- `third_party/meta-configurator/meta_configurator/src/embed-style.css`
+- `third_party/meta-configurator/meta_configurator/package.json` (script: `build:embed`)
 
 ### Serving and lazy-load contract
 
@@ -68,7 +68,7 @@ Files:
 ### Build/copy plumbing (dist -> web/public)
 
 - `scripts/build-meta-configurator-embed.mjs`:
-  - Runs `npm run build:embed` inside `ref-repos/meta-configurator/meta_configurator/`
+  - Runs `npm ci` (only if needed) and `npm run build:embed` inside `third_party/meta-configurator/meta_configurator/`
   - Copies `dist-embed/` -> `web/public/meta-configurator-embed/`
 - `web/package.json` script:
   - `build:meta-configurator-embed` -> `node ../scripts/build-meta-configurator-embed.mjs`
@@ -83,7 +83,7 @@ Files:
 - Vite-reported outputs:
   - `dist-embed/meta-configurator-embed.js`: 2,146.18 kB (gzip 584.14 kB)
   - `dist-embed/meta-configurator-embed.css`: 986.52 kB (gzip 408.03 kB)
-  - `dist-embed/assets/validationWorker-296995c3.js`: 149.50 kB
+  - `dist-embed/assets/validationWorker-ccf3499f.js`: 149.56 kB
 - Verified `dist-embed/` and `web/public/` copies are byte-identical for JS and CSS (SHA256 matches at the time of this report).
 - Verified embed output loads its validation worker under `/meta-configurator-embed/assets/...` (not `/assets/...`), matching the hosting prefix.
 
@@ -96,7 +96,5 @@ Files:
 
 ## Repo hygiene / capture status
 
-- `ref-repos/` is gitignored by `E:/writing-system/.gitignore`, so the MetaConfigurator fork and embed build sources are local-only inputs.
-- Current git status for the v1 integration artifacts (this is the current working tree state, not git history):
-  - Modified (tracked): `web/package.json`, `web/package-lock.json`, `web/src/pages/Schemas.tsx`, `web/src/router.tsx`
-  - Added (untracked): `scripts/build-meta-configurator-embed.mjs`, `web/src/lib/metaConfiguratorEmbed.ts`, `web/src/pages/SchemaAdvancedEditor.tsx`, `web/public/meta-configurator-embed/`, `docs/ongoing-tasks/meta-configurator-integration/*`
+- `third_party/meta-configurator/` is now the tracked fork location used by the embed build.
+- `ref-repos/` remains gitignored scratch space and is no longer required for the embed build.

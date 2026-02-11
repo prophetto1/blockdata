@@ -1,0 +1,15 @@
+ls:
+  src:
+    .dir: kebab-case | regex:__tests__
+    .js: camelCase
+    .ts: camelCase | kebab-case
+    .test.ts: camelCase
+    .css: regex:([.a-z]*)([-.][a-z]+)*
+    .vue: PascalCase
+
+ignore:
+  - .git
+  - node_modules
+  - .github
+  - .vscode
+  - .idea

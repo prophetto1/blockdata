@@ -1,40 +1,25 @@
 import {
   AppShell,
-  Burger,
-  NavLink,
-  Group,
-  Text,
-  Button,
-  Box,
-  ActionIcon,
-  Tooltip,
   useMantineColorScheme,
   useComputedColorScheme,
 } from '@mantine/core';
-import { useDisclosure } from '@mantine/hooks';
-import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import {
-  IconFolderPlus,
-  IconSchema,
-  IconPlug,
-  IconSettings,
-  IconBook,
-  IconSun,
-  IconMoon,
-} from '@tabler/icons-react';
+import { useDisclosure, useLocalStorage } from '@mantine/hooks';
+import { Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/auth/AuthContext';
-
-const NAV_ITEMS = [
-  { label: 'Projects', icon: IconFolderPlus, path: '/app' },
-  { label: 'Schemas', icon: IconSchema, path: '/app/schemas' },
-  { label: 'Integrations', icon: IconPlug, path: '/app/integrations' },
-  { label: 'Settings', icon: IconSettings, path: '/app/settings' },
-];
+import { TopCommandBar } from '@/components/shell/TopCommandBar';
+import { LeftRail } from '@/components/shell/LeftRail';
+import { AssistantDockHost } from '@/components/shell/AssistantDockHost';
+import { featureFlags } from '@/lib/featureFlags';
 
 export function AppLayout() {
-  const [opened, { toggle }] = useDisclosure();
+  const shellV2Enabled = featureFlags.shellV2;
+  const assistantDockEnabled = shellV2Enabled && featureFlags.assistantDock;
+  const [navOpened, { toggle: toggleNav, close: closeNav }] = useDisclosure();
+  const [assistantOpened, setAssistantOpened] = useLocalStorage<boolean>({
+    key: 'blockdata.shell.assistant_open',
+    defaultValue: false,
+  });
   const navigate = useNavigate();
-  const location = useLocation();
   const { user, profile, signOut } = useAuth();
   const { setColorScheme } = useMantineColorScheme();
   const computedColorScheme = useComputedColorScheme('dark');
@@ -48,10 +33,22 @@ export function AppLayout() {
     setColorScheme(computedColorScheme === 'dark' ? 'light' : 'dark');
   };
 
+  const toggleAssistant = () => setAssistantOpened(!assistantOpened);
+  const closeAssistant = () => setAssistantOpened(false);
+
   return (
     <AppShell
       header={{ height: 56 }}
-      navbar={{ width: 240, breakpoint: 'sm', collapsed: { mobile: !opened } }}
+      navbar={{ width: 240, breakpoint: 'sm', collapsed: { mobile: !navOpened } }}
+      aside={
+        assistantDockEnabled
+          ? {
+              width: 360,
+              breakpoint: 'sm',
+              collapsed: { desktop: !assistantOpened, mobile: !assistantOpened },
+            }
+          : undefined
+      }
       padding="md"
       styles={{
         header: {
@@ -62,69 +59,44 @@ export function AppLayout() {
           backgroundColor: 'var(--mantine-color-body)',
           borderRight: '1px solid var(--mantine-color-default-border)',
         },
+        ...(assistantDockEnabled
+          ? {
+              aside: {
+                backgroundColor: 'var(--mantine-color-body)',
+                borderLeft: '1px solid var(--mantine-color-default-border)',
+              },
+            }
+          : {}),
       }}
     >
       <AppShell.Header>
-        <Group h="100%" px="md" justify="space-between">
-          <Group>
-            <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" />
-            <Group gap={8}>
-              <img src="/icon-64.png" alt="" width={28} height={28} />
-              <Text fw={700} size="lg">BlockData</Text>
-            </Group>
-          </Group>
-          <Group gap="sm">
-            <Tooltip label={computedColorScheme === 'dark' ? 'Light mode' : 'Dark mode'}>
-              <ActionIcon
-                variant="subtle"
-                size="md"
-                onClick={toggleColorScheme}
-                aria-label="Toggle color scheme"
-              >
-                {computedColorScheme === 'dark'
-                  ? <IconSun size={18} />
-                  : <IconMoon size={18} />}
-              </ActionIcon>
-            </Tooltip>
-            <Text size="sm" c="dimmed">
-              {profile?.display_name || profile?.email || user?.email}
-            </Text>
-            <Button variant="subtle" size="xs" onClick={handleSignOut}>
-              Sign out
-            </Button>
-          </Group>
-        </Group>
+        <TopCommandBar
+          navOpened={navOpened}
+          onToggleNav={toggleNav}
+          showSearch={shellV2Enabled}
+          showAssistantToggle={assistantDockEnabled}
+          assistantOpened={assistantOpened}
+          onToggleAssistant={toggleAssistant}
+          computedColorScheme={computedColorScheme}
+          onToggleColorScheme={toggleColorScheme}
+          userLabel={profile?.display_name || profile?.email || user?.email}
+          onSignOut={handleSignOut}
+        />
       </AppShell.Header>
 
       <AppShell.Navbar p="xs">
-        <Box mt="xs">
-          {NAV_ITEMS.map((item) => (
-            <NavLink
-              key={item.path}
-              label={item.label}
-              leftSection={<item.icon size={18} />}
-              active={
-                item.path === '/app'
-                  ? location.pathname === '/app' || location.pathname.startsWith('/app/projects')
-                  : location.pathname.startsWith(item.path)
-              }
-              onClick={() => {
-                navigate(item.path);
-                toggle();
-              }}
-            />
-          ))}
-          <NavLink
-            label="Docs"
-            leftSection={<IconBook size={18} />}
-            component="a"
-            href="/docs"
-            target="_blank"
-            mt="xs"
-            style={{ opacity: 0.7 }}
-          />
-        </Box>
+        <LeftRail
+          onNavigate={() => {
+            closeNav();
+          }}
+        />
       </AppShell.Navbar>
+
+      {assistantDockEnabled && (
+        <AppShell.Aside p="xs">
+          <AssistantDockHost onClose={closeAssistant} />
+        </AppShell.Aside>
+      )}
 
       <AppShell.Main>
         <Outlet />

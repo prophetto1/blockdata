@@ -241,7 +241,7 @@ export default function Upload() {
   return (
     <>
       <AppBreadcrumbs items={[
-        { label: 'Projects', href: '/app' },
+        { label: 'Projects', href: '/app/projects' },
         { label: projectName || 'Project', href: `/app/projects/${projectId}` },
         { label: 'Upload' },
       ]} />

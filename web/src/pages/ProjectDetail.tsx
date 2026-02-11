@@ -557,7 +557,7 @@ export default function ProjectDetail() {
       const { error: err } = await supabase.rpc('delete_project', { p_project_id: projectId });
       if (err) throw new Error(err.message);
       notifications.show({ color: 'green', title: 'Deleted', message: 'Project and all contents removed' });
-      navigate('/app');
+      navigate('/app/projects');
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
       setDeletingProject(false);
@@ -571,7 +571,7 @@ export default function ProjectDetail() {
   return (
     <>
       <AppBreadcrumbs items={[
-        { label: 'Projects', href: '/app' },
+        { label: 'Projects', href: '/app/projects' },
         { label: project.project_name },
       ]} />
 

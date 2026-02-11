@@ -88,9 +88,71 @@ This document is the execution tracker for that work.
 3. Context contract and feature-flag plan.
 4. Mobile fallback behavior.
 
+### 0.1 Shell Region Contract (Desktop)
+
+1. `LeftRail`: primary navigation + workspace switch context.
+2. `TopCommandBar`: global search/command surface + session controls.
+3. `MainCanvas`: route content area (`<Outlet />`) with page-owned layout.
+4. `AssistantDock`: persistent right panel for internal assistant only.
+
+### 0.2 Density + Spacing Contract (Initial v0 values)
+
+1. Header height target: `48px` (reduce non-critical vertical space).
+2. Left rail width target: `220px` expanded, `72px` collapsed.
+3. Assistant dock width target: `360px` default, resizable `320-520px`.
+4. Global page padding target: `12px` default on desktop.
+5. Non-critical UI copy target size: `12-13px` (labels, metadata, helper text).
+6. Grid readability guardrail: do not reduce core grid text below current readable baseline.
+
+### 0.3 Mobile Behavior Contract
+
+1. `LeftRail` becomes drawer (overlay).
+2. `AssistantDock` becomes slide-over panel; default closed on mobile.
+3. `TopCommandBar` remains visible with compact controls.
+4. Main content stays first priority; assistant never permanently consumes canvas width on mobile.
+
+### 0.4 Assistant Context Contract
+
+Each assistant request payload includes:
+1. `route` (current pathname + key params).
+2. Optional `project_id`.
+3. Optional `schema_id`.
+4. Optional `run_id`.
+5. Optional selection summary (count + type only; not full data by default).
+6. Timestamp + client session id for traceability.
+
+### 0.5 Assistant Action Contract (v0)
+
+1. `ask`: explanation/guidance response.
+2. `suggest`: propose schema fields/prompt changes.
+3. `apply`: apply user-approved suggestion into wizard/editor state.
+4. `retry`: repeat failed call with same payload.
+
+Hard boundary:
+1. Assistant actions for schema authoring route to platform `schema-assist`.
+2. Worker-run execution paths remain separate and continue to use user-key logic where applicable.
+
+### 0.6 Feature Flags Contract
+
+1. `ff_shell_v2`: enables new shell regions/layout.
+2. `ff_assistant_dock`: enables right assistant panel UI.
+3. `ff_schema_assist`: enables server-backed assistant actions.
+
+Rollout order:
+1. Internal only.
+2. Selected pilot users.
+3. General availability.
+
+### 0.7 UI Copy Guardrails
+
+1. Internal assistant label must not imply user-key run execution.
+2. Worker actions must remain explicitly named as run processing/execution.
+3. Help text must state separation when both assistant and worker actions are visible.
+
 **Verification:**
 1. SRL checklist approved in this doc.
 2. No unresolved contract ambiguity for shell regions or copilot actions.
+3. Product language for assistant vs worker AI is unambiguous in all new shell surfaces.
 
 ---
 
@@ -287,3 +349,65 @@ This document is the execution tracker for that work.
 4. Schema creation path is wizard-first and supports assisted authoring.
 5. Visual/token system produces consistent shell behavior across core pages.
 6. Rollout is feature-flagged with baseline observability.
+
+---
+
+## 11) Progress Log
+
+### 2026-02-11 (Phase 1 partial)
+
+Completed:
+1. Added right-side assistant dock in app shell with explicit open/close controls (visible/not visible).
+2. Refactored shell layout into dedicated components:
+- `web/src/components/shell/TopCommandBar.tsx`
+- `web/src/components/shell/LeftRail.tsx`
+- `web/src/components/shell/AssistantDockHost.tsx`
+3. Rewired `web/src/components/layout/AppLayout.tsx` to use extracted shell components.
+
+Verification:
+1. `npm exec tsc -- -b` (from `web/`) passed.
+2. `npm exec vite build` (from `web/`) passed.
+
+### 2026-02-11 (Phase 1 hardening)
+
+Completed:
+1. Added shell feature flags:
+- `VITE_FF_SHELL_V2`
+- `VITE_FF_ASSISTANT_DOCK`
+2. Added centralized flag parser at `web/src/lib/featureFlags.ts`.
+3. Wired `AppLayout` to conditionally render assistant dock/toggle from flags.
+4. Persisted assistant open/closed state using local storage key:
+- `blockdata.shell.assistant_open`
+5. Updated `web/.env.example` with the new flag keys.
+
+Verification:
+1. `npm exec tsc -- -b` (from `web/`) passed.
+2. `npm exec vite build` (from `web/`) passed.
+
+### 2026-02-11 (Phase 2 partial: nav IA extraction)
+
+Completed:
+1. Added grouped nav configuration at `web/src/components/shell/nav-config.ts`.
+2. Updated `LeftRail` to render sectioned nav groups from config (Workspace/Platform).
+3. Preserved active-route logic for project-scoped paths.
+
+Verification:
+1. `npm exec tsc -- -b` (from `web/`) passed.
+2. `npm exec vite build` (from `web/`) passed.
+
+### 2026-02-11 (Phase 2 partial: workspace-home route cutover)
+
+Completed:
+1. Added `WorkspaceHome` page as a compact launch surface:
+- quick actions (open projects, open schemas, upload to latest project)
+- compact workspace stats (projects, documents, ingested, processing)
+- recent projects and recent documents panels
+2. Changed router mapping:
+- `/app` -> `WorkspaceHome`
+- `/app/projects` -> `Projects`
+3. Updated project-oriented breadcrumbs and redirects to use `/app/projects`.
+4. Updated left-rail nav grouping to keep Home and Projects as separate entries.
+
+Verification:
+1. `npm exec tsc -- -b` (from `web/`) passed.
+2. `npm exec vite build` (from `web/`) passed.
