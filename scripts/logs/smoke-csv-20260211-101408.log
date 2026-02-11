@@ -1,0 +1,75 @@
+﻿
+=== STEP 1: Authenticating ===
+Authenticated as: jondev717@gmail.com
+SUPABASE_URL: https://dbdzzhshmigewyprahej.supabase.co
+Using project: Default Project (bc168e07-a149-4e56-9a3a-e9e4ab34e2a0)
+
+=== STEP 2: Preparing non-markdown upload ===
+Using: E:\writing-system\scripts\_tmp-smoke.csv
+Expected track: docling (docling_json_pointer)
+
+=== STEP 3: Calling POST /functions/v1/ingest ===
+Ingest HTTP status: 202
+source_uid: d1111d7f1c46ab54d41a58e670807332cd6bb4815b22865f1edd9218b05e0e4a
+initial status: converting
+
+=== STEP 4: Polling documents_v2 status ===
+status=ingested source_type=csv conv_uid=9faed94bdceb06200d8365fd7c41a304104ac35769ff40c6a70d69540865216d
+Ingest complete! conv_uid=9faed94bdceb06200d8365fd7c41a304104ac35769ff40c6a70d69540865216d
+
+=== STEP 5: Exporting JSONL ===
+Export successful! 1 blocks exported
+Saved to: .\\scripts\\export-non-md-test.jsonl
+
+=== First block (sample) ===
+{
+    "immutable":  {
+                      "source_upload":  {
+                                            "source_uid":  "d1111d7f1c46ab54d41a58e670807332cd6bb4815b22865f1edd9218b05e0e4a",
+                                            "source_type":  "csv",
+                                            "source_filesize":  26,
+                                            "source_total_characters":  null,
+                                            "source_upload_timestamp":  "2026-02-11T17:15:19.466859+00:00"
+                                        },
+                      "conversion":  {
+                                         "conv_status":  "success",
+                                         "conv_uid":  "9faed94bdceb06200d8365fd7c41a304104ac35769ff40c6a70d69540865216d",
+                                         "conv_parsing_tool":  "docling",
+                                         "conv_representation_type":  "doclingdocument_json",
+                                         "conv_total_blocks":  1,
+                                         "conv_block_type_freq":  {
+                                                                      "table":  1
+                                                                  },
+                                         "conv_total_characters":  26
+                                     },
+                      "block":  {
+                                    "block_uid":  "9faed94bdceb06200d8365fd7c41a304104ac35769ff40c6a70d69540865216d:0",
+                                    "block_index":  0,
+                                    "block_type":  "table",
+                                    "block_locator":  {
+                                                          "type":  "docling_json_pointer",
+                                                          "pointer":  "#/tables/0"
+                                                      },
+                                    "block_content":  "ï»¿col_a | col_b\nhello | 123"
+                                }
+                  },
+    "user_defined":  {
+                         "schema_ref":  null,
+                         "schema_uid":  null,
+                         "data":  {
+
+                                  }
+                     }
+}
+
+=== Verifying v2 export shape ===
+
+=== Verifying pairing rules ===
+conv_parsing_tool: docling
+conv_representation_type: doclingdocument_json
+block_locator.type: docling_json_pointer
+block_locator.pointer: #/tables/0
+v2 export shape + pairing rules OK.
+
+=== SMOKE TEST COMPLETE ===
+

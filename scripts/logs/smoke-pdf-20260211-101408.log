@@ -1,0 +1,77 @@
+﻿
+=== STEP 1: Authenticating ===
+Authenticated as: jondev717@gmail.com
+SUPABASE_URL: https://dbdzzhshmigewyprahej.supabase.co
+Using project: Default Project (bc168e07-a149-4e56-9a3a-e9e4ab34e2a0)
+
+=== STEP 2: Preparing non-markdown upload ===
+Using: E:\writing-system\docs\tests\test-pack\lorem_ipsum.pdf
+Expected track: docling (docling_json_pointer)
+
+=== STEP 3: Calling POST /functions/v1/ingest ===
+Ingest HTTP status: 200
+source_uid: 01ba01ee164884d624cd3d3d6bf1a8f751d88cf45a7093c16119388213458c9e
+initial status: ingested
+
+=== STEP 4: Polling documents_v2 status ===
+status=ingested source_type=pdf conv_uid=09a695d889794334b294181fa99d580845090a2d64ac321dfba3c3a0ce235890
+Ingest complete! conv_uid=09a695d889794334b294181fa99d580845090a2d64ac321dfba3c3a0ce235890
+
+=== STEP 5: Exporting JSONL ===
+Export successful! 3 blocks exported
+Saved to: .\\scripts\\export-non-md-test.jsonl
+
+=== First block (sample) ===
+{
+    "immutable":  {
+                      "source_upload":  {
+                                            "source_uid":  "01ba01ee164884d624cd3d3d6bf1a8f751d88cf45a7093c16119388213458c9e",
+                                            "source_type":  "pdf",
+                                            "source_filesize":  1241,
+                                            "source_total_characters":  null,
+                                            "source_upload_timestamp":  "2026-02-11T09:40:07.695657+00:00"
+                                        },
+                      "conversion":  {
+                                         "conv_status":  "success",
+                                         "conv_uid":  "09a695d889794334b294181fa99d580845090a2d64ac321dfba3c3a0ce235890",
+                                         "conv_parsing_tool":  "docling",
+                                         "conv_representation_type":  "doclingdocument_json",
+                                         "conv_total_blocks":  3,
+                                         "conv_block_type_freq":  {
+                                                                      "heading":  1,
+                                                                      "paragraph":  2
+                                                                  },
+                                         "conv_total_characters":  328
+                                     },
+                      "block":  {
+                                    "block_uid":  "09a695d889794334b294181fa99d580845090a2d64ac321dfba3c3a0ce235890:0",
+                                    "block_index":  0,
+                                    "block_type":  "heading",
+                                    "block_locator":  {
+                                                          "type":  "docling_json_pointer",
+                                                          "page_no":  1,
+                                                          "pointer":  "#/texts/0"
+                                                      },
+                                    "block_content":  "Lorem Ipsum Test Document"
+                                }
+                  },
+    "user_defined":  {
+                         "schema_ref":  null,
+                         "schema_uid":  null,
+                         "data":  {
+
+                                  }
+                     }
+}
+
+=== Verifying v2 export shape ===
+
+=== Verifying pairing rules ===
+conv_parsing_tool: docling
+conv_representation_type: doclingdocument_json
+block_locator.type: docling_json_pointer
+block_locator.pointer: #/texts/0
+v2 export shape + pairing rules OK.
+
+=== SMOKE TEST COMPLETE ===
+

@@ -1,0 +1,75 @@
+﻿
+=== STEP 1: Authenticating ===
+Authenticated as: jondev717@gmail.com
+SUPABASE_URL: https://dbdzzhshmigewyprahej.supabase.co
+Using project: Default Project (bc168e07-a149-4e56-9a3a-e9e4ab34e2a0)
+
+=== STEP 2: Preparing non-markdown upload ===
+Using: E:\writing-system\scripts\test-non-md.txt
+Expected track: mdast fallback (text_offset_range)
+
+=== STEP 3: Calling POST /functions/v1/ingest ===
+Ingest HTTP status: 202
+source_uid: fa0139d7b15c970fb1afedf5b8e9d4c3f93182a6526655249ee9aeb8c98d006b
+initial status: converting
+
+=== STEP 4: Polling documents_v2 status ===
+status=ingested source_type=txt conv_uid=2abd5319f4e53483c468643378beeda53db56e86d3457339d792b0606e3fd1a4
+Ingest complete! conv_uid=2abd5319f4e53483c468643378beeda53db56e86d3457339d792b0606e3fd1a4
+
+=== STEP 5: Exporting JSONL ===
+Export successful! 1 blocks exported
+Saved to: .\\scripts\\export-non-md-test.jsonl
+
+=== First block (sample) ===
+{
+    "immutable":  {
+                      "source_upload":  {
+                                            "source_uid":  "fa0139d7b15c970fb1afedf5b8e9d4c3f93182a6526655249ee9aeb8c98d006b",
+                                            "source_type":  "txt",
+                                            "source_filesize":  168,
+                                            "source_total_characters":  null,
+                                            "source_upload_timestamp":  "2026-02-11T17:14:17.370797+00:00"
+                                        },
+                      "conversion":  {
+                                         "conv_status":  "success",
+                                         "conv_uid":  "2abd5319f4e53483c468643378beeda53db56e86d3457339d792b0606e3fd1a4",
+                                         "conv_parsing_tool":  "mdast",
+                                         "conv_representation_type":  "markdown_bytes",
+                                         "conv_total_blocks":  1,
+                                         "conv_block_type_freq":  {
+                                                                      "paragraph":  1
+                                                                  },
+                                         "conv_total_characters":  163
+                                     },
+                      "block":  {
+                                    "block_uid":  "2abd5319f4e53483c468643378beeda53db56e86d3457339d792b0606e3fd1a4:0",
+                                    "block_index":  0,
+                                    "block_type":  "paragraph",
+                                    "block_locator":  {
+                                                          "type":  "text_offset_range",
+                                                          "end_offset":  163,
+                                                          "start_offset":  0
+                                                      },
+                                    "block_content":  "Hello from the non-markdown pipeline.\nThis is a plain text document used to validate:\ningest -\u003e conversion-service -\u003e conversion-complete -\u003e blocks -\u003e export-jsonl"
+                                }
+                  },
+    "user_defined":  {
+                         "schema_ref":  null,
+                         "schema_uid":  null,
+                         "data":  {
+
+                                  }
+                     }
+}
+
+=== Verifying v2 export shape ===
+
+=== Verifying pairing rules ===
+conv_parsing_tool: mdast
+conv_representation_type: markdown_bytes
+block_locator.type: text_offset_range
+v2 export shape + pairing rules OK.
+
+=== SMOKE TEST COMPLETE ===
+

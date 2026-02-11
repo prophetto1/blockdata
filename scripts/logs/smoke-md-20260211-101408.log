@@ -1,0 +1,79 @@
+﻿
+=== STEP 1: Authenticating ===
+Authenticated as: jondev717@gmail.com
+SUPABASE_URL: https://dbdzzhshmigewyprahej.supabase.co
+Using project: Default Project (bc168e07-a149-4e56-9a3a-e9e4ab34e2a0)
+
+=== STEP 2: Preparing non-markdown upload ===
+Using: E:\writing-system\docs\tests\test-pack\gfm-smoke.md
+Expected track: mdast fallback (text_offset_range)
+
+=== STEP 3: Calling POST /functions/v1/ingest ===
+Ingest HTTP status: 200
+source_uid: ec9e61f32c1fcdf99252b60eba5f0a0d946d848642f145713768717ce29e6318
+initial status: ingested
+
+=== STEP 4: Polling documents_v2 status ===
+status=ingested source_type=md conv_uid=60f49fe715e1cfa8a9c99e514cb645f7113de0339b758f093c531b530a9d6e5a
+Ingest complete! conv_uid=60f49fe715e1cfa8a9c99e514cb645f7113de0339b758f093c531b530a9d6e5a
+
+=== STEP 5: Exporting JSONL ===
+Export successful! 9 blocks exported
+Saved to: .\\scripts\\export-non-md-test.jsonl
+
+=== First block (sample) ===
+{
+    "immutable":  {
+                      "source_upload":  {
+                                            "source_uid":  "ec9e61f32c1fcdf99252b60eba5f0a0d946d848642f145713768717ce29e6318",
+                                            "source_type":  "md",
+                                            "source_filesize":  428,
+                                            "source_total_characters":  428,
+                                            "source_upload_timestamp":  "2026-02-11T17:14:13.461674+00:00"
+                                        },
+                      "conversion":  {
+                                         "conv_status":  "success",
+                                         "conv_uid":  "60f49fe715e1cfa8a9c99e514cb645f7113de0339b758f093c531b530a9d6e5a",
+                                         "conv_parsing_tool":  "mdast",
+                                         "conv_representation_type":  "markdown_bytes",
+                                         "conv_total_blocks":  9,
+                                         "conv_block_type_freq":  {
+                                                                      "table":  1,
+                                                                      "heading":  4,
+                                                                      "footnote":  1,
+                                                                      "paragraph":  2,
+                                                                      "code_block":  1
+                                                                  },
+                                         "conv_total_characters":  410
+                                     },
+                      "block":  {
+                                    "block_uid":  "60f49fe715e1cfa8a9c99e514cb645f7113de0339b758f093c531b530a9d6e5a:0",
+                                    "block_index":  0,
+                                    "block_type":  "heading",
+                                    "block_locator":  {
+                                                          "type":  "text_offset_range",
+                                                          "end_offset":  11,
+                                                          "start_offset":  0
+                                                      },
+                                    "block_content":  "# GFM smoke"
+                                }
+                  },
+    "user_defined":  {
+                         "schema_ref":  null,
+                         "schema_uid":  null,
+                         "data":  {
+
+                                  }
+                     }
+}
+
+=== Verifying v2 export shape ===
+
+=== Verifying pairing rules ===
+conv_parsing_tool: mdast
+conv_representation_type: markdown_bytes
+block_locator.type: text_offset_range
+v2 export shape + pairing rules OK.
+
+=== SMOKE TEST COMPLETE ===
+

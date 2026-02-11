@@ -1,7 +1,8 @@
 # Phase 2 Integrations: Internal Assistant Development Direction
 
 **Date:** 2026-02-11  
-**Status:** Directional architecture + delivery plan  
+**Status:** Directional architecture + delivery plan (**deferred until core workflows/pipelines are production-stable**)  
+**Core-first active plan:** `docs/ongoing-tasks/0211-core-workflows-before-assistant-plan.md`  
 **Scope:** Internal platform assistant grounded in platform data (BlockData artifacts, specs, guides), with KG + vector retrieval + MCP tool access to platform CLI  
 **Audience:** Platform engineering, data/ML engineering, product, and operations
 
@@ -19,6 +20,22 @@ Use a **retrieval-first, tool-augmented assistant** architecture:
 - `Worker AI` (user-key execution for runs after schema definition)
 
 This approach is the current production standard for specialized assistants and avoids the risk/cost of premature base-model fine-tuning.
+
+---
+
+## 1.1 Activation Gate (Sequencing Lock)
+
+This assistant program is **intentionally sequenced after core platform completion**.
+
+Do not start assistant implementation until the following gates are met:
+
+1. Conversion/ingest pipeline is stable for required source formats.
+2. Worker/run processing is live, reliable, and operationally monitored.
+3. Schema core workflows (wizard + advanced editor + persistence/fork semantics) are complete.
+4. Review/export core workflows are complete and hardened.
+5. Core operational hardening (tests, permissions, smoke matrix, incident basics) is in place.
+
+Until these gates are met, this document remains architectural guidance only.
 
 ---
 

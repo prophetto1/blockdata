@@ -1,0 +1,75 @@
+﻿
+=== STEP 1: Authenticating ===
+Authenticated as: jondev717@gmail.com
+SUPABASE_URL: https://dbdzzhshmigewyprahej.supabase.co
+Using project: Default Project (bc168e07-a149-4e56-9a3a-e9e4ab34e2a0)
+
+=== STEP 2: Preparing non-markdown upload ===
+Using: E:\writing-system\docs\tests\test-pack\lorem_ipsum.docx
+Expected track: docling (docling_json_pointer)
+
+=== STEP 3: Calling POST /functions/v1/ingest ===
+Ingest HTTP status: 200
+source_uid: 1baa58a2d3eaa0958a7f3058c6c9af454918ec6cb1144e7f2124871027729add
+initial status: ingested
+
+=== STEP 4: Polling documents_v2 status ===
+status=ingested source_type=docx conv_uid=a949a29320ded5d5595161bd1247e6e3de0f79db85361dc23ed69d92f9f98d17
+Ingest complete! conv_uid=a949a29320ded5d5595161bd1247e6e3de0f79db85361dc23ed69d92f9f98d17
+
+=== STEP 5: Exporting JSONL ===
+Export successful! 9 blocks exported
+Saved to: .\\scripts\\export-non-md-test.jsonl
+
+=== First block (sample) ===
+{
+    "immutable":  {
+                      "source_upload":  {
+                                            "source_uid":  "1baa58a2d3eaa0958a7f3058c6c9af454918ec6cb1144e7f2124871027729add",
+                                            "source_type":  "docx",
+                                            "source_filesize":  14817,
+                                            "source_total_characters":  null,
+                                            "source_upload_timestamp":  "2026-02-09T11:33:44.545241+00:00"
+                                        },
+                      "conversion":  {
+                                         "conv_status":  "success",
+                                         "conv_uid":  "a949a29320ded5d5595161bd1247e6e3de0f79db85361dc23ed69d92f9f98d17",
+                                         "conv_parsing_tool":  "docling",
+                                         "conv_representation_type":  "doclingdocument_json",
+                                         "conv_total_blocks":  9,
+                                         "conv_block_type_freq":  {
+                                                                      "paragraph":  9
+                                                                  },
+                                         "conv_total_characters":  3478
+                                     },
+                      "block":  {
+                                    "block_uid":  "a949a29320ded5d5595161bd1247e6e3de0f79db85361dc23ed69d92f9f98d17:0",
+                                    "block_index":  0,
+                                    "block_type":  "paragraph",
+                                    "block_locator":  {
+                                                          "type":  "docling_json_pointer",
+                                                          "pointer":  "#/texts/0"
+                                                      },
+                                    "block_content":  "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin elit mi, fermentum vitae dolor facilisis, porttitor mollis quam. Cras quam massa, venenatis faucibus libero vel, euismod sollicitudin ipsum. Aliquam semper sapien leo, ac ultrices nibh mollis congue. Cras luctus ultrices est, ut scelerisque eros euismod ut. Curabitur ac tincidunt felis, non scelerisque lectus. Praesent sollicitudin vulputate est id consequat. Vestibulum pharetra ligula sit amet varius porttitor. Sed eros diam, gravida non varius at, scelerisque in libero. Ut auctor finibus mauris sit amet ornare. Sed facilisis leo at urna rhoncus, in facilisis arcu eleifend. Sed tincidunt lacinia fermentum. Cras non purus fringilla, semper quam non, sodales sem. Nulla facilisi."
+                                }
+                  },
+    "user_defined":  {
+                         "schema_ref":  null,
+                         "schema_uid":  null,
+                         "data":  {
+
+                                  }
+                     }
+}
+
+=== Verifying v2 export shape ===
+
+=== Verifying pairing rules ===
+conv_parsing_tool: docling
+conv_representation_type: doclingdocument_json
+block_locator.type: docling_json_pointer
+block_locator.pointer: #/texts/0
+v2 export shape + pairing rules OK.
+
+=== SMOKE TEST COMPLETE ===
+

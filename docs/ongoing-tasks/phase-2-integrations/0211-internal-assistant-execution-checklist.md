@@ -1,8 +1,9 @@
 # Phase 2 Integrations: Internal Assistant Execution Checklist
 
 **Date:** 2026-02-11  
-**Status:** Implementation backlog (task-by-task)  
+**Status:** Implementation backlog (task-by-task, **deferred until core workflows/pipelines are complete**)  
 **Companion doc:** `docs/ongoing-tasks/phase-2-integrations/0211-internal-assistant-development-direction.md`  
+**Core-first active plan:** `docs/ongoing-tasks/0211-core-workflows-before-assistant-plan.md`  
 **Scope:** Deliver the internal assistant with grounded retrieval and safe tool execution
 
 ---
@@ -15,6 +16,18 @@ Ship an internal assistant that is:
 2. Separated from worker AI execution paths.
 3. Safe for operational actions through confirmed, auditable tools.
 4. Measurable by quality, safety, and latency metrics.
+
+---
+
+## 1.1 Activation Gate (Must Be True Before Starting)
+
+- [ ] Conversion + ingest core pipeline verified on required formats.
+- [ ] Worker invocation/retry/rollup flows verified in runtime.
+- [ ] Schema creation/edit core workflows verified (without assistant dependency).
+- [ ] Review/export core workflows verified.
+- [ ] Core hardening baseline complete (tests + security + smoke checks).
+
+If any gate is unchecked, this checklist stays in backlog mode only.
 
 ---
 
