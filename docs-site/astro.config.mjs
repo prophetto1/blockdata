@@ -1,16 +1,25 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
-import starlightThemeBlack from 'starlight-theme-black';
 
 export default defineConfig({
 	base: '/docs',
+	vite: {
+		server: {
+			fs: {
+				allow: ['.'],
+			},
+		},
+	},
 	integrations: [
 		starlight({
 			title: 'BlockData',
-			plugins: [starlightThemeBlack({
-				footerText: '',
-			})],
+			favicon: '/favicon.ico',
+			logo: {
+				dark: './src/assets/logo-dark.png',
+				light: './src/assets/logo-light.png',
+				replacesTitle: true,
+			},
 			customCss: [
 				'@fontsource-variable/inter',
 				'./src/styles/custom.css',
@@ -21,43 +30,32 @@ export default defineConfig({
 					link: '/',
 					attrs: { style: 'font-weight:600;opacity:0.7' },
 				},
+				{ label: 'Getting Started', autogenerate: { directory: 'getting-started' } },
 				{
-					label: 'Getting Started',
-					autogenerate: { directory: 'getting-started' },
-				},
-				{
-					label: 'Projects',
-					autogenerate: { directory: 'projects' },
-				},
-				{
-					label: 'Blocks',
-					autogenerate: { directory: 'blocks' },
-				},
-				{
-					label: 'Schemas',
-					autogenerate: { directory: 'schemas' },
-				},
-				{
-					label: 'Processing',
-					autogenerate: { directory: 'processing' },
-				},
-				{
-					label: 'Review & Export',
-					autogenerate: { directory: 'review-and-export' },
-				},
-				{
-					label: 'Integrations',
-					autogenerate: { directory: 'integrations' },
-				},
-				{
-					label: 'Architecture',
+					label: 'Core Concepts',
 					collapsed: true,
-					autogenerate: { directory: 'architecture' },
+					items: [
+						{ label: 'Projects', autogenerate: { directory: 'projects' } },
+						{ label: 'Blocks', autogenerate: { directory: 'blocks' } },
+						{ label: 'Schemas', autogenerate: { directory: 'schemas' } },
+					],
 				},
 				{
-					label: 'Status',
+					label: 'Workflow',
 					collapsed: true,
-					autogenerate: { directory: 'status' },
+					items: [
+						{ label: 'Processing', autogenerate: { directory: 'processing' } },
+						{ label: 'Review & Export', autogenerate: { directory: 'review-and-export' } },
+						{ label: 'Integrations', autogenerate: { directory: 'integrations' } },
+					],
+				},
+				{
+					label: 'Reference',
+					collapsed: true,
+					items: [
+						{ label: 'Architecture', autogenerate: { directory: 'architecture' } },
+						{ label: 'Status', autogenerate: { directory: 'status' } },
+					],
 				},
 			],
 		}),

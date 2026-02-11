@@ -16,7 +16,7 @@ import {
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { useNavigate, Link } from 'react-router-dom';
-import { IconTerminal2, IconCheck } from '@tabler/icons-react';
+import { IconCheck } from '@tabler/icons-react';
 import { useAuth } from '@/auth/AuthContext';
 
 /**
@@ -67,13 +67,11 @@ export default function RegisterSplit() {
   };
 
   return (
-    <SimpleGrid cols={{ base: 1, md: 2 }} spacing={0} style={{ minHeight: 'calc(100vh - 80px)' }}>
+    <SimpleGrid cols={{ base: 1, md: 2 }} spacing={0} style={{ flex: 1 }}>
       <Box style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: 'var(--mantine-spacing-xl)' }}>
         <Box maw={440} mx="auto" w="100%">
           <Group mb="xl" gap="xs">
-            <ThemeIcon variant="transparent" color="indigo">
-              <IconTerminal2 />
-            </ThemeIcon>
+            <img src="/icon-64.png" alt="" width={28} height={28} style={{ display: 'block' }} />
             <Text fw={700}>BlockData</Text>
           </Group>
 

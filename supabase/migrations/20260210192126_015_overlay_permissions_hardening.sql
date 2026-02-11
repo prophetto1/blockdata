@@ -1,9 +1,3 @@
--- Migration 015: overlay permissions hardening
--- Goal:
--- - Prevent anonymous role from updating block overlays.
--- - Keep authenticated users restricted to staging edits only.
--- - Scope Phase 6 review RPC execution to authenticated/service_role.
-
 REVOKE UPDATE ON TABLE public.block_overlays_v2 FROM anon;
 
 REVOKE UPDATE ON TABLE public.block_overlays_v2 FROM authenticated;

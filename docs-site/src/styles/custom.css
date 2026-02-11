@@ -4,7 +4,90 @@
 		'Segoe UI', sans-serif;
 }
 
-/* Right-side desktop TOC hierarchy: keep top-level emphasis, soften nested links. */
+/* Taller nav to give the horizontal logo more room */
+:root {
+	--sl-nav-height: 4.5rem;
+}
+
+/* Logo sizing — horizontal lockup needs more height */
+.site-title img {
+	height: 2.5rem;
+	width: auto;
+}
+
+/* Pure black background in dark mode only */
+:root:not([data-theme='light']) {
+	--sl-color-bg: #000000;
+	--sl-color-bg-sidebar: #000000;
+	--sl-color-bg-nav: #000000;
+}
+
+/*
+ * Zinc color palette — matches web/src/theme.ts
+ *
+ * Starlight's naming is semantic, not literal:
+ *   "white" = strongest text color, "black" = page background
+ *   gray-1 = near-text, gray-6/7 = near-background
+ * In light mode the scale inverts: "white" becomes dark, "black" becomes light.
+ */
+
+/* Dark mode (default) — light text on dark bg */
+:root {
+	--sl-color-white: #fafafa;
+	--sl-color-gray-1: #e4e4e7;
+	--sl-color-gray-2: #a1a1aa;
+	--sl-color-gray-3: #71717a;
+	--sl-color-gray-4: #52525b;
+	--sl-color-gray-5: #3f3f46;
+	--sl-color-gray-6: #27272a;
+	--sl-color-black: #09090b;
+}
+
+/* Light mode — dark text on light bg (scale inverts) */
+:root[data-theme='light'] {
+	--sl-color-white: #18181b;
+	--sl-color-gray-1: #27272a;
+	--sl-color-gray-2: #3f3f46;
+	--sl-color-gray-3: #52525b;
+	--sl-color-gray-4: #71717a;
+	--sl-color-gray-5: #d4d4d8;
+	--sl-color-gray-6: #f4f4f5;
+	--sl-color-gray-7: #fafafa;
+	--sl-color-black: #ffffff;
+}
+
+/* Teal accent */
+:root {
+	--sl-color-accent-low: #0c4a6e;
+	--sl-color-accent: #0ea5e9;
+	--sl-color-accent-high: #e0f2fe;
+}
+
+:root[data-theme='light'] {
+	--sl-color-accent-low: #e0f2fe;
+	--sl-color-accent: #0284c7;
+	--sl-color-accent-high: #0c4a6e;
+}
+
+/* Widen content area and left-align it */
+:root {
+	--sl-content-width: 65rem;
+}
+.content-panel .sl-container {
+	margin-inline-start: 0;
+}
+
+/* Page title (h1) */
+.content-panel h1 {
+	font-size: 2rem;
+}
+
+/* Section headings (h2) smaller than title */
+.content-panel h2 {
+	font-size: 1.35rem;
+}
+
+/* Right-side desktop TOC hierarchy */
 .toc starlight-toc nav > ul > li > a {
 	font-size: 0.875rem;
 	font-weight: 500;
@@ -16,21 +99,16 @@
 	opacity: 0.9;
 }
 
-/*
- * Fine-tune zinc values if the theme plugin ever drifts from the web app palette.
- * starlight-theme-black uses Tailwind zinc, which matches web/src/theme.ts.
- * Uncomment to override:
- *
- * :root[data-theme='dark'] {
- *   --sl-color-bg: #09090b;
- *   --sl-color-bg-sidebar: #09090b;
- *   --sl-color-hairline-light: #27272a;
- *   --sl-color-text: #fafafa;
- * }
- *
- * :root[data-theme='light'] {
- *   --sl-color-bg: #ffffff;
- *   --sl-color-text: #09090b;
- *   --sl-color-hairline-light: #e4e4e7;
- * }
- */
+/* Pagination: hide "Previous" / "Next" labels, keep arrow + page title only */
+.pagination-links a > span {
+	font-size: 0;
+	line-height: 0;
+}
+.pagination-links a > span > br {
+	display: none;
+}
+.pagination-links .link-title {
+	font-size: 1rem;
+	font-weight: 600;
+	line-height: 1.4;
+}

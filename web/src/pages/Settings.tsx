@@ -104,14 +104,17 @@ export default function Settings() {
     if (!apiKey.trim()) return;
     setSaving(true);
     try {
-      const { error } = await supabase.rpc('save_api_key', {
-        p_provider: 'anthropic',
-        p_api_key: apiKey.trim(),
-        p_default_model: model,
-        p_default_temperature: temperature,
-        p_default_max_tokens: maxTokens,
+      await edgeJson<{ ok: boolean; key_suffix?: string }>('user-api-keys', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          provider: 'anthropic',
+          api_key: apiKey.trim(),
+          default_model: model,
+          default_temperature: temperature,
+          default_max_tokens: maxTokens,
+        }),
       });
-      if (error) throw new Error(error.message);
 
       // Reload the saved state
       const { data } = await supabase
@@ -140,13 +143,16 @@ export default function Settings() {
   const handleSaveDefaults = async () => {
     setSavingDefaults(true);
     try {
-      const { error } = await supabase.rpc('update_api_key_defaults', {
-        p_provider: 'anthropic',
-        p_default_model: model,
-        p_default_temperature: temperature,
-        p_default_max_tokens: maxTokens,
+      await edgeJson<{ ok: boolean }>('user-api-keys', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          provider: 'anthropic',
+          default_model: model,
+          default_temperature: temperature,
+          default_max_tokens: maxTokens,
+        }),
       });
-      if (error) throw new Error(error.message);
 
       if (existing) {
         setExisting({ ...existing, default_model: model, default_temperature: temperature, default_max_tokens: maxTokens });
@@ -161,8 +167,11 @@ export default function Settings() {
 
   const handleDeleteKey = async () => {
     try {
-      const { error } = await supabase.rpc('delete_api_key', { p_provider: 'anthropic' });
-      if (error) throw new Error(error.message);
+      await edgeJson<{ ok: boolean }>('user-api-keys', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ provider: 'anthropic' }),
+      });
       setExisting(null);
       setApiKey('');
       setModel('claude-sonnet-4-5-20250929');

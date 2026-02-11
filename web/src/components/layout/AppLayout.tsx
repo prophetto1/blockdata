@@ -68,7 +68,10 @@ export function AppLayout() {
         <Group h="100%" px="md" justify="space-between">
           <Group>
             <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" />
-            <Text fw={700} size="lg">BlockData</Text>
+            <Group gap={8}>
+              <img src="/icon-64.png" alt="" width={28} height={28} />
+              <Text fw={700} size="lg">BlockData</Text>
+            </Group>
           </Group>
           <Group gap="sm">
             <Tooltip label={computedColorScheme === 'dark' ? 'Light mode' : 'Dark mode'}>

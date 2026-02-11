@@ -1,6 +1,3 @@
--- Migration 012: add documents_v2 to Supabase Realtime publication
--- Purpose: enable project detail pages to receive live document status updates.
-
 DO $$
 BEGIN
   IF NOT EXISTS (

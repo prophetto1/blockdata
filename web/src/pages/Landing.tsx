@@ -471,19 +471,6 @@ export default function Landing() {
         </Container>
       </Box>
 
-      {/* ── FOOTER ── */}
-      <Box py="xl" style={{ borderTop: '1px solid var(--mantine-color-default-border)' }}>
-        <Container size="lg">
-          <Group justify="space-between">
-            <Text fw={700} size="sm">BlockData</Text>
-            <Group gap="xl">
-              <Text size="sm" c="dimmed" style={{ cursor: 'pointer' }} onClick={() => navigate('/how-it-works')}>How it works</Text>
-              <Text size="sm" c="dimmed" style={{ cursor: 'pointer' }} onClick={() => navigate('/use-cases')}>Use cases</Text>
-              <Text size="sm" c="dimmed" style={{ cursor: 'pointer' }} onClick={() => navigate('/integrations')}>Integrations</Text>
-            </Group>
-          </Group>
-        </Container>
-      </Box>
     </Box>
   );
 }

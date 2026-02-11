@@ -1,6 +1,5 @@
 import {
   Group,
-  Text,
   Button,
   ActionIcon,
   Tooltip,
@@ -43,12 +42,6 @@ export function PublicNavModern() {
     ? 'var(--mantine-color-body)'
     : 'transparent';
     
-  const textColor = isScrolled
-    ? 'var(--mantine-color-text)'
-    : 'var(--mantine-color-text)'; 
-    // ^ Note: If Hero is transparent, we might need to know the Hero's mode.
-    // But since we are making the Hero adaptive (Light bg in light mode), 
-    // 'text' color (Black in light, White in dark) is correct even when transparent.
 
   return (
     <Box
@@ -70,24 +63,14 @@ export function PublicNavModern() {
       <Container size="lg" h="100%">
         <Group h="100%" justify="space-between">
             {/* LOGO */}
-          <Group gap="xs" style={{ cursor: 'pointer' }} onClick={() => navigate('/')}>
-             <div style={{ 
-                 width: 24, 
-                 height: 24, 
-                 background: 'var(--mantine-color-indigo-6)',
-                 borderRadius: 6 
-             }} />
-             <Text
-                fw={800}
-                size="xl"
-                style={{ 
-                    color: textColor, 
-                    letterSpacing: '-0.5px' 
-                }}
-            >
-              BlockData
-            </Text>
-          </Group>
+          <Box style={{ cursor: 'pointer' }} onClick={() => navigate('/')}>
+            <img
+              src={isDark ? '/logo-dark.png' : '/logo-light.png'}
+              alt="BlockData"
+              height={45}
+              style={{ display: 'block' }}
+            />
+          </Box>
 
           {/* DESKTOP LINKS */}
             <Group gap={8} visibleFrom="sm" bg={isScrolled ? 'transparent' : 'var(--mantine-color-default-hover)'} p={4} style={{ borderRadius: 99 }}>
