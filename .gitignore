@@ -1,6 +1,7 @@
 # Local Claude/Codex settings
 .claude/
 .codex/settings.local.json
+.mcp.json
 skills/
 json-schemas/
 

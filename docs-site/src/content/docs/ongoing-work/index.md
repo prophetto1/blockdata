@@ -23,8 +23,8 @@ Internal assistant development (KG, vector, MCP, CLI) is **deferred** until all 
 
 | # | Priority | Status | Summary |
 |--:|----------|--------|---------|
-| 1 | Close format reliability gate | **Active** | Verify all required source formats pass ingest/conversion smoke. 6 of 8 verified; `pptx` and `xlsx` pending fixtures. |
-| 2 | Lock worker/run reliability baseline | Pending | Prove deterministic run behavior: create run, invoke worker, overlays reach `ai_complete`/`failed`, run rollup completes. |
+| 1 | Close format reliability gate | **Passed** | Full matrix run `20260211-124133` passed all required formats: `md`, `txt`, `docx`, `pdf`, `pptx`, `xlsx`, `html`, `csv`. |
+| 2 | Lock worker/run reliability baseline | In Progress | Claim-release reliability fixed and verified for no-key/cancel/invalid-key paths; happy-path, retry, and rollup parity checks are still pending valid key setup. |
 | 3 | Lock config registry and resolve conflicts | Pending | Centralize ~20 hardcoded defaults, resolve temperature drift (`0.2` vs `0.3`), `base_url` migration parity, claim ordering bug. |
 | 4 | Implement prompt caching | Pending | Add `cache_control` to worker LLM calls. Trivial change, 86% input cost savings. |
 | 5 | Implement adaptive multi-block batching | Pending | Pack multiple blocks per API call. Restructure worker claim/call loop, add overflow handling. |
@@ -41,8 +41,8 @@ All gates must pass before internal assistant work begins.
 
 | Gate | Status |
 |------|--------|
-| Required source formats pass ingest/conversion smoke matrix | In progress (6/8 verified) |
-| Worker pipeline verified live (claim &#8594; ai_complete/failed &#8594; rollup) | Not started |
+| Required source formats pass ingest/conversion smoke matrix | Passed (8/8 verified, run `20260211-124133`) |
+| Worker pipeline verified live (claim &#8594; ai_complete/failed &#8594; rollup) | In progress (no-key/cancel/invalid-key scenarios verified; happy/retry/rollup still pending) |
 | Schema core workflow complete and stable | Not started |
 | Review/export workflows complete and tested | Not started |
 | Core hardening baseline and runbooks in place | Not started |
@@ -57,8 +57,8 @@ All gates must pass before internal assistant work begins.
 | `txt` | Verified | mdast | 2026-02-11 |
 | `docx` | Verified | docling | 2026-02-11 |
 | `pdf` | Verified | docling | 2026-02-11 |
-| `pptx` | Unverified (missing fixture) | docling | — |
-| `xlsx` | Unverified (missing fixture) | docling | — |
+| `pptx` | Verified | docling | 2026-02-11 |
+| `xlsx` | Verified | docling | 2026-02-11 |
 | `html` | Verified | docling | 2026-02-11 |
 | `csv` | Verified | docling | 2026-02-11 |
 
