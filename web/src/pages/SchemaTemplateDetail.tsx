@@ -4,7 +4,6 @@ import { AppBreadcrumbs } from '@/components/common/AppBreadcrumbs';
 import { ErrorAlert } from '@/components/common/ErrorAlert';
 import { JsonViewer } from '@/components/common/JsonViewer';
 import { PageHeader } from '@/components/common/PageHeader';
-import { SchemaWorkflowNav } from '@/components/schemas/SchemaWorkflowNav';
 import { getSchemaTemplateSeed } from '@/lib/schemaTemplates';
 
 export default function SchemaTemplateDetail() {
@@ -18,7 +17,6 @@ export default function SchemaTemplateDetail() {
         <AppBreadcrumbs
           items={[
             { label: 'Schemas', href: '/app/schemas' },
-            { label: 'Start', href: '/app/schemas/start' },
             { label: 'Templates', href: '/app/schemas/templates' },
             { label: 'Template' },
           ]}
@@ -28,7 +26,6 @@ export default function SchemaTemplateDetail() {
             Back to templates
           </Button>
         </PageHeader>
-        <SchemaWorkflowNav includeApply={false} />
         <ErrorAlert message={`Unknown template id: ${templateId ?? 'missing'}`} />
       </>
     );
@@ -39,7 +36,6 @@ export default function SchemaTemplateDetail() {
       <AppBreadcrumbs
         items={[
           { label: 'Schemas', href: '/app/schemas' },
-          { label: 'Start', href: '/app/schemas/start' },
           { label: 'Templates', href: '/app/schemas/templates' },
           { label: template.name },
         ]}
@@ -56,8 +52,6 @@ export default function SchemaTemplateDetail() {
           Apply to wizard
         </Button>
       </PageHeader>
-
-      <SchemaWorkflowNav includeApply={false} />
 
       <Stack gap="md">
         <Card withBorder padding="md">
@@ -107,4 +101,3 @@ export default function SchemaTemplateDetail() {
     </>
   );
 }
-

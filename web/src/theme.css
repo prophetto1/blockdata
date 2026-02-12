@@ -45,3 +45,17 @@ body {
 .overlay-confirmed-cell {
   background-color: rgba(46, 189, 89, 0.12);
 }
+
+/* ── Schema start cards ── */
+.schema-start-card {
+  cursor: pointer;
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+.schema-start-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  border-color: var(--card-accent, var(--mantine-color-default-border));
+}
+.schema-start-card:active {
+  transform: translateY(0);
+}

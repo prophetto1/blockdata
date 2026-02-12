@@ -88,7 +88,7 @@ export function mountSchemaEditor(el: HTMLElement, options: MountSchemaEditorOpt
       preset: createThemePreset(),
       options: {
         prefix: 'p',
-        darkModeSelector: 'system',
+        darkModeSelector: 'html[data-mantine-color-scheme="dark"]',
         cssLayer: false,
       },
     },

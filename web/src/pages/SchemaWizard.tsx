@@ -24,6 +24,7 @@ import { PageHeader } from '@/components/common/PageHeader';
 import { SchemaWorkflowNav } from '@/components/schemas/SchemaWorkflowNav';
 import { edgeFetch } from '@/lib/edge';
 import { getSchemaTemplateSeed } from '@/lib/schemaTemplates';
+import { readSchemaUploadDraft, type SchemaUploadDraft } from '@/lib/schemaUploadClassifier';
 import { supabase } from '@/lib/supabase';
 import { TABLES } from '@/lib/tables';
 import type { SchemaRow } from '@/lib/types';
@@ -36,6 +37,7 @@ type WizardField = {
   id: string;
   key: string;
   type: FieldType;
+  nullable: boolean;
   description: string;
   required: boolean;
   enumCsv: string;
@@ -89,6 +91,7 @@ function createField(partial: Partial<WizardField> = {}): WizardField {
     id: `f_${Math.random().toString(36).slice(2, 10)}`,
     key: '',
     type: 'string',
+    nullable: false,
     description: '',
     required: false,
     enumCsv: '',
@@ -115,22 +118,23 @@ function slugify(value: string): string {
   return cleaned || 'schema';
 }
 
-function pickFieldType(def: Record<string, unknown>): FieldType {
+function pickFieldType(def: Record<string, unknown>): { baseType: FieldType; nullable: boolean } {
   const typeValue = def.type;
   if (typeof typeValue === 'string') {
     if (typeValue === 'string' || typeValue === 'number' || typeValue === 'integer' || typeValue === 'boolean' || typeValue === 'array' || typeValue === 'object') {
-      return typeValue;
+      return { baseType: typeValue, nullable: false };
     }
-    return 'string';
+    return { baseType: 'string', nullable: false };
   }
   if (Array.isArray(typeValue)) {
+    const nullable = typeValue.includes('null');
     const first = typeValue.find((v) => typeof v === 'string' && v !== 'null');
     if (first === 'string' || first === 'number' || first === 'integer' || first === 'boolean' || first === 'array' || first === 'object') {
-      return first;
+      return { baseType: first, nullable };
     }
   }
-  if (Array.isArray(def.enum)) return 'string';
-  return 'string';
+  if (Array.isArray(def.enum)) return { baseType: 'string', nullable: false };
+  return { baseType: 'string', nullable: false };
 }
 
 function schemaToFields(schemaJson: Record<string, unknown>): WizardField[] {
@@ -142,7 +146,7 @@ function schemaToFields(schemaJson: Record<string, unknown>): WizardField[] {
   const fields: WizardField[] = [];
   Object.entries(propsRaw).forEach(([key, rawDef]) => {
     if (!isPlainObject(rawDef)) return;
-    const type = pickFieldType(rawDef);
+    const typeInfo = pickFieldType(rawDef);
     const enumCsv = Array.isArray(rawDef.enum) ? rawDef.enum.map((value) => String(value)).join(', ') : '';
     const itemsType = isPlainObject(rawDef.items) && typeof rawDef.items.type === 'string'
       ? (rawDef.items.type as ArrayItemType)
@@ -150,7 +154,8 @@ function schemaToFields(schemaJson: Record<string, unknown>): WizardField[] {
 
     fields.push(createField({
       key,
-      type,
+      type: typeInfo.baseType,
+      nullable: typeInfo.nullable,
       description: typeof rawDef.description === 'string' ? rawDef.description : '',
       required: requiredSet.has(key),
       enumCsv,
@@ -175,7 +180,9 @@ function parseNumber(value: string): number | undefined {
 }
 
 function buildFieldSchema(field: WizardField): Record<string, unknown> {
-  const definition: Record<string, unknown> = { type: field.type };
+  const definition: Record<string, unknown> = {
+    type: field.nullable ? [field.type, 'null'] : field.type,
+  };
   const description = field.description.trim();
   if (description) definition.description = description;
 
@@ -251,6 +258,26 @@ function buildSchemaPreview(fields: WizardField[], prompt: PromptConfigDraft, in
   return schema;
 }
 
+function evaluateCompatibility(schemaJson: Record<string, unknown>): { status: 'pass' | 'warn'; issues: string[] } {
+  const issues: string[] = [];
+
+  if (schemaJson.type !== 'object') {
+    issues.push('Top-level type must be "object".');
+  }
+
+  const props = schemaJson.properties;
+  if (!isPlainObject(props)) {
+    issues.push('Top-level properties must be an object.');
+  } else if (Object.keys(props).length === 0) {
+    issues.push('At least one field is required (properties is empty).');
+  }
+
+  return {
+    status: issues.length === 0 ? 'pass' : 'warn',
+    issues,
+  };
+}
+
 function extractPrompt(schemaJson: Record<string, unknown>): PromptConfigDraft {
   const prompt = isPlainObject(schemaJson.prompt_config) ? schemaJson.prompt_config : {};
   return {
@@ -270,6 +297,7 @@ export default function SchemaWizard() {
   const source = normalizeSource(params.get('source'));
   const templateId = params.get('templateId');
   const schemaId = params.get('schemaId');
+  const uploadKey = params.get('uploadKey');
   const uploadName = params.get('uploadName');
 
   const [active, setActive] = useState(0);
@@ -284,6 +312,7 @@ export default function SchemaWizard() {
   });
   const [schemaRef, setSchemaRef] = useState('');
   const [existingRows, setExistingRows] = useState<SchemaRow[]>([]);
+  const [uploadDraft, setUploadDraft] = useState<SchemaUploadDraft | null>(null);
   const [selectedExistingId, setSelectedExistingId] = useState<string | null>(schemaId ?? null);
   const [loadingExisting, setLoadingExisting] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -291,6 +320,7 @@ export default function SchemaWizard() {
 
   const prefilledTemplateRef = useRef<string | null>(null);
   const prefilledExistingRef = useRef<string | null>(null);
+  const prefilledUploadRef = useRef<string | null>(null);
 
   const sourceLabel = useMemo(() => {
     if (source === 'existing') return 'From existing schema';
@@ -301,6 +331,7 @@ export default function SchemaWizard() {
   }, [source]);
 
   const schemaPreview = useMemo(() => buildSchemaPreview(fields, prompt, intent), [fields, prompt, intent]);
+  const compatibility = useMemo(() => evaluateCompatibility(schemaPreview), [schemaPreview]);
 
   const fieldError = useMemo(() => {
     if (fields.length === 0) return 'Add at least one field.';
@@ -363,6 +394,43 @@ export default function SchemaWizard() {
     setSchemaRef(slugify(`${row.schema_ref}_v2`));
     prefilledExistingRef.current = schemaId;
   }, [existingRows, schemaId, source]);
+
+  useEffect(() => {
+    if (source !== 'upload') return;
+    if (!uploadKey) {
+      setError('Upload source payload is missing. Return to Start and upload a .json file.');
+      return;
+    }
+    if (prefilledUploadRef.current === uploadKey) return;
+
+    const draft = readSchemaUploadDraft(uploadKey);
+    if (!draft) {
+      setError('Upload payload was not found (expired session). Re-upload from Start.');
+      return;
+    }
+
+    setUploadDraft(draft);
+    if (draft.classification.mode === 'advanced') {
+      const nextParams = new URLSearchParams({
+        source: 'upload',
+        uploadKey,
+        uploadName: draft.uploadName,
+      });
+      navigate(`/app/schemas/advanced?${nextParams.toString()}`, { replace: true });
+      return;
+    }
+
+    setIntent(
+      typeof draft.schemaJson.description === 'string' && draft.schemaJson.description.trim()
+        ? draft.schemaJson.description
+        : `Imported from upload: ${draft.uploadName}`,
+    );
+    setFields(schemaToFields(draft.schemaJson));
+    setPrompt(extractPrompt(draft.schemaJson));
+    setSchemaRef(draft.suggestedSchemaRef);
+    setError(null);
+    prefilledUploadRef.current = uploadKey;
+  }, [navigate, source, uploadKey]);
 
   const applyExistingSchema = (row: SchemaRow) => {
     setSelectedExistingId(row.schema_id);
@@ -495,11 +563,32 @@ export default function SchemaWizard() {
 
       {error && <ErrorAlert message={error} />}
 
-      {(source === 'template' || source === 'upload') && (
+      {source === 'template' && (
         <Alert color="blue" mb="md">
-          {source === 'template'
-            ? `Template prefill source: ${templateId ?? 'missing template id'}`
-            : `Upload source payload: ${uploadName ?? 'pending upload classifier wiring'}`}
+          {`Template prefill source: ${templateId ?? 'missing template id'}`}
+        </Alert>
+      )}
+
+      {source === 'upload' && (
+        <Alert
+          color={uploadDraft?.classification.mode === 'wizard' ? 'blue' : 'yellow'}
+          mb="md"
+          title={`Upload source: ${uploadDraft?.uploadName ?? uploadName ?? 'unknown file'}`}
+        >
+          <Stack gap={4}>
+            <Text size="sm">
+              {uploadDraft
+                ? uploadDraft.classification.mode === 'wizard'
+                  ? 'Upload is wizard-compatible and has been prefilled.'
+                  : 'Upload requires advanced editing due to unsupported constructs.'
+                : 'Upload source payload is still loading.'}
+            </Text>
+            {uploadDraft?.classification.warnings.map((warning) => (
+              <Text key={warning} size="xs" c="dimmed">
+                {warning}
+              </Text>
+            ))}
+          </Stack>
         </Alert>
       )}
 
@@ -615,6 +704,12 @@ export default function SchemaWizard() {
                       label="Required"
                       checked={field.required}
                       onChange={(event) => updateField(field.id, { required: event.currentTarget.checked })}
+                    />
+                    <Switch
+                      mt={28}
+                      label="Allow null"
+                      checked={field.nullable}
+                      onChange={(event) => updateField(field.id, { nullable: event.currentTarget.checked })}
                     />
                   </Group>
 
@@ -747,6 +842,20 @@ export default function SchemaWizard() {
           <Card withBorder padding="md">
             <Stack gap="sm">
               <Text fw={600}>Preview</Text>
+              <Alert
+                color={compatibility.status === 'pass' ? 'green' : 'yellow'}
+                title={`Compatibility: ${compatibility.status === 'pass' ? 'Pass' : 'Warn'}`}
+              >
+                {compatibility.status === 'pass'
+                  ? 'Schema meets the wizard compatibility contract (type object + non-empty properties).'
+                  : (
+                    <List size="xs">
+                      {compatibility.issues.map((issue) => (
+                        <List.Item key={issue}>{issue}</List.Item>
+                      ))}
+                    </List>
+                  )}
+              </Alert>
               <Text size="sm" c="dimmed">
                 Columns: {fields.map((field) => field.key.trim()).filter(Boolean).join(', ') || 'none'}
               </Text>

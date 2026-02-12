@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { Alert, Button, Card, Center, Group, Loader, Stack, Text, TextInput } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { IconArrowLeft, IconDeviceFloppy } from '@tabler/icons-react';
@@ -8,6 +8,7 @@ import { edgeFetch } from '@/lib/edge';
 import { TABLES } from '@/lib/tables';
 import type { SchemaRow } from '@/lib/types';
 import { loadMetaConfiguratorEmbed, type MountedSchemaEditor, type MetaConfiguratorEmbed } from '@/lib/metaConfiguratorEmbed';
+import { readSchemaUploadDraft } from '@/lib/schemaUploadClassifier';
 import { PageHeader } from '@/components/common/PageHeader';
 import { ErrorAlert } from '@/components/common/ErrorAlert';
 import { AppBreadcrumbs } from '@/components/common/AppBreadcrumbs';
@@ -27,13 +28,19 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
 
 export default function SchemaAdvancedEditor() {
   const { schemaId } = useParams<{ schemaId?: string }>();
+  const location = useLocation();
   const navigate = useNavigate();
+  const params = useMemo(() => new URLSearchParams(location.search), [location.search]);
+  const uploadSource = params.get('source');
+  const uploadKey = params.get('uploadKey');
+  const uploadName = params.get('uploadName');
 
   const [embed, setEmbed] = useState<MetaConfiguratorEmbed | null>(null);
   const [row, setRow] = useState<SchemaRow | null>(null);
   const [schemaJson, setSchemaJson] = useState<unknown>(DEFAULT_SCHEMA);
 
   const [schemaRef, setSchemaRef] = useState('');
+  const [uploadWarnings, setUploadWarnings] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [schemaLoaded, setSchemaLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -81,8 +88,32 @@ export default function SchemaAdvancedEditor() {
   useEffect(() => {
     setError(null);
     setSchemaLoaded(false);
+    setUploadWarnings([]);
 
     if (!schemaId) {
+      if (uploadSource === 'upload' && uploadKey) {
+        const draft = readSchemaUploadDraft(uploadKey);
+        if (!draft) {
+          setError('Upload payload was not found (expired session). Re-upload from Start.');
+          setRow(null);
+          setSchemaJson(DEFAULT_SCHEMA);
+          schemaJsonForMountRef.current = DEFAULT_SCHEMA;
+          setSchemaRef('');
+          setLoading(false);
+          setSchemaLoaded(true);
+          return;
+        }
+
+        setRow(null);
+        setSchemaJson(draft.schemaJson);
+        schemaJsonForMountRef.current = draft.schemaJson;
+        setSchemaRef(draft.suggestedSchemaRef);
+        setUploadWarnings(draft.classification.warnings);
+        setLoading(false);
+        setSchemaLoaded(true);
+        return;
+      }
+
       setRow(null);
       setSchemaJson(DEFAULT_SCHEMA);
       schemaJsonForMountRef.current = DEFAULT_SCHEMA;
@@ -117,7 +148,7 @@ export default function SchemaAdvancedEditor() {
         setLoading(false);
         setSchemaLoaded(true);
       });
-  }, [schemaId]);
+  }, [schemaId, uploadKey, uploadSource]);
 
   // 3) Mount the editor once both embed + schema are ready
   useEffect(() => {
@@ -202,7 +233,13 @@ export default function SchemaAdvancedEditor() {
 
       <PageHeader
         title="Advanced editor"
-        subtitle={schemaId ? `Editing "${row?.schema_ref}" (fork-by-default)` : 'Create or edit schemas with the full split view.'}
+        subtitle={
+          schemaId
+            ? `Editing "${row?.schema_ref}" (fork-by-default)`
+            : uploadSource === 'upload'
+              ? `Imported from ${uploadName ?? 'uploaded JSON'}`
+              : 'Create or edit schemas with the full split view.'
+        }
       >
         <Button
           variant="light"
@@ -227,6 +264,17 @@ export default function SchemaAdvancedEditor() {
       {error && <ErrorAlert message={error} />}
 
       <Stack gap="sm">
+        {uploadSource === 'upload' && (
+          <Alert color="blue" title={`Upload source: ${uploadName ?? 'unknown file'}`}>
+            <Stack gap={4}>
+              <Text size="sm">Upload classifier routed this schema to the advanced editor.</Text>
+              {uploadWarnings.map((warning) => (
+                <Text key={warning} size="xs" c="dimmed">{warning}</Text>
+              ))}
+            </Stack>
+          </Alert>
+        )}
+
         <Card withBorder padding="md">
           <Group align="flex-end" justify="space-between" wrap="wrap">
             <TextInput

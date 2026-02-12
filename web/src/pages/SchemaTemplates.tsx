@@ -3,7 +3,6 @@ import { Badge, Button, Card, Group, SegmentedControl, SimpleGrid, Stack, Text }
 import { useNavigate } from 'react-router-dom';
 import { AppBreadcrumbs } from '@/components/common/AppBreadcrumbs';
 import { PageHeader } from '@/components/common/PageHeader';
-import { SchemaWorkflowNav } from '@/components/schemas/SchemaWorkflowNav';
 import { SCHEMA_TEMPLATE_SEEDS } from '@/lib/schemaTemplates';
 
 export default function SchemaTemplates() {
@@ -25,18 +24,11 @@ export default function SchemaTemplates() {
       <AppBreadcrumbs
         items={[
           { label: 'Schemas', href: '/app/schemas' },
-          { label: 'Start', href: '/app/schemas/start' },
           { label: 'Templates' },
         ]}
       />
 
-      <PageHeader title="Schema Templates" subtitle="Curated seeds you can apply and customize in the wizard.">
-        <Button variant="light" size="xs" onClick={() => navigate('/app/schemas/start')}>
-          Back to start
-        </Button>
-      </PageHeader>
-
-      <SchemaWorkflowNav includeApply={false} />
+      <PageHeader title="Schema Templates" subtitle="Curated seeds you can apply and customize in the wizard." />
 
       <Card withBorder padding="md" mb="md">
         <Group justify="space-between" align="center" wrap="wrap" gap="sm">
@@ -93,4 +85,3 @@ export default function SchemaTemplates() {
     </>
   );
 }
-

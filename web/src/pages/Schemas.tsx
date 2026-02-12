@@ -1,28 +1,34 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Table, FileInput, TextInput, Button, Group, Stack, ActionIcon, Tooltip, Modal, Text } from '@mantine/core';
+import { AgGridReact } from 'ag-grid-react';
+import { AllCommunityModule, ModuleRegistry, themeQuartz, type ColDef, type ICellRendererParams } from 'ag-grid-community';
+import { FileInput, TextInput, Button, Group, Stack, ActionIcon, Tooltip, Modal, Text, useComputedColorScheme } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
-import { IconPencil, IconPlus, IconTrash } from '@tabler/icons-react';
+import { IconPencil, IconPlus, IconTrash, IconUpload } from '@tabler/icons-react';
 import { supabase } from '@/lib/supabase';
 import { edgeJson } from '@/lib/edge';
 import { TABLES } from '@/lib/tables';
 import type { SchemaRow } from '@/lib/types';
 import { PageHeader } from '@/components/common/PageHeader';
 import { ErrorAlert } from '@/components/common/ErrorAlert';
-import { JsonViewer } from '@/components/common/JsonViewer';
+
+ModuleRegistry.registerModules([AllCommunityModule]);
 
 export default function Schemas() {
   const navigate = useNavigate();
+  const gridRef = useRef<AgGridReact<SchemaRow>>(null);
   const [rows, setRows] = useState<SchemaRow[]>([]);
   const [file, setFile] = useState<File | null>(null);
   const [schemaRef, setSchemaRef] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [lastUpload, setLastUpload] = useState<unknown>(null);
+  const [uploadOpened, { open: openUpload, close: closeUpload }] = useDisclosure(false);
   const [deleteTarget, setDeleteTarget] = useState<SchemaRow | null>(null);
   const [deleteOpened, { open: openDelete, close: closeDelete }] = useDisclosure(false);
   const [deleting, setDeleting] = useState(false);
+  const computedColorScheme = useComputedColorScheme('dark');
+  const isDark = computedColorScheme === 'dark';
 
   const load = () => {
     supabase
@@ -60,14 +66,20 @@ export default function Schemas() {
     if (!file) { setError('Choose a schema JSON file first.'); return; }
     setBusy(true);
     setError(null);
-    setLastUpload(null);
     try {
       const form = new FormData();
       if (schemaRef.trim()) form.set('schema_ref', schemaRef.trim());
       form.set('schema', file);
-      const result = await edgeJson('schemas', { method: 'POST', body: form });
-      setLastUpload(result);
+      await edgeJson('schemas', { method: 'POST', body: form });
+      notifications.show({
+        color: 'green',
+        title: 'Schema uploaded',
+        message: schemaRef.trim() ? `Saved as ${schemaRef.trim()}` : 'Upload completed.',
+      });
       load();
+      setFile(null);
+      setSchemaRef('');
+      closeUpload();
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -75,65 +87,115 @@ export default function Schemas() {
     }
   };
 
+  const gridTheme = useMemo(() => {
+    return themeQuartz.withParams({
+      rowVerticalPaddingScale: 0.6,
+      browserColorScheme: isDark ? 'dark' : 'light',
+      backgroundColor: isDark ? '#09090b' : '#ffffff',
+      chromeBackgroundColor: isDark ? '#09090b' : '#ffffff',
+      foregroundColor: isDark ? '#fafafa' : '#09090b',
+      borderColor: isDark ? '#27272a' : '#e4e4e7',
+      subtleTextColor: isDark ? '#a1a1aa' : '#52525b',
+    });
+  }, [isDark]);
+
+  const renderActions = useCallback((params: ICellRendererParams<SchemaRow>) => {
+    const row = params.data;
+    if (!row) return null;
+    return (
+      <Group gap={4} justify="flex-end" wrap="nowrap">
+        <Tooltip label="Open advanced editor">
+          <ActionIcon variant="subtle" size="sm" onClick={() => navigate(`/app/schemas/advanced/${row.schema_id}`)}>
+            <IconPencil size={14} />
+          </ActionIcon>
+        </Tooltip>
+        <Tooltip label="Delete schema">
+          <ActionIcon variant="subtle" color="red" size="sm" onClick={() => { setDeleteTarget(row); openDelete(); }}>
+            <IconTrash size={14} />
+          </ActionIcon>
+        </Tooltip>
+      </Group>
+    );
+  }, [navigate, openDelete]);
+
+  const columnDefs = useMemo<ColDef<SchemaRow>[]>(() => ([
+    {
+      headerName: 'schema_ref',
+      field: 'schema_ref',
+      flex: 1,
+      minWidth: 220,
+      sortable: true,
+      filter: true,
+      cellRenderer: (params: ICellRendererParams<SchemaRow>) => (
+        <Text ff="monospace" size="sm">{params.value as string}</Text>
+      ),
+    },
+    {
+      headerName: 'schema_uid',
+      field: 'schema_uid',
+      width: 200,
+      sortable: true,
+      filter: true,
+      cellRenderer: (params: ICellRendererParams<SchemaRow>) => {
+        const value = params.value as string | undefined;
+        if (!value) return <Text size="sm" c="dimmed">--</Text>;
+        return <Text ff="monospace" size="sm">{value.slice(0, 16)}...</Text>;
+      },
+    },
+    {
+      headerName: 'created',
+      field: 'created_at',
+      width: 200,
+      sortable: true,
+      valueFormatter: (params) => {
+        if (!params.value) return '';
+        return new Date(params.value as string).toLocaleString();
+      },
+    },
+    {
+      headerName: '',
+      field: 'actions',
+      width: 120,
+      sortable: false,
+      filter: false,
+      cellRenderer: renderActions,
+    },
+  ]), [renderActions]);
+
+  const defaultColDef = useMemo<ColDef>(() => ({
+    resizable: true,
+    sortable: true,
+    filter: true,
+  }), []);
+
   return (
     <>
       <PageHeader title="Schemas" subtitle="Create, upload, and manage annotation schemas.">
         <Button size="xs" leftSection={<IconPlus size={14} />} onClick={() => navigate('/app/schemas/start')}>
           Create schema
         </Button>
+        <Button size="xs" variant="light" leftSection={<IconUpload size={14} />} onClick={openUpload}>
+          Upload schema
+        </Button>
         <Button variant="light" size="xs" onClick={() => navigate('/app/schemas/advanced')}>
           Advanced editor
         </Button>
       </PageHeader>
-      <Stack maw={700} gap="sm">
-        <Group grow>
-          <TextInput placeholder="schema_ref (optional)" value={schemaRef} onChange={(e) => setSchemaRef(e.currentTarget.value)} />
-          <FileInput placeholder="Choose .json file" accept="application/json,.json" value={file} onChange={setFile} />
-          <Button onClick={upload} loading={busy}>Upload schema</Button>
-        </Group>
-      </Stack>
       {error && <ErrorAlert message={error} />}
-      {lastUpload && <div style={{ marginTop: 'var(--mantine-spacing-md)' }}><JsonViewer value={lastUpload} /></div>}
-      <Table.ScrollContainer minWidth={500} mt="lg">
-        <Table striped highlightOnHover>
-          <Table.Thead>
-            <Table.Tr>
-              <Table.Th>schema_ref</Table.Th>
-              <Table.Th>schema_uid</Table.Th>
-              <Table.Th>created</Table.Th>
-              <Table.Th w={96} />
-            </Table.Tr>
-          </Table.Thead>
-          <Table.Tbody>
-            {rows.map((r) => (
-              <Table.Tr key={r.schema_id}>
-                <Table.Td ff="monospace" fz="xs">{r.schema_ref}</Table.Td>
-                <Table.Td ff="monospace" fz="xs">{r.schema_uid.slice(0, 16)}...</Table.Td>
-                <Table.Td>{new Date(r.created_at).toLocaleString()}</Table.Td>
-                <Table.Td>
-                  <Group gap={4} justify="flex-end" wrap="nowrap">
-                    <Tooltip label="Open advanced editor">
-                      <ActionIcon variant="subtle" size="sm" onClick={() => navigate(`/app/schemas/advanced/${r.schema_id}`)}>
-                        <IconPencil size={14} />
-                      </ActionIcon>
-                    </Tooltip>
-                    <Tooltip label="Delete schema">
-                      <ActionIcon variant="subtle" color="red" size="sm" onClick={() => { setDeleteTarget(r); openDelete(); }}>
-                        <IconTrash size={14} />
-                      </ActionIcon>
-                    </Tooltip>
-                  </Group>
-                </Table.Td>
-              </Table.Tr>
-            ))}
-            {rows.length === 0 && (
-              <Table.Tr>
-                <Table.Td colSpan={4} ta="center" c="dimmed">No schemas yet.</Table.Td>
-              </Table.Tr>
-            )}
-          </Table.Tbody>
-        </Table>
-      </Table.ScrollContainer>
+      <div style={{ height: rows.length === 0 ? 240 : 520, width: '100%' }}>
+        <AgGridReact
+          ref={gridRef}
+          theme={gridTheme}
+          rowData={rows}
+          columnDefs={columnDefs}
+          defaultColDef={defaultColDef}
+          rowHeight={44}
+          headerHeight={44}
+          animateRows={false}
+          domLayout="normal"
+          overlayNoRowsTemplate='<span style="color: var(--mantine-color-dimmed);">No schemas yet.</span>'
+        />
+      </div>
 
       <Modal opened={deleteOpened} onClose={closeDelete} title="Delete schema" centered>
         <Stack gap="md">
@@ -143,6 +205,29 @@ export default function Schemas() {
           <Group justify="flex-end">
             <Button variant="default" onClick={closeDelete}>Cancel</Button>
             <Button color="red" onClick={handleDeleteSchema} loading={deleting}>Delete</Button>
+          </Group>
+        </Stack>
+      </Modal>
+
+      <Modal opened={uploadOpened} onClose={closeUpload} title="Upload schema" centered>
+        <Stack gap="md">
+          <TextInput
+            label="schema_ref (optional)"
+            placeholder="e.g. book_review"
+            description="Leave blank to auto-derive from the uploaded schema."
+            value={schemaRef}
+            onChange={(e) => setSchemaRef(e.currentTarget.value)}
+          />
+          <FileInput
+            label="Schema JSON file"
+            placeholder="Choose .json file"
+            accept="application/json,.json"
+            value={file}
+            onChange={setFile}
+          />
+          <Group justify="flex-end">
+            <Button variant="default" onClick={closeUpload}>Cancel</Button>
+            <Button onClick={upload} loading={busy} disabled={!file}>Upload</Button>
           </Group>
         </Stack>
       </Modal>

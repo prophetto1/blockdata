@@ -28,6 +28,7 @@ import Settings from '@/pages/Settings';
 import SuperuserSettings from '@/pages/SuperuserSettings';
 import LoginSplit from '@/pages/LoginSplit';
 import RegisterSplit from '@/pages/RegisterSplit';
+import PlatformLanding from '@/pages/experiments/PlatformLanding';
 
 
 export const router = createBrowserRouter([
@@ -39,6 +40,7 @@ export const router = createBrowserRouter([
       { path: '/how-it-works', element: <HowItWorks /> },
       { path: '/use-cases', element: <UseCases withNav={false} /> },
       { path: '/integrations', element: <MarketingIntegrations withNav={false} /> },
+      { path: '/experiments/platform', element: <PlatformLanding /> },
     ],
   },
   // Auth pages: full-bleed (use the split concepts)

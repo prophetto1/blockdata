@@ -11,4 +11,5 @@ Processing is the run lifecycle that applies a schema to a document’s blocks a
 Related pages:
 - [Worker Protocol](/docs/processing/worker-protocol/)
 - [Runtime Policy](/docs/processing/runtime-policy/)
+- [Admin Config Registry](/docs/processing/admin-config-registry/)
 - [Overlay Contract](/docs/review-and-export/overlay-contract/)

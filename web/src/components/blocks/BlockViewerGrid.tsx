@@ -24,6 +24,7 @@ import {
   Select,
   Text,
   Tooltip,
+  useComputedColorScheme,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import {
@@ -232,6 +233,8 @@ export function BlockViewerGrid({ convUid, selectedRunId, selectedRun }: BlockVi
     if (stored === 'expanded') return 'comfortable';
     return stored === 'compact' || stored === 'comfortable' ? stored : 'compact';
   });
+  const computedColorScheme = useComputedColorScheme('dark');
+  const isDark = computedColorScheme === 'dark';
   const [typeFilter, setTypeFilter] = useState<string[]>([]);
   const [hiddenCols, setHiddenCols] = useState<Set<string>>(new Set());
   const [confirmingAll, setConfirmingAll] = useState(false);
@@ -318,10 +321,17 @@ export function BlockViewerGrid({ convUid, selectedRunId, selectedRun }: BlockVi
 
   const hasRun = !!selectedRunId;
 
-  const gridTheme = useMemo(
-    () => DENSITY_THEMES[viewMode as keyof typeof DENSITY_THEMES] ?? DENSITY_THEMES.compact,
-    [viewMode],
-  );
+  const gridTheme = useMemo(() => {
+    const base = DENSITY_THEMES[viewMode as keyof typeof DENSITY_THEMES] ?? DENSITY_THEMES.compact;
+    return base.withParams({
+      browserColorScheme: isDark ? 'dark' : 'light',
+      backgroundColor: isDark ? '#09090b' : '#ffffff',
+      chromeBackgroundColor: isDark ? '#09090b' : '#ffffff',
+      foregroundColor: isDark ? '#fafafa' : '#09090b',
+      borderColor: isDark ? '#27272a' : '#e4e4e7',
+      subtleTextColor: isDark ? '#a1a1aa' : '#52525b',
+    });
+  }, [isDark, viewMode]);
 
   const setBlockBusy = useCallback((blockUid: string, busy: boolean) => {
     setBlockActionBusy((prev) => {

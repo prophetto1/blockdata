@@ -29,6 +29,16 @@ export default defineConfig({
 					tag: 'script',
 					content: `document.addEventListener('DOMContentLoaded',()=>{const a=document.querySelector('a.site-title');if(a)a.href='/';});`,
 				},
+				{
+					tag: 'script',
+					attrs: {
+						src: 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js',
+					},
+				},
+				{
+					tag: 'script',
+					content: `document.addEventListener('DOMContentLoaded',()=>{if(!window.mermaid)return;const isLight=document.documentElement.dataset.theme==='light';window.mermaid.initialize({startOnLoad:false,theme:isLight?'default':'dark'});document.querySelectorAll('pre > code.language-mermaid').forEach(code=>{const pre=code.parentElement;if(!pre)return;const div=document.createElement('div');div.className='mermaid';div.textContent=code.textContent||'';pre.replaceWith(div);});window.mermaid.run({querySelector:'.mermaid'});});`,
+				},
 			],
 			sidebar: [
 				{
@@ -45,6 +55,8 @@ export default defineConfig({
 						{ label: 'Ingest & Conversion', link: '/ingest-and-conversion/' },
 						{ label: 'Processing', link: '/processing/' },
 						{ label: 'Worker Protocol', link: '/processing/worker-protocol/' },
+						{ label: 'Runtime Policy', link: '/processing/runtime-policy/' },
+						{ label: 'Admin Config Registry', link: '/processing/admin-config-registry/' },
 						{ label: 'Review & Export', link: '/review-and-export/' },
 						{ label: 'Overlay Contract', link: '/review-and-export/overlay-contract/' },
 					],
@@ -70,6 +82,7 @@ export default defineConfig({
 					label: 'Integrations',
 					items: [
 						{ label: 'Overview', link: '/integrations/' },
+						{ label: 'Source vs Destination', link: '/integrations/source-destination/' },
 						{ label: 'Zvec Contract', link: '/integrations/zvec-contract/' },
 						{ label: 'Zvec Adapters', link: '/integrations/zvec-adapters-and-transformers/' },
 					],
