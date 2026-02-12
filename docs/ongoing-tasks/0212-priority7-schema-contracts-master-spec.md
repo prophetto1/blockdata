@@ -1,222 +1,177 @@
-# Priority 7 Master Contracts - Schema Creation + Template Pipeline
+# Priority 7 Master Contracts - Schema Creation, Templates, and Save Semantics
 
 **Date:** 2026-02-12  
-**Status:** Canonical execution contract for Priority 7  
-**Scope:** Define the end-to-end contracts for schema creation pathways, template usage, save semantics, and run compatibility so implementation is deterministic and avoids rework.
+**Status:** Canonical implementation contract for Priority 7  
+**Authority:** For Priority 7 execution, this document supersedes overlapping guidance in:
+
+- `docs/ongoing-tasks/meta-configurator-integration/spec.md`
+- `docs/ongoing-tasks/meta-configurator-integration/status.md`
+- `docs/ongoing-tasks/0210-schema-wizard-and-ai-requirements.md`
+
+Those documents remain useful reference/history but are not the execution authority for Priority 7 decisions.
 
 ---
 
 ## 1) Purpose
 
-This document is the implementation contract for Priority 7.
+This document defines exact contracts for how schema creation must operate in Priority 7:
 
-It merges and normalizes schema-related requirements currently spread across:
+1. wizard-first creation path,
+2. template-based starting path,
+3. existing-schema fork path,
+4. upload-JSON path,
+5. advanced-editor escape hatch,
+6. single persistence boundary (`POST /schemas`),
+7. worker/grid compatibility expectations.
 
-- `docs/ongoing-tasks/meta-configurator-integration/spec.md`
-- `docs/ongoing-tasks/meta-configurator-integration/status.md`
-- `docs/ongoing-tasks/0210-schema-wizard-and-ai-requirements.md`
-- `docs/ongoing-tasks/0211-core-priority-queue-and-optimization-plan.md`
-- `docs/ongoing-tasks/0211-core-workflows-before-assistant-plan.md`
-
-If any wording conflicts, this document is the Priority 7 implementation source of truth.
-
----
-
-## 2) Non-Negotiables
-
-1. Schema creation is wizard-first for non-technical users.
-2. Advanced editor remains available as an escape hatch.
-3. Save path is single-boundary (`POST /schemas`) across all creation modes.
-4. Edit behavior is fork-by-default (new schema artifact, no in-place mutation path in P7).
-5. Worker/grid compatibility contract remains top-level `properties` + optional `prompt_config`.
-6. Conflict behavior is explicit and recoverable (`409` rename/fork flow).
+Goal: eliminate implementation ambiguity and prevent rework.
 
 ---
 
-## 3) Priority 7 Gate Mapping
+## 2) Scope Boundary (Gate-Critical vs Deferred)
 
-This contract is designed to satisfy Priority 7 requirements in:
-`docs/ongoing-tasks/0211-core-priority-queue-and-optimization-plan.md`
+### 2.1 Priority 7 gate-critical scope
 
-Required execution mapping:
+Required for Priority 7 pass:
 
-1. Wizard-first manual schema creation path -> Sections 5, 6, 7.
-2. Advanced editor escape hatch + fork semantics -> Sections 5, 9.
-3. Worker/grid compatibility (`properties`, `prompt_config`) -> Sections 8, 10.
-4. Happy-path + conflict-path (`409`) evidence -> Sections 11, 15.
+1. Wizard-first manual creation is operational.
+2. Advanced editor remains operational with fork-by-default save semantics.
+3. Save/idempotency/conflict behavior is deterministic and recoverable.
+4. Wizard-created schemas are worker/grid compatible via top-level `properties` + optional `prompt_config`.
+5. Happy-path and conflict-path evidence is recorded.
 
----
+### 2.2 Not required for Priority 7 pass
 
-## 4) Current Repo Baseline (for contract realism)
+Allowed but not required in this gate:
 
-Implemented today:
-
-1. `POST /schemas` edge function exists with deterministic `schema_uid` hashing and conflict handling.
-2. Advanced editor route exists (`/app/schemas/advanced`, `/app/schemas/advanced/:schemaId`) with fork-by-default UX.
-3. Schemas list page exists but is upload-first, not wizard-first.
-
-Not implemented today:
-
-1. Wizard page and stepper flow.
-2. Template gallery/detail/application flow.
-3. Existing-schema wizard prefill flow.
-4. Upload-to-wizard route decision flow.
+1. Full template gallery rollout.
+2. Dedicated `/app/schemas/apply` route.
+3. Schema Co-Pilot (`schema-assist`) implementation.
+4. Template admin/moderation/CMS workflows.
 
 ---
 
-## 5) Information Architecture + Route Contracts
+## 3) Non-Negotiables
 
-### 5.1 Route set
-
-Existing (keep):
-
-- `/app/schemas` - schema hub/list
-- `/app/schemas/advanced`
-- `/app/schemas/advanced/:schemaId`
-
-New (Priority 7):
-
-- `/app/schemas/start` - start chooser (mode selection)
-- `/app/schemas/templates` - template gallery
-- `/app/schemas/templates/:templateId` - template detail
-- `/app/schemas/wizard` - wizard create/edit
-- `/app/schemas/apply` - optional apply-to-run flow after save
-
-### 5.2 Ownership per route
-
-1. `/app/schemas/start`
-   - Chooses creation source only.
-2. `/app/schemas/templates*`
-   - Read-only exploration of template metadata and schema seed.
-3. `/app/schemas/wizard`
-   - Primary authoring and validation surface.
-4. `/app/schemas/advanced*`
-   - Power-user full editor; same save/conflict rules.
-5. `/app/schemas/apply`
-   - Binds saved schema to target docs/projects/runs.
+1. Schema creation is wizard-first and visual-first.
+2. Advanced editor is escape hatch, not default path.
+3. All creation branches converge on one save boundary: `POST /schemas`.
+4. Edit behavior defaults to fork (save as new schema artifact).
+5. Worker/grid compatibility in v0 is defined by top-level `properties` (plus optional `prompt_config`).
+6. Conflict behavior must surface explicit, recoverable `409` rename flow.
 
 ---
 
-## 6) Start Chooser Contract (Branch Controller)
+## 4) Canonical Terms
 
-Entry action: `Create User Schema`.
-
-User sees five modes:
-
-1. Browse Templates
-2. From Existing Schema
-3. Start from Scratch
-4. Upload JSON
-5. Advanced Editor
-
-Contract rule: all five branches converge to the same persistence boundary (`POST /schemas`) and same conflict semantics.
+- `schema_ref`: user-facing slug identifier (owner-scoped).
+- `schema_uid`: deterministic content hash of canonicalized schema JSON.
+- `schema_jsonb`: stored schema artifact JSON.
+- `prompt_config`: optional schema-level worker instruction and model controls.
+- `run`: binding of `conv_uid` + `schema_id` in `runs_v2`.
+- `overlay`: per-block mutable output for a run.
 
 ---
 
-## 7) Branch Pipelines (Exact Flows)
+## 5) System Requirements List (SRL)
 
-### 7.1 Path A - Browse Templates
-
-1. `/app/schemas/start` -> choose `Browse Templates`.
-2. `/app/schemas/templates` shows template cards (3-4 per row desktop, spacious layout, 8-10 per page).
-3. Category bar at top filters template list.
-4. User opens template detail via route or layer popup.
-5. User presses `Apply Template`.
-6. Navigate to `/app/schemas/wizard?source=template&templateId=<id>`.
-7. Wizard prefilled with template `fields` + `prompt_config`.
-8. User can save immediately or tweak then save.
-9. Save hits `POST /schemas`.
-10. End state: new user-owned schema (forked from template seed), available in schema list.
-
-### 7.2 Path B - From Existing User Schema
-
-1. `/app/schemas/start` -> choose `From Existing Schema`.
-2. List only current user's schemas.
-3. User selects a schema to fork.
-4. Default fork ref suggestion: `<schema_ref>_v2` (slug-trimmed).
-5. User chooses editor type:
-   - wizard path: `/app/schemas/wizard?source=existing&schemaId=<id>`
-   - advanced path: `/app/schemas/advanced/<id>`
-6. Save path identical (`POST /schemas`).
-7. End state: new schema row and `schema_id`; original schema unchanged.
-
-### 7.3 Path C - Start from Scratch (Wizard Core)
-
-1. `/app/schemas/start` -> choose `Start from Scratch`.
-2. Navigate `/app/schemas/wizard?source=scratch`.
-3. Step 1 Intent.
-4. Step 2 Fields (visual).
-5. Step 3 Prompt config (optional).
-6. Step 4 Preview + compatibility checks.
-7. Step 5 Save.
-8. Save path identical (`POST /schemas`).
-9. End state: new schema row with deterministic `schema_uid`.
-
-### 7.4 Path D - Upload JSON
-
-1. `/app/schemas/start` -> choose `Upload JSON`.
-2. Select local `.json`.
-3. Parse + classify:
-   - invalid JSON/object -> blocking parse error
-   - compatible subset -> route to wizard prefilled
-   - complex schema features -> route to advanced editor prefilled
-4. User reviews/edits.
-5. Save path identical (`POST /schemas`).
-6. End state: imported schema saved as user-owned artifact.
-
-### 7.5 Path E - Advanced Editor
-
-1. `/app/schemas/start` -> choose `Advanced Editor`.
-2. Navigate `/app/schemas/advanced`.
-3. Full split-view editing via embedded editor.
-4. Show compatibility warnings when top-level `properties` is missing/non-object.
-5. Save as new schema (fork-by-default).
-6. Save path identical (`POST /schemas`).
-7. End state: power-user-authored schema saved.
+SRL-1. Users can create a schema without writing JSON.  
+SRL-2. Users can edit full schema JSON via power-user escape hatch.  
+SRL-3. Saved schemas persist with stable `schema_ref` and deterministic `schema_uid`.  
+SRL-4. Save is idempotent on identical content; conflicts on `(owner_id, schema_ref)` are explicit and recoverable.  
+SRL-5. Editing defaults to fork (new schema artifact), not in-place mutation of in-use schema.  
+SRL-6. Wizard-created schemas are compatible with current worker/grid contract.  
+SRL-7. Grid columns derive from schema and display staged/confirmed overlays correctly.  
+SRL-8. Platform-provided schema assistance, when added, is isolated from user API key pathways.  
+SRL-9. Advanced editor embed remains compatible with host app styling and lifecycle.
 
 ---
 
-## 8) Schema Compatibility Contract (Worker/Grid)
+## 6) SRL Traceability Map
 
-### 8.1 Server baseline contract
-
-The backend `schemas` function enforces only:
-
-1. input is JSON object
-2. persistence semantics and uniqueness behavior
-
-It does not enforce full JSON Schema shape in P7.
-
-### 8.2 P7 compatibility contract (client/UX level)
-
-Wizard must enforce:
-
-1. top-level `type: "object"`
-2. top-level `properties` object
-3. field keys unique
-4. optional `prompt_config` block
-
-Advanced editor/upload:
-
-1. allow broader JSON authoring
-2. always warn when v0 worker/grid compatibility is broken
-3. allow save (with warning), unless parse/object validity fails
-
-### 8.3 Grid derivation rule
-
-Run grid columns derive from `schemas.schema_jsonb.properties` keys.
-
-If `properties` is missing, run display may degrade; this must be explicitly warned in authoring UI.
+| SRL | Implemented By | Verification |
+|---|---|---|
+| SRL-1 | Wizard route + field editor contracts (Sections 12, 13) | Wizard create-save proof (Section 22) |
+| SRL-2 | Advanced editor route + mount/save contract (Sections 15, 16) | Advanced save proof (Section 22) |
+| SRL-3 | Save boundary + hash derivation (Sections 9, 10) | Save response and list evidence |
+| SRL-4 | `POST /schemas` conflict semantics (Section 10) | `409` test + rename retry proof |
+| SRL-5 | Fork-by-default for wizard/advanced edit (Sections 7.3, 16) | Existing-schema fork evidence |
+| SRL-6 | Wizard compatibility enforcement (Section 12) | Run/grid compatibility evidence |
+| SRL-7 | Grid display/edit/review semantics (Section 18) | Run detail + grid output check |
+| SRL-8 | Out-of-scope and boundary lock (Sections 2.2, 19) | No user-key dependency in P7 flow |
+| SRL-9 | Embed API/lifecycle/theming contract (Section 15) | Advanced editor lifecycle check |
 
 ---
 
-## 9) Persistence + Conflict Contract (`POST /schemas`)
+## 7) Data Model Contracts
 
-### 9.1 Method and payloads
+### 7.1 `schemas` table contract
 
-Method: `POST` only.
+`schemas` is the source of truth for schema artifacts:
 
-Accepted payload forms:
+1. `schema_id` UUID primary key.
+2. `owner_id` UUID not null.
+3. `schema_ref` text not null, owner-scoped unique.
+4. `schema_uid` text not null (deterministic content hash).
+5. `schema_jsonb` JSONB not null (opaque payload to DB).
+
+### 7.2 `schema_ref` format contract
+
+Format: `^[a-z0-9][a-z0-9_-]{0,63}$`
+
+### 7.3 Provenance contract
+
+Runs reference `schema_id`; therefore edit defaults to fork to preserve run-time lineage.
+
+### 7.4 Deletion contract
+
+Schema deletion is available via `delete_schema` RPC. It succeeds only when the schema has zero referencing rows in `runs_v2`; the RPC fails if any run references the schema. The schemas list page already implements this with a confirmation dialog warning "This will fail if any runs reference it."
+
+### 7.5 Uniqueness constraints (exact)
+
+The unique constraint is on `(owner_id, schema_ref)`, not on `schema_uid`. This means:
+
+1. Different users may have identical `schema_uid` values (same content, different owners).
+2. The same user may have identical `schema_uid` under different `schema_ref` slugs.
+3. Conflict detection (`409`) triggers on `(owner_id, schema_ref)` match with differing `schema_uid`.
+
+---
+
+## 8) Current Runtime Baseline (Must Be Preserved)
+
+Already implemented and must not regress:
+
+1. `POST /schemas` edge function with deterministic hashing and idempotency/conflict behavior.
+2. Advanced editor routes:
+   - `/app/schemas/advanced`
+   - `/app/schemas/advanced/:schemaId`
+3. Advanced editor save defaults to fork and handles `409` with rename guidance.
+
+Not yet implemented:
+
+1. Wizard route and visual stepper.
+2. Start chooser route.
+3. Template gallery/detail routes.
+4. Upload classifier route logic.
+5. Existing-schema wizard prefill route.
+
+---
+
+## 9) Persistence Boundary (Single Save Contract)
+
+All branches save through `POST /schemas` only.
+
+No alternate schema-persistence endpoint is permitted in Priority 7.
+
+---
+
+## 10) `POST /schemas` API Contract
+
+### 10.1 Method
+
+`POST` only.
+
+### 10.2 Accepted payloads
 
 1. `multipart/form-data`
    - `schema_ref` optional
@@ -225,33 +180,281 @@ Accepted payload forms:
    - raw schema object
    - or `{ schema_ref, schema_json }`
 
-### 9.2 Deterministic identity
-
-1. Canonicalize schema JSON by sorted object keys (recursive).
-2. Compute `schema_uid = sha256(canonical_json)`.
-
-### 9.3 Status behavior (exact current runtime contract)
+### 10.3 Runtime status semantics (current implementation truth)
 
 1. `200` create success.
 2. `200` idempotent success when same `schema_ref` + same `schema_uid`.
 3. `409` conflict when same `schema_ref` + different `schema_uid`.
-4. `400` invalid request or non-object schema.
-5. `405` non-POST method.
+4. `400` invalid payload (including non-object schema JSON).
+5. `405` wrong method.
 
-### 9.4 Conflict recovery UX contract
+### 10.4 `schema_ref` derivation when not provided
 
-On `409`:
+1. use `$id` tail if present;
+2. else use `title`;
+3. else fallback `"schema"`;
+4. slugify:
+   - lowercase
+   - invalid chars -> `_`
+   - trim leading/trailing `_`
+   - collapse repeated `_`
+   - truncate to 64 chars.
 
-1. user remains on save step
-2. inline error shows existing vs incoming conflict
-3. rename input is focused
-4. retry save with new `schema_ref`
+### 10.5 `schema_uid` derivation
+
+1. canonicalize by recursively sorting object keys;
+2. keep array order unchanged;
+3. hash canonical JSON bytes with SHA-256 hex.
 
 ---
 
-## 10) Template Contracts (Library + Detail + Apply)
+## 11) Route and IA Contracts
 
-### 10.1 Template object contract
+### 11.1 Existing routes (kept)
+
+1. `/app/schemas`
+2. `/app/schemas/advanced`
+3. `/app/schemas/advanced/:schemaId`
+
+### 11.2 New routes (Priority 7 design set)
+
+1. `/app/schemas/start` (mode chooser)
+2. `/app/schemas/wizard` (wizard create/edit)
+3. `/app/schemas/templates` (template gallery, optional in P7 gate)
+4. `/app/schemas/templates/:templateId` (template detail, optional in P7 gate)
+5. `/app/schemas/apply` (optional post-save apply flow)
+
+---
+
+## 12) Wizard Output Contract (Strict)
+
+### 12.1 Wizard must enforce top-level compatibility
+
+Generated `schema_jsonb` must include:
+
+1. `type: "object"`
+2. `properties: Record<string, JSONSchemaFragment>`
+3. optional `required: string[]`
+4. optional `additionalProperties` (default false)
+5. optional `$id`, `title`, `description`
+6. optional `prompt_config`
+
+### 12.2 Supported JSON Schema subset for visual authoring
+
+Per field supported subset:
+
+1. Common:
+   - `type`
+   - `description`
+   - `enum`
+   - `default`
+2. String:
+   - `minLength`
+   - `maxLength`
+   - `pattern`
+   - `format`
+3. Number/integer:
+   - `minimum`
+   - `maximum`
+   - `multipleOf`
+4. Array:
+   - `items` (single schema)
+   - `minItems`
+   - `maxItems`
+5. Object:
+   - `properties`
+   - `required`
+   - `additionalProperties`
+6. Nullable:
+   - union style `type: ["string", "null"]` (and equivalents)
+
+### 12.3 Prompt config subset
+
+`prompt_config` optional keys:
+
+1. `system_instructions`
+2. `per_block_prompt`
+3. `model`
+4. `temperature`
+5. `max_tokens_per_block`
+6. `max_batch_size` (allowed in schema artifact; runtime usage may differ by current worker policy stack)
+
+---
+
+## 13) Wizard Step UX Contracts (Exact)
+
+### 13.1 Step 1 — Intent
+
+Required:
+
+1. Textbox: "What do you want to extract or annotate?" (free-text intent string).
+
+Optional:
+
+1. Sample document selector (selects a `conv_uid`) to power preview and AI assistance (when available).
+2. Source metadata carried forward from branch controller (`template_id`, `schema_id`, `upload_name`).
+
+### 13.2 Step 2 — Fields (Visual Editor)
+
+Visual field editor is the primary authoring surface; live JSON preview is secondary.
+
+Per-field controls:
+
+1. `key` (required; must be unique within schema).
+2. `type` (required; from supported subset in Section 12.2).
+3. `description` (recommended; treated as per-field instruction prompt for worker).
+4. `required` toggle.
+5. Type-specific constraints:
+   - enum: allowed values list.
+   - string: `minLength`, `maxLength`, `pattern`, `format`.
+   - number/integer: `minimum`, `maximum`, `multipleOf`.
+   - array: `items` schema, `minItems`, `maxItems`.
+   - object: nested `properties`, `required`, `additionalProperties`.
+   - nullable: `type: ["string", "null"]` union toggle.
+
+Field reordering (drag or move controls) is recommended but not gate-critical.
+
+### 13.3 Step 3 — Prompt Config (Optional)
+
+Controls:
+
+1. `system_instructions` (textarea).
+2. `per_block_prompt` (textarea).
+3. Advanced section (collapsed by default):
+   - `model` (dropdown).
+   - `temperature` (slider/input).
+   - `max_tokens_per_block` (input).
+
+User may leave this step entirely blank; schema is valid for manual annotation without prompt config.
+
+### 13.4 Step 4 — Preview
+
+Must show:
+
+1. Column header mock derived from top-level `properties` keys and types.
+2. Full schema JSON preview (read-only).
+3. Compatibility result: pass/warn based on Section 12.1 rules.
+
+If sample `conv_uid` was selected in Step 1:
+
+4. Show 1-3 sample blocks (read-only) beside the predicted column set.
+
+AI-powered preview (run schema against sample blocks) is deferred to post-P7.
+
+### 13.5 Step 5 — Save
+
+Must show:
+
+1. `schema_ref` slug input with format enforcement (`^[a-z0-9][a-z0-9_-]{0,63}$`).
+2. Inline conflict guidance (if `409` is returned, show existing vs incoming and focus rename input).
+3. Post-save choices:
+   - return to schemas list.
+   - continue to apply flow (if `/app/schemas/apply` is implemented).
+
+### 13.6 JSON Escape Hatch (Within Wizard)
+
+The wizard includes a JSON tab/editor that directly edits `schema_jsonb`:
+
+1. If JSON is invalid: wizard blocks "Next" and "Save" and shows parse errors.
+2. If JSON is valid but contains constructs outside the wizard's supported subset (Section 12.2): wizard preserves unknown keys intact but may disable the visual editor for unsupported parts.
+3. Switching back to visual view after manual JSON edits must not silently drop unknown keys.
+
+---
+
+## 14) Branch Controller Contract (`/app/schemas/start`)
+
+User chooses one mode:
+
+1. Browse Templates
+2. From Existing Schema
+3. Start from Scratch
+4. Upload JSON
+5. Advanced Editor
+
+All branches must converge to Section 10 save semantics.
+
+---
+
+## 15) Advanced Editor Embed Contract (No Drift)
+
+### 15.1 Asset contract
+
+Load:
+
+1. `/meta-configurator-embed/meta-configurator-embed.css`
+2. `/meta-configurator-embed/meta-configurator-embed.js`
+
+### 15.2 Global mount contract
+
+`window.MetaConfiguratorEmbed.mountSchemaEditor(el, { initialSchema, onChange })`
+
+Must return:
+
+1. `getSchemaJson()`
+2. `setSchemaJson(schemaJson)`
+3. `destroy()`
+
+Host must call `destroy()` on unmount/navigation.
+
+### 15.3 Styling/theming contract
+
+1. No global CSS reset/preflight that breaks host app.
+2. Advanced editor may differ visually but must support host dark/light mode behavior and host color-token control.
+
+### 15.4 Persistence contract
+
+Embed is editor-only; host performs schema persistence via `POST /schemas`.
+
+---
+
+## 16) Branch Pipeline Contracts (A-E)
+
+### 16.1 Path A - Templates (optional for P7 gate)
+
+1. Start chooser -> templates gallery.
+2. Category filter + paginated cards.
+3. Template detail (route or layer).
+4. Apply -> wizard prefilled.
+5. Save via `POST /schemas`.
+6. End: user-owned saved schema.
+
+### 16.2 Path B - Existing schema fork
+
+1. Start chooser -> existing schema picker (user-owned only).
+2. Default new ref suggestion `<old>_v2`.
+3. Open in wizard prefilled or advanced prefilled.
+4. Save via `POST /schemas`.
+5. End: new schema artifact; original untouched.
+
+### 16.3 Path C - Scratch wizard
+
+1. Start chooser -> wizard scratch.
+2. Step-by-step flow per Section 13: Intent -> Fields -> Prompt Config -> Preview -> Save.
+3. Save via `POST /schemas`.
+4. End: new schema artifact.
+
+### 16.4 Path D - Upload JSON
+
+1. Start chooser -> upload file.
+2. Parse/classify:
+   - invalid -> blocking error
+   - compatible -> wizard prefill
+   - advanced -> advanced editor prefill
+3. Save via `POST /schemas`.
+4. End: imported schema artifact.
+
+### 16.5 Path E - Advanced editor direct
+
+1. Start chooser -> advanced route.
+2. Edit with compatibility warnings.
+3. Save via `POST /schemas`.
+4. End: saved artifact.
+
+---
+
+## 17) Template Data Contract (Optional P7, Required for Template Path)
+
+`SchemaTemplate` (proposed contract for Phase 2):
 
 ```ts
 type SchemaTemplate = {
@@ -268,204 +471,159 @@ type SchemaTemplate = {
 };
 ```
 
-### 10.2 Template UI contract
+Template ownership rule:
 
-Template gallery must provide:
-
-1. category filter strip in wide container
-2. spacious card grid (3-4 columns desktop)
-3. page size 8-10 templates
-4. detail drilldown route or layer popup
-
-Template detail must provide:
-
-1. purpose and usage description
-2. field/enum summary
-3. schema JSON preview
-4. actions:
-   - `Apply Template`
-   - `Apply and Start Run` (if target context already chosen)
-
-### 10.3 Template ownership contract
-
-Templates are never saved directly as platform-owned runtime artifacts.
-Apply always creates a user-owned schema artifact through `POST /schemas`.
+1. templates are read-only seeds;
+2. applying a template always produces user-owned schema artifact via `POST /schemas`.
 
 ---
 
-## 11) Wizard Contracts (Step-by-Step)
+## 18) Grid Display, Edit, and Review Semantics Contract
 
-### 11.1 Step 1: Intent
+### 18.1 Column derivation
 
-Required:
+For a selected run, derive overlay columns from `schemas.schema_jsonb.properties` keys (via `extractSchemaFields` in `web/src/lib/schema-fields.ts`).
 
-1. task intent text
+Legacy note: the grid falls back to `schema_jsonb.fields` when `properties` is absent. This is legacy behavior; the wizard MUST output `properties` (not `fields`). The `fields` fallback exists for backward compatibility with older hand-authored schemas.
 
-Optional:
+### 18.2 Value selection per overlay status
 
-1. sample document pointer (`conv_uid`)
-2. source metadata (`template_id`, `schema_id`, `upload_name`)
+1. `status === 'confirmed'` -> display `overlay_jsonb_confirmed[k]`.
+2. `status === 'ai_complete'` -> display `overlay_jsonb_staging[k]`.
+3. any other status (`pending`, `claimed`, `failed`) -> blank/null.
 
-### 11.2 Step 2: Fields
+### 18.3 Cell editing
 
-Required controls per field:
+1. Cells are editable only when `overlay.status === 'ai_complete'` (staged).
+2. Edits write to `overlay_jsonb_staging` via `update_overlay_staging` RPC.
+3. Type-aware value parsing (number, boolean, array/object JSON) is applied before write.
 
-1. key
-2. type
-3. description
-4. required toggle
+### 18.4 Review actions (existing implementation)
 
-Type-specific controls:
+Per-block actions (available when `status === 'ai_complete'`):
 
-1. enum values
-2. numeric bounds
-3. array items type
-4. nested object support for allowed subset
+1. **Confirm**: moves overlay from staged to confirmed via `confirm_overlays` RPC (copies staging -> confirmed).
+2. **Reject to pending**: reverts overlay to `pending` via `reject_overlays_to_pending` RPC (clears staged data, block returns to worker queue).
 
-### 11.3 Step 3: Prompt Config
+Bulk actions:
 
-Optional controls:
+3. **Confirm All Staged**: confirms all `ai_complete` overlays in the run in one call via `confirm_overlays` RPC (no `p_block_uids` argument = all staged).
 
-1. `system_instructions`
-2. `per_block_prompt`
-3. advanced model knobs:
-   - `model`
-   - `temperature`
-   - `max_tokens_per_block`
+### 18.5 Degradation when `properties` is missing
 
-### 11.4 Step 4: Preview
-
-Must show:
-
-1. derived column preview from top-level `properties`
-2. schema JSON preview
-3. compatibility result and warnings
-
-### 11.5 Step 5: Save
-
-Must show:
-
-1. `schema_ref` slug input
-2. conflict-handling guidance
-3. post-save choices:
-   - return to schemas list
-   - continue to apply flow
+If `schema_jsonb.properties` is absent or not an object, no overlay columns are derived. The grid still shows immutable block columns; overlay data columns are simply absent. This must be warned during authoring (Sections 12.1, 15).
 
 ---
 
-## 12) Upload JSON Contracts
+## 19) AI Assistance Boundary Contract (Not in P7 Gate)
 
-Upload classifier outputs one of:
+`schema-assist` and schema copilot are deferred.
 
-1. `invalid` - parse/object error
-2. `wizard_compatible` - route to wizard with parsed draft
-3. `advanced_recommended` - route to advanced editor with parsed draft
+If later implemented:
 
-Classifier checks:
-
-1. parse success
-2. object at top-level
-3. presence/shape of `properties`
-4. presence of advanced constructs (`$ref`, `$defs`, `allOf`, `anyOf`, `oneOf`, conditionals)
-
-Rule:
-
-1. advanced constructs do not block save
-2. they route to advanced editor by default to avoid wizard corruption
+1. proposals only (never auto-save),
+2. must preserve compatibility rules,
+3. must remain isolated from user-key run-processing path.
 
 ---
 
-## 13) Apply Flow Contracts
+## 20) Security and Ownership Contracts
 
-After save, apply flow can:
-
-1. end immediately (schema only)
-2. bind schema to selected doc/project run creation
-
-Apply flow inputs:
-
-1. `schema_id` (saved result)
-2. `conv_uid` and `schema_id` for run creation path
-
-Run creation remains current boundary (`runs` edge function); schema flow does not bypass run contracts.
+1. schema flows require authenticated user.
+2. user sees only own schemas in existing-schema picker.
+3. template catalog is non-mutating from normal user flow.
+4. save calls are host-controlled, including advanced editor flow.
 
 ---
 
-## 14) Security + Ownership Contracts
+## 21) Key File Map (Implementation Immersion)
 
-1. all schema save/load flows require authenticated user
-2. user sees only own schemas in fork source picker
-3. template catalog is read-only, no ownership mutation
-4. no user API key dependency for manual wizard save behavior
-5. advanced editor embed remains client editor only; host controls save calls
+Backend:
 
----
+1. `supabase/functions/schemas/index.ts`
 
-## 15) Evidence/Test Matrix (Priority 7 Closure)
+Frontend current:
 
-### 15.1 Happy-path evidence
+1. `web/src/pages/Schemas.tsx`
+2. `web/src/pages/SchemaAdvancedEditor.tsx`
+3. `web/src/lib/metaConfiguratorEmbed.ts`
+4. `web/src/lib/schema-fields.ts`
+5. `web/src/components/blocks/BlockViewerGrid.tsx`
+6. `web/src/router.tsx`
 
-1. Scratch wizard -> save -> schema listed.
-2. Template apply -> save -> schema listed with new user-owned row.
-3. Existing-schema fork -> save -> original unchanged, new schema created.
-4. Upload JSON compatible -> wizard route -> save success.
-5. Advanced editor save -> success and list refresh.
+Primary reference docs:
 
-### 15.2 Conflict evidence
-
-1. save with existing `schema_ref` and different content -> `409`.
-2. rename and retry -> success.
-3. same ref + same content -> idempotent `200`.
-
-### 15.3 Worker/grid compatibility evidence
-
-1. run with wizard-created schema.
-2. verify overlay columns derived from `properties` keys.
-3. verify no compatibility-break regressions in run detail/grid display.
+1. `docs/ongoing-tasks/0211-core-priority-queue-and-optimization-plan.md`
+2. `docs/ongoing-tasks/0211-core-workflows-before-assistant-plan.md`
+3. `docs/ongoing-tasks/meta-configurator-integration/status.md`
 
 ---
 
-## 16) Implementation Phasing (No-Redo Plan)
+## 22) Priority 7 Evidence Matrix
 
-### Phase 1 (Priority 7 core gate)
+### 22.1 Gate-required evidence
 
-1. build `/app/schemas/start`
-2. build `/app/schemas/wizard` scratch flow
-3. wire existing-schema fork -> wizard prefill
-4. keep advanced editor as-is, unified save semantics
-5. add upload classifier and route handling
-6. capture happy-path + `409` evidence
+1. scratch wizard save works (new schema listed).
+2. existing-schema fork save works (new schema; source unchanged).
+3. advanced editor save path remains working.
+4. explicit conflict behavior:
+   - `409` on same ref + different content
+   - rename and retry success
+   - idempotent `200` on same ref + same content
+5. run/grid compatibility:
+   - run created with wizard schema
+   - grid columns from `properties`
+   - staged/confirmed display behavior preserved.
 
-### Phase 2 (Template-enabled without backend expansion)
+### 22.2 Optional evidence (if template path shipped)
 
-1. add local curated template registry (static data/module)
-2. add `/templates` + detail flow
-3. apply-to-wizard prefill
-4. capture template path evidence
-
-### Phase 3 (post-P7)
-
-1. template storage/admin management model
-2. schema-assist AI copilot path
-3. deeper schema version lineage UX
+1. template apply -> wizard prefill -> save.
+2. template-derived schema appears as user-owned artifact.
 
 ---
 
-## 17) Out-of-Scope for Priority 7
+## 23) Implementation Phasing
 
-1. `schema-assist` runtime AI implementation.
-2. template moderation/admin CMS.
-3. replacing embedded editor internal widget library.
-4. in-place schema mutation workflow for referenced schemas.
+### Phase 1 - Priority 7 gate closure
+
+1. `/app/schemas/start`
+2. `/app/schemas/wizard` scratch
+3. existing-schema fork -> wizard prefill
+4. upload classifier route + wizard/advanced routing
+5. preserve advanced editor path
+6. capture Section 22.1 evidence
+
+### Phase 2 - Template path
+
+1. template registry module
+2. templates gallery + detail
+3. apply -> wizard prefill
+4. capture Section 22.2 evidence
+
+### Phase 3 - Post-P7 extensions
+
+1. schema-assist copilot
+2. template admin lifecycle
+3. deeper schema lineage/version UX
 
 ---
 
-## 18) Final Contract Summary
+## 24) Out of Scope (Priority 7)
 
-Priority 7 implementation is correct when:
+1. replacing internal embed widget stack,
+2. template CMS workflows,
+3. in-place mutation flow for referenced schema artifacts,
+4. any assistant/KG/vector/MCP work.
 
-1. users can create schemas from multiple starting sources without authoring raw JSON by default,
-2. all branches converge on one save contract (`POST /schemas` with deterministic idempotency/conflict behavior),
-3. fork/conflict behavior is explicit and recoverable,
-4. saved schemas reliably work in run + grid paths via top-level `properties`.
+---
+
+## 25) Final Contract Summary
+
+Priority 7 is successful when:
+
+1. non-technical users can create compatible schemas in wizard-first flow,
+2. power users retain advanced editor escape hatch,
+3. all creation branches share deterministic `POST /schemas` behavior,
+4. conflict/fork behavior is explicit and recoverable,
+5. saved schemas reliably flow into run + grid behavior via top-level `properties`.
 

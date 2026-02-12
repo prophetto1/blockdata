@@ -56,6 +56,11 @@ This folder holds living execution notes, specs, and evidence for in-progress wo
 - `./meta-configurator-integration/verbal-specs.md`
 - `./0212-priority7-schema-contracts-master-spec.md`
 
+Priority 7 note:
+
+- `./0212-priority7-schema-contracts-master-spec.md` is the execution authority.
+- `./meta-configurator-integration/spec.md` and `./0210-schema-wizard-and-ai-requirements.md` are reference-only for P7.
+
 ---
 
 ## Deferred until core gates pass

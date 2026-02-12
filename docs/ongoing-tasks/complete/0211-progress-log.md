@@ -120,7 +120,7 @@ Priority 4 is now closed after a corrective rerun with benchmark and SQL parity 
 
 ## Next
 
-1. Start Priority 7 schema core workflow closure (`meta-configurator-integration/spec.md` path).
+1. Start Priority 7 schema core workflow closure (`0212-priority7-schema-contracts-master-spec.md` authority).
 2. Capture deterministic wizard/save/fork/conflict (`409`) evidence and update the gate ledger.
 3. Keep queue sequencing strict: Priority 8 stays blocked until Priority 7 is `Passed`.
 
@@ -207,3 +207,13 @@ Key outcomes:
 2. Locked single save boundary (`POST /schemas`) with current runtime status semantics (`200` create/idempotent, `409` conflict).
 3. Locked worker/grid compatibility contract (`properties` + optional `prompt_config`).
 4. Added deterministic implementation phasing and evidence matrix to avoid rework.
+5. Expanded master contract to include previously missing low-level details:
+   - exact JSON Schema subset for wizard authoring
+   - advanced editor embed mount/API/theming contracts
+   - schema data-model + `schema_ref` format/derivation details
+   - SRL traceability map and key implementation file map
+   - staged/confirmed grid display semantics
+6. Reclassified prior schema docs as reference-only for Priority 7 execution:
+   - `docs/ongoing-tasks/meta-configurator-integration/spec.md`
+   - `docs/ongoing-tasks/0210-schema-wizard-and-ai-requirements.md`
+7. Corrected Priority 7 queue entry-criteria checkbox state (`Priorities 2 and 3 are Passed` -> checked) in the core tracker.

@@ -269,7 +269,7 @@ Fail if any are true:
 ## 14) Priority 7 - Complete Schema Core Workflow
 
 ### Entry Criteria
-- [ ] Priorities 2 and 3 are `Passed`.
+- [x] Priorities 2 and 3 are `Passed`.
 
 ### Required Execution
 - [ ] Deliver wizard-first manual schema creation path.

@@ -1,7 +1,8 @@
 # Requirements: Schema Wizard + AI-Assisted Schema Creation
 
 **Filed:** 2026-02-10
-**Status:** Draft requirements
+**Status:** Reference-only for Priority 7 execution planning  
+**Priority 7 authority:** `docs/ongoing-tasks/0212-priority7-schema-contracts-master-spec.md`
 **Priority:** High (user-facing feature gap — currently schemas must be hand-authored as JSON)
 
 ---

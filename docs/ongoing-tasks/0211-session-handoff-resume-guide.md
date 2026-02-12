@@ -70,6 +70,9 @@
     - audit visibility proof passed in API and UI wiring
 17. Queue head moved forward:
     - Priority 7 is now the first non-passed priority.
+18. Priority 7 doc authority lock:
+    - execution authority: `docs/ongoing-tasks/0212-priority7-schema-contracts-master-spec.md`
+    - reference-only for P7 execution: `docs/ongoing-tasks/meta-configurator-integration/spec.md`, `docs/ongoing-tasks/0210-schema-wizard-and-ai-requirements.md`
 
 ---
 

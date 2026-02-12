@@ -1,6 +1,7 @@
 # Schema Creation Wizard + Schema Co-Pilot — End-to-End Spec (v0)
 
-**Status:** Canonical spec for schema creation UX and platform-provided schema assistance. Replaces the rejected implementation plan in this folder.
+**Status:** Reference-only for Priority 7 execution.  
+**Priority 7 authority:** `docs/ongoing-tasks/0212-priority7-schema-contracts-master-spec.md`
 
 This spec is written to be end-to-end: Schema authoring → save → run uses schema → overlays display in the grid.
 
