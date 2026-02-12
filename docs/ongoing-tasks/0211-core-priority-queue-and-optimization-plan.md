@@ -19,8 +19,8 @@ A priority is considered complete only when its `Entry criteria`, `Required exec
 
 - `docs/ongoing-tasks/0211-core-workflows-before-assistant-plan.md`
 - `docs/ongoing-tasks/0211-admin-config-registry.md`
-- `docs/ongoing-tasks/0211-source-format-reliability-matrix.md`
-- `docs/ongoing-tasks/0211-source-format-smoke-results.md`
+- `docs/ongoing-tasks/complete/0211-source-format-reliability-matrix.md`
+- `docs/ongoing-tasks/complete/0211-source-format-smoke-results.md`
 - `docs/ongoing-tasks/0211-worker-token-optimization-patterns.md`
 - `docs/ongoing-tasks/meta-configurator-integration/spec.md`
 - `docs/ongoing-tasks/0210-test-driven-hardening-plan.md`
@@ -78,10 +78,10 @@ A priority is considered complete only when its `Entry criteria`, `Required exec
 | Priority | Status | Date | Executor | Verification Commands | Evidence Artifacts | Notes |
 |---|---|---|---|---|---|---|
 | 1 | Passed | 2026-02-11 | Session owner | `scripts/run-format-matrix-smoke.ps1` | `0211-source-format-reliability-matrix.md`, `0211-source-format-smoke-results.md`, `scripts/logs/smoke-*-20260211-124133.log` | Added `pptx/xlsx` fixtures; full required-format pass at `20260211-124133` |
-| 2 | In Progress | 2026-02-11 | Session owner | SQL: `create_run_v2(...)`, `cancel_run(...)`, temporary `user_api_keys` setup/cleanup; HTTP: `POST /functions/v1/worker`; SQL: overlay/run/key state checks | `0211-worker-runtime-reliability.md`, `supabase/functions/worker/index.ts` | Fixed stranded-claim bug on no-key path; worker deployed as version `6`; cancellation + no-key + invalid-key release paths verified; happy/retry still blocked by missing valid API key |
-| 3 | Not Started |  |  |  |  |  |
-| 4 | Not Started |  |  |  |  |  |
-| 5 | Not Started |  |  |  |  |  |
+| 2 | Passed | 2026-02-12 | Session owner | SQL: `create_run_v2(...)`, `cancel_run(...)`, key-state/overlay/run queries; HTTP: `POST /functions/v1/worker`, `POST /functions/v1/test-api-key`, `POST /functions/v1/user-api-keys` | `docs/ongoing-tasks/complete/0211-worker-runtime-reliability.md`, `supabase/functions/worker/index.ts` | Worker v6 release fix verified; no-key + invalid-key + cancellation safeguards verified; valid-key happy path verified (`ab8a3b40-757c-473f-a0c8-65ac007f74bc`); retry-to-failed verified (`7f50cdcb-f897-4566-bb87-de2f62e79884`) |
+| 3 | Passed | 2026-02-12 | Session owner | SQL: `pg_get_functiondef(claim_overlay_batch)`, transactional claim-order probe (`BEGIN ... ROLLBACK`); Supabase mgmt: `apply_migration(017_claim_overlay_batch_block_index_ordering)`, `list_migrations`, `list_edge_functions` | `0211-admin-config-registry.md`, `supabase/migrations/20260211091818_add_base_url_multi_provider.sql`, `supabase/migrations/20260212004639_017_claim_overlay_batch_block_index_ordering.sql`, `supabase/functions/worker/index.ts`, `supabase/functions/user-api-keys/index.ts` | Default drift locked (`temperature=0.3`), `base_url` contract codified, claim ordering moved to `block_index`; deployed `worker` v7 and `user-api-keys` v3 |
+| 4 | Passed | 2026-02-12 | Session owner | Deploy: `worker v9 (verify_jwt=false + internal auth)`, `schemas v12 (verify_jwt=false)`; Benchmark: `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\benchmark-worker-prompt-caching.ps1 -SchemaId 94ffed2b-364f-453d-9553-fdb05521bf65 -BatchSize 5`; SQL: paired run-state + OFF/ON overlay comparison (`action/final.format/final.content`) | `docs/ongoing-tasks/0211-worker-optimization-benchmark-results.md`, `scripts/logs/prompt-caching-benchmark-20260211-191241.json`, `supabase/functions/worker/index.ts`, `scripts/benchmark-worker-prompt-caching.ps1` | Corrective pair passed: non-zero cache telemetry (`cache_creation_input_tokens=1633`, `cache_read_input_tokens=45724`) and material parity (`material_mismatch_blocks=0`) on `7af1b494-ad4b-401c-9bcb-e59386b9760b` vs `3e9dab67-9ede-491e-b50c-86642d78ad39` |
+| 5 | In Progress | 2026-02-12 | Session owner | Local implementation review (`worker/index.ts` pack loop + split/retry path) | `supabase/functions/worker/index.ts`, `docs/ongoing-tasks/0211-priority5-adaptive-batching-prep-spec.md` | Runtime integration underway; benchmark/deploy/gate evidence still pending |
 | 6 | Not Started |  |  |  |  |  |
 | 7 | Not Started |  |  |  |  |  |
 | 8 | Not Started |  |  |  |  |  |
@@ -102,8 +102,8 @@ A priority is considered complete only when its `Entry criteria`, `Required exec
 - [x] Re-run full matrix after fixes to confirm no regressions.
 
 ### Required Evidence
-- [x] Update `docs/ongoing-tasks/0211-source-format-smoke-results.md` with latest timestamped run.
-- [x] Update `docs/ongoing-tasks/0211-source-format-reliability-matrix.md` runtime status per format.
+- [x] Update `docs/ongoing-tasks/complete/0211-source-format-smoke-results.md` with latest timestamped run.
+- [x] Update `docs/ongoing-tasks/complete/0211-source-format-reliability-matrix.md` runtime status per format.
 - [x] Attach/reference per-format logs under `scripts/logs/`.
 
 ### Exit Criteria (Binary)
@@ -123,28 +123,28 @@ Fail if any are true:
 ### Entry Criteria
 - [x] Priority 1 status is `Passed`.
 - [x] Worker runtime path is reachable and authenticated invocation works.
-- [ ] LLM API key is configured for happy-path execution.
+- [x] LLM API key is configured and provider-valid for happy-path execution.
 - [x] Test schema and test document are selected for deterministic run checks.
 
 ### Required Execution
-- [ ] Execute deterministic happy path: create run -> invoke worker -> no pending overlays remain.
-- [ ] Validate transitions: `pending -> claimed -> ai_complete/failed`.
-- [ ] Validate retries and terminal failure behavior.
+- [x] Execute deterministic happy path: create run -> invoke worker -> no pending overlays remain.
+- [x] Validate transitions: `pending -> claimed -> ai_complete/failed`.
+- [x] Validate retries and terminal failure behavior.
 - [x] Validate cancellation behavior for claimed/pending overlays.
 - [x] Validate no-key fallback behavior releases claimed overlays back to pending.
 - [x] Validate invalid-key (401) behavior releases claims and marks key invalid.
-- [ ] Validate run rollups (`completed_blocks`, `failed_blocks`, run status) against overlay truth.
+- [x] Validate run rollups (`completed_blocks`, `failed_blocks`, run status) against overlay truth.
 
 ### Required Evidence
-- [x] Add/update worker reliability evidence doc (recommended: `docs/ongoing-tasks/0211-worker-runtime-reliability.md`).
-- [ ] Record at least one run ID and command/log evidence per scenario (happy, failure/retry, cancellation).
+- [x] Add/update worker reliability evidence doc (recommended: `docs/ongoing-tasks/complete/0211-worker-runtime-reliability.md`).
+- [x] Record at least one run ID and command/log evidence per scenario (happy, failure/retry, cancellation).
 - [x] Add short failure-signature runbook notes.
 
 ### Exit Criteria (Binary)
 Pass only if all are true:
-- [ ] Status transitions and rollups are deterministic and repeatable.
-- [ ] Retry/cancellation semantics match documented contract.
-- [ ] Worker gate is marked complete in `0211-core-workflows-before-assistant-plan.md`.
+- [x] Status transitions and rollups are deterministic and repeatable.
+- [x] Retry/cancellation semantics match documented contract.
+- [x] Worker gate is marked complete in `0211-core-workflows-before-assistant-plan.md`.
 
 Fail if any are true:
 - [ ] Rollup counts diverge from overlay state.
@@ -155,26 +155,26 @@ Fail if any are true:
 ## 10) Priority 3 - Lock Config Registry + Ownership Boundaries
 
 ### Entry Criteria
-- [ ] Priority 2 status is `Passed`.
-- [ ] `docs/ongoing-tasks/0211-admin-config-registry.md` reflects current repo/runtime inventory.
+- [x] Priority 2 status is `Passed`.
+- [x] `docs/ongoing-tasks/0211-admin-config-registry.md` reflects current repo/runtime inventory.
 
 ### Required Execution
-- [ ] Classify each config key as `env`, `admin-policy`, or `run/schema/user scope`.
-- [ ] Resolve default drift across worker/UI/DB (`model`, `temperature`, `max_tokens`).
-- [ ] Resolve `base_url` persistence and RPC signature parity.
-- [ ] Resolve deterministic claim ordering rule for batching workflows (`block_index` semantics).
-- [ ] Document interim handling for values still hardcoded pending admin controls.
+- [x] Classify each config key as `env`, `admin-policy`, or `run/schema/user scope`.
+- [x] Resolve default drift across worker/UI/DB (`model`, `temperature`, `max_tokens`).
+- [x] Resolve `base_url` persistence and RPC signature parity.
+- [x] Resolve deterministic claim ordering rule for batching workflows (`block_index` semantics).
+- [x] Document interim handling for values still hardcoded pending admin controls.
 
 ### Required Evidence
-- [ ] Update `0211-admin-config-registry.md` with resolved status per conflict.
-- [ ] Reference migrations/code locations that enforce resolved contracts.
-- [ ] Record unresolved items explicitly as blockers (if any).
+- [x] Update `0211-admin-config-registry.md` with resolved status per conflict.
+- [x] Reference migrations/code locations that enforce resolved contracts.
+- [x] Record unresolved items explicitly as blockers (if any).
 
 ### Exit Criteria (Binary)
 Pass only if all are true:
-- [ ] No critical conflicts remain unresolved in registry conflict summary.
-- [ ] Single approved config registry exists and is linked from core workflow plan.
-- [ ] Ordering and provider/base URL contracts are unambiguous and codified.
+- [x] No critical conflicts remain unresolved in registry conflict summary.
+- [x] Single approved config registry exists and is linked from core workflow plan.
+- [x] Ordering and provider/base URL contracts are unambiguous and codified.
 
 Fail if any are true:
 - [ ] Temperature/model/default conflicts remain.
@@ -185,23 +185,23 @@ Fail if any are true:
 ## 11) Priority 4 - Implement Prompt Caching
 
 ### Entry Criteria
-- [ ] Priority 3 status is `Passed`.
-- [ ] Baseline token/cost metrics are captured pre-change.
+- [x] Priority 3 status is `Passed`.
+- [x] Baseline token/cost metrics are captured pre-change.
 
 ### Required Execution
-- [ ] Add prompt caching behavior in worker LLM path.
-- [ ] Add feature flag for enable/disable rollback.
-- [ ] Run representative benchmark with caching off and on using same dataset/schema.
+- [x] Add prompt caching behavior in worker LLM path.
+- [x] Add feature flag for enable/disable rollback.
+- [x] Run representative benchmark with caching off and on using same dataset/schema.
 
 ### Required Evidence
-- [ ] Add/update benchmark doc (recommended: `docs/ongoing-tasks/0211-worker-optimization-benchmark-results.md`).
-- [ ] Record quality comparison notes and token/cost deltas.
+- [x] Add/update benchmark doc (recommended: `docs/ongoing-tasks/0211-worker-optimization-benchmark-results.md`).
+- [x] Record quality comparison notes and token/cost deltas.
 
 ### Exit Criteria (Binary)
 Pass only if all are true:
-- [ ] No quality regression on benchmark sample.
-- [ ] Measurable token/cost reduction is documented.
-- [ ] Rollback path is tested.
+- [x] No quality regression on benchmark sample.
+- [x] Measurable token/cost reduction is documented.
+- [x] Rollback path is tested.
 
 Fail if any are true:
 - [ ] Caching changes extraction outputs materially without approved tradeoff.
@@ -212,8 +212,8 @@ Fail if any are true:
 ## 12) Priority 5 - Implement Adaptive Multi-Block Batching
 
 ### Entry Criteria
-- [ ] Priorities 2, 3, and 4 are `Passed`.
-- [ ] Deterministic claim ordering is codified and validated.
+- [x] Priorities 2, 3, and 4 are `Passed`.
+- [x] Deterministic claim ordering is codified and validated.
 
 ### Required Execution
 - [ ] Implement pack sizing based on context and output budgets.
@@ -222,7 +222,7 @@ Fail if any are true:
 - [ ] Benchmark at least one extraction schema and one revision-heavy schema.
 
 ### Required Evidence
-- [ ] Add/update batching implementation spec (recommended: `docs/ongoing-tasks/0211-worker-runtime-optimization-spec.md`).
+- [ ] Add/update batching implementation spec (recommended: `docs/ongoing-tasks/0211-priority5-adaptive-batching-prep-spec.md`).
 - [ ] Add/update benchmark results with quality and call-count deltas.
 
 ### Exit Criteria (Binary)

@@ -111,7 +111,8 @@ Deno.serve(async (req) => {
       const default_max_tokens = typeof body?.default_max_tokens === "number"
         ? body.default_max_tokens
         : null;
-      const base_url = typeof body?.base_url === "string" ? body.base_url.trim() || null : null;
+      const urlResult = parseBaseUrl(body, provider);
+      if (!urlResult.ok) return json(400, { error: urlResult.error });
 
       const supabase = createUserClient(authHeader);
       const { data, error } = await supabase.rpc("update_api_key_defaults", {
@@ -119,7 +120,7 @@ Deno.serve(async (req) => {
         p_default_model: default_model,
         p_default_temperature: default_temperature,
         p_default_max_tokens: default_max_tokens,
-        p_base_url: base_url,
+        p_base_url: urlResult.base_url,
       });
       if (error) return json(400, { error: error.message });
       return json(200, data ?? { ok: true });

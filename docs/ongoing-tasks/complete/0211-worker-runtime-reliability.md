@@ -1,7 +1,7 @@
 # 0211 Worker Runtime Reliability (Priority 2)
 
-**Date:** 2026-02-11  
-**Status:** In Progress (partial scenarios verified)  
+**Date:** 2026-02-12  
+**Status:** Passed (Priority 2 evidence complete)  
 **Scope:** Runtime reliability checks for worker claim/release, cancellation, and run-state integrity.
 
 ---
@@ -17,6 +17,10 @@
    - schema: `82017f64-3833-485f-86af-4d3a61ffc131`
    - conversion (1 block, xlsx): `ceaafa1065f33684e5f10a39e388824c58c3f3f9ba9158766f96dc2a948014ea`
    - owner: `ae4c9b28-b123-4ce3-aa49-bc80ef537221`
+4. Key-management function:
+   - slug: `user-api-keys`
+   - deployed version: `2`
+   - runtime setting: `verify_jwt=false` (function still validates bearer via `auth.getUser()`)
 
 ---
 
@@ -123,25 +127,66 @@ Result: **Pass**.
 
 Result: **Pass**. 401 key-invalid handling releases claims and invalidates key state.
 
+## Scenario D: `.env` Anthropic key save path works, but key itself is invalid
+
+1. Saved Anthropic key from local `.env` via authenticated `POST /functions/v1/user-api-keys`.
+2. Save result:
+   - `saved_ok=true`, key stored encrypted (`enc:v1:*`)
+3. Validity check:
+   - `POST /functions/v1/test-api-key` returned `{"valid":false,"error":"Invalid or disabled API key"}`
+4. Worker run after save:
+   - run: `de64ec30-1831-4475-ad85-0b00b8f991d3`
+   - worker response: `{"error":"API key is invalid or disabled. Update your key in Settings.","worker_id":"worker-e185bb2a"}`
+   - overlay state: `pending`, `claimed_by=null`, `last_error='API key invalid or disabled'`
+   - run state: remains `running` with `completed_blocks=0`, `failed_blocks=0`
+5. User key row state:
+   - `is_valid=false`
+   - storage format: encrypted (`enc:v1:*`)
+
+Result: **Infrastructure path pass / credential validity fail**. Save/decrypt/release pipeline works, but the current Anthropic credential is rejected by provider.
+
+## Scenario E: Updated `.env` key validates and happy path completes
+
+1. Re-saved updated Anthropic key from local `.env` via `POST /functions/v1/user-api-keys`.
+2. Key test result:
+   - `POST /functions/v1/test-api-key` returned `{"valid":true}`
+3. Happy-path worker run:
+   - run: `ab8a3b40-757c-473f-a0c8-65ac007f74bc`
+   - worker response: `claimed=1, succeeded=1, failed=0, remaining_pending=0`
+4. DB state:
+   - overlay status: `ai_complete`
+   - `overlay_jsonb_staging` populated
+   - run status: `complete`
+   - rollup: `completed_blocks=1`, `failed_blocks=0`
+   - key row: `is_valid=true`, key suffix `RwAA`
+
+Result: **Pass**. Happy path and completion rollup verified.
+
+## Scenario F: Forced retry progression to terminal failed with correct rollup
+
+1. Created run: `7f50cdcb-f897-4566-bb87-de2f62e79884`
+2. Invoked worker 3 times using invalid model override:
+   - `model_override='invalid-model-for-retry-test'`
+3. Progression observed:
+   - attempt 1: overlay `pending`, `attempt_count=1`
+   - attempt 2: overlay `pending`, `attempt_count=2`
+   - attempt 3: overlay `failed`, `attempt_count=3`
+4. Final run state:
+   - run status: `complete`
+   - rollup: `completed_blocks=0`, `failed_blocks=1`
+   - `remaining_pending=0` from worker response on final attempt
+
+Result: **Pass**. Retry + terminal failure semantics and rollups verified.
+
 ---
 
 ## 5) Current Gaps Blocking Priority 2 Exit
 
-1. Happy path (`pending -> claimed -> ai_complete`) not verified because no valid Anthropic key is currently configured.
-2. Retry and terminal-failure semantics (`attempt_count` increments to terminal `failed`) require key-enabled LLM calls that return non-401 processing errors.
-3. Run rollup completion checks (`completed_blocks`, `failed_blocks`, terminal `runs_v2.status='complete'`) remain pending until happy/retry paths are executed.
+None. Priority 2 verification scenarios are now complete.
 
 ---
 
 ## 6) Next Required Checks
 
-1. Provision valid key path (user key or platform fallback key).
-2. Execute one happy-path run and verify:
-   - overlay transitions to `ai_complete`
-   - run transitions to `complete`
-   - rollups match overlay truth
-3. Execute one forced-failure run and verify:
-   - retry increments `attempt_count`
-   - terminal state reaches `failed` at retry limit
-   - run rollups reflect failed count accurately
-4. Record run IDs and outcomes in this file and gate docs.
+1. Use this document as baseline evidence for Priority 2 `Passed` status.
+2. Proceed to Priority 4 (prompt caching with benchmark + rollback toggle).

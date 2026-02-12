@@ -1,0 +1,67 @@
+{
+    "benchmark_at_utc":  "2026-02-12T01:31:02.6746614Z",
+    "supabase_project":  "dbdzzhshmigewyprahej",
+    "auth_mode":  {
+                      "run_creation":  "user_access_token",
+                      "worker_invocation":  "supabase_anon_key_default"
+                  },
+    "conv_uid":  "2b79a0a8c44e07dd60843efcf21a4ccf7b1d659bf9e27a3706c83317fc72a254",
+    "schema_id":  "82017f64-3833-485f-86af-4d3a61ffc131",
+    "batch_size":  25,
+    "pricing_assumptions":  {
+                                "input_usd_per_million":  3,
+                                "output_usd_per_million":  15,
+                                "cache_write_multiplier":  1.25,
+                                "cache_read_multiplier":  0.1
+                            },
+    "runs":  [
+                 {
+                     "label":  "cache_off",
+                     "prompt_caching_enabled":  false,
+                     "run_id":  "25ce329c-b4a6-4b05-8634-05e1d8b99672",
+                     "total_blocks":  29,
+                     "worker_invocations":  2,
+                     "elapsed_seconds":  174.58,
+                     "run_status":  "complete",
+                     "completed_blocks":  29,
+                     "failed_blocks":  0,
+                     "usage":  {
+                                   "cache_hit_calls":  0,
+                                   "call_count":  29,
+                                   "output_tokens":  10513,
+                                   "input_tokens":  32442,
+                                   "cache_creation_input_tokens":  0,
+                                   "cache_read_input_tokens":  0
+                               },
+                     "estimated_cost_usd":  0.255021
+                 },
+                 {
+                     "label":  "cache_on",
+                     "prompt_caching_enabled":  true,
+                     "run_id":  "cc7c4da8-ac17-4491-a14d-50b8fb483589",
+                     "total_blocks":  29,
+                     "worker_invocations":  2,
+                     "elapsed_seconds":  172.86,
+                     "run_status":  "complete",
+                     "completed_blocks":  29,
+                     "failed_blocks":  0,
+                     "usage":  {
+                                   "cache_hit_calls":  0,
+                                   "call_count":  29,
+                                   "output_tokens":  10242,
+                                   "input_tokens":  32442,
+                                   "cache_creation_input_tokens":  0,
+                                   "cache_read_input_tokens":  0
+                               },
+                     "estimated_cost_usd":  0.250956
+                 }
+             ],
+    "deltas":  {
+                   "estimated_cost_usd_delta":  0.004065,
+                   "estimated_cost_usd_reduction_pct":  1.59,
+                   "input_tokens_delta":  0,
+                   "output_tokens_delta":  271,
+                   "cache_creation_input_tokens_on":  0,
+                   "cache_read_input_tokens_on":  0
+               }
+}

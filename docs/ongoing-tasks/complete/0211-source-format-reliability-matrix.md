@@ -125,7 +125,7 @@ Matrix runner:
 
 Outputs:
 
-1. Summary report: `docs/ongoing-tasks/0211-source-format-smoke-results.md`
+1. Summary report: `docs/ongoing-tasks/complete/0211-source-format-smoke-results.md`
 2. Per-format logs: `scripts/logs/smoke-<format>-<timestamp>.log`
 
 Recommended first run:

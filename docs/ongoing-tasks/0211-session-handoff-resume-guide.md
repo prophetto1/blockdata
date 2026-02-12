@@ -1,6 +1,6 @@
 ﻿# 0211 Session Handoff + Resume Guide
 
-**Date:** 2026-02-11  
+**Date:** 2026-02-12  
 **Purpose:** Preserve execution continuity across account/session switches.
 
 ---
@@ -18,7 +18,7 @@
    - `docs/ongoing-tasks/0211-core-workflows-before-assistant-plan.md`
 5. Assistant work remains deferred until core gates are complete.
 6. Worker reliability evidence doc now exists:
-   - `docs/ongoing-tasks/0211-worker-runtime-reliability.md`
+   - `docs/ongoing-tasks/complete/0211-worker-runtime-reliability.md`
 7. Worker no-key stranded-claim defect was fixed and deployed:
    - `supabase/functions/worker/index.ts`
    - deployed `worker` function version `6`
@@ -26,6 +26,33 @@
    - no-key path re-verified on fresh run (`ff1905ba-9044-4f40-8d03-232e001c6cf9`)
    - invalid-key 401 path verified (`e055acca-30c5-4642-beb4-500f591d05ba`)
    - temporary test key row removed after verification (no Anthropic key rows currently)
+9. Key-management path update:
+   - deployed `user-api-keys` edge function v2
+   - saved updated Anthropic key from `.env` through encrypted save path
+   - provider validation now passes and `user_api_keys.is_valid=true`
+10. Priority 2 is now passed with complete evidence:
+   - happy path run: `ab8a3b40-757c-473f-a0c8-65ac007f74bc`
+   - retry-to-failed run: `7f50cdcb-f897-4566-bb87-de2f62e79884`
+11. Priority 3 is now passed with complete evidence:
+   - canonical registry locked and updated: `docs/ongoing-tasks/0211-admin-config-registry.md`
+   - claim ordering migration applied: runtime version `20260212004639` (`017_claim_overlay_batch_block_index_ordering`)
+   - worker deployed at version `7` (temperature fallback aligned to `0.3`)
+   - `user-api-keys` deployed at version `3` (PATCH `base_url` validation parity)
+12. Repo/runtime migration parity restored for custom provider `base_url` contract:
+   - runtime migration `20260211091818 add_base_url_multi_provider` is now represented in repo at
+     `supabase/migrations/20260211091818_add_base_url_multi_provider.sql`
+13. Priority 4 is now passed after corrective cycle:
+    - deployed `worker` version `9` with internal auth (`requireUserId`) and run ownership guard
+    - deployed `schemas` version `12` with `verify_jwt=false` (function-level auth retained)
+    - corrective benchmark pair completed:
+      - OFF run: `7af1b494-ad4b-401c-9bcb-e59386b9760b`
+      - ON run: `3e9dab67-9ede-491e-b50c-86642d78ad39`
+    - benchmark artifact: `scripts/logs/prompt-caching-benchmark-20260211-191241.json`
+    - evidence doc: `docs/ongoing-tasks/0211-worker-optimization-benchmark-results.md`
+14. Priority 4 gate-pass evidence summary:
+    - cache telemetry is non-zero on ON run (`cache_creation_input_tokens=1633`, `cache_read_input_tokens=45724`)
+    - cost reduction recorded (`estimated_cost_usd_reduction_pct=50.24`)
+    - material parity confirmed (`material_mismatch_blocks=0`)
 
 ---
 
@@ -36,8 +63,8 @@ Read in this order before making changes:
 1. `docs/ongoing-tasks/0211-core-workflows-before-assistant-plan.md`
 2. `docs/ongoing-tasks/0211-core-priority-queue-and-optimization-plan.md`
 3. `docs/ongoing-tasks/0211-admin-config-registry.md`
-4. `docs/ongoing-tasks/0211-source-format-reliability-matrix.md`
-5. `docs/ongoing-tasks/0211-source-format-smoke-results.md`
+4. `docs/ongoing-tasks/complete/0211-source-format-reliability-matrix.md`
+5. `docs/ongoing-tasks/complete/0211-source-format-smoke-results.md`
 6. `docs/ongoing-tasks/0211-worker-token-optimization-patterns.md`
 7. `docs/ongoing-tasks/meta-configurator-integration/spec.md`
 
@@ -47,16 +74,12 @@ Read in this order before making changes:
 
 Current queue says start here:
 
-### Priority 2: Lock worker/run reliability baseline
+### Priority 5 implementation cycle (adaptive batching)
 
-1. Execute deterministic worker run tests:
-   - happy path (`pending -> claimed -> ai_complete`)
-   - failure/retry path
-   - cancellation behavior (already verified in current evidence doc)
-   - no-key fallback release behavior (already verified in current evidence doc)
-2. Validate run rollups (`completed_blocks`, `failed_blocks`, terminal status) against overlay truth for happy/retry runs.
-3. Capture remaining run evidence in `0211-worker-runtime-reliability.md` and update the gate ledger.
-4. Do not move to Priority 3 until Priority 2 exit criteria are fully `Passed`.
+1. Use `docs/ongoing-tasks/0211-priority5-adaptive-batching-prep-spec.md` as the execution baseline.
+2. Complete worker pack-path wiring (`callLLMBatch`, pack loop integration, per-block mapping validation).
+3. Implement overflow split-and-retry behavior and preserve single-block fallback safety.
+4. Produce P5 benchmark evidence (quality parity, call-count reduction, queue correctness) and update gate ledger.
 
 ---
 
@@ -73,12 +96,10 @@ Current queue says start here:
 
 ## 5) Known Risks to Watch
 
-1. Worker default mismatch risk:
-   - worker fallback temp `0.2` vs UI/DB `0.3`
-2. Worker is still Anthropic-specific in runtime path.
-3. Happy/retry verification is currently blocked until a valid key path is present.
-4. Hardcoded policy values are spread across worker/UI/DB and need centralization.
-5. Existing workspace has many unrelated modified/untracked files; treat carefully.
+1. Worker runtime remains Anthropic-specific by contract; provider-policy runtime routing is still deferred.
+2. Hardcoded policy values are still spread across worker/UI/DB and need centralization in Priority 6.
+3. Prompt-caching rollout must include quality regression checks, not token-only optimization.
+4. Existing workspace has many unrelated modified/untracked files; treat carefully.
 
 ---
 
@@ -106,8 +127,8 @@ Start by reading these files in order:
 1) docs/ongoing-tasks/0211-core-workflows-before-assistant-plan.md
 2) docs/ongoing-tasks/0211-core-priority-queue-and-optimization-plan.md
 3) docs/ongoing-tasks/0211-admin-config-registry.md
-4) docs/ongoing-tasks/0211-source-format-reliability-matrix.md
-5) docs/ongoing-tasks/0211-source-format-smoke-results.md
+4) docs/ongoing-tasks/complete/0211-source-format-reliability-matrix.md
+5) docs/ongoing-tasks/complete/0211-source-format-smoke-results.md
 
 Constraints:
 - Execute one priority at a time.
@@ -116,7 +137,7 @@ Constraints:
 - Do not run destructive git cleanup.
 - Use the pass/fail tracker sections (entry/required evidence/exit) and update the gate ledger.
 
-Now execute Priority 2 (worker/run reliability baseline): finish remaining happy/retry/rollup checks, capture run IDs/evidence, and update the gate ledger and gate docs.
+Continue Priority 5 execution: finish adaptive batching runtime integration, run benchmark evidence, and update the pass/fail tracker and gate ledger.
 ```
 
 ---
