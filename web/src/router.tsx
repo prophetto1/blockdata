@@ -17,7 +17,12 @@ import ProjectDetail from '@/pages/ProjectDetail';
 import Upload from '@/pages/Upload';
 import DocumentDetail from '@/pages/DocumentDetail';
 import Schemas from '@/pages/Schemas';
+import SchemaApply from '@/pages/SchemaApply';
 import SchemaAdvancedEditor from '@/pages/SchemaAdvancedEditor';
+import SchemaStart from '@/pages/SchemaStart';
+import SchemaTemplateDetail from '@/pages/SchemaTemplateDetail';
+import SchemaTemplates from '@/pages/SchemaTemplates';
+import SchemaWizard from '@/pages/SchemaWizard';
 import RunDetail from '@/pages/RunDetail';
 import Settings from '@/pages/Settings';
 import SuperuserSettings from '@/pages/SuperuserSettings';
@@ -70,6 +75,11 @@ export const router = createBrowserRouter([
 
           // Global schemas (not project-scoped)
           { path: '/app/schemas', element: <Schemas /> },
+          { path: '/app/schemas/start', element: <SchemaStart /> },
+          { path: '/app/schemas/wizard', element: <SchemaWizard /> },
+          { path: '/app/schemas/templates', element: <SchemaTemplates /> },
+          { path: '/app/schemas/templates/:templateId', element: <SchemaTemplateDetail /> },
+          { path: '/app/schemas/apply', element: <SchemaApply /> },
           { path: '/app/schemas/advanced', element: <SchemaAdvancedEditor /> },
           { path: '/app/schemas/advanced/:schemaId', element: <SchemaAdvancedEditor /> },
 

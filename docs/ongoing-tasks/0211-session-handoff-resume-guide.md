@@ -8,9 +8,9 @@
 ## 1) Current Truth Snapshot (as of this session)
 
 0. Latest detailed handoff for closed Priority 5 work:
-   - `docs/ongoing-tasks/0212-session-handoff-priority5-core-pipeline.md`
+   - `docs/ongoing-tasks/complete/0212-session-handoff-priority5-core-pipeline.md`
 1. Canonical admin config doc is:
-   - `docs/ongoing-tasks/0211-admin-config-registry.md`
+   - `docs/ongoing-tasks/complete/0211-admin-config-registry.md`
 2. Duplicate file was removed:
    - `docs/ongoing-tasks/0211-admin-config-registry-and-conflicts.md` (deleted)
 3. Core ordered execution queue is:
@@ -36,7 +36,7 @@
    - happy path run: `ab8a3b40-757c-473f-a0c8-65ac007f74bc`
    - retry-to-failed run: `7f50cdcb-f897-4566-bb87-de2f62e79884`
 11. Priority 3 is now passed with complete evidence:
-   - canonical registry locked and updated: `docs/ongoing-tasks/0211-admin-config-registry.md`
+   - canonical registry locked and updated: `docs/ongoing-tasks/complete/0211-admin-config-registry.md`
    - claim ordering migration applied: runtime version `20260212004639` (`017_claim_overlay_batch_block_index_ordering`)
    - worker deployed at version `7` (temperature fallback aligned to `0.3`)
    - `user-api-keys` deployed at version `3` (PATCH `base_url` validation parity)
@@ -50,7 +50,7 @@
       - OFF run: `7af1b494-ad4b-401c-9bcb-e59386b9760b`
       - ON run: `3e9dab67-9ede-491e-b50c-86642d78ad39`
     - benchmark artifact: `scripts/logs/prompt-caching-benchmark-20260211-191241.json`
-    - evidence doc: `docs/ongoing-tasks/0211-worker-optimization-benchmark-results.md`
+    - evidence doc: `docs/ongoing-tasks/complete/0211-worker-optimization-benchmark-results.md`
 14. Priority 4 gate-pass evidence summary:
     - cache telemetry is non-zero on ON run (`cache_creation_input_tokens=1633`, `cache_read_input_tokens=45724`)
     - cost reduction recorded (`estimated_cost_usd_reduction_pct=50.24`)
@@ -83,7 +83,7 @@ Read in this order before making changes:
 1. `docs/ongoing-tasks/0211-core-workflows-before-assistant-plan.md`
 2. `docs/ongoing-tasks/0211-core-priority-queue-and-optimization-plan.md`
 3. `docs/ongoing-tasks/0212-priority7-schema-contracts-master-spec.md`
-4. `docs/ongoing-tasks/0211-admin-config-registry.md`
+4. `docs/ongoing-tasks/complete/0211-admin-config-registry.md`
 5. `docs/ongoing-tasks/complete/0211-source-format-reliability-matrix.md`
 6. `docs/ongoing-tasks/complete/0211-source-format-smoke-results.md`
 7. `docs/ongoing-tasks/0211-worker-token-optimization-patterns.md`
@@ -102,6 +102,17 @@ Current queue says start here:
 3. Prove wizard-first manual schema creation path produces worker-compatible schema contracts (`properties`, `prompt_config`).
 4. Prove deterministic save/fork/conflict (`409`) behavior and capture recovery-path evidence.
 5. Update gate ledger and evidence docs only after Priority 7 exit criteria are satisfied.
+
+Current implementation snapshot:
+
+6. Route/navigation scaffold is implemented in web router (`/app/schemas/start|wizard|templates|templates/:templateId|apply`) and local schema workflow nav.
+7. Wizard manual path is implemented at `web/src/pages/SchemaWizard.tsx` (5-step flow + `POST /schemas` save + `409` handling), plus template + existing-schema prefill.
+8. Open P7 gate gaps are now explicitly narrowed to:
+   - upload JSON classifier (wizard vs advanced routing),
+   - nullable + nested object authoring parity in wizard subset,
+   - preview compatibility pass/warn output,
+   - in-wizard JSON escape hatch behavior,
+   - Section 22.1 evidence capture.
 
 ---
 
@@ -129,7 +140,7 @@ Current queue says start here:
 
 1. `git status --short`
 2. Confirm canonical docs exist:
-   - `docs/ongoing-tasks/0211-admin-config-registry.md`
+   - `docs/ongoing-tasks/complete/0211-admin-config-registry.md`
    - `docs/ongoing-tasks/0211-core-priority-queue-and-optimization-plan.md`
 3. Confirm no stale reference to deleted duplicate file:
    - `rg -n "0211-admin-config-registry-and-conflicts\.md" docs -S`
@@ -148,7 +159,7 @@ I need you to continue exactly from the current core workflow queue.
 Start by reading these files in order:
 1) docs/ongoing-tasks/0211-core-workflows-before-assistant-plan.md
 2) docs/ongoing-tasks/0211-core-priority-queue-and-optimization-plan.md
-3) docs/ongoing-tasks/0211-admin-config-registry.md
+3) docs/ongoing-tasks/complete/0211-admin-config-registry.md
 4) docs/ongoing-tasks/complete/0211-source-format-reliability-matrix.md
 5) docs/ongoing-tasks/complete/0211-source-format-smoke-results.md
 

@@ -11,6 +11,7 @@ import { loadMetaConfiguratorEmbed, type MountedSchemaEditor, type MetaConfigura
 import { PageHeader } from '@/components/common/PageHeader';
 import { ErrorAlert } from '@/components/common/ErrorAlert';
 import { AppBreadcrumbs } from '@/components/common/AppBreadcrumbs';
+import { SchemaWorkflowNav } from '@/components/schemas/SchemaWorkflowNav';
 
 const DEFAULT_SCHEMA: Record<string, unknown> = {
   type: 'object',
@@ -220,6 +221,8 @@ export default function SchemaAdvancedEditor() {
           Save as new schema
         </Button>
       </PageHeader>
+
+      <SchemaWorkflowNav />
 
       {error && <ErrorAlert message={error} />}
 

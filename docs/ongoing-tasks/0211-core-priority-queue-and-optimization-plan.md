@@ -18,7 +18,7 @@ A priority is considered complete only when its `Entry criteria`, `Required exec
 ## 2) Canonical Inputs
 
 - `docs/ongoing-tasks/0211-core-workflows-before-assistant-plan.md`
-- `docs/ongoing-tasks/0211-admin-config-registry.md`
+- `docs/ongoing-tasks/complete/0211-admin-config-registry.md`
 - `docs/ongoing-tasks/complete/0211-source-format-reliability-matrix.md`
 - `docs/ongoing-tasks/complete/0211-source-format-smoke-results.md`
 - `docs/ongoing-tasks/0211-worker-token-optimization-patterns.md`
@@ -81,9 +81,9 @@ A priority is considered complete only when its `Entry criteria`, `Required exec
 | 1 | Passed | 2026-02-11 | Session owner | `scripts/run-format-matrix-smoke.ps1` | `0211-source-format-reliability-matrix.md`, `0211-source-format-smoke-results.md`, `scripts/logs/smoke-*-20260211-124133.log` | Added `pptx/xlsx` fixtures; full required-format pass at `20260211-124133` |
 | 2 | Passed | 2026-02-12 | Session owner | SQL: `create_run_v2(...)`, `cancel_run(...)`, key-state/overlay/run queries; HTTP: `POST /functions/v1/worker`, `POST /functions/v1/test-api-key`, `POST /functions/v1/user-api-keys` | `docs/ongoing-tasks/complete/0211-worker-runtime-reliability.md`, `supabase/functions/worker/index.ts` | Worker v6 release fix verified; no-key + invalid-key + cancellation safeguards verified; valid-key happy path verified (`ab8a3b40-757c-473f-a0c8-65ac007f74bc`); retry-to-failed verified (`7f50cdcb-f897-4566-bb87-de2f62e79884`) |
 | 3 | Passed | 2026-02-12 | Session owner | SQL: `pg_get_functiondef(claim_overlay_batch)`, transactional claim-order probe (`BEGIN ... ROLLBACK`); Supabase mgmt: `apply_migration(017_claim_overlay_batch_block_index_ordering)`, `list_migrations`, `list_edge_functions` | `0211-admin-config-registry.md`, `supabase/migrations/20260211091818_add_base_url_multi_provider.sql`, `supabase/migrations/20260212004639_017_claim_overlay_batch_block_index_ordering.sql`, `supabase/functions/worker/index.ts`, `supabase/functions/user-api-keys/index.ts` | Default drift locked (`temperature=0.3`), `base_url` contract codified, claim ordering moved to `block_index`; deployed `worker` v7 and `user-api-keys` v3 |
-| 4 | Passed | 2026-02-12 | Session owner | Deploy: `worker v9 (verify_jwt=false + internal auth)`, `schemas v12 (verify_jwt=false)`; Benchmark: `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\benchmark-worker-prompt-caching.ps1 -SchemaId 94ffed2b-364f-453d-9553-fdb05521bf65 -BatchSize 5`; SQL: paired run-state + OFF/ON overlay comparison (`action/final.format/final.content`) | `docs/ongoing-tasks/0211-worker-optimization-benchmark-results.md`, `scripts/logs/prompt-caching-benchmark-20260211-191241.json`, `supabase/functions/worker/index.ts`, `scripts/benchmark-worker-prompt-caching.ps1` | Corrective pair passed: non-zero cache telemetry (`cache_creation_input_tokens=1633`, `cache_read_input_tokens=45724`) and material parity (`material_mismatch_blocks=0`) on `7af1b494-ad4b-401c-9bcb-e59386b9760b` vs `3e9dab67-9ede-491e-b50c-86642d78ad39` |
-| 5 | Passed | 2026-02-12 | Session owner | Benchmark: `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\benchmark-worker-batching.ps1 -SchemaId 1a28c369-a3ea-48d9-876e-3562ee88eff4 -BatchSize 25`; Benchmark: `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\benchmark-worker-batching.ps1 -SchemaId 94ffed2b-364f-453d-9553-fdb05521bf65 -BatchSize 25`; SQL: baseline-vs-batched material parity checks on `overlay_jsonb_staging` by `block_uid` | `supabase/functions/worker/index.ts`, `scripts/benchmark-worker-batching.ps1`, `scripts/logs/worker-batching-benchmark-20260211-224355.json`, `scripts/logs/worker-batching-benchmark-20260211-224635.json`, `docs/ongoing-tasks/0211-priority5-adaptive-batching-prep-spec.md` | Worker v15 batching pass: extraction suite call_count 29 -> 4/2 with material parity (0 mismatches); revision-heavy suite call_count 29 -> 6 with material parity (0 mismatches) and no split-event regressions |
-| 6 | Passed | 2026-02-12 | Session owner | Deploy/runtime: `npx supabase secrets set SUPERUSER_EMAIL_ALLOWLIST=... --project-ref dbdzzhshmigewyprahej`; `npx supabase functions deploy admin-config/runs/worker --project-ref dbdzzhshmigewyprahej --no-verify-jwt --use-api`; Supabase Mgmt SQL `POST /v1/projects/dbdzzhshmigewyprahej/database/query` (apply migration `018`, verify counts, record migration row); Auth/API proofs: `POST /auth/v1/token`, `GET/PATCH /functions/v1/admin-config`, `POST /functions/v1/runs`, `POST /functions/v1/worker` | `supabase/migrations/20260212114500_018_admin_runtime_policy_controls.sql`, `supabase/functions/admin-config/index.ts`, `supabase/functions/_shared/admin_policy.ts`, `supabase/functions/_shared/superuser.ts`, `supabase/functions/runs/index.ts`, `supabase/functions/worker/index.ts`, `web/src/pages/SuperuserSettings.tsx`, `web/src/router.tsx`, `docs/ongoing-tasks/0211-admin-config-registry.md`, `docs/ongoing-tasks/0211-admin-optimization-controls-spec.md`, `docs/ongoing-tasks/complete/0211-progress-log.md` | Remote migration + seed verified (`policy_count=19`), superuser gate active, new-run policy-change proof passed, mid-run snapshot proof passed (`run 640cf4b0-6c6f-445b-bd13-ae80c1f2e73f` kept snapshot after policy restore), audit visibility proof passed (API rows present; UI consumes same `admin-config` audit payload). |
+| 4 | Passed | 2026-02-12 | Session owner | Deploy: `worker v9 (verify_jwt=false + internal auth)`, `schemas v12 (verify_jwt=false)`; Benchmark: `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\benchmark-worker-prompt-caching.ps1 -SchemaId 94ffed2b-364f-453d-9553-fdb05521bf65 -BatchSize 5`; SQL: paired run-state + OFF/ON overlay comparison (`action/final.format/final.content`) | `docs/ongoing-tasks/complete/0211-worker-optimization-benchmark-results.md`, `scripts/logs/prompt-caching-benchmark-20260211-191241.json`, `supabase/functions/worker/index.ts`, `scripts/benchmark-worker-prompt-caching.ps1` | Corrective pair passed: non-zero cache telemetry (`cache_creation_input_tokens=1633`, `cache_read_input_tokens=45724`) and material parity (`material_mismatch_blocks=0`) on `7af1b494-ad4b-401c-9bcb-e59386b9760b` vs `3e9dab67-9ede-491e-b50c-86642d78ad39` |
+| 5 | Passed | 2026-02-12 | Session owner | Benchmark: `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\benchmark-worker-batching.ps1 -SchemaId 1a28c369-a3ea-48d9-876e-3562ee88eff4 -BatchSize 25`; Benchmark: `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\benchmark-worker-batching.ps1 -SchemaId 94ffed2b-364f-453d-9553-fdb05521bf65 -BatchSize 25`; SQL: baseline-vs-batched material parity checks on `overlay_jsonb_staging` by `block_uid` | `supabase/functions/worker/index.ts`, `scripts/benchmark-worker-batching.ps1`, `scripts/logs/worker-batching-benchmark-20260211-224355.json`, `scripts/logs/worker-batching-benchmark-20260211-224635.json`, `docs/ongoing-tasks/complete/0211-priority5-adaptive-batching-prep-spec.md` | Worker v15 batching pass: extraction suite call_count 29 -> 4/2 with material parity (0 mismatches); revision-heavy suite call_count 29 -> 6 with material parity (0 mismatches) and no split-event regressions |
+| 6 | Passed | 2026-02-12 | Session owner | Deploy/runtime: `npx supabase secrets set SUPERUSER_EMAIL_ALLOWLIST=... --project-ref dbdzzhshmigewyprahej`; `npx supabase functions deploy admin-config/runs/worker --project-ref dbdzzhshmigewyprahej --no-verify-jwt --use-api`; Supabase Mgmt SQL `POST /v1/projects/dbdzzhshmigewyprahej/database/query` (apply migration `018`, verify counts, record migration row); Auth/API proofs: `POST /auth/v1/token`, `GET/PATCH /functions/v1/admin-config`, `POST /functions/v1/runs`, `POST /functions/v1/worker` | `supabase/migrations/20260212114500_018_admin_runtime_policy_controls.sql`, `supabase/functions/admin-config/index.ts`, `supabase/functions/_shared/admin_policy.ts`, `supabase/functions/_shared/superuser.ts`, `supabase/functions/runs/index.ts`, `supabase/functions/worker/index.ts`, `web/src/pages/SuperuserSettings.tsx`, `web/src/router.tsx`, `docs/ongoing-tasks/complete/0211-admin-config-registry.md`, `docs/ongoing-tasks/complete/0211-admin-optimization-controls-spec.md`, `docs/ongoing-tasks/complete/0211-progress-log.md` | Remote migration + seed verified (`policy_count=19`), superuser gate active, new-run policy-change proof passed, mid-run snapshot proof passed (`run 640cf4b0-6c6f-445b-bd13-ae80c1f2e73f` kept snapshot after policy restore), audit visibility proof passed (API rows present; UI consumes same `admin-config` audit payload). |
 | 7 | Not Started |  |  |  |  |  |
 | 8 | Not Started |  |  |  |  |  |
 | 9 | Not Started |  |  |  |  |  |
@@ -157,7 +157,7 @@ Fail if any are true:
 
 ### Entry Criteria
 - [x] Priority 2 status is `Passed`.
-- [x] `docs/ongoing-tasks/0211-admin-config-registry.md` reflects current repo/runtime inventory.
+- [x] `docs/ongoing-tasks/complete/0211-admin-config-registry.md` reflects current repo/runtime inventory.
 
 ### Required Execution
 - [x] Classify each config key as `env`, `admin-policy`, or `run/schema/user scope`.
@@ -195,7 +195,7 @@ Fail if any are true:
 - [x] Run representative benchmark with caching off and on using same dataset/schema.
 
 ### Required Evidence
-- [x] Add/update benchmark doc (recommended: `docs/ongoing-tasks/0211-worker-optimization-benchmark-results.md`).
+- [x] Add/update benchmark doc (recommended: `docs/ongoing-tasks/complete/0211-worker-optimization-benchmark-results.md`).
 - [x] Record quality comparison notes and token/cost deltas.
 
 ### Exit Criteria (Binary)
@@ -223,7 +223,7 @@ Fail if any are true:
 - [x] Benchmark at least one extraction schema and one revision-heavy schema.
 
 ### Required Evidence
-- [x] Add/update batching implementation spec (recommended: `docs/ongoing-tasks/0211-priority5-adaptive-batching-prep-spec.md`).
+- [x] Add/update batching implementation spec (recommended: `docs/ongoing-tasks/complete/0211-priority5-adaptive-batching-prep-spec.md`).
 - [x] Add/update benchmark results with quality and call-count deltas.
 
 ### Exit Criteria (Binary)
@@ -250,7 +250,7 @@ Fail if any are true:
 - [x] Add auditability for policy changes.
 
 ### Required Evidence
-- [x] Add/update controls spec (recommended: `docs/ongoing-tasks/0211-admin-optimization-controls-spec.md`).
+- [x] Add/update controls spec (recommended: `docs/ongoing-tasks/complete/0211-admin-optimization-controls-spec.md`).
 - [x] Record proof that run snapshots prevent mid-run drift.
 - [x] Record audit visibility proof.
 
@@ -275,6 +275,10 @@ Fail if any are true:
 - [ ] Deliver wizard-first manual schema creation path.
 - [ ] Preserve advanced editor escape hatch and fork-by-default semantics.
 - [ ] Enforce compatibility with worker/grid contract (`properties`, `prompt_config`).
+
+Current as-is progress snapshot (2026-02-12):
+- Implemented: start/wizard/templates/apply routes, schema workflow nav, wizard 5-step manual flow, existing-schema fork prefill, template prefill + gallery/detail scaffold.
+- Remaining for gate closure: upload classifier routing, nullable/nested object parity, preview compatibility pass/warn, in-wizard JSON escape hatch, and required evidence capture.
 
 ### Required Evidence
 - [ ] Update schema workflow status docs (`meta-configurator-integration/status.md` and related references).

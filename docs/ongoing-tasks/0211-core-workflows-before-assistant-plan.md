@@ -194,7 +194,7 @@ Completed:
 30. Benchmark showed small cost reduction (`~1.59%`) but cache usage counters remained `0` (no observed prompt-cache hits).
 31. SQL quality comparison found one material mismatch (`action/final.content`) between OFF and ON on block `...:15`; Priority 4 marked failed pending corrective rerun.
 32. Added Priority 4 evidence doc:
-    - `docs/ongoing-tasks/0211-worker-optimization-benchmark-results.md`
+    - `docs/ongoing-tasks/complete/0211-worker-optimization-benchmark-results.md`
 33. Reproduced JWT-gateway failure for ES256 user tokens on `worker` with `verify_jwt=true` (`401 Invalid JWT`).
 34. Deployed `worker` v9 with `verify_jwt=false` plus internal auth (`requireUserId`) and run ownership guard.
 35. Deployed `schemas` v12 with `verify_jwt=false` (function already uses `requireUserId`).

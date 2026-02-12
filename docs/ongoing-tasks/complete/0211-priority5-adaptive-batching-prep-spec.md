@@ -502,7 +502,7 @@ From the gate tracker:
    - Run B2: `batching_enabled=true, pack_size=10`
    - Run B3: `batching_enabled=true, pack_size=25`
 3. For each suite, compare call count, total tokens, cost, and quality (diff overlays field-by-field).
-4. Record both suites and conclusions in `docs/ongoing-tasks/0211-worker-optimization-benchmark-results.md`.
+4. Record both suites and conclusions in `docs/ongoing-tasks/complete/0211-worker-optimization-benchmark-results.md`.
 
 ---
 
@@ -551,7 +551,7 @@ From the gate tracker:
 | `supabase/migrations/20260212*_017_*.sql` | Claim ordering by `block_index` |
 | `scripts/benchmark-worker-prompt-caching.ps1` | P4 benchmark (extend or clone for P5) |
 | `docs/ongoing-tasks/0211-worker-token-optimization-patterns.md` | Cost analysis and optimization tiers |
-| `docs/ongoing-tasks/0211-admin-config-registry.md` | Config ownership (pack_size bounds â†’ admin policy) |
+| `docs/ongoing-tasks/complete/0211-admin-config-registry.md` | Config ownership (pack_size bounds â†’ admin policy) |
 
 ---
 

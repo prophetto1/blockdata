@@ -1,15 +1,16 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Table, FileInput, TextInput, Button, Group, Code, Stack, ActionIcon, Tooltip, Modal, Text } from '@mantine/core';
+import { Table, FileInput, TextInput, Button, Group, Stack, ActionIcon, Tooltip, Modal, Text } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
-import { IconPencil, IconTrash } from '@tabler/icons-react';
+import { IconPencil, IconPlus, IconTrash } from '@tabler/icons-react';
 import { supabase } from '@/lib/supabase';
 import { edgeJson } from '@/lib/edge';
 import { TABLES } from '@/lib/tables';
 import type { SchemaRow } from '@/lib/types';
 import { PageHeader } from '@/components/common/PageHeader';
 import { ErrorAlert } from '@/components/common/ErrorAlert';
+import { JsonViewer } from '@/components/common/JsonViewer';
 
 export default function Schemas() {
   const navigate = useNavigate();
@@ -76,7 +77,10 @@ export default function Schemas() {
 
   return (
     <>
-      <PageHeader title="Schemas" subtitle="Upload and list annotation schemas.">
+      <PageHeader title="Schemas" subtitle="Create, upload, and manage annotation schemas.">
+        <Button size="xs" leftSection={<IconPlus size={14} />} onClick={() => navigate('/app/schemas/start')}>
+          Create schema
+        </Button>
         <Button variant="light" size="xs" onClick={() => navigate('/app/schemas/advanced')}>
           Advanced editor
         </Button>
@@ -89,7 +93,7 @@ export default function Schemas() {
         </Group>
       </Stack>
       {error && <ErrorAlert message={error} />}
-      {lastUpload && <Code block mt="md">{JSON.stringify(lastUpload, null, 2)}</Code>}
+      {lastUpload && <div style={{ marginTop: 'var(--mantine-spacing-md)' }}><JsonViewer value={lastUpload} /></div>}
       <Table.ScrollContainer minWidth={500} mt="lg">
         <Table striped highlightOnHover>
           <Table.Thead>

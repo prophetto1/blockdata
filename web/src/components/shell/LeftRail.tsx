@@ -10,6 +10,7 @@ type LeftRailProps = {
 export function LeftRail({ onNavigate }: LeftRailProps) {
   const navigate = useNavigate();
   const location = useLocation();
+  const isTemplatesPath = location.pathname.startsWith('/app/schemas/templates');
 
   return (
     <Box mt="xs">
@@ -28,6 +29,10 @@ export function LeftRail({ onNavigate }: LeftRailProps) {
                   ? location.pathname === '/app'
                   : item.path === '/app/projects'
                     ? location.pathname.startsWith('/app/projects')
+                  : item.path === '/app/schemas'
+                    ? location.pathname.startsWith('/app/schemas') && !isTemplatesPath
+                  : item.path === '/app/schemas/templates'
+                    ? isTemplatesPath
                   : location.pathname.startsWith(item.path)
               }
               onClick={() => {

@@ -50,7 +50,7 @@ Priority 3 is now closed with runtime and repo parity checks complete.
 - Transactional claim-order probe confirmed numeric `block_index` ordering.
 
 ### Docs updated
-- `docs/ongoing-tasks/0211-admin-config-registry.md`
+- `docs/ongoing-tasks/complete/0211-admin-config-registry.md`
 - `docs/ongoing-tasks/0211-core-priority-queue-and-optimization-plan.md`
 - `docs/ongoing-tasks/0211-core-workflows-before-assistant-plan.md`
 - `docs/ongoing-tasks/0211-session-handoff-resume-guide.md`
@@ -79,7 +79,7 @@ Priority 4 is now closed after a corrective rerun with benchmark and SQL parity 
   - `material_mismatch_blocks=0` across `action`, `final.format`, and `final.content`.
 
 ### Evidence
-- `docs/ongoing-tasks/0211-worker-optimization-benchmark-results.md`
+- `docs/ongoing-tasks/complete/0211-worker-optimization-benchmark-results.md`
 - `scripts/logs/prompt-caching-benchmark-20260211-191241.json`
 - `scripts/benchmark-worker-prompt-caching.ps1`
 - `supabase/functions/worker/index.ts`
@@ -217,3 +217,82 @@ Key outcomes:
    - `docs/ongoing-tasks/meta-configurator-integration/spec.md`
    - `docs/ongoing-tasks/0210-schema-wizard-and-ai-requirements.md`
 7. Corrected Priority 7 queue entry-criteria checkbox state (`Priorities 2 and 3 are Passed` -> checked) in the core tracker.
+
+---
+
+## Priority 7: Route + Navigation Scaffold (In Progress)
+
+### Frontend route wiring added
+- Added new authenticated routes in `web/src/router.tsx`:
+  - `/app/schemas/start`
+  - `/app/schemas/wizard`
+  - `/app/schemas/templates`
+  - `/app/schemas/templates/:templateId`
+  - `/app/schemas/apply`
+
+### Schema workflow UI scaffolding added
+- Added local schema workflow navigation component:
+  - `web/src/components/schemas/SchemaWorkflowNav.tsx`
+- Added new schema workflow pages:
+  - `web/src/pages/SchemaStart.tsx`
+  - `web/src/pages/SchemaWizard.tsx`
+  - `web/src/pages/SchemaTemplates.tsx`
+  - `web/src/pages/SchemaTemplateDetail.tsx`
+  - `web/src/pages/SchemaApply.tsx`
+- Added template seed registry aligned with P7 contract naming:
+  - `web/src/lib/schemaTemplates.ts` (`template_id`, `template_version`, `use_case_tags`)
+
+### Existing page integration
+- Updated `web/src/pages/Schemas.tsx`:
+  - Added primary `Create schema` action linking to `/app/schemas/start`
+  - Kept `Advanced editor` action
+- Updated `web/src/pages/SchemaAdvancedEditor.tsx`:
+  - Added local schema workflow nav for consistent in-area routing
+
+### Validation
+- TypeScript compile passed after scaffold changes:
+  - `cd web && npx tsc -b`
+
+### Current P7 status after this increment
+- Completed this increment:
+  - route + information-architecture scaffold
+  - local menu/sub-menu behavior contract now represented in UI routing
+- Still pending for gate closure:
+  - wizard field editor + step logic
+  - save/fork/conflict UX in wizard path
+  - upload classifier behavior
+  - runtime evidence capture per P7 matrix
+
+---
+
+## Priority 7: Wizard Core Flow (Manual Path) - In Progress
+
+### Implemented in this increment
+- Replaced wizard placeholder with a working 5-step schema wizard in `web/src/pages/SchemaWizard.tsx`:
+  1. Intent capture
+  2. Visual field editor (key/type/description/required + type-specific controls)
+  3. Optional prompt config controls
+  4. JSON preview from assembled schema artifact
+  5. Save step with slug validation and `409` conflict handling
+- Added source-aware prefill behavior:
+  - template prefill via `templateId` from `web/src/lib/schemaTemplates.ts`
+  - existing-schema fork prefill from user-owned `schemas` rows when `source=existing`
+- Kept save boundary contract intact:
+  - `POST /schemas` through `edgeFetch`
+  - explicit handling of conflict responses and rename guidance path
+
+### Validation
+- TypeScript compile passed after wizard implementation:
+  - `cd web && npx tsc -b`
+
+### Remaining for full Priority 7 gate closure
+- Implement upload JSON classifier route + wizard/advanced routing semantics.
+- Expand wizard subset support for deeper nested object authoring parity.
+- Complete evidence capture for all gate-required scenarios in the Priority 7 matrix.
+
+### Menu update (schema library global entry)
+- Added dedicated global left-rail menu item:
+  - `Schema Library` -> `/app/schemas/templates`
+- Updated active-state behavior in `web/src/components/shell/LeftRail.tsx`:
+  - `Schema Library` active on `/app/schemas/templates*`
+  - `Schemas` active on other `/app/schemas*` routes.

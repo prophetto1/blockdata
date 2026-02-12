@@ -2,13 +2,13 @@
 
 **Date:** 2026-02-12  
 **Status:** Canonical implementation contract for Priority 7  
-**Authority:** For Priority 7 execution, this document supersedes overlapping guidance in:
+**Authority:** Primary execution contract for Priority 7 route/pipeline/save/evidence decisions; deeper reference docs remain valid where explicitly cited in this document:
 
 - `docs/ongoing-tasks/meta-configurator-integration/spec.md`
 - `docs/ongoing-tasks/meta-configurator-integration/status.md`
 - `docs/ongoing-tasks/0210-schema-wizard-and-ai-requirements.md`
 
-Those documents remain useful reference/history but are not the execution authority for Priority 7 decisions.
+Those documents remain reference inputs and history; this document is the default tie-breaker for Priority 7 execution decisions unless a section here explicitly delegates to a source section.
 
 ---
 
@@ -78,7 +78,7 @@ Allowed but not required in this gate:
 SRL-1. Users can create a schema without writing JSON.  
 SRL-2. Users can edit full schema JSON via power-user escape hatch.  
 SRL-3. Saved schemas persist with stable `schema_ref` and deterministic `schema_uid`.  
-SRL-4. Save is idempotent on identical content; conflicts on `(owner_id, schema_ref)` are explicit and recoverable.  
+SRL-4. Save is idempotent on identical `(owner_id, schema_ref, schema_uid)` submissions; owner-scoped `schema_ref` and `schema_uid` uniqueness conflicts are explicit and recoverable.  
 SRL-5. Editing defaults to fork (new schema artifact), not in-place mutation of in-use schema.  
 SRL-6. Wizard-created schemas are compatible with current worker/grid contract.  
 SRL-7. Grid columns derive from schema and display staged/confirmed overlays correctly.  
@@ -94,7 +94,7 @@ SRL-9. Advanced editor embed remains compatible with host app styling and lifecy
 | SRL-1 | Wizard route + field editor contracts (Sections 12, 13) | Wizard create-save proof (Section 22) |
 | SRL-2 | Advanced editor route + mount/save contract (Sections 15, 16) | Advanced save proof (Section 22) |
 | SRL-3 | Save boundary + hash derivation (Sections 9, 10) | Save response and list evidence |
-| SRL-4 | `POST /schemas` conflict semantics (Section 10) | `409` test + rename retry proof |
+| SRL-4 | `POST /schemas` conflict semantics (Section 10) | `409` tests (`schema_ref` and `schema_uid`) + rename retry proof |
 | SRL-5 | Fork-by-default for wizard/advanced edit (Sections 7.3, 16) | Existing-schema fork evidence |
 | SRL-6 | Wizard compatibility enforcement (Section 12) | Run/grid compatibility evidence |
 | SRL-7 | Grid display/edit/review semantics (Section 18) | Run detail + grid output check |
@@ -112,7 +112,7 @@ SRL-9. Advanced editor embed remains compatible with host app styling and lifecy
 1. `schema_id` UUID primary key.
 2. `owner_id` UUID not null.
 3. `schema_ref` text not null, owner-scoped unique.
-4. `schema_uid` text not null (deterministic content hash).
+4. `schema_uid` text not null (deterministic content hash), owner-scoped unique.
 5. `schema_jsonb` JSONB not null (opaque payload to DB).
 
 ### 7.2 `schema_ref` format contract
@@ -129,11 +129,18 @@ Schema deletion is available via `delete_schema` RPC. It succeeds only when the 
 
 ### 7.5 Uniqueness constraints (exact)
 
-The unique constraint is on `(owner_id, schema_ref)`, not on `schema_uid`. This means:
+Database constraints enforce both:
+
+1. `unique (owner_id, schema_ref)`
+2. `unique (owner_id, schema_uid)`
+3. `schema_uid` must match `^[0-9a-f]{64}$` (sha256 hex)
+
+This means:
 
 1. Different users may have identical `schema_uid` values (same content, different owners).
-2. The same user may have identical `schema_uid` under different `schema_ref` slugs.
-3. Conflict detection (`409`) triggers on `(owner_id, schema_ref)` match with differing `schema_uid`.
+2. The same user cannot create two schema rows with identical content hash (same `schema_uid`), even under different `schema_ref` slugs.
+3. Conflict detection (`409`) can be triggered by either unique key (`owner_id + schema_ref` or `owner_id + schema_uid`).
+4. Duplicate `(owner_id, schema_uid)` submissions should be treated as idempotent-by-content at the UX layer (link user back to the existing schema row), even if the current API response is a generic duplicate/409.
 
 ---
 
@@ -146,14 +153,25 @@ Already implemented and must not regress:
    - `/app/schemas/advanced`
    - `/app/schemas/advanced/:schemaId`
 3. Advanced editor save defaults to fork and handles `409` with rename guidance.
+4. New schema workflow routes are wired:
+   - `/app/schemas/start`
+   - `/app/schemas/wizard`
+   - `/app/schemas/templates`
+   - `/app/schemas/templates/:templateId`
+   - `/app/schemas/apply`
+5. Wizard manual 5-step flow exists with save through `POST /schemas` and `409` handling.
+6. Existing-schema fork prefill and template prefill paths are wired into wizard flow.
+7. Template registry + template gallery/detail scaffold exists (Phase 2-capable surface).
 
-Not yet implemented:
+Confirmed remaining gaps to close for P7 gate:
 
-1. Wizard route and visual stepper.
-2. Start chooser route.
-3. Template gallery/detail routes.
-4. Upload classifier route logic.
-5. Existing-schema wizard prefill route.
+1. Upload JSON classifier path is not implemented end-to-end yet (Path D currently routes to wizard shell without parser/classifier behavior).
+2. Wizard authoring parity gaps:
+   - nullable union toggle (`type: ["...","null"]`) authoring control,
+   - nested object property authoring parity,
+   - explicit compatibility pass/warn result in preview step.
+3. In-wizard JSON escape hatch contract is not yet implemented as specified in Section 13.6.
+4. Section 22.1 gate evidence capture is still incomplete.
 
 ---
 
@@ -185,8 +203,9 @@ No alternate schema-persistence endpoint is permitted in Priority 7.
 1. `200` create success.
 2. `200` idempotent success when same `schema_ref` + same `schema_uid`.
 3. `409` conflict when same `schema_ref` + different `schema_uid`.
-4. `400` invalid payload (including non-object schema JSON).
-5. `405` wrong method.
+4. `409` conflict when same owner submits an existing `schema_uid` under a different `schema_ref`.
+5. `400` invalid payload (including non-object schema JSON).
+6. `405` wrong method.
 
 ### 10.4 `schema_ref` derivation when not provided
 
@@ -223,6 +242,32 @@ No alternate schema-persistence endpoint is permitted in Priority 7.
 3. `/app/schemas/templates` (template gallery, optional in P7 gate)
 4. `/app/schemas/templates/:templateId` (template detail, optional in P7 gate)
 5. `/app/schemas/apply` (optional post-save apply flow)
+
+### 11.3 Global menu contract (left rail)
+
+Priority 7 keeps `Schemas` as the main entry and may expose a dedicated `Schema Library` menu item when template browsing is promoted as a first-class path.
+
+1. Keep `Schemas` -> `/app/schemas` as the primary schema workflow entry.
+2. When template path is surfaced in global nav, add `Schema Library` -> `/app/schemas/templates`.
+3. Active-state behavior must avoid double-highlight:
+   - `Schema Library` active for `/app/schemas/templates*`
+   - `Schemas` active for other `/app/schemas*` paths.
+
+### 11.4 Local sub-menu contract (schema workflow)
+
+Schema sub-navigation is local to the schema area (page-level nav/tabs/segmented control), not global left-rail expansion.
+
+1. Required local entries in P7 core:
+   - `Start` -> `/app/schemas/start`
+   - `Wizard` -> `/app/schemas/wizard`
+   - `Advanced` -> `/app/schemas/advanced`
+2. Optional local entries (only when shipped):
+   - `Templates` -> `/app/schemas/templates`
+   - `Apply` -> `/app/schemas/apply`
+3. Entry/exit rules:
+   - `Create schema` from `/app/schemas` opens `/app/schemas/start`.
+   - `Advanced editor` from `/app/schemas` opens `/app/schemas/advanced`.
+   - `Back to list` from subflows returns `/app/schemas`.
 
 ---
 
@@ -283,7 +328,9 @@ Per field supported subset:
 
 ## 13) Wizard Step UX Contracts (Exact)
 
-### 13.1 Step 1 — Intent
+Wizard steps are a recommended order, not a hard linear lock. Users may jump between steps; save action performs cross-step validation and routes users back to the step requiring correction.
+
+### 13.1 Step 1 - Intent
 
 Required:
 
@@ -294,7 +341,7 @@ Optional:
 1. Sample document selector (selects a `conv_uid`) to power preview and AI assistance (when available).
 2. Source metadata carried forward from branch controller (`template_id`, `schema_id`, `upload_name`).
 
-### 13.2 Step 2 — Fields (Visual Editor)
+### 13.2 Step 2 - Fields (Visual Editor)
 
 Visual field editor is the primary authoring surface; live JSON preview is secondary.
 
@@ -314,7 +361,7 @@ Per-field controls:
 
 Field reordering (drag or move controls) is recommended but not gate-critical.
 
-### 13.3 Step 3 — Prompt Config (Optional)
+### 13.3 Step 3 - Prompt Config (Optional)
 
 Controls:
 
@@ -327,7 +374,7 @@ Controls:
 
 User may leave this step entirely blank; schema is valid for manual annotation without prompt config.
 
-### 13.4 Step 4 — Preview
+### 13.4 Step 4 - Preview
 
 Must show:
 
@@ -341,7 +388,7 @@ If sample `conv_uid` was selected in Step 1:
 
 AI-powered preview (run schema against sample blocks) is deferred to post-P7.
 
-### 13.5 Step 5 — Save
+### 13.5 Step 5 - Save
 
 Must show:
 
@@ -459,10 +506,11 @@ Embed is editor-only; host performs schema persistence via `POST /schemas`.
 ```ts
 type SchemaTemplate = {
   template_id: string;
+  template_version: string;
   name: string;
   category: string;
   description: string;
-  tags: string[];
+  use_case_tags: string[];
   schema_json_seed: Record<string, unknown>;
   preview: {
     fields: Array<{ key: string; type: string; description?: string }>;
@@ -511,7 +559,7 @@ Bulk actions:
 
 ### 18.5 Degradation when `properties` is missing
 
-If `schema_jsonb.properties` is absent or not an object, no overlay columns are derived. The grid still shows immutable block columns; overlay data columns are simply absent. This must be warned during authoring (Sections 12.1, 15).
+If `schema_jsonb.properties` is absent or not an object, the grid falls back to legacy `schema_jsonb.fields` if present and valid (Section 18.1). If neither `properties` nor legacy `fields` is a valid object, no overlay columns are derived. The grid still shows immutable block columns; overlay data columns are simply absent. This must be warned during authoring (Sections 12.1, 15).
 
 ---
 
@@ -550,6 +598,14 @@ Frontend current:
 4. `web/src/lib/schema-fields.ts`
 5. `web/src/components/blocks/BlockViewerGrid.tsx`
 6. `web/src/router.tsx`
+7. `web/src/pages/SchemaStart.tsx`
+8. `web/src/pages/SchemaWizard.tsx`
+9. `web/src/pages/SchemaTemplates.tsx`
+10. `web/src/pages/SchemaTemplateDetail.tsx`
+11. `web/src/components/schemas/SchemaWorkflowNav.tsx`
+12. `web/src/lib/schemaTemplates.ts`
+13. `web/src/components/shell/nav-config.ts`
+14. `web/src/components/shell/LeftRail.tsx`
 
 Primary reference docs:
 
@@ -568,6 +624,7 @@ Primary reference docs:
 3. advanced editor save path remains working.
 4. explicit conflict behavior:
    - `409` on same ref + different content
+   - `409` on same owner + same content hash (`schema_uid`) under different ref
    - rename and retry success
    - idempotent `200` on same ref + same content
 5. run/grid compatibility:
@@ -586,12 +643,14 @@ Primary reference docs:
 
 ### Phase 1 - Priority 7 gate closure
 
-1. `/app/schemas/start`
-2. `/app/schemas/wizard` scratch
-3. existing-schema fork -> wizard prefill
-4. upload classifier route + wizard/advanced routing
-5. preserve advanced editor path
-6. capture Section 22.1 evidence
+1. Upload classifier (Path D): parse `.json`, classify wizard-compatible vs advanced-required, then route deterministically.
+2. Wizard nullable toggle support: allow authoring `type: ["<base>", "null"]` for supported base types.
+3. Preview compatibility indicator: explicit pass/warn result against Section 12.1 rules in Step 4.
+4. Nested object authoring parity: support nested `properties` in wizard subset or explicitly route unsupported nested structures to advanced editor with non-destructive preservation warning.
+5. In-wizard JSON escape hatch: JSON tab with parse/error gating and unknown-key preservation per Section 13.6.
+6. Re-verify existing fork + template prefill paths after steps 1-5.
+7. Capture Section 22.1 evidence artifacts (scratch save, fork save, conflict cases, run/grid compatibility).
+8. Update Priority 7 gate tracker and ledger only after evidence is reproducible.
 
 ### Phase 2 - Template path
 
@@ -626,4 +685,3 @@ Priority 7 is successful when:
 3. all creation branches share deterministic `POST /schemas` behavior,
 4. conflict/fork behavior is explicit and recoverable,
 5. saved schemas reliably flow into run + grid behavior via top-level `properties`.
-

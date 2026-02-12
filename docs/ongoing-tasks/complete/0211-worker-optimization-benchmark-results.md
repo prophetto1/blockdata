@@ -135,7 +135,7 @@ Why:
 
 Priority 5 (adaptive batching) final evidence is tracked in:
 
-- `docs/ongoing-tasks/0211-priority5-adaptive-batching-prep-spec.md`
-- `docs/ongoing-tasks/0212-session-handoff-priority5-core-pipeline.md`
+- `docs/ongoing-tasks/complete/0211-priority5-adaptive-batching-prep-spec.md`
+- `docs/ongoing-tasks/complete/0212-session-handoff-priority5-core-pipeline.md`
 - `scripts/logs/worker-batching-benchmark-20260211-224355.json`
 - `scripts/logs/worker-batching-benchmark-20260211-224635.json`

@@ -82,8 +82,8 @@ These are the source-of-truth files in the repo for ongoing work:
 |----------|---------|
 | `docs/ongoing-tasks/0211-core-workflows-before-assistant-plan.md` | Master sequencing: workstreams A-E and gate checklist |
 | `docs/ongoing-tasks/0211-core-priority-queue-and-optimization-plan.md` | Ordered execution queue with exit criteria per priority |
-| `docs/ongoing-tasks/0211-admin-config-registry.md` | Hardcoded config inventory, conflict summary, target admin schema |
-| `docs/ongoing-tasks/0211-source-format-reliability-matrix.md` | Format verification matrix and smoke assertions |
-| `docs/ongoing-tasks/0211-source-format-smoke-results.md` | Latest smoke run results |
+| `docs/ongoing-tasks/complete/0211-admin-config-registry.md` | Hardcoded config inventory, conflict summary, target admin schema |
+| `docs/ongoing-tasks/complete/0211-source-format-reliability-matrix.md` | Format verification matrix and smoke assertions |
+| `docs/ongoing-tasks/complete/0211-source-format-smoke-results.md` | Latest smoke run results |
 | `docs/ongoing-tasks/0211-worker-token-optimization-patterns.md` | Cost analysis and optimization tier design |
 | `docs/ongoing-tasks/0211-session-handoff-resume-guide.md` | Session continuity and startup checklist |

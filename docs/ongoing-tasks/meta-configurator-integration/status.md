@@ -1,6 +1,6 @@
 # MetaConfigurator Integration - Status (2026-02-11)
 
-Spec authority: `docs/ongoing-tasks/meta-configurator-integration/spec.md`
+Advanced-editor reference spec: `docs/ongoing-tasks/meta-configurator-integration/spec.md` (reference-only for Priority 7 execution)
 Priority 7 execution authority: `docs/ongoing-tasks/0212-priority7-schema-contracts-master-spec.md`
 
 ## Direction Lock (2026-02-11)
