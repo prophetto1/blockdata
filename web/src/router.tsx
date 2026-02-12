@@ -20,6 +20,7 @@ import Schemas from '@/pages/Schemas';
 import SchemaAdvancedEditor from '@/pages/SchemaAdvancedEditor';
 import RunDetail from '@/pages/RunDetail';
 import Settings from '@/pages/Settings';
+import SuperuserSettings from '@/pages/SuperuserSettings';
 import LoginSplit from '@/pages/LoginSplit';
 import RegisterSplit from '@/pages/RegisterSplit';
 
@@ -74,6 +75,7 @@ export const router = createBrowserRouter([
 
           // Settings (API keys, model defaults)
           { path: '/app/settings', element: <Settings /> },
+          { path: '/app/settings/superuser', element: <SuperuserSettings /> },
 
           // Legacy flat routes → redirect to project-scoped equivalents
           { path: '/app/documents/:sourceUid', element: <LegacyDocumentRedirect /> },

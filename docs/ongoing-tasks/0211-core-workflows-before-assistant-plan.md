@@ -108,8 +108,8 @@ Action: treat as unverified until fresh smoke matrix passes.
 2. Format support widened in code (`pptx`, `xlsx`, `html`, `csv`) and now has runtime verification from full matrix run (`20260211-124133`).  
 Action: keep full matrix in regression cadence to prevent drift.
 
-3. Priority 4 prompt-caching corrective cycle is complete and gate criteria are now met.  
-Action: proceed to Priority 5 execution.
+3. Priority 6 admin/superuser optimization controls gate is now passed with deploy/runtime evidence.  
+Action: proceed to Priority 7 schema core workflow completion.
 
 4. Edge Function JWT mode mismatch (asymmetric user JWT vs `verify_jwt=true`) was resolved for active runtime paths.  
 Action: maintain internal auth checks in functions where gateway verification is disabled.
@@ -132,10 +132,11 @@ Only after these gates are complete should assistant implementation move from de
 
 ## 5) Immediate Next Actions
 
-1. Start Priority 5 implementation (`0211-priority5-adaptive-batching-prep-spec.md`) using the now-passed Priority 4 baseline.
-2. Complete worker pack loop integration (`callLLMBatch` path, response mapping validation, overflow split/retry).
-3. Add Priority 5 benchmark evidence (call-count reduction + quality parity + queue invariants).
-4. Update gate ledger and evidence docs as P5 moves from implementation to pass/fail decision.
+1. Start Priority 7 schema core workflow closure (`meta-configurator-integration/spec.md`).
+2. Treat `docs/ongoing-tasks/0212-priority7-schema-contracts-master-spec.md` as the execution contract and avoid scope drift.
+3. Verify wizard-first schema creation path produces worker-compatible schema JSON (`properties`, `prompt_config`).
+4. Verify save/fork/conflict (`409`) behavior and record deterministic recovery path evidence.
+5. Update gate ledger and advance queue only after Priority 7 exit criteria are satisfied.
 
 ---
 
@@ -207,9 +208,32 @@ Completed:
 39. Confirmed material parity on corrective pair:
    - `material_mismatch_blocks=0` (`action/final.format/final.content`)
 40. Priority 4 marked passed; next active queue item is Priority 5.
+41. Completed Priority 5 adaptive batching closure cycle:
+   - updated worker batching response parsing/tool shape and schema-aware pack sizing behavior
+   - deployed worker through v15 with function-level auth retained
+   - final extraction benchmark artifact: `scripts/logs/worker-batching-benchmark-20260211-224355.json`
+   - final revision-heavy benchmark artifact: `scripts/logs/worker-batching-benchmark-20260211-224635.json`
+42. Verified Priority 5 gate evidence:
+   - extraction call_count `29 -> 4 -> 2`, cost down `40.77%` and `46.73%`, material parity `0` mismatch blocks
+   - revision-heavy call_count `29 -> 6 -> 6`, cost down `17.18%`, material parity `0` mismatch blocks
+   - queue invariants remained true (`completed=29`, `failed=0` in final suites)
+43. Priority 5 marked passed; next active queue item is Priority 6.
+44. Completed Priority 6 runtime closure:
+   - deployed `admin-config`, `runs`, `worker` with `--no-verify-jwt` and internal auth retained
+   - set `SUPERUSER_EMAIL_ALLOWLIST` as function secret
+   - applied migration `20260212114500_018_admin_runtime_policy_controls` to runtime via Supabase management SQL endpoint
+   - verified seed and storage state (`admin_runtime_policy` count = 19)
+45. Proved new-run policy uptake and mid-run snapshot stability:
+   - toggled `worker.prompt_caching.enabled` from `true` -> `false` -> `true`
+   - new-run proof: `d9e80ff2-a61a-49d4-a093-89a7b4b0421e` snapshot `true`, `63cfa335-7f99-4cc0-a3ca-a8ca4d60a7d9` snapshot `false`
+   - in-flight proof: run `640cf4b0-6c6f-445b-bd13-ae80c1f2e73f` kept `prompt_caching=false` across two worker invocations even after global restore (`remaining_pending 24 -> 19`)
+46. Proved audit visibility:
+   - `admin-config` API returned audit rows for both toggles with explicit reasons
+   - UI wiring confirmed to consume the same audit payload (`SuperuserSettings` fetches `admin-config?audit_limit=100` and renders `auditRows`)
+47. Priority 6 marked passed; next active queue item is Priority 7.
 
 Next:
 
-1. Execute Priority 5 worker batching integration and close remaining code-path gaps.
-2. Produce Priority 5 benchmark evidence for quality + call-count reduction.
-3. Keep queue sequencing strict: Priority 6 remains blocked until Priority 5 is explicitly `Passed`.
+1. Execute Priority 7 schema core workflow completion.
+2. Produce Priority 7 evidence for wizard usability and deterministic save/fork/conflict behavior.
+3. Keep queue sequencing strict: Priority 8 remains blocked until Priority 7 is explicitly `Passed`.

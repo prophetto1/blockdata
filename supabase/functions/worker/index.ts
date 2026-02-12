@@ -23,6 +23,11 @@ type ClaimedBlock = {
 
 type BatchLlmCallResult = {
   resultsByBlockUid: Map<string, Record<string, unknown>>;
+  missingBlockUids: string[];
+  unexpectedBlockUids: string[];
+  duplicateBlockUids: string[];
+  parseIssue: string | null;
+  stopReason: string | null;
   usage: LlmUsage;
 };
 
@@ -39,6 +44,206 @@ function isLikelyBatchOverflowError(errorMessage: string): boolean {
     msg.includes("input length") ||
     msg.includes("maximum context") ||
     msg.includes("max tokens");
+}
+
+function isLowCreditError(errorMessage: string): boolean {
+  const msg = errorMessage.toLowerCase();
+  return msg.includes("credit balance is too low") ||
+    msg.includes("insufficient credits");
+}
+
+function buildBatchUserMessage(
+  blockPrompt: string,
+  pack: ClaimedBlock[],
+): string {
+  const header = `${blockPrompt}\n\n` +
+    "Process each block independently. Use only the text inside each block_content section.\n" +
+    "Do not use content from any other block.\n" +
+    "Return exactly one result for every block_uid in results.\n\n";
+
+  const sections = pack.map((b, idx) =>
+    `--- BLOCK ${idx + 1} START ---\n` +
+    `block_uid: ${b.block_uid}\n` +
+    `block_type: ${b.block_type}\n` +
+    "block_content:\n" +
+    `${b.block_content}\n` +
+    `--- BLOCK ${idx + 1} END ---`
+  ).join("\n\n");
+
+  return header + sections;
+}
+
+function estimateOutputTokensPerBlock(
+  schemaProperties: Record<string, unknown>,
+  baselinePerBlockTokens: number,
+  maxOutputTokensPerCall: number,
+): number {
+  const keys = Object.keys(schemaProperties);
+  let estimate = Math.max(baselinePerBlockTokens, 120 + keys.length * 40);
+
+  for (const [key, raw] of Object.entries(schemaProperties)) {
+    const prop = (raw ?? {}) as Record<string, unknown>;
+    const typeValue = prop.type;
+    const type = typeof typeValue === "string" ? typeValue : "";
+    const hasEnum = Array.isArray(prop.enum);
+
+    if (type === "array") estimate += 60;
+    else if (type === "object") estimate += 80;
+    else if (type === "string" && !hasEnum) estimate += 25;
+
+    const keyLower = key.toLowerCase();
+    if (
+      keyLower.includes("content") ||
+      keyLower.includes("summary") ||
+      keyLower.includes("analysis") ||
+      keyLower.includes("reason") ||
+      keyLower.includes("rewrite") ||
+      keyLower.includes("revised")
+    ) {
+      estimate += 140;
+    }
+  }
+
+  return Math.min(Math.max(estimate, baselinePerBlockTokens), maxOutputTokensPerCall);
+}
+
+function isTextHeavyOutputSchema(
+  schemaProperties: Record<string, unknown>,
+): boolean {
+  const stack: Array<{ key: string; node: unknown }> = Object.entries(schemaProperties).map(
+    ([key, node]) => ({ key, node }),
+  );
+  while (stack.length > 0) {
+    const current = stack.pop();
+    if (!current) continue;
+    const keyLower = current.key.toLowerCase();
+    const node = (current.node ?? {}) as Record<string, unknown>;
+    const typeValue = node.type;
+    const type = typeof typeValue === "string" ? typeValue.toLowerCase() : "";
+
+    if (
+      keyLower.includes("content") ||
+      keyLower.includes("revised") ||
+      keyLower.includes("rewrite") ||
+      keyLower.includes("analysis") ||
+      keyLower.includes("summary") ||
+      keyLower.includes("reason") ||
+      keyLower === "final"
+    ) {
+      return true;
+    }
+
+    if (type === "object" && node.properties && typeof node.properties === "object") {
+      for (const [childKey, childNode] of Object.entries(
+        node.properties as Record<string, unknown>,
+      )) {
+        stack.push({ key: childKey, node: childNode });
+      }
+    }
+  }
+  return false;
+}
+
+function countWords(text: string): number {
+  const matches = text.match(/\S+/g);
+  return matches ? matches.length : 0;
+}
+
+function firstNChars(text: string, n: number): string {
+  return Array.from(text).slice(0, n).join("");
+}
+
+function applyDeterministicFieldOverrides(
+  data: Record<string, unknown>,
+  blockContent: string,
+  schemaProperties: Record<string, unknown>,
+): Record<string, unknown> {
+  const next = { ...data };
+
+  if (Object.hasOwn(schemaProperties, "word_count")) {
+    next.word_count = countWords(blockContent);
+  }
+  if (Object.hasOwn(schemaProperties, "has_question")) {
+    next.has_question = blockContent.includes("?");
+  }
+  if (Object.hasOwn(schemaProperties, "first_40_chars")) {
+    next.first_40_chars = firstNChars(blockContent, 40);
+  }
+
+  return next;
+}
+
+function parseBatchResponse(
+  // deno-lint-ignore no-explicit-any
+  apiResponse: any,
+  expectedBlockUids: string[],
+): BatchLlmCallResult {
+  const expectedSet = new Set(expectedBlockUids);
+  const resultsByBlockUid = new Map<string, Record<string, unknown>>();
+  const unexpectedBlockUids: string[] = [];
+  const duplicateBlockUids: string[] = [];
+  let parseIssue: string | null = null;
+
+  // deno-lint-ignore no-explicit-any
+  const toolUse = apiResponse?.content?.find((c: any) => c?.type === "tool_use");
+  // deno-lint-ignore no-explicit-any
+  const entries = Array.isArray(toolUse?.input?.results) ? (toolUse.input.results as any[]) : [];
+  if (!toolUse?.input) {
+    parseIssue = "missing_tool_use";
+  } else if (!Array.isArray(toolUse?.input?.results)) {
+    parseIssue = "missing_results_array";
+  }
+
+  for (const entry of entries) {
+    const blockUid = typeof entry?.block_uid === "string" ? entry.block_uid : "";
+    if (!blockUid) continue;
+    if (!expectedSet.has(blockUid)) {
+      unexpectedBlockUids.push(blockUid);
+      continue;
+    }
+    if (resultsByBlockUid.has(blockUid)) {
+      duplicateBlockUids.push(blockUid);
+      continue;
+    }
+
+    let data: Record<string, unknown> | null = null;
+    if (entry?.data && typeof entry.data === "object" && !Array.isArray(entry.data)) {
+      // Backward-compatible parsing for old batched shape.
+      data = entry.data as Record<string, unknown>;
+    } else if (entry && typeof entry === "object" && !Array.isArray(entry)) {
+      const cloned = { ...entry } as Record<string, unknown>;
+      delete cloned.block_uid;
+      data = cloned;
+    }
+
+    if (!data || typeof data !== "object") continue;
+    resultsByBlockUid.set(blockUid, data);
+  }
+
+  const missingBlockUids = expectedBlockUids.filter((uid) => !resultsByBlockUid.has(uid));
+
+  // deno-lint-ignore no-explicit-any
+  const usageRaw = (apiResponse as any)?.usage ?? {};
+  const usage: LlmUsage = {
+    input_tokens: Number(usageRaw.input_tokens ?? 0),
+    output_tokens: Number(usageRaw.output_tokens ?? 0),
+    cache_creation_input_tokens: Number(usageRaw.cache_creation_input_tokens ?? 0),
+    cache_read_input_tokens: Number(usageRaw.cache_read_input_tokens ?? 0),
+  };
+
+  const stopReason = typeof apiResponse?.stop_reason === "string"
+    ? apiResponse.stop_reason
+    : null;
+
+  return {
+    resultsByBlockUid,
+    missingBlockUids,
+    unexpectedBlockUids,
+    duplicateBlockUids,
+    parseIssue,
+    stopReason,
+    usage,
+  };
 }
 
 function buildAdaptivePacks(
@@ -119,10 +324,37 @@ function parsePositiveInt(value: unknown, fallback: number): number {
   return parseOptionalPositiveInt(value) ?? fallback;
 }
 
+function asObject(value: unknown): Record<string, unknown> | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  return value as Record<string, unknown>;
+}
+
+function asFiniteNumber(value: unknown): number | null {
+  if (typeof value !== "number" || !Number.isFinite(value)) return null;
+  return value;
+}
+
+function asFiniteInteger(value: unknown): number | null {
+  const n = asFiniteNumber(value);
+  if (n === null || !Number.isInteger(n)) return null;
+  return n;
+}
+
+function asBoolean(value: unknown): boolean | null {
+  return typeof value === "boolean" ? value : null;
+}
+
 class AuthKeyError extends Error {
   constructor(message: string) {
     super(message);
     this.name = "AuthKeyError";
+  }
+}
+
+class ProviderBalanceError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "ProviderBalanceError";
   }
 }
 
@@ -244,12 +476,9 @@ async function callLLMBatch(
             type: "object",
             properties: {
               block_uid: { type: "string" },
-              data: {
-                type: "object",
-                properties: schemaProperties,
-              },
+              ...schemaProperties,
             },
-            required: ["block_uid", "data"],
+            required: ["block_uid"],
           },
         },
       },
@@ -265,12 +494,6 @@ async function callLLMBatch(
   if (promptCachingEnabled) {
     headers["anthropic-beta"] = "prompt-caching-2024-07-31";
   }
-
-  const blocksJson = JSON.stringify(pack.map((b) => ({
-    block_uid: b.block_uid,
-    block_type: b.block_type,
-    block_content: b.block_content,
-  })));
 
   const response = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
@@ -291,11 +514,7 @@ async function callLLMBatch(
       messages: [
         {
           role: "user",
-          content:
-            `${blockPrompt}\n\n` +
-            "Process each block independently and return exactly one result for each block_uid.\n" +
-            "Use the provided schema for each result's data field.\n\n" +
-            `Blocks JSON:\n${blocksJson}`,
+          content: buildBatchUserMessage(blockPrompt, pack),
         },
       ],
       tools: [tool],
@@ -309,36 +528,11 @@ async function callLLMBatch(
   }
 
   const result = await response.json();
-  // deno-lint-ignore no-explicit-any
-  const toolUse = result.content?.find((c: any) => c.type === "tool_use");
-  if (!toolUse?.input) {
-    throw new Error("No tool_use block in batch LLM response");
-  }
-
-  const resultsByBlockUid = new Map<string, Record<string, unknown>>();
-  // deno-lint-ignore no-explicit-any
-  const input = toolUse.input as any;
-  // deno-lint-ignore no-explicit-any
-  const entries = Array.isArray(input?.results) ? input.results as any[] : [];
-  for (const entry of entries) {
-    const blockUid = typeof entry?.block_uid === "string" ? entry.block_uid : "";
-    const data = entry?.data;
-    if (!blockUid || !data || typeof data !== "object") continue;
-    if (!resultsByBlockUid.has(blockUid)) {
-      resultsByBlockUid.set(blockUid, data as Record<string, unknown>);
-    }
-  }
-
-  // deno-lint-ignore no-explicit-any
-  const usageRaw = (result as any)?.usage ?? {};
-  const usage: LlmUsage = {
-    input_tokens: Number(usageRaw.input_tokens ?? 0),
-    output_tokens: Number(usageRaw.output_tokens ?? 0),
-    cache_creation_input_tokens: Number(usageRaw.cache_creation_input_tokens ?? 0),
-    cache_read_input_tokens: Number(usageRaw.cache_read_input_tokens ?? 0),
-  };
-
-  return { resultsByBlockUid, usage };
+  return parseBatchResponse(
+    // deno-lint-ignore no-explicit-any
+    result as any,
+    pack.map((b) => b.block_uid),
+  );
 }
 
 // â”€â”€ Main handler â”€â”€
@@ -375,39 +569,50 @@ Deno.serve(async (req) => {
       body?.estimated_output_per_block,
     );
     const workerId = `worker-${crypto.randomUUID().slice(0, 8)}`;
-    const maxRetries = Number(getEnv("WORKER_MAX_RETRIES", "3"));
+    const envMaxRetries = Number(getEnv("WORKER_MAX_RETRIES", "3"));
     const envPromptCachingEnabled =
       getEnv("WORKER_PROMPT_CACHING_ENABLED", "true").toLowerCase() !== "false";
-    const promptCachingEnabled = promptCachingOverride ?? envPromptCachingEnabled;
     const envBatchingEnabled =
-      getEnv("WORKER_BATCHING_ENABLED", "false").toLowerCase() === "true";
-    const batchingEnabled = batchingOverride ?? envBatchingEnabled;
+      getEnv("WORKER_BATCHING_ENABLED", "true").toLowerCase() !== "false";
     const envPackSize = parsePositiveInt(getEnv("WORKER_BATCH_PACK_SIZE", "10"), 10);
     const envPackSizeMax = parsePositiveInt(getEnv("WORKER_BATCH_PACK_SIZE_MAX", "40"), 40);
-    const effectivePackSize = batchingEnabled
-      ? Math.min(Math.max(packSizeOverride ?? envPackSize, 1), envPackSizeMax, batchSize)
-      : 1;
-    const contextWindowTokens = parsePositiveInt(
+    const envContextWindowTokens = parsePositiveInt(
       getEnv("WORKER_BATCH_CONTEXT_WINDOW_TOKENS", "200000"),
       200000,
     );
-    const outputReserveTokens = parsePositiveInt(
+    const envOutputReserveTokens = parsePositiveInt(
       getEnv("WORKER_BATCH_OUTPUT_RESERVE_TOKENS", "20000"),
       20000,
     );
-    const toolOverheadTokens = parsePositiveInt(
+    const envToolOverheadTokens = parsePositiveInt(
       getEnv("WORKER_BATCH_TOOL_OVERHEAD_TOKENS", "2000"),
       2000,
     );
-    const maxOutputTokensPerCall = parsePositiveInt(
+    const envMaxOutputTokensPerCall = parsePositiveInt(
       getEnv("WORKER_BATCH_MAX_OUTPUT_TOKENS", "8192"),
       8192,
     );
-    const perBlockOutputBudgetTokens = Math.min(
+    const envPerBlockOutputBudgetTokens = Math.min(
       perBlockOutputBudgetOverride ??
         parsePositiveInt(getEnv("WORKER_BATCH_PER_BLOCK_OUTPUT_TOKENS", "200"), 200),
-      maxOutputTokensPerCall,
+      envMaxOutputTokensPerCall,
     );
+    const envTextHeavyMaxPackSize = parsePositiveInt(
+      getEnv("WORKER_BATCH_TEXT_HEAVY_MAX_PACK_SIZE", "6"),
+      6,
+    );
+    let maxRetries = envMaxRetries;
+    let promptCachingEnabled = promptCachingOverride ?? envPromptCachingEnabled;
+    let batchingEnabled = batchingOverride ?? envBatchingEnabled;
+    let contextWindowTokens = envContextWindowTokens;
+    let outputReserveTokens = envOutputReserveTokens;
+    let toolOverheadTokens = envToolOverheadTokens;
+    let maxOutputTokensPerCall = envMaxOutputTokensPerCall;
+    let perBlockOutputBudgetTokens = envPerBlockOutputBudgetTokens;
+    let textHeavyMaxPackSize = envTextHeavyMaxPackSize;
+    let effectivePackSize = batchingEnabled
+      ? Math.min(Math.max(packSizeOverride ?? envPackSize, 1), envPackSizeMax, batchSize)
+      : 1;
 
     const supabase = createAdminClient();
     const platformKey = getEnv("ANTHROPIC_API_KEY", "");
@@ -536,6 +741,59 @@ Deno.serve(async (req) => {
       });
     }
 
+    const runModelConfig = asObject(run.model_config) ?? {};
+    const runPolicySnapshot = asObject(runModelConfig.policy_snapshot);
+    const snapshotWorker = asObject(runPolicySnapshot?.worker);
+    const snapshotPromptCaching = asObject(snapshotWorker?.prompt_caching);
+    const snapshotBatching = asObject(snapshotWorker?.batching);
+
+    const snapshotPromptCachingEnabled = asBoolean(snapshotPromptCaching?.enabled);
+    const snapshotBatchingEnabled = asBoolean(snapshotBatching?.enabled);
+    const resolvedPackSizeMax = Math.max(
+      1,
+      asFiniteInteger(snapshotBatching?.pack_size_max) ?? envPackSizeMax,
+    );
+    const resolvedPackSizeDefault = Math.max(
+      1,
+      Math.min(asFiniteInteger(snapshotBatching?.pack_size) ?? envPackSize, resolvedPackSizeMax),
+    );
+
+    maxRetries = Math.max(1, Math.min(asFiniteInteger(snapshotWorker?.max_retries) ?? envMaxRetries, 10));
+    promptCachingEnabled = promptCachingOverride ?? snapshotPromptCachingEnabled ?? envPromptCachingEnabled;
+    batchingEnabled = batchingOverride ?? snapshotBatchingEnabled ?? envBatchingEnabled;
+    contextWindowTokens = Math.max(
+      1024,
+      asFiniteInteger(snapshotBatching?.context_window_tokens) ?? envContextWindowTokens,
+    );
+    outputReserveTokens = Math.max(
+      256,
+      asFiniteInteger(snapshotBatching?.output_reserve_tokens) ?? envOutputReserveTokens,
+    );
+    toolOverheadTokens = Math.max(
+      0,
+      asFiniteInteger(snapshotBatching?.tool_overhead_tokens) ?? envToolOverheadTokens,
+    );
+    maxOutputTokensPerCall = Math.max(
+      256,
+      asFiniteInteger(snapshotBatching?.max_output_tokens) ?? envMaxOutputTokensPerCall,
+    );
+    const snapshotPerBlockOutput = asFiniteInteger(snapshotBatching?.per_block_output_tokens) ??
+      envPerBlockOutputBudgetTokens;
+    perBlockOutputBudgetTokens = Math.min(
+      perBlockOutputBudgetOverride ?? snapshotPerBlockOutput,
+      maxOutputTokensPerCall,
+    );
+    textHeavyMaxPackSize = Math.max(
+      1,
+      Math.min(
+        asFiniteInteger(snapshotBatching?.text_heavy_max_pack_size) ?? envTextHeavyMaxPackSize,
+        resolvedPackSizeMax,
+      ),
+    );
+    effectivePackSize = batchingEnabled
+      ? Math.min(Math.max(packSizeOverride ?? resolvedPackSizeDefault, 1), resolvedPackSizeMax, batchSize)
+      : 1;
+
     // Check if run is cancelled
     if (run.status === "cancelled") {
       await releaseClaimed(undefined);
@@ -606,6 +864,15 @@ Deno.serve(async (req) => {
 
     const promptConfig = (schemaJsonb.prompt_config ?? {}) as Record<string, unknown>;
     const schemaProperties = (schemaJsonb.properties ?? {}) as Record<string, unknown>;
+    const estimatedOutputPerBlockTokens = estimateOutputTokensPerBlock(
+      schemaProperties,
+      perBlockOutputBudgetTokens,
+      maxOutputTokensPerCall,
+    );
+    const schemaIsTextHeavy = isTextHeavyOutputSchema(schemaProperties);
+    const schemaCappedPackSize = schemaIsTextHeavy
+      ? Math.min(effectivePackSize, textHeavyMaxPackSize)
+      : effectivePackSize;
 
     const systemPrompt =
       (promptConfig.system_instructions as string) ??
@@ -613,23 +880,22 @@ Deno.serve(async (req) => {
     const blockPrompt =
       (promptConfig.per_block_prompt as string) ??
       "Extract the following fields from this content block:";
-    const runModelConfig = (run.model_config as Record<string, unknown> | null) ?? null;
     // Priority: request override > schema prompt_config > run model_config > user defaults > env default
     const model =
       modelOverride ??
       (promptConfig.model as string) ??
-      (runModelConfig?.model as string) ??
+      (runModelConfig.model as string | undefined) ??
       userDefaults.default_model ??
       getEnv("WORKER_DEFAULT_MODEL", "claude-sonnet-4-5-20250929");
     const temperature = Number(
       promptConfig.temperature ??
-        (runModelConfig?.temperature as number | undefined) ??
+        (runModelConfig.temperature as number | undefined) ??
         userDefaults.default_temperature ??
         0.3,
     );
     const maxTokensPerBlock = Number(
       promptConfig.max_tokens_per_block ??
-        (runModelConfig?.max_tokens_per_block as number | undefined) ??
+        (runModelConfig.max_tokens_per_block as number | undefined) ??
         userDefaults.default_max_tokens ??
         2000,
     );
@@ -745,11 +1011,11 @@ Deno.serve(async (req) => {
 
     const initialPacks = batchingEnabled
       ? buildAdaptivePacks(claimedBlocks, {
-        maxBlocksPerPack: effectivePackSize,
+        maxBlocksPerPack: schemaCappedPackSize,
         contextWindowTokens,
         outputReserveTokens,
         toolOverheadTokens,
-        perBlockOutputBudgetTokens,
+        perBlockOutputBudgetTokens: estimatedOutputPerBlockTokens,
         maxOutputTokensPerCall,
         systemPrompt,
         blockPrompt,
@@ -778,11 +1044,16 @@ Deno.serve(async (req) => {
           schemaProperties,
         );
         applyUsage(llmResult.usage);
+        const normalizedData = applyDeterministicFieldOverrides(
+          llmResult.data,
+          block.block_content,
+          schemaProperties,
+        );
 
         await supabase
           .from("block_overlays_v2")
           .update({
-            overlay_jsonb_staging: llmResult.data,
+            overlay_jsonb_staging: normalizedData,
             status: "ai_complete",
           })
           .eq("run_id", runId)
@@ -792,6 +1063,9 @@ Deno.serve(async (req) => {
         await markUserKeyValid();
       } catch (err) {
         const errMsg = err instanceof Error ? err.message : String(err);
+        if (isLowCreditError(errMsg)) {
+          throw new ProviderBalanceError(errMsg);
+        }
         if (errMsg.includes("Anthropic API 401") || errMsg.includes("Anthropic API 403")) {
           throw new AuthKeyError(errMsg);
         }
@@ -812,10 +1086,9 @@ Deno.serve(async (req) => {
         return;
       }
 
-      const expectedBlockUidSet = new Set(pack.map((b) => b.block_uid));
       const maxTokensForPack = Math.min(
         maxOutputTokensPerCall,
-        Math.max(perBlockOutputBudgetTokens * pack.length, 512),
+        Math.max(estimatedOutputPerBlockTokens * pack.length, 512),
       );
 
       try {
@@ -832,38 +1105,57 @@ Deno.serve(async (req) => {
         );
         applyUsage(llmResult.usage);
 
-        const unexpectedBlockUids: string[] = [];
-        for (const uid of llmResult.resultsByBlockUid.keys()) {
-          if (!expectedBlockUidSet.has(uid)) unexpectedBlockUids.push(uid);
-        }
-        const missingBlocks = pack.filter((b) => !llmResult.resultsByBlockUid.has(b.block_uid));
-        if (missingBlocks.length > 0 || unexpectedBlockUids.length > 0) {
-          const missingPreview = missingBlocks.slice(0, 3).map((b) => b.block_uid).join(",");
-          const unexpectedPreview = unexpectedBlockUids.slice(0, 3).join(",");
-          throw new Error(
-            `Batch response mapping mismatch: missing=${missingBlocks.length}[${missingPreview}] unexpected=${unexpectedBlockUids.length}[${unexpectedPreview}]`,
-          );
-        }
-
+        const missingSet = new Set(llmResult.missingBlockUids);
         for (const block of pack) {
           const blockData = llmResult.resultsByBlockUid.get(block.block_uid);
           if (!blockData) {
-            await markRetryOrFailed(block.block_uid, "Batch response missing block result");
             continue;
           }
+          const normalizedData = applyDeterministicFieldOverrides(
+            blockData,
+            block.block_content,
+            schemaProperties,
+          );
           await supabase
             .from("block_overlays_v2")
             .update({
-              overlay_jsonb_staging: blockData,
+              overlay_jsonb_staging: normalizedData,
               status: "ai_complete",
             })
             .eq("run_id", runId)
             .eq("block_uid", block.block_uid);
           succeeded++;
         }
-        await markUserKeyValid();
+        if (llmResult.resultsByBlockUid.size > 0) {
+          await markUserKeyValid();
+        }
+
+        const missingBlocks = pack.filter((b) => missingSet.has(b.block_uid));
+        const hasOverflowStopReason = llmResult.stopReason === "max_tokens";
+
+        let retryBlocks = missingBlocks;
+        if (retryBlocks.length === 0 && (hasOverflowStopReason || llmResult.parseIssue !== null)) {
+          retryBlocks = pack;
+        }
+
+        if (retryBlocks.length > 0) {
+          if (retryBlocks.length > 1) {
+            batchMetrics.split_events += 1;
+            for (const nextPack of splitPack(retryBlocks)) {
+              await processPack(nextPack);
+            }
+          } else {
+            await processSingleBlock(retryBlocks[0]);
+          }
+          return;
+        }
+
+        // If mapped results are complete, ignore hallucinated extras as non-fatal noise.
       } catch (err) {
         const errMsg = err instanceof Error ? err.message : String(err);
+        if (isLowCreditError(errMsg)) {
+          throw new ProviderBalanceError(errMsg);
+        }
         if (errMsg.includes("Anthropic API 401") || errMsg.includes("Anthropic API 403")) {
           throw new AuthKeyError(errMsg);
         }
@@ -889,6 +1181,32 @@ Deno.serve(async (req) => {
         await processPack(pack);
       }
     } catch (err) {
+      if (err instanceof ProviderBalanceError) {
+        await releaseClaimed(
+          "Provider balance is too low. Add credits in Anthropic billing, then retry.",
+        );
+        return json(402, {
+          error:
+            "Provider balance is too low. Add credits in Anthropic billing, then retry.",
+          worker_id: workerId,
+          prompt_caching: {
+            enabled: promptCachingEnabled,
+            source: promptCachingOverride === null ? "env_default" : "request_override",
+          },
+          batching: {
+            enabled: batchingEnabled,
+            source: batchingOverride === null ? "env_default" : "request_override",
+            pack_size: schemaCappedPackSize,
+            initial_pack_count: batchMetrics.initial_pack_count,
+            packs_processed: batchMetrics.packs_processed,
+            split_events: batchMetrics.split_events,
+            avg_blocks_per_pack: batchMetrics.packs_processed > 0
+              ? Number((batchMetrics.blocks_covered_by_packs / batchMetrics.packs_processed).toFixed(2))
+              : 0,
+          },
+          usage: usageTotals,
+        });
+      }
       if (err instanceof AuthKeyError) {
         if (run.owner_id) {
           await supabase
@@ -908,7 +1226,7 @@ Deno.serve(async (req) => {
           batching: {
             enabled: batchingEnabled,
             source: batchingOverride === null ? "env_default" : "request_override",
-            pack_size: effectivePackSize,
+            pack_size: schemaCappedPackSize,
             initial_pack_count: batchMetrics.initial_pack_count,
             packs_processed: batchMetrics.packs_processed,
             split_events: batchMetrics.split_events,
@@ -965,7 +1283,7 @@ Deno.serve(async (req) => {
       batching: {
         enabled: batchingEnabled,
         source: batchingOverride === null ? "env_default" : "request_override",
-        pack_size: effectivePackSize,
+        pack_size: schemaCappedPackSize,
         initial_pack_count: batchMetrics.initial_pack_count,
         packs_processed: batchMetrics.packs_processed,
         split_events: batchMetrics.split_events,

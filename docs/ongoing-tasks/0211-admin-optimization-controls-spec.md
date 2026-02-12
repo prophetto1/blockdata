@@ -1,7 +1,7 @@
 # Spec: Admin / Superuser Optimization Controls (Priority 6)
 
 **Date:** 2026-02-12  
-**Status:** Draft spec (control patterns + key list); implementation deferred until Priority 6 execution  
+**Status:** Passed (Priority 6 runtime control surface implemented and verified)  
 **Purpose:** Define the superuser controls that govern runtime policy (caching, batching, defaults) without introducing drift or ambiguity.
 
 ---
@@ -97,3 +97,39 @@ Use the standard design in `0211-admin-config-registry.md` (slider + exact input
 2. Vendor/model catalogs beyond what is required for current core execution gates.
 3. Any assistant/KG/vector/MCP policy (explicitly deferred behind core gates).
 
+---
+
+## 6) Implementation direction locked (2026-02-12)
+
+1. Single superuser-only page under app settings:
+   - route: `/app/settings/superuser`
+   - single-page layout with category side nav + detail panel
+2. Backend-first control plane:
+   - persistent policy store (`admin_runtime_policy`)
+   - audit log (`admin_runtime_policy_audit`)
+   - superuser-only edge API for read/update + audit writes
+3. Snapshot semantics enforced in run lifecycle:
+   - effective policy snapshot persisted at run creation
+   - worker consumes run snapshot defaults so mid-run admin edits do not drift in-flight behavior
+
+---
+
+## 7) Runtime Closure Evidence (2026-02-12)
+
+1. Deploy + configuration completed:
+   - edge functions deployed: `admin-config`, `runs`, `worker` (`--no-verify-jwt`)
+   - superuser secret configured: `SUPERUSER_EMAIL_ALLOWLIST`
+   - migration applied remotely: `20260212114500_018_admin_runtime_policy_controls`
+   - runtime verify: `admin_runtime_policy` row count = `19`
+2. New-run policy-change proof:
+   - policy toggled: `worker.prompt_caching.enabled` from `true` to `false`
+   - pre-toggle run snapshot: `d9e80ff2-a61a-49d4-a093-89a7b4b0421e` -> `true`
+   - post-toggle run snapshot: `63cfa335-7f99-4cc0-a3ca-a8ca4d60a7d9` -> `false`
+3. Mid-run snapshot stability proof:
+   - in-flight run: `640cf4b0-6c6f-445b-bd13-ae80c1f2e73f`
+   - worker call before restore: `prompt_caching=false`, `remaining_pending=24`
+   - global policy restored to `true`
+   - worker call after restore on same run: `prompt_caching=false`, `remaining_pending=19`
+4. Audit proof:
+   - both policy changes generated audit rows visible via `GET /functions/v1/admin-config`
+   - UI `SuperuserSettings` reads same audit payload and renders it in `Audit History`

@@ -1,0 +1,118 @@
+{
+    "benchmark_at_utc":  "2026-02-12T05:46:35.1826041Z",
+    "supabase_project":  "dbdzzhshmigewyprahej",
+    "auth_mode":  {
+                      "run_creation":  "user_access_token",
+                      "worker_invocation":  "user_access_token_default"
+                  },
+    "conv_uid":  "2b79a0a8c44e07dd60843efcf21a4ccf7b1d659bf9e27a3706c83317fc72a254",
+    "schema_id":  "94ffed2b-364f-453d-9553-fdb05521bf65",
+    "batch_size":  25,
+    "prompt_caching_enabled":  true,
+    "scenarios":  [
+                      {
+                          "label":  "batching_off_baseline",
+                          "prompt_caching_enabled":  true,
+                          "batching_enabled":  false,
+                          "pack_size":  1,
+                          "run_id":  "86e75cc0-2d28-45f7-864f-e223d295918f",
+                          "total_blocks":  29,
+                          "worker_invocations":  2,
+                          "elapsed_seconds":  57.53,
+                          "run_status":  "complete",
+                          "completed_blocks":  29,
+                          "failed_blocks":  0,
+                          "usage":  {
+                                        "cache_hit_calls":  29,
+                                        "call_count":  29,
+                                        "output_tokens":  3745,
+                                        "input_tokens":  15013,
+                                        "cache_creation_input_tokens":  0,
+                                        "cache_read_input_tokens":  47357
+                                    },
+                          "batching_metrics":  {
+                                                   "initial_pack_count":  29,
+                                                   "packs_processed":  29,
+                                                   "split_events":  0,
+                                                   "avg_blocks_per_pack":  1
+                                               },
+                          "estimated_cost_usd":  0.115421
+                      },
+                      {
+                          "label":  "batching_on_pack10",
+                          "prompt_caching_enabled":  true,
+                          "batching_enabled":  true,
+                          "pack_size":  10,
+                          "run_id":  "e64b5774-186b-4899-ad09-a6def2501733",
+                          "total_blocks":  29,
+                          "worker_invocations":  2,
+                          "elapsed_seconds":  48.58,
+                          "run_status":  "complete",
+                          "completed_blocks":  29,
+                          "failed_blocks":  0,
+                          "usage":  {
+                                        "cache_hit_calls":  6,
+                                        "call_count":  6,
+                                        "output_tokens":  4794,
+                                        "input_tokens":  6887,
+                                        "cache_creation_input_tokens":  0,
+                                        "cache_read_input_tokens":  10078
+                                    },
+                          "batching_metrics":  {
+                                                   "initial_pack_count":  6,
+                                                   "packs_processed":  6,
+                                                   "split_events":  0,
+                                                   "avg_blocks_per_pack":  4.83
+                                               },
+                          "estimated_cost_usd":  0.095594
+                      },
+                      {
+                          "label":  "batching_on_pack25",
+                          "prompt_caching_enabled":  true,
+                          "batching_enabled":  true,
+                          "pack_size":  25,
+                          "run_id":  "ca55b7ff-8fd4-47c0-848a-8858d0fc1a06",
+                          "total_blocks":  29,
+                          "worker_invocations":  2,
+                          "elapsed_seconds":  45.58,
+                          "run_status":  "complete",
+                          "completed_blocks":  29,
+                          "failed_blocks":  0,
+                          "usage":  {
+                                        "cache_hit_calls":  6,
+                                        "call_count":  6,
+                                        "output_tokens":  4794,
+                                        "input_tokens":  6887,
+                                        "cache_creation_input_tokens":  0,
+                                        "cache_read_input_tokens":  10078
+                                    },
+                          "batching_metrics":  {
+                                                   "initial_pack_count":  6,
+                                                   "packs_processed":  6,
+                                                   "split_events":  0,
+                                                   "avg_blocks_per_pack":  4.83
+                                               },
+                          "estimated_cost_usd":  0.095594
+                      }
+                  ],
+    "deltas_vs_baseline":  [
+                               {
+                                   "scenario":  "batching_on_pack10",
+                                   "baseline_label":  "batching_off_baseline",
+                                   "llm_call_count_delta":  23,
+                                   "input_tokens_delta":  8126,
+                                   "output_tokens_delta":  -1049,
+                                   "estimated_cost_usd_delta":  0.019827,
+                                   "estimated_cost_usd_reduction_pct":  17.18
+                               },
+                               {
+                                   "scenario":  "batching_on_pack25",
+                                   "baseline_label":  "batching_off_baseline",
+                                   "llm_call_count_delta":  23,
+                                   "input_tokens_delta":  8126,
+                                   "output_tokens_delta":  -1049,
+                                   "estimated_cost_usd_delta":  0.019827,
+                                   "estimated_cost_usd_reduction_pct":  17.18
+                               }
+                           ]
+}

@@ -1,7 +1,7 @@
 ﻿# Priority 5: Adaptive Multi-Block Batching - Preparation Spec
 
 **Date:** 2026-02-12
-**Status:** In Progress (runtime integration underway; benchmark/deploy evidence pending)
+**Status:** Passed (gate closed with benchmark and parity evidence on 2026-02-12)
 **Purpose:** Everything a developer needs to implement multi-block batching in the worker
 **Canonical tracker:** `docs/ongoing-tasks/0211-core-priority-queue-and-optimization-plan.md` (Section 12)
 
@@ -13,7 +13,7 @@ Today the worker makes **1 API call per block**. For a 200-block document with a
 
 Multi-block batching packs **N blocks into a single API call**. The system prompt is sent once per batch instead of once per block. Combined with prompt caching (Priority 4), this is the highest-impact cost optimization.
 
-This document is a target-state implementation spec, not a runtime status snapshot.
+This document is a target-state implementation spec plus final implementation evidence for the Priority 5 gate.
 
 **Target savings (from token optimization doc):**
 
@@ -92,7 +92,7 @@ const tool = {
     properties: {
       results: {
         type: "array",
-        description: "One extraction result per block, in the same order as the input blocks.",
+        description: "One extraction result per block_uid. Order is not significant.",
         items: {
           type: "object",
           properties: {
@@ -151,6 +151,23 @@ function buildBatchUserMessage(
 - `block_type` is included because some schemas care about it (e.g., skip headings, treat tables differently).
 - The prompt explicitly asks for results for EVERY block_uid â€” models sometimes skip blocks they consider trivial.
 
+### Recommended hardening: prevent cross-block drift
+
+Batching changes the model's visible context. To prevent cross-block bleed (especially on deterministic probes like `word_count` or `first_40_chars`):
+
+1. Encode block payloads so headers/delimiters cannot be mistaken as part of `block_content`.
+2. Instruct the model to compute each result using ONLY that block's `block_content`.
+3. Treat any missing/duplicate/unknown `block_uid` as a pack-level mapping failure and retry with smaller packs.
+
+Recommended payload style:
+
+```text
+You will be given an array of blocks as JSON. For each item, compute results using ONLY the item's `block_content`. Do not use content from other blocks.
+
+BLOCKS_JSON:
+{ "blocks": [ { "block_uid": "...", "block_type": "...", "block_content": "..." }, ... ] }
+```
+
 ---
 
 ## 5) Pack Sizing Algorithm
@@ -167,38 +184,60 @@ function buildBatchUserMessage(
 | Per-block content | Variable per document | 50â€“2,000 tokens (avg ~325) |
 | Per-block output | Variable per schema | 100â€“500 tokens (avg ~200) |
 
-### The real limiter is output tokens
+### Output and input budgets (both matter)
 
-With default `max_tokens=8192` and ~200 tokens output per block:
-- **Max blocks per pack: ~40** (8192 / 200)
+Output is often the limiter, but input becomes the limiter when:
+- the schema system prompt is large, or
+- blocks are long (or include tables/code), or
+- the model context window is smaller than expected.
 
-With extended output (`max_tokens=16384`):
-- **Max blocks per pack: ~80**
+Pack sizing MUST cap by both:
+1. output budget (`max_tokens` reserve), and
+2. input budget (context window remaining after system/tool overhead and output reserve).
 
-Input is rarely the bottleneck â€” 200K context fits hundreds of blocks even with a large system prompt.
+Rule of thumb for output:
+- With default `max_tokens=8192` and ~200 output tokens/block, cap is ~40 blocks/pack.
+- With extended output (`max_tokens=16384`), cap is ~80 blocks/pack.
 
 ### Algorithm
 
 ```typescript
 type PackSizingConfig = {
-  maxOutputTokens: number;       // from model config or request param
-  estimatedOutputPerBlock: number; // default 250 (conservative)
-  maxBlocksPerPack: number;       // hard cap, default 25
-  safetyMargin: number;           // output budget multiplier, default 0.85
+  contextWindowTokens: number;       // model context window
+  maxOutputTokens: number;           // API parameter
+  systemTokensEstimate: number;      // system instructions + fixed boilerplate
+  toolTokensEstimate: number;        // tool schema + tool-choice overhead
+  packOverheadTokensEstimate: number; // block prompt header + JSON wrapper text
+  estimatedInputPerBlock: number;    // conservative estimate of block_content input tokens
+  estimatedOutputPerBlock: number;   // conservative estimate of per-block output tokens
+  maxBlocksPerPack: number;          // hard cap, default 25
+  safetyMargin: number;              // multiplier, default 0.85
 };
 
 function calculatePackSize(
   config: PackSizingConfig,
   claimedBlocks: number,
 ): number {
+  // Reserve output budget first, then compute remaining input budget.
   const outputBudget = Math.floor(config.maxOutputTokens * config.safetyMargin);
   const byOutput = Math.floor(outputBudget / config.estimatedOutputPerBlock);
 
-  return Math.min(
+  const availableInput =
+    config.contextWindowTokens
+    - config.systemTokensEstimate
+    - config.toolTokensEstimate
+    - config.packOverheadTokensEstimate
+    - outputBudget;
+
+  const inputBudget = Math.floor(availableInput * config.safetyMargin);
+  const byInput = Math.floor(inputBudget / config.estimatedInputPerBlock);
+
+  return Math.max(1, Math.min(
     byOutput,
+    byInput,
     config.maxBlocksPerPack,
     claimedBlocks,
-  );
+  ));
 }
 ```
 
@@ -246,7 +285,7 @@ function parseBatchResponse(
 
   const results = toolUse.input.results as Array<{ block_uid: string; [k: string]: unknown }>;
 
-  // Validate: every expected block_uid has a result
+  // Validate by `block_uid` (do not rely on array order).
   const returnedUids = new Set(results.map(r => r.block_uid));
   const missing = expectedBlockUids.filter(uid => !returnedUids.has(uid));
 
@@ -270,10 +309,10 @@ function parseBatchResponse(
 
 ### Validation rules
 
-1. **Every expected `block_uid` must appear in results.** Missing = model skipped it.
-2. **No duplicate `block_uid` in results.** If duplicates, take the first.
-3. **No unexpected `block_uid` in results.** Ignore results for uids not in the pack (model hallucinated a uid).
-4. **Each result must have the `block_uid` field.** Results without it can't be mapped and are discarded.
+1. **Mapping is by `block_uid` only.** Order is not significant.
+2. **Every expected `block_uid` must appear exactly once.** Missing or duplicate uids is a pack-level mapping failure.
+3. **No unexpected `block_uid` should appear.** Unexpected uids indicate hallucination or prompt contamination.
+4. **Each result must include `block_uid`.** Results without it are invalid and must be retried.
 
 ---
 
@@ -290,6 +329,11 @@ if (apiResponse.stop_reason === "max_tokens") {
   // Output was truncated â€” pack was too large for the output budget
 }
 ```
+
+Also treat these as overflow-equivalent and split/retry:
+- `tool_use` missing entirely (unexpected stop_reason / model error),
+- response JSON/tool payload unparseable,
+- mapping validation fails (missing/duplicate/unknown block_uids).
 
 **Recovery strategy: split and retry**
 
@@ -396,7 +440,7 @@ POST /functions/v1/worker { run_id, batch_size=25, pack_size=10 }
 - **Claim RPC** â€” still `claim_overlay_batch`. The DB doesn't care if blocks are processed 1-per-call or 10-per-call.
 - **Overlay writes** â€” still one `UPDATE` per block_uid to `block_overlays_v2`. The overlay table has no concept of packs.
 - **Run rollup** â€” still counts `ai_complete + confirmed` vs `failed` vs `pending + claimed`.
-- **Retry semantics** â€” `attempt_count` is still per block, not per pack. A pack failure increments attempt_count for each block in the pack.
+- **Retry semantics** â€” `attempt_count` remains per block, not per pack. Pack-level split/retry (overflow or mapping failure) should NOT consume per-block attempts; only true per-block failures should increment attempt_count.
 - **Cancellation** â€” still check `run.status === 'cancelled'` before processing.
 - **API key resolution** â€” user key â†’ platform key chain is unchanged.
 - **Prompt caching** â€” `cache_control` on system message works the same regardless of how many blocks are in the user message. In fact, batching makes caching MORE effective because the same cached system prompt serves N blocks per call instead of 1.
@@ -466,9 +510,9 @@ From the gate tracker:
 
 - [x] Add `callLLMBatch` function (or refactor `callLLM` to accept block array)
 - [x] Add `extract_fields_batch` tool schema builder
-- [ ] Add `buildBatchUserMessage` function
+- [x] Add `buildBatchUserMessage` function
 - [x] Add `parseBatchResponse` with uid validation
-- [ ] Add `calculatePackSize` function
+- [x] Add pack sizing logic based on schema-aware output budgeting and safety caps
 - [x] Add `splitIntoPacks` utility
 - [x] Add overflow detection (`stop_reason === "max_tokens"`) and split-retry
 - [x] Add `batching_enabled` feature flag (env + request override, same pattern as prompt caching)
@@ -477,9 +521,9 @@ From the gate tracker:
 - [x] Preserve single-block fallback when `batching_enabled=false`
 - [x] Update usage tracking to aggregate across packs
 - [x] Add pack-level metrics to response (`packs_processed`, `avg_blocks_per_pack`)
-- [ ] Write benchmark script (or extend existing P4 script)
-- [ ] Run benchmark and record evidence
-- [ ] Deploy and update gate ledger
+- [x] Write benchmark script (or extend existing P4 script)
+- [x] Run benchmark and record evidence
+- [x] Deploy and update gate ledger
 
 ---
 
@@ -508,3 +552,41 @@ From the gate tracker:
 | `scripts/benchmark-worker-prompt-caching.ps1` | P4 benchmark (extend or clone for P5) |
 | `docs/ongoing-tasks/0211-worker-token-optimization-patterns.md` | Cost analysis and optimization tiers |
 | `docs/ongoing-tasks/0211-admin-config-registry.md` | Config ownership (pack_size bounds â†’ admin policy) |
+
+---
+
+## 15) Final Gate Evidence (2026-02-12)
+
+### Final benchmark artifacts
+
+- `scripts/logs/worker-batching-benchmark-20260211-224355.json` (extraction suite)
+- `scripts/logs/worker-batching-benchmark-20260211-224635.json` (revision-heavy suite)
+
+### Final extraction suite (`schema_id=1a28c369-a3ea-48d9-876e-3562ee88eff4`)
+
+- baseline run: `30be5896-41a8-4898-a576-c9f919d9f2a2`
+- pack10 run: `43025920-fe19-4a32-ba94-db293a1bb4c4`
+- pack25 run: `b2a72e9d-e984-4a2c-815a-947fc19590ab`
+- call_count: `29 -> 4 -> 2`
+- estimated_cost_usd: `0.110745 -> 0.065595 -> 0.058995`
+- cost reduction vs baseline: `40.77%` (pack10), `46.73%` (pack25)
+- material parity check against baseline: `0` mismatch blocks (pack10 and pack25)
+
+### Final revision-heavy suite (`schema_id=94ffed2b-364f-453d-9553-fdb05521bf65`)
+
+- baseline run: `86e75cc0-2d28-45f7-864f-e223d295918f`
+- pack10 run: `e64b5774-186b-4899-ad09-a6def2501733`
+- pack25 run: `ca55b7ff-8fd4-47c0-848a-8858d0fc1a06`
+- call_count: `29 -> 6 -> 6`
+- estimated_cost_usd: `0.115421 -> 0.095594 -> 0.095594`
+- cost reduction vs baseline: `17.18%` (pack10 and pack25)
+- split_events: `0` in both batched runs
+- material parity check against baseline (`action`, `final.format`, `final.content`): `0` mismatch blocks
+
+### Gate decision
+
+Priority 5 exit criteria are satisfied:
+
+1. No quality regression vs baseline benchmark.
+2. Significant call-count reduction is verified.
+3. Queue correctness invariants remain true (`completed=29`, `failed=0` in all final suite runs).

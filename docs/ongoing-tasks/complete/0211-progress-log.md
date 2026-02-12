@@ -86,28 +86,124 @@ Priority 4 is now closed after a corrective rerun with benchmark and SQL parity 
 
 ---
 
-## Priority 5: Adaptive Multi-Block Batching - IN PROGRESS
+## Priority 5: Adaptive Multi-Block Batching - PASSED
 
-### Runtime integration completed locally
-- Replaced per-block processing loop with pack-based processing in `supabase/functions/worker/index.ts`.
-- Wired adaptive pack construction using current env/request controls (`batching_enabled`, `pack_size`, output budget settings).
-- Wired batched LLM execution path with per-pack uid validation.
-- Added split-and-retry behavior for overflow-like failures and response mapping mismatches.
-- Preserved single-block fallback and existing per-block retry/fail semantics.
-- Added batching metrics to worker responses:
-  - `initial_pack_count`
-  - `packs_processed`
-  - `split_events`
-  - `avg_blocks_per_pack`
+### Runtime closure
+- Completed batching hardening in `supabase/functions/worker/index.ts`:
+  - richer batch parse diagnostics (`missing/unexpected/duplicate block_uids`, `stopReason`, parse issue flags)
+  - flattened batched tool schema/result shape for deterministic mapping behavior
+  - schema-aware output budgeting with text-heavy pack caps
+  - recursive missing-subset retry/split behavior
+  - low-credit (`402`) handling via `ProviderBalanceError` with claim release
+- Kept single-block fallback and per-block retry/fail semantics intact.
+- Deployed worker through version `15` with `verify_jwt=false` and internal auth enforcement.
+
+### Final benchmark evidence
+- Extraction suite artifact: `scripts/logs/worker-batching-benchmark-20260211-224355.json`
+  - runs: `30be5896-41a8-4898-a576-c9f919d9f2a2` (baseline), `43025920-fe19-4a32-ba94-db293a1bb4c4` (pack10), `b2a72e9d-e984-4a2c-815a-947fc19590ab` (pack25)
+  - call_count: `29 -> 4 -> 2`
+  - cost reduction: `40.77%` (pack10), `46.73%` (pack25)
+  - material parity vs baseline: `0` mismatch blocks
+- Revision-heavy suite artifact: `scripts/logs/worker-batching-benchmark-20260211-224635.json`
+  - runs: `86e75cc0-2d28-45f7-864f-e223d295918f` (baseline), `e64b5774-186b-4899-ad09-a6def2501733` (pack10), `ca55b7ff-8fd4-47c0-848a-8858d0fc1a06` (pack25)
+  - call_count: `29 -> 6 -> 6`
+  - cost reduction: `17.18%` (pack10 and pack25)
+  - split_events: `0` in batched runs
+  - material parity vs baseline (`action`, `final.format`, `final.content`): `0` mismatch blocks
 
 ### Tracker updates
-- Marked Priority 5 as `In Progress` in `docs/ongoing-tasks/0211-core-priority-queue-and-optimization-plan.md`.
-- Updated implementation checklist status in `docs/ongoing-tasks/0211-priority5-adaptive-batching-prep-spec.md`.
+- Marked Priority 5 as `Passed` in `docs/ongoing-tasks/0211-core-priority-queue-and-optimization-plan.md`.
+- Updated Priority 5 prep/spec doc with final gate evidence.
+- Updated session handoff docs to move active queue focus to Priority 6.
 
 ---
 
 ## Next
 
-1. Deploy updated `worker` function and run live smoke checks.
-2. Extend benchmark flow for P5 suites (`batching_enabled=false/true`, varying `pack_size`).
-3. Capture quality parity + call-count reduction evidence and update gate ledger.
+1. Start Priority 7 schema core workflow closure (`meta-configurator-integration/spec.md` path).
+2. Capture deterministic wizard/save/fork/conflict (`409`) evidence and update the gate ledger.
+3. Keep queue sequencing strict: Priority 8 stays blocked until Priority 7 is `Passed`.
+
+---
+
+## Priority 6: Admin/Superuser Optimization Controls - PASSED
+
+### Backend control-plane foundation added
+- Added migration `supabase/migrations/20260212114500_018_admin_runtime_policy_controls.sql`:
+  - `admin_runtime_policy` table for mutable runtime policy values
+  - `admin_runtime_policy_audit` table for `who/when/from/to/reason`
+  - seeded defaults aligned to current worker/runtime behavior
+- Added shared policy loader/validator:
+  - `supabase/functions/_shared/admin_policy.ts`
+- Added superuser auth helper:
+  - `supabase/functions/_shared/superuser.ts` (email allowlist gate)
+- Added superuser edge API:
+  - `supabase/functions/admin-config/index.ts` (`GET` policies/audit, `PATCH/PUT` updates + audit writes)
+
+### Run snapshot + worker consumption wiring added
+- Updated `supabase/functions/runs/index.ts`:
+  - loads effective admin policy at run creation
+  - writes `model_config.policy_snapshot` + `policy_snapshot_at`
+  - preserves per-run model overrides while snapshotting platform defaults
+- Updated `supabase/functions/worker/index.ts`:
+  - resolves batching/caching/runtime defaults from `run.model_config.policy_snapshot`
+  - keeps request overrides as highest precedence for explicit invocations
+  - keeps env defaults as fallback if snapshot is absent (backward compatibility)
+
+### Superuser page scaffold added
+- Added `web/src/pages/SuperuserSettings.tsx`:
+  - single superuser-only control page model
+  - category side-nav (`Models`, `Worker`, `Upload`, `Audit History`)
+  - per-key editing + save with optional reason
+  - audit history viewer
+- Added route:
+  - `web/src/router.tsx` -> `/app/settings/superuser`
+- Added settings entry-point button:
+  - `web/src/pages/Settings.tsx`
+
+### Validation notes
+- Web TypeScript compile passed: `npx tsc -b --pretty false` (in `web/`).
+- `npm --prefix web run lint` still reports existing baseline errors in unrelated files (`AuthContext.tsx`, `useDocuments.ts`, `Projects.tsx`); no new lint-specific blocker introduced by P6 changes.
+
+### Runtime closure proof (2026-02-12)
+- Remote deploy completed:
+  - `SUPERUSER_EMAIL_ALLOWLIST` set via `supabase secrets set`
+  - edge functions deployed: `admin-config`, `runs`, `worker` (`verify_jwt=false`, internal auth retained)
+- Migration `018_admin_runtime_policy_controls` applied to remote runtime via Supabase management SQL API and recorded in migration history.
+- Runtime storage verified:
+  - `admin_runtime_policy` row count = `19`
+  - `admin_runtime_policy_audit` writing works via `admin-config` PATCH
+- New-run policy uptake proof:
+  - toggled `worker.prompt_caching.enabled` from `true` to `false`
+  - run `d9e80ff2-a61a-49d4-a093-89a7b4b0421e` snapshot = `true` (pre-toggle)
+  - run `63cfa335-7f99-4cc0-a3ca-a8ca4d60a7d9` snapshot = `false` (post-toggle)
+- Mid-run snapshot drift prevention proof:
+  - run `640cf4b0-6c6f-445b-bd13-ae80c1f2e73f` created under `false`
+  - worker call #1 -> `prompt_caching=false`, `remaining_pending=24`
+  - policy restored globally to `true`
+  - worker call #2 on same run -> `prompt_caching=false`, `remaining_pending=19`
+- Audit visibility proof:
+  - both toggles returned audit entries in `GET /functions/v1/admin-config`
+  - UI consumes same audit payload in `web/src/pages/SuperuserSettings.tsx` (`auditRows` rendering).
+
+---
+
+## Priority 7: Contract Consolidation (Pre-Implementation)
+
+Created a merged, execution-level Priority 7 contracts document:
+
+- `docs/ongoing-tasks/0212-priority7-schema-contracts-master-spec.md`
+
+This consolidates and normalizes scattered schema-flow requirements from:
+
+- `docs/ongoing-tasks/meta-configurator-integration/spec.md`
+- `docs/ongoing-tasks/meta-configurator-integration/status.md`
+- `docs/ongoing-tasks/0210-schema-wizard-and-ai-requirements.md`
+- queue/workflow gate docs for Priority 7
+
+Key outcomes:
+
+1. Locked five-branch schema creation pipeline (templates, existing-fork, scratch wizard, upload JSON, advanced editor).
+2. Locked single save boundary (`POST /schemas`) with current runtime status semantics (`200` create/idempotent, `409` conflict).
+3. Locked worker/grid compatibility contract (`properties` + optional `prompt_config`).
+4. Added deterministic implementation phasing and evidence matrix to avoid rework.

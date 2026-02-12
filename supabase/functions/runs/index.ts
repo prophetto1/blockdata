@@ -1,5 +1,6 @@
 import { corsPreflight, withCorsHeaders } from "../_shared/cors.ts";
 import { createAdminClient, requireUserId } from "../_shared/supabase.ts";
+import { buildRuntimePolicySnapshot, loadRuntimePolicy } from "../_shared/admin_policy.ts";
 
 function json(status: number, body: unknown): Response {
   return new Response(JSON.stringify(body, null, 2), {
@@ -10,6 +11,36 @@ function json(status: number, body: unknown): Response {
 
 function isUuid(value: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+}
+
+function parseRunOverrides(input: unknown): {
+  model?: string;
+  temperature?: number;
+  max_tokens_per_block?: number;
+} {
+  if (!input || typeof input !== "object" || Array.isArray(input)) return {};
+  const raw = input as Record<string, unknown>;
+  const out: {
+    model?: string;
+    temperature?: number;
+    max_tokens_per_block?: number;
+  } = {};
+
+  if (typeof raw.model === "string" && raw.model.trim().length > 0) {
+    out.model = raw.model.trim();
+  }
+  if (typeof raw.temperature === "number" && Number.isFinite(raw.temperature)) {
+    out.temperature = raw.temperature;
+  }
+  if (
+    typeof raw.max_tokens_per_block === "number" &&
+    Number.isFinite(raw.max_tokens_per_block) &&
+    Number.isInteger(raw.max_tokens_per_block)
+  ) {
+    out.max_tokens_per_block = raw.max_tokens_per_block;
+  }
+
+  return out;
 }
 
 Deno.serve(async (req) => {
@@ -23,7 +54,7 @@ Deno.serve(async (req) => {
 
     const conv_uid = typeof body?.conv_uid === "string" ? body.conv_uid.trim() : "";
     const schema_id = typeof body?.schema_id === "string" ? body.schema_id.trim() : "";
-    const model_config = body?.model_config ?? null;
+    const runOverrides = parseRunOverrides(body?.model_config);
 
     if (!conv_uid) return json(400, { error: "Missing conv_uid" });
     if (!schema_id) return json(400, { error: "Missing schema_id" });
@@ -40,12 +71,25 @@ Deno.serve(async (req) => {
     const run_id = data;
     if (!run_id) return json(500, { error: "RPC returned no run_id" });
 
-    // Set model_config if provided (create_run_v2 RPC doesn't accept it directly)
-    if (model_config) {
-      await supabaseAdmin
-        .from("runs_v2")
-        .update({ model_config })
-        .eq("run_id", run_id);
+    // Snapshot effective admin policy at run creation so mid-run policy edits do not drift behavior.
+    const runtimePolicy = await loadRuntimePolicy(supabaseAdmin);
+    const snapshotAt = new Date().toISOString();
+    const policySnapshot = buildRuntimePolicySnapshot(runtimePolicy, snapshotAt);
+    const model_config = {
+      model: runOverrides.model ?? runtimePolicy.models.platform_default_model,
+      temperature: runOverrides.temperature ?? runtimePolicy.models.platform_default_temperature,
+      max_tokens_per_block:
+        runOverrides.max_tokens_per_block ?? runtimePolicy.models.platform_default_max_tokens,
+      policy_snapshot_at: snapshotAt,
+      policy_snapshot: policySnapshot,
+    };
+
+    const { error: modelConfigErr } = await supabaseAdmin
+      .from("runs_v2")
+      .update({ model_config })
+      .eq("run_id", run_id);
+    if (modelConfigErr) {
+      return json(500, { error: `Failed to persist run policy snapshot: ${modelConfigErr.message}` });
     }
 
     // Fetch total_blocks from the newly created run
@@ -55,7 +99,11 @@ Deno.serve(async (req) => {
       .eq("run_id", run_id)
       .single();
 
-    return json(200, { run_id, total_blocks: runRow?.total_blocks ?? 0 });
+    return json(200, {
+      run_id,
+      total_blocks: runRow?.total_blocks ?? 0,
+      policy_snapshot_at: snapshotAt,
+    });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     return json(400, { error: msg });

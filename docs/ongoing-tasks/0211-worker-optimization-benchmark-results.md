@@ -128,3 +128,14 @@ Why:
 1. No quality regression on corrective benchmark sample.
 2. Measurable token/cost reduction is documented.
 3. Rollback path is tested and retained.
+
+---
+
+## 8) Priority 5 Reference Pointer
+
+Priority 5 (adaptive batching) final evidence is tracked in:
+
+- `docs/ongoing-tasks/0211-priority5-adaptive-batching-prep-spec.md`
+- `docs/ongoing-tasks/0212-session-handoff-priority5-core-pipeline.md`
+- `scripts/logs/worker-batching-benchmark-20260211-224355.json`
+- `scripts/logs/worker-batching-benchmark-20260211-224635.json`

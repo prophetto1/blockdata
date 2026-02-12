@@ -7,6 +7,8 @@
 
 ## 1) Current Truth Snapshot (as of this session)
 
+0. Latest detailed handoff for closed Priority 5 work:
+   - `docs/ongoing-tasks/0212-session-handoff-priority5-core-pipeline.md`
 1. Canonical admin config doc is:
    - `docs/ongoing-tasks/0211-admin-config-registry.md`
 2. Duplicate file was removed:
@@ -53,6 +55,21 @@
     - cache telemetry is non-zero on ON run (`cache_creation_input_tokens=1633`, `cache_read_input_tokens=45724`)
     - cost reduction recorded (`estimated_cost_usd_reduction_pct=50.24`)
     - material parity confirmed (`material_mismatch_blocks=0`)
+15. Priority 5 is now passed with final benchmark/parity evidence:
+    - deployed `worker` version `15` (`verify_jwt=false`, internal auth retained)
+    - final extraction artifact: `scripts/logs/worker-batching-benchmark-20260211-224355.json`
+    - final revision-heavy artifact: `scripts/logs/worker-batching-benchmark-20260211-224635.json`
+    - extraction call_count: `29 -> 4 -> 2` with `0` material mismatch blocks
+    - revision-heavy call_count: `29 -> 6 -> 6` with `0` material mismatch blocks
+16. Priority 6 is now passed with runtime proof:
+    - migration `20260212114500_018_admin_runtime_policy_controls` applied remotely
+    - `SUPERUSER_EMAIL_ALLOWLIST` configured
+    - `admin-config`, `runs`, `worker` deployed (`verify_jwt=false`, internal auth retained)
+    - new-run policy change proof passed (`d9e80ff2-a61a-49d4-a093-89a7b4b0421e` vs `63cfa335-7f99-4cc0-a3ca-a8ca4d60a7d9`)
+    - in-flight snapshot stability proof passed (`640cf4b0-6c6f-445b-bd13-ae80c1f2e73f`)
+    - audit visibility proof passed in API and UI wiring
+17. Queue head moved forward:
+    - Priority 7 is now the first non-passed priority.
 
 ---
 
@@ -62,11 +79,12 @@ Read in this order before making changes:
 
 1. `docs/ongoing-tasks/0211-core-workflows-before-assistant-plan.md`
 2. `docs/ongoing-tasks/0211-core-priority-queue-and-optimization-plan.md`
-3. `docs/ongoing-tasks/0211-admin-config-registry.md`
-4. `docs/ongoing-tasks/complete/0211-source-format-reliability-matrix.md`
-5. `docs/ongoing-tasks/complete/0211-source-format-smoke-results.md`
-6. `docs/ongoing-tasks/0211-worker-token-optimization-patterns.md`
-7. `docs/ongoing-tasks/meta-configurator-integration/spec.md`
+3. `docs/ongoing-tasks/0212-priority7-schema-contracts-master-spec.md`
+4. `docs/ongoing-tasks/0211-admin-config-registry.md`
+5. `docs/ongoing-tasks/complete/0211-source-format-reliability-matrix.md`
+6. `docs/ongoing-tasks/complete/0211-source-format-smoke-results.md`
+7. `docs/ongoing-tasks/0211-worker-token-optimization-patterns.md`
+8. `docs/ongoing-tasks/meta-configurator-integration/spec.md`
 
 ---
 
@@ -74,12 +92,13 @@ Read in this order before making changes:
 
 Current queue says start here:
 
-### Priority 5 implementation cycle (adaptive batching)
+### Priority 7 implementation cycle (schema core workflow)
 
-1. Use `docs/ongoing-tasks/0211-priority5-adaptive-batching-prep-spec.md` as the execution baseline.
-2. Complete worker pack-path wiring (`callLLMBatch`, pack loop integration, per-block mapping validation).
-3. Implement overflow split-and-retry behavior and preserve single-block fallback safety.
-4. Produce P5 benchmark evidence (quality parity, call-count reduction, queue correctness) and update gate ledger.
+1. Use `docs/ongoing-tasks/0212-priority7-schema-contracts-master-spec.md` as the primary execution contract.
+2. Use `docs/ongoing-tasks/meta-configurator-integration/spec.md` as the deeper UX/reference spec.
+3. Prove wizard-first manual schema creation path produces worker-compatible schema contracts (`properties`, `prompt_config`).
+4. Prove deterministic save/fork/conflict (`409`) behavior and capture recovery-path evidence.
+5. Update gate ledger and evidence docs only after Priority 7 exit criteria are satisfied.
 
 ---
 
@@ -97,7 +116,7 @@ Current queue says start here:
 ## 5) Known Risks to Watch
 
 1. Worker runtime remains Anthropic-specific by contract; provider-policy runtime routing is still deferred.
-2. Hardcoded policy values are still spread across worker/UI/DB and need centralization in Priority 6.
+2. Some non-P6 policy surfaces (provider registry and default prompt text) remain hardcoded by design and should be treated as future-scope work.
 3. Prompt-caching rollout must include quality regression checks, not token-only optimization.
 4. Existing workspace has many unrelated modified/untracked files; treat carefully.
 
@@ -137,7 +156,7 @@ Constraints:
 - Do not run destructive git cleanup.
 - Use the pass/fail tracker sections (entry/required evidence/exit) and update the gate ledger.
 
-Continue Priority 5 execution: finish adaptive batching runtime integration, run benchmark evidence, and update the pass/fail tracker and gate ledger.
+Continue Priority 7 execution: complete schema core workflow gates, add deterministic save/fork/conflict evidence, and update the pass/fail tracker and gate ledger.
 ```
 
 ---

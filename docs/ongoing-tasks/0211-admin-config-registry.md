@@ -1,7 +1,7 @@
 # Admin / Superuser Config Registry (Canonical)
 
 **Date:** 2026-02-12  
-**Status:** Priority 3 locked (baseline contracts codified); Priority 6 admin controls pending  
+**Status:** Priority 3 locked (baseline contracts codified); Priority 6 runtime policy controls passed  
 **Purpose:** Single source of truth for runtime config ownership, defaults, and interim hardcoded policy handling.  
 **Verification:** Repo + runtime cross-check completed on 2026-02-12.  
 **Depends on:** Priority 3 (registry lock) and Priority 6 (admin controls) in `0211-core-priority-queue-and-optimization-plan.md`
@@ -26,7 +26,7 @@
 
 | Config | Current Value | Ownership | Priority 3 Status | Notes |
 |---|---|---|---|---|
-| Claim batch size bounds | request default `25`, min `1`, max `100` | Admin policy (interim hardcoded) | Deferred by design | Move to admin config store in Priority 6 |
+| Claim batch size bounds | `worker.claim_batch_size.default/min/max` in `admin_runtime_policy` (seed `25/1/100`) | Admin policy (superuser-managed) | Implemented in Priority 6 | Snapshotted into run at creation; consumed by worker from run policy snapshot |
 | Max retries fallback | `getEnv("WORKER_MAX_RETRIES", "3")` | Environment | Locked | Deployment-level override |
 | Platform API key fallback | `getEnv("ANTHROPIC_API_KEY", "")` | Environment | Locked | Provider-specific by current contract |
 | Default model fallback | `getEnv("WORKER_DEFAULT_MODEL", "claude-sonnet-4-5-20250929")` | Environment -> policy fallback | Locked | Aligned with UI/DB baseline |
@@ -72,7 +72,7 @@
   - `WORKER_DEFAULT_MODEL`
   - `DOCUMENTS_BUCKET`
 
-### Layer B: Admin policy (superuser-owned; interim hardcoded until Priority 6)
+### Layer B: Admin policy (superuser-owned; runtime store implemented in Priority 6)
 
 - Runtime policy keys:
   - `worker.claim_batch_size`
@@ -102,7 +102,7 @@
 
 ## 4) Interim Hardcoded Handling (Explicit)
 
-These values are intentionally hardcoded until Priority 6 admin controls are implemented:
+These values remain intentionally hardcoded after Priority 6 because they are out of the current control-plane scope:
 
 1. Worker claim batch bounds (`25`, `1`, `100`).
 2. Worker fallback system/block prompts.
@@ -186,3 +186,47 @@ For each policy key, the spec must state:
 | Priority 4 | Prompt caching with policy toggle |
 | Priority 5 | Adaptive batching with policy controls |
 | Priority 6 | Admin controls UI + auditability |
+
+---
+
+## 8) Priority 6 closure evidence (2026-02-12)
+
+Priority 6 is now closed for the runtime optimization policy surface implemented in migration `018`.
+
+1. Final policy key list approved and deployed:
+   - `models.platform_default_model`
+   - `models.platform_default_temperature`
+   - `models.platform_default_max_tokens`
+   - `worker.prompt_caching.enabled`
+   - `worker.batching.enabled`
+   - `worker.batching.pack_size`
+   - `worker.batching.pack_size_max`
+   - `worker.batching.text_heavy_max_pack_size`
+   - `worker.batching.context_window_tokens`
+   - `worker.batching.output_reserve_tokens`
+   - `worker.batching.tool_overhead_tokens`
+   - `worker.batching.max_output_tokens`
+   - `worker.batching.per_block_output_tokens`
+   - `worker.claim_batch_size.default`
+   - `worker.claim_batch_size.min`
+   - `worker.claim_batch_size.max`
+   - `worker.max_retries`
+   - `upload.max_files_per_batch`
+   - `upload.allowed_extensions`
+2. Runtime deploy complete:
+   - `admin-config`, `runs`, and `worker` deployed with `verify_jwt=false` + internal auth checks.
+   - `SUPERUSER_EMAIL_ALLOWLIST` configured as an edge secret.
+   - migration `20260212114500_018_admin_runtime_policy_controls` applied remotely (policy row count = `19`).
+3. New-run policy proof:
+   - toggled `worker.prompt_caching.enabled: true -> false`
+   - run `d9e80ff2-a61a-49d4-a093-89a7b4b0421e` snapshot kept `true` (pre-toggle)
+   - run `63cfa335-7f99-4cc0-a3ca-a8ca4d60a7d9` snapshot captured `false` (post-toggle)
+4. Mid-run drift prevention proof:
+   - run `640cf4b0-6c6f-445b-bd13-ae80c1f2e73f` created while policy was `false`
+   - worker invocation 1: `prompt_caching=false`, `remaining_pending=24`
+   - policy restored globally to `true`
+   - worker invocation 2 on same run: `prompt_caching=false`, `remaining_pending=19`
+   - result: in-flight run behavior stayed on its run snapshot.
+5. Audit visibility proof:
+   - both policy toggles produced audit rows in `admin-config` API response (with reasons).
+   - UI audit pane reads the same payload (`SuperuserSettings` uses `GET admin-config?audit_limit=100` and renders `auditRows`).

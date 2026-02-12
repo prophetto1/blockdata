@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
   Card,
   Text,
@@ -336,6 +337,17 @@ export default function Settings() {
   return (
     <>
       <PageHeader title="Settings" subtitle="Configure AI providers and model defaults." />
+      <Group justify="flex-end" mb="md" maw={960}>
+        <Button
+          size="xs"
+          variant="light"
+          leftSection={<IconServer size={14} />}
+          component={Link}
+          to="/app/settings/superuser"
+        >
+          Superuser Controls
+        </Button>
+      </Group>
 
       <Group align="flex-start" gap="lg" wrap="nowrap" maw={960}>
         {/* ── Left column: provider list ── */}

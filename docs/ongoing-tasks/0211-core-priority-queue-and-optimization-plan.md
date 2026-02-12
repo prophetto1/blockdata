@@ -23,6 +23,7 @@ A priority is considered complete only when its `Entry criteria`, `Required exec
 - `docs/ongoing-tasks/complete/0211-source-format-smoke-results.md`
 - `docs/ongoing-tasks/0211-worker-token-optimization-patterns.md`
 - `docs/ongoing-tasks/meta-configurator-integration/spec.md`
+- `docs/ongoing-tasks/0212-priority7-schema-contracts-master-spec.md`
 - `docs/ongoing-tasks/0210-test-driven-hardening-plan.md`
 
 ---
@@ -81,8 +82,8 @@ A priority is considered complete only when its `Entry criteria`, `Required exec
 | 2 | Passed | 2026-02-12 | Session owner | SQL: `create_run_v2(...)`, `cancel_run(...)`, key-state/overlay/run queries; HTTP: `POST /functions/v1/worker`, `POST /functions/v1/test-api-key`, `POST /functions/v1/user-api-keys` | `docs/ongoing-tasks/complete/0211-worker-runtime-reliability.md`, `supabase/functions/worker/index.ts` | Worker v6 release fix verified; no-key + invalid-key + cancellation safeguards verified; valid-key happy path verified (`ab8a3b40-757c-473f-a0c8-65ac007f74bc`); retry-to-failed verified (`7f50cdcb-f897-4566-bb87-de2f62e79884`) |
 | 3 | Passed | 2026-02-12 | Session owner | SQL: `pg_get_functiondef(claim_overlay_batch)`, transactional claim-order probe (`BEGIN ... ROLLBACK`); Supabase mgmt: `apply_migration(017_claim_overlay_batch_block_index_ordering)`, `list_migrations`, `list_edge_functions` | `0211-admin-config-registry.md`, `supabase/migrations/20260211091818_add_base_url_multi_provider.sql`, `supabase/migrations/20260212004639_017_claim_overlay_batch_block_index_ordering.sql`, `supabase/functions/worker/index.ts`, `supabase/functions/user-api-keys/index.ts` | Default drift locked (`temperature=0.3`), `base_url` contract codified, claim ordering moved to `block_index`; deployed `worker` v7 and `user-api-keys` v3 |
 | 4 | Passed | 2026-02-12 | Session owner | Deploy: `worker v9 (verify_jwt=false + internal auth)`, `schemas v12 (verify_jwt=false)`; Benchmark: `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\benchmark-worker-prompt-caching.ps1 -SchemaId 94ffed2b-364f-453d-9553-fdb05521bf65 -BatchSize 5`; SQL: paired run-state + OFF/ON overlay comparison (`action/final.format/final.content`) | `docs/ongoing-tasks/0211-worker-optimization-benchmark-results.md`, `scripts/logs/prompt-caching-benchmark-20260211-191241.json`, `supabase/functions/worker/index.ts`, `scripts/benchmark-worker-prompt-caching.ps1` | Corrective pair passed: non-zero cache telemetry (`cache_creation_input_tokens=1633`, `cache_read_input_tokens=45724`) and material parity (`material_mismatch_blocks=0`) on `7af1b494-ad4b-401c-9bcb-e59386b9760b` vs `3e9dab67-9ede-491e-b50c-86642d78ad39` |
-| 5 | In Progress | 2026-02-12 | Session owner | Local implementation review (`worker/index.ts` pack loop + split/retry path) | `supabase/functions/worker/index.ts`, `docs/ongoing-tasks/0211-priority5-adaptive-batching-prep-spec.md` | Runtime integration underway; benchmark/deploy/gate evidence still pending |
-| 6 | Not Started |  |  |  |  |  |
+| 5 | Passed | 2026-02-12 | Session owner | Benchmark: `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\benchmark-worker-batching.ps1 -SchemaId 1a28c369-a3ea-48d9-876e-3562ee88eff4 -BatchSize 25`; Benchmark: `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\benchmark-worker-batching.ps1 -SchemaId 94ffed2b-364f-453d-9553-fdb05521bf65 -BatchSize 25`; SQL: baseline-vs-batched material parity checks on `overlay_jsonb_staging` by `block_uid` | `supabase/functions/worker/index.ts`, `scripts/benchmark-worker-batching.ps1`, `scripts/logs/worker-batching-benchmark-20260211-224355.json`, `scripts/logs/worker-batching-benchmark-20260211-224635.json`, `docs/ongoing-tasks/0211-priority5-adaptive-batching-prep-spec.md` | Worker v15 batching pass: extraction suite call_count 29 -> 4/2 with material parity (0 mismatches); revision-heavy suite call_count 29 -> 6 with material parity (0 mismatches) and no split-event regressions |
+| 6 | Passed | 2026-02-12 | Session owner | Deploy/runtime: `npx supabase secrets set SUPERUSER_EMAIL_ALLOWLIST=... --project-ref dbdzzhshmigewyprahej`; `npx supabase functions deploy admin-config/runs/worker --project-ref dbdzzhshmigewyprahej --no-verify-jwt --use-api`; Supabase Mgmt SQL `POST /v1/projects/dbdzzhshmigewyprahej/database/query` (apply migration `018`, verify counts, record migration row); Auth/API proofs: `POST /auth/v1/token`, `GET/PATCH /functions/v1/admin-config`, `POST /functions/v1/runs`, `POST /functions/v1/worker` | `supabase/migrations/20260212114500_018_admin_runtime_policy_controls.sql`, `supabase/functions/admin-config/index.ts`, `supabase/functions/_shared/admin_policy.ts`, `supabase/functions/_shared/superuser.ts`, `supabase/functions/runs/index.ts`, `supabase/functions/worker/index.ts`, `web/src/pages/SuperuserSettings.tsx`, `web/src/router.tsx`, `docs/ongoing-tasks/0211-admin-config-registry.md`, `docs/ongoing-tasks/0211-admin-optimization-controls-spec.md`, `docs/ongoing-tasks/complete/0211-progress-log.md` | Remote migration + seed verified (`policy_count=19`), superuser gate active, new-run policy-change proof passed, mid-run snapshot proof passed (`run 640cf4b0-6c6f-445b-bd13-ae80c1f2e73f` kept snapshot after policy restore), audit visibility proof passed (API rows present; UI consumes same `admin-config` audit payload). |
 | 7 | Not Started |  |  |  |  |  |
 | 8 | Not Started |  |  |  |  |  |
 | 9 | Not Started |  |  |  |  |  |
@@ -216,20 +217,20 @@ Fail if any are true:
 - [x] Deterministic claim ordering is codified and validated.
 
 ### Required Execution
-- [ ] Implement pack sizing based on context and output budgets.
-- [ ] Implement pack claim/assignment and per-block response validation.
-- [ ] Implement overflow split-and-retry behavior.
-- [ ] Benchmark at least one extraction schema and one revision-heavy schema.
+- [x] Implement pack sizing based on context and output budgets.
+- [x] Implement pack claim/assignment and per-block response validation.
+- [x] Implement overflow split-and-retry behavior.
+- [x] Benchmark at least one extraction schema and one revision-heavy schema.
 
 ### Required Evidence
-- [ ] Add/update batching implementation spec (recommended: `docs/ongoing-tasks/0211-priority5-adaptive-batching-prep-spec.md`).
-- [ ] Add/update benchmark results with quality and call-count deltas.
+- [x] Add/update batching implementation spec (recommended: `docs/ongoing-tasks/0211-priority5-adaptive-batching-prep-spec.md`).
+- [x] Add/update benchmark results with quality and call-count deltas.
 
 ### Exit Criteria (Binary)
 Pass only if all are true:
-- [ ] No quality regression vs baseline benchmark.
-- [ ] Significant call-count reduction is verified.
-- [ ] Queue correctness invariants remain true.
+- [x] No quality regression vs baseline benchmark.
+- [x] Significant call-count reduction is verified.
+- [x] Queue correctness invariants remain true.
 
 Fail if any are true:
 - [ ] Batched outputs cannot be deterministically mapped back to source blocks.
@@ -240,24 +241,24 @@ Fail if any are true:
 ## 13) Priority 6 - Build Admin/Superuser Optimization Controls
 
 ### Entry Criteria
-- [ ] Priorities 3, 4, and 5 are `Passed`.
-- [ ] Final policy key list is approved in config registry.
+- [x] Priorities 3, 4, and 5 are `Passed`.
+- [x] Final policy key list is approved in config registry.
 
 ### Required Execution
-- [ ] Add admin controls for caching, batching mode, limits, and safety margins.
-- [ ] Snapshot effective config at run creation.
-- [ ] Add auditability for policy changes.
+- [x] Add admin controls for caching, batching mode, limits, and safety margins.
+- [x] Snapshot effective config at run creation.
+- [x] Add auditability for policy changes.
 
 ### Required Evidence
-- [ ] Add/update controls spec (recommended: `docs/ongoing-tasks/0211-admin-optimization-controls-spec.md`).
-- [ ] Record proof that run snapshots prevent mid-run drift.
-- [ ] Record audit visibility proof.
+- [x] Add/update controls spec (recommended: `docs/ongoing-tasks/0211-admin-optimization-controls-spec.md`).
+- [x] Record proof that run snapshots prevent mid-run drift.
+- [x] Record audit visibility proof.
 
 ### Exit Criteria (Binary)
 Pass only if all are true:
-- [ ] Runtime behavior is policy-driven without code deploy.
-- [ ] Mid-run config drift is prevented by snapshot design.
-- [ ] Change history is observable.
+- [x] Runtime behavior is policy-driven without code deploy.
+- [x] Mid-run config drift is prevented by snapshot design.
+- [x] Change history is observable.
 
 Fail if any are true:
 - [ ] Runtime still depends on conflicting hardcoded policy values.

@@ -31,29 +31,57 @@ export default defineConfig({
 				},
 			],
 			sidebar: [
-				{ label: 'Getting Started', autogenerate: { directory: 'getting-started' } },
 				{
-					label: 'End-to-End',
-					collapsed: false,
+					label: 'Getting Started',
 					items: [
-						{ label: 'Projects', autogenerate: { directory: 'projects' } },
-						{ label: 'Documents', autogenerate: { directory: 'documents' } },
-						{ label: 'Ingest & Conversion', autogenerate: { directory: 'ingest-and-conversion' } },
-						{ label: 'Blocks', autogenerate: { directory: 'blocks' } },
-						{ label: 'Schemas', autogenerate: { directory: 'schemas' } },
-						{ label: 'Processing', autogenerate: { directory: 'processing' } },
-						{ label: 'Review & Export', autogenerate: { directory: 'review-and-export' } },
-						{ label: 'Integrations', autogenerate: { directory: 'integrations' } },
+						{ label: 'Overview', link: '/getting-started/' },
+						{ label: 'Projects', link: '/projects/' },
 					],
 				},
-				{ label: 'Roadmap', autogenerate: { directory: 'ongoing-work' } },
 				{
-					label: 'Reference',
+					label: 'Core Workflow',
+					items: [
+						{ label: 'Documents', link: '/documents/' },
+						{ label: 'Ingest & Conversion', link: '/ingest-and-conversion/' },
+						{ label: 'Processing', link: '/processing/' },
+						{ label: 'Worker Protocol', link: '/processing/worker-protocol/' },
+						{ label: 'Review & Export', link: '/review-and-export/' },
+						{ label: 'Overlay Contract', link: '/review-and-export/overlay-contract/' },
+					],
+				},
+				{
+					label: 'Key Concepts',
+					items: [
+						{
+							label: 'Blocks',
+							items: [
+								{ label: 'Overview', link: '/blocks/' },
+								{ label: 'Block Types', link: '/blocks/block-types/' },
+								{ label: 'Parsing Tracks', link: '/blocks/parsing-tracks/' },
+							],
+						},
+						{ label: 'Schemas', link: '/schemas/' },
+						{ label: 'Immutable Fields', link: '/schemas/immutable-schema/' },
+						{ label: 'User-Defined Schemas', link: '/schemas/user-defined-schemas/' },
+						{ label: 'Canonical Export', link: '/architecture/canonical-export/' },
+					],
+				},
+				{
+					label: 'Integrations',
+					items: [
+						{ label: 'Overview', link: '/integrations/' },
+						{ label: 'Zvec Contract', link: '/integrations/zvec-contract/' },
+						{ label: 'Zvec Adapters', link: '/integrations/zvec-adapters-and-transformers/' },
+					],
+				},
+				{
+					label: 'Roadmap',
 					collapsed: true,
 					items: [
-						{ label: 'Docs Policy', link: '/docs/docs-policy/' },
-						{ label: 'Architecture', autogenerate: { directory: 'architecture' } },
-						{ label: 'Status', autogenerate: { directory: 'status' } },
+						{ label: 'Ongoing Work', link: '/ongoing-work/' },
+						{ label: 'Architecture', link: '/architecture/' },
+						{ label: 'Status', link: '/status/' },
+						{ label: 'Docs Policy', link: '/docs-policy/' },
 					],
 				},
 			],

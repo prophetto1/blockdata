@@ -376,7 +376,6 @@ export default function ProjectDetail() {
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 run_id: runId,
-                batch_size: 100,
               }),
             });
             return { ...result, ok: true };
