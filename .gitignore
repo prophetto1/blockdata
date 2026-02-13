@@ -42,3 +42,6 @@ scripts/test-document.md
 ref-repos/mdast
 ref-repos/remark
 .vercel
+
+# Supabase local CLI artifacts
+supabase/.temp/

@@ -19,7 +19,16 @@ export type AgentConfigGetResponse = {
   configs: UserAgentConfigRow[];
   readiness: Record<string, AgentReadiness>;
   default_agent_slug: string | null;
-  user_api_keys: Pick<UserApiKeyRow, 'provider' | 'key_suffix' | 'is_valid' | 'base_url'>[];
+  user_api_keys: Pick<
+    UserApiKeyRow,
+    | 'provider'
+    | 'key_suffix'
+    | 'is_valid'
+    | 'base_url'
+    | 'default_model'
+    | 'default_temperature'
+    | 'default_max_tokens'
+  >[];
   provider_connections: ProviderConnectionView[];
 };
 
@@ -80,7 +89,19 @@ export function useAgentConfigs() {
   }, [data?.configs]);
 
   const keyByProvider = useMemo(() => {
-    const map = new Map<string, Pick<UserApiKeyRow, 'provider' | 'key_suffix' | 'is_valid' | 'base_url'>>();
+    const map = new Map<
+      string,
+      Pick<
+        UserApiKeyRow,
+        | 'provider'
+        | 'key_suffix'
+        | 'is_valid'
+        | 'base_url'
+        | 'default_model'
+        | 'default_temperature'
+        | 'default_max_tokens'
+      >
+    >();
     for (const row of data?.user_api_keys ?? []) map.set(row.provider, row);
     return map;
   }, [data?.user_api_keys]);
@@ -107,4 +128,3 @@ export function useAgentConfigs() {
     connectionsByProvider,
   };
 }
-

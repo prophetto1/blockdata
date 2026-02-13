@@ -1,15 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Button, Center, Loader, SimpleGrid, Stack, Text } from '@mantine/core';
+import { Badge, Button, Card, Center, Group, Loader, SimpleGrid, Stack, Text } from '@mantine/core';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { PageHeader } from '@/components/common/PageHeader';
-import { AgentCard } from '@/components/agents/AgentCard';
 import { useAgentConfigs } from '@/components/agents/useAgentConfigs';
+import { onboardingNextPath } from '@/components/agents/onboarding/constants';
 
 export default function AgentOnboardingSelect() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const selectedFromQuery = searchParams.get('selected');
-  const { data, loading, error, configBySlug } = useAgentConfigs();
+  const { data, loading, error } = useAgentConfigs();
   const [selectedSlug, setSelectedSlug] = useState<string | null>(selectedFromQuery);
 
   useEffect(() => {
@@ -52,37 +52,47 @@ export default function AgentOnboardingSelect() {
           {catalog.map((cat) => {
             const readiness = data?.readiness?.[cat.agent_slug];
             const configured = Boolean(readiness?.is_ready);
-            const cfg = configBySlug.get(cat.agent_slug) ?? null;
-            const isDefault = data?.default_agent_slug === cat.agent_slug;
             const isSelected = selectedSlug === cat.agent_slug;
             return (
-              <div
+              <Card
                 key={cat.agent_slug}
+                withBorder
+                radius="md"
+                p="lg"
                 style={{
                   outline: isSelected ? '2px solid var(--mantine-color-blue-6)' : 'none',
                   borderRadius: 10,
                 }}
               >
-                <AgentCard
-                  catalog={cat}
-                  isDefault={isDefault}
-                  configured={configured}
-                  keyword={cfg?.keyword ?? ''}
-                  canSetDefault={false}
-                  onConfigure={() => setSelectedSlug(cat.agent_slug)}
-                  onSetDefault={() => undefined}
-                />
-              </div>
+                <Stack gap="sm">
+                  <Group justify="space-between" align="flex-start">
+                    <Stack gap={2}>
+                      <Text fw={700}>{cat.display_name}</Text>
+                      <Text size="sm" c="dimmed">
+                        {cat.provider_family}
+                      </Text>
+                    </Stack>
+                    <Group gap={6}>
+                      {isSelected && <Badge color="blue">Selected</Badge>}
+                      <Badge color={configured ? 'green' : 'gray'} variant={configured ? 'filled' : 'light'}>
+                        {configured ? 'Configured' : 'Needs setup'}
+                      </Badge>
+                    </Group>
+                  </Group>
+                  <Button
+                    variant={isSelected ? 'filled' : 'light'}
+                    onClick={() => {
+                      setSelectedSlug(cat.agent_slug);
+                      navigate(onboardingNextPath(cat.agent_slug, cat.provider_family));
+                    }}
+                  >
+                    Select
+                  </Button>
+                </Stack>
+              </Card>
             );
           })}
         </SimpleGrid>
-        <Button
-          style={{ alignSelf: 'flex-end' }}
-          disabled={!selectedSlug}
-          onClick={() => selectedSlug && navigate(`/app/onboarding/agents/auth/${selectedSlug}`)}
-        >
-          Continue
-        </Button>
       </Stack>
     </>
   );

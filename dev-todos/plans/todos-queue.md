@@ -3,6 +3,7 @@
 **Date:** 2026-02-13  
 **Status:** Active queue  
 **Rule:** At most 2 items can be `In Progress` at once.
+**Important:** Queue entries are execution shorthand only. Do not infer architecture/product behavior from this file without reading the governing spec/plan docs.
 
 ---
 
@@ -48,7 +49,17 @@
 - [ ] `INT-002` Neo4j integration.
 - [ ] `INT-003` Webhook integration.
 - [ ] `INT-004` DuckDB/Parquet integration.
-- [ ] `INT-005` Agents + MCP configuration foundation (build-only; feature-flagged; no runtime binding).
+- [ ] `AGT-001` Onboarding flow parity (no dead/placeholder configure transitions).
+- [ ] `AGT-002` Provider auth method parity (provider-specific method contract incl. OAuth-capable paths).
+- [ ] `AGT-003` Agent-level model defaults contract (`default_model`, `temperature`, `max_tokens`).
+- [ ] `AGT-004` Credential/MCP separation with explicit handoff confirmations.
+- [ ] `AGT-005` Runtime binding from user agent configs into assistant execution resolver.
+- [ ] `AGT-006` Move full provider editor into `Agents`; remove duplicate provider editor from `Settings`.
+- [ ] `AGT-007` Agent card CTA/state semantics hardening (default eligibility + status colors).
+- [ ] `AGT-008` Defaults precedence enforcement (schema/run -> user -> superuser -> fallback).
+- [ ] `AGT-009` Google auth path clarity (`Gemini API key` vs `Vertex service account`).
+- [ ] `SUP-001` Superuser system AI connectors implementation (`runtime_primary`, `assistant_primary`).
+- [ ] `SUP-002` Runtime key precedence contract + worker alignment/tests.
 - [ ] `ASST-001` Internal assistant / phase-2 integrations (deferred).
 - [ ] `ASST-002` Copilot dock UI framework.
 - [ ] `ASST-003` `schema-assist` backend edge function.
@@ -67,3 +78,4 @@
 1. When an item is completed, move it to `dev-todos/todos-done-log.md`.
 2. Pull the next highest-priority item from `dev-todos/todos-backlog.md` into `In Progress`.
 3. Keep `In Progress` focused and short.
+4. Add dated progress notes for active `In Progress` work before handoff when meaningful implementation steps are completed.

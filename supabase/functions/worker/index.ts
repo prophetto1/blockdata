@@ -897,7 +897,7 @@ Deno.serve(async (req) => {
       promptConfig.max_tokens_per_block ??
         (runModelConfig.max_tokens_per_block as number | undefined) ??
         userDefaults.default_max_tokens ??
-        2000,
+        4096,
     );
 
     // Load block content for all claimed blocks

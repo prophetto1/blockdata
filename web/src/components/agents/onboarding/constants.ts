@@ -18,3 +18,11 @@ export function defaultAuthMethod(providerFamily: string): OnboardingAuthMethod 
   if (providerFamily === 'custom') return 'custom';
   return 'api_key';
 }
+
+export function onboardingNextPath(agentSlug: string, providerFamily: string): string {
+  const methods = supportedAuthMethods(providerFamily);
+  if (methods.length <= 1) {
+    return `/app/onboarding/agents/connect/${agentSlug}/${defaultAuthMethod(providerFamily)}`;
+  }
+  return `/app/onboarding/agents/auth/${agentSlug}`;
+}

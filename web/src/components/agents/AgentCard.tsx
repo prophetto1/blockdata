@@ -9,6 +9,8 @@ export function AgentCard({
   onConfigure,
   onSetDefault,
   canSetDefault,
+  configureLabel = 'Configure',
+  hideSetDefault = false,
 }: {
   catalog: AgentCatalogRow;
   isDefault: boolean;
@@ -17,6 +19,8 @@ export function AgentCard({
   onConfigure: () => void;
   onSetDefault: () => void;
   canSetDefault: boolean;
+  configureLabel?: string;
+  hideSetDefault?: boolean;
 }) {
   return (
     <Card withBorder radius="md" p="lg">
@@ -42,15 +46,17 @@ export function AgentCard({
 
         <Group justify="space-between">
           <Button variant="light" onClick={onConfigure}>
-            Configure
+            {configureLabel}
           </Button>
-          <Button
-            variant="subtle"
-            onClick={onSetDefault}
-            disabled={!canSetDefault || configured === false}
-          >
-            Set default
-          </Button>
+          {!hideSetDefault && (
+            <Button
+              variant="subtle"
+              onClick={onSetDefault}
+              disabled={!canSetDefault || configured === false}
+            >
+              Make default
+            </Button>
+          )}
         </Group>
       </Stack>
     </Card>

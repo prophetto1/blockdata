@@ -43,7 +43,7 @@ export default function Agents() {
   if (loading) {
     return (
       <>
-        <PageHeader title="Agents" subtitle="Configure provider credentials, keywords, and MCP bindings." />
+        <PageHeader title="Agents" subtitle="Configure provider credentials, keywords, and default agent selection." />
         <Center py="xl">
           <Loader />
         </Center>
@@ -54,7 +54,7 @@ export default function Agents() {
   if (error) {
     return (
       <>
-        <PageHeader title="Agents" subtitle="Configure provider credentials, keywords, and MCP bindings." />
+        <PageHeader title="Agents" subtitle="Configure provider credentials, keywords, and default agent selection." />
         <Text c="red">{error}</Text>
       </>
     );
@@ -62,7 +62,7 @@ export default function Agents() {
 
   return (
     <>
-      <PageHeader title="Agents" subtitle="Configure provider credentials, keywords, and MCP bindings." />
+      <PageHeader title="Agents" subtitle="Configure provider credentials, keywords, and default agent selection." />
 
       <TextInput
         placeholder="Search agents..."
@@ -86,7 +86,8 @@ export default function Agents() {
               isDefault={isDefault}
               configured={configured}
               keyword={keyword}
-              canSetDefault={configured}
+              canSetDefault={configured && !isDefault}
+              hideSetDefault={isDefault}
               onConfigure={() => setActiveSlug(cat.agent_slug)}
               onSetDefault={async () => {
                 try {
@@ -115,6 +116,9 @@ export default function Agents() {
                   key_suffix: keyByProvider.get(activeCatalog.provider_family)!.key_suffix,
                   is_valid: keyByProvider.get(activeCatalog.provider_family)!.is_valid,
                   base_url: keyByProvider.get(activeCatalog.provider_family)!.base_url,
+                  default_model: keyByProvider.get(activeCatalog.provider_family)!.default_model,
+                  default_temperature: keyByProvider.get(activeCatalog.provider_family)!.default_temperature,
+                  default_max_tokens: keyByProvider.get(activeCatalog.provider_family)!.default_max_tokens,
                 }
               : null
           }

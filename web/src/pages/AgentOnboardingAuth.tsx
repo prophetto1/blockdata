@@ -28,6 +28,17 @@ export default function AgentOnboardingAuth() {
   );
 
   useEffect(() => {
+    if (loading || !selectedCatalog) return;
+    if (methods.length === 0) {
+      navigate('/app/onboarding/agents/select', { replace: true });
+      return;
+    }
+    if (methods.length === 1) {
+      navigate(`/app/onboarding/agents/connect/${selectedCatalog.agent_slug}/${methods[0]}`, { replace: true });
+    }
+  }, [loading, selectedCatalog, methods, navigate]);
+
+  useEffect(() => {
     if (!loading && data && data.default_agent_slug && data.readiness?.[data.default_agent_slug]?.is_ready) {
       navigate('/app/agents', { replace: true });
     }
@@ -58,6 +69,7 @@ export default function AgentOnboardingAuth() {
   }
 
   if (!selectedCatalog) return null;
+  if (methods.length <= 1) return null;
 
   const selectedMethod = methods.includes(authMethod)
     ? authMethod

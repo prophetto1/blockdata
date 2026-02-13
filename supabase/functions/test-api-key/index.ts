@@ -1,4 +1,5 @@
 import { corsPreflight, withCorsHeaders } from "../_shared/cors.ts";
+import { requireUserId } from "../_shared/supabase.ts";
 
 function json(status: number, body: unknown): Response {
   return new Response(JSON.stringify(body), {
@@ -11,8 +12,10 @@ Deno.serve(async (req) => {
   const preflight = corsPreflight(req);
   if (preflight) return preflight;
   if (req.method !== "POST") return json(405, { error: "Method not allowed" });
+  if (!req.headers.get("Authorization")) return json(401, { valid: false, error: "Missing Authorization header" });
 
   try {
+    await requireUserId(req);
     const { api_key, provider, base_url } = await req.json();
     if (!api_key || typeof api_key !== "string") {
       return json(400, { valid: false, error: "Missing api_key" });
@@ -110,6 +113,10 @@ Deno.serve(async (req) => {
 
     return json(400, { valid: false, error: `Unsupported provider: ${provider}` });
   } catch (e) {
-    return json(500, { valid: false, error: e instanceof Error ? e.message : String(e) });
+    const msg = e instanceof Error ? e.message : String(e);
+    if (msg.includes("Missing Authorization header") || msg.startsWith("Invalid auth")) {
+      return json(401, { valid: false, error: msg });
+    }
+    return json(500, { valid: false, error: msg });
   }
 });

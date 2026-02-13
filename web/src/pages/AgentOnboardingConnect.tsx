@@ -77,7 +77,7 @@ export default function AgentOnboardingConnect() {
   if (loading) {
     return (
       <>
-        <PageHeader title="Agent onboarding" subtitle="Step 3 of 3: Connect credentials." />
+        <PageHeader title="Agent onboarding" subtitle="Connect credentials." />
         <Text>Loading...</Text>
       </>
     );
@@ -86,7 +86,7 @@ export default function AgentOnboardingConnect() {
   if (error) {
     return (
       <>
-        <PageHeader title="Agent onboarding" subtitle="Step 3 of 3: Connect credentials." />
+        <PageHeader title="Agent onboarding" subtitle="Connect credentials." />
         <Text c="red">{error}</Text>
       </>
     );
@@ -95,12 +95,18 @@ export default function AgentOnboardingConnect() {
   if (!selectedCatalog) return null;
 
   const providerFamily = selectedCatalog.provider_family;
+  const validMethods = supportedAuthMethods(providerFamily);
+  const hasAuthChoiceStep = validMethods.length > 1;
+  const stepSubtitlePrefix = hasAuthChoiceStep ? 'Step 3 of 3' : 'Step 2 of 2';
+  const backPath = hasAuthChoiceStep
+    ? `/app/onboarding/agents/auth/${selectedCatalog.agent_slug}`
+    : `/app/onboarding/agents/select?selected=${selectedCatalog.agent_slug}`;
 
   return (
     <>
       <PageHeader
         title="Agent onboarding"
-        subtitle={`Step 3 of 3: Connect credentials for ${selectedCatalog.display_name}.`}
+        subtitle={`${stepSubtitlePrefix}: Connect credentials for ${selectedCatalog.display_name}.`}
       />
       <Card withBorder radius="md" p="lg">
         <Stack gap="md">
@@ -120,7 +126,7 @@ export default function AgentOnboardingConnect() {
           )}
 
           <Group justify="space-between">
-            <Button variant="light" onClick={() => navigate(`/app/onboarding/agents/auth/${selectedCatalog.agent_slug}`)}>
+            <Button variant="light" onClick={() => navigate(backPath)}>
               Back
             </Button>
             <Group gap="xs">

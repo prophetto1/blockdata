@@ -1,9 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import {
   Button,
   Group,
   Modal,
-  MultiSelect,
   Select,
   Stack,
   Text,
@@ -14,13 +13,12 @@ import {
 import { notifications } from '@mantine/notifications';
 import { IconInfoCircle } from '@tabler/icons-react';
 import type { AgentCatalogRow, UserAgentConfigRow } from '@/lib/types';
-import { MCP_CATALOG } from '@/components/mcp/mcp-catalog';
 import { edgeJson } from '@/lib/edge';
 import { featureFlags } from '@/lib/featureFlags';
 import type { ProviderConnectionView } from '@/components/agents/useAgentConfigs';
 import { PROVIDERS } from '@/components/agents/providerRegistry';
 import { GoogleAuthPanel } from '@/components/agents/forms/GoogleAuthPanel';
-import { ApiKeyPanel } from '@/components/agents/forms/ApiKeyPanel';
+import { ProviderCredentialsModule } from '@/components/agents/forms/ProviderCredentialsModule';
 
 export function AgentConfigModal({
   opened,
@@ -38,13 +36,19 @@ export function AgentConfigModal({
   catalog: AgentCatalogRow;
   config: UserAgentConfigRow | null;
   readiness: { is_ready: boolean; reasons: string[] } | null;
-  providerKeyInfo: { key_suffix: string; is_valid: boolean | null; base_url: string | null } | null;
+  providerKeyInfo: {
+    key_suffix: string;
+    is_valid: boolean | null;
+    base_url: string | null;
+    default_model?: string;
+    default_temperature?: number;
+    default_max_tokens?: number;
+  } | null;
   providerConnections: ProviderConnectionView[];
   onSaveConfig: (patch: {
     agent_slug: string;
     keyword: string;
     model: string;
-    mcp_server_ids: string[];
   }) => Promise<void>;
   onReload: () => Promise<void>;
 }) {
@@ -53,15 +57,9 @@ export function AgentConfigModal({
 
   const [keyword, setKeyword] = useState(config?.keyword ?? '');
   const [model, setModel] = useState(config?.model ?? catalog.default_model ?? '');
-  const [mcpServers, setMcpServers] = useState<string[]>(config?.mcp_server_ids ?? []);
 
   const configured = readiness?.is_ready ?? false;
   const readinessText = readiness?.reasons?.join('; ') ?? '';
-
-  const mcpOptions = useMemo(
-    () => MCP_CATALOG.map((s) => ({ value: s.id, label: s.title })),
-    [],
-  );
 
   const modelOptions = providerDef?.models ?? [];
 
@@ -73,7 +71,6 @@ export function AgentConfigModal({
         agent_slug: catalog.agent_slug,
         keyword,
         model,
-        mcp_server_ids: mcpServers,
       });
       notifications.show({ color: 'green', message: 'Saved agent config' });
       onClose();
@@ -122,26 +119,21 @@ export function AgentConfigModal({
           />
         )}
 
-        <MultiSelect
-          label="MCP servers"
-          data={mcpOptions}
-          value={mcpServers}
-          onChange={setMcpServers}
-          placeholder="Select MCP servers (optional)"
-          searchable
-        />
-
         <Divider />
 
-        {provider === 'google' ? (
-          <GoogleAuthPanel
-            providerKeyInfo={providerKeyInfo}
-            providerConnections={providerConnections}
-            providerConnectionFlowsEnabled={featureFlags.providerConnectionFlows}
-            onReload={onReload}
-          />
-        ) : (
-          <ApiKeyPanel provider={provider} providerKeyInfo={providerKeyInfo} onReload={onReload} />
+        <ProviderCredentialsModule provider={provider} providerKeyInfo={providerKeyInfo} onReload={onReload} />
+
+        {provider === 'google' && (
+          <>
+            <Divider />
+            <GoogleAuthPanel
+              providerKeyInfo={providerKeyInfo}
+              providerConnections={providerConnections}
+              providerConnectionFlowsEnabled={featureFlags.providerConnectionFlows}
+              onReload={onReload}
+              vertexOnly
+            />
+          </>
         )}
 
         <Group justify="space-between" mt="xs">

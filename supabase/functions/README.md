@@ -20,3 +20,12 @@ This folder contains Supabase Edge Functions for the Phase 1 immutable ingest pi
 - `DOCUMENTS_BUCKET` (default: `documents`)
 - `CONVERSION_SERVICE_URL` (URL of the FastAPI service)
 - `CONVERSION_SERVICE_KEY` (shared secret; used in header `X-Conversion-Service-Key`)
+
+## JWT mode
+
+All deployed Edge Functions in this repo are pinned to `verify_jwt = false` via
+per-function `config.toml` files (for example `supabase/functions/agent-config/config.toml`).
+
+Each function enforces auth internally as needed (`requireUserId`, superuser checks,
+or conversion-service shared secret), which avoids Supabase gateway JWT verification
+drift across projects.

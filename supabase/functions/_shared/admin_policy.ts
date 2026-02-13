@@ -70,7 +70,7 @@ const DEFAULT_POLICY: RuntimePolicy = {
   models: {
     platform_default_model: "claude-sonnet-4-5-20250929",
     platform_default_temperature: 0.3,
-    platform_default_max_tokens: 2000,
+    platform_default_max_tokens: 4096,
   },
   worker: {
     max_retries: 3,

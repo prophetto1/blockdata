@@ -3,6 +3,7 @@
 **Date:** 2026-02-13  
 **Status:** Canonical open backlog  
 **Rule:** Only open work lives here. Completed items move to `dev-todos/todos-done-log.md`.
+**Important:** This file is tracking shorthand only. It is not the source of engineering truth; governing decisions come from spec/plan docs in `dev-todos/detailed-implementation-plans/` and `dev-todos/plans/`.
 
 ---
 
@@ -72,8 +73,24 @@
 - [ ] `INT-002` Neo4j integration.
 - [ ] `INT-003` Webhook integration.
 - [ ] `INT-004` DuckDB/Parquet integration.
-- [ ] `INT-005` Agents + MCP configuration foundation (build-only): implement schema/API/UI behind feature flags with runtime binding explicitly deferred.
 - [ ] `ASST-001` Internal assistant / Phase-2 integrations (remain deferred until queue gates allow).
+
+## Agents Configuration Parity/Hardening
+
+- [ ] `AGT-001` Onboarding flow parity: selecting a provider should execute a meaningful configure action (no dead/placeholder continue transitions).
+- [ ] `AGT-002` Provider auth method parity: implement per-provider auth options contract (including Anthropic login/OAuth option shape where supported) instead of API-key-only assumptions.
+- [ ] `AGT-003` Agent-level model defaults contract: define and implement `default_model`, `temperature`, and `max_tokens` ownership for user-side agent configs.
+- [ ] `AGT-004` Credential/MCP separation contract: keep provider credential setup and MCP bindings on separate screens with explicit handoff and saved-state confirmation.
+- [ ] `AGT-005` Runtime binding completion: wire user agent/provider configs into assistant execution path with deterministic resolver precedence and evidence.
+- [ ] `AGT-006` Transplant full provider editor from `Settings` into `Agents` and remove duplicate provider editor from `Settings`.
+- [ ] `AGT-007` Fix agent card behavior semantics: default CTA eligibility, status badge logic, and color-state consistency.
+- [ ] `AGT-008` Replace implicit tuning constants with explicit precedence contract (schema/run -> user defaults -> superuser defaults -> fallback).
+- [ ] `AGT-009` Clarify Google provider auth paths (`Gemini API key` vs `Vertex service account`) in UI copy and flows.
+
+## Superuser System AI Connectors
+
+- [ ] `SUP-001` Implement superuser-managed system AI connectors (`runtime_primary`, `assistant_primary`) with encrypted secret storage, audit trail, and worker fallback contract.
+- [ ] `SUP-002` Resolve and document runtime key precedence contract (`user key` vs `system runtime slot` vs `env fallback`) and align worker behavior/tests.
 
 ## Assistant Platform (Develop Later)
 

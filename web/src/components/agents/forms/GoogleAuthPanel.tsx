@@ -12,13 +12,15 @@ export function GoogleAuthPanel({
   providerConnections,
   providerConnectionFlowsEnabled,
   onReload,
+  vertexOnly = false,
 }: {
   providerKeyInfo: { key_suffix: string; is_valid: boolean | null; base_url: string | null } | null;
   providerConnections: ProviderConnectionView[];
   providerConnectionFlowsEnabled: boolean;
   onReload: () => Promise<void>;
+  vertexOnly?: boolean;
 }) {
-  const [mode, setMode] = useState<GoogleAuthMode>('gemini_key');
+  const [mode, setMode] = useState<GoogleAuthMode>(vertexOnly ? 'vertex_service_account' : 'gemini_key');
   const vertex = useMemo(
     () => providerConnections.find((c) => c.connection_type === 'gcp_service_account') ?? null,
     [providerConnections],
@@ -90,14 +92,16 @@ export function GoogleAuthPanel({
         )}
       </Group>
 
-      <SegmentedControl
-        value={mode}
-        onChange={(v) => setMode(v as GoogleAuthMode)}
-        data={[
-          { value: 'gemini_key', label: 'Gemini API key' },
-          { value: 'vertex_service_account', label: 'Vertex AI (service account)' },
-        ]}
-      />
+      {!vertexOnly && (
+        <SegmentedControl
+          value={mode}
+          onChange={(v) => setMode(v as GoogleAuthMode)}
+          data={[
+            { value: 'gemini_key', label: 'Gemini API key' },
+            { value: 'vertex_service_account', label: 'Vertex AI (service account)' },
+          ]}
+        />
+      )}
 
       {mode === 'gemini_key' ? (
         <ApiKeyPanel provider="google" providerKeyInfo={providerKeyInfo} onReload={onReload} />
@@ -147,4 +151,3 @@ export function GoogleAuthPanel({
     </Stack>
   );
 }
-

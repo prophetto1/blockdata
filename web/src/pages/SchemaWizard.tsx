@@ -829,7 +829,7 @@ export default function SchemaWizard() {
                 />
                 <TextInput
                   label="max_tokens_per_block"
-                  placeholder="e.g. 2000"
+                  placeholder="e.g. 4096"
                   value={prompt.maxTokensPerBlock}
                   onChange={(event) => setPrompt((prev) => ({ ...prev, maxTokensPerBlock: event.currentTarget.value }))}
                 />

@@ -35,6 +35,9 @@ export type KeyRow = {
   key_suffix: string;
   is_valid: boolean | null;
   base_url: string | null;
+  default_model?: string | null;
+  default_temperature?: number | null;
+  default_max_tokens?: number | null;
 };
 
 export type ConnectionRow = {
@@ -103,7 +106,9 @@ export async function handleAgentConfigRequest(
         supabase.from("user_agent_configs").select("*").order("created_at"),
         supabase
           .from("user_api_keys")
-          .select("provider, key_suffix, is_valid, base_url")
+          .select(
+            "provider, key_suffix, is_valid, base_url, default_model, default_temperature, default_max_tokens",
+          )
           .eq("user_id", userId),
         supabase
           .from("user_provider_connections")
