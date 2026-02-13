@@ -101,6 +101,8 @@ export type DoclingBlockDraft = {
   block_content: string;
   pointer: string; // e.g. "#/texts/5"
   page_no: number | null;
+  parser_block_type: string;
+  parser_path: string;
 };
 
 export type ExtractDoclingBlocksResult = {
@@ -168,6 +170,8 @@ export function extractDoclingBlocks(
         block_content: content,
         pointer,
         page_no: pageNo,
+        parser_block_type: textItem.label,
+        parser_path: pointer,
       });
 
       // Always recurse into children — in DoclingDocument, headings/titles act
@@ -189,6 +193,8 @@ export function extractDoclingBlocks(
         block_content: content,
         pointer,
         page_no: pageNo,
+        parser_block_type: tableItem.label,
+        parser_path: pointer,
       });
       if (tableItem.children) {
         for (const child of tableItem.children) resolveAndEmit(child);
@@ -215,6 +221,8 @@ export function extractDoclingBlocks(
         block_content: content,
         pointer,
         page_no: pageNo,
+        parser_block_type: picItem.label ?? "picture",
+        parser_path: pointer,
       });
       if (picItem.children) {
         for (const child of picItem.children) resolveAndEmit(child);
@@ -232,6 +240,8 @@ export function extractDoclingBlocks(
         block_content: content,
         pointer,
         page_no: pageNo,
+        parser_block_type: kvItem.label,
+        parser_path: pointer,
       });
       return;
     }
@@ -246,6 +256,8 @@ export function extractDoclingBlocks(
         block_content: content,
         pointer,
         page_no: pageNo,
+        parser_block_type: formItem.label,
+        parser_path: pointer,
       });
       return;
     }

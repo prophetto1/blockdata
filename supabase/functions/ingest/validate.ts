@@ -28,10 +28,10 @@ export type IdempotencyResult =
 
 /**
  * Idempotency check + retry handling.
- * - If another user owns the same source_uid → throws (409).
- * - If same user, doc exists and not failed → return existing.
- * - If same user, doc failed → delete stale rows, return retry with previous project_id (Gap 4).
- * - If no existing row → proceed.
+ * - If another user owns the same source_uid -> throws (409).
+ * - If same user, doc exists and not failed -> return existing.
+ * - If same user, doc failed -> delete stale rows, return retry with previous project_id (Gap 4).
+ * - If no existing row -> proceed.
  */
 export async function checkIdempotency(
   supabaseAdmin: SupabaseClient,
@@ -58,6 +58,7 @@ export async function checkIdempotency(
   if (existing.status === "conversion_failed" || existing.status === "ingest_failed") {
     const previousProjectId: string | null = existing.project_id ?? null;
     await supabaseAdmin.from("blocks_v2").delete().eq("conv_uid", existing.conv_uid ?? "");
+    await supabaseAdmin.from("conversion_representations_v2").delete().eq("source_uid", sourceUid);
     await supabaseAdmin.from("documents_v2").delete().eq("source_uid", sourceUid);
     return { action: "retry", previousProjectId };
   }

@@ -2,6 +2,9 @@ from __future__ import annotations
 
 import json
 import os
+import subprocess
+import tempfile
+from pathlib import Path
 from typing import Any, Optional
 
 import httpx
@@ -20,14 +23,45 @@ class OutputTarget(BaseModel):
 class ConvertRequest(BaseModel):
     source_uid: str
     conversion_job_id: str
-    source_type: str = Field(pattern=r"^(docx|pdf|pptx|xlsx|html|csv|txt)$")
+    track: Optional[str] = Field(default=None, pattern=r"^(mdast|docling|pandoc)$")
+    source_type: str = Field(pattern=r"^(docx|pdf|pptx|xlsx|html|csv|txt|rst|latex|odt|epub|rtf|org)$")
     source_download_url: str
     output: OutputTarget
     docling_output: Optional[OutputTarget] = None
+    pandoc_output: Optional[OutputTarget] = None
     callback_url: str
 
 
 app = FastAPI()
+
+SOURCE_SUFFIX_BY_TYPE: dict[str, str] = {
+    "docx": ".docx",
+    "pdf": ".pdf",
+    "pptx": ".pptx",
+    "xlsx": ".xlsx",
+    "html": ".html",
+    "csv": ".csv",
+    "txt": ".txt",
+    "rst": ".rst",
+    "latex": ".tex",
+    "odt": ".odt",
+    "epub": ".epub",
+    "rtf": ".rtf",
+    "org": ".org",
+}
+
+PANDOC_READER_BY_SOURCE_TYPE: dict[str, str] = {
+    "docx": "docx",
+    "html": "html",
+    "txt": "markdown",
+    "rst": "rst",
+    "latex": "latex",
+    "odt": "odt",
+    "epub": "epub",
+    "rtf": "rtf",
+    "org": "org",
+}
+
 
 @app.middleware("http")
 async def auth_middleware(request: Request, call_next):
@@ -120,35 +154,92 @@ def _build_docling_converter():
     )
 
 
-async def _convert(req: ConvertRequest) -> tuple[bytes, Optional[bytes]]:
+async def _download_bytes(source_download_url: str) -> bytes:
+    async with httpx.AsyncClient(timeout=180) as client:
+        r = await client.get(source_download_url)
+        r.raise_for_status()
+        return r.content
+
+
+def _run_pandoc(input_path: Path, reader: str, writer: str) -> bytes:
+    try:
+        proc = subprocess.run(
+            ["pandoc", "--from", reader, "--to", writer, str(input_path)],
+            check=True,
+            capture_output=True,
+        )
+    except FileNotFoundError as e:
+        raise RuntimeError("pandoc binary not found in conversion service image") from e
+    except subprocess.CalledProcessError as e:
+        stderr = (e.stderr or b"").decode("utf-8", errors="replace")
+        raise RuntimeError(f"pandoc conversion failed ({reader}->{writer}): {stderr[:1000]}") from e
+    return proc.stdout
+
+
+def _resolve_track(req: ConvertRequest) -> str:
+    if req.track:
+        return req.track
+    # Backward compatibility for older ingest clients.
     if req.source_type == "txt":
-        async with httpx.AsyncClient(timeout=120) as client:
-            r = await client.get(req.source_download_url)
-            r.raise_for_status()
-            # Best-effort UTF-8 decode; keep bytes if already utf-8.
-            text = r.content.decode("utf-8", errors="replace")
-            return text.encode("utf-8"), None
+        return "mdast"
+    return "docling"
 
-    # docx/pdf via Docling using the signed URL directly.
-    converter = _build_docling_converter()
-    result = converter.convert(req.source_download_url)
-    doc = result.document
-    md = doc.export_to_markdown()
 
-    docling_json_bytes: Optional[bytes] = None
-    if req.docling_output is not None:
-        export_to_dict = getattr(doc, "export_to_dict", None)
-        if callable(export_to_dict):
-            # Deterministic serialization for hash-stable conv_uid computation.
-            # sort_keys + compact separators ensure identical bytes across runs.
-            docling_json_bytes = json.dumps(
-                export_to_dict(),
-                ensure_ascii=False,
-                sort_keys=True,
-                separators=(",", ":"),
-            ).encode("utf-8")
+async def _convert(req: ConvertRequest) -> tuple[bytes, Optional[bytes], Optional[bytes]]:
+    track = _resolve_track(req)
 
-    return md.encode("utf-8"), docling_json_bytes
+    if track == "mdast":
+        if req.source_type != "txt":
+            raise RuntimeError(f"mdast track only supports txt in conversion-service path, got: {req.source_type}")
+        source_bytes = await _download_bytes(req.source_download_url)
+        text = source_bytes.decode("utf-8", errors="replace")
+        return text.encode("utf-8"), None, None
+
+    if track == "docling":
+        converter = _build_docling_converter()
+        result = converter.convert(req.source_download_url)
+        doc = result.document
+        markdown_bytes = doc.export_to_markdown().encode("utf-8")
+
+        docling_json_bytes: Optional[bytes] = None
+        if req.docling_output is not None:
+            export_to_dict = getattr(doc, "export_to_dict", None)
+            if callable(export_to_dict):
+                docling_json_bytes = json.dumps(
+                    export_to_dict(),
+                    ensure_ascii=False,
+                    sort_keys=True,
+                    separators=(",", ":"),
+                ).encode("utf-8")
+        return markdown_bytes, docling_json_bytes, None
+
+    if track == "pandoc":
+        reader = PANDOC_READER_BY_SOURCE_TYPE.get(req.source_type)
+        if not reader:
+            raise RuntimeError(f"pandoc track does not support source_type: {req.source_type}")
+
+        source_bytes = await _download_bytes(req.source_download_url)
+        suffix = SOURCE_SUFFIX_BY_TYPE.get(req.source_type, ".bin")
+        with tempfile.TemporaryDirectory(prefix="ws-pandoc-") as tmp_dir:
+            input_path = Path(tmp_dir) / f"source{suffix}"
+            input_path.write_bytes(source_bytes)
+
+            markdown_bytes = _run_pandoc(input_path, reader, "gfm")
+            pandoc_json_raw = _run_pandoc(input_path, reader, "json")
+
+        try:
+            ast_obj = json.loads(pandoc_json_raw.decode("utf-8"))
+        except Exception as e:
+            raise RuntimeError(f"pandoc JSON output is invalid: {e!r}") from e
+        pandoc_json_bytes = json.dumps(
+            ast_obj,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+        return markdown_bytes, None, pandoc_json_bytes
+
+    raise RuntimeError(f"Unknown track: {track}")
 
 
 @app.post("/convert")
@@ -164,12 +255,13 @@ async def convert(
         "conversion_job_id": body.conversion_job_id,
         "md_key": body.output.key,
         "docling_key": None,
+        "pandoc_key": None,
         "success": False,
         "error": None,
     }
 
     try:
-        markdown_bytes, docling_json_bytes = await _convert(body)
+        markdown_bytes, docling_json_bytes, pandoc_json_bytes = await _convert(body)
 
         md_upload_url = _append_token_if_needed(body.output.signed_upload_url, body.output.token)
         await _upload_bytes(
@@ -189,6 +281,18 @@ async def convert(
                 content_type="application/json; charset=utf-8",
             )
             callback_payload["docling_key"] = body.docling_output.key
+
+        if body.pandoc_output is not None and pandoc_json_bytes is not None:
+            pandoc_upload_url = _append_token_if_needed(
+                body.pandoc_output.signed_upload_url,
+                body.pandoc_output.token,
+            )
+            await _upload_bytes(
+                pandoc_upload_url,
+                pandoc_json_bytes,
+                content_type="application/json; charset=utf-8",
+            )
+            callback_payload["pandoc_key"] = body.pandoc_output.key
 
         callback_payload["success"] = True
     except Exception as e:

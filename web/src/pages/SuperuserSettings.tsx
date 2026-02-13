@@ -363,7 +363,7 @@ export default function SuperuserSettings() {
                         <Text fw={600} size="sm">{row.policy_key}</Text>
                         <Text size="xs" c="dimmed">
                           {formatTimestamp(row.changed_at)}
-                          {row.changed_by ? ` • ${row.changed_by}` : ''}
+                          {row.changed_by ? ` - ${row.changed_by}` : ''}
                         </Text>
                         {row.reason && (
                           <Text size="sm" mt={6}>{row.reason}</Text>

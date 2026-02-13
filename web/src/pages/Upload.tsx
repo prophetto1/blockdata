@@ -44,9 +44,18 @@ export default function Upload() {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [projectName, setProjectName] = useState<string>('');
+  const [maxFiles, setMaxFiles] = useState(10);
+  const [allowedExtensions, setAllowedExtensions] = useState<string[]>([
+    '.md',
+    '.docx',
+    '.pdf',
+    '.pptx',
+    '.xlsx',
+    '.html',
+    '.csv',
+    '.txt',
+  ]);
 
-  const maxFiles = 10;
-  const allowedExtensions = ['.md', '.docx', '.pdf', '.pptx', '.xlsx', '.html', '.csv', '.txt'];
   const statusColor: Record<UploadStatus, string> = {
     ready: 'gray',
     uploading: 'blue',
@@ -66,6 +75,26 @@ export default function Upload() {
         if (data) setProjectName((data as { project_name: string }).project_name);
       });
   }, [projectId]);
+
+  useEffect(() => {
+    edgeJson<{ upload: { max_files_per_batch: number; allowed_extensions: string[] } }>('upload-policy', { method: 'GET' })
+      .then((data) => {
+        if (typeof data.upload.max_files_per_batch === 'number' && data.upload.max_files_per_batch > 0) {
+          setMaxFiles(data.upload.max_files_per_batch);
+        }
+        if (Array.isArray(data.upload.allowed_extensions) && data.upload.allowed_extensions.length > 0) {
+          setAllowedExtensions(
+            data.upload.allowed_extensions.map((ext) => {
+              const lower = ext.trim().toLowerCase();
+              return lower.startsWith('.') ? lower : `.${lower}`;
+            }),
+          );
+        }
+      })
+      .catch(() => {
+        // Keep local fallback values if runtime policy endpoint is unavailable.
+      });
+  }, []);
 
   const isAccepted = (file: File) => {
     const lower = file.name.toLowerCase();

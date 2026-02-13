@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
+import type { IngestTrack } from "../_shared/admin_policy.ts";
 
 export type IngestResponse = {
   source_uid: string;
@@ -19,6 +20,7 @@ export type SignedUploadTarget = {
 export type IngestContext = {
   supabaseAdmin: SupabaseClient;
   ownerId: string;
+  ingest_track: IngestTrack;
   source_uid: string;
   source_type: string;
   source_key: string;

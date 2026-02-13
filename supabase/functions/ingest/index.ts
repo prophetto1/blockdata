@@ -1,10 +1,12 @@
 import { corsPreflight, withCorsHeaders } from "../_shared/cors.ts";
 import { getEnv } from "../_shared/env.ts";
 import { concatBytes, sha256Hex } from "../_shared/hash.ts";
+import { loadRuntimePolicy } from "../_shared/admin_policy.ts";
 import { sanitizeFilename } from "../_shared/sanitize.ts";
 import { createAdminClient, requireUserId } from "../_shared/supabase.ts";
 import type { IngestContext } from "./types.ts";
-import { detectSourceType, uploadToStorage } from "./storage.ts";
+import { uploadToStorage } from "./storage.ts";
+import { resolveIngestRoute } from "./routing.ts";
 import { validateProjectOwnership, checkIdempotency } from "./validate.ts";
 import { processMarkdown } from "./process-md.ts";
 import { processConversion } from "./process-convert.ts";
@@ -34,7 +36,11 @@ Deno.serve(async (req) => {
     let project_id = typeof projectIdRaw === "string" && projectIdRaw.trim() ? projectIdRaw.trim() : null;
 
     const originalFilename = sanitizeFilename(file.name || "upload");
-    const source_type = detectSourceType(originalFilename);
+    const supabaseAdmin = createAdminClient();
+    const runtimePolicy = await loadRuntimePolicy(supabaseAdmin);
+    const route = resolveIngestRoute(originalFilename, runtimePolicy);
+    const source_type = route.source_type;
+    const ingest_track = route.track;
 
     const fileBytes = new Uint8Array(await file.arrayBuffer());
     const sourceUidPrefix = new TextEncoder().encode(`${source_type}\n`);
@@ -42,7 +48,6 @@ Deno.serve(async (req) => {
 
     const bucket = getEnv("DOCUMENTS_BUCKET", "documents");
     const source_key = `uploads/${source_uid}/${originalFilename}`;
-    const supabaseAdmin = createAdminClient();
 
     // Gap 2: Validate project ownership (service-role bypasses RLS).
     if (project_id) {
@@ -64,7 +69,7 @@ Deno.serve(async (req) => {
 
     // Build shared context for processors.
     const ctx: IngestContext = {
-      supabaseAdmin, ownerId, source_uid, source_type, source_key,
+      supabaseAdmin, ownerId, ingest_track, source_uid, source_type, source_key,
       bucket, fileBytes, originalFilename, requestedTitle, project_id,
     };
 

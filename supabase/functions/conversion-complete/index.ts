@@ -1,8 +1,10 @@
 import { corsPreflight, withCorsHeaders } from "../_shared/cors.ts";
 import { getEnv, requireEnv } from "../_shared/env.ts";
 import { concatBytes, sha256Hex } from "../_shared/hash.ts";
-import { extractBlocks } from "../_shared/markdown.ts";
 import { extractDoclingBlocks } from "../_shared/docling.ts";
+import { extractBlocks } from "../_shared/markdown.ts";
+import { extractPandocBlocks } from "../_shared/pandoc.ts";
+import { insertRepresentationArtifact } from "../_shared/representation.ts";
 import { createAdminClient } from "../_shared/supabase.ts";
 
 type ConversionCompleteBody = {
@@ -10,6 +12,7 @@ type ConversionCompleteBody = {
   conversion_job_id: string;
   md_key: string;
   docling_key?: string | null;
+  pandoc_key?: string | null;
   success: boolean;
   error?: string | null;
 };
@@ -44,17 +47,18 @@ Deno.serve(async (req) => {
     const source_uid = (body.source_uid || "").trim();
     const conversion_job_id = (body.conversion_job_id || "").trim();
     const md_key = (body.md_key || "").trim();
+    const docling_key = (body.docling_key || "").trim();
+    const pandoc_key = (body.pandoc_key || "").trim();
     if (!source_uid || !conversion_job_id || !md_key) {
       return json(400, { error: "Missing source_uid, conversion_job_id, or md_key" });
     }
 
     const supabaseAdmin = createAdminClient();
+    const bucket = getEnv("DOCUMENTS_BUCKET", "documents");
 
     const { data: docRow, error: fetchErr } = await supabaseAdmin
       .from("documents_v2")
-      .select(
-        "source_uid, source_type, doc_title, uploaded_at, conversion_job_id, status, conv_uid",
-      )
+      .select("source_uid, source_type, conversion_job_id, status, conv_uid")
       .eq("source_uid", source_uid)
       .maybeSingle();
     if (fetchErr) throw new Error(`DB fetch documents_v2 failed: ${fetchErr.message}`);
@@ -77,11 +81,112 @@ Deno.serve(async (req) => {
       return json(200, { ok: false, status: "conversion_failed" });
     }
 
-    const bucket = getEnv("DOCUMENTS_BUCKET", "documents");
-    const docling_key = (body.docling_key || "").trim();
+    if (docling_key && pandoc_key) {
+      const errMsg = "Invalid callback payload: multiple sidecar keys";
+      await supabaseAdmin
+        .from("documents_v2")
+        .update({ status: "conversion_failed", error: errMsg })
+        .eq("source_uid", source_uid);
+      return json(200, { ok: false, status: "conversion_failed", error: errMsg });
+    }
 
     // -----------------------------------------------------------------------
-    // Branch: Docling track (docx/pdf with docling JSON available)
+    // Branch: Pandoc track
+    // -----------------------------------------------------------------------
+    if (pandoc_key) {
+      const { data: pandocDownload, error: pandocDlErr } = await supabaseAdmin.storage
+        .from(bucket)
+        .download(pandoc_key);
+      if (pandocDlErr || !pandocDownload) {
+        throw new Error(`Storage download pandoc AST failed: ${pandocDlErr?.message ?? "unknown"}`);
+      }
+
+      const pandocBytes = new Uint8Array(await pandocDownload.arrayBuffer());
+      const convPrefix = new TextEncoder().encode("pandoc\npandoc_ast_json\n");
+      const conv_uid = await sha256Hex(concatBytes([convPrefix, pandocBytes]));
+      const extracted = extractPandocBlocks(pandocBytes);
+
+      const conv_total_blocks = extracted.blocks.length;
+      const conv_total_characters = extracted.blocks.reduce((sum, b) => sum + b.block_content.length, 0);
+      const freqMap: Record<string, number> = {};
+      for (const b of extracted.blocks) {
+        freqMap[b.block_type] = (freqMap[b.block_type] || 0) + 1;
+      }
+
+      {
+        const { error: updErr } = await supabaseAdmin
+          .from("documents_v2")
+          .update({
+            conv_uid,
+            conv_locator: pandoc_key,
+            conv_status: "success",
+            conv_parsing_tool: "pandoc",
+            conv_representation_type: "pandoc_ast_json",
+            conv_total_blocks,
+            conv_block_type_freq: freqMap,
+            conv_total_characters,
+            status: "uploaded",
+            error: null,
+          })
+          .eq("source_uid", source_uid);
+        if (updErr) throw new Error(`DB update documents_v2 failed: ${updErr.message}`);
+      }
+
+      try {
+        const blockRows = extracted.blocks.map((b, idx) => ({
+          block_uid: `${conv_uid}:${idx}`,
+          conv_uid,
+          block_index: idx,
+          block_type: b.block_type,
+          block_locator: {
+            type: "pandoc_ast_path",
+            path: b.path,
+            parser_block_type: b.parser_block_type,
+            parser_path: b.path,
+          },
+          block_content: b.block_content,
+        }));
+        if (blockRows.length === 0) throw new Error("No blocks extracted from pandoc AST");
+
+        const { error: insErr } = await supabaseAdmin.from("blocks_v2").insert(blockRows);
+        if (insErr) throw new Error(`DB insert blocks_v2 failed: ${insErr.message}`);
+
+        await insertRepresentationArtifact(supabaseAdmin, {
+          source_uid,
+          conv_uid,
+          parsing_tool: "pandoc",
+          representation_type: "pandoc_ast_json",
+          artifact_locator: pandoc_key,
+          artifact_hash: conv_uid,
+          artifact_size_bytes: pandocBytes.byteLength,
+          artifact_meta: { source_type: docRow.source_type },
+        });
+
+        const { error: finalErr } = await supabaseAdmin
+          .from("documents_v2")
+          .update({ status: "ingested", error: null })
+          .eq("source_uid", source_uid);
+        if (finalErr) throw new Error(`DB update documents_v2 failed: ${finalErr.message}`);
+
+        return json(200, {
+          ok: true,
+          status: "ingested",
+          conv_uid,
+          blocks_count: blockRows.length,
+          track: "pandoc",
+        });
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        await supabaseAdmin
+          .from("documents_v2")
+          .update({ status: "ingest_failed", error: msg })
+          .eq("source_uid", source_uid);
+        return json(200, { ok: false, status: "ingest_failed", error: msg });
+      }
+    }
+
+    // -----------------------------------------------------------------------
+    // Branch: Docling track
     // -----------------------------------------------------------------------
     if (docling_key) {
       const { data: dlDownload, error: dlErr } = await supabaseAdmin.storage
@@ -92,24 +197,17 @@ Deno.serve(async (req) => {
       }
 
       const doclingBytes = new Uint8Array(await dlDownload.arrayBuffer());
-
-      // conv_uid: sha256("docling\ndoclingdocument_json\n" + docling_json_bytes)
       const convPrefix = new TextEncoder().encode("docling\ndoclingdocument_json\n");
       const conv_uid = await sha256Hex(concatBytes([convPrefix, doclingBytes]));
-
       const extracted = extractDoclingBlocks(doclingBytes);
 
       const conv_total_blocks = extracted.blocks.length;
-      const conv_total_characters = extracted.blocks.reduce(
-        (sum, b) => sum + b.block_content.length,
-        0,
-      );
+      const conv_total_characters = extracted.blocks.reduce((sum, b) => sum + b.block_content.length, 0);
       const freqMap: Record<string, number> = {};
       for (const b of extracted.blocks) {
         freqMap[b.block_type] = (freqMap[b.block_type] || 0) + 1;
       }
 
-      // Persist conv_uid and conversion metadata (blocks FK depends on conv_uid).
       {
         const { error: updErr } = await supabaseAdmin
           .from("documents_v2")
@@ -138,15 +236,27 @@ Deno.serve(async (req) => {
           block_locator: {
             type: "docling_json_pointer",
             pointer: b.pointer,
+            parser_block_type: b.parser_block_type,
+            parser_path: b.parser_path,
             ...(b.page_no != null ? { page_no: b.page_no } : {}),
           },
           block_content: b.block_content,
         }));
-
         if (blockRows.length === 0) throw new Error("No blocks extracted from docling JSON");
 
         const { error: insErr } = await supabaseAdmin.from("blocks_v2").insert(blockRows);
         if (insErr) throw new Error(`DB insert blocks_v2 failed: ${insErr.message}`);
+
+        await insertRepresentationArtifact(supabaseAdmin, {
+          source_uid,
+          conv_uid,
+          parsing_tool: "docling",
+          representation_type: "doclingdocument_json",
+          artifact_locator: docling_key,
+          artifact_hash: conv_uid,
+          artifact_size_bytes: doclingBytes.byteLength,
+          artifact_meta: { source_type: docRow.source_type },
+        });
 
         const { error: finalErr } = await supabaseAdmin
           .from("documents_v2")
@@ -172,7 +282,7 @@ Deno.serve(async (req) => {
     }
 
     // -----------------------------------------------------------------------
-    // Fallback: mdast track (txt, or older conversions without docling JSON)
+    // Fallback: mdast track (txt, legacy conversions, or no sidecar key)
     // -----------------------------------------------------------------------
     const { data: download, error: mdDlErr } = await supabaseAdmin.storage
       .from(bucket)
@@ -183,24 +293,17 @@ Deno.serve(async (req) => {
 
     const mdBytes = new Uint8Array(await download.arrayBuffer());
     const markdown = new TextDecoder().decode(mdBytes);
-
-    // conv_uid: sha256("mdast\nmarkdown_bytes\n" + md_bytes)
     const convPrefix = new TextEncoder().encode("mdast\nmarkdown_bytes\n");
     const conv_uid = await sha256Hex(concatBytes([convPrefix, mdBytes]));
-
     const extracted = extractBlocks(markdown);
 
     const conv_total_blocks = extracted.blocks.length;
-    const conv_total_characters = extracted.blocks.reduce(
-      (sum, b) => sum + b.block_content.length,
-      0,
-    );
+    const conv_total_characters = extracted.blocks.reduce((sum, b) => sum + b.block_content.length, 0);
     const freqMap: Record<string, number> = {};
     for (const b of extracted.blocks) {
       freqMap[b.block_type] = (freqMap[b.block_type] || 0) + 1;
     }
 
-    // Persist conv_uid and conversion metadata (blocks FK depends on conv_uid).
     {
       const { error: updErr } = await supabaseAdmin
         .from("documents_v2")
@@ -230,6 +333,8 @@ Deno.serve(async (req) => {
           type: "text_offset_range",
           start_offset: b.start_offset,
           end_offset: b.end_offset,
+          parser_block_type: b.parser_block_type,
+          parser_path: b.parser_path,
         },
         block_content: b.block_content,
       }));
@@ -238,6 +343,17 @@ Deno.serve(async (req) => {
 
       const { error: insErr } = await supabaseAdmin.from("blocks_v2").insert(blockRows);
       if (insErr) throw new Error(`DB insert blocks_v2 failed: ${insErr.message}`);
+
+      await insertRepresentationArtifact(supabaseAdmin, {
+        source_uid,
+        conv_uid,
+        parsing_tool: "mdast",
+        representation_type: "markdown_bytes",
+        artifact_locator: md_key,
+        artifact_hash: conv_uid,
+        artifact_size_bytes: mdBytes.byteLength,
+        artifact_meta: { source_type: docRow.source_type },
+      });
 
       const { error: finalErr } = await supabaseAdmin
         .from("documents_v2")

@@ -6,13 +6,25 @@ import type { IngestContext, IngestResponse, SignedUploadTarget } from "./types.
  * Process a non-markdown file: create documents_v2 row, call Python conversion service.
  */
 export async function processConversion(ctx: IngestContext): Promise<{ status: number; body: IngestResponse }> {
-  const { supabaseAdmin, source_uid, source_type, source_key, bucket, fileBytes, originalFilename, requestedTitle, project_id, ownerId } = ctx;
+  const {
+    supabaseAdmin,
+    ingest_track,
+    source_uid,
+    source_type,
+    source_key,
+    bucket,
+    fileBytes,
+    originalFilename,
+    requestedTitle,
+    project_id,
+    ownerId,
+  } = ctx;
 
   const conversion_job_id = crypto.randomUUID();
   const fallbackTitle = basenameNoExt(originalFilename);
   const doc_title = requestedTitle || fallbackTitle;
 
-  // Insert documents_v2 row (no conv_uid yet — conversion service will provide it).
+  // Insert documents_v2 row (no conv_uid yet - conversion service will provide it).
   {
     const { error } = await supabaseAdmin.from("documents_v2").insert({
       source_uid,
@@ -57,7 +69,7 @@ export async function processConversion(ctx: IngestContext): Promise<{ status: n
 
   // Docling JSON output: Docling-handled non-md formats get a sidecar JSON.
   let docling_output: SignedUploadTarget | null = null;
-  if (["docx", "pdf", "pptx", "xlsx", "html", "csv"].includes(source_type)) {
+  if (ingest_track === "docling") {
     const docling_key = `converted/${source_uid}/${basenameNoExt(originalFilename)}.docling.json`;
     const { data: doclingUpload, error: doclingErr } = await (supabaseAdmin.storage as any)
       .from(bucket)
@@ -70,6 +82,22 @@ export async function processConversion(ctx: IngestContext): Promise<{ status: n
       key: docling_key,
       signed_upload_url: doclingUpload.signedUrl,
       token: doclingUpload.token ?? null,
+    };
+  }
+  let pandoc_output: SignedUploadTarget | null = null;
+  if (ingest_track === "pandoc") {
+    const pandoc_key = `converted/${source_uid}/${basenameNoExt(originalFilename)}.pandoc.ast.json`;
+    const { data: pandocUpload, error: pandocErr } = await (supabaseAdmin.storage as any)
+      .from(bucket)
+      .createSignedUploadUrl(pandoc_key);
+    if (pandocErr || !pandocUpload?.signedUrl) {
+      throw new Error(`Create signed upload URL for pandoc AST failed: ${pandocErr?.message ?? "unknown"}`);
+    }
+    pandoc_output = {
+      bucket,
+      key: pandoc_key,
+      signed_upload_url: pandocUpload.signedUrl,
+      token: pandocUpload.token ?? null,
     };
   }
 
@@ -90,6 +118,7 @@ export async function processConversion(ctx: IngestContext): Promise<{ status: n
       body: JSON.stringify({
         source_uid,
         conversion_job_id,
+        track: ingest_track,
         source_type,
         source_download_url: signedDownload.signedUrl,
         output: {
@@ -99,6 +128,7 @@ export async function processConversion(ctx: IngestContext): Promise<{ status: n
           token: signedUpload.token ?? null,
         },
         docling_output,
+        pandoc_output,
         callback_url,
       }),
     });

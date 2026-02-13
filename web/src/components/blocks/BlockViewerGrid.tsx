@@ -65,6 +65,8 @@ const BLOCK_TYPE_COLOR: Record<string, string> = {
 
 const PAGE_SIZES = ['25', '50', '100'];
 const VIEW_MODE_KEY = 'blockdata-view-mode';
+const BLOCK_TYPE_VIEW_KEY = 'blockdata-type-view';
+type BlockTypeView = 'normalized' | 'parser_native';
 
 function BlockTypeCellRenderer(params: ICellRendererParams) {
   const type = params.value as string;
@@ -218,6 +220,25 @@ function parseEditedValue(value: unknown, meta: SchemaFieldMeta | undefined): un
   return value;
 }
 
+function parserNativeMetaFromLocator(locator: unknown): {
+  parserBlockType: string | null;
+  parserPath: string | null;
+} {
+  if (!locator || typeof locator !== 'object' || Array.isArray(locator)) {
+    return { parserBlockType: null, parserPath: null };
+  }
+  const obj = locator as Record<string, unknown>;
+  const parserBlockType = typeof obj.parser_block_type === 'string' ? obj.parser_block_type : null;
+  const parserPath = typeof obj.parser_path === 'string'
+    ? obj.parser_path
+    : typeof obj.path === 'string'
+      ? obj.path
+      : typeof obj.pointer === 'string'
+        ? obj.pointer
+        : null;
+  return { parserBlockType, parserPath };
+}
+
 type BlockViewerGridProps = {
   convUid: string;
   selectedRunId: string | null;
@@ -232,6 +253,10 @@ export function BlockViewerGrid({ convUid, selectedRunId, selectedRun }: BlockVi
     const stored = typeof localStorage !== 'undefined' ? localStorage.getItem(VIEW_MODE_KEY) : null;
     if (stored === 'expanded') return 'comfortable';
     return stored === 'compact' || stored === 'comfortable' ? stored : 'compact';
+  });
+  const [blockTypeView, setBlockTypeView] = useState<BlockTypeView>(() => {
+    const stored = typeof localStorage !== 'undefined' ? localStorage.getItem(BLOCK_TYPE_VIEW_KEY) : null;
+    return stored === 'parser_native' ? 'parser_native' : 'normalized';
   });
   const computedColorScheme = useComputedColorScheme('dark');
   const isDark = computedColorScheme === 'dark';
@@ -258,50 +283,73 @@ export function BlockViewerGrid({ convUid, selectedRunId, selectedRun }: BlockVi
     [schemaFields],
   );
 
-  const blockTypes = useMemo(() => {
-    const types = new Set<string>();
-    blocks.forEach((block) => types.add(block.block_type));
-    return Array.from(types).sort();
-  }, [blocks]);
+  const rowDataBase = useMemo(() => {
+    return blocks.map((block) => {
+      const overlay = overlayMap.get(block.block_uid) ?? null;
+      const normalizedLocator = block.block_locator ?? null;
+      const { parserBlockType, parserPath } = parserNativeMetaFromLocator(normalizedLocator);
+      const activeType = blockTypeView === 'parser_native' ? (parserBlockType ?? block.block_type) : block.block_type;
+      const normalizedLocatorJson = normalizedLocator ? JSON.stringify(normalizedLocator) : null;
+      const parserLocatorJson = JSON.stringify({
+        parser_block_type: parserBlockType,
+        parser_path: parserPath,
+      });
 
-  const rowData = useMemo(() => {
-    return blocks
-      .filter((block) => typeFilter.length === 0 || typeFilter.includes(block.block_type))
-      .map((block) => {
-        const overlay = overlayMap.get(block.block_uid) ?? null;
-        const row: Record<string, unknown> = {
-          block_index: block.block_index,
-          block_type: block.block_type,
-          block_content: block.block_content,
-          block_uid: block.block_uid,
-          conv_uid: block.conv_uid,
-          block_locator: block.block_locator ? JSON.stringify(block.block_locator) : null,
-          _overlay_status: overlay?.status ?? null,
-          _claimed_by: overlay?.claimed_by ?? null,
-          _claimed_at: overlay?.claimed_at ?? null,
-          _attempt_count: overlay?.attempt_count ?? null,
-          _last_error: overlay?.last_error ?? null,
-          _confirmed_at: overlay?.confirmed_at ?? null,
-          _confirmed_by: overlay?.confirmed_by ?? null,
-        };
+      const row: Record<string, unknown> = {
+        block_index: block.block_index,
+        block_type: block.block_type,
+        block_type_view: activeType,
+        block_type_parser_native: parserBlockType,
+        block_content: block.block_content,
+        block_uid: block.block_uid,
+        conv_uid: block.conv_uid,
+        block_locator: normalizedLocatorJson,
+        block_locator_view: blockTypeView === 'parser_native' ? parserLocatorJson : normalizedLocatorJson,
+        parser_block_type: parserBlockType,
+        parser_path: parserPath,
+        _overlay_status: overlay?.status ?? null,
+        _claimed_by: overlay?.claimed_by ?? null,
+        _claimed_at: overlay?.claimed_at ?? null,
+        _attempt_count: overlay?.attempt_count ?? null,
+        _last_error: overlay?.last_error ?? null,
+        _confirmed_at: overlay?.confirmed_at ?? null,
+        _confirmed_by: overlay?.confirmed_by ?? null,
+      };
 
-        if (overlay) {
-          const data =
-            overlay.status === 'confirmed'
-              ? overlay.overlay_jsonb_confirmed
-              : overlay.status === 'ai_complete'
-                ? overlay.overlay_jsonb_staging
-                : null;
-          if (data && Object.keys(data).length > 0) {
-            for (const field of schemaFields) {
-              row[`field_${field.key}`] = data[field.key] ?? null;
-            }
+      if (overlay) {
+        const data =
+          overlay.status === 'confirmed'
+            ? overlay.overlay_jsonb_confirmed
+            : overlay.status === 'ai_complete'
+              ? overlay.overlay_jsonb_staging
+              : null;
+        if (data && Object.keys(data).length > 0) {
+          for (const field of schemaFields) {
+            row[`field_${field.key}`] = data[field.key] ?? null;
           }
         }
+      }
 
-        return row;
-      });
-  }, [blocks, overlayMap, schemaFields, typeFilter]);
+      return row;
+    });
+  }, [blockTypeView, blocks, overlayMap, schemaFields]);
+
+  const blockTypes = useMemo(() => {
+    const types = new Set<string>();
+    rowDataBase.forEach((row) => {
+      const typeValue = row.block_type_view;
+      if (typeof typeValue === 'string' && typeValue) types.add(typeValue);
+    });
+    return Array.from(types).sort();
+  }, [rowDataBase]);
+
+  const rowData = useMemo(() => {
+    if (typeFilter.length === 0) return rowDataBase;
+    return rowDataBase.filter((row) => {
+      const typeValue = row.block_type_view;
+      return typeof typeValue === 'string' && typeFilter.includes(typeValue);
+    });
+  }, [rowDataBase, typeFilter]);
 
   const stagedCount = useMemo(() => {
     let count = 0;
@@ -480,8 +528,8 @@ export function BlockViewerGrid({ convUid, selectedRunId, selectedRun }: BlockVi
         hide: hiddenCols.has('block_index'),
       },
       {
-        field: 'block_type',
-        headerName: 'Type',
+        field: 'block_type_view',
+        headerName: blockTypeView === 'parser_native' ? 'Type (Parser)' : 'Type',
         pinned: 'left',
         width: 120,
         cellRenderer: BlockTypeCellRenderer,
@@ -509,12 +557,26 @@ export function BlockViewerGrid({ convUid, selectedRunId, selectedRun }: BlockVi
         hide: hiddenCols.has('conv_uid'),
       },
       {
-        field: 'block_locator',
-        headerName: 'Locator',
+        field: 'block_locator_view',
+        headerName: blockTypeView === 'parser_native' ? 'Locator (Parser)' : 'Locator',
         width: 250,
         wrapText: true,
         autoHeight: true,
         hide: hiddenCols.has('block_locator'),
+      },
+      {
+        field: 'parser_block_type',
+        headerName: 'Parser Type',
+        width: 160,
+        hide: hiddenCols.has('parser_block_type') || blockTypeView !== 'parser_native',
+      },
+      {
+        field: 'parser_path',
+        headerName: 'Parser Path',
+        width: 250,
+        wrapText: true,
+        autoHeight: true,
+        hide: hiddenCols.has('parser_path') || blockTypeView !== 'parser_native',
       },
     ];
 
@@ -593,6 +655,7 @@ export function BlockViewerGrid({ convUid, selectedRunId, selectedRun }: BlockVi
       } as ColGroupDef,
     ];
   }, [
+    blockTypeView,
     handleConfirmBlock,
     handleRejectBlock,
     hasRun,
@@ -624,6 +687,15 @@ export function BlockViewerGrid({ convUid, selectedRunId, selectedRun }: BlockVi
     }
   };
 
+  const handleBlockTypeViewChange = (value: string) => {
+    const next = value === 'parser_native' ? 'parser_native' : 'normalized';
+    setBlockTypeView(next);
+    setTypeFilter([]);
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(BLOCK_TYPE_VIEW_KEY, next);
+    }
+  };
+
   const toggleColumn = (colId: string) => {
     setHiddenCols((prev) => {
       const next = new Set(prev);
@@ -641,6 +713,8 @@ export function BlockViewerGrid({ convUid, selectedRunId, selectedRun }: BlockVi
       { id: 'block_uid', label: 'Block UID' },
       { id: 'conv_uid', label: 'Conv UID' },
       { id: 'block_locator', label: 'Locator' },
+      { id: 'parser_block_type', label: 'Parser Type' },
+      { id: 'parser_path', label: 'Parser Path' },
     ];
     if (hasRun) {
       cols.push({ id: '_overlay_status', label: 'Status' });
@@ -676,6 +750,16 @@ export function BlockViewerGrid({ convUid, selectedRunId, selectedRun }: BlockVi
                 comboboxProps={{ withinPortal: true }}
               />
             )}
+
+            <SegmentedControl
+              data={[
+                { value: 'normalized', label: 'Normalized' },
+                { value: 'parser_native', label: 'Parser Native' },
+              ]}
+              value={blockTypeView}
+              onChange={handleBlockTypeViewChange}
+              size="xs"
+            />
 
             <SegmentedControl
               data={[

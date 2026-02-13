@@ -14,6 +14,8 @@ export type BlockDraft = {
   start_offset: number;
   end_offset: number;
   block_content: string;
+  parser_block_type: string;
+  parser_path: string;
 };
 
 export type ExtractBlocksResult = {
@@ -32,7 +34,7 @@ export function extractBlocks(markdown: string): ExtractBlocksResult {
   // Note: remark-gfm can introduce mdast node types that aren't in the narrow
   // `Content` union from @types/mdast. We intentionally treat nodes as `any`
   // while preserving strong typing for our extracted BlockDraft.
-  const emit = (node: any, blockType: string) => {
+  const emit = (node: any, blockType: string, path: string) => {
     const span = getSpan(node);
     const contentSlice = markdown.slice(span[0], span[1]);
     blocks.push({
@@ -40,56 +42,62 @@ export function extractBlocks(markdown: string): ExtractBlocksResult {
       start_offset: span[0],
       end_offset: span[1],
       block_content: contentSlice,
+      parser_block_type: typeof node.type === "string" ? node.type : "unknown",
+      parser_path: path,
     });
   };
 
   // Block type mapping: mdast node types → v2 platform_block_type enum.
   // See docs/product-defining-v2.0/0207-blocks.md for the canonical enum.
-  const visit = (node: any) => {
+  const visit = (node: any, path: string) => {
     switch (node.type) {
       case "heading": {
         const heading = node as Heading;
         const text = toString(heading).trim();
         if (heading.depth === 1 && !docTitle && text) docTitle = text;
-        emit(node, "heading");
+        emit(node, "heading", path);
         return;
       }
       case "list": {
         const list = node as List;
-        for (const child of list.children ?? []) visit(child as Content);
+        for (let i = 0; i < (list.children ?? []).length; i++) {
+          visit(list.children[i] as Content, `${path}.children[${i}]`);
+        }
         return;
       }
       case "listItem":
-        emit(node, "list_item");
+        emit(node, "list_item", path);
         return;
       case "paragraph":
-        emit(node, "paragraph");
+        emit(node, "paragraph", path);
         return;
       case "code":
-        emit(node, "code_block");
+        emit(node, "code_block", path);
         return;
       case "table":
-        emit(node, "table");
+        emit(node, "table", path);
         return;
       case "html":
-        emit(node, "html_block");
+        emit(node, "html_block", path);
         return;
       case "definition":
-        emit(node, "definition");
+        emit(node, "definition", path);
         return;
       case "footnoteDefinition":
-        emit(node, "footnote");
+        emit(node, "footnote", path);
         return;
       case "thematicBreak":
-        emit(node, "divider");
+        emit(node, "divider", path);
         return;
       default:
-        emit(node, "other");
+        emit(node, "other", path);
         return;
     }
   };
 
-  for (const child of tree.children ?? []) visit(child as Content);
+  for (let i = 0; i < (tree.children ?? []).length; i++) {
+    visit(tree.children[i] as Content, `$.children[${i}]`);
+  }
 
   return { docTitle, blocks };
 }

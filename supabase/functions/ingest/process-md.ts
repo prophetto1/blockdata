@@ -1,5 +1,6 @@
 import { concatBytes, sha256Hex } from "../_shared/hash.ts";
 import { extractBlocks } from "../_shared/markdown.ts";
+import { insertRepresentationArtifact } from "../_shared/representation.ts";
 import { basenameNoExt } from "../_shared/sanitize.ts";
 import type { IngestContext, IngestResponse } from "./types.ts";
 
@@ -63,6 +64,8 @@ export async function processMarkdown(ctx: IngestContext): Promise<IngestRespons
         type: "text_offset_range",
         start_offset: b.start_offset,
         end_offset: b.end_offset,
+        parser_block_type: b.parser_block_type,
+        parser_path: b.parser_path,
       },
       block_content: b.block_content,
     }));
@@ -73,6 +76,16 @@ export async function processMarkdown(ctx: IngestContext): Promise<IngestRespons
 
     const { error } = await supabaseAdmin.from("blocks_v2").insert(blockRows);
     if (error) throw new Error(`DB insert blocks_v2 failed: ${error.message}`);
+    await insertRepresentationArtifact(supabaseAdmin, {
+      source_uid,
+      conv_uid,
+      parsing_tool: "mdast",
+      representation_type: "markdown_bytes",
+      artifact_locator: source_key,
+      artifact_hash: conv_uid,
+      artifact_size_bytes: fileBytes.byteLength,
+      artifact_meta: { source_type },
+    });
 
     const { error: updErr } = await supabaseAdmin
       .from("documents_v2")

@@ -33,6 +33,12 @@ function Get-ContentTypeForFile([string]$path) {
     if ($lower.EndsWith(".xlsx")) { return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }
     if ($lower.EndsWith(".html") -or $lower.EndsWith(".htm")) { return "text/html" }
     if ($lower.EndsWith(".csv")) { return "text/csv" }
+    if ($lower.EndsWith(".rst")) { return "text/x-rst" }
+    if ($lower.EndsWith(".tex") -or $lower.EndsWith(".latex")) { return "application/x-tex" }
+    if ($lower.EndsWith(".odt")) { return "application/vnd.oasis.opendocument.text" }
+    if ($lower.EndsWith(".epub")) { return "application/epub+zip" }
+    if ($lower.EndsWith(".rtf")) { return "application/rtf" }
+    if ($lower.EndsWith(".org")) { return "text/plain" }
     if ($lower.EndsWith(".md") -or $lower.EndsWith(".markdown")) { return "text/markdown" }
     return "application/octet-stream"
 }
@@ -127,9 +133,20 @@ $expectDoclingTrack = (
     $ext -eq ".htm" -or
     $ext -eq ".csv"
 )
+$expectPandocTrack = (
+    $ext -eq ".rst" -or
+    $ext -eq ".tex" -or
+    $ext -eq ".latex" -or
+    $ext -eq ".odt" -or
+    $ext -eq ".epub" -or
+    $ext -eq ".rtf" -or
+    $ext -eq ".org"
+)
 
 if ($expectDoclingTrack) {
     Write-Host "Expected track: docling (docling_json_pointer)" -ForegroundColor Gray
+} elseif ($expectPandocTrack) {
+    Write-Host "Expected track: pandoc (pandoc_ast_path)" -ForegroundColor Gray
 } else {
     Write-Host "Expected track: mdast fallback (text_offset_range)" -ForegroundColor Gray
 }
@@ -301,6 +318,21 @@ if ($expectDoclingTrack) {
         Write-Host "FAIL: block_locator.pointer is missing" -ForegroundColor Red; $valid = $false
     } else {
         Write-Host "block_locator.pointer: $($firstBlock.immutable.block.block_locator.pointer)" -ForegroundColor Gray
+    }
+} elseif ($expectPandocTrack) {
+    if ($tool -ne "pandoc") {
+        Write-Host "FAIL: conv_parsing_tool expected 'pandoc', got '$tool'" -ForegroundColor Red; $valid = $false
+    }
+    if ($repr -ne "pandoc_ast_json") {
+        Write-Host "FAIL: conv_representation_type expected 'pandoc_ast_json', got '$repr'" -ForegroundColor Red; $valid = $false
+    }
+    if ($locType -ne "pandoc_ast_path") {
+        Write-Host "FAIL: block_locator.type expected 'pandoc_ast_path', got '$locType'" -ForegroundColor Red; $valid = $false
+    }
+    if (-not $firstBlock.immutable.block.block_locator.path) {
+        Write-Host "FAIL: block_locator.path is missing" -ForegroundColor Red; $valid = $false
+    } else {
+        Write-Host "block_locator.path: $($firstBlock.immutable.block.block_locator.path)" -ForegroundColor Gray
     }
 } else {
     # Assertions for mdast fallback track (txt)

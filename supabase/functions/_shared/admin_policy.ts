@@ -1,5 +1,14 @@
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+export type IngestTrack = "mdast" | "docling" | "pandoc";
+
+export type TrackEnabledMap = Record<IngestTrack, boolean>;
+export type ExtensionTrackRouting = Record<string, IngestTrack>;
+export type TrackCapabilityCatalog = {
+  version: string;
+  tracks: Record<IngestTrack, { extensions: string[] }>;
+};
+
 export type RuntimePolicy = {
   models: {
     platform_default_model: string;
@@ -31,6 +40,9 @@ export type RuntimePolicy = {
   upload: {
     max_files_per_batch: number;
     allowed_extensions: string[];
+    track_enabled: TrackEnabledMap;
+    extension_track_routing: ExtensionTrackRouting;
+    track_capability_catalog: TrackCapabilityCatalog;
   };
 };
 
@@ -51,6 +63,8 @@ export type AdminPolicyRow = {
   updated_at: string;
   updated_by: string | null;
 };
+
+const ALL_TRACKS: IngestTrack[] = ["mdast", "docling", "pandoc"];
 
 const DEFAULT_POLICY: RuntimePolicy = {
   models: {
@@ -94,6 +108,44 @@ const DEFAULT_POLICY: RuntimePolicy = {
       "csv",
       "txt",
     ],
+    track_enabled: {
+      mdast: true,
+      docling: true,
+      pandoc: false,
+    },
+    extension_track_routing: {
+      md: "mdast",
+      markdown: "mdast",
+      txt: "mdast",
+      docx: "docling",
+      pdf: "docling",
+      pptx: "docling",
+      xlsx: "docling",
+      html: "docling",
+      htm: "docling",
+      csv: "docling",
+      rst: "pandoc",
+      tex: "pandoc",
+      latex: "pandoc",
+      odt: "pandoc",
+      epub: "pandoc",
+      rtf: "pandoc",
+      org: "pandoc",
+    },
+    track_capability_catalog: {
+      version: "2026-02-13",
+      tracks: {
+        mdast: {
+          extensions: ["md", "markdown", "txt"],
+        },
+        docling: {
+          extensions: ["docx", "pdf", "pptx", "xlsx", "html", "htm", "csv"],
+        },
+        pandoc: {
+          extensions: ["rst", "tex", "latex", "odt", "epub", "rtf", "org"],
+        },
+      },
+    },
   },
 };
 
@@ -122,15 +174,79 @@ function asString(value: unknown): string | null {
   return trimmed.length > 0 ? trimmed : null;
 }
 
-function asStringArray(value: unknown): string[] | null {
+function normalizeExtensionToken(value: string): string {
+  return value.trim().toLowerCase().replace(/^\./, "");
+}
+
+function asNormalizedExtensionArray(value: unknown): string[] | null {
   if (!Array.isArray(value)) return null;
   const out: string[] = [];
   for (const v of value) {
     const s = asString(v);
     if (!s) return null;
-    out.push(s.toLowerCase());
+    out.push(normalizeExtensionToken(s));
   }
   return out;
+}
+
+function asObject(value: unknown): Record<string, unknown> | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  return value as Record<string, unknown>;
+}
+
+function asTrack(value: unknown): IngestTrack | null {
+  if (value !== "mdast" && value !== "docling" && value !== "pandoc") return null;
+  return value;
+}
+
+function asTrackEnabledMap(value: unknown): TrackEnabledMap | null {
+  const obj = asObject(value);
+  if (!obj) return null;
+  const parsed: Partial<TrackEnabledMap> = {};
+  for (const track of ALL_TRACKS) {
+    const v = asBoolean(obj[track]);
+    if (v === null) return null;
+    parsed[track] = v;
+  }
+  return parsed as TrackEnabledMap;
+}
+
+function asExtensionTrackRouting(value: unknown): ExtensionTrackRouting | null {
+  const obj = asObject(value);
+  if (!obj) return null;
+  const out: ExtensionTrackRouting = {};
+  for (const [rawExt, rawTrack] of Object.entries(obj)) {
+    const track = asTrack(rawTrack);
+    if (!track) return null;
+    const ext = normalizeExtensionToken(rawExt);
+    if (!ext) return null;
+    out[ext] = track;
+  }
+  return out;
+}
+
+function asTrackCapabilityCatalog(value: unknown): TrackCapabilityCatalog | null {
+  const obj = asObject(value);
+  if (!obj) return null;
+  const version = asString(obj.version);
+  if (!version) return null;
+
+  const tracksObj = asObject(obj.tracks);
+  if (!tracksObj) return null;
+
+  const tracks: Partial<TrackCapabilityCatalog["tracks"]> = {};
+  for (const track of ALL_TRACKS) {
+    const entry = asObject(tracksObj[track]);
+    if (!entry) return null;
+    const extArray = asNormalizedExtensionArray(entry.extensions);
+    if (!extArray || extArray.length === 0) return null;
+    tracks[track] = { extensions: extArray };
+  }
+
+  return {
+    version,
+    tracks: tracks as TrackCapabilityCatalog["tracks"],
+  };
 }
 
 export function applyPolicyValue(
@@ -247,9 +363,27 @@ export function applyPolicyValue(
     return true;
   }
   if (key === "upload.allowed_extensions") {
-    const parsed = asStringArray(value);
+    const parsed = asNormalizedExtensionArray(value);
     if (!parsed || parsed.length === 0) return false;
     policy.upload.allowed_extensions = parsed;
+    return true;
+  }
+  if (key === "upload.track_enabled") {
+    const parsed = asTrackEnabledMap(value);
+    if (!parsed) return false;
+    policy.upload.track_enabled = parsed;
+    return true;
+  }
+  if (key === "upload.extension_track_routing") {
+    const parsed = asExtensionTrackRouting(value);
+    if (!parsed) return false;
+    policy.upload.extension_track_routing = parsed;
+    return true;
+  }
+  if (key === "upload.track_capability_catalog") {
+    const parsed = asTrackCapabilityCatalog(value);
+    if (!parsed) return false;
+    policy.upload.track_capability_catalog = parsed;
     return true;
   }
   return false;
@@ -318,6 +452,49 @@ export function validateRuntimePolicy(policy: RuntimePolicy): string[] {
   }
   if (policy.upload.allowed_extensions.length === 0) {
     errors.push("upload.allowed_extensions must include at least one extension");
+  }
+  if (!policy.upload.track_capability_catalog.version.trim()) {
+    errors.push("upload.track_capability_catalog.version must be non-empty");
+  }
+
+  for (const track of ALL_TRACKS) {
+    if (!Array.isArray(policy.upload.track_capability_catalog.tracks[track].extensions)) {
+      errors.push(`upload.track_capability_catalog.tracks.${track}.extensions must be an array`);
+      continue;
+    }
+    if (policy.upload.track_capability_catalog.tracks[track].extensions.length === 0) {
+      errors.push(`upload.track_capability_catalog.tracks.${track}.extensions must include at least one extension`);
+    }
+  }
+
+  const seenAllowed = new Set<string>();
+  for (const ext of policy.upload.allowed_extensions) {
+    if (seenAllowed.has(ext)) {
+      errors.push(`upload.allowed_extensions contains duplicate extension: ${ext}`);
+      continue;
+    }
+    seenAllowed.add(ext);
+
+    const track = policy.upload.extension_track_routing[ext];
+    if (!track) {
+      errors.push(`upload.extension_track_routing must include mapping for allowed extension: ${ext}`);
+      continue;
+    }
+    if (!policy.upload.track_enabled[track]) {
+      errors.push(`upload.track_enabled.${track} must be true for allowed extension: ${ext}`);
+      continue;
+    }
+    const capSet = new Set(policy.upload.track_capability_catalog.tracks[track].extensions);
+    if (!capSet.has(ext)) {
+      errors.push(`routing/capability mismatch: extension ${ext} routed to ${track} but missing from capability catalog`);
+    }
+  }
+
+  for (const [ext, track] of Object.entries(policy.upload.extension_track_routing)) {
+    const capSet = new Set(policy.upload.track_capability_catalog.tracks[track].extensions);
+    if (!capSet.has(ext)) {
+      errors.push(`routing/capability mismatch: extension ${ext} routed to ${track} but missing from capability catalog`);
+    }
   }
 
   return errors;

@@ -17,6 +17,39 @@ function json(status: number, body: unknown): Response {
   });
 }
 
+type BlockView = "normalized" | "parser_native";
+
+function asObject(value: unknown): Record<string, unknown> | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  return value as Record<string, unknown>;
+}
+
+function resolveBlockView(raw: string): BlockView | null {
+  if (raw === "normalized" || raw === "parser_native") return raw;
+  return null;
+}
+
+function parserNativeMetaFromLocator(
+  locator: unknown,
+): { parser_block_type: string | null; parser_path: string | null; parser_locator_type: string | null } {
+  const obj = asObject(locator);
+  if (!obj) {
+    return { parser_block_type: null, parser_path: null, parser_locator_type: null };
+  }
+
+  const parser_block_type = typeof obj.parser_block_type === "string" ? obj.parser_block_type : null;
+  const parser_path =
+    typeof obj.parser_path === "string"
+      ? obj.parser_path
+      : typeof obj.path === "string"
+        ? obj.path
+        : typeof obj.pointer === "string"
+          ? obj.pointer
+          : null;
+  const parser_locator_type = typeof obj.type === "string" ? obj.type : null;
+  return { parser_block_type, parser_path, parser_locator_type };
+}
+
 Deno.serve(async (req) => {
   const preflight = corsPreflight(req);
   if (preflight) return preflight;
@@ -28,7 +61,10 @@ Deno.serve(async (req) => {
   const url = new URL(req.url);
   const run_id = (url.searchParams.get("run_id") || "").trim();
   const conv_uid = (url.searchParams.get("conv_uid") || "").trim();
+  const blockViewRaw = (url.searchParams.get("block_view") || "normalized").trim().toLowerCase();
+  const block_view = resolveBlockView(blockViewRaw);
   if (!run_id && !conv_uid) return json(400, { error: "Missing run_id or conv_uid" });
+  if (!block_view) return json(400, { error: "Invalid block_view. Expected normalized or parser_native" });
 
   const supabase = createUserClient(authHeader);
 
@@ -47,8 +83,9 @@ Deno.serve(async (req) => {
     if (!run) return json(404, { error: "Run not found" });
 
     resolvedConvUid = run.conv_uid;
-    schemaRef = run.schemas?.schema_ref ?? null;
-    schemaUid = run.schemas?.schema_uid ?? null;
+    const schemaJoin = Array.isArray(run.schemas) ? run.schemas[0] : run.schemas;
+    schemaRef = schemaJoin?.schema_ref ?? null;
+    schemaUid = schemaJoin?.schema_uid ?? null;
 
     const { data: overlays, error: ovErr } = await supabase
       .from("block_overlays_v2")
@@ -86,6 +123,19 @@ Deno.serve(async (req) => {
   let out = "";
   for (const b of blocks) {
     const overlayData = run_id ? (overlaysByBlockUid.get(b.block_uid) ?? null) : null;
+    const parserMeta = parserNativeMetaFromLocator(b.block_locator);
+    const blockTypeForView = block_view === "parser_native"
+      ? (parserMeta.parser_block_type ?? b.block_type)
+      : b.block_type;
+    const blockLocatorForView = block_view === "parser_native"
+      ? {
+        type: "parser_native_view",
+        parser_block_type: parserMeta.parser_block_type,
+        parser_path: parserMeta.parser_path,
+        parser_locator_type: parserMeta.parser_locator_type,
+        source_locator: b.block_locator,
+      }
+      : b.block_locator;
     const record = {
       immutable: {
         source_upload: {
@@ -107,8 +157,9 @@ Deno.serve(async (req) => {
         block: {
           block_uid: b.block_uid,
           block_index: b.block_index,
-          block_type: b.block_type,
-          block_locator: b.block_locator,
+          block_view,
+          block_type: blockTypeForView,
+          block_locator: blockLocatorForView,
           block_content: b.block_content,
         },
       },
