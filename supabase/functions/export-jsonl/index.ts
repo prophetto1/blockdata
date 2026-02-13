@@ -157,7 +157,6 @@ Deno.serve(async (req) => {
         block: {
           block_uid: b.block_uid,
           block_index: b.block_index,
-          block_view,
           block_type: blockTypeForView,
           block_locator: blockLocatorForView,
           block_content: b.block_content,

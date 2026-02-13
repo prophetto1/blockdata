@@ -5,6 +5,8 @@
 **Scope:** Everything between current state and production-ready platform
 **Sources consolidated:** `0209-projects-hierarchy-plan-review.md`, `0209-grid-toolbar-and-layout-plan.md`, `web-frontend-buildout-checklist.md`, session discussions on staging layer / editing track / AI worker
 
+**Migration note (2026-02-13):** Remaining open actions from this file are now consolidated in `dev-todos/0213-consolidated-remaining-actions.md`.
+
 ---
 
 ## Current State Snapshot

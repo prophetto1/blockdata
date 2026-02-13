@@ -130,43 +130,36 @@ export default function Landing() {
   const isDark = colorScheme === 'dark';
 
   return (
-    <Box bg="var(--mantine-color-body)">
+    <Box bg={isDark ? 'var(--mantine-color-body)' : '#f6f6f7'}>
 
       {/* ── HERO ── */}
       <Box
-        pt={{ base: 120, md: 160 }}
-        pb={{ base: 80, md: 120 }}
+        pt={{ base: 114, md: 146 }}
+        pb={{ base: 72, md: 108 }}
         style={{
           position: 'relative',
           overflow: 'hidden',
-          background: isDark 
+          background: isDark
             ? 'radial-gradient(circle at 60% 30%, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0) 60%)'
-            : 'radial-gradient(circle at 60% 30%, rgba(0,0,0,0.03) 0%, rgba(0,0,0,0) 60%)',
+            : 'radial-gradient(circle at 60% 30%, rgba(15,23,42,0.06) 0%, rgba(15,23,42,0) 62%)',
         }}
       >
-        <Container size="lg" style={{ position: 'relative', zIndex: 1 }}>
-          <SimpleGrid cols={{ base: 1, md: 2 }} spacing={80}>
+        <Container
+          size="xl"
+          px={{ base: 'md', md: 'xl' }}
+          style={{ position: 'relative', zIndex: 1, maxWidth: 1360 }}
+        >
+          <SimpleGrid cols={{ base: 1, md: 2 }} spacing={{ base: 52, md: 86 }}>
             {/* Left: copy */}
             <Stack gap="xl" justify="center">
-              <Badge
-                variant="filled"
-                size="lg"
-                radius="xl"
-                color="gray"
-                bg="var(--mantine-color-default-border)"
-                c="var(--mantine-color-text)"
-                tt="none"
-              >
-                Document Intelligence Platform
-              </Badge>
               <Title
                 order={1}
                 style={{
                   // Removed hardcoded 'white'
-                  fontSize: 'clamp(3rem, 5vw, 4rem)',
-                  lineHeight: 1.1,
+                  fontSize: 'clamp(2.35rem, 4.4vw, 3.6rem)',
+                  lineHeight: 1.08,
                   fontWeight: 800,
-                  letterSpacing: '-0.02em',
+                  letterSpacing: '-0.03em',
                 }}
               >
                 Your documents.<br />
@@ -176,7 +169,7 @@ export default function Landing() {
                 </span>
               </Title>
               <Text
-                size="xl"
+                size="lg"
                 c="dimmed"
                 maw={520}
                              >
@@ -263,7 +256,7 @@ export default function Landing() {
 
       {/* ── WHAT YOUR SCHEMA CAN DO ── */}
       <Box py={100}>
-        <Container size="lg">
+        <Container size="xl">
           <Stack gap="xl">
             <Stack gap={4} align="center" mb="lg">
               <Text size="sm" fw={700} tt="uppercase" c="dimmed">
@@ -377,7 +370,7 @@ export default function Landing() {
 
       {/* ── USE CASES TEASER ── */}
       <Box py={100}>
-        <Container size="lg">
+        <Container size="xl">
           <Stack gap="xl">
             <Group justify="space-between" align="end" mb="lg">
                 <Box>
@@ -410,7 +403,7 @@ export default function Landing() {
       {/* Or adapt it. If we keep it dark, we need to enforce white text. */}
       {/* Strategy: Keep it dark (Brand moment), but ensure text is forced white. */ }
       <Box py={100} style={{ backgroundColor: '#1A1B1E' }}>
-        <Container size="lg">
+        <Container size="xl">
           <Stack gap="xl">
             <Stack gap={4} align="center" mb="lg">
               <Text size="sm" fw={700} tt="uppercase" c="dimmed">
@@ -473,3 +466,4 @@ export default function Landing() {
     </Box>
   );
 }
+

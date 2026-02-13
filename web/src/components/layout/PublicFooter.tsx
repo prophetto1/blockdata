@@ -8,7 +8,7 @@ export function PublicFooter() {
 
   return (
     <Box component="footer" py="xl" style={{ borderTop: '1px solid var(--mantine-color-default-border)' }}>
-      <Container size="lg">
+      <Container size="xl">
         <Group justify="space-between">
           <img
             src={isDark ? '/logo-dark.png' : '/logo-light.png'}
@@ -32,3 +32,4 @@ export function PublicFooter() {
     </Box>
   );
 }
+

@@ -96,3 +96,45 @@ export type UserApiKeyRow = {
   created_at: string;
   updated_at: string;
 };
+
+export type AgentCatalogRow = {
+  agent_slug: string;
+  display_name: string;
+  provider_family: string;
+  enabled: boolean;
+  default_model: string;
+  supports_api_key: boolean;
+  supports_provider_connections: boolean;
+  supports_mcp_bindings: boolean;
+  supports_mode: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type UserAgentConfigRow = {
+  id: string;
+  user_id: string;
+  agent_slug: string;
+  keyword: string;
+  model: string;
+  mode: string | null;
+  mcp_server_ids: string[];
+  config_jsonb: Record<string, unknown>;
+  is_ready: boolean;
+  is_default: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type ProviderConnectionStatus = 'connected' | 'disconnected' | 'error';
+
+export type UserProviderConnectionRow = {
+  id: string;
+  user_id: string;
+  provider: string;
+  connection_type: string;
+  status: ProviderConnectionStatus;
+  metadata_jsonb: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
+};

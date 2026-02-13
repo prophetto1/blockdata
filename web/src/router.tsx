@@ -29,6 +29,14 @@ import SuperuserSettings from '@/pages/SuperuserSettings';
 import LoginSplit from '@/pages/LoginSplit';
 import RegisterSplit from '@/pages/RegisterSplit';
 import PlatformLanding from '@/pages/experiments/PlatformLanding';
+import Agents from '@/pages/Agents';
+import AgentOnboarding from '@/pages/AgentOnboarding';
+import AgentOnboardingAuth from '@/pages/AgentOnboardingAuth';
+import AgentOnboardingConnect from '@/pages/AgentOnboardingConnect';
+import AgentOnboardingSelect from '@/pages/AgentOnboardingSelect';
+import McpServers from '@/pages/McpServers';
+import Commands from '@/pages/Commands';
+import { featureFlags } from '@/lib/featureFlags';
 
 
 export const router = createBrowserRouter([
@@ -88,6 +96,36 @@ export const router = createBrowserRouter([
           // Settings (API keys, model defaults)
           { path: '/app/settings', element: <Settings /> },
           { path: '/app/settings/superuser', element: <SuperuserSettings /> },
+
+          // Agents + MCP (config surfaces; execution deferred)
+          {
+            path: '/app/agents',
+            element: featureFlags.agentsConfigUI ? <Agents /> : <Navigate to="/app/settings" replace />,
+          },
+          {
+            path: '/app/onboarding/agents',
+            element: featureFlags.agentsConfigUI ? <AgentOnboarding /> : <Navigate to="/app/settings" replace />,
+          },
+          {
+            path: '/app/onboarding/agents/select',
+            element: featureFlags.agentsConfigUI ? <AgentOnboardingSelect /> : <Navigate to="/app/settings" replace />,
+          },
+          {
+            path: '/app/onboarding/agents/auth/:agentSlug',
+            element: featureFlags.agentsConfigUI ? <AgentOnboardingAuth /> : <Navigate to="/app/settings" replace />,
+          },
+          {
+            path: '/app/onboarding/agents/connect/:agentSlug/:authMethod',
+            element: featureFlags.agentsConfigUI ? <AgentOnboardingConnect /> : <Navigate to="/app/settings" replace />,
+          },
+          {
+            path: '/app/mcp',
+            element: featureFlags.mcpPlaceholderUI ? <McpServers /> : <Navigate to="/app/settings" replace />,
+          },
+          {
+            path: '/app/commands',
+            element: featureFlags.commandsUI ? <Commands /> : <Navigate to="/app/settings" replace />,
+          },
 
           // Legacy flat routes → redirect to project-scoped equivalents
           { path: '/app/documents/:sourceUid', element: <LegacyDocumentRedirect /> },

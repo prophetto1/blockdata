@@ -1,137 +1,81 @@
 import {
+  Badge,
   Box,
   Button,
   Container,
-  Group,
+  Paper,
   SimpleGrid,
   Stack,
   Text,
   Title,
-  Paper,
-  ThemeIcon,
-  Badge,
   useMantineColorScheme,
 } from '@mantine/core';
-import {
-  IconArrowRight,
-  IconScale,
-  IconPencil,
-  IconFileText,
-  IconShare,
-  IconBrain,
-  IconDatabase,
-  IconRefresh,
-  IconClipboardCheck,
-  IconLanguage,
-  IconSearch,
-} from '@tabler/icons-react';
+import { IconArrowRight } from '@tabler/icons-react';
 import { useNavigate } from 'react-router-dom';
 import { PublicNavModern } from '@/components/layout/PublicNavModern';
 
-/**
- * UseCases — v2.1
- *
- * v2.1 improvements:
- * - Theme-adaptive hero (no hardcoded white)
- * - Colored accents per use case for visual anchoring
- * - Colored ThemeIcons, left borders, section labels, field badges
- */
+type UseCase = {
+  badge: string;
+  title: string;
+  scenario: string;
+  approach: string;
+  schema: string[];
+  output: string;
+  downstream: string;
+};
 
-const FEATURED = [
+const FEATURED: UseCase[] = [
   {
-    icon: IconPencil,
-    color: 'green',
-    title: 'Work through a long document at consistent quality',
+    badge: 'Metadata Enrichment',
+    title: 'Long Document Review',
     scenario:
-      'You have a 50,000-word manuscript, a 200-page thesis, or a lengthy technical report. You need every paragraph reviewed against the same standard — but by paragraph 200, AI drifts. By paragraph 400, it starts skipping.',
-    how: 'Upload your document. The platform splits it into blocks. Define a schema — revision rules, quality criteria, whatever you need per block. AI processes every block independently with identical instructions. Paragraph 1 and paragraph 840 get the same treatment.',
-    fields: ['revised_content', 'quality_score', 'style_violations', 'changes_made'],
-    result: 'A long document reviewed at paragraph-level quality in minutes. Every revision traceable to the exact block that produced it. Reassemble confirmed blocks into a complete revised document.',
+      'Legal memo, technical manual, or 200-page contract. You need sections, claims, and citations without reading every page.',
+    approach:
+      'Upload the file, define fields by schema, and process all blocks in parallel. Review low-confidence rows before export.',
+    schema: ['section_type', 'claim_type', 'cited_authorities[]', 'confidence', 'page_number'],
+    output: 'Structured table of claims, citations, and section labels. One row per block with source traceability.',
+    downstream: 'Spreadsheet review, case management workflows, and compliance dashboards.',
   },
   {
-    icon: IconShare,
-    color: 'blue',
-    title: 'Turn a document collection into structured, searchable knowledge',
+    badge: 'Combined Track',
+    title: 'Corpus Structuring',
     scenario:
-      'You have dozens of documents — PDFs, Word files, markdown — spread across a shared drive. They contain what your team knows: specs, research, contracts, policies. Extracting structure manually is weeks of work.',
-    how: 'Create a project. Upload documents in parallel. Define one schema: the fields you want extracted from every paragraph across every document. Apply it once. AI workers fan out across thousands of blocks simultaneously.',
-    fields: ['topic', 'entities', 'relationships', 'key_claims'],
-    result: 'A document set turned into structured, traceable output. Export JSONL for your pipeline, push to a knowledge graph, or load into a vector store with metadata filters.',
+      'Hundreds of reports and filings must become queryable, consistent data for teams and downstream systems.',
+    approach:
+      'Apply one schema to all files. Workers process blocks in parallel and fill a single review grid in real time.',
+    schema: ['document_id', 'topic_tags[]', 'named_entities[]', 'key_findings', 'confidence'],
+    output: 'JSONL corpus with immutable provenance and normalized fields across all documents.',
+    downstream: 'Warehouse analytics, vector indexing, and knowledge graph pipelines.',
   },
   {
-    icon: IconScale,
-    color: 'indigo',
-    title: 'Legal corpus analysis at paragraph resolution',
+    badge: 'Content Revision',
+    title: 'Batch Content Transformation',
     scenario:
-      'You need to analyze hundreds of legal opinions — classifying rhetorical functions, extracting cited authorities, mapping argument structures. Manual annotation at this scale is prohibitive.',
-    how: 'Upload the corpus. Define a legal analysis schema with fields for rhetorical function, cited authorities, legal principles, and holding vs. dicta classification. AI processes each paragraph independently. Review and confirm in the grid.',
-    fields: ['rhetorical_function', 'cited_authorities', 'legal_principle', 'is_holding'],
-    result: 'A structured legal dataset with paragraph-level annotations across the entire corpus. Feed into citation network analysis, build evaluation benchmarks, or export for academic research.',
-  },
-  {
-    icon: IconRefresh,
-    color: 'teal',
-    title: 'Revise an entire corpus to match new standards',
-    scenario:
-      'Your organization has 77 technical specifications written over 5 years. A new style guide dropped. Every document needs to be rewritten to comply — but doing it manually would take months.',
-    how: 'Upload all 77 documents into one project. Define a revision schema with your style guide rules as prompt instructions. Apply to all documents with one click. AI workers process every block in parallel. Review revisions in the grid, edit where needed, confirm, and export revised documents.',
-    fields: ['revised_content', 'revision_type', 'compliance_status', 'style_violations_fixed'],
-    result: '77 revised documents with full provenance. Every block traces from original content through revision rules to confirmed output. Export the revised documents and the structured audit trail.',
-  },
-  {
-    icon: IconBrain,
-    color: 'orange',
-    title: 'Build training datasets from expert-reviewed annotations',
-    scenario:
-      'You want to fine-tune a model on domain-specific extraction — but you need high-quality labeled data with expert review, not raw model output.',
-    how: 'Upload your training corpus. Define a schema matching the extraction task you want to teach the model. AI produces initial annotations. Domain experts review, correct, and confirm in the grid. Export as JSONL training pairs: block content → confirmed output.',
-    fields: ['classification', 'extracted_entities', 'summary', 'confidence'],
-    result: 'A supervised training dataset where every example has been human-reviewed. The staging/confirm flow is your quality gate. Version datasets by schema + run for reproducible training.',
-  },
-  {
-    icon: IconClipboardCheck,
-    color: 'violet',
-    title: 'Contract review with revision and compliance metadata',
-    scenario:
-      'A 45-page master service agreement needs review: identify obligations, flag risks, and produce a revised version with non-compliant clauses rewritten — all traceable to the original clause.',
-    how: 'Upload the contract. Define a schema that extracts obligations, risk flags, and defined terms, while also producing revised text for non-compliant clauses. AI processes each clause independently. Review both the metadata and the revisions before confirming.',
-    fields: ['revised_content', 'obligation_type', 'risk_level', 'defined_terms', 'deadline'],
-    result: 'A reviewed contract with clause-level metadata and a revised version with non-compliant language rewritten. Both export from the same confirmed overlays.',
+      'A large policy or documentation set needs readability and style modernization while preserving source context.',
+    approach:
+      'Run revision instructions at block level, review side-by-side, confirm approved rows, then export reconstructed output.',
+    schema: ['original_block', 'revised_block', 'tone_target', 'readability_score', 'approval_status'],
+    output: 'Revised dataset with block-level audit history and deterministic lineage.',
+    downstream: 'CMS updates, publication pipelines, and controlled document reconstruction.',
   },
 ];
 
 const SECONDARY = [
   {
-    icon: IconLanguage,
-    color: 'cyan',
-    title: 'Batch translation with quality metadata',
-    stat: '12 manuals. 4 target languages. 18,000 blocks.',
-    description:
-      'Define a schema with revised_content (translated text), translation_quality (fluency/accuracy scores), and untranslatable_terms. AI translates block by block. Reviewers confirm per-language.',
+    title: 'Contract review and compliance',
+    text: 'Extract obligations, deadlines, and risk clauses with row-level provenance.',
   },
   {
-    icon: IconFileText,
-    color: 'blue',
-    title: 'Thesis and dissertation review',
-    stat: '80,000 words. 640 blocks. 8 schema fields.',
-    description:
-      'Schema covers argument strength, citation quality, methodology alignment, and prose clarity. Every paragraph evaluated against your committee\'s standards.',
+    title: 'Research corpus annotation',
+    text: 'Tag methods, findings, and references consistently across large paper collections.',
   },
   {
-    icon: IconSearch,
-    color: 'orange',
-    title: 'RFP response preparation',
-    stat: '120-page RFP. 340 requirements. 6 response fields.',
-    description:
-      'Extract requirements, classify by domain, draft responses per section, tag compliance status. Export a structured requirements matrix alongside the drafted response.',
+    title: 'Survey response coding',
+    text: 'Classify open-ended responses for quantitative analysis at scale.',
   },
   {
-    icon: IconDatabase,
-    color: 'grape',
-    title: 'Research paper corpus annotation',
-    stat: '200 papers. 42,000 blocks. 5 metadata fields.',
-    description:
-      'Tag methodology, findings, limitations, and cited works across an entire research corpus. Export for meta-analysis or load into a knowledge graph.',
+    title: 'Policy translation workflows',
+    text: 'Translate high-volume policy text while preserving structure and terminology.',
   },
 ];
 
@@ -141,154 +85,147 @@ export default function UseCases({ withNav = true }: { withNav?: boolean }) {
   const isDark = colorScheme === 'dark';
 
   return (
-    <Box bg="var(--mantine-color-body)">
+    <Box bg={isDark ? 'var(--mantine-color-body)' : '#f6f6f7'}>
       {withNav && <PublicNavModern />}
 
-      {/* ── HERO ── */}
       <Box
-        pt={{ base: 120, md: 180 }}
-        pb={{ base: 80, md: 120 }}
+        pt={{ base: 112, md: 146 }}
+        pb={{ base: 72, md: 106 }}
         style={{
           position: 'relative',
           overflow: 'hidden',
           background: isDark
             ? 'radial-gradient(circle at 70% 0%, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0) 70%)'
-            : 'radial-gradient(circle at 70% 0%, rgba(0,0,0,0.03) 0%, rgba(0,0,0,0) 70%)',
+            : 'radial-gradient(circle at 70% 0%, rgba(15,23,42,0.06) 0%, rgba(15,23,42,0) 68%)',
         }}
       >
-        <Container size="lg" style={{ position: 'relative', zIndex: 1 }}>
-          <Stack gap="xl" align="center">
-            <Badge
-              variant="filled"
-              color="gray"
-              size="lg"
-              radius="xl"
-              tt="none"
-              bg={isDark ? 'rgba(255,255,255,0.1)' : 'var(--mantine-color-default-border)'}
-              c="var(--mantine-color-text)"
-            >
-              Real-world Application
-            </Badge>
+        <Container
+          size="xl"
+          px={{ base: 'md', md: 'xl' }}
+          style={{ position: 'relative', zIndex: 1, maxWidth: 1360 }}
+        >
+          <Stack gap="lg" align="center">
             <Title
               order={1}
               ta="center"
               style={{
-                fontSize: 'clamp(3rem, 5vw, 4.5rem)',
+                fontSize: 'clamp(2.25rem, 4.2vw, 3.7rem)',
                 lineHeight: 1.1,
                 fontWeight: 800,
                 letterSpacing: '-0.03em',
               }}
             >
-              Beyond "Chat with PDF"
+              Beyond "chat with PDF"
             </Title>
-            <Text ta="center" c="dimmed" size="xl" maw={720}>
-              When you need consistent, schema-driven output across thousands of paragraphs — metadata, revisions, or both — this is the workflow.
+            <Text ta="center" c="dimmed" size="lg" maw={760} style={{ lineHeight: 1.55, letterSpacing: '-0.01em' }}>
+              Schema-driven processing for metadata extraction, content revision, or both - across thousands of blocks.
             </Text>
           </Stack>
         </Container>
       </Box>
 
-      {/* ── FEATURED ── */}
-      <Box py={100} bg="var(--mantine-color-default-hover)">
-        <Container size="lg">
+      <Box py={{ base: 72, md: 96 }} bg="var(--mantine-color-default-hover)">
+        <Container size="xl" px={{ base: 'md', md: 'xl' }} style={{ maxWidth: 1360 }}>
           <Stack gap="xl">
-            {FEATURED.map((uc) => (
+            {FEATURED.map((useCase) => (
               <Paper
-                key={uc.title}
-                p="xl"
+                key={useCase.title}
+                p={{ base: 'lg', md: 36 }}
                 radius="lg"
                 withBorder
                 bg="var(--mantine-color-body)"
                 style={{
-                  position: 'relative',
-                  overflow: 'hidden',
-                  borderLeft: `3px solid var(--mantine-color-${uc.color}-6)`,
+                  boxShadow: isDark
+                    ? '0 16px 32px rgba(0,0,0,0.28)'
+                    : '0 12px 24px rgba(15,23,42,0.05)',
                 }}
               >
-                <SimpleGrid cols={{ base: 1, md: 2 }} spacing={60}>
+                <Stack gap={{ base: 'lg', md: 'xl' }}>
                   <Stack gap="md">
-                    <Group gap="md">
-                      <ThemeIcon variant="light" size="xl" radius="md" color={uc.color}>
-                        <uc.icon size={24} />
-                      </ThemeIcon>
-                      <Title order={3} size="h2" lh={1.2}>
-                        {uc.title}
-                      </Title>
-                    </Group>
-                    <Stack gap="xs" mt="md">
-                      <Text size="xs" fw={700} c={`${uc.color}.6`} tt="uppercase">The Situation</Text>
-                      <Text size="md" c="dimmed">{uc.scenario}</Text>
-                    </Stack>
-                    <Stack gap="xs" mt="sm">
-                      <Text size="xs" fw={700} c={`${uc.color}.6`} tt="uppercase">The Workflow</Text>
-                      <Text size="md" c="dimmed">{uc.how}</Text>
-                    </Stack>
+                    <Badge color="teal" variant="filled" radius="sm" w="fit-content">
+                      {useCase.badge}
+                    </Badge>
+                    <Title order={2} style={{ letterSpacing: '-0.02em' }}>
+                      {useCase.title}
+                    </Title>
                   </Stack>
 
-                  <Stack mt={{ base: 0, md: 10 }}>
-                    <Paper
-                      p="lg"
-                      radius="md"
-                      bg="var(--mantine-color-default-hover)"
-                      withBorder
-                      style={{ borderLeft: `3px solid var(--mantine-color-${uc.color}-4)` }}
-                    >
+                  <SimpleGrid cols={{ base: 1, md: 2 }} spacing={{ base: 'xl', md: 56 }}>
+                    <Stack gap="lg">
                       <Stack gap="xs">
-                        <Text size="xs" fw={700} c={`${uc.color}.6`} tt="uppercase">Output</Text>
-                        <Text size="sm" style={{ fontWeight: 500 }}>{uc.result}</Text>
+                        <Text fw={700} size="lg">
+                          Scenario
+                        </Text>
+                        <Text c="dimmed" size="lg" lh={1.6}>
+                          {useCase.scenario}
+                        </Text>
                       </Stack>
-                    </Paper>
-                    <Stack gap="xs" mt="md">
-                      <Text size="xs" fw={700} c="dimmed" tt="uppercase">Schema Fields</Text>
-                      <Group gap={6} wrap="wrap">
-                        {uc.fields.map((f) => (
-                          <Badge
-                            key={f}
-                            variant="outline"
-                            color={uc.color}
-                            size="md"
-                            radius="sm"
-                            styles={{ root: { textTransform: 'none', fontWeight: 500, fontFamily: 'monospace' } }}
-                          >
-                            {f}
-                          </Badge>
-                        ))}
-                      </Group>
+                      <Stack gap="xs">
+                        <Text fw={700} size="lg">
+                          BlockData approach
+                        </Text>
+                        <Text c="dimmed" size="lg" lh={1.6}>
+                          {useCase.approach}
+                        </Text>
+                      </Stack>
                     </Stack>
-                  </Stack>
-                </SimpleGrid>
+
+                    <Stack gap="lg">
+                      <Stack gap="xs">
+                        <Text fw={700} size="lg">
+                          Example schema
+                        </Text>
+                        <Paper p="md" radius="md" bg="var(--mantine-color-default-hover)">
+                          <Stack gap={6}>
+                            {useCase.schema.map((field) => (
+                              <Text key={field} ff="monospace" size="lg">
+                                {field}
+                              </Text>
+                            ))}
+                          </Stack>
+                        </Paper>
+                      </Stack>
+                      <Stack gap="xs">
+                        <Text fw={700} size="lg">
+                          Output
+                        </Text>
+                        <Text c="dimmed" size="lg" lh={1.6}>
+                          {useCase.output}
+                        </Text>
+                      </Stack>
+                      <Stack gap="xs">
+                        <Text fw={700} size="lg">
+                          Downstream
+                        </Text>
+                        <Text c="dimmed" size="lg" lh={1.6}>
+                          {useCase.downstream}
+                        </Text>
+                      </Stack>
+                    </Stack>
+                  </SimpleGrid>
+                </Stack>
               </Paper>
             ))}
           </Stack>
         </Container>
       </Box>
 
-      {/* ── SECONDARY ── */}
-      <Box py={100}>
-        <Container size="lg">
+      <Box py={{ base: 72, md: 94 }}>
+        <Container size="xl" px={{ base: 'md', md: 'xl' }} style={{ maxWidth: 1360 }}>
           <Stack gap="xl">
-            <Title order={2} ta="center">Use cases at scale.</Title>
+            <Title order={2} ta="center">
+              More use cases
+            </Title>
             <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg">
-              {SECONDARY.map((uc) => (
-                <Paper key={uc.title} p="xl" radius="md" withBorder>
-                  <Stack gap="md">
-                    <Group gap="md">
-                      <ThemeIcon variant="light" size="lg" radius="md" color={uc.color}>
-                        <uc.icon size={20} />
-                      </ThemeIcon>
-                      <Text fw={700} size="lg">{uc.title}</Text>
-                    </Group>
-                    <Badge
-                      variant="light"
-                      radius="sm"
-                      size="md"
-                      color={uc.color}
-                      w="fit-content"
-                      styles={{ root: { textTransform: 'none' } }}
-                    >
-                      {uc.stat}
-                    </Badge>
-                    <Text size="md" c="dimmed">{uc.description}</Text>
+              {SECONDARY.map((item) => (
+                <Paper key={item.title} p="lg" radius="md" withBorder>
+                  <Stack gap="xs">
+                    <Text fw={700} size="lg">
+                      {item.title}
+                    </Text>
+                    <Text c="dimmed" size="lg" lh={1.6}>
+                      {item.text}
+                    </Text>
                   </Stack>
                 </Paper>
               ))}
@@ -297,32 +234,22 @@ export default function UseCases({ withNav = true }: { withNav?: boolean }) {
         </Container>
       </Box>
 
-      {/* ── CTA ── */}
-      <Box py={120} bg="var(--mantine-color-default-hover)">
+      <Box py={{ base: 80, md: 112 }} bg="var(--mantine-color-default-hover)">
         <Container size="sm">
           <Stack align="center" gap="lg">
-            <Title order={2} ta="center" fz={40}>
+            <Title order={2} ta="center" fz={{ base: 36, md: 44 }}>
               Try it on a real document.
             </Title>
-            <Text ta="center" c="dimmed" size="xl" maw={520}>
-              Upload one file and see blocks populate in the grid.
+            <Text ta="center" c="dimmed" size="xl" maw={580}>
+              Upload one file and watch structured results appear block by block.
             </Text>
-            <Group gap="md">
-              <Button
-                size="xl"
-                rightSection={<IconArrowRight size={20} />}
-                onClick={() => navigate('/register')}
-              >
-                Create account
-              </Button>
-              <Button
-                size="xl"
-                variant="default"
-                onClick={() => navigate('/integrations')}
-              >
-                See integrations
-              </Button>
-            </Group>
+            <Button
+              size="xl"
+              rightSection={<IconArrowRight size={18} />}
+              onClick={() => navigate('/register')}
+            >
+              Get started free
+            </Button>
           </Stack>
         </Container>
       </Box>

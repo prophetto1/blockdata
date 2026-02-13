@@ -1,80 +1,64 @@
 import {
+  Badge,
   Box,
   Button,
+  Code,
   Container,
   Group,
+  Paper,
   SimpleGrid,
   Stack,
   Text,
-  Title,
-  Paper,
   ThemeIcon,
-  Badge,
-  Code,
-  Divider,
+  Title,
   useMantineColorScheme,
 } from '@mantine/core';
 import {
-  IconUpload,
+  IconBolt,
+  IconCheck,
+  IconFileExport,
   IconLayoutGrid,
   IconSchema,
-  IconBolt,
-  IconChecks,
-  IconFileExport,
-  IconCheck,
+  IconUpload,
 } from '@tabler/icons-react';
 import { useNavigate } from 'react-router-dom';
-
-/**
- * HowItWorks — v2.1
- *
- * v2.1 improvements:
- * - Theme-adaptive hero (no hardcoded white)
- * - Pipeline cards with color progression per stage
- */
 
 const PIPELINE = [
   {
     step: '01',
     icon: IconUpload,
-    color: 'blue',
     title: 'Upload',
-    body: 'Drop in documents — Markdown, Word, PDF. The platform handles format conversion via Docling or mdast.',
+    body: 'Drop in documents - Markdown, Word, and PDF. Files are normalized before processing.',
   },
   {
     step: '02',
     icon: IconLayoutGrid,
-    color: 'violet',
     title: 'Decompose',
-    body: 'Documents split into ordered blocks. Each gets a steady ID hash computed from content and position.',
+    body: 'Each document is split into stable blocks with deterministic IDs and source position.',
   },
   {
     step: '03',
     icon: IconSchema,
-    color: 'indigo',
-    title: 'Schema',
-    body: 'Your JSON schema instructs the AI per block. Extract metadata, rewrite content, or both.',
+    title: 'Define schema',
+    body: 'Your JSON schema defines block-level outputs for enrichment, revision, or both.',
   },
   {
     step: '04',
     icon: IconBolt,
-    color: 'orange',
     title: 'Process',
-    body: 'Concurrent workers claim blocks atomically. 20 workers on 5,000 blocks finishes in minutes.',
+    body: 'Workers process blocks in parallel with identical instructions and consistent quality.',
   },
   {
     step: '05',
-    icon: IconChecks,
-    color: 'green',
+    icon: IconCheck,
     title: 'Review',
-    body: 'Results land in staging. Edit inline, confirm per-block or in bulk. Nothing exports without approval.',
+    body: 'Results land in staging. Review, edit, and confirm block-by-block or in bulk.',
   },
   {
     step: '06',
     icon: IconFileExport,
-    color: 'teal',
     title: 'Export',
-    body: 'Canonical JSONL with full provenance. Reassemble revised documents from confirmed blocks.',
+    body: 'Confirmed output exports as stable JSONL with full provenance and predictable contracts.',
   },
 ];
 
@@ -97,7 +81,7 @@ const COMPARISON = [
   {
     label: 'Human review',
     docLevel: 'Read entire output.',
-    blockData: 'Staging & bulk confirm.',
+    blockData: 'Staging and bulk confirm.',
   },
   {
     label: 'Scale',
@@ -109,21 +93,18 @@ const COMPARISON = [
 const SCHEMA_DETAIL = [
   {
     label: 'Metadata',
-    description: 'Classify paragraphs, extract entities, tag topics, score sentiment.',
+    description: 'Classify paragraphs, extract entities, tag topics, and score confidence.',
     example: '{ "rhetorical_function": "holding", "confidence": 0.92 }',
-    color: 'blue',
   },
   {
     label: 'Revision',
-    description: 'Rewrite to plain language, apply style guide, translate, simplify.',
+    description: 'Rewrite to plain language, apply style standards, translate, or simplify.',
     example: '{ "revised_content": "The court decided...", "diff": "..." }',
-    color: 'green',
   },
   {
     label: 'Combined',
-    description: 'Revise content AND produce structured metadata about the revision.',
+    description: 'Revise content and return structured metadata about the revision.',
     example: '{ "revised": "...", "reading_level_change": "12->8" }',
-    color: 'violet',
   },
 ];
 
@@ -133,83 +114,101 @@ export default function HowItWorks() {
   const isDark = colorScheme === 'dark';
 
   return (
-    <Box bg="var(--mantine-color-body)">
-
-      {/* ── HERO ── */}
+    <Box bg={isDark ? 'var(--mantine-color-body)' : '#f6f6f7'}>
       <Box
-        pt={{ base: 120, md: 180 }}
-        pb={{ base: 80, md: 120 }}
+        pt={{ base: 112, md: 150 }}
+        pb={{ base: 76, md: 108 }}
         style={{
           position: 'relative',
           overflow: 'hidden',
           background: isDark
             ? 'radial-gradient(circle at 50% 0%, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0) 70%)'
-            : 'radial-gradient(circle at 50% 0%, rgba(0,0,0,0.03) 0%, rgba(0,0,0,0) 70%)',
+            : 'radial-gradient(circle at 50% 0%, rgba(15,23,42,0.06) 0%, rgba(15,23,42,0) 68%)',
         }}
       >
-        <Container size="lg" style={{ position: 'relative', zIndex: 1 }}>
-          <Stack gap="xl" align="center">
-            <Badge
-              variant="filled"
-              color="gray"
-              size="lg"
-              radius="xl"
-              tt="none"
-              bg={isDark ? 'rgba(255,255,255,0.1)' : 'var(--mantine-color-default-border)'}
-              c="var(--mantine-color-text)"
-            >
-              Architecture
-            </Badge>
+        <Container
+          size="xl"
+          px={{ base: 'md', md: 'xl' }}
+          style={{ position: 'relative', zIndex: 1, maxWidth: 1360 }}
+        >
+          <Stack gap="lg" align="center">
             <Title
               order={1}
               ta="center"
               style={{
-                fontSize: 'clamp(3rem, 5vw, 4.5rem)',
+                fontSize: 'clamp(2.25rem, 4.2vw, 3.7rem)',
                 lineHeight: 1.1,
                 fontWeight: 800,
                 letterSpacing: '-0.03em',
               }}
             >
-              Every block. Same instructions.<br />
-              <span style={{ color: 'var(--mantine-color-dimmed)' }}> Zero drift.</span>
+              Every block. Same instructions.
+              <br />
+              <span style={{ color: 'var(--mantine-color-dimmed)' }}>Zero drift.</span>
             </Title>
-            <Text ta="center" c="dimmed" size="xl" maw={680}>
-              The platform decomposes documents into blocks, applies your schema per block in parallel, and stages results for human review.
+            <Text ta="center" c="dimmed" size="lg" maw={760} style={{ lineHeight: 1.55, letterSpacing: '-0.01em' }}>
+              The platform decomposes documents into blocks, applies your schema per block in parallel, and stages
+              results for human review.
             </Text>
           </Stack>
         </Container>
       </Box>
 
-      {/* ── PIPELINE (Horizontal Cards) ── */}
-      <Box py={100} bg="var(--mantine-color-default-hover)">
-        <Container size="xl">
+      <Box py={{ base: 72, md: 96 }} bg="var(--mantine-color-default-hover)">
+        <Container size="xl" px={{ base: 'md', md: 'xl' }} style={{ maxWidth: 1360 }}>
           <Stack gap="xl">
-            <Group justify="space-between" align="end" mb="lg">
+            <Group justify="space-between" align="end" wrap="wrap">
               <Box>
-                <Text size="sm" fw={700} tt="uppercase" c="dimmed" mb={4}>The Pipeline</Text>
-                <Title order={2}>Six stages. Full lifecycle.</Title>
+                <Text size="sm" fw={700} tt="uppercase" c="dimmed" mb={4}>
+                  The pipeline
+                </Text>
+                <Title order={2} style={{ letterSpacing: '-0.02em' }}>
+                  Six stages. Full lifecycle.
+                </Title>
               </Box>
-              <Button variant="default" onClick={() => navigate('/register')}>Start building</Button>
+              <Button variant="default" onClick={() => navigate('/register')}>
+                Start building
+              </Button>
             </Group>
 
-            <SimpleGrid cols={{ base: 1, sm: 2, md: 3, lg: 6 }} spacing="md">
+            <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="lg">
               {PIPELINE.map((step) => (
                 <Paper
                   key={step.title}
-                  p="lg"
+                  p={24}
                   radius="md"
                   withBorder
                   bg="var(--mantine-color-body)"
-                  style={{ position: 'relative', height: '100%' }}
+                  style={{ minHeight: 220 }}
                 >
-                  <Text size="xs" fw={800} c={`${step.color}.6`} mb="xs" style={{ opacity: 0.5 }}>{step.step}</Text>
-                  <ThemeIcon size="lg" radius="md" variant="light" color={step.color} mb="md">
-                    <step.icon size={20} />
-                  </ThemeIcon>
-                  <Text fw={700} mb="xs">{step.title}</Text>
-                  <Text size="sm" c="dimmed" lh={1.5} style={{ fontSize: '0.85rem' }}>
-                    {step.body}
-                  </Text>
+                  <Stack gap={12} h="100%">
+                    <Group gap={12}>
+                      <ThemeIcon
+                        size={34}
+                        radius="xl"
+                        variant="default"
+                        style={{ border: '1px solid var(--mantine-color-default-border)' }}
+                      >
+                        <Text size="sm" fw={700}>
+                          {step.step}
+                        </Text>
+                      </ThemeIcon>
+                      <ThemeIcon
+                        size={34}
+                        radius="md"
+                        variant="default"
+                        style={{ border: '1px solid var(--mantine-color-default-border)' }}
+                      >
+                        <step.icon size={18} />
+                      </ThemeIcon>
+                    </Group>
+                    <Text fw={700} size="lg">
+                      {step.title}
+                    </Text>
+                    <Text size="sm" c="dimmed" lh={1.65}>
+                      {step.body}
+                    </Text>
+                  </Stack>
                 </Paper>
               ))}
             </SimpleGrid>
@@ -217,77 +216,99 @@ export default function HowItWorks() {
         </Container>
       </Box>
 
-      {/* ── THE GRID (Hero Visual) ── */}
-      <Box py={120}>
-        <Container size="lg">
-          <Stack gap="xl" align="center" mb={60}>
-            <Title order={2} ta="center" fz={40}>The grid is the product.</Title>
-            <Text c="dimmed" ta="center" maw={600} size="lg">
+      <Box py={{ base: 80, md: 112 }}>
+        <Container size="xl" px={{ base: 'md', md: 'xl' }} style={{ maxWidth: 1360 }}>
+          <Stack gap="xl" align="center" mb={56}>
+            <Title order={2} ta="center">
+              The grid is the product.
+            </Title>
+            <Text c="dimmed" ta="center" maw={620} size="lg">
               Review every block in one view. Immutable source on the left, schema overlay on the right.
             </Text>
           </Stack>
 
-          {/* Mac Window Container */}
           <Paper
             radius="lg"
             withBorder
             style={{
               overflow: 'hidden',
-              boxShadow: '0 24px 48px -12px rgba(0, 0, 0, 0.5)',
-              backgroundColor: '#1A1B1E',
+              boxShadow: isDark
+                ? '0 24px 48px rgba(0, 0, 0, 0.45)'
+                : '0 20px 40px rgba(15, 23, 42, 0.08), 0 6px 14px rgba(15, 23, 42, 0.06)',
+              backgroundColor: isDark ? '#15161A' : '#FFFFFF',
             }}
           >
-            {/* Window Header */}
-            <Group p="sm" bg="rgba(255,255,255,0.03)" style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+            <Group p="sm" style={{ borderBottom: '1px solid var(--mantine-color-default-border)' }}>
               <Group gap={6}>
                 <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#ff5f56' }} />
                 <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#ffbd2e' }} />
                 <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#27c93f' }} />
               </Group>
-              <Text size="xs" c="dimmed" mx="auto" fw={500}>legal_analysis_project — BlockData</Text>
+              <Text size="xs" c="dimmed" mx="auto" fw={500}>
+                legal_analysis_project - BlockData
+              </Text>
               <Box w={40} />
             </Group>
 
-            {/* Toolbar */}
-            <Group
-              p="xs"
-              px="md"
-              gap="sm"
-              style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}
-            >
-              <Badge variant="outline" color="gray" size="sm" radius="sm">schema: v1.2</Badge>
-              <Divider orientation="vertical" />
-              <Badge variant="filled" color="green" size="sm" radius="sm">276 confirmed</Badge>
-              <Badge variant="filled" color="yellow" size="sm" radius="sm">58 staged</Badge>
-              <Box style={{ flex: 1 }} />
-              <Button size="xs" variant="default">Filter</Button>
-              <Button size="xs" variant="white" color="dark">Export JSONL</Button>
-            </Group>
-
-            {/* Grid Header */}
             <SimpleGrid
               cols={6}
               spacing={0}
-              style={{
-                backgroundColor: 'rgba(255,255,255,0.02)',
-                borderBottom: '1px solid rgba(255,255,255,0.08)',
-              }}
+              style={{ borderBottom: '1px solid var(--mantine-color-default-border)' }}
               py="xs"
             >
-              <Text size="xs" fw={700} c="dimmed" pl="md">#</Text>
-              <Text size="xs" fw={700} c="dimmed">TYPE</Text>
-              <Text size="xs" fw={700} c="dimmed">CONTENT (SOURCE)</Text>
-              <Text size="xs" fw={700} c="dimmed">FUNCTION</Text>
-              <Text size="xs" fw={700} c="dimmed">AUTHORITY</Text>
-              <Text size="xs" fw={700} c="dimmed">STATUS</Text>
+              <Text size="xs" fw={700} c="dimmed" pl="md">
+                #
+              </Text>
+              <Text size="xs" fw={700} c="dimmed">
+                TYPE
+              </Text>
+              <Text size="xs" fw={700} c="dimmed">
+                CONTENT (SOURCE)
+              </Text>
+              <Text size="xs" fw={700} c="dimmed">
+                FUNCTION
+              </Text>
+              <Text size="xs" fw={700} c="dimmed">
+                AUTHORITY
+              </Text>
+              <Text size="xs" fw={700} c="dimmed">
+                STATUS
+              </Text>
             </SimpleGrid>
 
-            {/* Data Rows */}
             {[
-              { i: 42, type: 'PARA', content: 'The court held that the administrative agency exceeded its statutory…', fn: 'holding', auth: 'Chevron', status: 'confirmed', statusColor: 'green' },
-              { i: 43, type: 'PARA', content: 'In reaching this conclusion, the majority relied on the plain text…', fn: 'reasoning', auth: 'Marbury', status: 'staged', statusColor: 'yellow' },
-              { i: 44, type: 'HEAD', content: 'III. Dissenting Opinion', fn: '—', auth: '—', status: 'staged', statusColor: 'yellow' },
-              { i: 45, type: 'PARA', content: 'The dissent argued that the majority\'s reading of the statute fails…', fn: 'dissent', auth: 'Griswold', status: 'pending', statusColor: 'gray' },
+              {
+                i: 42,
+                type: 'PARA',
+                content: 'The court held that the administrative agency exceeded its statutory...',
+                fn: 'holding',
+                auth: 'Chevron',
+                status: 'confirmed',
+              },
+              {
+                i: 43,
+                type: 'PARA',
+                content: 'In reaching this conclusion, the majority relied on the plain text...',
+                fn: 'reasoning',
+                auth: 'Marbury',
+                status: 'staged',
+              },
+              {
+                i: 44,
+                type: 'HEAD',
+                content: 'III. Dissenting Opinion',
+                fn: '-',
+                auth: '-',
+                status: 'staged',
+              },
+              {
+                i: 45,
+                type: 'PARA',
+                content: "The dissent argued that the majority's reading of the statute fails...",
+                fn: 'dissent',
+                auth: 'Griswold',
+                status: 'pending',
+              },
             ].map((row, index) => (
               <SimpleGrid
                 key={row.i}
@@ -295,46 +316,73 @@ export default function HowItWorks() {
                 spacing={0}
                 py="sm"
                 style={{
-                  borderBottom: '1px solid rgba(255,255,255,0.04)',
-                  backgroundColor: index % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)',
+                  borderBottom: '1px solid var(--mantine-color-default-border)',
+                  backgroundColor:
+                    index % 2 === 0 ? 'transparent' : isDark ? 'rgba(255,255,255,0.01)' : 'rgba(9,9,11,0.02)',
                 }}
               >
-                <Text size="xs" c="dimmed" ff="monospace" pl="md">{row.i}</Text>
-                <Badge variant="light" size="xs" radius="sm" color="gray" w="fit-content" styles={{ root: { textTransform: 'none' } }}>{row.type}</Badge>
-                <Text size="xs" c="dimmed" lineClamp={1} pr="md">{row.content}</Text>
-                <Text size="xs" c="blue" ff="monospace">{row.fn}</Text>
-                <Text size="xs" c="dimmed" ff="monospace">{row.auth}</Text>
-                <Badge variant="dot" color={row.statusColor} size="xs" w="fit-content">{row.status}</Badge>
+                <Text size="xs" c="dimmed" ff="monospace" pl="md">
+                  {row.i}
+                </Text>
+                <Badge
+                  variant="default"
+                  size="xs"
+                  radius="sm"
+                  w="fit-content"
+                  styles={{ root: { textTransform: 'none' } }}
+                >
+                  {row.type}
+                </Badge>
+                <Text size="xs" c="dimmed" lineClamp={1} pr="md">
+                  {row.content}
+                </Text>
+                <Text size="xs" ff="monospace">
+                  {row.fn}
+                </Text>
+                <Text size="xs" c="dimmed" ff="monospace">
+                  {row.auth}
+                </Text>
+                <Badge variant="dot" color="gray" size="xs" w="fit-content">
+                  {row.status}
+                </Badge>
               </SimpleGrid>
             ))}
 
-            {/* Fake Footer */}
-            <Box p="xs" bg="rgba(255,255,255,0.02)">
-              <Text size="xs" c="dimmed" ta="center">Showing 4 of 347 blocks</Text>
+            <Box p="xs" bg={isDark ? 'rgba(255,255,255,0.02)' : 'rgba(9,9,11,0.03)'}>
+              <Text size="xs" c="dimmed" ta="center">
+                Showing 4 of 347 blocks
+              </Text>
             </Box>
           </Paper>
         </Container>
       </Box>
 
-      {/* ── COMPARISON / ARCHITECTURE ── */}
-      <Box py={120} bg="var(--mantine-color-default-hover)">
-        <Container size="lg">
-          <SimpleGrid cols={{ base: 1, md: 2 }} spacing={80}>
+      <Box py={{ base: 76, md: 108 }} bg="var(--mantine-color-default-hover)">
+        <Container size="xl" px={{ base: 'md', md: 'xl' }} style={{ maxWidth: 1360 }}>
+          <SimpleGrid cols={{ base: 1, md: 2 }} spacing={{ base: 40, md: 80 }}>
             <Stack>
-              <Title order={2} mb="md">Block-level vs.<br/>Document-level</Title>
+              <Title order={2} mb="md">
+                Block-level vs.
+                <br />
+                Document-level
+              </Title>
               <Text size="lg" c="dimmed">
-                Processing documents as single large blobs leads to drift and hallucination.
-                Decomposing them into atomic blocks ensures consistent quality from start to finish.
+                Processing documents as a single large blob leads to drift and inconsistent outputs.
+                Decomposing into atomic blocks keeps quality stable from start to finish.
               </Text>
               <Stack mt="xl">
-                {COMPARISON.map(item => (
+                {COMPARISON.map((item) => (
                   <Group key={item.label} align="start" wrap="nowrap">
-                    <ThemeIcon variant="light" color="green" radius="xl" size="sm" mt={4}>
+                    <ThemeIcon variant="default" radius="xl" size="sm">
                       <IconCheck size={12} />
                     </ThemeIcon>
                     <Box>
-                      <Text fw={700} size="sm">{item.label}</Text>
-                      <Text size="sm" c="dimmed">{item.blockData}</Text>
+                      <Text fw={700} size="sm">
+                        {item.label}
+                      </Text>
+                      <Text size="sm" c="dimmed">
+                        {item.blockData}
+                      </Text>
                     </Box>
                   </Group>
                 ))}
@@ -342,14 +390,20 @@ export default function HowItWorks() {
             </Stack>
 
             <Stack gap="lg">
-              <Title order={3} size="h4" c="dimmed" tt="uppercase">Schema Flexibility</Title>
-              {SCHEMA_DETAIL.map(s => (
+              <Title order={3} size="h4" c="dimmed" tt="uppercase">
+                Schema flexibility
+              </Title>
+              {SCHEMA_DETAIL.map((s) => (
                 <Paper key={s.label} p="md" radius="md" withBorder>
-                  <Group justify="space-between" mb="xs">
-                    <Badge variant="light" color={s.color}>{s.label}</Badge>
-                  </Group>
-                  <Text size="sm" mb="sm">{s.description}</Text>
-                  <Code block style={{ fontSize: 11 }}>{s.example}</Code>
+                  <Badge variant="default" mb="xs">
+                    {s.label}
+                  </Badge>
+                  <Text size="sm" mb="sm">
+                    {s.description}
+                  </Text>
+                  <Code block style={{ fontSize: 11 }}>
+                    {s.example}
+                  </Code>
                 </Paper>
               ))}
             </Stack>
@@ -357,17 +411,21 @@ export default function HowItWorks() {
         </Container>
       </Box>
 
-      {/* ── CTA ── */}
-      <Box py={120}>
+      <Box py={{ base: 80, md: 112 }}>
         <Container size="sm" ta="center">
-          <Title order={2} fz={40} mb="lg">Ready to build?</Title>
+          <Title order={2} fz={{ base: 36, md: 44 }} mb="lg">
+            Ready to build?
+          </Title>
           <Group justify="center">
-            <Button size="xl" onClick={() => navigate('/register')}>Get Started</Button>
-            <Button size="xl" variant="default" onClick={() => navigate('/use-cases')}>View Use Cases</Button>
+            <Button size="xl" onClick={() => navigate('/register')}>
+              Get started
+            </Button>
+            <Button size="xl" variant="default" onClick={() => navigate('/use-cases')}>
+              View use cases
+            </Button>
           </Group>
         </Container>
       </Box>
-
     </Box>
   );
 }

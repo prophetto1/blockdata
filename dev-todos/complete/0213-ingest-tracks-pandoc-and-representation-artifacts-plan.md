@@ -1,8 +1,10 @@
 # Ingest Track Standardization + Pandoc + Representation Artifacts Plan (v2 Patch)
 
 **Date:** 2026-02-13  
-**Status:** Execution record for v2 rollout (Phases 1-3 implemented and validated; Phase 4 deferred; Phase 5 required next-phase scope)  
+**Status:** Execution record for v2 rollout (Phases 1-3 + 5 implemented and validated; Phase 4 deferred)  
 **Working location:** `dev-todos/` (moved from `docs/ongoing-tasks/`)  
+
+**Migration note (2026-02-13):** Remaining open actions (Phase 4 + carry-forward backlog) are consolidated in `dev-todos/0213-consolidated-remaining-actions.md`.
 
 ---
 
@@ -558,7 +560,7 @@ Status snapshot date: **2026-02-13**
 3. `[x]` Phase 2 complete
 4. `[x]` Phase 3 complete
 5. `[ ]` Phase 4 complete (**deferred**)
-6. `[ ]` Phase 5 complete (**required**, not started)
+6. `[x]` Phase 5 complete
 
 Current roadmap priority (active execution scope):
 
@@ -567,7 +569,7 @@ Current roadmap priority (active execution scope):
 3. Ensure robust source-type identification and routing.
 4. Persist parser-native intermediary artifacts (`markdown_bytes`, `doclingdocument_json`, `pandoc_ast_json`) as first-class records.
 5. Continue hardening ingest reliability, policy controls, and rollout safety.
-6. Deliver Phase 5 parser-native view exposure (API/UI toggle and parser-native metadata path) after ingest hardening gates are stable.
+6. Continue ingest hardening while preserving normalized-default behavior and parser-native opt-in exposure.
 
 Per-phase notes:
 
@@ -611,9 +613,21 @@ Per-phase notes:
    - Reason: roadmap priority is ingest-track operation/coverage and intermediary artifact hardening first.
    - Evidence: no adapter interface or deterministic adapter implementation in current scope.
 
-5. Phase 5 (Parser-native view exposure) status: **Required, not started**
-   - Scope remains in roadmap: add parser-native block metadata fields and normalized-vs-parser-native API/UI toggle without breaking defaults.
-   - Evidence: no API/UI normalized-vs-parser-native toggle implementation found in current changed files.
+5. Phase 5 (Parser-native view exposure) status: **Complete**
+   - Evidence:
+     - Parser-native metadata persisted in block locators across tracks:
+       - `supabase/functions/ingest/process-md.ts`
+       - `supabase/functions/conversion-complete/index.ts`
+       - `supabase/functions/_shared/markdown.ts`
+       - `supabase/functions/_shared/docling.ts`
+       - `supabase/functions/_shared/pandoc.ts`
+     - API toggle implemented in JSONL export:
+       - `supabase/functions/export-jsonl/index.ts` (`block_view=normalized|parser_native`, normalized default)
+     - UI toggle implemented in block viewer:
+       - `web/src/components/blocks/BlockViewerGrid.tsx` (`Normalized` / `Parser Native`)
+     - Docs updated for normalized-vs-parser-native contract:
+       - `docs-site/src/content/docs/core-workflow/processing/ingest-pipeline.md`
+       - `docs-site/src/content/docs/key-concepts/blocks/parsing-tracks.md`
 
 Test commands + results (this session):
 
@@ -627,10 +641,15 @@ Test commands + results (this session):
    - `block_locator.type=pandoc_ast_path`
 3. Runtime representation check via PostgREST query on `conversion_representations_v2` -> **PASS**
    - New row observed for `source_type=rst`, `parsing_tool=pandoc`, `representation_type=pandoc_ast_json`.
+4. `deno test supabase/functions/_shared/*.test.ts` -> **PASS**
+   - mdast/docling/pandoc extractor tests green, including parser-native metadata assertions.
+5. `npm --prefix web run lint` -> **FAIL (pre-existing unrelated issues)**
+   - Existing failures in `web/src/auth/AuthContext.tsx`, `web/src/components/marketing/MarketingGrid.tsx`, `web/src/hooks/useDocuments.ts`, `web/src/pages/Projects.tsx`, `web/src/pages/SchemaStart.tsx`.
+   - No new Phase 5-specific lint error introduced.
 
 Current blockers/risks:
 
-1. Phase 4 is intentionally deferred; Phase 5 is explicitly required next-phase scope.
+1. Phase 4 is intentionally deferred.
 2. Pandoc binary is installed from apt (`pandoc`) but not version-pinned at package version granularity in Dockerfile.
 3. Temporary rollout policy changes were applied for validation (`upload.track_enabled.pandoc=true`, `upload.allowed_extensions` includes `rst`) and should be treated as active runtime config.
 

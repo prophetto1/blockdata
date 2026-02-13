@@ -13,9 +13,9 @@ function base64UrlDecode(s: string): Uint8Array {
   return out;
 }
 
-async function deriveAesKey(secret: string): Promise<CryptoKey> {
+async function deriveAesKey(secret: string, context: string): Promise<CryptoKey> {
   const enc = new TextEncoder();
-  const seed = enc.encode(`${secret}\nuser-api-keys-v1\n`);
+  const seed = enc.encode(`${secret}\n${context}\n`);
   const digest = await crypto.subtle.digest("SHA-256", seed);
   return crypto.subtle.importKey("raw", digest, { name: "AES-GCM" }, false, [
     "encrypt",
@@ -25,8 +25,12 @@ async function deriveAesKey(secret: string): Promise<CryptoKey> {
 
 const PREFIX = "enc:v1:";
 
-export async function encryptApiKey(plaintext: string, secret: string): Promise<string> {
-  const key = await deriveAesKey(secret);
+export async function encryptWithContext(
+  plaintext: string,
+  secret: string,
+  context: string,
+): Promise<string> {
+  const key = await deriveAesKey(secret, context);
   const iv = crypto.getRandomValues(new Uint8Array(12));
   const ptBytes = new TextEncoder().encode(plaintext);
   const ct = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, ptBytes);
@@ -34,7 +38,11 @@ export async function encryptApiKey(plaintext: string, secret: string): Promise<
   return `${PREFIX}${base64UrlEncode(iv)}:${base64UrlEncode(ctBytes)}`;
 }
 
-export async function decryptApiKey(encrypted: string, secret: string): Promise<string> {
+export async function decryptWithContext(
+  encrypted: string,
+  secret: string,
+  context: string,
+): Promise<string> {
   if (!encrypted.startsWith(PREFIX)) {
     // Back-compat: older rows stored plaintext in api_key_encrypted.
     return encrypted;
@@ -42,10 +50,20 @@ export async function decryptApiKey(encrypted: string, secret: string): Promise<
   const rest = encrypted.slice(PREFIX.length);
   const parts = rest.split(":");
   if (parts.length !== 2) throw new Error("Invalid encrypted key format");
-  const iv = base64UrlDecode(parts[0]);
-  const ct = base64UrlDecode(parts[1]);
-  const key = await deriveAesKey(secret);
+  // Copy into fresh Uint8Array instances to satisfy Deno's stricter BufferSource typing.
+  const iv = new Uint8Array(base64UrlDecode(parts[0]));
+  const ct = new Uint8Array(base64UrlDecode(parts[1]));
+  const key = await deriveAesKey(secret, context);
   const pt = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, ct);
   return new TextDecoder().decode(new Uint8Array(pt));
 }
 
+const USER_API_KEYS_CONTEXT = "user-api-keys-v1";
+
+export async function encryptApiKey(plaintext: string, secret: string): Promise<string> {
+  return encryptWithContext(plaintext, secret, USER_API_KEYS_CONTEXT);
+}
+
+export async function decryptApiKey(encrypted: string, secret: string): Promise<string> {
+  return decryptWithContext(encrypted, secret, USER_API_KEYS_CONTEXT);
+}
