@@ -14,7 +14,7 @@ Documents from source integrations are decomposed into stable blocks, processed 
 
 ## Canonical Integration Contracts
 
-- [Canonical Export Contract](/docs/architecture/canonical-export/)
+- [Canonical Export Contract](/docs/key-concepts/architecture/canonical-export/)
 - [Source vs Destination Integrations](/docs/integrations/source-destination/)
 - [Zvec Integration Contract](/docs/integrations/zvec-contract/)
 - [Zvec Adapters and Transformers](/docs/integrations/zvec-adapters-and-transformers/)

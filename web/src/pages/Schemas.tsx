@@ -166,6 +166,10 @@ export default function Schemas() {
     resizable: true,
     sortable: true,
     filter: true,
+    cellStyle: {
+      display: 'flex',
+      alignItems: 'center',
+    },
   }), []);
 
   return (

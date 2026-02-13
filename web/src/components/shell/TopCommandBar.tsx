@@ -1,5 +1,6 @@
-import { ActionIcon, Burger, Button, Group, Text, TextInput, Tooltip } from '@mantine/core';
+import { ActionIcon, Burger, Button, Group, Text, TextInput, Tooltip, UnstyledButton } from '@mantine/core';
 import { IconMoon, IconSearch, IconSun } from '@tabler/icons-react';
+import { useNavigate } from 'react-router-dom';
 
 type TopCommandBarProps = {
   navOpened: boolean;
@@ -26,13 +27,26 @@ export function TopCommandBar({
   userLabel,
   onSignOut,
 }: TopCommandBarProps) {
+  const navigate = useNavigate();
+
   return (
     <Group h="100%" px="md" justify="space-between">
       <Group gap="sm">
         <Burger opened={navOpened} onClick={onToggleNav} hiddenFrom="sm" size="sm" />
         <Group gap={8}>
-          <img src="/icon-64.png" alt="" width={28} height={28} />
-          <Text fw={700} size="lg">BlockData</Text>
+          <UnstyledButton
+            type="button"
+            onClick={() => navigate('/app')}
+            aria-label="Go to workspace home"
+            style={{ display: 'flex', cursor: 'pointer' }}
+          >
+            <img
+              src={computedColorScheme === 'dark' ? '/logo-dark.png' : '/logo-light.png'}
+              alt="BlockData"
+              height={42}
+              style={{ display: 'block' }}
+            />
+          </UnstyledButton>
         </Group>
         {showSearch && (
           <TextInput

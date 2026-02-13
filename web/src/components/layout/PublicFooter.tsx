@@ -1,14 +1,21 @@
-import { Anchor, Box, Container, Group, Text } from '@mantine/core';
+import { Anchor, Box, Container, Group, useMantineColorScheme, useComputedColorScheme } from '@mantine/core';
 import { Link } from 'react-router-dom';
 
 export function PublicFooter() {
+  const { colorScheme } = useMantineColorScheme();
+  const computedColorScheme = useComputedColorScheme('dark');
+  const isDark = (colorScheme === 'auto' ? computedColorScheme : colorScheme) === 'dark';
+
   return (
     <Box component="footer" py="xl" style={{ borderTop: '1px solid var(--mantine-color-default-border)' }}>
       <Container size="lg">
         <Group justify="space-between">
-          <Text fw={700} size="sm">
-            BlockData
-          </Text>
+          <img
+            src={isDark ? '/logo-dark.png' : '/logo-light.png'}
+            alt="BlockData"
+            height={48}
+            style={{ display: 'block', filter: 'grayscale(1)' }}
+          />
           <Group gap="xl">
             <Anchor component={Link} to="/how-it-works" size="sm" c="dimmed">
               How it works
@@ -25,4 +32,3 @@ export function PublicFooter() {
     </Box>
   );
 }
-

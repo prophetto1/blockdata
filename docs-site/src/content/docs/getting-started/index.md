@@ -10,17 +10,17 @@ BlockData decomposes uploaded documents into typed **blocks**, applies **schemas
 
 ## Recommended reading order (end-to-end)
 
-1. [Projects](/docs/projects/)
-2. [Documents](/docs/documents/)
-3. [Ingest & Conversion](/docs/ingest-and-conversion/)
-4. [Blocks](/docs/blocks/)
-5. [Schemas](/docs/schemas/)
-6. [Processing](/docs/processing/)
-7. [Review & Export](/docs/review-and-export/)
+1. [Projects](/docs/getting-started/projects/)
+2. [Documents](/docs/core-workflow/documents/)
+3. [Ingest & Conversion](/docs/core-workflow/ingest-and-conversion/)
+4. [Blocks](/docs/key-concepts/blocks/)
+5. [Schemas](/docs/key-concepts/schemas/)
+6. [Processing](/docs/core-workflow/processing/)
+7. [Review & Export](/docs/core-workflow/review-and-export/)
 8. [Integrations](/docs/integrations/)
 
 ## Canonical contracts
 
-- [Immutable Fields](/docs/schemas/immutable-schema/)
-- [Overlay Contract](/docs/review-and-export/overlay-contract/)
-- [Canonical Export Contract](/docs/architecture/canonical-export/)
+- [Immutable Fields](/docs/key-concepts/schemas/immutable-schema/)
+- [Overlay Contract](/docs/core-workflow/review-and-export/overlay-contract/)
+- [Canonical Export Contract](/docs/key-concepts/architecture/canonical-export/)

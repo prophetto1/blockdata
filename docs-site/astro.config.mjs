@@ -15,11 +15,21 @@ export default defineConfig({
 		starlight({
 			title: 'BlockData',
 			favicon: '/favicon.ico',
+			components: {
+				Header: './src/components/Header.astro',
+			},
 			logo: {
 				dark: './src/assets/logo-dark.png',
 				light: './src/assets/logo-light.png',
 				replacesTitle: true,
 			},
+			social: [
+				{
+					icon: 'github',
+					label: 'GitHub',
+					href: 'https://github.com/prophetto1/blockdata',
+				},
+			],
 			customCss: [
 				'@fontsource-variable/roboto-flex',
 				'./src/styles/custom.css',
@@ -45,20 +55,21 @@ export default defineConfig({
 					label: 'Getting Started',
 					items: [
 						{ label: 'Overview', link: '/getting-started/' },
-						{ label: 'Projects', link: '/projects/' },
+						{ label: 'Projects', link: '/getting-started/projects/' },
 					],
 				},
 				{
 					label: 'Core Workflow',
 					items: [
-						{ label: 'Documents', link: '/documents/' },
-						{ label: 'Ingest & Conversion', link: '/ingest-and-conversion/' },
-						{ label: 'Processing', link: '/processing/' },
-						{ label: 'Worker Protocol', link: '/processing/worker-protocol/' },
-						{ label: 'Runtime Policy', link: '/processing/runtime-policy/' },
-						{ label: 'Admin Config Registry', link: '/processing/admin-config-registry/' },
-						{ label: 'Review & Export', link: '/review-and-export/' },
-						{ label: 'Overlay Contract', link: '/review-and-export/overlay-contract/' },
+						{ label: 'Documents', link: '/core-workflow/documents/' },
+						{ label: 'Ingest & Conversion', link: '/core-workflow/ingest-and-conversion/' },
+						{ label: 'Ingest Pipeline (MD + DOCX)', link: '/core-workflow/processing/ingest-pipeline/' },
+						{ label: 'Processing', link: '/core-workflow/processing/' },
+						{ label: 'Worker Protocol', link: '/core-workflow/processing/worker-protocol/' },
+						{ label: 'Runtime Policy', link: '/core-workflow/processing/runtime-policy/' },
+						{ label: 'Admin Config Registry', link: '/core-workflow/processing/admin-config-registry/' },
+						{ label: 'Review & Export', link: '/core-workflow/review-and-export/' },
+						{ label: 'Overlay Contract', link: '/core-workflow/review-and-export/overlay-contract/' },
 					],
 				},
 				{
@@ -67,15 +78,15 @@ export default defineConfig({
 						{
 							label: 'Blocks',
 							items: [
-								{ label: 'Overview', link: '/blocks/' },
-								{ label: 'Block Types', link: '/blocks/block-types/' },
-								{ label: 'Parsing Tracks', link: '/blocks/parsing-tracks/' },
+								{ label: 'Overview', link: '/key-concepts/blocks/' },
+								{ label: 'Block Types', link: '/key-concepts/blocks/block-types/' },
+								{ label: 'Parsing Tracks', link: '/key-concepts/blocks/parsing-tracks/' },
 							],
 						},
-						{ label: 'Schemas', link: '/schemas/' },
-						{ label: 'Immutable Fields', link: '/schemas/immutable-schema/' },
-						{ label: 'User-Defined Schemas', link: '/schemas/user-defined-schemas/' },
-						{ label: 'Canonical Export', link: '/architecture/canonical-export/' },
+						{ label: 'Schemas', link: '/key-concepts/schemas/' },
+						{ label: 'Immutable Fields', link: '/key-concepts/schemas/immutable-schema/' },
+						{ label: 'User-Defined Schemas', link: '/key-concepts/schemas/user-defined-schemas/' },
+						{ label: 'Canonical Export', link: '/key-concepts/architecture/canonical-export/' },
 					],
 				},
 				{
@@ -91,10 +102,10 @@ export default defineConfig({
 					label: 'Roadmap',
 					collapsed: true,
 					items: [
-						{ label: 'Ongoing Work', link: '/ongoing-work/' },
-						{ label: 'Architecture', link: '/architecture/' },
-						{ label: 'Status', link: '/status/' },
-						{ label: 'Docs Policy', link: '/docs-policy/' },
+						{ label: 'Ongoing Work', link: '/roadmap/ongoing-work/' },
+						{ label: 'Architecture', link: '/roadmap/architecture/' },
+						{ label: 'Status', link: '/roadmap/status/' },
+						{ label: 'Docs Policy', link: '/roadmap/docs-policy/' },
 					],
 				},
 			],
