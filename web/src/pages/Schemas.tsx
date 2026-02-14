@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AgGridReact } from 'ag-grid-react';
 import { AllCommunityModule, ModuleRegistry, themeQuartz, type ColDef, type ICellRendererParams } from 'ag-grid-community';
-import { FileInput, TextInput, Button, Group, Stack, ActionIcon, Tooltip, Modal, Text, useComputedColorScheme } from '@mantine/core';
+import { FileInput, TextInput, Button, Group, Stack, ActionIcon, Tooltip, Modal, Text, Grid, Paper, Badge, useComputedColorScheme } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
 import { IconPencil, IconPlus, IconTrash, IconUpload } from '@tabler/icons-react';
@@ -12,6 +12,7 @@ import { TABLES } from '@/lib/tables';
 import type { SchemaRow } from '@/lib/types';
 import { PageHeader } from '@/components/common/PageHeader';
 import { ErrorAlert } from '@/components/common/ErrorAlert';
+import { JsonViewer } from '@/components/common/JsonViewer';
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
@@ -19,6 +20,7 @@ export default function Schemas() {
   const navigate = useNavigate();
   const gridRef = useRef<AgGridReact<SchemaRow>>(null);
   const [rows, setRows] = useState<SchemaRow[]>([]);
+  const [selectedSchemaId, setSelectedSchemaId] = useState<string | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [schemaRef, setSchemaRef] = useState('');
   const [busy, setBusy] = useState(false);
@@ -38,7 +40,14 @@ export default function Schemas() {
       .limit(50)
       .then(({ data, error: err }) => {
         if (err) setError(err.message);
-        else setRows((data ?? []) as SchemaRow[]);
+        else {
+          const nextRows = (data ?? []) as SchemaRow[];
+          setRows(nextRows);
+          setSelectedSchemaId((prev) => {
+            if (prev && nextRows.some((row) => row.schema_id === prev)) return prev;
+            return nextRows[0]?.schema_id ?? null;
+          });
+        }
       });
   };
 
@@ -63,7 +72,7 @@ export default function Schemas() {
   };
 
   const upload = async () => {
-    if (!file) { setError('Choose a schema JSON file first.'); return; }
+    if (!file) { setError('Choose a User Schema JSON file first.'); return; }
     setBusy(true);
     setError(null);
     try {
@@ -127,7 +136,16 @@ export default function Schemas() {
       sortable: true,
       filter: true,
       cellRenderer: (params: ICellRendererParams<SchemaRow>) => (
-        <Text ff="monospace" size="sm">{params.value as string}</Text>
+        <Button
+          variant="subtle"
+          size="compact-sm"
+          px={0}
+          onClick={() => {
+            if (params.data) setSelectedSchemaId(params.data.schema_id);
+          }}
+        >
+          {params.value as string}
+        </Button>
       ),
     },
     {
@@ -139,7 +157,7 @@ export default function Schemas() {
       cellRenderer: (params: ICellRendererParams<SchemaRow>) => {
         const value = params.value as string | undefined;
         if (!value) return <Text size="sm" c="dimmed">--</Text>;
-        return <Text ff="monospace" size="sm">{value.slice(0, 16)}...</Text>;
+        return <Text size="sm">{value.slice(0, 16)}...</Text>;
       },
     },
     {
@@ -172,9 +190,24 @@ export default function Schemas() {
     },
   }), []);
 
+  const gridHeight = rows.length === 0 ? 240 : 520;
+  const selectedSchema = useMemo(
+    () => rows.find((row) => row.schema_id === selectedSchemaId) ?? null,
+    [rows, selectedSchemaId],
+  );
+
   return (
     <>
-      <PageHeader title="Schemas" subtitle="Create, upload, and manage annotation schemas.">
+      <PageHeader
+        title="User Schemas"
+        subtitle={
+          <>
+            You can create or upload your user-schemas here.
+            <br />
+            This page accepts User Schema JSON (structured schema object). Source Document JSONs belong in document/source integration.
+          </>
+        }
+      >
         <Button size="xs" leftSection={<IconPlus size={14} />} onClick={() => navigate('/app/schemas/start')}>
           Create schema
         </Button>
@@ -186,20 +219,52 @@ export default function Schemas() {
         </Button>
       </PageHeader>
       {error && <ErrorAlert message={error} />}
-      <div style={{ height: rows.length === 0 ? 240 : 520, width: '100%' }}>
-        <AgGridReact
-          ref={gridRef}
-          theme={gridTheme}
-          rowData={rows}
-          columnDefs={columnDefs}
-          defaultColDef={defaultColDef}
-          rowHeight={44}
-          headerHeight={44}
-          animateRows={false}
-          domLayout="normal"
-          overlayNoRowsTemplate='<span style="color: var(--mantine-color-dimmed);">No schemas yet.</span>'
-        />
-      </div>
+      <Grid gutter="lg">
+        <Grid.Col span={{ base: 12, lg: 7 }}>
+          <div
+            className="block-viewer-grid grid-font-medium grid-font-family-sans grid-valign-center"
+            style={{ height: gridHeight, width: '100%' }}
+          >
+            <AgGridReact
+              ref={gridRef}
+              theme={gridTheme}
+              rowData={rows}
+              columnDefs={columnDefs}
+              defaultColDef={defaultColDef}
+              rowHeight={44}
+              headerHeight={44}
+              animateRows={false}
+              domLayout="normal"
+              overlayNoRowsTemplate='<span style="color: var(--mantine-color-dimmed);">No schemas yet.</span>'
+            />
+          </div>
+        </Grid.Col>
+        <Grid.Col span={{ base: 12, lg: 5 }}>
+          <Paper withBorder p="md" radius="md" style={{ minHeight: gridHeight }}>
+            <Stack gap="sm">
+              <Group justify="space-between">
+                <Text fw={600} size="sm">User Schema JSON Preview</Text>
+                {selectedSchema && (
+                  <Badge variant="light" ff="monospace">
+                    {selectedSchema.schema_ref}
+                  </Badge>
+                )}
+              </Group>
+              {selectedSchema ? (
+                <JsonViewer
+                  value={selectedSchema.schema_jsonb}
+                  minHeight={Math.max(gridHeight - 80, 160)}
+                  maxHeight={Math.max(gridHeight - 80, 160)}
+                />
+              ) : (
+                <Text size="sm" c="dimmed">
+                  Select a schema name from the left table to preview its JSON.
+                </Text>
+              )}
+            </Stack>
+          </Paper>
+        </Grid.Col>
+      </Grid>
 
       <Modal opened={deleteOpened} onClose={closeDelete} title="Delete schema" centered>
         <Stack gap="md">
@@ -223,7 +288,7 @@ export default function Schemas() {
             onChange={(e) => setSchemaRef(e.currentTarget.value)}
           />
           <FileInput
-            label="Schema JSON file"
+            label="User Schema JSON file"
             placeholder="Choose .json file"
             accept="application/json,.json"
             value={file}

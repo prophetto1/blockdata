@@ -1,6 +1,15 @@
 /* MantineHub (Shadcn-inspired) surface + border alignment.
    Keep this small and focused: layout consistency + dark-mode surfaces. */
 
+:root {
+  /* Marketing page rhythm tokens */
+  --section-py: 64px;
+  --section-py-md: 96px;
+  --section-px: 16px;
+  --section-px-sm: 24px;
+  --section-px-md: 32px;
+}
+
 html,
 body,
 #root {
@@ -23,19 +32,153 @@ body {
 }
 
 /* AG Grid density: Compact — tight line-height, minimal cell padding */
-.grid-compact .ag-cell {
-  line-height: 1.3 !important;
+.block-viewer-grid {
+  --ag-header-height: 36px;
+  --viewer-font-size: 14px;
+  --viewer-font-size-effective: var(--viewer-font-size);
+  --viewer-font-family: "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --viewer-line-height-compact: 1.3;
+  --viewer-line-height-comfortable: 1.5;
+  --viewer-letter-spacing: 0;
+  --ag-font-size: var(--viewer-font-size-effective);
 }
-.grid-compact .ag-cell-wrapper {
-  align-items: flex-start;
+
+.block-viewer-grid.grid-font-small {
+  --viewer-font-size: 12px;
+}
+
+.block-viewer-grid.grid-font-medium {
+  --viewer-font-size: 14px;
+}
+
+.block-viewer-grid.grid-font-large {
+  --viewer-font-size: 16px;
+}
+
+.block-viewer-grid.grid-font-family-sans {
+  --viewer-font-family: "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.block-viewer-grid.grid-font-family-serif {
+  --viewer-font-family: Georgia, Cambria, "Times New Roman", serif;
+}
+
+.block-viewer-grid.grid-font-family-mono {
+  --viewer-font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  /* Monospace wraps sooner; compensate to keep row heights aligned with sans/serif. */
+  --viewer-font-size-effective: calc(var(--viewer-font-size) * 0.9);
+  --viewer-line-height-compact: 1.25;
+  --viewer-line-height-comfortable: 1.45;
+  --viewer-letter-spacing: -0.01em;
+}
+
+.block-viewer-grid.grid-font-small.grid-font-family-mono {
+  --viewer-font-size-effective: calc(var(--viewer-font-size) * 0.95);
+}
+
+.block-viewer-grid.grid-font-medium.grid-font-family-mono {
+  --viewer-font-size-effective: calc(var(--viewer-font-size) * 0.9);
+}
+
+.block-viewer-grid.grid-font-large.grid-font-family-mono {
+  --viewer-font-size-effective: calc(var(--viewer-font-size) * 0.86);
+  --viewer-line-height-compact: 1.2;
+  --viewer-line-height-comfortable: 1.4;
+}
+
+.block-viewer-grid.grid-font-large.grid-font-family-sans {
+  --viewer-font-size-effective: calc(var(--viewer-font-size) * 0.93);
+}
+
+.block-viewer-grid.grid-font-large.grid-font-family-serif {
+  --viewer-font-size-effective: calc(var(--viewer-font-size) * 0.91);
+}
+
+.block-viewer-grid.grid-compact {
+  --ag-row-height: 28px;
+}
+
+.block-viewer-grid.grid-comfortable {
+  --ag-row-height: 36px;
+}
+
+.block-viewer-grid .ag-root-wrapper,
+.block-viewer-grid .ag-root,
+.block-viewer-grid .ag-cell,
+.block-viewer-grid .ag-cell-value,
+.block-viewer-grid .ag-cell-wrapper {
+  font-family: var(--viewer-font-family) !important;
+  font-size: var(--viewer-font-size-effective) !important;
+  letter-spacing: var(--viewer-letter-spacing) !important;
+}
+
+.block-viewer-grid .ag-header,
+.block-viewer-grid .ag-header-cell,
+.block-viewer-grid .ag-header-group-cell,
+.block-viewer-grid .ag-header-cell-text {
+  font-family: "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+  font-size: 14px !important;
+}
+
+.block-viewer-grid .mantine-Text-root,
+.block-viewer-grid .mantine-Badge-root,
+.block-viewer-grid .mantine-Badge-label {
+  font-family: var(--viewer-font-family) !important;
+  font-size: var(--viewer-font-size-effective) !important;
+  letter-spacing: var(--viewer-letter-spacing) !important;
+  line-height: var(--viewer-line-height-compact) !important;
+}
+
+.grid-compact .ag-cell {
+  line-height: var(--viewer-line-height-compact) !important;
 }
 
 /* AG Grid density: Comfortable — relaxed line-height */
 .grid-comfortable .ag-cell {
-  line-height: 1.5 !important;
+  line-height: var(--viewer-line-height-comfortable) !important;
 }
-.grid-comfortable .ag-cell-wrapper {
+
+.block-viewer-grid.grid-valign-top .ag-cell-wrapper {
   align-items: flex-start;
+}
+
+.block-viewer-grid.grid-valign-center .ag-cell-wrapper {
+  align-items: center;
+}
+
+.block-viewer-grid.grid-valign-bottom .ag-cell-wrapper {
+  align-items: flex-end;
+}
+
+.block-viewer-grid.grid-valign-top .ag-cell {
+  display: flex;
+  align-items: flex-start;
+}
+
+.block-viewer-grid.grid-valign-center .ag-cell {
+  display: flex;
+  align-items: center;
+}
+
+.block-viewer-grid.grid-valign-bottom .ag-cell {
+  display: flex;
+  align-items: flex-end;
+}
+
+.block-viewer-grid .ag-cell > .ag-cell-wrapper,
+.block-viewer-grid .ag-cell > .ag-cell-value {
+  width: 100%;
+}
+
+.block-viewer-grid .cell-break-anywhere,
+.block-viewer-grid .cell-break-anywhere .ag-cell-value {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.block-viewer-grid .ag-header-cell.user-schema-boundary-header,
+.block-viewer-grid .ag-cell.user-schema-boundary-cell {
+  border-left: 1px solid var(--ag-border-color, var(--mantine-color-default-border)) !important;
 }
 
 .overlay-staged-cell {
@@ -58,4 +201,71 @@ body {
 }
 .schema-start-card:active {
   transform: translateY(0);
+}
+
+/* Shell left rail: clearer hierarchy + cleaner text-first navigation */
+.left-rail-heading {
+  color: var(--mantine-color-gray-1);
+  font-size: 12px;
+  font-weight: 750;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  line-height: 1.25;
+}
+
+.left-rail-group {
+  padding-top: 8px;
+}
+
+.left-rail [data-group="work"] .left-rail-heading {
+  color: #8cc6ff;
+}
+
+.left-rail [data-group="library"] .left-rail-heading {
+  color: #87d8b2;
+}
+
+.left-rail [data-group="automation"] .left-rail-heading {
+  color: #ffcf7a;
+}
+
+.left-rail [data-group="system"] .left-rail-heading {
+  color: #d5d9e3;
+}
+
+.left-rail-link {
+  border-radius: 8px;
+  margin-bottom: 3px;
+  border: 1px solid transparent;
+  transition: background-color 140ms ease, border-color 140ms ease;
+}
+
+.left-rail-link .mantine-NavLink-label {
+  color: var(--mantine-color-gray-2);
+  font-size: 15px;
+  font-weight: 520;
+  line-height: 1.32;
+  letter-spacing: 0.005em;
+}
+
+.left-rail-link:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.left-rail-link:hover .mantine-NavLink-label {
+  color: var(--mantine-color-gray-0);
+}
+
+.left-rail-link .mantine-NavLink-section {
+  display: none;
+}
+
+.left-rail-link[data-active] {
+  background: rgba(140, 198, 255, 0.14);
+  border-color: rgba(140, 198, 255, 0.38);
+}
+
+.left-rail-link[data-active] .mantine-NavLink-label {
+  color: var(--mantine-color-gray-0);
+  font-weight: 650;
 }

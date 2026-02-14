@@ -3,7 +3,7 @@ import { Group, Title, Text } from '@mantine/core';
 
 type Props = {
   title: string;
-  subtitle?: string;
+  subtitle?: ReactNode;
   children?: ReactNode;
 };
 

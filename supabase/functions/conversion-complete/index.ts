@@ -10,6 +10,7 @@ import { createAdminClient } from "../_shared/supabase.ts";
 type ConversionCompleteBody = {
   source_uid: string;
   conversion_job_id: string;
+  track?: "mdast" | "docling" | "pandoc" | null;
   md_key: string;
   docling_key?: string | null;
   pandoc_key?: string | null;
@@ -46,6 +47,7 @@ Deno.serve(async (req) => {
     const body = await readJson<ConversionCompleteBody>(req);
     const source_uid = (body.source_uid || "").trim();
     const conversion_job_id = (body.conversion_job_id || "").trim();
+    const track = (body.track || "").trim();
     const md_key = (body.md_key || "").trim();
     const docling_key = (body.docling_key || "").trim();
     const pandoc_key = (body.pandoc_key || "").trim();
@@ -81,8 +83,51 @@ Deno.serve(async (req) => {
       return json(200, { ok: false, status: "conversion_failed" });
     }
 
-    if (docling_key && pandoc_key) {
-      const errMsg = "Invalid callback payload: multiple sidecar keys";
+    const requestedTrack = track === "mdast" || track === "docling" || track === "pandoc"
+      ? track
+      : null;
+    const resolvedTrack: "mdast" | "docling" | "pandoc" = requestedTrack ??
+      (pandoc_key ? "pandoc" : docling_key ? "docling" : "mdast");
+
+    const insertSupplementalRepresentation = async (
+      key: string,
+      parsing_tool: "mdast" | "docling" | "pandoc",
+      representation_type: "markdown_bytes" | "doclingdocument_json" | "pandoc_ast_json",
+      conv_uid: string,
+    ) => {
+      const { data: download, error: dlErr } = await supabaseAdmin.storage
+        .from(bucket)
+        .download(key);
+      if (dlErr || !download) {
+        throw new Error(`Storage download ${representation_type} failed: ${dlErr?.message ?? "unknown"}`);
+      }
+      const bytes = new Uint8Array(await download.arrayBuffer());
+      const prefix = new TextEncoder().encode(`${parsing_tool}\n${representation_type}\n`);
+      const artifact_hash = await sha256Hex(concatBytes([prefix, bytes]));
+
+      await insertRepresentationArtifact(supabaseAdmin, {
+        source_uid,
+        conv_uid,
+        parsing_tool,
+        representation_type,
+        artifact_locator: key,
+        artifact_hash,
+        artifact_size_bytes: bytes.byteLength,
+        artifact_meta: { source_type: docRow.source_type, role: "supplemental" },
+      });
+    };
+
+    if (resolvedTrack === "pandoc" && !pandoc_key) {
+      const errMsg = "Invalid callback payload: track=pandoc but pandoc_key is missing";
+      await supabaseAdmin
+        .from("documents_v2")
+        .update({ status: "conversion_failed", error: errMsg })
+        .eq("source_uid", source_uid);
+      return json(200, { ok: false, status: "conversion_failed", error: errMsg });
+    }
+
+    if (resolvedTrack === "docling" && !docling_key) {
+      const errMsg = "Invalid callback payload: track=docling but docling_key is missing";
       await supabaseAdmin
         .from("documents_v2")
         .update({ status: "conversion_failed", error: errMsg })
@@ -93,10 +138,10 @@ Deno.serve(async (req) => {
     // -----------------------------------------------------------------------
     // Branch: Pandoc track
     // -----------------------------------------------------------------------
-    if (pandoc_key) {
+    if (resolvedTrack === "pandoc") {
       const { data: pandocDownload, error: pandocDlErr } = await supabaseAdmin.storage
         .from(bucket)
-        .download(pandoc_key);
+        .download(pandoc_key!);
       if (pandocDlErr || !pandocDownload) {
         throw new Error(`Storage download pandoc AST failed: ${pandocDlErr?.message ?? "unknown"}`);
       }
@@ -156,11 +201,27 @@ Deno.serve(async (req) => {
           conv_uid,
           parsing_tool: "pandoc",
           representation_type: "pandoc_ast_json",
-          artifact_locator: pandoc_key,
+          artifact_locator: pandoc_key!,
           artifact_hash: conv_uid,
           artifact_size_bytes: pandocBytes.byteLength,
           artifact_meta: { source_type: docRow.source_type },
         });
+
+        await insertSupplementalRepresentation(
+          md_key,
+          "mdast",
+          "markdown_bytes",
+          conv_uid,
+        );
+
+        if (docling_key) {
+          await insertSupplementalRepresentation(
+            docling_key,
+            "docling",
+            "doclingdocument_json",
+            conv_uid,
+          );
+        }
 
         const { error: finalErr } = await supabaseAdmin
           .from("documents_v2")
@@ -188,10 +249,10 @@ Deno.serve(async (req) => {
     // -----------------------------------------------------------------------
     // Branch: Docling track
     // -----------------------------------------------------------------------
-    if (docling_key) {
+    if (resolvedTrack === "docling") {
       const { data: dlDownload, error: dlErr } = await supabaseAdmin.storage
         .from(bucket)
-        .download(docling_key);
+        .download(docling_key!);
       if (dlErr || !dlDownload) {
         throw new Error(`Storage download docling JSON failed: ${dlErr?.message ?? "unknown"}`);
       }
@@ -252,11 +313,27 @@ Deno.serve(async (req) => {
           conv_uid,
           parsing_tool: "docling",
           representation_type: "doclingdocument_json",
-          artifact_locator: docling_key,
+          artifact_locator: docling_key!,
           artifact_hash: conv_uid,
           artifact_size_bytes: doclingBytes.byteLength,
           artifact_meta: { source_type: docRow.source_type },
         });
+
+        await insertSupplementalRepresentation(
+          md_key,
+          "mdast",
+          "markdown_bytes",
+          conv_uid,
+        );
+
+        if (pandoc_key) {
+          await insertSupplementalRepresentation(
+            pandoc_key,
+            "pandoc",
+            "pandoc_ast_json",
+            conv_uid,
+          );
+        }
 
         const { error: finalErr } = await supabaseAdmin
           .from("documents_v2")
@@ -282,7 +359,7 @@ Deno.serve(async (req) => {
     }
 
     // -----------------------------------------------------------------------
-    // Fallback: mdast track (txt, legacy conversions, or no sidecar key)
+    // Fallback: mdast track (txt, legacy conversions, or no parser artifact key)
     // -----------------------------------------------------------------------
     const { data: download, error: mdDlErr } = await supabaseAdmin.storage
       .from(bucket)
@@ -354,6 +431,24 @@ Deno.serve(async (req) => {
         artifact_size_bytes: mdBytes.byteLength,
         artifact_meta: { source_type: docRow.source_type },
       });
+
+      if (docling_key) {
+        await insertSupplementalRepresentation(
+          docling_key,
+          "docling",
+          "doclingdocument_json",
+          conv_uid,
+        );
+      }
+
+      if (pandoc_key) {
+        await insertSupplementalRepresentation(
+          pandoc_key,
+          "pandoc",
+          "pandoc_ast_json",
+          conv_uid,
+        );
+      }
 
       const { error: finalErr } = await supabaseAdmin
         .from("documents_v2")

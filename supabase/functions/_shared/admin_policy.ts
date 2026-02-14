@@ -8,6 +8,10 @@ export type TrackCapabilityCatalog = {
   version: string;
   tracks: Record<IngestTrack, { extensions: string[] }>;
 };
+export type ParserArtifactSourceTypes = {
+  docling: string[];
+  pandoc: string[];
+};
 
 export type RuntimePolicy = {
   models: {
@@ -43,6 +47,7 @@ export type RuntimePolicy = {
     track_enabled: TrackEnabledMap;
     extension_track_routing: ExtensionTrackRouting;
     track_capability_catalog: TrackCapabilityCatalog;
+    parser_artifact_source_types: ParserArtifactSourceTypes;
   };
 };
 
@@ -146,6 +151,10 @@ const DEFAULT_POLICY: RuntimePolicy = {
         },
       },
     },
+    parser_artifact_source_types: {
+      docling: ["docx", "pdf", "pptx", "xlsx", "html", "csv"],
+      pandoc: ["docx", "html", "txt", "rst", "latex", "odt", "epub", "rtf", "org"],
+    },
   },
 };
 
@@ -247,6 +256,15 @@ function asTrackCapabilityCatalog(value: unknown): TrackCapabilityCatalog | null
     version,
     tracks: tracks as TrackCapabilityCatalog["tracks"],
   };
+}
+
+function asParserArtifactSourceTypes(value: unknown): ParserArtifactSourceTypes | null {
+  const obj = asObject(value);
+  if (!obj) return null;
+  const docling = asNormalizedExtensionArray(obj.docling);
+  const pandoc = asNormalizedExtensionArray(obj.pandoc);
+  if (!docling || !pandoc || docling.length === 0 || pandoc.length === 0) return null;
+  return { docling, pandoc };
 }
 
 export function applyPolicyValue(
@@ -386,6 +404,12 @@ export function applyPolicyValue(
     policy.upload.track_capability_catalog = parsed;
     return true;
   }
+  if (key === "upload.parser_artifact_source_types") {
+    const parsed = asParserArtifactSourceTypes(value);
+    if (!parsed) return false;
+    policy.upload.parser_artifact_source_types = parsed;
+    return true;
+  }
   return false;
 }
 
@@ -455,6 +479,12 @@ export function validateRuntimePolicy(policy: RuntimePolicy): string[] {
   }
   if (!policy.upload.track_capability_catalog.version.trim()) {
     errors.push("upload.track_capability_catalog.version must be non-empty");
+  }
+  if (policy.upload.parser_artifact_source_types.docling.length === 0) {
+    errors.push("upload.parser_artifact_source_types.docling must include at least one source_type");
+  }
+  if (policy.upload.parser_artifact_source_types.pandoc.length === 0) {
+    errors.push("upload.parser_artifact_source_types.pandoc must include at least one source_type");
   }
 
   for (const track of ALL_TRACKS) {

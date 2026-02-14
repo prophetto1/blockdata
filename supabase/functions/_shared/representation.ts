@@ -26,7 +26,7 @@ export async function insertRepresentationArtifact(
       artifact_hash: payload.artifact_hash,
       artifact_size_bytes: payload.artifact_size_bytes,
       artifact_meta: payload.artifact_meta ?? {},
-    }, { onConflict: "conv_uid", ignoreDuplicates: true });
+    }, { onConflict: "conv_uid,representation_type", ignoreDuplicates: true });
   if (error) {
     throw new Error(`DB insert conversion_representations_v2 failed: ${error.message}`);
   }

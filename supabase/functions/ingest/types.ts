@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
-import type { IngestTrack } from "../_shared/admin_policy.ts";
+import type { IngestTrack, RuntimePolicy } from "../_shared/admin_policy.ts";
 
 export type IngestResponse = {
   source_uid: string;
@@ -19,6 +19,7 @@ export type SignedUploadTarget = {
 /** Shared context passed through the ingest pipeline. */
 export type IngestContext = {
   supabaseAdmin: SupabaseClient;
+  runtimePolicy: RuntimePolicy;
   ownerId: string;
   ingest_track: IngestTrack;
   source_uid: string;

@@ -28,16 +28,26 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { label: 'Home', icon: IconHome2, path: '/app' },
       { label: 'Projects', icon: IconFolderPlus, path: '/app/projects' },
-      { label: 'Schemas', icon: IconSchema, path: '/app/schemas' },
+      { label: 'User Schemas', icon: IconSchema, path: '/app/schemas' },
+    ],
+  },
+  {
+    label: 'Library',
+    items: [
       { label: 'Schema Library', icon: IconBook, path: '/app/schemas/templates' },
     ],
   },
   {
-    label: 'Platform',
+    label: 'Automation',
     items: [
       ...(featureFlags.agentsConfigUI ? [{ label: 'Agents', icon: IconBrain, path: '/app/agents' }] : []),
       ...(featureFlags.mcpPlaceholderUI ? [{ label: 'MCP', icon: IconPlug, path: '/app/mcp' }] : []),
       ...(featureFlags.commandsUI ? [{ label: 'Commands', icon: IconKey, path: '/app/commands' }] : []),
+    ],
+  },
+  {
+    label: 'System',
+    items: [
       { label: 'Settings', icon: IconSettings, path: '/app/settings' },
     ],
   },

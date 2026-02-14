@@ -1,4 +1,4 @@
-import { Button, createTheme } from '@mantine/core';
+import { Button, Container, createTheme } from '@mantine/core';
 import type { CSSVariablesResolver, MantineColorsTuple } from '@mantine/core';
 
 // MantineHub (Shadcn-inspired) neutral palette (Zinc).
@@ -72,6 +72,16 @@ export const theme = createTheme({
   },
 
   components: {
+    Container: Container.extend({
+      defaultProps: {
+        size: 'xl',
+      },
+      vars: () => ({
+        root: {
+          '--container-size-xl': '1360px',
+        },
+      }),
+    }),
     Button: Button.extend({
       vars: (_theme, props) => {
         const variant = props.variant ?? 'filled';

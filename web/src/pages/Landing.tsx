@@ -28,44 +28,30 @@ import {
 } from '@tabler/icons-react';
 import { useNavigate } from 'react-router-dom';
 
-/**
- * CONCEPT: LandingV2 (Refined)
- *
- * Improvements:
- * - Layout-driven navigation (MarketingLayout)
- * - Hero: Larger typography + gradient background (Adaptive)
- * - Cards: Polished visual hierarchy
- * - Content: Preserved exactly from original
- */
-
 // ─── Data ────────────────────────────────────────────────────────────────────
 
 const PIPELINE_STEPS = [
   {
     icon: IconUpload,
     step: '01',
-    color: 'blue',
     title: 'Upload',
     text: 'Drop in documents — Markdown, Word, PDF. Multiple files, any format. The platform decomposes each into ordered, typed blocks.',
   },
   {
     icon: IconSchema,
     step: '02',
-    color: 'indigo',
     title: 'Define your schema',
     text: 'Tell the platform what to do per block — extract metadata, revise content, or both. Your schema is the instruction set.',
   },
   {
     icon: IconBolt,
     step: '03',
-    color: 'orange',
     title: 'Process',
     text: 'Concurrent workers process blocks in parallel. 5,000 blocks across 77 documents in minutes, not hours. No drift, no quality loss.',
   },
   {
     icon: IconChecks,
     step: '04',
-    color: 'green',
     title: 'Review & confirm',
     text: 'AI results land in staging. Review in the grid, edit inline, confirm per-block or in bulk. Nothing exports without your approval.',
   },
@@ -78,7 +64,6 @@ const SCHEMA_EXAMPLES = [
     title: 'Add structured metadata',
     description: 'Classify paragraphs, extract entities, tag topics, score sentiment — your schema defines the fields. The source content stays untouched.',
     fields: ['rhetorical_function', 'cited_authorities', 'confidence_score'],
-    color: 'blue',
   },
   {
     icon: IconPencil,
@@ -86,7 +71,6 @@ const SCHEMA_EXAMPLES = [
     title: 'Transform content block by block',
     description: 'Rewrite to plain language, apply a style guide, translate, simplify. Confirmed blocks reassemble into a revised document.',
     fields: ['revised_content', 'changes_made', 'reading_level'],
-    color: 'green',
   },
   {
     icon: IconSparkles,
@@ -94,17 +78,16 @@ const SCHEMA_EXAMPLES = [
     title: 'Revise and analyze in one pass',
     description: 'Revise content according to your rules, then add metadata about the revision. Get the revised document and a dataset describing every change.',
     fields: ['revised_content', 'simplification_notes', 'compliance_status'],
-    color: 'violet',
   },
 ];
 
 const CAPABILITIES = [
-  { icon: IconUpload, color: 'blue', title: 'Multi-format ingestion', text: 'Markdown, Word, PDF, plain text. Every format produces the same block inventory.' },
-  { icon: IconSchema, color: 'indigo', title: 'Schema-driven processing', text: 'Your schema defines what happens. Metadata, revisions, or anything else — the platform executes it.' },
-  { icon: IconBolt, color: 'orange', title: 'Block-level parallelism', text: '20 concurrent workers. 5,000 blocks. Under 15 minutes. Each block processed independently.' },
-  { icon: IconTable, color: 'teal', title: 'Real-time working surface', text: 'Watch results fill into the grid live. Filter, sort, inspect at paragraph resolution.' },
-  { icon: IconFingerprint, color: 'violet', title: 'Deterministic identity', text: 'Every block has a stable hash. Re-upload the same file, get the same IDs. Join to external systems.' },
-  { icon: IconShieldCheck, color: 'green', title: 'Human-in-the-loop review', text: 'AI writes to staging. You confirm. Nothing reaches your export without your approval.' },
+  { icon: IconUpload, title: 'Multi-format ingestion', text: 'Markdown, Word, PDF, plain text. Every format produces the same block inventory.' },
+  { icon: IconSchema, title: 'Schema-driven processing', text: 'Your schema defines what happens. Metadata, revisions, or anything else — the platform executes it.' },
+  { icon: IconBolt, title: 'Block-level parallelism', text: '20 concurrent workers. 5,000 blocks. Under 15 minutes. Each block processed independently.' },
+  { icon: IconTable, title: 'Real-time working surface', text: 'Watch results fill into the grid live. Filter, sort, inspect at paragraph resolution.' },
+  { icon: IconFingerprint, title: 'Deterministic identity', text: 'Every block has a stable hash. Re-upload the same file, get the same IDs. Join to external systems.' },
+  { icon: IconShieldCheck, title: 'Human-in-the-loop review', text: 'AI writes to staging. You confirm. Nothing reaches your export without your approval.' },
 ];
 
 const USE_CASE_TEASERS = [
@@ -130,12 +113,12 @@ export default function Landing() {
   const isDark = colorScheme === 'dark';
 
   return (
-    <Box bg={isDark ? 'var(--mantine-color-body)' : '#f6f6f7'}>
+    <Box>
 
       {/* ── HERO ── */}
       <Box
         pt={{ base: 114, md: 146 }}
-        pb={{ base: 72, md: 108 }}
+        pb={{ base: 64, md: 96 }}
         style={{
           position: 'relative',
           overflow: 'hidden',
@@ -144,20 +127,15 @@ export default function Landing() {
             : 'radial-gradient(circle at 60% 30%, rgba(15,23,42,0.06) 0%, rgba(15,23,42,0) 62%)',
         }}
       >
-        <Container
-          size="xl"
-          px={{ base: 'md', md: 'xl' }}
-          style={{ position: 'relative', zIndex: 1, maxWidth: 1360 }}
-        >
-          <SimpleGrid cols={{ base: 1, md: 2 }} spacing={{ base: 52, md: 86 }}>
+        <Container px={{ base: 'md', sm: 'lg', md: 'xl' }} style={{ position: 'relative', zIndex: 1 }}>
+          <SimpleGrid cols={{ base: 1, md: 2 }} spacing={{ base: 48, md: 80 }}>
             {/* Left: copy */}
             <Stack gap="xl" justify="center">
               <Title
                 order={1}
                 style={{
-                  // Removed hardcoded 'white'
                   fontSize: 'clamp(2.35rem, 4.4vw, 3.6rem)',
-                  lineHeight: 1.08,
+                  lineHeight: 1.15,
                   fontWeight: 800,
                   letterSpacing: '-0.03em',
                 }}
@@ -168,11 +146,7 @@ export default function Landing() {
                   Zero drift.
                 </span>
               </Title>
-              <Text
-                size="lg"
-                c="dimmed"
-                maw={520}
-                             >
+              <Text size="lg" c="dimmed" maw={520}>
                 Upload any document. Define a schema — metadata labels, revision
                 instructions, or both. AI processes every block independently.
                 You review, confirm, and export.
@@ -180,21 +154,16 @@ export default function Landing() {
               <Group gap="md" mt="sm">
                 <Button
                   size="xl"
+                  color="teal"
                   rightSection={<IconArrowRight size={18} />}
                   onClick={() => navigate('/register')}
                 >
-                  Get started free
+                  Get started
                 </Button>
                 <Button
                   size="xl"
                   variant="default"
                   onClick={() => navigate('/how-it-works')}
-                  styles={{
-                    root: {
-                      backgroundColor: 'transparent',
-                       // Removed hardcoded 'white' color/border props to let variant="default" handle it
-                    },
-                  }}
                 >
                   How it works
                 </Button>
@@ -206,14 +175,8 @@ export default function Landing() {
               <Paper
                 p="xl"
                 radius="lg"
-                style={{
-                  backgroundColor: isDark ? '#1A1B1E' : '#FFFFFF',
-                  borderColor: 'var(--mantine-color-default-border)',
-                  borderWidth: 1,
-                  borderStyle: 'solid',
-                  boxShadow: 'var(--mantine-shadow-xl)',
-                  width: '100%',
-                }}
+                withBorder
+                style={{ width: '100%' }}
               >
                 <Group gap="xs" mb="lg" pb="xs" style={{ borderBottom: '1px solid var(--mantine-color-default-border)' }}>
                   <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#ef4444' }} />
@@ -227,7 +190,7 @@ export default function Landing() {
                   block
                   bg="transparent"
                   style={{ fontSize: 13, whiteSpace: 'pre', lineHeight: 1.6 }}
-                  c={isDark ? 'rgba(255,255,255,0.7)' : 'dimmed'}
+                  c="dimmed"
                 >
 {`{
   "block": {
@@ -255,8 +218,8 @@ export default function Landing() {
       </Box>
 
       {/* ── WHAT YOUR SCHEMA CAN DO ── */}
-      <Box py={100}>
-        <Container size="xl">
+      <Box py={{ base: 64, md: 96 }}>
+        <Container px={{ base: 'md', sm: 'lg', md: 'xl' }}>
           <Stack gap="xl">
             <Stack gap={4} align="center" mb="lg">
               <Text size="sm" fw={700} tt="uppercase" c="dimmed">
@@ -273,26 +236,13 @@ export default function Landing() {
 
             <SimpleGrid cols={{ base: 1, md: 3 }} spacing="lg">
               {SCHEMA_EXAMPLES.map((ex) => (
-                <Paper 
-                    key={ex.label} 
-                    p="xl" 
-                    radius="md" 
-                    withBorder
-                    style={{ position: 'relative', overflow: 'hidden' }}
-                >
-                   <Box 
-                        style={{
-                            position: 'absolute',
-                            top: 0, left: 0, right: 0, height: 4,
-                            backgroundColor: `var(--mantine-color-${ex.color}-filled)`
-                        }} 
-                   />
+                <Paper key={ex.label} p="xl" radius="md" withBorder>
                   <Stack gap="md">
                     <Group gap="sm" justify="space-between">
-                      <ThemeIcon variant="light" size="xl" radius="md" color={ex.color}>
+                      <ThemeIcon variant="light" size="xl" radius="md" color="teal">
                         <ex.icon size={22} />
                       </ThemeIcon>
-                      <Badge variant="outline" color={ex.color} size="md" radius="sm">
+                      <Badge variant="outline" color="teal" size="md" radius="sm">
                         {ex.label}
                       </Badge>
                     </Group>
@@ -323,8 +273,8 @@ export default function Landing() {
       </Box>
 
       {/* ── PIPELINE ── */}
-      <Box py={100} style={{ backgroundColor: 'var(--mantine-color-default-hover)' }}>
-        <Container size="xl">
+      <Box py={{ base: 64, md: 96 }} bg="var(--mantine-color-default-hover)">
+        <Container px={{ base: 'md', sm: 'lg', md: 'xl' }}>
           <Stack gap="xl">
             <Stack gap={4} align="center" mb="lg">
               <Text size="sm" fw={700} tt="uppercase" c="dimmed">
@@ -337,11 +287,11 @@ export default function Landing() {
 
             <SimpleGrid cols={{ base: 1, sm: 2, md: 4 }} spacing="lg">
               {PIPELINE_STEPS.map((s) => (
-                <Paper key={s.step} p="xl" radius="md" withBorder>
+                <Paper key={s.step} p="xl" radius="md" withBorder bg="var(--mantine-color-body)">
                   <Stack gap="sm">
                     <Group gap="sm" mb="xs">
-                       <Text size="sm" fw={800} c={`${s.color}.6`} style={{ opacity: 0.5 }}>{s.step}</Text>
-                       <ThemeIcon variant="light" color={s.color} size="md">
+                       <Text size="sm" fw={800} c="dimmed" style={{ opacity: 0.5 }}>{s.step}</Text>
+                       <ThemeIcon variant="light" color="teal" size="md">
                            <s.icon />
                        </ThemeIcon>
                     </Group>
@@ -354,7 +304,7 @@ export default function Landing() {
               ))}
             </SimpleGrid>
 
-            <Group justify="center" mt="xl">
+            <Group justify="center" mt="md">
               <Button
                 variant="default"
                 size="lg"
@@ -369,8 +319,8 @@ export default function Landing() {
       </Box>
 
       {/* ── USE CASES TEASER ── */}
-      <Box py={100}>
-        <Container size="xl">
+      <Box py={{ base: 64, md: 96 }}>
+        <Container px={{ base: 'md', sm: 'lg', md: 'xl' }}>
           <Stack gap="xl">
             <Group justify="space-between" align="end" mb="lg">
                 <Box>
@@ -382,7 +332,7 @@ export default function Landing() {
 
             <SimpleGrid cols={{ base: 1, md: 3 }} spacing="lg">
               {USE_CASE_TEASERS.map((uc) => (
-                <Paper key={uc.title} p="xl" radius="md" withBorder bg="var(--mantine-color-default-hover)">
+                <Paper key={uc.title} p="xl" radius="md" withBorder>
                   <Stack gap="md">
                     <Text fw={700} lh={1.3} size="lg">
                       {uc.title}
@@ -399,17 +349,14 @@ export default function Landing() {
       </Box>
 
       {/* ── CAPABILITIES ── */}
-      {/* This section is explicitly dark. We should probably keep it dark even in light mode for contrast? */}
-      {/* Or adapt it. If we keep it dark, we need to enforce white text. */}
-      {/* Strategy: Keep it dark (Brand moment), but ensure text is forced white. */ }
-      <Box py={100} style={{ backgroundColor: '#1A1B1E' }}>
-        <Container size="xl">
+      <Box py={{ base: 64, md: 96 }} bg="var(--mantine-color-default-hover)">
+        <Container px={{ base: 'md', sm: 'lg', md: 'xl' }}>
           <Stack gap="xl">
             <Stack gap={4} align="center" mb="lg">
               <Text size="sm" fw={700} tt="uppercase" c="dimmed">
                 Capabilities
               </Text>
-              <Title order={2} ta="center" c="white">
+              <Title order={2} ta="center">
                 Everything you need to work with documents.
               </Title>
             </Stack>
@@ -417,19 +364,18 @@ export default function Landing() {
             <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="xl">
               {CAPABILITIES.map((c) => (
                 <div key={c.title}>
-                    <ThemeIcon variant="light" color={c.color} size="lg" radius="md" mb="md">
+                    <ThemeIcon variant="light" color="teal" size="lg" radius="md" mb="md">
                       <c.icon size={20} />
                     </ThemeIcon>
-                    <Text fw={700} size="lg" c="white" mb="xs">{c.title}</Text>
+                    <Text fw={700} size="lg" mb="xs">{c.title}</Text>
                     <Text size="md" c="dimmed" lh={1.6}>{c.text}</Text>
                 </div>
               ))}
             </SimpleGrid>
 
-            <Group justify="center" mt="xl">
+            <Group justify="center" mt="md">
               <Button
-                variant="white"
-                color="dark"
+                variant="default"
                 size="lg"
                 rightSection={<IconArrowRight size={16} />}
                 onClick={() => navigate('/integrations')}
@@ -442,7 +388,7 @@ export default function Landing() {
       </Box>
 
       {/* ── FINAL CTA ── */}
-      <Box py={120}>
+      <Box py={{ base: 80, md: 112 }}>
         <Container size="sm">
           <Stack align="center" gap="xl">
             <Title order={2} ta="center" fz={{ base: 32, sm: 48 }} fw={800}>
@@ -454,10 +400,11 @@ export default function Landing() {
             </Text>
             <Button
               size="xl"
+              color="teal"
               rightSection={<IconArrowRight size={20} />}
               onClick={() => navigate('/register')}
             >
-              Get started free
+              Get started
             </Button>
           </Stack>
         </Container>
@@ -466,4 +413,3 @@ export default function Landing() {
     </Box>
   );
 }
-

@@ -1,5 +1,6 @@
 import { Badge, Button, Card, Group, Stack, Text } from '@mantine/core';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useMemo } from 'react';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { AppBreadcrumbs } from '@/components/common/AppBreadcrumbs';
 import { ErrorAlert } from '@/components/common/ErrorAlert';
 import { JsonViewer } from '@/components/common/JsonViewer';
@@ -8,8 +9,24 @@ import { getSchemaTemplateSeed } from '@/lib/schemaTemplates';
 
 export default function SchemaTemplateDetail() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { templateId } = useParams<{ templateId: string }>();
   const template = templateId ? getSchemaTemplateSeed(templateId) : null;
+  const contextQuery = useMemo(() => new URLSearchParams(location.search), [location.search]);
+
+  const withContext = (path: string, extra: Record<string, string> = {}) => {
+    const url = new URL(path, 'https://local.invalid');
+    const query = new URLSearchParams(url.search);
+    for (const key of ['sourceUid', 'projectId', 'convUid', 'returnTo']) {
+      const value = contextQuery.get(key);
+      if (value) query.set(key, value);
+    }
+    for (const [key, value] of Object.entries(extra)) {
+      query.set(key, value);
+    }
+    const search = query.toString();
+    return `${url.pathname}${search ? `?${search}` : ''}`;
+  };
 
   if (!template) {
     return (
@@ -22,7 +39,7 @@ export default function SchemaTemplateDetail() {
           ]}
         />
         <PageHeader title="Template not found" subtitle="The selected template id does not exist.">
-          <Button variant="light" size="xs" onClick={() => navigate('/app/schemas/templates')}>
+          <Button variant="light" size="xs" onClick={() => navigate(withContext('/app/schemas/templates'))}>
             Back to templates
           </Button>
         </PageHeader>
@@ -42,12 +59,15 @@ export default function SchemaTemplateDetail() {
       />
 
       <PageHeader title={template.name} subtitle={`Template ${template.template_id} v${template.template_version}`}>
-        <Button variant="default" size="xs" onClick={() => navigate('/app/schemas/templates')}>
+        <Button variant="default" size="xs" onClick={() => navigate(withContext('/app/schemas/templates'))}>
           Back to templates
         </Button>
         <Button
           size="xs"
-          onClick={() => navigate(`/app/schemas/wizard?source=template&templateId=${encodeURIComponent(template.template_id)}`)}
+          onClick={() => navigate(withContext('/app/schemas/wizard', {
+            source: 'template',
+            templateId: template.template_id,
+          }))}
         >
           Apply to wizard
         </Button>

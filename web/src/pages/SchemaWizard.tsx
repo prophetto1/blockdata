@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
   Button,
@@ -299,6 +299,10 @@ export default function SchemaWizard() {
   const schemaId = params.get('schemaId');
   const uploadKey = params.get('uploadKey');
   const uploadName = params.get('uploadName');
+  const sourceUid = params.get('sourceUid');
+  const projectId = params.get('projectId');
+  const convUid = params.get('convUid');
+  const returnTo = params.get('returnTo');
 
   const [active, setActive] = useState(0);
   const [intent, setIntent] = useState('');
@@ -329,6 +333,30 @@ export default function SchemaWizard() {
     if (source === 'advanced') return 'From advanced editor';
     return 'Start from scratch';
   }, [source]);
+
+  const appendContextParams = useCallback((base: URLSearchParams): URLSearchParams => {
+    const next = new URLSearchParams(base.toString());
+    if (sourceUid) next.set('sourceUid', sourceUid);
+    if (projectId) next.set('projectId', projectId);
+    if (convUid) next.set('convUid', convUid);
+    if (returnTo) next.set('returnTo', returnTo);
+    return next;
+  }, [convUid, projectId, returnTo, sourceUid]);
+
+  const toApplyPath = (schemaIdValue: string, schemaRefValue: string) => {
+    const q = new URLSearchParams({
+      schemaId: schemaIdValue,
+      schemaRef: schemaRefValue,
+    });
+    const withContext = appendContextParams(q);
+    return `/app/schemas/apply?${withContext.toString()}`;
+  };
+
+  const toStartPath = () => {
+    const query = appendContextParams(new URLSearchParams());
+    const serialized = query.toString();
+    return serialized ? `/app/schemas/start?${serialized}` : '/app/schemas/start';
+  };
 
   const schemaPreview = useMemo(() => buildSchemaPreview(fields, prompt, intent), [fields, prompt, intent]);
   const compatibility = useMemo(() => evaluateCompatibility(schemaPreview), [schemaPreview]);
@@ -416,7 +444,7 @@ export default function SchemaWizard() {
         uploadKey,
         uploadName: draft.uploadName,
       });
-      navigate(`/app/schemas/advanced?${nextParams.toString()}`, { replace: true });
+      navigate(`/app/schemas/advanced?${appendContextParams(nextParams).toString()}`, { replace: true });
       return;
     }
 
@@ -430,7 +458,7 @@ export default function SchemaWizard() {
     setSchemaRef(draft.suggestedSchemaRef);
     setError(null);
     prefilledUploadRef.current = uploadKey;
-  }, [navigate, source, uploadKey]);
+  }, [appendContextParams, navigate, source, uploadKey]);
 
   const applyExistingSchema = (row: SchemaRow) => {
     setSelectedExistingId(row.schema_id);
@@ -530,11 +558,23 @@ export default function SchemaWizard() {
         throw new Error(`Save failed: HTTP ${response.status} ${text.slice(0, 500)}`);
       }
 
+      const savedSchemaId = isPlainObject(payload) && typeof payload.schema_id === 'string'
+        ? payload.schema_id
+        : null;
+      const savedSchemaRef = isPlainObject(payload) && typeof payload.schema_ref === 'string'
+        ? payload.schema_ref
+        : ref;
+
       notifications.show({
         color: 'green',
         title: 'Schema saved',
         message: `Schema "${ref}" created successfully.`,
       });
+
+      if (savedSchemaId && sourceUid && projectId && returnTo === 'document') {
+        navigate(toApplyPath(savedSchemaId, savedSchemaRef));
+        return;
+      }
       navigate('/app/schemas');
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : String(saveError));
@@ -554,7 +594,11 @@ export default function SchemaWizard() {
       />
 
       <PageHeader title="Schema Wizard" subtitle={`Source: ${sourceLabel}`}>
-        <Button variant="light" size="xs" onClick={() => navigate('/app/schemas/start')}>
+        <Button
+          variant="light"
+          size="xs"
+          onClick={() => navigate(toStartPath())}
+        >
           Back to start
         </Button>
       </PageHeader>

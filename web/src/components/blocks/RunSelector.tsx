@@ -8,20 +8,17 @@ type Props = {
 };
 
 export function RunSelector({ runs, value, onChange }: Props) {
-  const data = [
-    { value: '', label: 'No run (blocks only)' },
-    ...runs.map((r) => ({
-      value: r.run_id,
-      label: `${r.schemas?.schema_ref ?? 'unknown'} - ${r.status} (${r.completed_blocks}/${r.total_blocks})`,
-    })),
-  ];
+  const data = runs.map((r) => ({
+    value: r.run_id,
+    label: `${r.schemas?.schema_ref ?? 'unknown'} - ${r.status} (${r.completed_blocks}/${r.total_blocks})`,
+  }));
 
   return (
     <Select
       placeholder="Select a run to view overlays"
       data={data}
-      value={value ?? ''}
-      onChange={(v) => onChange(v || null)}
+      value={value}
+      onChange={onChange}
       searchable
       maw={450}
     />

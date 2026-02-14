@@ -14,7 +14,7 @@
 | **Run** | A job that sends a document's blocks to an AI model for processing according to a schema's instructions. When a user selects a document and a schema and clicks "apply," the system creates a run. This generates one overlay row per block, all initially `pending`, and begins dispatching blocks (in packs) to the AI model. The AI model reads each block, follows the schema's `prompt_config` instructions, and produces structured output for that block. The run tracks aggregate progress (`completed_blocks`, `failed_blocks`, `status`) and is identified by `run_id` in `runs_v2`. |
 | **Pack** | A pre-computed group of blocks within a run that will be sent to the AI model in a single API call. Pack size is determined at run creation based on block sizes, schema properties, and model limits. A pack is identified by `pack_index` (integer, 0-based) within a run. |
 | **Overlay** | The structured data the AI model produces for a single block. Stored in `block_overlays_v2` — first in `overlay_jsonb_staging` (awaiting human review), then in `overlay_jsonb_confirmed` (after user approval). Each overlay row belongs to exactly one run and one block. |
-| **Schema** | A user-uploaded JSON artifact defining the fields the AI model should extract or produce for each block, plus a `prompt_config` section with instructions. Stored in `schemas`. Reusable across runs and documents. |
+| **Schema** | A user-uploaded User Schema JSON artifact (structured schema object) defining extraction fields under top-level `properties`, plus `prompt_config` instructions. Stored in `schemas`. Reusable across runs and documents. Contract: `docs/specs/user-schema-json-contract.md`. |
 
 ---
 

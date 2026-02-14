@@ -1,10 +1,12 @@
 import { ActionIcon, Burger, Button, Group, Text, TextInput, Tooltip, UnstyledButton } from '@mantine/core';
-import { IconMoon, IconSearch, IconSun } from '@tabler/icons-react';
+import { IconChevronLeft, IconChevronRight, IconMoon, IconSearch, IconSun } from '@tabler/icons-react';
 import { useNavigate } from 'react-router-dom';
 
 type TopCommandBarProps = {
   navOpened: boolean;
   onToggleNav: () => void;
+  desktopNavOpened: boolean;
+  onToggleDesktopNav: () => void;
   showSearch?: boolean;
   showAssistantToggle?: boolean;
   assistantOpened: boolean;
@@ -18,6 +20,8 @@ type TopCommandBarProps = {
 export function TopCommandBar({
   navOpened,
   onToggleNav,
+  desktopNavOpened,
+  onToggleDesktopNav,
   showSearch = true,
   showAssistantToggle = true,
   assistantOpened,
@@ -33,19 +37,27 @@ export function TopCommandBar({
     <Group h="100%" px="md" justify="space-between">
       <Group gap="sm">
         <Burger opened={navOpened} onClick={onToggleNav} hiddenFrom="sm" size="sm" />
+        <Tooltip label={desktopNavOpened ? 'Hide navigation' : 'Show navigation'}>
+          <ActionIcon
+            visibleFrom="sm"
+            variant="subtle"
+            size="md"
+            onClick={onToggleDesktopNav}
+            aria-label={desktopNavOpened ? 'Hide navigation' : 'Show navigation'}
+          >
+            {desktopNavOpened ? <IconChevronLeft size={18} /> : <IconChevronRight size={18} />}
+          </ActionIcon>
+        </Tooltip>
         <Group gap={8}>
           <UnstyledButton
             type="button"
             onClick={() => navigate('/app')}
             aria-label="Go to workspace home"
-            style={{ display: 'flex', cursor: 'pointer' }}
+            style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}
           >
-            <img
-              src={computedColorScheme === 'dark' ? '/logo-dark.png' : '/logo-light.png'}
-              alt="BlockData"
-              height={42}
-              style={{ display: 'block' }}
-            />
+            <Text fw={800} fz={21} style={{ letterSpacing: '-0.02em' }}>
+              BlockData
+            </Text>
           </UnstyledButton>
         </Group>
         {showSearch && (

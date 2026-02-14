@@ -69,7 +69,7 @@ Deno.serve(async (req) => {
 
     // Build shared context for processors.
     const ctx: IngestContext = {
-      supabaseAdmin, ownerId, ingest_track, source_uid, source_type, source_key,
+      supabaseAdmin, runtimePolicy, ownerId, ingest_track, source_uid, source_type, source_key,
       bucket, fileBytes, originalFilename, requestedTitle, project_id,
     };
 

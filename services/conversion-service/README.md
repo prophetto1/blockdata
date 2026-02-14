@@ -1,6 +1,6 @@
 # Conversion Service (FastAPI) - Multi-Track Ingest Conversion
 
-This service converts non-Markdown uploads into normalized markdown and optional parser-native sidecars, then calls back the Edge Function.
+This service converts non-Markdown uploads into normalized markdown and parser representation artifacts, then calls back the Edge Function.
 
 It never writes Postgres directly and does not require Supabase service-role keys.
 
@@ -50,8 +50,8 @@ Body (JSON):
 Notes:
 
 1. `output` (markdown target) is required.
-2. `docling_output` is used when `track=docling`.
-3. `pandoc_output` is used when `track=pandoc`.
+2. `docling_output` is used when Docling JSON is available (primary or supplemental).
+3. `pandoc_output` is used when Pandoc AST is available (primary or supplemental).
 4. `track=mdast` currently supports `txt` conversion path in this service.
 5. For backward compatibility, if `track` is omitted:
    - `txt` defaults to `mdast`
@@ -63,6 +63,7 @@ On completion (success or failure), the service POSTs to `callback_url` with:
 {
   "source_uid": "...",
   "conversion_job_id": "...",
+  "track": "docling|pandoc|mdast",
   "md_key": "converted/<source_uid>/<name>.md",
   "docling_key": "converted/<source_uid>/<name>.docling.json",
   "pandoc_key": "converted/<source_uid>/<name>.pandoc.ast.json",
@@ -75,11 +76,12 @@ Key semantics:
 
 1. `docling_key` is null unless Docling JSON upload succeeded.
 2. `pandoc_key` is null unless Pandoc AST upload succeeded.
-3. Callback auth uses the same shared secret in `X-Conversion-Service-Key`.
+3. `track` is the resolved conversion track used by the service.
+4. Callback auth uses the same shared secret in `X-Conversion-Service-Key`.
 
 ## Determinism
 
-1. Docling sidecar JSON is canonicalized (`sort_keys=True`, compact separators).
+1. Docling JSON representation is canonicalized (`sort_keys=True`, compact separators).
 2. Pandoc AST JSON is canonicalized (`sort_keys=True`, compact separators).
 3. This supports stable `conv_uid` generation in `conversion-complete`.
 
@@ -87,9 +89,12 @@ Key semantics:
 
 1. `docling`:
    - converts via Docling to markdown,
-   - optionally emits `doclingdocument_json`.
+   - emits `doclingdocument_json` when requested,
+   - can emit supplemental `pandoc_ast_json` when requested and supported.
 2. `pandoc`:
    - converts via Pandoc to markdown (`gfm`),
-   - emits `pandoc_ast_json`.
+   - emits `pandoc_ast_json`,
+   - can emit supplemental `doclingdocument_json` when requested and supported.
 3. `mdast`:
-   - currently direct text decode path for `txt`.
+   - currently direct text decode path for `txt`,
+   - can emit supplemental parser artifacts when requested and supported.

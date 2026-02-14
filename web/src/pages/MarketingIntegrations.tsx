@@ -32,7 +32,7 @@ import {
   type TablerIcon,
 } from '@tabler/icons-react';
 import { useNavigate } from 'react-router-dom';
-import { PublicNavModern } from '@/components/layout/PublicNavModern';
+import { IntegrationMap } from '@/components/marketing/IntegrationMap';
 
 type ExportFormat = {
   icon: TablerIcon;
@@ -157,18 +157,37 @@ const DOWNSTREAM: InfoCard[] = [
   },
 ];
 
-export default function IntegrationsV2({ withNav = true }: { withNav?: boolean }) {
+function InfoCardGrid({ items }: { items: InfoCard[] }) {
+  return (
+    <SimpleGrid cols={{ base: 1, md: items.length <= 3 ? 3 : 2 }} spacing="lg">
+      {items.map((item) => (
+        <Paper key={item.title} p="xl" radius="md" withBorder>
+          <Stack gap="sm">
+            <Group gap="sm">
+              <ThemeIcon variant="light" color="teal" size="md" radius="md">
+                <item.icon size={16} />
+              </ThemeIcon>
+              <Text fw={700} size="lg">{item.title}</Text>
+            </Group>
+            <Text size="md" c="dimmed" lh={1.6}>{item.text}</Text>
+          </Stack>
+        </Paper>
+      ))}
+    </SimpleGrid>
+  );
+}
+
+export default function MarketingIntegrations() {
   const navigate = useNavigate();
   const { colorScheme } = useMantineColorScheme();
   const isDark = colorScheme === 'dark';
 
   return (
-    <Box bg={isDark ? 'var(--mantine-color-body)' : '#f6f6f7'}>
-      {withNav && <PublicNavModern />}
-
+    <Box>
+      {/* ── HERO ── */}
       <Box
         pt={{ base: 112, md: 146 }}
-        pb={{ base: 72, md: 96 }}
+        pb={{ base: 64, md: 96 }}
         style={{
           position: 'relative',
           overflow: 'hidden',
@@ -177,18 +196,14 @@ export default function IntegrationsV2({ withNav = true }: { withNav?: boolean }
             : 'radial-gradient(circle at 30% 0%, rgba(15,23,42,0.06) 0%, rgba(15,23,42,0) 70%)',
         }}
       >
-        <Container
-          size="xl"
-          px={{ base: 'md', md: 'xl' }}
-          style={{ position: 'relative', zIndex: 1, maxWidth: 1360 }}
-        >
+        <Container px={{ base: 'md', sm: 'lg', md: 'xl' }} style={{ position: 'relative', zIndex: 1 }}>
           <Stack gap="lg" align="center">
             <Title
               order={1}
               ta="center"
               style={{
                 fontSize: 'clamp(2.25rem, 4.2vw, 3.7rem)',
-                lineHeight: 1.1,
+                lineHeight: 1.15,
                 fontWeight: 800,
                 letterSpacing: '-0.03em',
               }}
@@ -204,9 +219,25 @@ export default function IntegrationsV2({ withNav = true }: { withNav?: boolean }
         </Container>
       </Box>
 
-      <Box py={{ base: 64, md: 88 }} bg="var(--mantine-color-default-hover)">
-        <Container size="xl" px={{ base: 'md', md: 'xl' }} style={{ maxWidth: 1360 }}>
-          <SimpleGrid cols={{ base: 1, md: 2 }} spacing={{ base: 'xl', md: 56 }}>
+      {/* ── INTEGRATION MAP ── */}
+      <Box py={{ base: 48, md: 72 }}>
+        <Container px={{ base: 'md', sm: 'lg', md: 'xl' }}>
+          <Stack gap="xl">
+            <Stack gap={4} align="center">
+              <Text size="sm" fw={700} tt="uppercase" c="dimmed">Overview</Text>
+              <Title order={2} ta="center" style={{ letterSpacing: '-0.02em' }}>
+                Documents in. Structured data out.
+              </Title>
+            </Stack>
+            <IntegrationMap />
+          </Stack>
+        </Container>
+      </Box>
+
+      {/* ── EXPORT CONTRACT ── */}
+      <Box py={{ base: 64, md: 96 }} bg="var(--mantine-color-default-hover)">
+        <Container px={{ base: 'md', sm: 'lg', md: 'xl' }}>
+          <SimpleGrid cols={{ base: 1, md: 2 }} spacing={{ base: 'xl', md: 48 }}>
             <Stack gap="md" maw={560}>
               <Title order={2} style={{ letterSpacing: '-0.02em' }}>
                 The Export Contract
@@ -215,25 +246,19 @@ export default function IntegrationsV2({ withNav = true }: { withNav?: boolean }
                 Every BlockData export follows a stable contract with two sections.
               </Text>
               <Stack gap={6} mt="xs">
-                <Text fw={700} size="xl">
-                  Immutable section
-                </Text>
+                <Text fw={700} size="xl">Immutable section</Text>
                 <Text c="dimmed" size="lg" lh={1.6}>
                   `document_id`, `block_index`, `original_text`, and source metadata are guaranteed provenance fields that never change.
                 </Text>
               </Stack>
               <Stack gap={6} mt="xs">
-                <Text fw={700} size="xl">
-                  User-defined section
-                </Text>
+                <Text fw={700} size="xl">User-defined section</Text>
                 <Text c="dimmed" size="lg" lh={1.6}>
                   Your schema fields sit alongside immutable data. This is where extracted or revised content lives.
                 </Text>
               </Stack>
               <Text size="xl" lh={1.6} mt="sm">
-                <Text component="span" fw={700}>
-                  Immutable fields guarantee provenance.
-                </Text>{' '}
+                <Text component="span" fw={700}>Immutable fields guarantee provenance.</Text>{' '}
                 User schema fields sit alongside them, never replacing them.
               </Text>
             </Stack>
@@ -247,16 +272,11 @@ export default function IntegrationsV2({ withNav = true }: { withNav?: boolean }
                 style={{
                   width: '100%',
                   maxWidth: 620,
-                  boxShadow: isDark
-                    ? '0 20px 42px rgba(0,0,0,0.45)'
-                    : '0 18px 36px rgba(15,23,42,0.12)',
                   border: '1px solid rgba(255,255,255,0.08)',
                 }}
               >
                 <Group gap="xs" mb="md" pb="xs" style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-                  <Text size="xs" c="dimmed" fw={500}>
-                    block_export.jsonl
-                  </Text>
+                  <Text size="xs" c="dimmed" fw={500}>block_export.jsonl</Text>
                 </Group>
                 <Box style={{ maxHeight: 420, overflow: 'auto' }}>
                   <Code
@@ -273,16 +293,13 @@ export default function IntegrationsV2({ withNav = true }: { withNav?: boolean }
         </Container>
       </Box>
 
-      <Box py={{ base: 72, md: 96 }}>
-        <Container size="xl" px={{ base: 'md', md: 'xl' }} style={{ maxWidth: 1360 }}>
+      {/* ── EXPORT FORMATS ── */}
+      <Box py={{ base: 64, md: 96 }}>
+        <Container px={{ base: 'md', sm: 'lg', md: 'xl' }}>
           <Stack gap="xl">
             <Stack gap={4} align="center" mb="sm">
-              <Text size="sm" fw={700} tt="uppercase" c="dimmed">
-                Formats
-              </Text>
-              <Title order={2} ta="center">
-                JSONL is canonical.
-              </Title>
+              <Text size="sm" fw={700} tt="uppercase" c="dimmed">Formats</Text>
+              <Title order={2} ta="center">JSONL is canonical.</Title>
             </Stack>
 
             <SimpleGrid cols={{ base: 1, md: 3 }} spacing="lg">
@@ -291,32 +308,25 @@ export default function IntegrationsV2({ withNav = true }: { withNav?: boolean }
                   <Stack gap="md">
                     <Group justify="space-between" align="center">
                       <Group gap="sm" align="center">
-                        <ThemeIcon variant="default" size="lg" radius="md">
+                        <ThemeIcon variant="light" color="teal" size="lg" radius="md">
                           <fmt.icon size={18} />
                         </ThemeIcon>
-                        <Text fw={700} size="lg">
-                          {fmt.name}
-                        </Text>
+                        <Text fw={700} size="lg">{fmt.name}</Text>
                       </Group>
-                      <Badge variant={fmt.badge === 'Canonical' ? 'filled' : 'default'} color={fmt.badge === 'Canonical' ? 'teal' : 'gray'}>
+                      <Badge
+                        variant={fmt.badge === 'Canonical' ? 'filled' : 'default'}
+                        color={fmt.badge === 'Canonical' ? 'teal' : 'gray'}
+                      >
                         {fmt.badge}
                       </Badge>
                     </Group>
                     <Stack gap="xs">
-                      <Text size="xs" fw={700} tt="uppercase" c="dimmed">
-                        Best for
-                      </Text>
-                      <Text size="sm" lh={1.6}>
-                        {fmt.bestFor}
-                      </Text>
+                      <Text size="xs" fw={700} tt="uppercase" c="dimmed">Best for</Text>
+                      <Text size="sm" lh={1.6}>{fmt.bestFor}</Text>
                     </Stack>
                     <Stack gap="xs">
-                      <Text size="xs" fw={700} tt="uppercase" c="dimmed">
-                        Details
-                      </Text>
-                      <Text size="sm" c="dimmed" lh={1.6}>
-                        {fmt.detail}
-                      </Text>
+                      <Text size="xs" fw={700} tt="uppercase" c="dimmed">Details</Text>
+                      <Text size="sm" c="dimmed" lh={1.6}>{fmt.detail}</Text>
                     </Stack>
                   </Stack>
                 </Paper>
@@ -326,112 +336,47 @@ export default function IntegrationsV2({ withNav = true }: { withNav?: boolean }
         </Container>
       </Box>
 
-      <Box py={{ base: 72, md: 96 }} bg="var(--mantine-color-default-hover)">
-        <Container size="xl" px={{ base: 'md', md: 'xl' }} style={{ maxWidth: 1360 }}>
+      {/* ── FILE PIPELINES ── */}
+      <Box py={{ base: 64, md: 96 }} bg="var(--mantine-color-default-hover)">
+        <Container px={{ base: 'md', sm: 'lg', md: 'xl' }}>
           <Stack gap="xl">
             <Stack gap={4} align="center" mb="sm">
-              <Text size="sm" fw={700} tt="uppercase" c="dimmed">
-                Pipelines
-              </Text>
-              <Title order={2} ta="center">
-                Export the right file.
-              </Title>
+              <Text size="sm" fw={700} tt="uppercase" c="dimmed">Pipelines</Text>
+              <Title order={2} ta="center">Export the right file.</Title>
             </Stack>
-
-            <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg">
-              {FILE_PIPELINES.map((item) => (
-                <Paper key={item.title} p="xl" radius="md" withBorder>
-                  <Stack gap="sm">
-                    <Group gap="sm">
-                      <ThemeIcon variant="default" size="md" radius="md">
-                        <item.icon size={16} />
-                      </ThemeIcon>
-                      <Text fw={700} size="lg">
-                        {item.title}
-                      </Text>
-                    </Group>
-                    <Text size="md" c="dimmed" lh={1.6}>
-                      {item.text}
-                    </Text>
-                  </Stack>
-                </Paper>
-              ))}
-            </SimpleGrid>
+            <InfoCardGrid items={FILE_PIPELINES} />
           </Stack>
         </Container>
       </Box>
 
-      <Box py={{ base: 72, md: 96 }}>
-        <Container size="xl" px={{ base: 'md', md: 'xl' }} style={{ maxWidth: 1360 }}>
+      {/* ── PUSH INTEGRATIONS ── */}
+      <Box py={{ base: 64, md: 96 }}>
+        <Container px={{ base: 'md', sm: 'lg', md: 'xl' }}>
           <Stack gap="xl">
             <Stack gap={4} align="center" mb="sm">
-              <Text size="sm" fw={700} tt="uppercase" c="dimmed">
-                Push integrations
-              </Text>
-              <Title order={2} ta="center">
-                The platform calls you.
-              </Title>
+              <Text size="sm" fw={700} tt="uppercase" c="dimmed">Push integrations</Text>
+              <Title order={2} ta="center">The platform calls you.</Title>
             </Stack>
-
-            <SimpleGrid cols={{ base: 1, md: 3 }} spacing="lg">
-              {PUSH_INTEGRATIONS.map((item) => (
-                <Paper key={item.title} p="xl" radius="md" withBorder>
-                  <Stack gap="sm">
-                    <Group gap="sm">
-                      <ThemeIcon variant="default" size="md" radius="md">
-                        <item.icon size={16} />
-                      </ThemeIcon>
-                      <Text fw={700} size="lg">
-                        {item.title}
-                      </Text>
-                    </Group>
-                    <Text size="md" c="dimmed" lh={1.6}>
-                      {item.text}
-                    </Text>
-                  </Stack>
-                </Paper>
-              ))}
-            </SimpleGrid>
+            <InfoCardGrid items={PUSH_INTEGRATIONS} />
           </Stack>
         </Container>
       </Box>
 
-      <Box py={{ base: 72, md: 96 }} bg="var(--mantine-color-default-hover)">
-        <Container size="xl" px={{ base: 'md', md: 'xl' }} style={{ maxWidth: 1360 }}>
+      {/* ── DOWNSTREAM ── */}
+      <Box py={{ base: 64, md: 96 }} bg="var(--mantine-color-default-hover)">
+        <Container px={{ base: 'md', sm: 'lg', md: 'xl' }}>
           <Stack gap="xl">
             <Stack gap={4} align="center" mb="sm">
-              <Text size="sm" fw={700} tt="uppercase" c="dimmed">
-                Downstream
-              </Text>
-              <Title order={2} ta="center">
-                What teams build.
-              </Title>
+              <Text size="sm" fw={700} tt="uppercase" c="dimmed">Downstream</Text>
+              <Title order={2} ta="center">What teams build.</Title>
             </Stack>
-
-            <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="lg">
-              {DOWNSTREAM.map((item) => (
-                <Paper key={item.title} p="lg" radius="md" withBorder>
-                  <Stack gap="sm">
-                    <Group gap="sm">
-                      <ThemeIcon variant="default" size="md" radius="md">
-                        <item.icon size={16} />
-                      </ThemeIcon>
-                      <Text fw={700} size="lg">
-                        {item.title}
-                      </Text>
-                    </Group>
-                    <Text size="md" c="dimmed" lh={1.6}>
-                      {item.text}
-                    </Text>
-                  </Stack>
-                </Paper>
-              ))}
-            </SimpleGrid>
+            <InfoCardGrid items={DOWNSTREAM} />
           </Stack>
         </Container>
       </Box>
 
-      <Box py={{ base: 80, md: 112 }}>
+      {/* ── FINAL CTA ── */}
+      <Box py={{ base: 64, md: 96 }}>
         <Container size="sm">
           <Stack align="center" gap="lg">
             <Title order={2} ta="center" fz={{ base: 36, md: 44 }}>
@@ -440,7 +385,7 @@ export default function IntegrationsV2({ withNav = true }: { withNav?: boolean }
             <Text ta="center" c="dimmed" size="xl" maw={600}>
               Upload documents, define a schema, review results, and export a clean contract downstream.
             </Text>
-            <Button size="xl" rightSection={<IconArrowRight size={18} />} onClick={() => navigate('/register')}>
+            <Button size="xl" color="teal" rightSection={<IconArrowRight size={18} />} onClick={() => navigate('/register')}>
               Get started
             </Button>
           </Stack>

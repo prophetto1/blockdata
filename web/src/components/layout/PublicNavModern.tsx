@@ -1,4 +1,5 @@
 import {
+  ActionIcon,
   Box,
   Button,
   Container,
@@ -10,7 +11,7 @@ import {
   useMantineColorScheme,
 } from '@mantine/core';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { IconMenu2, IconArrowRight, IconMoon, IconSun } from '@tabler/icons-react';
+import { IconMenu2, IconMoon, IconSun } from '@tabler/icons-react';
 
 export function PublicNavModern() {
   const navigate = useNavigate();
@@ -45,59 +46,58 @@ export function PublicNavModern() {
         height: 62,
       }}
     >
-      <Container size="xl" h="100%" px={{ base: 'md', md: 'xl' }} style={{ maxWidth: 1360 }}>
+      <Container h="100%" px={{ base: 'md', sm: 'lg', md: 'xl' }}>
         <Group h="100%" justify="space-between" wrap="nowrap">
           <UnstyledButton
             onClick={() => navigate('/')}
-            style={{ minWidth: 180, display: 'flex', alignItems: 'center' }}
+            style={{ display: 'flex', alignItems: 'center' }}
           >
             <Text fw={800} fz={21} style={{ letterSpacing: '-0.02em' }}>
               BlockData
             </Text>
           </UnstyledButton>
 
-          <Group gap={8} visibleFrom="sm" style={{ flex: 1, justifyContent: 'center' }}>
-            {links.map((l) => (
-              <Button
-                key={l.to}
-                size="sm"
-                variant="subtle"
-                radius="md"
-                color={location.pathname === l.to ? 'teal' : isDark ? 'gray' : 'dark'}
-                style={{
-                  opacity: location.pathname === l.to ? 1 : 0.72,
-                  fontWeight: 600,
-                  letterSpacing: '-0.01em',
-                }}
-                onClick={() => navigate(l.to)}
-              >
-                {l.label}
-              </Button>
-            ))}
+          <Group gap={32} visibleFrom="sm">
+            {links.map((l) => {
+              const isActive = location.pathname === l.to;
+              return (
+                <UnstyledButton key={l.to} onClick={() => navigate(l.to)}>
+                  <Text
+                    size="md"
+                    fw={500}
+                    c={isActive ? 'teal.5' : 'dimmed'}
+                    style={{
+                      letterSpacing: '-0.01em',
+                      transition: 'color 150ms ease',
+                    }}
+                  >
+                    {l.label}
+                  </Text>
+                </UnstyledButton>
+              );
+            })}
           </Group>
 
-          <Group gap="xs" wrap="nowrap" style={{ minWidth: 220, justifyContent: 'flex-end' }}>
-            <Button
+          <Group gap="sm" wrap="nowrap">
+            <ActionIcon
               variant="subtle"
-              size="sm"
               color="gray"
-              leftSection={isDark ? <IconSun size={16} /> : <IconMoon size={16} />}
+              size="lg"
               onClick={toggleColorScheme}
+              aria-label="Toggle color scheme"
               visibleFrom="sm"
             >
-              Theme
-            </Button>
+              {isDark ? <IconSun size={18} /> : <IconMoon size={18} />}
+            </ActionIcon>
             {!isLoginPage && (
-              <Button
-                variant="subtle"
-                size="sm"
-                color="gray"
-                style={{ opacity: 0.86, fontWeight: 600 }}
+              <UnstyledButton
                 onClick={() => navigate('/login')}
                 visibleFrom="sm"
               >
-                Log in
-              </Button>
+                <Text size="md" fw={500} c="dimmed" style={{ transition: 'color 150ms ease' }}>
+                  Log in
+                </Text>
+              </UnstyledButton>
             )}
             {!isRegisterPage && (
               <Button
@@ -105,18 +105,17 @@ export function PublicNavModern() {
                 radius="xl"
                 color="teal"
                 onClick={() => navigate('/register')}
-                rightSection={<IconArrowRight size={16} />}
               >
-                Get Started Free
+                Get Started
               </Button>
             )}
 
             <Box hiddenFrom="sm">
               <Menu width={220} position="bottom-end">
                 <Menu.Target>
-                  <Button variant="subtle" size="compact-md" color="gray" aria-label="Open menu">
-                    <IconMenu2 size={24} />
-                  </Button>
+                  <ActionIcon variant="subtle" size="lg" color="gray" aria-label="Open menu">
+                    <IconMenu2 size={22} />
+                  </ActionIcon>
                 </Menu.Target>
                 <Menu.Dropdown>
                   {links.map((l) => (
@@ -129,7 +128,7 @@ export function PublicNavModern() {
                     {isDark ? 'Light mode' : 'Dark mode'}
                   </Menu.Item>
                   {!isLoginPage && <Menu.Item onClick={() => navigate('/login')}>Log in</Menu.Item>}
-                  {!isRegisterPage && <Menu.Item onClick={() => navigate('/register')}>Get Started Free</Menu.Item>}
+                  {!isRegisterPage && <Menu.Item onClick={() => navigate('/register')}>Get Started</Menu.Item>}
                 </Menu.Dropdown>
               </Menu>
             </Box>
@@ -139,4 +138,3 @@ export function PublicNavModern() {
     </Box>
   );
 }
-

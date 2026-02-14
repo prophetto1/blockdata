@@ -1,9 +1,11 @@
 import {
+  ActionIcon,
   AppShell,
   useMantineColorScheme,
   useComputedColorScheme,
 } from '@mantine/core';
 import { useDisclosure, useLocalStorage } from '@mantine/hooks';
+import { IconChevronRight } from '@tabler/icons-react';
 import { Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/auth/AuthContext';
 import { TopCommandBar } from '@/components/shell/TopCommandBar';
@@ -15,6 +17,10 @@ export function AppLayout() {
   const shellV2Enabled = featureFlags.shellV2;
   const assistantDockEnabled = shellV2Enabled && featureFlags.assistantDock;
   const [navOpened, { toggle: toggleNav, close: closeNav }] = useDisclosure();
+  const [desktopNavOpened, setDesktopNavOpened] = useLocalStorage<boolean>({
+    key: 'blockdata.shell.nav_open_desktop',
+    defaultValue: true,
+  });
   const [assistantOpened, setAssistantOpened] = useLocalStorage<boolean>({
     key: 'blockdata.shell.assistant_open',
     defaultValue: false,
@@ -35,11 +41,12 @@ export function AppLayout() {
 
   const toggleAssistant = () => setAssistantOpened(!assistantOpened);
   const closeAssistant = () => setAssistantOpened(false);
+  const toggleDesktopNav = () => setDesktopNavOpened(!desktopNavOpened);
 
   return (
     <AppShell
       header={{ height: 56 }}
-      navbar={{ width: 240, breakpoint: 'sm', collapsed: { mobile: !navOpened } }}
+      navbar={{ width: 240, breakpoint: 'sm', collapsed: { mobile: !navOpened, desktop: !desktopNavOpened } }}
       aside={
         assistantDockEnabled
           ? {
@@ -73,6 +80,8 @@ export function AppLayout() {
         <TopCommandBar
           navOpened={navOpened}
           onToggleNav={toggleNav}
+          desktopNavOpened={desktopNavOpened}
+          onToggleDesktopNav={toggleDesktopNav}
           showSearch={shellV2Enabled}
           showAssistantToggle={assistantDockEnabled}
           assistantOpened={assistantOpened}
@@ -99,6 +108,25 @@ export function AppLayout() {
       )}
 
       <AppShell.Main>
+        {!desktopNavOpened && (
+          <ActionIcon
+            visibleFrom="sm"
+            size="md"
+            variant="filled"
+            color="gray"
+            radius="md"
+            aria-label="Show navigation"
+            onClick={toggleDesktopNav}
+            style={{
+              position: 'fixed',
+              left: 8,
+              top: 64,
+              zIndex: 210,
+            }}
+          >
+            <IconChevronRight size={18} />
+          </ActionIcon>
+        )}
         <Outlet />
       </AppShell.Main>
     </AppShell>

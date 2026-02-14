@@ -14,94 +14,53 @@ export type SchemaTemplateSeed = {
 
 export const SCHEMA_TEMPLATE_SEEDS: SchemaTemplateSeed[] = [
   {
-    template_id: 'contract-review',
+    template_id: 'quick-note',
     template_version: '1.0.0',
-    name: 'Contract Review',
-    category: 'legal',
-    description: 'Extract clause type, risk level, obligations, and governing law signals.',
-    use_case_tags: ['legal', 'contracts', 'risk'],
+    name: 'Quick Note',
+    category: 'starter',
+    description: 'Minimal two-field schema for fast smoke runs.',
+    use_case_tags: ['starter', 'smoke'],
     schema_json_seed: {
       type: 'object',
       additionalProperties: false,
       properties: {
-        clause_type: { type: 'string', description: 'Primary clause category.' },
-        risk_level: { type: 'string', enum: ['low', 'medium', 'high'] },
-        obligations: {
-          type: 'array',
-          items: { type: 'string' },
-          description: 'Party obligations found in this block.',
-        },
-        governing_law: { type: 'string' },
-      },
-      required: ['clause_type', 'risk_level'],
-    },
-    preview: {
-      fields: [
-        { key: 'clause_type', type: 'string' },
-        { key: 'risk_level', type: 'enum', description: 'low | medium | high' },
-        { key: 'obligations', type: 'array' },
-        { key: 'governing_law', type: 'string' },
-      ],
-      use_case: 'Contract redlining and review workflows.',
-    },
-  },
-  {
-    template_id: 'prose-quality',
-    template_version: '1.0.0',
-    name: 'Prose Quality',
-    category: 'writing',
-    description: 'Track quality issues, revisions, and confidence for each paragraph.',
-    use_case_tags: ['writing', 'editing', 'revision'],
-    schema_json_seed: {
-      type: 'object',
-      additionalProperties: false,
-      properties: {
-        revised_content: { type: 'string' },
-        issues_found: { type: 'array', items: { type: 'string' } },
-        quality_score: { type: 'number', minimum: 0, maximum: 1 },
+        label: { type: 'string', description: 'Short classification or note label.' },
         confidence: { type: 'number', minimum: 0, maximum: 1 },
       },
-      required: ['revised_content'],
+      required: ['label'],
     },
     preview: {
       fields: [
-        { key: 'revised_content', type: 'string' },
-        { key: 'issues_found', type: 'array' },
-        { key: 'quality_score', type: 'number' },
+        { key: 'label', type: 'string' },
         { key: 'confidence', type: 'number' },
       ],
-      use_case: 'Long-form manuscript and report improvement.',
+      use_case: 'Quick validation run to confirm schema->run->grid behavior.',
     },
   },
   {
-    template_id: 'citation-analysis',
+    template_id: 'quick-note-plus',
     template_version: '1.0.0',
-    name: 'Citation Analysis',
-    category: 'research',
-    description: 'Identify citations, citation role, and claim support quality.',
-    use_case_tags: ['research', 'citations', 'analysis'],
+    name: 'Quick Note Plus',
+    category: 'starter',
+    description: 'Small starter schema with one additional note field for richer smoke tests.',
+    use_case_tags: ['starter', 'smoke', 'notes'],
     schema_json_seed: {
       type: 'object',
       additionalProperties: false,
       properties: {
-        cited_authority: { type: 'array', items: { type: 'string' } },
-        citation_role: {
-          type: 'string',
-          enum: ['supporting', 'distinguishing', 'background', 'counterpoint'],
-        },
-        claim_strength: { type: 'number', minimum: 0, maximum: 1 },
-        notes: { type: 'string' },
+        label: { type: 'string', description: 'Short classification label.' },
+        note: { type: 'string', description: 'One-line supporting note.' },
+        confidence: { type: 'number', minimum: 0, maximum: 1 },
       },
-      required: ['citation_role'],
+      required: ['label', 'note'],
     },
     preview: {
       fields: [
-        { key: 'cited_authority', type: 'array' },
-        { key: 'citation_role', type: 'enum' },
-        { key: 'claim_strength', type: 'number' },
-        { key: 'notes', type: 'string' },
+        { key: 'label', type: 'string' },
+        { key: 'note', type: 'string' },
+        { key: 'confidence', type: 'number' },
       ],
-      use_case: 'Citation mapping and source-quality evaluation.',
+      use_case: 'Fast run validation where each result needs both a label and a short rationale.',
     },
   },
 ];
@@ -109,4 +68,3 @@ export const SCHEMA_TEMPLATE_SEEDS: SchemaTemplateSeed[] = [
 export function getSchemaTemplateSeed(templateId: string): SchemaTemplateSeed | null {
   return SCHEMA_TEMPLATE_SEEDS.find((template) => template.template_id === templateId) ?? null;
 }
-

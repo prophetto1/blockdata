@@ -20,7 +20,6 @@ import Schemas from '@/pages/Schemas';
 import SchemaApply from '@/pages/SchemaApply';
 import SchemaAdvancedEditor from '@/pages/SchemaAdvancedEditor';
 import SchemaStart from '@/pages/SchemaStart';
-import SchemaTemplateDetail from '@/pages/SchemaTemplateDetail';
 import SchemaTemplates from '@/pages/SchemaTemplates';
 import SchemaWizard from '@/pages/SchemaWizard';
 import RunDetail from '@/pages/RunDetail';
@@ -46,8 +45,8 @@ export const router = createBrowserRouter([
     children: [
       { path: '/', element: <Landing /> },
       { path: '/how-it-works', element: <HowItWorks /> },
-      { path: '/use-cases', element: <UseCases withNav={false} /> },
-      { path: '/integrations', element: <MarketingIntegrations withNav={false} /> },
+      { path: '/use-cases', element: <UseCases /> },
+      { path: '/integrations', element: <MarketingIntegrations /> },
       { path: '/experiments/platform', element: <PlatformLanding /> },
     ],
   },
@@ -88,7 +87,7 @@ export const router = createBrowserRouter([
           { path: '/app/schemas/start', element: <SchemaStart /> },
           { path: '/app/schemas/wizard', element: <SchemaWizard /> },
           { path: '/app/schemas/templates', element: <SchemaTemplates /> },
-          { path: '/app/schemas/templates/:templateId', element: <SchemaTemplateDetail /> },
+          { path: '/app/schemas/templates/:templateId', element: <Navigate to="/app/schemas/templates" replace /> },
           { path: '/app/schemas/apply', element: <SchemaApply /> },
           { path: '/app/schemas/advanced', element: <SchemaAdvancedEditor /> },
           { path: '/app/schemas/advanced/:schemaId', element: <SchemaAdvancedEditor /> },

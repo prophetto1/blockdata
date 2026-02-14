@@ -176,6 +176,60 @@ def _run_pandoc(input_path: Path, reader: str, writer: str) -> bytes:
     return proc.stdout
 
 
+def _canonical_json_bytes(value: Any) -> bytes:
+    return json.dumps(
+        value,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+
+
+def _build_docling_json_bytes(doc: Any) -> Optional[bytes]:
+    export_to_dict = getattr(doc, "export_to_dict", None)
+    if not callable(export_to_dict):
+        return None
+    return _canonical_json_bytes(export_to_dict())
+
+
+def _build_pandoc_ast_bytes_strict(source_type: str, source_bytes: bytes) -> bytes:
+    reader = PANDOC_READER_BY_SOURCE_TYPE.get(source_type)
+    if not reader:
+        raise RuntimeError(f"pandoc track does not support source_type: {source_type}")
+
+    suffix = SOURCE_SUFFIX_BY_TYPE.get(source_type, ".bin")
+    with tempfile.TemporaryDirectory(prefix="ws-pandoc-") as tmp_dir:
+        input_path = Path(tmp_dir) / f"source{suffix}"
+        input_path.write_bytes(source_bytes)
+        pandoc_json_raw = _run_pandoc(input_path, reader, "json")
+
+    try:
+        ast_obj = json.loads(pandoc_json_raw.decode("utf-8"))
+    except Exception as e:
+        raise RuntimeError(f"pandoc JSON output is invalid: {e!r}") from e
+    return _canonical_json_bytes(ast_obj)
+
+
+async def _maybe_build_docling_json_bytes(req: ConvertRequest) -> Optional[bytes]:
+    try:
+        converter = _build_docling_converter()
+        result = converter.convert(req.source_download_url)
+        return _build_docling_json_bytes(result.document)
+    except Exception:
+        return None
+
+
+async def _maybe_build_pandoc_ast_bytes(req: ConvertRequest, source_bytes: Optional[bytes] = None) -> Optional[bytes]:
+    if req.source_type not in PANDOC_READER_BY_SOURCE_TYPE:
+        return None
+    try:
+        if source_bytes is None:
+            source_bytes = await _download_bytes(req.source_download_url)
+        return _build_pandoc_ast_bytes_strict(req.source_type, source_bytes)
+    except Exception:
+        return None
+
+
 def _resolve_track(req: ConvertRequest) -> str:
     if req.track:
         return req.track
@@ -193,7 +247,10 @@ async def _convert(req: ConvertRequest) -> tuple[bytes, Optional[bytes], Optiona
             raise RuntimeError(f"mdast track only supports txt in conversion-service path, got: {req.source_type}")
         source_bytes = await _download_bytes(req.source_download_url)
         text = source_bytes.decode("utf-8", errors="replace")
-        return text.encode("utf-8"), None, None
+        markdown_bytes = text.encode("utf-8")
+        docling_json_bytes = await _maybe_build_docling_json_bytes(req) if req.docling_output is not None else None
+        pandoc_json_bytes = await _maybe_build_pandoc_ast_bytes(req, source_bytes) if req.pandoc_output is not None else None
+        return markdown_bytes, docling_json_bytes, pandoc_json_bytes
 
     if track == "docling":
         converter = _build_docling_converter()
@@ -203,15 +260,9 @@ async def _convert(req: ConvertRequest) -> tuple[bytes, Optional[bytes], Optiona
 
         docling_json_bytes: Optional[bytes] = None
         if req.docling_output is not None:
-            export_to_dict = getattr(doc, "export_to_dict", None)
-            if callable(export_to_dict):
-                docling_json_bytes = json.dumps(
-                    export_to_dict(),
-                    ensure_ascii=False,
-                    sort_keys=True,
-                    separators=(",", ":"),
-                ).encode("utf-8")
-        return markdown_bytes, docling_json_bytes, None
+            docling_json_bytes = _build_docling_json_bytes(doc)
+        pandoc_json_bytes = await _maybe_build_pandoc_ast_bytes(req) if req.pandoc_output is not None else None
+        return markdown_bytes, docling_json_bytes, pandoc_json_bytes
 
     if track == "pandoc":
         reader = PANDOC_READER_BY_SOURCE_TYPE.get(req.source_type)
@@ -225,19 +276,9 @@ async def _convert(req: ConvertRequest) -> tuple[bytes, Optional[bytes], Optiona
             input_path.write_bytes(source_bytes)
 
             markdown_bytes = _run_pandoc(input_path, reader, "gfm")
-            pandoc_json_raw = _run_pandoc(input_path, reader, "json")
-
-        try:
-            ast_obj = json.loads(pandoc_json_raw.decode("utf-8"))
-        except Exception as e:
-            raise RuntimeError(f"pandoc JSON output is invalid: {e!r}") from e
-        pandoc_json_bytes = json.dumps(
-            ast_obj,
-            ensure_ascii=False,
-            sort_keys=True,
-            separators=(",", ":"),
-        ).encode("utf-8")
-        return markdown_bytes, None, pandoc_json_bytes
+        pandoc_json_bytes = _build_pandoc_ast_bytes_strict(req.source_type, source_bytes)
+        docling_json_bytes = await _maybe_build_docling_json_bytes(req) if req.docling_output is not None else None
+        return markdown_bytes, docling_json_bytes, pandoc_json_bytes
 
     raise RuntimeError(f"Unknown track: {track}")
 
@@ -253,6 +294,7 @@ async def convert(
     callback_payload: dict[str, Any] = {
         "source_uid": body.source_uid,
         "conversion_job_id": body.conversion_job_id,
+        "track": _resolve_track(body),
         "md_key": body.output.key,
         "docling_key": None,
         "pandoc_key": None,

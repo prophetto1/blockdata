@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback, useRef } from 'react';
+import { useMemo, useState, useCallback, useRef, useEffect } from 'react';
 import { AgGridReact } from 'ag-grid-react';
 import {
   AllCommunityModule,
@@ -17,7 +17,6 @@ import {
   Divider,
   Group,
   Menu,
-  MultiSelect,
   Pagination,
   Paper,
   SegmentedControl,
@@ -28,10 +27,16 @@ import {
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import {
+  IconArrowBarToDown,
+  IconArrowBarToUp,
+  IconArrowsVertical,
   IconCheck,
+  IconChevronDown,
   IconColumns,
+  IconDownload,
   IconFilter,
   IconRotateClockwise,
+  IconTrash,
 } from '@tabler/icons-react';
 import { supabase } from '@/lib/supabase';
 import { useBlocks } from '@/hooks/useBlocks';
@@ -67,6 +72,14 @@ const PAGE_SIZES = ['25', '50', '100'];
 const VIEW_MODE_KEY = 'blockdata-view-mode';
 const BLOCK_TYPE_VIEW_KEY = 'blockdata-type-view';
 type BlockTypeView = 'normalized' | 'parser_native';
+const HIDDEN_COLS_KEY = 'blockdata-hidden-cols';
+const DEFAULT_HIDDEN_COLS = ['block_uid', 'parser_path'];
+const VIEWER_FONT_SIZE_KEY = 'blockdata-viewer-font-size';
+type ViewerFontSize = 'small' | 'medium' | 'large';
+const VIEWER_FONT_FAMILY_KEY = 'blockdata-viewer-font-family';
+type ViewerFontFamily = 'sans' | 'serif' | 'mono';
+const VIEWER_VERTICAL_ALIGN_KEY = 'blockdata-viewer-vertical-align';
+type ViewerVerticalAlign = 'top' | 'center' | 'bottom';
 
 function BlockTypeCellRenderer(params: ICellRendererParams) {
   const type = params.value as string;
@@ -243,9 +256,11 @@ type BlockViewerGridProps = {
   convUid: string;
   selectedRunId: string | null;
   selectedRun: RunWithSchema | null;
+  onExport?: () => void;
+  onDelete?: () => void;
 };
 
-export function BlockViewerGrid({ convUid, selectedRunId, selectedRun }: BlockViewerGridProps) {
+export function BlockViewerGrid({ convUid, selectedRunId, selectedRun, onExport, onDelete }: BlockViewerGridProps) {
   const gridRef = useRef<AgGridReact<Record<string, unknown>>>(null);
   const [pageIndex, setPageIndex] = useState(0);
   const [pageSize, setPageSize] = useState(50);
@@ -254,14 +269,39 @@ export function BlockViewerGrid({ convUid, selectedRunId, selectedRun }: BlockVi
     if (stored === 'expanded') return 'comfortable';
     return stored === 'compact' || stored === 'comfortable' ? stored : 'compact';
   });
+  const [viewerFontSize, setViewerFontSize] = useState<ViewerFontSize>(() => {
+    const stored = typeof localStorage !== 'undefined' ? localStorage.getItem(VIEWER_FONT_SIZE_KEY) : null;
+    return stored === 'small' || stored === 'medium' || stored === 'large' ? stored : 'medium';
+  });
+  const [viewerFontFamily, setViewerFontFamily] = useState<ViewerFontFamily>(() => {
+    const stored = typeof localStorage !== 'undefined' ? localStorage.getItem(VIEWER_FONT_FAMILY_KEY) : null;
+    return stored === 'serif' || stored === 'mono' ? stored : 'sans';
+  });
+  const [viewerVerticalAlign, setViewerVerticalAlign] = useState<ViewerVerticalAlign>(() => {
+    const stored = typeof localStorage !== 'undefined' ? localStorage.getItem(VIEWER_VERTICAL_ALIGN_KEY) : null;
+    return stored === 'top' || stored === 'bottom' ? stored : 'center';
+  });
   const [blockTypeView, setBlockTypeView] = useState<BlockTypeView>(() => {
     const stored = typeof localStorage !== 'undefined' ? localStorage.getItem(BLOCK_TYPE_VIEW_KEY) : null;
-    return stored === 'parser_native' ? 'parser_native' : 'normalized';
+    return stored === 'normalized' ? 'normalized' : 'parser_native';
   });
   const computedColorScheme = useComputedColorScheme('dark');
   const isDark = computedColorScheme === 'dark';
   const [typeFilter, setTypeFilter] = useState<string[]>([]);
-  const [hiddenCols, setHiddenCols] = useState<Set<string>>(new Set());
+  const [hiddenCols, setHiddenCols] = useState<Set<string>>(() => {
+    if (typeof localStorage === 'undefined') return new Set(DEFAULT_HIDDEN_COLS);
+    const stored = localStorage.getItem(HIDDEN_COLS_KEY);
+    if (!stored) return new Set(DEFAULT_HIDDEN_COLS);
+    try {
+      const parsed = JSON.parse(stored);
+      if (Array.isArray(parsed)) {
+        return new Set(parsed.filter((value): value is string => typeof value === 'string'));
+      }
+    } catch {
+      // Fall back to defaults when storage is invalid.
+    }
+    return new Set(DEFAULT_HIDDEN_COLS);
+  });
   const [confirmingAll, setConfirmingAll] = useState(false);
   const [blockActionBusy, setBlockActionBusy] = useState<Record<string, boolean>>({});
 
@@ -288,23 +328,17 @@ export function BlockViewerGrid({ convUid, selectedRunId, selectedRun }: BlockVi
       const overlay = overlayMap.get(block.block_uid) ?? null;
       const normalizedLocator = block.block_locator ?? null;
       const { parserBlockType, parserPath } = parserNativeMetaFromLocator(normalizedLocator);
-      const activeType = blockTypeView === 'parser_native' ? (parserBlockType ?? block.block_type) : block.block_type;
       const normalizedLocatorJson = normalizedLocator ? JSON.stringify(normalizedLocator) : null;
-      const parserLocatorJson = JSON.stringify({
-        parser_block_type: parserBlockType,
-        parser_path: parserPath,
-      });
 
       const row: Record<string, unknown> = {
         block_index: block.block_index,
         block_type: block.block_type,
-        block_type_view: activeType,
+        block_type_view: block.block_type,
         block_type_parser_native: parserBlockType,
         block_content: block.block_content,
         block_uid: block.block_uid,
-        conv_uid: block.conv_uid,
         block_locator: normalizedLocatorJson,
-        block_locator_view: blockTypeView === 'parser_native' ? parserLocatorJson : normalizedLocatorJson,
+        block_locator_view: normalizedLocatorJson,
         parser_block_type: parserBlockType,
         parser_path: parserPath,
         _overlay_status: overlay?.status ?? null,
@@ -332,7 +366,7 @@ export function BlockViewerGrid({ convUid, selectedRunId, selectedRun }: BlockVi
 
       return row;
     });
-  }, [blockTypeView, blocks, overlayMap, schemaFields]);
+  }, [blocks, overlayMap, schemaFields]);
 
   const blockTypes = useMemo(() => {
     const types = new Set<string>();
@@ -351,6 +385,13 @@ export function BlockViewerGrid({ convUid, selectedRunId, selectedRun }: BlockVi
     });
   }, [rowDataBase, typeFilter]);
 
+  const hasParserTypeData = useMemo(() => (
+    rowDataBase.some((row) => {
+      const value = row.parser_block_type;
+      return typeof value === 'string' && value.trim().length > 0;
+    })
+  ), [rowDataBase]);
+
   const stagedCount = useMemo(() => {
     let count = 0;
     for (const overlay of overlayMap.values()) {
@@ -368,6 +409,22 @@ export function BlockViewerGrid({ convUid, selectedRunId, selectedRun }: BlockVi
   }, [overlayMap]);
 
   const hasRun = !!selectedRunId;
+
+  const firstUserSchemaColId = useMemo(() => {
+    if (!hasRun) return null;
+    const orderedIds: string[] = [
+      '_overlay_status',
+      '_review_actions',
+      ...schemaFields.map((field) => `field_${field.key}`),
+      '_claimed_by',
+      '_claimed_at',
+      '_attempt_count',
+      '_last_error',
+      '_confirmed_at',
+      '_confirmed_by',
+    ];
+    return orderedIds.find((id) => !hiddenCols.has(id)) ?? null;
+  }, [hasRun, hiddenCols, schemaFields]);
 
   const gridTheme = useMemo(() => {
     const base = DENSITY_THEMES[viewMode as keyof typeof DENSITY_THEMES] ?? DENSITY_THEMES.compact;
@@ -517,11 +574,16 @@ export function BlockViewerGrid({ convUid, selectedRunId, selectedRun }: BlockVi
   }, [overlayMap, patchOverlay, schemaFieldByKey, selectedRunId]);
 
   const columnDefs = useMemo<(ColDef | ColGroupDef)[]>(() => {
+    const useAutoHeight = viewMode === 'comfortable';
+    const contentMinWidth = 320;
+    const locatorWidth = 280;
+    const parserPathWidth = 280;
+    const lastErrorWidth = 220;
+
     const immutableCols: ColDef[] = [
       {
         field: 'block_index',
         headerName: '#',
-        pinned: 'left',
         width: 60,
         suppressSizeToFit: true,
         type: 'numericColumn',
@@ -529,8 +591,7 @@ export function BlockViewerGrid({ convUid, selectedRunId, selectedRun }: BlockVi
       },
       {
         field: 'block_type_view',
-        headerName: blockTypeView === 'parser_native' ? 'Type (Parser)' : 'Type',
-        pinned: 'left',
+        headerName: 'Type',
         width: 120,
         cellRenderer: BlockTypeCellRenderer,
         hide: hiddenCols.has('block_type'),
@@ -538,8 +599,8 @@ export function BlockViewerGrid({ convUid, selectedRunId, selectedRun }: BlockVi
       {
         field: 'block_content',
         headerName: 'Content',
-        pinned: 'left',
-        width: 350,
+        flex: 1,
+        minWidth: contentMinWidth,
         wrapText: true,
         autoHeight: true,
         hide: hiddenCols.has('block_content'),
@@ -548,34 +609,31 @@ export function BlockViewerGrid({ convUid, selectedRunId, selectedRun }: BlockVi
         field: 'block_uid',
         headerName: 'Block UID',
         width: 220,
+        wrapText: true,
+        autoHeight: true,
+        cellClass: 'cell-break-anywhere',
         hide: hiddenCols.has('block_uid'),
       },
       {
-        field: 'conv_uid',
-        headerName: 'Conv UID',
-        width: 220,
-        hide: hiddenCols.has('conv_uid'),
-      },
-      {
         field: 'block_locator_view',
-        headerName: blockTypeView === 'parser_native' ? 'Locator (Parser)' : 'Locator',
-        width: 250,
+        headerName: 'Locator',
+        width: locatorWidth,
         wrapText: true,
-        autoHeight: true,
+        autoHeight: useAutoHeight,
         hide: hiddenCols.has('block_locator'),
       },
       {
         field: 'parser_block_type',
         headerName: 'Parser Type',
         width: 160,
-        hide: hiddenCols.has('parser_block_type') || blockTypeView !== 'parser_native',
+        hide: hiddenCols.has('parser_block_type') || blockTypeView !== 'parser_native' || !hasParserTypeData,
       },
       {
         field: 'parser_path',
         headerName: 'Parser Path',
-        width: 250,
+        width: parserPathWidth,
         wrapText: true,
-        autoHeight: true,
+        autoHeight: useAutoHeight,
         hide: hiddenCols.has('parser_path') || blockTypeView !== 'parser_native',
       },
     ];
@@ -588,6 +646,8 @@ export function BlockViewerGrid({ convUid, selectedRunId, selectedRun }: BlockVi
         headerName: 'Status',
         width: 100,
         cellRenderer: StatusCellRenderer,
+        cellClass: firstUserSchemaColId === '_overlay_status' ? 'user-schema-boundary-cell' : undefined,
+        headerClass: firstUserSchemaColId === '_overlay_status' ? 'user-schema-boundary-header' : undefined,
         hide: hiddenCols.has('_overlay_status'),
       },
       {
@@ -603,6 +663,8 @@ export function BlockViewerGrid({ convUid, selectedRunId, selectedRun }: BlockVi
           onRejectBlock: handleRejectBlock,
           isBusy: isBusyForBlock,
         } satisfies ReviewActionCellRendererParams,
+        cellClass: firstUserSchemaColId === '_review_actions' ? 'user-schema-boundary-cell' : undefined,
+        headerClass: firstUserSchemaColId === '_review_actions' ? 'user-schema-boundary-header' : undefined,
         hide: hiddenCols.has('_review_actions'),
       },
       ...schemaFields.map((field): ColDef => ({
@@ -623,20 +685,67 @@ export function BlockViewerGrid({ convUid, selectedRunId, selectedRun }: BlockVi
           'overlay-staged-cell': (params) => params.data?._overlay_status === 'ai_complete',
           'overlay-confirmed-cell': (params) => params.data?._overlay_status === 'confirmed',
         },
+        cellClass: firstUserSchemaColId === `field_${field.key}` ? 'user-schema-boundary-cell' : undefined,
+        headerClass: firstUserSchemaColId === `field_${field.key}` ? 'user-schema-boundary-header' : undefined,
         resizable: true,
         wrapText: true,
-        autoHeight: true,
+        autoHeight: useAutoHeight,
         hide: hiddenCols.has(`field_${field.key}`),
       })),
     ];
 
     const overlayMetaCols: ColDef[] = [
-      { field: '_claimed_by', headerName: 'Claimed By', width: 140, hide: hiddenCols.has('_claimed_by') },
-      { field: '_claimed_at', headerName: 'Claimed At', width: 160, hide: hiddenCols.has('_claimed_at') },
-      { field: '_attempt_count', headerName: 'Attempts', width: 90, type: 'numericColumn', hide: hiddenCols.has('_attempt_count') },
-      { field: '_last_error', headerName: 'Last Error', width: 200, wrapText: true, autoHeight: true, hide: hiddenCols.has('_last_error') },
-      { field: '_confirmed_at', headerName: 'Confirmed At', width: 160, hide: hiddenCols.has('_confirmed_at') },
-      { field: '_confirmed_by', headerName: 'Confirmed By', width: 140, hide: hiddenCols.has('_confirmed_by') },
+      {
+        field: '_claimed_by',
+        headerName: 'Claimed By',
+        width: 140,
+        cellClass: firstUserSchemaColId === '_claimed_by' ? 'user-schema-boundary-cell' : undefined,
+        headerClass: firstUserSchemaColId === '_claimed_by' ? 'user-schema-boundary-header' : undefined,
+        hide: hiddenCols.has('_claimed_by'),
+      },
+      {
+        field: '_claimed_at',
+        headerName: 'Claimed At',
+        width: 160,
+        cellClass: firstUserSchemaColId === '_claimed_at' ? 'user-schema-boundary-cell' : undefined,
+        headerClass: firstUserSchemaColId === '_claimed_at' ? 'user-schema-boundary-header' : undefined,
+        hide: hiddenCols.has('_claimed_at'),
+      },
+      {
+        field: '_attempt_count',
+        headerName: 'Attempts',
+        width: 90,
+        type: 'numericColumn',
+        cellClass: firstUserSchemaColId === '_attempt_count' ? 'user-schema-boundary-cell' : undefined,
+        headerClass: firstUserSchemaColId === '_attempt_count' ? 'user-schema-boundary-header' : undefined,
+        hide: hiddenCols.has('_attempt_count'),
+      },
+      {
+        field: '_last_error',
+        headerName: 'Last Error',
+        width: lastErrorWidth,
+        wrapText: true,
+        autoHeight: useAutoHeight,
+        cellClass: firstUserSchemaColId === '_last_error' ? 'user-schema-boundary-cell' : undefined,
+        headerClass: firstUserSchemaColId === '_last_error' ? 'user-schema-boundary-header' : undefined,
+        hide: hiddenCols.has('_last_error'),
+      },
+      {
+        field: '_confirmed_at',
+        headerName: 'Confirmed At',
+        width: 160,
+        cellClass: firstUserSchemaColId === '_confirmed_at' ? 'user-schema-boundary-cell' : undefined,
+        headerClass: firstUserSchemaColId === '_confirmed_at' ? 'user-schema-boundary-header' : undefined,
+        hide: hiddenCols.has('_confirmed_at'),
+      },
+      {
+        field: '_confirmed_by',
+        headerName: 'Confirmed By',
+        width: 140,
+        cellClass: firstUserSchemaColId === '_confirmed_by' ? 'user-schema-boundary-cell' : undefined,
+        headerClass: firstUserSchemaColId === '_confirmed_by' ? 'user-schema-boundary-header' : undefined,
+        hide: hiddenCols.has('_confirmed_by'),
+      },
     ];
 
     return [
@@ -659,10 +768,13 @@ export function BlockViewerGrid({ convUid, selectedRunId, selectedRun }: BlockVi
     handleConfirmBlock,
     handleRejectBlock,
     hasRun,
+    firstUserSchemaColId,
+    hasParserTypeData,
     hiddenCols,
     isBusyForBlock,
     schemaFields,
     selectedRun,
+    viewMode,
   ]);
 
   const defaultColDef = useMemo<ColDef>(() => ({
@@ -680,6 +792,18 @@ export function BlockViewerGrid({ convUid, selectedRunId, selectedRun }: BlockVi
     params.data.block_uid as string
   ), []);
 
+  useEffect(() => {
+    const api = gridRef.current?.api;
+    if (!api) return;
+    api.resetRowHeights();
+    api.refreshCells({ force: true });
+  }, [viewerFontFamily, viewerFontSize, viewMode, blockTypeView]);
+
+  useEffect(() => {
+    if (typeof localStorage === 'undefined') return;
+    localStorage.setItem(HIDDEN_COLS_KEY, JSON.stringify(Array.from(hiddenCols)));
+  }, [hiddenCols]);
+
   const handleViewModeChange = (value: string) => {
     setViewMode(value);
     if (typeof localStorage !== 'undefined') {
@@ -693,6 +817,30 @@ export function BlockViewerGrid({ convUid, selectedRunId, selectedRun }: BlockVi
     setTypeFilter([]);
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem(BLOCK_TYPE_VIEW_KEY, next);
+    }
+  };
+
+  const handleViewerFontSizeChange = (value: string) => {
+    const next: ViewerFontSize = value === 'small' || value === 'large' ? value : 'medium';
+    setViewerFontSize(next);
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(VIEWER_FONT_SIZE_KEY, next);
+    }
+  };
+
+  const handleViewerFontFamilyChange = (value: string) => {
+    const next: ViewerFontFamily = value === 'serif' || value === 'mono' ? value : 'sans';
+    setViewerFontFamily(next);
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(VIEWER_FONT_FAMILY_KEY, next);
+    }
+  };
+
+  const handleViewerVerticalAlignChange = (value: string | null) => {
+    const next: ViewerVerticalAlign = value === 'top' || value === 'bottom' ? value : 'center';
+    setViewerVerticalAlign(next);
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(VIEWER_VERTICAL_ALIGN_KEY, next);
     }
   };
 
@@ -711,11 +859,12 @@ export function BlockViewerGrid({ convUid, selectedRunId, selectedRun }: BlockVi
       { id: 'block_type', label: 'Type' },
       { id: 'block_content', label: 'Content' },
       { id: 'block_uid', label: 'Block UID' },
-      { id: 'conv_uid', label: 'Conv UID' },
       { id: 'block_locator', label: 'Locator' },
-      { id: 'parser_block_type', label: 'Parser Type' },
       { id: 'parser_path', label: 'Parser Path' },
     ];
+    if (hasParserTypeData) {
+      cols.push({ id: 'parser_block_type', label: 'Parser Type' });
+    }
     if (hasRun) {
       cols.push({ id: '_overlay_status', label: 'Status' });
       cols.push({ id: '_review_actions', label: 'Review' });
@@ -730,7 +879,7 @@ export function BlockViewerGrid({ convUid, selectedRunId, selectedRun }: BlockVi
       );
     }
     return cols;
-  }, [hasRun, schemaFields]);
+  }, [hasParserTypeData, hasRun, schemaFields]);
 
   return (
     <>
@@ -738,28 +887,47 @@ export function BlockViewerGrid({ convUid, selectedRunId, selectedRun }: BlockVi
         <Group justify="space-between" wrap="wrap" gap="xs">
           <Group gap="xs" wrap="nowrap">
             {blockTypes.length > 1 && (
-              <MultiSelect
-                data={blockTypes.map((type) => ({ value: type, label: type }))}
-                value={typeFilter}
-                onChange={setTypeFilter}
-                placeholder="All types"
-                size="xs"
-                w={160}
-                clearable
-                leftSection={<IconFilter size={14} />}
-                comboboxProps={{ withinPortal: true }}
-              />
+              <Menu shadow="md" width={200} position="bottom-start" withinPortal closeOnItemClick={false}>
+                <Menu.Target>
+                  <Button
+                    variant="subtle"
+                    size="compact-xs"
+                    px={8}
+                    leftSection={<IconFilter size={14} />}
+                    rightSection={<IconChevronDown size={10} />}
+                  >
+                    {typeFilter.length === 0 ? 'All types' : `${typeFilter.length} type${typeFilter.length > 1 ? 's' : ''}`}
+                  </Button>
+                </Menu.Target>
+                <Menu.Dropdown>
+                  {blockTypes.map((type) => (
+                    <Menu.Item
+                      key={type}
+                      leftSection={
+                        typeFilter.includes(type)
+                          ? <IconCheck size={14} />
+                          : <span style={{ width: 14, display: 'inline-block' }} />
+                      }
+                      onClick={() =>
+                        setTypeFilter((prev) =>
+                          prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type],
+                        )
+                      }
+                    >
+                      <Text size="xs">{type}</Text>
+                    </Menu.Item>
+                  ))}
+                  {typeFilter.length > 0 && (
+                    <>
+                      <Menu.Divider />
+                      <Menu.Item c="dimmed" onClick={() => setTypeFilter([])}>
+                        <Text size="xs">Clear all</Text>
+                      </Menu.Item>
+                    </>
+                  )}
+                </Menu.Dropdown>
+              </Menu>
             )}
-
-            <SegmentedControl
-              data={[
-                { value: 'normalized', label: 'Normalized' },
-                { value: 'parser_native', label: 'Parser Native' },
-              ]}
-              value={blockTypeView}
-              onChange={handleBlockTypeViewChange}
-              size="xs"
-            />
 
             <SegmentedControl
               data={[
@@ -771,7 +939,54 @@ export function BlockViewerGrid({ convUid, selectedRunId, selectedRun }: BlockVi
               size="xs"
             />
 
-            <Menu shadow="md" width={220} position="bottom-end" withinPortal>
+            <SegmentedControl
+              data={[
+                { value: 'small', label: 'S' },
+                { value: 'medium', label: 'M' },
+                { value: 'large', label: 'L' },
+              ]}
+              value={viewerFontSize}
+              onChange={handleViewerFontSizeChange}
+              size="xs"
+            />
+
+            <SegmentedControl
+              data={[
+                { value: 'sans', label: 'Sans' },
+                { value: 'serif', label: 'Serif' },
+                { value: 'mono', label: 'Mono' },
+              ]}
+              value={viewerFontFamily}
+              onChange={handleViewerFontFamilyChange}
+              size="xs"
+            />
+
+            <Menu shadow="md" width={170} position="bottom-start" withinPortal>
+              <Menu.Target>
+                <Tooltip label="Vertical align">
+                  <Button
+                    variant="subtle"
+                    size="compact-xs"
+                    px={6}
+                    rightSection={<IconChevronDown size={10} />}
+                    aria-label="Vertical align"
+                  >
+                    {viewerVerticalAlign === 'top'
+                      ? <IconArrowBarToUp size={14} />
+                      : viewerVerticalAlign === 'center'
+                        ? <IconArrowsVertical size={14} />
+                        : <IconArrowBarToDown size={14} />}
+                  </Button>
+                </Tooltip>
+              </Menu.Target>
+              <Menu.Dropdown>
+                <Menu.Item leftSection={<IconArrowBarToUp size={14} />} onClick={() => handleViewerVerticalAlignChange('top')}>Top</Menu.Item>
+                <Menu.Item leftSection={<IconArrowsVertical size={14} />} onClick={() => handleViewerVerticalAlignChange('center')}>Center</Menu.Item>
+                <Menu.Item leftSection={<IconArrowBarToDown size={14} />} onClick={() => handleViewerVerticalAlignChange('bottom')}>Bottom</Menu.Item>
+              </Menu.Dropdown>
+            </Menu>
+
+            <Menu shadow="md" width={250} position="bottom-end" withinPortal closeOnItemClick={false}>
               <Menu.Target>
                 <Tooltip label="Toggle columns">
                   <ActionIcon variant="subtle" size="sm">
@@ -780,6 +995,31 @@ export function BlockViewerGrid({ convUid, selectedRunId, selectedRun }: BlockVi
                 </Tooltip>
               </Menu.Target>
               <Menu.Dropdown>
+                <Menu.Label>Representation (affects columns)</Menu.Label>
+                <Text size="10px" c="dimmed" px="xs" pb={4}>
+                  Normalized shows baseline columns. Parser Native reveals Parser Type/Path columns for inspection.
+                </Text>
+                <Menu.Item
+                  onClick={() => handleBlockTypeViewChange('normalized')}
+                  leftSection={
+                    blockTypeView === 'normalized'
+                      ? <IconCheck size={14} />
+                      : <span style={{ width: 14, display: 'inline-block' }} />
+                  }
+                >
+                  <Text size="xs">Normalized</Text>
+                </Menu.Item>
+                <Menu.Item
+                  onClick={() => handleBlockTypeViewChange('parser_native')}
+                  leftSection={
+                    blockTypeView === 'parser_native'
+                      ? <IconCheck size={14} />
+                      : <span style={{ width: 14, display: 'inline-block' }} />
+                  }
+                >
+                  <Text size="xs">Parser Native</Text>
+                </Menu.Item>
+                <Menu.Divider />
                 <Menu.Label>Columns</Menu.Label>
                 {allColumns.map((col) => (
                   <Menu.Item
@@ -815,6 +1055,22 @@ export function BlockViewerGrid({ convUid, selectedRunId, selectedRun }: BlockVi
               aria-label="Page size"
             />
           </Group>
+          <Group gap={4} wrap="nowrap">
+            {onExport && (
+              <Tooltip label="Export">
+                <ActionIcon variant="light" size="lg" onClick={onExport} aria-label="Export">
+                  <IconDownload size={22} />
+                </ActionIcon>
+              </Tooltip>
+            )}
+            {onDelete && (
+              <Tooltip label="Delete">
+                <ActionIcon variant="subtle" color="red" size="lg" onClick={onDelete} aria-label="Delete">
+                  <IconTrash size={22} />
+                </ActionIcon>
+              </Tooltip>
+            )}
+          </Group>
         </Group>
       </Paper>
 
@@ -842,7 +1098,7 @@ export function BlockViewerGrid({ convUid, selectedRunId, selectedRun }: BlockVi
 
       <div style={{ display: 'flex', flexDirection: 'column', height: gridHeight, minHeight: 300 }}>
         <div
-          className={`grid-${viewMode}`}
+          className={`block-viewer-grid grid-${viewMode} grid-font-${viewerFontSize} grid-font-family-${viewerFontFamily} grid-valign-${viewerVerticalAlign}`}
           style={{
             flex: 1,
             width: '100%',

@@ -160,7 +160,7 @@ function advanced(reason: SchemaUploadClassificationReason, warnings: string[]):
 function validateTopLevel(schemaJson: Record<string, unknown>): SchemaUploadClassification | null {
   if (schemaJson.type !== 'object') {
     return advanced('unsupported_top_level_shape', [
-      'Root schema must be `type: "object"` for wizard mode.',
+      'User Schema JSON requires root `type: "object"` for wizard mode.',
     ]);
   }
 
@@ -181,7 +181,7 @@ function validateTopLevel(schemaJson: Record<string, unknown>): SchemaUploadClas
   const properties = schemaJson.properties;
   if (!isPlainObject(properties) || Object.keys(properties).length === 0) {
     return advanced('unsupported_top_level_shape', [
-      'Wizard mode requires a non-empty top-level `properties` object.',
+      'Wizard mode requires a non-empty top-level `properties` object (top-level fields become columns).',
     ]);
   }
 
@@ -353,7 +353,7 @@ function validateFields(schemaJson: Record<string, unknown>): SchemaUploadClassi
       const nestedProps = rawDefinition.properties;
       if (isPlainObject(nestedProps) && Object.keys(nestedProps).length > 0) {
         return advanced('unsupported_nested_object', [
-          `Field "${fieldKey}" has nested properties; route to advanced editor.`,
+          `Field "${fieldKey}" has nested properties; wizard supports top-level fields only. Route to advanced editor.`,
         ]);
       }
 
@@ -381,7 +381,7 @@ export function classifySchemaForUpload(schemaJson: Record<string, unknown>): Sc
   return {
     mode: 'wizard',
     reason: 'wizard_subset_compatible',
-    warnings: ['Schema is compatible with the current wizard subset.'],
+    warnings: ['User Schema JSON is compatible with the current structured-schema wizard subset.'],
   };
 }
 
@@ -399,7 +399,7 @@ export function parseSchemaUpload(uploadName: string, rawText: string): ParseUpl
   if (!isPlainObject(parsed)) {
     return {
       ok: false,
-      error: 'Uploaded file must contain a top-level JSON object.',
+      error: 'Uploaded file must contain User Schema JSON (structured top-level JSON object).',
     };
   }
 

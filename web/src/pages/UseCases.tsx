@@ -12,7 +12,6 @@ import {
 } from '@mantine/core';
 import { IconArrowRight } from '@tabler/icons-react';
 import { useNavigate } from 'react-router-dom';
-import { PublicNavModern } from '@/components/layout/PublicNavModern';
 
 type UseCase = {
   badge: string;
@@ -79,18 +78,17 @@ const SECONDARY = [
   },
 ];
 
-export default function UseCases({ withNav = true }: { withNav?: boolean }) {
+export default function UseCases() {
   const navigate = useNavigate();
   const { colorScheme } = useMantineColorScheme();
   const isDark = colorScheme === 'dark';
 
   return (
-    <Box bg={isDark ? 'var(--mantine-color-body)' : '#f6f6f7'}>
-      {withNav && <PublicNavModern />}
-
+    <Box>
+      {/* ── HERO ── */}
       <Box
         pt={{ base: 112, md: 146 }}
-        pb={{ base: 72, md: 106 }}
+        pb={{ base: 64, md: 96 }}
         style={{
           position: 'relative',
           overflow: 'hidden',
@@ -99,18 +97,14 @@ export default function UseCases({ withNav = true }: { withNav?: boolean }) {
             : 'radial-gradient(circle at 70% 0%, rgba(15,23,42,0.06) 0%, rgba(15,23,42,0) 68%)',
         }}
       >
-        <Container
-          size="xl"
-          px={{ base: 'md', md: 'xl' }}
-          style={{ position: 'relative', zIndex: 1, maxWidth: 1360 }}
-        >
+        <Container px={{ base: 'md', sm: 'lg', md: 'xl' }} style={{ position: 'relative', zIndex: 1 }}>
           <Stack gap="lg" align="center">
             <Title
               order={1}
               ta="center"
               style={{
                 fontSize: 'clamp(2.25rem, 4.2vw, 3.7rem)',
-                lineHeight: 1.1,
+                lineHeight: 1.15,
                 fontWeight: 800,
                 letterSpacing: '-0.03em',
               }}
@@ -124,23 +118,19 @@ export default function UseCases({ withNav = true }: { withNav?: boolean }) {
         </Container>
       </Box>
 
-      <Box py={{ base: 72, md: 96 }} bg="var(--mantine-color-default-hover)">
-        <Container size="xl" px={{ base: 'md', md: 'xl' }} style={{ maxWidth: 1360 }}>
+      {/* ── FEATURED USE CASES ── */}
+      <Box py={{ base: 64, md: 96 }} bg="var(--mantine-color-default-hover)">
+        <Container px={{ base: 'md', sm: 'lg', md: 'xl' }}>
           <Stack gap="xl">
             {FEATURED.map((useCase) => (
               <Paper
                 key={useCase.title}
-                p={{ base: 'lg', md: 36 }}
+                p={{ base: 'xl', md: 36 }}
                 radius="lg"
                 withBorder
                 bg="var(--mantine-color-body)"
-                style={{
-                  boxShadow: isDark
-                    ? '0 16px 32px rgba(0,0,0,0.28)'
-                    : '0 12px 24px rgba(15,23,42,0.05)',
-                }}
               >
-                <Stack gap={{ base: 'lg', md: 'xl' }}>
+                <Stack gap="xl">
                   <Stack gap="md">
                     <Badge color="teal" variant="filled" radius="sm" w="fit-content">
                       {useCase.badge}
@@ -150,56 +140,36 @@ export default function UseCases({ withNav = true }: { withNav?: boolean }) {
                     </Title>
                   </Stack>
 
-                  <SimpleGrid cols={{ base: 1, md: 2 }} spacing={{ base: 'xl', md: 56 }}>
+                  <SimpleGrid cols={{ base: 1, md: 2 }} spacing={{ base: 'xl', md: 48 }}>
                     <Stack gap="lg">
                       <Stack gap="xs">
-                        <Text fw={700} size="lg">
-                          Scenario
-                        </Text>
-                        <Text c="dimmed" size="lg" lh={1.6}>
-                          {useCase.scenario}
-                        </Text>
+                        <Text fw={700} size="lg">Scenario</Text>
+                        <Text c="dimmed" size="lg" lh={1.6}>{useCase.scenario}</Text>
                       </Stack>
                       <Stack gap="xs">
-                        <Text fw={700} size="lg">
-                          BlockData approach
-                        </Text>
-                        <Text c="dimmed" size="lg" lh={1.6}>
-                          {useCase.approach}
-                        </Text>
+                        <Text fw={700} size="lg">BlockData approach</Text>
+                        <Text c="dimmed" size="lg" lh={1.6}>{useCase.approach}</Text>
                       </Stack>
                     </Stack>
 
                     <Stack gap="lg">
                       <Stack gap="xs">
-                        <Text fw={700} size="lg">
-                          Example schema
-                        </Text>
+                        <Text fw={700} size="lg">Example schema</Text>
                         <Paper p="md" radius="md" bg="var(--mantine-color-default-hover)">
                           <Stack gap={6}>
                             {useCase.schema.map((field) => (
-                              <Text key={field} ff="monospace" size="lg">
-                                {field}
-                              </Text>
+                              <Text key={field} ff="monospace" size="lg">{field}</Text>
                             ))}
                           </Stack>
                         </Paper>
                       </Stack>
                       <Stack gap="xs">
-                        <Text fw={700} size="lg">
-                          Output
-                        </Text>
-                        <Text c="dimmed" size="lg" lh={1.6}>
-                          {useCase.output}
-                        </Text>
+                        <Text fw={700} size="lg">Output</Text>
+                        <Text c="dimmed" size="lg" lh={1.6}>{useCase.output}</Text>
                       </Stack>
                       <Stack gap="xs">
-                        <Text fw={700} size="lg">
-                          Downstream
-                        </Text>
-                        <Text c="dimmed" size="lg" lh={1.6}>
-                          {useCase.downstream}
-                        </Text>
+                        <Text fw={700} size="lg">Downstream</Text>
+                        <Text c="dimmed" size="lg" lh={1.6}>{useCase.downstream}</Text>
                       </Stack>
                     </Stack>
                   </SimpleGrid>
@@ -210,22 +180,19 @@ export default function UseCases({ withNav = true }: { withNav?: boolean }) {
         </Container>
       </Box>
 
-      <Box py={{ base: 72, md: 94 }}>
-        <Container size="xl" px={{ base: 'md', md: 'xl' }} style={{ maxWidth: 1360 }}>
+      {/* ── SECONDARY USE CASES ── */}
+      <Box py={{ base: 64, md: 96 }}>
+        <Container px={{ base: 'md', sm: 'lg', md: 'xl' }}>
           <Stack gap="xl">
             <Title order={2} ta="center">
               More use cases
             </Title>
             <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg">
               {SECONDARY.map((item) => (
-                <Paper key={item.title} p="lg" radius="md" withBorder>
+                <Paper key={item.title} p="xl" radius="md" withBorder>
                   <Stack gap="xs">
-                    <Text fw={700} size="lg">
-                      {item.title}
-                    </Text>
-                    <Text c="dimmed" size="lg" lh={1.6}>
-                      {item.text}
-                    </Text>
+                    <Text fw={700} size="lg">{item.title}</Text>
+                    <Text c="dimmed" size="lg" lh={1.6}>{item.text}</Text>
                   </Stack>
                 </Paper>
               ))}
@@ -234,7 +201,8 @@ export default function UseCases({ withNav = true }: { withNav?: boolean }) {
         </Container>
       </Box>
 
-      <Box py={{ base: 80, md: 112 }} bg="var(--mantine-color-default-hover)">
+      {/* ── FINAL CTA ── */}
+      <Box py={{ base: 64, md: 96 }} bg="var(--mantine-color-default-hover)">
         <Container size="sm">
           <Stack align="center" gap="lg">
             <Title order={2} ta="center" fz={{ base: 36, md: 44 }}>
@@ -245,10 +213,11 @@ export default function UseCases({ withNav = true }: { withNav?: boolean }) {
             </Text>
             <Button
               size="xl"
+              color="teal"
               rightSection={<IconArrowRight size={18} />}
               onClick={() => navigate('/register')}
             >
-              Get started free
+              Get started
             </Button>
           </Stack>
         </Container>

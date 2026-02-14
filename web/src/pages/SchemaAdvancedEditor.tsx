@@ -34,6 +34,10 @@ export default function SchemaAdvancedEditor() {
   const uploadSource = params.get('source');
   const uploadKey = params.get('uploadKey');
   const uploadName = params.get('uploadName');
+  const sourceUid = params.get('sourceUid');
+  const projectId = params.get('projectId');
+  const convUid = params.get('convUid');
+  const returnTo = params.get('returnTo');
 
   const [embed, setEmbed] = useState<MetaConfiguratorEmbed | null>(null);
   const [row, setRow] = useState<SchemaRow | null>(null);
@@ -50,20 +54,39 @@ export default function SchemaAdvancedEditor() {
   const mountedRef = useRef<MountedSchemaEditor | null>(null);
   const schemaJsonForMountRef = useRef<unknown>(DEFAULT_SCHEMA);
 
+  const appendContextParams = (base: URLSearchParams): URLSearchParams => {
+    const next = new URLSearchParams(base.toString());
+    if (sourceUid) next.set('sourceUid', sourceUid);
+    if (projectId) next.set('projectId', projectId);
+    if (convUid) next.set('convUid', convUid);
+    if (returnTo) next.set('returnTo', returnTo);
+    return next;
+  };
+
   const schemaWarnings = useMemo(() => {
     const warnings: string[] = [];
     if (!isPlainObject(schemaJson)) {
-      warnings.push('Schema must be a JSON object (not an array / primitive).');
+      warnings.push('User Schema JSON must be a structured schema object (not an array or primitive).');
       return warnings;
     }
 
     if (schemaJson.type !== 'object') {
-      warnings.push('v0 worker/grid compatibility expects `schema_jsonb.type` to be "object".');
+      warnings.push('Compatibility expects `schema_jsonb.type` to be "object".');
     }
 
     const props = schemaJson.properties;
     if (!isPlainObject(props)) {
-      warnings.push('v0 worker/grid compatibility expects `schema_jsonb.properties` to be an object.');
+      warnings.push('Compatibility expects top-level `schema_jsonb.properties` to be an object.');
+      return warnings;
+    }
+
+    const nestedKeys = Object.entries(props)
+      .filter(([, value]) => isPlainObject(value) && isPlainObject((value as Record<string, unknown>).properties))
+      .map(([key]) => key);
+    if (nestedKeys.length > 0) {
+      warnings.push(
+        `Nested fields detected (${nestedKeys.join(', ')}). Grid columns are derived from top-level properties only.`,
+      );
     }
 
     return warnings;
@@ -180,7 +203,7 @@ export default function SchemaAdvancedEditor() {
       return;
     }
     if (!isPlainObject(schemaJson)) {
-      setError('Schema must be a JSON object.');
+      setError('User Schema JSON must be a JSON object.');
       return;
     }
 
@@ -214,6 +237,22 @@ export default function SchemaAdvancedEditor() {
         title: 'Saved',
         message: `Schema "${ref}" saved`,
       });
+
+      const savedSchemaId = isPlainObject(payload) && typeof payload.schema_id === 'string'
+        ? payload.schema_id
+        : null;
+      const savedSchemaRef = isPlainObject(payload) && typeof payload.schema_ref === 'string'
+        ? payload.schema_ref
+        : ref;
+
+      if (savedSchemaId && sourceUid && projectId && returnTo === 'document') {
+        const query = appendContextParams(new URLSearchParams({
+          schemaId: savedSchemaId,
+          schemaRef: savedSchemaRef,
+        }));
+        navigate(`/app/schemas/apply?${query.toString()}`);
+        return;
+      }
       navigate('/app/schemas');
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -237,7 +276,7 @@ export default function SchemaAdvancedEditor() {
           schemaId
             ? `Editing "${row?.schema_ref}" (fork-by-default)`
             : uploadSource === 'upload'
-              ? `Imported from ${uploadName ?? 'uploaded JSON'}`
+              ? `Imported User Schema JSON from ${uploadName ?? 'uploaded JSON'}`
               : 'Create or edit schemas with the full split view.'
         }
       >

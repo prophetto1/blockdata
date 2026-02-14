@@ -114,10 +114,11 @@ export default function HowItWorks() {
   const isDark = colorScheme === 'dark';
 
   return (
-    <Box bg={isDark ? 'var(--mantine-color-body)' : '#f6f6f7'}>
+    <Box>
+      {/* ── HERO ── */}
       <Box
         pt={{ base: 112, md: 150 }}
-        pb={{ base: 76, md: 108 }}
+        pb={{ base: 64, md: 96 }}
         style={{
           position: 'relative',
           overflow: 'hidden',
@@ -126,18 +127,14 @@ export default function HowItWorks() {
             : 'radial-gradient(circle at 50% 0%, rgba(15,23,42,0.06) 0%, rgba(15,23,42,0) 68%)',
         }}
       >
-        <Container
-          size="xl"
-          px={{ base: 'md', md: 'xl' }}
-          style={{ position: 'relative', zIndex: 1, maxWidth: 1360 }}
-        >
+        <Container px={{ base: 'md', sm: 'lg', md: 'xl' }} style={{ position: 'relative', zIndex: 1 }}>
           <Stack gap="lg" align="center">
             <Title
               order={1}
               ta="center"
               style={{
                 fontSize: 'clamp(2.25rem, 4.2vw, 3.7rem)',
-                lineHeight: 1.1,
+                lineHeight: 1.15,
                 fontWeight: 800,
                 letterSpacing: '-0.03em',
               }}
@@ -154,8 +151,9 @@ export default function HowItWorks() {
         </Container>
       </Box>
 
-      <Box py={{ base: 72, md: 96 }} bg="var(--mantine-color-default-hover)">
-        <Container size="xl" px={{ base: 'md', md: 'xl' }} style={{ maxWidth: 1360 }}>
+      {/* ── PIPELINE ── */}
+      <Box py={{ base: 64, md: 96 }} bg="var(--mantine-color-default-hover)">
+        <Container px={{ base: 'md', sm: 'lg', md: 'xl' }}>
           <Stack gap="xl">
             <Group justify="space-between" align="end" wrap="wrap">
               <Box>
@@ -175,31 +173,18 @@ export default function HowItWorks() {
               {PIPELINE.map((step) => (
                 <Paper
                   key={step.title}
-                  p={24}
+                  p="xl"
                   radius="md"
                   withBorder
                   bg="var(--mantine-color-body)"
-                  style={{ minHeight: 220 }}
                 >
-                  <Stack gap={12} h="100%">
-                    <Group gap={12}>
-                      <ThemeIcon
-                        size={34}
-                        radius="xl"
-                        variant="default"
-                        style={{ border: '1px solid var(--mantine-color-default-border)' }}
-                      >
-                        <Text size="sm" fw={700}>
-                          {step.step}
-                        </Text>
-                      </ThemeIcon>
-                      <ThemeIcon
-                        size={34}
-                        radius="md"
-                        variant="default"
-                        style={{ border: '1px solid var(--mantine-color-default-border)' }}
-                      >
-                        <step.icon size={18} />
+                  <Stack gap="sm">
+                    <Group gap="sm">
+                      <Text size="sm" fw={800} c="dimmed" style={{ opacity: 0.5 }}>
+                        {step.step}
+                      </Text>
+                      <ThemeIcon variant="light" color="teal" size="md" radius="md">
+                        <step.icon size={16} />
                       </ThemeIcon>
                     </Group>
                     <Text fw={700} size="lg">
@@ -216,9 +201,10 @@ export default function HowItWorks() {
         </Container>
       </Box>
 
-      <Box py={{ base: 80, md: 112 }}>
-        <Container size="xl" px={{ base: 'md', md: 'xl' }} style={{ maxWidth: 1360 }}>
-          <Stack gap="xl" align="center" mb={56}>
+      {/* ── GRID PREVIEW ── */}
+      <Box py={{ base: 64, md: 96 }}>
+        <Container px={{ base: 'md', sm: 'lg', md: 'xl' }}>
+          <Stack gap="xl" align="center" mb={48}>
             <Title order={2} ta="center">
               The grid is the product.
             </Title>
@@ -230,13 +216,7 @@ export default function HowItWorks() {
           <Paper
             radius="lg"
             withBorder
-            style={{
-              overflow: 'hidden',
-              boxShadow: isDark
-                ? '0 24px 48px rgba(0, 0, 0, 0.45)'
-                : '0 20px 40px rgba(15, 23, 42, 0.08), 0 6px 14px rgba(15, 23, 42, 0.06)',
-              backgroundColor: isDark ? '#15161A' : '#FFFFFF',
-            }}
+            style={{ overflow: 'hidden' }}
           >
             <Group p="sm" style={{ borderBottom: '1px solid var(--mantine-color-default-border)' }}>
               <Group gap={6}>
@@ -256,59 +236,19 @@ export default function HowItWorks() {
               style={{ borderBottom: '1px solid var(--mantine-color-default-border)' }}
               py="xs"
             >
-              <Text size="xs" fw={700} c="dimmed" pl="md">
-                #
-              </Text>
-              <Text size="xs" fw={700} c="dimmed">
-                TYPE
-              </Text>
-              <Text size="xs" fw={700} c="dimmed">
-                CONTENT (SOURCE)
-              </Text>
-              <Text size="xs" fw={700} c="dimmed">
-                FUNCTION
-              </Text>
-              <Text size="xs" fw={700} c="dimmed">
-                AUTHORITY
-              </Text>
-              <Text size="xs" fw={700} c="dimmed">
-                STATUS
-              </Text>
+              <Text size="xs" fw={700} c="dimmed" pl="md">#</Text>
+              <Text size="xs" fw={700} c="dimmed">TYPE</Text>
+              <Text size="xs" fw={700} c="dimmed">CONTENT (SOURCE)</Text>
+              <Text size="xs" fw={700} c="dimmed">FUNCTION</Text>
+              <Text size="xs" fw={700} c="dimmed">AUTHORITY</Text>
+              <Text size="xs" fw={700} c="dimmed">STATUS</Text>
             </SimpleGrid>
 
             {[
-              {
-                i: 42,
-                type: 'PARA',
-                content: 'The court held that the administrative agency exceeded its statutory...',
-                fn: 'holding',
-                auth: 'Chevron',
-                status: 'confirmed',
-              },
-              {
-                i: 43,
-                type: 'PARA',
-                content: 'In reaching this conclusion, the majority relied on the plain text...',
-                fn: 'reasoning',
-                auth: 'Marbury',
-                status: 'staged',
-              },
-              {
-                i: 44,
-                type: 'HEAD',
-                content: 'III. Dissenting Opinion',
-                fn: '-',
-                auth: '-',
-                status: 'staged',
-              },
-              {
-                i: 45,
-                type: 'PARA',
-                content: "The dissent argued that the majority's reading of the statute fails...",
-                fn: 'dissent',
-                auth: 'Griswold',
-                status: 'pending',
-              },
+              { i: 42, type: 'PARA', content: 'The court held that the administrative agency exceeded its statutory...', fn: 'holding', auth: 'Chevron', status: 'confirmed' },
+              { i: 43, type: 'PARA', content: 'In reaching this conclusion, the majority relied on the plain text...', fn: 'reasoning', auth: 'Marbury', status: 'staged' },
+              { i: 44, type: 'HEAD', content: 'III. Dissenting Opinion', fn: '-', auth: '-', status: 'staged' },
+              { i: 45, type: 'PARA', content: "The dissent argued that the majority's reading of the statute fails...", fn: 'dissent', auth: 'Griswold', status: 'pending' },
             ].map((row, index) => (
               <SimpleGrid
                 key={row.i}
@@ -321,30 +261,14 @@ export default function HowItWorks() {
                     index % 2 === 0 ? 'transparent' : isDark ? 'rgba(255,255,255,0.01)' : 'rgba(9,9,11,0.02)',
                 }}
               >
-                <Text size="xs" c="dimmed" ff="monospace" pl="md">
-                  {row.i}
-                </Text>
-                <Badge
-                  variant="default"
-                  size="xs"
-                  radius="sm"
-                  w="fit-content"
-                  styles={{ root: { textTransform: 'none' } }}
-                >
+                <Text size="xs" c="dimmed" ff="monospace" pl="md">{row.i}</Text>
+                <Badge variant="default" size="xs" radius="sm" w="fit-content" styles={{ root: { textTransform: 'none' } }}>
                   {row.type}
                 </Badge>
-                <Text size="xs" c="dimmed" lineClamp={1} pr="md">
-                  {row.content}
-                </Text>
-                <Text size="xs" ff="monospace">
-                  {row.fn}
-                </Text>
-                <Text size="xs" c="dimmed" ff="monospace">
-                  {row.auth}
-                </Text>
-                <Badge variant="dot" color="gray" size="xs" w="fit-content">
-                  {row.status}
-                </Badge>
+                <Text size="xs" c="dimmed" lineClamp={1} pr="md">{row.content}</Text>
+                <Text size="xs" ff="monospace">{row.fn}</Text>
+                <Text size="xs" c="dimmed" ff="monospace">{row.auth}</Text>
+                <Badge variant="dot" color="gray" size="xs" w="fit-content">{row.status}</Badge>
               </SimpleGrid>
             ))}
 
@@ -357,9 +281,10 @@ export default function HowItWorks() {
         </Container>
       </Box>
 
-      <Box py={{ base: 76, md: 108 }} bg="var(--mantine-color-default-hover)">
-        <Container size="xl" px={{ base: 'md', md: 'xl' }} style={{ maxWidth: 1360 }}>
-          <SimpleGrid cols={{ base: 1, md: 2 }} spacing={{ base: 40, md: 80 }}>
+      {/* ── BLOCK VS DOCUMENT ── */}
+      <Box py={{ base: 64, md: 96 }} bg="var(--mantine-color-default-hover)">
+        <Container px={{ base: 'md', sm: 'lg', md: 'xl' }}>
+          <SimpleGrid cols={{ base: 1, md: 2 }} spacing={{ base: 40, md: 64 }}>
             <Stack>
               <Title order={2} mb="md">
                 Block-level vs.
@@ -373,16 +298,12 @@ export default function HowItWorks() {
               <Stack mt="xl">
                 {COMPARISON.map((item) => (
                   <Group key={item.label} align="start" wrap="nowrap">
-                    <ThemeIcon variant="default" radius="xl" size="sm">
+                    <ThemeIcon variant="light" color="teal" radius="xl" size="sm">
                       <IconCheck size={12} />
                     </ThemeIcon>
                     <Box>
-                      <Text fw={700} size="sm">
-                        {item.label}
-                      </Text>
-                      <Text size="sm" c="dimmed">
-                        {item.blockData}
-                      </Text>
+                      <Text fw={700} size="sm">{item.label}</Text>
+                      <Text size="sm" c="dimmed">{item.blockData}</Text>
                     </Box>
                   </Group>
                 ))}
@@ -394,16 +315,10 @@ export default function HowItWorks() {
                 Schema flexibility
               </Title>
               {SCHEMA_DETAIL.map((s) => (
-                <Paper key={s.label} p="md" radius="md" withBorder>
-                  <Badge variant="default" mb="xs">
-                    {s.label}
-                  </Badge>
-                  <Text size="sm" mb="sm">
-                    {s.description}
-                  </Text>
-                  <Code block style={{ fontSize: 11 }}>
-                    {s.example}
-                  </Code>
+                <Paper key={s.label} p="lg" radius="md" withBorder>
+                  <Badge variant="default" mb="xs">{s.label}</Badge>
+                  <Text size="sm" mb="sm">{s.description}</Text>
+                  <Code block style={{ fontSize: 11 }}>{s.example}</Code>
                 </Paper>
               ))}
             </Stack>
@@ -411,13 +326,14 @@ export default function HowItWorks() {
         </Container>
       </Box>
 
-      <Box py={{ base: 80, md: 112 }}>
+      {/* ── FINAL CTA ── */}
+      <Box py={{ base: 64, md: 96 }}>
         <Container size="sm" ta="center">
           <Title order={2} fz={{ base: 36, md: 44 }} mb="lg">
             Ready to build?
           </Title>
           <Group justify="center">
-            <Button size="xl" onClick={() => navigate('/register')}>
+            <Button size="xl" color="teal" onClick={() => navigate('/register')}>
               Get started
             </Button>
             <Button size="xl" variant="default" onClick={() => navigate('/use-cases')}>

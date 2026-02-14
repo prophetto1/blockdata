@@ -8,6 +8,7 @@ import type { IngestContext, IngestResponse, SignedUploadTarget } from "./types.
 export async function processConversion(ctx: IngestContext): Promise<{ status: number; body: IngestResponse }> {
   const {
     supabaseAdmin,
+    runtimePolicy,
     ingest_track,
     source_uid,
     source_type,
@@ -67,9 +68,13 @@ export async function processConversion(ctx: IngestContext): Promise<{ status: n
     throw new Error(`Create signed upload URL failed: ${ulErr?.message ?? "unknown"}`);
   }
 
-  // Docling JSON output: Docling-handled non-md formats get a sidecar JSON.
+  // Representation artifact upload targets. We provision by source capability
+  // (superuser runtime policy) so callbacks can carry multiple parser artifacts.
+  const doclingArtifactSourceTypes = new Set(runtimePolicy.upload.parser_artifact_source_types.docling);
+  const pandocArtifactSourceTypes = new Set(runtimePolicy.upload.parser_artifact_source_types.pandoc);
+
   let docling_output: SignedUploadTarget | null = null;
-  if (ingest_track === "docling") {
+  if (doclingArtifactSourceTypes.has(source_type)) {
     const docling_key = `converted/${source_uid}/${basenameNoExt(originalFilename)}.docling.json`;
     const { data: doclingUpload, error: doclingErr } = await (supabaseAdmin.storage as any)
       .from(bucket)
@@ -85,7 +90,7 @@ export async function processConversion(ctx: IngestContext): Promise<{ status: n
     };
   }
   let pandoc_output: SignedUploadTarget | null = null;
-  if (ingest_track === "pandoc") {
+  if (pandocArtifactSourceTypes.has(source_type)) {
     const pandoc_key = `converted/${source_uid}/${basenameNoExt(originalFilename)}.pandoc.ast.json`;
     const { data: pandocUpload, error: pandocErr } = await (supabaseAdmin.storage as any)
       .from(bucket)

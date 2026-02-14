@@ -1,17 +1,15 @@
-import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { Alert, Badge, Button, Loader, Center, Text, Group, Progress, Stack, Skeleton, Modal } from '@mantine/core';
+import { useEffect, useMemo, useState } from 'react';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { Alert, Badge, Button, Loader, Center, Text, Group, Stack, Skeleton, Modal } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
-import { IconInfoCircle, IconDownload, IconTrash } from '@tabler/icons-react';
+import { IconInfoCircle, IconPlus } from '@tabler/icons-react';
 import { supabase } from '@/lib/supabase';
 import { downloadFromEdge } from '@/lib/edge';
 import { TABLES } from '@/lib/tables';
 import type { DocumentRow } from '@/lib/types';
 import { ErrorAlert } from '@/components/common/ErrorAlert';
-import { AppBreadcrumbs } from '@/components/common/AppBreadcrumbs';
 import { BlockViewerGrid } from '@/components/blocks/BlockViewerGrid';
-import { RunSelector } from '@/components/blocks/RunSelector';
 import { useRuns } from '@/hooks/useRuns';
 
 const STATUS_COLOR: Record<string, string> = {
@@ -31,13 +29,18 @@ function formatBytes(bytes: number): string {
 export default function DocumentDetail() {
   const { sourceUid, projectId } = useParams<{ sourceUid: string; projectId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const [doc, setDoc] = useState<DocumentRow | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [projectName, setProjectName] = useState<string>('');
   const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
   const [deleteOpened, { open: openDelete, close: closeDelete }] = useDisclosure(false);
   const [deleting, setDeleting] = useState(false);
+  const requestedRunId = useMemo(() => {
+    const params = new URLSearchParams(location.search);
+    const value = params.get('runId');
+    return value?.trim() ? value.trim() : null;
+  }, [location.search]);
 
   useEffect(() => {
     if (!sourceUid) return;
@@ -59,19 +62,6 @@ export default function DocumentDetail() {
         setLoading(false);
       });
   }, [sourceUid, projectId, navigate]);
-
-  // Fetch project name for breadcrumbs
-  useEffect(() => {
-    if (!projectId) return;
-    supabase
-      .from(TABLES.projects)
-      .select('project_name')
-      .eq('project_id', projectId)
-      .maybeSingle()
-      .then(({ data }) => {
-        if (data) setProjectName((data as { project_name: string }).project_name);
-      });
-  }, [projectId]);
 
   const exportJsonl = async () => {
     if (!doc?.conv_uid) return;
@@ -101,7 +91,19 @@ export default function DocumentDetail() {
   };
 
   // Runs — hook must be called before any early returns
-  const { runs, error: runsError } = useRuns(doc?.conv_uid ?? null);
+  const { runs } = useRuns(doc?.conv_uid ?? null);
+
+  useEffect(() => {
+    if (runs.length === 0) {
+      setSelectedRunId(null);
+      return;
+    }
+    setSelectedRunId((prev) => {
+      if (requestedRunId && runs.some((run) => run.run_id === requestedRunId)) return requestedRunId;
+      if (prev && runs.some((run) => run.run_id === prev)) return prev;
+      return runs[0].run_id;
+    });
+  }, [requestedRunId, runs]);
 
   if (loading) {
     return (
@@ -116,69 +118,37 @@ export default function DocumentDetail() {
   if (!doc) return <ErrorAlert message={error ?? 'Document not found'} />;
 
   const selectedRun = runs.find((r) => r.run_id === selectedRunId) ?? null;
-  const runProgress = selectedRun && selectedRun.total_blocks > 0
-    ? {
-        completed: selectedRun.completed_blocks,
-        failed: selectedRun.failed_blocks,
-        total: selectedRun.total_blocks,
-        pctComplete: (selectedRun.completed_blocks / selectedRun.total_blocks) * 100,
-        pctFailed: (selectedRun.failed_blocks / selectedRun.total_blocks) * 100,
-      }
-    : null;
-
   return (
     <>
-      <AppBreadcrumbs items={[
-        { label: 'Projects', href: '/app/projects' },
-        { label: projectName || 'Project', href: `/app/projects/${projectId}` },
-        { label: doc.doc_title },
-      ]} />
-      {/* Compact document header: title + metadata + actions in one row */}
-      <Group justify="space-between" mb="sm" wrap="wrap">
-        <Group gap="sm" wrap="nowrap" style={{ minWidth: 0 }}>
-          <Text fw={600} size="md" truncate style={{ maxWidth: 300 }}>{doc.doc_title}</Text>
-          <Badge size="sm" color={STATUS_COLOR[doc.status] ?? 'gray'} variant="light">{doc.status}</Badge>
-          <Text size="xs" c="dimmed">{doc.source_type}</Text>
-          <Text size="xs" c="dimmed">{formatBytes(doc.source_filesize)}</Text>
-          {doc.source_total_characters && (
-            <Text size="xs" c="dimmed">{doc.source_total_characters.toLocaleString()} chars</Text>
-          )}
-        </Group>
+      {/* Compact document header: title + metadata */}
+      <Group justify="space-between" mb="sm" wrap="nowrap" style={{ minWidth: 0 }}>
+        <Text fw={600} size="md" truncate style={{ maxWidth: 420 }}>{doc.doc_title}</Text>
         <Group gap="xs" wrap="nowrap">
-          {doc.conv_uid && (
-            <Button variant="light" size="xs" onClick={exportJsonl} leftSection={<IconDownload size={14} />}>
-              Export
-            </Button>
-          )}
-          <Button variant="subtle" color="red" size="xs" leftSection={<IconTrash size={14} />} onClick={openDelete}>
-            Delete
+          <Button
+            size="xs"
+            variant="light"
+            leftSection={<IconPlus size={14} />}
+            onClick={() => {
+              const query = new URLSearchParams({
+                sourceUid: doc.source_uid,
+              });
+              if (projectId) query.set('projectId', projectId);
+              if (doc.conv_uid) query.set('convUid', doc.conv_uid);
+              query.set('returnTo', 'document');
+              navigate(`/app/schemas/start?${query.toString()}`);
+            }}
+          >
+            Add Schema
           </Button>
         </Group>
       </Group>
-
-      {/* Run selector row — separate from grid toolbar */}
-      {doc.status === 'ingested' && doc.conv_uid && (
-        <Group gap="sm" mb="xs" wrap="nowrap">
-          <RunSelector runs={runs} value={selectedRunId} onChange={setSelectedRunId} />
-          {selectedRun && (
-            <Badge size="xs" variant="light" color={selectedRun.status === 'complete' ? 'green' : selectedRun.status === 'running' ? 'blue' : 'red'}>
-              {selectedRun.status}
-            </Badge>
-          )}
-          {runProgress && (
-            <Group gap={4} wrap="nowrap">
-              <Progress.Root size="xs" w={80}>
-                <Progress.Section value={runProgress.pctComplete} color="green" />
-                <Progress.Section value={runProgress.pctFailed} color="red" />
-              </Progress.Root>
-              <Text size="xs" c="dimmed">
-                {runProgress.completed}/{runProgress.total}
-              </Text>
-            </Group>
-          )}
-          {runsError && <Text size="xs" c="red">{runsError}</Text>}
-        </Group>
-      )}
+      <Group gap="xs" wrap="nowrap" mb="sm">
+        <Badge size="sm" color={STATUS_COLOR[doc.status] ?? 'gray'} variant="light">{doc.status}</Badge>
+        <Text size="xs" c="dimmed">
+          {doc.source_type} · {formatBytes(doc.source_filesize)}
+          {doc.source_total_characters ? ` · ${doc.source_total_characters.toLocaleString()} chars` : ''}
+        </Text>
+      </Group>
 
       {error && <ErrorAlert message={error} />}
 
@@ -204,7 +174,13 @@ export default function DocumentDetail() {
       )}
 
       {doc.status === 'ingested' && doc.conv_uid && (
-        <BlockViewerGrid convUid={doc.conv_uid} selectedRunId={selectedRunId} selectedRun={selectedRun} />
+        <BlockViewerGrid
+          convUid={doc.conv_uid}
+          selectedRunId={selectedRunId}
+          selectedRun={selectedRun}
+          onExport={exportJsonl}
+          onDelete={openDelete}
+        />
       )}
 
       <Modal opened={deleteOpened} onClose={closeDelete} title="Delete document" centered>

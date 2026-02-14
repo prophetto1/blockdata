@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useMemo, useRef } from 'react';
 import {
   Box,
   Button,
@@ -19,7 +19,7 @@ import {
 } from '@tabler/icons-react';
 import type { TablerIcon } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { AppBreadcrumbs } from '@/components/common/AppBreadcrumbs';
 import { PageHeader } from '@/components/common/PageHeader';
 import { parseSchemaUpload, persistSchemaUploadDraft } from '@/lib/schemaUploadClassifier';
@@ -60,7 +60,7 @@ const GRID_OPTIONS: StartOption[] = [
   },
   {
     title: 'Upload JSON',
-    description: 'Import a file — routed to wizard or advanced.',
+    description: 'Import a User Schema JSON (structured schema object with top-level properties).',
     icon: IconUpload,
     kind: 'upload',
   },
@@ -77,12 +77,26 @@ const GRID_OPTIONS: StartOption[] = [
 
 export default function SchemaStart() {
   const navigate = useNavigate();
-  const [uploading, setUploading] = useState(false);
+  const location = useLocation();
   const uploadResetRef = useRef<() => void>(null);
+  const contextQuery = useMemo(() => new URLSearchParams(location.search), [location.search]);
+
+  const withContext = (path: string, extra: Record<string, string> = {}) => {
+    const url = new URL(path, 'https://local.invalid');
+    const query = new URLSearchParams(url.search);
+    for (const key of ['sourceUid', 'projectId', 'convUid', 'returnTo']) {
+      const value = contextQuery.get(key);
+      if (value) query.set(key, value);
+    }
+    for (const [key, value] of Object.entries(extra)) {
+      query.set(key, value);
+    }
+    const search = query.toString();
+    return `${url.pathname}${search ? `?${search}` : ''}`;
+  };
 
   const handleUpload = async (file: File | null) => {
     if (!file) return;
-    setUploading(true);
     try {
       const text = await file.text();
       const parsed = parseSchemaUpload(file.name, text);
@@ -99,11 +113,6 @@ export default function SchemaStart() {
         });
         return;
       }
-      const query = new URLSearchParams({
-        source: 'upload',
-        uploadKey: draftId,
-        uploadName: parsed.draft.uploadName,
-      });
       const toWizard = parsed.draft.classification.mode === 'wizard';
       notifications.show({
         color: toWizard ? 'blue' : 'yellow',
@@ -112,8 +121,16 @@ export default function SchemaStart() {
       });
       navigate(
         toWizard
-          ? `/app/schemas/wizard?${query.toString()}`
-          : `/app/schemas/advanced?${query.toString()}`,
+          ? withContext('/app/schemas/wizard', {
+            source: 'upload',
+            uploadKey: draftId,
+            uploadName: parsed.draft.uploadName,
+          })
+          : withContext('/app/schemas/advanced', {
+            source: 'upload',
+            uploadKey: draftId,
+            uploadName: parsed.draft.uploadName,
+          }),
       );
     } catch (error) {
       notifications.show({
@@ -121,8 +138,6 @@ export default function SchemaStart() {
         title: 'Upload failed',
         message: error instanceof Error ? error.message : String(error),
       });
-    } finally {
-      setUploading(false);
     }
   };
 
@@ -132,7 +147,7 @@ export default function SchemaStart() {
       const input = document.getElementById('schema-upload-input') as HTMLInputElement | null;
       input?.click();
     } else {
-      navigate(option.path ?? '/app/schemas/start');
+      navigate(withContext(option.path ?? '/app/schemas/start'));
     }
   };
 
@@ -158,7 +173,7 @@ export default function SchemaStart() {
         className="schema-start-card"
         radius="md"
         mb="lg"
-        onClick={() => navigate(FEATURED.path!)}
+        onClick={() => navigate(withContext(FEATURED.path!))}
         bg="var(--mantine-color-default-hover)"
         py={40}
         px="xl"
