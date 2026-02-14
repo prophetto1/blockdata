@@ -1,7 +1,7 @@
 # Config Source Authority Reconciliation
 
 Date: 2026-02-13  
-Status: Draft (required before further config implementation)
+Status: Reference (superseded for source-authority mapping by `dev-todos/plans/0213-canonical-spec-authority-contract.md`)
 
 ## 1) Why this exists
 
