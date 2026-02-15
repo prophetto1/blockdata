@@ -172,7 +172,7 @@ export default function Schemas() {
     },
     {
       headerName: '',
-      field: 'actions',
+      colId: 'actions',
       width: 120,
       sortable: false,
       filter: false,

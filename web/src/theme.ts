@@ -78,7 +78,7 @@ export const theme = createTheme({
       },
       vars: () => ({
         root: {
-          '--container-size-xl': '1360px',
+          '--container-size': '1360px',
         },
       }),
     }),
