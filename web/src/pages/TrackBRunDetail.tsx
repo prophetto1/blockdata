@@ -33,7 +33,7 @@ import 'react-pdf/dist/Page/TextLayer.css';
 pdfjs.GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url).toString();
 
 type PreviewManifest = {
-  status: 'ready' | 'unavailable';
+  status: 'pending' | 'ready' | 'failed';
   preview_type: 'source_pdf' | 'preview_pdf' | 'none';
   source_locator: string;
   source_type: string;
@@ -334,8 +334,11 @@ export default function TrackBRunDetail() {
     if (refreshingPreviewUrls) return 'Refreshing preview URLs...';
     if (previewManifestError) return previewManifestError;
     if (!previewManifest) return 'Preview manifest is loading.';
-    if (previewManifest.status === 'unavailable') {
+    if (previewManifest.status === 'failed') {
       return previewManifest.reason ?? 'Preview unavailable for this document instance.';
+    }
+    if (previewManifest.status === 'pending') {
+      return previewManifest.reason ?? 'Preview generation is in progress.';
     }
     if (previewPdfArtifact?.signed_url_error) {
       return previewPdfArtifact.signed_url_error;
@@ -363,7 +366,7 @@ export default function TrackBRunDetail() {
         <Button
           variant="light"
           size="xs"
-          onClick={() => navigate(projectId ? `/app/projects/${projectId}/track-b/workbench` : '/app/projects')}
+          onClick={() => navigate(projectId ? `/app/projects/${projectId}/track-b/transform` : '/app/projects')}
         >
           Open Workbench
         </Button>
@@ -452,7 +455,11 @@ export default function TrackBRunDetail() {
                     <Badge size="sm" variant="light">{selectedDoc.source_type}</Badge>
                   )}
                   {previewManifest?.status && (
-                    <Badge size="sm" variant="light" color={previewManifest.status === 'ready' ? 'green' : 'yellow'}>
+                    <Badge
+                      size="sm"
+                      variant="light"
+                      color={previewManifest.status === 'ready' ? 'green' : previewManifest.status === 'pending' ? 'blue' : 'yellow'}
+                    >
                       {previewManifest.status}
                     </Badge>
                   )}

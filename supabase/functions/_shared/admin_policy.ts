@@ -49,6 +49,10 @@ export type RuntimePolicy = {
     track_capability_catalog: TrackCapabilityCatalog;
     parser_artifact_source_types: ParserArtifactSourceTypes;
   };
+  track_b: {
+    api_enabled: boolean;
+    worker_enabled: boolean;
+  };
 };
 
 export type RuntimePolicySnapshot = {
@@ -57,6 +61,7 @@ export type RuntimePolicySnapshot = {
   models: RuntimePolicy["models"];
   worker: RuntimePolicy["worker"];
   upload: RuntimePolicy["upload"];
+  track_b: RuntimePolicy["track_b"];
 };
 
 export type AdminPolicyRow = {
@@ -155,6 +160,10 @@ const DEFAULT_POLICY: RuntimePolicy = {
       docling: ["docx", "pdf", "pptx", "xlsx", "html", "csv"],
       pandoc: ["docx", "html", "txt", "rst", "latex", "odt", "epub", "rtf", "org"],
     },
+  },
+  track_b: {
+    api_enabled: true,
+    worker_enabled: true,
   },
 };
 
@@ -410,6 +419,18 @@ export function applyPolicyValue(
     policy.upload.parser_artifact_source_types = parsed;
     return true;
   }
+  if (key === "track_b.api_enabled") {
+    const parsed = asBoolean(value);
+    if (parsed === null) return false;
+    policy.track_b.api_enabled = parsed;
+    return true;
+  }
+  if (key === "track_b.worker_enabled") {
+    const parsed = asBoolean(value);
+    if (parsed === null) return false;
+    policy.track_b.worker_enabled = parsed;
+    return true;
+  }
   return false;
 }
 
@@ -571,6 +592,7 @@ export function buildRuntimePolicySnapshot(
     models: policy.models,
     worker: policy.worker,
     upload: policy.upload,
+    track_b: policy.track_b,
   };
 }
 

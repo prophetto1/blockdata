@@ -13,6 +13,7 @@ import type { SchemaRow } from '@/lib/types';
 import { PageHeader } from '@/components/common/PageHeader';
 import { ErrorAlert } from '@/components/common/ErrorAlert';
 import { JsonViewer } from '@/components/common/JsonViewer';
+import { CopyUid } from '@/components/common/CopyUid';
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
@@ -157,7 +158,7 @@ export default function Schemas() {
       cellRenderer: (params: ICellRendererParams<SchemaRow>) => {
         const value = params.value as string | undefined;
         if (!value) return <Text size="sm" c="dimmed">--</Text>;
-        return <Text size="sm">{value.slice(0, 16)}...</Text>;
+        return <CopyUid value={value} display={`${value.slice(0, 16)}...`} />;
       },
     },
     {

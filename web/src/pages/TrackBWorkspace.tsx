@@ -70,11 +70,11 @@ export default function TrackBWorkspace() {
             role="button"
             tabIndex={0}
             style={{ cursor: 'pointer' }}
-            onClick={() => navigate(`/app/projects/${project.project_id}/track-b/workbench`)}
+            onClick={() => navigate(`/app/projects/${project.project_id}/track-b/transform`)}
             onKeyDown={(event) => {
               if (event.key === 'Enter' || event.key === ' ') {
                 event.preventDefault();
-                navigate(`/app/projects/${project.project_id}/track-b/workbench`);
+                navigate(`/app/projects/${project.project_id}/track-b/transform`);
               }
             }}
           >

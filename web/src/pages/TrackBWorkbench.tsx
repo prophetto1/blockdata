@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type KeyboardEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent, type MouseEvent as ReactMouseEvent } from 'react';
 import { AgGridReact } from 'ag-grid-react';
 import {
   AllCommunityModule,
@@ -6,15 +6,13 @@ import {
   themeQuartz,
   type ColDef,
   type ICellRendererParams,
-  type RowClickedEvent,
 } from 'ag-grid-community';
-import { useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import {
   Badge,
   Button,
   Center,
   Checkbox,
-  Divider,
   Group,
   Loader,
   ScrollArea,
@@ -27,9 +25,10 @@ import {
 } from '@mantine/core';
 import { useElementSize } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
-import { IconChevronLeft, IconChevronRight, IconFileText, IconPlayerPlay } from '@tabler/icons-react';
+import { IconChevronLeft, IconChevronRight, IconFileText, IconPlayerPlay, IconPlus } from '@tabler/icons-react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import { ErrorAlert } from '@/components/common/ErrorAlert';
+import { CopyUid } from '@/components/common/CopyUid';
 import { useHeaderCenter } from '@/components/shell/HeaderCenterContext';
 import { JsonViewer } from '@/components/common/JsonViewer';
 import { edgeJson } from '@/lib/edge';
@@ -51,7 +50,7 @@ ModuleRegistry.registerModules([AllCommunityModule]);
 pdfjs.GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url).toString();
 
 type PreviewManifest = {
-  status: 'ready' | 'unavailable';
+  status: 'pending' | 'ready' | 'failed';
   preview_type: 'source_pdf' | 'preview_pdf' | 'none';
   source_locator: string;
   source_type: string;
@@ -75,8 +74,27 @@ const RUN_STATUS_COLOR: Record<string, string> = {
   cancelled: 'gray',
 };
 
-function isUuid(value: string): boolean {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+const LAYOUT_STORAGE_KEY = 'track-b-workbench-panel-layout-v1';
+const RESIZE_HANDLE_WIDTH = 10;
+const FILES_PANE_WIDTH = 300;
+const RESULT_MIN_WIDTH = 280;
+const PREVIEW_MIN_WIDTH = 360;
+const RESULT_MAX_WIDTH_RATIO = 0.45;
+
+type ResizeTarget = 'result';
+
+type ResizeDragState = {
+  target: ResizeTarget;
+  startX: number;
+  startResultWidth: number;
+};
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value));
+}
+
+function isSchemaUid(value: string): boolean {
+  return /^[0-9a-f]{64}$/i.test(value);
 }
 
 function shortUid(value: string): string {
@@ -85,7 +103,10 @@ function shortUid(value: string): string {
 
 export default function TrackBWorkbench() {
   const { projectId } = useParams<{ projectId: string }>();
+  const location = useLocation();
+  const navigate = useNavigate();
   const { ref: previewRef, width: previewWidth } = useElementSize();
+  const { ref: layoutRef, width: layoutWidth } = useElementSize();
   const { setCenter } = useHeaderCenter();
   const computedColorScheme = useComputedColorScheme('dark');
   const isDark = computedColorScheme === 'dark';
@@ -125,6 +146,8 @@ export default function TrackBWorkbench() {
   const [elementsPayload, setElementsPayload] = useState<unknown>(null);
   const [elementsLoading, setElementsLoading] = useState(false);
   const [elementsError, setElementsError] = useState<string | null>(null);
+  const [resultPaneWidth, setResultPaneWidth] = useState(320);
+  const resizeDragRef = useRef<ResizeDragState | null>(null);
 
   const loadPage = useCallback(async () => {
     if (!projectId) return;
@@ -157,7 +180,7 @@ export default function TrackBWorkbench() {
             .order('updated_at', { ascending: false }),
           supabase
             .from('unstructured_workflow_runs_v2')
-            .select('run_uid, workspace_id, project_id, workflow_uid, flow_mode, status, accepted_count, rejected_count, error, started_at, ended_at, created_at, updated_at')
+            .select('run_uid, workspace_id, project_id, workflow_uid, workflow_template_key, user_schema_uid, flow_mode, status, accepted_count, rejected_count, error, started_at, ended_at, created_at, updated_at')
             .eq('project_id', projectId)
             .order('created_at', { ascending: false })
             .limit(20),
@@ -176,6 +199,17 @@ export default function TrackBWorkbench() {
       setLoading(false);
     }
   }, [projectId]);
+
+  useEffect(() => {
+    const path = location.pathname.toLowerCase();
+    if (path.endsWith('/extract')) {
+      setFlowMode('extract');
+      return;
+    }
+    if (path.endsWith('/transform')) {
+      setFlowMode('transform');
+    }
+  }, [location.pathname]);
 
   useEffect(() => {
     void loadPage();
@@ -234,6 +268,12 @@ export default function TrackBWorkbench() {
       return runData.docs[0].source_uid;
     });
   }, [runData]);
+
+  useEffect(() => {
+    if (!runData || runData.docs.length === 0 || !selectedSourceUid) return;
+    if (runData.docs.some((doc) => doc.source_uid === selectedSourceUid)) return;
+    setSelectedSourceUid(runData.docs[0].source_uid);
+  }, [runData, selectedSourceUid]);
 
   const runOptions = useMemo(
     () => runs.map((run) => ({
@@ -370,20 +410,87 @@ export default function TrackBWorkbench() {
   }), [isDark]);
 
   const defaultColDef = useMemo<ColDef>(() => ({
-    resizable: true,
+    resizable: false,
+    suppressMovable: true,
     sortable: false,
     filter: false,
   }), []);
 
   const formattedResultRows = useMemo(() => formattedElements.map((element, idx) => {
-    const type = typeof element.raw_element_type === 'string' ? element.raw_element_type : 'Element';
     const text = typeof element.text === 'string' ? element.text : JSON.stringify(element);
     return {
-      id: `${type}-${idx}`,
-      type,
+      id: String(idx),
       text,
     };
   }), [formattedElements]);
+
+  const getMaxResultWidth = useCallback((totalWidth: number) => {
+    const maxByAvailableSpace = totalWidth - FILES_PANE_WIDTH - RESIZE_HANDLE_WIDTH - PREVIEW_MIN_WIDTH;
+    const maxByRatio = Math.floor(totalWidth * RESULT_MAX_WIDTH_RATIO);
+    return Math.max(0, Math.min(maxByAvailableSpace, maxByRatio));
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const raw = window.localStorage.getItem(LAYOUT_STORAGE_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as { resultPaneWidth?: number };
+      if (typeof parsed.resultPaneWidth === 'number') setResultPaneWidth(Math.round(parsed.resultPaneWidth));
+    } catch {
+      // Ignore malformed localStorage values.
+    }
+  }, []);
+
+  useEffect(() => {
+    if (layoutWidth <= 0) return;
+    const maxResultWidth = getMaxResultWidth(layoutWidth);
+    const minResultWidth = Math.min(RESULT_MIN_WIDTH, maxResultWidth);
+    setResultPaneWidth((prev) => clamp(prev, minResultWidth, maxResultWidth));
+  }, [getMaxResultWidth, layoutWidth]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    window.localStorage.setItem(
+      LAYOUT_STORAGE_KEY,
+      JSON.stringify({ resultPaneWidth }),
+    );
+  }, [resultPaneWidth]);
+
+  const handleResizeStart = useCallback(
+    (target: ResizeTarget) => (event: ReactMouseEvent<HTMLDivElement>) => {
+      if (layoutWidth <= 0) return;
+      event.preventDefault();
+      resizeDragRef.current = {
+        target,
+        startX: event.clientX,
+        startResultWidth: resultPaneWidth,
+      };
+    },
+    [layoutWidth, resultPaneWidth],
+  );
+
+  useEffect(() => {
+    const onMouseMove = (event: MouseEvent) => {
+      const drag = resizeDragRef.current;
+      if (!drag || layoutWidth <= 0) return;
+      const delta = event.clientX - drag.startX;
+      const maxResultWidth = getMaxResultWidth(layoutWidth);
+      const minResultWidth = Math.min(RESULT_MIN_WIDTH, maxResultWidth);
+      setResultPaneWidth(clamp(drag.startResultWidth - delta, minResultWidth, maxResultWidth));
+    };
+
+    const onMouseUp = () => {
+      resizeDragRef.current = null;
+    };
+
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+    };
+  }, [getMaxResultWidth, layoutWidth]);
 
   const handleToggleDoc = (sourceUid: string, checked: boolean) => {
     setSelectedSourceUids((prev) => {
@@ -395,71 +502,13 @@ export default function TrackBWorkbench() {
     });
   };
 
-  const filesColumnDefs = useMemo<ColDef<DocumentRow>[]>(() => [
+  const resultColumnDefs = useMemo<ColDef<{ id: string; text: string }>[]>(() => [
     {
       headerName: '',
-      colId: 'selected',
-      width: 46,
-      minWidth: 46,
-      maxWidth: 46,
-      resizable: false,
-      cellRenderer: (params: ICellRendererParams<DocumentRow>) => {
-        const row = params.data;
-        if (!row) return null;
-        return (
-          <Checkbox
-            checked={selectedSourceUids.includes(row.source_uid)}
-            onChange={(event) => handleToggleDoc(row.source_uid, event.currentTarget.checked)}
-            onClick={(event) => event.stopPropagation()}
-          />
-        );
-      },
-    },
-    {
-      headerName: 'Document',
-      field: 'doc_title',
-      flex: 1.2,
-      minWidth: 160,
-      cellRenderer: (params: ICellRendererParams<DocumentRow>) => {
-        const row = params.data;
-        if (!row) return null;
-        return (
-          <Stack gap={0}>
-            <Text size="xs" fw={600} truncate>{row.doc_title}</Text>
-            <Text size="10px" c="dimmed">{shortUid(row.source_uid)} | {row.source_type}</Text>
-          </Stack>
-        );
-      },
-    },
-    {
-      headerName: 'Status',
-      field: 'status',
-      width: 100,
-      minWidth: 100,
-      cellRenderer: (params: ICellRendererParams<DocumentRow>) => (
-        <Badge size="xs" variant="light">{String(params.data?.status ?? '')}</Badge>
-      ),
-    },
-  ], [selectedSourceUids]);
-
-  const handleFileRowClick = useCallback((event: RowClickedEvent<DocumentRow>) => {
-    if (!event.data) return;
-    setSelectedSourceUid(event.data.source_uid);
-  }, []);
-
-  const resultColumnDefs = useMemo<ColDef<{ id: string; type: string; text: string }>[]>(() => [
-    {
-      headerName: 'Type',
-      field: 'type',
-      width: 110,
-      minWidth: 110,
-    },
-    {
-      headerName: 'Text',
       field: 'text',
       flex: 1,
       minWidth: 180,
-      cellRenderer: (params: ICellRendererParams<{ id: string; type: string; text: string }>) => (
+      cellRenderer: (params: ICellRendererParams<{ id: string; text: string }>) => (
         <Text size="xs" lineClamp={4}>{params.data?.text ?? ''}</Text>
       ),
     },
@@ -486,8 +535,8 @@ export default function TrackBWorkbench() {
         notifications.show({ color: 'yellow', title: 'Schema required', message: 'Extract requires user_schema_uid.' });
         return;
       }
-      if (!isUuid(schemaUid)) {
-        notifications.show({ color: 'yellow', title: 'Invalid schema UID', message: 'user_schema_uid must be a UUID.' });
+      if (!isSchemaUid(schemaUid)) {
+        notifications.show({ color: 'yellow', title: 'Invalid schema UID', message: 'user_schema_uid must be a 64-char hex schema_uid.' });
         return;
       }
     }
@@ -602,7 +651,11 @@ export default function TrackBWorkbench() {
         <SegmentedControl
           size="xs"
           value={flowMode}
-          onChange={(value) => setFlowMode((value as 'transform' | 'extract') ?? 'transform')}
+          onChange={(value) => {
+            const next = (value as 'transform' | 'extract') ?? 'transform';
+            setFlowMode(next);
+            if (projectId) navigate(`/app/projects/${projectId}/track-b/${next}`, { replace: true });
+          }}
           data={[
             { label: 'Transform', value: 'transform' },
             { label: 'Extract', value: 'extract' },
@@ -659,7 +712,7 @@ export default function TrackBWorkbench() {
       </Group>,
     );
     return () => setCenter(null);
-  }, [flowMode, setCenter, projectName, editingName, editName, savingName, workflowUid, workflowOptions, workflowTemplateKey, schemaOptions, userSchemaUid, runs, runOptions, selectedRunUid, creatingRun, workspaceId, selectedSourceUids, beginEditName, cancelEditName, onNameKeyDown, handleCreateRun]);
+  }, [flowMode, setCenter, projectName, editingName, editName, savingName, workflowUid, workflowOptions, workflowTemplateKey, schemaOptions, userSchemaUid, runs, runOptions, selectedRunUid, creatingRun, workspaceId, selectedSourceUids, beginEditName, cancelEditName, onNameKeyDown, handleCreateRun, navigate, projectId]);
 
   if (loading) return <Center mt="xl"><Loader /></Center>;
 
@@ -680,8 +733,10 @@ export default function TrackBWorkbench() {
       )}
 
       <div
+        ref={layoutRef}
         style={{
-          display: 'flex',
+          display: 'grid',
+          gridTemplateColumns: `${FILES_PANE_WIDTH}px minmax(${PREVIEW_MIN_WIDTH}px, 1fr) ${RESIZE_HANDLE_WIDTH}px ${resultPaneWidth}px`,
           flex: 1,
           minHeight: 0,
         }}
@@ -689,60 +744,98 @@ export default function TrackBWorkbench() {
         {/* ── Files column ── */}
         <div
           style={{
-            width: 280,
-            minWidth: 280,
             borderRight: '1px solid var(--mantine-color-default-border)',
             display: 'flex',
             flexDirection: 'column',
             overflow: 'hidden',
           }}
         >
-          <div style={{ padding: '12px 12px 0' }}>
-            <Group justify="space-between" mb={8}>
+          <div style={{ height: 44, padding: '0 12px', borderBottom: '1px solid var(--mantine-color-default-border)', display: 'flex', alignItems: 'center' }}>
+            <Group justify="space-between" style={{ width: '100%' }}>
               <Group gap={6}>
                 <IconFileText size={14} />
                 <Text fw={600} size="sm">Files</Text>
               </Group>
             </Group>
-            <Divider />
           </div>
-          <div
-            className="block-viewer-grid grid-font-medium grid-font-family-sans grid-valign-center"
-            style={{ flex: 1, minHeight: 0, width: '100%' }}
-          >
-            <AgGridReact
-              theme={gridTheme}
-              rowData={docs}
-              columnDefs={filesColumnDefs}
-              defaultColDef={defaultColDef}
-              getRowId={(params) => params.data.source_uid}
-              onRowClicked={handleFileRowClick}
-              rowHeight={54}
-              headerHeight={36}
-              animateRows={false}
-              domLayout="normal"
-              getRowStyle={(params) => (
-                params.data?.source_uid === selectedSourceUid
-                  ? { backgroundColor: 'var(--mantine-color-blue-light)' }
-                  : undefined
+          <div style={{ padding: '10px 10px 0' }}>
+            <Button
+              fullWidth
+              size="xs"
+              variant="default"
+              rightSection={<IconPlus size={12} />}
+              onClick={() => notifications.show({
+                color: 'yellow',
+                title: 'Use Project Upload Flow',
+                message: 'Use the project upload flow to add files.',
+              })}
+            >
+              Add new file
+            </Button>
+          </div>
+          <ScrollArea style={{ flex: 1, minHeight: 0 }} p="xs">
+            <Stack gap={6}>
+              {docs.length === 0 && (
+                <Text size="xs" c="dimmed">No files in this project.</Text>
               )}
-              overlayNoRowsTemplate='<span style="color: var(--mantine-color-dimmed);">No files in this project.</span>'
-            />
-          </div>
+              {docs.map((doc) => {
+                const isSelected = selectedSourceUid === doc.source_uid;
+                return (
+                  <div
+                    key={doc.source_uid}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => setSelectedSourceUid(doc.source_uid)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        setSelectedSourceUid(doc.source_uid);
+                      }
+                    }}
+                    style={{
+                      width: '100%',
+                      border: '1px solid var(--mantine-color-default-border)',
+                      background: isSelected ? 'var(--mantine-color-blue-light)' : 'var(--mantine-color-body)',
+                      cursor: 'pointer',
+                      padding: 8,
+                      borderRadius: 4,
+                      boxSizing: 'border-box',
+                    }}
+                  >
+                    <Group gap={8} wrap="nowrap" style={{ minWidth: 0 }}>
+                      <Checkbox
+                        checked={selectedSourceUids.includes(doc.source_uid)}
+                        onChange={(event) => handleToggleDoc(doc.source_uid, event.currentTarget.checked)}
+                        onClick={(event) => event.stopPropagation()}
+                      />
+                      <Stack gap={1} style={{ flex: 1, minWidth: 0 }}>
+                        <Text size="xs" fw={600} style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {doc.doc_title}
+                        </Text>
+                        <CopyUid value={doc.source_uid} display={shortUid(doc.source_uid)} size="10px" />
+                      </Stack>
+                      <Badge size="xs" variant="light">
+                        {String(doc.source_type || '').toUpperCase()}
+                      </Badge>
+                    </Group>
+                  </div>
+                );
+              })}
+            </Stack>
+          </ScrollArea>
         </div>
 
         {/* ── Preview column ── */}
         <div
           style={{
-            flex: 1,
-            borderRight: '1px solid var(--mantine-color-default-border)',
+            minWidth: 0,
             display: 'flex',
             flexDirection: 'column',
             overflow: 'hidden',
           }}
         >
-          <div style={{ padding: '12px 12px 0' }}>
-            <Group justify="space-between" mb={8}>
+          <div style={{ height: 44, padding: '0 12px', borderBottom: '1px solid var(--mantine-color-default-border)', display: 'flex', alignItems: 'center' }}>
+            <Group justify="space-between" style={{ width: '100%' }}>
               <Text fw={600} size="sm">Preview</Text>
               <Group gap="xs">
                 {selectedRunUid && (
@@ -753,14 +846,13 @@ export default function TrackBWorkbench() {
                 <Badge size="sm" variant="light">{runDocStatus}</Badge>
               </Group>
             </Group>
-            <Divider />
           </div>
           <ScrollArea style={{ flex: 1 }} p="xs">
             <div ref={previewRef}>
               {runLoading && <Center py="xl"><Loader size="sm" /></Center>}
               {!runLoading && previewManifestLoading && <Center py="xl"><Loader size="sm" /></Center>}
               {!runLoading && !previewManifestLoading && pdfUrl && (
-                <Stack gap="sm" align="center" style={{ background: 'var(--mantine-color-default)', borderRadius: 8, padding: 10 }}>
+                <Stack gap="sm" align="center" style={{ background: 'var(--mantine-color-default)', padding: 10 }}>
                   <Document
                     file={pdfUrl}
                     loading={<Loader size="sm" />}
@@ -811,35 +903,73 @@ export default function TrackBWorkbench() {
 
         {/* ── Result column ── */}
         <div
+          role="separator"
+          aria-label="Resize result panel"
+          aria-orientation="vertical"
+          onMouseDown={handleResizeStart('result')}
           style={{
-            width: 320,
-            minWidth: 320,
+            cursor: 'col-resize',
+            position: 'relative',
+            display: 'flex',
+            justifyContent: 'center',
+            background: 'transparent',
+            userSelect: 'none',
+          }}
+        >
+          <div
+            style={{
+              width: 1,
+              height: '100%',
+              background: 'var(--mantine-color-default-border)',
+            }}
+          />
+          <div
+            style={{
+              position: 'absolute',
+              left: 0,
+              right: 0,
+              top: 43,
+              borderTop: '1px solid var(--mantine-color-default-border)',
+            }}
+          />
+        </div>
+
+        <div
+          style={{
             display: 'flex',
             flexDirection: 'column',
             overflow: 'hidden',
           }}
         >
-          <div style={{ padding: '12px 12px 0' }}>
-            <Group justify="space-between" mb={8}>
+          <div style={{ height: 44, padding: '0 12px', borderBottom: '1px solid var(--mantine-color-default-border)', display: 'flex', alignItems: 'center' }}>
+            <Group justify="space-between" align="center" style={{ width: '100%' }}>
               <Text fw={600} size="sm">Result</Text>
+              <Group gap="sm">
+                <Text
+                  size="xs"
+                  c={resultMode === 'formatted' ? 'blue' : 'dimmed'}
+                  td="underline"
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => setResultMode('formatted')}
+                >
+                  Formatted
+                </Text>
+                <Text
+                  size="xs"
+                  c={resultMode === 'json' ? 'blue' : 'dimmed'}
+                  td="underline"
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => setResultMode('json')}
+                >
+                  JSON
+                </Text>
+              </Group>
             </Group>
-            <Divider mb={8} />
-            <SegmentedControl
-              value={resultMode}
-              onChange={(value) => setResultMode((value as 'formatted' | 'json') ?? 'formatted')}
-              data={[
-                { label: 'Formatted', value: 'formatted' },
-                { label: 'JSON', value: 'json' },
-              ]}
-              size="xs"
-              fullWidth
-              mb={8}
-            />
           </div>
           {elementsLoading && <Center py="lg"><Loader size="sm" /></Center>}
           {!elementsLoading && resultMode === 'formatted' && (
             <div
-              className="block-viewer-grid grid-font-medium grid-font-family-sans grid-valign-center"
+              className="block-viewer-grid trackb-flat-grid grid-font-medium grid-font-family-sans grid-valign-center"
               style={{ flex: 1, minHeight: 0, width: '100%' }}
             >
               <AgGridReact
@@ -849,7 +979,7 @@ export default function TrackBWorkbench() {
                 defaultColDef={defaultColDef}
                 getRowId={(params) => params.data.id}
                 rowHeight={54}
-                headerHeight={36}
+                headerHeight={0}
                 animateRows={false}
                 domLayout="normal"
                 overlayNoRowsTemplate={`<span style="color: var(--mantine-color-dimmed);">${elementsError ?? 'No parsed result yet.'}</span>`}

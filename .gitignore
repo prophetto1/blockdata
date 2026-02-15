@@ -4,11 +4,17 @@
 .mcp.json
 skills/
 json-schemas/
-
+.codex/
+.codex-tmp/
 # Project-specific ignores
 ref-repos/
 -personal-/
 src-content/
+.mypy_cache/
+.playwright-mcp/
+dev-todos/
+docs/
+docs-site/
 
 # Third-party tracked forks: ignore generated artifacts
 third_party/meta-configurator/.husky/

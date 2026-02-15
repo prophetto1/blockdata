@@ -576,7 +576,7 @@ export default function SchemaWizard() {
         return;
       }
       if (projectId && returnTo === 'track-b-workbench') {
-        navigate(`/app/projects/${projectId}/track-b/workbench`);
+        navigate(`/app/projects/${projectId}/track-b/transform`);
         return;
       }
       navigate('/app/schemas');

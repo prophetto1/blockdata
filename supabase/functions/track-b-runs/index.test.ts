@@ -8,6 +8,7 @@ import {
   handleTrackBRunsRequest,
   insertTrackBAuditEvent,
   parseRunCreatePayload,
+  validateWorkflowScope,
 } from "./index.ts";
 
 Deno.test("computeRequestFingerprint is stable across object key order", async () => {
@@ -63,6 +64,25 @@ Deno.test("parseRunCreatePayload accepts transform runs with unique selected_sou
   assertEquals(result.value.selected_source_uids.length, 2);
 });
 
+Deno.test("parseRunCreatePayload validates extract user_schema_uid as 64-char hex", () => {
+  const result = parseRunCreatePayload({
+    workspace_id: "22222222-2222-2222-2222-222222222222",
+    project_id: "11111111-1111-1111-1111-111111111111",
+    flow_mode: "extract",
+    selected_source_uids: [
+      "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+    ],
+    workflow_template_key: "track-b-default",
+    user_schema_uid: "not-a-schema-uid",
+  });
+  assertEquals(result.ok, false);
+  if (result.ok) return;
+  assertEquals(
+    result.error,
+    "user_schema_uid must be a 64-char hex schema_uid when provided",
+  );
+});
+
 Deno.test("parseRunCreatePayload rejects duplicate selected_source_uids", () => {
   const uid =
     "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
@@ -88,6 +108,36 @@ Deno.test("buildIdempotencyScope scopes by workspace, actor, and endpoint path",
     scope,
     "workspace-a:00000000-0000-0000-0000-000000000123:/api/v1/workspaces/workspace-a/track-b/runs",
   );
+});
+
+Deno.test("validateWorkflowScope enforces workflow scope and active state", () => {
+  const ok = validateWorkflowScope({
+    workflow_uid: "33333333-3333-3333-3333-333333333333",
+    workspace_id: "22222222-2222-2222-2222-222222222222",
+    project_id: "11111111-1111-1111-1111-111111111111",
+    row: {
+      workflow_uid: "33333333-3333-3333-3333-333333333333",
+      workspace_id: "22222222-2222-2222-2222-222222222222",
+      project_id: null,
+      is_active: true,
+    },
+  });
+  assertEquals(ok.ok, true);
+
+  const inactive = validateWorkflowScope({
+    workflow_uid: "33333333-3333-3333-3333-333333333333",
+    workspace_id: "22222222-2222-2222-2222-222222222222",
+    project_id: "11111111-1111-1111-1111-111111111111",
+    row: {
+      workflow_uid: "33333333-3333-3333-3333-333333333333",
+      workspace_id: "22222222-2222-2222-2222-222222222222",
+      project_id: null,
+      is_active: false,
+    },
+  });
+  assertEquals(inactive.ok, false);
+  if (inactive.ok) return;
+  assertEquals(inactive.code, "WORKFLOW_INACTIVE");
 });
 
 Deno.test("handleTrackBRunsRequest requires Idempotency-Key header", async () => {
@@ -152,6 +202,32 @@ Deno.test("handleTrackBRunsRequest DELETE requires workspace_id and run_uid quer
   const body = await resp.json();
   assertEquals(resp.status, 400);
   assertEquals(body.error, "workspace_id and run_uid are required");
+});
+
+Deno.test("handleTrackBRunsRequest returns 503 when Track B API is disabled by runtime policy", async () => {
+  const req = new Request(
+    "https://example.com/functions/v1/track-b-runs?workspace_id=22222222-2222-2222-2222-222222222222&run_uid=33333333-3333-3333-3333-333333333333",
+    {
+      method: "GET",
+      headers: {
+        Authorization: "Bearer token",
+      },
+    },
+  );
+  const resp = await handleTrackBRunsRequest(req, {
+    requireUserId: () =>
+      Promise.resolve("00000000-0000-0000-0000-000000000123"),
+    createAdminClient: (() => ({})) as never,
+    loadRuntimePolicy: () =>
+      Promise.resolve({
+        track_b: {
+          api_enabled: false,
+        },
+      }),
+  });
+  const body = await resp.json();
+  assertEquals(resp.status, 503);
+  assertEquals(body.code, "TRACK_B_API_DISABLED");
 });
 
 Deno.test("buildTrackBAuditEvent shapes audit row with required fields", () => {
@@ -286,7 +362,9 @@ Deno.test("attachSourceAccessToRunDocs signs PDF docs and keeps non-PDF rows uns
       step_indexed_at: null,
       step_downloaded_at: null,
       step_partitioned_at: null,
+      step_enriched_at: null,
       step_chunked_at: null,
+      step_extracted_at: null,
       step_embedded_at: null,
       step_uploaded_at: null,
       error: null,
@@ -299,7 +377,9 @@ Deno.test("attachSourceAccessToRunDocs signs PDF docs and keeps non-PDF rows uns
       step_indexed_at: null,
       step_downloaded_at: null,
       step_partitioned_at: null,
+      step_enriched_at: null,
       step_chunked_at: null,
+      step_extracted_at: null,
       step_embedded_at: null,
       step_uploaded_at: null,
       error: null,

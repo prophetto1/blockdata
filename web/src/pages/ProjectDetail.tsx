@@ -766,7 +766,7 @@ export default function ProjectDetail() {
                 <Button
                   size="xs"
                   variant="filled"
-                  onClick={() => navigate(`/app/projects/${projectId}/track-b/workbench`)}
+                  onClick={() => navigate(`/app/projects/${projectId}/track-b/transform`)}
                   disabled={!project.workspace_id}
                 >
                   Open Workbench

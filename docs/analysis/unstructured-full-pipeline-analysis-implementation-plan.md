@@ -65,10 +65,12 @@ Current system analyzed for integration constraints:
 
 1. Workflow graph editor UI like the platform canvas.
 2. Productized control-plane UX (node inspector, workflow detail pane, run history UX parity).
-3. Proprietary enrichment nodes shown in screenshots:
-   - "Image summarizer"
-   - "OCR enrichment" (managed generative OCR behavior)
+3. Full managed enrichment node set from workflow docs:
+   - "Image description"
+   - "Table description"
    - "Table to HTML" as a managed node abstraction
+   - "NER"
+   - "Generative OCR"
 4. Hosted model behavior parity (if requiring proprietary model quality).
 
 ### 3.3 Current system constraints we must preserve
@@ -106,7 +108,7 @@ Target behavior should support:
 3. Result pane with formatted and JSON views.
 4. Optional overlay bounding boxes view.
 5. Schema definition and "Run Schema" behavior.
-6. Node-based workflow mode (Source -> Partitioner -> optional enrichers -> Destination).
+6. Node-based workflow mode (Source -> Partitioner -> track-required enricher capability set with conditional execution -> Destination).
 7. Job history and rerun visibility.
 
 Internal terminology to keep:
@@ -513,9 +515,11 @@ Acceptance:
 
 Deliverables:
 
-1. Implement optional nodes:
-   - image summarization
-   - OCR enrichment
+1. Implement track-required enricher capability set (execution remains conditional by eligibility/policy):
+   - image description
+   - table description
+   - NER
+   - generative OCR
    - table to HTML normalization
 2. Mark proprietary parity gaps explicitly in UI labels.
 3. Run enrichers in Track B worker path using hybrid execution:
@@ -531,8 +535,10 @@ Acceptance:
 Enrichment nodes use a hybrid model:
 
 1. `table_to_html` baseline uses OSS deterministic conversion (`cells_to_html`), with optional provider upgrade path.
-2. `ocr_enrichment` baseline uses partition/OCR output, with optional provider upgrade path.
-3. `image_summarizer` is provider-backed.
+2. `generative_ocr` baseline uses partition/OCR output, with optional provider upgrade path.
+3. `image_description` is provider-backed.
+4. `table_description` is provider-backed.
+5. `ner` is provider-backed.
 
 Execution path:
 
@@ -741,7 +747,7 @@ Use these for API-level workflow operations:
 6. `ref-repos/unstructured-python-client/src/unstructured_client/models/shared/workflownodetype.py:7`
    - enum values (`partition`, `prompter`, `chunk`, `embed`).
 
-### 18.5 Screenshot: Enrichment nodes (Image summary, OCR enrichment, Table to HTML)
+### 18.5 Screenshot/Docs: Enrichment nodes (Image/Table description, Table to HTML, NER, Generative OCR)
 
 Use these for node taxonomy and settings contracts:
 

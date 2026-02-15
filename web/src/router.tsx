@@ -88,8 +88,10 @@ export const router = createBrowserRouter([
           { path: '/app/track-b', element: <Navigate to="/app/track-b/workspace" replace /> },
           { path: '/app/track-b/workspace', element: <TrackBWorkspace /> },
           { path: '/app/track-b/pipeline', element: <TrackBPipeline /> },
-          { path: '/app/projects/:projectId/track-b', element: <TrackBWorkbench /> },
-          { path: '/app/projects/:projectId/track-b/workbench', element: <TrackBWorkbench /> },
+          { path: '/app/projects/:projectId/track-b', element: <Navigate to="transform" replace /> },
+          { path: '/app/projects/:projectId/track-b/workbench', element: <Navigate to="../transform" replace /> },
+          { path: '/app/projects/:projectId/track-b/transform', element: <TrackBWorkbench /> },
+          { path: '/app/projects/:projectId/track-b/extract', element: <TrackBWorkbench /> },
           { path: '/app/projects/:projectId/track-b/runs/:runUid', element: <TrackBRunDetail /> },
 
           // Global schemas (not project-scoped)

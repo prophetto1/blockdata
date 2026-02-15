@@ -1,6 +1,7 @@
 import { corsPreflight, withCorsHeaders } from "../_shared/cors.ts";
 import { sha256HexOfString } from "../_shared/hash.ts";
 import { createAdminClient, requireUserId } from "../_shared/supabase.ts";
+import { validateFlatUserSchema } from "../_shared/user_schema.ts";
 
 function json(status: number, body: unknown): Response {
   return new Response(JSON.stringify(body, null, 2), {
@@ -88,6 +89,14 @@ Deno.serve(async (req) => {
 
     if (!isPlainObject(schemaJson)) {
       return json(400, { error: "Schema must be a JSON object" });
+    }
+
+    const schemaIssues = validateFlatUserSchema(schemaJson);
+    if (schemaIssues.length > 0) {
+      return json(400, {
+        error: "Schema violates flat User Schema JSON contract",
+        details: schemaIssues,
+      });
     }
 
     const schema_ref = slugify(schemaRefInput || deriveSchemaRef(schemaJson));

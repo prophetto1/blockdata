@@ -298,14 +298,14 @@ export default function Projects() {
   return (
     <>
       <PageHeader title="Projects" subtitle="Organize your documents and annotation runs.">
-        <Button leftSection={<IconFolderPlus size={16} />} onClick={open}>
+        <Button size="xs" leftSection={<IconFolderPlus size={14} />} onClick={open}>
           New project
         </Button>
       </PageHeader>
 
       {error && <ErrorAlert message={error} />}
 
-      <Stack gap="sm" mb="md">
+      <Group gap="sm" mb="md" align="center">
         <TextInput
           value={search}
           onChange={(e) => {
@@ -314,8 +314,11 @@ export default function Projects() {
           }}
           placeholder="Search by project name or description"
           leftSection={<IconSearch size={14} />}
+          w={320}
         />
         <SegmentedControl
+          size="sm"
+          ml="auto"
           value={statusFilter}
           onChange={(value) => {
             setStatusFilter(value as StatusFilter);
@@ -328,7 +331,7 @@ export default function Projects() {
             { label: 'Empty', value: 'empty' },
           ]}
         />
-      </Stack>
+      </Group>
 
       {!loading && projects.length === 0 && (
         <Center py="xl">

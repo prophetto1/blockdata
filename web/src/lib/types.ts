@@ -172,6 +172,8 @@ export type TrackBRunRow = {
   workspace_id: string;
   project_id: string;
   workflow_uid: string | null;
+  workflow_template_key?: string | null;
+  user_schema_uid?: string | null;
   flow_mode: 'transform' | 'extract';
   status: TrackBRunStatus;
   accepted_count: number;

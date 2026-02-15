@@ -16,7 +16,6 @@ import {
   IconArrowRight,
   IconFileText,
   IconFolder,
-  IconFolderPlus,
   IconSchema,
   IconUpload,
 } from '@tabler/icons-react';
@@ -121,11 +120,7 @@ export default function WorkspaceHome() {
 
   return (
     <>
-      <PageHeader title="Track A" subtitle="Compact launch surface for projects, schemas, and processing status.">
-        <Button size="xs" leftSection={<IconFolderPlus size={14} />} onClick={() => navigate('/app/projects')}>
-          New project
-        </Button>
-      </PageHeader>
+      <PageHeader title="Track A" subtitle="Compact launch surface for projects, schemas, and processing status." />
 
       {error && <ErrorAlert message={error} />}
 

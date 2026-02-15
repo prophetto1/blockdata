@@ -1,15 +1,20 @@
 import { corsPreflight, withCorsHeaders } from "../_shared/cors.ts";
 import { sha256HexOfString } from "../_shared/hash.ts";
+import { loadRuntimePolicy as defaultLoadRuntimePolicy } from "../_shared/admin_policy.ts";
 import { createAdminClient, requireUserId } from "../_shared/supabase.ts";
 
 type TrackBRunDeps = {
   requireUserId: (req: Request) => Promise<string>;
   createAdminClient: () => ReturnType<typeof createAdminClient>;
+  loadRuntimePolicy?: (
+    supabaseAdmin: ReturnType<typeof createAdminClient>,
+  ) => Promise<{ track_b: { api_enabled: boolean } }>;
 };
 
 const defaultDeps: TrackBRunDeps = {
   requireUserId,
   createAdminClient,
+  loadRuntimePolicy: defaultLoadRuntimePolicy,
 };
 
 type FlowMode = "transform" | "extract";
@@ -35,6 +40,13 @@ type TrackBAuditEvent = {
   occurred_at: string;
 };
 
+type WorkflowRow = {
+  workflow_uid: string;
+  workspace_id: string;
+  project_id: string | null;
+  is_active: boolean;
+};
+
 type ParseResult =
   | { ok: true; value: RunCreatePayload }
   | { ok: false; error: string };
@@ -45,7 +57,9 @@ type RunDocRow = {
   step_indexed_at: string | null;
   step_downloaded_at: string | null;
   step_partitioned_at: string | null;
+  step_enriched_at: string | null;
   step_chunked_at: string | null;
+  step_extracted_at: string | null;
   step_embedded_at: string | null;
   step_uploaded_at: string | null;
   error: string | null;
@@ -87,6 +101,7 @@ export type ArtifactRowWithSignedUrl = ArtifactRow & {
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const SOURCE_UID_RE = /^[0-9a-f]{64}$/i;
+const SCHEMA_UID_RE = /^[0-9a-f]{64}$/i;
 const SIGNED_URL_TTL_SECONDS = 600;
 
 function json(status: number, body: unknown): Response {
@@ -108,6 +123,10 @@ function isUuid(value: string): boolean {
 
 function isSourceUid(value: string): boolean {
   return SOURCE_UID_RE.test(value);
+}
+
+function isSchemaUid(value: string): boolean {
+  return SCHEMA_UID_RE.test(value);
 }
 
 function getDocumentsBucketName(): string {
@@ -171,7 +190,7 @@ export async function attachSourceAccessToRunDocs(input: {
       };
     }
 
-    if (source.source_type !== "pdf") {
+    if (source.source_type.toLowerCase() !== "pdf") {
       return {
         ...doc,
         source_type: source.source_type,
@@ -318,8 +337,11 @@ export function parseRunCreatePayload(input: unknown): ParseResult {
       error: "user_schema_uid is required for flow_mode=extract",
     };
   }
-  if (user_schema_uid && !isUuid(user_schema_uid)) {
-    return { ok: false, error: "user_schema_uid must be a UUID when provided" };
+  if (user_schema_uid && !isSchemaUid(user_schema_uid)) {
+    return {
+      ok: false,
+      error: "user_schema_uid must be a 64-char hex schema_uid when provided",
+    };
   }
 
   return {
@@ -334,6 +356,49 @@ export function parseRunCreatePayload(input: unknown): ParseResult {
       user_schema_uid,
     },
   };
+}
+
+export function validateWorkflowScope(input: {
+  workflow_uid: string;
+  workspace_id: string;
+  project_id: string;
+  row: WorkflowRow | null;
+}):
+  | { ok: true }
+  | { ok: false; status: number; code: string; error: string } {
+  if (!input.row) {
+    return {
+      ok: false,
+      status: 404,
+      code: "WORKFLOW_NOT_FOUND",
+      error: "workflow_uid not found",
+    };
+  }
+  if (!input.row.is_active) {
+    return {
+      ok: false,
+      status: 409,
+      code: "WORKFLOW_INACTIVE",
+      error: "workflow_uid is not active",
+    };
+  }
+  if (input.row.workspace_id !== input.workspace_id) {
+    return {
+      ok: false,
+      status: 403,
+      code: "WORKFLOW_SCOPE_MISMATCH",
+      error: "workflow_uid is not within workspace_id",
+    };
+  }
+  if (input.row.project_id && input.row.project_id !== input.project_id) {
+    return {
+      ok: false,
+      status: 403,
+      code: "WORKFLOW_SCOPE_MISMATCH",
+      error: "workflow_uid is not valid for project_id",
+    };
+  }
+  return { ok: true };
 }
 
 export async function handleTrackBRunsRequest(
@@ -352,6 +417,7 @@ export async function handleTrackBRunsRequest(
   if (!authHeader) return json(401, { error: "Missing Authorization header" });
 
   try {
+    const loadRuntimePolicy = deps.loadRuntimePolicy ?? defaultLoadRuntimePolicy;
     if (req.method === "GET" || req.method === "DELETE") {
       const actorId = await deps.requireUserId(req);
       const supabaseAdmin = deps.createAdminClient();
@@ -365,6 +431,13 @@ export async function handleTrackBRunsRequest(
       }
       if (!isUuid(workspace_id) || !isUuid(run_uid)) {
         return json(400, { error: "workspace_id and run_uid must be UUIDs" });
+      }
+      const runtimePolicy = await loadRuntimePolicy(supabaseAdmin);
+      if (!runtimePolicy.track_b.api_enabled) {
+        return json(503, {
+          error: "Track B API is disabled by runtime policy",
+          code: "TRACK_B_API_DISABLED",
+        });
       }
 
       const { data: membership, error: membershipErr } = await supabaseAdmin
@@ -385,7 +458,7 @@ export async function handleTrackBRunsRequest(
       const { data: runRow, error: runErr } = await supabaseAdmin
         .from("unstructured_workflow_runs_v2")
         .select(
-          "run_uid, workspace_id, project_id, workflow_uid, flow_mode, status, accepted_count, rejected_count, error, started_at, ended_at, created_at, updated_at",
+          "run_uid, workspace_id, project_id, workflow_uid, workflow_template_key, user_schema_uid, flow_mode, status, accepted_count, rejected_count, error, started_at, ended_at, created_at, updated_at",
         )
         .eq("workspace_id", workspace_id)
         .eq("run_uid", run_uid)
@@ -457,7 +530,7 @@ export async function handleTrackBRunsRequest(
       const { data: docs, error: docsErr } = await supabaseAdmin
         .from("unstructured_run_docs_v2")
         .select(
-          "source_uid, status, step_indexed_at, step_downloaded_at, step_partitioned_at, step_chunked_at, step_embedded_at, step_uploaded_at, error, created_at, updated_at",
+          "source_uid, status, step_indexed_at, step_downloaded_at, step_partitioned_at, step_enriched_at, step_chunked_at, step_extracted_at, step_embedded_at, step_uploaded_at, error, created_at, updated_at",
         )
         .eq("run_uid", run_uid)
         .order("source_uid", { ascending: true });
@@ -512,6 +585,13 @@ export async function handleTrackBRunsRequest(
     });
     const requestFingerprint = await computeRequestFingerprint(payload);
     const supabaseAdmin = deps.createAdminClient();
+    const runtimePolicy = await loadRuntimePolicy(supabaseAdmin);
+    if (!runtimePolicy.track_b.api_enabled) {
+      return json(503, {
+        error: "Track B API is disabled by runtime policy",
+        code: "TRACK_B_API_DISABLED",
+      });
+    }
 
     const { data: membership, error: membershipErr } = await supabaseAdmin
       .from("workspace_b_memberships_v2")
@@ -540,6 +620,31 @@ export async function handleTrackBRunsRequest(
         error: "project_id is not within workspace_id",
         code: "PROJECT_SCOPE_MISMATCH",
       });
+    }
+
+    let workflowTemplateKeyToPersist: string | null = null;
+    if (payload.workflow_uid) {
+      const { data: workflowRow, error: workflowErr } = await supabaseAdmin
+        .from("unstructured_workflows_v2")
+        .select("workflow_uid, workspace_id, project_id, is_active")
+        .eq("workflow_uid", payload.workflow_uid)
+        .maybeSingle();
+      if (workflowErr) return json(400, { error: workflowErr.message });
+
+      const workflowValidation = validateWorkflowScope({
+        workflow_uid: payload.workflow_uid,
+        workspace_id: payload.workspace_id,
+        project_id: payload.project_id,
+        row: (workflowRow as WorkflowRow | null),
+      });
+      if (!workflowValidation.ok) {
+        return json(workflowValidation.status, {
+          error: workflowValidation.error,
+          code: workflowValidation.code,
+        });
+      }
+    } else {
+      workflowTemplateKeyToPersist = payload.workflow_template_key ?? null;
     }
 
     const { data: existing, error: existingErr } = await supabaseAdmin
@@ -599,6 +704,8 @@ export async function handleTrackBRunsRequest(
       .insert({
         workspace_id: payload.workspace_id,
         workflow_uid: payload.workflow_uid ?? null,
+        workflow_template_key: workflowTemplateKeyToPersist,
+        user_schema_uid: payload.user_schema_uid ?? null,
         project_id: payload.project_id,
         owner_id: actorId,
         flow_mode: payload.flow_mode,
@@ -694,6 +801,32 @@ export async function handleTrackBRunsRequest(
       return json(500, {
         error: `Failed to write audit event: ${createAuditErr}`,
       });
+    }
+
+    if (payload.flow_mode === "extract" && payload.user_schema_uid) {
+      const schemaTriggerAuditErr = await insertTrackBAuditEvent(
+        supabaseAdmin,
+        buildTrackBAuditEvent({
+          workspace_id: payload.workspace_id,
+          project_id: payload.project_id,
+          actor_id: actorId,
+          action: "schema_run_trigger",
+          target_type: "schema",
+          target_id: payload.user_schema_uid,
+          detail_json: {
+            run_uid,
+            flow_mode: payload.flow_mode,
+            workflow_uid: payload.workflow_uid ?? null,
+            workflow_template_key: payload.workflow_template_key ?? null,
+          },
+          occurred_at: new Date().toISOString(),
+        }),
+      );
+      if (schemaTriggerAuditErr) {
+        return json(500, {
+          error: `Failed to write audit event: ${schemaTriggerAuditErr}`,
+        });
+      }
     }
 
     return json(202, {

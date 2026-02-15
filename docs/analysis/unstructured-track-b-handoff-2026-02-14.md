@@ -35,9 +35,11 @@ Resolved during this pass:
 1. Enrichment contract ambiguity fixed:
    - moved from provider-only implication to explicit hybrid model.
    - now aligned with accepted direction:
+     - `image_description`: provider-backed.
+     - `table_description`: provider-backed.
      - `table_to_html`: OSS baseline + optional provider upgrade.
-     - `ocr_enrichment`: baseline OCR path + optional provider upgrade.
-     - `image_summarizer`: provider-backed.
+     - `ner`: provider-backed.
+     - `generative_ocr`: baseline OCR path + optional provider upgrade.
 2. Run status enum drift fixed in implementation plan:
    - added `partial_success` to plan table status list.
 3. Section numbering glitch fixed:
@@ -98,6 +100,13 @@ Resolved during this pass:
 4. Enrichment model is hybrid:
    - OSS baseline where available.
    - provider-backed upgrades optional and pluggable.
+5. Canonical enrichment set is five nodes:
+   - `image_description`
+   - `table_description`
+   - `table_to_html`
+   - `ner`
+   - `generative_ocr`
+6. Enricher capability is track-required for Track B, with conditional execution by eligibility/policy and explicit skip reasons.
 
 ## 5.6 Runtime and security
 

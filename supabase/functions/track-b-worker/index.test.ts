@@ -6,11 +6,15 @@ import {
 } from "https://deno.land/std@0.224.0/assert/mod.ts";
 import {
   DOC_STATUS_EXECUTION_ORDER,
+  DOC_STATUS_EXECUTION_ORDER_BY_FLOW,
+  applyDeterministicEnricher,
+  resolveWorkflowExecutionConfigFromTemplateKey,
   computeStepDurationsMs,
   buildPreviewManifest,
   buildPreviewPdfBytesFromElements,
   buildChunksFromPartitionElements,
   buildDeterministicChunkEmbeddings,
+  parseVertexPredictEmbeddingsResponse,
   parsePositiveIntEnv,
   buildRunDocStatusUpdateBody,
   buildPartitionServiceRequest,
@@ -44,10 +48,58 @@ Deno.test("DOC_STATUS_EXECUTION_ORDER keeps persisting after enriching", () => {
     "indexing",
     "downloading",
     "partitioning",
-    "chunking",
     "enriching",
+    "chunking",
     "persisting",
   ]);
+});
+
+Deno.test("DOC_STATUS_EXECUTION_ORDER_BY_FLOW uses extracting for extract flow", () => {
+  assertEquals(DOC_STATUS_EXECUTION_ORDER_BY_FLOW.transform, [
+    "indexing",
+    "downloading",
+    "partitioning",
+    "enriching",
+    "chunking",
+    "persisting",
+  ]);
+  assertEquals(DOC_STATUS_EXECUTION_ORDER_BY_FLOW.extract, [
+    "indexing",
+    "downloading",
+    "partitioning",
+    "enriching",
+    "extracting",
+    "persisting",
+  ]);
+});
+
+Deno.test("resolveWorkflowExecutionConfigFromTemplateKey resolves known keys and rejects unknown keys", () => {
+  const transformConfig = resolveWorkflowExecutionConfigFromTemplateKey(
+    "track-b-default",
+    "transform",
+  );
+  assertEquals(transformConfig.ok, true);
+  if (!transformConfig.ok) return;
+  assertEquals(transformConfig.value.embedding.enabled, true);
+  assertEquals(transformConfig.value.enrichers.image_description, true);
+  assertEquals(transformConfig.value.enrichers.table_description, true);
+  assertEquals(transformConfig.value.enrichers.table_to_html, true);
+  assertEquals(transformConfig.value.enrichers.ner, true);
+  assertEquals(transformConfig.value.enrichers.generative_ocr, true);
+
+  const extractConfig = resolveWorkflowExecutionConfigFromTemplateKey(
+    "track-b-default",
+    "extract",
+  );
+  assertEquals(extractConfig.ok, true);
+  if (!extractConfig.ok) return;
+  assertEquals(extractConfig.value.embedding.enabled, false);
+
+  const badConfig = resolveWorkflowExecutionConfigFromTemplateKey(
+    "track-b-unknown",
+    "transform",
+  );
+  assertEquals(badConfig.ok, false);
 });
 
 Deno.test("buildTrackBArtifactKey includes workspace scope and run/doc path", () => {
@@ -222,9 +274,9 @@ Deno.test("buildPartitionServiceRequest uses locked partition parameter contract
     doc_title: "Sample Title",
   });
   assertEquals(request.partition_parameters.coordinates, true);
-  assertEquals(request.partition_parameters.strategy, "auto");
+  assertEquals(request.partition_parameters.strategy, "hi_res");
   assertEquals(request.partition_parameters.output_format, "application/json");
-  assertEquals(request.partition_parameters.unique_element_ids, false);
+  assertEquals(request.partition_parameters.unique_element_ids, true);
   assertEquals(request.partition_parameters.chunking_strategy, "by_title");
 });
 
@@ -282,17 +334,64 @@ Deno.test("buildDeterministicChunkEmbeddings is stable and bounded", () => {
   }
 });
 
+Deno.test("parseVertexPredictEmbeddingsResponse parses vectors and token counts", () => {
+  const parsed = parseVertexPredictEmbeddingsResponse({
+    predictions: [
+      {
+        embeddings: {
+          values: [0.1, -0.2, 0.3],
+          statistics: { token_count: 12 },
+        },
+      },
+      {
+        embeddings: {
+          values: [0.9, 0.8, 0.7],
+          statistics: { token_count: 8 },
+        },
+      },
+    ],
+  }, 2);
+  assertEquals(parsed.vectors.length, 2);
+  assertEquals(parsed.vectors[0].length, 3);
+  assertEquals(parsed.prompt_token_count, 20);
+});
+
+Deno.test("parseVertexPredictEmbeddingsResponse throws on mismatched count", () => {
+  let threw = false;
+  try {
+    parseVertexPredictEmbeddingsResponse(
+      { predictions: [{ embeddings: { values: [0.1] } }] },
+      2,
+    );
+  } catch {
+    threw = true;
+  }
+  assertEquals(threw, true);
+});
+
 Deno.test("buildRunDocStatusUpdateBody sets step timestamps for chunk and embed", () => {
   const now = "2026-02-15T01:23:45.000Z";
   const chunking = buildRunDocStatusUpdateBody("chunking", now);
   assertEquals(chunking.step_chunked_at, now);
 
   const enriching = buildRunDocStatusUpdateBody("enriching", now);
+  assertEquals(enriching.step_enriched_at, now);
   assertEquals(enriching.step_embedded_at, now);
+
+  const extracting = buildRunDocStatusUpdateBody("extracting", now);
+  assertEquals(extracting.step_extracted_at, now);
 
   const persisting = buildRunDocStatusUpdateBody("persisting", now, "boom");
   assertEquals(persisting.step_uploaded_at, now);
   assertEquals(persisting.error, "boom");
+});
+
+Deno.test("buildRunDocStatusUpdateBody keeps extracting as coarse status update", () => {
+  const now = "2026-02-15T01:23:45.000Z";
+  const extracting = buildRunDocStatusUpdateBody("extracting", now);
+  assertEquals(extracting.status, "extracting");
+  assertEquals("step_chunked_at" in extracting, false);
+  assertEquals("step_embedded_at" in extracting, false);
 });
 
 Deno.test("computeStepDurationsMs returns stage deltas", () => {
@@ -300,18 +399,110 @@ Deno.test("computeStepDurationsMs returns stage deltas", () => {
     indexing: "2026-02-15T00:00:00.000Z",
     downloading: "2026-02-15T00:00:01.000Z",
     partitioning: "2026-02-15T00:00:03.000Z",
-    chunking: "2026-02-15T00:00:06.000Z",
-    enriching: "2026-02-15T00:00:08.000Z",
+    enriching: "2026-02-15T00:00:05.000Z",
+    chunking: "2026-02-15T00:00:08.000Z",
     persisting: "2026-02-15T00:00:09.000Z",
     success: "2026-02-15T00:00:11.000Z",
   };
   const out = computeStepDurationsMs(marks);
   assertEquals(out.indexing_ms, 1000);
   assertEquals(out.downloading_ms, 2000);
-  assertEquals(out.partitioning_ms, 3000);
-  assertEquals(out.chunking_ms, 2000);
-  assertEquals(out.enriching_ms, 1000);
-  assertEquals(out.persisting_ms, 2000);
+  assertEquals(out.partitioning_ms, 2000);
+  assertEquals(out.enriching_ms, 3000);
+  assertEquals(out.chunking_ms, 1000);
+  assertEquals(out.persisting_ms, 3000);
+});
+
+Deno.test("computeStepDurationsMs handles extract flow marks without chunking", () => {
+  const marks = {
+    indexing: "2026-02-15T00:00:00.000Z",
+    downloading: "2026-02-15T00:00:01.000Z",
+    partitioning: "2026-02-15T00:00:03.000Z",
+    enriching: "2026-02-15T00:00:04.000Z",
+    extracting: "2026-02-15T00:00:06.000Z",
+    persisting: "2026-02-15T00:00:08.000Z",
+    success: "2026-02-15T00:00:09.000Z",
+  };
+  const out = computeStepDurationsMs(marks);
+  assertEquals(out.partitioning_ms, 1000);
+  assertEquals(out.enriching_ms, 2000);
+  assertEquals(out.persisting_ms, 3000);
+});
+
+Deno.test("applyDeterministicEnricher skips with explicit reasons and applies mutations", () => {
+  const sourceUid =
+    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+  const baseElements = [
+    {
+      raw_element_type: "NarrativeText",
+      text: "Acme Corp signed a contract.",
+      raw_element_id: "a",
+      page_number: 1,
+      metadata_json: {},
+      coordinates_json: null,
+      raw_payload: { type: "NarrativeText", text: "Acme Corp signed a contract." },
+    },
+  ];
+
+  const notApplicable = applyDeterministicEnricher({
+    node: "image_description",
+    elements: baseElements,
+    enabled: true,
+    providerApiKey: "x",
+    source_uid: sourceUid,
+  });
+  assertEquals(notApplicable.status, "skipped");
+  assertEquals(notApplicable.skip_reason, "skipped_not_applicable");
+
+  const missingImageBase64 = applyDeterministicEnricher({
+    node: "image_description",
+    elements: [{
+      raw_element_type: "Image",
+      text: "",
+      raw_element_id: "img1",
+      page_number: 1,
+      metadata_json: {},
+      coordinates_json: null,
+      raw_payload: { type: "Image" },
+    }],
+    enabled: true,
+    providerApiKey: "x",
+    source_uid: sourceUid,
+  });
+  assertEquals(missingImageBase64.status, "skipped");
+  assertEquals(missingImageBase64.skip_reason, "skipped_no_image_base64");
+
+  const missingProvider = applyDeterministicEnricher({
+    node: "ner",
+    elements: baseElements,
+    enabled: true,
+    providerApiKey: "",
+    source_uid: sourceUid,
+  });
+  assertEquals(missingProvider.status, "skipped");
+  assertEquals(missingProvider.skip_reason, "missing_provider_key");
+
+  const tableApplied = applyDeterministicEnricher({
+    node: "table_to_html",
+    elements: [{
+      raw_element_type: "Table",
+      text: "Revenue Q1",
+      raw_element_id: "tbl1",
+      page_number: 1,
+      metadata_json: { image_base64: "ZmFrZQ==" },
+      coordinates_json: null,
+      raw_payload: { type: "Table", text: "Revenue Q1" },
+    }],
+    enabled: true,
+    providerApiKey: "x",
+    source_uid: sourceUid,
+  });
+  assertEquals(tableApplied.status, "applied");
+  assertEquals(tableApplied.applied_count, 1);
+  assertEquals(
+    (tableApplied.elements[0].metadata_json?.text_as_html as string).includes("<table"),
+    true,
+  );
 });
 
 Deno.test("parsePositiveIntEnv enforces bounds and fallback", () => {
@@ -331,12 +522,22 @@ Deno.test("buildPreviewManifest marks pdf sources as ready", () => {
   assertEquals(out.preview_type, "source_pdf");
 });
 
-Deno.test("buildPreviewManifest marks non-pdf sources as unavailable", () => {
+Deno.test("buildPreviewManifest marks non-pdf sources as pending by default", () => {
   const out = buildPreviewManifest({
     source_type: "docx",
     source_locator: "uploads/a.docx",
   });
-  assertEquals(out.status, "unavailable");
+  assertEquals(out.status, "pending");
+  assertEquals(out.preview_type, "none");
+});
+
+Deno.test("buildPreviewManifest marks failed when preview_error_reason exists", () => {
+  const out = buildPreviewManifest({
+    source_type: "docx",
+    source_locator: "uploads/a.docx",
+    preview_error_reason: "preview_pdf_generation_failed:boom",
+  });
+  assertEquals(out.status, "failed");
   assertEquals(out.preview_type, "none");
 });
 
@@ -419,4 +620,28 @@ Deno.test("handleTrackBWorkerRequest rejects non-POST methods", async () => {
   const body = await resp.json();
   assertEquals(resp.status, 405);
   assertEquals(body.error, "Method not allowed");
+});
+
+Deno.test("handleTrackBWorkerRequest returns 503 when Track B worker is disabled by runtime policy", async () => {
+  const req = new Request("https://example.com/functions/v1/track-b-worker", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Track-B-Worker-Key": "expected",
+    },
+    body: JSON.stringify({ batch_size: 1 }),
+  });
+  const resp = await handleTrackBWorkerRequest(req, {
+    requireEnv: () => "expected",
+    createAdminClient: (() => ({})) as never,
+    loadRuntimePolicy: () =>
+      Promise.resolve({
+        track_b: {
+          worker_enabled: false,
+        },
+      }),
+  });
+  const body = await resp.json();
+  assertEquals(resp.status, 503);
+  assertEquals(body.code, "TRACK_B_WORKER_DISABLED");
 });

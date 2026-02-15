@@ -41,6 +41,7 @@ export-by-run).
   `X-Track-B-Worker-Key`)
 - `TRACK_B_CHUNK_MAX_CHARS` (optional; default `1200`, bounded to `200..8000`)
 - `TRACK_B_EMBED_DIMENSIONS` (optional; default `8`, bounded to `4..256`)
+- `TRACK_B_PARTITION_TIMEOUT_MS` (optional; default `60000`, bounded to `1000..300000`)
 - `UNSTRUCTURED_TRACK_SERVICE_URL` (optional; if set, `track-b-worker` requests
   `POST /general/v0/general` (multipart) from this service, with fallback to
   `POST /partition`)

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Badge, Button, Center, Group, Loader, Paper, Select, Stack, Text } from '@mantine/core';
 import { useNavigate } from 'react-router-dom';
 import { AppBreadcrumbs } from '@/components/common/AppBreadcrumbs';
+import { CopyUid } from '@/components/common/CopyUid';
 import { ErrorAlert } from '@/components/common/ErrorAlert';
 import { PageHeader } from '@/components/common/PageHeader';
 import { supabase } from '@/lib/supabase';
@@ -142,14 +143,15 @@ export default function TrackBPipeline() {
                 <Button size="compact-xs" variant="light" onClick={() => navigate(`/app/projects/${run.project_id}/track-b/runs/${run.run_uid}`)}>
                   Open Run
                 </Button>
-                <Button size="compact-xs" variant="default" onClick={() => navigate(`/app/projects/${run.project_id}/track-b/workbench`)}>
+                <Button size="compact-xs" variant="default" onClick={() => navigate(`/app/projects/${run.project_id}/track-b/transform`)}>
                   Workspace
                 </Button>
               </Group>
             </Group>
-            <Text size="10px" c="dimmed" mt={4}>
-              {shortUid(run.run_uid)} | {formatRelativeTime(run.created_at)}
-            </Text>
+            <Group gap={4} mt={4}>
+              <CopyUid value={run.run_uid} display={shortUid(run.run_uid)} size="10px" />
+              <Text size="10px" c="dimmed">| {formatRelativeTime(run.created_at)}</Text>
+            </Group>
           </Paper>
         ))}
       </Stack>

@@ -271,6 +271,11 @@ Acceptance condition:
 1. Separate route-level entry points and run payload contracts.
 2. Extract run can target outputs from a prior Transform run for the same selected docs.
 3. Tab UI must not collapse backend stages into one implicit operation.
+4. Execution order is flow-specific (not one linear chain):
+   - `transform`: `partition -> enriching -> chunking -> persisting` (with optional `embed` before persist if template enables it).
+   - `extract`: `partition -> enriching -> extracting -> persisting`.
+5. Track B extract granularity is per-block for MVP:
+   - extraction result unit is block-scoped (`u_block_uid`), not one document-level object.
 
 ### REQ-FLOW-002: Workflow builder MVP is scoped down
 
@@ -299,6 +304,16 @@ Acceptance condition:
 
 1. Define Schema UI enforces `REQ-SCHEMA-001` and `REQ-SCHEMA-002`.
 2. FLOW does not redefine schema shape rules.
+
+### REQ-FLOW-004: Track node-set declaration is explicit for MVP
+
+Track-required node sets must have one canonical declaration point during MVP.
+
+Acceptance condition:
+
+1. MVP declaration location is worker-side track mapping (hardcoded/config-backed in repo, not user-authored canvas).
+2. Workflow templates can activate/deactivate eligible nodes within the track-required set.
+3. Full workflow-canvas node authoring remains a later-phase feature.
 
 ## 3.7 User Schema JSON requirements
 
@@ -351,6 +366,7 @@ Discussion context:
 Acceptance condition:
 
 - Accepted formats have a visual preview strategy defined.
+- This is not a "source-PDF-only" requirement; non-PDF formats must still render through native viewer or conversion path.
 
 ### REQ-PREVIEW-002: Exception policy for technically impossible cases
 
@@ -371,6 +387,7 @@ Preferred strategy:
 1. Convert non-PDF docs to `preview_pdf` artifact asynchronously.
 2. Render using one viewer surface.
 3. Optionally use stronger native viewers for specific formats when needed.
+4. Product requirement remains "preview all technologically previewable supported formats," not "preview only original PDFs."
 
 Discussion context:
 
@@ -388,12 +405,28 @@ Track B enrichment behavior uses a hybrid model, not a single provider-only mode
 
 Locked node behavior:
 
-1. `table_to_html`:
+Legacy alias mapping for prior drafts:
+
+1. `image_summarizer` -> `image_description`
+2. `ocr_enrichment` -> `generative_ocr`
+
+Execution semantics (locked):
+
+1. The five enrichers are track-required capabilities for Track B.
+2. Execution is conditional by eligibility and run/template activation policy (not unconditional always-on).
+3. If not run, status must be explicit (`skipped_not_applicable`, `skipped_no_image_base64`, or `disabled_by_policy`).
+4. Per-node failure isolation is required; one enricher failure must not invalidate successful outputs from prior nodes.
+
+1. `image_description`:
+   - provider-backed vision step (no OSS baseline in analyzed repos).
+2. `table_description`:
+   - provider-backed table summarization step.
+3. `table_to_html`:
    - baseline uses deterministic OSS conversion (`cells_to_html`) from `unstructured-inference`.
    - optional provider-backed upgrade path is allowed for difficult tables.
-2. `image_summarizer`:
-   - provider-backed vision step (no OSS baseline in analyzed repos).
-3. `ocr_enrichment`:
+4. `ner`:
+   - provider-backed entity + relationship extraction step.
+5. `generative_ocr`:
    - baseline OCR is partition output path.
    - optional provider-backed generative OCR upgrade is allowed for low-quality OCR cases.
 
@@ -402,6 +435,31 @@ Acceptance condition:
 1. Each node declares baseline mode and optional upgraded mode.
 2. Baseline outputs persist without requiring provider calls.
 3. Upgrade outputs persist as separate artifacts with clear provenance.
+4. Workflows that enable enrichers must run a high-res partition mode that preserves required image payloads.
+5. `chunk` executes after all configured enrichers.
+6. If high-res payload requirements are missing in a run, affected nodes emit explicit skip/error status; they are never silently omitted.
+
+### REQ-ENRICH-004: Cost and activation policy is explicit
+
+Enricher execution must be policy-driven to avoid uncontrolled multiplicative provider calls.
+
+Acceptance condition:
+
+1. Track B run/template config declares active enrichers.
+2. Runtime policy can disable/limit specific enricher nodes.
+3. State events capture both activation choice and actual execution outcome per node.
+
+### REQ-ENRICH-005: Multi-provider key resolution is deterministic
+
+Provider-backed enrichers must resolve credentials by provider with deterministic precedence.
+
+Acceptance condition:
+
+1. Resolution order is explicit and test-covered:
+   - user-scoped `user_api_keys` provider key (when allowed),
+   - platform/provider env key fallback.
+2. Missing key does not cause silent node drops; node records explicit missing-key status.
+3. Provider identity is persisted in artifact/state metadata for auditability.
 
 ### REQ-ENRICH-002: Enrichment failures are isolated
 
@@ -557,32 +615,39 @@ Allowed doc states:
 4. `partitioning`
 5. `chunking`
 6. `enriching`
-7. `persisting`
-8. `success`
-9. `failed`
-10. `cancelled`
+7. `extracting`
+8. `persisting`
+9. `success`
+10. `failed`
+11. `cancelled`
 
 Allowed document transition matrix (locked):
 
 1. `queued -> indexing | downloading | partitioning | failed | cancelled`
 2. `indexing -> downloading | partitioning | failed | cancelled`
 3. `downloading -> partitioning | failed | cancelled`
-4. `partitioning -> chunking | enriching | persisting | success | failed | cancelled`
+4. `partitioning -> chunking | enriching | extracting | persisting | success | failed | cancelled`
 5. `chunking -> enriching | persisting | success | failed | cancelled`
-6. `enriching -> persisting | success | failed | cancelled`
-7. `persisting -> success | failed | cancelled`
-8. `success ->` terminal
-9. `failed ->` terminal
-10. `cancelled ->` terminal
+6. `enriching -> chunking | extracting | persisting | success | failed | cancelled`
+7. `extracting -> persisting | success | failed | cancelled`
+8. `persisting -> success | failed | cancelled`
+9. `success ->` terminal
+10. `failed ->` terminal
+11. `cancelled ->` terminal
 
 Step-skip rule:
 
-1. Optional steps (`chunking`, `enriching`) may be skipped by workflow config, but transitions must still follow the matrix above.
+1. `chunking`, `enriching`, and `extracting` are conditionally executed based on `flow_mode`, node eligibility, and active template policy.
+2. Skipped steps still require explicit state/event evidence and must follow legal transitions.
 
 Acceptance condition:
 
 1. Illegal transitions are rejected and logged.
 2. State transition history can be reconstructed from DB events.
+3. Migration updates must include:
+   - `supabase/migrations/20260214233000_026_track_b_foundation.sql` status/step check updates for `extracting`/`extract`.
+   - `supabase/migrations/20260214234500_027_track_b_state_transition_guards.sql` transition-guard updates for `extracting`.
+4. Doc status remains coarse; detailed per-node outcomes live in state-event and artifact metadata.
 
 ## 3.13 Non-functional requirements
 
@@ -808,7 +873,7 @@ Extract exactly:
 Acceptance condition:
 
 1. MVP does not assume proprietary platform node types exist in OSS.
-2. `image_summarizer`, `ocr_enrichment`, and `table_to_html` are first-party Track B custom nodes.
+2. `image_description`, `table_description`, `table_to_html`, `ner`, and `generative_ocr` are first-party Track B custom nodes.
 
 ### REQ-OSS-009: Explicit non-reuse boundary
 

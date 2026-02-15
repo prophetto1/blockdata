@@ -16,7 +16,7 @@ import {
   Textarea,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import { IconAdjustments, IconBuildingFactory, IconHistory, IconUpload } from '@tabler/icons-react';
+import { IconAdjustments, IconBuildingFactory, IconHistory, IconRoute, IconUpload } from '@tabler/icons-react';
 import { edgeFetch } from '@/lib/edge';
 import { PageHeader } from '@/components/common/PageHeader';
 import { ErrorAlert } from '@/components/common/ErrorAlert';
@@ -49,7 +49,7 @@ type AdminConfigResponse = {
 };
 
 type Category = {
-  id: 'models' | 'worker' | 'upload' | 'audit';
+  id: 'models' | 'worker' | 'upload' | 'track_b' | 'audit';
   label: string;
   icon: ReactNode;
   match: (policyKey: string) => boolean;
@@ -73,6 +73,12 @@ const CATEGORIES: Category[] = [
     label: 'Upload',
     icon: <IconUpload size={16} />,
     match: (key) => key.startsWith('upload.'),
+  },
+  {
+    id: 'track_b',
+    label: 'Track B',
+    icon: <IconRoute size={16} />,
+    match: (key) => key.startsWith('track_b.'),
   },
   {
     id: 'audit',

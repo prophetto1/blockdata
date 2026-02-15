@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { ActionIcon, Group, Text, TextInput, Tooltip, UnstyledButton } from '@mantine/core';
-import { IconMenu2, IconMoon, IconSearch, IconSun, IconX } from '@tabler/icons-react';
+import { ActionIcon, Group, Kbd, Text, Tooltip, UnstyledButton } from '@mantine/core';
+import { IconMenu2, IconMoon, IconSearch, IconSun } from '@tabler/icons-react';
+import { spotlight } from '@mantine/spotlight';
 import { useNavigate } from 'react-router-dom';
 import { AiAssistantIcon } from '@/components/icons/AiAssistantIcon';
 import { useHeaderCenter } from '@/components/shell/HeaderCenterContext';
@@ -29,7 +29,7 @@ export function TopCommandBar({
   onToggleColorScheme,
 }: TopCommandBarProps) {
   const navigate = useNavigate();
-  const [searchOpen, setSearchOpen] = useState(false);
+  void navigate; // used by Spotlight actions defined in AppLayout
   const { center } = useHeaderCenter();
 
   return (
@@ -74,37 +74,17 @@ export function TopCommandBar({
       {center}
 
       <Group gap="sm">
-        {showSearch && !searchOpen && (
-          <Tooltip label="Search">
+        {showSearch && (
+          <Tooltip label={<Group gap={4}><span>Search</span><Kbd size="xs">Ctrl+K</Kbd></Group>}>
             <ActionIcon
-              visibleFrom="md"
               variant="subtle"
               size="md"
-              onClick={() => setSearchOpen(true)}
+              onClick={() => spotlight.open()}
               aria-label="Open search"
             >
               <IconSearch size={18} />
             </ActionIcon>
           </Tooltip>
-        )}
-        {showSearch && searchOpen && (
-          <TextInput
-            visibleFrom="md"
-            size="xs"
-            radius="xl"
-            w={320}
-            autoFocus
-            leftSection={<IconSearch size={14} />}
-            rightSection={
-              <ActionIcon variant="subtle" size="xs" onClick={() => setSearchOpen(false)} aria-label="Close search">
-                <IconX size={14} />
-              </ActionIcon>
-            }
-            placeholder="Search projects, schemas, runs..."
-            onBlur={(e) => {
-              if (!e.currentTarget.value) setSearchOpen(false);
-            }}
-          />
         )}
         {showAssistantToggle && (
           <Tooltip label={assistantOpened ? 'Hide Assistant' : 'Show Assistant'}>

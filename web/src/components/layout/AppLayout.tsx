@@ -1,15 +1,21 @@
+import { useMemo } from 'react';
 import {
   AppShell,
+  Drawer,
+  rem,
   useMantineColorScheme,
   useComputedColorScheme,
 } from '@mantine/core';
 import { useDisclosure, useLocalStorage } from '@mantine/hooks';
+import { Spotlight, type SpotlightActionData } from '@mantine/spotlight';
+import { IconSearch } from '@tabler/icons-react';
 import { Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/auth/AuthContext';
 import { TopCommandBar } from '@/components/shell/TopCommandBar';
 import { LeftRail } from '@/components/shell/LeftRail';
 import { HeaderCenterProvider } from '@/components/shell/HeaderCenterContext';
 import { AssistantDockHost } from '@/components/shell/AssistantDockHost';
+import { NAV_GROUPS } from '@/components/shell/nav-config';
 import { featureFlags } from '@/lib/featureFlags';
 
 export function AppLayout() {
@@ -42,20 +48,34 @@ export function AppLayout() {
   const closeAssistant = () => setAssistantOpened(false);
   const toggleDesktopNav = () => setDesktopNavOpened(!desktopNavOpened);
 
+  /* ---- Spotlight actions from nav-config ---- */
+  const spotlightActions = useMemo<SpotlightActionData[]>(
+    () =>
+      NAV_GROUPS.flatMap((group) =>
+        group.items.map((item) => ({
+          id: item.path,
+          label: item.label,
+          description: group.label,
+          onClick: () => navigate(item.path),
+          leftSection: <item.icon size={18} stroke={1.5} />,
+        })),
+      ),
+    [navigate],
+  );
+
   return (
     <HeaderCenterProvider>
+    <Spotlight
+      actions={spotlightActions}
+      shortcut={['mod + k']}
+      nothingFound="No results"
+      searchProps={{ leftSection: <IconSearch size={18} />, placeholder: 'Search pages...' }}
+      highlightQuery
+    />
+
     <AppShell
       header={{ height: 56 }}
       navbar={{ width: 220, breakpoint: 'sm', collapsed: { mobile: !navOpened, desktop: !desktopNavOpened } }}
-      aside={
-        assistantDockEnabled
-          ? {
-              width: 360,
-              breakpoint: 'sm',
-              collapsed: { desktop: !assistantOpened, mobile: !assistantOpened },
-            }
-          : undefined
-      }
       padding="md"
       styles={{
         header: {
@@ -66,14 +86,6 @@ export function AppLayout() {
           backgroundColor: 'var(--mantine-color-body)',
           borderRight: '1px solid var(--mantine-color-default-border)',
         },
-        ...(assistantDockEnabled
-          ? {
-              aside: {
-                backgroundColor: 'var(--mantine-color-body)',
-                borderLeft: '1px solid var(--mantine-color-default-border)',
-              },
-            }
-          : {}),
       }}
     >
       <AppShell.Header>
@@ -101,16 +113,27 @@ export function AppLayout() {
         />
       </AppShell.Navbar>
 
-      {assistantDockEnabled && (
-        <AppShell.Aside p="xs">
-          <AssistantDockHost onClose={closeAssistant} />
-        </AppShell.Aside>
-      )}
-
       <AppShell.Main>
         <Outlet />
       </AppShell.Main>
     </AppShell>
+
+    {assistantDockEnabled && (
+      <Drawer
+        opened={assistantOpened}
+        onClose={closeAssistant}
+        position="right"
+        size={rem(360)}
+        title="Assistant"
+        overlayProps={{ backgroundOpacity: 0.15 }}
+        styles={{
+          body: { paddingTop: 0 },
+        }}
+      >
+        <AssistantDockHost onClose={closeAssistant} />
+      </Drawer>
+    )}
+
     </HeaderCenterProvider>
   );
 }

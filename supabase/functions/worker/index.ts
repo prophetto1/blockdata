@@ -1,7 +1,7 @@
 import { corsPreflight, withCorsHeaders } from "../_shared/cors.ts";
 import { createAdminClient, requireUserId } from "../_shared/supabase.ts";
-import { getEnv, requireEnv } from "../_shared/env.ts";
-import { decryptApiKey } from "../_shared/api_key_crypto.ts";
+import { getEnv } from "../_shared/env.ts";
+import { callVertexClaude } from "../_shared/vertex_claude.ts";
 
 type LlmUsage = {
   input_tokens: number;
@@ -365,10 +365,9 @@ function json(status: number, body: unknown): Response {
   });
 }
 
-// â”€â”€ LLM call via Anthropic Messages API with tool_use for structured output â”€â”€
+// â"€â"€ LLM call via Vertex AI Claude with tool_use for structured output â"€â"€
 
 async function callLLM(
-  apiKey: string,
   model: string,
   temperature: number,
   maxTokens: number,
@@ -389,50 +388,31 @@ async function callLLM(
     },
   };
 
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    "x-api-key": apiKey,
-    "anthropic-version": "2023-06-01",
-  };
-  if (promptCachingEnabled) {
-    headers["anthropic-beta"] = "prompt-caching-2024-07-31";
-  }
-
-  const response = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers,
-    body: JSON.stringify({
-      model,
-      max_tokens: maxTokens,
-      temperature,
-      system: promptCachingEnabled
-        ? [
-          {
-            type: "text",
-            text: systemPrompt,
-            cache_control: { type: "ephemeral" },
-          },
-        ]
-        : systemPrompt,
-      messages: [
+  const result = await callVertexClaude({
+    model,
+    max_tokens: maxTokens,
+    temperature,
+    system: promptCachingEnabled
+      ? [
         {
-          role: "user",
-          content: `${blockPrompt}\n\n---\n\nBlock type: ${blockType}\nBlock content:\n${blockContent}`,
+          type: "text",
+          text: systemPrompt,
+          cache_control: { type: "ephemeral" },
         },
-      ],
-      tools: [tool],
-      tool_choice: { type: "tool", name: "extract_fields" },
-    }),
+      ]
+      : systemPrompt,
+    messages: [
+      {
+        role: "user",
+        content: `${blockPrompt}\n\n---\n\nBlock type: ${blockType}\nBlock content:\n${blockContent}`,
+      },
+    ],
+    tools: [tool],
+    tool_choice: { type: "tool", name: "extract_fields" },
   });
 
-  if (!response.ok) {
-    const errText = await response.text();
-    throw new Error(`Anthropic API ${response.status}: ${errText.slice(0, 500)}`);
-  }
-
-  const result = await response.json();
   // deno-lint-ignore no-explicit-any
-  const toolUse = result.content?.find((c: any) => c.type === "tool_use");
+  const toolUse = (result as any).content?.find((c: any) => c.type === "tool_use");
   if (!toolUse?.input) {
     throw new Error("No tool_use block in LLM response");
   }
@@ -453,7 +433,6 @@ async function callLLM(
 }
 
 async function callLLMBatch(
-  apiKey: string,
   model: string,
   temperature: number,
   maxTokens: number,
@@ -486,48 +465,29 @@ async function callLLMBatch(
     },
   };
 
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    "x-api-key": apiKey,
-    "anthropic-version": "2023-06-01",
-  };
-  if (promptCachingEnabled) {
-    headers["anthropic-beta"] = "prompt-caching-2024-07-31";
-  }
-
-  const response = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers,
-    body: JSON.stringify({
-      model,
-      max_tokens: maxTokens,
-      temperature,
-      system: promptCachingEnabled
-        ? [
-          {
-            type: "text",
-            text: systemPrompt,
-            cache_control: { type: "ephemeral" },
-          },
-        ]
-        : systemPrompt,
-      messages: [
+  const result = await callVertexClaude({
+    model,
+    max_tokens: maxTokens,
+    temperature,
+    system: promptCachingEnabled
+      ? [
         {
-          role: "user",
-          content: buildBatchUserMessage(blockPrompt, pack),
+          type: "text",
+          text: systemPrompt,
+          cache_control: { type: "ephemeral" },
         },
-      ],
-      tools: [tool],
-      tool_choice: { type: "tool", name: "extract_fields_batch" },
-    }),
+      ]
+      : systemPrompt,
+    messages: [
+      {
+        role: "user",
+        content: buildBatchUserMessage(blockPrompt, pack),
+      },
+    ],
+    tools: [tool],
+    tool_choice: { type: "tool", name: "extract_fields_batch" },
   });
 
-  if (!response.ok) {
-    const errText = await response.text();
-    throw new Error(`Anthropic API ${response.status}: ${errText.slice(0, 500)}`);
-  }
-
-  const result = await response.json();
   return parseBatchResponse(
     // deno-lint-ignore no-explicit-any
     result as any,
@@ -615,8 +575,6 @@ Deno.serve(async (req) => {
       : 1;
 
     const supabase = createAdminClient();
-    const platformKey = getEnv("ANTHROPIC_API_KEY", "");
-    const cryptoSecret = requireEnv("SUPABASE_SERVICE_ROLE_KEY");
 
     // â”€â”€ 1. Claim batch â”€â”€
 
@@ -819,47 +777,25 @@ Deno.serve(async (req) => {
       return json(500, { error: "Schema not found for run" });
     }
 
-    // â”€â”€ 2b. Resolve API key: user key â†’ platform env fallback â”€â”€
+    // â"€â"€ 2b. Load user model defaults (LLM calls go via Vertex AI, no user API key needed) â"€â"€
 
-    let anthropicKey = platformKey;
     let userDefaults: { default_model?: string; default_temperature?: number; default_max_tokens?: number } = {};
-    let usingUserKey = false;
 
     if (run.owner_id) {
       const { data: keyRow } = await supabase
         .from("user_api_keys")
-        .select("api_key_encrypted, default_model, default_temperature, default_max_tokens")
+        .select("default_model, default_temperature, default_max_tokens")
         .eq("user_id", run.owner_id)
         .eq("provider", "anthropic")
         .maybeSingle();
 
-      if (keyRow?.api_key_encrypted) {
-        try {
-          anthropicKey = await decryptApiKey(keyRow.api_key_encrypted, cryptoSecret);
-          usingUserKey = true;
-        } catch {
-          await supabase
-            .from("user_api_keys")
-            .update({ is_valid: false })
-            .eq("user_id", run.owner_id)
-            .eq("provider", "anthropic");
-          await releaseClaimed("Saved API key could not be decrypted. Re-save it in Settings.");
-          return json(401, {
-            error: "Saved API key is invalid. Re-save it in Settings.",
-            worker_id: workerId,
-          });
-        }
+      if (keyRow) {
         userDefaults = {
           default_model: keyRow.default_model ?? undefined,
           default_temperature: keyRow.default_temperature ?? undefined,
           default_max_tokens: keyRow.default_max_tokens ?? undefined,
         };
       }
-    }
-
-    if (!anthropicKey) {
-      await releaseClaimed("No API key configured. Set your Anthropic API key in Settings.");
-      return json(500, { error: "No API key configured. Set your Anthropic API key in Settings." });
     }
 
     const promptConfig = (schemaJsonb.prompt_config ?? {}) as Record<string, unknown>;
@@ -923,7 +859,6 @@ Deno.serve(async (req) => {
 
     let succeeded = 0;
     let failed = 0;
-    let markedKeyValid = false;
     const usageTotals = {
       call_count: 0,
       input_tokens: 0,
@@ -931,16 +866,6 @@ Deno.serve(async (req) => {
       cache_creation_input_tokens: 0,
       cache_read_input_tokens: 0,
       cache_hit_calls: 0,
-    };
-
-    const markUserKeyValid = async () => {
-      if (markedKeyValid || !usingUserKey || !run.owner_id) return;
-      markedKeyValid = true;
-      await supabase
-        .from("user_api_keys")
-        .update({ is_valid: true })
-        .eq("user_id", run.owner_id)
-        .eq("provider", "anthropic");
     };
 
     const markRetryOrFailed = async (blockUid: string, errMsg: string) => {
@@ -1032,7 +957,6 @@ Deno.serve(async (req) => {
     const processSingleBlock = async (block: ClaimedBlock): Promise<void> => {
       try {
         const llmResult = await callLLM(
-          anthropicKey,
           model,
           temperature,
           maxTokensPerBlock,
@@ -1060,13 +984,12 @@ Deno.serve(async (req) => {
           .eq("block_uid", block.block_uid);
 
         succeeded++;
-        await markUserKeyValid();
       } catch (err) {
         const errMsg = err instanceof Error ? err.message : String(err);
         if (isLowCreditError(errMsg)) {
           throw new ProviderBalanceError(errMsg);
         }
-        if (errMsg.includes("Anthropic API 401") || errMsg.includes("Anthropic API 403")) {
+        if (errMsg.includes("Vertex Claude API 401") || errMsg.includes("Vertex Claude API 403")) {
           throw new AuthKeyError(errMsg);
         }
         await markRetryOrFailed(block.block_uid, errMsg);
@@ -1093,7 +1016,6 @@ Deno.serve(async (req) => {
 
       try {
         const llmResult = await callLLMBatch(
-          anthropicKey,
           model,
           temperature,
           maxTokensForPack,
@@ -1126,10 +1048,6 @@ Deno.serve(async (req) => {
             .eq("block_uid", block.block_uid);
           succeeded++;
         }
-        if (llmResult.resultsByBlockUid.size > 0) {
-          await markUserKeyValid();
-        }
-
         const missingBlocks = pack.filter((b) => missingSet.has(b.block_uid));
         const hasOverflowStopReason = llmResult.stopReason === "max_tokens";
 
@@ -1156,7 +1074,7 @@ Deno.serve(async (req) => {
         if (isLowCreditError(errMsg)) {
           throw new ProviderBalanceError(errMsg);
         }
-        if (errMsg.includes("Anthropic API 401") || errMsg.includes("Anthropic API 403")) {
+        if (errMsg.includes("Vertex Claude API 401") || errMsg.includes("Vertex Claude API 403")) {
           throw new AuthKeyError(errMsg);
         }
 
@@ -1183,11 +1101,11 @@ Deno.serve(async (req) => {
     } catch (err) {
       if (err instanceof ProviderBalanceError) {
         await releaseClaimed(
-          "Provider balance is too low. Add credits in Anthropic billing, then retry.",
+          "Provider quota/balance exceeded. Check GCP Vertex AI billing, then retry.",
         );
         return json(402, {
           error:
-            "Provider balance is too low. Add credits in Anthropic billing, then retry.",
+            "Provider quota/balance exceeded. Check GCP Vertex AI billing, then retry.",
           worker_id: workerId,
           prompt_caching: {
             enabled: promptCachingEnabled,
@@ -1208,16 +1126,9 @@ Deno.serve(async (req) => {
         });
       }
       if (err instanceof AuthKeyError) {
-        if (run.owner_id) {
-          await supabase
-            .from("user_api_keys")
-            .update({ is_valid: false })
-            .eq("user_id", run.owner_id)
-            .eq("provider", "anthropic");
-        }
-        await releaseClaimed("API key invalid or disabled");
+        await releaseClaimed("Vertex AI auth failed — check GCP service account config");
         return json(401, {
-          error: "API key is invalid or disabled. Update your key in Settings.",
+          error: "Vertex AI authentication failed. Check GCP service account configuration.",
           worker_id: workerId,
           prompt_caching: {
             enabled: promptCachingEnabled,
