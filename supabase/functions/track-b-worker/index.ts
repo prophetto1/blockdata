@@ -79,9 +79,10 @@ export const DOC_STATUS_EXECUTION_ORDER = [
 
 type PreviewManifest = {
   status: "ready" | "unavailable";
-  preview_type: "source_pdf" | "none";
+  preview_type: "source_pdf" | "preview_pdf" | "none";
   source_locator: string;
   source_type: string;
+  preview_pdf_storage_key?: string;
   reason?: string;
 };
 
@@ -400,9 +401,117 @@ export function computeStepDurationsMs(marks: StepMarks): Record<string, number 
   };
 }
 
+function normalizePdfLineText(input: string): string {
+  const cleaned = input
+    .replace(/[\r\n\t]+/g, " ")
+    .replace(/[^\x20-\x7E]/g, "?")
+    .trim();
+  return cleaned.length > 0 ? cleaned : "?";
+}
+
+function escapePdfTextLiteral(input: string): string {
+  return input
+    .replace(/\\/g, "\\\\")
+    .replace(/\(/g, "\\(")
+    .replace(/\)/g, "\\)");
+}
+
+function wrapTextToLines(input: string, maxChars: number): string[] {
+  const lineLength = Math.max(20, maxChars);
+  const words = normalizePdfLineText(input).split(/\s+/);
+  const out: string[] = [];
+  let current = "";
+  for (const word of words) {
+    const candidate = current ? `${current} ${word}` : word;
+    if (candidate.length > lineLength && current) {
+      out.push(current);
+      current = word;
+    } else {
+      current = candidate;
+    }
+  }
+  if (current) out.push(current);
+  return out.length > 0 ? out : ["?"];
+}
+
+function buildSinglePagePdf(lines: string[]): Uint8Array {
+  const safeLines = lines.length > 0 ? lines : ["Track B Preview"];
+  const contentParts = [
+    "BT",
+    "/F1 11 Tf",
+    "14 TL",
+    "50 760 Td",
+  ];
+  for (let i = 0; i < safeLines.length; i++) {
+    const escaped = escapePdfTextLiteral(normalizePdfLineText(safeLines[i]));
+    if (i === 0) {
+      contentParts.push(`(${escaped}) Tj`);
+    } else {
+      contentParts.push("T*");
+      contentParts.push(`(${escaped}) Tj`);
+    }
+  }
+  contentParts.push("ET");
+  const contentStream = `${contentParts.join("\n")}\n`;
+  const contentLength = new TextEncoder().encode(contentStream).byteLength;
+
+  const objects = [
+    "<< /Type /Catalog /Pages 2 0 R >>",
+    "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+    "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>",
+    "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
+    `<< /Length ${contentLength} >>\nstream\n${contentStream}endstream`,
+  ];
+
+  let body = "%PDF-1.4\n";
+  const offsets: number[] = [];
+  for (let i = 0; i < objects.length; i++) {
+    offsets.push(body.length);
+    body += `${i + 1} 0 obj\n${objects[i]}\nendobj\n`;
+  }
+  const xrefOffset = body.length;
+  body += `xref\n0 ${objects.length + 1}\n`;
+  body += "0000000000 65535 f \n";
+  for (const offset of offsets) {
+    body += `${String(offset).padStart(10, "0")} 00000 n \n`;
+  }
+  body += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\n`;
+  body += `startxref\n${xrefOffset}\n%%EOF\n`;
+  return new TextEncoder().encode(body);
+}
+
+export function buildPreviewPdfBytesFromElements(input: {
+  source_uid: string;
+  source_type: string;
+  source_locator: string;
+  doc_title: string | null;
+  elements: PartitionElement[];
+}): Uint8Array {
+  const lines: string[] = [
+    "Track B Preview",
+    `Title: ${input.doc_title?.trim() || "(untitled)"}`,
+    `Source type: ${input.source_type}`,
+    `Source uid: ${input.source_uid.slice(0, 12)}...`,
+    "",
+  ];
+  const maxLines = 42;
+  for (const element of input.elements) {
+    if (lines.length >= maxLines) break;
+    const head = `[${element.raw_element_type}]`;
+    const parts = wrapTextToLines(`${head} ${element.text}`, 88);
+    for (const part of parts) {
+      if (lines.length >= maxLines) break;
+      lines.push(part);
+    }
+  }
+  return buildSinglePagePdf(lines);
+}
+
 export function buildPreviewManifest(input: {
   source_type: string;
   source_locator: string;
+  preview_pdf_storage_key?: string;
+  preview_error_reason?: string;
 }): PreviewManifest {
   if (input.source_type.toLowerCase() === "pdf") {
     return {
@@ -412,12 +521,22 @@ export function buildPreviewManifest(input: {
       source_type: input.source_type,
     };
   }
+  if (input.preview_pdf_storage_key) {
+    return {
+      status: "ready",
+      preview_type: "preview_pdf",
+      source_locator: input.source_locator,
+      source_type: input.source_type,
+      preview_pdf_storage_key: input.preview_pdf_storage_key,
+    };
+  }
   return {
     status: "unavailable",
     preview_type: "none",
     source_locator: input.source_locator,
     source_type: input.source_type,
-    reason: "preview_not_generated_yet_for_source_type",
+    reason: input.preview_error_reason ??
+      "preview_not_generated_yet_for_source_type",
   };
 }
 
@@ -731,6 +850,12 @@ async function processRun(
         source_uid,
         filename: "preview.json",
       });
+      const previewPdfArtifactKey = buildTrackBArtifactKey({
+        workspace_id: runRow.workspace_id,
+        run_uid,
+        source_uid,
+        filename: "preview.pdf",
+      });
       const partitionPayload = {
         backend: partitionBackend,
         elements: partitionElements,
@@ -738,7 +863,9 @@ async function processRun(
       const elementsPayload = partitionElements;
       const chunkPayload = { chunks: chunkRows };
       const embedPayload = { embeddings: embeddingRows };
-      const previewPayload = buildPreviewManifest({
+      let previewPdfUploaded = false;
+      let previewPdfUploadSizeBytes = 0;
+      let previewPayload = buildPreviewManifest({
         source_type: sourceDoc.source_type,
         source_locator: sourceDoc.source_locator,
       });
@@ -746,7 +873,6 @@ async function processRun(
       const elementsPayloadJson = JSON.stringify(elementsPayload);
       const chunkPayloadJson = JSON.stringify(chunkPayload);
       const embedPayloadJson = JSON.stringify(embedPayload);
-      const previewPayloadJson = JSON.stringify(previewPayload);
       const partitionPayloadBytes = new TextEncoder().encode(
         partitionPayloadJson,
       );
@@ -755,7 +881,6 @@ async function processRun(
       );
       const chunkPayloadBytes = new TextEncoder().encode(chunkPayloadJson);
       const embedPayloadBytes = new TextEncoder().encode(embedPayloadJson);
-      const previewPayloadBytes = new TextEncoder().encode(previewPayloadJson);
       const artifactsBucket = Deno.env.get("DOCUMENTS_BUCKET")?.trim() ||
         "documents";
 
@@ -806,6 +931,51 @@ async function processRun(
         );
       }
 
+      if (sourceDoc.source_type.toLowerCase() !== "pdf") {
+        try {
+          const previewPdfBytes = buildPreviewPdfBytesFromElements({
+            source_uid,
+            source_type: sourceDoc.source_type,
+            source_locator: sourceDoc.source_locator,
+            doc_title: sourceDoc.doc_title,
+            elements: partitionElements,
+          });
+          const { error: previewPdfUploadErr } = await supabaseAdmin.storage
+            .from(artifactsBucket)
+            .upload(previewPdfArtifactKey, previewPdfBytes, {
+              contentType: "application/pdf",
+              upsert: true,
+            });
+          if (previewPdfUploadErr) {
+            previewPayload = buildPreviewManifest({
+              source_type: sourceDoc.source_type,
+              source_locator: sourceDoc.source_locator,
+              preview_error_reason:
+                `preview_pdf_upload_failed:${previewPdfUploadErr.message}`,
+            });
+          } else {
+            previewPdfUploaded = true;
+            previewPdfUploadSizeBytes = previewPdfBytes.byteLength;
+            previewPayload = buildPreviewManifest({
+              source_type: sourceDoc.source_type,
+              source_locator: sourceDoc.source_locator,
+              preview_pdf_storage_key: previewPdfArtifactKey,
+            });
+          }
+        } catch (previewPdfErr) {
+          previewPayload = buildPreviewManifest({
+            source_type: sourceDoc.source_type,
+            source_locator: sourceDoc.source_locator,
+            preview_error_reason: `preview_pdf_generation_failed:${
+              toErrorMessage(previewPdfErr).slice(0, 180)
+            }`,
+          });
+        }
+      }
+
+      const previewPayloadJson = JSON.stringify(previewPayload);
+      const previewPayloadBytes = new TextEncoder().encode(previewPayloadJson);
+      let previewManifestUploaded = false;
       const { error: previewUploadErr } = await supabaseAdmin.storage
         .from(artifactsBucket)
         .upload(previewArtifactKey, previewPayloadJson, {
@@ -813,9 +983,23 @@ async function processRun(
           upsert: true,
         });
       if (previewUploadErr) {
-        throw new Error(
-          `Failed to upload preview artifact: ${previewUploadErr.message}`,
-        );
+        try {
+          await supabaseAdmin.from("unstructured_state_events_v2").insert({
+            run_uid,
+            source_uid,
+            entity_type: "doc",
+            from_status: "persisting",
+            to_status: "persisting",
+            detail_json: {
+              warning: "preview_manifest_upload_failed",
+              reason: previewUploadErr.message.slice(0, 500),
+            },
+          });
+        } catch {
+          // Best-effort warning event.
+        }
+      } else {
+        previewManifestUploaded = true;
       }
 
       const docIds = await buildTrackBIds({
@@ -909,88 +1093,117 @@ async function processRun(
         });
       }
 
+      const stepArtifactRows: Array<Record<string, unknown>> = [
+        {
+          run_uid,
+          source_uid,
+          step_name: "partition",
+          artifact_type: "partition_json",
+          storage_bucket: artifactsBucket,
+          storage_key: partitionArtifactKey,
+          content_type: "application/json",
+          size_bytes: partitionPayloadBytes.byteLength,
+        },
+        {
+          run_uid,
+          source_uid,
+          step_name: "chunk",
+          artifact_type: "chunk_json",
+          storage_bucket: artifactsBucket,
+          storage_key: chunkArtifactKey,
+          content_type: "application/json",
+          size_bytes: chunkPayloadBytes.byteLength,
+        },
+        {
+          run_uid,
+          source_uid,
+          step_name: "embed",
+          artifact_type: "embedding_json",
+          storage_bucket: artifactsBucket,
+          storage_key: embedArtifactKey,
+          content_type: "application/json",
+          size_bytes: embedPayloadBytes.byteLength,
+        },
+        {
+          run_uid,
+          source_uid,
+          step_name: "persist",
+          artifact_type: "elements_json",
+          storage_bucket: artifactsBucket,
+          storage_key: elementsArtifactKey,
+          content_type: "application/json",
+          size_bytes: elementsPayloadBytes.byteLength,
+        },
+      ];
+      if (previewManifestUploaded) {
+        stepArtifactRows.push({
+          run_uid,
+          source_uid,
+          step_name: "preview",
+          artifact_type: "preview_manifest_json",
+          storage_bucket: artifactsBucket,
+          storage_key: previewArtifactKey,
+          content_type: "application/json",
+          size_bytes: previewPayloadBytes.byteLength,
+        });
+      }
+      if (previewPdfUploaded) {
+        stepArtifactRows.push({
+          run_uid,
+          source_uid,
+          step_name: "preview",
+          artifact_type: "preview_pdf",
+          storage_bucket: artifactsBucket,
+          storage_key: previewPdfArtifactKey,
+          content_type: "application/pdf",
+          size_bytes: previewPdfUploadSizeBytes,
+        });
+      }
+
       const { error: artifactErr } = await supabaseAdmin
         .from("unstructured_step_artifacts_v2")
-        .insert([
-          {
-            run_uid,
-            source_uid,
-            step_name: "partition",
-            artifact_type: "partition_json",
-            storage_bucket: artifactsBucket,
-            storage_key: partitionArtifactKey,
-            content_type: "application/json",
-            size_bytes: partitionPayloadBytes.byteLength,
-          },
-          {
-            run_uid,
-            source_uid,
-            step_name: "chunk",
-            artifact_type: "chunk_json",
-            storage_bucket: artifactsBucket,
-            storage_key: chunkArtifactKey,
-            content_type: "application/json",
-            size_bytes: chunkPayloadBytes.byteLength,
-          },
-          {
-            run_uid,
-            source_uid,
-            step_name: "embed",
-            artifact_type: "embedding_json",
-            storage_bucket: artifactsBucket,
-            storage_key: embedArtifactKey,
-            content_type: "application/json",
-            size_bytes: embedPayloadBytes.byteLength,
-          },
-          {
-            run_uid,
-            source_uid,
-            step_name: "preview",
-            artifact_type: "preview_manifest_json",
-            storage_bucket: artifactsBucket,
-            storage_key: previewArtifactKey,
-            content_type: "application/json",
-            size_bytes: previewPayloadBytes.byteLength,
-          },
-          {
-            run_uid,
-            source_uid,
-            step_name: "persist",
-            artifact_type: "elements_json",
-            storage_bucket: artifactsBucket,
-            storage_key: elementsArtifactKey,
-            content_type: "application/json",
-            size_bytes: elementsPayloadBytes.byteLength,
-          },
-        ]);
+        .insert(stepArtifactRows);
       if (artifactErr) {
         throw new Error(
           `Failed to insert step artifacts: ${artifactErr.message}`,
         );
       }
 
+      const representationRows: Array<Record<string, unknown>> = [
+        {
+          run_uid,
+          source_uid,
+          representation_type: "unstructured_elements_json",
+          storage_bucket: artifactsBucket,
+          storage_key: elementsArtifactKey,
+          content_type: "application/json",
+          size_bytes: elementsPayloadBytes.byteLength,
+        },
+        {
+          run_uid,
+          source_uid,
+          representation_type: "unstructured_chunk_embeddings_json",
+          storage_bucket: artifactsBucket,
+          storage_key: embedArtifactKey,
+          content_type: "application/json",
+          size_bytes: embedPayloadBytes.byteLength,
+        },
+      ];
+      if (previewPdfUploaded) {
+        representationRows.push({
+          run_uid,
+          source_uid,
+          representation_type: "preview_pdf",
+          storage_bucket: artifactsBucket,
+          storage_key: previewPdfArtifactKey,
+          content_type: "application/pdf",
+          size_bytes: previewPdfUploadSizeBytes,
+        });
+      }
+
       const { error: reprErr } = await supabaseAdmin
         .from("unstructured_representations_v2")
-        .insert([
-          {
-            run_uid,
-            source_uid,
-            representation_type: "unstructured_elements_json",
-            storage_bucket: artifactsBucket,
-            storage_key: elementsArtifactKey,
-            content_type: "application/json",
-            size_bytes: elementsPayloadBytes.byteLength,
-          },
-          {
-            run_uid,
-            source_uid,
-            representation_type: "unstructured_chunk_embeddings_json",
-            storage_bucket: artifactsBucket,
-            storage_key: embedArtifactKey,
-            content_type: "application/json",
-            size_bytes: embedPayloadBytes.byteLength,
-          },
-        ]);
+        .insert(representationRows);
       if (reprErr) {
         throw new Error(
           `Failed to insert unstructured representation: ${reprErr.message}`,
@@ -1020,8 +1233,11 @@ async function processRun(
             step_durations_ms: computeStepDurationsMs(stepMarks),
             chunk_count: chunkRows.length,
             embedding_count: embeddingRows.length,
-            artifact_count: 5,
+            artifact_count: stepArtifactRows.length,
             preview_status: previewPayload.status,
+            preview_type: previewPayload.preview_type,
+            preview_pdf_uploaded: previewPdfUploaded,
+            preview_manifest_uploaded: previewManifestUploaded,
           },
         });
       } catch {

@@ -363,6 +363,7 @@ export default function Settings() {
                 key={p.id}
                 label={p.label}
                 description={p.enabled ? p.description : 'Coming soon'}
+                py={6}
                 leftSection={
                   <ThemeIcon size="sm" radius="sm" variant="light" color={p.enabled ? p.color : 'gray'}>
                     {p.icon}
@@ -382,7 +383,11 @@ export default function Settings() {
                 active={selectedId === p.id}
                 onClick={() => handleSelectProvider(p.id)}
                 disabled={!p.enabled}
-                styles={{ label: { fontSize: 'var(--mantine-font-size-sm)' } }}
+                styles={{
+                  root: { minHeight: 42 },
+                  label: { fontSize: '13px', lineHeight: 1.2 },
+                  description: { fontSize: '11px', lineHeight: 1.2 },
+                }}
               />
             );
           })}

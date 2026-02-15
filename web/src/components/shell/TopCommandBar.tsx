@@ -1,26 +1,25 @@
-import { ActionIcon, Burger, Button, Group, Text, TextInput, Tooltip, UnstyledButton } from '@mantine/core';
-import { IconChevronLeft, IconChevronRight, IconMoon, IconSearch, IconSun } from '@tabler/icons-react';
+import { useState } from 'react';
+import { ActionIcon, Group, Text, TextInput, Tooltip, UnstyledButton } from '@mantine/core';
+import { IconMenu2, IconMoon, IconSearch, IconSun, IconX } from '@tabler/icons-react';
 import { useNavigate } from 'react-router-dom';
+import { AiAssistantIcon } from '@/components/icons/AiAssistantIcon';
+import { useHeaderCenter } from '@/components/shell/HeaderCenterContext';
 
 type TopCommandBarProps = {
   navOpened: boolean;
   onToggleNav: () => void;
-  desktopNavOpened: boolean;
-  onToggleDesktopNav: () => void;
+  desktopNavOpened?: boolean;
+  onToggleDesktopNav?: () => void;
   showSearch?: boolean;
   showAssistantToggle?: boolean;
   assistantOpened: boolean;
   onToggleAssistant: () => void;
   computedColorScheme: 'dark' | 'light';
   onToggleColorScheme: () => void;
-  userLabel?: string;
-  onSignOut: () => void | Promise<void>;
 };
 
 export function TopCommandBar({
-  navOpened,
   onToggleNav,
-  desktopNavOpened,
   onToggleDesktopNav,
   showSearch = true,
   showAssistantToggle = true,
@@ -28,24 +27,34 @@ export function TopCommandBar({
   onToggleAssistant,
   computedColorScheme,
   onToggleColorScheme,
-  userLabel,
-  onSignOut,
 }: TopCommandBarProps) {
   const navigate = useNavigate();
+  const [searchOpen, setSearchOpen] = useState(false);
+  const { center } = useHeaderCenter();
 
   return (
     <Group h="100%" px="md" justify="space-between">
       <Group gap="sm">
-        <Burger opened={navOpened} onClick={onToggleNav} hiddenFrom="sm" size="sm" />
-        <Tooltip label={desktopNavOpened ? 'Hide navigation' : 'Show navigation'}>
+        <Tooltip label="Toggle navigation">
+          <ActionIcon
+            hiddenFrom="sm"
+            size="md"
+            variant="subtle"
+            aria-label="Toggle navigation"
+            onClick={onToggleNav}
+          >
+            <IconMenu2 size={18} />
+          </ActionIcon>
+        </Tooltip>
+        <Tooltip label="Toggle navigation">
           <ActionIcon
             visibleFrom="sm"
-            variant="subtle"
             size="md"
-            onClick={onToggleDesktopNav}
-            aria-label={desktopNavOpened ? 'Hide navigation' : 'Show navigation'}
+            variant="subtle"
+            aria-label="Toggle navigation"
+            onClick={onToggleDesktopNav ?? onToggleNav}
           >
-            {desktopNavOpened ? <IconChevronLeft size={18} /> : <IconChevronRight size={18} />}
+            <IconMenu2 size={18} />
           </ActionIcon>
         </Tooltip>
         <Group gap={8}>
@@ -60,23 +69,61 @@ export function TopCommandBar({
             </Text>
           </UnstyledButton>
         </Group>
-        {showSearch && (
+      </Group>
+
+      {center}
+
+      <Group gap="sm">
+        {showSearch && !searchOpen && (
+          <Tooltip label="Search">
+            <ActionIcon
+              visibleFrom="md"
+              variant="subtle"
+              size="md"
+              onClick={() => setSearchOpen(true)}
+              aria-label="Open search"
+            >
+              <IconSearch size={18} />
+            </ActionIcon>
+          </Tooltip>
+        )}
+        {showSearch && searchOpen && (
           <TextInput
             visibleFrom="md"
             size="xs"
             radius="xl"
             w={320}
+            autoFocus
             leftSection={<IconSearch size={14} />}
+            rightSection={
+              <ActionIcon variant="subtle" size="xs" onClick={() => setSearchOpen(false)} aria-label="Close search">
+                <IconX size={14} />
+              </ActionIcon>
+            }
             placeholder="Search projects, schemas, runs..."
+            onBlur={(e) => {
+              if (!e.currentTarget.value) setSearchOpen(false);
+            }}
           />
         )}
-      </Group>
-
-      <Group gap="sm">
         {showAssistantToggle && (
-          <Button variant="subtle" size="xs" onClick={onToggleAssistant}>
-            {assistantOpened ? 'Hide Assistant' : 'Show Assistant'}
-          </Button>
+          <Tooltip label={assistantOpened ? 'Hide Assistant' : 'Show Assistant'}>
+            <ActionIcon
+              variant="subtle"
+              size="md"
+              onClick={onToggleAssistant}
+              aria-label={assistantOpened ? 'Hide Assistant' : 'Show Assistant'}
+            >
+              <AiAssistantIcon
+                size={20}
+                style={{
+                  filter: assistantOpened
+                    ? 'drop-shadow(0 0 8px rgba(255, 77, 109, 0.25))'
+                    : undefined,
+                }}
+              />
+            </ActionIcon>
+          </Tooltip>
         )}
         <Tooltip label={computedColorScheme === 'dark' ? 'Light mode' : 'Dark mode'}>
           <ActionIcon
@@ -88,12 +135,6 @@ export function TopCommandBar({
             {computedColorScheme === 'dark' ? <IconSun size={18} /> : <IconMoon size={18} />}
           </ActionIcon>
         </Tooltip>
-        <Text size="sm" c="dimmed">
-          {userLabel}
-        </Text>
-        <Button variant="subtle" size="xs" onClick={onSignOut}>
-          Sign out
-        </Button>
       </Group>
     </Group>
   );

@@ -121,7 +121,7 @@ export default function WorkspaceHome() {
 
   return (
     <>
-      <PageHeader title="Workspace" subtitle="Compact launch surface for projects, schemas, and processing status.">
+      <PageHeader title="Track A" subtitle="Compact launch surface for projects, schemas, and processing status.">
         <Button size="xs" leftSection={<IconFolderPlus size={14} />} onClick={() => navigate('/app/projects')}>
           New project
         </Button>

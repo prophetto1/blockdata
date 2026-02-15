@@ -7,6 +7,38 @@ function functionsBaseUrl(): string {
   return `${(SUPABASE_URL as string).replace(/\/+$/, '')}/functions/v1`;
 }
 
+function base64UrlDecodeToString(input: string): string {
+  // atob expects standard base64 with padding, while JWT uses base64url without padding.
+  const b64 = input.replace(/-/g, '+').replace(/_/g, '/');
+  const padded = b64 + '='.repeat((4 - (b64.length % 4)) % 4);
+  return atob(padded);
+}
+
+function tryGetProjectRefFromSupabaseUrl(url: unknown): string | null {
+  if (typeof url !== 'string') return null;
+  try {
+    const host = new URL(url).hostname;
+    if (!host.endsWith('.supabase.co')) return null;
+    const ref = host.split('.')[0] ?? null;
+    return ref && ref.length > 0 ? ref : null;
+  } catch {
+    return null;
+  }
+}
+
+function tryGetJwtProjectRef(token: unknown): string | null {
+  if (typeof token !== 'string') return null;
+  const parts = token.split('.');
+  if (parts.length < 2) return null;
+  try {
+    const payloadJson = base64UrlDecodeToString(parts[1]!);
+    const payload = JSON.parse(payloadJson) as { ref?: unknown };
+    return typeof payload.ref === 'string' && payload.ref.length > 0 ? payload.ref : null;
+  } catch {
+    return null;
+  }
+}
+
 async function requireAccessToken(): Promise<string> {
   const sessionResult = await supabase.auth.getSession();
   if (sessionResult.error) throw new Error(sessionResult.error.message);
@@ -83,9 +115,12 @@ export async function edgeFetch(path: string, init: RequestInit = {}): Promise<R
     const retryText = await resp.clone().text().catch(() => '');
     if (retryText.includes('Invalid JWT')) {
       if (localSessionLooksValid) {
+        const expectedRef = tryGetProjectRefFromSupabaseUrl(SUPABASE_URL);
+        const jwtRef = tryGetJwtProjectRef(token);
         throw new Error(
           `Edge function auth rejected JWT (${path}) after token refresh. ` +
-            'This usually indicates a backend function auth configuration mismatch for this Supabase project.',
+            'This usually indicates a backend function auth configuration mismatch for this Supabase project. ' +
+            `functions_base_url=${functionsBaseUrl()} expected_ref=${expectedRef ?? 'unknown'} jwt_ref=${jwtRef ?? 'unknown'}`,
         );
       }
       throw new Error('Session may be invalid or expired; please sign in again.');

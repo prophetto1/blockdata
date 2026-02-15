@@ -221,3 +221,15 @@ export type TrackBRunGetResponse = {
   docs: TrackBRunDocRow[];
   artifacts: TrackBArtifactRow[];
 };
+
+export type TrackBWorkflowRow = {
+  workflow_uid: string;
+  workspace_id: string;
+  project_id: string | null;
+  owner_id: string;
+  name: string;
+  is_active: boolean;
+  workflow_spec_json: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
+};

@@ -1,15 +1,14 @@
 import {
-  ActionIcon,
   AppShell,
   useMantineColorScheme,
   useComputedColorScheme,
 } from '@mantine/core';
 import { useDisclosure, useLocalStorage } from '@mantine/hooks';
-import { IconChevronRight } from '@tabler/icons-react';
 import { Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/auth/AuthContext';
 import { TopCommandBar } from '@/components/shell/TopCommandBar';
 import { LeftRail } from '@/components/shell/LeftRail';
+import { HeaderCenterProvider } from '@/components/shell/HeaderCenterContext';
 import { AssistantDockHost } from '@/components/shell/AssistantDockHost';
 import { featureFlags } from '@/lib/featureFlags';
 
@@ -44,9 +43,10 @@ export function AppLayout() {
   const toggleDesktopNav = () => setDesktopNavOpened(!desktopNavOpened);
 
   return (
+    <HeaderCenterProvider>
     <AppShell
       header={{ height: 56 }}
-      navbar={{ width: 240, breakpoint: 'sm', collapsed: { mobile: !navOpened, desktop: !desktopNavOpened } }}
+      navbar={{ width: 220, breakpoint: 'sm', collapsed: { mobile: !navOpened, desktop: !desktopNavOpened } }}
       aside={
         assistantDockEnabled
           ? {
@@ -88,8 +88,6 @@ export function AppLayout() {
           onToggleAssistant={toggleAssistant}
           computedColorScheme={computedColorScheme}
           onToggleColorScheme={toggleColorScheme}
-          userLabel={profile?.display_name || profile?.email || user?.email}
-          onSignOut={handleSignOut}
         />
       </AppShell.Header>
 
@@ -98,6 +96,8 @@ export function AppLayout() {
           onNavigate={() => {
             closeNav();
           }}
+          userLabel={profile?.display_name || profile?.email || user?.email}
+          onSignOut={handleSignOut}
         />
       </AppShell.Navbar>
 
@@ -108,27 +108,9 @@ export function AppLayout() {
       )}
 
       <AppShell.Main>
-        {!desktopNavOpened && (
-          <ActionIcon
-            visibleFrom="sm"
-            size="md"
-            variant="filled"
-            color="gray"
-            radius="md"
-            aria-label="Show navigation"
-            onClick={toggleDesktopNav}
-            style={{
-              position: 'fixed',
-              left: 8,
-              top: 64,
-              zIndex: 210,
-            }}
-          >
-            <IconChevronRight size={18} />
-          </ActionIcon>
-        )}
         <Outlet />
       </AppShell.Main>
     </AppShell>
+    </HeaderCenterProvider>
   );
 }

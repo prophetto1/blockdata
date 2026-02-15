@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   Badge,
@@ -16,6 +16,7 @@ import {
   Text,
 } from '@mantine/core';
 import { useElementSize } from '@mantine/hooks';
+import { notifications } from '@mantine/notifications';
 import { IconChevronLeft, IconChevronRight } from '@tabler/icons-react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import { edgeJson } from '@/lib/edge';
@@ -36,6 +37,7 @@ type PreviewManifest = {
   preview_type: 'source_pdf' | 'preview_pdf' | 'none';
   source_locator: string;
   source_type: string;
+  preview_pdf_storage_key?: string;
   reason?: string;
 };
 
@@ -65,6 +67,18 @@ function shortUid(value: string): string {
   return `${value.slice(0, 10)}...${value.slice(-8)}`;
 }
 
+function shouldRefreshSignedUrls(message: string): boolean {
+  const lower = message.toLowerCase();
+  return lower.includes('401') ||
+    lower.includes('403') ||
+    lower.includes('unauthorized') ||
+    lower.includes('forbidden') ||
+    lower.includes('expired') ||
+    lower.includes('signature') ||
+    lower.includes('token') ||
+    lower.includes('failed to fetch');
+}
+
 export default function TrackBRunDetail() {
   const { projectId, runUid } = useParams<{ projectId: string; runUid: string }>();
   const navigate = useNavigate();
@@ -80,7 +94,11 @@ export default function TrackBRunDetail() {
   const [jsonPane, setJsonPane] = useState<'manifest' | 'artifacts'>('manifest');
   const [pdfPageCount, setPdfPageCount] = useState(0);
   const [pdfPageNumber, setPdfPageNumber] = useState(1);
+  const [cancelling, setCancelling] = useState(false);
+  const [refreshingPreviewUrls, setRefreshingPreviewUrls] = useState(false);
   const { ref: previewRef, width: previewWidth } = useElementSize();
+  const manifestRefreshAttemptedRef = useRef<string | null>(null);
+  const pdfRefreshAttemptedRef = useRef<string | null>(null);
 
   const isTerminalRun = data?.run.status === 'success' ||
     data?.run.status === 'partial_success' ||
@@ -127,6 +145,47 @@ export default function TrackBRunDetail() {
       if (!silent) setLoading(false);
     }
   }, [runUid, workspaceId]);
+
+  const handleCancelRun = useCallback(async () => {
+    if (!workspaceId || !runUid) return;
+    setCancelling(true);
+    try {
+      const response = await edgeJson<{ run_uid: string; status: string }>(
+        `track-b-runs?workspace_id=${encodeURIComponent(workspaceId)}&run_uid=${encodeURIComponent(runUid)}`,
+        { method: 'DELETE' },
+      );
+      notifications.show({
+        color: 'yellow',
+        title: 'Track B run cancelled',
+        message: `${response.run_uid.slice(0, 8)}... is now ${response.status}.`,
+      });
+      await loadRun();
+    } catch (e) {
+      const message = e instanceof Error ? e.message : String(e);
+      setError(message);
+      notifications.show({
+        color: 'red',
+        title: 'Cancel failed',
+        message: message.slice(0, 220),
+      });
+    } finally {
+      setCancelling(false);
+    }
+  }, [loadRun, runUid, workspaceId]);
+
+  const refreshSignedUrls = useCallback(async (reason?: string) => {
+    if (refreshingPreviewUrls) return;
+    setRefreshingPreviewUrls(true);
+    setPreviewManifestError(reason ?? 'Refreshing preview URLs...');
+    try {
+      await loadRun(true);
+      setPreviewManifestError(null);
+    } catch (e) {
+      setPreviewManifestError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setRefreshingPreviewUrls(false);
+    }
+  }, [loadRun, refreshingPreviewUrls]);
 
   useEffect(() => {
     void (async () => {
@@ -190,9 +249,17 @@ export default function TrackBRunDetail() {
     return previews[previews.length - 1];
   }, [selectedArtifacts]);
 
+  const previewPdfArtifactFromManifest = useMemo<TrackBArtifactRow | null>(() => {
+    const key = previewManifest?.preview_pdf_storage_key;
+    if (!key) return null;
+    return selectedArtifacts.find((artifact) => artifact.storage_key === key) ?? null;
+  }, [previewManifest?.preview_pdf_storage_key, selectedArtifacts]);
+
   useEffect(() => {
     setPdfPageNumber(1);
     setPdfPageCount(0);
+    manifestRefreshAttemptedRef.current = null;
+    pdfRefreshAttemptedRef.current = null;
   }, [selectedSourceUid]);
 
   useEffect(() => {
@@ -212,7 +279,8 @@ export default function TrackBRunDetail() {
     setPreviewManifestError(null);
     setPreviewManifest(null);
 
-    fetch(previewManifestArtifact.signed_url)
+    const manifestUrl = previewManifestArtifact.signed_url;
+    fetch(manifestUrl)
       .then(async (resp) => {
         if (!resp.ok) {
           const text = await resp.text().catch(() => '');
@@ -223,7 +291,15 @@ export default function TrackBRunDetail() {
       })
       .catch((e) => {
         if (active) {
-          setPreviewManifestError(e instanceof Error ? e.message : String(e));
+          const message = e instanceof Error ? e.message : String(e);
+          setPreviewManifestError(message);
+          if (
+            shouldRefreshSignedUrls(message) &&
+            manifestRefreshAttemptedRef.current !== manifestUrl
+          ) {
+            manifestRefreshAttemptedRef.current = manifestUrl;
+            void refreshSignedUrls('Preview manifest URL expired. Refreshing signed URLs...');
+          }
         }
       })
       .finally(() => {
@@ -233,9 +309,12 @@ export default function TrackBRunDetail() {
     return () => {
       active = false;
     };
-  }, [previewManifestArtifact]);
+  }, [previewManifestArtifact, refreshSignedUrls]);
 
   const pdfUrl = useMemo(() => {
+    if (previewPdfArtifactFromManifest?.signed_url) {
+      return previewPdfArtifactFromManifest.signed_url;
+    }
     if (previewPdfArtifact?.signed_url) {
       return previewPdfArtifact.signed_url;
     }
@@ -247,11 +326,12 @@ export default function TrackBRunDetail() {
       return selectedDoc.source_signed_url;
     }
     return null;
-  }, [previewPdfArtifact, previewManifest, selectedDoc]);
+  }, [previewPdfArtifactFromManifest, previewPdfArtifact, previewManifest, selectedDoc]);
 
   const pdfRenderWidth = Math.max(previewWidth - 16, 320);
 
   const previewFallbackReason = useMemo(() => {
+    if (refreshingPreviewUrls) return 'Refreshing preview URLs...';
     if (previewManifestError) return previewManifestError;
     if (!previewManifest) return 'Preview manifest is loading.';
     if (previewManifest.status === 'unavailable') {
@@ -260,11 +340,14 @@ export default function TrackBRunDetail() {
     if (previewPdfArtifact?.signed_url_error) {
       return previewPdfArtifact.signed_url_error;
     }
+    if (previewPdfArtifactFromManifest?.signed_url_error) {
+      return previewPdfArtifactFromManifest.signed_url_error;
+    }
     if (!pdfUrl) {
       return selectedDoc?.source_signed_url_error ?? 'Preview signed URL unavailable.';
     }
     return null;
-  }, [previewManifestError, previewManifest, previewPdfArtifact, pdfUrl, selectedDoc]);
+  }, [previewManifestError, previewManifest, previewPdfArtifact, previewPdfArtifactFromManifest, pdfUrl, refreshingPreviewUrls, selectedDoc]);
 
   if (loading) return <Center mt="xl"><Loader /></Center>;
 
@@ -277,6 +360,24 @@ export default function TrackBRunDetail() {
       ]}
       />
       <PageHeader title="Track B Run" subtitle={data?.run.run_uid ?? runUid}>
+        <Button
+          variant="light"
+          size="xs"
+          onClick={() => navigate(projectId ? `/app/projects/${projectId}/track-b/workbench` : '/app/projects')}
+        >
+          Open Workbench
+        </Button>
+        {!isTerminalRun && (
+          <Button
+            variant="light"
+            color="yellow"
+            size="xs"
+            onClick={() => void handleCancelRun()}
+            loading={cancelling}
+          >
+            Cancel
+          </Button>
+        )}
         <Button variant="light" size="xs" onClick={() => void loadRun()}>
           Refresh
         </Button>
@@ -355,6 +456,14 @@ export default function TrackBRunDetail() {
                       {previewManifest.status}
                     </Badge>
                   )}
+                  <Button
+                    size="compact-xs"
+                    variant="default"
+                    loading={refreshingPreviewUrls}
+                    onClick={() => void refreshSignedUrls('Refreshing preview URLs...')}
+                  >
+                    Refresh URLs
+                  </Button>
                 </Group>
               </Group>
 
@@ -370,8 +479,20 @@ export default function TrackBRunDetail() {
                       onLoadSuccess={({ numPages }) => {
                         setPdfPageCount(numPages);
                         setPdfPageNumber((prev) => Math.min(Math.max(prev, 1), numPages));
+                        setPreviewManifestError(null);
                       }}
-                      onLoadError={(e) => setPreviewManifestError(e.message)}
+                      onLoadError={(e) => {
+                        const message = e instanceof Error ? e.message : String(e);
+                        setPreviewManifestError(message);
+                        if (
+                          pdfUrl &&
+                          shouldRefreshSignedUrls(message) &&
+                          pdfRefreshAttemptedRef.current !== pdfUrl
+                        ) {
+                          pdfRefreshAttemptedRef.current = pdfUrl;
+                          void refreshSignedUrls('Preview URL expired. Refreshing signed URLs...');
+                        }
+                      }}
                     >
                       <Page pageNumber={pdfPageNumber} width={pdfRenderWidth} />
                     </Document>

@@ -8,6 +8,7 @@ import {
   DOC_STATUS_EXECUTION_ORDER,
   computeStepDurationsMs,
   buildPreviewManifest,
+  buildPreviewPdfBytesFromElements,
   buildChunksFromPartitionElements,
   buildDeterministicChunkEmbeddings,
   parsePositiveIntEnv,
@@ -337,6 +338,56 @@ Deno.test("buildPreviewManifest marks non-pdf sources as unavailable", () => {
   });
   assertEquals(out.status, "unavailable");
   assertEquals(out.preview_type, "none");
+});
+
+Deno.test("buildPreviewManifest marks non-pdf sources ready when preview_pdf key exists", () => {
+  const out = buildPreviewManifest({
+    source_type: "docx",
+    source_locator: "uploads/a.docx",
+    preview_pdf_storage_key:
+      "workspace_b/ws/runs/run/doc/preview.pdf",
+  });
+  assertEquals(out.status, "ready");
+  assertEquals(out.preview_type, "preview_pdf");
+  assertEquals(
+    out.preview_pdf_storage_key,
+    "workspace_b/ws/runs/run/doc/preview.pdf",
+  );
+});
+
+Deno.test("buildPreviewPdfBytesFromElements returns a minimal PDF payload", () => {
+  const bytes = buildPreviewPdfBytesFromElements({
+    source_uid:
+      "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+    source_type: "docx",
+    source_locator: "uploads/a.docx",
+    doc_title: "Preview Doc",
+    elements: [
+      {
+        raw_element_type: "Title",
+        text: "Preview Title",
+        raw_element_id: "a",
+        page_number: 1,
+        metadata_json: {},
+        coordinates_json: null,
+        raw_payload: { type: "Title", text: "Preview Title" },
+      },
+      {
+        raw_element_type: "NarrativeText",
+        text: "Preview body content for generated PDF artifact.",
+        raw_element_id: "b",
+        page_number: 1,
+        metadata_json: {},
+        coordinates_json: null,
+        raw_payload: { type: "NarrativeText", text: "Preview body content." },
+      },
+    ],
+  });
+  const text = new TextDecoder().decode(bytes);
+  assertEquals(text.startsWith("%PDF-1.4"), true);
+  assertMatch(text, /Track B Preview/);
+  assertMatch(text, /Preview Doc/);
+  assertMatch(text, /xref/);
 });
 
 Deno.test("handleTrackBWorkerRequest rejects unauthorized worker key", async () => {

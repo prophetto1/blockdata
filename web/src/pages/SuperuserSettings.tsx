@@ -253,6 +253,7 @@ export default function SuperuserSettings() {
               <NavLink
                 key={category.id}
                 label={category.label}
+                py={6}
                 leftSection={category.icon}
                 rightSection={
                   category.id === 'audit'
@@ -261,6 +262,10 @@ export default function SuperuserSettings() {
                 }
                 active={selectedCategory === category.id}
                 onClick={() => setSelectedCategory(category.id)}
+                styles={{
+                  root: { minHeight: 40 },
+                  label: { fontSize: '13px', lineHeight: 1.2 },
+                }}
               />
             ))}
           </Card>

@@ -1,6 +1,5 @@
 import type { Icon } from '@tabler/icons-react';
 import {
-  IconBook,
   IconBrain,
   IconFolderPlus,
   IconHome2,
@@ -24,17 +23,19 @@ export type NavGroup = {
 
 export const NAV_GROUPS: NavGroup[] = [
   {
-    label: 'Workspace',
+    label: 'Track A',
     items: [
-      { label: 'Home', icon: IconHome2, path: '/app' },
+      { label: 'Workspace', icon: IconHome2, path: '/app' },
       { label: 'Projects', icon: IconFolderPlus, path: '/app/projects' },
       { label: 'User Schemas', icon: IconSchema, path: '/app/schemas' },
+      { label: 'Schema Library', icon: IconSchema, path: '/app/schemas/templates' },
     ],
   },
   {
-    label: 'Library',
+    label: 'Track B',
     items: [
-      { label: 'Schema Library', icon: IconBook, path: '/app/schemas/templates' },
+      { label: 'Workspace', icon: IconFolderPlus, path: '/app/track-b/workspace' },
+      { label: 'Pipeline', icon: IconSchema, path: '/app/track-b/pipeline' },
     ],
   },
   {

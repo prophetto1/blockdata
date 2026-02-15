@@ -1,47 +1,58 @@
-import { Box, NavLink, Text } from '@mantine/core';
+import { Box, Divider, NavLink, Text, UnstyledButton } from '@mantine/core';
+import { IconExternalLink, IconLogout } from '@tabler/icons-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { NAV_GROUPS } from '@/components/shell/nav-config';
 
 type LeftRailProps = {
   onNavigate?: () => void;
+  userLabel?: string;
+  onSignOut?: () => void | Promise<void>;
 };
 
-export function LeftRail({ onNavigate }: LeftRailProps) {
+export function LeftRail({ onNavigate, userLabel, onSignOut }: LeftRailProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const isTemplatesPath = location.pathname.startsWith('/app/schemas/templates');
+  const isProjectTrackBPath = /^\/app\/projects\/[^/]+\/track-b(\/.*)?$/.test(location.pathname);
   const getGroupKey = (label: string) => label.toLowerCase().replace(/\s+/g, '-');
 
+  const isItemActive = (path: string): boolean => {
+    if (path === '/app') return location.pathname === '/app';
+    if (path === '/app/projects') return location.pathname.startsWith('/app/projects') && !isProjectTrackBPath;
+    if (path === '/app/schemas') return location.pathname.startsWith('/app/schemas') && !isTemplatesPath;
+    if (path === '/app/schemas/templates') return isTemplatesPath;
+    if (path === '/app/track-b/workspace') {
+      return location.pathname === path ||
+        location.pathname === '/app/track-b' ||
+        isProjectTrackBPath && !location.pathname.includes('/track-b/runs/');
+    }
+    if (path === '/app/track-b/pipeline') {
+      return location.pathname === path || location.pathname.includes('/track-b/runs/');
+    }
+    return location.pathname.startsWith(path);
+  };
+
   return (
-    <Box mt="xs" className="left-rail">
+    <Box mt={2} className="left-rail" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       {NAV_GROUPS.map((group, groupIndex) => (
         <Box
           key={group.label}
-          mt={groupIndex === 0 ? 0 : 'md'}
+          mt={groupIndex === 0 ? 0 : 8}
           className={groupIndex === 0 ? undefined : 'left-rail-group'}
           data-group={getGroupKey(group.label)}
         >
-          <Text px="sm" mb={6} className="left-rail-heading">
+          <Text px="xs" mb={2} className="left-rail-heading">
             {group.label}
           </Text>
           {group.items.map((item) => (
             <NavLink
               key={item.path}
               label={item.label}
+              leftSection={<item.icon size={15} stroke={1.8} />}
               className="left-rail-link"
-              px="sm"
-              py={5}
-              active={
-                item.path === '/app'
-                  ? location.pathname === '/app'
-                  : item.path === '/app/projects'
-                    ? location.pathname.startsWith('/app/projects')
-                  : item.path === '/app/schemas'
-                    ? location.pathname.startsWith('/app/schemas') && !isTemplatesPath
-                  : item.path === '/app/schemas/templates'
-                    ? isTemplatesPath
-                  : location.pathname.startsWith(item.path)
-              }
+              px="xs"
+              py={3}
+              active={isItemActive(item.path)}
               onClick={() => {
                 navigate(item.path);
                 onNavigate?.();
@@ -52,15 +63,39 @@ export function LeftRail({ onNavigate }: LeftRailProps) {
       ))}
       <NavLink
         label="Docs"
+        leftSection={<IconExternalLink size={15} stroke={1.8} />}
         className="left-rail-link"
-        px="sm"
-        py={5}
+        px="xs"
+        py={3}
         component="a"
         href="/docs"
         target="_blank"
-        mt="xs"
-        style={{ opacity: 0.84 }}
+        mt={4}
+        style={{ opacity: 0.7 }}
       />
+
+      {(userLabel || onSignOut) && (
+        <Box mt="auto" pt="md">
+          <Divider mb="xs" />
+          {userLabel && (
+            <Text px="xs" size="xs" c="dimmed" truncate>
+              {userLabel}
+            </Text>
+          )}
+          {onSignOut && (
+            <UnstyledButton
+              px="xs"
+              py={4}
+              mt={4}
+              onClick={onSignOut}
+              style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%' }}
+            >
+              <IconLogout size={14} stroke={1.8} style={{ opacity: 0.5 }} />
+              <Text size="xs" c="dimmed">Sign out</Text>
+            </UnstyledButton>
+          )}
+        </Box>
+      )}
     </Box>
   );
 }

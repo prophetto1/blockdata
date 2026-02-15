@@ -24,6 +24,9 @@ import SchemaTemplates from '@/pages/SchemaTemplates';
 import SchemaWizard from '@/pages/SchemaWizard';
 import RunDetail from '@/pages/RunDetail';
 import TrackBRunDetail from '@/pages/TrackBRunDetail';
+import TrackBWorkbench from '@/pages/TrackBWorkbench';
+import TrackBWorkspace from '@/pages/TrackBWorkspace';
+import TrackBPipeline from '@/pages/TrackBPipeline';
 import Settings from '@/pages/Settings';
 import SuperuserSettings from '@/pages/SuperuserSettings';
 import LoginSplit from '@/pages/LoginSplit';
@@ -82,6 +85,11 @@ export const router = createBrowserRouter([
           { path: '/app/projects/:projectId/upload', element: <Upload /> },
           { path: '/app/projects/:projectId/documents/:sourceUid', element: <DocumentDetail /> },
           { path: '/app/projects/:projectId/runs/:runId', element: <RunDetail /> },
+          { path: '/app/track-b', element: <Navigate to="/app/track-b/workspace" replace /> },
+          { path: '/app/track-b/workspace', element: <TrackBWorkspace /> },
+          { path: '/app/track-b/pipeline', element: <TrackBPipeline /> },
+          { path: '/app/projects/:projectId/track-b', element: <TrackBWorkbench /> },
+          { path: '/app/projects/:projectId/track-b/workbench', element: <TrackBWorkbench /> },
           { path: '/app/projects/:projectId/track-b/runs/:runUid', element: <TrackBRunDetail /> },
 
           // Global schemas (not project-scoped)
