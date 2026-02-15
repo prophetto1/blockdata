@@ -1,0 +1,14 @@
+[project]
+name = "unstructured-track-service"
+version = "0.1.0"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+  "fastapi>=0.110",
+  "uvicorn[standard]>=0.27",
+  "pydantic>=2.6",
+  "unstructured-client>=0.42",
+  "unstructured>=0.18",
+]
+
+[tool.uvicorn]
+factory = false

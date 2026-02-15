@@ -12,7 +12,7 @@ export function concatBytes(parts: Uint8Array[]): Uint8Array {
 }
 
 export async function sha256Hex(bytes: Uint8Array): Promise<string> {
-  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  const digest = await crypto.subtle.digest("SHA-256", bytes as BufferSource);
   return toHex(new Uint8Array(digest));
 }
 
@@ -25,4 +25,3 @@ function toHex(bytes: Uint8Array): string {
   for (const b of bytes) out += b.toString(16).padStart(2, "0");
   return out;
 }
-

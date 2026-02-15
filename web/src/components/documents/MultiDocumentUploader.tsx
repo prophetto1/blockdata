@@ -22,7 +22,7 @@ type UploadEntry = {
 
 type MultiDocumentUploaderProps = {
   projectId: string;
-  title?: string;
+  title?: string | null;
   subtitle?: string | null;
   maxWidth?: number | string;
   framed?: boolean;
@@ -270,9 +270,81 @@ export function MultiDocumentUploader({
     }
   };
 
+  const openFilePicker = () => {
+    if (!uploading) inputRef.current?.click();
+  };
+
+  const queueRows = entries.map((entry) => {
+    const status = statuses[entry.id] ?? 'ready';
+    const message = messages[entry.id];
+
+    return (
+      <Paper
+        key={entry.id}
+        withBorder
+        p="sm"
+        radius="sm"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <Group justify="space-between" align="flex-start" wrap="nowrap">
+          <Stack gap={2} style={{ minWidth: 0 }}>
+            <Text size="sm" fw={500} style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {entry.file.name}
+            </Text>
+            <Text size="xs" c="dimmed">
+              {formatBytes(entry.file.size)}
+            </Text>
+            {message && (
+              <Text size="xs" c={status === 'failed' ? 'red' : 'dimmed'}>
+                {message}
+              </Text>
+            )}
+          </Stack>
+
+          <Group gap="xs">
+            <Badge variant="light" color={statusColor[status]}>
+              {status}
+            </Badge>
+            {status === 'failed' && !uploading && (
+              <Button
+                size="compact-xs"
+                variant="light"
+                onClick={async (event) => {
+                  event.stopPropagation();
+                  try {
+                    await uploadOne(entry);
+                  } catch (e) {
+                    setStatuses((prev) => ({ ...prev, [entry.id]: 'failed' }));
+                    setMessages((prev) => ({
+                      ...prev,
+                      [entry.id]: e instanceof Error ? e.message : String(e),
+                    }));
+                  }
+                }}
+              >
+                Retry
+              </Button>
+            )}
+            <ActionIcon
+              variant="subtle"
+              color="gray"
+              disabled={uploading || status === 'uploading'}
+              onClick={(event) => {
+                event.stopPropagation();
+                removeEntry(entry.id);
+              }}
+            >
+              <IconX size={14} />
+            </ActionIcon>
+          </Group>
+        </Group>
+      </Paper>
+    );
+  });
+
   const content = (
     <Stack gap="md">
-        <Text fw={600} size="lg">{title}</Text>
+        {title ? <Text fw={600} size="lg">{title}</Text> : null}
         {subtitleText ? (
           <Text size="sm" c="dimmed">
             {subtitleText}
@@ -291,12 +363,10 @@ export function MultiDocumentUploader({
             aspectRatio: dropzoneSquare ? '1 / 1' : undefined,
             minHeight: dropzoneSquare ? 320 : undefined,
             display: dropzoneSquare ? 'flex' : undefined,
-            alignItems: dropzoneSquare ? 'center' : undefined,
-            justifyContent: dropzoneSquare ? 'center' : undefined,
+            alignItems: dropzoneSquare ? (entries.length === 0 ? 'center' : 'stretch') : undefined,
+            justifyContent: dropzoneSquare ? (entries.length === 0 ? 'center' : 'flex-start') : undefined,
           }}
-          onClick={() => {
-            if (!uploading) inputRef.current?.click();
-          }}
+          onClick={openFilePicker}
           onDragEnter={(event) => {
             event.preventDefault();
             if (!uploading) setDragActive(true);
@@ -310,21 +380,55 @@ export function MultiDocumentUploader({
           }}
           onDrop={onDrop}
         >
-          <Stack align="center" gap="xs" style={dropzoneSquare ? { width: '100%' } : undefined}>
-            <IconFileText size={28} />
-            <Text size="sm" fw={500}>Drop files to add them</Text>
-            <Text size="xs" c="dimmed">
-              Supported: {allowedExtensions.join(', ')}
-            </Text>
-            <Button variant="light" size="xs" disabled={uploading}>
-              Browse files
-            </Button>
-            {entries.length > 0 ? (
-              <Badge variant="light" color="blue" mt={6}>
-                Queue: {entries.length} file(s) selected
-              </Badge>
-            ) : null}
-          </Stack>
+          {entries.length === 0 ? (
+            <Stack align="center" gap="xs" style={dropzoneSquare ? { width: '100%' } : undefined}>
+              <IconFileText size={28} />
+              <Text size="sm" fw={500}>Drop files to add them</Text>
+              <Text size="xs" c="dimmed">
+                Supported: {allowedExtensions.join(', ')}
+              </Text>
+              <Button
+                variant="light"
+                size="xs"
+                disabled={uploading}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  openFilePicker();
+                }}
+              >
+                Browse files
+              </Button>
+            </Stack>
+          ) : (
+            <Stack gap="xs" style={{ width: '100%' }}>
+              <Group justify="space-between" align="center">
+                <Text size="xs" c="dimmed" fw={600}>
+                  Upload queue
+                </Text>
+                <Badge variant="light" color="blue">
+                  {entries.length} file(s) selected
+                </Badge>
+              </Group>
+
+              <Stack gap="xs" style={{ width: '100%', maxHeight: dropzoneSquare ? 240 : 260, overflowY: 'auto' }}>
+                {queueRows}
+              </Stack>
+
+              <Group justify="center">
+                <Button
+                  variant="light"
+                  size="xs"
+                  disabled={uploading}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    openFilePicker();
+                  }}
+                >
+                  Add more files
+                </Button>
+              </Group>
+            </Stack>
+          )}
           <input
             ref={inputRef}
             type="file"
@@ -334,70 +438,6 @@ export function MultiDocumentUploader({
             onChange={onFileInputChange}
           />
         </Paper>
-
-        {entries.length > 0 && (
-          <Stack gap="xs">
-            <Text size="xs" c="dimmed" fw={600}>
-              Upload queue
-            </Text>
-            {entries.map((entry) => {
-              const status = statuses[entry.id] ?? 'ready';
-              const message = messages[entry.id];
-              return (
-                <Paper key={entry.id} withBorder p="sm" radius="sm">
-                  <Group justify="space-between" align="flex-start" wrap="nowrap">
-                    <Stack gap={2} style={{ minWidth: 0 }}>
-                      <Text size="sm" fw={500} style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {entry.file.name}
-                      </Text>
-                      <Text size="xs" c="dimmed">
-                        {formatBytes(entry.file.size)}
-                      </Text>
-                      {message && (
-                        <Text size="xs" c={status === 'failed' ? 'red' : 'dimmed'}>
-                          {message}
-                        </Text>
-                      )}
-                    </Stack>
-
-                    <Group gap="xs">
-                      <Badge variant="light" color={statusColor[status]}>
-                        {status}
-                      </Badge>
-                      {status === 'failed' && !uploading && (
-                        <Button
-                          size="compact-xs"
-                          variant="light"
-                          onClick={async () => {
-                            try {
-                              await uploadOne(entry);
-                            } catch (e) {
-                              setStatuses((prev) => ({ ...prev, [entry.id]: 'failed' }));
-                              setMessages((prev) => ({
-                                ...prev,
-                                [entry.id]: e instanceof Error ? e.message : String(e),
-                              }));
-                            }
-                          }}
-                        >
-                          Retry
-                        </Button>
-                      )}
-                      <ActionIcon
-                        variant="subtle"
-                        color="gray"
-                        disabled={uploading || status === 'uploading'}
-                        onClick={() => removeEntry(entry.id)}
-                      >
-                        <IconX size={14} />
-                      </ActionIcon>
-                    </Group>
-                  </Group>
-                </Paper>
-              );
-            })}
-          </Stack>
-        )}
 
         {error && <ErrorAlert message={error} />}
 

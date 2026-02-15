@@ -217,7 +217,7 @@ Add:
    - `workflow_uid` (fk)
    - `project_id`
    - `owner_id`
-   - `status` (`queued|running|success|failed|cancelled`)
+   - `status` (`queued|running|partial_success|success|failed|cancelled`)
    - `started_at`, `ended_at`
    - `error`
 3. `unstructured_run_docs_v2`
@@ -518,15 +518,21 @@ Deliverables:
    - OCR enrichment
    - table to HTML normalization
 2. Mark proprietary parity gaps explicitly in UI labels.
-3. Run enrichers in Track B worker path using explicit prompt templates and provider adapters.
+3. Run enrichers in Track B worker path using hybrid execution:
+   - OSS baseline where available (`table_to_html`, baseline OCR from partition output).
+   - provider-backed upgrade mode for optional quality improvements.
 
 Acceptance:
 
 - Enrichment nodes are functional and produce persisted artifacts.
 
-## 13.1 Enrichment implementation path (fixed)
+### 11.1 Enrichment implementation path (fixed)
 
-Enrichment nodes are not assumed from OSS libs; they are explicit LLM inference steps.
+Enrichment nodes use a hybrid model:
+
+1. `table_to_html` baseline uses OSS deterministic conversion (`cells_to_html`), with optional provider upgrade path.
+2. `ocr_enrichment` baseline uses partition/OCR output, with optional provider upgrade path.
+3. `image_summarizer` is provider-backed.
 
 Execution path:
 

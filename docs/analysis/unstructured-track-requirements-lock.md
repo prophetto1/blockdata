@@ -382,13 +382,26 @@ Acceptance condition:
 
 ## 3.9 Enrichment requirements
 
-### REQ-ENRICH-001: Enrichment nodes are explicit LLM/inference steps
+### REQ-ENRICH-001: Enrichment implementation is hybrid (OSS baseline + provider upgrades)
 
-Nodes such as image summarization, OCR enrichment, and table-to-HTML are implemented as explicit provider-backed steps, not assumed from OSS libraries.
+Track B enrichment behavior uses a hybrid model, not a single provider-only model.
+
+Locked node behavior:
+
+1. `table_to_html`:
+   - baseline uses deterministic OSS conversion (`cells_to_html`) from `unstructured-inference`.
+   - optional provider-backed upgrade path is allowed for difficult tables.
+2. `image_summarizer`:
+   - provider-backed vision step (no OSS baseline in analyzed repos).
+3. `ocr_enrichment`:
+   - baseline OCR is partition output path.
+   - optional provider-backed generative OCR upgrade is allowed for low-quality OCR cases.
 
 Acceptance condition:
 
-- Node execution path includes prompt/template + provider adapter + artifact persistence.
+1. Each node declares baseline mode and optional upgraded mode.
+2. Baseline outputs persist without requiring provider calls.
+3. Upgrade outputs persist as separate artifacts with clear provenance.
 
 ### REQ-ENRICH-002: Enrichment failures are isolated
 
@@ -397,6 +410,16 @@ Per-doc/per-node failures should not corrupt earlier successful outputs.
 Acceptance condition:
 
 - Run state and artifacts accurately reflect partial success/failure.
+
+### REQ-ENRICH-003: Provider upgrade path is pluggable and prompt-versioned
+
+Provider-backed upgrades must be behind a shared adapter contract and versioned prompt/config bundle.
+
+Acceptance condition:
+
+1. A shared `EnrichmentAdapter` contract exists for provider steps.
+2. Prompt templates are versioned and node-scoped.
+3. Provider failure never invalidates baseline artifacts already produced.
 
 ## 3.10 Batch and execution behavior requirements
 
@@ -836,7 +859,7 @@ All items below should be green before development starts in each area.
 6. `SCHEMA`: flat User Schema JSON contract approved.
 7. `TAXONOMY`: mapped enum + raw taxonomy persistence contract approved.
 8. `PREVIEW`: visual-preview-by-default + exception policy approved.
-9. `ENRICH`: provider adapter path approved.
+9. `ENRICH`: hybrid baseline + provider upgrade path approved.
 10. `BATCH`: multi-doc run behavior and per-doc status model approved.
 11. `API`: run contracts and idempotency rules approved.
 12. `STATE`: run/doc state machines approved.

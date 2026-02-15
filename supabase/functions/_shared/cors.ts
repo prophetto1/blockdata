@@ -1,7 +1,7 @@
 export const DEFAULT_CORS_HEADERS: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-conversion-service-key",
+    "authorization, x-client-info, apikey, content-type, x-conversion-service-key, x-track-b-worker-key",
   "Access-Control-Allow-Methods": "GET, POST, PATCH, DELETE, OPTIONS",
 };
 
@@ -17,6 +17,8 @@ export function withCorsHeaders(
 
 export function corsPreflight(req: Request): Response | null {
   if (req.method !== "OPTIONS") return null;
-  return new Response(null, { status: 204, headers: withCorsHeaders(undefined) });
+  return new Response(null, {
+    status: 204,
+    headers: withCorsHeaders(undefined),
+  });
 }
-

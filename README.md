@@ -350,7 +350,7 @@ Edge functions deploy to Supabase's Deno runtime. Database migrations are applie
 
 ```bash
 supabase db push           # Apply migrations to remote
-supabase functions deploy   # Deploy all edge functions
+supabase functions deploy --no-verify-jwt   # Deploy all edge functions (avoid gateway JWT drift)
 ```
 
 ### Conversion Service → Any Container Host
