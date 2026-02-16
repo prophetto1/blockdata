@@ -19,6 +19,7 @@ import {
   SegmentedControl,
   Select,
   Stack,
+  Switch,
   Text,
   TextInput,
   useComputedColorScheme,
@@ -89,8 +90,101 @@ type ResizeDragState = {
   startResultWidth: number;
 };
 
+type CoordinatesPayload = {
+  points: Array<[number, number]>;
+  layout_width: number | null;
+  layout_height: number | null;
+};
+
+type FormattedElement = {
+  id: string;
+  text: string;
+  elementType: string;
+  pageNumber: number | null;
+  coordinates: CoordinatesPayload | null;
+};
+
+type PdfPageProxyLike = {
+  getViewport: (params: { scale: number }) => { width: number; height: number };
+};
+
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
+}
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  return value as Record<string, unknown>;
+}
+
+function toFiniteNumber(value: unknown): number | null {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string') {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
+}
+
+function coerceCoordinatePoints(value: unknown): Array<[number, number]> {
+  if (!Array.isArray(value)) return [];
+  const out: Array<[number, number]> = [];
+  for (const point of value) {
+    if (!Array.isArray(point) || point.length < 2) continue;
+    const x = toFiniteNumber(point[0]);
+    const y = toFiniteNumber(point[1]);
+    if (x === null || y === null) continue;
+    out.push([x, y]);
+  }
+  return out;
+}
+
+function extractElementCoordinates(element: Record<string, unknown>): CoordinatesPayload | null {
+  const metadata = asRecord(element.metadata);
+  const directCoordinates =
+    asRecord(element.coordinates_json) ??
+    asRecord(element.coordinates) ??
+    (metadata ? asRecord(metadata.coordinates) : null);
+  if (!directCoordinates) return null;
+
+  const points = coerceCoordinatePoints(directCoordinates.points);
+  if (points.length < 2) return null;
+
+  const layoutWidth = toFiniteNumber(directCoordinates.layout_width);
+  const layoutHeight = toFiniteNumber(directCoordinates.layout_height);
+  return {
+    points,
+    layout_width: layoutWidth,
+    layout_height: layoutHeight,
+  };
+}
+
+function extractPageNumber(element: Record<string, unknown>): number | null {
+  const metadata = asRecord(element.metadata);
+  const page =
+    toFiniteNumber(element.page_number) ??
+    (metadata ? toFiniteNumber(metadata.page_number) : null);
+  if (page === null) return null;
+  const pageInt = Math.trunc(page);
+  return pageInt >= 1 ? pageInt : null;
+}
+
+function getBoundingRect(points: Array<[number, number]>) {
+  let minX = Number.POSITIVE_INFINITY;
+  let minY = Number.POSITIVE_INFINITY;
+  let maxX = Number.NEGATIVE_INFINITY;
+  let maxY = Number.NEGATIVE_INFINITY;
+  for (const [x, y] of points) {
+    minX = Math.min(minX, x);
+    minY = Math.min(minY, y);
+    maxX = Math.max(maxX, x);
+    maxY = Math.max(maxY, y);
+  }
+  if (!Number.isFinite(minX) || !Number.isFinite(minY) || !Number.isFinite(maxX) || !Number.isFinite(maxY)) {
+    return null;
+  }
+  if (maxX <= minX || maxY <= minY) return null;
+  return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
 }
 
 function isSchemaUid(value: string): boolean {
@@ -142,10 +236,14 @@ export default function TrackBWorkbench() {
   const [previewManifestLoading, setPreviewManifestLoading] = useState(false);
   const [pdfPageCount, setPdfPageCount] = useState(0);
   const [pdfPageNumber, setPdfPageNumber] = useState(1);
+  const [pdfPageSize, setPdfPageSize] = useState<{ width: number; height: number } | null>(null);
+  const [showAllBoundingBoxes, setShowAllBoundingBoxes] = useState(true);
   const [resultMode, setResultMode] = useState<'formatted' | 'json'>('formatted');
   const [elementsPayload, setElementsPayload] = useState<unknown>(null);
   const [elementsLoading, setElementsLoading] = useState(false);
   const [elementsError, setElementsError] = useState<string | null>(null);
+  const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
+  const resultGridRef = useRef<AgGridReact<{ id: string; text: string; pageNumber: number | null; elementType: string }>>(null);
   const [resultPaneWidth, setResultPaneWidth] = useState(320);
   const resizeDragRef = useRef<ResizeDragState | null>(null);
 
@@ -321,6 +419,8 @@ export default function TrackBWorkbench() {
   useEffect(() => {
     setPdfPageNumber(1);
     setPdfPageCount(0);
+    setPdfPageSize(null);
+    setSelectedElementId(null);
   }, [selectedSourceUid]);
 
   useEffect(() => {
@@ -391,13 +491,75 @@ export default function TrackBWorkbench() {
   const runDocStatus = selectedRunDoc?.status ?? 'no_doc';
   const pdfRenderWidth = Math.max(previewWidth - 12, 320);
 
-  const formattedElements = useMemo(() => {
-    if (!Array.isArray(elementsPayload)) return [];
-    return elementsPayload
-      .map((item) => (typeof item === 'object' && item ? item as Record<string, unknown> : null))
-      .filter((item): item is Record<string, unknown> => !!item)
-      .slice(0, 32);
+  const formattedElements = useMemo<FormattedElement[]>(() => {
+    const baseArray = Array.isArray(elementsPayload)
+      ? elementsPayload
+      : (asRecord(elementsPayload)?.elements && Array.isArray(asRecord(elementsPayload)?.elements)
+        ? asRecord(elementsPayload)?.elements as unknown[]
+        : []);
+
+    const out: FormattedElement[] = [];
+    for (let idx = 0; idx < baseArray.length; idx += 1) {
+      const element = asRecord(baseArray[idx]);
+      if (!element) continue;
+      const text = typeof element.text === 'string' ? element.text : JSON.stringify(element);
+      const elementType =
+        (typeof element.raw_element_type === 'string' && element.raw_element_type) ||
+        (typeof element.type === 'string' && element.type) ||
+        'Unknown';
+      out.push({
+        id: String(idx),
+        text,
+        elementType,
+        pageNumber: extractPageNumber(element),
+        coordinates: extractElementCoordinates(element),
+      });
+    }
+    return out;
   }, [elementsPayload]);
+
+  const currentPageElements = useMemo(() => (
+    formattedElements.filter((element) => element.pageNumber === pdfPageNumber)
+  ), [formattedElements, pdfPageNumber]);
+
+  const currentPageBoxes = useMemo(() => {
+    if (pdfPageNumber < 1) return [];
+    const boxes: Array<{
+      id: string;
+      left: number;
+      top: number;
+      width: number;
+      height: number;
+      elementType: string;
+    }> = [];
+
+    for (const element of currentPageElements) {
+      if (!element.coordinates) continue;
+      const rect = getBoundingRect(element.coordinates.points);
+      if (!rect) continue;
+
+      const coordWidth = element.coordinates.layout_width ?? pdfPageSize?.width ?? null;
+      const coordHeight = element.coordinates.layout_height ?? pdfPageSize?.height ?? null;
+      if (!coordWidth || !coordHeight || coordWidth <= 0 || coordHeight <= 0) continue;
+
+      const scaleX = pdfRenderWidth / coordWidth;
+      const renderHeight = pdfPageSize
+        ? Math.max((pdfPageSize.height * pdfRenderWidth) / pdfPageSize.width, 1)
+        : Math.max((coordHeight * pdfRenderWidth) / coordWidth, 1);
+      const scaleY = renderHeight / coordHeight;
+
+      boxes.push({
+        id: element.id,
+        left: rect.x * scaleX,
+        top: rect.y * scaleY,
+        width: rect.width * scaleX,
+        height: rect.height * scaleY,
+        elementType: element.elementType,
+      });
+    }
+
+    return boxes;
+  }, [currentPageElements, pdfPageNumber, pdfPageSize, pdfRenderWidth]);
 
   const gridTheme = useMemo(() => themeQuartz.withParams({
     rowVerticalPaddingScale: 0.5,
@@ -416,13 +578,41 @@ export default function TrackBWorkbench() {
     filter: false,
   }), []);
 
-  const formattedResultRows = useMemo(() => formattedElements.map((element, idx) => {
-    const text = typeof element.text === 'string' ? element.text : JSON.stringify(element);
-    return {
-      id: String(idx),
-      text,
-    };
-  }), [formattedElements]);
+  const formattedResultRows = useMemo(
+    () =>
+      formattedElements.map((element) => ({
+        id: element.id,
+        text: element.text,
+        pageNumber: element.pageNumber,
+        elementType: element.elementType,
+      })),
+    [formattedElements],
+  );
+
+  useEffect(() => {
+    if (formattedElements.length === 0) {
+      setSelectedElementId(null);
+      return;
+    }
+    if (selectedElementId && formattedElements.some((element) => element.id === selectedElementId)) return;
+    setSelectedElementId(null);
+  }, [formattedElements, selectedElementId]);
+
+  useEffect(() => {
+    if (!selectedElementId) return;
+    const selected = formattedElements.find((element) => element.id === selectedElementId);
+    if (!selected?.pageNumber) return;
+    if (selected.pageNumber === pdfPageNumber) return;
+    setPdfPageNumber(selected.pageNumber);
+  }, [formattedElements, pdfPageNumber, selectedElementId]);
+
+  useEffect(() => {
+    const api = resultGridRef.current?.api;
+    if (!api || !selectedElementId) return;
+    const idx = formattedResultRows.findIndex((row) => row.id === selectedElementId);
+    if (idx >= 0) api.ensureIndexVisible(idx, 'middle');
+    api.redrawRows();
+  }, [formattedResultRows, selectedElementId]);
 
   const getMaxResultWidth = useCallback((totalWidth: number) => {
     const maxByAvailableSpace = totalWidth - FILES_PANE_WIDTH - RESIZE_HANDLE_WIDTH - PREVIEW_MIN_WIDTH;
@@ -502,14 +692,24 @@ export default function TrackBWorkbench() {
     });
   };
 
-  const resultColumnDefs = useMemo<ColDef<{ id: string; text: string }>[]>(() => [
+  const resultColumnDefs = useMemo<ColDef<{ id: string; text: string; pageNumber: number | null; elementType: string }>[]>(() => [
     {
       headerName: '',
       field: 'text',
       flex: 1,
-      minWidth: 180,
-      cellRenderer: (params: ICellRendererParams<{ id: string; text: string }>) => (
-        <Text size="xs" lineClamp={4}>{params.data?.text ?? ''}</Text>
+      minWidth: 220,
+      cellRenderer: (params: ICellRendererParams<{ id: string; text: string; pageNumber: number | null; elementType: string }>) => (
+        <Stack gap={4} py={4}>
+          <Group gap={6}>
+            <Badge size="xs" variant="light">
+              {params.data?.elementType ?? 'Unknown'}
+            </Badge>
+            <Text size="10px" c="dimmed">
+              {params.data?.pageNumber ? `Page ${params.data.pageNumber}` : 'Page --'}
+            </Text>
+          </Group>
+          <Text size="xs" lineClamp={4}>{params.data?.text ?? ''}</Text>
+        </Stack>
       ),
     },
   ], []);
@@ -838,6 +1038,15 @@ export default function TrackBWorkbench() {
             <Group justify="space-between" style={{ width: '100%' }}>
               <Text fw={600} size="sm">Preview</Text>
               <Group gap="xs">
+                <Text size="xs" c="dimmed">
+                  {currentPageBoxes.length} box{currentPageBoxes.length === 1 ? '' : 'es'}
+                </Text>
+                <Switch
+                  size="xs"
+                  checked={showAllBoundingBoxes}
+                  onChange={(event) => setShowAllBoundingBoxes(event.currentTarget.checked)}
+                  label="Show all"
+                />
                 {selectedRunUid && (
                   <Badge size="sm" variant="light" color={RUN_STATUS_COLOR[runs.find((r) => r.run_uid === selectedRunUid)?.status ?? 'queued'] ?? 'gray'}>
                     {runs.find((r) => r.run_uid === selectedRunUid)?.status ?? 'queued'}
@@ -862,7 +1071,60 @@ export default function TrackBWorkbench() {
                     }}
                     onLoadError={(e) => setPreviewManifestError(e.message)}
                   >
-                    <Page pageNumber={pdfPageNumber} width={pdfRenderWidth} />
+                    <div style={{ position: 'relative', width: pdfRenderWidth, maxWidth: '100%' }}>
+                      <Page
+                        pageNumber={pdfPageNumber}
+                        width={pdfRenderWidth}
+                        onLoadSuccess={(page: PdfPageProxyLike) => {
+                          const viewport = page.getViewport({ scale: 1 });
+                          setPdfPageSize({
+                            width: viewport.width,
+                            height: viewport.height,
+                          });
+                        }}
+                      />
+                      <div
+                        style={{
+                          position: 'absolute',
+                          inset: 0,
+                          pointerEvents: 'none',
+                          overflow: 'hidden',
+                        }}
+                      >
+                        {currentPageBoxes
+                          .filter((box) => showAllBoundingBoxes || box.id === selectedElementId)
+                          .map((box) => {
+                            const isSelected = box.id === selectedElementId;
+                            return (
+                              <div
+                                key={box.id}
+                                role="button"
+                                tabIndex={0}
+                                onClick={() => setSelectedElementId(box.id)}
+                                onKeyDown={(event) => {
+                                  if (event.key === 'Enter' || event.key === ' ') {
+                                    event.preventDefault();
+                                    setSelectedElementId(box.id);
+                                  }
+                                }}
+                                style={{
+                                  position: 'absolute',
+                                  left: box.left,
+                                  top: box.top,
+                                  width: box.width,
+                                  height: box.height,
+                                  border: `2px solid ${isSelected ? '#22c55e' : '#f59e0b'}`,
+                                  backgroundColor: isSelected ? 'rgba(34, 197, 94, 0.12)' : 'rgba(245, 158, 11, 0.10)',
+                                  pointerEvents: 'auto',
+                                  cursor: 'pointer',
+                                  boxSizing: 'border-box',
+                                }}
+                                title={`${box.elementType}`}
+                              />
+                            );
+                          })}
+                      </div>
+                    </div>
                   </Document>
                   <Group gap="xs">
                     <Button
@@ -973,15 +1235,25 @@ export default function TrackBWorkbench() {
               style={{ flex: 1, minHeight: 0, width: '100%' }}
             >
               <AgGridReact
+                ref={resultGridRef}
                 theme={gridTheme}
                 rowData={formattedResultRows}
                 columnDefs={resultColumnDefs}
                 defaultColDef={defaultColDef}
                 getRowId={(params) => params.data.id}
-                rowHeight={54}
+                rowHeight={72}
                 headerHeight={0}
                 animateRows={false}
                 domLayout="normal"
+                onRowClicked={(event) => {
+                  const rowId = event.data?.id;
+                  if (rowId) setSelectedElementId(rowId);
+                }}
+                getRowStyle={(params) => (
+                  params.data?.id === selectedElementId
+                    ? { background: isDark ? 'rgba(34, 197, 94, 0.16)' : 'rgba(34, 197, 94, 0.12)' }
+                    : undefined
+                )}
                 overlayNoRowsTemplate={`<span style="color: var(--mantine-color-dimmed);">${elementsError ?? 'No parsed result yet.'}</span>`}
               />
             </div>
