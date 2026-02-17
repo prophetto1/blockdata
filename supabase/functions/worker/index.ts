@@ -31,6 +31,14 @@ type BatchLlmCallResult = {
   usage: LlmUsage;
 };
 
+type PlatformLlmTransport = "vertex_ai" | "litellm_openai";
+
+type LlmRuntime = {
+  transport: PlatformLlmTransport;
+  litellm_base_url: string | null;
+  litellm_api_key: string | null;
+};
+
 function estimateTokensFromText(text: string): number {
   // 4 chars/token is a conservative rough estimate used only for pack sizing heuristics.
   return Math.ceil(text.length / 4);
@@ -50,6 +58,68 @@ function isLowCreditError(errorMessage: string): boolean {
   const msg = errorMessage.toLowerCase();
   return msg.includes("credit balance is too low") ||
     msg.includes("insufficient credits");
+}
+
+function normalizeTransport(value: unknown): PlatformLlmTransport {
+  return value === "litellm_openai" ? "litellm_openai" : "vertex_ai";
+}
+
+function buildLiteLlmChatEndpoint(baseUrl: string): string {
+  return `${baseUrl.replace(/\/+$/, "")}/chat/completions`;
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === "object" && !Array.isArray(value);
+}
+
+function parseToolArgumentsJson(raw: unknown): Record<string, unknown> {
+  if (typeof raw === "string") {
+    const parsed = JSON.parse(raw);
+    if (!isPlainObject(parsed)) throw new Error("LiteLLM tool arguments must be a JSON object");
+    return parsed;
+  }
+  if (!isPlainObject(raw)) throw new Error("LiteLLM tool arguments are missing");
+  return raw;
+}
+
+function parseLiteLlmToolPayload(
+  response: Record<string, unknown>,
+  expectedToolName: string,
+): Record<string, unknown> {
+  const choices = Array.isArray(response.choices) ? response.choices : [];
+  const firstChoice = isPlainObject(choices[0]) ? choices[0] : null;
+  const message = firstChoice && isPlainObject(firstChoice.message)
+    ? firstChoice.message
+    : null;
+  const toolCalls = message && Array.isArray(message.tool_calls) ? message.tool_calls : [];
+  if (toolCalls.length === 0) {
+    throw new Error("LiteLLM response has no tool_calls");
+  }
+
+  const selected = toolCalls.find((entry) => {
+    if (!isPlainObject(entry)) return false;
+    const fn = isPlainObject(entry.function) ? entry.function : null;
+    return fn?.name === expectedToolName;
+  }) ?? toolCalls[0];
+
+  if (!isPlainObject(selected)) {
+    throw new Error("LiteLLM tool_call entry is invalid");
+  }
+  const fn = isPlainObject(selected.function) ? selected.function : null;
+  if (!fn) {
+    throw new Error("LiteLLM tool_call.function is missing");
+  }
+  return parseToolArgumentsJson(fn.arguments);
+}
+
+function parseLiteLlmUsage(response: Record<string, unknown>): LlmUsage {
+  const usageRaw = isPlainObject(response.usage) ? response.usage : {};
+  return {
+    input_tokens: Number(usageRaw.prompt_tokens ?? 0),
+    output_tokens: Number(usageRaw.completion_tokens ?? 0),
+    cache_creation_input_tokens: Number(usageRaw.cache_creation_input_tokens ?? 0),
+    cache_read_input_tokens: Number(usageRaw.cache_read_input_tokens ?? 0),
+  };
 }
 
 function buildBatchUserMessage(
@@ -368,6 +438,7 @@ function json(status: number, body: unknown): Response {
 // â"€â"€ LLM call via Vertex AI Claude with tool_use for structured output â"€â"€
 
 async function callLLM(
+  llmRuntime: LlmRuntime,
   model: string,
   temperature: number,
   maxTokens: number,
@@ -387,6 +458,53 @@ async function callLLM(
       properties: schemaProperties,
     },
   };
+
+  if (llmRuntime.transport === "litellm_openai") {
+    const baseUrl = llmRuntime.litellm_base_url?.trim() ?? "";
+    if (!baseUrl) {
+      throw new Error("LiteLLM transport selected but models.platform_litellm_base_url is missing");
+    }
+    const endpoint = buildLiteLlmChatEndpoint(baseUrl);
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (llmRuntime.litellm_api_key?.trim()) {
+      headers.Authorization = `Bearer ${llmRuntime.litellm_api_key.trim()}`;
+    }
+
+    const resp = await fetch(endpoint, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        model,
+        temperature,
+        max_tokens: maxTokens,
+        messages: [
+          { role: "system", content: systemPrompt },
+          {
+            role: "user",
+            content: `${blockPrompt}\n\n---\n\nBlock type: ${blockType}\nBlock content:\n${blockContent}`,
+          },
+        ],
+        tools: [{
+          type: "function",
+          function: {
+            name: "extract_fields",
+            description: tool.description,
+            parameters: tool.input_schema,
+          },
+        }],
+        tool_choice: { type: "function", function: { name: "extract_fields" } },
+      }),
+    });
+    if (!resp.ok) {
+      const errText = await resp.text().catch(() => "");
+      throw new Error(`LiteLLM API ${resp.status}: ${errText.slice(0, 500)}`);
+    }
+    const responseJson = await resp.json() as Record<string, unknown>;
+    return {
+      data: parseLiteLlmToolPayload(responseJson, "extract_fields"),
+      usage: parseLiteLlmUsage(responseJson),
+    };
+  }
 
   const result = await callVertexClaude({
     model,
@@ -433,6 +551,7 @@ async function callLLM(
 }
 
 async function callLLMBatch(
+  llmRuntime: LlmRuntime,
   model: string,
   temperature: number,
   maxTokens: number,
@@ -464,6 +583,89 @@ async function callLLMBatch(
       required: ["results"],
     },
   };
+
+  if (llmRuntime.transport === "litellm_openai") {
+    const baseUrl = llmRuntime.litellm_base_url?.trim() ?? "";
+    if (!baseUrl) {
+      throw new Error("LiteLLM transport selected but models.platform_litellm_base_url is missing");
+    }
+    const endpoint = buildLiteLlmChatEndpoint(baseUrl);
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (llmRuntime.litellm_api_key?.trim()) {
+      headers.Authorization = `Bearer ${llmRuntime.litellm_api_key.trim()}`;
+    }
+
+    const resp = await fetch(endpoint, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        model,
+        temperature,
+        max_tokens: maxTokens,
+        messages: [
+          { role: "system", content: systemPrompt },
+          {
+            role: "user",
+            content: buildBatchUserMessage(blockPrompt, pack),
+          },
+        ],
+        tools: [{
+          type: "function",
+          function: {
+            name: "extract_fields_batch",
+            description: tool.description,
+            parameters: tool.input_schema,
+          },
+        }],
+        tool_choice: { type: "function", function: { name: "extract_fields_batch" } },
+      }),
+    });
+    if (!resp.ok) {
+      const errText = await resp.text().catch(() => "");
+      throw new Error(`LiteLLM API ${resp.status}: ${errText.slice(0, 500)}`);
+    }
+
+    const responseJson = await resp.json() as Record<string, unknown>;
+    const payload = parseLiteLlmToolPayload(responseJson, "extract_fields_batch");
+    const entries = Array.isArray(payload.results) ? payload.results : [];
+    const expectedBlockUids = pack.map((b) => b.block_uid);
+    const expectedSet = new Set(expectedBlockUids);
+    const resultsByBlockUid = new Map<string, Record<string, unknown>>();
+    const unexpectedBlockUids: string[] = [];
+    const duplicateBlockUids: string[] = [];
+
+    for (const entry of entries) {
+      if (!isPlainObject(entry)) continue;
+      const blockUid = typeof entry.block_uid === "string" ? entry.block_uid : "";
+      if (!blockUid) continue;
+      if (!expectedSet.has(blockUid)) {
+        unexpectedBlockUids.push(blockUid);
+        continue;
+      }
+      if (resultsByBlockUid.has(blockUid)) {
+        duplicateBlockUids.push(blockUid);
+        continue;
+      }
+      const cloned = { ...entry } as Record<string, unknown>;
+      delete cloned.block_uid;
+      resultsByBlockUid.set(blockUid, cloned);
+    }
+
+    const missingBlockUids = expectedBlockUids.filter((uid) => !resultsByBlockUid.has(uid));
+    const choices = Array.isArray(responseJson.choices) ? responseJson.choices : [];
+    const firstChoice = isPlainObject(choices[0]) ? choices[0] : null;
+    const finishReason = typeof firstChoice?.finish_reason === "string" ? firstChoice.finish_reason : null;
+
+    return {
+      resultsByBlockUid,
+      missingBlockUids,
+      unexpectedBlockUids,
+      duplicateBlockUids,
+      parseIssue: Array.isArray(payload.results) ? null : "missing_results_array",
+      stopReason: finishReason === "length" ? "max_tokens" : finishReason,
+      usage: parseLiteLlmUsage(responseJson),
+    };
+  }
 
   const result = await callVertexClaude({
     model,
@@ -701,6 +903,7 @@ Deno.serve(async (req) => {
 
     const runModelConfig = asObject(run.model_config) ?? {};
     const runPolicySnapshot = asObject(runModelConfig.policy_snapshot);
+    const snapshotModels = asObject(runPolicySnapshot?.models);
     const snapshotWorker = asObject(runPolicySnapshot?.worker);
     const snapshotPromptCaching = asObject(snapshotWorker?.prompt_caching);
     const snapshotBatching = asObject(snapshotWorker?.batching);
@@ -771,7 +974,8 @@ Deno.serve(async (req) => {
       });
     }
 
-    const schemaJsonb = run.schemas?.schema_jsonb as Record<string, unknown> | undefined;
+    const schemaRow = Array.isArray(run.schemas) ? run.schemas[0] : run.schemas;
+    const schemaJsonb = asObject((schemaRow as Record<string, unknown> | null | undefined)?.schema_jsonb);
     if (!schemaJsonb) {
       await releaseClaimed("Schema not found for run");
       return json(500, { error: "Schema not found for run" });
@@ -835,6 +1039,26 @@ Deno.serve(async (req) => {
         userDefaults.default_max_tokens ??
         4096,
     );
+    const llmRuntime: LlmRuntime = {
+      transport: normalizeTransport(
+        runModelConfig.transport ??
+          snapshotModels?.platform_llm_transport ??
+          getEnv("PLATFORM_LLM_TRANSPORT", "vertex_ai"),
+      ),
+      litellm_base_url:
+        (
+          (typeof runModelConfig.litellm_base_url === "string" ? runModelConfig.litellm_base_url : null) ??
+          (typeof snapshotModels?.platform_litellm_base_url === "string"
+            ? snapshotModels.platform_litellm_base_url
+            : null) ??
+          getEnv("PLATFORM_LITELLM_BASE_URL", "")
+        ).trim() || null,
+      litellm_api_key: getEnv("PLATFORM_LITELLM_API_KEY", "").trim() || null,
+    };
+    if (llmRuntime.transport === "litellm_openai" && !llmRuntime.litellm_base_url) {
+      await releaseClaimed("LiteLLM transport selected but no base URL configured");
+      return json(500, { error: "LiteLLM transport selected but no base URL configured" });
+    }
 
     // Load block content for all claimed blocks
     const { data: blocks, error: blkErr } = await supabase
@@ -957,6 +1181,7 @@ Deno.serve(async (req) => {
     const processSingleBlock = async (block: ClaimedBlock): Promise<void> => {
       try {
         const llmResult = await callLLM(
+          llmRuntime,
           model,
           temperature,
           maxTokensPerBlock,
@@ -989,7 +1214,12 @@ Deno.serve(async (req) => {
         if (isLowCreditError(errMsg)) {
           throw new ProviderBalanceError(errMsg);
         }
-        if (errMsg.includes("Vertex Claude API 401") || errMsg.includes("Vertex Claude API 403")) {
+        if (
+          errMsg.includes("Vertex Claude API 401") ||
+          errMsg.includes("Vertex Claude API 403") ||
+          errMsg.includes("LiteLLM API 401") ||
+          errMsg.includes("LiteLLM API 403")
+        ) {
           throw new AuthKeyError(errMsg);
         }
         await markRetryOrFailed(block.block_uid, errMsg);
@@ -1016,6 +1246,7 @@ Deno.serve(async (req) => {
 
       try {
         const llmResult = await callLLMBatch(
+          llmRuntime,
           model,
           temperature,
           maxTokensForPack,

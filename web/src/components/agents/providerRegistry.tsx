@@ -67,4 +67,3 @@ export const PROVIDERS: ProviderDef[] = [
 export function providerLabel(id: string): string {
   return PROVIDERS.find((p) => p.id === id)?.label ?? id;
 }
-

@@ -66,15 +66,17 @@ export function ProviderCredentialsModule({
 
   const existingSuffix = providerKeyInfo?.key_suffix?.trim() || '';
   const hasExistingKey = existingSuffix.length === 4;
+  const hasBaseUrlField = provider === 'custom';
+  const requiresBaseUrl = provider === 'custom';
 
-  const canTest = apiKey.trim().length > 0 && (provider !== 'custom' || baseUrl.trim().length > 0);
+  const canTest = apiKey.trim().length > 0 && (!requiresBaseUrl || baseUrl.trim().length > 0);
 
   const hasDefaultsChanged =
     providerKeyInfo != null &&
     (model !== (providerKeyInfo.default_model ?? '') ||
       temperature !== (providerKeyInfo.default_temperature ?? 0.3) ||
       maxTokens !== (providerKeyInfo.default_max_tokens ?? DEFAULT_MAX_TOKENS) ||
-      (provider === 'custom' && (baseUrl.trim() || null) !== (providerKeyInfo.base_url ?? null)));
+      (hasBaseUrlField && (baseUrl.trim() || null) !== (providerKeyInfo.base_url ?? null)));
 
   const handleTest = async () => {
     if (!canTest) return;
@@ -86,7 +88,7 @@ export function ProviderCredentialsModule({
         body: JSON.stringify({
           provider,
           api_key: apiKey.trim(),
-          ...(provider === 'custom' ? { base_url: baseUrl.trim() } : {}),
+          ...(hasBaseUrlField ? { base_url: baseUrl.trim() || null } : {}),
         }),
       });
       if (result.valid) {
@@ -103,7 +105,7 @@ export function ProviderCredentialsModule({
 
   const handleSaveKey = async () => {
     if (!apiKey.trim()) return;
-    if (provider === 'custom' && !baseUrl.trim()) {
+    if (requiresBaseUrl && !baseUrl.trim()) {
       notifications.show({
         color: 'yellow',
         message: 'Custom provider requires a base URL.',
@@ -121,7 +123,7 @@ export function ProviderCredentialsModule({
           default_model: model,
           default_temperature: temperature,
           default_max_tokens: maxTokens,
-          ...(provider === 'custom' ? { base_url: baseUrl.trim() } : {}),
+          ...(hasBaseUrlField ? { base_url: baseUrl.trim() || null } : {}),
         }),
       });
       setApiKey('');
@@ -154,7 +156,7 @@ export function ProviderCredentialsModule({
           default_model: model,
           default_temperature: temperature,
           default_max_tokens: maxTokens,
-          ...(provider === 'custom' ? { base_url: baseUrl.trim() } : {}),
+          ...(hasBaseUrlField ? { base_url: baseUrl.trim() || null } : {}),
         }),
       });
       await onReload();
@@ -234,15 +236,17 @@ export function ProviderCredentialsModule({
         {testStatus === 'invalid' && testError && <Text size="xs" c="red" mt={4}>{testError}</Text>}
       </Paper>
 
-      {provider === 'custom' && (
+      {hasBaseUrlField && (
         <Paper p="md" radius="sm" withBorder>
           <TextInput
             label="Base URL"
-            description="OpenAI-compatible endpoint (for example: http://localhost:1234/v1)"
+            description={
+              'OpenAI-compatible endpoint (for example: http://localhost:1234/v1)'
+            }
             placeholder="https://your-endpoint.example.com/v1"
             value={baseUrl}
             onChange={(e) => setBaseUrl(e.currentTarget.value)}
-            required
+            required={requiresBaseUrl}
           />
         </Paper>
       )}

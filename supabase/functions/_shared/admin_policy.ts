@@ -18,6 +18,8 @@ export type RuntimePolicy = {
     platform_default_model: string;
     platform_default_temperature: number;
     platform_default_max_tokens: number;
+    platform_llm_transport: "vertex_ai" | "litellm_openai";
+    platform_litellm_base_url: string;
   };
   worker: {
     max_retries: number;
@@ -81,6 +83,8 @@ const DEFAULT_POLICY: RuntimePolicy = {
     platform_default_model: "claude-sonnet-4-5-20250929",
     platform_default_temperature: 0.3,
     platform_default_max_tokens: 4096,
+    platform_llm_transport: "vertex_ai",
+    platform_litellm_base_url: "",
   },
   worker: {
     max_retries: 3,
@@ -299,6 +303,22 @@ export function applyPolicyValue(
     policy.models.platform_default_max_tokens = parsed;
     return true;
   }
+  if (key === "models.platform_llm_transport") {
+    const parsed = asString(value);
+    if (!parsed) return false;
+    if (parsed !== "vertex_ai" && parsed !== "litellm_openai") return false;
+    policy.models.platform_llm_transport = parsed;
+    return true;
+  }
+  if (key === "models.platform_litellm_base_url") {
+    if (value === null) {
+      policy.models.platform_litellm_base_url = "";
+      return true;
+    }
+    if (typeof value !== "string") return false;
+    policy.models.platform_litellm_base_url = value.trim();
+    return true;
+  }
   if (key === "worker.max_retries") {
     const parsed = asFiniteInteger(value);
     if (parsed === null) return false;
@@ -446,6 +466,26 @@ export function validateRuntimePolicy(policy: RuntimePolicy): string[] {
   }
   if (policy.models.platform_default_max_tokens < 1 || policy.models.platform_default_max_tokens > 65536) {
     errors.push("models.platform_default_max_tokens must be within [1,65536]");
+  }
+  if (
+    policy.models.platform_llm_transport !== "vertex_ai" &&
+    policy.models.platform_llm_transport !== "litellm_openai"
+  ) {
+    errors.push("models.platform_llm_transport must be one of: vertex_ai, litellm_openai");
+  }
+  if (policy.models.platform_llm_transport === "litellm_openai") {
+    if (!policy.models.platform_litellm_base_url.trim()) {
+      errors.push("models.platform_litellm_base_url must be set when models.platform_llm_transport=litellm_openai");
+    } else {
+      try {
+        const parsed = new URL(policy.models.platform_litellm_base_url);
+        if (!["http:", "https:"].includes(parsed.protocol)) {
+          errors.push("models.platform_litellm_base_url must use http or https");
+        }
+      } catch {
+        errors.push("models.platform_litellm_base_url must be a valid URL");
+      }
+    }
   }
   if (policy.worker.max_retries < 1 || policy.worker.max_retries > 10) {
     errors.push("worker.max_retries must be within [1,10]");

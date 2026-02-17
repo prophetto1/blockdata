@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Button, Group } from '@mantine/core';
 import { useNavigate, useParams } from 'react-router-dom';
 import { AppBreadcrumbs } from '@/components/common/AppBreadcrumbs';
 import { MultiDocumentUploader } from '@/components/documents/MultiDocumentUploader';
@@ -33,6 +34,15 @@ export default function Upload() {
           { label: 'Upload' },
         ]}
       />
+      <Group mb="sm">
+        <Button
+          size="xs"
+          variant="light"
+          onClick={() => navigate(`/app/projects/${projectId}/upload-uppy-demo`)}
+        >
+          Open Uppy Library Demo
+        </Button>
+      </Group>
       <MultiDocumentUploader
         projectId={projectId}
         maxWidth={760}

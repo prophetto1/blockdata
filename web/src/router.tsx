@@ -15,6 +15,7 @@ import WorkspaceHome from '@/pages/WorkspaceHome';
 import Projects from '@/pages/Projects';
 import ProjectDetail from '@/pages/ProjectDetail';
 import Upload from '@/pages/Upload';
+import UppyLibraryDemo from '@/pages/UppyLibraryDemo';
 import DocumentDetail from '@/pages/DocumentDetail';
 import Schemas from '@/pages/Schemas';
 import SchemaApply from '@/pages/SchemaApply';
@@ -33,6 +34,7 @@ import LoginSplit from '@/pages/LoginSplit';
 import RegisterSplit from '@/pages/RegisterSplit';
 import PlatformLanding from '@/pages/experiments/PlatformLanding';
 import Agents from '@/pages/Agents';
+import ModelRegistrationPreview from '@/pages/ModelRegistrationPreview';
 import AgentOnboarding from '@/pages/AgentOnboarding';
 import AgentOnboardingAuth from '@/pages/AgentOnboardingAuth';
 import AgentOnboardingConnect from '@/pages/AgentOnboardingConnect';
@@ -83,6 +85,7 @@ export const router = createBrowserRouter([
           // Project-scoped routes
           { path: '/app/projects/:projectId', element: <ProjectDetail /> },
           { path: '/app/projects/:projectId/upload', element: <Upload /> },
+          { path: '/app/projects/:projectId/upload-uppy-demo', element: <UppyLibraryDemo /> },
           { path: '/app/projects/:projectId/documents/:sourceUid', element: <DocumentDetail /> },
           { path: '/app/projects/:projectId/runs/:runId', element: <RunDetail /> },
           { path: '/app/track-b', element: <Navigate to="/app/track-b/workspace" replace /> },
@@ -112,6 +115,10 @@ export const router = createBrowserRouter([
           {
             path: '/app/agents',
             element: featureFlags.agentsConfigUI ? <Agents /> : <Navigate to="/app/settings" replace />,
+          },
+          {
+            path: '/app/agents/preview',
+            element: <ModelRegistrationPreview />,
           },
           {
             path: '/app/onboarding/agents',

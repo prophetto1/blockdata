@@ -8,6 +8,22 @@ function json(status: number, body: unknown): Response {
   });
 }
 
+function parseHttpUrl(value: unknown): { ok: true; value: string } | { ok: false; error: string } {
+  if (typeof value !== "string" || !value.trim()) {
+    return { ok: false, error: "base_url is required" };
+  }
+  const trimmed = value.trim();
+  try {
+    const parsed = new URL(trimmed);
+    if (!["http:", "https:"].includes(parsed.protocol)) {
+      return { ok: false, error: "base_url must use http or https" };
+    }
+  } catch {
+    return { ok: false, error: "Invalid base_url" };
+  }
+  return { ok: true, value: trimmed.replace(/\/+$/, "") };
+}
+
 Deno.serve(async (req) => {
   const preflight = corsPreflight(req);
   if (preflight) return preflight;
@@ -21,7 +37,6 @@ Deno.serve(async (req) => {
       return json(400, { valid: false, error: "Missing api_key" });
     }
 
-    // ── Anthropic: POST /v1/messages with minimal payload ──
     if (provider === "anthropic") {
       const resp = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
@@ -48,7 +63,6 @@ Deno.serve(async (req) => {
       return json(200, { valid: false, error: `API returned ${resp.status}: ${errText.slice(0, 200)}` });
     }
 
-    // ── OpenAI: GET /v1/models (no tokens consumed) ──
     if (provider === "openai") {
       const resp = await fetch("https://api.openai.com/v1/models", {
         method: "GET",
@@ -63,10 +77,9 @@ Deno.serve(async (req) => {
       return json(200, { valid: false, error: `API returned ${resp.status}: ${errText.slice(0, 200)}` });
     }
 
-    // ── Google AI: GET /v1beta/models with key in query param ──
     if (provider === "google") {
       const resp = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(api_key)}`
+        `https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(api_key)}`,
       );
 
       if (resp.ok) return json(200, { valid: true });
@@ -77,21 +90,13 @@ Deno.serve(async (req) => {
       return json(200, { valid: false, error: `API returned ${resp.status}: ${errText.slice(0, 200)}` });
     }
 
-    // ── Custom: GET <base_url>/models with Bearer token ──
     if (provider === "custom") {
-      if (!base_url || typeof base_url !== "string") {
-        return json(400, { valid: false, error: "Custom provider requires base_url" });
-      }
-      try {
-        const parsed = new URL(base_url);
-        if (!["http:", "https:"].includes(parsed.protocol)) {
-          return json(400, { valid: false, error: "base_url must use http or https" });
-        }
-      } catch {
-        return json(400, { valid: false, error: "Invalid base_url" });
+      const parsedBase = parseHttpUrl(base_url);
+      if (!parsedBase.ok) {
+        return json(400, { valid: false, error: parsedBase.error });
       }
 
-      const modelsUrl = `${base_url.replace(/\/+$/, "")}/models`;
+      const modelsUrl = `${parsedBase.value}/models`;
       try {
         const resp = await fetch(modelsUrl, {
           method: "GET",

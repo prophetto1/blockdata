@@ -29,3 +29,22 @@ Deno.test("buildRuntimePolicySnapshot includes track_b rollout flags", () => {
   assertEquals(snapshot.track_b.api_enabled, false);
   assertEquals(snapshot.track_b.worker_enabled, false);
 });
+
+Deno.test("applyPolicyValue accepts platform LLM transport and LiteLLM base URL", () => {
+  const policy = runtimePolicyDefaults();
+  const okTransport = applyPolicyValue(
+    policy,
+    "models.platform_llm_transport",
+    "litellm_openai",
+  );
+  const okBaseUrl = applyPolicyValue(
+    policy,
+    "models.platform_litellm_base_url",
+    "https://litellm.example.com/v1",
+  );
+
+  assertEquals(okTransport, true);
+  assertEquals(okBaseUrl, true);
+  assertEquals(policy.models.platform_llm_transport, "litellm_openai");
+  assertEquals(policy.models.platform_litellm_base_url, "https://litellm.example.com/v1");
+});

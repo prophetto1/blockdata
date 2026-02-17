@@ -11,13 +11,27 @@ type WorkerDeps = {
   createAdminClient: () => ReturnType<typeof defaultCreateAdminClient>;
   loadRuntimePolicy?: (
     supabaseAdmin: ReturnType<typeof defaultCreateAdminClient>,
-  ) => Promise<{ track_b: { worker_enabled: boolean } }>;
+  ) => Promise<{
+    track_b: { worker_enabled: boolean };
+    models: {
+      platform_llm_transport: "vertex_ai" | "litellm_openai";
+      platform_litellm_base_url: string;
+    };
+  }>;
 };
 
 const defaultDeps: WorkerDeps = {
   requireEnv: defaultRequireEnv,
   createAdminClient: defaultCreateAdminClient,
   loadRuntimePolicy: defaultLoadRuntimePolicy,
+};
+
+type PlatformLlmTransport = "vertex_ai" | "litellm_openai";
+
+type LlmRuntime = {
+  transport: PlatformLlmTransport;
+  litellm_base_url: string | null;
+  litellm_api_key: string | null;
 };
 
 type WorkerPayload = {
@@ -198,6 +212,14 @@ function json(status: number, body: unknown): Response {
 
 function toErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
+}
+
+function normalizeTransport(value: unknown): PlatformLlmTransport {
+  return value === "litellm_openai" ? "litellm_openai" : "vertex_ai";
+}
+
+function buildLiteLlmChatEndpoint(baseUrl: string): string {
+  return `${baseUrl.replace(/\/+$/, "")}/chat/completions`;
 }
 
 export function parseWorkerPayload(input: unknown): WorkerPayload {
@@ -1464,6 +1486,7 @@ type ExtractLlmResult = {
 };
 
 async function extractBlockWithLLM(input: {
+  llmRuntime: LlmRuntime;
   schema_jsonb: Record<string, unknown>;
   element_text: string;
   block_type: string;
@@ -1488,6 +1511,91 @@ async function extractBlockWithLLM(input: {
       properties: schemaProps,
     },
   };
+
+  if (input.llmRuntime.transport === "litellm_openai") {
+    const baseUrl = input.llmRuntime.litellm_base_url?.trim() ?? "";
+    if (!baseUrl) {
+      throw new Error("LiteLLM transport selected but models.platform_litellm_base_url is missing");
+    }
+
+    const endpoint = buildLiteLlmChatEndpoint(baseUrl);
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (input.llmRuntime.litellm_api_key?.trim()) {
+      headers.Authorization = `Bearer ${input.llmRuntime.litellm_api_key.trim()}`;
+    }
+
+    const resp = await fetch(endpoint, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        model,
+        max_tokens: maxTokens,
+        temperature,
+        messages: [
+          { role: "system", content: systemPrompt },
+          {
+            role: "user",
+            content: `${blockPrompt}\n\n---\n\nBlock type: ${input.block_type}\nBlock content:\n${input.element_text}`,
+          },
+        ],
+        tools: [{
+          type: "function",
+          function: {
+            name: "extract_fields",
+            description: tool.description,
+            parameters: tool.input_schema,
+          },
+        }],
+        tool_choice: { type: "function", function: { name: "extract_fields" } },
+      }),
+    });
+    if (!resp.ok) {
+      const errText = await resp.text().catch(() => "");
+      throw new Error(`LiteLLM API ${resp.status}: ${errText.slice(0, 500)}`);
+    }
+
+    const responseJson = await resp.json() as Record<string, unknown>;
+    const choices = Array.isArray(responseJson.choices) ? responseJson.choices : [];
+    const firstChoice = (choices[0] && typeof choices[0] === "object")
+      ? choices[0] as Record<string, unknown>
+      : null;
+    const message = firstChoice && typeof firstChoice.message === "object" &&
+        firstChoice.message !== null
+      ? firstChoice.message as Record<string, unknown>
+      : null;
+    const toolCalls = message && Array.isArray(message.tool_calls) ? message.tool_calls : [];
+    const firstToolCall = (toolCalls[0] && typeof toolCalls[0] === "object")
+      ? toolCalls[0] as Record<string, unknown>
+      : null;
+    const fn = firstToolCall && typeof firstToolCall.function === "object" &&
+        firstToolCall.function !== null
+      ? firstToolCall.function as Record<string, unknown>
+      : null;
+    const argsRaw = fn?.arguments;
+    let data: Record<string, unknown>;
+    if (typeof argsRaw === "string") {
+      const parsed = JSON.parse(argsRaw);
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+        throw new Error("LiteLLM tool arguments must decode to an object");
+      }
+      data = parsed as Record<string, unknown>;
+    } else if (argsRaw && typeof argsRaw === "object" && !Array.isArray(argsRaw)) {
+      data = argsRaw as Record<string, unknown>;
+    } else {
+      throw new Error("No tool arguments found in LiteLLM response");
+    }
+
+    const usageRaw = responseJson.usage && typeof responseJson.usage === "object"
+      ? responseJson.usage as Record<string, unknown>
+      : {};
+    return {
+      data,
+      usage: {
+        input_tokens: Number(usageRaw.prompt_tokens ?? 0),
+        output_tokens: Number(usageRaw.completion_tokens ?? 0),
+      },
+    };
+  }
 
   const result = await callVertexClaude({
     model,
@@ -1628,6 +1736,12 @@ async function updateRunDocStatus(
 async function processRun(
   supabaseAdmin: ReturnType<typeof defaultCreateAdminClient>,
   run_uid: string,
+  runtimePolicy: {
+    models: {
+      platform_llm_transport: "vertex_ai" | "litellm_openai";
+      platform_litellm_base_url: string;
+    };
+  },
 ): Promise<
   {
     run_uid: string;
@@ -1648,6 +1762,23 @@ async function processRun(
   }
 
   const flowMode = runRow.flow_mode as FlowMode;
+  const llmRuntime: LlmRuntime = {
+    transport: normalizeTransport(
+      runtimePolicy.models.platform_llm_transport ??
+        Deno.env.get("PLATFORM_LLM_TRANSPORT") ??
+        "vertex_ai",
+    ),
+    litellm_base_url:
+      (
+        runtimePolicy.models.platform_litellm_base_url ??
+        Deno.env.get("PLATFORM_LITELLM_BASE_URL") ??
+        ""
+      ).trim() || null,
+    litellm_api_key: (Deno.env.get("PLATFORM_LITELLM_API_KEY") ?? "").trim() || null,
+  };
+  if (llmRuntime.transport === "litellm_openai" && !llmRuntime.litellm_base_url) {
+    throw new Error("LiteLLM transport selected but no base URL configured");
+  }
   const statusOrder = DOC_STATUS_EXECUTION_ORDER_BY_FLOW[flowMode];
   let runConfigError: string | null = null;
 
@@ -2112,6 +2243,7 @@ async function processRun(
           const element = enrichedElements[row.element_ordinal];
           try {
             const llmResult = await extractBlockWithLLM({
+              llmRuntime,
               schema_jsonb: schemaJson,
               element_text: element.text,
               block_type: element.raw_element_type,
@@ -2543,7 +2675,7 @@ export async function handleTrackBWorkerRequest(
       }
     > = [];
     for (const run_uid of run_uids) {
-      const result = await processRun(supabaseAdmin, run_uid);
+      const result = await processRun(supabaseAdmin, run_uid, runtimePolicy);
       processed.push(result);
     }
 

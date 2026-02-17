@@ -25,8 +25,10 @@ export function ApiKeyPanel({
 
   const existingSuffix = providerKeyInfo?.key_suffix?.trim() || '';
   const hasExisting = existingSuffix.length === 4;
+  const hasBaseUrlField = provider === 'custom';
+  const requiresBaseUrl = provider === 'custom';
 
-  const canTest = apiKey.trim().length > 0 && (provider !== 'custom' || baseUrl.trim().length > 0);
+  const canTest = apiKey.trim().length > 0 && (!requiresBaseUrl || baseUrl.trim().length > 0);
 
   const handleTest = async () => {
     setTestStatus('testing');
@@ -37,7 +39,7 @@ export function ApiKeyPanel({
         body: JSON.stringify({
           provider,
           api_key: apiKey,
-          ...(provider === 'custom' ? { base_url: baseUrl } : {}),
+          ...(hasBaseUrlField ? { base_url: baseUrl.trim() || null } : {}),
         }),
       });
       if (result.valid) {
@@ -60,7 +62,7 @@ export function ApiKeyPanel({
         body: JSON.stringify({
           provider,
           api_key: apiKey,
-          ...(provider === 'custom' ? { base_url: baseUrl } : {}),
+          ...(hasBaseUrlField ? { base_url: baseUrl.trim() || null } : {}),
         }),
       });
       notifications.show({ color: 'green', message: 'Saved API key' });
@@ -86,13 +88,13 @@ export function ApiKeyPanel({
         )}
       </Group>
 
-      {provider === 'custom' && (
+      {hasBaseUrlField && (
         <TextInput
           label="Base URL"
           description="OpenAI-compatible endpoint base (e.g., http://localhost:1234/v1)"
           value={baseUrl}
           onChange={(e) => setBaseUrl(e.currentTarget.value)}
-          required
+          required={requiresBaseUrl}
         />
       )}
 
@@ -119,7 +121,7 @@ export function ApiKeyPanel({
             {testStatus === 'valid' ? 'Valid' : testStatus === 'invalid' ? 'Failed' : 'Test'}
           </Button>
         </Tooltip>
-        <Button onClick={handleSave} loading={saving} disabled={!apiKey.trim() || (provider === 'custom' && !baseUrl.trim())}>
+        <Button onClick={handleSave} loading={saving} disabled={!apiKey.trim() || (requiresBaseUrl && !baseUrl.trim())}>
           Save
         </Button>
       </Group>
@@ -139,4 +141,3 @@ export function ApiKeyPanel({
     </Stack>
   );
 }
-
