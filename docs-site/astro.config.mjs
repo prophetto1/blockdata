@@ -1,10 +1,14 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
+import react from '@astrojs/react';
 
 export default defineConfig({
 	base: '/docs',
 	vite: {
+		resolve: {
+			dedupe: ['react', 'react-dom'],
+		},
 		server: {
 			fs: {
 				allow: ['.'],
@@ -12,6 +16,7 @@ export default defineConfig({
 		},
 	},
 	integrations: [
+		react(),
 		starlight({
 			title: 'BlockData',
 			favicon: '/favicon.ico',
