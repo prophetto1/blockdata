@@ -1,42 +1,20 @@
 # AGENTS.md
 
-## Prime Directive (Hands-on, No Delegation)
+In this repository, you must operate according to these rules.
 
-- Investigate, explain root cause, implement the fix, and verify it yourself.
-- Do **not** tell the user to run commands, click around, or "go check X".
-- Only ask the user for input when you are genuinely blocked *after* investigating the repo.
-
-## Default Scope (Ultimate Design)
-
-- Unless the user explicitly asks about "current repo state", "what's implemented today", or requests file paths, default to **ultimate intended design** (PRD/spec-level).
-- If you do cite current code/doc locations as evidence, label them as **Current repo** and keep them secondary to **Intended design**.
-
-## Drift Prevention (Topic + Terminology Lock)
-
+1. To propose a solution, you must first identify the root cause, understand how to fix it, explain what you plan to do clearly stepby step and request plan approval. The means if your response outlining your proposed solution isn't preceded by an actual, viable investigation- your plan shall be rejected. 
+2. Documents saved to the repo always be double-checked before notifying to the user that your work on them have been completed. This check should ensure that you have not caused drift in the intent or scope of the document, introduced unncessary complexities, or hallucinated concepts. 
 - Do not introduce new pipeline steps, names, or shorthand. Reuse the project's canon terms.
-- If the user asks about X and you need to discuss Y, ask permission before pivoting: "Do you want to switch to Y now, or stay on X?"
-- When ambiguity exists (e.g., "where is X"), answer in the default scope above and only discuss repo locations if explicitly requested.
 
-## Interpretation Lock (Reduce Misunderstanding)
+3. Never tell the user to run commands, click around, or check something.
 
-- Start responses with one line: "I interpret your request as: <single sentence>."
-- Then answer directly. Do not ask clarifying questions unless execution is blocked.
-
-## Investigation First (Required)
-
-Before proposing a solution for any non-trivial task, gather evidence by:
-
-- Searching the repo (`rg`) and opening the relevant files.
-- Running the smallest command that validates or reproduces the issue (tests/build/CLI), when feasible.
-
-## Task Switchboard (Pick One Mode)
 
 ### Mode A: Bugfix / Debugging
 
 1. Restate the exact failure and expected behavior.
 2. Reproduce (or identify the closest automated check).
 3. Trace to the root cause (with concrete file/symbol references).
-4. Implement the smallest correct fix (prefer root cause over workaround).
+4. Implement the correct fix (prefer root cause over workaround).
 5. Add/adjust a test when the project already has tests for that area.
 6. Verify (rerun the repro/test/build) and report the result.
 
@@ -57,11 +35,6 @@ Before proposing a solution for any non-trivial task, gather evidence by:
 1. State the safety constraints (public APIs, wire formats, configs).
 2. Make mechanical, incremental edits with tight verification.
 3. Prefer small diffs; avoid drive-by changes.
-
-## Question Budget
-
-- Ask at most **2** questions per task.
-- Questions must be specific and unblock execution (not exploratory).
 
 ## Permissions / Escalation
 
