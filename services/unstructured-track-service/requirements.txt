@@ -1,5 +1,0 @@
-fastapi>=0.110
-uvicorn[standard]>=0.27
-pydantic>=2.6
-unstructured-client>=0.42
-unstructured>=0.18

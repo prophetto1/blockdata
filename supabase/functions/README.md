@@ -20,13 +20,6 @@ export-by-run).
   readiness based on saved keys/connections (config-first).
 - `provider-connections`: Stores non-key provider connections (v1: Vertex AI
   service account) encrypted server-side.
-- `track-b-runs`: Creates Track B (`unstructured_oss`) workflow runs with
-  required idempotency semantics and subset document selection.
-- `track-b-worker`: Internal Track B worker endpoint that claims queued Track B
-  runs, advances doc/run states (`indexing -> downloading -> partitioning ->
-  chunking -> enriching -> persisting -> success`), and persists Track B
-  artifacts/outputs (`partition`, `chunk`, `embed`, `preview`, `persist` step
-  artifacts).
 
 ## Required env vars (Supabase secrets)
 
@@ -37,28 +30,6 @@ export-by-run).
 - `CONVERSION_SERVICE_URL` (URL of the FastAPI service)
 - `CONVERSION_SERVICE_KEY` (shared secret; used in header
   `X-Conversion-Service-Key`)
-- `TRACK_B_WORKER_KEY` (shared secret; used by `track-b-worker` in header
-  `X-Track-B-Worker-Key`)
-- `TRACK_B_CHUNK_MAX_CHARS` (optional; default `1200`, bounded to `200..8000`)
-- `TRACK_B_EMBED_DIMENSIONS` (optional; default `8`, bounded to `4..256`)
-- `TRACK_B_PARTITION_TIMEOUT_MS` (optional; default `60000`, bounded to `1000..300000`)
-- `UNSTRUCTURED_TRACK_SERVICE_URL` (optional; if set, `track-b-worker` requests
-  `POST /general/v0/general` (multipart) from this service, with fallback to
-  `POST /partition`)
-- `TRACK_B_SERVICE_KEY` (optional; forwarded by `track-b-worker` to service as
-  `X-Track-B-Service-Key` when set)
-- `UNSTRUCTURED_API_KEY` (optional for Track B worker; used as
-  `unstructured-api-key` when calling `POST /general/v0/general`)
-
-Track B partition service contract currently expects Unstructured-style elements
-(`type`, `element_id`, `text`, `metadata`) and uses explicit
-`partition_parameters` in worker requests (`coordinates`, `strategy`,
-`output_format`, `unique_element_ids`, `chunking_strategy`).
-
-Track B worker observability emits `unstructured_state_events_v2` detail payloads:
-- `event = "doc_observability"` with per-step latency, artifact count, and backend
-- `event = "doc_failure_observability"` with failed step + reason
-- `event = "run_observability"` with doc success/failure counts and step failure totals
 
 ## JWT mode
 

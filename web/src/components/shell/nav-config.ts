@@ -32,13 +32,6 @@ export const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    label: 'Track B',
-    items: [
-      { label: 'Workspace', icon: IconFolderPlus, path: '/app/track-b/workspace' },
-      { label: 'Pipeline', icon: IconSchema, path: '/app/track-b/pipeline' },
-    ],
-  },
-  {
     label: 'Automation',
     items: [
       ...(featureFlags.agentsConfigUI ? [{ label: 'Agents', icon: IconBrain, path: '/app/agents' }] : []),

@@ -759,39 +759,6 @@ export default function ProjectDetail() {
           <Stack gap="sm">
             <Group justify="space-between" align="center" wrap="wrap">
               <Group gap="xs">
-                <ThemeIcon size="sm" variant="light"><IconPlayerPlay size={14} /></ThemeIcon>
-                <Text fw={600} size="sm">Unstructured Track B</Text>
-              </Group>
-              <Group gap="xs">
-                <Button
-                  size="xs"
-                  variant="filled"
-                  onClick={() => navigate(`/app/projects/${projectId}/track-b/transform`)}
-                  disabled={!project.workspace_id}
-                >
-                  Open Workbench
-                </Button>
-              </Group>
-            </Group>
-            {!project.workspace_id && (
-              <Text size="xs" c="dimmed">
-                This project is missing a workspace binding, so the Track B workbench is unavailable.
-              </Text>
-            )}
-            {project.workspace_id && (
-              <Text size="xs" c="dimmed">
-                Track B execution and review are isolated to the dedicated workbench page.
-              </Text>
-            )}
-          </Stack>
-        </Box>
-
-        <Divider my="md" />
-
-        <Box px="md" pb="md">
-          <Stack gap="sm">
-            <Group justify="space-between" align="center" wrap="wrap">
-              <Group gap="xs">
                 <ThemeIcon size="sm" variant="light"><IconFileText size={14} /></ThemeIcon>
                 <Text fw={600} size="sm">Documents</Text>
               </Group>

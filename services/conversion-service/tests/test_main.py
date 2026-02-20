@@ -32,7 +32,7 @@ def test_resolve_track_uses_explicit_track():
     assert conversion_main._resolve_track(req) == "pandoc"
 
 
-def test_resolve_track_backcompat_defaults():
+def test_resolve_track_legacy_defaults():
     txt_req = _build_request(track=None, source_type="txt")
     docx_req = _build_request(track=None, source_type="docx")
     assert conversion_main._resolve_track(txt_req) == "mdast"

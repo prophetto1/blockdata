@@ -1,7 +1,7 @@
 export const DEFAULT_CORS_HEADERS: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-conversion-service-key, x-track-b-worker-key",
+    "authorization, x-client-info, apikey, content-type, x-conversion-service-key",
   "Access-Control-Allow-Methods": "GET, POST, PATCH, DELETE, OPTIONS",
 };
 

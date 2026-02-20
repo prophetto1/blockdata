@@ -120,21 +120,6 @@ body {
   font-size: 14px !important;
 }
 
-.trackb-flat-grid .ag-root-wrapper {
-  border: none !important;
-  border-radius: 0 !important;
-}
-
-.trackb-flat-grid .ag-root-wrapper-body,
-.trackb-flat-grid .ag-header {
-  border-top: none !important;
-  border-bottom: none !important;
-}
-
-.trackb-flat-grid .ag-row:first-child {
-  border-top: none !important;
-}
-
 .block-viewer-grid .mantine-Text-root,
 .block-viewer-grid .mantine-Badge-root,
 .block-viewer-grid .mantine-Badge-label {
@@ -234,10 +219,6 @@ body {
 
 .left-rail [data-group="track-a"] .left-rail-heading {
   color: light-dark(#2b6cb0, #8cc6ff);
-}
-
-.left-rail [data-group="track-b"] .left-rail-heading {
-  color: light-dark(#c05621, #f2b27a);
 }
 
 .left-rail [data-group="automation"] .left-rail-heading {

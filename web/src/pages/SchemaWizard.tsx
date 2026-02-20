@@ -575,10 +575,6 @@ export default function SchemaWizard() {
         navigate(toApplyPath(savedSchemaId, savedSchemaRef));
         return;
       }
-      if (projectId && returnTo === 'track-b-workbench') {
-        navigate(`/app/projects/${projectId}/track-b/transform`);
-        return;
-      }
       navigate('/app/schemas');
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : String(saveError));

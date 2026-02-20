@@ -13,22 +13,13 @@ export function LeftRail({ onNavigate, userLabel, onSignOut }: LeftRailProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const isTemplatesPath = location.pathname.startsWith('/app/schemas/templates');
-  const isProjectTrackBPath = /^\/app\/projects\/[^/]+\/track-b(\/.*)?$/.test(location.pathname);
   const getGroupKey = (label: string) => label.toLowerCase().replace(/\s+/g, '-');
 
   const isItemActive = (path: string): boolean => {
     if (path === '/app') return location.pathname === '/app';
-    if (path === '/app/projects') return location.pathname.startsWith('/app/projects') && !isProjectTrackBPath;
+    if (path === '/app/projects') return location.pathname.startsWith('/app/projects');
     if (path === '/app/schemas') return location.pathname.startsWith('/app/schemas') && !isTemplatesPath;
     if (path === '/app/schemas/templates') return isTemplatesPath;
-    if (path === '/app/track-b/workspace') {
-      return location.pathname === path ||
-        location.pathname === '/app/track-b' ||
-        isProjectTrackBPath && !location.pathname.includes('/track-b/runs/');
-    }
-    if (path === '/app/track-b/pipeline') {
-      return location.pathname === path || location.pathname.includes('/track-b/runs/');
-    }
     return location.pathname.startsWith(path);
   };
 

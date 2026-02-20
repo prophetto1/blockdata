@@ -253,10 +253,6 @@ export default function SchemaAdvancedEditor() {
         navigate(`/app/schemas/apply?${query.toString()}`);
         return;
       }
-      if (projectId && returnTo === 'track-b-workbench') {
-        navigate(`/app/projects/${projectId}/track-b/transform`);
-        return;
-      }
       navigate('/app/schemas');
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
