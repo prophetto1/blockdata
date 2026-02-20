@@ -404,7 +404,7 @@ body {
 
 .parse-doc-card {
   display: grid;
-  grid-template-columns: 18px minmax(0, 1fr) 54px 72px 96px 24px;
+  grid-template-columns: 18px minmax(0, 1fr) 54px 72px 26px 24px;
   align-items: center;
   gap: 8px;
   min-height: 34px;
@@ -441,14 +441,8 @@ body {
 }
 
 .parse-doc-card-status {
-  min-width: 0;
-}
-
-.parse-doc-card-status-label {
-  min-width: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  min-width: 26px;
+  justify-content: center;
 }
 
 .parse-doc-card-status-dot {
@@ -566,6 +560,11 @@ body {
   text-align: center;
 }
 
+.parse-pdf-units-label {
+  min-width: 92px;
+  text-align: left;
+}
+
 .parse-pdf-preview-viewport {
   flex: 1;
   min-height: 0;
@@ -582,6 +581,7 @@ body {
   display: flex;
   align-items: flex-start;
   justify-content: center;
+  width: 100%;
   padding: 0;
 }
 
@@ -593,7 +593,25 @@ body {
 
 .parse-pdf-preview-viewport .react-pdf__Document {
   display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  min-width: 100%;
+  padding-bottom: 6px;
+}
+
+.parse-pdf-page-shell {
+  width: 100%;
+  display: flex;
   justify-content: center;
+  scroll-margin-top: 8px;
+}
+
+.parse-pdf-page-wrap {
+  position: relative;
+  width: fit-content;
+  max-width: 100%;
 }
 
 .parse-pdf-preview-viewport .react-pdf__Page {
@@ -607,6 +625,48 @@ body {
   height: auto !important;
   border-radius: 4px;
   box-shadow: 0 1px 4px light-dark(rgba(0, 0, 0, 0.08), rgba(0, 0, 0, 0.3));
+}
+
+.parse-pdf-unit-overlay {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  bottom: 8px;
+  width: 16px;
+  pointer-events: none;
+}
+
+.parse-pdf-unit-marker {
+  position: absolute;
+  right: 0;
+  transform: translateY(-50%);
+  width: 10px;
+  height: 6px;
+  border-radius: 999px;
+  border: 1px solid light-dark(rgba(20, 20, 20, 0.22), rgba(255, 255, 255, 0.22));
+  background: light-dark(rgba(0, 113, 227, 0.45), rgba(102, 177, 255, 0.55));
+  cursor: pointer;
+  pointer-events: auto;
+  padding: 0;
+}
+
+.parse-pdf-unit-marker[data-active='true'] {
+  width: 14px;
+  background: light-dark(rgba(0, 113, 227, 0.85), rgba(102, 177, 255, 0.85));
+  border-color: light-dark(rgba(0, 74, 160, 0.9), rgba(158, 206, 255, 0.95));
+}
+
+.parse-pdf-unit-panel {
+  border-top: 1px solid var(--mantine-color-default-border);
+  padding: 4px 8px;
+  background: light-dark(rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.02));
+  min-height: 30px;
+  display: flex;
+  align-items: center;
+}
+
+.parse-pdf-unit-panel-copy {
+  min-width: 0;
 }
 
 .parse-text-preview {
@@ -1013,6 +1073,7 @@ body {
   border: 1px dashed var(--mantine-color-default-border);
   border-radius: 12px;
   margin: 10px;
+  padding: 24px 16px;
   min-height: 168px;
   position: relative;
   cursor: pointer;
@@ -1285,17 +1346,25 @@ body {
   line-height: 1;
 }
 
-.left-rail-project-focus-count {
-  min-width: 22px;
-  text-align: center;
+.left-rail-project-focus-create {
+  width: 22px;
+  height: 22px;
   border: 1px solid var(--mantine-color-default-border);
   border-radius: 999px;
+  display: inline-grid;
+  place-items: center;
   color: light-dark(var(--mantine-color-gray-7), var(--mantine-color-gray-3));
   background: light-dark(rgba(255, 255, 255, 0.78), rgba(9, 9, 11, 0.78));
-  font-size: 11px;
-  font-weight: 650;
-  line-height: 18px;
-  padding-inline: 6px;
+  transition:
+    border-color 120ms ease,
+    background-color 120ms ease,
+    color 120ms ease;
+}
+
+.left-rail-project-focus-create:hover {
+  border-color: var(--app-left-rail-track-a);
+  background: light-dark(rgba(255, 255, 255, 0.96), rgba(15, 23, 42, 0.9));
+  color: var(--app-left-rail-track-a);
 }
 
 .left-rail-project-focus input {
@@ -1378,105 +1447,27 @@ body {
   flex: 0 0 auto;
 }
 
-.left-rail-account-meta {
-  min-width: 0;
-  flex: 1;
-}
-
-.left-rail-account-kicker {
-  color: light-dark(var(--mantine-color-gray-6), var(--mantine-color-gray-5));
-  font-size: 11px;
-  font-weight: 680;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  line-height: 1.1;
-}
-
 .left-rail-account-user {
-  margin-top: 2px;
   color: light-dark(var(--mantine-color-gray-9), var(--mantine-color-gray-0));
   font-size: 13px;
   font-weight: 580;
   line-height: 1.2;
 }
 
-.left-rail-account-action {
-  width: 100%;
-  min-height: 34px;
-  border: 1px solid transparent;
-  border-radius: 9px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 0 10px;
-  color: light-dark(var(--mantine-color-gray-7), var(--mantine-color-gray-3));
-  background: light-dark(rgba(255, 255, 255, 0.78), rgba(9, 9, 11, 0.76));
-  transition:
-    border-color 120ms ease,
-    background-color 120ms ease,
-    color 120ms ease;
+.left-rail-account-action-signout-icon {
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  color: light-dark(var(--mantine-color-gray-5), var(--mantine-color-gray-5));
+  transition: color 120ms ease, background-color 120ms ease;
 }
 
-.left-rail-account-action:hover {
-  border-color: var(--mantine-color-default-border);
-  background: light-dark(rgba(255, 255, 255, 0.96), rgba(24, 24, 27, 0.92));
-  color: light-dark(var(--mantine-color-gray-9), var(--mantine-color-gray-0));
-}
-
-.left-rail-account-action-label {
-  font-size: 12px;
-  font-weight: 560;
-  line-height: 1;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.left-rail-account-action-hint {
-  margin-left: auto;
-  font-size: 10px;
-  font-weight: 620;
-  line-height: 1;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: light-dark(var(--mantine-color-gray-6), var(--mantine-color-gray-5));
-}
-
-.left-rail-account-action-placeholder {
-  cursor: default;
-  border-color: light-dark(rgba(43, 108, 176, 0.16), rgba(140, 198, 255, 0.22));
-  background: light-dark(rgba(255, 255, 255, 0.88), rgba(9, 9, 11, 0.82));
-}
-
-.left-rail-account-action-placeholder:disabled {
-  opacity: 1;
-}
-
-.left-rail-account-actions {
-  margin-top: 8px;
-  display: flex;
-  align-items: stretch;
-  gap: 6px;
-}
-
-.left-rail-account-actions .left-rail-account-action {
-  flex: 1 1 0;
-  min-width: 0;
-}
-
-.left-rail-account-action-signout {
-  width: auto;
-  align-self: stretch;
-  justify-content: flex-start;
-  border-color: light-dark(rgba(220, 38, 38, 0.36), rgba(248, 113, 113, 0.44));
-  background: light-dark(rgba(254, 242, 242, 0.92), rgba(34, 12, 12, 0.8));
-  color: light-dark(rgba(127, 29, 29, 1), rgba(252, 165, 165, 1));
-}
-
-.left-rail-account-action-signout:hover {
-  border-color: light-dark(rgba(220, 38, 38, 0.5), rgba(252, 165, 165, 0.55));
-  background: light-dark(rgba(254, 226, 226, 0.98), rgba(44, 14, 14, 0.9));
-  color: light-dark(rgba(127, 29, 29, 1), rgba(254, 202, 202, 1));
+.left-rail-account-action-signout-icon:hover {
+  color: light-dark(rgba(220, 38, 38, 0.9), rgba(252, 165, 165, 0.95));
+  background: light-dark(rgba(254, 242, 242, 0.8), rgba(34, 12, 12, 0.6));
 }
 
 .left-rail [data-group="workspace"] .left-rail-heading {
@@ -1548,8 +1539,7 @@ body {
 }
 
 .left-rail.is-compact .left-rail-brand-wrap {
-  padding-inline-start: 3px;
-  padding-inline-end: 5px;
+  padding-inline: 0;
 }
 
 .left-rail.is-compact .left-rail-brand-row {
@@ -1574,21 +1564,21 @@ body {
 
 .left-rail.is-compact .left-rail-project-focus-wrap,
 .left-rail.is-compact .left-rail-heading,
-.left-rail.is-compact .left-rail-account-kicker,
 .left-rail.is-compact .left-rail-account-user,
-.left-rail.is-compact .left-rail-account-action-label,
-.left-rail.is-compact .left-rail-account-action-placeholder {
+.left-rail.is-compact .left-rail-account-action-signout-icon {
   display: none;
 }
 
 .left-rail.is-compact .left-rail-content {
-  padding-inline-start: 3px;
-  padding-inline-end: 5px;
+  padding-inline: 0;
 }
 
 .left-rail.is-compact .left-rail-quick-actions {
   gap: 4px;
-  align-items: center;
+}
+
+.left-rail.is-compact .left-rail-bottom-nav {
+  scrollbar-gutter: auto;
 }
 
 .left-rail.is-compact .left-rail-group {
@@ -1694,17 +1684,6 @@ body {
 .left-rail.is-compact .left-rail-account-avatar {
   width: 30px;
   height: 30px;
-}
-
-.left-rail.is-compact .left-rail-account-actions {
-  margin-top: 4px;
-  flex-direction: column;
-}
-
-.left-rail.is-compact .left-rail-account-action {
-  justify-content: center;
-  min-height: 30px;
-  padding-inline: 0;
 }
 
 @media (max-width: 48em) {

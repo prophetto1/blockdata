@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState, type MouseEvent as ReactMouseEvent } from 'react';
-import { Box, Loader, NavLink, Select, Text, UnstyledButton } from '@mantine/core';
-import { useLocalStorage } from '@mantine/hooks';
-import { IconChevronLeft, IconFileText, IconLogout, IconSettings } from '@tabler/icons-react';
+import { Box, Button, Group, Loader, Modal, NavLink, Select, Stack, Text, TextInput, UnstyledButton } from '@mantine/core';
+import { useDisclosure, useLocalStorage } from '@mantine/hooks';
+import { notifications } from '@mantine/notifications';
+import { IconChevronLeft, IconFileText, IconLogout, IconPlus } from '@tabler/icons-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { GLOBAL_MENUS, NAV_GROUPS } from '@/components/shell/nav-config';
 import { PROJECT_FOCUS_STORAGE_KEY } from '@/lib/projectFocus';
@@ -20,6 +21,7 @@ type ProjectFocusOption = {
   value: string;
   label: string;
   docCount: number;
+  workspaceId: string | null;
 };
 type RailIcon = (typeof GLOBAL_MENUS)[number]['icon'];
 
@@ -76,6 +78,10 @@ export function LeftRail({
   });
   const [projectOptions, setProjectOptions] = useState<ProjectFocusOption[]>([]);
   const [projectOptionsLoading, setProjectOptionsLoading] = useState(false);
+  const [createProjectOpened, { open: openCreateProject, close: closeCreateProject }] = useDisclosure(false);
+  const [newProjectName, setNewProjectName] = useState('');
+  const [newProjectDescription, setNewProjectDescription] = useState('');
+  const [creatingProject, setCreatingProject] = useState(false);
   const getGroupKey = (label: string) => label.toLowerCase().replace(/\s+/g, '-');
 
   useEffect(() => {
@@ -136,6 +142,7 @@ export function LeftRail({
           value: String(row.project_id ?? ''),
           label: String(row.project_name ?? 'Untitled project'),
           docCount: toCount(row.doc_count),
+          workspaceId: row.workspace_id ? String(row.workspace_id) : null,
         }))
         .filter((row) => row.value.length > 0)
         .sort((a, b) => a.label.localeCompare(b.label));
@@ -166,7 +173,6 @@ export function LeftRail({
       ? candidate
       : null;
   }, [activeProjectId, focusedProjectId, projectOptions]);
-  const projectCountLabel = projectOptionsLoading ? '...' : String(projectOptions.length);
   const globalMenuPaths = useMemo(
     () => new Set(GLOBAL_MENUS.map((menu) => menu.path)),
     [],
@@ -201,6 +207,72 @@ export function LeftRail({
     if (!target) return;
     if (target.closest('a, button, input, textarea, select, label, [role="button"]')) return;
     onToggleDesktopCompact();
+  };
+  const handleCreateProject = async () => {
+    const projectName = newProjectName.trim();
+    if (!projectName) {
+      notifications.show({
+        color: 'red',
+        title: 'Project name required',
+        message: 'Enter a project name to create a project.',
+      });
+      return;
+    }
+
+    setCreatingProject(true);
+    const { data: authData, error: authError } = await supabase.auth.getUser();
+    if (authError || !authData.user) {
+      notifications.show({
+        color: 'red',
+        title: 'Authentication required',
+        message: authError?.message ?? 'Unable to resolve current user.',
+      });
+      setCreatingProject(false);
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from(TABLES.projects)
+      .insert({
+        owner_id: authData.user.id,
+        workspace_id: projectOptions.find((project) => project.value === projectSelectValue)?.workspaceId
+          ?? projectOptions[0]?.workspaceId
+          ?? crypto.randomUUID(),
+        project_name: projectName,
+        description: newProjectDescription.trim() || null,
+      })
+      .select('project_id, project_name, workspace_id')
+      .single();
+
+    if (error) {
+      notifications.show({
+        color: 'red',
+        title: 'Failed to create project',
+        message: error.message,
+      });
+      setCreatingProject(false);
+      return;
+    }
+
+    const createdProject = data as { project_id: string; project_name: string; workspace_id: string | null };
+    setProjectOptions((prev) => [...prev, {
+      value: createdProject.project_id,
+      label: createdProject.project_name,
+      docCount: 0,
+      workspaceId: createdProject.workspace_id,
+    }].sort((a, b) => a.label.localeCompare(b.label)));
+    setFocusedProjectId(createdProject.project_id);
+    setNewProjectName('');
+    setNewProjectDescription('');
+    closeCreateProject();
+    setCreatingProject(false);
+    navigate(`/app/projects/${createdProject.project_id}`);
+    onNavigate?.();
+    notifications.show({
+      color: 'green',
+      title: 'Project created',
+      message: createdProject.project_name,
+    });
   };
 
   const isItemActive = (path: string): boolean => {
@@ -339,6 +411,7 @@ export function LeftRail({
   };
 
   return (
+    <>
     <Box className={`left-rail${desktopCompact ? ' is-compact' : ''}`} onClick={maybeExpandCompactRail}>
       <Box className="left-rail-brand-wrap">
         <Box className="left-rail-brand-row">
@@ -375,7 +448,14 @@ export function LeftRail({
         <Box className="left-rail-project-focus-wrap">
           <Box className="left-rail-project-focus-head">
             <Text className="left-rail-project-focus-label">Project</Text>
-            <Text className="left-rail-project-focus-count">{projectCountLabel}</Text>
+            <UnstyledButton
+              className="left-rail-project-focus-create"
+              aria-label="Create new project"
+              title="Create new project"
+              onClick={openCreateProject}
+            >
+              <IconPlus size={12} stroke={2.4} />
+            </UnstyledButton>
           </Box>
           <Select
             className="left-rail-project-focus"
@@ -453,43 +533,63 @@ export function LeftRail({
 
         {(userLabel || (onSignOut && !desktopCompact)) && (
           <Box pt={desktopCompact ? 0 : 'md'}>
-            <Box className="left-rail-account-card">
-              {userLabel && (
+            {desktopCompact ? (
+              <Box className="left-rail-account-card" style={{ display: 'flex', justifyContent: 'center' }}>
+                <Box className="left-rail-account-avatar" aria-label={userLabel} title={userLabel}>
+                  {userInitial}
+                </Box>
+              </Box>
+            ) : (
+              <Box className="left-rail-account-card">
                 <Box className="left-rail-account-head">
                   <Box className="left-rail-account-avatar" aria-hidden>
                     {userInitial}
                   </Box>
-                  <Box className="left-rail-account-meta">
-                    <Text className="left-rail-account-kicker">Account</Text>
-                    <Text className="left-rail-account-user" title={userLabel} truncate>
-                      {userLabel}
-                    </Text>
-                  </Box>
+                  <Text className="left-rail-account-user" title={userLabel} truncate style={{ flex: 1, minWidth: 0 }}>
+                    {userLabel}
+                  </Text>
+                  {onSignOut && (
+                    <UnstyledButton
+                      className="left-rail-account-action-signout-icon"
+                      onClick={onSignOut}
+                      aria-label="Sign out"
+                      title="Sign out"
+                    >
+                      <IconLogout size={15} stroke={1.8} />
+                    </UnstyledButton>
+                  )}
                 </Box>
-              )}
-              {onSignOut && !desktopCompact && (
-                <Box className="left-rail-account-actions">
-                  <UnstyledButton
-                    className="left-rail-account-action left-rail-account-action-placeholder"
-                    disabled
-                    aria-disabled="true"
-                  >
-                    <IconSettings size={14} stroke={1.8} />
-                    <Text className="left-rail-account-action-label">Edit</Text>
-                  </UnstyledButton>
-                  <UnstyledButton
-                    className="left-rail-account-action left-rail-account-action-signout"
-                    onClick={onSignOut}
-                  >
-                    <IconLogout size={14} stroke={1.8} />
-                    <Text className="left-rail-account-action-label">Sign out</Text>
-                  </UnstyledButton>
-                </Box>
-              )}
-            </Box>
+              </Box>
+            )}
           </Box>
         )}
       </Box>
     </Box>
+    <Modal opened={createProjectOpened} onClose={closeCreateProject} title="New Project" centered>
+      <Stack gap="md">
+        <TextInput
+          label="Project name"
+          value={newProjectName}
+          onChange={(event) => setNewProjectName(event.currentTarget.value)}
+          placeholder="e.g., Jon"
+          data-autofocus
+        />
+        <TextInput
+          label="Description (optional)"
+          value={newProjectDescription}
+          onChange={(event) => setNewProjectDescription(event.currentTarget.value)}
+          placeholder="Brief description"
+        />
+        <Group justify="flex-end">
+          <Button variant="default" onClick={closeCreateProject} disabled={creatingProject}>
+            Cancel
+          </Button>
+          <Button onClick={handleCreateProject} loading={creatingProject} disabled={!newProjectName.trim()}>
+            Create
+          </Button>
+        </Group>
+      </Stack>
+    </Modal>
+    </>
   );
 }

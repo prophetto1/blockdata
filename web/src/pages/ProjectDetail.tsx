@@ -101,6 +101,7 @@ type ProjectDocumentRow = DocumentRow & {
 
 type PreviewKind = 'none' | 'pdf' | 'image' | 'text' | 'docx' | 'pptx' | 'file';
 type ProjectDetailMode = 'parse' | 'extract';
+type MiddlePreviewTab = 'preview' | 'results';
 type ParseConfigView = 'Basic' | 'Advanced';
 type ExtractConfigView = 'Basic' | 'Advanced' | 'Schema';
 type ExtractSchemaMode = 'table' | 'code';
@@ -135,10 +136,10 @@ const EXTRACT_SCHEMA_TYPE_OPTIONS: Array<{ value: ExtractSchemaFieldType; label:
   { value: 'array:object', label: 'array > object' },
 ];
 
-const DOC_STATUS_META: Record<ProjectDocumentRow['status'], { label: string; tone: 'blue' | 'yellow' | 'green' | 'red' }> = {
-  uploaded: { label: 'Uploaded', tone: 'blue' },
-  converting: { label: 'Converting', tone: 'yellow' },
-  ingested: { label: 'Ingested', tone: 'green' },
+const DOC_STATUS_META: Record<ProjectDocumentRow['status'], { label: string; tone: 'yellow' | 'green' | 'red' }> = {
+  uploaded: { label: 'Uploaded', tone: 'green' },
+  converting: { label: 'In progress', tone: 'yellow' },
+  ingested: { label: 'Uploaded', tone: 'green' },
   conversion_failed: { label: 'Failed', tone: 'red' },
   ingest_failed: { label: 'Failed', tone: 'red' },
 } as const;
@@ -229,6 +230,7 @@ export default function ProjectDetail({ mode = 'parse' }: ProjectDetailProps) {
   const [previewText, setPreviewText] = useState<string | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewError, setPreviewError] = useState<string | null>(null);
+  const [middlePreviewTab, setMiddlePreviewTab] = useState<MiddlePreviewTab>('preview');
   const [parseConfigView, setParseConfigView] = useState<ParseConfigView>('Basic');
   const [extractConfigView, setExtractConfigView] = useState<ExtractConfigView>('Advanced');
   const [extractSchemaMode, setExtractSchemaMode] = useState<ExtractSchemaMode>('table');
@@ -817,11 +819,14 @@ export default function ProjectDetail({ mode = 'parse' }: ProjectDetailProps) {
                           </Text>
                           <Text size="xs" className="parse-doc-card-format">{getDocumentFormat(doc)}</Text>
                           <Text size="xs" className="parse-doc-card-size">{formatBytes(doc.source_filesize)}</Text>
-                          <Group gap={6} wrap="nowrap" className="parse-doc-card-status">
+                          <Group
+                            gap={6}
+                            wrap="nowrap"
+                            className="parse-doc-card-status"
+                            aria-label={`Status: ${statusMeta.label}`}
+                            title={statusMeta.label}
+                          >
                             <span className={`parse-doc-card-status-dot is-${statusMeta.tone}`} />
-                            <Text size="xs" c="dimmed" className="parse-doc-card-status-label">
-                              {statusMeta.label}
-                            </Text>
                           </Group>
                           <ActionIcon
                             size="sm"
@@ -864,110 +869,151 @@ export default function ProjectDetail({ mode = 'parse' }: ProjectDetailProps) {
         <Box className="parse-playground-work">
           <Box className="parse-playground-preview">
             <Box className="parse-preview-frame">
-              {!selectedDoc && (
-                <Center h="100%">
-                  <Text size="sm" c="dimmed">Select a document to preview.</Text>
-                </Center>
-              )}
-
-              {selectedDoc && previewLoading && (
-                <Center h="100%">
-                  <Stack align="center" gap="xs">
-                    <Loader size="sm" />
-                    <Text size="sm" c="dimmed">Loading preview...</Text>
-                  </Stack>
-                </Center>
-              )}
-
-              {selectedDoc && !previewLoading && previewError && (
-                <Box p="sm">
-                  <Alert color="red" variant="light">
-                    {previewError}
-                  </Alert>
-                </Box>
-              )}
-
-              {selectedDoc && !previewLoading && previewKind === 'pdf' && previewUrl && (
-                <PdfPreview
-                  key={`${selectedDoc.source_uid}:${previewUrl}`}
-                  title={selectedDoc.doc_title}
-                  url={previewUrl}
+              <Group justify="space-between" align="center" className="parse-middle-view-tabs" wrap="nowrap">
+                <SegmentedControl
+                  value={middlePreviewTab}
+                  size="xs"
+                  radius="md"
+                  data={[
+                    { label: 'Preview', value: 'preview' },
+                    { label: 'Results', value: 'results' },
+                  ]}
+                  onChange={(value) => setMiddlePreviewTab(value as MiddlePreviewTab)}
                 />
-              )}
+              </Group>
 
-              {selectedDoc && !previewLoading && previewKind === 'image' && previewUrl && (
-                <Center h="100%">
-                  <img src={previewUrl} alt={selectedDoc.doc_title} className="parse-preview-image" />
-                </Center>
-              )}
-
-              {selectedDoc && !previewLoading && previewKind === 'text' && (
-                <Box className="parse-text-preview">
-                  {isMarkdownTextPreview && (
-                    <Group justify="space-between" wrap="nowrap" className="parse-text-preview-header">
-                      <Group gap={6} wrap="nowrap" className="parse-text-preview-file">
-                        <IconFileText size={14} />
-                        <Text size="xs" className="parse-text-preview-filename" title={selectedDoc.doc_title}>
-                          {selectedDoc.doc_title}
-                        </Text>
-                      </Group>
-                      {previewUrl && (
-                        <ActionIcon
-                          size="sm"
-                          variant="subtle"
-                          component="a"
-                          href={previewUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          download
-                          aria-label="Download markdown"
-                        >
-                          <IconDownload size={14} />
-                        </ActionIcon>
-                      )}
-                    </Group>
-                  )}
-                  <pre className="parse-preview-text">{previewText ?? ''}</pre>
-                </Box>
-              )}
-
-              {selectedDoc && !previewLoading && previewKind === 'docx' && previewUrl && (
-                <DocxPreview
-                  key={`${selectedDoc.source_uid}:${previewUrl}`}
-                  title={selectedDoc.doc_title}
-                  url={previewUrl}
-                />
-              )}
-
-              {selectedDoc && !previewLoading && previewKind === 'pptx' && previewUrl && (
-                <PptxPreview
-                  key={`${selectedDoc.source_uid}:${previewUrl}`}
-                  title={selectedDoc.doc_title}
-                  url={previewUrl}
-                />
-              )}
-
-              {selectedDoc && !previewLoading && previewKind === 'file' && (
-                <Center h="100%">
-                  <Stack align="center" gap="xs" p="md">
-                    <Text size="sm" c="dimmed" ta="center">
-                      Preview not supported for this format.
-                    </Text>
-                    {previewUrl && (
-                      <Button
-                        component="a"
-                        href={previewUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        size="xs"
-                        variant="light"
-                      >
-                        Open file
-                      </Button>
+              <Box className="parse-preview-content">
+                {middlePreviewTab === 'preview' && (
+                  <>
+                    {!selectedDoc && (
+                      <Center h="100%">
+                        <Text size="sm" c="dimmed">Select a document to preview.</Text>
+                      </Center>
                     )}
-                  </Stack>
-                </Center>
-              )}
+
+                    {selectedDoc && previewLoading && (
+                      <Center h="100%">
+                        <Stack align="center" gap="xs">
+                          <Loader size="sm" />
+                          <Text size="sm" c="dimmed">Loading preview...</Text>
+                        </Stack>
+                      </Center>
+                    )}
+
+                    {selectedDoc && !previewLoading && previewError && (
+                      <Box p="sm">
+                        <Alert color="red" variant="light">
+                          {previewError}
+                        </Alert>
+                      </Box>
+                    )}
+
+                    {selectedDoc && !previewLoading && previewKind === 'pdf' && previewUrl && (
+                      <PdfPreview
+                        key={`${selectedDoc.source_uid}:${previewUrl}`}
+                        title={selectedDoc.doc_title}
+                        url={previewUrl}
+                      />
+                    )}
+
+                    {selectedDoc && !previewLoading && previewKind === 'image' && previewUrl && (
+                      <Center h="100%">
+                        <img src={previewUrl} alt={selectedDoc.doc_title} className="parse-preview-image" />
+                      </Center>
+                    )}
+
+                    {selectedDoc && !previewLoading && previewKind === 'text' && (
+                      <Box className="parse-text-preview">
+                        {isMarkdownTextPreview && (
+                          <Group justify="space-between" wrap="nowrap" className="parse-text-preview-header">
+                            <Group gap={6} wrap="nowrap" className="parse-text-preview-file">
+                              <IconFileText size={14} />
+                              <Text size="xs" className="parse-text-preview-filename" title={selectedDoc.doc_title}>
+                                {selectedDoc.doc_title}
+                              </Text>
+                            </Group>
+                            {previewUrl && (
+                              <ActionIcon
+                                size="sm"
+                                variant="subtle"
+                                component="a"
+                                href={previewUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                download
+                                aria-label="Download markdown"
+                              >
+                                <IconDownload size={14} />
+                              </ActionIcon>
+                            )}
+                          </Group>
+                        )}
+                        <pre className="parse-preview-text">{previewText ?? ''}</pre>
+                      </Box>
+                    )}
+
+                    {selectedDoc && !previewLoading && previewKind === 'docx' && previewUrl && (
+                      <DocxPreview
+                        key={`${selectedDoc.source_uid}:${previewUrl}`}
+                        title={selectedDoc.doc_title}
+                        url={previewUrl}
+                      />
+                    )}
+
+                    {selectedDoc && !previewLoading && previewKind === 'pptx' && previewUrl && (
+                      <PptxPreview
+                        key={`${selectedDoc.source_uid}:${previewUrl}`}
+                        title={selectedDoc.doc_title}
+                        url={previewUrl}
+                      />
+                    )}
+
+                    {selectedDoc && !previewLoading && previewKind === 'file' && (
+                      <Center h="100%">
+                        <Stack align="center" gap="xs" p="md">
+                          <Text size="sm" c="dimmed" ta="center">
+                            Preview not supported for this format.
+                          </Text>
+                          {previewUrl && (
+                            <Button
+                              component="a"
+                              href={previewUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              size="xs"
+                              variant="light"
+                            >
+                              Open file
+                            </Button>
+                          )}
+                        </Stack>
+                      </Center>
+                    )}
+                  </>
+                )}
+
+                {middlePreviewTab === 'results' && (
+                  <Center h="100%">
+                    <Stack align="center" gap="xs" p="md">
+                      {!selectedDoc && (
+                        <Text size="sm" c="dimmed" ta="center">
+                          Select a document to view parse results.
+                        </Text>
+                      )}
+                      {selectedDoc && selectedDoc.status !== 'ingested' && (
+                        <Text size="sm" c="dimmed" ta="center">
+                          Results are available after you run parse for this document.
+                        </Text>
+                      )}
+                      {selectedDoc && selectedDoc.status === 'ingested' && (
+                        <Text size="sm" c="dimmed" ta="center">
+                          Parse results panel will render here.
+                        </Text>
+                      )}
+                    </Stack>
+                  </Center>
+                )}
+              </Box>
             </Box>
           </Box>
         </Box>

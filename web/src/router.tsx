@@ -11,7 +11,6 @@ import HowItWorks from '@/pages/HowItWorks';
 import UseCases from '@/pages/UseCases';
 import MarketingIntegrations from '@/pages/MarketingIntegrations';
 import AuthCallback from '@/pages/AuthCallback';
-import ProjectsList from '@/pages/Projects';
 import ProjectsHome from '@/pages/ProjectsHome';
 import ProjectDetail from '@/pages/ProjectDetail';
 import Upload from '@/pages/Upload';
@@ -78,7 +77,7 @@ export const router = createBrowserRouter([
           // App landing + projects
           { path: '/app', element: <Navigate to="/app/projects" replace /> },
           { path: '/app/projects', element: <ProjectsHome /> },
-          { path: '/app/projects/list', element: <ProjectsList /> },
+          { path: '/app/projects/list', element: <Navigate to="/app/projects" replace /> },
 
           // Project-scoped routes
           { path: '/app/projects/:projectId', element: <ProjectDetail /> },
