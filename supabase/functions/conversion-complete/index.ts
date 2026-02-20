@@ -59,15 +59,21 @@ Deno.serve(async (req) => {
     const bucket = getEnv("DOCUMENTS_BUCKET", "documents");
 
     const { data: docRow, error: fetchErr } = await supabaseAdmin
-      .from("documents_v2")
-      .select("source_uid, source_type, conversion_job_id, status, conv_uid")
+      .from("source_documents")
+      .select("source_uid, source_type, conversion_job_id, status")
       .eq("source_uid", source_uid)
       .maybeSingle();
-    if (fetchErr) throw new Error(`DB fetch documents_v2 failed: ${fetchErr.message}`);
+    if (fetchErr) throw new Error(`DB fetch source_documents failed: ${fetchErr.message}`);
     if (!docRow) return json(404, { error: "Document not found" });
 
-    if (docRow.status === "ingested" && docRow.conv_uid) {
-      return json(200, { ok: true, noop: true, status: "ingested", conv_uid: docRow.conv_uid });
+    const { data: existingConv } = await supabaseAdmin
+      .from("conversion_parsing")
+      .select("conv_uid")
+      .eq("source_uid", source_uid)
+      .maybeSingle();
+
+    if (docRow.status === "ingested" && existingConv?.conv_uid) {
+      return json(200, { ok: true, noop: true, status: "ingested", conv_uid: existingConv.conv_uid });
     }
 
     if (docRow.conversion_job_id !== conversion_job_id) {
@@ -77,7 +83,7 @@ Deno.serve(async (req) => {
     if (!body.success) {
       const errMsg = (body.error || "conversion failed").toString().slice(0, 1000);
       await supabaseAdmin
-        .from("documents_v2")
+        .from("source_documents")
         .update({ status: "conversion_failed", error: errMsg })
         .eq("source_uid", source_uid);
       return json(200, { ok: false, status: "conversion_failed" });
@@ -120,7 +126,7 @@ Deno.serve(async (req) => {
     if (resolvedTrack === "pandoc" && !pandoc_key) {
       const errMsg = "Invalid callback payload: track=pandoc but pandoc_key is missing";
       await supabaseAdmin
-        .from("documents_v2")
+        .from("source_documents")
         .update({ status: "conversion_failed", error: errMsg })
         .eq("source_uid", source_uid);
       return json(200, { ok: false, status: "conversion_failed", error: errMsg });
@@ -129,7 +135,7 @@ Deno.serve(async (req) => {
     if (resolvedTrack === "docling" && !docling_key) {
       const errMsg = "Invalid callback payload: track=docling but docling_key is missing";
       await supabaseAdmin
-        .from("documents_v2")
+        .from("source_documents")
         .update({ status: "conversion_failed", error: errMsg })
         .eq("source_uid", source_uid);
       return json(200, { ok: false, status: "conversion_failed", error: errMsg });
@@ -159,22 +165,20 @@ Deno.serve(async (req) => {
       }
 
       {
-        const { error: updErr } = await supabaseAdmin
-          .from("documents_v2")
-          .update({
+        const { error: convInsErr } = await supabaseAdmin
+          .from("conversion_parsing")
+          .insert({
             conv_uid,
-            conv_locator: pandoc_key,
+            source_uid,
             conv_status: "success",
             conv_parsing_tool: "pandoc",
             conv_representation_type: "pandoc_ast_json",
             conv_total_blocks,
             conv_block_type_freq: freqMap,
             conv_total_characters,
-            status: "uploaded",
-            error: null,
-          })
-          .eq("source_uid", source_uid);
-        if (updErr) throw new Error(`DB update documents_v2 failed: ${updErr.message}`);
+            conv_locator: pandoc_key,
+          });
+        if (convInsErr) throw new Error(`DB insert conversion_parsing failed: ${convInsErr.message}`);
       }
 
       try {
@@ -193,8 +197,8 @@ Deno.serve(async (req) => {
         }));
         if (blockRows.length === 0) throw new Error("No blocks extracted from pandoc AST");
 
-        const { error: insErr } = await supabaseAdmin.from("blocks_v2").insert(blockRows);
-        if (insErr) throw new Error(`DB insert blocks_v2 failed: ${insErr.message}`);
+        const { error: insErr } = await supabaseAdmin.from("blocks").insert(blockRows);
+        if (insErr) throw new Error(`DB insert blocks failed: ${insErr.message}`);
 
         await insertRepresentationArtifact(supabaseAdmin, {
           source_uid,
@@ -224,10 +228,10 @@ Deno.serve(async (req) => {
         }
 
         const { error: finalErr } = await supabaseAdmin
-          .from("documents_v2")
+          .from("source_documents")
           .update({ status: "ingested", error: null })
           .eq("source_uid", source_uid);
-        if (finalErr) throw new Error(`DB update documents_v2 failed: ${finalErr.message}`);
+        if (finalErr) throw new Error(`DB update source_documents failed: ${finalErr.message}`);
 
         return json(200, {
           ok: true,
@@ -239,7 +243,7 @@ Deno.serve(async (req) => {
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
         await supabaseAdmin
-          .from("documents_v2")
+          .from("source_documents")
           .update({ status: "ingest_failed", error: msg })
           .eq("source_uid", source_uid);
         return json(200, { ok: false, status: "ingest_failed", error: msg });
@@ -270,22 +274,20 @@ Deno.serve(async (req) => {
       }
 
       {
-        const { error: updErr } = await supabaseAdmin
-          .from("documents_v2")
-          .update({
+        const { error: convInsErr } = await supabaseAdmin
+          .from("conversion_parsing")
+          .insert({
             conv_uid,
-            conv_locator: docling_key,
+            source_uid,
             conv_status: "success",
             conv_parsing_tool: "docling",
             conv_representation_type: "doclingdocument_json",
             conv_total_blocks,
             conv_block_type_freq: freqMap,
             conv_total_characters,
-            status: "uploaded",
-            error: null,
-          })
-          .eq("source_uid", source_uid);
-        if (updErr) throw new Error(`DB update documents_v2 failed: ${updErr.message}`);
+            conv_locator: docling_key,
+          });
+        if (convInsErr) throw new Error(`DB insert conversion_parsing failed: ${convInsErr.message}`);
       }
 
       try {
@@ -305,8 +307,8 @@ Deno.serve(async (req) => {
         }));
         if (blockRows.length === 0) throw new Error("No blocks extracted from docling JSON");
 
-        const { error: insErr } = await supabaseAdmin.from("blocks_v2").insert(blockRows);
-        if (insErr) throw new Error(`DB insert blocks_v2 failed: ${insErr.message}`);
+        const { error: insErr } = await supabaseAdmin.from("blocks").insert(blockRows);
+        if (insErr) throw new Error(`DB insert blocks failed: ${insErr.message}`);
 
         await insertRepresentationArtifact(supabaseAdmin, {
           source_uid,
@@ -336,10 +338,10 @@ Deno.serve(async (req) => {
         }
 
         const { error: finalErr } = await supabaseAdmin
-          .from("documents_v2")
+          .from("source_documents")
           .update({ status: "ingested", error: null })
           .eq("source_uid", source_uid);
-        if (finalErr) throw new Error(`DB update documents_v2 failed: ${finalErr.message}`);
+        if (finalErr) throw new Error(`DB update source_documents failed: ${finalErr.message}`);
 
         return json(200, {
           ok: true,
@@ -351,7 +353,7 @@ Deno.serve(async (req) => {
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
         await supabaseAdmin
-          .from("documents_v2")
+          .from("source_documents")
           .update({ status: "ingest_failed", error: msg })
           .eq("source_uid", source_uid);
         return json(200, { ok: false, status: "ingest_failed", error: msg });
@@ -382,22 +384,20 @@ Deno.serve(async (req) => {
     }
 
     {
-      const { error: updErr } = await supabaseAdmin
-        .from("documents_v2")
-        .update({
+      const { error: convInsErr } = await supabaseAdmin
+        .from("conversion_parsing")
+        .insert({
           conv_uid,
-          conv_locator: md_key,
+          source_uid,
           conv_status: "success",
           conv_parsing_tool: "mdast",
           conv_representation_type: "markdown_bytes",
           conv_total_blocks,
           conv_block_type_freq: freqMap,
           conv_total_characters,
-          status: "uploaded",
-          error: null,
-        })
-        .eq("source_uid", source_uid);
-      if (updErr) throw new Error(`DB update documents_v2 failed: ${updErr.message}`);
+          conv_locator: md_key,
+        });
+      if (convInsErr) throw new Error(`DB insert conversion_parsing failed: ${convInsErr.message}`);
     }
 
     try {
@@ -418,8 +418,8 @@ Deno.serve(async (req) => {
 
       if (blockRows.length === 0) throw new Error("No blocks extracted from markdown");
 
-      const { error: insErr } = await supabaseAdmin.from("blocks_v2").insert(blockRows);
-      if (insErr) throw new Error(`DB insert blocks_v2 failed: ${insErr.message}`);
+      const { error: insErr } = await supabaseAdmin.from("blocks").insert(blockRows);
+      if (insErr) throw new Error(`DB insert blocks failed: ${insErr.message}`);
 
       await insertRepresentationArtifact(supabaseAdmin, {
         source_uid,
@@ -451,10 +451,10 @@ Deno.serve(async (req) => {
       }
 
       const { error: finalErr } = await supabaseAdmin
-        .from("documents_v2")
+        .from("source_documents")
         .update({ status: "ingested", error: null })
         .eq("source_uid", source_uid);
-      if (finalErr) throw new Error(`DB update documents_v2 failed: ${finalErr.message}`);
+      if (finalErr) throw new Error(`DB update source_documents failed: ${finalErr.message}`);
 
       return json(200, {
         ok: true,
@@ -466,7 +466,7 @@ Deno.serve(async (req) => {
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       await supabaseAdmin
-        .from("documents_v2")
+        .from("source_documents")
         .update({ status: "ingest_failed", error: msg })
         .eq("source_uid", source_uid);
       return json(200, { ok: false, status: "ingest_failed", error: msg });

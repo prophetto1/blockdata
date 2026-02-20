@@ -1,12 +1,13 @@
 // Single source of truth for table names.
-// During v2 parallel mode, tables have _v2 suffix.
-// After Step 9 cutover, remove _v2 suffixes here.
 export const TABLES = {
   projects: 'projects',
-  documents: 'documents_v2',
-  blocks: 'blocks_v2',
+  documents: 'documents_view',        // read-only view joining source_documents + conversion_parsing
+  sourceDocuments: 'source_documents', // write target + realtime subscription
+  conversionParsing: 'conversion_parsing',
+  blocks: 'blocks',
   schemas: 'schemas',
-  runs: 'runs_v2',
-  overlays: 'block_overlays_v2',
+  runs: 'runs',
+  overlays: 'block_overlays',
   profiles: 'profiles',
+  userApiKeys: 'user_api_keys',
 } as const;

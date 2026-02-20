@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AgGridReact } from 'ag-grid-react';
-import { AllCommunityModule, ModuleRegistry, themeQuartz, type ColDef, type ICellRendererParams } from 'ag-grid-community';
+import { AllCommunityModule, ModuleRegistry, type ColDef, type ICellRendererParams } from 'ag-grid-community';
 import { FileInput, TextInput, Button, Group, Stack, ActionIcon, Tooltip, Modal, Text, Grid, Paper, Badge, useComputedColorScheme } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
@@ -10,6 +10,7 @@ import { supabase } from '@/lib/supabase';
 import { edgeJson } from '@/lib/edge';
 import { TABLES } from '@/lib/tables';
 import type { SchemaRow } from '@/lib/types';
+import { createAppGridTheme } from '@/lib/agGridTheme';
 import { PageHeader } from '@/components/common/PageHeader';
 import { ErrorAlert } from '@/components/common/ErrorAlert';
 import { JsonViewer } from '@/components/common/JsonViewer';
@@ -98,15 +99,7 @@ export default function Schemas() {
   };
 
   const gridTheme = useMemo(() => {
-    return themeQuartz.withParams({
-      rowVerticalPaddingScale: 0.6,
-      browserColorScheme: isDark ? 'dark' : 'light',
-      backgroundColor: isDark ? '#09090b' : '#ffffff',
-      chromeBackgroundColor: isDark ? '#09090b' : '#ffffff',
-      foregroundColor: isDark ? '#fafafa' : '#09090b',
-      borderColor: isDark ? '#27272a' : '#e4e4e7',
-      subtleTextColor: isDark ? '#a1a1aa' : '#52525b',
-    });
+    return createAppGridTheme(isDark);
   }, [isDark]);
 
   const renderActions = useCallback((params: ICellRendererParams<SchemaRow>) => {

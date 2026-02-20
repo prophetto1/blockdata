@@ -1434,7 +1434,7 @@ Source: intermediary spec REQ-REP-01 through REQ-REP-05, REQ-ING-08, REQ-ING-11,
 
 For each Docling conversion, the following provenance fields are first-class integration outputs:
 
-**Representation-level fields (target: `conversion_representations_v2`):**
+**Representation-level fields (target: `conversion_representations`):**
 
 | Field | Type | Source in Docling | Required |
 |---|---|---|---|
@@ -1463,7 +1463,7 @@ For each Docling conversion, the following provenance fields are first-class int
 }
 ```
 
-**Current state:** None of these fields exist as columns on `conversion_representations_v2`. The `artifact_meta` jsonb column exists but contains `{}`.
+**Current state:** None of these fields exist as columns on `conversion_representations`. The `artifact_meta` jsonb column exists but contains `{}`.
 
 ### 13.4 Hash Strategy Decision
 
@@ -1495,7 +1495,7 @@ For each Docling-parsed block, the following fields are first-class outputs that
 | `coordinates_json` | `ProvenanceItem.bbox` | Paginated sources with layout | Bounding box with `coord_origin`; see Section 12 |
 | `parser_metadata_json` | Selected `DocItem` metadata fields | All blocks | Optional parser-native metadata slice (confidence, charspan, formatting) |
 
-**Current state:** `blocks_v2` has only `block_uid`, `conv_uid`, `block_index`, `block_type`, `block_locator`, `block_content`. The 6 fields above are not present as columns.
+**Current state:** `blocks` has only `block_uid`, `conv_uid`, `block_index`, `block_type`, `block_locator`, `block_content`. The 6 fields above are not present as columns.
 
 **Cross-reference:** Maps to Output B gaps G-02 (raw labels/groups) and G-03 (page geometry).
 
@@ -1519,8 +1519,8 @@ The following Output B critical gaps (Section 4.1) map directly to integration c
 
 | Output B gap | Description | v2 contract section | Docling status |
 |---|---|---|---|
-| G-01 | Parser provenance not implemented as first-class columns on `conversion_representations_v2` | 13.3, 13.4 | Docling provides all source data; persistence contract defined |
-| G-02 | Parser-native labels/groups not persisted on `blocks_v2` | 13.5 | `DocItemLabel` and `GroupLabel` fully enumerated in Supertables C/D; extraction path documented in Section 5 |
+| G-01 | Parser provenance not implemented as first-class columns on `conversion_representations` | 13.3, 13.4 | Docling provides all source data; persistence contract defined |
+| G-02 | Parser-native labels/groups not persisted on `blocks` | 13.5 | `DocItemLabel` and `GroupLabel` fully enumerated in Supertables C/D; extraction path documented in Section 5 |
 | G-03 | Paginated geometry fields missing (`page_no`, `coordinates_json`) | 13.5, Section 12 | `ProvenanceItem` shape fully documented in Section 12; persistence contract defined |
 
 All three gaps are implementation gaps (schema DDL + ingestion code), not Docling capability gaps. Docling already emits the required data.
@@ -1533,9 +1533,9 @@ Source: intermediary spec REQ-ING-05 through REQ-ING-07 (current state), REQ-ING
 |---|---|---|---|
 | Docling config | Near-default; only `artifacts_path` customized | Profile-driven via `format_options` dict | Config |
 | Enrichers | All disabled (code, formula, picture) | Profile-dependent; `high_recall` enables all | Config |
-| Parser provenance | Not persisted in `artifact_meta` or columns | Full provenance fields on `conversion_representations_v2` + `artifact_meta` | Schema DDL + code |
-| Block raw labels | Not persisted | `raw_element_type`, `raw_group_type` on `blocks_v2` | Schema DDL + code |
-| Page geometry | Not persisted | `page_no`, `coordinates_json` on `blocks_v2` | Schema DDL + code |
+| Parser provenance | Not persisted in `artifact_meta` or columns | Full provenance fields on `conversion_representations` + `artifact_meta` | Schema DDL + code |
+| Block raw labels | Not persisted | `raw_element_type`, `raw_group_type` on `blocks` | Schema DDL + code |
+| Page geometry | Not persisted | `page_no`, `coordinates_json` on `blocks` | Schema DDL + code |
 | Options hash | Not computed | SHA-256 canonical hash per conversion | Code |
 | Profile naming | Not implemented (no profile system) | `docling_*` prefixed canonical names | Config |
 | Remote services | Not enabled | Policy-gated per REQ-ING-12 | Policy |

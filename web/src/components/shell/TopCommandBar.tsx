@@ -1,9 +1,9 @@
-import { ActionIcon, Group, Kbd, Text, Tooltip, UnstyledButton } from '@mantine/core';
+import { ActionIcon, Box, Group, Kbd, Tooltip } from '@mantine/core';
 import { IconMenu2, IconMoon, IconSearch, IconSun } from '@tabler/icons-react';
 import { spotlight } from '@mantine/spotlight';
-import { useNavigate } from 'react-router-dom';
 import { AiAssistantIcon } from '@/components/icons/AiAssistantIcon';
 import { useHeaderCenter } from '@/components/shell/HeaderCenterContext';
+import { styleTokens } from '@/lib/styleTokens';
 
 type TopCommandBarProps = {
   navOpened: boolean;
@@ -20,7 +20,6 @@ type TopCommandBarProps = {
 
 export function TopCommandBar({
   onToggleNav,
-  onToggleDesktopNav,
   showSearch = true,
   showAssistantToggle = true,
   assistantOpened,
@@ -28,13 +27,11 @@ export function TopCommandBar({
   computedColorScheme,
   onToggleColorScheme,
 }: TopCommandBarProps) {
-  const navigate = useNavigate();
-  void navigate; // used by Spotlight actions defined in AppLayout
   const { center } = useHeaderCenter();
 
   return (
-    <Group h="100%" px="md" justify="space-between">
-      <Group gap="sm">
+    <Box className="top-command-bar">
+      <Box className="top-command-bar-left">
         <Tooltip label="Toggle navigation">
           <ActionIcon
             hiddenFrom="sm"
@@ -46,34 +43,13 @@ export function TopCommandBar({
             <IconMenu2 size={18} />
           </ActionIcon>
         </Tooltip>
-        <Tooltip label="Toggle navigation">
-          <ActionIcon
-            visibleFrom="sm"
-            size="md"
-            variant="subtle"
-            aria-label="Toggle navigation"
-            onClick={onToggleDesktopNav ?? onToggleNav}
-          >
-            <IconMenu2 size={18} />
-          </ActionIcon>
-        </Tooltip>
-        <Group gap={8}>
-          <UnstyledButton
-            type="button"
-            onClick={() => navigate('/app')}
-            aria-label="Go to workspace home"
-            style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}
-          >
-            <Text fw={800} fz={21} style={{ letterSpacing: '-0.02em' }}>
-              BlockData
-            </Text>
-          </UnstyledButton>
-        </Group>
-      </Group>
+      </Box>
 
-      {center}
+      <Box className="top-command-bar-center">
+        {center}
+      </Box>
 
-      <Group gap="sm">
+      <Group className="top-command-bar-right" gap="sm" justify="flex-end" wrap="nowrap">
         {showSearch && (
           <Tooltip label={<Group gap={4}><span>Search</span><Kbd size="xs">Ctrl+K</Kbd></Group>}>
             <ActionIcon
@@ -98,7 +74,7 @@ export function TopCommandBar({
                 size={20}
                 style={{
                   filter: assistantOpened
-                    ? 'drop-shadow(0 0 8px rgba(255, 77, 109, 0.25))'
+                    ? `drop-shadow(0 0 8px ${styleTokens.accents.assistantGlow})`
                     : undefined,
                 }}
               />
@@ -116,6 +92,6 @@ export function TopCommandBar({
           </ActionIcon>
         </Tooltip>
       </Group>
-    </Group>
+    </Box>
   );
 }

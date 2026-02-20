@@ -1,8 +1,8 @@
 import type { Icon } from '@tabler/icons-react';
 import {
   IconBrain,
+  IconDatabase,
   IconFolderPlus,
-  IconHome2,
   IconKey,
   IconPlug,
   IconSchema,
@@ -21,14 +21,20 @@ export type NavGroup = {
   items: NavItem[];
 };
 
+export const GLOBAL_MENUS: NavItem[] = [
+  { label: 'Parse', icon: IconFolderPlus, path: '/app/projects' },
+  { label: 'Extract', icon: IconSchema, path: '/app/extract' },
+  { label: 'Schema', icon: IconSchema, path: '/app/schemas' },
+  { label: 'Transform', icon: IconSettings, path: '/app/schemas/advanced' },
+  { label: 'Database', icon: IconDatabase, path: '/app/projects/list' },
+];
+
 export const NAV_GROUPS: NavGroup[] = [
   {
-    label: 'Track A',
+    label: 'Workspace',
     items: [
-      { label: 'Workspace', icon: IconHome2, path: '/app' },
       { label: 'Projects', icon: IconFolderPlus, path: '/app/projects' },
       { label: 'User Schemas', icon: IconSchema, path: '/app/schemas' },
-      { label: 'Schema Library', icon: IconSchema, path: '/app/schemas/templates' },
     ],
   },
   {

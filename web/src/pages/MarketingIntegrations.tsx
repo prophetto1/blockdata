@@ -11,7 +11,6 @@ import {
   Text,
   ThemeIcon,
   Title,
-  useMantineColorScheme,
 } from '@mantine/core';
 import {
   IconArrowRight,
@@ -32,7 +31,9 @@ import {
   type TablerIcon,
 } from '@tabler/icons-react';
 import { useNavigate } from 'react-router-dom';
+import { MarketingHeroShell } from '@/components/layout/MarketingHeroShell';
 import { IntegrationMap } from '@/components/marketing/IntegrationMap';
+import { styleTokens } from '@/lib/styleTokens';
 
 type ExportFormat = {
   icon: TablerIcon;
@@ -179,25 +180,18 @@ function InfoCardGrid({ items }: { items: InfoCard[] }) {
 
 export default function MarketingIntegrations() {
   const navigate = useNavigate();
-  const { colorScheme } = useMantineColorScheme();
-  const isDark = colorScheme === 'dark';
 
   return (
     <Box>
       {/* ── HERO ── */}
-      <Box
-        pt={{ base: 112, md: 146 }}
-        pb={{ base: 64, md: 96 }}
-        style={{
-          position: 'relative',
-          overflow: 'hidden',
-          background: isDark
-            ? 'radial-gradient(circle at 30% 0%, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0) 70%)'
-            : 'radial-gradient(circle at 30% 0%, rgba(15,23,42,0.06) 0%, rgba(15,23,42,0) 70%)',
-        }}
+      <MarketingHeroShell
+        x="30%"
+        y="0%"
+        lightAlpha={0.03}
+        darkAlpha={0.06}
+        fadeStop={70}
       >
-        <Container px={{ base: 'md', sm: 'lg', md: 'xl' }} style={{ position: 'relative', zIndex: 1 }}>
-          <Stack gap="lg" align="center">
+        <Stack gap="lg" align="center">
             <Title
               order={1}
               ta="center"
@@ -215,9 +209,8 @@ export default function MarketingIntegrations() {
             <Text ta="center" c="dimmed" size="lg" maw={760} style={{ lineHeight: 1.55, letterSpacing: '-0.01em' }}>
               Every processed block exports to a predictable JSONL structure. Build pipelines once, run them forever.
             </Text>
-          </Stack>
-        </Container>
-      </Box>
+        </Stack>
+      </MarketingHeroShell>
 
       {/* ── INTEGRATION MAP ── */}
       <Box py={{ base: 48, md: 72 }}>
@@ -268,21 +261,21 @@ export default function MarketingIntegrations() {
                 withBorder
                 radius="lg"
                 p={{ base: 'md', md: 'lg' }}
-                bg="#14161b"
+                bg={styleTokens.marketing.codePaneBg}
                 style={{
                   width: '100%',
                   maxWidth: 620,
-                  border: '1px solid rgba(255,255,255,0.08)',
+                  border: `1px solid ${styleTokens.marketing.codePaneBorder}`,
                 }}
               >
-                <Group gap="xs" mb="md" pb="xs" style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+                <Group gap="xs" mb="md" pb="xs" style={{ borderBottom: `1px solid ${styleTokens.marketing.codePaneBorder}` }}>
                   <Text size="xs" c="dimmed" fw={500}>block_export.jsonl</Text>
                 </Group>
                 <Box style={{ maxHeight: 420, overflow: 'auto' }}>
                   <Code
                     block
                     bg="transparent"
-                    style={{ fontSize: 15, color: 'rgba(255,255,255,0.88)', lineHeight: 1.62, whiteSpace: 'pre' }}
+                    style={{ fontSize: 15, color: styleTokens.marketing.codePaneFg, lineHeight: 1.62, whiteSpace: 'pre' }}
                   >
                     {JSONL_EXAMPLE}
                   </Code>

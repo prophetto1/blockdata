@@ -24,7 +24,7 @@ Local URL:
 
 ## What it integrates with
 
-- PostgREST reads under RLS: `documents_v2`, `blocks_v2`, `schemas`, `runs_v2`, `block_overlays_v2`
+- PostgREST reads under RLS: `documents_view` (joins `source_documents` + `conversion_parsing`), `blocks`, `schemas`, `runs`, `block_overlays`
 - Edge Functions:
   - `POST /functions/v1/ingest`
   - `POST /functions/v1/schemas`

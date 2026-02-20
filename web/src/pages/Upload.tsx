@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Button, Group } from '@mantine/core';
+import { Button, Group, Paper, Stack } from '@mantine/core';
 import { useNavigate, useParams } from 'react-router-dom';
 import { AppBreadcrumbs } from '@/components/common/AppBreadcrumbs';
-import { MultiDocumentUploader } from '@/components/documents/MultiDocumentUploader';
+import { useShellHeaderTitle } from '@/components/common/useShellHeaderTitle';
+import { ProjectParseUppyUploader } from '@/components/documents/ProjectParseUppyUploader';
 import { supabase } from '@/lib/supabase';
 import { TABLES } from '@/lib/tables';
 
@@ -23,6 +24,11 @@ export default function Upload() {
       });
   }, [projectId]);
 
+  useShellHeaderTitle({
+    title: 'Upload',
+    subtitle: projectName ? `Project: ${projectName}` : undefined,
+  });
+
   if (!projectId) return null;
 
   return (
@@ -34,7 +40,14 @@ export default function Upload() {
           { label: 'Upload' },
         ]}
       />
-      <Group mb="sm">
+      <Group mb="sm" justify="space-between">
+        <Button
+          size="xs"
+          variant="default"
+          onClick={() => navigate(`/app/projects/${projectId}`)}
+        >
+          Back to project
+        </Button>
         <Button
           size="xs"
           variant="light"
@@ -43,12 +56,15 @@ export default function Upload() {
           Open Uppy Library Demo
         </Button>
       </Group>
-      <MultiDocumentUploader
-        projectId={projectId}
-        maxWidth={760}
-        showBackButton
-        onBack={() => navigate(`/app/projects/${projectId}`)}
-      />
+      <Paper withBorder p="lg" maw={760}>
+        <Stack gap="xs">
+          <ProjectParseUppyUploader
+            projectId={projectId}
+            ingestMode="upload_only"
+            height={420}
+          />
+        </Stack>
+      </Paper>
     </>
   );
 }

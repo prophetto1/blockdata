@@ -39,12 +39,12 @@ export async function checkIdempotency(
   ownerId: string,
 ): Promise<IdempotencyResult> {
   const { data: existing, error } = await supabaseAdmin
-    .from("documents_v2")
-    .select("source_uid, owner_id, conv_uid, status, error, project_id")
+    .from("source_documents")
+    .select("source_uid, owner_id, status, error, project_id")
     .eq("source_uid", sourceUid)
     .maybeSingle();
 
-  if (error) throw new Error(`DB lookup documents_v2 failed: ${error.message}`);
+  if (error) throw new Error(`DB lookup source_documents failed: ${error.message}`);
   if (!existing) return { action: "proceed" };
 
   if (existing.owner_id !== ownerId) {
@@ -54,12 +54,21 @@ export async function checkIdempotency(
     );
   }
 
-  // Allow retry for failed conversions: delete the stale row and re-process.
+  const { data: existingConv } = await supabaseAdmin
+    .from("conversion_parsing")
+    .select("conv_uid")
+    .eq("source_uid", sourceUid)
+    .maybeSingle();
+
+  // Allow retry for failed conversions: delete the stale rows and re-process.
   if (existing.status === "conversion_failed" || existing.status === "ingest_failed") {
     const previousProjectId: string | null = existing.project_id ?? null;
-    await supabaseAdmin.from("blocks_v2").delete().eq("conv_uid", existing.conv_uid ?? "");
-    await supabaseAdmin.from("conversion_representations_v2").delete().eq("source_uid", sourceUid);
-    await supabaseAdmin.from("documents_v2").delete().eq("source_uid", sourceUid);
+    if (existingConv?.conv_uid) {
+      await supabaseAdmin.from("blocks").delete().eq("conv_uid", existingConv.conv_uid);
+    }
+    await supabaseAdmin.from("conversion_representations").delete().eq("source_uid", sourceUid);
+    await supabaseAdmin.from("conversion_parsing").delete().eq("source_uid", sourceUid);
+    await supabaseAdmin.from("source_documents").delete().eq("source_uid", sourceUid);
     return { action: "retry", previousProjectId };
   }
 
@@ -67,7 +76,7 @@ export async function checkIdempotency(
     action: "return_existing",
     response: {
       source_uid: sourceUid,
-      conv_uid: existing.conv_uid ?? null,
+      conv_uid: existingConv?.conv_uid ?? null,
       status: existing.status ?? "uploaded",
       error: existing.error ?? undefined,
     },

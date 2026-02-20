@@ -3,7 +3,7 @@ import { basenameNoExt } from "../_shared/sanitize.ts";
 import type { IngestContext, IngestResponse, SignedUploadTarget } from "./types.ts";
 
 /**
- * Process a non-markdown file: create documents_v2 row, call Python conversion service.
+ * Process a non-markdown file: create source_documents row, call Python conversion service.
  */
 export async function processConversion(ctx: IngestContext): Promise<{ status: number; body: IngestResponse }> {
   const {
@@ -25,9 +25,9 @@ export async function processConversion(ctx: IngestContext): Promise<{ status: n
   const fallbackTitle = basenameNoExt(originalFilename);
   const doc_title = requestedTitle || fallbackTitle;
 
-  // Insert documents_v2 row (no conv_uid yet - conversion service will provide it).
+  // Insert source_documents row (conversion_parsing row created later by conversion-complete callback).
   {
-    const { error } = await supabaseAdmin.from("documents_v2").insert({
+    const { error } = await supabaseAdmin.from("source_documents").insert({
       source_uid,
       owner_id: ownerId,
       source_type,
@@ -35,20 +35,12 @@ export async function processConversion(ctx: IngestContext): Promise<{ status: n
       source_total_characters: null,
       source_locator: source_key,
       doc_title,
-      conv_uid: null,
-      conv_status: null,
-      conv_parsing_tool: null,
-      conv_representation_type: null,
-      conv_total_blocks: null,
-      conv_block_type_freq: null,
-      conv_total_characters: null,
-      conv_locator: null,
       project_id,
       status: "converting",
       conversion_job_id,
       error: null,
     });
-    if (error) throw new Error(`DB insert documents_v2 failed: ${error.message}`);
+    if (error) throw new Error(`DB insert source_documents failed: ${error.message}`);
   }
 
   // Signed download URL for conversion service to fetch the original.
@@ -140,7 +132,7 @@ export async function processConversion(ctx: IngestContext): Promise<{ status: n
   } catch (fetchErr) {
     const msg = fetchErr instanceof Error ? fetchErr.message : String(fetchErr);
     await supabaseAdmin
-      .from("documents_v2")
+      .from("source_documents")
       .update({ status: "conversion_failed", error: `conversion service unreachable: ${msg}`.slice(0, 1000) })
       .eq("source_uid", source_uid);
     return { status: 502, body: { source_uid, conv_uid: null, status: "conversion_failed", error: `conversion service unreachable: ${msg}` } };
@@ -149,7 +141,7 @@ export async function processConversion(ctx: IngestContext): Promise<{ status: n
   if (!convertResp.ok) {
     const msg = await convertResp.text().catch(() => "");
     await supabaseAdmin
-      .from("documents_v2")
+      .from("source_documents")
       .update({ status: "conversion_failed", error: `conversion request failed: HTTP ${convertResp.status} ${msg}`.slice(0, 1000) })
       .eq("source_uid", source_uid);
     return { status: 502, body: { source_uid, conv_uid: null, status: "conversion_failed", error: "conversion request failed" } };

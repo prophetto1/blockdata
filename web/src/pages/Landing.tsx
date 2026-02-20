@@ -11,7 +11,6 @@ import {
   ThemeIcon,
   Badge,
   Code,
-  useMantineColorScheme,
 } from '@mantine/core';
 import {
   IconArrowRight,
@@ -27,6 +26,8 @@ import {
   IconShieldCheck,
 } from '@tabler/icons-react';
 import { useNavigate } from 'react-router-dom';
+import { MarketingHeroShell } from '@/components/layout/MarketingHeroShell';
+import { styleTokens } from '@/lib/styleTokens';
 
 // ─── Data ────────────────────────────────────────────────────────────────────
 
@@ -109,26 +110,20 @@ const USE_CASE_TEASERS = [
 
 export default function Landing() {
   const navigate = useNavigate();
-  const { colorScheme } = useMantineColorScheme();
-  const isDark = colorScheme === 'dark';
 
   return (
     <Box>
 
       {/* ── HERO ── */}
-      <Box
+      <MarketingHeroShell
+        x="60%"
+        y="30%"
         pt={{ base: 114, md: 146 }}
-        pb={{ base: 64, md: 96 }}
-        style={{
-          position: 'relative',
-          overflow: 'hidden',
-          background: isDark
-            ? 'radial-gradient(circle at 60% 30%, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0) 60%)'
-            : 'radial-gradient(circle at 60% 30%, rgba(15,23,42,0.06) 0%, rgba(15,23,42,0) 62%)',
-        }}
+        lightAlpha={0.04}
+        darkAlpha={0.06}
+        fadeStop={62}
       >
-        <Container px={{ base: 'md', sm: 'lg', md: 'xl' }} style={{ position: 'relative', zIndex: 1 }}>
-          <SimpleGrid cols={{ base: 1, md: 2 }} spacing={{ base: 48, md: 80 }}>
+        <SimpleGrid cols={{ base: 1, md: 2 }} spacing={{ base: 48, md: 80 }}>
             {/* Left: copy */}
             <Stack gap="xl" justify="center">
               <Title
@@ -179,9 +174,9 @@ export default function Landing() {
                 style={{ width: '100%' }}
               >
                 <Group gap="xs" mb="lg" pb="xs" style={{ borderBottom: '1px solid var(--mantine-color-default-border)' }}>
-                  <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#ef4444' }} />
-                  <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#f59e0b' }} />
-                  <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#22c55e' }} />
+                  <div style={{ width: 10, height: 10, borderRadius: '50%', background: styleTokens.windowDots.danger }} />
+                  <div style={{ width: 10, height: 10, borderRadius: '50%', background: styleTokens.windowDots.warning }} />
+                  <div style={{ width: 10, height: 10, borderRadius: '50%', background: styleTokens.windowDots.success }} />
                   <Text size="xs" ml="auto" c="dimmed" fw={500}>
                     blockdata — export preview
                   </Text>
@@ -214,8 +209,7 @@ export default function Landing() {
               </Paper>
             </Box>
           </SimpleGrid>
-        </Container>
-      </Box>
+      </MarketingHeroShell>
 
       {/* ── WHAT YOUR SCHEMA CAN DO ── */}
       <Box py={{ base: 64, md: 96 }}>

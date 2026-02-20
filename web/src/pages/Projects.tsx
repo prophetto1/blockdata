@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { AgGridReact } from 'ag-grid-react';
-import { AllCommunityModule, ModuleRegistry, themeQuartz, type ColDef, type ICellRendererParams } from 'ag-grid-community';
+import { AllCommunityModule, ModuleRegistry, type ColDef, type ICellRendererParams } from 'ag-grid-community';
 import {
   ActionIcon,
   Badge,
@@ -33,12 +33,16 @@ import {
 import { supabase } from '@/lib/supabase';
 import { TABLES } from '@/lib/tables';
 import type { ProjectOverviewRow, ProjectRow } from '@/lib/types';
+import { createAppGridTheme } from '@/lib/agGridTheme';
 import { PageHeader } from '@/components/common/PageHeader';
 import { ErrorAlert } from '@/components/common/ErrorAlert';
 
 type StatusFilter = 'all' | 'active' | 'processing' | 'empty';
 
 const PAGE_SIZE = 12;
+const PROJECTS_RPC_NEW = 'list_projects_overview';
+const PROJECTS_RPC_LEGACY = 'list_projects_overview_v2';
+let projectsRpcName: typeof PROJECTS_RPC_NEW | typeof PROJECTS_RPC_LEGACY = PROJECTS_RPC_NEW;
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
@@ -52,6 +56,15 @@ function formatDate(value: string | null | undefined) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return '--';
   return date.toLocaleDateString();
+}
+
+function isMissingRpcError(error: { code?: string; message?: string } | null | undefined) {
+  if (!error) return false;
+  return (
+    error.code === 'PGRST202' ||
+    /could not find the function/i.test(error.message ?? '') ||
+    /function .* does not exist/i.test(error.message ?? '')
+  );
 }
 
 export default function Projects() {
@@ -79,12 +92,21 @@ export default function Projects() {
       setError(null);
 
       const offset = (page - 1) * PAGE_SIZE;
-      const { data, error: err } = await supabase.rpc('list_projects_overview_v2', {
+      const rpcParams = {
         p_search: debouncedSearch || null,
         p_status: statusFilter,
         p_limit: PAGE_SIZE,
         p_offset: offset,
-      });
+      };
+
+      let { data, error: err } = await supabase.rpc(projectsRpcName, rpcParams);
+
+      if (err && projectsRpcName === PROJECTS_RPC_NEW && isMissingRpcError(err)) {
+        projectsRpcName = PROJECTS_RPC_LEGACY;
+        const fallback = await supabase.rpc(projectsRpcName, rpcParams);
+        data = fallback.data;
+        err = fallback.error;
+      }
 
       if (cancelled) return;
 
@@ -128,15 +150,7 @@ export default function Projects() {
   );
 
   const gridTheme = useMemo(() => {
-    return themeQuartz.withParams({
-      rowVerticalPaddingScale: 0.6,
-      browserColorScheme: isDark ? 'dark' : 'light',
-      backgroundColor: isDark ? '#09090b' : '#ffffff',
-      chromeBackgroundColor: isDark ? '#09090b' : '#ffffff',
-      foregroundColor: isDark ? '#fafafa' : '#09090b',
-      borderColor: isDark ? '#27272a' : '#e4e4e7',
-      subtleTextColor: isDark ? '#a1a1aa' : '#52525b',
-    });
+    return createAppGridTheme(isDark);
   }, [isDark]);
 
   const columnDefs = useMemo<ColDef<ProjectOverviewRow>[]>(() => ([

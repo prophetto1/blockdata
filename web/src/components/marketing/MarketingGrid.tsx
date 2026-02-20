@@ -1,11 +1,16 @@
 import { useMemo, useState } from 'react';
 import { AgGridReact } from 'ag-grid-react';
-import { AllCommunityModule, ModuleRegistry, themeQuartz } from 'ag-grid-community';
-import { Badge, Paper, Text } from '@mantine/core';
+import {
+  AllCommunityModule,
+  ModuleRegistry,
+  type ColDef,
+  type ICellRendererParams,
+} from 'ag-grid-community';
+import { Badge, Paper, Text, useComputedColorScheme } from '@mantine/core';
+import { createAppGridTheme } from '@/lib/agGridTheme';
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
-const DENSITY_THEME = themeQuartz.withParams({ rowVerticalPaddingScale: 0.5 });
 const BLOCK_TYPE_COLOR: Record<string, string> = {
   heading: 'blue',
   paragraph: 'gray',
@@ -13,9 +18,19 @@ const BLOCK_TYPE_COLOR: Record<string, string> = {
   code_block: 'violet',
 };
 
+type MarketingGridRow = {
+  block_index: number;
+  block_type: string;
+  block_content: string;
+  block_uid: string;
+  status: string;
+  field_classification: string | null;
+  field_is_binding: boolean | null;
+};
+
 // --- Mock Data ---
 
-const MOCK_ROWS = [
+const MOCK_ROWS: MarketingGridRow[] = [
   {
     block_index: 1,
     block_type: 'heading',
@@ -83,23 +98,29 @@ const MOCK_ROWS = [
 
 // --- Renderers ---
 
-function StatusRenderer(params: any) {
-    const status = params.value;
+function StatusRenderer(params: ICellRendererParams<MarketingGridRow, string>) {
+    const status = params.value ?? 'pending';
     const color = status === 'confirmed' ? 'green' : status === 'ai_complete' ? 'yellow' : 'gray';
     return <Badge size="xs" variant="light" color={color}>{status}</Badge>;
 }
 
-function TypeRenderer(params: any) {
-    return <Badge size="xs" variant="light" color={BLOCK_TYPE_COLOR[params.value] || 'gray'}>{params.value}</Badge>;
+function TypeRenderer(params: ICellRendererParams<MarketingGridRow, string>) {
+    const value = params.value ?? 'unknown';
+    return <Badge size="xs" variant="light" color={BLOCK_TYPE_COLOR[value] || 'gray'}>{value}</Badge>;
 }
 
 // --- Component ---
 
 export function MarketingGrid() {
   const [rowData] = useState(MOCK_ROWS);
+  const computedColorScheme = useComputedColorScheme('dark');
+  const isDark = computedColorScheme === 'dark';
+  const gridTheme = useMemo(
+    () => createAppGridTheme(isDark).withParams({ rowVerticalPaddingScale: 0.5 }),
+    [isDark],
+  );
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const colDefs = useMemo<any[]>(() => [
+  const colDefs = useMemo<ColDef<MarketingGridRow>[]>(() => [
     { field: 'block_index', headerName: '#', width: 50, pinned: 'left' },
     { field: 'block_type', headerName: 'Type', width: 100, pinned: 'left', cellRenderer: TypeRenderer },
     { field: 'block_content', headerName: 'Content', flex: 1, minWidth: 300 },
@@ -119,10 +140,9 @@ export function MarketingGrid() {
         <div style={{ padding: '8px 12px', borderBottom: '1px solid var(--mantine-color-default-border)', background: 'var(--mantine-color-body)' }}>
             <Text size="xs" c="dimmed" fw={700}>PREVIEW: LEGAL_AGREEMENT_V1.PDF</Text>
         </div>
-        <div className="ag-theme-quartz-dark" style={{ flex: 1, width: '100%' }}>
-            {/* Force dark theme for the "tech" feel regardless of page mode, or adapt */}
+        <div className="block-viewer-grid grid-font-medium grid-font-family-sans grid-valign-center" style={{ flex: 1, width: '100%' }}>
              <AgGridReact
-                theme={DENSITY_THEME}
+                theme={gridTheme}
                 rowData={rowData}
                 columnDefs={colDefs}
                 domLayout='autoHeight'

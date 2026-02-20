@@ -839,7 +839,7 @@ Deno.serve(async (req) => {
       if (typeof lastError === "string") patch.last_error = lastError;
 
       const { data: strictRows, error: strictErr } = await supabase
-        .from("block_overlays_v2")
+        .from("block_overlays")
         .update(patch)
         .eq("run_id", runId)
         .eq("claimed_by", workerId)
@@ -857,7 +857,7 @@ Deno.serve(async (req) => {
 
       // Fallback to targeted run+block release in case claimed_by drifted unexpectedly.
       const { data: fallbackRows, error: fallbackErr } = await supabase
-        .from("block_overlays_v2")
+        .from("block_overlays")
         .update(patch)
         .eq("run_id", runId)
         .in("status", ["pending", "claimed"])
@@ -882,7 +882,7 @@ Deno.serve(async (req) => {
 
     // Run + schema (cached for entire batch)
     const { data: run, error: runErr } = await supabase
-      .from("runs_v2")
+      .from("runs")
       .select("run_id, owner_id, conv_uid, schema_id, model_config, status, schemas(schema_ref, schema_jsonb)")
       .eq("run_id", runId)
       .single();
@@ -1062,7 +1062,7 @@ Deno.serve(async (req) => {
 
     // Load block content for all claimed blocks
     const { data: blocks, error: blkErr } = await supabase
-      .from("blocks_v2")
+      .from("blocks")
       .select("block_uid, block_type, block_content")
       .in("block_uid", claimedUids);
 
@@ -1094,7 +1094,7 @@ Deno.serve(async (req) => {
 
     const markRetryOrFailed = async (blockUid: string, errMsg: string) => {
       const { data: overlay } = await supabase
-        .from("block_overlays_v2")
+        .from("block_overlays")
         .select("attempt_count")
         .eq("run_id", runId)
         .eq("block_uid", blockUid)
@@ -1104,7 +1104,7 @@ Deno.serve(async (req) => {
 
       if (attempts < maxRetries) {
         await supabase
-          .from("block_overlays_v2")
+          .from("block_overlays")
           .update({
             status: "pending",
             last_error: errMsg,
@@ -1116,7 +1116,7 @@ Deno.serve(async (req) => {
           .eq("block_uid", blockUid);
       } else {
         await supabase
-          .from("block_overlays_v2")
+          .from("block_overlays")
           .update({
             status: "failed",
             last_error: errMsg,
@@ -1141,10 +1141,10 @@ Deno.serve(async (req) => {
       const block = blockMap.get(blockUid);
       if (!block) {
         await supabase
-          .from("block_overlays_v2")
+          .from("block_overlays")
           .update({
             status: "failed",
-            last_error: "Block not found in blocks_v2",
+            last_error: "Block not found in blocks",
           })
           .eq("run_id", runId)
           .eq("block_uid", blockUid);
@@ -1200,7 +1200,7 @@ Deno.serve(async (req) => {
         );
 
         await supabase
-          .from("block_overlays_v2")
+          .from("block_overlays")
           .update({
             overlay_jsonb_staging: normalizedData,
             status: "ai_complete",
@@ -1270,7 +1270,7 @@ Deno.serve(async (req) => {
             schemaProperties,
           );
           await supabase
-            .from("block_overlays_v2")
+            .from("block_overlays")
             .update({
               overlay_jsonb_staging: normalizedData,
               status: "ai_complete",
@@ -1383,7 +1383,7 @@ Deno.serve(async (req) => {
     }
 
     const { data: counts } = await supabase
-      .from("block_overlays_v2")
+      .from("block_overlays")
       .select("status")
       .eq("run_id", runId);
 
@@ -1409,7 +1409,7 @@ Deno.serve(async (req) => {
       runUpdate.completed_at = new Date().toISOString();
     }
 
-    await supabase.from("runs_v2").update(runUpdate).eq("run_id", runId);
+    await supabase.from("runs").update(runUpdate).eq("run_id", runId);
 
     return json(200, {
       worker_id: workerId,

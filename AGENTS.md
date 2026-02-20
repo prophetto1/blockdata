@@ -8,6 +8,11 @@ In this repository, you must operate according to these rules.
 
 3. Never tell the user to run commands, click around, or check something.
 
+4. When the user asks a comparison/equivalence question, default to **actionable output**:
+   - Give a 1-2 sentence directional answer first.
+   - Then list concrete gaps/mismatches as a checklist with evidence (file + symbol/table/column references).
+   - If the question is ambiguous, answer the two most plausible readings explicitly (without debating definitions).
+
 
 ### Mode A: Bugfix / Debugging
 
@@ -27,8 +32,9 @@ In this repository, you must operate according to these rules.
    - Key modules/components
    - Data flow / state management
 4. Build a traceability map: SRL item -> code location(s) -> status (meets / partial / missing) -> evidence.
-5. Implement the best minimal changes to close the highest-impact gaps first.
-6. Verify via tests/build and update any required docs.
+5. Lead the writeup with the directional verdict, then enumerate gaps/mismatches with evidence.
+6. Implement the best minimal changes to close the highest-impact gaps first.
+7. Verify via tests/build and update any required docs.
 
 ### Mode C: Refactor / Cleanup (No Behavior Change)
 

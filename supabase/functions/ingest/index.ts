@@ -7,9 +7,11 @@ import { createAdminClient, requireUserId } from "../_shared/supabase.ts";
 import type { IngestContext } from "./types.ts";
 import { uploadToStorage } from "./storage.ts";
 import { resolveIngestRoute } from "./routing.ts";
+import { parseIngestMode } from "./mode.ts";
 import { validateProjectOwnership, checkIdempotency } from "./validate.ts";
 import { processMarkdown } from "./process-md.ts";
 import { processConversion } from "./process-convert.ts";
+import { processUploadOnly } from "./process-upload-only.ts";
 
 function json(status: number, body: unknown): Response {
   return new Response(JSON.stringify(body, null, 2), {
@@ -34,6 +36,7 @@ Deno.serve(async (req) => {
     const requestedTitle = typeof docTitleRaw === "string" ? docTitleRaw.trim() : "";
     const projectIdRaw = form.get("project_id");
     let project_id = typeof projectIdRaw === "string" && projectIdRaw.trim() ? projectIdRaw.trim() : null;
+    const ingestMode = parseIngestMode(form.get("ingest_mode"));
 
     const originalFilename = sanitizeFilename(file.name || "upload");
     const supabaseAdmin = createAdminClient();
@@ -72,6 +75,11 @@ Deno.serve(async (req) => {
       supabaseAdmin, runtimePolicy, ownerId, ingest_track, source_uid, source_type, source_key,
       bucket, fileBytes, originalFilename, requestedTitle, project_id,
     };
+
+    if (ingestMode === "upload_only") {
+      const { status, body } = await processUploadOnly(ctx);
+      return json(status, body);
+    }
 
     if (source_type === "md") {
       const resp = await processMarkdown(ctx);

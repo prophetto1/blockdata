@@ -75,7 +75,7 @@ Deno.serve(async (req) => {
 
   if (run_id) {
     const { data: run, error: runErr } = await supabase
-      .from("runs_v2")
+      .from("runs")
       .select("run_id, conv_uid, schemas(schema_ref, schema_uid)")
       .eq("run_id", run_id)
       .maybeSingle();
@@ -88,7 +88,7 @@ Deno.serve(async (req) => {
     schemaUid = schemaJoin?.schema_uid ?? null;
 
     const { data: overlays, error: ovErr } = await supabase
-      .from("block_overlays_v2")
+      .from("block_overlays")
       .select("block_uid, overlay_jsonb_confirmed")
       .eq("run_id", run_id)
       .eq("status", "confirmed");
@@ -98,21 +98,31 @@ Deno.serve(async (req) => {
     }
   }
 
-  // Fetch document from documents_v2 by conv_uid
-  const { data: doc, error: docErr } = await supabase
-    .from("documents_v2")
+  // Fetch conversion + source document by conv_uid
+  const { data: conv, error: convErr } = await supabase
+    .from("conversion_parsing")
     .select(
-      "source_uid, source_type, source_filesize, source_total_characters, uploaded_at, conv_uid, conv_status, conv_parsing_tool, conv_representation_type, conv_total_blocks, conv_block_type_freq, conv_total_characters, status",
+      "conv_uid, conv_status, conv_parsing_tool, conv_representation_type, conv_total_blocks, conv_block_type_freq, conv_total_characters, source_uid",
     )
     .eq("conv_uid", resolvedConvUid)
     .maybeSingle();
-  if (docErr) return json(500, { error: docErr.message });
-  if (!doc) return json(404, { error: "Document not found" });
-  if (doc.status !== "ingested") return json(409, { error: "Document not ingested yet" });
+  if (convErr) return json(500, { error: convErr.message });
+  if (!conv) return json(404, { error: "Conversion not found" });
 
-  // Fetch blocks from blocks_v2
+  const { data: srcDoc, error: srcErr } = await supabase
+    .from("source_documents")
+    .select("source_uid, source_type, source_filesize, source_total_characters, uploaded_at, status")
+    .eq("source_uid", conv.source_uid)
+    .maybeSingle();
+  if (srcErr) return json(500, { error: srcErr.message });
+  if (!srcDoc) return json(404, { error: "Source document not found" });
+  if (srcDoc.status !== "ingested") return json(409, { error: "Document not ingested yet" });
+
+  const doc = { ...srcDoc, ...conv };
+
+  // Fetch blocks from blocks
   const { data: blocks, error: blkErr } = await supabase
-    .from("blocks_v2")
+    .from("blocks")
     .select("block_uid, block_type, block_index, block_locator, block_content")
     .eq("conv_uid", doc.conv_uid)
     .order("block_index", { ascending: true });

@@ -16,7 +16,7 @@ export async function insertRepresentationArtifact(
   payload: RepresentationArtifactInsert,
 ): Promise<void> {
   const { error } = await supabaseAdmin
-    .from("conversion_representations_v2")
+    .from("conversion_representations")
     .upsert({
       source_uid: payload.source_uid,
       conv_uid: payload.conv_uid,
@@ -28,6 +28,6 @@ export async function insertRepresentationArtifact(
       artifact_meta: payload.artifact_meta ?? {},
     }, { onConflict: "conv_uid,representation_type", ignoreDuplicates: true });
   if (error) {
-    throw new Error(`DB insert conversion_representations_v2 failed: ${error.message}`);
+    throw new Error(`DB insert conversion_representations failed: ${error.message}`);
   }
 }

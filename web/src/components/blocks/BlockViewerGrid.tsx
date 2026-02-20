@@ -3,7 +3,6 @@ import { AgGridReact } from 'ag-grid-react';
 import {
   AllCommunityModule,
   ModuleRegistry,
-  themeQuartz,
   type CellValueChangedEvent,
   type ColDef,
   type ColGroupDef,
@@ -42,14 +41,15 @@ import { supabase } from '@/lib/supabase';
 import { useBlocks } from '@/hooks/useBlocks';
 import { useOverlays } from '@/hooks/useOverlays';
 import { extractSchemaFields, type SchemaFieldMeta } from '@/lib/schema-fields';
+import { createAppGridTheme } from '@/lib/agGridTheme';
 import type { RunWithSchema } from '@/lib/types';
 import { ErrorAlert } from '@/components/common/ErrorAlert';
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
-const DENSITY_THEMES = {
-  compact: themeQuartz.withParams({ rowVerticalPaddingScale: 0.3 }),
-  comfortable: themeQuartz.withParams({ rowVerticalPaddingScale: 0.7 }),
+const GRID_ROW_PADDING_SCALE = {
+  compact: 0.3,
+  comfortable: 0.7,
 } as const;
 
 const BLOCK_TYPE_COLOR: Record<string, string> = {
@@ -427,15 +427,11 @@ export function BlockViewerGrid({ convUid, selectedRunId, selectedRun, onExport,
   }, [hasRun, hiddenCols, schemaFields]);
 
   const gridTheme = useMemo(() => {
-    const base = DENSITY_THEMES[viewMode as keyof typeof DENSITY_THEMES] ?? DENSITY_THEMES.compact;
-    return base.withParams({
-      browserColorScheme: isDark ? 'dark' : 'light',
-      backgroundColor: isDark ? '#09090b' : '#ffffff',
-      chromeBackgroundColor: isDark ? '#09090b' : '#ffffff',
-      foregroundColor: isDark ? '#fafafa' : '#09090b',
-      borderColor: isDark ? '#27272a' : '#e4e4e7',
-      subtleTextColor: isDark ? '#a1a1aa' : '#52525b',
-    });
+    const rowVerticalPaddingScale =
+      GRID_ROW_PADDING_SCALE[viewMode as keyof typeof GRID_ROW_PADDING_SCALE] ??
+      GRID_ROW_PADDING_SCALE.compact;
+
+    return createAppGridTheme(isDark).withParams({ rowVerticalPaddingScale });
   }, [isDark, viewMode]);
 
   const setBlockBusy = useCallback((blockUid: string, busy: boolean) => {

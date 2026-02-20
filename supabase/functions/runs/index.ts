@@ -43,6 +43,15 @@ function parseRunOverrides(input: unknown): {
   return out;
 }
 
+function isMissingRpcError(error: { code?: string; message?: string } | null | undefined): boolean {
+  if (!error) return false;
+  return (
+    error.code === "PGRST202" ||
+    /could not find the function/i.test(error.message ?? "") ||
+    /function .* does not exist/i.test(error.message ?? "")
+  );
+}
+
 Deno.serve(async (req) => {
   const preflight = corsPreflight(req);
   if (preflight) return preflight;
@@ -61,11 +70,18 @@ Deno.serve(async (req) => {
     if (!isUuid(schema_id)) return json(400, { error: "Invalid schema_id" });
 
     const supabaseAdmin = createAdminClient();
-    const { data, error } = await supabaseAdmin.rpc("create_run_v2", {
+    const rpcParams = {
       p_owner_id: ownerId,
       p_conv_uid: conv_uid,
       p_schema_id: schema_id,
-    });
+    };
+
+    let { data, error } = await supabaseAdmin.rpc("create_run", rpcParams);
+    if (error && isMissingRpcError(error)) {
+      const fallback = await supabaseAdmin.rpc("create_run_v2", rpcParams);
+      data = fallback.data;
+      error = fallback.error;
+    }
 
     if (error) return json(400, { error: error.message });
     const run_id = data;
@@ -85,7 +101,7 @@ Deno.serve(async (req) => {
     };
 
     const { error: modelConfigErr } = await supabaseAdmin
-      .from("runs_v2")
+      .from("runs")
       .update({ model_config })
       .eq("run_id", run_id);
     if (modelConfigErr) {
@@ -94,7 +110,7 @@ Deno.serve(async (req) => {
 
     // Fetch total_blocks from the newly created run
     const { data: runRow } = await supabaseAdmin
-      .from("runs_v2")
+      .from("runs")
       .select("total_blocks")
       .eq("run_id", run_id)
       .single();

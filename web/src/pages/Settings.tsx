@@ -31,6 +31,7 @@ import {
   IconServer,
 } from '@tabler/icons-react';
 import { supabase } from '@/lib/supabase';
+import { TABLES } from '@/lib/tables';
 import { edgeJson } from '@/lib/edge';
 import { PageHeader } from '@/components/common/PageHeader';
 import type { UserApiKeyRow } from '@/lib/types';
@@ -145,7 +146,7 @@ export default function Settings() {
   // Load all saved keys on mount
   useEffect(() => {
     supabase
-      .from('user_api_keys')
+      .from(TABLES.userApiKeys)
       .select(USER_KEY_COLUMNS)
       .then(({ data }) => {
         const map: Record<string, UserApiKeyRow | null> = {};
@@ -245,7 +246,7 @@ export default function Settings() {
       });
 
       const { data } = await supabase
-        .from('user_api_keys')
+        .from(TABLES.userApiKeys)
         .select(USER_KEY_COLUMNS)
         .eq('provider', selectedId)
         .maybeSingle();

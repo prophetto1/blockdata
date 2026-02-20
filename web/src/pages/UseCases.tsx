@@ -8,10 +8,10 @@ import {
   Stack,
   Text,
   Title,
-  useMantineColorScheme,
 } from '@mantine/core';
 import { IconArrowRight } from '@tabler/icons-react';
 import { useNavigate } from 'react-router-dom';
+import { MarketingHeroShell } from '@/components/layout/MarketingHeroShell';
 
 type UseCase = {
   badge: string;
@@ -80,25 +80,18 @@ const SECONDARY = [
 
 export default function UseCases() {
   const navigate = useNavigate();
-  const { colorScheme } = useMantineColorScheme();
-  const isDark = colorScheme === 'dark';
 
   return (
     <Box>
       {/* ── HERO ── */}
-      <Box
-        pt={{ base: 112, md: 146 }}
-        pb={{ base: 64, md: 96 }}
-        style={{
-          position: 'relative',
-          overflow: 'hidden',
-          background: isDark
-            ? 'radial-gradient(circle at 70% 0%, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0) 70%)'
-            : 'radial-gradient(circle at 70% 0%, rgba(15,23,42,0.06) 0%, rgba(15,23,42,0) 68%)',
-        }}
+      <MarketingHeroShell
+        x="70%"
+        y="0%"
+        lightAlpha={0.03}
+        darkAlpha={0.06}
+        fadeStop={70}
       >
-        <Container px={{ base: 'md', sm: 'lg', md: 'xl' }} style={{ position: 'relative', zIndex: 1 }}>
-          <Stack gap="lg" align="center">
+        <Stack gap="lg" align="center">
             <Title
               order={1}
               ta="center"
@@ -114,9 +107,8 @@ export default function UseCases() {
             <Text ta="center" c="dimmed" size="lg" maw={760} style={{ lineHeight: 1.55, letterSpacing: '-0.01em' }}>
               Schema-driven processing for metadata extraction, content revision, or both - across thousands of blocks.
             </Text>
-          </Stack>
-        </Container>
-      </Box>
+        </Stack>
+      </MarketingHeroShell>
 
       {/* ── FEATURED USE CASES ── */}
       <Box py={{ base: 64, md: 96 }} bg="var(--mantine-color-default-hover)">

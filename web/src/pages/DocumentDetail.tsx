@@ -9,6 +9,7 @@ import { downloadFromEdge } from '@/lib/edge';
 import { TABLES } from '@/lib/tables';
 import type { DocumentRow } from '@/lib/types';
 import { ErrorAlert } from '@/components/common/ErrorAlert';
+import { useShellHeaderTitle } from '@/components/common/useShellHeaderTitle';
 import { BlockViewerGrid } from '@/components/blocks/BlockViewerGrid';
 import { useRuns } from '@/hooks/useRuns';
 
@@ -105,6 +106,15 @@ export default function DocumentDetail() {
     });
   }, [requestedRunId, runs]);
 
+  useShellHeaderTitle({
+    title: doc?.doc_title ?? 'Document',
+    subtitle: doc
+      ? `${doc.source_type} · ${formatBytes(doc.source_filesize)}${
+          doc.source_total_characters ? ` · ${doc.source_total_characters.toLocaleString()} chars` : ''
+        }`
+      : undefined,
+  });
+
   if (loading) {
     return (
       <Stack gap="md">
@@ -120,9 +130,7 @@ export default function DocumentDetail() {
   const selectedRun = runs.find((r) => r.run_id === selectedRunId) ?? null;
   return (
     <>
-      {/* Compact document header: title + metadata */}
-      <Group justify="space-between" mb="sm" wrap="nowrap" style={{ minWidth: 0 }}>
-        <Text fw={600} size="md" truncate style={{ maxWidth: 420 }}>{doc.doc_title}</Text>
+      <Group justify="flex-end" mb="sm" wrap="nowrap" style={{ minWidth: 0 }}>
         <Group gap="xs" wrap="nowrap">
           <Button
             size="xs"

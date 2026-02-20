@@ -11,7 +11,6 @@ import {
   Text,
   ThemeIcon,
   Title,
-  useMantineColorScheme,
 } from '@mantine/core';
 import {
   IconBolt,
@@ -22,6 +21,8 @@ import {
   IconUpload,
 } from '@tabler/icons-react';
 import { useNavigate } from 'react-router-dom';
+import { MarketingHeroShell } from '@/components/layout/MarketingHeroShell';
+import { styleTokens } from '@/lib/styleTokens';
 
 const PIPELINE = [
   {
@@ -110,25 +111,19 @@ const SCHEMA_DETAIL = [
 
 export default function HowItWorks() {
   const navigate = useNavigate();
-  const { colorScheme } = useMantineColorScheme();
-  const isDark = colorScheme === 'dark';
 
   return (
     <Box>
       {/* ── HERO ── */}
-      <Box
+      <MarketingHeroShell
+        x="50%"
+        y="0%"
         pt={{ base: 112, md: 150 }}
-        pb={{ base: 64, md: 96 }}
-        style={{
-          position: 'relative',
-          overflow: 'hidden',
-          background: isDark
-            ? 'radial-gradient(circle at 50% 0%, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0) 70%)'
-            : 'radial-gradient(circle at 50% 0%, rgba(15,23,42,0.06) 0%, rgba(15,23,42,0) 68%)',
-        }}
+        lightAlpha={0.03}
+        darkAlpha={0.06}
+        fadeStop={70}
       >
-        <Container px={{ base: 'md', sm: 'lg', md: 'xl' }} style={{ position: 'relative', zIndex: 1 }}>
-          <Stack gap="lg" align="center">
+        <Stack gap="lg" align="center">
             <Title
               order={1}
               ta="center"
@@ -147,9 +142,8 @@ export default function HowItWorks() {
               The platform decomposes documents into blocks, applies your schema per block in parallel, and stages
               results for human review.
             </Text>
-          </Stack>
-        </Container>
-      </Box>
+        </Stack>
+      </MarketingHeroShell>
 
       {/* ── PIPELINE ── */}
       <Box py={{ base: 64, md: 96 }} bg="var(--mantine-color-default-hover)">
@@ -220,9 +214,9 @@ export default function HowItWorks() {
           >
             <Group p="sm" style={{ borderBottom: '1px solid var(--mantine-color-default-border)' }}>
               <Group gap={6}>
-                <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#ff5f56' }} />
-                <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#ffbd2e' }} />
-                <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#27c93f' }} />
+                <div style={{ width: 10, height: 10, borderRadius: '50%', background: styleTokens.windowDots.dangerSoft }} />
+                <div style={{ width: 10, height: 10, borderRadius: '50%', background: styleTokens.windowDots.warningSoft }} />
+                <div style={{ width: 10, height: 10, borderRadius: '50%', background: styleTokens.windowDots.successSoft }} />
               </Group>
               <Text size="xs" c="dimmed" mx="auto" fw={500}>
                 legal_analysis_project - BlockData
@@ -257,8 +251,7 @@ export default function HowItWorks() {
                 py="sm"
                 style={{
                   borderBottom: '1px solid var(--mantine-color-default-border)',
-                  backgroundColor:
-                    index % 2 === 0 ? 'transparent' : isDark ? 'rgba(255,255,255,0.01)' : 'rgba(9,9,11,0.02)',
+                  backgroundColor: index % 2 === 0 ? 'transparent' : styleTokens.marketing.demoRowAlt,
                 }}
               >
                 <Text size="xs" c="dimmed" ff="monospace" pl="md">{row.i}</Text>
@@ -272,7 +265,7 @@ export default function HowItWorks() {
               </SimpleGrid>
             ))}
 
-            <Box p="xs" bg={isDark ? 'rgba(255,255,255,0.02)' : 'rgba(9,9,11,0.03)'}>
+            <Box p="xs" bg={styleTokens.marketing.demoFooterBg}>
               <Text size="xs" c="dimmed" ta="center">
                 Showing 4 of 347 blocks
               </Text>

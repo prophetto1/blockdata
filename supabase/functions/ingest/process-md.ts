@@ -27,9 +27,9 @@ export async function processMarkdown(ctx: IngestContext): Promise<IngestRespons
     freqMap[b.block_type] = (freqMap[b.block_type] || 0) + 1;
   }
 
-  // Insert documents_v2 row.
+  // Insert source_documents row.
   {
-    const { error } = await supabaseAdmin.from("documents_v2").insert({
+    const { error } = await supabaseAdmin.from("source_documents").insert({
       source_uid,
       owner_id: ownerId,
       source_type,
@@ -37,7 +37,19 @@ export async function processMarkdown(ctx: IngestContext): Promise<IngestRespons
       source_total_characters: markdown.length,
       source_locator: source_key,
       doc_title,
+      project_id,
+      status: "uploaded",
+      conversion_job_id: null,
+      error: null,
+    });
+    if (error) throw new Error(`DB insert source_documents failed: ${error.message}`);
+  }
+
+  // Insert conversion_parsing row.
+  {
+    const { error } = await supabaseAdmin.from("conversion_parsing").insert({
       conv_uid,
+      source_uid,
       conv_status: "success",
       conv_parsing_tool: "mdast",
       conv_representation_type: "markdown_bytes",
@@ -45,15 +57,11 @@ export async function processMarkdown(ctx: IngestContext): Promise<IngestRespons
       conv_block_type_freq: freqMap,
       conv_total_characters,
       conv_locator: source_key,
-      project_id,
-      status: "uploaded",
-      conversion_job_id: null,
-      error: null,
     });
-    if (error) throw new Error(`DB insert documents_v2 failed: ${error.message}`);
+    if (error) throw new Error(`DB insert conversion_parsing failed: ${error.message}`);
   }
 
-  // Insert blocks_v2.
+  // Insert blocks.
   try {
     const blockRows = extracted.blocks.map((b, idx) => ({
       block_uid: `${conv_uid}:${idx}`,
@@ -74,8 +82,8 @@ export async function processMarkdown(ctx: IngestContext): Promise<IngestRespons
       throw new Error("No blocks extracted from markdown");
     }
 
-    const { error } = await supabaseAdmin.from("blocks_v2").insert(blockRows);
-    if (error) throw new Error(`DB insert blocks_v2 failed: ${error.message}`);
+    const { error } = await supabaseAdmin.from("blocks").insert(blockRows);
+    if (error) throw new Error(`DB insert blocks failed: ${error.message}`);
     await insertRepresentationArtifact(supabaseAdmin, {
       source_uid,
       conv_uid,
@@ -88,16 +96,16 @@ export async function processMarkdown(ctx: IngestContext): Promise<IngestRespons
     });
 
     const { error: updErr } = await supabaseAdmin
-      .from("documents_v2")
+      .from("source_documents")
       .update({ status: "ingested", error: null })
       .eq("source_uid", source_uid);
-    if (updErr) throw new Error(`DB update documents_v2 failed: ${updErr.message}`);
+    if (updErr) throw new Error(`DB update source_documents failed: ${updErr.message}`);
 
     return { source_uid, conv_uid, status: "ingested", blocks_count: blockRows.length };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     await supabaseAdmin
-      .from("documents_v2")
+      .from("source_documents")
       .update({ status: "ingest_failed", error: msg })
       .eq("source_uid", source_uid);
     return { source_uid, conv_uid, status: "ingest_failed", error: msg };

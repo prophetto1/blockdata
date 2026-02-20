@@ -6,8 +6,6 @@ import {
   Stack,
   Text,
   ThemeIcon,
-  useComputedColorScheme,
-  useMantineColorScheme,
 } from '@mantine/core';
 import {
   IconArrowDown,
@@ -20,6 +18,7 @@ import {
   IconVectorTriangle,
   type TablerIcon,
 } from '@tabler/icons-react';
+import { styleTokens } from '@/lib/styleTokens';
 
 // ─── Data ────────────────────────────────────────────────────────────────────
 
@@ -129,18 +128,12 @@ function Connector({ label }: { label: string }) {
 // ─── Main component ──────────────────────────────────────────────────────────
 
 export function IntegrationMap() {
-  const { colorScheme } = useMantineColorScheme();
-  const computedColorScheme = useComputedColorScheme('dark');
-  const isDark = (colorScheme === 'auto' ? computedColorScheme : colorScheme) === 'dark';
-
-  const hubBg = isDark ? 'rgba(32, 201, 151, 0.10)' : 'rgba(32, 201, 151, 0.06)';
-
   const hubCard = (
     <Paper
       p="xl"
       radius="lg"
       withBorder
-      bg={hubBg}
+      bg={styleTokens.marketing.integrationHubBackground}
       style={{
         textAlign: 'center' as const,
         borderColor: 'var(--mantine-color-teal-5)',

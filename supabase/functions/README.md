@@ -1,21 +1,24 @@
-# Supabase Edge Functions (Phase 1 + Phase 2 scaffolding)
+# Supabase Edge Functions
 
-This folder contains Supabase Edge Functions for the Phase 1 immutable ingest
-pipeline, plus Phase 2 scaffolding (schema upload + run creation +
-export-by-run).
+Edge functions for the BlockData ingest pipeline, schema management, run
+execution, and export.
 
 ## Functions
 
-- `ingest`: Accepts an upload, writes `documents`, ensures Markdown exists
-  (Docling conversion if needed), and ingests Markdown into `blocks`.
+- `ingest`: Accepts an upload. Default mode performs conversion/ingest. Optional
+  multipart field `ingest_mode=upload_only` stores only `source_documents`
+  (`status='uploaded'`) so parsing can be started explicitly later.
 - `conversion-complete`: Callback endpoint invoked by the Python conversion
   service after it uploads Markdown back to Storage.
-- `export-jsonl`: Emits JSONL for either `doc_uid` (Phase 1; inert annotation
-  placeholder) or `run_id` (Phase 2; overlays `block_annotations`).
-- `schemas`: Uploads User Schema JSON (structured schema object) into
-  `public.schemas` (Phase 2). See `docs/specs/user-schema-json-contract.md`.
-- `runs`: Creates an `annotation_runs` row and populates `block_annotations` for
-  a `doc_uid` + `schema_id` (Phase 2).
+- `export-jsonl`: Emits JSONL for a `run_id`, joining `blocks` + `block_overlays`
+  into the canonical two-key export format.
+- `schemas`: CRUD for user-defined extraction schemas in `public.schemas`.
+- `runs`: Creates a `runs` row and populates `block_overlays` (one per block)
+  for a `conv_uid` + `schema_id`.
+- `worker`: Claims pending `block_overlays`, calls the LLM, writes structured
+  output back to the overlay.
+- `user-api-keys`: Encrypted storage for per-user provider API keys.
+- `admin-config`: Superuser-only admin runtime policy management.
 - `agent-config`: Returns agent catalog + per-user agent configuration; computes
   readiness based on saved keys/connections (config-first).
 - `provider-connections`: Stores non-key provider connections (v1: Vertex AI

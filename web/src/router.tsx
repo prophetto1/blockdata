@@ -11,12 +11,13 @@ import HowItWorks from '@/pages/HowItWorks';
 import UseCases from '@/pages/UseCases';
 import MarketingIntegrations from '@/pages/MarketingIntegrations';
 import AuthCallback from '@/pages/AuthCallback';
-import WorkspaceHome from '@/pages/WorkspaceHome';
-import Projects from '@/pages/Projects';
+import ProjectsList from '@/pages/Projects';
+import ProjectsHome from '@/pages/ProjectsHome';
 import ProjectDetail from '@/pages/ProjectDetail';
 import Upload from '@/pages/Upload';
 import UppyLibraryDemo from '@/pages/UppyLibraryDemo';
 import DocumentDetail from '@/pages/DocumentDetail';
+import Extract from '@/pages/Extract';
 import Schemas from '@/pages/Schemas';
 import SchemaApply from '@/pages/SchemaApply';
 import SchemaAdvancedEditor from '@/pages/SchemaAdvancedEditor';
@@ -74,9 +75,10 @@ export const router = createBrowserRouter([
       {
         element: <AppLayout />,
         children: [
-          // Workspace home + projects
-          { path: '/app', element: <WorkspaceHome /> },
-          { path: '/app/projects', element: <Projects /> },
+          // App landing + projects
+          { path: '/app', element: <Navigate to="/app/projects" replace /> },
+          { path: '/app/projects', element: <ProjectsHome /> },
+          { path: '/app/projects/list', element: <ProjectsList /> },
 
           // Project-scoped routes
           { path: '/app/projects/:projectId', element: <ProjectDetail /> },
@@ -84,6 +86,8 @@ export const router = createBrowserRouter([
           { path: '/app/projects/:projectId/upload-uppy-demo', element: <UppyLibraryDemo /> },
           { path: '/app/projects/:projectId/documents/:sourceUid', element: <DocumentDetail /> },
           { path: '/app/projects/:projectId/runs/:runId', element: <RunDetail /> },
+          { path: '/app/extract', element: <Navigate to="/app/projects" replace /> },
+          { path: '/app/extract/:projectId', element: <Extract /> },
 
           // Global schemas (not project-scoped)
           { path: '/app/schemas', element: <Schemas /> },

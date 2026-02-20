@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
-import { Group, Title, Text } from '@mantine/core';
+import { Group } from '@mantine/core';
+import { useShellHeaderTitle } from '@/components/common/useShellHeaderTitle';
 
 type Props = {
   title: string;
@@ -8,13 +9,13 @@ type Props = {
 };
 
 export function PageHeader({ title, subtitle, children }: Props) {
+  useShellHeaderTitle({ title, subtitle });
+
+  if (!children) return null;
+
   return (
-    <Group justify="space-between" align="flex-start" mb="lg">
-      <div>
-        <Title order={2}>{title}</Title>
-        {subtitle && <Text size="sm" c="dimmed" mt={4}>{subtitle}</Text>}
-      </div>
-      {children && <Group gap="sm">{children}</Group>}
+    <Group justify="flex-end" align="center" mb="md" gap="sm" wrap="wrap">
+      {children}
     </Group>
   );
 }

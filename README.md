@@ -121,7 +121,7 @@ Schemas ────┤                      │
 Everything before blocks is **ingestion**. Everything after is **routing**. The middle is schema-driven AI work on small, stable, parallelizable units.
 
 ```
-blocks_v2 + block_overlays_v2 (source of truth)
+blocks + block_overlays (source of truth)
   ├→ vector index (assistant retrieval) — reads DB directly
   ├→ knowledge graph pipeline
   ├→ observability / trace pipeline
@@ -314,11 +314,12 @@ All tables are protected by Row-Level Security (RLS). Users can only access thei
 | Table | Purpose | Key Columns |
 |:------|:--------|:------------|
 | `projects` | Group documents by initiative | `project_id`, `owner_id`, `project_name` |
-| `documents_v2` | Document metadata (content-addressed) | `conv_uid` (PK), `source_uid`, `source_type`, `status`, `conv_parsing_tool` |
-| `blocks_v2` | Immutable block inventory | `block_uid` (PK), `conv_uid`, `block_index`, `block_type`, `block_content` |
+| `source_documents` | Upload metadata + ownership | `source_uid` (PK), `owner_id`, `source_type`, `status`, `project_id` |
+| `conversion_parsing` | Parsing results per source | `conv_uid` (PK), `source_uid`, `conv_parsing_tool`, `conv_representation_type` |
+| `blocks` | Immutable block inventory | `block_uid` (PK), `conv_uid`, `block_index`, `block_type`, `block_content` |
 | `schemas` | User-defined extraction schemas | `schema_id`, `schema_ref`, `schema_uid`, `schema_jsonb` |
-| `runs_v2` | Schema execution instances | `run_id`, `conv_uid`, `schema_id`, `status`, `model_config` |
-| `block_overlays_v2` | Mutable AI output per block | `run_id`, `block_uid`, `overlay_jsonb_staging`, `status` |
+| `runs` | Schema execution instances | `run_id`, `conv_uid`, `schema_id`, `status`, `model_config` |
+| `block_overlays` | Mutable AI output per block | `run_id`, `block_uid`, `overlay_jsonb_staging`, `status` |
 | `user_api_keys` | Encrypted provider API keys | `provider`, `api_key_encrypted`, `default_model` |
 | `profiles` | User metadata | `user_id`, `email`, `display_name` |
 
