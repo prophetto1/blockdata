@@ -101,6 +101,7 @@ export type DoclingBlockDraft = {
   block_content: string;
   pointer: string; // e.g. "#/texts/5"
   page_no: number | null;
+  page_nos: number[];
   parser_block_type: string;
   parser_path: string;
 };
@@ -144,6 +145,18 @@ export function extractDoclingBlocks(
 
   const visited = new Set<string>();
 
+  function extractPageNos(prov: DoclingProv[] | undefined): number[] {
+    if (!prov || prov.length === 0) return [];
+    const pages = new Set<number>();
+    for (const entry of prov) {
+      const raw = entry?.page_no;
+      if (typeof raw !== "number" || !Number.isFinite(raw)) continue;
+      const page = Math.trunc(raw);
+      if (page > 0) pages.add(page);
+    }
+    return Array.from(pages).sort((a, b) => a - b);
+  }
+
   function resolveAndEmit(ref: DoclingRef): void {
     const pointer = ref.$ref;
     if (visited.has(pointer)) return;
@@ -154,7 +167,8 @@ export function extractDoclingBlocks(
     if (textItem) {
       const blockType = mapDoclingLabel(textItem.label);
       const content = textItem.text ?? textItem.orig ?? "";
-      const pageNo = textItem.prov?.[0]?.page_no ?? null;
+      const pageNos = extractPageNos(textItem.prov);
+      const pageNo = pageNos[0] ?? null;
 
       // Extract doc title from first TITLE item
       if (
@@ -170,6 +184,7 @@ export function extractDoclingBlocks(
         block_content: content,
         pointer,
         page_no: pageNo,
+        page_nos: pageNos,
         parser_block_type: textItem.label,
         parser_path: pointer,
       });
@@ -187,12 +202,14 @@ export function extractDoclingBlocks(
     const tableItem = tablesMap.get(pointer);
     if (tableItem) {
       const content = tableToText(tableItem);
-      const pageNo = tableItem.prov?.[0]?.page_no ?? null;
+      const pageNos = extractPageNos(tableItem.prov);
+      const pageNo = pageNos[0] ?? null;
       blocks.push({
         block_type: mapDoclingLabel(tableItem.label),
         block_content: content,
         pointer,
         page_no: pageNo,
+        page_nos: pageNos,
         parser_block_type: tableItem.label,
         parser_path: pointer,
       });
@@ -215,12 +232,14 @@ export function extractDoclingBlocks(
         }
         content = captionTexts.join(" ");
       }
-      const pageNo = picItem.prov?.[0]?.page_no ?? null;
+      const pageNos = extractPageNos(picItem.prov);
+      const pageNo = pageNos[0] ?? null;
       blocks.push({
         block_type: "figure",
         block_content: content,
         pointer,
         page_no: pageNo,
+        page_nos: pageNos,
         parser_block_type: picItem.label ?? "picture",
         parser_path: pointer,
       });
@@ -234,12 +253,14 @@ export function extractDoclingBlocks(
     const kvItem = kvMap.get(pointer);
     if (kvItem) {
       const content = kvItem.text ?? kvItem.orig ?? "";
-      const pageNo = kvItem.prov?.[0]?.page_no ?? null;
+      const pageNos = extractPageNos(kvItem.prov);
+      const pageNo = pageNos[0] ?? null;
       blocks.push({
         block_type: "key_value_region",
         block_content: content,
         pointer,
         page_no: pageNo,
+        page_nos: pageNos,
         parser_block_type: kvItem.label,
         parser_path: pointer,
       });
@@ -250,12 +271,14 @@ export function extractDoclingBlocks(
     const formItem = formMap.get(pointer);
     if (formItem) {
       const content = formItem.text ?? formItem.orig ?? "";
-      const pageNo = formItem.prov?.[0]?.page_no ?? null;
+      const pageNos = extractPageNos(formItem.prov);
+      const pageNo = pageNos[0] ?? null;
       blocks.push({
         block_type: "form_region",
         block_content: content,
         pointer,
         page_no: pageNo,
+        page_nos: pageNos,
         parser_block_type: formItem.label,
         parser_path: pointer,
       });

@@ -221,12 +221,23 @@ body {
   letter-spacing: var(--viewer-letter-spacing) !important;
 }
 
+/* Remove the outer rounded shell around AG Grid while keeping internal grid lines. */
+.block-viewer-grid .ag-root-wrapper {
+  border-radius: 0 !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
 .block-viewer-grid .ag-header,
 .block-viewer-grid .ag-header-cell,
 .block-viewer-grid .ag-header-group-cell,
 .block-viewer-grid .ag-header-cell-text {
   font-family: "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
   font-size: 14px !important;
+}
+
+.block-viewer-grid .ag-header {
+  border-top: 1px solid var(--ag-border-color, var(--mantine-color-default-border)) !important;
 }
 
 .block-viewer-grid .mantine-Text-root,
@@ -290,6 +301,18 @@ body {
   border-left: 1px solid var(--ag-border-color, var(--mantine-color-default-border)) !important;
 }
 
+.block-grid-segmented-borderless {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.block-grid-segmented-borderless .mantine-SegmentedControl-root {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
 .overlay-staged-cell {
   background-color: var(--app-overlay-staged-bg);
 }
@@ -350,6 +373,10 @@ body {
   grid-template-columns: var(--parse-explorer-width, 320px) var(--parse-config-width, 360px) minmax(0, 1fr);
 }
 
+.parse-playground-layout--transform-grid {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .parse-playground-explorer,
 .parse-playground-work,
 .parse-playground-right {
@@ -397,6 +424,12 @@ body {
   padding-top: var(--mantine-spacing-md);
   min-height: 0;
   overflow: hidden;
+}
+
+.parse-playground-work.is-transform-grid {
+  border-left: 0;
+  border-right: 0;
+  padding-top: 0;
 }
 
 .parse-playground-layout--test > .parse-playground-work {
@@ -528,6 +561,26 @@ body {
   flex-direction: column;
   overflow: hidden;
   overflow-x: hidden;
+  --config-header-bleed-left: var(--mantine-spacing-lg);
+  --config-header-bleed-right: var(--mantine-spacing-md);
+}
+
+.parse-config-collapse-toggle {
+  position: absolute;
+  top: calc(var(--mantine-spacing-md) + 2px);
+  right: var(--mantine-spacing-md);
+  z-index: 10;
+}
+
+.parse-playground-right.is-collapsed {
+  padding: 8px;
+  --config-header-bleed-left: 0px;
+  --config-header-bleed-right: 0px;
+}
+
+.parse-playground-right.is-collapsed .parse-config-collapse-toggle {
+  top: 8px;
+  right: 8px;
 }
 
 .parse-playground-layout--test > .parse-playground-right {
@@ -538,6 +591,8 @@ body {
 
 .parse-playground-right.is-extract {
   padding: var(--mantine-spacing-sm) var(--mantine-spacing-sm) var(--mantine-spacing-sm) var(--mantine-spacing-md);
+  --config-header-bleed-left: var(--mantine-spacing-md);
+  --config-header-bleed-right: var(--mantine-spacing-sm);
 }
 
 .parse-playground-preview {
@@ -748,6 +803,34 @@ body {
 
 .parse-middle-tab {
   transition: color 120ms ease;
+}
+
+.parse-middle-grid-toolbar-host {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.parse-middle-grid-toolbar-host .block-grid-toolbar-portaled {
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.block-grid-toolbar-row {
+  min-width: 0;
+}
+
+.block-grid-toolbar-main {
+  min-width: 0;
+}
+
+.parse-middle-grid-toolbar-host .block-grid-toolbar-main {
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
 }
 
 .parse-overlay-toggle .mantine-Switch-label {
@@ -1369,11 +1452,12 @@ body {
   padding-right: calc(var(--mantine-spacing-lg) + 6px);
 }
 
+.extract-config-top-tabs,
 .parse-config-top-tabs {
-  margin-left: calc(var(--mantine-spacing-lg) * -1);
-  margin-right: calc(var(--mantine-spacing-md) * -1);
-  padding-left: calc(var(--mantine-spacing-lg) + 6px);
-  padding-right: calc(var(--mantine-spacing-md) + 6px);
+  margin-left: calc(var(--config-header-bleed-left, 0px) * -1);
+  margin-right: calc(var(--config-header-bleed-right, 0px) * -1);
+  padding-left: calc(var(--config-header-bleed-left, 0px) + 6px);
+  padding-right: calc(var(--config-header-bleed-right, 0px) + 6px);
 }
 
 .parse-playground-upload .uppy-Dashboard-inner {
@@ -1530,6 +1614,8 @@ body {
   .parse-playground-right {
     border-top: 1px solid var(--mantine-color-default-border);
     padding: var(--mantine-spacing-md) 0 0;
+    --config-header-bleed-left: 0px;
+    --config-header-bleed-right: 0px;
   }
 
   .parse-playground-resizer {

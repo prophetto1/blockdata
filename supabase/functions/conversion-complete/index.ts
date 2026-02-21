@@ -302,6 +302,7 @@ Deno.serve(async (req) => {
             parser_block_type: b.parser_block_type,
             parser_path: b.parser_path,
             ...(b.page_no != null ? { page_no: b.page_no } : {}),
+            ...(b.page_nos.length > 0 ? { page_nos: b.page_nos } : {}),
           },
           block_content: b.block_content,
         }));

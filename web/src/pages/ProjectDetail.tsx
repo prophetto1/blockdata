@@ -52,8 +52,10 @@ import { PdfPreview } from '@/components/documents/PdfPreview';
 import { PdfResultsHighlighter, type ParsedResultBlock } from '@/components/documents/PdfResultsHighlighter';
 import { PptxPreview } from '@/components/documents/PptxPreview';
 import { ProjectParseUppyUploader, type UploadBatchResult } from '@/components/documents/ProjectParseUppyUploader';
+import { BlockViewerGrid } from '@/components/blocks/BlockViewerGrid';
 import { ErrorAlert } from '@/components/common/ErrorAlert';
 import { useShellHeaderTitle } from '@/components/common/useShellHeaderTitle';
+import { useRuns } from '@/hooks/useRuns';
 import { supabase } from '@/lib/supabase';
 import { edgeJson } from '@/lib/edge';
 import { TABLES } from '@/lib/tables';
@@ -67,6 +69,9 @@ const EXPLORER_WIDTH_COLLAPSED = 56;
 const CONFIG_WIDTH_DEFAULT = 450;
 const CONFIG_WIDTH_MIN = 450;
 const CONFIG_WIDTH_MAX = 450;
+const CONFIG_WIDTH_COLLAPSED = 56;
+const TRANSFORM_TEST_CONFIG_WIDTH_MIN = 300;
+const TRANSFORM_TEST_CONFIG_WIDTH_MAX = 760;
 const DOCUMENTS_BUCKET = (import.meta.env.VITE_DOCUMENTS_BUCKET as string | undefined) ?? 'documents';
 
 const TEXT_SOURCE_TYPES = new Set([
@@ -113,6 +118,7 @@ type TestRightTab = 'preview' | 'metadata' | 'blocks';
 type ParseConfigView = 'Basic' | 'Advanced';
 type ExtractConfigView = 'Basic' | 'Advanced' | 'Schema';
 type ExtractSchemaMode = 'table' | 'code';
+type ConfigCollapseState = 'full' | 'half' | 'collapsed';
 type ExtractSchemaFieldType =
   | 'string'
   | 'number'
@@ -291,6 +297,10 @@ function getDocumentFormat(doc: ProjectDocumentRow): string {
 
 export default function ProjectDetail({ mode = 'parse', surface = 'default' }: ProjectDetailProps) {
   const { projectId } = useParams<{ projectId: string }>();
+  const isExtractMode = mode === 'extract';
+  const isTransformMode = mode === 'transform';
+  const isTestSurfacePage = surface === 'test';
+  const isTransformTestSurface = isTransformMode && isTestSurfacePage;
 
   const [project, setProject] = useState<ProjectRow | null>(null);
   const [docs, setDocs] = useState<ProjectDocumentRow[]>([]);
@@ -315,9 +325,11 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
   const [showMetadataBlocksPanel, setShowMetadataBlocksPanel] = useState(true);
   const [middlePreviewTab, setMiddlePreviewTab] = useState<MiddlePreviewTab>('preview');
   const [testRightTab, setTestRightTab] = useState<TestRightTab>('preview');
+  const [testBlocksToolbarHost, setTestBlocksToolbarHost] = useState<HTMLDivElement | null>(null);
   const [testBlocks, setTestBlocks] = useState<TestBlockCardRow[]>([]);
   const [testBlocksLoading, setTestBlocksLoading] = useState(false);
   const [testBlocksError, setTestBlocksError] = useState<string | null>(null);
+  const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
   const [parseConfigView, setParseConfigView] = useState<ParseConfigView>('Basic');
   const [parseLoading, setParseLoading] = useState(false);
   const [parseError, setParseError] = useState<string | null>(null);
@@ -330,11 +342,14 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
   const [explorerWidth, setExplorerWidth] = useState(EXPLORER_WIDTH_DEFAULT);
   const [isExplorerCollapsed, setIsExplorerCollapsed] = useState(false);
   const [configWidth, setConfigWidth] = useState(CONFIG_WIDTH_DEFAULT);
+  const [configCollapseState, setConfigCollapseState] = useState<ConfigCollapseState>('full');
   const [activeResizer, setActiveResizer] = useState<'explorer' | 'config' | null>(null);
   const [desktopNavOpened] = useLocalStorage<boolean>({
     key: 'blockdata.shell.nav_open_desktop',
     defaultValue: true,
   });
+  const isConfigCollapsed = isTestSurfacePage && configCollapseState === 'collapsed';
+  const isConfigHalf = isTransformTestSurface && configCollapseState === 'half';
 
   const resizeStateRef = useRef<{ startX: number; startWidth: number } | null>(null);
   const pendingUploadedSelectionRef = useRef<string[] | null>(null);
@@ -531,6 +546,21 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
   const selectedDoc = useMemo(
     () => docs.find((doc) => doc.source_uid === selectedSourceUid) ?? null,
     [docs, selectedSourceUid],
+  );
+  const { runs: selectedDocRuns } = useRuns(selectedDoc?.conv_uid ?? null);
+  useEffect(() => {
+    if (selectedDocRuns.length === 0) {
+      setSelectedRunId(null);
+      return;
+    }
+    setSelectedRunId((current) => {
+      if (current && selectedDocRuns.some((run) => run.run_id === current)) return current;
+      return selectedDocRuns[0].run_id;
+    });
+  }, [selectedDocRuns]);
+  const selectedRun = useMemo(
+    () => selectedDocRuns.find((run) => run.run_id === selectedRunId) ?? null,
+    [selectedDocRuns, selectedRunId],
   );
   const selectedSourceUidSet = useMemo(() => new Set(selectedSourceUids), [selectedSourceUids]);
   const allPagedSelected = useMemo(
@@ -860,6 +890,16 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
     };
   }, [selectedDoc?.conv_uid, surface]);
 
+  useEffect(() => {
+    if (!isTestSurfacePage) {
+      if (configCollapseState !== 'full') setConfigCollapseState('full');
+      return;
+    }
+    if (!isTransformTestSurface && configCollapseState === 'half') {
+      setConfigCollapseState('full');
+    }
+  }, [configCollapseState, isTestSurfacePage, isTransformTestSurface]);
+
   const handleExplorerResizeStart = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
     if (isExplorerCollapsed) return;
     event.preventDefault();
@@ -868,10 +908,23 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
   }, [explorerWidth, isExplorerCollapsed]);
 
   const handleConfigResizeStart = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
+    if (isTestSurfacePage && configCollapseState !== 'full') return;
     event.preventDefault();
     resizeStateRef.current = { startX: event.clientX, startWidth: configWidth };
     setActiveResizer('config');
-  }, [configWidth]);
+  }, [configCollapseState, configWidth, isTestSurfacePage]);
+
+  const handleConfigToggle = useCallback(() => {
+    if (!isTestSurfacePage) return;
+    setConfigCollapseState((current) => {
+      if (isTransformTestSurface) {
+        if (current === 'full') return 'half';
+        if (current === 'half') return 'collapsed';
+        return 'full';
+      }
+      return current === 'collapsed' ? 'full' : 'collapsed';
+    });
+  }, [isTestSurfacePage, isTransformTestSurface]);
 
   useEffect(() => {
     if (!activeResizer) return;
@@ -889,9 +942,11 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
         return;
       }
       const delta = state.startX - event.clientX;
+      const configMin = isTestSurfacePage ? TRANSFORM_TEST_CONFIG_WIDTH_MIN : CONFIG_WIDTH_MIN;
+      const configMax = isTestSurfacePage ? TRANSFORM_TEST_CONFIG_WIDTH_MAX : CONFIG_WIDTH_MAX;
       const nextWidth = Math.max(
-        CONFIG_WIDTH_MIN,
-        Math.min(CONFIG_WIDTH_MAX, state.startWidth + delta),
+        configMin,
+        Math.min(configMax, state.startWidth + delta),
       );
       setConfigWidth(nextWidth);
     };
@@ -914,7 +969,7 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
       window.removeEventListener('pointerup', onPointerUp);
       window.removeEventListener('pointercancel', onPointerUp);
     };
-  }, [activeResizer]);
+  }, [activeResizer, isTestSurfacePage]);
 
   useShellHeaderTitle({
     title: project?.project_name ?? 'Project',
@@ -924,9 +979,7 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
   if (loading) return <Center mt="xl"><Loader /></Center>;
   if (!project) return <ErrorAlert message={error ?? 'Project not found'} />;
 
-  const isExtractMode = mode === 'extract';
-  const isTransformMode = mode === 'transform';
-  const isTestSurface = surface === 'test';
+  const isTestSurface = isTestSurfacePage;
   const shouldRouteCollapsedSpaceToConfig = isTestSurface || (isExtractMode && extractConfigView === 'Schema');
   const navCompactionExplorerBoost = desktopNavOpened ? 0 : (isTestSurface ? 0 : 20);
   const navCompactionConfigBoost = desktopNavOpened ? 0 : (isTestSurface ? 0 : 130);
@@ -935,7 +988,20 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
     ? Math.max(0, expandedExplorerWidth - EXPLORER_WIDTH_COLLAPSED)
     : 0;
   const effectiveExplorerWidth = isExplorerCollapsed ? EXPLORER_WIDTH_COLLAPSED : expandedExplorerWidth;
-  const effectiveConfigWidth = configWidth + navCompactionConfigBoost + (shouldRouteCollapsedSpaceToConfig ? collapsedDelta : 0);
+  const expandedConfigWidth = configWidth + navCompactionConfigBoost + (shouldRouteCollapsedSpaceToConfig ? collapsedDelta : 0);
+  const halfConfigWidth = Math.max(CONFIG_WIDTH_COLLAPSED, Math.round(expandedConfigWidth * 0.5));
+  const effectiveConfigWidth = isConfigCollapsed
+    ? CONFIG_WIDTH_COLLAPSED
+    : isConfigHalf
+      ? halfConfigWidth
+      : expandedConfigWidth;
+  const configToggleLabel = isTransformTestSurface
+    ? (configCollapseState === 'full'
+      ? 'Collapse Configuration column to 50%'
+      : configCollapseState === 'half'
+        ? 'Collapse Configuration column fully'
+        : 'Expand Configuration column')
+    : (isConfigCollapsed ? 'Expand Configuration column' : 'Collapse Configuration column');
   const layoutStyle = {
     '--parse-explorer-width': `${effectiveExplorerWidth}px`,
     '--parse-config-width': `${effectiveConfigWidth}px`,
@@ -1157,7 +1223,6 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
             </Stack>
           </Box>
         </Box>
-
         <Box className="parse-playground-work">
           <Box className="parse-playground-preview">
             <Box className="parse-preview-frame">
@@ -1166,7 +1231,12 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
                   <Group gap={12} align="center" wrap="nowrap">
                     {middleTabsControl}
                   </Group>
-                  {isRightBlocksTab && testBlocks.length > 0 && <Text size="xs" c="dimmed">{testBlocks.length} blocks</Text>}
+                  {isTransformMode && isRightBlocksTab && (
+                    <Box className="parse-middle-grid-toolbar-host" ref={setTestBlocksToolbarHost} />
+                  )}
+                  {!isTransformMode && isRightBlocksTab && testBlocks.length > 0 && (
+                    <Text size="xs" c="dimmed">{testBlocks.length} blocks</Text>
+                  )}
                   {showMetadataOverlayToggle && (
                     <Group gap={8} wrap="nowrap">
                       <Switch
@@ -1379,55 +1449,80 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
                 )}
 
                 {isRightBlocksTab && (
-                  <Box className="parse-docling-results-list">
-                    {!selectedDoc ? (
-                      <Center h="100%">
-                        <Text size="sm" c="dimmed" ta="center">
-                          Select a document to view parsed blocks.
-                        </Text>
-                      </Center>
-                    ) : !selectedDoc.conv_uid ? (
-                      <Center h="100%">
-                        <Text size="sm" c="dimmed" ta="center">
-                          No parsed blocks are available for this document yet.
-                        </Text>
-                      </Center>
-                    ) : testBlocksLoading ? (
-                      <Center h="100%">
-                        <Loader size="sm" />
-                      </Center>
-                    ) : testBlocksError ? (
-                      <Center h="100%">
-                        <Text size="sm" c="red" ta="center">
-                          {testBlocksError}
-                        </Text>
-                      </Center>
-                    ) : testBlocks.length === 0 ? (
-                      <Center h="100%">
-                        <Text size="sm" c="dimmed" ta="center">
-                          Parsed blocks returned empty for this document.
-                        </Text>
-                      </Center>
-                    ) : (
-                      testBlocks.map((block) => (
-                        <Box key={block.blockUid} className="parse-docling-results-item">
-                          <Text size="xs" fw={700}>
-                            {block.blockType} | #{block.blockIndex}
+                  isTransformMode ? (
+                    <Box style={{ height: '100%', minHeight: 0, overflow: 'hidden' }}>
+                      {!selectedDoc ? (
+                        <Center h="100%">
+                          <Text size="sm" c="dimmed" ta="center">
+                            Select a document to view parsed blocks.
                           </Text>
-                          <Text size="xs" c="dimmed" lineClamp={3}>
-                            {block.snippet || '[no text]'}
+                        </Center>
+                      ) : !selectedDoc.conv_uid ? (
+                        <Center h="100%">
+                          <Text size="sm" c="dimmed" ta="center">
+                            No parsed blocks are available for this document yet.
                           </Text>
-                        </Box>
-                      ))
-                    )}
-                  </Box>
+                        </Center>
+                      ) : (
+                        <BlockViewerGrid
+                          convUid={selectedDoc.conv_uid}
+                          selectedRunId={selectedRunId}
+                          selectedRun={selectedRun}
+                          toolbarPortalTarget={testBlocksToolbarHost}
+                        />
+                      )}
+                    </Box>
+                  ) : (
+                    <Box className="parse-docling-results-list">
+                      {!selectedDoc ? (
+                        <Center h="100%">
+                          <Text size="sm" c="dimmed" ta="center">
+                            Select a document to view parsed blocks.
+                          </Text>
+                        </Center>
+                      ) : !selectedDoc.conv_uid ? (
+                        <Center h="100%">
+                          <Text size="sm" c="dimmed" ta="center">
+                            No parsed blocks are available for this document yet.
+                          </Text>
+                        </Center>
+                      ) : testBlocksLoading ? (
+                        <Center h="100%">
+                          <Loader size="sm" />
+                        </Center>
+                      ) : testBlocksError ? (
+                        <Center h="100%">
+                          <Text size="sm" c="red" ta="center">
+                            {testBlocksError}
+                          </Text>
+                        </Center>
+                      ) : testBlocks.length === 0 ? (
+                        <Center h="100%">
+                          <Text size="sm" c="dimmed" ta="center">
+                            Parsed blocks returned empty for this document.
+                          </Text>
+                        </Center>
+                      ) : (
+                        testBlocks.map((block) => (
+                          <Box key={block.blockUid} className="parse-docling-results-item">
+                            <Text size="xs" fw={700}>
+                              {block.blockType} | #{block.blockIndex}
+                            </Text>
+                            <Text size="xs" c="dimmed" lineClamp={3}>
+                              {block.snippet || '[no text]'}
+                            </Text>
+                          </Box>
+                        ))
+                      )}
+                    </Box>
+                  )
                 )}
               </Box>
             </Box>
           </Box>
         </Box>
 
-        <Box className={`parse-playground-right${isExtractMode ? ' is-extract' : ''}`}>
+        <Box className={`parse-playground-right${isExtractMode ? ' is-extract' : ''}${isTestSurfacePage && isConfigCollapsed ? ' is-collapsed' : ''}`}>
           <Box
             className={`parse-playground-resizer parse-playground-resizer-config${activeResizer === 'config' ? ' is-active' : ''}`}
             role="separator"
@@ -1435,7 +1530,19 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
             aria-label="Resize config pane"
             onPointerDown={handleConfigResizeStart}
           />
-          {isExtractMode ? (
+          {isTestSurfacePage && (
+            <ActionIcon
+              size="sm"
+              variant="subtle"
+              className="parse-config-collapse-toggle"
+              aria-label={configToggleLabel}
+              title={configToggleLabel}
+              onClick={handleConfigToggle}
+            >
+              {isConfigCollapsed ? <IconChevronRight size={16} /> : <IconChevronLeft size={16} />}
+            </ActionIcon>
+          )}
+          {isTestSurfacePage && isConfigCollapsed ? null : (isExtractMode ? (
             <Stack gap="sm" className="extract-config-root">
               <Group justify="space-between" wrap="nowrap" className="extract-config-top-tabs">
                 <Text size="sm" fw={700}>Build</Text>
@@ -1767,7 +1874,13 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
               )}
 
             </Stack>
-          ) : isTransformMode ? null : (
+          ) : isTransformMode ? (
+            <Stack gap={0} className="parse-config-root">
+              <Group justify="space-between" wrap="nowrap" className="parse-config-top-tabs">
+                <Text size="sm" fw={700}>Configuration</Text>
+              </Group>
+            </Stack>
+          ) : (
             <Stack gap={0} className={`parse-config-root${showCenterResultsList ? ' parse-results-side-root' : ''}`}>
               <Group justify="space-between" wrap="nowrap" className="parse-config-top-tabs">
                 {isTestSurface ? (
@@ -1994,7 +2107,7 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
                 </Stack>
               )}
             </Stack>
-          )}
+          ))}
         </Box>
       </Box>
 

@@ -1,4 +1,5 @@
 import { useMemo, useState, useCallback, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { AgGridReact } from 'ag-grid-react';
 import {
   AllCommunityModule,
@@ -252,15 +253,51 @@ function parserNativeMetaFromLocator(locator: unknown): {
   return { parserBlockType, parserPath };
 }
 
+function extractPagesFromLocator(locator: unknown): number[] {
+  if (!locator || typeof locator !== 'object' || Array.isArray(locator)) return [];
+  const obj = locator as Record<string, unknown>;
+  const pages = new Set<number>();
+
+  const pageNosValue = obj.page_nos;
+  if (Array.isArray(pageNosValue)) {
+    for (const value of pageNosValue) {
+      if (typeof value !== 'number' || !Number.isFinite(value)) continue;
+      const page = Math.trunc(value);
+      if (page > 0) pages.add(page);
+    }
+  }
+
+  const singlePageValue = obj.page_no;
+  if (pages.size === 0 && typeof singlePageValue === 'number' && Number.isFinite(singlePageValue)) {
+    const page = Math.trunc(singlePageValue);
+    if (page > 0) pages.add(page);
+  }
+
+  return Array.from(pages).sort((a, b) => a - b);
+}
+
+function formatPageLabels(pages: number[]): string | null {
+  if (pages.length === 0) return null;
+  return pages.map((page) => `p${page}`).join(', ');
+}
+
 type BlockViewerGridProps = {
   convUid: string;
   selectedRunId: string | null;
   selectedRun: RunWithSchema | null;
   onExport?: () => void;
   onDelete?: () => void;
+  toolbarPortalTarget?: HTMLElement | null;
 };
 
-export function BlockViewerGrid({ convUid, selectedRunId, selectedRun, onExport, onDelete }: BlockViewerGridProps) {
+export function BlockViewerGrid({
+  convUid,
+  selectedRunId,
+  selectedRun,
+  onExport,
+  onDelete,
+  toolbarPortalTarget,
+}: BlockViewerGridProps) {
   const gridRef = useRef<AgGridReact<Record<string, unknown>>>(null);
   const [pageIndex, setPageIndex] = useState(0);
   const [pageSize, setPageSize] = useState(50);
@@ -328,10 +365,12 @@ export function BlockViewerGrid({ convUid, selectedRunId, selectedRun, onExport,
       const overlay = overlayMap.get(block.block_uid) ?? null;
       const normalizedLocator = block.block_locator ?? null;
       const { parserBlockType, parserPath } = parserNativeMetaFromLocator(normalizedLocator);
+      const pageLabels = formatPageLabels(extractPagesFromLocator(normalizedLocator));
       const normalizedLocatorJson = normalizedLocator ? JSON.stringify(normalizedLocator) : null;
 
       const row: Record<string, unknown> = {
         block_index: block.block_index,
+        block_pages: pageLabels,
         block_type: block.block_type,
         block_type_view: block.block_type,
         block_type_parser_native: parserBlockType,
@@ -582,8 +621,22 @@ export function BlockViewerGrid({ convUid, selectedRunId, selectedRun, onExport,
         headerName: '#',
         width: 60,
         suppressSizeToFit: true,
+        suppressMovable: true,
         type: 'numericColumn',
         hide: hiddenCols.has('block_index'),
+      },
+      {
+        field: 'block_pages',
+        headerName: 'Pages',
+        width: 92,
+        minWidth: 84,
+        suppressMovable: true,
+        sortable: true,
+        filter: true,
+        valueFormatter: (params) => {
+          const value = params.value;
+          return typeof value === 'string' && value.trim().length > 0 ? value : '--';
+        },
       },
       {
         field: 'block_type_view',
@@ -877,199 +930,232 @@ export function BlockViewerGrid({ convUid, selectedRunId, selectedRun, onExport,
     return cols;
   }, [hasParserTypeData, hasRun, schemaFields]);
 
+  const toolbarControls = (
+    <Group
+      className="block-grid-toolbar-row"
+      justify={toolbarPortalTarget ? 'flex-end' : 'space-between'}
+      wrap={toolbarPortalTarget ? 'nowrap' : 'wrap'}
+      gap="xs"
+    >
+      <Group className="block-grid-toolbar-main" gap="xs" wrap="nowrap">
+        {blockTypes.length > 1 && (
+          <Menu shadow="md" width={200} position="bottom-start" withinPortal closeOnItemClick={false}>
+            <Menu.Target>
+              <Button
+                variant="subtle"
+                size="compact-xs"
+                px={8}
+                leftSection={<IconFilter size={14} />}
+                rightSection={<IconChevronDown size={10} />}
+              >
+                {typeFilter.length === 0 ? 'All types' : `${typeFilter.length} type${typeFilter.length > 1 ? 's' : ''}`}
+              </Button>
+            </Menu.Target>
+            <Menu.Dropdown>
+              {blockTypes.map((type) => (
+                <Menu.Item
+                  key={type}
+                  leftSection={
+                    typeFilter.includes(type)
+                      ? <IconCheck size={14} />
+                      : <span style={{ width: 14, display: 'inline-block' }} />
+                  }
+                  onClick={() =>
+                    setTypeFilter((prev) =>
+                      prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type],
+                    )
+                  }
+                >
+                  <Text size="xs">{type}</Text>
+                </Menu.Item>
+              ))}
+              {typeFilter.length > 0 && (
+                <>
+                  <Menu.Divider />
+                  <Menu.Item c="dimmed" onClick={() => setTypeFilter([])}>
+                    <Text size="xs">Clear all</Text>
+                  </Menu.Item>
+                </>
+              )}
+            </Menu.Dropdown>
+          </Menu>
+        )}
+
+        <SegmentedControl
+          className="block-grid-segmented-borderless"
+          styles={{
+            root: { border: 0, background: 'transparent', boxShadow: 'none', padding: 0 },
+            control: { border: 0 },
+            indicator: { border: 0, boxShadow: 'none' },
+          }}
+          data={[
+            { value: 'compact', label: 'Compact' },
+            { value: 'comfortable', label: 'Comfortable' },
+          ]}
+          value={viewMode}
+          onChange={handleViewModeChange}
+          size="xs"
+        />
+
+        <SegmentedControl
+          className="block-grid-segmented-borderless"
+          styles={{
+            root: { border: 0, background: 'transparent', boxShadow: 'none', padding: 0 },
+            control: { border: 0 },
+            indicator: { border: 0, boxShadow: 'none' },
+          }}
+          data={[
+            { value: 'small', label: 'S' },
+            { value: 'medium', label: 'M' },
+            { value: 'large', label: 'L' },
+          ]}
+          value={viewerFontSize}
+          onChange={handleViewerFontSizeChange}
+          size="xs"
+        />
+
+        <SegmentedControl
+          className="block-grid-segmented-borderless"
+          styles={{
+            root: { border: 0, background: 'transparent', boxShadow: 'none', padding: 0 },
+            control: { border: 0 },
+            indicator: { border: 0, boxShadow: 'none' },
+          }}
+          data={[
+            { value: 'sans', label: 'Sans' },
+            { value: 'serif', label: 'Serif' },
+            { value: 'mono', label: 'Mono' },
+          ]}
+          value={viewerFontFamily}
+          onChange={handleViewerFontFamilyChange}
+          size="xs"
+        />
+
+        <Menu shadow="md" width={170} position="bottom-start" withinPortal>
+          <Menu.Target>
+            <Tooltip label="Vertical align">
+              <Button
+                variant="subtle"
+                size="compact-xs"
+                px={6}
+                rightSection={<IconChevronDown size={10} />}
+                aria-label="Vertical align"
+              >
+                {viewerVerticalAlign === 'top'
+                  ? <IconArrowBarToUp size={14} />
+                  : viewerVerticalAlign === 'center'
+                    ? <IconArrowsVertical size={14} />
+                    : <IconArrowBarToDown size={14} />}
+              </Button>
+            </Tooltip>
+          </Menu.Target>
+          <Menu.Dropdown>
+            <Menu.Item leftSection={<IconArrowBarToUp size={14} />} onClick={() => handleViewerVerticalAlignChange('top')}>Top</Menu.Item>
+            <Menu.Item leftSection={<IconArrowsVertical size={14} />} onClick={() => handleViewerVerticalAlignChange('center')}>Center</Menu.Item>
+            <Menu.Item leftSection={<IconArrowBarToDown size={14} />} onClick={() => handleViewerVerticalAlignChange('bottom')}>Bottom</Menu.Item>
+          </Menu.Dropdown>
+        </Menu>
+
+        <Menu shadow="md" width={250} position="bottom-end" withinPortal closeOnItemClick={false}>
+          <Menu.Target>
+            <Tooltip label="Toggle columns">
+              <ActionIcon variant="subtle" size="sm">
+                <IconColumns size={16} />
+              </ActionIcon>
+            </Tooltip>
+          </Menu.Target>
+          <Menu.Dropdown>
+            <Menu.Label>Representation (affects columns)</Menu.Label>
+            <Text size="10px" c="dimmed" px="xs" pb={4}>
+              Normalized shows baseline columns. Parser Native reveals Parser Type/Path columns for inspection.
+            </Text>
+            <Menu.Item
+              onClick={() => handleBlockTypeViewChange('normalized')}
+              leftSection={
+                blockTypeView === 'normalized'
+                  ? <IconCheck size={14} />
+                  : <span style={{ width: 14, display: 'inline-block' }} />
+              }
+            >
+              <Text size="xs">Normalized</Text>
+            </Menu.Item>
+            <Menu.Item
+              onClick={() => handleBlockTypeViewChange('parser_native')}
+              leftSection={
+                blockTypeView === 'parser_native'
+                  ? <IconCheck size={14} />
+                  : <span style={{ width: 14, display: 'inline-block' }} />
+              }
+            >
+              <Text size="xs">Parser Native</Text>
+            </Menu.Item>
+            <Menu.Divider />
+            <Menu.Label>Columns</Menu.Label>
+            {allColumns.map((col) => (
+              <Menu.Item
+                key={col.id}
+                onClick={() => toggleColumn(col.id)}
+                leftSection={<Text size="xs" fw={500}>{hiddenCols.has(col.id) ? '[ ]' : '[x]'}</Text>}
+              >
+                <Text size="xs">{col.label}</Text>
+              </Menu.Item>
+            ))}
+          </Menu.Dropdown>
+        </Menu>
+
+        <Divider orientation="vertical" />
+
+        <Text size="xs" c="dimmed">
+          {typeFilter.length > 0 ? `${rowData.length} of ${totalCount}` : totalCount} blocks
+        </Text>
+        {hasRun && (
+          <Text size="xs" c="dimmed">
+            {confirmedCount} confirmed - {stagedCount} staged
+          </Text>
+        )}
+        <Select
+          data={PAGE_SIZES}
+          value={String(pageSize)}
+          onChange={(value) => {
+            setPageSize(Number(value) || 50);
+            setPageIndex(0);
+          }}
+          w={72}
+          size="xs"
+          aria-label="Page size"
+        />
+      </Group>
+      <Group className="block-grid-toolbar-actions" gap={4} wrap="nowrap">
+        {onExport && (
+          <Tooltip label="Export">
+            <ActionIcon variant="light" size="lg" onClick={onExport} aria-label="Export">
+              <IconDownload size={22} />
+            </ActionIcon>
+          </Tooltip>
+        )}
+        {onDelete && (
+          <Tooltip label="Delete">
+            <ActionIcon variant="subtle" color="red" size="lg" onClick={onDelete} aria-label="Delete">
+              <IconTrash size={22} />
+            </ActionIcon>
+          </Tooltip>
+        )}
+      </Group>
+    </Group>
+  );
+
   return (
     <>
-      <Paper p="xs" mb={4} withBorder>
-        <Group justify="space-between" wrap="wrap" gap="xs">
-          <Group gap="xs" wrap="nowrap">
-            {blockTypes.length > 1 && (
-              <Menu shadow="md" width={200} position="bottom-start" withinPortal closeOnItemClick={false}>
-                <Menu.Target>
-                  <Button
-                    variant="subtle"
-                    size="compact-xs"
-                    px={8}
-                    leftSection={<IconFilter size={14} />}
-                    rightSection={<IconChevronDown size={10} />}
-                  >
-                    {typeFilter.length === 0 ? 'All types' : `${typeFilter.length} type${typeFilter.length > 1 ? 's' : ''}`}
-                  </Button>
-                </Menu.Target>
-                <Menu.Dropdown>
-                  {blockTypes.map((type) => (
-                    <Menu.Item
-                      key={type}
-                      leftSection={
-                        typeFilter.includes(type)
-                          ? <IconCheck size={14} />
-                          : <span style={{ width: 14, display: 'inline-block' }} />
-                      }
-                      onClick={() =>
-                        setTypeFilter((prev) =>
-                          prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type],
-                        )
-                      }
-                    >
-                      <Text size="xs">{type}</Text>
-                    </Menu.Item>
-                  ))}
-                  {typeFilter.length > 0 && (
-                    <>
-                      <Menu.Divider />
-                      <Menu.Item c="dimmed" onClick={() => setTypeFilter([])}>
-                        <Text size="xs">Clear all</Text>
-                      </Menu.Item>
-                    </>
-                  )}
-                </Menu.Dropdown>
-              </Menu>
-            )}
-
-            <SegmentedControl
-              data={[
-                { value: 'compact', label: 'Compact' },
-                { value: 'comfortable', label: 'Comfortable' },
-              ]}
-              value={viewMode}
-              onChange={handleViewModeChange}
-              size="xs"
-            />
-
-            <SegmentedControl
-              data={[
-                { value: 'small', label: 'S' },
-                { value: 'medium', label: 'M' },
-                { value: 'large', label: 'L' },
-              ]}
-              value={viewerFontSize}
-              onChange={handleViewerFontSizeChange}
-              size="xs"
-            />
-
-            <SegmentedControl
-              data={[
-                { value: 'sans', label: 'Sans' },
-                { value: 'serif', label: 'Serif' },
-                { value: 'mono', label: 'Mono' },
-              ]}
-              value={viewerFontFamily}
-              onChange={handleViewerFontFamilyChange}
-              size="xs"
-            />
-
-            <Menu shadow="md" width={170} position="bottom-start" withinPortal>
-              <Menu.Target>
-                <Tooltip label="Vertical align">
-                  <Button
-                    variant="subtle"
-                    size="compact-xs"
-                    px={6}
-                    rightSection={<IconChevronDown size={10} />}
-                    aria-label="Vertical align"
-                  >
-                    {viewerVerticalAlign === 'top'
-                      ? <IconArrowBarToUp size={14} />
-                      : viewerVerticalAlign === 'center'
-                        ? <IconArrowsVertical size={14} />
-                        : <IconArrowBarToDown size={14} />}
-                  </Button>
-                </Tooltip>
-              </Menu.Target>
-              <Menu.Dropdown>
-                <Menu.Item leftSection={<IconArrowBarToUp size={14} />} onClick={() => handleViewerVerticalAlignChange('top')}>Top</Menu.Item>
-                <Menu.Item leftSection={<IconArrowsVertical size={14} />} onClick={() => handleViewerVerticalAlignChange('center')}>Center</Menu.Item>
-                <Menu.Item leftSection={<IconArrowBarToDown size={14} />} onClick={() => handleViewerVerticalAlignChange('bottom')}>Bottom</Menu.Item>
-              </Menu.Dropdown>
-            </Menu>
-
-            <Menu shadow="md" width={250} position="bottom-end" withinPortal closeOnItemClick={false}>
-              <Menu.Target>
-                <Tooltip label="Toggle columns">
-                  <ActionIcon variant="subtle" size="sm">
-                    <IconColumns size={16} />
-                  </ActionIcon>
-                </Tooltip>
-              </Menu.Target>
-              <Menu.Dropdown>
-                <Menu.Label>Representation (affects columns)</Menu.Label>
-                <Text size="10px" c="dimmed" px="xs" pb={4}>
-                  Normalized shows baseline columns. Parser Native reveals Parser Type/Path columns for inspection.
-                </Text>
-                <Menu.Item
-                  onClick={() => handleBlockTypeViewChange('normalized')}
-                  leftSection={
-                    blockTypeView === 'normalized'
-                      ? <IconCheck size={14} />
-                      : <span style={{ width: 14, display: 'inline-block' }} />
-                  }
-                >
-                  <Text size="xs">Normalized</Text>
-                </Menu.Item>
-                <Menu.Item
-                  onClick={() => handleBlockTypeViewChange('parser_native')}
-                  leftSection={
-                    blockTypeView === 'parser_native'
-                      ? <IconCheck size={14} />
-                      : <span style={{ width: 14, display: 'inline-block' }} />
-                  }
-                >
-                  <Text size="xs">Parser Native</Text>
-                </Menu.Item>
-                <Menu.Divider />
-                <Menu.Label>Columns</Menu.Label>
-                {allColumns.map((col) => (
-                  <Menu.Item
-                    key={col.id}
-                    onClick={() => toggleColumn(col.id)}
-                    leftSection={<Text size="xs" fw={500}>{hiddenCols.has(col.id) ? '[ ]' : '[x]'}</Text>}
-                  >
-                    <Text size="xs">{col.label}</Text>
-                  </Menu.Item>
-                ))}
-              </Menu.Dropdown>
-            </Menu>
-
-            <Divider orientation="vertical" />
-
-            <Text size="xs" c="dimmed">
-              {typeFilter.length > 0 ? `${rowData.length} of ${totalCount}` : totalCount} blocks
-            </Text>
-            {hasRun && (
-              <Text size="xs" c="dimmed">
-                {confirmedCount} confirmed - {stagedCount} staged
-              </Text>
-            )}
-            <Select
-              data={PAGE_SIZES}
-              value={String(pageSize)}
-              onChange={(value) => {
-                setPageSize(Number(value) || 50);
-                setPageIndex(0);
-              }}
-              w={72}
-              size="xs"
-              aria-label="Page size"
-            />
-          </Group>
-          <Group gap={4} wrap="nowrap">
-            {onExport && (
-              <Tooltip label="Export">
-                <ActionIcon variant="light" size="lg" onClick={onExport} aria-label="Export">
-                  <IconDownload size={22} />
-                </ActionIcon>
-              </Tooltip>
-            )}
-            {onDelete && (
-              <Tooltip label="Delete">
-                <ActionIcon variant="subtle" color="red" size="lg" onClick={onDelete} aria-label="Delete">
-                  <IconTrash size={22} />
-                </ActionIcon>
-              </Tooltip>
-            )}
-          </Group>
-        </Group>
-      </Paper>
-
+      {toolbarPortalTarget ? createPortal(
+        <div className="block-grid-toolbar-portaled">
+          {toolbarControls}
+        </div>,
+        toolbarPortalTarget,
+      ) : (
+        <Paper p="xs" mb={4}>
+          {toolbarControls}
+        </Paper>
+      )}
       {hasRun && stagedCount > 0 && (
         <Alert color="yellow" variant="light" mb={4}>
           <Group justify="space-between" wrap="wrap" gap="xs">
@@ -1130,3 +1216,4 @@ export function BlockViewerGrid({ convUid, selectedRunId, selectedRun, onExport,
     </>
   );
 }
+
