@@ -1764,22 +1764,22 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
                 {showCenterConfig && (
                   <Group gap={6} wrap="nowrap" className="parse-config-run-btn">
                     <ActionIcon
-                      size="sm"
-                      variant="default"
+                      size="md"
+                      variant="transparent"
                       aria-label="Save config"
                       title="Save config"
                     >
-                      <IconDeviceFloppy size={14} />
+                      <IconDeviceFloppy size={16} />
                     </ActionIcon>
                     <ActionIcon
-                      size="sm"
-                      variant="filled"
+                      size="md"
+                      variant="transparent"
                       aria-label="Run parse"
                       title="Run parse"
                       loading={parseLoading}
                       onClick={() => void handleRunParse()}
                     >
-                      <IconPlayerPlay size={14} />
+                      <IconPlayerPlay size={16} />
                     </ActionIcon>
                   </Group>
                 )}
@@ -1814,7 +1814,7 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
               )}
 
               {showCenterConfig && (
-                <>
+                <Stack gap="sm" className="parse-config-scroll">
 
               {parseError && (
                 <Alert color="red" variant="light" withCloseButton onClose={() => setParseError(null)}>
@@ -1956,7 +1956,7 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
                 </>
               )}
 
-                </>
+                </Stack>
               )}
             </Stack>
           )}

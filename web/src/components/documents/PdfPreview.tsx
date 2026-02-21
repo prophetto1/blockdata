@@ -241,7 +241,7 @@ export function PdfPreview({
               aria-label="Previous page"
               onClick={() => scrollToPage(activePageNumber - 1)}
             >
-              <IconChevronLeft size={14} />
+              <IconChevronLeft size={18} />
             </ActionIcon>
             <TextInput
               size="xs"
@@ -264,7 +264,7 @@ export function PdfPreview({
               aria-label="Next page"
               onClick={() => scrollToPage(activePageNumber + 1)}
             >
-              <IconChevronRight size={14} />
+              <IconChevronRight size={18} />
             </ActionIcon>
           </Group>
 
@@ -276,7 +276,7 @@ export function PdfPreview({
               onClick={() => changeZoom(-ZOOM_STEP)}
               disabled={isPdfJsControlsDisabled}
             >
-              <IconZoomOut size={14} />
+              <IconZoomOut size={18} />
             </ActionIcon>
             <Text size="xs" c="dimmed" className="parse-pdf-zoom-label">
               {zoomPercent}%
@@ -288,7 +288,7 @@ export function PdfPreview({
               onClick={() => changeZoom(ZOOM_STEP)}
               disabled={isPdfJsControlsDisabled}
             >
-              <IconZoomIn size={14} />
+              <IconZoomIn size={18} />
             </ActionIcon>
             <ActionIcon
               size="sm"
@@ -297,7 +297,7 @@ export function PdfPreview({
               onClick={() => setRotation((current) => (current + 90) % 360)}
               disabled={isPdfJsControlsDisabled}
             >
-              <IconRotateClockwise2 size={14} />
+              <IconRotateClockwise2 size={18} />
             </ActionIcon>
             <ActionIcon
               size="sm"
@@ -306,7 +306,7 @@ export function PdfPreview({
               onClick={() => setZoomPercent(100)}
               disabled={isPdfJsControlsDisabled}
             >
-              <IconRefresh size={14} />
+              <IconRefresh size={18} />
             </ActionIcon>
             <ActionIcon
               size="sm"
@@ -316,7 +316,7 @@ export function PdfPreview({
                 void toggleFullscreen();
               }}
             >
-              <IconArrowsMaximize size={14} />
+              <IconArrowsMaximize size={18} />
             </ActionIcon>
             <ActionIcon
               size="sm"
@@ -328,7 +328,7 @@ export function PdfPreview({
               rel="noreferrer"
               download
             >
-              <IconDownload size={14} />
+              <IconDownload size={18} />
             </ActionIcon>
             {showUnitsUi && (
               <>
@@ -339,7 +339,7 @@ export function PdfPreview({
                   onClick={() => setShowUnitOverlay((current) => !current)}
                   disabled={totalUnits === 0}
                 >
-                  <IconFileText size={14} />
+                  <IconFileText size={18} />
                 </ActionIcon>
                 <Text size="xs" c="dimmed" className="parse-pdf-units-label">
                   Units {totalUnits}
