@@ -343,6 +343,11 @@ body {
   box-sizing: border-box;
   margin-inline: calc(var(--mantine-spacing-md) * -1);
   margin-top: calc(var(--mantine-spacing-md) * -1);
+  margin-bottom: calc(var(--mantine-spacing-xs) * -1);
+}
+
+.parse-playground-layout--test {
+  grid-template-columns: var(--parse-explorer-width, 320px) var(--parse-config-width, 360px) minmax(0, 1fr);
 }
 
 .parse-playground-explorer,
@@ -367,9 +372,15 @@ body {
   grid-template-rows: minmax(0, 1fr);
   border-left: 1px solid var(--mantine-color-default-border);
   border-right: 1px solid var(--mantine-color-default-border);
-  padding: 0;
+  padding-top: var(--mantine-spacing-md);
   min-height: 0;
   overflow: hidden;
+}
+
+.parse-playground-layout--test > .parse-playground-work {
+  grid-column: 3;
+  grid-row: 1;
+  border-right: 0;
 }
 
 .parse-playground-upload,
@@ -480,7 +491,7 @@ body {
 }
 
 .parse-playground-upload {
-  overflow: hidden;
+  overflow: visible;
 }
 
 .parse-playground-right {
@@ -488,6 +499,12 @@ body {
   padding: var(--mantine-spacing-md) var(--mantine-spacing-md) var(--mantine-spacing-md) var(--mantine-spacing-lg);
   overflow-y: auto;
   overflow-x: hidden;
+}
+
+.parse-playground-layout--test > .parse-playground-right {
+  grid-column: 2;
+  grid-row: 1;
+  border-left: 1px solid var(--mantine-color-default-border);
 }
 
 .parse-playground-right.is-extract {
@@ -559,10 +576,7 @@ body {
 }
 
 .parse-docling-results-toolbar {
-  min-height: 34px;
-  padding: 4px 8px;
-  border-bottom: 1px solid var(--mantine-color-default-border);
-  background: light-dark(rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.02));
+  display: none;
 }
 
 .parse-docling-results-pdf {
@@ -614,12 +628,6 @@ body {
 .parse-docling-results-item.is-active {
   border-color: light-dark(rgba(56, 189, 248, 0.65), rgba(56, 189, 248, 0.8));
   background: light-dark(rgba(56, 189, 248, 0.16), rgba(56, 189, 248, 0.26));
-}
-
-.parse-docling-block-layer {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
 }
 
 .parse-docling-block-box {
@@ -686,21 +694,20 @@ body {
   background: var(--mantine-color-body);
 }
 
-.parse-pdf-toolbar {
-  padding: 4px 6px;
-}
-
 .parse-upload-header,
 .parse-middle-view-tabs,
+.parse-pdf-toolbar,
 .extract-config-top-tabs,
 .parse-config-top-tabs {
-  min-height: 30px;
-  padding: 0 6px 6px;
+  min-height: 31px;
+  padding: 0 6px 4px;
 }
 
 .parse-pdf-toolbar {
   overflow-x: auto;
   overflow-y: hidden;
+  flex-wrap: nowrap !important;
+  max-height: 31px;
 }
 
 .parse-middle-tab {
@@ -713,9 +720,10 @@ body {
 }
 
 .parse-pdf-toolbar-left {
-  min-width: 0;
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
+  gap: 12px;
 }
 
 .parse-pdf-page-input {
@@ -741,9 +749,9 @@ body {
 .parse-pdf-preview-viewport {
   flex: 1;
   min-height: 0;
-  overflow-x: auto;
+  overflow-x: hidden;
   overflow-y: auto;
-  scrollbar-gutter: stable both-edges;
+  scrollbar-gutter: stable;
   overscroll-behavior: contain;
   background: light-dark(rgba(0, 0, 0, 0.015), rgba(255, 255, 255, 0.015));
   padding: 4px;
@@ -770,7 +778,9 @@ body {
   align-items: center;
   justify-content: flex-start;
   gap: 8px;
-  min-width: 100%;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
   padding-bottom: 6px;
 }
 
@@ -1078,7 +1088,34 @@ body {
 .parse-config-top-tabs {
   position: sticky;
   top: 0;
-  z-index: 2;
+  z-index: 8;
+  border-bottom: 1px solid var(--mantine-color-default-border);
+  background: light-dark(#ffffff, #0b0f18);
+  isolation: isolate;
+}
+
+.extract-config-top-tabs::after,
+.parse-config-top-tabs::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(var(--mantine-spacing-sm) * -1);
+  height: var(--mantine-spacing-sm);
+  background: inherit;
+  box-shadow: inset 0 1px 0 var(--mantine-color-default-border);
+  pointer-events: none;
+}
+
+.parse-config-top-tabs::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: calc(var(--mantine-spacing-sm) * -1);
+  left: calc(var(--mantine-spacing-lg) * -1);
+  width: 1px;
+  background: var(--mantine-color-default-border);
+  pointer-events: none;
 }
 
 .extract-config-run-btn,
@@ -1242,11 +1279,12 @@ body {
 
 .parse-playground-upload .uppy-Dashboard {
   background: transparent;
+  margin-top: var(--mantine-spacing-sm);
 }
 
 .parse-upload-header {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   margin-left: calc(var(--mantine-spacing-md) * -1);
   margin-right: calc(var(--mantine-spacing-lg) * -1);
   padding-left: calc(var(--mantine-spacing-md) + 6px);
@@ -1395,6 +1433,7 @@ body {
     row-gap: var(--mantine-spacing-md);
     margin-inline: 0;
     margin-top: 0;
+    margin-bottom: 0;
     border-top: 0;
   }
 

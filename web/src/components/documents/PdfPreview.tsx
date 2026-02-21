@@ -71,17 +71,16 @@ export function PdfPreview({
   useLayoutEffect(() => {
     const node = viewportRef.current;
     if (!node) return;
-    const observedNode = node.parentElement ?? node;
 
     const updateWidth = () => {
-      const measuredWidth = Math.round(observedNode.getBoundingClientRect().width);
+      const measuredWidth = Math.round(node.clientWidth);
       const next = Math.max(measuredWidth - VIEWPORT_HORIZONTAL_PADDING, VIEWPORT_MIN_WIDTH);
       setViewportWidth((current) => (Math.abs(current - next) >= WIDTH_JITTER_PX ? next : current));
     };
 
     updateWidth();
     const observer = new ResizeObserver(updateWidth);
-    observer.observe(observedNode);
+    observer.observe(node);
 
     return () => {
       observer.disconnect();

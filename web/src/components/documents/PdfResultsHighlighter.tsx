@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { Fragment, useCallback, useEffect, useState } from 'react';
 import { Box, Center, Group, Loader, Switch, Text } from '@mantine/core';
 import {
   PdfLoader,
@@ -16,6 +16,7 @@ const PDF_WORKER_SRC = new URL(
   '../../../node_modules/react-pdf-highlighter/node_modules/pdfjs-dist/build/pdf.worker.min.mjs',
   import.meta.url,
 ).toString();
+const SHOW_ALL_BOUNDING_BOXES_DEFAULT = true;
 
 type DoclingHighlight = IHighlight & {
   blockUid: string;
@@ -42,6 +43,8 @@ type PdfResultsHighlighterProps = {
   pdfUrl: string;
   doclingJsonUrl: string;
   convUid: string;
+  showAllBoundingBoxes?: boolean;
+  onShowAllBoundingBoxesChange?: (nextValue: boolean) => void;
   onBlocksChange?: (blocks: ParsedResultBlock[]) => void;
 };
 
@@ -250,14 +253,18 @@ export function PdfResultsHighlighter({
   pdfUrl,
   doclingJsonUrl,
   convUid,
+  showAllBoundingBoxes: showAllBoundingBoxesProp,
+  onShowAllBoundingBoxesChange,
   onBlocksChange,
 }: PdfResultsHighlighterProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [highlights, setHighlights] = useState<DoclingHighlight[]>([]);
-  const [showAllBoundingBoxes, setShowAllBoundingBoxes] = useState(true);
+  const [showAllBoundingBoxesInternal, setShowAllBoundingBoxesInternal] = useState(SHOW_ALL_BOUNDING_BOXES_DEFAULT);
   const [selectedHighlightId, setSelectedHighlightId] = useState<string | null>(null);
   const [pdfLoadError, setPdfLoadError] = useState<string | null>(null);
+  const [highlightRenderNudge, setHighlightRenderNudge] = useState(0);
+  const showAllBoundingBoxes = showAllBoundingBoxesProp ?? showAllBoundingBoxesInternal;
 
   useEffect(() => {
     let cancelled = false;
@@ -306,20 +313,45 @@ export function PdfResultsHighlighter({
     };
   }, [convUid, doclingJsonUrl]);
 
-  const selectedHighlight = useMemo(
-    () => highlights.find((highlight) => highlight.id === selectedHighlightId) ?? null,
-    [highlights, selectedHighlightId],
+  const visibleHighlights = (
+    highlightRenderNudge >= 0 && showAllBoundingBoxes
+      ? [...highlights]
+      : []
   );
-
-  const visibleHighlights = useMemo(() => {
-    if (showAllBoundingBoxes) return highlights;
-    if (selectedHighlight) return [selectedHighlight];
-    return [];
-  }, [highlights, selectedHighlight, showAllBoundingBoxes]);
 
   useEffect(() => {
     setPdfLoadError(null);
+    setHighlightRenderNudge(0);
   }, [pdfUrl]);
+
+  useEffect(() => {
+    if (showAllBoundingBoxesProp !== undefined) return;
+    setShowAllBoundingBoxesInternal(SHOW_ALL_BOUNDING_BOXES_DEFAULT);
+  }, [convUid, doclingJsonUrl, pdfUrl, showAllBoundingBoxesProp]);
+
+  const handleToggleShowAllBoundingBoxes = useCallback((nextValue: boolean) => {
+    if (showAllBoundingBoxesProp === undefined) {
+      setShowAllBoundingBoxesInternal(nextValue);
+    }
+    onShowAllBoundingBoxesChange?.(nextValue);
+  }, [onShowAllBoundingBoxesChange, showAllBoundingBoxesProp]);
+
+
+  useEffect(() => {
+    if (highlights.length === 0) return undefined;
+
+    const rafId = requestAnimationFrame(() => {
+      setHighlightRenderNudge((value) => value + 1);
+    });
+    const timeoutId = window.setTimeout(() => {
+      setHighlightRenderNudge((value) => value + 1);
+    }, 220);
+
+    return () => {
+      cancelAnimationFrame(rafId);
+      window.clearTimeout(timeoutId);
+    };
+  }, [highlights.length, convUid, doclingJsonUrl, pdfUrl]);
 
   useEffect(() => {
     if (!onBlocksChange) return;
@@ -367,9 +399,9 @@ export function PdfResultsHighlighter({
         <Group justify="space-between" align="center" wrap="nowrap" className="parse-docling-results-toolbar">
           <Switch
             size="xs"
-            label="Show all bounding boxes"
+            label="Show overlay"
             checked={showAllBoundingBoxes}
-            onChange={(event) => setShowAllBoundingBoxes(event.currentTarget.checked)}
+            onChange={(event) => handleToggleShowAllBoundingBoxes(event.currentTarget.checked)}
           />
           <Text size="xs" c="dimmed">
             {highlights.length} blocks
@@ -425,7 +457,7 @@ export function PdfResultsHighlighter({
                       onMouseOver={(content) => setTip(highlight, () => content)}
                       onMouseOut={hideTip}
                     >
-                      <div className="parse-docling-block-layer">
+                      <Fragment>
                         {highlight.position.rects.map((rect, rectIndex) => {
                           const rectStyle = {
                             left: rect.left,
@@ -445,7 +477,7 @@ export function PdfResultsHighlighter({
                             />
                           );
                         })}
-                      </div>
+                      </Fragment>
                     </Popup>
                   );
                 }}

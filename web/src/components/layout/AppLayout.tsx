@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import {
   AppShell,
   Drawer,
@@ -83,7 +83,38 @@ export function AppLayout() {
   const isProjectCanvasRoute = /^\/app\/projects\/[^/]+$/.test(location.pathname);
   const isTestCanvasRoute = /^\/app\/(?:test|parse2)\/[^/]+$/.test(location.pathname);
   const isExtractCanvasRoute = /^\/app\/extract\/[^/]+$/.test(location.pathname);
-  const lockMainScroll = isProjectCanvasRoute || isTestCanvasRoute || isExtractCanvasRoute;
+  const isTransformCanvasRoute = /^\/app\/transform\/[^/]+$/.test(location.pathname);
+  const lockMainScroll = (
+    isProjectCanvasRoute
+    || isTestCanvasRoute
+    || isExtractCanvasRoute
+    || isTransformCanvasRoute
+  );
+
+  useEffect(() => {
+    if (!lockMainScroll) return undefined;
+
+    const previousHtmlOverflow = document.documentElement.style.overflow;
+    const previousBodyOverflow = document.body.style.overflow;
+    const previousBodyOverscrollBehavior = document.body.style.overscrollBehavior;
+
+    document.documentElement.style.overflow = 'hidden';
+    document.body.style.overflow = 'hidden';
+    document.body.style.overscrollBehavior = 'none';
+
+    return () => {
+      document.documentElement.style.overflow = previousHtmlOverflow;
+      document.body.style.overflow = previousBodyOverflow;
+      document.body.style.overscrollBehavior = previousBodyOverscrollBehavior;
+    };
+  }, [lockMainScroll]);
+
+  const lockedMainStyle = lockMainScroll
+    ? {
+        overflow: 'hidden' as const,
+        overscrollBehavior: 'none' as const,
+      }
+    : undefined;
 
   return (
     <HeaderCenterProvider>
@@ -159,7 +190,7 @@ export function AppLayout() {
         />
       </AppShell.Navbar>
 
-      <AppShell.Main style={lockMainScroll ? { overflow: 'hidden' } : undefined}>
+      <AppShell.Main style={lockedMainStyle}>
         <AppPageShell mode="fluid">
           <Outlet />
         </AppPageShell>
