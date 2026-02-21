@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Center, Loader, Stack, Text, useComputedColorScheme } from '@mantine/core';
+import { Alert, Box, Center, Loader, Stack, Text, useComputedColorScheme } from '@mantine/core';
 import Uppy, { type UploadResult } from '@uppy/core';
 import Dashboard from '@uppy/react/dashboard';
 import XHRUpload from '@uppy/xhr-upload';
@@ -249,8 +249,10 @@ export function ProjectParseUppyUploader({
   }
 
   return (
-    <Stack gap="xs">
-      <Text fw={700} size="sm">Add Documents</Text>
+    <Stack gap={0}>
+      <Box className="parse-upload-header">
+        <Text fw={700} size="sm">Add Documents</Text>
+      </Box>
       <div ref={dashboardHostRef}>
         <Dashboard
           uppy={uppy}
@@ -269,7 +271,7 @@ export function ProjectParseUppyUploader({
         />
       </div>
       {summary && (
-        <Text size="xs" c="dimmed" lineClamp={1}>
+        <Text size="xs" c="dimmed" lineClamp={1} mt="xs">
           {summary}
         </Text>
       )}

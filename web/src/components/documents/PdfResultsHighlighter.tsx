@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Box, Center, Group, Loader, Switch, Text } from '@mantine/core';
 import {
   PdfLoader,
@@ -12,7 +12,10 @@ import { supabase } from '@/lib/supabase';
 import { TABLES } from '@/lib/tables';
 import type { BlockRow } from '@/lib/types';
 
-const PDF_WORKER_SRC = new URL('pdfjs-dist/legacy/build/pdf.worker.min.mjs', import.meta.url).toString();
+const PDF_WORKER_SRC = new URL(
+  '../../../node_modules/react-pdf-highlighter/node_modules/pdfjs-dist/build/pdf.worker.min.mjs',
+  import.meta.url,
+).toString();
 
 type DoclingHighlight = IHighlight & {
   blockUid: string;
@@ -24,11 +27,22 @@ type DoclingHighlight = IHighlight & {
   colorToken: number;
 };
 
+export type ParsedResultBlock = {
+  id: string;
+  blockUid: string;
+  blockIndex: number;
+  blockType: string;
+  pageNo: number;
+  snippet: string;
+  colorToken: number;
+};
+
 type PdfResultsHighlighterProps = {
   title: string;
   pdfUrl: string;
   doclingJsonUrl: string;
   convUid: string;
+  onBlocksChange?: (blocks: ParsedResultBlock[]) => void;
 };
 
 function asRecord(value: unknown): Record<string, unknown> | null {
@@ -160,6 +174,17 @@ function mergeScaledRects(rects: Scaled[]): Scaled {
   };
 }
 
+function toneFromBlockType(blockType: string, blockIndex: number): number {
+  const normalized = blockType.trim().toLowerCase();
+  if (normalized.includes('heading')) return 0;
+  if (normalized.includes('paragraph')) return 1;
+  if (normalized.includes('list')) return 2;
+  if (normalized.includes('table')) return 3;
+  if (normalized.includes('code')) return 4;
+  if (normalized.includes('caption')) return 5;
+  return blockIndex % 6;
+}
+
 function buildDoclingHighlights(blocks: BlockRow[], doclingDocument: unknown): DoclingHighlight[] {
   const pageSizes = extractPageSizes(doclingDocument);
   const highlights: DoclingHighlight[] = [];
@@ -199,7 +224,7 @@ function buildDoclingHighlights(blocks: BlockRow[], doclingDocument: unknown): D
         parserPath,
         pageNo,
         snippet,
-        colorToken: block.block_index % 6,
+        colorToken: toneFromBlockType(block.block_type, block.block_index),
         content: { text: normalizedText },
         comment: {
           emoji: '',
@@ -225,13 +250,14 @@ export function PdfResultsHighlighter({
   pdfUrl,
   doclingJsonUrl,
   convUid,
+  onBlocksChange,
 }: PdfResultsHighlighterProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [highlights, setHighlights] = useState<DoclingHighlight[]>([]);
   const [showAllBoundingBoxes, setShowAllBoundingBoxes] = useState(true);
   const [selectedHighlightId, setSelectedHighlightId] = useState<string | null>(null);
-  const scrollToHighlightRef = useRef<((highlight: DoclingHighlight) => void) | null>(null);
+  const [pdfLoadError, setPdfLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -291,6 +317,24 @@ export function PdfResultsHighlighter({
     return [];
   }, [highlights, selectedHighlight, showAllBoundingBoxes]);
 
+  useEffect(() => {
+    setPdfLoadError(null);
+  }, [pdfUrl]);
+
+  useEffect(() => {
+    if (!onBlocksChange) return;
+    const blocks = highlights.map((highlight) => ({
+      id: highlight.id,
+      blockUid: highlight.blockUid,
+      blockIndex: highlight.blockIndex,
+      blockType: highlight.blockType,
+      pageNo: highlight.pageNo,
+      snippet: highlight.snippet,
+      colorToken: highlight.colorToken,
+    }));
+    onBlocksChange(blocks);
+  }, [highlights, onBlocksChange]);
+
   if (loading) {
     return (
       <Center h="100%">
@@ -335,6 +379,10 @@ export function PdfResultsHighlighter({
           <PdfLoader
             workerSrc={PDF_WORKER_SRC}
             url={pdfUrl}
+            onError={(loadError) => {
+              const message = loadError instanceof Error ? loadError.message : String(loadError);
+              setPdfLoadError(message || 'Unknown PDF loader error.');
+            }}
             beforeLoad={
               <Center h="100%">
                 <Loader size="sm" />
@@ -344,6 +392,7 @@ export function PdfResultsHighlighter({
               <Center h="100%">
                 <Text size="sm" c="dimmed" ta="center">
                   PDF preview failed for {title}.
+                  {pdfLoadError ? ` (${pdfLoadError})` : ''}
                 </Text>
               </Center>
             }
@@ -354,19 +403,11 @@ export function PdfResultsHighlighter({
                 enableAreaSelection={() => false}
                 onSelectionFinished={() => null}
                 onScrollChange={() => {}}
-                scrollRef={(scrollTo) => {
-                  scrollToHighlightRef.current = scrollTo;
-                }}
+                scrollRef={() => {}}
                 highlights={visibleHighlights}
                 pdfScaleValue="page-width"
                 highlightTransform={(highlight, _index, setTip, hideTip, _viewportToScaled, _screenshot, isScrolledTo) => {
                   const isActive = selectedHighlightId === highlight.id;
-                  const boxStyle: CSSProperties = {
-                    left: highlight.position.boundingRect.left,
-                    top: highlight.position.boundingRect.top,
-                    width: highlight.position.boundingRect.width,
-                    height: highlight.position.boundingRect.height,
-                  };
 
                   return (
                     <Popup
@@ -374,7 +415,7 @@ export function PdfResultsHighlighter({
                       popupContent={(
                         <Box className="parse-docling-box-popup">
                           <Text size="xs" fw={700}>
-                            {highlight.blockType} · #{highlight.blockIndex} · p.{highlight.pageNo}
+                            {highlight.blockType} | #{highlight.blockIndex} | p.{highlight.pageNo}
                           </Text>
                           <Text size="xs" c="dimmed" lineClamp={4}>
                             {highlight.snippet || '[no text]'}
@@ -384,49 +425,33 @@ export function PdfResultsHighlighter({
                       onMouseOver={(content) => setTip(highlight, () => content)}
                       onMouseOut={hideTip}
                     >
-                      <button
-                        type="button"
-                        className={`parse-docling-block-box tone-${highlight.colorToken}${isActive ? ' is-active' : ''}${isScrolledTo ? ' is-scrolled' : ''}`}
-                        style={boxStyle}
-                        onClick={() => setSelectedHighlightId(highlight.id)}
-                        aria-label={`Block ${highlight.blockIndex} on page ${highlight.pageNo}`}
-                      />
+                      <div className="parse-docling-block-layer">
+                        {highlight.position.rects.map((rect, rectIndex) => {
+                          const rectStyle = {
+                            left: rect.left,
+                            top: rect.top,
+                            width: rect.width,
+                            height: rect.height,
+                          };
+                          return (
+                            <button
+                              type="button"
+                              key={`${highlight.id}:rect:${rectIndex}`}
+                              className={`parse-docling-block-box tone-${highlight.colorToken}${isActive ? ' is-active' : ''}${isScrolledTo ? ' is-scrolled' : ''}`}
+                              style={rectStyle}
+                              onClick={() => setSelectedHighlightId(highlight.id)}
+                              title={`${highlight.blockType} #${highlight.blockIndex} p.${highlight.pageNo}`}
+                              aria-label={`Block ${highlight.blockIndex} on page ${highlight.pageNo}`}
+                            />
+                          );
+                        })}
+                      </div>
                     </Popup>
                   );
                 }}
               />
             )}
           </PdfLoader>
-        </Box>
-      </Box>
-
-      <Box className="parse-docling-results-panel">
-        <Group justify="space-between" align="center" wrap="nowrap" className="parse-docling-results-panel-head">
-          <Text size="sm" fw={700}>Result</Text>
-          <Text size="xs" c="dimmed">Formatted</Text>
-        </Group>
-        <Box className="parse-docling-results-list">
-          {highlights.map((highlight) => {
-            const active = selectedHighlightId === highlight.id;
-            return (
-              <button
-                type="button"
-                key={highlight.id}
-                className={`parse-docling-results-item${active ? ' is-active' : ''}`}
-                onClick={() => {
-                  setSelectedHighlightId(highlight.id);
-                  scrollToHighlightRef.current?.(highlight);
-                }}
-              >
-                <Text size="xs" fw={700}>
-                  {highlight.blockType} · #{highlight.blockIndex} · p.{highlight.pageNo}
-                </Text>
-                <Text size="xs" c="dimmed" lineClamp={3}>
-                  {highlight.snippet || '[no text]'}
-                </Text>
-              </button>
-            );
-          })}
         </Box>
       </Box>
     </Box>

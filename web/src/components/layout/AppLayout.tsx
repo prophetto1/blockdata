@@ -81,8 +81,9 @@ export function AppLayout() {
     [navigate],
   );
   const isProjectCanvasRoute = /^\/app\/projects\/[^/]+$/.test(location.pathname);
+  const isTestCanvasRoute = /^\/app\/(?:test|parse2)\/[^/]+$/.test(location.pathname);
   const isExtractCanvasRoute = /^\/app\/extract\/[^/]+$/.test(location.pathname);
-  const lockMainScroll = isProjectCanvasRoute || isExtractCanvasRoute;
+  const lockMainScroll = isProjectCanvasRoute || isTestCanvasRoute || isExtractCanvasRoute;
 
   return (
     <HeaderCenterProvider>

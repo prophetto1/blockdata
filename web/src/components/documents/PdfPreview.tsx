@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { ActionIcon, Box, Center, Group, Loader, Text, TextInput } from '@mantine/core';
 import {
   IconArrowsMaximize,
@@ -20,6 +20,7 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.min.m
 type PdfPreviewProps = {
   title: string;
   url: string;
+  toolbarLeft?: ReactNode;
   overlayMode?: 'none' | 'units';
   atomicUnits?: PdfAtomicUnit[];
   unitsLoading?: boolean;
@@ -45,6 +46,7 @@ const WIDTH_JITTER_PX = 3;
 export function PdfPreview({
   title,
   url,
+  toolbarLeft = null,
   overlayMode = 'none',
   atomicUnits = [],
   unitsLoading = false,
@@ -225,7 +227,12 @@ export function PdfPreview({
 
   return (
     <Box className="parse-pdf-viewer">
-      <Group justify="flex-end" wrap="nowrap" className="parse-pdf-toolbar">
+      <Group justify={toolbarLeft ? 'space-between' : 'flex-end'} wrap="nowrap" className="parse-pdf-toolbar">
+        {toolbarLeft && (
+          <Box className="parse-pdf-toolbar-left">
+            {toolbarLeft}
+          </Box>
+        )}
         <Group gap={8} wrap="nowrap" className="parse-pdf-toolbar-controls">
           <Group gap={4} wrap="nowrap">
             <ActionIcon

@@ -70,7 +70,8 @@ export function LeftRail({
   const navPaddingY = 4;
   const quickActionPaddingY = 6;
   const isTemplatesPath = location.pathname.startsWith('/app/schemas/templates');
-  const activeProjectMatch = location.pathname.match(/^\/app\/projects\/([^/]+)/);
+  const isTestRoute = location.pathname.startsWith('/app/test') || location.pathname.startsWith('/app/parse2');
+  const activeProjectMatch = location.pathname.match(/^\/app\/(?:projects|test|parse2|extract|transform)\/([^/]+)/);
   const activeProjectId = activeProjectMatch ? activeProjectMatch[1] : null;
   const [focusedProjectId, setFocusedProjectId] = useLocalStorage<string | null>({
     key: PROJECT_FOCUS_STORAGE_KEY,
@@ -185,6 +186,7 @@ export function LeftRail({
     [],
   );
   const parsePath = projectSelectValue ? `/app/projects/${projectSelectValue}` : '/app/projects';
+  const testPath = projectSelectValue ? `/app/test/${projectSelectValue}` : '/app/test';
   const extractPath = projectSelectValue
     ? `/app/extract/${projectSelectValue}`
     : '/app/extract';
@@ -266,7 +268,11 @@ export function LeftRail({
     setNewProjectDescription('');
     closeCreateProject();
     setCreatingProject(false);
-    navigate(`/app/projects/${createdProject.project_id}`);
+    if (isTestRoute) {
+      navigate(`/app/test/${createdProject.project_id}`);
+    } else {
+      navigate(`/app/projects/${createdProject.project_id}`);
+    }
     onNavigate?.();
     notifications.show({
       color: 'green',
@@ -289,6 +295,7 @@ export function LeftRail({
     if (path === '/app/projects/list') return location.pathname.startsWith('/app/projects/list');
     if (path === '/app/extract') return location.pathname.startsWith('/app/extract');
     if (path === '/app/transform') return location.pathname.startsWith('/app/transform');
+    if (path === '/app/test') return location.pathname.startsWith('/app/test') || location.pathname.startsWith('/app/parse2');
     if (path === '/app/schemas') {
       return location.pathname.startsWith('/app/schemas')
         && !location.pathname.startsWith('/app/schemas/apply')
@@ -471,7 +478,15 @@ export function LeftRail({
             onChange={(value) => {
               if (!value) return;
               setFocusedProjectId(value);
-              navigate(`/app/projects/${value}`);
+              if (location.pathname.startsWith('/app/test') || location.pathname.startsWith('/app/parse2')) {
+                navigate(`/app/test/${value}`);
+              } else if (location.pathname.startsWith('/app/extract')) {
+                navigate(`/app/extract/${value}`);
+              } else if (location.pathname.startsWith('/app/transform')) {
+                navigate(`/app/transform/${value}`);
+              } else {
+                navigate(`/app/projects/${value}`);
+              }
               onNavigate?.();
             }}
           />
@@ -514,6 +529,33 @@ export function LeftRail({
               />
             );
           })}
+          {desktopCompact ? (
+            <UnstyledButton
+              className={`left-rail-icon-link left-rail-icon-link-code${isGlobalMenuActive('/app/test') ? ' is-active' : ''}`}
+              onClick={() => {
+                navigate(testPath);
+                onNavigate?.();
+              }}
+              aria-label="Test"
+              title="Test"
+            >
+              <Text className="left-rail-icon-link-text">T</Text>
+            </UnstyledButton>
+          ) : (
+            <NavLink
+              label="Test"
+              className="left-rail-link left-rail-quick-action"
+              aria-label="Test"
+              title="Test"
+              px={navPaddingX}
+              py={quickActionPaddingY}
+              active={isGlobalMenuActive('/app/test')}
+              onClick={() => {
+                navigate(testPath);
+                onNavigate?.();
+              }}
+            />
+          )}
         </Box>
 
         <Box mt="auto" className="left-rail-bottom-nav">

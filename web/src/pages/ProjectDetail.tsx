@@ -45,12 +45,13 @@ import {
 } from '@tabler/icons-react';
 import { DocxPreview } from '@/components/documents/DocxPreview';
 import { PdfPreview } from '@/components/documents/PdfPreview';
-import { PdfResultsHighlighter } from '@/components/documents/PdfResultsHighlighter';
+import { PdfResultsHighlighter, type ParsedResultBlock } from '@/components/documents/PdfResultsHighlighter';
 import { PptxPreview } from '@/components/documents/PptxPreview';
 import { ProjectParseUppyUploader, type UploadBatchResult } from '@/components/documents/ProjectParseUppyUploader';
 import { ErrorAlert } from '@/components/common/ErrorAlert';
 import { useShellHeaderTitle } from '@/components/common/useShellHeaderTitle';
 import { supabase } from '@/lib/supabase';
+import { edgeJson } from '@/lib/edge';
 import { TABLES } from '@/lib/tables';
 import type { DocumentRow, ProjectRow } from '@/lib/types';
 
@@ -294,8 +295,11 @@ export default function ProjectDetail({ mode = 'parse' }: ProjectDetailProps) {
   const [resultsDoclingJsonUrl, setResultsDoclingJsonUrl] = useState<string | null>(null);
   const [resultsDoclingLoading, setResultsDoclingLoading] = useState(false);
   const [resultsDoclingError, setResultsDoclingError] = useState<string | null>(null);
+  const [resultsBlocks, setResultsBlocks] = useState<ParsedResultBlock[]>([]);
   const [middlePreviewTab, setMiddlePreviewTab] = useState<MiddlePreviewTab>('preview');
   const [parseConfigView, setParseConfigView] = useState<ParseConfigView>('Basic');
+  const [parseLoading, setParseLoading] = useState(false);
+  const [parseError, setParseError] = useState<string | null>(null);
   const [extractConfigView, setExtractConfigView] = useState<ExtractConfigView>('Advanced');
   const [extractSchemaMode, setExtractSchemaMode] = useState<ExtractSchemaMode>('table');
   const [extractSchemaReady, setExtractSchemaReady] = useState(false);
@@ -538,6 +542,31 @@ export default function ProjectDetail({ mode = 'parse' }: ProjectDetailProps) {
     void load();
   }, [load]);
 
+  const handleRunParse = useCallback(async () => {
+    // Parse all checked documents, or the currently viewed document if none checked.
+    const targets = selectedSourceUids.length > 0
+      ? selectedSourceUids
+      : selectedSourceUid ? [selectedSourceUid] : [];
+    if (targets.length === 0) return;
+
+    setParseLoading(true);
+    setParseError(null);
+    try {
+      for (const uid of targets) {
+        await edgeJson('trigger-parse', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ source_uid: uid }),
+        });
+      }
+      void load();
+    } catch (e) {
+      setParseError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setParseLoading(false);
+    }
+  }, [selectedSourceUids, selectedSourceUid, load]);
+
   const toggleDocSelection = useCallback((sourceUid: string, checked: boolean) => {
     setSelectedSourceUids((prev) => {
       if (checked) {
@@ -742,6 +771,10 @@ export default function ProjectDetail({ mode = 'parse' }: ProjectDetailProps) {
     };
   }, [selectedDoc]);
 
+  useEffect(() => {
+    setResultsBlocks([]);
+  }, [selectedDoc?.source_uid, middlePreviewTab]);
+
   const handleExplorerResizeStart = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
     event.preventDefault();
     resizeStateRef.current = { startX: event.clientX, startWidth: explorerWidth };
@@ -816,6 +849,30 @@ export default function ProjectDetail({ mode = 'parse' }: ProjectDetailProps) {
   const isMarkdownTextPreview = (
     previewKind === 'text'
     && selectedDoc?.source_type?.toLowerCase() === 'md'
+  );
+  const middleTabsControl = (
+    <>
+      <Text
+        size="sm"
+        fw={middlePreviewTab === 'preview' ? 700 : 600}
+        c={middlePreviewTab === 'preview' ? undefined : 'dimmed'}
+        className={`parse-middle-tab${middlePreviewTab === 'preview' ? ' is-active' : ''}`}
+        onClick={() => setMiddlePreviewTab('preview')}
+        style={{ cursor: 'pointer', userSelect: 'none' }}
+      >
+        Preview
+      </Text>
+      <Text
+        size="sm"
+        fw={middlePreviewTab === 'results' ? 700 : 600}
+        c={middlePreviewTab === 'results' ? undefined : 'dimmed'}
+        className={`parse-middle-tab${middlePreviewTab === 'results' ? ' is-active' : ''}`}
+        onClick={() => setMiddlePreviewTab('results')}
+        style={{ cursor: 'pointer', userSelect: 'none' }}
+      >
+        Results
+      </Text>
+    </>
   );
 
   return (
@@ -949,16 +1006,7 @@ export default function ProjectDetail({ mode = 'parse' }: ProjectDetailProps) {
           <Box className="parse-playground-preview">
             <Box className="parse-preview-frame">
               <Group justify="space-between" align="center" className="parse-middle-view-tabs" wrap="nowrap">
-                <SegmentedControl
-                  value={middlePreviewTab}
-                  size="xs"
-                  radius="md"
-                  data={[
-                    { label: 'Preview', value: 'preview' },
-                    { label: 'Results', value: 'results' },
-                  ]}
-                  onChange={(value) => setMiddlePreviewTab(value as MiddlePreviewTab)}
-                />
+                {middleTabsControl}
               </Group>
 
               <Box className="parse-preview-content">
@@ -992,6 +1040,7 @@ export default function ProjectDetail({ mode = 'parse' }: ProjectDetailProps) {
                         key={`${selectedDoc.source_uid}:${previewUrl}`}
                         title={selectedDoc.doc_title}
                         url={previewUrl}
+                        toolbarLeft={null}
                       />
                     )}
 
@@ -1136,6 +1185,7 @@ export default function ProjectDetail({ mode = 'parse' }: ProjectDetailProps) {
                               pdfUrl={previewUrl}
                               doclingJsonUrl={resultsDoclingJsonUrl}
                               convUid={selectedDoc.conv_uid}
+                              onBlocksChange={setResultsBlocks}
                             />
                         )}
                       </>
@@ -1158,10 +1208,7 @@ export default function ProjectDetail({ mode = 'parse' }: ProjectDetailProps) {
           {isExtractMode ? (
             <Stack gap="sm" className="extract-config-root">
               <Group justify="space-between" wrap="nowrap" className="extract-config-top-tabs">
-                <Group gap="md" wrap="nowrap">
-                  <Text size="sm" fw={700} className="extract-config-top-tab is-active">Build</Text>
-                  <Text size="sm" fw={600} c="dimmed" className="extract-config-top-tab">Results</Text>
-                </Group>
+                <Text size="sm" fw={700}>Build</Text>
                 <Button size="compact-sm" className="extract-config-run-btn">Run Extract</Button>
               </Group>
 
@@ -1484,15 +1531,53 @@ export default function ProjectDetail({ mode = 'parse' }: ProjectDetailProps) {
                 <Text size="xs" c="dimmed">Est. ~1,680 credits</Text>
               </Group>
             </Stack>
-          ) : isTransformMode ? null : (
+          ) : isTransformMode ? null : middlePreviewTab === 'results' ? (
+            <Stack gap="sm" className="parse-config-root parse-results-side-root">
+              <Group justify="space-between" wrap="nowrap" className="parse-config-top-tabs">
+                <Text size="sm" fw={700}>Result</Text>
+                <Text size="xs" c="dimmed">{resultsBlocks.length} blocks</Text>
+              </Group>
+
+              <Box className="parse-results-side-list">
+                {resultsBlocks.length === 0 ? (
+                  <Center className="parse-results-side-empty">
+                    <Text size="sm" c="dimmed" ta="center">
+                      No parsed blocks are available for this document yet.
+                    </Text>
+                  </Center>
+                ) : (
+                  resultsBlocks.map((block) => (
+                    <Box key={block.id} className="parse-docling-results-item">
+                      <Text size="xs" fw={700}>
+                        {block.blockType} | #{block.blockIndex} | p.{block.pageNo}
+                      </Text>
+                      <Text size="xs" c="dimmed" lineClamp={3}>
+                        {block.snippet || '[no text]'}
+                      </Text>
+                    </Box>
+                  ))
+                )}
+              </Box>
+            </Stack>
+          ) : (
             <Stack gap="sm" className="parse-config-root">
               <Group justify="space-between" wrap="nowrap" className="parse-config-top-tabs">
-                <Group gap="md" wrap="nowrap">
-                  <Text size="sm" fw={700} className="parse-config-top-tab is-active">Build</Text>
-                  <Text size="sm" fw={600} c="dimmed" className="parse-config-top-tab">Results</Text>
-                </Group>
-                <Button size="compact-sm" className="parse-config-run-btn">Run Parse</Button>
+                <Text size="sm" fw={700}>Build</Text>
+                <Button
+                  size="compact-sm"
+                  className="parse-config-run-btn"
+                  loading={parseLoading}
+                  onClick={() => void handleRunParse()}
+                >
+                  Run Parse
+                </Button>
               </Group>
+
+              {parseError && (
+                <Alert color="red" variant="light" withCloseButton onClose={() => setParseError(null)}>
+                  <Text size="xs">{parseError}</Text>
+                </Alert>
+              )}
 
               <Group justify="space-between" wrap="nowrap">
                 <Group gap={6} wrap="nowrap">
