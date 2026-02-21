@@ -25,7 +25,7 @@ export const GLOBAL_MENUS: NavItem[] = [
   { label: 'Parse', icon: IconFolderPlus, path: '/app/projects' },
   { label: 'Extract', icon: IconSchema, path: '/app/extract' },
   { label: 'Schema', icon: IconSchema, path: '/app/schemas' },
-  { label: 'Transform', icon: IconSettings, path: '/app/schemas/advanced' },
+  { label: 'Transform', icon: IconSettings, path: '/app/transform' },
   { label: 'Database', icon: IconDatabase, path: '/app/projects/list' },
 ];
 

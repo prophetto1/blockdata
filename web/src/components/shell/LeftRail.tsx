@@ -30,14 +30,14 @@ const PROJECTS_RPC_LEGACY = 'list_projects_overview_v2';
 const GLOBAL_MENU_ORDER: Record<string, number> = {
   '/app/projects': 0, // Parse
   '/app/extract': 1, // Extract
-  '/app/schemas/advanced': 2, // Transform
+  '/app/transform': 2, // Transform
   '/app/projects/list': 3, // Database
   '/app/schemas': 4, // Schema
 };
 const GLOBAL_MENU_COMPACT_CODE: Record<string, string> = {
   '/app/projects': 'P',
   '/app/extract': 'E',
-  '/app/schemas/advanced': 'T',
+  '/app/transform': 'T',
   '/app/projects/list': 'D',
   '/app/schemas': 'S',
 };
@@ -189,12 +189,12 @@ export function LeftRail({
     ? `/app/extract/${projectSelectValue}`
     : '/app/extract';
   const transformPath = projectSelectValue
-    ? `/app/schemas/advanced?projectId=${projectSelectValue}`
-    : '/app/schemas/advanced';
+    ? `/app/transform/${projectSelectValue}`
+    : '/app/transform';
   const globalPathOverrides: Record<string, string> = {
     '/app/projects': parsePath,
     '/app/extract': extractPath,
-    '/app/schemas/advanced': transformPath,
+    '/app/transform': transformPath,
   };
   const userInitial = useMemo(() => {
     if (!userLabel) return '?';
@@ -288,7 +288,7 @@ export function LeftRail({
     }
     if (path === '/app/projects/list') return location.pathname.startsWith('/app/projects/list');
     if (path === '/app/extract') return location.pathname.startsWith('/app/extract');
-    if (path === '/app/schemas/advanced') return location.pathname.startsWith('/app/schemas/advanced');
+    if (path === '/app/transform') return location.pathname.startsWith('/app/transform');
     if (path === '/app/schemas') {
       return location.pathname.startsWith('/app/schemas')
         && !location.pathname.startsWith('/app/schemas/apply')

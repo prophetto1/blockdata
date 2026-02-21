@@ -17,6 +17,7 @@ import Upload from '@/pages/Upload';
 import UppyLibraryDemo from '@/pages/UppyLibraryDemo';
 import DocumentDetail from '@/pages/DocumentDetail';
 import Extract from '@/pages/Extract';
+import Transform from '@/pages/Transform';
 import Schemas from '@/pages/Schemas';
 import SchemaApply from '@/pages/SchemaApply';
 import SchemaAdvancedEditor from '@/pages/SchemaAdvancedEditor';
@@ -87,6 +88,8 @@ export const router = createBrowserRouter([
           { path: '/app/projects/:projectId/runs/:runId', element: <RunDetail /> },
           { path: '/app/extract', element: <Navigate to="/app/projects" replace /> },
           { path: '/app/extract/:projectId', element: <Extract /> },
+          { path: '/app/transform', element: <Navigate to="/app/projects" replace /> },
+          { path: '/app/transform/:projectId', element: <Transform /> },
 
           // Global schemas (not project-scoped)
           { path: '/app/schemas', element: <Schemas /> },

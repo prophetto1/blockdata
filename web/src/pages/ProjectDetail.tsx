@@ -45,11 +45,11 @@ import {
 } from '@tabler/icons-react';
 import { DocxPreview } from '@/components/documents/DocxPreview';
 import { PdfPreview } from '@/components/documents/PdfPreview';
+import { PdfResultsHighlighter } from '@/components/documents/PdfResultsHighlighter';
 import { PptxPreview } from '@/components/documents/PptxPreview';
 import { ProjectParseUppyUploader, type UploadBatchResult } from '@/components/documents/ProjectParseUppyUploader';
 import { ErrorAlert } from '@/components/common/ErrorAlert';
 import { useShellHeaderTitle } from '@/components/common/useShellHeaderTitle';
-import { styleTokens } from '@/lib/styleTokens';
 import { supabase } from '@/lib/supabase';
 import { TABLES } from '@/lib/tables';
 import type { DocumentRow, ProjectRow } from '@/lib/types';
@@ -100,7 +100,7 @@ type ProjectDocumentRow = DocumentRow & {
 };
 
 type PreviewKind = 'none' | 'pdf' | 'image' | 'text' | 'docx' | 'pptx' | 'file';
-type ProjectDetailMode = 'parse' | 'extract';
+type ProjectDetailMode = 'parse' | 'extract' | 'transform';
 type MiddlePreviewTab = 'preview' | 'results';
 type ParseConfigView = 'Basic' | 'Advanced';
 type ExtractConfigView = 'Basic' | 'Advanced' | 'Schema';
@@ -148,6 +148,67 @@ type SignedUrlResult = {
   url: string | null;
   error: string | null;
 };
+
+async function createSignedUrlForLocator(locator: string | null | undefined): Promise<SignedUrlResult> {
+  const normalized = locator?.trim();
+  if (!normalized) {
+    return { url: null, error: 'No file locator was found.' };
+  }
+
+  const sourceKey = normalized.replace(/^\/+/, '');
+  const { data, error: signedUrlError } = await supabase.storage
+    .from(DOCUMENTS_BUCKET)
+    .createSignedUrl(sourceKey, 60 * 20);
+
+  if (signedUrlError) {
+    return { url: null, error: signedUrlError.message };
+  }
+  if (!data?.signedUrl) {
+    return { url: null, error: 'Storage did not return a signed URL.' };
+  }
+  return { url: data.signedUrl, error: null };
+}
+
+async function resolveSignedUrlForLocators(locators: Array<string | null | undefined>): Promise<SignedUrlResult> {
+  const errors: string[] = [];
+  for (const locator of locators) {
+    if (!locator?.trim()) continue;
+    const result = await createSignedUrlForLocator(locator);
+    if (result.url) return result;
+    if (result.error) errors.push(result.error);
+  }
+  return {
+    url: null,
+    error: errors[0] ?? 'No previewable file was available for this document.',
+  };
+}
+
+function toDoclingJsonLocator(locator: string | null | undefined): string | null {
+  const normalized = locator?.trim();
+  if (!normalized) return null;
+  if (normalized.toLowerCase().endsWith('.docling.json')) return normalized;
+
+  const lastSlash = normalized.lastIndexOf('/');
+  const dir = lastSlash >= 0 ? normalized.slice(0, lastSlash + 1) : '';
+  const filename = lastSlash >= 0 ? normalized.slice(lastSlash + 1) : normalized;
+  const lastDot = filename.lastIndexOf('.');
+  const basename = lastDot > 0 ? filename.slice(0, lastDot) : filename;
+  if (!basename) return null;
+  return `${dir}${basename}.docling.json`;
+}
+
+function dedupeLocators(locators: Array<string | null | undefined>): string[] {
+  const seen = new Set<string>();
+  const normalized: string[] = [];
+  for (const locator of locators) {
+    const value = locator?.trim();
+    if (!value) continue;
+    if (seen.has(value)) continue;
+    seen.add(value);
+    normalized.push(value);
+  }
+  return normalized;
+}
 
 function sortDocumentsByUploadedAt(rows: ProjectDocumentRow[]) {
   return [...rows].sort((a, b) => new Date(b.uploaded_at).getTime() - new Date(a.uploaded_at).getTime());
@@ -230,6 +291,9 @@ export default function ProjectDetail({ mode = 'parse' }: ProjectDetailProps) {
   const [previewText, setPreviewText] = useState<string | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewError, setPreviewError] = useState<string | null>(null);
+  const [resultsDoclingJsonUrl, setResultsDoclingJsonUrl] = useState<string | null>(null);
+  const [resultsDoclingLoading, setResultsDoclingLoading] = useState(false);
+  const [resultsDoclingError, setResultsDoclingError] = useState<string | null>(null);
   const [middlePreviewTab, setMiddlePreviewTab] = useState<MiddlePreviewTab>('preview');
   const [parseConfigView, setParseConfigView] = useState<ParseConfigView>('Basic');
   const [extractConfigView, setExtractConfigView] = useState<ExtractConfigView>('Advanced');
@@ -519,38 +583,6 @@ export default function ProjectDetail({ mode = 'parse' }: ProjectDetailProps) {
   useEffect(() => {
     let cancelled = false;
 
-    const createSignedUrl = async (locator: string | null | undefined): Promise<SignedUrlResult> => {
-      const normalized = locator?.trim();
-      if (!normalized) {
-        return { url: null, error: 'No file locator was found.' };
-      }
-      const sourceKey = normalized.replace(/^\/+/, '');
-      const { data, error: signedUrlError } = await supabase.storage
-        .from(DOCUMENTS_BUCKET)
-        .createSignedUrl(sourceKey, 60 * 20);
-      if (signedUrlError) {
-        return { url: null, error: signedUrlError.message };
-      }
-      if (!data?.signedUrl) {
-        return { url: null, error: 'Storage did not return a signed URL.' };
-      }
-      return { url: data.signedUrl, error: null };
-    };
-
-    const resolveSignedUrl = async (locators: Array<string | null | undefined>): Promise<SignedUrlResult> => {
-      const errors: string[] = [];
-      for (const locator of locators) {
-        if (!locator?.trim()) continue;
-        const result = await createSignedUrl(locator);
-        if (result.url) return result;
-        if (result.error) errors.push(result.error);
-      }
-      return {
-        url: null,
-        error: errors[0] ?? 'No previewable file was available for this document.',
-      };
-    };
-
     const loadPreview = async () => {
       if (!selectedDoc) {
         setPreviewKind('none');
@@ -571,19 +603,19 @@ export default function ProjectDetail({ mode = 'parse' }: ProjectDetailProps) {
 
       // Prefer original for PDF/image, converted content for text-like preview.
       if (isPdfDocument(selectedDoc) || isImageDocument(selectedDoc)) {
-        const signedResult = await resolveSignedUrl([selectedDoc.source_locator, selectedDoc.conv_locator]);
+        const signedResult = await resolveSignedUrlForLocators([selectedDoc.source_locator, selectedDoc.conv_locator]);
         signedUrl = signedResult.url;
         signedUrlError = signedResult.error;
       } else if (isDocxDocument(selectedDoc) || isPptxDocument(selectedDoc)) {
-        const signedResult = await resolveSignedUrl([selectedDoc.source_locator, selectedDoc.conv_locator]);
+        const signedResult = await resolveSignedUrlForLocators([selectedDoc.source_locator, selectedDoc.conv_locator]);
         signedUrl = signedResult.url;
         signedUrlError = signedResult.error;
       } else if (isTextDocument(selectedDoc)) {
-        const signedResult = await resolveSignedUrl([selectedDoc.conv_locator, selectedDoc.source_locator]);
+        const signedResult = await resolveSignedUrlForLocators([selectedDoc.conv_locator, selectedDoc.source_locator]);
         signedUrl = signedResult.url;
         signedUrlError = signedResult.error;
       } else {
-        const signedResult = await resolveSignedUrl([selectedDoc.source_locator, selectedDoc.conv_locator]);
+        const signedResult = await resolveSignedUrlForLocators([selectedDoc.source_locator, selectedDoc.conv_locator]);
         signedUrl = signedResult.url;
         signedUrlError = signedResult.error;
       }
@@ -663,6 +695,53 @@ export default function ProjectDetail({ mode = 'parse' }: ProjectDetailProps) {
     };
   }, [selectedDoc]);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadDoclingJsonForResults = async () => {
+      setResultsDoclingJsonUrl(null);
+      setResultsDoclingError(null);
+      setResultsDoclingLoading(false);
+
+      if (!selectedDoc || !isPdfDocument(selectedDoc) || !selectedDoc.conv_uid) {
+        return;
+      }
+
+      const locators = dedupeLocators([
+        selectedDoc.conv_locator,
+        toDoclingJsonLocator(selectedDoc.conv_locator),
+        toDoclingJsonLocator(selectedDoc.source_locator),
+      ]);
+
+      if (locators.length === 0) {
+        setResultsDoclingError('Docling JSON artifact locator was not found.');
+        return;
+      }
+
+      setResultsDoclingLoading(true);
+      const signedResult = await resolveSignedUrlForLocators(locators);
+      if (cancelled) return;
+
+      if (!signedResult.url) {
+        setResultsDoclingError(
+          signedResult.error
+            ? `Docling JSON unavailable: ${signedResult.error}`
+            : 'Docling JSON unavailable for this document.',
+        );
+        setResultsDoclingLoading(false);
+        return;
+      }
+
+      setResultsDoclingJsonUrl(signedResult.url);
+      setResultsDoclingLoading(false);
+    };
+
+    void loadDoclingJsonForResults();
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedDoc]);
+
   const handleExplorerResizeStart = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
     event.preventDefault();
     resizeStateRef.current = { startX: event.clientX, startWidth: explorerWidth };
@@ -726,14 +805,14 @@ export default function ProjectDetail({ mode = 'parse' }: ProjectDetailProps) {
   if (loading) return <Center mt="xl"><Loader /></Center>;
   if (!project) return <ErrorAlert message={error ?? 'Project not found'} />;
 
-  const navCompactionWidthShare = desktopNavOpened
-    ? 0
-    : Math.round((styleTokens.shell.navbarWidth - styleTokens.shell.navbarCompactWidth) / 3);
+  const navCompactionExplorerBoost = desktopNavOpened ? 0 : 20;
+  const navCompactionConfigBoost = desktopNavOpened ? 0 : 130;
   const layoutStyle = {
-    '--parse-explorer-width': `${explorerWidth + navCompactionWidthShare}px`,
-    '--parse-config-width': `${configWidth + navCompactionWidthShare}px`,
+    '--parse-explorer-width': `${explorerWidth + navCompactionExplorerBoost}px`,
+    '--parse-config-width': `${configWidth + navCompactionConfigBoost}px`,
   } as CSSProperties;
   const isExtractMode = mode === 'extract';
+  const isTransformMode = mode === 'transform';
   const isMarkdownTextPreview = (
     previewKind === 'text'
     && selectedDoc?.source_type?.toLowerCase() === 'md'
@@ -993,25 +1072,75 @@ export default function ProjectDetail({ mode = 'parse' }: ProjectDetailProps) {
                 )}
 
                 {middlePreviewTab === 'results' && (
-                  <Center h="100%">
-                    <Stack align="center" gap="xs" p="md">
-                      {!selectedDoc && (
+                  <>
+                    {!selectedDoc && (
+                      <Center h="100%">
                         <Text size="sm" c="dimmed" ta="center">
                           Select a document to view parse results.
                         </Text>
-                      )}
-                      {selectedDoc && selectedDoc.status !== 'ingested' && (
+                      </Center>
+                    )}
+
+                    {selectedDoc && isPdfDocument(selectedDoc) && !selectedDoc.conv_uid && (
+                      <Center h="100%">
                         <Text size="sm" c="dimmed" ta="center">
-                          Results are available after you run parse for this document.
+                          No parsed result artifacts exist for this file yet (status: {selectedDoc.status}).
                         </Text>
-                      )}
-                      {selectedDoc && selectedDoc.status === 'ingested' && (
+                      </Center>
+                    )}
+
+                    {selectedDoc && !isPdfDocument(selectedDoc) && (
+                      <Center h="100%">
                         <Text size="sm" c="dimmed" ta="center">
-                          Parse results panel will render here.
+                          Parse results preview is currently enabled for PDFs.
                         </Text>
-                      )}
-                    </Stack>
-                  </Center>
+                      </Center>
+                    )}
+
+                    {selectedDoc && isPdfDocument(selectedDoc) && selectedDoc.conv_uid && (
+                      <>
+                        {(previewLoading || resultsDoclingLoading) && (
+                          <Center h="100%">
+                            <Stack align="center" gap="xs">
+                              <Loader size="sm" />
+                              <Text size="sm" c="dimmed">Loading parsed PDF results...</Text>
+                            </Stack>
+                          </Center>
+                        )}
+
+                        {!previewLoading && !resultsDoclingLoading && (!previewUrl || previewKind !== 'pdf') && (
+                          <Center h="100%">
+                            <Text size="sm" c="dimmed" ta="center">
+                              PDF preview is unavailable for this parsed document.
+                            </Text>
+                          </Center>
+                        )}
+
+                        {!previewLoading && !resultsDoclingLoading && previewKind === 'pdf' && previewUrl && resultsDoclingError && (
+                          <Center h="100%">
+                            <Text size="sm" c="dimmed" ta="center">
+                              {resultsDoclingError}
+                            </Text>
+                          </Center>
+                        )}
+
+                        {!previewLoading
+                          && !resultsDoclingLoading
+                          && previewKind === 'pdf'
+                          && previewUrl
+                          && resultsDoclingJsonUrl
+                          && selectedDoc.conv_uid && (
+                            <PdfResultsHighlighter
+                              key={`${selectedDoc.source_uid}:${selectedDoc.conv_uid}:${resultsDoclingJsonUrl}`}
+                              title={selectedDoc.doc_title}
+                              pdfUrl={previewUrl}
+                              doclingJsonUrl={resultsDoclingJsonUrl}
+                              convUid={selectedDoc.conv_uid}
+                            />
+                        )}
+                      </>
+                    )}
+                  </>
                 )}
               </Box>
             </Box>
@@ -1355,7 +1484,7 @@ export default function ProjectDetail({ mode = 'parse' }: ProjectDetailProps) {
                 <Text size="xs" c="dimmed">Est. ~1,680 credits</Text>
               </Group>
             </Stack>
-          ) : (
+          ) : isTransformMode ? null : (
             <Stack gap="sm" className="parse-config-root">
               <Group justify="space-between" wrap="nowrap" className="parse-config-top-tabs">
                 <Group gap="md" wrap="nowrap">
