@@ -69,9 +69,7 @@ export function LeftRail({
   const navPaddingX = 'xs';
   const navPaddingY = 4;
   const quickActionPaddingY = 6;
-  const isTemplatesPath = location.pathname.startsWith('/app/schemas/templates');
-  const isTestRoute = location.pathname.startsWith('/app/test') || location.pathname.startsWith('/app/parse2');
-  const activeProjectMatch = location.pathname.match(/^\/app\/(?:projects|test|parse2|extract|transform)\/([^/]+)/);
+  const activeProjectMatch = location.pathname.match(/^\/app\/(?:projects|extract|transform)\/([^/]+)/);
   const activeProjectId = activeProjectMatch ? activeProjectMatch[1] : null;
   const [focusedProjectId, setFocusedProjectId] = useLocalStorage<string | null>({
     key: PROJECT_FOCUS_STORAGE_KEY,
@@ -185,8 +183,15 @@ export function LeftRail({
     )),
     [],
   );
+  const schemaMenu = useMemo(
+    () => orderedGlobalMenus.find((menu) => menu.path === '/app/schemas') ?? null,
+    [orderedGlobalMenus],
+  );
+  const quickActionMenus = useMemo(
+    () => orderedGlobalMenus.filter((menu) => menu.path !== '/app/schemas'),
+    [orderedGlobalMenus],
+  );
   const parsePath = projectSelectValue ? `/app/projects/${projectSelectValue}` : '/app/projects';
-  const testPath = projectSelectValue ? `/app/test/${projectSelectValue}` : '/app/test';
   const extractPath = projectSelectValue
     ? `/app/extract/${projectSelectValue}`
     : '/app/extract';
@@ -268,11 +273,7 @@ export function LeftRail({
     setNewProjectDescription('');
     closeCreateProject();
     setCreatingProject(false);
-    if (isTestRoute) {
-      navigate(`/app/test/${createdProject.project_id}`);
-    } else {
-      navigate(`/app/projects/${createdProject.project_id}`);
-    }
+    navigate(`/app/projects/${createdProject.project_id}`);
     onNavigate?.();
     notifications.show({
       color: 'green',
@@ -284,8 +285,7 @@ export function LeftRail({
   const isItemActive = (path: string): boolean => {
     if (path === '/app') return location.pathname === '/app';
     if (path === '/app/projects') return location.pathname.startsWith('/app/projects');
-    if (path === '/app/schemas') return location.pathname.startsWith('/app/schemas') && !isTemplatesPath;
-    if (path === '/app/schemas/templates') return isTemplatesPath;
+    if (path === '/app/schemas') return location.pathname.startsWith('/app/schemas');
     return location.pathname.startsWith(path);
   };
   const isGlobalMenuActive = (path: string): boolean => {
@@ -295,12 +295,7 @@ export function LeftRail({
     if (path === '/app/projects/list') return location.pathname.startsWith('/app/projects/list');
     if (path === '/app/extract') return location.pathname.startsWith('/app/extract');
     if (path === '/app/transform') return location.pathname.startsWith('/app/transform');
-    if (path === '/app/test') return location.pathname.startsWith('/app/test') || location.pathname.startsWith('/app/parse2');
-    if (path === '/app/schemas') {
-      return location.pathname.startsWith('/app/schemas')
-        && !location.pathname.startsWith('/app/schemas/apply')
-        && !location.pathname.startsWith('/app/schemas/advanced');
-    }
+    if (path === '/app/schemas') return location.pathname.startsWith('/app/schemas');
     return location.pathname.startsWith(path);
   };
   const renderRailItem = ({
@@ -478,9 +473,7 @@ export function LeftRail({
             onChange={(value) => {
               if (!value) return;
               setFocusedProjectId(value);
-              if (location.pathname.startsWith('/app/test') || location.pathname.startsWith('/app/parse2')) {
-                navigate(`/app/test/${value}`);
-              } else if (location.pathname.startsWith('/app/extract')) {
+              if (location.pathname.startsWith('/app/extract')) {
                 navigate(`/app/extract/${value}`);
               } else if (location.pathname.startsWith('/app/transform')) {
                 navigate(`/app/transform/${value}`);
@@ -493,7 +486,7 @@ export function LeftRail({
         </Box>
 
         <Box className="left-rail-quick-actions left-rail-quick-actions-locked">
-          {orderedGlobalMenus.map((menu) => {
+          {quickActionMenus.map((menu) => {
             const onActivate = () => {
               navigate(globalPathOverrides[menu.path] ?? menu.path);
               onNavigate?.();
@@ -529,33 +522,35 @@ export function LeftRail({
               />
             );
           })}
-          {desktopCompact ? (
+          {schemaMenu && (desktopCompact ? (
             <UnstyledButton
-              className={`left-rail-icon-link left-rail-icon-link-code${isGlobalMenuActive('/app/test') ? ' is-active' : ''}`}
+              className={`left-rail-icon-link left-rail-icon-link-code${isGlobalMenuActive(schemaMenu.path) ? ' is-active' : ''}`}
               onClick={() => {
-                navigate(testPath);
+                navigate(globalPathOverrides[schemaMenu.path] ?? schemaMenu.path);
                 onNavigate?.();
               }}
-              aria-label="Test"
-              title="Test"
+              aria-label={schemaMenu.label}
+              title={schemaMenu.label}
             >
-              <Text className="left-rail-icon-link-text">T</Text>
+              <Text className="left-rail-icon-link-text">
+                {GLOBAL_MENU_COMPACT_CODE[schemaMenu.path] ?? schemaMenu.label.charAt(0).toUpperCase()}
+              </Text>
             </UnstyledButton>
           ) : (
             <NavLink
-              label="Test"
+              label={schemaMenu.label}
               className="left-rail-link left-rail-quick-action"
-              aria-label="Test"
-              title="Test"
+              aria-label={schemaMenu.label}
+              title={schemaMenu.label}
               px={navPaddingX}
               py={quickActionPaddingY}
-              active={isGlobalMenuActive('/app/test')}
+              active={isGlobalMenuActive(schemaMenu.path)}
               onClick={() => {
-                navigate(testPath);
+                navigate(globalPathOverrides[schemaMenu.path] ?? schemaMenu.path);
                 onNavigate?.();
               }}
             />
-          )}
+          ))}
         </Box>
 
         <Box mt="auto" className="left-rail-bottom-nav">

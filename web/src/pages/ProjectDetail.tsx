@@ -114,7 +114,7 @@ type PreviewKind = 'none' | 'pdf' | 'image' | 'text' | 'docx' | 'pptx' | 'file';
 type ProjectDetailMode = 'parse' | 'extract' | 'transform';
 type ProjectDetailSurface = 'default' | 'test';
 type MiddlePreviewTab = 'preview' | 'results';
-type TestRightTab = 'preview' | 'metadata' | 'blocks';
+type TestRightTab = 'preview' | 'metadata' | 'blocks' | 'grid';
 type ParseConfigView = 'Basic' | 'Advanced';
 type ExtractConfigView = 'Basic' | 'Advanced' | 'Schema';
 type ExtractSchemaMode = 'table' | 'code';
@@ -900,6 +900,13 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
     }
   }, [configCollapseState, isTestSurfacePage, isTransformTestSurface]);
 
+  useEffect(() => {
+    if (isTransformTestSurface) return;
+    if (testRightTab === 'grid') {
+      setTestRightTab('preview');
+    }
+  }, [isTransformTestSurface, testRightTab]);
+
   const handleExplorerResizeStart = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
     if (isExplorerCollapsed) return;
     event.preventDefault();
@@ -1013,6 +1020,7 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
   const isRightPreviewTab = isTestSurface ? testRightTab === 'preview' : middlePreviewTab === 'preview';
   const isRightMetadataTab = isTestSurface ? testRightTab === 'metadata' : middlePreviewTab === 'results';
   const isRightBlocksTab = isTestSurface && testRightTab === 'blocks';
+  const isRightGridTab = isTransformTestSurface && testRightTab === 'grid';
   const showMetadataOverlayToggle = (
     isRightMetadataTab
     && !!selectedDoc
@@ -1029,40 +1037,35 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
   );
   const showCenterResultsList = !isTestSurface && middlePreviewTab === 'results';
   const showCenterConfig = isTestSurface || middlePreviewTab !== 'results';
+  const testRightTabOptions = isTransformTestSurface
+    ? [
+        { value: 'preview', label: 'Preview' },
+        { value: 'metadata', label: 'Metadata' },
+        { value: 'blocks', label: 'Blocks' },
+        { value: 'grid', label: 'Grid' },
+      ]
+    : [
+        { value: 'preview', label: 'Preview' },
+        { value: 'metadata', label: 'Metadata' },
+        { value: 'blocks', label: 'Blocks' },
+      ];
   const middleTabsControl = (
     isTestSurface ? (
-      <>
-        <Text
-          size="sm"
-          fw={testRightTab === 'preview' ? 700 : 600}
-          c={testRightTab === 'preview' ? undefined : 'dimmed'}
-          className={`parse-middle-tab${testRightTab === 'preview' ? ' is-active' : ''}`}
-          onClick={() => setTestRightTab('preview')}
-          style={{ cursor: 'pointer', userSelect: 'none' }}
-        >
-          Preview
-        </Text>
-        <Text
-          size="sm"
-          fw={testRightTab === 'metadata' ? 700 : 600}
-          c={testRightTab === 'metadata' ? undefined : 'dimmed'}
-          className={`parse-middle-tab${testRightTab === 'metadata' ? ' is-active' : ''}`}
-          onClick={() => setTestRightTab('metadata')}
-          style={{ cursor: 'pointer', userSelect: 'none' }}
-        >
-          Metadata
-        </Text>
-        <Text
-          size="sm"
-          fw={testRightTab === 'blocks' ? 700 : 600}
-          c={testRightTab === 'blocks' ? undefined : 'dimmed'}
-          className={`parse-middle-tab${testRightTab === 'blocks' ? ' is-active' : ''}`}
-          onClick={() => setTestRightTab('blocks')}
-          style={{ cursor: 'pointer', userSelect: 'none' }}
-        >
-          Blocks
-        </Text>
-      </>
+      <Group gap={12} wrap="nowrap">
+        {testRightTabOptions.map((option) => (
+          <Text
+            key={option.value}
+            size="sm"
+            fw={testRightTab === option.value ? 700 : 600}
+            c={testRightTab === option.value ? undefined : 'dimmed'}
+            className={`parse-middle-tab${testRightTab === option.value ? ' is-active' : ''}`}
+            onClick={() => setTestRightTab(option.value as TestRightTab)}
+            style={{ cursor: 'pointer', userSelect: 'none' }}
+          >
+            {option.label}
+          </Text>
+        ))}
+      </Group>
     ) : (
       <>
         <Text
@@ -1227,11 +1230,16 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
           <Box className="parse-playground-preview">
             <Box className="parse-preview-frame">
               {!showPdfInPreview && (
-                <Group justify="space-between" align="center" className="parse-middle-view-tabs" wrap="nowrap">
+                <Group
+                  justify={isRightGridTab ? 'flex-start' : 'space-between'}
+                  align="center"
+                  className="parse-middle-view-tabs"
+                  wrap="nowrap"
+                >
                   <Group gap={12} align="center" wrap="nowrap">
                     {middleTabsControl}
                   </Group>
-                  {isTransformMode && isRightBlocksTab && (
+                  {isRightGridTab && (
                     <Box className="parse-middle-grid-toolbar-host" ref={setTestBlocksToolbarHost} />
                   )}
                   {!isTransformMode && isRightBlocksTab && testBlocks.length > 0 && (
@@ -1449,73 +1457,73 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
                 )}
 
                 {isRightBlocksTab && (
-                  isTransformMode ? (
-                    <Box style={{ height: '100%', minHeight: 0, overflow: 'hidden' }}>
-                      {!selectedDoc ? (
-                        <Center h="100%">
-                          <Text size="sm" c="dimmed" ta="center">
-                            Select a document to view parsed blocks.
+                  <Box className="parse-docling-results-list">
+                    {!selectedDoc ? (
+                      <Center h="100%">
+                        <Text size="sm" c="dimmed" ta="center">
+                          Select a document to view parsed blocks.
+                        </Text>
+                      </Center>
+                    ) : !selectedDoc.conv_uid ? (
+                      <Center h="100%">
+                        <Text size="sm" c="dimmed" ta="center">
+                          No parsed blocks are available for this document yet.
+                        </Text>
+                      </Center>
+                    ) : testBlocksLoading ? (
+                      <Center h="100%">
+                        <Loader size="sm" />
+                      </Center>
+                    ) : testBlocksError ? (
+                      <Center h="100%">
+                        <Text size="sm" c="red" ta="center">
+                          {testBlocksError}
+                        </Text>
+                      </Center>
+                    ) : testBlocks.length === 0 ? (
+                      <Center h="100%">
+                        <Text size="sm" c="dimmed" ta="center">
+                          Parsed blocks returned empty for this document.
+                        </Text>
+                      </Center>
+                    ) : (
+                      testBlocks.map((block) => (
+                        <Box key={block.blockUid} className="parse-docling-results-item">
+                          <Text size="xs" fw={700}>
+                            {block.blockType} | #{block.blockIndex}
                           </Text>
-                        </Center>
-                      ) : !selectedDoc.conv_uid ? (
-                        <Center h="100%">
-                          <Text size="sm" c="dimmed" ta="center">
-                            No parsed blocks are available for this document yet.
+                          <Text size="xs" c="dimmed" lineClamp={3}>
+                            {block.snippet || '[no text]'}
                           </Text>
-                        </Center>
-                      ) : (
-                        <BlockViewerGrid
-                          convUid={selectedDoc.conv_uid}
-                          selectedRunId={selectedRunId}
-                          selectedRun={selectedRun}
-                          toolbarPortalTarget={testBlocksToolbarHost}
-                        />
-                      )}
-                    </Box>
-                  ) : (
-                    <Box className="parse-docling-results-list">
-                      {!selectedDoc ? (
-                        <Center h="100%">
-                          <Text size="sm" c="dimmed" ta="center">
-                            Select a document to view parsed blocks.
-                          </Text>
-                        </Center>
-                      ) : !selectedDoc.conv_uid ? (
-                        <Center h="100%">
-                          <Text size="sm" c="dimmed" ta="center">
-                            No parsed blocks are available for this document yet.
-                          </Text>
-                        </Center>
-                      ) : testBlocksLoading ? (
-                        <Center h="100%">
-                          <Loader size="sm" />
-                        </Center>
-                      ) : testBlocksError ? (
-                        <Center h="100%">
-                          <Text size="sm" c="red" ta="center">
-                            {testBlocksError}
-                          </Text>
-                        </Center>
-                      ) : testBlocks.length === 0 ? (
-                        <Center h="100%">
-                          <Text size="sm" c="dimmed" ta="center">
-                            Parsed blocks returned empty for this document.
-                          </Text>
-                        </Center>
-                      ) : (
-                        testBlocks.map((block) => (
-                          <Box key={block.blockUid} className="parse-docling-results-item">
-                            <Text size="xs" fw={700}>
-                              {block.blockType} | #{block.blockIndex}
-                            </Text>
-                            <Text size="xs" c="dimmed" lineClamp={3}>
-                              {block.snippet || '[no text]'}
-                            </Text>
-                          </Box>
-                        ))
-                      )}
-                    </Box>
-                  )
+                        </Box>
+                      ))
+                    )}
+                  </Box>
+                )}
+
+                {isRightGridTab && (
+                  <Box style={{ height: '100%', minHeight: 0, overflow: 'hidden' }}>
+                    {!selectedDoc ? (
+                      <Center h="100%">
+                        <Text size="sm" c="dimmed" ta="center">
+                          Select a document to view parsed blocks.
+                        </Text>
+                      </Center>
+                    ) : !selectedDoc.conv_uid ? (
+                      <Center h="100%">
+                        <Text size="sm" c="dimmed" ta="center">
+                          No parsed blocks are available for this document yet.
+                        </Text>
+                      </Center>
+                    ) : (
+                      <BlockViewerGrid
+                        convUid={selectedDoc.conv_uid}
+                        selectedRunId={selectedRunId}
+                        selectedRun={selectedRun}
+                        toolbarPortalTarget={testBlocksToolbarHost}
+                      />
+                    )}
+                  </Box>
                 )}
               </Box>
             </Box>
@@ -1543,7 +1551,7 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
             </ActionIcon>
           )}
           {isTestSurfacePage && isConfigCollapsed ? null : (isExtractMode ? (
-            <Stack gap="sm" className="extract-config-root">
+            <Stack gap={0} className="extract-config-root">
               <Group justify="space-between" wrap="nowrap" className="extract-config-top-tabs">
                 <Text size="sm" fw={700}>Build</Text>
                 <Group gap={6} wrap="nowrap" className="extract-config-run-btn">
@@ -1558,7 +1566,7 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
                 </Group>
               </Group>
 
-                <Group justify="space-between" wrap="nowrap">
+                <Group justify="space-between" wrap="nowrap" className="extract-config-subhead">
                   <Group gap={6} wrap="nowrap">
                     <Text fw={700} size="sm">Configuration</Text>
                     <IconInfoCircle size={14} stroke={1.8} className="extract-config-info-icon" />
@@ -1876,13 +1884,21 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
             </Stack>
           ) : isTransformMode ? (
             <Stack gap={0} className="parse-config-root">
-              <Group justify="space-between" wrap="nowrap" className="parse-config-top-tabs">
+              <Group
+                justify="space-between"
+                wrap="nowrap"
+                className="parse-config-top-tabs"
+              >
                 <Text size="sm" fw={700}>Configuration</Text>
               </Group>
             </Stack>
           ) : (
             <Stack gap={0} className={`parse-config-root${showCenterResultsList ? ' parse-results-side-root' : ''}`}>
-              <Group justify="space-between" wrap="nowrap" className="parse-config-top-tabs">
+              <Group
+                justify="space-between"
+                wrap="nowrap"
+                className={`parse-config-top-tabs${showCenterConfig ? ' parse-config-top-tabs--with-subhead' : ''}`}
+              >
                 {isTestSurface ? (
                   <Text size="sm" fw={700}>Build</Text>
                 ) : (
@@ -1970,7 +1986,7 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
                 </Alert>
               )}
 
-              <Group justify="space-between" wrap="nowrap">
+              <Group justify="space-between" wrap="nowrap" className="parse-config-subhead">
                 <Group gap={6} wrap="nowrap">
                   <Text fw={700} size="sm">Configuration</Text>
                   <IconInfoCircle size={14} stroke={1.8} className="extract-config-info-icon" />

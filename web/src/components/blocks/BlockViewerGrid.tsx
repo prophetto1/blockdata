@@ -933,7 +933,7 @@ export function BlockViewerGrid({
   const toolbarControls = (
     <Group
       className="block-grid-toolbar-row"
-      justify={toolbarPortalTarget ? 'flex-end' : 'space-between'}
+      justify={toolbarPortalTarget ? 'flex-start' : 'space-between'}
       wrap={toolbarPortalTarget ? 'nowrap' : 'wrap'}
       gap="xs"
     >

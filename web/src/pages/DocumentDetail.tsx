@@ -3,7 +3,7 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Alert, Badge, Button, Loader, Center, Text, Group, Stack, Skeleton, Modal } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
-import { IconInfoCircle, IconPlus } from '@tabler/icons-react';
+import { IconInfoCircle } from '@tabler/icons-react';
 import { supabase } from '@/lib/supabase';
 import { downloadFromEdge } from '@/lib/edge';
 import { TABLES } from '@/lib/tables';
@@ -130,26 +130,6 @@ export default function DocumentDetail() {
   const selectedRun = runs.find((r) => r.run_id === selectedRunId) ?? null;
   return (
     <>
-      <Group justify="flex-end" mb="sm" wrap="nowrap" style={{ minWidth: 0 }}>
-        <Group gap="xs" wrap="nowrap">
-          <Button
-            size="xs"
-            variant="light"
-            leftSection={<IconPlus size={14} />}
-            onClick={() => {
-              const query = new URLSearchParams({
-                sourceUid: doc.source_uid,
-              });
-              if (projectId) query.set('projectId', projectId);
-              if (doc.conv_uid) query.set('convUid', doc.conv_uid);
-              query.set('returnTo', 'document');
-              navigate(`/app/schemas/start?${query.toString()}`);
-            }}
-          >
-            Add Schema
-          </Button>
-        </Group>
-      </Group>
       <Group gap="xs" wrap="nowrap" mb="sm">
         <Badge size="sm" color={STATUS_COLOR[doc.status] ?? 'gray'} variant="light">{doc.status}</Badge>
         <Text size="xs" c="dimmed">

@@ -1,299 +1,332 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { AgGridReact } from 'ag-grid-react';
-import { AllCommunityModule, ModuleRegistry, type ColDef, type ICellRendererParams } from 'ag-grid-community';
-import { FileInput, TextInput, Button, Group, Stack, ActionIcon, Tooltip, Modal, Text, Grid, Paper, Badge, useComputedColorScheme } from '@mantine/core';
-import { useDisclosure } from '@mantine/hooks';
-import { notifications } from '@mantine/notifications';
-import { IconPencil, IconPlus, IconTrash, IconUpload } from '@tabler/icons-react';
-import { supabase } from '@/lib/supabase';
-import { edgeJson } from '@/lib/edge';
-import { TABLES } from '@/lib/tables';
-import type { SchemaRow } from '@/lib/types';
-import { createAppGridTheme } from '@/lib/agGridTheme';
+import { useCallback, useMemo, useState } from 'react';
+import {
+  ActionIcon,
+  Badge,
+  Box,
+  Button,
+  Center,
+  Group,
+  Paper,
+  Select,
+  Stack,
+  Text,
+  TextInput,
+  Textarea,
+} from '@mantine/core';
+import {
+  IconAlertTriangle,
+  IconArrowsMaximize,
+  IconCirclePlus,
+  IconCode,
+  IconDotsVertical,
+  IconPencil,
+  IconTable,
+  IconTrash,
+} from '@tabler/icons-react';
 import { PageHeader } from '@/components/common/PageHeader';
-import { ErrorAlert } from '@/components/common/ErrorAlert';
-import { JsonViewer } from '@/components/common/JsonViewer';
-import { CopyUid } from '@/components/common/CopyUid';
 
-ModuleRegistry.registerModules([AllCommunityModule]);
+type ExtractSchemaMode = 'table' | 'code';
+type ExtractSchemaFieldType =
+  | 'string'
+  | 'number'
+  | 'boolean'
+  | 'object'
+  | 'array:string'
+  | 'array:number'
+  | 'array:boolean'
+  | 'array:object';
+
+type ExtractSchemaField = {
+  id: string;
+  name: string;
+  type: ExtractSchemaFieldType;
+  description: string;
+  required: boolean;
+};
+
+const EXTRACT_SCHEMA_TYPE_OPTIONS: Array<{ value: ExtractSchemaFieldType; label: string }> = [
+  { value: 'string', label: 'string' },
+  { value: 'number', label: 'number' },
+  { value: 'boolean', label: 'boolean' },
+  { value: 'object', label: 'object' },
+  { value: 'array:string', label: 'array<string>' },
+  { value: 'array:number', label: 'array<number>' },
+  { value: 'array:boolean', label: 'array<boolean>' },
+  { value: 'array:object', label: 'array<object>' },
+];
 
 export default function Schemas() {
-  const navigate = useNavigate();
-  const gridRef = useRef<AgGridReact<SchemaRow>>(null);
-  const [rows, setRows] = useState<SchemaRow[]>([]);
-  const [selectedSchemaId, setSelectedSchemaId] = useState<string | null>(null);
-  const [file, setFile] = useState<File | null>(null);
-  const [schemaRef, setSchemaRef] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [uploadOpened, { open: openUpload, close: closeUpload }] = useDisclosure(false);
-  const [deleteTarget, setDeleteTarget] = useState<SchemaRow | null>(null);
-  const [deleteOpened, { open: openDelete, close: closeDelete }] = useDisclosure(false);
-  const [deleting, setDeleting] = useState(false);
-  const computedColorScheme = useComputedColorScheme('dark');
-  const isDark = computedColorScheme === 'dark';
+  const [extractSchemaMode, setExtractSchemaMode] = useState<ExtractSchemaMode>('table');
+  const [extractSchemaReady, setExtractSchemaReady] = useState(false);
+  const [extractSchemaFields, setExtractSchemaFields] = useState<ExtractSchemaField[]>([]);
+  const [extractSchemaDraft, setExtractSchemaDraft] = useState('');
 
-  const load = () => {
-    supabase
-      .from(TABLES.schemas)
-      .select('schema_id, schema_ref, schema_uid, created_at, owner_id, schema_jsonb')
-      .order('created_at', { ascending: false })
-      .limit(50)
-      .then(({ data, error: err }) => {
-        if (err) setError(err.message);
-        else {
-          const nextRows = (data ?? []) as SchemaRow[];
-          setRows(nextRows);
-          setSelectedSchemaId((prev) => {
-            if (prev && nextRows.some((row) => row.schema_id === prev)) return prev;
-            return nextRows[0]?.schema_id ?? null;
-          });
-        }
-      });
-  };
-
-  useEffect(load, []);
-
-  const handleDeleteSchema = async () => {
-    if (!deleteTarget) return;
-    setDeleting(true);
-    try {
-      const { error: err } = await supabase.rpc('delete_schema', { p_schema_id: deleteTarget.schema_id });
-      if (err) throw new Error(err.message);
-      notifications.show({ color: 'green', title: 'Deleted', message: `Schema "${deleteTarget.schema_ref}" removed` });
-      closeDelete();
-      setDeleteTarget(null);
-      load();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-      closeDelete();
-    } finally {
-      setDeleting(false);
+  const createSchemaField = useCallback((seed?: Partial<ExtractSchemaField>): ExtractSchemaField => (
+    {
+      id: `field-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      name: seed?.name ?? '',
+      type: seed?.type ?? 'string',
+      description: seed?.description ?? '',
+      required: seed?.required ?? true,
     }
-  };
+  ), []);
 
-  const upload = async () => {
-    if (!file) { setError('Choose a User Schema JSON file first.'); return; }
-    setBusy(true);
-    setError(null);
-    try {
-      const form = new FormData();
-      if (schemaRef.trim()) form.set('schema_ref', schemaRef.trim());
-      form.set('schema', file);
-      await edgeJson('schemas', { method: 'POST', body: form });
-      notifications.show({
-        color: 'green',
-        title: 'Schema uploaded',
-        message: schemaRef.trim() ? `Saved as ${schemaRef.trim()}` : 'Upload completed.',
-      });
-      load();
-      setFile(null);
-      setSchemaRef('');
-      closeUpload();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setBusy(false);
-    }
-  };
+  const updateExtractSchemaField = useCallback((id: string, patch: Partial<ExtractSchemaField>) => {
+    setExtractSchemaFields((prev) => prev.map((field) => (
+      field.id === id ? { ...field, ...patch } : field
+    )));
+  }, []);
 
-  const gridTheme = useMemo(() => {
-    return createAppGridTheme(isDark);
-  }, [isDark]);
+  const addExtractSchemaField = useCallback((afterFieldId?: string) => {
+    setExtractSchemaFields((prev) => {
+      const nextField = createSchemaField();
+      if (!afterFieldId) return [...prev, nextField];
+      const index = prev.findIndex((field) => field.id === afterFieldId);
+      if (index < 0) return [...prev, nextField];
+      return [...prev.slice(0, index + 1), nextField, ...prev.slice(index + 1)];
+    });
+  }, [createSchemaField]);
 
-  const renderActions = useCallback((params: ICellRendererParams<SchemaRow>) => {
-    const row = params.data;
-    if (!row) return null;
-    return (
-      <Group gap={4} justify="flex-end" wrap="nowrap">
-        <Tooltip label="Open advanced editor">
-          <ActionIcon variant="subtle" size="sm" onClick={() => navigate(`/app/schemas/advanced/${row.schema_id}`)}>
-            <IconPencil size={14} />
-          </ActionIcon>
-        </Tooltip>
-        <Tooltip label="Delete schema">
-          <ActionIcon variant="subtle" color="red" size="sm" onClick={() => { setDeleteTarget(row); openDelete(); }}>
-            <IconTrash size={14} />
-          </ActionIcon>
-        </Tooltip>
-      </Group>
-    );
-  }, [navigate, openDelete]);
+  const removeExtractSchemaField = useCallback((id: string) => {
+    setExtractSchemaFields((prev) => prev.filter((field) => field.id !== id));
+  }, []);
 
-  const columnDefs = useMemo<ColDef<SchemaRow>[]>(() => ([
-    {
-      headerName: 'schema_ref',
-      field: 'schema_ref',
-      flex: 1,
-      minWidth: 220,
-      sortable: true,
-      filter: true,
-      cellRenderer: (params: ICellRendererParams<SchemaRow>) => (
-        <Button
-          variant="subtle"
-          size="compact-sm"
-          px={0}
-          onClick={() => {
-            if (params.data) setSelectedSchemaId(params.data.schema_id);
-          }}
-        >
-          {params.value as string}
-        </Button>
-      ),
-    },
-    {
-      headerName: 'schema_uid',
-      field: 'schema_uid',
-      width: 200,
-      sortable: true,
-      filter: true,
-      cellRenderer: (params: ICellRendererParams<SchemaRow>) => {
-        const value = params.value as string | undefined;
-        if (!value) return <Text size="sm" c="dimmed">--</Text>;
-        return <CopyUid value={value} display={`${value.slice(0, 16)}...`} />;
-      },
-    },
-    {
-      headerName: 'created',
-      field: 'created_at',
-      width: 200,
-      sortable: true,
-      valueFormatter: (params) => {
-        if (!params.value) return '';
-        return new Date(params.value as string).toLocaleString();
-      },
-    },
-    {
-      headerName: '',
-      colId: 'actions',
-      width: 120,
-      sortable: false,
-      filter: false,
-      cellRenderer: renderActions,
-    },
-  ]), [renderActions]);
+  const initializeManualSchema = useCallback(() => {
+    setExtractSchemaReady(true);
+    setExtractSchemaMode('table');
+    setExtractSchemaFields([createSchemaField({ name: '', type: 'string', description: '', required: true })]);
+  }, [createSchemaField]);
 
-  const defaultColDef = useMemo<ColDef>(() => ({
-    resizable: true,
-    sortable: true,
-    filter: true,
-    cellStyle: {
-      display: 'flex',
-      alignItems: 'center',
-    },
-  }), []);
+  const initializeAutoSchema = useCallback(() => {
+    setExtractSchemaReady(true);
+    setExtractSchemaMode('table');
+    setExtractSchemaFields([
+      createSchemaField({ name: 'invoice', type: 'string', description: 'Invoice identifier', required: true }),
+      createSchemaField({ name: 'total_amount', type: 'number', description: 'Total billed amount', required: true }),
+      createSchemaField({ name: 'due_date', type: 'string', description: 'Payment due date', required: false }),
+    ]);
+  }, [createSchemaField]);
 
-  const gridHeight = rows.length === 0 ? 240 : 520;
-  const selectedSchema = useMemo(
-    () => rows.find((row) => row.schema_id === selectedSchemaId) ?? null,
-    [rows, selectedSchemaId],
-  );
+  const clearExtractSchema = useCallback(() => {
+    setExtractSchemaReady(false);
+    setExtractSchemaFields([]);
+    setExtractSchemaDraft('');
+    setExtractSchemaMode('table');
+  }, []);
+
+  const extractSchemaPreviewJson = useMemo(() => {
+    const properties = extractSchemaFields.reduce<Record<string, unknown>>((acc, field) => {
+      const key = field.name.trim();
+      if (!key) return acc;
+      if (field.type.startsWith('array:')) {
+        const itemType = field.type.replace('array:', '') as 'string' | 'number' | 'boolean' | 'object';
+        acc[key] = {
+          type: 'array',
+          items: { type: itemType },
+          description: field.description.trim() || undefined,
+        };
+        return acc;
+      }
+      acc[key] = {
+        type: field.type,
+        description: field.description.trim() || undefined,
+      };
+      return acc;
+    }, {});
+
+    const required = extractSchemaFields
+      .filter((field) => field.required && field.name.trim().length > 0)
+      .map((field) => field.name.trim());
+
+    return JSON.stringify({
+      type: 'object',
+      properties,
+      required,
+    }, null, 2);
+  }, [extractSchemaFields]);
 
   return (
     <>
-      <PageHeader
-        title="User Schemas"
-        subtitle={
-          <>
-            You can create or upload your user-schemas here.
-            <br />
-            This page accepts User Schema JSON (structured schema object). Source Document JSONs belong in document/source integration.
-          </>
-        }
-      >
-        <Button size="xs" leftSection={<IconPlus size={14} />} onClick={() => navigate('/app/schemas/start')}>
-          Create schema
-        </Button>
-        <Button size="xs" variant="light" leftSection={<IconUpload size={14} />} onClick={openUpload}>
-          Upload schema
-        </Button>
-        <Button variant="light" size="xs" onClick={() => navigate('/app/schemas/advanced')}>
-          Advanced editor
-        </Button>
+      <PageHeader title="Schema" subtitle="Schema JSON editor">
+        <Text size="xs" c="dimmed">Standalone schema workspace</Text>
       </PageHeader>
-      {error && <ErrorAlert message={error} />}
-      <Grid gutter="lg">
-        <Grid.Col span={{ base: 12, lg: 7 }}>
-          <div
-            className="block-viewer-grid grid-font-medium grid-font-family-sans grid-valign-center"
-            style={{ height: gridHeight, width: '100%' }}
-          >
-            <AgGridReact
-              ref={gridRef}
-              theme={gridTheme}
-              rowData={rows}
-              columnDefs={columnDefs}
-              defaultColDef={defaultColDef}
-              rowHeight={44}
-              headerHeight={44}
-              animateRows={false}
-              domLayout="normal"
-              overlayNoRowsTemplate='<span style="color: var(--mantine-color-dimmed);">No schemas yet.</span>'
-            />
-          </div>
-        </Grid.Col>
-        <Grid.Col span={{ base: 12, lg: 5 }}>
-          <Paper withBorder p="md" radius="md" style={{ minHeight: gridHeight }}>
-            <Stack gap="sm">
-              <Group justify="space-between">
-                <Text fw={600} size="sm">User Schema JSON Preview</Text>
-                {selectedSchema && (
-                  <Badge variant="light" ff="monospace">
-                    {selectedSchema.schema_ref}
-                  </Badge>
-                )}
-              </Group>
-              {selectedSchema ? (
-                <JsonViewer
-                  value={selectedSchema.schema_jsonb}
-                  minHeight={Math.max(gridHeight - 80, 160)}
-                  maxHeight={Math.max(gridHeight - 80, 160)}
-                />
-              ) : (
-                <Text size="sm" c="dimmed">
-                  Select a schema name from the left table to preview its JSON.
+
+      <Paper withBorder radius="md" p="md">
+        <Stack gap="md">
+          <Group justify="space-between" wrap="nowrap" className="extract-schema-toolbar">
+            <Group gap={4} wrap="nowrap" className="extract-schema-mode-toggle">
+              <ActionIcon
+                size="sm"
+                variant={extractSchemaMode === 'table' ? 'light' : 'subtle'}
+                aria-label="Table schema mode"
+                onClick={() => setExtractSchemaMode('table')}
+              >
+                <IconTable size={14} />
+              </ActionIcon>
+              <ActionIcon
+                size="sm"
+                variant={extractSchemaMode === 'code' ? 'light' : 'subtle'}
+                aria-label="Code schema mode"
+                onClick={() => setExtractSchemaMode('code')}
+              >
+                <IconCode size={14} />
+              </ActionIcon>
+            </Group>
+
+            <Group gap={6} wrap="nowrap">
+              <ActionIcon size="sm" variant="subtle" aria-label="Expand schema">
+                <IconArrowsMaximize size={14} />
+              </ActionIcon>
+              <ActionIcon
+                size="sm"
+                variant="subtle"
+                aria-label="Reset schema"
+                onClick={clearExtractSchema}
+              >
+                <IconTrash size={14} />
+              </ActionIcon>
+            </Group>
+          </Group>
+
+          {!extractSchemaReady && (
+            <Center className="extract-schema-create-wrap">
+              <Stack align="center" gap="sm" className="extract-schema-create-card">
+                <Text fw={700} size="xl">Create Schema</Text>
+                <Text size="sm" c="dimmed" ta="center" maw={460}>
+                  Upload a file or provide a natural language description to automatically generate a schema.
+                  Or use the Schema Builder to manually create a schema.
                 </Text>
-              )}
+                <Group gap="sm">
+                  <Button variant="filled" onClick={initializeAutoSchema}>Auto-Generate</Button>
+                  <Button variant="default" onClick={initializeManualSchema}>Create Manually</Button>
+                </Group>
+              </Stack>
+            </Center>
+          )}
+
+          {extractSchemaReady && extractSchemaMode === 'table' && (
+            <Stack gap="sm">
+              <Group justify="space-between" wrap="nowrap">
+                <Group gap={6} wrap="nowrap">
+                  <Text fw={600}>Apply to all fields</Text>
+                  <IconDotsVertical size={14} />
+                  <Badge variant="light" radius="xl">{extractSchemaFields.length}</Badge>
+                </Group>
+                <Button
+                  variant="default"
+                  size="xs"
+                  leftSection={<IconPencil size={14} />}
+                >
+                  Edit
+                </Button>
+              </Group>
+
+              <Box className="extract-schema-table-head">
+                <Box />
+                <Text fw={700} size="sm">Field Name</Text>
+                <Text fw={700} size="sm">Field Type</Text>
+                <Text fw={700} size="sm">Field Description</Text>
+                <Box />
+              </Box>
+
+              <Stack gap={8}>
+                {extractSchemaFields.map((field) => {
+                  const hasName = field.name.trim().length > 0;
+                  return (
+                    <Box key={field.id} className="extract-schema-row">
+                      <ActionIcon
+                        size="sm"
+                        variant="subtle"
+                        aria-label="Add schema field"
+                        onClick={() => addExtractSchemaField(field.id)}
+                      >
+                        <IconCirclePlus size={16} />
+                      </ActionIcon>
+
+                      <TextInput
+                        placeholder="e.g. invoice"
+                        value={field.name}
+                        onChange={(event) => updateExtractSchemaField(field.id, { name: event.currentTarget.value })}
+                      />
+
+                      <Select
+                        data={EXTRACT_SCHEMA_TYPE_OPTIONS}
+                        value={field.type}
+                        comboboxProps={{ withinPortal: false }}
+                        onChange={(value) => {
+                          if (!value) return;
+                          updateExtractSchemaField(field.id, { type: value as ExtractSchemaFieldType });
+                        }}
+                      />
+
+                      <TextInput
+                        placeholder="(optional)"
+                        value={field.description}
+                        onChange={(event) => updateExtractSchemaField(field.id, { description: event.currentTarget.value })}
+                      />
+
+                      <Group gap={4} wrap="nowrap" className="extract-schema-row-actions">
+                        <ActionIcon
+                          size="sm"
+                          variant={field.required ? 'light' : 'subtle'}
+                          aria-label="Toggle required field"
+                          onClick={() => updateExtractSchemaField(field.id, { required: !field.required })}
+                        >
+                          <Text fw={700}>*</Text>
+                        </ActionIcon>
+
+                        <ActionIcon
+                          size="sm"
+                          variant="subtle"
+                          color="red"
+                          aria-label="Delete schema field"
+                          onClick={() => removeExtractSchemaField(field.id)}
+                        >
+                          <IconTrash size={14} />
+                        </ActionIcon>
+
+                        <ActionIcon
+                          size="sm"
+                          variant="subtle"
+                          color={hasName ? 'gray' : 'red'}
+                          aria-label="Schema field validation state"
+                        >
+                          <IconAlertTriangle size={14} />
+                        </ActionIcon>
+                      </Group>
+                    </Box>
+                  );
+                })}
+              </Stack>
+
+              <Group>
+                <Button
+                  variant="subtle"
+                  size="compact-sm"
+                  leftSection={<IconCirclePlus size={14} />}
+                  onClick={() => addExtractSchemaField()}
+                >
+                  Add field
+                </Button>
+              </Group>
             </Stack>
-          </Paper>
-        </Grid.Col>
-      </Grid>
+          )}
 
-      <Modal opened={deleteOpened} onClose={closeDelete} title="Delete schema" centered>
-        <Stack gap="md">
-          <Text size="sm">
-            Delete schema <Text span fw={600} ff="monospace">{deleteTarget?.schema_ref}</Text>? This will fail if any runs reference it.
-          </Text>
-          <Group justify="flex-end">
-            <Button variant="default" onClick={closeDelete}>Cancel</Button>
-            <Button color="red" onClick={handleDeleteSchema} loading={deleting}>Delete</Button>
-          </Group>
+          {extractSchemaReady && extractSchemaMode === 'code' && (
+            <Stack gap="sm">
+              <Textarea
+                label="Schema JSON"
+                minRows={14}
+                value={extractSchemaDraft || extractSchemaPreviewJson}
+                onChange={(event) => setExtractSchemaDraft(event.currentTarget.value)}
+              />
+              <Text size="xs" c="dimmed">
+                Switch back to table mode to edit fields visually.
+              </Text>
+            </Stack>
+          )}
         </Stack>
-      </Modal>
-
-      <Modal opened={uploadOpened} onClose={closeUpload} title="Upload schema" centered>
-        <Stack gap="md">
-          <TextInput
-            label="schema_ref (optional)"
-            placeholder="e.g. book_review"
-            description="Leave blank to auto-derive from the uploaded schema."
-            value={schemaRef}
-            onChange={(e) => setSchemaRef(e.currentTarget.value)}
-          />
-          <FileInput
-            label="User Schema JSON file"
-            placeholder="Choose .json file"
-            accept="application/json,.json"
-            value={file}
-            onChange={setFile}
-          />
-          <Group justify="flex-end">
-            <Button variant="default" onClick={closeUpload}>Cancel</Button>
-            <Button onClick={upload} loading={busy} disabled={!file}>Upload</Button>
-          </Group>
-        </Stack>
-      </Modal>
+      </Paper>
     </>
   );
 }

@@ -590,7 +590,7 @@ body {
 }
 
 .parse-playground-right.is-extract {
-  padding: var(--mantine-spacing-sm) var(--mantine-spacing-sm) var(--mantine-spacing-sm) var(--mantine-spacing-md);
+  padding: var(--mantine-spacing-md) var(--mantine-spacing-sm) var(--mantine-spacing-sm) var(--mantine-spacing-md);
   --config-header-bleed-left: var(--mantine-spacing-md);
   --config-header-bleed-right: var(--mantine-spacing-sm);
 }
@@ -779,8 +779,7 @@ body {
 
 .parse-upload-header,
 .parse-middle-view-tabs,
-.parse-pdf-toolbar,
-.extract-config-top-tabs {
+.parse-pdf-toolbar {
   border-bottom: 1px solid var(--mantine-color-default-border);
   background: var(--mantine-color-body);
 }
@@ -790,15 +789,18 @@ body {
 .parse-pdf-toolbar,
 .extract-config-top-tabs,
 .parse-config-top-tabs {
-  min-height: 31px;
-  padding: 0 6px 4px;
+  height: 36px;
+  min-height: 36px;
+  padding: 0 8px;
+  box-sizing: border-box;
+  align-items: center;
 }
 
 .parse-pdf-toolbar {
   overflow-x: auto;
   overflow-y: hidden;
   flex-wrap: nowrap !important;
-  max-height: 31px;
+  max-height: 36px;
 }
 
 .parse-middle-tab {
@@ -806,21 +808,27 @@ body {
 }
 
 .parse-middle-grid-toolbar-host {
-  flex: 1 1 auto;
+  flex: 0 1 auto;
   min-width: 0;
+  height: 35px;
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  justify-content: flex-start;
 }
 
 .parse-middle-grid-toolbar-host .block-grid-toolbar-portaled {
-  width: 100%;
+  width: auto;
   min-width: 0;
+  height: 35px;
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  justify-content: flex-start;
 }
 
 .block-grid-toolbar-row {
   min-width: 0;
+  height: 35px;
+  align-items: center;
 }
 
 .block-grid-toolbar-main {
@@ -1257,17 +1265,32 @@ body {
   border-bottom: 1px solid var(--mantine-color-default-border);
 }
 
-.extract-config-top-tabs::after,
+.extract-config-top-tabs::after {
+  display: none;
+}
+
 .parse-config-top-tabs::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 100%;
-  bottom: auto;
-  height: var(--mantine-spacing-sm);
-  background: inherit;
-  pointer-events: none;
+  display: none;
+}
+
+.extract-config-subhead {
+  min-height: 36px;
+  margin-left: calc(var(--config-header-bleed-left, 0px) * -1);
+  margin-right: calc(var(--config-header-bleed-right, 0px) * -1);
+  padding-left: calc(var(--config-header-bleed-left, 0px) + 6px);
+  padding-right: calc(var(--config-header-bleed-right, 0px) + 6px);
+  align-items: center;
+  box-sizing: border-box;
+}
+
+.parse-config-subhead {
+  min-height: 36px;
+  margin-left: calc(var(--config-header-bleed-left, 0px) * -1);
+  margin-right: calc(var(--config-header-bleed-right, 0px) * -1);
+  padding-left: calc(var(--config-header-bleed-left, 0px) + 6px);
+  padding-right: calc(var(--config-header-bleed-right, 0px) + 6px);
+  align-items: center;
+  box-sizing: border-box;
 }
 
 .parse-playground-layout[data-surface='test'] .parse-config-top-tabs::after {

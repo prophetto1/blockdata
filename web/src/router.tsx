@@ -17,14 +17,8 @@ import Upload from '@/pages/Upload';
 import UppyLibraryDemo from '@/pages/UppyLibraryDemo';
 import DocumentDetail from '@/pages/DocumentDetail';
 import Extract from '@/pages/Extract';
-import Test from '@/pages/Test';
 import Transform from '@/pages/Transform';
 import Schemas from '@/pages/Schemas';
-import SchemaApply from '@/pages/SchemaApply';
-import SchemaAdvancedEditor from '@/pages/SchemaAdvancedEditor';
-import SchemaStart from '@/pages/SchemaStart';
-import SchemaTemplates from '@/pages/SchemaTemplates';
-import SchemaWizard from '@/pages/SchemaWizard';
 import RunDetail from '@/pages/RunDetail';
 import Settings from '@/pages/Settings';
 import SuperuserSettings from '@/pages/SuperuserSettings';
@@ -89,22 +83,18 @@ export const router = createBrowserRouter([
           { path: '/app/projects/:projectId/runs/:runId', element: <RunDetail /> },
           { path: '/app/extract', element: <Navigate to="/app/projects" replace /> },
           { path: '/app/extract/:projectId', element: <Extract /> },
-          { path: '/app/test', element: <Navigate to="/app/projects" replace /> },
-          { path: '/app/test/:projectId', element: <Test /> },
-          { path: '/app/parse2', element: <Navigate to="/app/test" replace /> },
-          { path: '/app/parse2/:projectId', element: <Test /> },
           { path: '/app/transform', element: <Navigate to="/app/projects" replace /> },
           { path: '/app/transform/:projectId', element: <Transform /> },
 
           // Global schemas (not project-scoped)
           { path: '/app/schemas', element: <Schemas /> },
-          { path: '/app/schemas/start', element: <SchemaStart /> },
-          { path: '/app/schemas/wizard', element: <SchemaWizard /> },
-          { path: '/app/schemas/templates', element: <SchemaTemplates /> },
-          { path: '/app/schemas/templates/:templateId', element: <Navigate to="/app/schemas/templates" replace /> },
-          { path: '/app/schemas/apply', element: <SchemaApply /> },
-          { path: '/app/schemas/advanced', element: <SchemaAdvancedEditor /> },
-          { path: '/app/schemas/advanced/:schemaId', element: <SchemaAdvancedEditor /> },
+          { path: '/app/schemas/start', element: <Navigate to="/app/schemas" replace /> },
+          { path: '/app/schemas/wizard', element: <Navigate to="/app/schemas" replace /> },
+          { path: '/app/schemas/templates', element: <Navigate to="/app/schemas" replace /> },
+          { path: '/app/schemas/templates/:templateId', element: <Navigate to="/app/schemas" replace /> },
+          { path: '/app/schemas/apply', element: <Navigate to="/app/schemas" replace /> },
+          { path: '/app/schemas/advanced', element: <Navigate to="/app/schemas" replace /> },
+          { path: '/app/schemas/advanced/:schemaId', element: <Navigate to="/app/schemas" replace /> },
 
           // Settings (API keys, model defaults)
           { path: '/app/settings', element: <Settings /> },
