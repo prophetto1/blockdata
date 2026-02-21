@@ -869,13 +869,6 @@ body {
   scrollbar-width: thin;
 }
 
-.parse-pdf-toolbar-left {
-  flex: 0 0 auto;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
 .parse-pdf-page-input {
   width: 54px;
 }
@@ -889,11 +882,6 @@ body {
 .parse-pdf-zoom-label {
   min-width: 44px;
   text-align: center;
-}
-
-.parse-pdf-units-label {
-  min-width: 92px;
-  text-align: left;
 }
 
 .parse-pdf-preview-viewport {
@@ -958,48 +946,6 @@ body {
   height: auto !important;
   border-radius: 4px;
   box-shadow: 0 1px 4px light-dark(rgba(0, 0, 0, 0.08), rgba(0, 0, 0, 0.3));
-}
-
-.parse-pdf-unit-overlay {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  bottom: 8px;
-  width: 16px;
-  pointer-events: none;
-}
-
-.parse-pdf-unit-marker {
-  position: absolute;
-  right: 0;
-  transform: translateY(-50%);
-  width: 10px;
-  height: 6px;
-  border-radius: 999px;
-  border: 1px solid light-dark(rgba(20, 20, 20, 0.22), rgba(255, 255, 255, 0.22));
-  background: light-dark(rgba(0, 113, 227, 0.45), rgba(102, 177, 255, 0.55));
-  cursor: pointer;
-  pointer-events: auto;
-  padding: 0;
-}
-
-.parse-pdf-unit-marker[data-active='true'] {
-  width: 14px;
-  background: light-dark(rgba(0, 113, 227, 0.85), rgba(102, 177, 255, 0.85));
-  border-color: light-dark(rgba(0, 74, 160, 0.9), rgba(158, 206, 255, 0.95));
-}
-
-.parse-pdf-unit-panel {
-  border-top: 1px solid var(--mantine-color-default-border);
-  padding: 4px 8px;
-  background: light-dark(rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.02));
-  min-height: 30px;
-  display: flex;
-  align-items: center;
-}
-
-.parse-pdf-unit-panel-copy {
-  min-width: 0;
 }
 
 .parse-text-preview {

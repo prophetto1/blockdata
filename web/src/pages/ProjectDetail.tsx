@@ -1027,14 +1027,6 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
     && isPdfDocument(selectedDoc)
     && !!selectedDoc.conv_uid
   );
-  const showPdfInPreview = (
-    isRightPreviewTab
-    && !!selectedDoc
-    && !previewLoading
-    && !previewError
-    && previewKind === 'pdf'
-    && !!previewUrl
-  );
   const showCenterResultsList = !isTestSurface && middlePreviewTab === 'results';
   const showCenterConfig = isTestSurface || middlePreviewTab !== 'results';
   const testRightTabOptions = isTransformTestSurface
@@ -1229,44 +1221,42 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
         <Box className="parse-playground-work">
           <Box className="parse-playground-preview">
             <Box className="parse-preview-frame">
-              {!showPdfInPreview && (
-                <Group
-                  justify={isRightGridTab ? 'flex-start' : 'space-between'}
-                  align="center"
-                  className="parse-middle-view-tabs"
-                  wrap="nowrap"
-                >
-                  <Group gap={12} align="center" wrap="nowrap">
-                    {middleTabsControl}
-                  </Group>
-                  {isRightGridTab && (
-                    <Box className="parse-middle-grid-toolbar-host" ref={setTestBlocksToolbarHost} />
-                  )}
-                  {!isTransformMode && isRightBlocksTab && testBlocks.length > 0 && (
-                    <Text size="xs" c="dimmed">{testBlocks.length} blocks</Text>
-                  )}
-                  {showMetadataOverlayToggle && (
-                    <Group gap={8} wrap="nowrap">
-                      <Switch
-                        className="parse-overlay-toggle"
-                        size="xs"
-                        label="Show overlay"
-                        checked={showAllBboxes}
-                        disabled={previewLoading || resultsDoclingLoading}
-                        onChange={(event) => setShowAllBboxes(event.currentTarget.checked)}
-                      />
-                      <Switch
-                        className="parse-overlay-toggle"
-                        size="xs"
-                        label="Show results"
-                        checked={showMetadataBlocksPanel}
-                        disabled={previewLoading || resultsDoclingLoading}
-                        onChange={(event) => setShowMetadataBlocksPanel(event.currentTarget.checked)}
-                      />
-                    </Group>
-                  )}
+              <Group
+                justify={isRightGridTab ? 'flex-start' : 'space-between'}
+                align="center"
+                className="parse-middle-view-tabs"
+                wrap="nowrap"
+              >
+                <Group gap={12} align="center" wrap="nowrap">
+                  {middleTabsControl}
                 </Group>
-              )}
+                {isRightGridTab && (
+                  <Box className="parse-middle-grid-toolbar-host" ref={setTestBlocksToolbarHost} />
+                )}
+                {!isTransformMode && isRightBlocksTab && testBlocks.length > 0 && (
+                  <Text size="xs" c="dimmed">{testBlocks.length} blocks</Text>
+                )}
+                {showMetadataOverlayToggle && (
+                  <Group gap={8} wrap="nowrap">
+                    <Switch
+                      className="parse-overlay-toggle"
+                      size="xs"
+                      label="Show overlay"
+                      checked={showAllBboxes}
+                      disabled={previewLoading || resultsDoclingLoading}
+                      onChange={(event) => setShowAllBboxes(event.currentTarget.checked)}
+                    />
+                    <Switch
+                      className="parse-overlay-toggle"
+                      size="xs"
+                      label="Show results"
+                      checked={showMetadataBlocksPanel}
+                      disabled={previewLoading || resultsDoclingLoading}
+                      onChange={(event) => setShowMetadataBlocksPanel(event.currentTarget.checked)}
+                    />
+                  </Group>
+                )}
+              </Group>
 
               <Box className="parse-preview-content">
                 {isRightPreviewTab && (
@@ -1299,7 +1289,6 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
                         key={`${selectedDoc.source_uid}:${previewUrl}`}
                         title={selectedDoc.doc_title}
                         url={previewUrl}
-                        toolbarLeft={middleTabsControl}
                       />
                     )}
 
