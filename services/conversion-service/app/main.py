@@ -29,6 +29,8 @@ class ConvertRequest(BaseModel):
     output: OutputTarget
     docling_output: Optional[OutputTarget] = None
     pandoc_output: Optional[OutputTarget] = None
+    html_output: Optional[OutputTarget] = None
+    doctags_output: Optional[OutputTarget] = None
     callback_url: str
 
 
@@ -192,6 +194,30 @@ def _build_docling_json_bytes(doc: Any) -> Optional[bytes]:
     return _canonical_json_bytes(export_to_dict())
 
 
+def _build_docling_html_bytes(doc: Any) -> Optional[bytes]:
+    export_to_html = getattr(doc, "export_to_html", None)
+    if not callable(export_to_html):
+        return None
+    html = export_to_html()
+    if not isinstance(html, str):
+        return None
+    return html.encode("utf-8")
+
+
+def _build_docling_doctags_bytes(doc: Any) -> Optional[bytes]:
+    export_to_doctags = getattr(doc, "export_to_doctags", None)
+    if callable(export_to_doctags):
+        doctags = export_to_doctags()
+        if isinstance(doctags, str):
+            return doctags.encode("utf-8")
+    export_to_document_tokens = getattr(doc, "export_to_document_tokens", None)
+    if callable(export_to_document_tokens):
+        tokens = export_to_document_tokens()
+        if isinstance(tokens, str):
+            return tokens.encode("utf-8")
+    return None
+
+
 def _build_pandoc_ast_bytes_strict(source_type: str, source_bytes: bytes) -> bytes:
     reader = PANDOC_READER_BY_SOURCE_TYPE.get(source_type)
     if not reader:
@@ -239,7 +265,9 @@ def _resolve_track(req: ConvertRequest) -> str:
     return "docling"
 
 
-async def _convert(req: ConvertRequest) -> tuple[bytes, Optional[bytes], Optional[bytes]]:
+async def _convert(
+    req: ConvertRequest,
+) -> tuple[bytes, Optional[bytes], Optional[bytes], Optional[bytes], Optional[bytes]]:
     track = _resolve_track(req)
 
     if track == "mdast":
@@ -250,7 +278,7 @@ async def _convert(req: ConvertRequest) -> tuple[bytes, Optional[bytes], Optiona
         markdown_bytes = text.encode("utf-8")
         docling_json_bytes = await _maybe_build_docling_json_bytes(req) if req.docling_output is not None else None
         pandoc_json_bytes = await _maybe_build_pandoc_ast_bytes(req, source_bytes) if req.pandoc_output is not None else None
-        return markdown_bytes, docling_json_bytes, pandoc_json_bytes
+        return markdown_bytes, docling_json_bytes, pandoc_json_bytes, None, None
 
     if track == "docling":
         converter = _build_docling_converter()
@@ -261,8 +289,14 @@ async def _convert(req: ConvertRequest) -> tuple[bytes, Optional[bytes], Optiona
         docling_json_bytes: Optional[bytes] = None
         if req.docling_output is not None:
             docling_json_bytes = _build_docling_json_bytes(doc)
+        html_bytes: Optional[bytes] = None
+        if req.html_output is not None:
+            html_bytes = _build_docling_html_bytes(doc)
+        doctags_bytes: Optional[bytes] = None
+        if req.doctags_output is not None:
+            doctags_bytes = _build_docling_doctags_bytes(doc)
         pandoc_json_bytes = await _maybe_build_pandoc_ast_bytes(req) if req.pandoc_output is not None else None
-        return markdown_bytes, docling_json_bytes, pandoc_json_bytes
+        return markdown_bytes, docling_json_bytes, pandoc_json_bytes, html_bytes, doctags_bytes
 
     if track == "pandoc":
         reader = PANDOC_READER_BY_SOURCE_TYPE.get(req.source_type)
@@ -278,7 +312,7 @@ async def _convert(req: ConvertRequest) -> tuple[bytes, Optional[bytes], Optiona
             markdown_bytes = _run_pandoc(input_path, reader, "gfm")
         pandoc_json_bytes = _build_pandoc_ast_bytes_strict(req.source_type, source_bytes)
         docling_json_bytes = await _maybe_build_docling_json_bytes(req) if req.docling_output is not None else None
-        return markdown_bytes, docling_json_bytes, pandoc_json_bytes
+        return markdown_bytes, docling_json_bytes, pandoc_json_bytes, None, None
 
     raise RuntimeError(f"Unknown track: {track}")
 
@@ -298,12 +332,14 @@ async def convert(
         "md_key": body.output.key,
         "docling_key": None,
         "pandoc_key": None,
+        "html_key": None,
+        "doctags_key": None,
         "success": False,
         "error": None,
     }
 
     try:
-        markdown_bytes, docling_json_bytes, pandoc_json_bytes = await _convert(body)
+        markdown_bytes, docling_json_bytes, pandoc_json_bytes, html_bytes, doctags_bytes = await _convert(body)
 
         md_upload_url = _append_token_if_needed(body.output.signed_upload_url, body.output.token)
         await _upload_bytes(
@@ -335,6 +371,30 @@ async def convert(
                 content_type="application/json; charset=utf-8",
             )
             callback_payload["pandoc_key"] = body.pandoc_output.key
+
+        if body.html_output is not None and html_bytes is not None:
+            html_upload_url = _append_token_if_needed(
+                body.html_output.signed_upload_url,
+                body.html_output.token,
+            )
+            await _upload_bytes(
+                html_upload_url,
+                html_bytes,
+                content_type="text/html",
+            )
+            callback_payload["html_key"] = body.html_output.key
+
+        if body.doctags_output is not None and doctags_bytes is not None:
+            doctags_upload_url = _append_token_if_needed(
+                body.doctags_output.signed_upload_url,
+                body.doctags_output.token,
+            )
+            await _upload_bytes(
+                doctags_upload_url,
+                doctags_bytes,
+                content_type="text/plain; charset=utf-8",
+            )
+            callback_payload["doctags_key"] = body.doctags_output.key
 
         callback_payload["success"] = True
     except Exception as e:

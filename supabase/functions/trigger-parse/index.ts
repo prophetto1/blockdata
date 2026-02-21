@@ -106,6 +106,8 @@ Deno.serve(async (req) => {
     // Docling artifact upload target (if source type supports it).
     const doclingArtifactSourceTypes = new Set(runtimePolicy.upload.parser_artifact_source_types.docling);
     let docling_output: SignedUploadTarget | null = null;
+    let html_output: SignedUploadTarget | null = null;
+    let doctags_output: SignedUploadTarget | null = null;
     if (doclingArtifactSourceTypes.has(source_type)) {
       const docling_key = `converted/${source_uid}/${baseName}.docling.json`;
       const { data: doclingUpload, error: doclingErr } = await (supabaseAdmin.storage as any)
@@ -119,6 +121,34 @@ Deno.serve(async (req) => {
         key: docling_key,
         signed_upload_url: doclingUpload.signedUrl,
         token: doclingUpload.token ?? null,
+      };
+
+      const html_key = `converted/${source_uid}/${baseName}.html`;
+      const { data: htmlUpload, error: htmlErr } = await (supabaseAdmin.storage as any)
+        .from(bucket)
+        .createSignedUploadUrl(html_key);
+      if (htmlErr || !htmlUpload?.signedUrl) {
+        throw new Error(`Signed upload URL (html) failed: ${htmlErr?.message ?? "unknown"}`);
+      }
+      html_output = {
+        bucket,
+        key: html_key,
+        signed_upload_url: htmlUpload.signedUrl,
+        token: htmlUpload.token ?? null,
+      };
+
+      const doctags_key = `converted/${source_uid}/${baseName}.doctags`;
+      const { data: doctagsUpload, error: doctagsErr } = await (supabaseAdmin.storage as any)
+        .from(bucket)
+        .createSignedUploadUrl(doctags_key);
+      if (doctagsErr || !doctagsUpload?.signedUrl) {
+        throw new Error(`Signed upload URL (doctags) failed: ${doctagsErr?.message ?? "unknown"}`);
+      }
+      doctags_output = {
+        bucket,
+        key: doctags_key,
+        signed_upload_url: doctagsUpload.signedUrl,
+        token: doctagsUpload.token ?? null,
       };
     }
 
@@ -176,6 +206,8 @@ Deno.serve(async (req) => {
           },
           docling_output,
           pandoc_output,
+          html_output,
+          doctags_output,
           callback_url,
         }),
       });

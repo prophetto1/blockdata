@@ -19,6 +19,7 @@ import DocumentDetail from '@/pages/DocumentDetail';
 import Extract from '@/pages/Extract';
 import Transform from '@/pages/Transform';
 import Schemas from '@/pages/Schemas';
+import SchemaLayout from '@/pages/SchemaLayout';
 import RunDetail from '@/pages/RunDetail';
 import Settings from '@/pages/Settings';
 import SuperuserSettings from '@/pages/SuperuserSettings';
@@ -88,6 +89,7 @@ export const router = createBrowserRouter([
 
           // Global schemas (not project-scoped)
           { path: '/app/schemas', element: <Schemas /> },
+          { path: '/app/schemas/layout', element: <SchemaLayout /> },
           { path: '/app/schemas/start', element: <Navigate to="/app/schemas" replace /> },
           { path: '/app/schemas/wizard', element: <Navigate to="/app/schemas" replace /> },
           { path: '/app/schemas/templates', element: <Navigate to="/app/schemas" replace /> },

@@ -35,6 +35,7 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { label: 'Projects', icon: IconFolderPlus, path: '/app/projects' },
       { label: 'User Schemas', icon: IconSchema, path: '/app/schemas' },
+      { label: 'Layout', icon: IconSchema, path: '/app/schemas/layout' },
     ],
   },
   {

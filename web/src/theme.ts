@@ -101,7 +101,7 @@ export const theme = createTheme({
 export const cssVariablesResolver: CSSVariablesResolver = () => ({
   variables: {
     '--mantine-heading-font-weight': '700',
-    '--app-shell-header-height': '56px',
+    '--app-shell-header-height': '48px',
     '--app-shell-navbar-width': '270px',
     '--app-shell-content-max-width': '1460px',
     '--app-shell-page-gap': 'var(--mantine-spacing-md)',
@@ -153,7 +153,7 @@ export const cssVariablesResolver: CSSVariablesResolver = () => ({
     '--app-marketing-demo-footer-bg': 'rgba(9, 9, 11, 0.03)',
     '--app-marketing-integration-hub-bg': 'rgba(32, 201, 151, 0.06)',
     '--app-left-rail-track-a': '#2b6cb0',
-    '--app-left-rail-automation': '#b7791f',
+    '--app-left-rail-automation': '#2b6cb0',
     '--app-left-rail-link-hover': 'rgba(0, 0, 0, 0.04)',
     '--app-left-rail-link-active': 'rgba(0, 0, 0, 0.06)',
   },
@@ -193,7 +193,7 @@ export const cssVariablesResolver: CSSVariablesResolver = () => ({
     '--app-marketing-demo-footer-bg': 'rgba(255, 255, 255, 0.02)',
     '--app-marketing-integration-hub-bg': 'rgba(32, 201, 151, 0.10)',
     '--app-left-rail-track-a': '#8cc6ff',
-    '--app-left-rail-automation': '#ffcf7a',
+    '--app-left-rail-automation': '#8cc6ff',
     '--app-left-rail-link-hover': 'rgba(255, 255, 255, 0.05)',
     '--app-left-rail-link-active': 'rgba(255, 255, 255, 0.08)',
   },

@@ -14,6 +14,8 @@ type ConversionCompleteBody = {
   md_key: string;
   docling_key?: string | null;
   pandoc_key?: string | null;
+  html_key?: string | null;
+  doctags_key?: string | null;
   success: boolean;
   error?: string | null;
 };
@@ -51,6 +53,8 @@ Deno.serve(async (req) => {
     const md_key = (body.md_key || "").trim();
     const docling_key = (body.docling_key || "").trim();
     const pandoc_key = (body.pandoc_key || "").trim();
+    const html_key = (body.html_key || "").trim();
+    const doctags_key = (body.doctags_key || "").trim();
     if (!source_uid || !conversion_job_id || !md_key) {
       return json(400, { error: "Missing source_uid, conversion_job_id, or md_key" });
     }
@@ -98,7 +102,7 @@ Deno.serve(async (req) => {
     const insertSupplementalRepresentation = async (
       key: string,
       parsing_tool: "mdast" | "docling" | "pandoc",
-      representation_type: "markdown_bytes" | "doclingdocument_json" | "pandoc_ast_json",
+      representation_type: "markdown_bytes" | "doclingdocument_json" | "pandoc_ast_json" | "html_bytes" | "doctags_text",
       conv_uid: string,
     ) => {
       const { data: download, error: dlErr } = await supabaseAdmin.storage
@@ -227,6 +231,24 @@ Deno.serve(async (req) => {
           );
         }
 
+        if (html_key) {
+          await insertSupplementalRepresentation(
+            html_key,
+            "docling",
+            "html_bytes",
+            conv_uid,
+          );
+        }
+
+        if (doctags_key) {
+          await insertSupplementalRepresentation(
+            doctags_key,
+            "docling",
+            "doctags_text",
+            conv_uid,
+          );
+        }
+
         const { error: finalErr } = await supabaseAdmin
           .from("source_documents")
           .update({ status: "ingested", error: null })
@@ -334,6 +356,24 @@ Deno.serve(async (req) => {
             pandoc_key,
             "pandoc",
             "pandoc_ast_json",
+            conv_uid,
+          );
+        }
+
+        if (html_key) {
+          await insertSupplementalRepresentation(
+            html_key,
+            "docling",
+            "html_bytes",
+            conv_uid,
+          );
+        }
+
+        if (doctags_key) {
+          await insertSupplementalRepresentation(
+            doctags_key,
+            "docling",
+            "doctags_text",
             conv_uid,
           );
         }
@@ -447,6 +487,24 @@ Deno.serve(async (req) => {
           pandoc_key,
           "pandoc",
           "pandoc_ast_json",
+          conv_uid,
+        );
+      }
+
+      if (html_key) {
+        await insertSupplementalRepresentation(
+          html_key,
+          "docling",
+          "html_bytes",
+          conv_uid,
+        );
+      }
+
+      if (doctags_key) {
+        await insertSupplementalRepresentation(
+          doctags_key,
+          "docling",
+          "doctags_text",
           conv_uid,
         );
       }

@@ -53,10 +53,12 @@ def test_convert_mdast_txt_path(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr(conversion_main, "_download_bytes", fake_download)
 
     req = _build_request(track="mdast", source_type="txt")
-    markdown_bytes, docling_json_bytes, pandoc_json_bytes = asyncio.run(conversion_main._convert(req))
+    markdown_bytes, docling_json_bytes, pandoc_json_bytes, html_bytes, doctags_bytes = asyncio.run(conversion_main._convert(req))
     assert markdown_bytes == b"hello"
     assert docling_json_bytes is None
     assert pandoc_json_bytes is None
+    assert html_bytes is None
+    assert doctags_bytes is None
 
 
 def test_convert_pandoc_canonicalizes_ast(monkeypatch: pytest.MonkeyPatch):
@@ -77,11 +79,13 @@ def test_convert_pandoc_canonicalizes_ast(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr(conversion_main, "_run_pandoc", fake_run)
 
     req = _build_request(track="pandoc", source_type="rst")
-    markdown_bytes, docling_json_bytes, pandoc_json_bytes = asyncio.run(conversion_main._convert(req))
+    markdown_bytes, docling_json_bytes, pandoc_json_bytes, html_bytes, doctags_bytes = asyncio.run(conversion_main._convert(req))
 
     assert markdown_bytes == b"# Heading\n"
     assert docling_json_bytes is None
     assert pandoc_json_bytes == b'{"a":{"b":2,"d":4},"z":1}'
+    assert html_bytes is None
+    assert doctags_bytes is None
     assert calls[0] == ("rst", "gfm", ".rst")
     assert calls[1] == ("rst", "json", ".rst")
 
@@ -96,6 +100,12 @@ def test_convert_docling_can_emit_supplemental_pandoc(monkeypatch: pytest.Monkey
     class FakeDoc:
         def export_to_markdown(self) -> str:
             return "# Docling\n"
+
+        def export_to_html(self) -> str:
+            return "<h1>Docling</h1>"
+
+        def export_to_doctags(self) -> str:
+            return "<doctag>Docling</doctag>"
 
         def export_to_dict(self) -> dict[str, object]:
             return {"z": 1, "a": {"d": 4, "b": 2}}
@@ -136,11 +146,25 @@ def test_convert_docling_can_emit_supplemental_pandoc(monkeypatch: pytest.Monkey
         signed_upload_url="https://example.test/upload-pandoc",
         token=None,
     )
+    req.html_output = conversion_main.OutputTarget(
+        bucket="documents",
+        key="converted/source/file.html",
+        signed_upload_url="https://example.test/upload-html",
+        token=None,
+    )
+    req.doctags_output = conversion_main.OutputTarget(
+        bucket="documents",
+        key="converted/source/file.doctags",
+        signed_upload_url="https://example.test/upload-doctags",
+        token=None,
+    )
 
-    markdown_bytes, docling_json_bytes, pandoc_json_bytes = asyncio.run(conversion_main._convert(req))
+    markdown_bytes, docling_json_bytes, pandoc_json_bytes, html_bytes, doctags_bytes = asyncio.run(conversion_main._convert(req))
     assert markdown_bytes == b"# Docling\n"
     assert docling_json_bytes == b'{"a":{"b":2,"d":4},"z":1}'
     assert pandoc_json_bytes == b'{"x":1,"y":2}'
+    assert html_bytes == b"<h1>Docling</h1>"
+    assert doctags_bytes == b"<doctag>Docling</doctag>"
 
 
 def test_convert_pandoc_can_emit_supplemental_docling(monkeypatch: pytest.MonkeyPatch):
@@ -180,7 +204,9 @@ def test_convert_pandoc_can_emit_supplemental_docling(monkeypatch: pytest.Monkey
         token=None,
     )
 
-    markdown_bytes, docling_json_bytes, pandoc_json_bytes = asyncio.run(conversion_main._convert(req))
+    markdown_bytes, docling_json_bytes, pandoc_json_bytes, html_bytes, doctags_bytes = asyncio.run(conversion_main._convert(req))
     assert markdown_bytes == b"# Heading\n"
     assert docling_json_bytes == b'{"a":{"b":4,"d":6},"z":3}'
     assert pandoc_json_bytes == b'{"a":{"b":2,"d":4},"z":1}'
+    assert html_bytes is None
+    assert doctags_bytes is None

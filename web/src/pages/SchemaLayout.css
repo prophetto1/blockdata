@@ -1,0 +1,298 @@
+.schema-layout-test-page {
+  background: var(--mantine-color-body);
+  transition: grid-template-columns 180ms ease;
+  position: relative;
+  isolation: isolate;
+}
+
+.schema-layout-test-page > .parse-playground-explorer {
+  grid-column: 1;
+}
+
+.schema-layout-test-page > .parse-playground-right {
+  grid-column: 2;
+}
+
+.schema-layout-test-page:not(.is-left-collapsed) > .parse-playground-right {
+  border-left: 1px solid var(--mantine-color-default-border);
+}
+
+.schema-layout-test-page > .parse-playground-work {
+  grid-column: 3;
+  border-left: 1px solid var(--mantine-color-default-border);
+}
+
+.schema-layout-test-page .parse-playground-explorer {
+  display: grid;
+  grid-template-rows: 36px minmax(0, 1fr);
+  padding: 0;
+}
+
+.schema-layout-test-page .parse-playground-work {
+  padding-top: 0;
+  overflow: hidden;
+  border-right: 0;
+}
+
+.schema-layout-test-page .parse-playground-right {
+  padding: 0;
+  overflow: hidden;
+}
+
+.schema-layout-left-header,
+.schema-layout-middle-header,
+.schema-layout-right-header {
+  height: 36px;
+  min-height: 36px;
+  padding: 0 10px;
+  border-bottom: 1px solid var(--mantine-color-default-border);
+  align-items: center;
+  background: var(--mantine-color-body);
+  box-sizing: border-box;
+}
+
+.schema-layout-config-title {
+  min-width: 0;
+}
+
+.schema-layout-left-header {
+  padding-right: 6px;
+}
+
+.schema-layout-snap-btn {
+  width: 24px;
+  min-width: 24px;
+  height: 24px;
+}
+
+.schema-layout-left-body {
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 8px;
+  padding: 8px 10px 10px;
+  overflow: hidden;
+}
+
+.schema-layout-left-scroll {
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 2px;
+  scrollbar-gutter: stable;
+}
+
+.schema-layout-test-upload-card {
+  min-height: 200px;
+  border: 1px dashed var(--mantine-color-default-border);
+  border-radius: 12px;
+  display: grid;
+  place-content: center;
+  gap: 4px;
+  text-align: center;
+  background:
+    radial-gradient(
+      circle at 12% 8%,
+      light-dark(rgba(59, 130, 246, 0.1), rgba(56, 189, 248, 0.12)) 0%,
+      transparent 52%
+    ),
+    light-dark(rgba(250, 251, 255, 0.88), rgba(12, 18, 30, 0.82));
+}
+
+.schema-layout-middle-shell {
+  height: 100%;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
+}
+
+.schema-layout-middle-scroll {
+  min-height: 0;
+  overflow: hidden;
+  padding: 0;
+}
+
+.schema-layout-middle-virtual-preview {
+  height: 100%;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: 36px minmax(0, 1fr);
+}
+
+.schema-layout-middle-toolbar-host {
+  margin-left: auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+}
+
+.schema-layout-middle-toolbar-host .parse-pdf-toolbar {
+  height: 100%;
+  min-height: 36px;
+  max-height: 36px;
+  padding: 0;
+  border-bottom: 0;
+  background: transparent;
+}
+
+.schema-layout-middle-toolbar-host .parse-pdf-toolbar-controls {
+  margin-left: auto;
+}
+
+.schema-layout-middle-sheet-wrap {
+  min-height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.schema-layout-preview-host {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.schema-layout-test-checkbox {
+  width: 12px;
+  height: 12px;
+  border: 1px solid var(--mantine-color-default-border);
+  border-radius: 3px;
+}
+
+.schema-layout-test-doc-action {
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  background: light-dark(rgba(100, 116, 139, 0.28), rgba(148, 163, 184, 0.38));
+}
+
+.schema-layout-test-config-root {
+  display: grid;
+  grid-template-rows: 36px 36px minmax(0, 1fr);
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.schema-layout-test-preview-sheet {
+  width: min(96%, 920px);
+  min-height: 1200px;
+  border: 1px solid var(--mantine-color-default-border);
+  border-radius: 8px;
+  background: light-dark(#ffffff, #111827);
+  box-shadow: 0 2px 8px light-dark(rgba(15, 23, 42, 0.08), rgba(2, 6, 23, 0.35));
+}
+
+.schema-layout-right-controls {
+  height: 36px;
+  min-height: 36px;
+  padding: 0 10px;
+  align-items: center;
+  background: var(--mantine-color-body);
+  gap: 12px;
+}
+
+.schema-layout-test-config-scroll {
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0 10px;
+  scrollbar-gutter: stable;
+}
+
+.schema-layout-test-config-card {
+  border-top: 1px solid var(--mantine-color-default-border);
+  padding: 10px 0;
+}
+
+.schema-layout-test-config-card:first-child {
+  border-top: 0;
+}
+
+.schema-layout-left-collapsed-body,
+.schema-layout-right-collapsed-body {
+  min-height: 0;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  user-select: none;
+}
+
+.schema-layout-collapsed-rail-content {
+  align-items: center;
+}
+
+.schema-layout-test-explorer.is-collapsed .schema-layout-left-header {
+  justify-content: center !important;
+  padding: 0;
+}
+
+.schema-layout-test-page .parse-playground-explorer.is-collapsed,
+.schema-layout-test-page .parse-playground-right.is-collapsed {
+  padding: 0;
+}
+
+.schema-layout-test-explorer.is-collapsed .schema-layout-left-header .schema-layout-snap-btn {
+  width: 28px;
+  min-width: 28px;
+  height: 28px;
+}
+
+.schema-layout-vertical-label {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  letter-spacing: 0.08em;
+}
+
+.schema-layout-test-explorer.is-collapsed .schema-layout-left-body {
+  display: none;
+}
+
+.schema-layout-test-right.is-collapsed .schema-layout-test-config-root {
+  grid-template-rows: 36px minmax(0, 1fr);
+}
+
+.schema-layout-test-right.is-collapsed .schema-layout-test-config-scroll {
+  display: none;
+}
+
+.schema-layout-test-right.is-collapsed .schema-layout-right-header {
+  justify-content: center !important;
+  padding: 0;
+}
+
+.schema-layout-right-tabs {
+  align-items: center;
+  min-width: max-content;
+}
+
+.schema-layout-view-picker,
+.schema-layout-docs-size {
+  align-items: center;
+  min-width: max-content;
+}
+
+.schema-layout-view-label {
+  color: var(--mantine-color-text);
+}
+
+.schema-layout-docs-size-tabs {
+  align-items: center;
+}
+
+.schema-layout-test-pill {
+  font-size: 11px;
+  line-height: 1;
+  border: 1px solid var(--mantine-color-default-border);
+  border-radius: 999px;
+  padding: 5px 8px;
+  color: var(--mantine-color-dimmed);
+  background: light-dark(rgba(255, 255, 255, 0.84), rgba(17, 24, 39, 0.36));
+}
+
+.schema-layout-test-pill.is-active {
+  color: var(--mantine-color-text);
+  border-color: light-dark(var(--mantine-color-gray-4), var(--mantine-color-gray-6));
+  background: light-dark(rgba(15, 23, 42, 0.08), rgba(148, 163, 184, 0.2));
+}

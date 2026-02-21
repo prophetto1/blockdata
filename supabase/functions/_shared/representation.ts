@@ -4,7 +4,7 @@ export type RepresentationArtifactInsert = {
   source_uid: string;
   conv_uid: string;
   parsing_tool: "mdast" | "docling" | "pandoc";
-  representation_type: "markdown_bytes" | "doclingdocument_json" | "pandoc_ast_json";
+  representation_type: "markdown_bytes" | "doclingdocument_json" | "pandoc_ast_json" | "html_bytes" | "doctags_text";
   artifact_locator: string;
   artifact_hash: string;
   artifact_size_bytes: number;

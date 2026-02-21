@@ -1,7 +1,9 @@
 import { useEffect, useMemo } from 'react';
 import {
   AppShell,
-  Drawer,
+  Box,
+  Modal,
+  Portal,
   rem,
   useMantineColorScheme,
   useComputedColorScheme,
@@ -32,6 +34,14 @@ export function AppLayout() {
     key: 'blockdata.shell.assistant_open',
     defaultValue: false,
   });
+  const [assistantDetached, setAssistantDetached] = useLocalStorage<boolean>({
+    key: 'blockdata.shell.assistant_detached',
+    defaultValue: false,
+  });
+  const [assistantSide, setAssistantSide] = useLocalStorage<'left' | 'right'>({
+    key: 'blockdata.shell.assistant_side',
+    defaultValue: 'right',
+  });
   const navigate = useNavigate();
   const location = useLocation();
   const { user, profile, signOut } = useAuth();
@@ -47,8 +57,27 @@ export function AppLayout() {
     setColorScheme(computedColorScheme === 'dark' ? 'light' : 'dark');
   };
 
-  const toggleAssistant = () => setAssistantOpened(!assistantOpened);
-  const closeAssistant = () => setAssistantOpened(false);
+  const toggleAssistant = () => {
+    if (assistantOpened) {
+      setAssistantOpened(false);
+      setAssistantDetached(false);
+      return;
+    }
+    setAssistantOpened(true);
+  };
+  const closeAssistant = () => {
+    setAssistantOpened(false);
+    setAssistantDetached(false);
+  };
+  const toggleAssistantDetached = () => {
+    if (!assistantOpened) {
+      setAssistantOpened(true);
+    }
+    setAssistantDetached(!assistantDetached);
+  };
+  const toggleAssistantSide = () => {
+    setAssistantSide(assistantSide === 'right' ? 'left' : 'right');
+  };
   const toggleDesktopNav = () => setDesktopNavOpened(!desktopNavOpened);
   const desktopNavbarWidth = desktopNavOpened
     ? styleTokens.shell.navbarWidth
@@ -83,10 +112,12 @@ export function AppLayout() {
   const isProjectCanvasRoute = /^\/app\/projects\/[^/]+$/.test(location.pathname);
   const isExtractCanvasRoute = /^\/app\/extract\/[^/]+$/.test(location.pathname);
   const isTransformCanvasRoute = /^\/app\/transform\/[^/]+$/.test(location.pathname);
+  const isSchemaLayoutRoute = location.pathname === '/app/schemas/layout';
   const lockMainScroll = (
     isProjectCanvasRoute
     || isExtractCanvasRoute
     || isTransformCanvasRoute
+    || isSchemaLayoutRoute
   );
 
   useEffect(() => {
@@ -131,13 +162,6 @@ export function AppLayout() {
         breakpoint: 'sm',
         collapsed: { mobile: !navOpened, desktop: false },
       }}
-      aside={assistantDockEnabled
-        ? {
-            width: styleTokens.shell.assistantWidth,
-            breakpoint: 'sm',
-            collapsed: { desktop: !assistantOpened, mobile: true },
-          }
-        : undefined}
       padding={styleTokens.shell.mainPadding}
       styles={{
         header: {
@@ -146,12 +170,6 @@ export function AppLayout() {
         navbar: {
           backgroundColor: 'var(--mantine-color-body)',
           borderRight: '1px solid var(--mantine-color-default-border)',
-          top: 0,
-          height: '100dvh',
-        },
-        aside: {
-          backgroundColor: 'var(--mantine-color-body)',
-          borderLeft: '1px solid var(--mantine-color-default-border)',
           top: 0,
           height: '100dvh',
         },
@@ -194,28 +212,62 @@ export function AppLayout() {
         </AppPageShell>
       </AppShell.Main>
 
-      {assistantDockEnabled && (
-        <AppShell.Aside px={0} pb={0} pt={0}>
-          <AssistantDockHost onClose={closeAssistant} />
-        </AppShell.Aside>
-      )}
     </AppShell>
 
+    {assistantDockEnabled && assistantOpened && !assistantDetached && (
+      <Portal>
+        <Box
+          style={{
+            position: 'fixed',
+            zIndex: 340,
+            bottom: rem(12),
+            left: assistantSide === 'left' ? rem(12) : undefined,
+            right: assistantSide === 'right' ? rem(12) : undefined,
+            width: 'min(560px, calc(100vw - 24px))',
+            height: 'min(78vh, 860px)',
+            borderRadius: rem(12),
+            border: '1px solid rgba(148, 163, 184, 0.28)',
+            backgroundColor: '#29313c',
+            overflow: 'hidden',
+            boxShadow: '0 24px 64px rgba(0, 0, 0, 0.34)',
+          }}
+        >
+          <AssistantDockHost
+            onClose={closeAssistant}
+            onDetach={toggleAssistantDetached}
+            onToggleSide={toggleAssistantSide}
+            side={assistantSide}
+          />
+        </Box>
+      </Portal>
+    )}
+
     {assistantDockEnabled && (
-      <Drawer
-        hiddenFrom="sm"
-        opened={assistantOpened}
+      <Modal
+        opened={assistantOpened && assistantDetached}
         onClose={closeAssistant}
-        position="right"
-        size={rem(360)}
-        title="Assistant"
-        overlayProps={{ backgroundOpacity: 0.15 }}
+        withCloseButton={false}
+        centered
+        size="min(1180px, 96vw)"
+        yOffset="2vh"
+        overlayProps={{ backgroundOpacity: 0.32, blur: 2 }}
         styles={{
-          body: { paddingTop: 0 },
+          content: {
+            border: '1px solid rgba(148, 163, 184, 0.28)',
+            backgroundColor: '#29313c',
+            overflow: 'hidden',
+          },
+          body: {
+            padding: 0,
+          },
         }}
       >
-        <AssistantDockHost onClose={closeAssistant} />
-      </Drawer>
+        <AssistantDockHost
+          onClose={closeAssistant}
+          onDetach={toggleAssistantDetached}
+          detached
+        />
+      </Modal>
     )}
 
     </HeaderCenterProvider>

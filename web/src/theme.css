@@ -870,7 +870,7 @@ body {
 }
 
 .parse-pdf-page-input {
-  width: 54px;
+  width: 46px;
 }
 
 .parse-pdf-page-input input {
@@ -879,9 +879,36 @@ body {
   padding-right: 6px;
 }
 
-.parse-pdf-zoom-label {
-  min-width: 44px;
-  text-align: center;
+.parse-pdf-zoom-select {
+  width: 72px;
+}
+
+.parse-pdf-toolbar-controls {
+  margin-left: auto;
+}
+
+.parse-pdf-zoom-select .mantine-Input-input,
+.parse-pdf-zoom-select .mantine-NativeSelect-input {
+  height: 26px;
+  min-height: 26px;
+  padding-left: 8px;
+  padding-right: 24px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--mantine-color-text);
+  background: var(--mantine-color-body);
+  border-color: var(--mantine-color-default-border);
+}
+
+.parse-pdf-zoom-select .mantine-Input-input:focus,
+.parse-pdf-zoom-select .mantine-NativeSelect-input:focus {
+  background: var(--mantine-color-body);
+}
+
+.parse-pdf-zoom-select .mantine-Input-input option,
+.parse-pdf-zoom-select .mantine-NativeSelect-input option {
+  color: var(--mantine-color-text);
+  background: var(--mantine-color-body);
 }
 
 .parse-pdf-preview-viewport {

@@ -4,6 +4,7 @@ export const TABLES = {
   documents: 'documents_view',        // read-only view joining source_documents + conversion_parsing
   sourceDocuments: 'source_documents', // write target + realtime subscription
   conversionParsing: 'conversion_parsing',
+  conversionRepresentations: 'conversion_representations',
   blocks: 'blocks',
   schemas: 'schemas',
   runs: 'runs',

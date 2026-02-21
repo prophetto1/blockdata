@@ -114,7 +114,7 @@ type PreviewKind = 'none' | 'pdf' | 'image' | 'text' | 'docx' | 'pptx' | 'file';
 type ProjectDetailMode = 'parse' | 'extract' | 'transform';
 type ProjectDetailSurface = 'default' | 'test';
 type MiddlePreviewTab = 'preview' | 'results';
-type TestRightTab = 'preview' | 'metadata' | 'blocks' | 'grid';
+type TestRightTab = 'preview' | 'metadata' | 'blocks' | 'grid' | 'outputs';
 type ParseConfigView = 'Basic' | 'Advanced';
 type ExtractConfigView = 'Basic' | 'Advanced' | 'Schema';
 type ExtractSchemaMode = 'table' | 'code';
@@ -171,6 +171,23 @@ type SignedUrlResult = {
   error: string | null;
 };
 
+async function downloadFromSignedUrl(signedUrl: string, filename: string): Promise<void> {
+  const response = await fetch(signedUrl);
+  if (!response.ok) {
+    const text = await response.text().catch(() => '');
+    throw new Error(`HTTP ${response.status} ${text.slice(0, 500)}`);
+  }
+  const blob = await response.blob();
+  const blobUrl = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = blobUrl;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(blobUrl);
+}
+
 async function createSignedUrlForLocator(locator: string | null | undefined): Promise<SignedUrlResult> {
   const normalized = locator?.trim();
   if (!normalized) {
@@ -210,13 +227,41 @@ function toDoclingJsonLocator(locator: string | null | undefined): string | null
   if (!normalized) return null;
   if (normalized.toLowerCase().endsWith('.docling.json')) return normalized;
 
+  const sibling = toArtifactLocator(normalized, 'docling.json');
+  return sibling;
+}
+
+function toArtifactLocator(locator: string | null | undefined, nextExtension: string): string | null {
+  const normalized = locator?.trim();
+  if (!normalized) return null;
+
   const lastSlash = normalized.lastIndexOf('/');
   const dir = lastSlash >= 0 ? normalized.slice(0, lastSlash + 1) : '';
   const filename = lastSlash >= 0 ? normalized.slice(lastSlash + 1) : normalized;
-  const lastDot = filename.lastIndexOf('.');
-  const basename = lastDot > 0 ? filename.slice(0, lastDot) : filename;
+  const lowered = filename.toLowerCase();
+  let basename = filename;
+  const knownSuffixes = ['.docling.json', '.pandoc.ast.json', '.doctags', '.md', '.html'];
+  for (const suffix of knownSuffixes) {
+    if (lowered.endsWith(suffix)) {
+      basename = filename.slice(0, filename.length - suffix.length);
+      break;
+    }
+  }
+  if (basename === filename) {
+    const lastDot = filename.lastIndexOf('.');
+    basename = lastDot > 0 ? filename.slice(0, lastDot) : filename;
+  }
   if (!basename) return null;
-  return `${dir}${basename}.docling.json`;
+  const normalizedExt = nextExtension.replace(/^\.+/, '');
+  return `${dir}${basename}.${normalizedExt}`;
+}
+
+function getFilenameFromLocator(locator: string | null | undefined): string | null {
+  const normalized = locator?.trim();
+  if (!normalized) return null;
+  const lastSlash = normalized.lastIndexOf('/');
+  const filename = lastSlash >= 0 ? normalized.slice(lastSlash + 1) : normalized;
+  return filename || null;
 }
 
 function dedupeLocators(locators: Array<string | null | undefined>): string[] {
@@ -320,6 +365,17 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
   const [resultsDoclingJsonUrl, setResultsDoclingJsonUrl] = useState<string | null>(null);
   const [resultsDoclingLoading, setResultsDoclingLoading] = useState(false);
   const [resultsDoclingError, setResultsDoclingError] = useState<string | null>(null);
+  const [outputsLoading, setOutputsLoading] = useState(false);
+  const [outputsError, setOutputsError] = useState<string | null>(null);
+  const [outputDoclingJsonUrl, setOutputDoclingJsonUrl] = useState<string | null>(null);
+  const [outputMarkdownUrl, setOutputMarkdownUrl] = useState<string | null>(null);
+  const [outputHtmlUrl, setOutputHtmlUrl] = useState<string | null>(null);
+  const [outputDoctagsUrl, setOutputDoctagsUrl] = useState<string | null>(null);
+  const [outputDoclingJsonName, setOutputDoclingJsonName] = useState<string | null>(null);
+  const [outputMarkdownName, setOutputMarkdownName] = useState<string | null>(null);
+  const [outputHtmlName, setOutputHtmlName] = useState<string | null>(null);
+  const [outputDoctagsName, setOutputDoctagsName] = useState<string | null>(null);
+  const [outputDownloadBusy, setOutputDownloadBusy] = useState<'docling' | 'markdown' | 'html' | 'doctags' | null>(null);
   const [resultsBlocks, setResultsBlocks] = useState<ParsedResultBlock[]>([]);
   const [showAllBboxes, setShowAllBboxes] = useState(true);
   const [showMetadataBlocksPanel, setShowMetadataBlocksPanel] = useState(true);
@@ -776,6 +832,144 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
     };
   }, [selectedDoc]);
 
+  const handleOutputDownload = useCallback(async (kind: 'docling' | 'markdown' | 'html' | 'doctags') => {
+    const output =
+      kind === 'docling'
+        ? {
+            url: outputDoclingJsonUrl,
+            filename: outputDoclingJsonName ?? 'output.docling.json',
+          }
+        : kind === 'markdown'
+          ? {
+              url: outputMarkdownUrl,
+              filename: outputMarkdownName ?? 'output.md',
+            }
+          : kind === 'html'
+            ? {
+                url: outputHtmlUrl,
+                filename: outputHtmlName ?? 'output.html',
+              }
+            : {
+                url: outputDoctagsUrl,
+                filename: outputDoctagsName ?? 'output.doctags',
+              };
+
+    if (!output.url) return;
+
+    setOutputsError(null);
+    setOutputDownloadBusy(kind);
+    try {
+      await downloadFromSignedUrl(output.url, output.filename);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      setOutputsError(`Failed to download ${output.filename}: ${message}`);
+    } finally {
+      setOutputDownloadBusy((current) => (current === kind ? null : current));
+    }
+  }, [
+    outputDoclingJsonName,
+    outputDoclingJsonUrl,
+    outputDoctagsName,
+    outputDoctagsUrl,
+    outputHtmlName,
+    outputHtmlUrl,
+    outputMarkdownName,
+    outputMarkdownUrl,
+  ]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadOutputs = async () => {
+      setOutputsError(null);
+      setOutputsLoading(false);
+      setOutputDoclingJsonUrl(null);
+      setOutputMarkdownUrl(null);
+      setOutputHtmlUrl(null);
+      setOutputDoctagsUrl(null);
+      setOutputDoclingJsonName(null);
+      setOutputMarkdownName(null);
+      setOutputHtmlName(null);
+      setOutputDoctagsName(null);
+      setOutputDownloadBusy(null);
+
+      if (!selectedDoc || !isPdfDocument(selectedDoc) || !selectedDoc.conv_uid) {
+        return;
+      }
+
+      setOutputsLoading(true);
+
+      const { data: repRows, error: repError } = await supabase
+        .from(TABLES.conversionRepresentations)
+        .select('representation_type, artifact_locator')
+        .eq('conv_uid', selectedDoc.conv_uid);
+
+      if (cancelled) return;
+      if (repError) {
+        setOutputsError(`Failed to load output artifacts: ${repError.message}`);
+        setOutputsLoading(false);
+        return;
+      }
+
+      type RepresentationRow = {
+        representation_type: string;
+        artifact_locator: string | null;
+      };
+
+      const representationLocators = new Map<string, string>();
+      for (const row of (repRows ?? []) as RepresentationRow[]) {
+        if (!row.artifact_locator) continue;
+        representationLocators.set(row.representation_type, row.artifact_locator);
+      }
+
+      const doclingLocators = dedupeLocators([
+        representationLocators.get('doclingdocument_json') ?? null,
+        toDoclingJsonLocator(selectedDoc.conv_locator),
+        toDoclingJsonLocator(selectedDoc.source_locator),
+      ]);
+      const markdownLocators = dedupeLocators([
+        representationLocators.get('markdown_bytes') ?? null,
+        toArtifactLocator(selectedDoc.conv_locator, 'md'),
+        toArtifactLocator(selectedDoc.source_locator, 'md'),
+      ]);
+      const htmlLocators = dedupeLocators([
+        representationLocators.get('html_bytes') ?? null,
+        toArtifactLocator(selectedDoc.conv_locator, 'html'),
+        toArtifactLocator(selectedDoc.source_locator, 'html'),
+      ]);
+      const doctagsLocators = dedupeLocators([
+        representationLocators.get('doctags_text') ?? null,
+        toArtifactLocator(selectedDoc.conv_locator, 'doctags'),
+        toArtifactLocator(selectedDoc.source_locator, 'doctags'),
+      ]);
+
+      setOutputDoclingJsonName(getFilenameFromLocator(representationLocators.get('doclingdocument_json') ?? doclingLocators[0] ?? null));
+      setOutputMarkdownName(getFilenameFromLocator(representationLocators.get('markdown_bytes') ?? markdownLocators[0] ?? null));
+      setOutputHtmlName(getFilenameFromLocator(representationLocators.get('html_bytes') ?? htmlLocators[0] ?? null));
+      setOutputDoctagsName(getFilenameFromLocator(representationLocators.get('doctags_text') ?? doctagsLocators[0] ?? null));
+
+      const [doclingSigned, markdownSigned, htmlSigned, doctagsSigned] = await Promise.all([
+        resolveSignedUrlForLocators(doclingLocators),
+        resolveSignedUrlForLocators(markdownLocators),
+        resolveSignedUrlForLocators(htmlLocators),
+        resolveSignedUrlForLocators(doctagsLocators),
+      ]);
+
+      if (cancelled) return;
+
+      setOutputDoclingJsonUrl(doclingSigned.url);
+      setOutputMarkdownUrl(markdownSigned.url);
+      setOutputHtmlUrl(htmlSigned.url);
+      setOutputDoctagsUrl(doctagsSigned.url);
+      setOutputsLoading(false);
+    };
+
+    void loadOutputs();
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedDoc]);
+
   useEffect(() => {
     let cancelled = false;
 
@@ -1021,6 +1215,7 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
   const isRightMetadataTab = isTestSurface ? testRightTab === 'metadata' : middlePreviewTab === 'results';
   const isRightBlocksTab = isTestSurface && testRightTab === 'blocks';
   const isRightGridTab = isTransformTestSurface && testRightTab === 'grid';
+  const isRightOutputsTab = isTestSurface && testRightTab === 'outputs';
   const showMetadataOverlayToggle = (
     isRightMetadataTab
     && !!selectedDoc
@@ -1035,11 +1230,13 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
         { value: 'metadata', label: 'Metadata' },
         { value: 'blocks', label: 'Blocks' },
         { value: 'grid', label: 'Grid' },
+        { value: 'outputs', label: 'Outputs' },
       ]
     : [
         { value: 'preview', label: 'Preview' },
         { value: 'metadata', label: 'Metadata' },
         { value: 'blocks', label: 'Blocks' },
+        { value: 'outputs', label: 'Outputs' },
       ];
   const middleTabsControl = (
     isTestSurface ? (
@@ -1083,7 +1280,6 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
       </>
     )
   );
-
   return (
     <>
       {error && <ErrorAlert message={error} />}
@@ -1487,6 +1683,117 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
                         </Box>
                       ))
                     )}
+                  </Box>
+                )}
+
+                {isRightOutputsTab && (
+                  <Box className="parse-text-preview">
+                    {!selectedDoc && (
+                      <Center h="100%">
+                        <Text size="sm" c="dimmed" ta="center">
+                          Select a document to view parser outputs.
+                        </Text>
+                      </Center>
+                    )}
+
+                    {selectedDoc && !isPdfDocument(selectedDoc) && (
+                      <Center h="100%">
+                        <Text size="sm" c="dimmed" ta="center">
+                          Outputs are currently shown for PDFs parsed through Docling.
+                        </Text>
+                      </Center>
+                    )}
+
+                    {selectedDoc && isPdfDocument(selectedDoc) && !selectedDoc.conv_uid && (
+                      <Center h="100%">
+                        <Text size="sm" c="dimmed" ta="center">
+                          No parsed outputs are available for this document yet.
+                        </Text>
+                      </Center>
+                    )}
+
+                    {selectedDoc && isPdfDocument(selectedDoc) && selectedDoc.conv_uid && outputsLoading && (
+                      <Center h="100%">
+                        <Stack align="center" gap="xs">
+                          <Loader size="sm" />
+                          <Text size="sm" c="dimmed">Loading parser outputs...</Text>
+                        </Stack>
+                      </Center>
+                    )}
+
+                    {selectedDoc && isPdfDocument(selectedDoc) && selectedDoc.conv_uid && !outputsLoading && outputsError && (
+                      <Center h="100%">
+                        <Text size="sm" c="red" ta="center">
+                          {outputsError}
+                        </Text>
+                      </Center>
+                    )}
+
+                    {selectedDoc
+                      && isPdfDocument(selectedDoc)
+                      && selectedDoc.conv_uid
+                      && !outputsLoading
+                      && !outputsError && (
+                        <Stack gap="xs" p="sm">
+                          <Text size="sm" fw={700}>Output Files</Text>
+                          <Group justify="space-between" wrap="nowrap">
+                            <Text size="sm" c={outputDoclingJsonUrl ? undefined : 'dimmed'}>
+                              {outputDoclingJsonName ?? '[docling json unavailable]'}
+                            </Text>
+                            <Button
+                              size="xs"
+                              variant="light"
+                              onClick={() => void handleOutputDownload('docling')}
+                              loading={outputDownloadBusy === 'docling'}
+                              disabled={!outputDoclingJsonUrl}
+                            >
+                              Download
+                            </Button>
+                          </Group>
+                          <Group justify="space-between" wrap="nowrap">
+                            <Text size="sm" c={outputMarkdownUrl ? undefined : 'dimmed'}>
+                              {outputMarkdownName ?? '[markdown unavailable]'}
+                            </Text>
+                            <Button
+                              size="xs"
+                              variant="light"
+                              onClick={() => void handleOutputDownload('markdown')}
+                              loading={outputDownloadBusy === 'markdown'}
+                              disabled={!outputMarkdownUrl}
+                            >
+                              Download
+                            </Button>
+                          </Group>
+                          <Group justify="space-between" wrap="nowrap">
+                            <Text size="sm" c={outputHtmlUrl ? undefined : 'dimmed'}>
+                              {outputHtmlName ?? '[html unavailable]'}
+                            </Text>
+                            <Button
+                              size="xs"
+                              variant="light"
+                              onClick={() => void handleOutputDownload('html')}
+                              loading={outputDownloadBusy === 'html'}
+                              disabled={!outputHtmlUrl}
+                            >
+                              Download
+                            </Button>
+                          </Group>
+                          <Group justify="space-between" wrap="nowrap">
+                            <Text size="sm" c={outputDoctagsUrl ? undefined : 'dimmed'}>
+                              {outputDoctagsName ?? '[doctags unavailable]'}
+                            </Text>
+                            <Button
+                              size="xs"
+                              variant="light"
+                              onClick={() => void handleOutputDownload('doctags')}
+                              loading={outputDownloadBusy === 'doctags'}
+                              disabled={!outputDoctagsUrl}
+                            >
+                              Download
+                            </Button>
+                          </Group>
+                        </Stack>
+                      )}
                   </Box>
                 )}
 

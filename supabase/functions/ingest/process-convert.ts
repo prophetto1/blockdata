@@ -66,6 +66,8 @@ export async function processConversion(ctx: IngestContext): Promise<{ status: n
   const pandocArtifactSourceTypes = new Set(runtimePolicy.upload.parser_artifact_source_types.pandoc);
 
   let docling_output: SignedUploadTarget | null = null;
+  let html_output: SignedUploadTarget | null = null;
+  let doctags_output: SignedUploadTarget | null = null;
   if (doclingArtifactSourceTypes.has(source_type)) {
     const docling_key = `converted/${source_uid}/${basenameNoExt(originalFilename)}.docling.json`;
     const { data: doclingUpload, error: doclingErr } = await (supabaseAdmin.storage as any)
@@ -79,6 +81,34 @@ export async function processConversion(ctx: IngestContext): Promise<{ status: n
       key: docling_key,
       signed_upload_url: doclingUpload.signedUrl,
       token: doclingUpload.token ?? null,
+    };
+
+    const html_key = `converted/${source_uid}/${basenameNoExt(originalFilename)}.html`;
+    const { data: htmlUpload, error: htmlErr } = await (supabaseAdmin.storage as any)
+      .from(bucket)
+      .createSignedUploadUrl(html_key);
+    if (htmlErr || !htmlUpload?.signedUrl) {
+      throw new Error(`Create signed upload URL for html failed: ${htmlErr?.message ?? "unknown"}`);
+    }
+    html_output = {
+      bucket,
+      key: html_key,
+      signed_upload_url: htmlUpload.signedUrl,
+      token: htmlUpload.token ?? null,
+    };
+
+    const doctags_key = `converted/${source_uid}/${basenameNoExt(originalFilename)}.doctags`;
+    const { data: doctagsUpload, error: doctagsErr } = await (supabaseAdmin.storage as any)
+      .from(bucket)
+      .createSignedUploadUrl(doctags_key);
+    if (doctagsErr || !doctagsUpload?.signedUrl) {
+      throw new Error(`Create signed upload URL for doctags failed: ${doctagsErr?.message ?? "unknown"}`);
+    }
+    doctags_output = {
+      bucket,
+      key: doctags_key,
+      signed_upload_url: doctagsUpload.signedUrl,
+      token: doctagsUpload.token ?? null,
     };
   }
   let pandoc_output: SignedUploadTarget | null = null;
@@ -126,6 +156,8 @@ export async function processConversion(ctx: IngestContext): Promise<{ status: n
         },
         docling_output,
         pandoc_output,
+        html_output,
+        doctags_output,
         callback_url,
       }),
     });
