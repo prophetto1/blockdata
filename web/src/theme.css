@@ -361,10 +361,32 @@ body {
   position: relative;
   display: grid;
   grid-template-rows: minmax(220px, 34dvh) minmax(0, 1fr);
-  gap: var(--mantine-spacing-sm);
+  gap: 0;
   padding: var(--mantine-spacing-md) var(--mantine-spacing-lg) var(--mantine-spacing-md) var(--mantine-spacing-md);
   min-height: 0;
   overflow: hidden;
+}
+
+.parse-explorer-collapse-toggle {
+  position: absolute;
+  top: calc(var(--mantine-spacing-md) + 2px);
+  right: var(--mantine-spacing-lg);
+  z-index: 6;
+}
+
+.parse-playground-explorer.is-collapsed {
+  grid-template-rows: minmax(0, 1fr);
+  padding: 8px;
+}
+
+.parse-playground-explorer.is-collapsed .parse-explorer-collapse-toggle {
+  top: 8px;
+  right: 8px;
+}
+
+.parse-playground-explorer.is-collapsed .parse-playground-upload,
+.parse-playground-explorer.is-collapsed .parse-playground-docs {
+  display: none;
 }
 
 .parse-playground-work {
@@ -400,6 +422,7 @@ body {
 
 .parse-docs-toolbar {
   min-height: 26px;
+  padding-left: 6px;
 }
 
 .parse-doc-card-list {
@@ -490,6 +513,10 @@ body {
   border-radius: 6px;
 }
 
+.parse-docs-pagination .mantine-Pagination-control[data-active] {
+  color: var(--mantine-primary-color-contrast);
+}
+
 .parse-playground-upload {
   overflow: visible;
 }
@@ -564,9 +591,13 @@ body {
 .parse-docling-results {
   height: 100%;
   min-height: 0;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 34%);
   overflow: hidden;
+}
+
+.parse-docling-results--pdf-only {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .parse-docling-results-preview {
@@ -594,6 +625,8 @@ body {
   min-height: 0;
   display: flex;
   flex-direction: column;
+  border-left: 1px solid var(--mantine-color-default-border);
+  background: light-dark(rgba(255, 255, 255, 0.48), rgba(15, 23, 42, 0.14));
 }
 
 .parse-docling-results-panel-head {
@@ -614,6 +647,8 @@ body {
 }
 
 .parse-docling-results-item {
+  appearance: none;
+  width: 100%;
   border: 1px solid var(--mantine-color-default-border);
   border-radius: 8px;
   padding: 7px 8px;
@@ -690,8 +725,7 @@ body {
 .parse-upload-header,
 .parse-middle-view-tabs,
 .parse-pdf-toolbar,
-.extract-config-top-tabs,
-.parse-config-top-tabs {
+.extract-config-top-tabs {
   border-bottom: 1px solid var(--mantine-color-default-border);
   background: var(--mantine-color-body);
 }
@@ -714,6 +748,29 @@ body {
 
 .parse-middle-tab {
   transition: color 120ms ease;
+}
+
+.parse-overlay-toggle .mantine-Switch-label {
+  padding-left: 6px;
+  font-size: 11px;
+  color: light-dark(var(--mantine-color-gray-7), var(--mantine-color-gray-3));
+  white-space: nowrap;
+}
+
+.parse-overlay-toggle .mantine-Switch-track {
+  min-width: 34px;
+  background: light-dark(var(--mantine-color-gray-2), #2a3140);
+  border: 1px solid light-dark(var(--mantine-color-gray-4), #4b5565);
+}
+
+.parse-overlay-toggle .mantine-Switch-thumb {
+  background: light-dark(#ffffff, #f3f4f6);
+  border: 1px solid light-dark(var(--mantine-color-gray-5), #aeb4bf);
+}
+
+.parse-overlay-toggle .mantine-Switch-input:checked + .mantine-Switch-track {
+  background: var(--mantine-color-blue-6);
+  border-color: var(--mantine-color-blue-5);
 }
 
 .parse-pdf-toolbar {
@@ -1082,6 +1139,7 @@ body {
   min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
+  padding-top: 0;
   padding-right: 2px;
 }
 
@@ -1113,6 +1171,7 @@ body {
   z-index: 8;
   background: var(--mantine-color-body);
   isolation: isolate;
+  border-bottom: 1px solid var(--mantine-color-default-border);
 }
 
 .extract-config-top-tabs::after,
@@ -1121,10 +1180,15 @@ body {
   position: absolute;
   left: 0;
   right: 0;
-  bottom: calc(var(--mantine-spacing-sm) * -1);
+  top: 100%;
+  bottom: auto;
   height: var(--mantine-spacing-sm);
   background: inherit;
   pointer-events: none;
+}
+
+.parse-playground-layout[data-surface='test'] .parse-config-top-tabs::after {
+  display: none;
 }
 
 .extract-config-run-btn,
@@ -1161,10 +1225,15 @@ body {
 
 .extract-config-section,
 .parse-config-section {
-  border: 1px solid var(--mantine-color-default-border);
-  border-radius: 10px;
-  padding: 10px;
-  background: light-dark(rgba(255, 255, 255, 0.7), rgba(15, 23, 42, 0.25));
+  border: 0;
+  border-radius: 0;
+  padding: 10px 0;
+  background: transparent;
+}
+
+.extract-config-section + .extract-config-section,
+.parse-config-section + .parse-config-section {
+  border-top: 1px solid var(--mantine-color-default-border);
 }
 
 .extract-config-subheading,
@@ -1288,7 +1357,7 @@ body {
 
 .parse-playground-upload .uppy-Dashboard {
   background: transparent;
-  margin-top: var(--mantine-spacing-sm);
+  margin-top: 8px;
 }
 
 .parse-upload-header {

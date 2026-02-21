@@ -1,4 +1,4 @@
-import { Fragment, useCallback, useEffect, useState } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Box, Center, Group, Loader, Switch, Text } from '@mantine/core';
 import {
   PdfLoader,
@@ -17,6 +17,7 @@ const PDF_WORKER_SRC = new URL(
   import.meta.url,
 ).toString();
 const SHOW_ALL_BOUNDING_BOXES_DEFAULT = true;
+const RESULTS_PDF_BASE_SCALE = '0.82';
 
 type DoclingHighlight = IHighlight & {
   blockUid: string;
@@ -45,6 +46,8 @@ type PdfResultsHighlighterProps = {
   convUid: string;
   showAllBoundingBoxes?: boolean;
   onShowAllBoundingBoxesChange?: (nextValue: boolean) => void;
+  showBlocksPanel?: boolean;
+  onShowBlocksPanelChange?: (nextValue: boolean) => void;
   onBlocksChange?: (blocks: ParsedResultBlock[]) => void;
 };
 
@@ -255,6 +258,8 @@ export function PdfResultsHighlighter({
   convUid,
   showAllBoundingBoxes: showAllBoundingBoxesProp,
   onShowAllBoundingBoxesChange,
+  showBlocksPanel: showBlocksPanelProp,
+  onShowBlocksPanelChange,
   onBlocksChange,
 }: PdfResultsHighlighterProps) {
   const [loading, setLoading] = useState(true);
@@ -264,7 +269,10 @@ export function PdfResultsHighlighter({
   const [selectedHighlightId, setSelectedHighlightId] = useState<string | null>(null);
   const [pdfLoadError, setPdfLoadError] = useState<string | null>(null);
   const [highlightRenderNudge, setHighlightRenderNudge] = useState(0);
+  const [showBlocksPanel, setShowBlocksPanel] = useState(true);
+  const scrollToHighlightRef = useRef<((highlight: DoclingHighlight) => void) | null>(null);
   const showAllBoundingBoxes = showAllBoundingBoxesProp ?? showAllBoundingBoxesInternal;
+  const resolvedShowBlocksPanel = showBlocksPanelProp ?? showBlocksPanel;
 
   useEffect(() => {
     let cancelled = false;
@@ -313,11 +321,12 @@ export function PdfResultsHighlighter({
     };
   }, [convUid, doclingJsonUrl]);
 
-  const visibleHighlights = (
-    highlightRenderNudge >= 0 && showAllBoundingBoxes
-      ? [...highlights]
-      : []
-  );
+  const visibleHighlights = useMemo(() => {
+    if (highlightRenderNudge < 0) return [];
+    if (showAllBoundingBoxes) return [...highlights];
+    if (!selectedHighlightId) return [];
+    return highlights.filter((highlight) => highlight.id === selectedHighlightId);
+  }, [highlightRenderNudge, highlights, selectedHighlightId, showAllBoundingBoxes]);
 
   useEffect(() => {
     setPdfLoadError(null);
@@ -335,6 +344,20 @@ export function PdfResultsHighlighter({
     }
     onShowAllBoundingBoxesChange?.(nextValue);
   }, [onShowAllBoundingBoxesChange, showAllBoundingBoxesProp]);
+
+  const handleToggleShowBlocksPanel = useCallback((nextValue: boolean) => {
+    if (showBlocksPanelProp === undefined) {
+      setShowBlocksPanel(nextValue);
+    }
+    onShowBlocksPanelChange?.(nextValue);
+  }, [onShowBlocksPanelChange, showBlocksPanelProp]);
+
+  const focusHighlight = useCallback((highlight: DoclingHighlight) => {
+    setSelectedHighlightId(highlight.id);
+    requestAnimationFrame(() => {
+      scrollToHighlightRef.current?.(highlight);
+    });
+  }, []);
 
 
   useEffect(() => {
@@ -394,18 +417,26 @@ export function PdfResultsHighlighter({
   }
 
   return (
-    <Box className="parse-docling-results">
+    <Box className={`parse-docling-results${resolvedShowBlocksPanel ? '' : ' parse-docling-results--pdf-only'}`}>
       <Box className="parse-docling-results-preview">
         <Group justify="space-between" align="center" wrap="nowrap" className="parse-docling-results-toolbar">
-          <Switch
-            size="xs"
-            label="Show overlay"
-            checked={showAllBoundingBoxes}
-            onChange={(event) => handleToggleShowAllBoundingBoxes(event.currentTarget.checked)}
-          />
-          <Text size="xs" c="dimmed">
-            {highlights.length} blocks
-          </Text>
+          <Group gap="xs" wrap="nowrap">
+            <Switch
+              className="parse-overlay-toggle"
+              size="xs"
+              label="Show overlay"
+              checked={showAllBoundingBoxes}
+              onChange={(event) => handleToggleShowAllBoundingBoxes(event.currentTarget.checked)}
+            />
+            <Switch
+              className="parse-overlay-toggle"
+              size="xs"
+              label="Show blocks"
+              checked={resolvedShowBlocksPanel}
+              onChange={(event) => handleToggleShowBlocksPanel(event.currentTarget.checked)}
+            />
+          </Group>
+          <Text size="xs" c="dimmed">{highlights.length} blocks</Text>
         </Group>
         <Box className="parse-docling-results-pdf">
           <PdfLoader
@@ -435,9 +466,11 @@ export function PdfResultsHighlighter({
                 enableAreaSelection={() => false}
                 onSelectionFinished={() => null}
                 onScrollChange={() => {}}
-                scrollRef={() => {}}
+                scrollRef={(scrollTo) => {
+                  scrollToHighlightRef.current = scrollTo;
+                }}
                 highlights={visibleHighlights}
-                pdfScaleValue="page-width"
+                pdfScaleValue={RESULTS_PDF_BASE_SCALE}
                 highlightTransform={(highlight, _index, setTip, hideTip, _viewportToScaled, _screenshot, isScrolledTo) => {
                   const isActive = selectedHighlightId === highlight.id;
 
@@ -471,7 +504,7 @@ export function PdfResultsHighlighter({
                               key={`${highlight.id}:rect:${rectIndex}`}
                               className={`parse-docling-block-box tone-${highlight.colorToken}${isActive ? ' is-active' : ''}${isScrolledTo ? ' is-scrolled' : ''}`}
                               style={rectStyle}
-                              onClick={() => setSelectedHighlightId(highlight.id)}
+                              onClick={() => focusHighlight(highlight)}
                               title={`${highlight.blockType} #${highlight.blockIndex} p.${highlight.pageNo}`}
                               aria-label={`Block ${highlight.blockIndex} on page ${highlight.pageNo}`}
                             />
@@ -486,6 +519,31 @@ export function PdfResultsHighlighter({
           </PdfLoader>
         </Box>
       </Box>
+      {resolvedShowBlocksPanel && (
+        <Box className="parse-docling-results-panel">
+          <Group justify="space-between" align="center" wrap="nowrap" className="parse-docling-results-panel-head">
+            <Text size="sm" fw={700}>Result</Text>
+            <Text size="xs" c="dimmed">Formatted</Text>
+          </Group>
+          <Box className="parse-docling-results-list">
+            {highlights.map((highlight) => (
+              <button
+                key={highlight.id}
+                type="button"
+                className={`parse-docling-results-item${selectedHighlightId === highlight.id ? ' is-active' : ''}`}
+                onClick={() => focusHighlight(highlight)}
+              >
+                <Text size="xs" fw={700}>
+                  {highlight.blockType} | #{highlight.blockIndex} | p.{highlight.pageNo}
+                </Text>
+                <Text size="xs" c="dimmed" lineClamp={3}>
+                  {highlight.snippet || '[no text]'}
+                </Text>
+              </button>
+            ))}
+          </Box>
+        </Box>
+      )}
     </Box>
   );
 }

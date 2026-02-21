@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { ActionIcon, Box, Center, Group, Loader, Text, TextInput } from '@mantine/core';
 import {
   IconArrowsMaximize,
@@ -39,10 +39,6 @@ export type PdfAtomicUnit = {
 const ZOOM_MIN = 50;
 const ZOOM_MAX = 300;
 const ZOOM_STEP = 10;
-const VIEWPORT_MIN_WIDTH = 280;
-const VIEWPORT_HORIZONTAL_PADDING = 8;
-const WIDTH_JITTER_PX = 3;
-
 export function PdfPreview({
   title,
   url,
@@ -62,30 +58,10 @@ export function PdfPreview({
   const [pageInput, setPageInput] = useState('1');
   const [zoomPercent, setZoomPercent] = useState(100);
   const [rotation, setRotation] = useState(0);
-  const [viewportWidth, setViewportWidth] = useState(0);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [fallbackToIframe, setFallbackToIframe] = useState(false);
   const [showUnitOverlay, setShowUnitOverlay] = useState(true);
   const [selectedUnitUid, setSelectedUnitUid] = useState<string | null>(null);
-
-  useLayoutEffect(() => {
-    const node = viewportRef.current;
-    if (!node) return;
-
-    const updateWidth = () => {
-      const measuredWidth = Math.round(node.clientWidth);
-      const next = Math.max(measuredWidth - VIEWPORT_HORIZONTAL_PADDING, VIEWPORT_MIN_WIDTH);
-      setViewportWidth((current) => (Math.abs(current - next) >= WIDTH_JITTER_PX ? next : current));
-    };
-
-    updateWidth();
-    const observer = new ResizeObserver(updateWidth);
-    observer.observe(node);
-
-    return () => {
-      observer.disconnect();
-    };
-  }, []);
 
   const canGoPrev = activePageNumber > 1;
   const canGoNext = pageCount !== null && activePageNumber < pageCount;
@@ -184,7 +160,7 @@ export function PdfPreview({
     return () => {
       observer.disconnect();
     };
-  }, [fallbackToIframe, loadError, pageCount, viewportWidth, zoomPercent, rotation]);
+  }, [fallbackToIframe, loadError, pageCount, zoomPercent, rotation]);
 
   useEffect(() => {
     return () => {
@@ -402,7 +378,6 @@ export function PdfPreview({
                   <Box className="parse-pdf-page-wrap">
                     <Page
                       pageNumber={pageNumber}
-                      width={viewportWidth > 0 ? viewportWidth : undefined}
                       scale={zoomPercent / 100}
                       rotate={rotation}
                       loading={

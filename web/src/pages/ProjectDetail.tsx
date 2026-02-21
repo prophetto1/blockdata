@@ -33,6 +33,8 @@ import {
 import {
   IconAlertTriangle,
   IconArrowsMaximize,
+  IconChevronLeft,
+  IconChevronRight,
   IconCirclePlus,
   IconCode,
   IconDeviceFloppy,
@@ -61,6 +63,7 @@ const PAGE_SIZE = 10;
 const EXPLORER_WIDTH_DEFAULT = 500;
 const EXPLORER_WIDTH_MIN = 500;
 const EXPLORER_WIDTH_MAX = 500;
+const EXPLORER_WIDTH_COLLAPSED = 56;
 const CONFIG_WIDTH_DEFAULT = 450;
 const CONFIG_WIDTH_MIN = 450;
 const CONFIG_WIDTH_MAX = 450;
@@ -309,6 +312,7 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
   const [resultsDoclingError, setResultsDoclingError] = useState<string | null>(null);
   const [resultsBlocks, setResultsBlocks] = useState<ParsedResultBlock[]>([]);
   const [showAllBboxes, setShowAllBboxes] = useState(true);
+  const [showMetadataBlocksPanel, setShowMetadataBlocksPanel] = useState(true);
   const [middlePreviewTab, setMiddlePreviewTab] = useState<MiddlePreviewTab>('preview');
   const [testRightTab, setTestRightTab] = useState<TestRightTab>('preview');
   const [testBlocks, setTestBlocks] = useState<TestBlockCardRow[]>([]);
@@ -324,6 +328,7 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
   const [extractSchemaDraft, setExtractSchemaDraft] = useState('');
 
   const [explorerWidth, setExplorerWidth] = useState(EXPLORER_WIDTH_DEFAULT);
+  const [isExplorerCollapsed, setIsExplorerCollapsed] = useState(false);
   const [configWidth, setConfigWidth] = useState(CONFIG_WIDTH_DEFAULT);
   const [activeResizer, setActiveResizer] = useState<'explorer' | 'config' | null>(null);
   const [desktopNavOpened] = useLocalStorage<boolean>({
@@ -856,10 +861,11 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
   }, [selectedDoc?.conv_uid, surface]);
 
   const handleExplorerResizeStart = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
+    if (isExplorerCollapsed) return;
     event.preventDefault();
     resizeStateRef.current = { startX: event.clientX, startWidth: explorerWidth };
     setActiveResizer('explorer');
-  }, [explorerWidth]);
+  }, [explorerWidth, isExplorerCollapsed]);
 
   const handleConfigResizeStart = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
     event.preventDefault();
@@ -918,15 +924,22 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
   if (loading) return <Center mt="xl"><Loader /></Center>;
   if (!project) return <ErrorAlert message={error ?? 'Project not found'} />;
 
-  const isTestSurface = surface === 'test';
-  const navCompactionExplorerBoost = desktopNavOpened ? 0 : (isTestSurface ? 0 : 20);
-  const navCompactionConfigBoost = desktopNavOpened ? 0 : (isTestSurface ? 50 : 130);
-  const layoutStyle = {
-    '--parse-explorer-width': `${explorerWidth + navCompactionExplorerBoost}px`,
-    '--parse-config-width': `${configWidth + navCompactionConfigBoost}px`,
-  } as CSSProperties;
   const isExtractMode = mode === 'extract';
   const isTransformMode = mode === 'transform';
+  const isTestSurface = surface === 'test';
+  const shouldRouteCollapsedSpaceToConfig = isTestSurface || (isExtractMode && extractConfigView === 'Schema');
+  const navCompactionExplorerBoost = desktopNavOpened ? 0 : (isTestSurface ? 0 : 20);
+  const navCompactionConfigBoost = desktopNavOpened ? 0 : (isTestSurface ? 0 : 130);
+  const expandedExplorerWidth = explorerWidth + navCompactionExplorerBoost;
+  const collapsedDelta = isExplorerCollapsed
+    ? Math.max(0, expandedExplorerWidth - EXPLORER_WIDTH_COLLAPSED)
+    : 0;
+  const effectiveExplorerWidth = isExplorerCollapsed ? EXPLORER_WIDTH_COLLAPSED : expandedExplorerWidth;
+  const effectiveConfigWidth = configWidth + navCompactionConfigBoost + (shouldRouteCollapsedSpaceToConfig ? collapsedDelta : 0);
+  const layoutStyle = {
+    '--parse-explorer-width': `${effectiveExplorerWidth}px`,
+    '--parse-config-width': `${effectiveConfigWidth}px`,
+  } as CSSProperties;
   const isMarkdownTextPreview = (
     previewKind === 'text'
     && selectedDoc?.source_type?.toLowerCase() === 'md'
@@ -1019,7 +1032,7 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
         data-surface={surface}
         style={layoutStyle}
       >
-        <Box className="parse-playground-explorer">
+        <Box className={`parse-playground-explorer${isExplorerCollapsed ? ' is-collapsed' : ''}`}>
           <Box
             className={`parse-playground-resizer parse-playground-resizer-explorer${activeResizer === 'explorer' ? ' is-active' : ''}`}
             role="separator"
@@ -1027,6 +1040,16 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
             aria-label="Resize documents pane"
             onPointerDown={handleExplorerResizeStart}
           />
+          <ActionIcon
+            size="sm"
+            variant="subtle"
+            className="parse-explorer-collapse-toggle"
+            aria-label={isExplorerCollapsed ? 'Expand Add Documents column' : 'Collapse Add Documents column'}
+            title={isExplorerCollapsed ? 'Expand Add Documents column' : 'Collapse Add Documents column'}
+            onClick={() => setIsExplorerCollapsed((current) => !current)}
+          >
+            {isExplorerCollapsed ? <IconChevronRight size={16} /> : <IconChevronLeft size={16} />}
+          </ActionIcon>
 
           <Box className="parse-playground-upload">
             <ProjectParseUppyUploader
@@ -1041,19 +1064,13 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
           <Box className="parse-playground-docs">
             <Stack gap="xs" style={{ minHeight: 0, height: '100%' }}>
               <Group justify="space-between" align="center" wrap="nowrap" className="parse-docs-toolbar">
-                <Group gap={8} wrap="nowrap">
-                  <Checkbox
-                    checked={allPagedSelected}
-                    indeterminate={somePagedSelected}
-                    size="xs"
-                    styles={docSelectorCheckboxStyles}
-                    aria-label="Select all documents on this page"
-                    onChange={(event) => toggleAllPagedDocSelection(event.currentTarget.checked)}
-                  />
-                  <Text fw={700} size="sm">Project Documents</Text>
-                </Group>
-                <Text size="xs" c="dimmed">
-                  {pagedDocs.length} of {docs.length}
+                <Text
+                  size="xs"
+                  c="dimmed"
+                  style={{ cursor: 'pointer', userSelect: 'none' }}
+                  onClick={() => toggleAllPagedDocSelection(!allPagedSelected)}
+                >
+                  {allPagedSelected || somePagedSelected ? 'Deselect all' : 'Select all'}
                 </Text>
               </Group>
 
@@ -1118,23 +1135,23 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
                         </Box>
                       );
                     })}
-                  </Box>
 
-                  {totalPages > 1 && (
-                    <Group justify="center" className="parse-docs-pagination-wrap">
-                      <Pagination
-                        value={page}
-                        onChange={setPage}
-                        total={totalPages}
-                        siblings={1}
-                        boundaries={1}
-                        size="xs"
-                        className="parse-docs-pagination"
-                        withControls={false}
-                        withEdges={false}
-                      />
-                    </Group>
-                  )}
+                    {totalPages > 1 && (
+                      <Group justify="center" className="parse-docs-pagination-wrap">
+                        <Pagination
+                          value={page}
+                          onChange={setPage}
+                          total={totalPages}
+                          siblings={1}
+                          boundaries={1}
+                          size="xs"
+                          className="parse-docs-pagination"
+                          withControls={false}
+                          withEdges={false}
+                        />
+                      </Group>
+                    )}
+                  </Box>
                 </>
               )}
             </Stack>
@@ -1151,14 +1168,24 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
                   </Group>
                   {isRightBlocksTab && testBlocks.length > 0 && <Text size="xs" c="dimmed">{testBlocks.length} blocks</Text>}
                   {showMetadataOverlayToggle && (
-                    <Switch
-                      size="xs"
-                      label="Show overlay"
-                      checked={showAllBboxes}
-                      disabled={previewLoading || resultsDoclingLoading}
-                      onChange={(event) => setShowAllBboxes(event.currentTarget.checked)}
-                      styles={{ label: { paddingLeft: 6, fontSize: 11, color: 'var(--mantine-color-dimmed)', whiteSpace: 'nowrap' } }}
-                    />
+                    <Group gap={8} wrap="nowrap">
+                      <Switch
+                        className="parse-overlay-toggle"
+                        size="xs"
+                        label="Show overlay"
+                        checked={showAllBboxes}
+                        disabled={previewLoading || resultsDoclingLoading}
+                        onChange={(event) => setShowAllBboxes(event.currentTarget.checked)}
+                      />
+                      <Switch
+                        className="parse-overlay-toggle"
+                        size="xs"
+                        label="Show results"
+                        checked={showMetadataBlocksPanel}
+                        disabled={previewLoading || resultsDoclingLoading}
+                        onChange={(event) => setShowMetadataBlocksPanel(event.currentTarget.checked)}
+                      />
+                    </Group>
                   )}
                 </Group>
               )}
@@ -1341,6 +1368,8 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
                               convUid={selectedDoc.conv_uid}
                               showAllBoundingBoxes={showAllBboxes}
                               onShowAllBoundingBoxesChange={setShowAllBboxes}
+                              showBlocksPanel={showMetadataBlocksPanel}
+                              onShowBlocksPanelChange={setShowMetadataBlocksPanel}
                               onBlocksChange={setResultsBlocks}
                             />
                         )}
@@ -1410,7 +1439,16 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
             <Stack gap="sm" className="extract-config-root">
               <Group justify="space-between" wrap="nowrap" className="extract-config-top-tabs">
                 <Text size="sm" fw={700}>Build</Text>
-                <Button size="compact-sm" className="extract-config-run-btn">Run Extract</Button>
+                <Group gap={6} wrap="nowrap" className="extract-config-run-btn">
+                  <ActionIcon
+                    size="sm"
+                    variant="transparent"
+                    aria-label="Run extract"
+                    title="Run extract"
+                  >
+                    <IconPlayerPlay size={17} />
+                  </ActionIcon>
+                </Group>
               </Group>
 
                 <Group justify="space-between" wrap="nowrap">
@@ -1728,12 +1766,9 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
                 </>
               )}
 
-              <Group justify="space-between" wrap="nowrap" className="extract-config-footer">
-                <Text size="xs" c="dimmed">Est. ~1,680 credits</Text>
-              </Group>
             </Stack>
           ) : isTransformMode ? null : (
-            <Stack gap="sm" className={`parse-config-root${showCenterResultsList ? ' parse-results-side-root' : ''}`}>
+            <Stack gap={0} className={`parse-config-root${showCenterResultsList ? ' parse-results-side-root' : ''}`}>
               <Group justify="space-between" wrap="nowrap" className="parse-config-top-tabs">
                 {isTestSurface ? (
                   <Text size="sm" fw={700}>Build</Text>
@@ -1764,22 +1799,22 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
                 {showCenterConfig && (
                   <Group gap={6} wrap="nowrap" className="parse-config-run-btn">
                     <ActionIcon
-                      size="md"
+                      size="sm"
                       variant="transparent"
                       aria-label="Save config"
                       title="Save config"
                     >
-                      <IconDeviceFloppy size={16} />
+                      <IconDeviceFloppy size={17} />
                     </ActionIcon>
                     <ActionIcon
-                      size="md"
+                      size="sm"
                       variant="transparent"
                       aria-label="Run parse"
                       title="Run parse"
                       loading={parseLoading}
                       onClick={() => void handleRunParse()}
                     >
-                      <IconPlayerPlay size={16} />
+                      <IconPlayerPlay size={17} />
                     </ActionIcon>
                   </Group>
                 )}

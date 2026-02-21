@@ -82,7 +82,7 @@ export const router = createBrowserRouter([
           { path: '/app/projects/list', element: <Navigate to="/app/projects" replace /> },
 
           // Project-scoped routes
-          { path: '/app/projects/:projectId', element: <ProjectDetail /> },
+          { path: '/app/projects/:projectId', element: <ProjectDetail surface="test" /> },
           { path: '/app/projects/:projectId/upload', element: <Upload /> },
           { path: '/app/projects/:projectId/upload-uppy-demo', element: <UppyLibraryDemo /> },
           { path: '/app/projects/:projectId/documents/:sourceUid', element: <DocumentDetail /> },
