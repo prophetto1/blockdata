@@ -23,7 +23,7 @@ param(
   [string]$CompanionSecret,
 
   # Comma-separated CORS origins
-  [string]$ClientOrigins = 'https://blockdata.vercel.app,http://localhost:5173',
+  [string]$ClientOrigins = 'https://blockdata.vercel.app,https://blockdata.run,https://datablock.run,http://localhost:5173',
 
   # Comma-separated upload destination allowlist
   [string]$UploadUrls = 'https://dbdzzhshmigewyprahej.supabase.co/functions/v1/ingest'
