@@ -1,5 +1,5 @@
 import { getEnv, requireEnv } from "../_shared/env.ts";
-import { isConversionAckTimeoutError, resolveConversionAckTimeoutMs } from "../_shared/conversion-ack-timeout.ts";
+import { isConversionAckTimeoutError, raceWithAckTimeout, resolveConversionAckTimeoutMs } from "../_shared/conversion-ack-timeout.ts";
 import { basenameNoExt } from "../_shared/sanitize.ts";
 import type { IngestContext, IngestResponse, SignedUploadTarget } from "./types.ts";
 
@@ -136,11 +136,9 @@ export async function processConversion(ctx: IngestContext): Promise<{ status: n
   const conversionKey = requireEnv("CONVERSION_SERVICE_KEY");
   const ackTimeoutMs = resolveConversionAckTimeoutMs(getEnv("CONVERSION_SERVICE_ACK_TIMEOUT_MS", "8000"));
   const abortController = new AbortController();
-  const ackTimeoutHandle = setTimeout(() => abortController.abort(), ackTimeoutMs);
 
-  let convertResp: Response;
-  try {
-    convertResp = await fetch(`${conversionServiceUrl}/convert`, {
+  const convertResult = await raceWithAckTimeout(
+    fetch(`${conversionServiceUrl}/convert`, {
       method: "POST",
       signal: abortController.signal,
       headers: {
@@ -165,8 +163,24 @@ export async function processConversion(ctx: IngestContext): Promise<{ status: n
         doctags_output,
         callback_url,
       }),
-    });
-  } catch (fetchErr) {
+    }),
+    ackTimeoutMs,
+    () => abortController.abort(),
+  );
+
+  if (convertResult.kind === "timeout") {
+    return {
+      status: 202,
+      body: {
+        source_uid,
+        conv_uid: null,
+        status: "converting",
+      },
+    };
+  }
+
+  if (convertResult.kind === "error") {
+    const fetchErr = convertResult.error;
     if (isConversionAckTimeoutError(fetchErr)) {
       return {
         status: 202,
@@ -183,9 +197,9 @@ export async function processConversion(ctx: IngestContext): Promise<{ status: n
       .update({ status: "conversion_failed", error: `conversion service unreachable: ${msg}`.slice(0, 1000) })
       .eq("source_uid", source_uid);
     return { status: 502, body: { source_uid, conv_uid: null, status: "conversion_failed", error: `conversion service unreachable: ${msg}` } };
-  } finally {
-    clearTimeout(ackTimeoutHandle);
   }
+
+  const convertResp = convertResult.value;
 
   if (!convertResp.ok) {
     const msg = await convertResp.text().catch(() => "");

@@ -256,7 +256,7 @@ function toArtifactLocator(locator: string | null | undefined, nextExtension: st
   const filename = lastSlash >= 0 ? normalized.slice(lastSlash + 1) : normalized;
   const lowered = filename.toLowerCase();
   let basename = filename;
-  const knownSuffixes = ['.docling.json', '.pandoc.ast.json', '.doctags', '.md', '.html'];
+  const knownSuffixes = ['.docling.json', '.pandoc.ast.json', '.citations.json', '.doctags', '.md', '.html'];
   for (const suffix of knownSuffixes) {
     if (lowered.endsWith(suffix)) {
       basename = filename.slice(0, filename.length - suffix.length);
@@ -389,19 +389,25 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
   const [resultsDoclingError, setResultsDoclingError] = useState<string | null>(null);
   const [outputsLoading, setOutputsLoading] = useState(false);
   const [outputsError, setOutputsError] = useState<string | null>(null);
+  const [outputsNotice, setOutputsNotice] = useState<string | null>(null);
+  const [outputsReloadKey, setOutputsReloadKey] = useState(0);
+  const [runCitationsBusy, setRunCitationsBusy] = useState(false);
   const [outputDoclingJsonUrl, setOutputDoclingJsonUrl] = useState<string | null>(null);
   const [outputMarkdownUrl, setOutputMarkdownUrl] = useState<string | null>(null);
   const [outputHtmlUrl, setOutputHtmlUrl] = useState<string | null>(null);
   const [outputDoctagsUrl, setOutputDoctagsUrl] = useState<string | null>(null);
+  const [outputCitationsUrl, setOutputCitationsUrl] = useState<string | null>(null);
   const [outputDoclingJsonLocators, setOutputDoclingJsonLocators] = useState<string[]>([]);
   const [outputMarkdownLocators, setOutputMarkdownLocators] = useState<string[]>([]);
   const [outputHtmlLocators, setOutputHtmlLocators] = useState<string[]>([]);
   const [outputDoctagsLocators, setOutputDoctagsLocators] = useState<string[]>([]);
+  const [outputCitationsLocators, setOutputCitationsLocators] = useState<string[]>([]);
   const [outputDoclingJsonName, setOutputDoclingJsonName] = useState<string | null>(null);
   const [outputMarkdownName, setOutputMarkdownName] = useState<string | null>(null);
   const [outputHtmlName, setOutputHtmlName] = useState<string | null>(null);
   const [outputDoctagsName, setOutputDoctagsName] = useState<string | null>(null);
-  const [outputDownloadBusy, setOutputDownloadBusy] = useState<'docling' | 'markdown' | 'html' | 'doctags' | null>(null);
+  const [outputCitationsName, setOutputCitationsName] = useState<string | null>(null);
+  const [outputDownloadBusy, setOutputDownloadBusy] = useState<'docling' | 'markdown' | 'html' | 'doctags' | 'citations' | null>(null);
   const [resultsBlocks, setResultsBlocks] = useState<ParsedResultBlock[]>([]);
   const [showAllBboxes, setShowAllBboxes] = useState(true);
   const [showMetadataBlocksPanel, setShowMetadataBlocksPanel] = useState(true);
@@ -889,7 +895,7 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
     };
   }, [selectedDoc]);
 
-  const handleOutputDownload = useCallback(async (kind: 'docling' | 'markdown' | 'html' | 'doctags') => {
+  const handleOutputDownload = useCallback(async (kind: 'docling' | 'markdown' | 'html' | 'doctags' | 'citations') => {
     const output =
       kind === 'docling'
         ? {
@@ -909,10 +915,16 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
                 locators: outputHtmlLocators,
                 filename: outputHtmlName ?? 'output.html',
               }
-            : {
+            : kind === 'doctags'
+              ? {
                 url: outputDoctagsUrl,
                 locators: outputDoctagsLocators,
                 filename: outputDoctagsName ?? 'output.doctags',
+              }
+              : {
+                url: outputCitationsUrl,
+                locators: outputCitationsLocators,
+                filename: outputCitationsName ?? 'output.citations.json',
               };
 
     const setSignedUrlForKind = (signedUrl: string) => {
@@ -928,7 +940,11 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
         setOutputHtmlUrl(signedUrl);
         return;
       }
-      setOutputDoctagsUrl(signedUrl);
+      if (kind === 'doctags') {
+        setOutputDoctagsUrl(signedUrl);
+        return;
+      }
+      setOutputCitationsUrl(signedUrl);
     };
 
     if (!output.url && output.locators.length === 0) {
@@ -968,6 +984,9 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
     outputDoclingJsonName,
     outputDoclingJsonLocators,
     outputDoclingJsonUrl,
+    outputCitationsName,
+    outputCitationsLocators,
+    outputCitationsUrl,
     outputDoctagsName,
     outputDoctagsLocators,
     outputDoctagsUrl,
@@ -979,6 +998,40 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
     outputMarkdownUrl,
   ]);
 
+  const handleRunCitations = useCallback(async () => {
+    if (!selectedDoc?.source_uid || !selectedDoc?.conv_uid) return;
+    setRunCitationsBusy(true);
+    setOutputsError(null);
+    setOutputsNotice(null);
+    try {
+      const resp = await edgeJson<{
+        ok: boolean;
+        skipped?: boolean;
+        citation_total?: number;
+        message?: string;
+      }>('generate-citations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ source_uid: selectedDoc.source_uid }),
+      });
+
+      if (!resp.ok) {
+        throw new Error(resp.message ?? 'Citations generation failed');
+      }
+      if (resp.skipped) {
+        setOutputsNotice(resp.message ?? 'No legal citations detected for this document.');
+      } else {
+        setOutputsNotice(`Citations output generated (${resp.citation_total ?? 0} matches).`);
+      }
+      setOutputsReloadKey((value) => value + 1);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      setOutputsError(`Failed to run citations: ${message}`);
+    } finally {
+      setRunCitationsBusy(false);
+    }
+  }, [selectedDoc]);
+
   useEffect(() => {
     let cancelled = false;
 
@@ -989,17 +1042,20 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
       setOutputMarkdownUrl(null);
       setOutputHtmlUrl(null);
       setOutputDoctagsUrl(null);
+      setOutputCitationsUrl(null);
       setOutputDoclingJsonLocators([]);
       setOutputMarkdownLocators([]);
       setOutputHtmlLocators([]);
       setOutputDoctagsLocators([]);
+      setOutputCitationsLocators([]);
       setOutputDoclingJsonName(null);
       setOutputMarkdownName(null);
       setOutputHtmlName(null);
       setOutputDoctagsName(null);
+      setOutputCitationsName(null);
       setOutputDownloadBusy(null);
 
-      if (!selectedDoc || !isPdfDocument(selectedDoc) || !selectedDoc.conv_uid) {
+      if (!selectedDoc || !selectedDoc.conv_uid) {
         return;
       }
 
@@ -1048,22 +1104,28 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
         toArtifactLocator(selectedDoc.conv_locator, 'doctags'),
         toArtifactLocator(selectedDoc.source_locator, 'doctags'),
       ]);
+      const citationsLocators = dedupeLocators([
+        representationLocators.get('citations_json') ?? null,
+      ]);
 
       setOutputDoclingJsonLocators(doclingLocators);
       setOutputMarkdownLocators(markdownLocators);
       setOutputHtmlLocators(htmlLocators);
       setOutputDoctagsLocators(doctagsLocators);
+      setOutputCitationsLocators(citationsLocators);
 
       setOutputDoclingJsonName(getFilenameFromLocator(representationLocators.get('doclingdocument_json') ?? doclingLocators[0] ?? null));
       setOutputMarkdownName(getFilenameFromLocator(representationLocators.get('markdown_bytes') ?? markdownLocators[0] ?? null));
       setOutputHtmlName(getFilenameFromLocator(representationLocators.get('html_bytes') ?? htmlLocators[0] ?? null));
       setOutputDoctagsName(getFilenameFromLocator(representationLocators.get('doctags_text') ?? doctagsLocators[0] ?? null));
+      setOutputCitationsName(getFilenameFromLocator(representationLocators.get('citations_json') ?? null));
 
-      const [doclingSigned, markdownSigned, htmlSigned, doctagsSigned] = await Promise.all([
+      const [doclingSigned, markdownSigned, htmlSigned, doctagsSigned, citationsSigned] = await Promise.all([
         resolveSignedUrlForLocators(doclingLocators),
         resolveSignedUrlForLocators(markdownLocators),
         resolveSignedUrlForLocators(htmlLocators),
         resolveSignedUrlForLocators(doctagsLocators),
+        resolveSignedUrlForLocators(citationsLocators),
       ]);
 
       if (cancelled) return;
@@ -1072,6 +1134,7 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
       setOutputMarkdownUrl(markdownSigned.url);
       setOutputHtmlUrl(htmlSigned.url);
       setOutputDoctagsUrl(doctagsSigned.url);
+      setOutputCitationsUrl(citationsSigned.url);
       setOutputsLoading(false);
     };
 
@@ -1079,7 +1142,11 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
     return () => {
       cancelled = true;
     };
-  }, [selectedDoc]);
+  }, [selectedDoc, outputsReloadKey]);
+
+  useEffect(() => {
+    setOutputsNotice(null);
+  }, [selectedDoc?.source_uid]);
 
   useEffect(() => {
     let cancelled = false;
@@ -1409,6 +1476,7 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
   const hasMarkdownOutput = outputMarkdownLocators.length > 0 || !!outputMarkdownUrl;
   const hasHtmlOutput = outputHtmlLocators.length > 0 || !!outputHtmlUrl;
   const hasDoctagsOutput = outputDoctagsLocators.length > 0 || !!outputDoctagsUrl;
+  const hasCitationsOutput = outputCitationsLocators.length > 0 || !!outputCitationsUrl;
   const shouldShowPdfToolbarHost = isRightPreviewTab && previewKind === 'pdf';
   const showMetadataOverlayToggle = (
     isRightMetadataTab
@@ -1547,11 +1615,11 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
             ingestMode="upload_only"
             compactUi
             uiVariant={isShellGrid ? 'headless' : 'dashboard'}
-            enableRemoteSources={isShellGrid}
+            enableRemoteSources
             companionUrl={import.meta.env.VITE_UPPY_COMPANION_URL as string | undefined}
             hideHeader={isShellGrid}
             onBatchUploaded={handleBatchUploaded}
-            height={240}
+            height={320}
           />
       </Box>
 
@@ -2056,15 +2124,7 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
                       </Center>
                     )}
 
-                    {selectedDoc && !isPdfDocument(selectedDoc) && (
-                      <Center h="100%">
-                        <Text size="sm" c="dimmed" ta="center">
-                          Outputs are currently shown for PDFs parsed through Docling.
-                        </Text>
-                      </Center>
-                    )}
-
-                    {selectedDoc && isPdfDocument(selectedDoc) && !selectedDoc.conv_uid && (
+                    {selectedDoc && !selectedDoc.conv_uid && (
                       <Center h="100%">
                         <Text size="sm" c="dimmed" ta="center">
                           No parsed outputs are available for this document yet.
@@ -2072,7 +2132,7 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
                       </Center>
                     )}
 
-                    {selectedDoc && isPdfDocument(selectedDoc) && selectedDoc.conv_uid && outputsLoading && (
+                    {selectedDoc && selectedDoc.conv_uid && outputsLoading && (
                       <Center h="100%">
                         <Stack align="center" gap="xs">
                           <Loader size="sm" />
@@ -2081,7 +2141,7 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
                       </Center>
                     )}
 
-                    {selectedDoc && isPdfDocument(selectedDoc) && selectedDoc.conv_uid && !outputsLoading && outputsError && (
+                    {selectedDoc && selectedDoc.conv_uid && !outputsLoading && outputsError && (
                       <Center h="100%">
                         <Text size="sm" c="red" ta="center">
                           {outputsError}
@@ -2090,7 +2150,6 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
                     )}
 
                     {selectedDoc
-                      && isPdfDocument(selectedDoc)
                       && selectedDoc.conv_uid
                       && !outputsLoading
                       && !outputsError && (
@@ -2152,6 +2211,20 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
                               Download
                             </Button>
                           </Group>
+                          <Group justify="space-between" wrap="nowrap">
+                            <Text size="sm" c={hasCitationsOutput ? undefined : 'dimmed'}>
+                              {outputCitationsName ?? '[citations unavailable]'}
+                            </Text>
+                            <Button
+                              size="xs"
+                              variant="light"
+                              onClick={() => void handleOutputDownload('citations')}
+                              loading={outputDownloadBusy === 'citations'}
+                              disabled={!hasCitationsOutput}
+                            >
+                              Download
+                            </Button>
+                          </Group>
                         </Stack>
                       )}
                   </Box>
@@ -2172,12 +2245,32 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
                         </Text>
                       </Center>
                     ) : (
-                      <BlockViewerGrid
-                        convUid={selectedDoc.conv_uid}
-                        selectedRunId={selectedRunId}
-                        selectedRun={selectedRun}
-                        toolbarPortalTarget={testBlocksToolbarHost}
-                      />
+                      <Stack gap="xs" h="100%" p="sm">
+                        <Group justify="space-between" align="center" wrap="nowrap">
+                          <Text size="sm" fw={700}>Grid</Text>
+                          <Button
+                            size="xs"
+                            variant="default"
+                            onClick={() => void handleRunCitations()}
+                            loading={runCitationsBusy}
+                          >
+                            {hasCitationsOutput ? 'Regenerate citations' : 'Run citations'}
+                          </Button>
+                        </Group>
+                        {(outputsNotice || outputsError) && (
+                          <Text size="xs" c={outputsError ? 'red' : 'dimmed'}>
+                            {outputsError ?? outputsNotice}
+                          </Text>
+                        )}
+                        <Box style={{ flex: 1, minHeight: 0 }}>
+                          <BlockViewerGrid
+                            convUid={selectedDoc.conv_uid}
+                            selectedRunId={selectedRunId}
+                            selectedRun={selectedRun}
+                            toolbarPortalTarget={testBlocksToolbarHost}
+                          />
+                        </Box>
+                      </Stack>
                     )}
                   </Box>
                 )}

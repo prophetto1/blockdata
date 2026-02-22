@@ -1449,31 +1449,65 @@ body {
 .parse-pdf-toolbar {
   border-radius: 0;
   scrollbar-width: thin;
-  gap: 10px;
-  justify-content: space-between;
+  gap: 16px;
+  justify-content: center;
   width: 100%;
 }
 
+.parse-pdf-toolbar .mantine-ActionIcon-root {
+  border: 0;
+  background: transparent;
+  color: light-dark(var(--mantine-color-gray-7), var(--mantine-color-gray-3));
+}
+
+.parse-pdf-toolbar .mantine-ActionIcon-root:hover:not([data-disabled]),
+.parse-pdf-toolbar .mantine-ActionIcon-root:focus-visible:not([data-disabled]) {
+  background: transparent;
+}
+
+.parse-pdf-toolbar .mantine-ActionIcon-root[data-disabled] {
+  opacity: 0.42;
+  color: light-dark(var(--mantine-color-gray-5), var(--mantine-color-gray-6));
+  background: transparent;
+}
+
 .parse-pdf-page-input {
-  width: 42px;
+  width: auto;
 }
 
 .parse-pdf-page-input input {
+  width: calc((var(--parse-pdf-page-digits, 3) + 0.3) * 1ch);
   text-align: center;
-  padding-left: 4px;
-  padding-right: 4px;
+  padding-inline: 0;
   border: 0;
   background: transparent;
   min-height: 22px;
   height: 22px;
-  font-size: 13px;
-  font-weight: 700;
+  font-size: 15px;
+  font-weight: 650;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.parse-pdf-page-input input:focus,
+.parse-pdf-page-input input:focus-visible {
+  outline: none;
+}
+
+.parse-pdf-page-separator {
+  margin-inline: 0;
+  text-align: center;
+  color: light-dark(var(--mantine-color-gray-7), var(--mantine-color-gray-4));
+  font-variant-numeric: tabular-nums;
+  font-size: 16px;
 }
 
 .parse-pdf-page-total {
-  min-width: 42px;
+  min-width: 0;
   text-align: center;
   font-variant-numeric: tabular-nums;
+  font-size: 16px;
+  margin-left: 5px;
 }
 
 .parse-preview-toolbar-host {
@@ -1494,31 +1528,47 @@ body {
 
 .parse-pdf-toolbar-pill {
   height: 30px;
-  padding: 0 6px;
-  border: 1px solid light-dark(rgba(148, 163, 184, 0.32), rgba(148, 163, 184, 0.28));
-  border-radius: 10px;
-  background: light-dark(rgba(148, 163, 184, 0.14), rgba(148, 163, 184, 0.16));
-  backdrop-filter: saturate(120%);
+  padding: 0 1px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  backdrop-filter: none;
 }
 
 .parse-pdf-page-controls {
-  min-width: 148px;
+  min-width: max-content;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: max-content;
+  align-items: center;
+  column-gap: 4px;
+}
+
+.parse-pdf-page-controls .mantine-ActionIcon-root:first-child {
+  margin-right: -10px;
 }
 
 .parse-pdf-toolbar-placeholder {
-  width: 148px;
+  width: 110px;
   height: 30px;
 }
 
 .parse-pdf-zoom-inline {
-  min-width: 116px;
-  justify-content: space-between;
+  min-width: max-content;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: max-content;
+  align-items: center;
+  justify-content: end;
+  column-gap: 4px;
 }
 
 .parse-pdf-zoom-value {
-  min-width: 46px;
+  min-width: 0;
+  padding-inline: 2px;
   text-align: center;
   font-variant-numeric: tabular-nums;
+  font-size: 16px;
 }
 
 .parse-view-menu-button.mantine-Button-root {
@@ -2272,6 +2322,7 @@ body {
 
 .schema-layout-test-page .parse-playground-upload .uppy-Dashboard {
   margin-top: 0;
+  min-height: 312px;
 }
 
 .schema-layout-test-page .parse-playground-upload .uppy-Dashboard-inner {
@@ -2283,7 +2334,7 @@ body {
 
 .schema-layout-test-page .parse-playground-upload .uppy-Dashboard-AddFiles {
   margin: 8px;
-  min-height: 156px;
+  min-height: 210px;
   border-radius: 12px;
   border-color: light-dark(rgba(148, 163, 184, 0.45), rgba(71, 85, 105, 0.78));
   background: light-dark(rgba(241, 245, 249, 0.88), rgba(14, 25, 46, 0.68));
@@ -2313,11 +2364,45 @@ body {
 
 .parse-playground-upload .uppy-Dashboard-AddFiles-list {
   display: flex !important;
-  flex: 0 0 auto;
+  flex: 1 1 auto;
+  min-height: 0;
   max-height: none;
-  overflow: visible;
+  overflow-x: hidden;
+  overflow-y: auto;
   position: relative;
   z-index: 2;
+}
+
+.parse-playground-upload .uppy-Dashboard.uppy-Dashboard--isAddFilesPanelVisible .uppy-Dashboard-AddFiles {
+  margin: 0;
+  min-height: 0;
+  height: calc(100% - 54px);
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.parse-playground-upload .uppy-Dashboard.uppy-Dashboard--isAddFilesPanelVisible .uppy-Dashboard-AddFiles::before,
+.parse-playground-upload .uppy-Dashboard.uppy-Dashboard--isAddFilesPanelVisible .uppy-Dashboard-AddFiles::after {
+  display: none;
+  content: none;
+}
+
+.parse-playground-upload .uppy-Dashboard.uppy-Dashboard--isAddFilesPanelVisible .uppy-Dashboard-AddFiles-title {
+  margin-top: 8px;
+  margin-bottom: 6px;
+  padding: 0 12px;
+  font-size: 18px;
+  line-height: 1.25;
+}
+
+.parse-playground-upload .uppy-Dashboard.uppy-Dashboard--isAddFilesPanelVisible .uppy-Dashboard-AddFiles-list {
+  flex: 1 1 auto;
+  flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
+  width: 100%;
+  padding: 0;
 }
 
 .parse-playground-upload .uppy-Dashboard-browse {

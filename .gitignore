@@ -51,3 +51,4 @@ ref-repos/remark
 
 # Supabase local CLI artifacts
 supabase/.temp/
+.env*.local

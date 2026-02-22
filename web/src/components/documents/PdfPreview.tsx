@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { ActionIcon, Box, Center, Group, Loader, Text, TextInput } from '@mantine/core';
 
 import { createPortal } from 'react-dom';
@@ -63,6 +63,7 @@ export function PdfPreview({
   const isPdfJsControlsDisabled = fallbackToIframe || pageCount === null || !!loadError;
   const showPageControls = !isPdfJsControlsDisabled && (pageCount ?? 0) > 1;
   const pageScale = Math.max(0.1, zoomPercent / 100);
+  const pageDigits = Math.max(2, String(pageCount ?? activePageNumber).length);
 
   const clampPageNumber = (value: number): number => {
     if (!Number.isFinite(value)) return activePageNumber;
@@ -162,9 +163,14 @@ export function PdfPreview({
   }, [fallbackToIframe, loadError, pageCount, rotation, pageScale]);
 
   const toolbar = (
-    <Group justify="space-between" wrap="nowrap" className="parse-pdf-toolbar">
+    <Group justify="center" wrap="nowrap" className="parse-pdf-toolbar">
       {showPageControls ? (
-        <Group gap={4} wrap="nowrap" className="parse-pdf-page-controls parse-pdf-toolbar-pill">
+        <Group
+          gap={2}
+          wrap="nowrap"
+          className="parse-pdf-page-controls parse-pdf-toolbar-pill"
+          style={{ '--parse-pdf-page-digits': String(pageDigits) } as CSSProperties}
+        >
           <ActionIcon
             size="sm"
             variant="subtle"
@@ -186,8 +192,11 @@ export function PdfPreview({
             className="parse-pdf-page-input"
             disabled={isPdfJsControlsDisabled}
           />
-          <Text size="sm" fw={600} className="parse-pdf-page-total">
-            / {pageCount ?? '--'}
+          <Text size="md" fw={600} className="parse-pdf-page-separator" aria-hidden>
+            /
+          </Text>
+          <Text size="md" fw={600} className="parse-pdf-page-total">
+            {pageCount ?? '--'}
           </Text>
           <ActionIcon
             size="sm"
@@ -204,7 +213,7 @@ export function PdfPreview({
         <Box className="parse-pdf-toolbar-placeholder" />
       )}
 
-      <Group gap={4} wrap="nowrap" className="parse-pdf-zoom-inline parse-pdf-toolbar-pill">
+      <Group gap={2} wrap="nowrap" className="parse-pdf-zoom-inline parse-pdf-toolbar-pill">
         <ActionIcon
           size="sm"
           variant="subtle"
@@ -215,7 +224,7 @@ export function PdfPreview({
         >
           <svg xmlns="http://www.w3.org/2000/svg" height="18" viewBox="0 -960 960 960" width="18" fill="currentColor"><path d="M200-440v-80h560v80H200Z"/></svg>
         </ActionIcon>
-        <Text size="sm" fw={600} className="parse-pdf-zoom-value">
+        <Text size="md" fw={600} className="parse-pdf-zoom-value">
           {zoomPercent}%
         </Text>
         <ActionIcon

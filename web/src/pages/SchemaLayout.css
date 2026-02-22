@@ -51,6 +51,15 @@
   box-sizing: border-box;
 }
 
+.schema-layout-middle-header {
+  position: relative;
+}
+
+.schema-layout-middle-header .parse-view-menu-button {
+  position: relative;
+  z-index: 3;
+}
+
 .schema-layout-config-title {
   min-width: 0;
 }
@@ -124,6 +133,8 @@
   min-width: 0;
   display: flex;
   align-items: center;
+  position: relative;
+  z-index: 1;
 }
 
 .schema-layout-middle-toolbar-host .parse-pdf-toolbar {
@@ -147,7 +158,9 @@
 
 .schema-layout-middle-toolbar-host.parse-preview-toolbar-host .parse-pdf-toolbar {
   width: 100%;
-  justify-content: space-between;
+  justify-content: center;
+  gap: 16px;
+  transform: translateX(-100px);
 }
 
 .schema-layout-middle-sheet-wrap {
