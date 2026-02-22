@@ -224,7 +224,8 @@ $deployArgs = @(
   '--service-account', $runtimeServiceAccountEmail,
   '--ingress', 'all',
   '--set-secrets', "COMPANION_SECRET=uppy-companion-secret:latest",
-  '--set-env-vars', "COMPANION_PROTOCOL=https,COMPANION_PORT=$Port,COMPANION_DATADIR=/tmp/companion-data,COMPANION_CLIENT_ORIGINS=$ClientOrigins,COMPANION_UPLOAD_URLS=$UploadUrls"
+  # Use an explicit gcloud delimiter to preserve commas in env var values.
+  '--set-env-vars', "^##^COMPANION_PROTOCOL=https##COMPANION_PORT=$Port##COMPANION_DATADIR=/tmp/companion-data##COMPANION_CLIENT_ORIGINS=$ClientOrigins##COMPANION_UPLOAD_URLS=$UploadUrls"
 )
 
 Write-Host "Deploying Cloud Run service..."

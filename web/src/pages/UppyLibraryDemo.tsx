@@ -133,7 +133,6 @@ export default function UppyLibraryDemo() {
           companionUrl: endpoint,
           companionHeaders: {
             ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
-            ...(SUPABASE_ANON_KEY ? { apikey: SUPABASE_ANON_KEY } : {}),
           },
           companionCookiesRule: 'include',
         });

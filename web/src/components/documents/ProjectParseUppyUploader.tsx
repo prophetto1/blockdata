@@ -177,7 +177,6 @@ export function ProjectParseUppyUploader({
           sources: [...REMOTE_SOURCE_PLUGINS],
           companionHeaders: {
             Authorization: `Bearer ${session.access_token}`,
-            ...(SUPABASE_ANON_KEY ? { apikey: SUPABASE_ANON_KEY } : {}),
           },
           companionCookiesRule: 'include',
         });

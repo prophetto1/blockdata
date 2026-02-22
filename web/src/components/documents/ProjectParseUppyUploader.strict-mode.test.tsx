@@ -1,6 +1,6 @@
 import { StrictMode, useLayoutEffect, type ReactNode } from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MantineProvider } from '@mantine/core';
 
 type MockUppyInstance = {
@@ -71,6 +71,10 @@ function MountGuard({ children }: { children: ReactNode }) {
 }
 
 describe('ProjectParseUppyUploader strict mode lifecycle', () => {
+  afterEach(() => {
+    cleanup();
+  });
+
   beforeEach(() => {
     dashboardUppyInstances.length = 0;
     hasCommitted = false;
@@ -93,5 +97,40 @@ describe('ProjectParseUppyUploader strict mode lifecycle', () => {
     });
 
     expect(constructedBeforeCommit).toBe(false);
+  });
+
+  it('does not include apikey in Companion headers', async () => {
+    render(
+      <MantineProvider>
+        <ProjectParseUppyUploader
+          projectId="project-1"
+          enableRemoteSources
+          companionUrl="https://companion.example"
+        />
+      </MantineProvider>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('uppy-dashboard')).toBeInTheDocument();
+    });
+
+    const instance = dashboardUppyInstances.at(-1);
+    expect(instance).toBeDefined();
+
+    const remoteSourcesCall = instance?.use.mock.calls.find((call) => {
+      const opts = call[1] as Record<string, unknown> | undefined;
+      return opts?.companionCookiesRule === 'include';
+    });
+
+    expect(remoteSourcesCall).toBeDefined();
+    const options = remoteSourcesCall?.[1] as {
+      companionHeaders?: Record<string, string>;
+      companionCookiesRule?: string;
+    };
+    expect(options.companionCookiesRule).toBe('include');
+    expect(options.companionHeaders).toEqual({
+      Authorization: 'Bearer test-access-token',
+    });
+    expect(options.companionHeaders).not.toHaveProperty('apikey');
   });
 });
