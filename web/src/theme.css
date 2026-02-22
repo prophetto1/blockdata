@@ -238,6 +238,92 @@ body {
 
 .block-viewer-grid .ag-header {
   border-top: 1px solid var(--ag-border-color, var(--mantine-color-default-border)) !important;
+  background: light-dark(rgba(148, 163, 184, 0.12), rgba(148, 163, 184, 0.16)) !important;
+}
+
+.block-viewer-grid .ag-header-cell,
+.block-viewer-grid .ag-header-group-cell {
+  border-right: 0 !important;
+}
+
+.block-viewer-grid .ag-header-cell::after,
+.block-viewer-grid .ag-header-group-cell::after {
+  display: none !important;
+}
+
+.block-grid-header-label {
+  font-family: "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  line-height: 1.2;
+  color: light-dark(var(--mantine-color-gray-7), var(--mantine-color-gray-2)) !important;
+}
+
+.block-grid-type-header {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.block-grid-type-header-label {
+  margin: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+.block-grid-type-header .mantine-ActionIcon-root {
+  position: absolute;
+  right: 0;
+}
+
+.block-viewer-grid .ag-header-cell.block-grid-col-center-header .ag-header-cell-label {
+  justify-content: center;
+}
+
+.block-viewer-grid .ag-header-cell.block-grid-col-center-header .ag-header-cell-text {
+  text-align: center;
+}
+
+.block-viewer-grid .ag-header-cell.block-grid-col-left-header .ag-header-cell-label {
+  justify-content: flex-start;
+}
+
+.block-viewer-grid .ag-cell.block-grid-col-center-cell .ag-cell-wrapper,
+.block-viewer-grid .ag-cell.block-grid-col-center-cell .ag-cell-value {
+  justify-content: center !important;
+  text-align: center !important;
+}
+
+.block-viewer-grid .ag-cell.block-grid-col-block-cell {
+  display: block !important;
+  align-items: stretch !important;
+  text-align: left !important;
+}
+
+.block-viewer-grid .ag-cell.block-grid-col-block-cell .ag-cell-wrapper,
+.block-viewer-grid .ag-cell.block-grid-col-block-cell .ag-cell-value {
+  justify-content: flex-start !important;
+  align-items: flex-start !important;
+  text-align: left !important;
+  white-space: normal !important;
+  line-height: 1.45 !important;
+}
+
+.block-viewer-grid .ag-header-cell {
+  padding-left: 2px !important;
+  padding-right: 2px !important;
+}
+
+.block-viewer-grid .ag-header-cell-label {
+  gap: 2px !important;
+}
+
+.block-viewer-grid .ag-header-cell-text {
+  text-overflow: clip !important;
+  font-weight: 600 !important;
+  color: light-dark(var(--mantine-color-gray-7), var(--mantine-color-gray-2)) !important;
 }
 
 .block-viewer-grid .mantine-Text-root,
@@ -301,6 +387,12 @@ body {
   border-left: 1px solid var(--ag-border-color, var(--mantine-color-default-border)) !important;
 }
 
+/* Keep column header sorting on click but hide sort arrows for the whole blocks grid. */
+.block-viewer-grid .ag-header-cell .ag-sort-indicator-container,
+.block-viewer-grid .ag-header-cell .ag-sort-indicator {
+  display: none !important;
+}
+
 .block-grid-segmented-borderless {
   border: 0;
   background: transparent;
@@ -311,6 +403,59 @@ body {
   border: 0;
   background: transparent;
   box-shadow: none;
+}
+
+.block-grid-segmented-boxed .mantine-SegmentedControl-root {
+  border: 1px solid light-dark(rgba(15, 23, 42, 0.14), rgba(148, 163, 184, 0.3));
+  background: light-dark(rgba(241, 245, 249, 0.72), rgba(15, 23, 42, 0.5));
+  border-radius: 8px;
+  padding: 2px;
+}
+
+.block-grid-segmented-boxed .mantine-SegmentedControl-control {
+  border-radius: 6px;
+}
+
+.block-grid-segmented-boxed .mantine-SegmentedControl-indicator {
+  border-radius: 6px;
+  border: 1px solid light-dark(var(--mantine-color-blue-3), var(--mantine-color-blue-7));
+  background: light-dark(
+    var(--mantine-color-blue-light, rgba(219, 234, 254, 0.78)),
+    rgba(37, 99, 235, 0.32)
+  );
+  box-shadow: none;
+}
+
+.block-grid-segmented-boxed .mantine-SegmentedControl-label {
+  min-width: 24px;
+  padding-inline: 8px;
+  height: 20px;
+  font-size: 11px;
+  line-height: 20px;
+  font-weight: 700;
+  color: light-dark(var(--mantine-color-gray-7), var(--mantine-color-gray-3));
+}
+
+.block-grid-segmented-boxed .mantine-SegmentedControl-label[data-active] {
+  color: light-dark(
+    var(--mantine-color-blue-light-color, var(--mantine-color-blue-7)),
+    var(--mantine-color-blue-1)
+  );
+}
+
+.block-grid-config-inspector {
+  margin: 0;
+  max-height: 320px;
+  overflow: auto;
+  padding: 8px;
+  border: 1px solid var(--mantine-color-default-border);
+  border-radius: 8px;
+  background: light-dark(rgba(15, 23, 42, 0.03), rgba(15, 23, 42, 0.28));
+  color: var(--mantine-color-text);
+  font-size: 11px;
+  line-height: 1.4;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  white-space: pre;
 }
 
 .overlay-staged-cell {
@@ -835,6 +980,35 @@ body {
   min-width: 0;
 }
 
+.block-grid-page-nav {
+  align-items: center;
+  min-width: max-content;
+}
+
+.block-grid-page-nav-action {
+  cursor: pointer;
+  user-select: none;
+  color: light-dark(#0f766e, var(--mantine-color-gray-3));
+  transition: color 120ms ease;
+}
+
+.block-grid-page-nav-action:hover {
+  color: light-dark(#0d9488, var(--mantine-color-gray-1));
+}
+
+.block-grid-page-nav-action.is-disabled {
+  cursor: default;
+  pointer-events: none;
+  color: var(--mantine-color-dimmed);
+}
+
+.block-grid-page-nav-status {
+  min-width: 48px;
+  text-align: center;
+  user-select: none;
+  font-variant-numeric: tabular-nums;
+}
+
 .parse-middle-grid-toolbar-host .block-grid-toolbar-main {
   overflow-x: auto;
   overflow-y: hidden;
@@ -914,7 +1088,7 @@ body {
 .parse-pdf-preview-viewport {
   flex: 1;
   min-height: 0;
-  overflow-x: hidden;
+  overflow-x: auto;
   overflow-y: auto;
   scrollbar-gutter: stable;
   overscroll-behavior: contain;
@@ -927,8 +1101,10 @@ body {
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  width: 100%;
+  width: max-content;
+  min-width: 100%;
   padding: 0;
+  margin-inline: auto;
 }
 
 .parse-pdf-surface--iframe {
@@ -943,9 +1119,9 @@ body {
   align-items: center;
   justify-content: flex-start;
   gap: 8px;
-  width: 100%;
-  min-width: 0;
-  max-width: 100%;
+  width: max-content;
+  min-width: 100%;
+  max-width: none;
   padding-bottom: 6px;
 }
 
@@ -959,17 +1135,16 @@ body {
 .parse-pdf-page-wrap {
   position: relative;
   width: fit-content;
-  max-width: 100%;
 }
 
 .parse-pdf-preview-viewport .react-pdf__Page {
   display: flex;
   justify-content: center;
-  max-width: 100%;
+  max-width: none;
 }
 
 .parse-pdf-preview-viewport .react-pdf__Page__canvas {
-  max-width: 100%;
+  max-width: none;
   height: auto !important;
   border-radius: 4px;
   box-shadow: 0 1px 4px light-dark(rgba(0, 0, 0, 0.08), rgba(0, 0, 0, 0.3));

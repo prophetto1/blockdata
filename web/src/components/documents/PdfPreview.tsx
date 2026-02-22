@@ -1,11 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { ActionIcon, Box, Center, Group, Loader, NativeSelect, Text, TextInput } from '@mantine/core';
-import {
-  IconChevronLeft,
-  IconChevronRight,
-  IconDownload,
-  IconRotateClockwise,
-} from '@tabler/icons-react';
+
 import { createPortal } from 'react-dom';
 import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
@@ -23,10 +18,8 @@ type PdfPreviewProps = {
 const ZOOM_MIN = 50;
 const ZOOM_MAX = 300;
 const ZOOM_PRESETS = [50, 75, 100, 125, 150, 200, 300] as const;
-const VIEWPORT_MIN_WIDTH = 280;
-const VIEWPORT_HORIZONTAL_PADDING = 8;
-const WIDTH_JITTER_PX = 3;
-const TOOLBAR_ICON_SIZE = 14;
+const PDF_BASE_WIDTH_PX = 700;
+
 
 export function PdfPreview({
   title,
@@ -35,46 +28,19 @@ export function PdfPreview({
   toolbarPortalTarget = null,
 }: PdfPreviewProps) {
   const viewportRef = useRef<HTMLDivElement | null>(null);
+  const pageShellRefs = useRef<Map<number, HTMLDivElement>>(new Map());
+  const activePageRef = useRef(1);
   const [activePageNumber, setActivePageNumber] = useState(1);
   const [pageCount, setPageCount] = useState<number | null>(null);
   const [pageInput, setPageInput] = useState('1');
   const [zoomPercent, setZoomPercent] = useState(100);
   const [rotation, setRotation] = useState(0);
-  const [viewportWidth, setViewportWidth] = useState(0);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [fallbackToIframe, setFallbackToIframe] = useState(false);
 
   useEffect(() => {
-    const node = viewportRef.current;
-    if (!node) return;
-    const observedNode = node.parentElement ?? node;
-
-    let frameId = 0;
-    const updateWidth = () => {
-      const measuredWidth = Math.round(observedNode.getBoundingClientRect().width);
-      const next = Math.max(measuredWidth - VIEWPORT_HORIZONTAL_PADDING, VIEWPORT_MIN_WIDTH);
-      setViewportWidth((current) => (Math.abs(current - next) >= WIDTH_JITTER_PX ? next : current));
-    };
-
-    const scheduleUpdate = () => {
-      if (frameId) return;
-      frameId = window.requestAnimationFrame(() => {
-        frameId = 0;
-        updateWidth();
-      });
-    };
-
-    scheduleUpdate();
-    const observer = new ResizeObserver(scheduleUpdate);
-    observer.observe(observedNode);
-
-    return () => {
-      observer.disconnect();
-      if (frameId) window.cancelAnimationFrame(frameId);
-    };
-  }, []);
-
-  useEffect(() => {
+    pageShellRefs.current.clear();
+    activePageRef.current = 1;
     setActivePageNumber(1);
     setPageInput('1');
     setPageCount(null);
@@ -85,6 +51,10 @@ export function PdfPreview({
   }, [url]);
 
   useEffect(() => {
+    activePageRef.current = activePageNumber;
+  }, [activePageNumber]);
+
+  useEffect(() => {
     setPageInput(String(activePageNumber));
   }, [activePageNumber]);
 
@@ -92,6 +62,7 @@ export function PdfPreview({
   const canGoNext = pageCount !== null && activePageNumber < pageCount;
   const isPdfJsControlsDisabled = fallbackToIframe || pageCount === null || !!loadError;
   const showPageControls = !isPdfJsControlsDisabled && (pageCount ?? 0) > 1;
+  const pageScale = Math.max(0.1, zoomPercent / 100);
   const zoomOptions = (ZOOM_PRESETS.some((value) => value === zoomPercent)
     ? [...ZOOM_PRESETS]
     : [...ZOOM_PRESETS, zoomPercent].sort((a, b) => a - b))
@@ -105,14 +76,85 @@ export function PdfPreview({
 
   const clampZoom = (value: number) => Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, value));
 
+  const setPageShellRef = (pageNumber: number, node: HTMLDivElement | null) => {
+    if (node) {
+      pageShellRefs.current.set(pageNumber, node);
+      return;
+    }
+    pageShellRefs.current.delete(pageNumber);
+  };
+
+  const scrollToPage = (rawPageNumber: number, behavior: ScrollBehavior = 'smooth') => {
+    const nextPage = clampPageNumber(rawPageNumber);
+    setActivePageNumber(nextPage);
+
+    const viewportNode = viewportRef.current;
+    const pageNode = pageShellRefs.current.get(nextPage);
+    if (!viewportNode || !pageNode) return;
+
+    const viewportRect = viewportNode.getBoundingClientRect();
+    const pageRect = pageNode.getBoundingClientRect();
+    const top = viewportNode.scrollTop + (pageRect.top - viewportRect.top);
+    viewportNode.scrollTo({ top, behavior });
+  };
+
   const commitPageInput = () => {
     const parsed = Number.parseInt(pageInput.trim(), 10);
     if (Number.isNaN(parsed)) {
       setPageInput(String(activePageNumber));
       return;
     }
-    setActivePageNumber(clampPageNumber(parsed));
+    scrollToPage(parsed);
   };
+
+  useEffect(() => {
+    if (fallbackToIframe || loadError || pageCount === null) return undefined;
+    const viewportNode = viewportRef.current;
+    if (!viewportNode) return undefined;
+
+    let frameId = 0;
+    const updateActivePage = () => {
+      frameId = 0;
+      const pageEntries = [...pageShellRefs.current.entries()].sort((a, b) => a[0] - b[0]);
+      if (pageEntries.length === 0) return;
+
+      const viewportRect = viewportNode.getBoundingClientRect();
+      const viewportCenter = viewportRect.top + (viewportRect.height / 2);
+
+      let bestPage = activePageRef.current;
+      let bestDistance = Number.POSITIVE_INFINITY;
+
+      pageEntries.forEach(([pageNumber, pageNode]) => {
+        const rect = pageNode.getBoundingClientRect();
+        const containsCenter = rect.top <= viewportCenter && rect.bottom >= viewportCenter;
+        const distance = containsCenter
+          ? 0
+          : Math.min(Math.abs(viewportCenter - rect.top), Math.abs(viewportCenter - rect.bottom));
+
+        if (distance < bestDistance || (distance === bestDistance && pageNumber < bestPage)) {
+          bestDistance = distance;
+          bestPage = pageNumber;
+        }
+      });
+
+      if (bestPage === activePageRef.current) return;
+      activePageRef.current = bestPage;
+      setActivePageNumber(bestPage);
+    };
+
+    const scheduleUpdate = () => {
+      if (frameId) return;
+      frameId = window.requestAnimationFrame(updateActivePage);
+    };
+
+    scheduleUpdate();
+    viewportNode.addEventListener('scroll', scheduleUpdate, { passive: true });
+
+    return () => {
+      viewportNode.removeEventListener('scroll', scheduleUpdate);
+      if (frameId) window.cancelAnimationFrame(frameId);
+    };
+  }, [fallbackToIframe, loadError, pageCount, rotation, pageScale]);
 
   const toolbar = (
     <Group justify="flex-end" wrap="nowrap" className="parse-pdf-toolbar">
@@ -125,9 +167,9 @@ export function PdfPreview({
               disabled={!canGoPrev || isPdfJsControlsDisabled}
               aria-label="Previous page"
               title="Previous page"
-              onClick={() => setActivePageNumber(clampPageNumber(activePageNumber - 1))}
+              onClick={() => scrollToPage(activePageNumber - 1)}
             >
-              <IconChevronLeft size={TOOLBAR_ICON_SIZE} />
+              <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24" fill="currentColor" style={{ transform: 'scaleX(-1)' }}><path d="M73.3-235.46v-489.08h75.76v489.08H73.3Zm566.51 2.5L585.53-286l156.2-156.12H241.72v-75.76h500.01L586.77-674l53.04-53.04L886.86-480 639.81-232.96Z"/></svg>
             </ActionIcon>
             <TextInput
               size="xs"
@@ -140,7 +182,7 @@ export function PdfPreview({
               className="parse-pdf-page-input"
               disabled={isPdfJsControlsDisabled}
             />
-            <Text size="xs" c="dimmed" className="parse-pdf-page-total">
+            <Text size="sm" fw={600} className="parse-pdf-page-total">
               / {pageCount ?? '--'}
             </Text>
             <ActionIcon
@@ -149,9 +191,9 @@ export function PdfPreview({
               disabled={!canGoNext || isPdfJsControlsDisabled}
               aria-label="Next page"
               title="Next page"
-              onClick={() => setActivePageNumber(clampPageNumber(activePageNumber + 1))}
+              onClick={() => scrollToPage(activePageNumber + 1)}
             >
-              <IconChevronRight size={TOOLBAR_ICON_SIZE} />
+              <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24" fill="currentColor"><path d="M73.3-235.46v-489.08h75.76v489.08H73.3Zm566.51 2.5L585.53-286l156.2-156.12H241.72v-75.76h500.01L586.77-674l53.04-53.04L886.86-480 639.81-232.96Z"/></svg>
             </ActionIcon>
           </Group>
         )}
@@ -176,7 +218,7 @@ export function PdfPreview({
           onClick={() => setRotation((current) => (current + 90) % 360)}
           disabled={isPdfJsControlsDisabled}
         >
-          <IconRotateClockwise size={TOOLBAR_ICON_SIZE} />
+          <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24" fill="currentColor"><path d="M198.67-326.67Q178-363.33 169-401t-9-77q0-132 94-226.33 94-94.34 226-94.34h31l-74.67-74.66L481-918l152.67 152.67L481-612.67 435.67-658l74-74H480q-104.67 0-179 74.5T226.67-478q0 28 5.66 53.67 5.67 25.66 15 49l-48.66 48.66ZM477.67-40 325-192.67l152.67-152.66 44.66 44.66L447.67-226H480q104.67 0 179-74.5T733.33-480q0-28-5.33-53.67-5.33-25.66-16-49l48.67-48.66q20.66 36.66 30 74.33 9.33 37.67 9.33 77 0 132-94 226.33-94 94.34-226 94.34h-32.33l74.66 74.66L477.67-40Z"/></svg>
         </ActionIcon>
         <ActionIcon
           size="sm"
@@ -189,7 +231,7 @@ export function PdfPreview({
           download
           title="Download PDF"
         >
-          <IconDownload size={TOOLBAR_ICON_SIZE} />
+          <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24" fill="currentColor"><path d="M480-320 280-520l56-58 104 104v-326h80v326l104-104 56 58-200 200ZM240-160q-33 0-56.5-23.5T160-240v-120h80v120h480v-120h80v120q0 33-23.5 56.5T720-160H240Z"/></svg>
         </ActionIcon>
       </Group>
     </Group>
@@ -233,19 +275,33 @@ export function PdfPreview({
                 setFallbackToIframe(true);
               }}
             >
-              <Page
-                pageNumber={activePageNumber}
-                width={viewportWidth > 0 ? viewportWidth : undefined}
-                scale={zoomPercent / 100}
-                rotate={rotation}
-                loading={
-                  <Center h="100%">
-                    <Loader size="sm" />
-                  </Center>
-                }
-                renderTextLayer
-                renderAnnotationLayer
-              />
+              {Array.from({ length: pageCount ?? 1 }, (_, index) => {
+                const pageNumber = index + 1;
+                return (
+                  <Box
+                    key={pageNumber}
+                    className="parse-pdf-page-shell"
+                    data-page-number={pageNumber}
+                    ref={(node) => setPageShellRef(pageNumber, node)}
+                  >
+                    <Box className="parse-pdf-page-wrap">
+                      <Page
+                        pageNumber={pageNumber}
+                        width={PDF_BASE_WIDTH_PX}
+                        scale={pageScale}
+                        rotate={rotation}
+                        loading={
+                          <Center h="100%">
+                            <Loader size="sm" />
+                          </Center>
+                        }
+                        renderTextLayer
+                        renderAnnotationLayer
+                      />
+                    </Box>
+                  </Box>
+                );
+              })}
             </Document>
           </Box>
         )}

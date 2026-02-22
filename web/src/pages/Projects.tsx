@@ -262,7 +262,7 @@ export default function Projects() {
   const defaultColDef = useMemo<ColDef<ProjectOverviewRow>>(() => ({
     resizable: true,
     sortable: true,
-    filter: true,
+    filter: false,
     suppressHeaderMenuButton: true,
   }), []);
 

@@ -37,6 +37,7 @@ type ProjectParseUppyUploaderProps = {
   onBatchUploaded?: (result: UploadBatchResult) => void | Promise<void>;
   height?: number;
   compactUi?: boolean;
+  hideHeader?: boolean;
 };
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string | undefined;
@@ -65,6 +66,7 @@ export function ProjectParseUppyUploader({
   onBatchUploaded,
   height = 320,
   compactUi = false,
+  hideHeader = false,
 }: ProjectParseUppyUploaderProps) {
   const computedColorScheme = useComputedColorScheme('dark');
   const { session } = useAuth();
@@ -250,9 +252,11 @@ export function ProjectParseUppyUploader({
 
   return (
     <Stack gap={0}>
-      <Box className="parse-upload-header">
-        <Text fw={700} size="sm">Add Documents</Text>
-      </Box>
+      {!hideHeader && (
+        <Box className="parse-upload-header">
+          <Text fw={700} size="sm">Add Documents</Text>
+        </Box>
+      )}
       <div ref={dashboardHostRef}>
         <Dashboard
           uppy={uppy}

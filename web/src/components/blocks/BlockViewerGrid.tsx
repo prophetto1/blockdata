@@ -5,8 +5,11 @@ import {
   AllCommunityModule,
   ModuleRegistry,
   type CellValueChangedEvent,
+  type ColumnResizedEvent,
   type ColDef,
   type ColGroupDef,
+  type GridApi,
+  type GridReadyEvent,
   type ICellRendererParams,
 } from 'ag-grid-community';
 import {
@@ -17,7 +20,6 @@ import {
   Divider,
   Group,
   Menu,
-  Pagination,
   Paper,
   SegmentedControl,
   Select,
@@ -81,6 +83,99 @@ const VIEWER_FONT_FAMILY_KEY = 'blockdata-viewer-font-family';
 type ViewerFontFamily = 'sans' | 'serif' | 'mono';
 const VIEWER_VERTICAL_ALIGN_KEY = 'blockdata-viewer-vertical-align';
 type ViewerVerticalAlign = 'top' | 'center' | 'bottom';
+const COLUMN_WIDTHS_KEY_BASE = 'blockdata-column-widths';
+const DEWRAP_PREFIX_STOP_WORDS = new Set([
+  'a',
+  'an',
+  'and',
+  'as',
+  'at',
+  'be',
+  'by',
+  'for',
+  'from',
+  'he',
+  'if',
+  'in',
+  'is',
+  'it',
+  'of',
+  'on',
+  'or',
+  'so',
+  'the',
+  'to',
+  'we',
+]);
+
+function loadPersistedColumnWidths(storageKey: string): Record<string, number> {
+  if (typeof localStorage === 'undefined') return {};
+  try {
+    const raw = localStorage.getItem(storageKey);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    const next: Record<string, number> = {};
+    Object.entries(parsed).forEach(([key, value]) => {
+      const width = typeof value === 'number' ? value : Number(value);
+      if (Number.isFinite(width) && width > 0) {
+        next[key] = Math.round(width);
+      }
+    });
+    return next;
+  } catch {
+    return {};
+  }
+}
+
+function stringifyDebugConfig(value: unknown): string {
+  const seen = new WeakSet<object>();
+  return JSON.stringify(
+    value,
+    (_key, currentValue) => {
+      if (typeof currentValue === 'function') {
+        return `[Function ${currentValue.name || 'anonymous'}]`;
+      }
+      if (typeof currentValue === 'symbol') {
+        return currentValue.toString();
+      }
+      if (currentValue instanceof Set) {
+        return Array.from(currentValue);
+      }
+      if (currentValue instanceof Map) {
+        return Array.from(currentValue.entries());
+      }
+      if (typeof currentValue === 'object' && currentValue !== null) {
+        if (seen.has(currentValue)) return '[Circular]';
+        seen.add(currentValue);
+      }
+      return currentValue;
+    },
+    2,
+  );
+}
+
+function normalizeBlockContentForDisplay(value: unknown): string {
+  if (typeof value !== 'string') return '';
+
+  let text = value.replace(/\r\n?/g, '\n');
+
+  // Preserve hyphenated compounds across source line wraps.
+  text = text.replace(/([A-Za-z])-\s*\n\s*([A-Za-z])/g, '$1-$2');
+
+  // Fix obvious OCR line-wrap artifacts like "fa\nmily" while keeping normal short words.
+  text = text.replace(/\b([A-Za-z]{2})\s*\n\s*([A-Za-z]{2,})\b/g, (_match, left: string, right: string) => {
+    return DEWRAP_PREFIX_STOP_WORDS.has(left.toLowerCase()) ? `${left} ${right}` : `${left}${right}`;
+  });
+
+  // Fix artifacts like "Stat\ne B" where a trailing letter wraps to the next line.
+  text = text.replace(/\b([A-Za-z]{3,})\s*\n\s*([A-Za-z]{1,2})(?=\s+[A-Z])/g, '$1$2');
+
+  // Remaining line wraps become normal spacing.
+  text = text.replace(/\s*\n\s*/g, ' ');
+  text = text.replace(/\s{2,}/g, ' ').trim();
+
+  return text;
+}
 
 function BlockTypeCellRenderer(params: ICellRendererParams) {
   const type = params.value as string;
@@ -103,6 +198,14 @@ type ReviewActionCellRendererParams = {
   onConfirmBlock?: (blockUid: string) => void;
   onRejectBlock?: (blockUid: string) => void;
   isBusy?: (blockUid: string) => boolean;
+};
+
+type TypeHeaderRendererParams = {
+  blockTypes: string[];
+  typeFilter: string[];
+  onToggleType: (type: string) => void;
+  onClearTypes: () => void;
+  progressSort?: (multiSort?: boolean) => void;
 };
 
 function ReviewActionCellRenderer(params: ICellRendererParams) {
@@ -141,6 +244,64 @@ function ReviewActionCellRenderer(params: ICellRendererParams) {
         </ActionIcon>
       </Tooltip>
     </Group>
+  );
+}
+
+function TypeHeaderRenderer(params: TypeHeaderRendererParams) {
+  const selectedCount = params.typeFilter.length;
+  return (
+    <div className="block-grid-type-header">
+      <span
+        className="block-grid-header-label block-grid-type-header-label"
+        onClick={() => params.progressSort?.(false)}
+        onKeyDown={(event) => {
+          if (event.key !== 'Enter' && event.key !== ' ') return;
+          event.preventDefault();
+          params.progressSort?.(false);
+        }}
+        role="button"
+        tabIndex={0}
+        aria-label="Sort by type"
+      >
+        Type
+      </span>
+      {params.blockTypes.length > 1 && (
+        <Menu shadow="md" width={200} position="bottom-start" withinPortal closeOnItemClick={false}>
+          <Menu.Target>
+            <ActionIcon
+              variant={selectedCount > 0 ? 'light' : 'subtle'}
+              size="xs"
+              aria-label="Filter block types"
+            >
+              <IconFilter size={12} />
+            </ActionIcon>
+          </Menu.Target>
+          <Menu.Dropdown>
+            {params.blockTypes.map((type) => (
+              <Menu.Item
+                key={type}
+                leftSection={
+                  params.typeFilter.includes(type)
+                    ? <IconCheck size={14} />
+                    : <span style={{ width: 14, display: 'inline-block' }} />
+                }
+                onClick={() => params.onToggleType(type)}
+              >
+                <Text size="xs">{type}</Text>
+              </Menu.Item>
+            ))}
+            {selectedCount > 0 && (
+              <>
+                <Menu.Divider />
+                <Menu.Item c="dimmed" onClick={params.onClearTypes}>
+                  <Text size="xs">Clear all</Text>
+                </Menu.Item>
+              </>
+            )}
+          </Menu.Dropdown>
+        </Menu>
+      )}
+    </div>
   );
 }
 
@@ -341,6 +502,9 @@ export function BlockViewerGrid({
   });
   const [confirmingAll, setConfirmingAll] = useState(false);
   const [blockActionBusy, setBlockActionBusy] = useState<Record<string, boolean>>({});
+  const [showGridConfigInspector, setShowGridConfigInspector] = useState(false);
+  const [configRefreshTick, setConfigRefreshTick] = useState(0);
+  const persistedColumnWidthsRef = useRef<Record<string, number>>({});
 
   const { blocks, totalCount, loading: blocksLoading, error: blocksError } = useBlocks(convUid, pageIndex, pageSize);
   const {
@@ -359,6 +523,13 @@ export function BlockViewerGrid({
     () => new Map(schemaFields.map((field) => [field.key, field])),
     [schemaFields],
   );
+  const columnWidthStorageKey = useMemo(() => {
+    const schemaSignature = schemaFields.length > 0
+      ? schemaFields.map((field) => field.key).join('|')
+      : 'no-schema';
+    const runSignature = selectedRunId ? 'with-run' : 'no-run';
+    return `${COLUMN_WIDTHS_KEY_BASE}:v2:${runSignature}:${blockTypeView}:${schemaSignature}`;
+  }, [blockTypeView, schemaFields, selectedRunId]);
 
   const rowDataBase = useMemo(() => {
     return blocks.map((block) => {
@@ -610,7 +781,6 @@ export function BlockViewerGrid({
 
   const columnDefs = useMemo<(ColDef | ColGroupDef)[]>(() => {
     const useAutoHeight = viewMode === 'comfortable';
-    const contentMinWidth = 320;
     const locatorWidth = 280;
     const parserPathWidth = 280;
     const lastErrorWidth = 220;
@@ -618,21 +788,22 @@ export function BlockViewerGrid({
     const immutableCols: ColDef[] = [
       {
         field: 'block_index',
-        headerName: '#',
+        headerName: 'ID',
         width: 60,
-        suppressSizeToFit: true,
         suppressMovable: true,
-        type: 'numericColumn',
+        headerClass: 'block-grid-col-center-header',
+        cellClass: 'block-grid-col-center-cell',
         hide: hiddenCols.has('block_index'),
       },
       {
         field: 'block_pages',
         headerName: 'Pages',
         width: 92,
-        minWidth: 84,
         suppressMovable: true,
         sortable: true,
-        filter: true,
+        filter: false,
+        headerClass: 'block-grid-col-center-header',
+        cellClass: 'block-grid-col-center-cell',
         valueFormatter: (params) => {
           const value = params.value;
           return typeof value === 'string' && value.trim().length > 0 ? value : '--';
@@ -641,17 +812,32 @@ export function BlockViewerGrid({
       {
         field: 'block_type_view',
         headerName: 'Type',
-        width: 120,
+        width: 136,
+        headerComponent: TypeHeaderRenderer,
+        headerComponentParams: {
+          blockTypes,
+          typeFilter,
+          onToggleType: (type: string) => {
+            setTypeFilter((prev) =>
+              prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type],
+            );
+          },
+          onClearTypes: () => setTypeFilter([]),
+        } satisfies TypeHeaderRendererParams,
         cellRenderer: BlockTypeCellRenderer,
+        headerClass: 'block-grid-col-center-header',
+        cellClass: 'block-grid-col-center-cell',
         hide: hiddenCols.has('block_type'),
       },
       {
         field: 'block_content',
-        headerName: 'Content',
-        flex: 1,
-        minWidth: contentMinWidth,
+        headerName: 'Block',
+        width: 460,
+        valueGetter: (params) => normalizeBlockContentForDisplay(params.data?.block_content),
         wrapText: true,
         autoHeight: true,
+        headerClass: 'block-grid-col-left-header',
+        cellClass: 'block-grid-col-block-cell',
         hide: hiddenCols.has('block_content'),
       },
       {
@@ -705,7 +891,6 @@ export function BlockViewerGrid({
         width: 100,
         sortable: false,
         filter: false,
-        resizable: false,
         cellRenderer: ReviewActionCellRenderer,
         cellRendererParams: {
           onConfirmBlock: handleConfirmBlock,
@@ -813,6 +998,7 @@ export function BlockViewerGrid({
       } as ColGroupDef,
     ];
   }, [
+    blockTypes,
     blockTypeView,
     handleConfirmBlock,
     handleRejectBlock,
@@ -823,23 +1009,68 @@ export function BlockViewerGrid({
     isBusyForBlock,
     schemaFields,
     selectedRun,
+    typeFilter,
     viewMode,
   ]);
 
   const defaultColDef = useMemo<ColDef>(() => ({
     resizable: true,
     sortable: true,
-    filter: true,
+    filter: false,
     suppressMovable: false,
   }), []);
 
   const totalPages = Math.ceil(totalCount / pageSize);
+  const canGoToPrevPage = pageIndex > 0;
+  const canGoToNextPage = pageIndex < totalPages - 1;
   const error = blocksError || overlaysError;
-  const gridHeight = 'calc(100vh - 230px)';
 
   const getRowId = useCallback((params: { data: Record<string, unknown> }) => (
     params.data.block_uid as string
   ), []);
+
+  const persistColumnWidths = useCallback((api: GridApi<Record<string, unknown>>) => {
+    const widths: Record<string, number> = {};
+    api.getColumns()?.forEach((column) => {
+      const colId = column.getColId();
+      const width = column.getActualWidth();
+      if (Number.isFinite(width) && width > 0) {
+        widths[colId] = Math.round(width);
+      }
+    });
+    persistedColumnWidthsRef.current = widths;
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(columnWidthStorageKey, JSON.stringify(widths));
+    }
+  }, [columnWidthStorageKey]);
+
+  const applyPersistedColumnWidths = useCallback((api: GridApi<Record<string, unknown>>) => {
+    const widths = persistedColumnWidthsRef.current;
+    const entries = Object.entries(widths);
+    if (entries.length === 0) return;
+    api.applyColumnState({
+      state: entries.map(([colId, width]) => ({ colId, width })),
+      applyOrder: false,
+    });
+    api.resetRowHeights();
+  }, []);
+
+  const handleGridReady = useCallback((event: GridReadyEvent<Record<string, unknown>>) => {
+    applyPersistedColumnWidths(event.api);
+  }, [applyPersistedColumnWidths]);
+
+  const handleColumnResized = useCallback((event: ColumnResizedEvent<Record<string, unknown>>) => {
+    if (!event.finished) return;
+    persistColumnWidths(event.api);
+    event.api.resetRowHeights();
+  }, [persistColumnWidths]);
+
+  useEffect(() => {
+    persistedColumnWidthsRef.current = loadPersistedColumnWidths(columnWidthStorageKey);
+    const api = gridRef.current?.api;
+    if (!api) return;
+    applyPersistedColumnWidths(api);
+  }, [applyPersistedColumnWidths, columnWidthStorageKey]);
 
   useEffect(() => {
     const api = gridRef.current?.api;
@@ -847,6 +1078,12 @@ export function BlockViewerGrid({
     api.resetRowHeights();
     api.refreshCells({ force: true });
   }, [viewerFontFamily, viewerFontSize, viewMode, blockTypeView]);
+
+  useEffect(() => {
+    const api = gridRef.current?.api;
+    if (!api) return;
+    applyPersistedColumnWidths(api);
+  }, [applyPersistedColumnWidths, columnDefs]);
 
   useEffect(() => {
     if (typeof localStorage === 'undefined') return;
@@ -904,9 +1141,9 @@ export function BlockViewerGrid({
 
   const allColumns = useMemo(() => {
     const cols: { id: string; label: string }[] = [
-      { id: 'block_index', label: '#' },
+      { id: 'block_index', label: 'ID' },
       { id: 'block_type', label: 'Type' },
-      { id: 'block_content', label: 'Content' },
+      { id: 'block_content', label: 'Block' },
       { id: 'block_uid', label: 'Block UID' },
       { id: 'block_locator', label: 'Locator' },
       { id: 'parser_path', label: 'Parser Path' },
@@ -930,6 +1167,69 @@ export function BlockViewerGrid({
     return cols;
   }, [hasParserTypeData, hasRun, schemaFields]);
 
+  const gridConfigSnapshot = useMemo(() => {
+    const api = gridRef.current?.api;
+    return {
+      source: 'BlockViewerGrid',
+      generatedAt: new Date().toISOString(),
+      gridProps: {
+        animateRows: false,
+        suppressColumnVirtualisation: false,
+        domLayout: 'normal',
+      },
+      state: {
+        refreshTick: configRefreshTick,
+        convUid,
+        selectedRunId,
+        hasRun,
+        rowCount: rowData.length,
+        totalCount,
+        pageIndex,
+        pageSize,
+        viewMode,
+        viewerFontSize,
+        viewerFontFamily,
+        viewerVerticalAlign,
+        blockTypeView,
+        typeFilter,
+        hiddenCols: Array.from(hiddenCols),
+      },
+      defaultColDef,
+      columnDefs,
+      runtime: api
+        ? {
+          displayedRowCount: api.getDisplayedRowCount(),
+          columnState: api.getColumnState(),
+          filterModel: api.getFilterModel(),
+          columnGroupState: api.getColumnGroupState(),
+        }
+        : { gridReady: false },
+    };
+  }, [
+    blockTypeView,
+    columnDefs,
+    configRefreshTick,
+    convUid,
+    defaultColDef,
+    hasRun,
+    hiddenCols,
+    pageIndex,
+    pageSize,
+    rowData.length,
+    selectedRunId,
+    totalCount,
+    typeFilter,
+    viewMode,
+    viewerFontFamily,
+    viewerFontSize,
+    viewerVerticalAlign,
+  ]);
+
+  const gridConfigSnapshotJson = useMemo(
+    () => stringifyDebugConfig(gridConfigSnapshot),
+    [gridConfigSnapshot],
+  );
+
   const toolbarControls = (
     <Group
       className="block-grid-toolbar-row"
@@ -938,56 +1238,8 @@ export function BlockViewerGrid({
       gap="xs"
     >
       <Group className="block-grid-toolbar-main" gap="xs" wrap="nowrap">
-        {blockTypes.length > 1 && (
-          <Menu shadow="md" width={200} position="bottom-start" withinPortal closeOnItemClick={false}>
-            <Menu.Target>
-              <Button
-                variant="subtle"
-                size="compact-xs"
-                px={8}
-                leftSection={<IconFilter size={14} />}
-                rightSection={<IconChevronDown size={10} />}
-              >
-                {typeFilter.length === 0 ? 'All types' : `${typeFilter.length} type${typeFilter.length > 1 ? 's' : ''}`}
-              </Button>
-            </Menu.Target>
-            <Menu.Dropdown>
-              {blockTypes.map((type) => (
-                <Menu.Item
-                  key={type}
-                  leftSection={
-                    typeFilter.includes(type)
-                      ? <IconCheck size={14} />
-                      : <span style={{ width: 14, display: 'inline-block' }} />
-                  }
-                  onClick={() =>
-                    setTypeFilter((prev) =>
-                      prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type],
-                    )
-                  }
-                >
-                  <Text size="xs">{type}</Text>
-                </Menu.Item>
-              ))}
-              {typeFilter.length > 0 && (
-                <>
-                  <Menu.Divider />
-                  <Menu.Item c="dimmed" onClick={() => setTypeFilter([])}>
-                    <Text size="xs">Clear all</Text>
-                  </Menu.Item>
-                </>
-              )}
-            </Menu.Dropdown>
-          </Menu>
-        )}
-
         <SegmentedControl
-          className="block-grid-segmented-borderless"
-          styles={{
-            root: { border: 0, background: 'transparent', boxShadow: 'none', padding: 0 },
-            control: { border: 0 },
-            indicator: { border: 0, boxShadow: 'none' },
-          }}
+          className="block-grid-segmented-boxed"
           data={[
             { value: 'compact', label: 'Compact' },
             { value: 'comfortable', label: 'Comfortable' },
@@ -998,12 +1250,7 @@ export function BlockViewerGrid({
         />
 
         <SegmentedControl
-          className="block-grid-segmented-borderless"
-          styles={{
-            root: { border: 0, background: 'transparent', boxShadow: 'none', padding: 0 },
-            control: { border: 0 },
-            indicator: { border: 0, boxShadow: 'none' },
-          }}
+          className="block-grid-segmented-boxed"
           data={[
             { value: 'small', label: 'S' },
             { value: 'medium', label: 'M' },
@@ -1015,12 +1262,7 @@ export function BlockViewerGrid({
         />
 
         <SegmentedControl
-          className="block-grid-segmented-borderless"
-          styles={{
-            root: { border: 0, background: 'transparent', boxShadow: 'none', padding: 0 },
-            control: { border: 0 },
-            indicator: { border: 0, boxShadow: 'none' },
-          }}
+          className="block-grid-segmented-boxed"
           data={[
             { value: 'sans', label: 'Sans' },
             { value: 'serif', label: 'Serif' },
@@ -1108,6 +1350,35 @@ export function BlockViewerGrid({
         <Text size="xs" c="dimmed">
           {typeFilter.length > 0 ? `${rowData.length} of ${totalCount}` : totalCount} blocks
         </Text>
+        {totalPages > 1 && (
+          <Group gap={8} wrap="nowrap" className="block-grid-page-nav">
+            <Text
+              size="xs"
+              fw={600}
+              className={`block-grid-page-nav-action${canGoToPrevPage ? '' : ' is-disabled'}`}
+              onClick={() => {
+                if (!canGoToPrevPage) return;
+                setPageIndex((current) => Math.max(0, current - 1));
+              }}
+            >
+              Before
+            </Text>
+            <Text size="xs" c="dimmed" className="block-grid-page-nav-status">
+              {pageIndex + 1} / {totalPages}
+            </Text>
+            <Text
+              size="xs"
+              fw={600}
+              className={`block-grid-page-nav-action${canGoToNextPage ? '' : ' is-disabled'}`}
+              onClick={() => {
+                if (!canGoToNextPage) return;
+                setPageIndex((current) => Math.min(totalPages - 1, current + 1));
+              }}
+            >
+              After
+            </Text>
+          </Group>
+        )}
         {hasRun && (
           <Text size="xs" c="dimmed">
             {confirmedCount} confirmed - {stagedCount} staged
@@ -1126,6 +1397,17 @@ export function BlockViewerGrid({
         />
       </Group>
       <Group className="block-grid-toolbar-actions" gap={4} wrap="nowrap">
+        <Button
+          variant={showGridConfigInspector ? 'light' : 'subtle'}
+          size="compact-xs"
+          px={8}
+          onClick={() => {
+            setShowGridConfigInspector((prev) => !prev);
+            setConfigRefreshTick((prev) => prev + 1);
+          }}
+        >
+          Grid Config
+        </Button>
         {onExport && (
           <Tooltip label="Export">
             <ActionIcon variant="light" size="lg" onClick={onExport} aria-label="Export">
@@ -1156,6 +1438,30 @@ export function BlockViewerGrid({
           {toolbarControls}
         </Paper>
       )}
+      {showGridConfigInspector && (
+        <Paper withBorder p="xs" mb={4}>
+          <Group justify="space-between" mb={6}>
+            <Text size="xs" fw={600}>AG Grid Config Inspector</Text>
+            <Group gap={4}>
+              <Button
+                variant="subtle"
+                size="compact-xs"
+                onClick={() => setConfigRefreshTick((prev) => prev + 1)}
+              >
+                Refresh
+              </Button>
+              <Button
+                variant="subtle"
+                size="compact-xs"
+                onClick={() => setShowGridConfigInspector(false)}
+              >
+                Hide
+              </Button>
+            </Group>
+          </Group>
+          <pre className="block-grid-config-inspector">{gridConfigSnapshotJson}</pre>
+        </Paper>
+      )}
       {hasRun && stagedCount > 0 && (
         <Alert color="yellow" variant="light" mb={4}>
           <Group justify="space-between" wrap="wrap" gap="xs">
@@ -1178,7 +1484,7 @@ export function BlockViewerGrid({
 
       {error && <ErrorAlert message={error} />}
 
-      <div style={{ display: 'flex', flexDirection: 'column', height: gridHeight, minHeight: 300 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
         <div
           className={`block-viewer-grid grid-${viewMode} grid-font-${viewerFontSize} grid-font-family-${viewerFontFamily} grid-valign-${viewerVerticalAlign}`}
           style={{
@@ -1196,22 +1502,14 @@ export function BlockViewerGrid({
             defaultColDef={defaultColDef}
             getRowId={getRowId}
             onCellValueChanged={handleCellValueChanged}
+            onGridReady={handleGridReady}
+            onColumnResized={handleColumnResized}
             animateRows={false}
             suppressColumnVirtualisation={false}
             domLayout="normal"
           />
         </div>
 
-        {totalPages > 1 && (
-          <Group justify="center" py={6}>
-            <Pagination
-              total={totalPages}
-              value={pageIndex + 1}
-              onChange={(page) => setPageIndex(page - 1)}
-              size="xs"
-            />
-          </Group>
-        )}
       </div>
     </>
   );

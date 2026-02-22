@@ -273,6 +273,37 @@
   min-width: max-content;
 }
 
+.schema-layout-view-stepper {
+  align-items: center;
+  min-width: max-content;
+}
+
+.schema-layout-view-stepper-action {
+  cursor: pointer;
+  user-select: none;
+  color: light-dark(#0f766e, var(--mantine-color-gray-3));
+  transition: color 120ms ease;
+}
+
+.schema-layout-view-stepper-action:hover {
+  color: light-dark(#0d9488, var(--mantine-color-gray-1));
+}
+
+.schema-layout-view-stepper-action.is-disabled {
+  cursor: default;
+  pointer-events: none;
+  color: var(--mantine-color-dimmed);
+}
+
+.schema-layout-view-stepper-current {
+  user-select: none;
+}
+
+.schema-layout-view-stepper-index {
+  user-select: none;
+  font-variant-numeric: tabular-nums;
+}
+
 .schema-layout-view-label {
   color: var(--mantine-color-text);
 }

@@ -181,13 +181,14 @@ function mergeScaledRects(rects: Scaled[]): Scaled {
 }
 
 function toneFromBlockType(blockType: string, blockIndex: number): number {
-  const normalized = blockType.trim().toLowerCase();
+  const normalized = blockType.trim().toLowerCase().replace(/[\s-]+/g, '_');
+
+  if (normalized.includes('page_header')) return 2;
   if (normalized.includes('heading')) return 0;
   if (normalized.includes('paragraph')) return 1;
-  if (normalized.includes('list')) return 2;
-  if (normalized.includes('table')) return 3;
-  if (normalized.includes('code')) return 4;
-  if (normalized.includes('caption')) return 5;
+  if (normalized.includes('list')) return 3;
+  if (normalized.includes('table')) return 4;
+  if (normalized.includes('code') || normalized.includes('caption')) return 5;
   return blockIndex % 6;
 }
 

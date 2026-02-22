@@ -60,6 +60,7 @@ import { supabase } from '@/lib/supabase';
 import { edgeJson } from '@/lib/edge';
 import { TABLES } from '@/lib/tables';
 import type { DocumentRow, ProjectRow } from '@/lib/types';
+import './SchemaLayout.css';
 
 const PAGE_SIZE = 10;
 const EXPLORER_WIDTH_DEFAULT = 500;
@@ -69,9 +70,11 @@ const EXPLORER_WIDTH_COLLAPSED = 56;
 const CONFIG_WIDTH_DEFAULT = 450;
 const CONFIG_WIDTH_MIN = 450;
 const CONFIG_WIDTH_MAX = 450;
+const CONFIG_WIDTH_HALF = 280;
 const CONFIG_WIDTH_COLLAPSED = 56;
 const TRANSFORM_TEST_CONFIG_WIDTH_MIN = 300;
 const TRANSFORM_TEST_CONFIG_WIDTH_MAX = 760;
+const DOCS_PER_PAGE_OPTIONS = [10, 25, 50] as const;
 const DOCUMENTS_BUCKET = (import.meta.env.VITE_DOCUMENTS_BUCKET as string | undefined) ?? 'documents';
 
 const TEXT_SOURCE_TYPES = new Set([
@@ -342,9 +345,11 @@ function getDocumentFormat(doc: ProjectDocumentRow): string {
 
 export default function ProjectDetail({ mode = 'parse', surface = 'default' }: ProjectDetailProps) {
   const { projectId } = useParams<{ projectId: string }>();
+  const isParseMode = mode === 'parse';
   const isExtractMode = mode === 'extract';
   const isTransformMode = mode === 'transform';
   const isTestSurfacePage = surface === 'test';
+  const isShellGrid = isTestSurfacePage && (isParseMode || isExtractMode || isTransformMode);
   const isTransformTestSurface = isTransformMode && isTestSurfacePage;
 
   const [project, setProject] = useState<ProjectRow | null>(null);
@@ -352,6 +357,7 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
+  const [docsPerPage, setDocsPerPage] = useState<number>(PAGE_SIZE);
   const [selectedSourceUid, setSelectedSourceUid] = useState<string | null>(null);
   const [selectedSourceUids, setSelectedSourceUids] = useState<string[]>([]);
   const [deleteTargetDoc, setDeleteTargetDoc] = useState<ProjectDocumentRow | null>(null);
@@ -371,6 +377,10 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
   const [outputMarkdownUrl, setOutputMarkdownUrl] = useState<string | null>(null);
   const [outputHtmlUrl, setOutputHtmlUrl] = useState<string | null>(null);
   const [outputDoctagsUrl, setOutputDoctagsUrl] = useState<string | null>(null);
+  const [outputDoclingJsonLocators, setOutputDoclingJsonLocators] = useState<string[]>([]);
+  const [outputMarkdownLocators, setOutputMarkdownLocators] = useState<string[]>([]);
+  const [outputHtmlLocators, setOutputHtmlLocators] = useState<string[]>([]);
+  const [outputDoctagsLocators, setOutputDoctagsLocators] = useState<string[]>([]);
   const [outputDoclingJsonName, setOutputDoclingJsonName] = useState<string | null>(null);
   const [outputMarkdownName, setOutputMarkdownName] = useState<string | null>(null);
   const [outputHtmlName, setOutputHtmlName] = useState<string | null>(null);
@@ -382,6 +392,7 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
   const [middlePreviewTab, setMiddlePreviewTab] = useState<MiddlePreviewTab>('preview');
   const [testRightTab, setTestRightTab] = useState<TestRightTab>('preview');
   const [testBlocksToolbarHost, setTestBlocksToolbarHost] = useState<HTMLDivElement | null>(null);
+  const [pdfToolbarHost, setPdfToolbarHost] = useState<HTMLDivElement | null>(null);
   const [testBlocks, setTestBlocks] = useState<TestBlockCardRow[]>([]);
   const [testBlocksLoading, setTestBlocksLoading] = useState(false);
   const [testBlocksError, setTestBlocksError] = useState<string | null>(null);
@@ -405,7 +416,7 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
     defaultValue: true,
   });
   const isConfigCollapsed = isTestSurfacePage && configCollapseState === 'collapsed';
-  const isConfigHalf = isTransformTestSurface && configCollapseState === 'half';
+  const isConfigHalf = isTestSurfacePage && configCollapseState === 'half';
 
   const resizeStateRef = useRef<{ startX: number; startWidth: number } | null>(null);
   const pendingUploadedSelectionRef = useRef<string[] | null>(null);
@@ -555,7 +566,7 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
   }, [load, projectId]);
 
   useEffect(() => {
-    const totalPages = Math.max(1, Math.ceil(docs.length / PAGE_SIZE));
+    const totalPages = Math.max(1, Math.ceil(docs.length / docsPerPage));
     setPage((current) => Math.min(current, totalPages));
 
     const pendingUploadedSelection = pendingUploadedSelectionRef.current;
@@ -582,7 +593,7 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
     if (!exists) {
       setSelectedSourceUid(docs[0]?.source_uid ?? null);
     }
-  }, [docs, selectedSourceUid]);
+  }, [docs, docsPerPage, selectedSourceUid]);
 
   useEffect(() => {
     setSelectedSourceUids((prev) => {
@@ -594,11 +605,14 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
   }, [docs]);
 
 
-  const totalPages = useMemo(() => Math.max(1, Math.ceil(docs.length / PAGE_SIZE)), [docs.length]);
+  const totalPages = useMemo(() => Math.max(1, Math.ceil(docs.length / docsPerPage)), [docs.length, docsPerPage]);
   const pagedDocs = useMemo(() => {
-    const offset = (page - 1) * PAGE_SIZE;
-    return docs.slice(offset, offset + PAGE_SIZE);
-  }, [docs, page]);
+    const offset = (page - 1) * docsPerPage;
+    return docs.slice(offset, offset + docsPerPage);
+  }, [docs, docsPerPage, page]);
+  const hasDocs = docs.length > 0;
+  const docRangeStart = hasDocs ? (page - 1) * docsPerPage + 1 : 0;
+  const docRangeEnd = hasDocs ? Math.min(docs.length, page * docsPerPage) : 0;
   const selectedDoc = useMemo(
     () => docs.find((doc) => doc.source_uid === selectedSourceUid) ?? null,
     [docs, selectedSourceUid],
@@ -837,29 +851,70 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
       kind === 'docling'
         ? {
             url: outputDoclingJsonUrl,
+            locators: outputDoclingJsonLocators,
             filename: outputDoclingJsonName ?? 'output.docling.json',
           }
         : kind === 'markdown'
           ? {
               url: outputMarkdownUrl,
+              locators: outputMarkdownLocators,
               filename: outputMarkdownName ?? 'output.md',
             }
           : kind === 'html'
             ? {
                 url: outputHtmlUrl,
+                locators: outputHtmlLocators,
                 filename: outputHtmlName ?? 'output.html',
               }
             : {
                 url: outputDoctagsUrl,
+                locators: outputDoctagsLocators,
                 filename: outputDoctagsName ?? 'output.doctags',
               };
 
-    if (!output.url) return;
+    const setSignedUrlForKind = (signedUrl: string) => {
+      if (kind === 'docling') {
+        setOutputDoclingJsonUrl(signedUrl);
+        return;
+      }
+      if (kind === 'markdown') {
+        setOutputMarkdownUrl(signedUrl);
+        return;
+      }
+      if (kind === 'html') {
+        setOutputHtmlUrl(signedUrl);
+        return;
+      }
+      setOutputDoctagsUrl(signedUrl);
+    };
+
+    if (!output.url && output.locators.length === 0) {
+      setOutputsError(`Output artifact unavailable: ${output.filename}`);
+      return;
+    }
 
     setOutputsError(null);
     setOutputDownloadBusy(kind);
     try {
-      await downloadFromSignedUrl(output.url, output.filename);
+      let signedUrl = output.url;
+      if (!signedUrl) {
+        const resolved = await resolveSignedUrlForLocators(output.locators);
+        if (!resolved.url) {
+          throw new Error(resolved.error ?? 'Storage signed URL unavailable.');
+        }
+        signedUrl = resolved.url;
+        setSignedUrlForKind(signedUrl);
+      }
+
+      try {
+        await downloadFromSignedUrl(signedUrl, output.filename);
+      } catch (downloadErr) {
+        if (output.locators.length === 0) throw downloadErr;
+        const refreshed = await resolveSignedUrlForLocators(output.locators);
+        if (!refreshed.url || refreshed.url === signedUrl) throw downloadErr;
+        setSignedUrlForKind(refreshed.url);
+        await downloadFromSignedUrl(refreshed.url, output.filename);
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       setOutputsError(`Failed to download ${output.filename}: ${message}`);
@@ -868,12 +923,16 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
     }
   }, [
     outputDoclingJsonName,
+    outputDoclingJsonLocators,
     outputDoclingJsonUrl,
     outputDoctagsName,
+    outputDoctagsLocators,
     outputDoctagsUrl,
     outputHtmlName,
+    outputHtmlLocators,
     outputHtmlUrl,
     outputMarkdownName,
+    outputMarkdownLocators,
     outputMarkdownUrl,
   ]);
 
@@ -887,6 +946,10 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
       setOutputMarkdownUrl(null);
       setOutputHtmlUrl(null);
       setOutputDoctagsUrl(null);
+      setOutputDoclingJsonLocators([]);
+      setOutputMarkdownLocators([]);
+      setOutputHtmlLocators([]);
+      setOutputDoctagsLocators([]);
       setOutputDoclingJsonName(null);
       setOutputMarkdownName(null);
       setOutputHtmlName(null);
@@ -942,6 +1005,11 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
         toArtifactLocator(selectedDoc.conv_locator, 'doctags'),
         toArtifactLocator(selectedDoc.source_locator, 'doctags'),
       ]);
+
+      setOutputDoclingJsonLocators(doclingLocators);
+      setOutputMarkdownLocators(markdownLocators);
+      setOutputHtmlLocators(htmlLocators);
+      setOutputDoctagsLocators(doctagsLocators);
 
       setOutputDoclingJsonName(getFilenameFromLocator(representationLocators.get('doclingdocument_json') ?? doclingLocators[0] ?? null));
       setOutputMarkdownName(getFilenameFromLocator(representationLocators.get('markdown_bytes') ?? markdownLocators[0] ?? null));
@@ -1089,10 +1157,10 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
       if (configCollapseState !== 'full') setConfigCollapseState('full');
       return;
     }
-    if (!isTransformTestSurface && configCollapseState === 'half') {
+    if (!isTransformTestSurface && !isShellGrid && configCollapseState === 'half') {
       setConfigCollapseState('full');
     }
-  }, [configCollapseState, isTestSurfacePage, isTransformTestSurface]);
+  }, [configCollapseState, isShellGrid, isTestSurfacePage, isTransformTestSurface]);
 
   useEffect(() => {
     if (isTransformTestSurface) return;
@@ -1102,30 +1170,32 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
   }, [isTransformTestSurface, testRightTab]);
 
   const handleExplorerResizeStart = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
+    if (isShellGrid) return;
     if (isExplorerCollapsed) return;
     event.preventDefault();
     resizeStateRef.current = { startX: event.clientX, startWidth: explorerWidth };
     setActiveResizer('explorer');
-  }, [explorerWidth, isExplorerCollapsed]);
+  }, [explorerWidth, isExplorerCollapsed, isShellGrid]);
 
   const handleConfigResizeStart = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
+    if (isShellGrid) return;
     if (isTestSurfacePage && configCollapseState !== 'full') return;
     event.preventDefault();
     resizeStateRef.current = { startX: event.clientX, startWidth: configWidth };
     setActiveResizer('config');
-  }, [configCollapseState, configWidth, isTestSurfacePage]);
+  }, [configCollapseState, configWidth, isShellGrid, isTestSurfacePage]);
 
   const handleConfigToggle = useCallback(() => {
     if (!isTestSurfacePage) return;
     setConfigCollapseState((current) => {
-      if (isTransformTestSurface) {
+      if (isTransformTestSurface || isShellGrid) {
         if (current === 'full') return 'half';
         if (current === 'half') return 'collapsed';
         return 'full';
       }
       return current === 'collapsed' ? 'full' : 'collapsed';
     });
-  }, [isTestSurfacePage, isTransformTestSurface]);
+  }, [isShellGrid, isTestSurfacePage, isTransformTestSurface]);
 
   useEffect(() => {
     if (!activeResizer) return;
@@ -1181,22 +1251,31 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
   if (!project) return <ErrorAlert message={error ?? 'Project not found'} />;
 
   const isTestSurface = isTestSurfacePage;
-  const shouldRouteCollapsedSpaceToConfig = isTestSurface || (isExtractMode && extractConfigView === 'Schema');
+  const parseExplorerWidth = isExplorerCollapsed ? EXPLORER_WIDTH_COLLAPSED : EXPLORER_WIDTH_DEFAULT;
+  const parseConfigWidth = isConfigCollapsed
+    ? CONFIG_WIDTH_COLLAPSED
+    : isConfigHalf
+      ? CONFIG_WIDTH_HALF
+      : CONFIG_WIDTH_DEFAULT;
+  const shouldRouteCollapsedSpaceToConfig = !isShellGrid && (isTestSurface || (isExtractMode && extractConfigView === 'Schema'));
   const navCompactionExplorerBoost = desktopNavOpened ? 0 : (isTestSurface ? 0 : 20);
   const navCompactionConfigBoost = desktopNavOpened ? 0 : (isTestSurface ? 0 : 130);
   const expandedExplorerWidth = explorerWidth + navCompactionExplorerBoost;
   const collapsedDelta = isExplorerCollapsed
     ? Math.max(0, expandedExplorerWidth - EXPLORER_WIDTH_COLLAPSED)
     : 0;
-  const effectiveExplorerWidth = isExplorerCollapsed ? EXPLORER_WIDTH_COLLAPSED : expandedExplorerWidth;
+  const nonParseExplorerWidth = isExplorerCollapsed ? EXPLORER_WIDTH_COLLAPSED : expandedExplorerWidth;
   const expandedConfigWidth = configWidth + navCompactionConfigBoost + (shouldRouteCollapsedSpaceToConfig ? collapsedDelta : 0);
   const halfConfigWidth = Math.max(CONFIG_WIDTH_COLLAPSED, Math.round(expandedConfigWidth * 0.5));
-  const effectiveConfigWidth = isConfigCollapsed
+  const nonParseConfigWidth = isConfigCollapsed
     ? CONFIG_WIDTH_COLLAPSED
     : isConfigHalf
       ? halfConfigWidth
       : expandedConfigWidth;
-  const configToggleLabel = isTransformTestSurface
+  const effectiveExplorerWidth = isShellGrid ? parseExplorerWidth : nonParseExplorerWidth;
+  const effectiveConfigWidth = isShellGrid ? parseConfigWidth : nonParseConfigWidth;
+  const usesThreeStateConfigCycle = isTransformTestSurface || isShellGrid;
+  const configToggleLabel = usesThreeStateConfigCycle
     ? (configCollapseState === 'full'
       ? 'Collapse Configuration column to 50%'
       : configCollapseState === 'half'
@@ -1216,6 +1295,11 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
   const isRightBlocksTab = isTestSurface && testRightTab === 'blocks';
   const isRightGridTab = isTransformTestSurface && testRightTab === 'grid';
   const isRightOutputsTab = isTestSurface && testRightTab === 'outputs';
+  const hasDoclingOutput = outputDoclingJsonLocators.length > 0 || !!outputDoclingJsonUrl;
+  const hasMarkdownOutput = outputMarkdownLocators.length > 0 || !!outputMarkdownUrl;
+  const hasHtmlOutput = outputHtmlLocators.length > 0 || !!outputHtmlUrl;
+  const hasDoctagsOutput = outputDoctagsLocators.length > 0 || !!outputDoctagsUrl;
+  const shouldShowPdfToolbarHost = isRightPreviewTab && previewKind === 'pdf';
   const showMetadataOverlayToggle = (
     isRightMetadataTab
     && !!selectedDoc
@@ -1240,21 +1324,18 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
       ];
   const middleTabsControl = (
     isTestSurface ? (
-      <Group gap={12} wrap="nowrap">
-        {testRightTabOptions.map((option) => (
-          <Text
-            key={option.value}
-            size="sm"
-            fw={testRightTab === option.value ? 700 : 600}
-            c={testRightTab === option.value ? undefined : 'dimmed'}
-            className={`parse-middle-tab${testRightTab === option.value ? ' is-active' : ''}`}
-            onClick={() => setTestRightTab(option.value as TestRightTab)}
-            style={{ cursor: 'pointer', userSelect: 'none' }}
-          >
-            {option.label}
-          </Text>
-        ))}
-      </Group>
+      <Select
+        size="xs"
+        w={152}
+        data={testRightTabOptions}
+        value={testRightTab}
+        allowDeselect={false}
+        aria-label="Select right panel view"
+        onChange={(value) => {
+          if (!value) return;
+          setTestRightTab(value as TestRightTab);
+        }}
+      />
     ) : (
       <>
         <Text
@@ -1280,139 +1361,306 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
       </>
     )
   );
+  const layoutClassName = `parse-playground-layout${surface === 'test' ? ' parse-playground-layout--test' : ''}${isShellGrid ? ` schema-layout-test-page${isExplorerCollapsed ? ' is-left-collapsed' : ''}` : ''}`;
+  const explorerClassName = `parse-playground-explorer${isExplorerCollapsed ? ' is-collapsed' : ''}${isShellGrid ? ' schema-layout-test-explorer' : ''}`;
+  const rightPaneClassName = `parse-playground-right${isExtractMode && !isShellGrid ? ' is-extract' : ''}${isTestSurfacePage && isConfigCollapsed ? ' is-collapsed' : ''}${isShellGrid ? ` schema-layout-test-right${isConfigHalf ? ' is-half' : ''}` : ''}`;
+  const middleTabsClassName = `parse-middle-view-tabs${isShellGrid ? ' schema-layout-middle-header' : ''}`;
+  const parseConfigRootClassName = `parse-config-root${showCenterResultsList ? ' parse-results-side-root' : ''}${isShellGrid ? ' schema-layout-test-config-root' : ''}`;
+  const parseConfigScrollClassName = `parse-config-scroll${isShellGrid ? ' schema-layout-test-config-scroll' : ''}`;
+  const extractConfigRootClassName = `extract-config-root${isShellGrid ? ' schema-layout-test-config-root' : ''}`;
+  const extractConfigScrollClassName = isShellGrid ? 'schema-layout-test-config-scroll' : undefined;
+  const parseConfigViewTabs = (
+    <Group gap={10} wrap="nowrap" className="schema-layout-right-tabs">
+      <Text
+        size="sm"
+        fw={parseConfigView === 'Basic' ? 700 : 600}
+        c={parseConfigView === 'Basic' ? undefined : 'dimmed'}
+        className={`parse-middle-tab${parseConfigView === 'Basic' ? ' is-active' : ''}`}
+        onClick={() => setParseConfigView('Basic')}
+        style={{ cursor: 'pointer', userSelect: 'none' }}
+      >
+        Basic
+      </Text>
+      <Text
+        size="sm"
+        fw={parseConfigView === 'Advanced' ? 700 : 600}
+        c={parseConfigView === 'Advanced' ? undefined : 'dimmed'}
+        className={`parse-middle-tab${parseConfigView === 'Advanced' ? ' is-active' : ''}`}
+        onClick={() => setParseConfigView('Advanced')}
+        style={{ cursor: 'pointer', userSelect: 'none' }}
+      >
+        Advanced
+      </Text>
+    </Group>
+  );
+  const extractConfigViewTabs = (
+    <Group gap={10} wrap="nowrap" className="schema-layout-right-tabs">
+      <Text
+        size="sm"
+        fw={extractConfigView === 'Basic' ? 700 : 600}
+        c={extractConfigView === 'Basic' ? undefined : 'dimmed'}
+        className={`parse-middle-tab${extractConfigView === 'Basic' ? ' is-active' : ''}`}
+        onClick={() => setExtractConfigView('Basic')}
+        style={{ cursor: 'pointer', userSelect: 'none' }}
+      >
+        Basic
+      </Text>
+      <Text
+        size="sm"
+        fw={extractConfigView === 'Advanced' ? 700 : 600}
+        c={extractConfigView === 'Advanced' ? undefined : 'dimmed'}
+        className={`parse-middle-tab${extractConfigView === 'Advanced' ? ' is-active' : ''}`}
+        onClick={() => setExtractConfigView('Advanced')}
+        style={{ cursor: 'pointer', userSelect: 'none' }}
+      >
+        Advanced
+      </Text>
+      <Text
+        size="sm"
+        fw={extractConfigView === 'Schema' ? 700 : 600}
+        c={extractConfigView === 'Schema' ? undefined : 'dimmed'}
+        className={`parse-middle-tab${extractConfigView === 'Schema' ? ' is-active' : ''}`}
+        onClick={() => setExtractConfigView('Schema')}
+        style={{ cursor: 'pointer', userSelect: 'none' }}
+      >
+        Schema
+      </Text>
+    </Group>
+  );
+  const explorerBodyContent = (
+    <>
+      <Box className="parse-playground-upload">
+          <ProjectParseUppyUploader
+            projectId={project.project_id}
+            ingestMode="upload_only"
+            compactUi
+            hideHeader={isShellGrid}
+            onBatchUploaded={handleBatchUploaded}
+            height={240}
+          />
+      </Box>
+
+      <Box className="parse-playground-docs">
+          <Stack
+            gap="xs"
+            style={{ minHeight: 0, height: '100%' }}
+            className={isShellGrid ? 'schema-layout-left-scroll' : undefined}
+          >
+          <Group justify="space-between" align="center" wrap="nowrap" className="parse-docs-toolbar">
+            <Text
+              size="xs"
+              c="dimmed"
+              style={{ cursor: 'pointer', userSelect: 'none' }}
+              onClick={() => toggleAllPagedDocSelection(!allPagedSelected)}
+            >
+              {allPagedSelected || somePagedSelected ? 'Deselect all' : 'Select all'}
+            </Text>
+          </Group>
+
+          {docs.length === 0 ? (
+            <Center py="lg">
+              <Text size="sm" c="dimmed">No documents yet.</Text>
+            </Center>
+          ) : (
+            <>
+              <Box className="parse-doc-card-list">
+                {pagedDocs.map((doc) => {
+                  const selected = doc.source_uid === selectedSourceUid;
+                  const checked = selectedSourceUidSet.has(doc.source_uid);
+                  const statusMeta = DOC_STATUS_META[doc.status];
+                  return (
+                    <Box
+                      key={doc.source_uid}
+                      className={`parse-doc-card${selected ? ' is-active' : ''}`}
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => setSelectedSourceUid(doc.source_uid)}
+                      onKeyDown={(event) => {
+                        if (event.key !== 'Enter' && event.key !== ' ') return;
+                        event.preventDefault();
+                        setSelectedSourceUid(doc.source_uid);
+                      }}
+                    >
+                      <Checkbox
+                        checked={checked}
+                        size="xs"
+                        styles={docSelectorCheckboxStyles}
+                        aria-label={`Select ${doc.doc_title}`}
+                        onClick={(event) => event.stopPropagation()}
+                        onChange={(event) => toggleDocSelection(doc.source_uid, event.currentTarget.checked)}
+                      />
+                      <Text size="xs" fw={selected ? 700 : 600} className="parse-doc-card-name" title={doc.doc_title}>
+                        {doc.doc_title}
+                      </Text>
+                      <Text size="xs" className="parse-doc-card-format">{getDocumentFormat(doc)}</Text>
+                      <Text size="xs" className="parse-doc-card-size">{formatBytes(doc.source_filesize)}</Text>
+                      <Group
+                        gap={6}
+                        wrap="nowrap"
+                        className="parse-doc-card-status"
+                        aria-label={`Status: ${statusMeta.label}`}
+                        title={statusMeta.label}
+                      >
+                        <span className={`parse-doc-card-status-dot is-${statusMeta.tone}`} />
+                      </Group>
+                      <ActionIcon
+                        size="sm"
+                        variant="subtle"
+                        color="red"
+                        aria-label={`Delete ${doc.doc_title}`}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setDeleteTargetDoc(doc);
+                        }}
+                      >
+                        <IconTrash size={14} />
+                      </ActionIcon>
+                    </Box>
+                  );
+                })}
+              </Box>
+              {isShellGrid ? (
+                <Group justify="space-between" align="center" wrap="nowrap" className="schema-layout-docs-footer">
+                  <Text size="xs" c="dimmed">{docRangeStart}-{docRangeEnd} of {docs.length}</Text>
+                  <Group gap={8} align="center" wrap="nowrap">
+                    <Group gap={4} align="center" wrap="nowrap" className="schema-layout-docs-size">
+                      <Text size="xs" c="dimmed">Rows</Text>
+                      <Group gap={8} wrap="nowrap" className="schema-layout-docs-size-tabs">
+                        {DOCS_PER_PAGE_OPTIONS.map((sizeOption) => (
+                          <Text
+                            key={sizeOption}
+                            size="xs"
+                            fw={docsPerPage === sizeOption ? 700 : 600}
+                            c={docsPerPage === sizeOption ? undefined : 'dimmed'}
+                            className={`parse-middle-tab${docsPerPage === sizeOption ? ' is-active' : ''}`}
+                            onClick={() => {
+                              setDocsPerPage(sizeOption);
+                              setPage(1);
+                            }}
+                            style={{ cursor: 'pointer', userSelect: 'none' }}
+                          >
+                            {sizeOption}
+                          </Text>
+                        ))}
+                      </Group>
+                    </Group>
+                    <Pagination
+                      size="xs"
+                      total={totalPages}
+                      value={page}
+                      onChange={setPage}
+                      siblings={0}
+                      boundaries={1}
+                      className="parse-docs-pagination"
+                    />
+                  </Group>
+                </Group>
+              ) : (
+                totalPages > 1 && (
+                  <Group justify="center" className="parse-docs-pagination-wrap">
+                    <Pagination
+                      value={page}
+                      onChange={setPage}
+                      total={totalPages}
+                      siblings={1}
+                      boundaries={1}
+                      size="xs"
+                      className="parse-docs-pagination"
+                      withControls={false}
+                      withEdges={false}
+                    />
+                  </Group>
+                )
+              )}
+            </>
+          )}
+        </Stack>
+      </Box>
+    </>
+  );
   return (
     <>
       {error && <ErrorAlert message={error} />}
 
       <Box
-        className={`parse-playground-layout${surface === 'test' ? ' parse-playground-layout--test' : ''}`}
+        className={layoutClassName}
         data-surface={surface}
         style={layoutStyle}
       >
-        <Box className={`parse-playground-explorer${isExplorerCollapsed ? ' is-collapsed' : ''}`}>
-          <Box
-            className={`parse-playground-resizer parse-playground-resizer-explorer${activeResizer === 'explorer' ? ' is-active' : ''}`}
-            role="separator"
-            aria-orientation="vertical"
-            aria-label="Resize documents pane"
-            onPointerDown={handleExplorerResizeStart}
-          />
-          <ActionIcon
-            size="sm"
-            variant="subtle"
-            className="parse-explorer-collapse-toggle"
-            aria-label={isExplorerCollapsed ? 'Expand Add Documents column' : 'Collapse Add Documents column'}
-            title={isExplorerCollapsed ? 'Expand Add Documents column' : 'Collapse Add Documents column'}
-            onClick={() => setIsExplorerCollapsed((current) => !current)}
-          >
-            {isExplorerCollapsed ? <IconChevronRight size={16} /> : <IconChevronLeft size={16} />}
-          </ActionIcon>
-
-          <Box className="parse-playground-upload">
-            <ProjectParseUppyUploader
-              projectId={project.project_id}
-              ingestMode="upload_only"
-              compactUi
-              onBatchUploaded={handleBatchUploaded}
-              height={240}
+        <Box className={explorerClassName}>
+          {!isShellGrid && (
+            <Box
+              className={`parse-playground-resizer parse-playground-resizer-explorer${activeResizer === 'explorer' ? ' is-active' : ''}`}
+              role="separator"
+              aria-orientation="vertical"
+              aria-label="Resize documents pane"
+              onPointerDown={handleExplorerResizeStart}
             />
-          </Box>
+          )}
+          {isShellGrid ? (
+            <Group justify={isExplorerCollapsed ? 'center' : 'space-between'} wrap="nowrap" className="schema-layout-left-header">
+              {!isExplorerCollapsed ? (
+                <Text size="sm" fw={700}>Documents</Text>
+              ) : null}
+              <ActionIcon
+                size="sm"
+                variant="subtle"
+                className="schema-layout-snap-btn"
+                aria-label={isExplorerCollapsed ? 'Expand documents column' : 'Collapse documents column'}
+                title={isExplorerCollapsed ? 'Expand documents column' : 'Collapse documents column'}
+                onClick={() => setIsExplorerCollapsed((current) => !current)}
+              >
+                {isExplorerCollapsed ? <IconChevronRight size={14} /> : <IconChevronLeft size={14} />}
+              </ActionIcon>
+            </Group>
+          ) : (
+            <ActionIcon
+              size="sm"
+              variant="subtle"
+              className="parse-explorer-collapse-toggle"
+              aria-label={isExplorerCollapsed ? 'Expand Add Documents column' : 'Collapse Add Documents column'}
+              title={isExplorerCollapsed ? 'Expand Add Documents column' : 'Collapse Add Documents column'}
+              onClick={() => setIsExplorerCollapsed((current) => !current)}
+            >
+              {isExplorerCollapsed ? <IconChevronRight size={16} /> : <IconChevronLeft size={16} />}
+            </ActionIcon>
+          )}
 
-          <Box className="parse-playground-docs">
-            <Stack gap="xs" style={{ minHeight: 0, height: '100%' }}>
-              <Group justify="space-between" align="center" wrap="nowrap" className="parse-docs-toolbar">
-                <Text
-                  size="xs"
-                  c="dimmed"
-                  style={{ cursor: 'pointer', userSelect: 'none' }}
-                  onClick={() => toggleAllPagedDocSelection(!allPagedSelected)}
+          {isShellGrid && isExplorerCollapsed ? (
+            <Box
+              className="schema-layout-left-collapsed-body"
+              role="button"
+              tabIndex={0}
+              onClick={() => setIsExplorerCollapsed(false)}
+              onKeyDown={(event) => {
+                if (event.key !== 'Enter' && event.key !== ' ') return;
+                event.preventDefault();
+                setIsExplorerCollapsed(false);
+              }}
+            >
+              <Group gap={8} wrap="nowrap" className="schema-layout-collapsed-rail-content">
+                <ActionIcon
+                  size="sm"
+                  variant="subtle"
+                  className="schema-layout-snap-btn"
+                  aria-label="Expand documents column"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    setIsExplorerCollapsed(false);
+                  }}
                 >
-                  {allPagedSelected || somePagedSelected ? 'Deselect all' : 'Select all'}
-                </Text>
+                  <IconChevronRight size={14} />
+                </ActionIcon>
+                <Text size="xs" c="dimmed" className="schema-layout-vertical-label">DOCS</Text>
               </Group>
-
-              {docs.length === 0 ? (
-                <Center py="lg">
-                  <Text size="sm" c="dimmed">No documents yet.</Text>
-                </Center>
-              ) : (
-                <>
-                  <Box className="parse-doc-card-list">
-                    {pagedDocs.map((doc) => {
-                      const selected = doc.source_uid === selectedSourceUid;
-                      const checked = selectedSourceUidSet.has(doc.source_uid);
-                      const statusMeta = DOC_STATUS_META[doc.status];
-                      return (
-                        <Box
-                          key={doc.source_uid}
-                          className={`parse-doc-card${selected ? ' is-active' : ''}`}
-                          role="button"
-                          tabIndex={0}
-                          onClick={() => setSelectedSourceUid(doc.source_uid)}
-                          onKeyDown={(event) => {
-                            if (event.key !== 'Enter' && event.key !== ' ') return;
-                            event.preventDefault();
-                            setSelectedSourceUid(doc.source_uid);
-                          }}
-                        >
-                          <Checkbox
-                            checked={checked}
-                            size="xs"
-                            styles={docSelectorCheckboxStyles}
-                            aria-label={`Select ${doc.doc_title}`}
-                            onClick={(event) => event.stopPropagation()}
-                            onChange={(event) => toggleDocSelection(doc.source_uid, event.currentTarget.checked)}
-                          />
-                          <Text size="xs" fw={selected ? 700 : 600} className="parse-doc-card-name" title={doc.doc_title}>
-                            {doc.doc_title}
-                          </Text>
-                          <Text size="xs" className="parse-doc-card-format">{getDocumentFormat(doc)}</Text>
-                          <Text size="xs" className="parse-doc-card-size">{formatBytes(doc.source_filesize)}</Text>
-                          <Group
-                            gap={6}
-                            wrap="nowrap"
-                            className="parse-doc-card-status"
-                            aria-label={`Status: ${statusMeta.label}`}
-                            title={statusMeta.label}
-                          >
-                            <span className={`parse-doc-card-status-dot is-${statusMeta.tone}`} />
-                          </Group>
-                          <ActionIcon
-                            size="sm"
-                            variant="subtle"
-                            color="red"
-                            aria-label={`Delete ${doc.doc_title}`}
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              setDeleteTargetDoc(doc);
-                            }}
-                          >
-                            <IconTrash size={14} />
-                          </ActionIcon>
-                        </Box>
-                      );
-                    })}
-
-                    {totalPages > 1 && (
-                      <Group justify="center" className="parse-docs-pagination-wrap">
-                        <Pagination
-                          value={page}
-                          onChange={setPage}
-                          total={totalPages}
-                          siblings={1}
-                          boundaries={1}
-                          size="xs"
-                          className="parse-docs-pagination"
-                          withControls={false}
-                          withEdges={false}
-                        />
-                      </Group>
-                    )}
-                  </Box>
-                </>
-              )}
-            </Stack>
-          </Box>
+            </Box>
+          ) : (
+            isShellGrid ? (
+              <Box className="schema-layout-left-body">
+                {explorerBodyContent}
+              </Box>
+            ) : explorerBodyContent
+          )}
         </Box>
         <Box className="parse-playground-work">
           <Box className="parse-playground-preview">
@@ -1420,7 +1668,7 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
               <Group
                 justify={isRightGridTab ? 'flex-start' : 'space-between'}
                 align="center"
-                className="parse-middle-view-tabs"
+                className={middleTabsClassName}
                 wrap="nowrap"
               >
                 <Group gap={12} align="center" wrap="nowrap">
@@ -1428,6 +1676,9 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
                 </Group>
                 {isRightGridTab && (
                   <Box className="parse-middle-grid-toolbar-host" ref={setTestBlocksToolbarHost} />
+                )}
+                {shouldShowPdfToolbarHost && (
+                  <Box className="schema-layout-middle-toolbar-host" ref={setPdfToolbarHost} />
                 )}
                 {!isTransformMode && isRightBlocksTab && testBlocks.length > 0 && (
                   <Text size="xs" c="dimmed">{testBlocks.length} blocks</Text>
@@ -1485,6 +1736,8 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
                         key={`${selectedDoc.source_uid}:${previewUrl}`}
                         title={selectedDoc.doc_title}
                         url={previewUrl}
+                        hideToolbar={!pdfToolbarHost}
+                        toolbarPortalTarget={pdfToolbarHost}
                       />
                     )}
 
@@ -1737,7 +1990,7 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
                         <Stack gap="xs" p="sm">
                           <Text size="sm" fw={700}>Output Files</Text>
                           <Group justify="space-between" wrap="nowrap">
-                            <Text size="sm" c={outputDoclingJsonUrl ? undefined : 'dimmed'}>
+                            <Text size="sm" c={hasDoclingOutput ? undefined : 'dimmed'}>
                               {outputDoclingJsonName ?? '[docling json unavailable]'}
                             </Text>
                             <Button
@@ -1745,13 +1998,13 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
                               variant="light"
                               onClick={() => void handleOutputDownload('docling')}
                               loading={outputDownloadBusy === 'docling'}
-                              disabled={!outputDoclingJsonUrl}
+                              disabled={!hasDoclingOutput}
                             >
                               Download
                             </Button>
                           </Group>
                           <Group justify="space-between" wrap="nowrap">
-                            <Text size="sm" c={outputMarkdownUrl ? undefined : 'dimmed'}>
+                            <Text size="sm" c={hasMarkdownOutput ? undefined : 'dimmed'}>
                               {outputMarkdownName ?? '[markdown unavailable]'}
                             </Text>
                             <Button
@@ -1759,13 +2012,13 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
                               variant="light"
                               onClick={() => void handleOutputDownload('markdown')}
                               loading={outputDownloadBusy === 'markdown'}
-                              disabled={!outputMarkdownUrl}
+                              disabled={!hasMarkdownOutput}
                             >
                               Download
                             </Button>
                           </Group>
                           <Group justify="space-between" wrap="nowrap">
-                            <Text size="sm" c={outputHtmlUrl ? undefined : 'dimmed'}>
+                            <Text size="sm" c={hasHtmlOutput ? undefined : 'dimmed'}>
                               {outputHtmlName ?? '[html unavailable]'}
                             </Text>
                             <Button
@@ -1773,13 +2026,13 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
                               variant="light"
                               onClick={() => void handleOutputDownload('html')}
                               loading={outputDownloadBusy === 'html'}
-                              disabled={!outputHtmlUrl}
+                              disabled={!hasHtmlOutput}
                             >
                               Download
                             </Button>
                           </Group>
                           <Group justify="space-between" wrap="nowrap">
-                            <Text size="sm" c={outputDoctagsUrl ? undefined : 'dimmed'}>
+                            <Text size="sm" c={hasDoctagsOutput ? undefined : 'dimmed'}>
                               {outputDoctagsName ?? '[doctags unavailable]'}
                             </Text>
                             <Button
@@ -1787,7 +2040,7 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
                               variant="light"
                               onClick={() => void handleOutputDownload('doctags')}
                               loading={outputDownloadBusy === 'doctags'}
-                              disabled={!outputDoctagsUrl}
+                              disabled={!hasDoctagsOutput}
                             >
                               Download
                             </Button>
@@ -1826,60 +2079,102 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
           </Box>
         </Box>
 
-        <Box className={`parse-playground-right${isExtractMode ? ' is-extract' : ''}${isTestSurfacePage && isConfigCollapsed ? ' is-collapsed' : ''}`}>
-          <Box
-            className={`parse-playground-resizer parse-playground-resizer-config${activeResizer === 'config' ? ' is-active' : ''}`}
-            role="separator"
-            aria-orientation="vertical"
-            aria-label="Resize config pane"
-            onPointerDown={handleConfigResizeStart}
-          />
-          {isTestSurfacePage && (
-            <ActionIcon
-              size="sm"
-              variant="subtle"
-              className="parse-config-collapse-toggle"
-              aria-label={configToggleLabel}
-              title={configToggleLabel}
-              onClick={handleConfigToggle}
-            >
-              {isConfigCollapsed ? <IconChevronRight size={16} /> : <IconChevronLeft size={16} />}
-            </ActionIcon>
+        <Box className={rightPaneClassName}>
+          {!isShellGrid && (
+            <Box
+              className={`parse-playground-resizer parse-playground-resizer-config${activeResizer === 'config' ? ' is-active' : ''}`}
+              role="separator"
+              aria-orientation="vertical"
+              aria-label="Resize config pane"
+              onPointerDown={handleConfigResizeStart}
+            />
           )}
-          {isTestSurfacePage && isConfigCollapsed ? null : (isExtractMode ? (
-            <Stack gap={0} className="extract-config-root">
-              <Group justify="space-between" wrap="nowrap" className="extract-config-top-tabs">
-                <Text size="sm" fw={700}>Build</Text>
-                <Group gap={6} wrap="nowrap" className="extract-config-run-btn">
-                  <ActionIcon
-                    size="sm"
-                    variant="transparent"
-                    aria-label="Run extract"
-                    title="Run extract"
-                  >
-                    <IconPlayerPlay size={17} />
-                  </ActionIcon>
-                </Group>
-              </Group>
-
-                <Group justify="space-between" wrap="nowrap" className="extract-config-subhead">
-                  <Group gap={6} wrap="nowrap">
-                    <Text fw={700} size="sm">Configuration</Text>
-                    <IconInfoCircle size={14} stroke={1.8} className="extract-config-info-icon" />
+          {isShellGrid ? (
+            <Group justify={isConfigCollapsed ? 'center' : 'space-between'} wrap="nowrap" className="schema-layout-right-header">
+              {!isConfigCollapsed ? (
+                <Text size="sm" fw={700}>Configuration</Text>
+              ) : null}
+              <ActionIcon
+                size="sm"
+                variant="subtle"
+                className="schema-layout-snap-btn"
+                aria-label={configToggleLabel}
+                title={configToggleLabel}
+                onClick={handleConfigToggle}
+              >
+                {isConfigCollapsed ? <IconChevronRight size={14} /> : <IconChevronLeft size={14} />}
+              </ActionIcon>
+            </Group>
+          ) : (
+            isTestSurfacePage && (
+              <ActionIcon
+                size="sm"
+                variant="subtle"
+                className="parse-config-collapse-toggle"
+                aria-label={configToggleLabel}
+                title={configToggleLabel}
+                onClick={handleConfigToggle}
+              >
+                {isConfigCollapsed ? <IconChevronRight size={16} /> : <IconChevronLeft size={16} />}
+              </ActionIcon>
+            )
+          )}
+          {isTestSurfacePage && isConfigCollapsed
+            ? (isShellGrid ? <Box className="schema-layout-right-collapsed-body" /> : null)
+            : (isExtractMode ? (
+            <Stack gap={0} className={extractConfigRootClassName}>
+              {isShellGrid ? (
+                <Group justify="space-between" gap={10} wrap="nowrap" className="schema-layout-right-controls">
+                  {extractConfigViewTabs}
+                  <Group gap={6} wrap="nowrap" className="parse-config-run-btn">
+                    <ActionIcon
+                      size="sm"
+                      variant="transparent"
+                      aria-label="Run extract"
+                      title="Run extract"
+                    >
+                      <IconPlayerPlay size={17} />
+                    </ActionIcon>
                   </Group>
-                  <SegmentedControl
-                    value={extractConfigView}
-                    size="xs"
-                    radius="md"
-                    className="extract-config-view-switch"
-                    data={[
-                      { label: 'Basic', value: 'Basic' },
-                      { label: 'Advanced', value: 'Advanced' },
-                      { label: 'Schema', value: 'Schema' },
-                    ]}
-                    onChange={(value) => setExtractConfigView(value as ExtractConfigView)}
-                  />
                 </Group>
+              ) : (
+                <>
+                  <Group justify="space-between" wrap="nowrap" className="extract-config-top-tabs">
+                    <Text size="sm" fw={700}>Build</Text>
+                    <Group gap={6} wrap="nowrap" className="extract-config-run-btn">
+                      <ActionIcon
+                        size="sm"
+                        variant="transparent"
+                        aria-label="Run extract"
+                        title="Run extract"
+                      >
+                        <IconPlayerPlay size={17} />
+                      </ActionIcon>
+                    </Group>
+                  </Group>
+
+                  <Group justify="space-between" wrap="nowrap" className="extract-config-subhead">
+                    <Group gap={6} wrap="nowrap">
+                      <Text fw={700} size="sm">Configuration</Text>
+                      <IconInfoCircle size={14} stroke={1.8} className="extract-config-info-icon" />
+                    </Group>
+                    <SegmentedControl
+                      value={extractConfigView}
+                      size="xs"
+                      radius="md"
+                      className="extract-config-view-switch"
+                      data={[
+                        { label: 'Basic', value: 'Basic' },
+                        { label: 'Advanced', value: 'Advanced' },
+                        { label: 'Schema', value: 'Schema' },
+                      ]}
+                      onChange={(value) => setExtractConfigView(value as ExtractConfigView)}
+                    />
+                  </Group>
+                </>
+              )}
+
+              <Stack gap="sm" className={extractConfigScrollClassName}>
 
               {extractConfigView === 'Basic' && (
                 <>
@@ -2177,51 +2472,25 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
                 </>
               )}
 
+              </Stack>
             </Stack>
-          ) : isTransformMode ? (
+            ) : isTransformMode ? (
             <Stack gap={0} className="parse-config-root">
-              <Group
-                justify="space-between"
-                wrap="nowrap"
-                className="parse-config-top-tabs"
-              >
-                <Text size="sm" fw={700}>Configuration</Text>
-              </Group>
+              {!isShellGrid && (
+                <Group
+                  justify="space-between"
+                  wrap="nowrap"
+                  className="parse-config-top-tabs"
+                >
+                  <Text size="sm" fw={700}>Configuration</Text>
+                </Group>
+              )}
             </Stack>
-          ) : (
-            <Stack gap={0} className={`parse-config-root${showCenterResultsList ? ' parse-results-side-root' : ''}`}>
-              <Group
-                justify="space-between"
-                wrap="nowrap"
-                className={`parse-config-top-tabs${showCenterConfig ? ' parse-config-top-tabs--with-subhead' : ''}`}
-              >
-                {isTestSurface ? (
-                  <Text size="sm" fw={700}>Build</Text>
-                ) : (
-                  <Group gap={12} wrap="nowrap">
-                    <Text
-                      size="sm"
-                      fw={middlePreviewTab !== 'results' ? 700 : 600}
-                      c={middlePreviewTab !== 'results' ? undefined : 'dimmed'}
-                      className={`parse-middle-tab${middlePreviewTab !== 'results' ? ' is-active' : ''}`}
-                      onClick={() => setMiddlePreviewTab('preview')}
-                      style={{ cursor: 'pointer', userSelect: 'none' }}
-                    >
-                      Build
-                    </Text>
-                    <Text
-                      size="sm"
-                      fw={middlePreviewTab === 'results' ? 700 : 600}
-                      c={middlePreviewTab === 'results' ? undefined : 'dimmed'}
-                      className={`parse-middle-tab${middlePreviewTab === 'results' ? ' is-active' : ''}`}
-                      onClick={() => setMiddlePreviewTab('results')}
-                      style={{ cursor: 'pointer', userSelect: 'none' }}
-                    >
-                      Results
-                    </Text>
-                  </Group>
-                )}
-                {showCenterConfig && (
+            ) : (
+            <Stack gap={0} className={parseConfigRootClassName}>
+              {isShellGrid ? (
+                <Group justify="space-between" gap={10} wrap="nowrap" className="schema-layout-right-controls">
+                  {parseConfigViewTabs}
                   <Group gap={6} wrap="nowrap" className="parse-config-run-btn">
                     <ActionIcon
                       size="sm"
@@ -2242,13 +2511,68 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
                       <IconPlayerPlay size={17} />
                     </ActionIcon>
                   </Group>
-                )}
-                {showCenterResultsList && (
-                  <Text size="xs" c="dimmed">
-                    {resultsBlocks.length} blocks
-                  </Text>
-                )}
-              </Group>
+                </Group>
+              ) : (
+                <Group
+                  justify="space-between"
+                  wrap="nowrap"
+                  className={`parse-config-top-tabs${showCenterConfig ? ' parse-config-top-tabs--with-subhead' : ''}`}
+                >
+                  {isTestSurface ? (
+                    <Text size="sm" fw={700}>Build</Text>
+                  ) : (
+                    <Group gap={12} wrap="nowrap">
+                      <Text
+                        size="sm"
+                        fw={middlePreviewTab !== 'results' ? 700 : 600}
+                        c={middlePreviewTab !== 'results' ? undefined : 'dimmed'}
+                        className={`parse-middle-tab${middlePreviewTab !== 'results' ? ' is-active' : ''}`}
+                        onClick={() => setMiddlePreviewTab('preview')}
+                        style={{ cursor: 'pointer', userSelect: 'none' }}
+                      >
+                        Build
+                      </Text>
+                      <Text
+                        size="sm"
+                        fw={middlePreviewTab === 'results' ? 700 : 600}
+                        c={middlePreviewTab === 'results' ? undefined : 'dimmed'}
+                        className={`parse-middle-tab${middlePreviewTab === 'results' ? ' is-active' : ''}`}
+                        onClick={() => setMiddlePreviewTab('results')}
+                        style={{ cursor: 'pointer', userSelect: 'none' }}
+                      >
+                        Results
+                      </Text>
+                    </Group>
+                  )}
+                  {showCenterConfig && (
+                    <Group gap={6} wrap="nowrap" className="parse-config-run-btn">
+                      <ActionIcon
+                        size="sm"
+                        variant="transparent"
+                        aria-label="Save config"
+                        title="Save config"
+                      >
+                        <IconDeviceFloppy size={17} />
+                      </ActionIcon>
+                      <ActionIcon
+                        size="sm"
+                        variant="transparent"
+                        aria-label="Run parse"
+                        title="Run parse"
+                        loading={parseLoading}
+                        onClick={() => void handleRunParse()}
+                      >
+                        <IconPlayerPlay size={17} />
+                      </ActionIcon>
+                    </Group>
+                  )}
+                  {showCenterResultsList && (
+                    <Text size="xs" c="dimmed">
+                      {resultsBlocks.length} blocks
+                    </Text>
+                  )}
+                </Group>
+              )}
 
               {showCenterResultsList && (
                 <Box className="parse-results-side-list">
@@ -2274,7 +2598,7 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
               )}
 
               {showCenterConfig && (
-                <Stack gap="sm" className="parse-config-scroll">
+                <Stack gap="sm" className={parseConfigScrollClassName}>
 
               {parseError && (
                 <Alert color="red" variant="light" withCloseButton onClose={() => setParseError(null)}>
@@ -2282,23 +2606,25 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
                 </Alert>
               )}
 
-              <Group justify="space-between" wrap="nowrap" className="parse-config-subhead">
-                <Group gap={6} wrap="nowrap">
-                  <Text fw={700} size="sm">Configuration</Text>
-                  <IconInfoCircle size={14} stroke={1.8} className="extract-config-info-icon" />
+              {!isShellGrid && (
+                <Group justify="space-between" wrap="nowrap" className="parse-config-subhead">
+                  <Group gap={6} wrap="nowrap">
+                    <Text fw={700} size="sm">Configuration</Text>
+                    <IconInfoCircle size={14} stroke={1.8} className="extract-config-info-icon" />
+                  </Group>
+                  <SegmentedControl
+                    value={parseConfigView}
+                    size="xs"
+                    radius="md"
+                    className="parse-config-view-switch"
+                    data={[
+                      { label: 'Basic', value: 'Basic' },
+                      { label: 'Advanced', value: 'Advanced' },
+                    ]}
+                    onChange={(value) => setParseConfigView(value as ParseConfigView)}
+                  />
                 </Group>
-                <SegmentedControl
-                  value={parseConfigView}
-                  size="xs"
-                  radius="md"
-                  className="parse-config-view-switch"
-                  data={[
-                    { label: 'Basic', value: 'Basic' },
-                    { label: 'Advanced', value: 'Advanced' },
-                  ]}
-                  onChange={(value) => setParseConfigView(value as ParseConfigView)}
-                />
-              </Group>
+              )}
 
               {parseConfigView === 'Basic' && (
                 <Box className="parse-config-section">

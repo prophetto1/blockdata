@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect } from 'react';
 import {
   AppShell,
   Box,
@@ -9,15 +9,12 @@ import {
   useComputedColorScheme,
 } from '@mantine/core';
 import { useDisclosure, useLocalStorage } from '@mantine/hooks';
-import { Spotlight, type SpotlightActionData } from '@mantine/spotlight';
-import { IconSearch } from '@tabler/icons-react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/auth/AuthContext';
 import { TopCommandBar } from '@/components/shell/TopCommandBar';
 import { LeftRail } from '@/components/shell/LeftRail';
 import { HeaderCenterProvider } from '@/components/shell/HeaderCenterContext';
 import { AssistantDockHost } from '@/components/shell/AssistantDockHost';
-import { GLOBAL_MENUS, NAV_GROUPS } from '@/components/shell/nav-config';
 import { AppPageShell } from '@/components/layout/AppPageShell';
 import { featureFlags } from '@/lib/featureFlags';
 import { styleTokens } from '@/lib/styleTokens';
@@ -83,32 +80,6 @@ export function AppLayout() {
     ? styleTokens.shell.navbarWidth
     : styleTokens.shell.navbarCompactWidth;
 
-  /* ---- Spotlight actions from nav-config ---- */
-  const spotlightActions = useMemo<SpotlightActionData[]>(
-    () => {
-      const globalPaths = new Set(GLOBAL_MENUS.map((item) => item.path));
-      const globalActions = GLOBAL_MENUS.map((item) => ({
-        id: `global-${item.path}`,
-        label: item.label,
-        description: 'Global',
-        onClick: () => navigate(item.path),
-        leftSection: <item.icon size={18} stroke={1.5} />,
-      }));
-      const groupedActions = NAV_GROUPS.flatMap((group) =>
-        group.items
-          .filter((item) => !globalPaths.has(item.path))
-          .map((item) => ({
-            id: item.path,
-            label: item.label,
-            description: group.label,
-            onClick: () => navigate(item.path),
-            leftSection: <item.icon size={18} stroke={1.5} />,
-          })),
-      );
-      return [...globalActions, ...groupedActions];
-    },
-    [navigate],
-  );
   const isProjectCanvasRoute = /^\/app\/projects\/[^/]+$/.test(location.pathname);
   const isExtractCanvasRoute = /^\/app\/extract\/[^/]+$/.test(location.pathname);
   const isTransformCanvasRoute = /^\/app\/transform\/[^/]+$/.test(location.pathname);
@@ -145,16 +116,9 @@ export function AppLayout() {
       }
     : undefined;
 
+  // Command search lives in TopCommandBar; AppLayout intentionally has no Spotlight provider.
   return (
     <HeaderCenterProvider>
-    <Spotlight
-      actions={spotlightActions}
-      shortcut={['mod + k']}
-      nothingFound="No results"
-      searchProps={{ leftSection: <IconSearch size={18} />, placeholder: 'Search pages...' }}
-      highlightQuery
-    />
-
     <AppShell
       header={{ height: styleTokens.shell.headerHeight }}
       navbar={{
@@ -181,7 +145,6 @@ export function AppLayout() {
           onToggleNav={toggleNav}
           desktopNavOpened={desktopNavOpened}
           onToggleDesktopNav={toggleDesktopNav}
-          showSearch={shellV2Enabled}
           showAssistantToggle={assistantDockEnabled}
           assistantOpened={assistantOpened}
           onToggleAssistant={toggleAssistant}
