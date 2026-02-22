@@ -17,7 +17,7 @@ type UppyUiVariant = 'dashboard' | 'headless';
 type UppyMeta = { project_id: string; ingest_mode: IngestMode };
 type UppyBody = Record<string, never>;
 type UppyInstance = Uppy<UppyMeta, UppyBody>;
-const REMOTE_SOURCE_PLUGINS = ['GoogleDrive', 'Dropbox', 'OneDrive', 'Box', 'Url'] as const;
+const REMOTE_SOURCE_PLUGINS = ['GoogleDrive'] as const;
 
 type IngestResponse = {
   source_uid?: string;

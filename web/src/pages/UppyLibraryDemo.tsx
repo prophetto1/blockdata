@@ -19,6 +19,7 @@ type LogLevel = 'info' | 'error';
 type UppyMeta = { project_id: string };
 type UppyBody = Record<string, never>;
 type UppyInstance = Uppy<UppyMeta, UppyBody>;
+const REMOTE_SOURCE_PLUGINS = ['GoogleDrive'] as const;
 
 type LogEntry = {
   at: string;
@@ -131,6 +132,7 @@ export default function UppyLibraryDemo() {
         }
         instance.use(UppyRemoteSources, {
           companionUrl: endpoint,
+          sources: [...REMOTE_SOURCE_PLUGINS],
           companionHeaders: {
             ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
           },

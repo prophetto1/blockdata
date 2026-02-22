@@ -126,11 +126,13 @@ describe('ProjectParseUppyUploader strict mode lifecycle', () => {
     const options = remoteSourcesCall?.[1] as {
       companionHeaders?: Record<string, string>;
       companionCookiesRule?: string;
+      sources?: string[];
     };
     expect(options.companionCookiesRule).toBe('include');
     expect(options.companionHeaders).toEqual({
       Authorization: 'Bearer test-access-token',
     });
     expect(options.companionHeaders).not.toHaveProperty('apikey');
+    expect(options.sources).toEqual(['GoogleDrive']);
   });
 });
