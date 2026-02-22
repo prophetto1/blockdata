@@ -57,7 +57,9 @@ import { PdfPreview } from '@/components/documents/PdfPreview';
 import { PdfResultsHighlighter, type ParsedResultBlock } from '@/components/documents/PdfResultsHighlighter';
 import { PptxPreview } from '@/components/documents/PptxPreview';
 import { ProjectParseUppyUploader, type UploadBatchResult } from '@/components/documents/ProjectParseUppyUploader';
-import { BlockViewerGrid } from '@/components/blocks/BlockViewerGrid';
+import { BlockViewerGridTanStackCodex } from '@/components/blocks/BlockViewerGridTanStackCodex';
+import { BlockViewerGridV2 } from '@/components/blocks/BlockViewerGridV2';
+import { BlockViewerGridRDG } from '@/components/blocks/BlockViewerGridRDG';
 import { ErrorAlert } from '@/components/common/ErrorAlert';
 import { DoubleArrowIcon } from '@/components/icons/DoubleArrowIcon';
 import { useShellHeaderTitle } from '@/components/common/useShellHeaderTitle';
@@ -130,6 +132,7 @@ type ProjectDetailMode = 'parse' | 'extract' | 'transform';
 type ProjectDetailSurface = 'default' | 'test';
 type MiddlePreviewTab = 'preview' | 'results';
 type TestRightTab = 'preview' | 'metadata' | 'blocks' | 'grid' | 'outputs';
+type TransformGridRenderer = 'rdg' | 'tanstack_codex' | 'grid_v2';
 type ParseConfigView = 'Basic' | 'Advanced';
 type ExtractConfigView = 'Basic' | 'Advanced' | 'Schema';
 type ExtractSchemaMode = 'table' | 'code';
@@ -414,6 +417,7 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
   const [showMetadataBlocksPanel, setShowMetadataBlocksPanel] = useState(true);
   const [middlePreviewTab, setMiddlePreviewTab] = useState<MiddlePreviewTab>('preview');
   const [testRightTab, setTestRightTab] = useState<TestRightTab>('preview');
+  const [transformGridRenderer, setTransformGridRenderer] = useState<TransformGridRenderer>('rdg');
   const [testBlocksToolbarHost, setTestBlocksToolbarHost] = useState<HTMLDivElement | null>(null);
   const [pdfToolbarHost, setPdfToolbarHost] = useState<HTMLDivElement | null>(null);
   const [testBlocks, setTestBlocks] = useState<TestBlockCardRow[]>([]);
@@ -2261,7 +2265,21 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
                     ) : (
                       <Stack gap="xs" h="100%" p="sm">
                         <Group justify="space-between" align="center" wrap="nowrap">
-                          <Text size="sm" fw={700}>Grid</Text>
+                          <Group gap="xs" align="center" wrap="nowrap">
+                            <Text size="sm" fw={700}>Grid</Text>
+                            <Select
+                              size="xs"
+                              w={170}
+                              data={[
+                                { value: 'rdg', label: 'React Data Grid' },
+                                { value: 'tanstack_codex', label: 'TanStack Codex' },
+                                { value: 'grid_v2', label: 'Grid V2' },
+                              ]}
+                              value={transformGridRenderer}
+                              onChange={(value) => setTransformGridRenderer((value as TransformGridRenderer) ?? 'rdg')}
+                              aria-label="Grid renderer"
+                            />
+                          </Group>
                           <Button
                             size="xs"
                             variant="default"
@@ -2276,13 +2294,29 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
                             {outputsError ?? outputsNotice}
                           </Text>
                         )}
-                        <Box style={{ flex: 1, minHeight: 0 }}>
-                          <BlockViewerGrid
-                            convUid={selectedDoc.conv_uid}
-                            selectedRunId={selectedRunId}
-                            selectedRun={selectedRun}
-                            toolbarPortalTarget={testBlocksToolbarHost}
-                          />
+                        <Box style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                          {transformGridRenderer === 'rdg' ? (
+                            <BlockViewerGridRDG
+                              convUid={selectedDoc.conv_uid}
+                              selectedRunId={selectedRunId}
+                              selectedRun={selectedRun}
+                              toolbarPortalTarget={testBlocksToolbarHost}
+                            />
+                          ) : transformGridRenderer === 'grid_v2' ? (
+                            <BlockViewerGridV2
+                              convUid={selectedDoc.conv_uid}
+                              selectedRunId={selectedRunId}
+                              selectedRun={selectedRun}
+                              toolbarPortalTarget={testBlocksToolbarHost}
+                            />
+                          ) : (
+                            <BlockViewerGridTanStackCodex
+                              convUid={selectedDoc.conv_uid}
+                              selectedRunId={selectedRunId}
+                              selectedRun={selectedRun}
+                              toolbarPortalTarget={testBlocksToolbarHost}
+                            />
+                          )}
                         </Box>
                       </Stack>
                     )}
