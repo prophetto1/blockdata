@@ -17,7 +17,6 @@ import {
   Alert,
   Badge,
   Button,
-  Divider,
   Group,
   Menu,
   Paper,
@@ -42,6 +41,7 @@ import {
 } from '@tabler/icons-react';
 import { supabase } from '@/lib/supabase';
 import { useBlocks } from '@/hooks/useBlocks';
+import { useBlockTypeRegistry } from '@/hooks/useBlockTypeRegistry';
 import { useOverlays } from '@/hooks/useOverlays';
 import { extractSchemaFields, type SchemaFieldMeta } from '@/lib/schema-fields';
 import { createAppGridTheme } from '@/lib/agGridTheme';
@@ -55,21 +55,9 @@ const GRID_ROW_PADDING_SCALE = {
   comfortable: 0.7,
 } as const;
 
-const BLOCK_TYPE_COLOR: Record<string, string> = {
-  heading: 'blue',
-  paragraph: 'gray',
-  list_item: 'teal',
-  code_block: 'violet',
-  table: 'orange',
-  figure: 'pink',
-  caption: 'grape',
-  footnote: 'cyan',
-  divider: 'gray',
-  html_block: 'red',
-  definition: 'indigo',
-  checkbox: 'lime',
-  other: 'gray',
-};
+// Badge colors loaded from block_type_catalog via useBlockTypeRegistry.
+// Module-level ref updated by the component when registry loads.
+let _badgeColorMap: Record<string, string> = {};
 
 const PAGE_SIZES = ['25', '50', '100'];
 const VIEW_MODE_KEY = 'blockdata-view-mode';
@@ -179,7 +167,7 @@ function normalizeBlockContentForDisplay(value: unknown): string {
 
 function BlockTypeCellRenderer(params: ICellRendererParams) {
   const type = params.value as string;
-  return <Badge size="xs" variant="light" color={BLOCK_TYPE_COLOR[type] ?? 'gray'}>{type}</Badge>;
+  return <Badge size="xs" variant="light" color={_badgeColorMap[type] ?? 'gray'}>{type}</Badge>;
 }
 
 function StatusCellRenderer(params: ICellRendererParams) {
@@ -505,6 +493,9 @@ export function BlockViewerGrid({
   const [showGridConfigInspector, setShowGridConfigInspector] = useState(false);
   const [configRefreshTick, setConfigRefreshTick] = useState(0);
   const persistedColumnWidthsRef = useRef<Record<string, number>>({});
+
+  const { registry } = useBlockTypeRegistry();
+  if (registry) _badgeColorMap = registry.badgeColor;
 
   const { blocks, totalCount, loading: blocksLoading, error: blocksError } = useBlocks(convUid, pageIndex, pageSize);
   const {
@@ -836,7 +827,7 @@ export function BlockViewerGrid({
         valueGetter: (params) => normalizeBlockContentForDisplay(params.data?.block_content),
         wrapText: true,
         autoHeight: true,
-        headerClass: 'block-grid-col-left-header',
+        headerClass: 'block-grid-col-center-header',
         cellClass: 'block-grid-col-block-cell',
         hide: hiddenCols.has('block_content'),
       },
@@ -1233,80 +1224,91 @@ export function BlockViewerGrid({
   const toolbarControls = (
     <Group
       className="block-grid-toolbar-row"
-      justify={toolbarPortalTarget ? 'flex-start' : 'space-between'}
-      wrap={toolbarPortalTarget ? 'nowrap' : 'wrap'}
-      gap="xs"
+      justify="space-between"
+      wrap="nowrap"
+      gap={8}
     >
       <Group className="block-grid-toolbar-main" gap="xs" wrap="nowrap">
-        <SegmentedControl
-          className="block-grid-segmented-boxed"
-          data={[
-            { value: 'compact', label: 'Compact' },
-            { value: 'comfortable', label: 'Comfortable' },
-          ]}
-          value={viewMode}
-          onChange={handleViewModeChange}
-          size="xs"
-        />
+        <Group className="block-grid-toolbar-group" gap={6} wrap="nowrap">
+          <SegmentedControl
+            className="block-grid-segmented-boxed"
+            data={[
+              { value: 'compact', label: 'Compact' },
+              { value: 'comfortable', label: 'Comfortable' },
+            ]}
+            value={viewMode}
+            onChange={handleViewModeChange}
+            size="xs"
+          />
 
-        <SegmentedControl
-          className="block-grid-segmented-boxed"
-          data={[
-            { value: 'small', label: 'S' },
-            { value: 'medium', label: 'M' },
-            { value: 'large', label: 'L' },
-          ]}
-          value={viewerFontSize}
-          onChange={handleViewerFontSizeChange}
-          size="xs"
-        />
+          <SegmentedControl
+            className="block-grid-segmented-boxed"
+            data={[
+              { value: 'small', label: 'S' },
+              { value: 'medium', label: 'M' },
+              { value: 'large', label: 'L' },
+            ]}
+            value={viewerFontSize}
+            onChange={handleViewerFontSizeChange}
+            size="xs"
+          />
 
-        <SegmentedControl
-          className="block-grid-segmented-boxed"
-          data={[
-            { value: 'sans', label: 'Sans' },
-            { value: 'serif', label: 'Serif' },
-            { value: 'mono', label: 'Mono' },
-          ]}
-          value={viewerFontFamily}
-          onChange={handleViewerFontFamilyChange}
-          size="xs"
-        />
+          <SegmentedControl
+            className="block-grid-segmented-boxed"
+            data={[
+              { value: 'sans', label: 'Sans' },
+              { value: 'serif', label: 'Serif' },
+              { value: 'mono', label: 'Mono' },
+            ]}
+            value={viewerFontFamily}
+            onChange={handleViewerFontFamilyChange}
+            size="xs"
+          />
+        </Group>
 
-        <Menu shadow="md" width={170} position="bottom-start" withinPortal>
-          <Menu.Target>
-            <Tooltip label="Vertical align">
+        <Group className="block-grid-toolbar-group" gap={6} wrap="nowrap">
+          <Menu shadow="md" width={170} position="bottom-start" withinPortal>
+            <Menu.Target>
               <Button
-                variant="subtle"
+                variant="default"
+                className="block-grid-topline-button"
                 size="compact-xs"
                 px={6}
                 rightSection={<IconChevronDown size={10} />}
                 aria-label="Vertical align"
               >
-                {viewerVerticalAlign === 'top'
-                  ? <IconArrowBarToUp size={14} />
-                  : viewerVerticalAlign === 'center'
-                    ? <IconArrowsVertical size={14} />
-                    : <IconArrowBarToDown size={14} />}
+                <Group gap={6} wrap="nowrap">
+                  <Text size="xs" fw={600}>Align</Text>
+                  {viewerVerticalAlign === 'top'
+                    ? <IconArrowBarToUp size={14} />
+                    : viewerVerticalAlign === 'center'
+                      ? <IconArrowsVertical size={14} />
+                      : <IconArrowBarToDown size={14} />}
+                </Group>
               </Button>
-            </Tooltip>
-          </Menu.Target>
-          <Menu.Dropdown>
-            <Menu.Item leftSection={<IconArrowBarToUp size={14} />} onClick={() => handleViewerVerticalAlignChange('top')}>Top</Menu.Item>
-            <Menu.Item leftSection={<IconArrowsVertical size={14} />} onClick={() => handleViewerVerticalAlignChange('center')}>Center</Menu.Item>
-            <Menu.Item leftSection={<IconArrowBarToDown size={14} />} onClick={() => handleViewerVerticalAlignChange('bottom')}>Bottom</Menu.Item>
-          </Menu.Dropdown>
-        </Menu>
+            </Menu.Target>
+            <Menu.Dropdown className="block-grid-topline-menu-dropdown">
+              <Menu.Item leftSection={<IconArrowBarToUp size={14} />} onClick={() => handleViewerVerticalAlignChange('top')}>Top</Menu.Item>
+              <Menu.Item leftSection={<IconArrowsVertical size={14} />} onClick={() => handleViewerVerticalAlignChange('center')}>Center</Menu.Item>
+              <Menu.Item leftSection={<IconArrowBarToDown size={14} />} onClick={() => handleViewerVerticalAlignChange('bottom')}>Bottom</Menu.Item>
+            </Menu.Dropdown>
+          </Menu>
 
-        <Menu shadow="md" width={250} position="bottom-end" withinPortal closeOnItemClick={false}>
-          <Menu.Target>
-            <Tooltip label="Toggle columns">
-              <ActionIcon variant="subtle" size="sm">
-                <IconColumns size={16} />
-              </ActionIcon>
-            </Tooltip>
-          </Menu.Target>
-          <Menu.Dropdown>
+          <Menu shadow="md" width={250} position="bottom-end" withinPortal closeOnItemClick={false}>
+            <Menu.Target>
+              <Button
+                variant="default"
+                className="block-grid-topline-button"
+                size="compact-xs"
+                px={6}
+                leftSection={<IconColumns size={14} />}
+                rightSection={<IconChevronDown size={10} />}
+                aria-label="Columns"
+              >
+                Columns
+              </Button>
+            </Menu.Target>
+          <Menu.Dropdown className="block-grid-topline-menu-dropdown">
             <Menu.Label>Representation (affects columns)</Menu.Label>
             <Text size="10px" c="dimmed" px="xs" pb={4}>
               Normalized shows baseline columns. Parser Native reveals Parser Type/Path columns for inspection.
@@ -1343,62 +1345,20 @@ export function BlockViewerGrid({
               </Menu.Item>
             ))}
           </Menu.Dropdown>
-        </Menu>
+          </Menu>
+        </Group>
 
-        <Divider orientation="vertical" />
-
-        <Text size="xs" c="dimmed">
-          {typeFilter.length > 0 ? `${rowData.length} of ${totalCount}` : totalCount} blocks
-        </Text>
-        {totalPages > 1 && (
-          <Group gap={8} wrap="nowrap" className="block-grid-page-nav">
-            <Text
-              size="xs"
-              fw={600}
-              className={`block-grid-page-nav-action${canGoToPrevPage ? '' : ' is-disabled'}`}
-              onClick={() => {
-                if (!canGoToPrevPage) return;
-                setPageIndex((current) => Math.max(0, current - 1));
-              }}
-            >
-              Before
-            </Text>
-            <Text size="xs" c="dimmed" className="block-grid-page-nav-status">
-              {pageIndex + 1} / {totalPages}
-            </Text>
-            <Text
-              size="xs"
-              fw={600}
-              className={`block-grid-page-nav-action${canGoToNextPage ? '' : ' is-disabled'}`}
-              onClick={() => {
-                if (!canGoToNextPage) return;
-                setPageIndex((current) => Math.min(totalPages - 1, current + 1));
-              }}
-            >
-              After
-            </Text>
-          </Group>
-        )}
         {hasRun && (
-          <Text size="xs" c="dimmed">
+          <Text size="xs" c="dimmed" className="block-grid-toolbar-metrics">
             {confirmedCount} confirmed - {stagedCount} staged
           </Text>
         )}
-        <Select
-          data={PAGE_SIZES}
-          value={String(pageSize)}
-          onChange={(value) => {
-            setPageSize(Number(value) || 50);
-            setPageIndex(0);
-          }}
-          w={72}
-          size="xs"
-          aria-label="Page size"
-        />
       </Group>
       <Group className="block-grid-toolbar-actions" gap={4} wrap="nowrap">
         <Button
-          variant={showGridConfigInspector ? 'light' : 'subtle'}
+          variant={showGridConfigInspector ? 'filled' : 'default'}
+          color="gray"
+          className="block-grid-topline-button"
           size="compact-xs"
           px={8}
           onClick={() => {
@@ -1410,15 +1370,15 @@ export function BlockViewerGrid({
         </Button>
         {onExport && (
           <Tooltip label="Export">
-            <ActionIcon variant="light" size="lg" onClick={onExport} aria-label="Export">
-              <IconDownload size={22} />
+            <ActionIcon className="block-grid-topline-icon" variant="default" color="gray" size="md" onClick={onExport} aria-label="Export">
+              <IconDownload size={16} />
             </ActionIcon>
           </Tooltip>
         )}
         {onDelete && (
           <Tooltip label="Delete">
-            <ActionIcon variant="subtle" color="red" size="lg" onClick={onDelete} aria-label="Delete">
-              <IconTrash size={22} />
+            <ActionIcon className="block-grid-topline-icon" variant="default" color="red" size="md" onClick={onDelete} aria-label="Delete">
+              <IconTrash size={16} />
             </ActionIcon>
           </Tooltip>
         )}
@@ -1509,9 +1469,57 @@ export function BlockViewerGrid({
             domLayout="normal"
           />
         </div>
+        {totalCount > 0 && (
+          <Group justify="center" className="block-grid-pagination-wrap">
+            <Group gap="md" wrap="nowrap" className="block-grid-pagination-row">
+              <Group gap={6} wrap="nowrap" className="block-grid-page-size-control">
+                <Text size="xs" c="dimmed">Blocks / page</Text>
+                <Select
+                  data={PAGE_SIZES}
+                  value={String(pageSize)}
+                  onChange={(value) => {
+                    setPageSize(Number(value) || 50);
+                    setPageIndex(0);
+                  }}
+                  w={72}
+                  size="xs"
+                  aria-label="Blocks per page"
+                />
+              </Group>
 
+              {totalPages > 1 && (
+                <Group gap={8} wrap="nowrap" className="block-grid-page-nav">
+                  <Text
+                    size="xs"
+                    fw={600}
+                    className={`block-grid-page-nav-action${canGoToPrevPage ? '' : ' is-disabled'}`}
+                    onClick={() => {
+                      if (!canGoToPrevPage) return;
+                      setPageIndex((current) => Math.max(0, current - 1));
+                    }}
+                  >
+                    Previous
+                  </Text>
+                  <Text size="xs" c="dimmed" className="block-grid-page-nav-status">
+                    {pageIndex + 1} / {totalPages}
+                  </Text>
+                  <Text
+                    size="xs"
+                    fw={600}
+                    className={`block-grid-page-nav-action${canGoToNextPage ? '' : ' is-disabled'}`}
+                    onClick={() => {
+                      if (!canGoToNextPage) return;
+                      setPageIndex((current) => Math.min(totalPages - 1, current + 1));
+                    }}
+                  >
+                    Next
+                  </Text>
+                </Group>
+              )}
+            </Group>
+          </Group>
+        )}
       </div>
     </>
   );
 }
-

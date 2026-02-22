@@ -19,6 +19,7 @@ import {
   Checkbox,
   Group,
   Loader,
+  Menu,
   Modal,
   Pagination,
   Radio,
@@ -34,7 +35,9 @@ import {
   IconAlertTriangle,
   IconArrowsMaximize,
   IconChevronLeft,
+  IconChevronDown,
   IconChevronRight,
+  IconCheck,
   IconCirclePlus,
   IconCode,
   IconDeviceFloppy,
@@ -1322,44 +1325,46 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
         { value: 'blocks', label: 'Blocks' },
         { value: 'outputs', label: 'Outputs' },
       ];
+  const parsePreviewOptions = [
+    { value: 'preview', label: 'Preview' },
+    { value: 'results', label: 'Results' },
+  ];
+  const activePreviewView = isTestSurface ? testRightTab : middlePreviewTab;
+  const activePreviewOptions = isTestSurface ? testRightTabOptions : parsePreviewOptions;
+  const activePreviewLabel = activePreviewOptions.find((option) => option.value === activePreviewView)?.label ?? activePreviewView;
   const middleTabsControl = (
-    isTestSurface ? (
-      <Select
-        size="xs"
-        w={152}
-        data={testRightTabOptions}
-        value={testRightTab}
-        allowDeselect={false}
-        aria-label="Select right panel view"
-        onChange={(value) => {
-          if (!value) return;
-          setTestRightTab(value as TestRightTab);
-        }}
-      />
-    ) : (
-      <>
-        <Text
-          size="sm"
-          fw={middlePreviewTab === 'preview' ? 700 : 600}
-          c={middlePreviewTab === 'preview' ? undefined : 'dimmed'}
-          className={`parse-middle-tab${middlePreviewTab === 'preview' ? ' is-active' : ''}`}
-          onClick={() => setMiddlePreviewTab('preview')}
-          style={{ cursor: 'pointer', userSelect: 'none' }}
+    <Menu shadow="md" width={180} position="bottom-start" withinPortal>
+      <Menu.Target>
+        <Button
+          size="xs"
+          variant="default"
+          className="parse-view-menu-button"
+          rightSection={<IconChevronDown size={12} />}
         >
-          Preview
-        </Text>
-        <Text
-          size="sm"
-          fw={middlePreviewTab === 'results' ? 700 : 600}
-          c={middlePreviewTab === 'results' ? undefined : 'dimmed'}
-          className={`parse-middle-tab${middlePreviewTab === 'results' ? ' is-active' : ''}`}
-          onClick={() => setMiddlePreviewTab('results')}
-          style={{ cursor: 'pointer', userSelect: 'none' }}
-        >
-          Results
-        </Text>
-      </>
-    )
+          {activePreviewLabel}
+        </Button>
+      </Menu.Target>
+      <Menu.Dropdown className="parse-view-menu-dropdown">
+        {activePreviewOptions.map((option) => {
+          const isActive = option.value === activePreviewView;
+          return (
+            <Menu.Item
+              key={option.value}
+              leftSection={isActive ? <IconCheck size={14} /> : <span style={{ width: 14 }} />}
+              onClick={() => {
+                if (isTestSurface) {
+                  setTestRightTab(option.value as TestRightTab);
+                  return;
+                }
+                setMiddlePreviewTab(option.value as MiddlePreviewTab);
+              }}
+            >
+              {option.label}
+            </Menu.Item>
+          );
+        })}
+      </Menu.Dropdown>
+    </Menu>
   );
   const layoutClassName = `parse-playground-layout${surface === 'test' ? ' parse-playground-layout--test' : ''}${isShellGrid ? ` schema-layout-test-page${isExplorerCollapsed ? ' is-left-collapsed' : ''}` : ''}`;
   const explorerClassName = `parse-playground-explorer${isExplorerCollapsed ? ' is-collapsed' : ''}${isShellGrid ? ' schema-layout-test-explorer' : ''}`;
@@ -1678,7 +1683,7 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
                   <Box className="parse-middle-grid-toolbar-host" ref={setTestBlocksToolbarHost} />
                 )}
                 {shouldShowPdfToolbarHost && (
-                  <Box className="schema-layout-middle-toolbar-host" ref={setPdfToolbarHost} />
+                  <Box className="schema-layout-middle-toolbar-host parse-preview-toolbar-host" ref={setPdfToolbarHost} />
                 )}
                 {!isTransformMode && isRightBlocksTab && testBlocks.length > 0 && (
                   <Text size="xs" c="dimmed">{testBlocks.length} blocks</Text>

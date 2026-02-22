@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ActionIcon, Box, Center, Group, Loader, NativeSelect, Text, TextInput } from '@mantine/core';
+import { ActionIcon, Box, Center, Group, Loader, Text, TextInput } from '@mantine/core';
 
 import { createPortal } from 'react-dom';
 import { Document, Page, pdfjs } from 'react-pdf';
@@ -63,10 +63,6 @@ export function PdfPreview({
   const isPdfJsControlsDisabled = fallbackToIframe || pageCount === null || !!loadError;
   const showPageControls = !isPdfJsControlsDisabled && (pageCount ?? 0) > 1;
   const pageScale = Math.max(0.1, zoomPercent / 100);
-  const zoomOptions = (ZOOM_PRESETS.some((value) => value === zoomPercent)
-    ? [...ZOOM_PRESETS]
-    : [...ZOOM_PRESETS, zoomPercent].sort((a, b) => a - b))
-    .map((value) => ({ value: String(value), label: `${value}%` }));
 
   const clampPageNumber = (value: number): number => {
     if (!Number.isFinite(value)) return activePageNumber;
@@ -75,6 +71,15 @@ export function PdfPreview({
   };
 
   const clampZoom = (value: number) => Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, value));
+  const stepZoom = (direction: 'in' | 'out') => {
+    const current = zoomPercent;
+    const sorted = [...ZOOM_PRESETS].sort((a, b) => a - b);
+    const next = direction === 'in'
+      ? sorted.find((value) => value > current)
+      : [...sorted].reverse().find((value) => value < current);
+    const fallback = direction === 'in' ? current + 25 : current - 25;
+    setZoomPercent(clampZoom(next ?? fallback));
+  };
 
   const setPageShellRef = (pageNumber: number, node: HTMLDivElement | null) => {
     if (node) {
@@ -157,81 +162,71 @@ export function PdfPreview({
   }, [fallbackToIframe, loadError, pageCount, rotation, pageScale]);
 
   const toolbar = (
-    <Group justify="flex-end" wrap="nowrap" className="parse-pdf-toolbar">
-      <Group gap={6} wrap="nowrap" className="parse-pdf-toolbar-controls">
-        {showPageControls && (
-          <Group gap={4} wrap="nowrap" className="parse-pdf-page-controls">
-            <ActionIcon
-              size="sm"
-              variant="subtle"
-              disabled={!canGoPrev || isPdfJsControlsDisabled}
-              aria-label="Previous page"
-              title="Previous page"
-              onClick={() => scrollToPage(activePageNumber - 1)}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24" fill="currentColor" style={{ transform: 'scaleX(-1)' }}><path d="M73.3-235.46v-489.08h75.76v489.08H73.3Zm566.51 2.5L585.53-286l156.2-156.12H241.72v-75.76h500.01L586.77-674l53.04-53.04L886.86-480 639.81-232.96Z"/></svg>
-            </ActionIcon>
-            <TextInput
-              size="xs"
-              value={pageInput}
-              onChange={(event) => setPageInput(event.currentTarget.value)}
-              onBlur={commitPageInput}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter') commitPageInput();
-              }}
-              className="parse-pdf-page-input"
-              disabled={isPdfJsControlsDisabled}
-            />
-            <Text size="sm" fw={600} className="parse-pdf-page-total">
-              / {pageCount ?? '--'}
-            </Text>
-            <ActionIcon
-              size="sm"
-              variant="subtle"
-              disabled={!canGoNext || isPdfJsControlsDisabled}
-              aria-label="Next page"
-              title="Next page"
-              onClick={() => scrollToPage(activePageNumber + 1)}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24" fill="currentColor"><path d="M73.3-235.46v-489.08h75.76v489.08H73.3Zm566.51 2.5L585.53-286l156.2-156.12H241.72v-75.76h500.01L586.77-674l53.04-53.04L886.86-480 639.81-232.96Z"/></svg>
-            </ActionIcon>
-          </Group>
-        )}
-        <NativeSelect
-          size="xs"
-          value={String(zoomPercent)}
-          data={zoomOptions}
-          onChange={(event) => {
-            const parsed = Number.parseInt(event.currentTarget.value, 10);
-            if (Number.isNaN(parsed)) return;
-            setZoomPercent(clampZoom(parsed));
-          }}
-          className="parse-pdf-zoom-select"
-          aria-label="Zoom level"
-          disabled={isPdfJsControlsDisabled}
-        />
+    <Group justify="space-between" wrap="nowrap" className="parse-pdf-toolbar">
+      {showPageControls ? (
+        <Group gap={4} wrap="nowrap" className="parse-pdf-page-controls parse-pdf-toolbar-pill">
+          <ActionIcon
+            size="sm"
+            variant="subtle"
+            disabled={!canGoPrev || isPdfJsControlsDisabled}
+            aria-label="Previous page"
+            title="Previous page"
+            onClick={() => scrollToPage(activePageNumber - 1)}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" height="20" viewBox="0 -960 960 960" width="20" fill="currentColor"><path d="M396-480 564-312 516-264 300-480l216-216 48 48-168 168Z"/></svg>
+          </ActionIcon>
+          <TextInput
+            size="xs"
+            value={pageInput}
+            onChange={(event) => setPageInput(event.currentTarget.value)}
+            onBlur={commitPageInput}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') commitPageInput();
+            }}
+            className="parse-pdf-page-input"
+            disabled={isPdfJsControlsDisabled}
+          />
+          <Text size="sm" fw={600} className="parse-pdf-page-total">
+            / {pageCount ?? '--'}
+          </Text>
+          <ActionIcon
+            size="sm"
+            variant="subtle"
+            disabled={!canGoNext || isPdfJsControlsDisabled}
+            aria-label="Next page"
+            title="Next page"
+            onClick={() => scrollToPage(activePageNumber + 1)}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" height="20" viewBox="0 -960 960 960" width="20" fill="currentColor"><path d="m375-264-48-48 168-168-168-168 48-48 216 216-216 216Z"/></svg>
+          </ActionIcon>
+        </Group>
+      ) : (
+        <Box className="parse-pdf-toolbar-placeholder" />
+      )}
+
+      <Group gap={4} wrap="nowrap" className="parse-pdf-zoom-inline parse-pdf-toolbar-pill">
         <ActionIcon
           size="sm"
           variant="subtle"
-          aria-label="Rotate pages"
-          title="Rotate pages"
-          onClick={() => setRotation((current) => (current + 90) % 360)}
-          disabled={isPdfJsControlsDisabled}
+          aria-label="Zoom out"
+          title="Zoom out"
+          onClick={() => stepZoom('out')}
+          disabled={isPdfJsControlsDisabled || zoomPercent <= ZOOM_MIN}
         >
-          <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24" fill="currentColor"><path d="M198.67-326.67Q178-363.33 169-401t-9-77q0-132 94-226.33 94-94.34 226-94.34h31l-74.67-74.66L481-918l152.67 152.67L481-612.67 435.67-658l74-74H480q-104.67 0-179 74.5T226.67-478q0 28 5.66 53.67 5.67 25.66 15 49l-48.66 48.66ZM477.67-40 325-192.67l152.67-152.66 44.66 44.66L447.67-226H480q104.67 0 179-74.5T733.33-480q0-28-5.33-53.67-5.33-25.66-16-49l48.67-48.66q20.66 36.66 30 74.33 9.33 37.67 9.33 77 0 132-94 226.33-94 94.34-226 94.34h-32.33l74.66 74.66L477.67-40Z"/></svg>
+          <svg xmlns="http://www.w3.org/2000/svg" height="18" viewBox="0 -960 960 960" width="18" fill="currentColor"><path d="M200-440v-80h560v80H200Z"/></svg>
         </ActionIcon>
+        <Text size="sm" fw={600} className="parse-pdf-zoom-value">
+          {zoomPercent}%
+        </Text>
         <ActionIcon
           size="sm"
           variant="subtle"
-          aria-label="Download PDF"
-          component="a"
-          href={url}
-          target="_blank"
-          rel="noreferrer"
-          download
-          title="Download PDF"
+          aria-label="Zoom in"
+          title="Zoom in"
+          onClick={() => stepZoom('in')}
+          disabled={isPdfJsControlsDisabled || zoomPercent >= ZOOM_MAX}
         >
-          <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24" fill="currentColor"><path d="M480-320 280-520l56-58 104 104v-326h80v326l104-104 56 58-200 200ZM240-160q-33 0-56.5-23.5T160-240v-120h80v120h480v-120h80v120q0 33-23.5 56.5T720-160H240Z"/></svg>
+          <svg xmlns="http://www.w3.org/2000/svg" height="18" viewBox="0 -960 960 960" width="18" fill="currentColor"><path d="M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z"/></svg>
         </ActionIcon>
       </Group>
     </Group>

@@ -141,7 +141,11 @@ export async function edgeJson<T>(path: string, init: RequestInit = {}): Promise
       resp.status === 404 && text.includes('Requested function was not found')
         ? ` Edge function "${path}" is not deployed for this project.`
         : '';
-    throw new Error(`Edge function failed: HTTP ${resp.status} ${text.slice(0, 500)}${authHint}${notFoundHint}`);
+    const workerLimitHint =
+      resp.status === 546 || text.includes('"WORKER_LIMIT"')
+        ? ' Edge function hit compute limits. The request may still be processing; retry in a moment.'
+        : '';
+    throw new Error(`Edge function failed: HTTP ${resp.status} ${text.slice(0, 500)}${authHint}${notFoundHint}${workerLimitHint}`);
   }
   return JSON.parse(text) as T;
 }

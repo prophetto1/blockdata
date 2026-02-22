@@ -1,4 +1,5 @@
-import { requireEnv } from "../_shared/env.ts";
+import { getEnv, requireEnv } from "../_shared/env.ts";
+import { isConversionAckTimeoutError, resolveConversionAckTimeoutMs } from "../_shared/conversion-ack-timeout.ts";
 import { basenameNoExt } from "../_shared/sanitize.ts";
 import type { IngestContext, IngestResponse, SignedUploadTarget } from "./types.ts";
 
@@ -133,11 +134,15 @@ export async function processConversion(ctx: IngestContext): Promise<{ status: n
   const callback_url = `${supabaseUrl}/functions/v1/conversion-complete`;
   const conversionServiceUrl = requireEnv("CONVERSION_SERVICE_URL").replace(/\/+$/, "");
   const conversionKey = requireEnv("CONVERSION_SERVICE_KEY");
+  const ackTimeoutMs = resolveConversionAckTimeoutMs(getEnv("CONVERSION_SERVICE_ACK_TIMEOUT_MS", "8000"));
+  const abortController = new AbortController();
+  const ackTimeoutHandle = setTimeout(() => abortController.abort(), ackTimeoutMs);
 
   let convertResp: Response;
   try {
     convertResp = await fetch(`${conversionServiceUrl}/convert`, {
       method: "POST",
+      signal: abortController.signal,
       headers: {
         "Content-Type": "application/json",
         "X-Conversion-Service-Key": conversionKey,
@@ -162,12 +167,24 @@ export async function processConversion(ctx: IngestContext): Promise<{ status: n
       }),
     });
   } catch (fetchErr) {
+    if (isConversionAckTimeoutError(fetchErr)) {
+      return {
+        status: 202,
+        body: {
+          source_uid,
+          conv_uid: null,
+          status: "converting",
+        },
+      };
+    }
     const msg = fetchErr instanceof Error ? fetchErr.message : String(fetchErr);
     await supabaseAdmin
       .from("source_documents")
       .update({ status: "conversion_failed", error: `conversion service unreachable: ${msg}`.slice(0, 1000) })
       .eq("source_uid", source_uid);
     return { status: 502, body: { source_uid, conv_uid: null, status: "conversion_failed", error: `conversion service unreachable: ${msg}` } };
+  } finally {
+    clearTimeout(ackTimeoutHandle);
   }
 
   if (!convertResp.ok) {

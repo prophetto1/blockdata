@@ -24,7 +24,7 @@
 
 .schema-layout-test-page .parse-playground-explorer {
   display: grid;
-  grid-template-rows: 36px minmax(0, 1fr);
+  grid-template-rows: var(--shell-pane-header-height, 50px) minmax(0, 1fr);
   padding: 0;
 }
 
@@ -42,8 +42,8 @@
 .schema-layout-left-header,
 .schema-layout-middle-header,
 .schema-layout-right-header {
-  height: 36px;
-  min-height: 36px;
+  height: var(--shell-pane-header-height, 50px);
+  min-height: var(--shell-pane-header-height, 50px);
   padding: 0 10px;
   border-bottom: 1px solid var(--mantine-color-default-border);
   align-items: center;
@@ -116,7 +116,7 @@
   height: 100%;
   min-height: 0;
   display: grid;
-  grid-template-rows: 36px minmax(0, 1fr);
+  grid-template-rows: var(--shell-pane-header-height, 50px) minmax(0, 1fr);
 }
 
 .schema-layout-middle-toolbar-host {
@@ -128,8 +128,8 @@
 
 .schema-layout-middle-toolbar-host .parse-pdf-toolbar {
   height: 100%;
-  min-height: 36px;
-  max-height: 36px;
+  min-height: var(--shell-pane-header-height, 50px);
+  max-height: var(--shell-pane-header-height, 50px);
   padding: 0;
   border-bottom: 0;
   background: transparent;
@@ -137,6 +137,17 @@
 
 .schema-layout-middle-toolbar-host .parse-pdf-toolbar-controls {
   margin-left: auto;
+}
+
+.schema-layout-middle-toolbar-host.parse-preview-toolbar-host {
+  margin-left: 8px;
+  flex: 1 1 auto;
+  justify-content: stretch;
+}
+
+.schema-layout-middle-toolbar-host.parse-preview-toolbar-host .parse-pdf-toolbar {
+  width: 100%;
+  justify-content: space-between;
 }
 
 .schema-layout-middle-sheet-wrap {
@@ -169,7 +180,7 @@
 
 .schema-layout-test-config-root {
   display: grid;
-  grid-template-rows: 36px 36px minmax(0, 1fr);
+  grid-template-rows: var(--shell-pane-header-height, 50px) var(--shell-pane-header-height, 50px) minmax(0, 1fr);
   flex: 1;
   min-height: 0;
   overflow: hidden;
@@ -185,8 +196,8 @@
 }
 
 .schema-layout-right-controls {
-  height: 36px;
-  min-height: 36px;
+  height: var(--shell-pane-header-height, 50px);
+  min-height: var(--shell-pane-header-height, 50px);
   padding: 0 10px;
   align-items: center;
   background: var(--mantine-color-body);
@@ -250,7 +261,7 @@
 }
 
 .schema-layout-test-right.is-collapsed .schema-layout-test-config-root {
-  grid-template-rows: 36px minmax(0, 1fr);
+  grid-template-rows: var(--shell-pane-header-height, 50px) minmax(0, 1fr);
 }
 
 .schema-layout-test-right.is-collapsed .schema-layout-test-config-scroll {

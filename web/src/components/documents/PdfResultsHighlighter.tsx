@@ -10,6 +10,7 @@ import {
 import 'react-pdf-highlighter/dist/style.css';
 import { supabase } from '@/lib/supabase';
 import { TABLES } from '@/lib/tables';
+import { useBlockTypeRegistry } from '@/hooks/useBlockTypeRegistry';
 import type { BlockRow } from '@/lib/types';
 
 const PDF_WORKER_SRC = new URL(
@@ -19,6 +20,29 @@ const PDF_WORKER_SRC = new URL(
 const SHOW_ALL_BOUNDING_BOXES_DEFAULT = true;
 const RESULTS_PDF_BASE_SCALE = '0.82';
 
+const DEFAULT_DOCLING_LABEL_BY_BLOCK_TYPE: Record<string, string> = {
+  heading: 'section_header',
+  paragraph: 'text',
+  list_item: 'list_item',
+  code_block: 'code',
+  table: 'table',
+  figure: 'picture',
+  caption: 'caption',
+  footnote: 'footnote',
+  page_header: 'page_header',
+  page_footer: 'page_footer',
+  checkbox: 'checkbox_unselected',
+  form_region: 'form',
+  key_value_region: 'key_value_region',
+};
+
+const FALLBACK_OVERLAY_BY_BLOCK_TYPE: Record<string, { border: string; bg: string }> = {
+  heading: { border: '#0ea5e9', bg: 'rgba(14,165,233,0.14)' },
+  page_header: { border: '#f59e0b', bg: 'rgba(245,158,11,0.16)' },
+  page_footer: { border: '#d97706', bg: 'rgba(217,119,6,0.16)' },
+  paragraph: { border: '#38bdf8', bg: 'rgba(56,189,248,0.14)' },
+};
+
 type DoclingHighlight = IHighlight & {
   blockUid: string;
   blockIndex: number;
@@ -26,7 +50,8 @@ type DoclingHighlight = IHighlight & {
   parserPath: string | null;
   pageNo: number;
   snippet: string;
-  colorToken: number;
+  overlayBorderColor?: string;
+  overlayBgColor?: string;
 };
 
 export type ParsedResultBlock = {
@@ -36,7 +61,6 @@ export type ParsedResultBlock = {
   blockType: string;
   pageNo: number;
   snippet: string;
-  colorToken: number;
 };
 
 type PdfResultsHighlighterProps = {
@@ -180,19 +204,67 @@ function mergeScaledRects(rects: Scaled[]): Scaled {
   };
 }
 
-function toneFromBlockType(blockType: string, blockIndex: number): number {
-  const normalized = blockType.trim().toLowerCase().replace(/[\s-]+/g, '_');
-
-  if (normalized.includes('page_header')) return 2;
-  if (normalized.includes('heading')) return 0;
-  if (normalized.includes('paragraph')) return 1;
-  if (normalized.includes('list')) return 3;
-  if (normalized.includes('table')) return 4;
-  if (normalized.includes('code') || normalized.includes('caption')) return 5;
-  return blockIndex % 6;
+function normalizeNativeLabel(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const normalized = value.trim().toLowerCase().replace(/[\s-]+/g, '_');
+  return normalized.length > 0 ? normalized : null;
 }
 
-function buildDoclingHighlights(blocks: BlockRow[], doclingDocument: unknown): DoclingHighlight[] {
+function resolveOverlayKey(
+  blockType: string,
+  parserBlockType: unknown,
+  nodeLabel: unknown,
+  overlayBorderMap?: Record<string, string>,
+  overlayBgMap?: Record<string, string>,
+): string | null {
+  const normalizedBlockType = normalizeNativeLabel(blockType);
+  const normalizedParserBlockType = normalizeNativeLabel(parserBlockType);
+  const normalizedNodeLabel = normalizeNativeLabel(nodeLabel);
+  const defaultDoclingLabel = normalizedBlockType
+    ? DEFAULT_DOCLING_LABEL_BY_BLOCK_TYPE[normalizedBlockType] ?? normalizedBlockType
+    : null;
+
+  const candidates = [
+    normalizedParserBlockType,
+    normalizedNodeLabel,
+    defaultDoclingLabel,
+    normalizedBlockType,
+  ].filter((value, index, values): value is string => (
+    value !== null && values.indexOf(value) === index
+  ));
+
+  for (const candidate of candidates) {
+    if (overlayBorderMap?.[candidate] || overlayBgMap?.[candidate]) {
+      return candidate;
+    }
+  }
+
+  return candidates[0] ?? null;
+}
+
+function resolveOverlayColors(
+  blockType: string,
+  parserBlockType: unknown,
+  nodeLabel: unknown,
+  overlayBorderMap?: Record<string, string>,
+  overlayBgMap?: Record<string, string>,
+): { border?: string; bg?: string } {
+  const overlayKey = resolveOverlayKey(blockType, parserBlockType, nodeLabel, overlayBorderMap, overlayBgMap);
+  const normalizedBlockType = normalizeNativeLabel(blockType);
+  const fallback = normalizedBlockType ? FALLBACK_OVERLAY_BY_BLOCK_TYPE[normalizedBlockType] : undefined;
+  return {
+    border: (overlayKey ? overlayBorderMap?.[overlayKey] : undefined) ?? fallback?.border,
+    bg: (overlayKey ? overlayBgMap?.[overlayKey] : undefined) ?? fallback?.bg,
+  };
+}
+
+
+function buildDoclingHighlights(
+  blocks: BlockRow[],
+  doclingDocument: unknown,
+  overlayBorderMap?: Record<string, string>,
+  overlayBgMap?: Record<string, string>,
+): DoclingHighlight[] {
   const pageSizes = extractPageSizes(doclingDocument);
   const highlights: DoclingHighlight[] = [];
 
@@ -200,9 +272,18 @@ function buildDoclingHighlights(blocks: BlockRow[], doclingDocument: unknown): D
     const locator = asRecord(block.block_locator);
     const locatorType = typeof locator?.type === 'string' ? locator.type : null;
     const parserPath = typeof locator?.pointer === 'string' ? locator.pointer : null;
+    const parserBlockType = typeof locator?.parser_block_type === 'string' ? locator.parser_block_type : null;
     if (locatorType !== 'docling_json_pointer' || !parserPath) continue;
 
     const node = resolveJsonPointer(doclingDocument, parserPath);
+    const nodeLabel = asRecord(node)?.label;
+    const overlayColors = resolveOverlayColors(
+      block.block_type,
+      parserBlockType,
+      nodeLabel,
+      overlayBorderMap,
+      overlayBgMap,
+    );
     const rectEntries = extractScaledRectsForNode(node, pageSizes);
     if (rectEntries.length === 0) continue;
 
@@ -231,7 +312,8 @@ function buildDoclingHighlights(blocks: BlockRow[], doclingDocument: unknown): D
         parserPath,
         pageNo,
         snippet,
-        colorToken: toneFromBlockType(block.block_type, block.block_index),
+        overlayBorderColor: overlayColors.border,
+        overlayBgColor: overlayColors.bg,
         content: { text: normalizedText },
         comment: {
           emoji: '',
@@ -272,6 +354,7 @@ export function PdfResultsHighlighter({
   const [highlightRenderNudge, setHighlightRenderNudge] = useState(0);
   const [showBlocksPanel, setShowBlocksPanel] = useState(true);
   const scrollToHighlightRef = useRef<((highlight: DoclingHighlight) => void) | null>(null);
+  const { registry } = useBlockTypeRegistry();
   const showAllBoundingBoxes = showAllBoundingBoxesProp ?? showAllBoundingBoxesInternal;
   const resolvedShowBlocksPanel = showBlocksPanelProp ?? showBlocksPanel;
 
@@ -303,7 +386,12 @@ export function PdfResultsHighlighter({
         }
 
         const doclingDocument = await doclingResponse.json();
-        const nextHighlights = buildDoclingHighlights((blocksResult.data ?? []) as BlockRow[], doclingDocument);
+        const nextHighlights = buildDoclingHighlights(
+          (blocksResult.data ?? []) as BlockRow[],
+          doclingDocument,
+          registry?.overlayBorder,
+          registry?.overlayBg,
+        );
 
         if (cancelled) return;
         setHighlights(nextHighlights);
@@ -320,7 +408,7 @@ export function PdfResultsHighlighter({
     return () => {
       cancelled = true;
     };
-  }, [convUid, doclingJsonUrl]);
+  }, [convUid, doclingJsonUrl, registry]);
 
   const visibleHighlights = useMemo(() => {
     if (highlightRenderNudge < 0) return [];
@@ -386,7 +474,6 @@ export function PdfResultsHighlighter({
       blockType: highlight.blockType,
       pageNo: highlight.pageNo,
       snippet: highlight.snippet,
-      colorToken: highlight.colorToken,
     }));
     onBlocksChange(blocks);
   }, [highlights, onBlocksChange]);
@@ -493,17 +580,19 @@ export function PdfResultsHighlighter({
                     >
                       <Fragment>
                         {highlight.position.rects.map((rect, rectIndex) => {
-                          const rectStyle = {
+                          const rectStyle: React.CSSProperties = {
                             left: rect.left,
                             top: rect.top,
                             width: rect.width,
                             height: rect.height,
+                            borderColor: highlight.overlayBorderColor,
+                            background: highlight.overlayBgColor,
                           };
                           return (
                             <button
                               type="button"
                               key={`${highlight.id}:rect:${rectIndex}`}
-                              className={`parse-docling-block-box tone-${highlight.colorToken}${isActive ? ' is-active' : ''}${isScrolledTo ? ' is-scrolled' : ''}`}
+                              className={`parse-docling-block-box${isActive ? ' is-active' : ''}${isScrolledTo ? ' is-scrolled' : ''}`}
                               style={rectStyle}
                               onClick={() => focusHighlight(highlight)}
                               title={`${highlight.blockType} #${highlight.blockIndex} p.${highlight.pageNo}`}
