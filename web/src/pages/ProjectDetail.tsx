@@ -409,6 +409,7 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
   const [outputCitationsName, setOutputCitationsName] = useState<string | null>(null);
   const [outputDownloadBusy, setOutputDownloadBusy] = useState<'docling' | 'markdown' | 'html' | 'doctags' | 'citations' | null>(null);
   const [resultsBlocks, setResultsBlocks] = useState<ParsedResultBlock[]>([]);
+  const [activeResultsBlockId, setActiveResultsBlockId] = useState<string | null>(null);
   const [showAllBboxes, setShowAllBboxes] = useState(true);
   const [showMetadataBlocksPanel, setShowMetadataBlocksPanel] = useState(true);
   const [middlePreviewTab, setMiddlePreviewTab] = useState<MiddlePreviewTab>('preview');
@@ -1197,7 +1198,18 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
 
   useEffect(() => {
     setResultsBlocks([]);
+    setActiveResultsBlockId(null);
   }, [selectedDoc?.source_uid]);
+
+  const handleResultsBlocksChange = useCallback((blocks: ParsedResultBlock[]) => {
+    setResultsBlocks(blocks);
+    setActiveResultsBlockId((current) => {
+      if (current && blocks.some((block) => block.id === current)) {
+        return current;
+      }
+      return blocks[0]?.id ?? null;
+    });
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -2044,11 +2056,13 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
                               pdfUrl={previewUrl}
                               doclingJsonUrl={resultsDoclingJsonUrl}
                               convUid={selectedDoc.conv_uid}
+                              activeHighlightId={activeResultsBlockId}
+                              onActiveHighlightIdChange={setActiveResultsBlockId}
                               showAllBoundingBoxes={showAllBboxes}
                               onShowAllBoundingBoxesChange={setShowAllBboxes}
                               showBlocksPanel={showMetadataBlocksPanel}
                               onShowBlocksPanelChange={setShowMetadataBlocksPanel}
-                              onBlocksChange={setResultsBlocks}
+                              onBlocksChange={handleResultsBlocksChange}
                             />
                         )}
                       </>
@@ -2772,14 +2786,19 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
                     </Center>
                   ) : (
                     resultsBlocks.map((block) => (
-                      <Box key={block.id} className="parse-docling-results-item">
+                      <button
+                        key={block.id}
+                        type="button"
+                        className={`parse-docling-results-item${activeResultsBlockId === block.id ? ' is-active' : ''}`}
+                        onClick={() => setActiveResultsBlockId(block.id)}
+                      >
                         <Text size="xs" fw={700}>
                           {block.blockType} | #{block.blockIndex} | p.{block.pageNo}
                         </Text>
                         <Text size="xs" c="dimmed" lineClamp={3}>
                           {block.snippet || '[no text]'}
                         </Text>
-                      </Box>
+                      </button>
                     ))
                   )}
                 </Box>

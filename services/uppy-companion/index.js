@@ -3,7 +3,7 @@ const os = require('os');
 const path = require('path');
 const express = require('express');
 const bodyParser = require('body-parser');
-const session = require('express-session');
+const cookieSession = require('cookie-session');
 const companion = require('@uppy/companion');
 
 const PORT = parseInt(process.env.COMPANION_PORT || '3020', 10);
@@ -89,11 +89,14 @@ function buildProviderOptions() {
 const app = express();
 
 app.use(bodyParser.json());
+
+// cookie-session stores session data in a signed cookie — no server-side state.
+// This is required on Cloud Run where each request can hit a different instance.
 app.use(
-  session({
+  cookieSession({
+    name: 'companion:sess',
     secret: process.env.COMPANION_SECRET || 'companion-dev-secret',
-    resave: false,
-    saveUninitialized: false,
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours
   }),
 );
 

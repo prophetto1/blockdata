@@ -8,15 +8,16 @@
     "build": "tsc -b && vite build && cd ../docs-site && npm ci && npm run build && mkdir -p ../web/dist/docs && cp -r dist/* ../web/dist/docs/",
     "build:meta-configurator-embed": "node ../scripts/build-meta-configurator-embed.mjs",
     "lint": "eslint .",
+    "test": "vitest run",
     "preview": "vite preview"
   },
   "dependencies": {
+    "@fontsource/ibm-plex-sans": "^5.2.7",
     "@mantine/core": "^8.3.14",
     "@mantine/form": "^8.3.14",
     "@mantine/hooks": "^8.3.14",
     "@mantine/notifications": "^8.3.14",
     "@mantine/spotlight": "^8.3.14",
-    "@fontsource/ibm-plex-sans": "^5.2.7",
     "@monaco-editor/react": "^4.7.0",
     "@supabase/supabase-js": "^2.95.3",
     "@tabler/icons-react": "^3.36.1",
@@ -44,6 +45,8 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
     "@types/lodash-es": "^4.17.12",
     "@types/node": "^24.10.1",
     "@types/react": "^19.2.5",
@@ -53,11 +56,13 @@
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",
     "globals": "^16.5.0",
+    "jsdom": "^28.1.0",
     "postcss": "^8.5.6",
     "postcss-preset-mantine": "^1.18.0",
     "postcss-simple-vars": "^7.0.1",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.46.4",
-    "vite": "^7.2.4"
+    "vite": "^7.2.4",
+    "vitest": "^4.0.18"
   }
 }

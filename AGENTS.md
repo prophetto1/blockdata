@@ -13,6 +13,11 @@ In this repository, you must operate according to these rules.
    - Then list concrete gaps/mismatches as a checklist with evidence (file + symbol/table/column references).
    - If the question is ambiguous, answer the two most plausible readings explicitly (without debating definitions).
 
+5. Verification claims must be explicit and scoped:
+   - Never say behavior is "verified" unless behavior was actually validated in the running UI or equivalent runtime check.
+   - Build/type/test checks (for example `tsc`, lint, unit tests) must be reported as build/test verification only, not behavior correctness.
+   - When behavior was not validated, state that clearly.
+
 
 ### Mode A: Bugfix / Debugging
 

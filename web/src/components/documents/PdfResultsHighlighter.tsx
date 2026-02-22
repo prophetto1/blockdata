@@ -46,12 +46,25 @@ type PdfResultsHighlighterProps = {
   pdfUrl: string;
   doclingJsonUrl: string;
   convUid: string;
+  activeHighlightId?: string | null;
+  onActiveHighlightIdChange?: (nextHighlightId: string | null) => void;
   showAllBoundingBoxes?: boolean;
   onShowAllBoundingBoxesChange?: (nextValue: boolean) => void;
   showBlocksPanel?: boolean;
   onShowBlocksPanelChange?: (nextValue: boolean) => void;
   onBlocksChange?: (blocks: ParsedResultBlock[]) => void;
 };
+
+function findScrollableAncestor(node: HTMLElement | null): HTMLElement | null {
+  let current: HTMLElement | null = node;
+  while (current) {
+    if (current.scrollHeight > current.clientHeight + 1) {
+      return current;
+    }
+    current = current.parentElement;
+  }
+  return null;
+}
 
 function asRecord(value: unknown): Record<string, unknown> | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
@@ -280,6 +293,8 @@ export function PdfResultsHighlighter({
   pdfUrl,
   doclingJsonUrl,
   convUid,
+  activeHighlightId,
+  onActiveHighlightIdChange,
   showAllBoundingBoxes: showAllBoundingBoxesProp,
   onShowAllBoundingBoxesChange,
   showBlocksPanel: showBlocksPanelProp,
@@ -295,7 +310,10 @@ export function PdfResultsHighlighter({
   const [pdfLoadError, setPdfLoadError] = useState<string | null>(null);
   const [highlightRenderNudge, setHighlightRenderNudge] = useState(0);
   const [showBlocksPanel, setShowBlocksPanel] = useState(true);
+  const [scrollRefRevision, setScrollRefRevision] = useState(0);
   const scrollToHighlightRef = useRef<((highlight: DoclingHighlight) => void) | null>(null);
+  const pdfViewportRef = useRef<HTMLDivElement | null>(null);
+  const [pendingScrollHighlightId, setPendingScrollHighlightId] = useState<string | null>(null);
   const { registry } = useBlockTypeRegistry();
   const showAllBoundingBoxes = showAllBoundingBoxesProp ?? showAllBoundingBoxesInternal;
   const resolvedShowBlocksPanel = showBlocksPanelProp ?? showBlocksPanel;
@@ -402,16 +420,97 @@ export function PdfResultsHighlighter({
     onShowBlocksPanelChange?.(nextValue);
   }, [onShowBlocksPanelChange, showBlocksPanelProp]);
 
-  const focusHighlight = useCallback((highlight: DoclingHighlight) => {
-    setSelectedHighlightId(highlight.id);
-    scrollToHighlightRef.current?.(highlight);
+  const scrollToHighlightFallback = useCallback((highlight: DoclingHighlight): boolean => {
+    const root = pdfViewportRef.current;
+    if (!root) return false;
+
+    const pageSelector = `.page[data-page-number="${highlight.pageNo}"]`;
+    const targetPage = root.querySelector<HTMLElement>(pageSelector);
+    const firstPage = root.querySelector<HTMLElement>('.page[data-page-number="1"], .page');
+    const scrollContainer = findScrollableAncestor(targetPage ?? firstPage ?? root);
+    if (!scrollContainer) return false;
+
+    if (!targetPage) {
+      const pageOne = root.querySelector<HTMLElement>('.page[data-page-number="1"]');
+      const pageTwo = root.querySelector<HTMLElement>('.page[data-page-number="2"]');
+      const stride = (
+        pageOne && pageTwo
+          ? Math.abs(pageTwo.offsetTop - pageOne.offsetTop)
+          : pageOne
+            ? pageOne.clientHeight + 24
+            : 900
+      );
+      const estimatedTop = Math.max(0, stride * Math.max(0, highlight.pageNo - 1));
+      scrollContainer.scrollTo({ top: estimatedTop, behavior: 'auto' });
+      return true;
+    }
+
+    const pageRect = targetPage.getBoundingClientRect();
+    const containerRect = scrollContainer.getBoundingClientRect();
+    const pageTopInContainer = pageRect.top - containerRect.top + scrollContainer.scrollTop;
+
+    let blockOffset = 0;
+    const scaledRect = highlight.position.boundingRect;
+    if (scaledRect && typeof scaledRect.height === 'number' && scaledRect.height > 0 && typeof scaledRect.y2 === 'number') {
+      const ratioFromTop = 1 - (scaledRect.y2 / scaledRect.height);
+      if (Number.isFinite(ratioFromTop)) {
+        blockOffset = Math.max(0, Math.min(1, ratioFromTop)) * targetPage.clientHeight;
+      }
+    }
+
+    const targetTop = Math.max(0, pageTopInContainer + blockOffset - 24);
+    scrollContainer.scrollTo({ top: targetTop, behavior: 'auto' });
+    return true;
+  }, []);
+
+  const scrollToHighlight = useCallback((highlight: DoclingHighlight): boolean => {
+    const scroll = scrollToHighlightRef.current;
+    if (!scroll) {
+      return scrollToHighlightFallback(highlight);
+    }
+    scroll(highlight);
     requestAnimationFrame(() => {
       scrollToHighlightRef.current?.(highlight);
     });
     window.setTimeout(() => {
       scrollToHighlightRef.current?.(highlight);
     }, 140);
-  }, []);
+    return true;
+  }, [scrollToHighlightFallback]);
+
+  const requestHighlightFocus = useCallback((nextHighlightId: string | null) => {
+    setSelectedHighlightId(nextHighlightId);
+    setPendingScrollHighlightId(nextHighlightId);
+    onActiveHighlightIdChange?.(nextHighlightId);
+  }, [onActiveHighlightIdChange]);
+
+  const focusHighlight = useCallback((highlight: DoclingHighlight) => {
+    requestHighlightFocus(highlight.id);
+  }, [requestHighlightFocus]);
+
+  useEffect(() => {
+    if (activeHighlightId === undefined) return;
+
+    if (!activeHighlightId) {
+      setSelectedHighlightId(null);
+      setPendingScrollHighlightId(null);
+      return;
+    }
+
+    if (selectedHighlightId !== activeHighlightId) {
+      setSelectedHighlightId(activeHighlightId);
+    }
+    setPendingScrollHighlightId(activeHighlightId);
+  }, [activeHighlightId, highlights, selectedHighlightId]);
+
+  useEffect(() => {
+    const pendingId = pendingScrollHighlightId;
+    if (!pendingId) return;
+    const target = highlights.find((highlight) => highlight.id === pendingId);
+    if (!target) return;
+    if (!scrollToHighlight(target)) return;
+    setPendingScrollHighlightId(null);
+  }, [highlights, pendingScrollHighlightId, scrollRefRevision, scrollToHighlight]);
 
 
   useEffect(() => {
@@ -491,7 +590,7 @@ export function PdfResultsHighlighter({
           </Group>
           <Text size="xs" c="dimmed">{highlights.length} blocks</Text>
         </Group>
-        <Box className="parse-docling-results-pdf">
+        <Box className="parse-docling-results-pdf" ref={pdfViewportRef}>
           <PdfLoader
             workerSrc={PDF_WORKER_SRC}
             url={pdfUrl}
@@ -520,7 +619,9 @@ export function PdfResultsHighlighter({
                 onSelectionFinished={() => null}
                 onScrollChange={() => {}}
                 scrollRef={(scrollTo) => {
+                  if (scrollToHighlightRef.current === scrollTo) return;
                   scrollToHighlightRef.current = scrollTo;
+                  setScrollRefRevision((value) => value + 1);
                 }}
                 highlights={visibleHighlights}
                 pdfScaleValue={RESULTS_PDF_BASE_SCALE}

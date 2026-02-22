@@ -124,19 +124,30 @@ export function ProjectParseUppyUploader({
     };
   }, []);
 
-  const { uppy, setupError } = useMemo(() => {
+  const [uppy, setUppy] = useState<UppyInstance | null>(null);
+  const [setupError, setSetupError] = useState<string | null>(null);
+
+  useEffect(() => {
     if (!projectId) {
-      return { uppy: null as UppyInstance | null, setupError: 'Missing project context.' };
+      setUppy(null);
+      setSetupError('Missing project context.');
+      return;
     }
     if (!session?.access_token) {
-      return { uppy: null as UppyInstance | null, setupError: 'No active auth session found.' };
+      setUppy(null);
+      setSetupError('No active auth session found.');
+      return;
     }
     if (!ingestEndpoint || !SUPABASE_ANON_KEY) {
-      return { uppy: null as UppyInstance | null, setupError: 'Missing Supabase uploader configuration.' };
+      setUppy(null);
+      setSetupError('Missing Supabase uploader configuration.');
+      return;
     }
 
+    let instance: UppyInstance | null = null;
+
     try {
-      const instance = new Uppy<UppyMeta, UppyBody>({
+      instance = new Uppy<UppyMeta, UppyBody>({
         autoProceed: compactUi,
         restrictions: {
           maxNumberOfFiles: maxFiles,
@@ -210,21 +221,19 @@ export function ProjectParseUppyUploader({
         setSummary(error.message);
       });
 
-      return { uppy: instance, setupError: null as string | null };
+      setUppy(instance);
+      setSetupError(null);
     } catch (error) {
-      return {
-        uppy: null as UppyInstance | null,
-        setupError: error instanceof Error ? error.message : String(error),
-      };
+      if (instance) instance.destroy();
+      setUppy(null);
+      setSetupError(error instanceof Error ? error.message : String(error));
+      return;
     }
-  }, [allowedExtensions, compactUi, ingestEndpoint, ingestMode, maxFiles, onBatchUploaded, projectId, remoteSourcesEnabled, resolvedCompanionUrl, session]);
 
-  useEffect(() => {
-    if (!uppy) return;
     return () => {
-      uppy.destroy();
+      instance?.destroy();
     };
-  }, [uppy]);
+  }, [allowedExtensions, compactUi, ingestEndpoint, ingestMode, maxFiles, onBatchUploaded, projectId, remoteSourcesEnabled, resolvedCompanionUrl, session?.access_token]);
 
   useEffect(() => {
     if (resolvedUiVariant !== 'dashboard') return;
