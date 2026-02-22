@@ -1,6 +1,7 @@
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -35,8 +36,8 @@ import {
   IconAlertTriangle,
   IconArrowsMaximize,
   IconChevronLeft,
-  IconChevronDown,
   IconChevronRight,
+  IconChevronDown,
   IconCheck,
   IconCirclePlus,
   IconCode,
@@ -47,6 +48,7 @@ import {
   IconInfoCircle,
   IconPencil,
   IconPlayerPlay,
+  IconRotateClockwise,
   IconTable,
   IconTrash,
 } from '@tabler/icons-react';
@@ -57,28 +59,35 @@ import { PptxPreview } from '@/components/documents/PptxPreview';
 import { ProjectParseUppyUploader, type UploadBatchResult } from '@/components/documents/ProjectParseUppyUploader';
 import { BlockViewerGrid } from '@/components/blocks/BlockViewerGrid';
 import { ErrorAlert } from '@/components/common/ErrorAlert';
+import { DoubleArrowIcon } from '@/components/icons/DoubleArrowIcon';
 import { useShellHeaderTitle } from '@/components/common/useShellHeaderTitle';
+import { useHeaderCenter } from '@/components/shell/HeaderCenterContext';
+import { useBlockTypeRegistry } from '@/hooks/useBlockTypeRegistry';
 import { useRuns } from '@/hooks/useRuns';
+import { resolveOverlayColors } from '@/lib/doclingOverlayColors';
 import { supabase } from '@/lib/supabase';
 import { edgeJson } from '@/lib/edge';
+import { ICON_TOKENS } from '@/lib/iconTokens';
 import { TABLES } from '@/lib/tables';
 import type { DocumentRow, ProjectRow } from '@/lib/types';
 import './SchemaLayout.css';
 
 const PAGE_SIZE = 10;
 const EXPLORER_WIDTH_DEFAULT = 500;
+const SHELL_EXPLORER_WIDTH_DEFAULT = 392;
 const EXPLORER_WIDTH_MIN = 500;
 const EXPLORER_WIDTH_MAX = 500;
 const EXPLORER_WIDTH_COLLAPSED = 56;
-const CONFIG_WIDTH_DEFAULT = 450;
-const CONFIG_WIDTH_MIN = 450;
-const CONFIG_WIDTH_MAX = 450;
-const CONFIG_WIDTH_HALF = 280;
+const CONFIG_WIDTH_DEFAULT = 300;
+const CONFIG_WIDTH_MIN = 300;
+const CONFIG_WIDTH_MAX = 300;
 const CONFIG_WIDTH_COLLAPSED = 56;
 const TRANSFORM_TEST_CONFIG_WIDTH_MIN = 300;
-const TRANSFORM_TEST_CONFIG_WIDTH_MAX = 760;
-const DOCS_PER_PAGE_OPTIONS = [10, 25, 50] as const;
+const TRANSFORM_TEST_CONFIG_WIDTH_MAX = 300;
+const SHELL_DOCS_PER_PAGE = 4;
 const DOCUMENTS_BUCKET = (import.meta.env.VITE_DOCUMENTS_BUCKET as string | undefined) ?? 'documents';
+const PANE_CHEVRON_ICON = ICON_TOKENS.shell.paneChevron;
+const CONFIG_ACTION_ICON = ICON_TOKENS.shell.configAction;
 
 const TEXT_SOURCE_TYPES = new Set([
   'md',
@@ -124,7 +133,7 @@ type TestRightTab = 'preview' | 'metadata' | 'blocks' | 'grid' | 'outputs';
 type ParseConfigView = 'Basic' | 'Advanced';
 type ExtractConfigView = 'Basic' | 'Advanced' | 'Schema';
 type ExtractSchemaMode = 'table' | 'code';
-type ConfigCollapseState = 'full' | 'half' | 'collapsed';
+type ConfigCollapseState = 'full' | 'collapsed';
 type ExtractSchemaFieldType =
   | 'string'
   | 'number'
@@ -150,6 +159,7 @@ type TestBlockCardRow = {
   blockUid: string;
   blockIndex: number;
   blockType: string;
+  parserBlockType: string | null;
   snippet: string;
 };
 
@@ -354,17 +364,20 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
   const isTestSurfacePage = surface === 'test';
   const isShellGrid = isTestSurfacePage && (isParseMode || isExtractMode || isTransformMode);
   const isTransformTestSurface = isTransformMode && isTestSurfacePage;
+  const { setShellTopSlots } = useHeaderCenter();
+  const { registry: blockTypeRegistry } = useBlockTypeRegistry();
 
   const [project, setProject] = useState<ProjectRow | null>(null);
   const [docs, setDocs] = useState<ProjectDocumentRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
-  const [docsPerPage, setDocsPerPage] = useState<number>(PAGE_SIZE);
+  const [docsPerPage] = useState<number>(PAGE_SIZE);
   const [selectedSourceUid, setSelectedSourceUid] = useState<string | null>(null);
   const [selectedSourceUids, setSelectedSourceUids] = useState<string[]>([]);
   const [deleteTargetDoc, setDeleteTargetDoc] = useState<ProjectDocumentRow | null>(null);
   const [deletingDoc, setDeletingDoc] = useState(false);
+  const [retryingSourceUids, setRetryingSourceUids] = useState<Record<string, boolean>>({});
 
   const [previewKind, setPreviewKind] = useState<PreviewKind>('none');
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -419,7 +432,6 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
     defaultValue: true,
   });
   const isConfigCollapsed = isTestSurfacePage && configCollapseState === 'collapsed';
-  const isConfigHalf = isTestSurfacePage && configCollapseState === 'half';
 
   const resizeStateRef = useRef<{ startX: number; startWidth: number } | null>(null);
   const pendingUploadedSelectionRef = useRef<string[] | null>(null);
@@ -568,8 +580,10 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
     };
   }, [load, projectId]);
 
+  const effectiveDocsPerPage = isShellGrid ? SHELL_DOCS_PER_PAGE : docsPerPage;
+
   useEffect(() => {
-    const totalPages = Math.max(1, Math.ceil(docs.length / docsPerPage));
+    const totalPages = Math.max(1, Math.ceil(docs.length / effectiveDocsPerPage));
     setPage((current) => Math.min(current, totalPages));
 
     const pendingUploadedSelection = pendingUploadedSelectionRef.current;
@@ -596,7 +610,7 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
     if (!exists) {
       setSelectedSourceUid(docs[0]?.source_uid ?? null);
     }
-  }, [docs, docsPerPage, selectedSourceUid]);
+  }, [docs, effectiveDocsPerPage, selectedSourceUid]);
 
   useEffect(() => {
     setSelectedSourceUids((prev) => {
@@ -607,15 +621,17 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
     });
   }, [docs]);
 
-
-  const totalPages = useMemo(() => Math.max(1, Math.ceil(docs.length / docsPerPage)), [docs.length, docsPerPage]);
+  const totalPages = useMemo(
+    () => Math.max(1, Math.ceil(docs.length / effectiveDocsPerPage)),
+    [docs.length, effectiveDocsPerPage],
+  );
   const pagedDocs = useMemo(() => {
-    const offset = (page - 1) * docsPerPage;
-    return docs.slice(offset, offset + docsPerPage);
-  }, [docs, docsPerPage, page]);
+    const offset = (page - 1) * effectiveDocsPerPage;
+    return docs.slice(offset, offset + effectiveDocsPerPage);
+  }, [docs, effectiveDocsPerPage, page]);
   const hasDocs = docs.length > 0;
-  const docRangeStart = hasDocs ? (page - 1) * docsPerPage + 1 : 0;
-  const docRangeEnd = hasDocs ? Math.min(docs.length, page * docsPerPage) : 0;
+  const docRangeStart = hasDocs ? (page - 1) * effectiveDocsPerPage + 1 : 0;
+  const docRangeEnd = hasDocs ? Math.min(docs.length, page * effectiveDocsPerPage) : 0;
   const selectedDoc = useMemo(
     () => docs.find((doc) => doc.source_uid === selectedSourceUid) ?? null,
     [docs, selectedSourceUid],
@@ -691,6 +707,30 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
       setParseLoading(false);
     }
   }, [selectedSourceUids, selectedSourceUid, load]);
+
+  const handleRetryDocument = useCallback(async (sourceUid: string) => {
+    setRetryingSourceUids((prev) => ({ ...prev, [sourceUid]: true }));
+    setError(null);
+    try {
+      await edgeJson('trigger-parse', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ source_uid: sourceUid }),
+      });
+      setDocs((prev) => prev.map((doc) => (
+        doc.source_uid === sourceUid ? { ...doc, status: 'converting' } : doc
+      )));
+      void load();
+    } catch (retryError) {
+      setError(retryError instanceof Error ? retryError.message : String(retryError));
+    } finally {
+      setRetryingSourceUids((prev) => {
+        const next = { ...prev };
+        delete next[sourceUid];
+        return next;
+      });
+    }
+  }, [load]);
 
   const toggleDocSelection = useCallback((sourceUid: string, checked: boolean) => {
     setSelectedSourceUids((prev) => {
@@ -1114,7 +1154,7 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
 
       const { data, error: blocksError } = await supabase
         .from(TABLES.blocks)
-        .select('block_uid, block_index, block_type, block_content')
+        .select('block_uid, block_index, block_type, block_content, block_locator')
         .eq('conv_uid', selectedDoc.conv_uid)
         .order('block_index', { ascending: true });
 
@@ -1133,14 +1173,19 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
           block_index: number;
           block_type: string;
           block_content: string | null;
+          block_locator: { parser_block_type?: unknown } | null;
         };
         const snippet = typeof record.block_content === 'string'
           ? record.block_content.trim().replace(/\s+/g, ' ').slice(0, 280)
           : '';
+        const parserBlockType = typeof record.block_locator?.parser_block_type === 'string'
+          ? record.block_locator.parser_block_type
+          : null;
         return {
           blockUid: record.block_uid,
           blockIndex: record.block_index,
           blockType: record.block_type,
+          parserBlockType,
           snippet,
         } satisfies TestBlockCardRow;
       });
@@ -1158,12 +1203,8 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
   useEffect(() => {
     if (!isTestSurfacePage) {
       if (configCollapseState !== 'full') setConfigCollapseState('full');
-      return;
     }
-    if (!isTransformTestSurface && !isShellGrid && configCollapseState === 'half') {
-      setConfigCollapseState('full');
-    }
-  }, [configCollapseState, isShellGrid, isTestSurfacePage, isTransformTestSurface]);
+  }, [configCollapseState, isTestSurfacePage]);
 
   useEffect(() => {
     if (isTransformTestSurface) return;
@@ -1190,15 +1231,8 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
 
   const handleConfigToggle = useCallback(() => {
     if (!isTestSurfacePage) return;
-    setConfigCollapseState((current) => {
-      if (isTransformTestSurface || isShellGrid) {
-        if (current === 'full') return 'half';
-        if (current === 'half') return 'collapsed';
-        return 'full';
-      }
-      return current === 'collapsed' ? 'full' : 'collapsed';
-    });
-  }, [isShellGrid, isTestSurfacePage, isTransformTestSurface]);
+    setConfigCollapseState((current) => (current === 'collapsed' ? 'full' : 'collapsed'));
+  }, [isTestSurfacePage]);
 
   useEffect(() => {
     if (!activeResizer) return;
@@ -1245,6 +1279,90 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
     };
   }, [activeResizer, isTestSurfacePage]);
 
+  const shellGuideLeftWidth = isExplorerCollapsed ? EXPLORER_WIDTH_COLLAPSED : SHELL_EXPLORER_WIDTH_DEFAULT;
+  const shellGuideMiddleWidth = isConfigCollapsed ? CONFIG_WIDTH_COLLAPSED : CONFIG_WIDTH_DEFAULT;
+  const topConfigToggleLabel = isConfigCollapsed ? 'Expand Configuration column' : 'Collapse Configuration column';
+
+  useEffect(() => {
+    if (!isShellGrid) return undefined;
+
+    const root = document.documentElement;
+    root.style.setProperty('--shell-guide-left-width', `${shellGuideLeftWidth}px`);
+    root.style.setProperty('--shell-guide-middle-width', `${shellGuideMiddleWidth}px`);
+
+    return () => {
+      root.style.removeProperty('--shell-guide-left-width');
+      root.style.removeProperty('--shell-guide-middle-width');
+    };
+  }, [isShellGrid, shellGuideLeftWidth, shellGuideMiddleWidth]);
+
+  useLayoutEffect(() => {
+    if (!isShellGrid) {
+      setShellTopSlots(null);
+      return;
+    }
+
+    setShellTopSlots({
+      left: (
+        <Group
+          gap={8}
+          wrap="nowrap"
+          justify={isExplorerCollapsed ? 'flex-end' : 'space-between'}
+          className="top-command-bar-shell-slot"
+        >
+          {!isExplorerCollapsed ? (
+            <Text size="sm" fw={700} className="top-command-bar-shell-label">Documents</Text>
+          ) : null}
+          <ActionIcon
+            size="sm"
+            variant="subtle"
+            className="top-command-bar-shell-toggle"
+            aria-label={isExplorerCollapsed ? 'Expand documents column' : 'Collapse documents column'}
+            title={isExplorerCollapsed ? 'Expand documents column' : 'Collapse documents column'}
+            onClick={() => setIsExplorerCollapsed((current) => !current)}
+          >
+            {isExplorerCollapsed ? (
+              <DoubleArrowIcon size={PANE_CHEVRON_ICON.size} />
+            ) : (
+              <IconChevronLeft size={PANE_CHEVRON_ICON.size} stroke={PANE_CHEVRON_ICON.stroke} />
+            )}
+          </ActionIcon>
+        </Group>
+      ),
+      middle: (
+        <Group
+          gap={8}
+          wrap="nowrap"
+          justify={isConfigCollapsed ? 'flex-end' : 'space-between'}
+          className="top-command-bar-shell-slot"
+        >
+          {!isConfigCollapsed ? (
+            <Text size="sm" fw={700} className="top-command-bar-shell-label">Configuration</Text>
+          ) : null}
+          <ActionIcon
+            size="sm"
+            variant="subtle"
+            className="top-command-bar-shell-toggle"
+            aria-label={topConfigToggleLabel}
+            title={topConfigToggleLabel}
+            onClick={handleConfigToggle}
+          >
+            {isConfigCollapsed ? (
+              <DoubleArrowIcon size={PANE_CHEVRON_ICON.size} />
+            ) : (
+              <IconChevronLeft size={PANE_CHEVRON_ICON.size} stroke={PANE_CHEVRON_ICON.stroke} />
+            )}
+          </ActionIcon>
+        </Group>
+      ),
+      right: (
+        <Text size="sm" fw={700} className="top-command-bar-shell-label">Preview</Text>
+      ),
+    });
+  }, [handleConfigToggle, isConfigCollapsed, isExplorerCollapsed, isShellGrid, setShellTopSlots, topConfigToggleLabel]);
+
+  useEffect(() => () => setShellTopSlots(null), [setShellTopSlots]);
+
   useShellHeaderTitle({
     title: project?.project_name ?? 'Project',
     subtitle: project?.description ?? undefined,
@@ -1254,12 +1372,10 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
   if (!project) return <ErrorAlert message={error ?? 'Project not found'} />;
 
   const isTestSurface = isTestSurfacePage;
-  const parseExplorerWidth = isExplorerCollapsed ? EXPLORER_WIDTH_COLLAPSED : EXPLORER_WIDTH_DEFAULT;
+  const parseExplorerWidth = isExplorerCollapsed ? EXPLORER_WIDTH_COLLAPSED : SHELL_EXPLORER_WIDTH_DEFAULT;
   const parseConfigWidth = isConfigCollapsed
     ? CONFIG_WIDTH_COLLAPSED
-    : isConfigHalf
-      ? CONFIG_WIDTH_HALF
-      : CONFIG_WIDTH_DEFAULT;
+    : CONFIG_WIDTH_DEFAULT;
   const shouldRouteCollapsedSpaceToConfig = !isShellGrid && (isTestSurface || (isExtractMode && extractConfigView === 'Schema'));
   const navCompactionExplorerBoost = desktopNavOpened ? 0 : (isTestSurface ? 0 : 20);
   const navCompactionConfigBoost = desktopNavOpened ? 0 : (isTestSurface ? 0 : 130);
@@ -1269,26 +1385,17 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
     : 0;
   const nonParseExplorerWidth = isExplorerCollapsed ? EXPLORER_WIDTH_COLLAPSED : expandedExplorerWidth;
   const expandedConfigWidth = configWidth + navCompactionConfigBoost + (shouldRouteCollapsedSpaceToConfig ? collapsedDelta : 0);
-  const halfConfigWidth = Math.max(CONFIG_WIDTH_COLLAPSED, Math.round(expandedConfigWidth * 0.5));
   const nonParseConfigWidth = isConfigCollapsed
     ? CONFIG_WIDTH_COLLAPSED
-    : isConfigHalf
-      ? halfConfigWidth
-      : expandedConfigWidth;
+    : expandedConfigWidth;
   const effectiveExplorerWidth = isShellGrid ? parseExplorerWidth : nonParseExplorerWidth;
   const effectiveConfigWidth = isShellGrid ? parseConfigWidth : nonParseConfigWidth;
-  const usesThreeStateConfigCycle = isTransformTestSurface || isShellGrid;
-  const configToggleLabel = usesThreeStateConfigCycle
-    ? (configCollapseState === 'full'
-      ? 'Collapse Configuration column to 50%'
-      : configCollapseState === 'half'
-        ? 'Collapse Configuration column fully'
-        : 'Expand Configuration column')
-    : (isConfigCollapsed ? 'Expand Configuration column' : 'Collapse Configuration column');
+  const configToggleLabel = isConfigCollapsed ? 'Expand Configuration column' : 'Collapse Configuration column';
   const layoutStyle = {
     '--parse-explorer-width': `${effectiveExplorerWidth}px`,
     '--parse-config-width': `${effectiveConfigWidth}px`,
   } as CSSProperties;
+
   const isMarkdownTextPreview = (
     previewKind === 'text'
     && selectedDoc?.source_type?.toLowerCase() === 'md'
@@ -1368,7 +1475,7 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
   );
   const layoutClassName = `parse-playground-layout${surface === 'test' ? ' parse-playground-layout--test' : ''}${isShellGrid ? ` schema-layout-test-page${isExplorerCollapsed ? ' is-left-collapsed' : ''}` : ''}`;
   const explorerClassName = `parse-playground-explorer${isExplorerCollapsed ? ' is-collapsed' : ''}${isShellGrid ? ' schema-layout-test-explorer' : ''}`;
-  const rightPaneClassName = `parse-playground-right${isExtractMode && !isShellGrid ? ' is-extract' : ''}${isTestSurfacePage && isConfigCollapsed ? ' is-collapsed' : ''}${isShellGrid ? ` schema-layout-test-right${isConfigHalf ? ' is-half' : ''}` : ''}`;
+  const rightPaneClassName = `parse-playground-right${isExtractMode && !isShellGrid ? ' is-extract' : ''}${isTestSurfacePage && isConfigCollapsed ? ' is-collapsed' : ''}${isShellGrid ? ' schema-layout-test-right' : ''}`;
   const middleTabsClassName = `parse-middle-view-tabs${isShellGrid ? ' schema-layout-middle-header' : ''}`;
   const parseConfigRootClassName = `parse-config-root${showCenterResultsList ? ' parse-results-side-root' : ''}${isShellGrid ? ' schema-layout-test-config-root' : ''}`;
   const parseConfigScrollClassName = `parse-config-scroll${isShellGrid ? ' schema-layout-test-config-scroll' : ''}`;
@@ -1439,6 +1546,9 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
             projectId={project.project_id}
             ingestMode="upload_only"
             compactUi
+            uiVariant={isShellGrid ? 'headless' : 'dashboard'}
+            enableRemoteSources={isShellGrid}
+            companionUrl={import.meta.env.VITE_UPPY_COMPANION_URL as string | undefined}
             hideHeader={isShellGrid}
             onBatchUploaded={handleBatchUploaded}
             height={240}
@@ -1452,14 +1562,25 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
             className={isShellGrid ? 'schema-layout-left-scroll' : undefined}
           >
           <Group justify="space-between" align="center" wrap="nowrap" className="parse-docs-toolbar">
-            <Text
-              size="xs"
-              c="dimmed"
-              style={{ cursor: 'pointer', userSelect: 'none' }}
+            <Group
+              gap={8}
+              wrap="nowrap"
+              className="parse-docs-select-all"
               onClick={() => toggleAllPagedDocSelection(!allPagedSelected)}
             >
-              {allPagedSelected || somePagedSelected ? 'Deselect all' : 'Select all'}
-            </Text>
+              <Checkbox
+                checked={allPagedSelected}
+                indeterminate={somePagedSelected}
+                size="xs"
+                styles={docSelectorCheckboxStyles}
+                onClick={(event) => event.stopPropagation()}
+                onChange={(event) => toggleAllPagedDocSelection(event.currentTarget.checked)}
+                aria-label={allPagedSelected || somePagedSelected ? 'Deselect all documents on this page' : 'Select all documents on this page'}
+              />
+              <Text size="xs" c="dimmed" style={{ userSelect: 'none' }}>
+                Select all
+              </Text>
+            </Group>
           </Group>
 
           {docs.length === 0 ? (
@@ -1473,10 +1594,12 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
                   const selected = doc.source_uid === selectedSourceUid;
                   const checked = selectedSourceUidSet.has(doc.source_uid);
                   const statusMeta = DOC_STATUS_META[doc.status];
+                  const retryable = doc.status === 'conversion_failed' || doc.status === 'ingest_failed';
+                  const retrying = !!retryingSourceUids[doc.source_uid];
                   return (
                     <Box
                       key={doc.source_uid}
-                      className={`parse-doc-card${selected ? ' is-active' : ''}`}
+                      className={`parse-doc-card${selected ? ' is-active' : ''}${retryable ? ' is-failed' : ''}`}
                       role="button"
                       tabIndex={0}
                       onClick={() => setSelectedSourceUid(doc.source_uid)}
@@ -1494,24 +1617,41 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
                         onClick={(event) => event.stopPropagation()}
                         onChange={(event) => toggleDocSelection(doc.source_uid, event.currentTarget.checked)}
                       />
-                      <Text size="xs" fw={selected ? 700 : 600} className="parse-doc-card-name" title={doc.doc_title}>
-                        {doc.doc_title}
-                      </Text>
+                      <Box className="parse-doc-card-main">
+                        <Text size="xs" fw={selected ? 700 : 600} className="parse-doc-card-name" title={doc.doc_title}>
+                          {doc.doc_title}
+                        </Text>
+                        <Text size="xs" className="parse-doc-card-size">{formatBytes(doc.source_filesize)}</Text>
+                      </Box>
                       <Text size="xs" className="parse-doc-card-format">{getDocumentFormat(doc)}</Text>
-                      <Text size="xs" className="parse-doc-card-size">{formatBytes(doc.source_filesize)}</Text>
                       <Group
                         gap={6}
                         wrap="nowrap"
-                        className="parse-doc-card-status"
+                        className="parse-doc-card-actions"
                         aria-label={`Status: ${statusMeta.label}`}
                         title={statusMeta.label}
                       >
                         <span className={`parse-doc-card-status-dot is-${statusMeta.tone}`} />
+                        {retryable && (
+                          <ActionIcon
+                            size="sm"
+                            variant="subtle"
+                            color="red"
+                            aria-label={`Retry ${doc.doc_title}`}
+                            disabled={retrying}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              void handleRetryDocument(doc.source_uid);
+                            }}
+                          >
+                            {retrying ? <Loader size={12} /> : <IconRotateClockwise size={13} />}
+                          </ActionIcon>
+                        )}
                       </Group>
                       <ActionIcon
                         size="sm"
                         variant="subtle"
-                        color="red"
+                        color={retryable ? 'red' : 'gray'}
                         aria-label={`Delete ${doc.doc_title}`}
                         onClick={(event) => {
                           event.stopPropagation();
@@ -1527,37 +1667,28 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
               {isShellGrid ? (
                 <Group justify="space-between" align="center" wrap="nowrap" className="schema-layout-docs-footer">
                   <Text size="xs" c="dimmed">{docRangeStart}-{docRangeEnd} of {docs.length}</Text>
-                  <Group gap={8} align="center" wrap="nowrap">
-                    <Group gap={4} align="center" wrap="nowrap" className="schema-layout-docs-size">
-                      <Text size="xs" c="dimmed">Rows</Text>
-                      <Group gap={8} wrap="nowrap" className="schema-layout-docs-size-tabs">
-                        {DOCS_PER_PAGE_OPTIONS.map((sizeOption) => (
-                          <Text
-                            key={sizeOption}
-                            size="xs"
-                            fw={docsPerPage === sizeOption ? 700 : 600}
-                            c={docsPerPage === sizeOption ? undefined : 'dimmed'}
-                            className={`parse-middle-tab${docsPerPage === sizeOption ? ' is-active' : ''}`}
-                            onClick={() => {
-                              setDocsPerPage(sizeOption);
-                              setPage(1);
-                            }}
-                            style={{ cursor: 'pointer', userSelect: 'none' }}
-                          >
-                            {sizeOption}
-                          </Text>
-                        ))}
-                      </Group>
-                    </Group>
-                    <Pagination
-                      size="xs"
-                      total={totalPages}
-                      value={page}
-                      onChange={setPage}
-                      siblings={0}
-                      boundaries={1}
-                      className="parse-docs-pagination"
-                    />
+                  <Group gap={4} align="center" wrap="nowrap" className="parse-docs-footer-nav">
+                    <ActionIcon
+                      size="sm"
+                      variant="subtle"
+                      className="parse-docs-footer-nav-btn"
+                      aria-label="Previous documents page"
+                      disabled={page <= 1}
+                      onClick={() => setPage((current) => Math.max(1, current - 1))}
+                    >
+                      <IconChevronLeft size={14} />
+                    </ActionIcon>
+                    <Text size="xs" fw={600} className="parse-docs-footer-page">{page}</Text>
+                    <ActionIcon
+                      size="sm"
+                      variant="subtle"
+                      className="parse-docs-footer-nav-btn"
+                      aria-label="Next documents page"
+                      disabled={page >= totalPages}
+                      onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
+                    >
+                      <IconChevronRight size={14} />
+                    </ActionIcon>
                   </Group>
                 </Group>
               ) : (
@@ -1602,23 +1733,7 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
               onPointerDown={handleExplorerResizeStart}
             />
           )}
-          {isShellGrid ? (
-            <Group justify={isExplorerCollapsed ? 'center' : 'space-between'} wrap="nowrap" className="schema-layout-left-header">
-              {!isExplorerCollapsed ? (
-                <Text size="sm" fw={700}>Documents</Text>
-              ) : null}
-              <ActionIcon
-                size="sm"
-                variant="subtle"
-                className="schema-layout-snap-btn"
-                aria-label={isExplorerCollapsed ? 'Expand documents column' : 'Collapse documents column'}
-                title={isExplorerCollapsed ? 'Expand documents column' : 'Collapse documents column'}
-                onClick={() => setIsExplorerCollapsed((current) => !current)}
-              >
-                {isExplorerCollapsed ? <IconChevronRight size={14} /> : <IconChevronLeft size={14} />}
-              </ActionIcon>
-            </Group>
-          ) : (
+          {!isShellGrid && (
             <ActionIcon
               size="sm"
               variant="subtle"
@@ -1627,45 +1742,19 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
               title={isExplorerCollapsed ? 'Expand Add Documents column' : 'Collapse Add Documents column'}
               onClick={() => setIsExplorerCollapsed((current) => !current)}
             >
-              {isExplorerCollapsed ? <IconChevronRight size={16} /> : <IconChevronLeft size={16} />}
+              {isExplorerCollapsed ? (
+                <DoubleArrowIcon size={PANE_CHEVRON_ICON.size} />
+              ) : (
+                <IconChevronLeft size={PANE_CHEVRON_ICON.size} stroke={PANE_CHEVRON_ICON.stroke} />
+              )}
             </ActionIcon>
           )}
 
-          {isShellGrid && isExplorerCollapsed ? (
-            <Box
-              className="schema-layout-left-collapsed-body"
-              role="button"
-              tabIndex={0}
-              onClick={() => setIsExplorerCollapsed(false)}
-              onKeyDown={(event) => {
-                if (event.key !== 'Enter' && event.key !== ' ') return;
-                event.preventDefault();
-                setIsExplorerCollapsed(false);
-              }}
-            >
-              <Group gap={8} wrap="nowrap" className="schema-layout-collapsed-rail-content">
-                <ActionIcon
-                  size="sm"
-                  variant="subtle"
-                  className="schema-layout-snap-btn"
-                  aria-label="Expand documents column"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    setIsExplorerCollapsed(false);
-                  }}
-                >
-                  <IconChevronRight size={14} />
-                </ActionIcon>
-                <Text size="xs" c="dimmed" className="schema-layout-vertical-label">DOCS</Text>
-              </Group>
+          {isShellGrid ? (
+            <Box className="schema-layout-left-body">
+              {explorerBodyContent}
             </Box>
-          ) : (
-            isShellGrid ? (
-              <Box className="schema-layout-left-body">
-                {explorerBodyContent}
-              </Box>
-            ) : explorerBodyContent
-          )}
+          ) : explorerBodyContent}
         </Box>
         <Box className="parse-playground-work">
           <Box className="parse-playground-preview">
@@ -1930,16 +2019,29 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
                         </Text>
                       </Center>
                     ) : (
-                      testBlocks.map((block) => (
-                        <Box key={block.blockUid} className="parse-docling-results-item">
-                          <Text size="xs" fw={700}>
-                            {block.blockType} | #{block.blockIndex}
-                          </Text>
-                          <Text size="xs" c="dimmed" lineClamp={3}>
-                            {block.snippet || '[no text]'}
-                          </Text>
-                        </Box>
-                      ))
+                      testBlocks.map((block) => {
+                        const overlayColors = resolveOverlayColors(
+                          block.blockType,
+                          block.parserBlockType,
+                          null,
+                          blockTypeRegistry?.overlayBorder,
+                          blockTypeRegistry?.overlayBg,
+                        );
+                        const cardStyle = {
+                          '--parse-block-card-accent': overlayColors.border,
+                          '--parse-block-card-fill': overlayColors.bg,
+                        } as CSSProperties;
+                        return (
+                          <Box key={block.blockUid} className="parse-docling-results-item" style={cardStyle}>
+                            <Text size="xs" fw={700}>
+                              {block.blockType} | #{block.blockIndex}
+                            </Text>
+                            <Text size="xs" c="dimmed" lineClamp={3}>
+                              {block.snippet || '[no text]'}
+                            </Text>
+                          </Box>
+                        );
+                      })
                     )}
                   </Box>
                 )}
@@ -2085,7 +2187,7 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
         </Box>
 
         <Box className={rightPaneClassName}>
-          {!isShellGrid && (
+          {!isShellGrid && CONFIG_WIDTH_MAX > CONFIG_WIDTH_MIN && (
             <Box
               className={`parse-playground-resizer parse-playground-resizer-config${activeResizer === 'config' ? ' is-active' : ''}`}
               role="separator"
@@ -2094,23 +2196,7 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
               onPointerDown={handleConfigResizeStart}
             />
           )}
-          {isShellGrid ? (
-            <Group justify={isConfigCollapsed ? 'center' : 'space-between'} wrap="nowrap" className="schema-layout-right-header">
-              {!isConfigCollapsed ? (
-                <Text size="sm" fw={700}>Configuration</Text>
-              ) : null}
-              <ActionIcon
-                size="sm"
-                variant="subtle"
-                className="schema-layout-snap-btn"
-                aria-label={configToggleLabel}
-                title={configToggleLabel}
-                onClick={handleConfigToggle}
-              >
-                {isConfigCollapsed ? <IconChevronRight size={14} /> : <IconChevronLeft size={14} />}
-              </ActionIcon>
-            </Group>
-          ) : (
+          {!isShellGrid && (
             isTestSurfacePage && (
               <ActionIcon
                 size="sm"
@@ -2120,7 +2206,11 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
                 title={configToggleLabel}
                 onClick={handleConfigToggle}
               >
-                {isConfigCollapsed ? <IconChevronRight size={16} /> : <IconChevronLeft size={16} />}
+                {isConfigCollapsed ? (
+                  <DoubleArrowIcon size={PANE_CHEVRON_ICON.size} />
+                ) : (
+                  <IconChevronLeft size={PANE_CHEVRON_ICON.size} stroke={PANE_CHEVRON_ICON.stroke} />
+                )}
               </ActionIcon>
             )
           )}
@@ -2138,7 +2228,7 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
                       aria-label="Run extract"
                       title="Run extract"
                     >
-                      <IconPlayerPlay size={17} />
+                      <IconPlayerPlay size={CONFIG_ACTION_ICON.size} stroke={CONFIG_ACTION_ICON.stroke} />
                     </ActionIcon>
                   </Group>
                 </Group>
@@ -2153,7 +2243,7 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
                         aria-label="Run extract"
                         title="Run extract"
                       >
-                        <IconPlayerPlay size={17} />
+                        <IconPlayerPlay size={CONFIG_ACTION_ICON.size} stroke={CONFIG_ACTION_ICON.stroke} />
                       </ActionIcon>
                     </Group>
                   </Group>
@@ -2503,7 +2593,7 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
                       aria-label="Save config"
                       title="Save config"
                     >
-                      <IconDeviceFloppy size={17} />
+                      <IconDeviceFloppy size={CONFIG_ACTION_ICON.size} stroke={CONFIG_ACTION_ICON.stroke} />
                     </ActionIcon>
                     <ActionIcon
                       size="sm"
@@ -2513,7 +2603,7 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
                       loading={parseLoading}
                       onClick={() => void handleRunParse()}
                     >
-                      <IconPlayerPlay size={17} />
+                      <IconPlayerPlay size={CONFIG_ACTION_ICON.size} stroke={CONFIG_ACTION_ICON.stroke} />
                     </ActionIcon>
                   </Group>
                 </Group>
@@ -2557,7 +2647,7 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
                         aria-label="Save config"
                         title="Save config"
                       >
-                        <IconDeviceFloppy size={17} />
+                        <IconDeviceFloppy size={CONFIG_ACTION_ICON.size} stroke={CONFIG_ACTION_ICON.stroke} />
                       </ActionIcon>
                       <ActionIcon
                         size="sm"
@@ -2567,7 +2657,7 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
                         loading={parseLoading}
                         onClick={() => void handleRunParse()}
                       >
-                        <IconPlayerPlay size={17} />
+                        <IconPlayerPlay size={CONFIG_ACTION_ICON.size} stroke={CONFIG_ACTION_ICON.stroke} />
                       </ActionIcon>
                     </Group>
                   )}

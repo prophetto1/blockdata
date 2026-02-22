@@ -5,8 +5,6 @@ import {
   Modal,
   Portal,
   rem,
-  useMantineColorScheme,
-  useComputedColorScheme,
 } from '@mantine/core';
 import { useDisclosure, useLocalStorage } from '@mantine/hooks';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
@@ -42,16 +40,10 @@ export function AppLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, profile, signOut } = useAuth();
-  const { setColorScheme } = useMantineColorScheme();
-  const computedColorScheme = useComputedColorScheme('dark');
 
   const handleSignOut = async () => {
     await signOut();
     navigate('/login');
-  };
-
-  const toggleColorScheme = () => {
-    setColorScheme(computedColorScheme === 'dark' ? 'light' : 'dark');
   };
 
   const toggleAssistant = () => {
@@ -116,7 +108,7 @@ export function AppLayout() {
       }
     : undefined;
 
-  // Command search lives in TopCommandBar; AppLayout intentionally has no Spotlight provider.
+  // Command search is handled in LeftRail; AppLayout intentionally has no Spotlight provider.
   return (
     <HeaderCenterProvider>
     <AppShell
@@ -141,15 +133,8 @@ export function AppLayout() {
     >
       <AppShell.Header>
         <TopCommandBar
-          navOpened={navOpened}
           onToggleNav={toggleNav}
-          desktopNavOpened={desktopNavOpened}
-          onToggleDesktopNav={toggleDesktopNav}
-          showAssistantToggle={assistantDockEnabled}
-          assistantOpened={assistantOpened}
-          onToggleAssistant={toggleAssistant}
-          computedColorScheme={computedColorScheme}
-          onToggleColorScheme={toggleColorScheme}
+          shellGuides={lockMainScroll}
         />
       </AppShell.Header>
 
@@ -166,6 +151,9 @@ export function AppLayout() {
           onSignOut={handleSignOut}
           desktopCompact={!desktopNavOpened}
           onToggleDesktopCompact={toggleDesktopNav}
+          showAssistantToggle={assistantDockEnabled}
+          assistantOpened={assistantOpened}
+          onToggleAssistant={toggleAssistant}
         />
       </AppShell.Navbar>
 

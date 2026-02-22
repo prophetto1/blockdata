@@ -1,7 +1,10 @@
 import { ActionIcon, Box, Group, Pagination, Radio, Stack, Switch, Text, TextInput } from '@mantine/core';
-import { IconChevronLeft, IconChevronRight } from '@tabler/icons-react';
-import { useEffect, useMemo, useState, type CSSProperties } from 'react';
+import { IconChevronLeft } from '@tabler/icons-react';
+import { useEffect, useLayoutEffect, useMemo, useState, type CSSProperties } from 'react';
+import { useHeaderCenter } from '@/components/shell/HeaderCenterContext';
+import { DoubleArrowIcon } from '@/components/icons/DoubleArrowIcon';
 import { PdfPreview } from '../components/documents/PdfPreview';
+import { ICON_TOKENS } from '../lib/iconTokens';
 import './SchemaLayout.css';
 
 const DOCS_PER_PAGE = 10;
@@ -13,10 +16,10 @@ const LEFT_COLUMN_WIDTH = {
 } as const;
 
 const RIGHT_COLUMN_WIDTH = {
-  full: 450,
-  half: 280,
+  full: 300,
   collapsed: 56,
 } as const;
+const PANE_CHEVRON_ICON = ICON_TOKENS.shell.paneChevron;
 
 type LeftColumnState = keyof typeof LEFT_COLUMN_WIDTH;
 type RightColumnState = keyof typeof RIGHT_COLUMN_WIDTH;
@@ -29,6 +32,7 @@ const docRows = Array.from({ length: 37 }, (_, index) => ({
 }));
 
 export default function SchemaLayout() {
+  const { setShellTopSlots } = useHeaderCenter();
   const [leftColumnState, setLeftColumnState] = useState<LeftColumnState>('full');
   const [rightColumnState, setRightColumnState] = useState<RightColumnState>('full');
   const [parseConfigView, setParseConfigView] = useState<ParseConfigView>('Basic');
@@ -40,18 +44,92 @@ export default function SchemaLayout() {
   const isLeftCollapsed = leftColumnState === 'collapsed';
   const isRightCollapsed = rightColumnState === 'collapsed';
 
+  useEffect(() => {
+    const root = document.documentElement;
+    root.style.setProperty('--shell-guide-left-width', `${LEFT_COLUMN_WIDTH[leftColumnState]}px`);
+    root.style.setProperty('--shell-guide-middle-width', `${RIGHT_COLUMN_WIDTH[rightColumnState]}px`);
+
+    return () => {
+      root.style.removeProperty('--shell-guide-left-width');
+      root.style.removeProperty('--shell-guide-middle-width');
+    };
+  }, [leftColumnState, rightColumnState]);
+
+  useLayoutEffect(() => {
+    setShellTopSlots({
+      left: (
+        <Group
+          gap={8}
+          wrap="nowrap"
+          justify={isLeftCollapsed ? 'flex-end' : 'space-between'}
+          className="top-command-bar-shell-slot"
+        >
+          {!isLeftCollapsed ? (
+            <Text size="sm" fw={700} className="top-command-bar-shell-label">Documents</Text>
+          ) : null}
+          <ActionIcon
+            size="sm"
+            variant="subtle"
+            className="top-command-bar-shell-toggle"
+            aria-label={isLeftCollapsed ? 'Expand left column' : 'Collapse left column'}
+            title={isLeftCollapsed ? 'Expand left column' : 'Collapse left column'}
+            onClick={() => setLeftColumnState((current) => (current === 'collapsed' ? 'full' : 'collapsed'))}
+          >
+            {isLeftCollapsed ? (
+              <DoubleArrowIcon size={PANE_CHEVRON_ICON.size} />
+            ) : (
+              <IconChevronLeft size={PANE_CHEVRON_ICON.size} stroke={PANE_CHEVRON_ICON.stroke} />
+            )}
+          </ActionIcon>
+        </Group>
+      ),
+      middle: (
+        <Group
+          gap={8}
+          wrap="nowrap"
+          justify={isRightCollapsed ? 'flex-end' : 'space-between'}
+          className="top-command-bar-shell-slot"
+        >
+          {!isRightCollapsed ? (
+            <Text size="sm" fw={700} className="top-command-bar-shell-label">Configuration</Text>
+          ) : null}
+          <ActionIcon
+            size="sm"
+            variant="subtle"
+            className="top-command-bar-shell-toggle"
+            aria-label={isRightCollapsed ? 'Expand configuration column' : 'Collapse configuration column'}
+            title={isRightCollapsed ? 'Expand configuration column' : 'Collapse configuration column'}
+            onClick={() => setRightColumnState((current) => (current === 'collapsed' ? 'full' : 'collapsed'))}
+          >
+            {isRightCollapsed ? (
+              <DoubleArrowIcon size={PANE_CHEVRON_ICON.size} />
+            ) : (
+              <IconChevronLeft size={PANE_CHEVRON_ICON.size} stroke={PANE_CHEVRON_ICON.stroke} />
+            )}
+          </ActionIcon>
+        </Group>
+      ),
+      right: (
+        <Text size="sm" fw={700} className="top-command-bar-shell-label">Preview</Text>
+      ),
+    });
+  }, [isLeftCollapsed, isRightCollapsed, setShellTopSlots]);
+
+  useEffect(() => () => setShellTopSlots(null), [setShellTopSlots]);
+
   const layoutStyle = useMemo(() => ({
     '--parse-explorer-width': `${LEFT_COLUMN_WIDTH[leftColumnState]}px`,
     '--parse-config-width': `${RIGHT_COLUMN_WIDTH[rightColumnState]}px`,
   }) as CSSProperties, [leftColumnState, rightColumnState]);
   const totalDocPages = Math.max(1, Math.ceil(docRows.length / docsPerPage));
+  const activeDocPage = Math.min(docPage, totalDocPages);
   const pagedDocRows = useMemo(() => {
-    const start = (docPage - 1) * docsPerPage;
+    const start = (activeDocPage - 1) * docsPerPage;
     return docRows.slice(start, start + docsPerPage);
-  }, [docPage, docsPerPage]);
+  }, [activeDocPage, docsPerPage]);
   const hasDocs = docRows.length > 0;
-  const docRangeStart = hasDocs ? (docPage - 1) * docsPerPage + 1 : 0;
-  const docRangeEnd = hasDocs ? Math.min(docRows.length, docPage * docsPerPage) : 0;
+  const docRangeStart = hasDocs ? (activeDocPage - 1) * docsPerPage + 1 : 0;
+  const docRangeEnd = hasDocs ? Math.min(docRows.length, activeDocPage * docsPerPage) : 0;
   const previewSelector = (
     <Group gap={15} wrap="nowrap" className="schema-layout-view-picker">
       <Text
@@ -87,23 +165,6 @@ export default function SchemaLayout() {
     </Group>
   );
 
-  useEffect(() => {
-    if (docPage <= totalDocPages) return;
-    setDocPage(totalDocPages);
-  }, [docPage, totalDocPages]);
-
-  const toggleLeftColumn = () => {
-    setLeftColumnState((current) => (current === 'collapsed' ? 'full' : 'collapsed'));
-  };
-
-  const cycleRightColumn = () => {
-    setRightColumnState((current) => {
-      if (current === 'full') return 'half';
-      if (current === 'half') return 'collapsed';
-      return 'full';
-    });
-  };
-
   return (
     <Box
       className={`parse-playground-layout parse-playground-layout--test schema-layout-test-page${isLeftCollapsed ? ' is-left-collapsed' : ''}`}
@@ -111,115 +172,70 @@ export default function SchemaLayout() {
       style={layoutStyle}
     >
       <Box className={`parse-playground-explorer schema-layout-test-explorer${isLeftCollapsed ? ' is-collapsed' : ''}`}>
-        <Group justify={isLeftCollapsed ? 'center' : 'space-between'} wrap="nowrap" className="schema-layout-left-header">
-          {!isLeftCollapsed ? (
-            <Group gap={8} wrap="nowrap">
-              <Text size="sm" fw={700}>Documents</Text>
-            </Group>
-          ) : null}
-          <ActionIcon
-            size="sm"
-            variant="subtle"
-            className="schema-layout-snap-btn"
-            aria-label={isLeftCollapsed ? 'Expand left column' : 'Collapse left column'}
-            title={isLeftCollapsed ? 'Expand left column' : 'Collapse left column'}
-            onClick={toggleLeftColumn}
-          >
-            {isLeftCollapsed ? <IconChevronRight size={14} /> : <IconChevronLeft size={14} />}
-          </ActionIcon>
-        </Group>
-
-        {isLeftCollapsed ? (
-          <Box
-            className="schema-layout-left-collapsed-body"
-            role="button"
-            tabIndex={0}
-            onClick={toggleLeftColumn}
-            onKeyDown={(event) => {
-              if (event.key !== 'Enter' && event.key !== ' ') return;
-              event.preventDefault();
-              toggleLeftColumn();
-            }}
-          >
-            <Group gap={8} wrap="nowrap" className="schema-layout-collapsed-rail-content">
-              <ActionIcon
-                size="sm"
-                variant="subtle"
-                className="schema-layout-snap-btn"
-                aria-label="Expand left column"
-                onClick={toggleLeftColumn}
-              >
-                <IconChevronRight size={14} />
-              </ActionIcon>
-              <Text size="xs" c="dimmed" className="schema-layout-vertical-label">DOCS</Text>
-            </Group>
+        <Box className="schema-layout-left-body">
+          <Box className="schema-layout-test-upload-card">
+            <Text size="xl" fw={700}>Drop files here</Text>
+            <Text size="sm" c="dimmed">or click to browse</Text>
           </Box>
-        ) : (
-          <Box className="schema-layout-left-body">
-            <Box className="schema-layout-test-upload-card">
-              <Text size="xl" fw={700}>Drop files here</Text>
-              <Text size="sm" c="dimmed">or click to browse</Text>
+
+          <Stack gap="xs" className="schema-layout-left-scroll">
+            <Group justify="space-between" align="center" wrap="nowrap" className="parse-docs-toolbar">
+              <Text size="xs" c="dimmed">Select all</Text>
+              <Text size="xs" c="dimmed">{docRows.length} docs</Text>
+            </Group>
+
+            <Box className="parse-doc-card-list">
+              {pagedDocRows.map((doc, index) => (
+                <Box key={doc.id} className={`parse-doc-card${index === 0 ? ' is-active' : ''}`}>
+                  <span className="schema-layout-test-checkbox" />
+                  <Text size="xs" fw={index === 0 ? 700 : 600} className="parse-doc-card-name">{doc.title}</Text>
+                  <Text size="xs" className="parse-doc-card-format">PDF</Text>
+                  <Text size="xs" className="parse-doc-card-size">2 MB</Text>
+                  <Group gap={6} wrap="nowrap" className="parse-doc-card-status">
+                    <span className="parse-doc-card-status-dot is-green" />
+                  </Group>
+                  <span className="schema-layout-test-doc-action" />
+                </Box>
+              ))}
             </Box>
 
-            <Stack gap="xs" className="schema-layout-left-scroll">
-              <Group justify="space-between" align="center" wrap="nowrap" className="parse-docs-toolbar">
-                <Text size="xs" c="dimmed">Select all</Text>
-                <Text size="xs" c="dimmed">{docRows.length} docs</Text>
-              </Group>
-
-              <Box className="parse-doc-card-list">
-                {pagedDocRows.map((doc, index) => (
-                  <Box key={doc.id} className={`parse-doc-card${index === 0 ? ' is-active' : ''}`}>
-                    <span className="schema-layout-test-checkbox" />
-                    <Text size="xs" fw={index === 0 ? 700 : 600} className="parse-doc-card-name">{doc.title}</Text>
-                    <Text size="xs" className="parse-doc-card-format">PDF</Text>
-                    <Text size="xs" className="parse-doc-card-size">2 MB</Text>
-                    <Group gap={6} wrap="nowrap" className="parse-doc-card-status">
-                      <span className="parse-doc-card-status-dot is-green" />
-                    </Group>
-                    <span className="schema-layout-test-doc-action" />
-                  </Box>
-                ))}
-              </Box>
-
-              <Group justify="space-between" align="center" wrap="nowrap" className="schema-layout-docs-footer">
-                <Text size="xs" c="dimmed">{docRangeStart}-{docRangeEnd} of {docRows.length}</Text>
-                <Group gap={8} align="center" wrap="nowrap">
-                  <Group gap={4} align="center" wrap="nowrap" className="schema-layout-docs-size">
-                    <Text size="xs" c="dimmed">Rows</Text>
-                    <Group gap={8} wrap="nowrap" className="schema-layout-docs-size-tabs">
-                      {DOCS_PER_PAGE_OPTIONS.map((sizeOption) => (
-                        <Text
-                          key={sizeOption}
-                          size="xs"
-                          fw={docsPerPage === sizeOption ? 700 : 600}
-                          c={docsPerPage === sizeOption ? undefined : 'dimmed'}
-                          className={`parse-middle-tab${docsPerPage === sizeOption ? ' is-active' : ''}`}
-                          onClick={() => {
-                            setDocsPerPage(sizeOption);
-                            setDocPage(1);
-                          }}
-                          style={{ cursor: 'pointer', userSelect: 'none' }}
-                        >
-                          {sizeOption}
-                        </Text>
-                      ))}
-                    </Group>
+            <Group justify="space-between" align="center" wrap="nowrap" className="schema-layout-docs-footer">
+              <Text size="xs" c="dimmed">{docRangeStart}-{docRangeEnd} of {docRows.length}</Text>
+              <Group gap={8} align="center" wrap="nowrap">
+                <Group gap={4} align="center" wrap="nowrap" className="schema-layout-docs-size">
+                  <Text size="xs" c="dimmed">Rows</Text>
+                  <Group gap={8} wrap="nowrap" className="schema-layout-docs-size-tabs">
+                    {DOCS_PER_PAGE_OPTIONS.map((sizeOption) => (
+                      <Text
+                        key={sizeOption}
+                        size="xs"
+                        fw={docsPerPage === sizeOption ? 700 : 600}
+                        c={docsPerPage === sizeOption ? undefined : 'dimmed'}
+                        className={`parse-middle-tab${docsPerPage === sizeOption ? ' is-active' : ''}`}
+                        onClick={() => {
+                          setDocsPerPage(sizeOption);
+                          setDocPage(1);
+                        }}
+                        style={{ cursor: 'pointer', userSelect: 'none' }}
+                      >
+                        {sizeOption}
+                      </Text>
+                    ))}
                   </Group>
-                  <Pagination
-                    size="xs"
-                    total={totalDocPages}
-                    value={docPage}
-                    onChange={setDocPage}
-                    siblings={0}
-                    boundaries={1}
-                    className="parse-docs-pagination"
-                  />
                 </Group>
+                <Pagination
+                  size="xs"
+                  total={totalDocPages}
+                  value={activeDocPage}
+                  onChange={setDocPage}
+                  siblings={0}
+                  boundaries={1}
+                  className="parse-docs-pagination"
+                />
               </Group>
-            </Stack>
-          </Box>
-        )}
+            </Group>
+          </Stack>
+        </Box>
       </Box>
 
       <Box className="parse-playground-work schema-layout-test-work">
@@ -255,27 +271,9 @@ export default function SchemaLayout() {
       </Box>
 
       <Box
-        className={`parse-playground-right schema-layout-test-right${rightColumnState === 'half' ? ' is-half' : ''}${isRightCollapsed ? ' is-collapsed' : ''}`}
+        className={`parse-playground-right schema-layout-test-right${isRightCollapsed ? ' is-collapsed' : ''}`}
       >
         <Stack gap={0} className="schema-layout-test-config-root">
-          <Group justify={isRightCollapsed ? 'center' : 'space-between'} wrap="nowrap" className="schema-layout-right-header">
-            {!isRightCollapsed ? (
-              <Group gap={8} wrap="nowrap" className="schema-layout-config-title">
-                <Text size="sm" fw={700}>Configuration</Text>
-              </Group>
-            ) : null}
-            <ActionIcon
-              size="sm"
-              variant="subtle"
-              className="schema-layout-snap-btn"
-              aria-label={isRightCollapsed ? 'Expand configuration column' : 'Cycle right column snap mode'}
-              title={isRightCollapsed ? 'Expand configuration column' : 'Cycle right column snap mode'}
-              onClick={cycleRightColumn}
-            >
-              {isRightCollapsed ? <IconChevronRight size={14} /> : <IconChevronLeft size={14} />}
-            </ActionIcon>
-          </Group>
-
           {isRightCollapsed ? (
             <Box className="schema-layout-right-collapsed-body" />
           ) : (

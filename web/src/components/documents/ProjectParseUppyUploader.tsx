@@ -1,18 +1,23 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Box, Center, Loader, Stack, Text, useComputedColorScheme } from '@mantine/core';
 import Uppy, { type UploadResult } from '@uppy/core';
+import { Dropzone, FilesList, UppyContextProvider, UploadButton } from '@uppy/react';
 import Dashboard from '@uppy/react/dashboard';
+import UppyRemoteSources from '@uppy/remote-sources';
 import XHRUpload from '@uppy/xhr-upload';
 import { useAuth } from '@/auth/AuthContext';
 import { edgeJson } from '@/lib/edge';
 
 import '@uppy/core/css/style.min.css';
 import '@uppy/dashboard/css/style.min.css';
+import '@uppy/react/css/style.css';
 
 type IngestMode = 'ingest' | 'upload_only';
+type UppyUiVariant = 'dashboard' | 'headless';
 type UppyMeta = { project_id: string; ingest_mode: IngestMode };
 type UppyBody = Record<string, never>;
 type UppyInstance = Uppy<UppyMeta, UppyBody>;
+const REMOTE_SOURCE_PLUGINS = ['GoogleDrive', 'Dropbox', 'OneDrive', 'Box', 'Url'] as const;
 
 type IngestResponse = {
   source_uid?: string;
@@ -37,6 +42,9 @@ type ProjectParseUppyUploaderProps = {
   onBatchUploaded?: (result: UploadBatchResult) => void | Promise<void>;
   height?: number;
   compactUi?: boolean;
+  uiVariant?: UppyUiVariant;
+  enableRemoteSources?: boolean;
+  companionUrl?: string;
   hideHeader?: boolean;
 };
 
@@ -49,6 +57,11 @@ const DEFAULT_ALLOWED_EXTENSIONS = ['.md', '.docx', '.pdf', '.pptx', '.xlsx', '.
 function getIngestEndpoint(): string | null {
   if (!SUPABASE_URL) return null;
   return `${SUPABASE_URL.replace(/\/+$/, '')}/functions/v1/ingest`;
+}
+
+function resolveCompanionUrl(value: string | undefined): string | null {
+  const normalized = value?.trim();
+  return normalized && normalized.length > 0 ? normalized : null;
 }
 
 function normalizeAllowedExtensions(value: string[] | undefined): string[] {
@@ -66,6 +79,9 @@ export function ProjectParseUppyUploader({
   onBatchUploaded,
   height = 320,
   compactUi = false,
+  uiVariant = 'dashboard',
+  enableRemoteSources = false,
+  companionUrl,
   hideHeader = false,
 }: ProjectParseUppyUploaderProps) {
   const computedColorScheme = useComputedColorScheme('dark');
@@ -76,6 +92,15 @@ export function ProjectParseUppyUploader({
   const [allowedExtensions, setAllowedExtensions] = useState<string[]>(DEFAULT_ALLOWED_EXTENSIONS);
 
   const ingestEndpoint = useMemo(() => getIngestEndpoint(), []);
+  const resolvedCompanionUrl = useMemo(() => resolveCompanionUrl(companionUrl), [companionUrl]);
+  const remoteSourcesEnabled = enableRemoteSources && Boolean(resolvedCompanionUrl);
+  const remoteSourcesConfigWarning = enableRemoteSources && !resolvedCompanionUrl
+    ? 'Cloud import unavailable: set VITE_UPPY_COMPANION_URL to your Companion service URL.'
+    : null;
+  const resolvedUiVariant: UppyUiVariant = remoteSourcesEnabled ? 'dashboard' : uiVariant;
+  const dropzoneNote = ingestMode === 'upload_only'
+    ? 'Drop files here or browse files. Parsing runs later when you click Parse.'
+    : 'Drop files here or browse files';
 
   useEffect(() => {
     let cancelled = false;
@@ -135,6 +160,13 @@ export function ProjectParseUppyUploader({
         allowedMetaFields: ['project_id', 'ingest_mode'],
       });
 
+      if (remoteSourcesEnabled && resolvedCompanionUrl) {
+        instance.use(UppyRemoteSources, {
+          companionUrl: resolvedCompanionUrl,
+          sources: [...REMOTE_SOURCE_PLUGINS],
+        });
+      }
+
       instance.on('upload', () => {
         setSummary(null);
       });
@@ -180,7 +212,7 @@ export function ProjectParseUppyUploader({
         setupError: error instanceof Error ? error.message : String(error),
       };
     }
-  }, [allowedExtensions, compactUi, ingestEndpoint, ingestMode, maxFiles, onBatchUploaded, projectId, session]);
+  }, [allowedExtensions, compactUi, ingestEndpoint, ingestMode, maxFiles, onBatchUploaded, projectId, remoteSourcesEnabled, resolvedCompanionUrl, session]);
 
   useEffect(() => {
     if (!uppy) return;
@@ -190,6 +222,8 @@ export function ProjectParseUppyUploader({
   }, [uppy]);
 
   useEffect(() => {
+    if (resolvedUiVariant !== 'dashboard') return;
+
     const root = dashboardHostRef.current;
     if (!root) return;
 
@@ -236,7 +270,7 @@ export function ProjectParseUppyUploader({
       addFilesArea.removeAttribute('tabindex');
       addFilesArea.removeAttribute('aria-label');
     };
-  }, [uppy, compactUi]);
+  }, [compactUi, resolvedUiVariant, uppy]);
 
   if (setupError) {
     return <Alert color="red">{setupError}</Alert>;
@@ -257,23 +291,41 @@ export function ProjectParseUppyUploader({
           <Text fw={700} size="sm">Add Documents</Text>
         </Box>
       )}
-      <div ref={dashboardHostRef}>
-        <Dashboard
-          uppy={uppy}
-          height={height}
-          width="100%"
-          showSelectedFiles={false}
-          disableStatusBar={compactUi}
-          proudlyDisplayPoweredByUppy={false}
-          note={compactUi ? undefined : (
-            ingestMode === 'upload_only'
-              ? 'Drop files here or browse files. Parsing runs later when you click Parse.'
-              : 'Drop files here or browse files'
-          )}
-          hideProgressDetails={false}
-          theme={computedColorScheme === 'dark' ? 'dark' : 'light'}
-        />
-      </div>
+      {resolvedUiVariant === 'headless' ? (
+        <UppyContextProvider uppy={uppy as unknown as Uppy}>
+          <Stack gap={compactUi ? 0 : 'xs'} className={`parse-upload-headless${compactUi ? ' is-compact' : ''}`}>
+            <Dropzone
+              width="100%"
+              height={`${Math.max(120, height)}px`}
+              note={compactUi ? undefined : dropzoneNote}
+            />
+            {!compactUi && (
+              <>
+                <FilesList />
+                <UploadButton />
+              </>
+            )}
+          </Stack>
+        </UppyContextProvider>
+      ) : (
+        <div ref={dashboardHostRef}>
+          <Dashboard
+            uppy={uppy}
+            height={height}
+            width="100%"
+            showSelectedFiles={false}
+            plugins={remoteSourcesEnabled ? [...REMOTE_SOURCE_PLUGINS] : []}
+            disableStatusBar={compactUi}
+            proudlyDisplayPoweredByUppy={false}
+            note={compactUi ? undefined : dropzoneNote}
+            hideProgressDetails={false}
+            theme={computedColorScheme === 'dark' ? 'dark' : 'light'}
+          />
+        </div>
+      )}
+      {remoteSourcesConfigWarning && (
+        <Alert color="yellow" mt="xs">{remoteSourcesConfigWarning}</Alert>
+      )}
       {summary && (
         <Text size="xs" c="dimmed" lineClamp={1} mt="xs">
           {summary}

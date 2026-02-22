@@ -3,3 +3,4 @@ uvicorn[standard]>=0.27
 httpx>=0.26
 pydantic>=2.6
 docling>=2.70.0
+eyecite>=2.7

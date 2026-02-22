@@ -1,0 +1,33 @@
+Ariel Porat & Alex Stein, Liability for Uncertainty: Making Evidential Damage Actionable , 18 Cardozo L. Rev. 1891, 1891 -93 (1997).
+If Porat and Stein provide the doctrinal theory, Anderson v. Mt. Clemens Pottery Co. provides the judicial template. The Supreme Court's 1946 decision is the canonical U.S. example of burden inversion triggered by recordkeeping failure.
+Anderson v. Mt. Clemens Pottery Co., 328 U.S. 680, 687 -88 (1946).
+Sindell v. Abbott Labs., 26 Cal. 3d 588, 611 -13 (1980).
+Agnieszka McPeak, Disappearing Data , 2018 Wis. L. Rev. 17, 19 -22 (2018); Agnieszka McPeak, Self-Destruct Apps: Spoliation by Design? , 51 Akron L. Rev. 739, 741 -44 (2018).
+The VP role Maria sought sits above the broken rung, where the filtering has already compounded. Latinas make up roughly 5% of entry-level corporate employees. By the C-suite, they are 1%. At major U.S. banks -Heartland's peer institutions -the odds of a Latino employee reaching an executive position are as low as 15% compared to white colleagues.
+Under Kansas law, once the plaintiff establishes a prima facie case of retaliation, the burden shifts to the employer to articulate a legitimate, non-retaliatory reason for the adverse action. If the employer meets this burden, the plaintiff must then demonstrate that the employer's stated reason is pretextual. Notably, Kansas courts have held that the employer must prove its legitimate reason by clear and convincing evidence. See Porter v. MidAmerican Energy, 287 Kan. 412 (2008); Gonzalez v. Unified School District 501, 312 P.3d 1058 (Kan. Ct. App. 2013).
+Martinez v. Consolidated Logistics , 2026 WL 4478821 (D. Kan. Aug. 15, 2026), is published.
+In Kansas, the employer bears the burden of proving its legitimate, non-retaliatory reason by clear and convincing evidence. See Martinez v. Consolidated Logistics, 2026 WL 4478821 (D. Kan. 2026).
+Nominal Equivalence: "D. Kan. 2026" signals authority regardless of production method. "Legal AI trained on judicial opinions" signals capability regardless of corpus contamination. "Clear and convincing evidence" looks like a legal standard whether or not it's correct.
+The Courts have also recognized patterns/statistical evidence as establishing a prima facie case to shift the burden to the defendant. Teamsters v. United States (1977) is an example where the burden shifted to the defendant to rebut the inference. In Sindell v. Abbott Laboratories (Cal. 1980), the court identified that architecture may defeat liability by making liability structurally impossible, and adopted burden shifting/apportionment logic.
+Id. at 1893 -94; see also Ariel Porat & Alex Stein, Tort Liability Under Uncertainty 163 -97 (2001).
+Id. at 379.
+Id. at 687.
+Id. at 686 -87.
+Id. at 610 -12.
+Claude E. Shannon, A Mathematical Theory of Communication, 27 Bell Sys. Tech. J. 379 (1948).
+Warren Weaver, Recent Contributions to the Mathematical Theory of Communication, in The Mathematical Theory of Communication 1, 4 (Claude E. Shannon & Warren Weaver eds., 1949).
+Luciano Floridi, The Philosophy of Information (Oxford Univ. Press 2011).
+Julie E. Cohen, Between Truth and Power: The Legal Constructions of Informational Capitalism 3 -7 (2019).
+Mireille Hildebrandt, Smart Technologies and the End(s) of Law: Novel Entanglements of Law and Technology 3 -11 (2015).
+Benjamin C. Pierce, Types and Programming Languages 93 -95 (2002).
+Griggs v. Duke Power (1971).
+Watson v. Fort Worth Bank & Trust (1988).
+Wal-Mart v. Dukes (2011).
+State v. Lamberson (2002).
+State v. Riggs (2013).
+R.S. v. Thompson.
+State ex rel. Montgomery v. Padilla.
+State ex rel. Montgomery v. Brain.
+Ybarra v. Spangard (1944).
+Basic v. Levinson.
+Hadley v. Baxendale.

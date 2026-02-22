@@ -24,7 +24,7 @@
 
 .schema-layout-test-page .parse-playground-explorer {
   display: grid;
-  grid-template-rows: var(--shell-pane-header-height, 50px) minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
   padding: 0;
 }
 
@@ -69,8 +69,8 @@
   min-height: 0;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
-  gap: 8px;
-  padding: 8px 10px 10px;
+  gap: 6px;
+  padding: 8px;
   overflow: hidden;
 }
 
@@ -78,7 +78,7 @@
   min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
-  padding-right: 2px;
+  padding-right: 0;
   scrollbar-gutter: stable;
 }
 
@@ -180,7 +180,7 @@
 
 .schema-layout-test-config-root {
   display: grid;
-  grid-template-rows: var(--shell-pane-header-height, 50px) var(--shell-pane-header-height, 50px) minmax(0, 1fr);
+  grid-template-rows: var(--shell-pane-header-height, 50px) minmax(0, 1fr);
   flex: 1;
   min-height: 0;
   overflow: hidden;
@@ -261,7 +261,7 @@
 }
 
 .schema-layout-test-right.is-collapsed .schema-layout-test-config-root {
-  grid-template-rows: var(--shell-pane-header-height, 50px) minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
 }
 
 .schema-layout-test-right.is-collapsed .schema-layout-test-config-scroll {

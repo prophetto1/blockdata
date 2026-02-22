@@ -18,6 +18,9 @@ import {
   Tooltip,
   NavLink,
   Box,
+  Switch,
+  useMantineColorScheme,
+  useComputedColorScheme,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import {
@@ -123,6 +126,9 @@ const USER_KEY_COLUMNS =
 const DEFAULT_MAX_TOKENS = 4096;
 
 export default function Settings() {
+  const { setColorScheme } = useMantineColorScheme();
+  const computedColorScheme = useComputedColorScheme('dark');
+  const isDarkMode = computedColorScheme === 'dark';
   const [selectedId, setSelectedId] = useState(PROVIDERS[0].id);
   const provider = PROVIDERS.find((p) => p.id === selectedId)!;
 
@@ -330,6 +336,10 @@ export default function Settings() {
       maxTokens !== existing.default_max_tokens ||
       (selectedId === 'custom' && (baseUrl.trim() || null) !== (existing.base_url ?? null)));
 
+  const handleToggleDayNight = () => {
+    setColorScheme(isDarkMode ? 'light' : 'dark');
+  };
+
   if (loading) return null;
 
   /* ================================================================ */
@@ -339,7 +349,13 @@ export default function Settings() {
   return (
     <>
       <PageHeader title="Settings" subtitle="Configure AI providers and model defaults." />
-      <Group justify="flex-end" mb="md" maw={960}>
+      <Group justify="space-between" align="center" mb="md" maw={960}>
+        <Switch
+          checked={isDarkMode}
+          onChange={handleToggleDayNight}
+          label={isDarkMode ? 'Night mode' : 'Day mode'}
+          size="md"
+        />
         <Button
           size="xs"
           variant="light"

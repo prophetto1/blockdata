@@ -12,6 +12,21 @@ from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
+from eyecite import get_citations, resolve_citations
+
+
+class CitationsRequest(BaseModel):
+    text: str
+
+
+class CitationResult(BaseModel):
+    type: str
+    matched_text: str
+    span: list[int]
+    groups: dict[str, Any]
+    metadata: dict[str, Any]
+    resource_id: Optional[str] = None
+
 
 class OutputTarget(BaseModel):
     bucket: str
@@ -69,7 +84,7 @@ PANDOC_READER_BY_SOURCE_TYPE: dict[str, str] = {
 async def auth_middleware(request: Request, call_next):
     # Auth gate must run before request body validation so that missing/wrong
     # secrets get a 401 even if the JSON body is malformed or incomplete.
-    if request.url.path == "/convert" and request.method.upper() == "POST":
+    if request.url.path in ("/convert", "/citations") and request.method.upper() == "POST":
         expected = os.environ.get("CONVERSION_SERVICE_KEY")
         if not expected:
             return JSONResponse(status_code=500, content={"detail": "CONVERSION_SERVICE_KEY is not set"})
@@ -408,3 +423,54 @@ async def convert(
             pass
 
     return {"ok": True}
+
+
+def _serialize_citation(c: Any) -> dict[str, Any]:
+    meta = c.metadata
+    meta_dict: dict[str, Any] = {}
+    for field in meta.__dataclass_fields__:
+        val = getattr(meta, field, None)
+        if val is not None:
+            meta_dict[field] = val
+    return {
+        "type": type(c).__name__,
+        "matched_text": c.matched_text(),
+        "span": list(c.span()),
+        "groups": dict(c.groups),
+        "metadata": meta_dict,
+    }
+
+
+@app.post("/citations")
+async def extract_citations(
+    body: CitationsRequest,
+    x_conversion_service_key: Optional[str] = Header(default=None),
+):
+    _require_shared_secret(x_conversion_service_key)
+
+    cites = get_citations(body.text, remove_ambiguous=False)
+    resolutions = resolve_citations(cites)
+
+    results = []
+    # Build resource lookup: citation id → resource index
+    cite_to_resource: dict[int, int] = {}
+    resources = []
+    for i, (resource, members) in enumerate(resolutions.items()):
+        resources.append({
+            "id": i,
+            "anchor": _serialize_citation(resource.citation),
+            "count": len(members),
+        })
+        for m in members:
+            cite_to_resource[id(m)] = i
+
+    for c in cites:
+        entry = _serialize_citation(c)
+        entry["resource_id"] = cite_to_resource.get(id(c))
+        results.append(entry)
+
+    return {
+        "citations": results,
+        "resources": resources,
+        "total": len(results),
+    }

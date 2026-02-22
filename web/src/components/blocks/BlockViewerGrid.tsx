@@ -59,7 +59,7 @@ const GRID_ROW_PADDING_SCALE = {
 // Module-level ref updated by the component when registry loads.
 let _badgeColorMap: Record<string, string> = {};
 
-const PAGE_SIZES = ['25', '50', '100'];
+const PAGE_SIZES = ['50', '100', '250', '500', '1000'];
 const VIEW_MODE_KEY = 'blockdata-view-mode';
 const BLOCK_TYPE_VIEW_KEY = 'blockdata-type-view';
 type BlockTypeView = 'normalized' | 'parser_native';

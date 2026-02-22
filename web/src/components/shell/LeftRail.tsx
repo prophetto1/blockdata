@@ -1,11 +1,22 @@
-import { useEffect, useMemo, useState, type MouseEvent as ReactMouseEvent } from 'react';
-import { Box, Button, Group, Loader, Modal, NavLink, Select, Stack, Text, TextInput, UnstyledButton } from '@mantine/core';
-import { useDisclosure, useLocalStorage } from '@mantine/hooks';
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type KeyboardEvent as ReactKeyboardEvent,
+  type MouseEvent as ReactMouseEvent,
+} from 'react';
+import { Box, Button, Group, Kbd, Loader, Modal, NavLink, Select, Stack, Text, TextInput, UnstyledButton } from '@mantine/core';
+import { useDisclosure, useHotkeys, useLocalStorage } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
-import { IconChevronLeft, IconFileText, IconLogout, IconPlus } from '@tabler/icons-react';
+import type { Icon } from '@tabler/icons-react';
+import { IconChevronLeft, IconLogout, IconPlus, IconSearch, IconSettings } from '@tabler/icons-react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { AiAssistantIcon } from '@/components/icons/AiAssistantIcon';
 import { GLOBAL_MENUS, NAV_GROUPS } from '@/components/shell/nav-config';
+import { ICON_TOKENS } from '@/lib/iconTokens';
 import { PROJECT_FOCUS_STORAGE_KEY } from '@/lib/projectFocus';
+import { styleTokens } from '@/lib/styleTokens';
 import { supabase } from '@/lib/supabase';
 import { TABLES } from '@/lib/tables';
 
@@ -15,6 +26,9 @@ type LeftRailProps = {
   onSignOut?: () => void | Promise<void>;
   desktopCompact?: boolean;
   onToggleDesktopCompact?: () => void;
+  showAssistantToggle?: boolean;
+  assistantOpened?: boolean;
+  onToggleAssistant?: () => void;
 };
 
 type ProjectFocusOption = {
@@ -24,6 +38,13 @@ type ProjectFocusOption = {
   workspaceId: string | null;
 };
 type RailIcon = (typeof GLOBAL_MENUS)[number]['icon'];
+type SearchAction = {
+  id: string;
+  label: string;
+  group: string;
+  path: string;
+  icon: Icon;
+};
 
 const PROJECTS_RPC_NEW = 'list_projects_overview';
 const PROJECTS_RPC_LEGACY = 'list_projects_overview_v2';
@@ -41,6 +62,30 @@ const GLOBAL_MENU_COMPACT_CODE: Record<string, string> = {
   '/app/projects/list': 'D',
   '/app/schemas': 'S',
 };
+const ACCOUNT_ACTION_ICON = ICON_TOKENS.shell.configAction;
+
+function buildSearchActions(): SearchAction[] {
+  const globalPaths = new Set(GLOBAL_MENUS.map((item) => item.path));
+  const globalActions: SearchAction[] = GLOBAL_MENUS.map((item) => ({
+    id: `global-${item.path}`,
+    label: item.label,
+    group: 'Global',
+    path: item.path,
+    icon: item.icon,
+  }));
+  const groupedActions: SearchAction[] = NAV_GROUPS.flatMap((group) =>
+    group.items
+      .filter((item) => !globalPaths.has(item.path))
+      .map((item) => ({
+        id: item.path,
+        label: item.label,
+        group: group.label,
+        path: item.path,
+        icon: item.icon,
+      })),
+  );
+  return [...globalActions, ...groupedActions];
+}
 
 function toCount(value: unknown): number {
   const n = typeof value === 'number' ? value : Number(value);
@@ -62,6 +107,9 @@ export function LeftRail({
   onSignOut,
   desktopCompact = false,
   onToggleDesktopCompact,
+  showAssistantToggle = true,
+  assistantOpened = false,
+  onToggleAssistant,
 }: LeftRailProps) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -78,10 +126,31 @@ export function LeftRail({
   const [projectOptions, setProjectOptions] = useState<ProjectFocusOption[]>([]);
   const [projectOptionsLoading, setProjectOptionsLoading] = useState(false);
   const [createProjectOpened, { open: openCreateProject, close: closeCreateProject }] = useDisclosure(false);
+  const [searchOpened, { open: openSearch, close: closeSearch }] = useDisclosure(false);
   const [newProjectName, setNewProjectName] = useState('');
   const [newProjectDescription, setNewProjectDescription] = useState('');
   const [creatingProject, setCreatingProject] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchSelectedIndex, setSearchSelectedIndex] = useState(0);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const allSearchActions = useMemo(() => buildSearchActions(), []);
   const getGroupKey = (label: string) => label.toLowerCase().replace(/\s+/g, '-');
+
+  const filteredSearchActions = useMemo(
+    () => (
+      searchQuery.trim()
+        ? allSearchActions.filter((action) => action.label.toLowerCase().includes(searchQuery.toLowerCase()))
+        : allSearchActions
+    ),
+    [allSearchActions, searchQuery],
+  );
+
+  const handleOpenSearch = () => {
+    setSearchSelectedIndex(0);
+    openSearch();
+  };
+
+  useHotkeys([['mod+k', () => handleOpenSearch()]]);
 
   useEffect(() => {
     if (!activeProjectId) return;
@@ -89,6 +158,17 @@ export function LeftRail({
       setFocusedProjectId(activeProjectId);
     }
   }, [activeProjectId, focusedProjectId, setFocusedProjectId]);
+
+  useEffect(() => {
+    if (!searchOpened) return;
+    const timer = window.setTimeout(() => {
+      searchInputRef.current?.focus();
+      searchInputRef.current?.select();
+    }, 0);
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [searchOpened]);
 
   useEffect(() => {
     let cancelled = false;
@@ -282,6 +362,40 @@ export function LeftRail({
     });
   };
 
+  const closeSearchModal = () => {
+    setSearchQuery('');
+    setSearchSelectedIndex(0);
+    closeSearch();
+  };
+
+  const pickSearchAction = (action: SearchAction) => {
+    navigate(action.path);
+    closeSearchModal();
+    onNavigate?.();
+  };
+
+  const handleSearchKeyDown = (event: ReactKeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      setSearchSelectedIndex((index) => Math.min(index + 1, filteredSearchActions.length - 1));
+      return;
+    }
+    if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      setSearchSelectedIndex((index) => Math.max(index - 1, 0));
+      return;
+    }
+    if (event.key === 'Enter' && filteredSearchActions[searchSelectedIndex]) {
+      event.preventDefault();
+      pickSearchAction(filteredSearchActions[searchSelectedIndex]);
+      return;
+    }
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      closeSearchModal();
+    }
+  };
+
   const isItemActive = (path: string): boolean => {
     if (path === '/app') return location.pathname === '/app';
     if (path === '/app/projects') return location.pathname.startsWith('/app/projects');
@@ -440,7 +554,10 @@ export function LeftRail({
               aria-label="Collapse side navigation"
               title="Collapse side navigation"
             >
-              <IconChevronLeft size={16} stroke={2} />
+              <IconChevronLeft
+                size={ICON_TOKENS.shell.paneChevron.size}
+                stroke={ICON_TOKENS.shell.paneChevron.stroke}
+              />
             </UnstyledButton>
           )}
         </Box>
@@ -555,17 +672,75 @@ export function LeftRail({
 
         <Box mt="auto" className="left-rail-bottom-nav">
           {NAV_GROUPS.map((group, groupIndex) => renderGroup(group, groupIndex))}
-          {renderRailItem({
-            key: 'docs-link',
-            label: 'Docs',
-            icon: IconFileText,
-            active: false,
-            className: 'left-rail-link',
-            py: navPaddingY,
-            href: '/docs',
-            target: '_blank',
-            style: { opacity: 0.7, marginTop: 4 },
-          })}
+        </Box>
+
+        <Box className="left-rail-shell-controls" pt={desktopCompact ? 0 : 'xs'}>
+          {desktopCompact ? (
+            <>
+              <UnstyledButton
+                className={`left-rail-icon-link left-rail-control-icon${searchOpened ? ' is-active' : ''}`}
+                onClick={handleOpenSearch}
+                aria-label="Search pages"
+                title="Search pages (Ctrl+K)"
+              >
+                <IconSearch size={20} stroke={1.8} />
+              </UnstyledButton>
+              {showAssistantToggle && onToggleAssistant && (
+                <UnstyledButton
+                  className={`left-rail-icon-link left-rail-control-icon${assistantOpened ? ' is-active' : ''}`}
+                  onClick={onToggleAssistant}
+                  aria-label={assistantOpened ? 'Hide Assistant' : 'Show Assistant'}
+                  title={assistantOpened ? 'Hide Assistant' : 'Show Assistant'}
+                >
+                  <AiAssistantIcon
+                    size={20}
+                    style={{
+                      filter: assistantOpened
+                        ? `drop-shadow(0 0 8px ${styleTokens.accents.assistantGlow})`
+                        : undefined,
+                    }}
+                  />
+                </UnstyledButton>
+              )}
+            </>
+          ) : (
+            <>
+              <NavLink
+                label="Search"
+                className="left-rail-link left-rail-control-action"
+                leftSection={<IconSearch size={16} stroke={1.8} />}
+                rightSection={<Kbd size="xs" className="left-rail-control-kbd">Ctrl+K</Kbd>}
+                aria-label="Search pages"
+                title="Search pages"
+                px={navPaddingX}
+                py={navPaddingY}
+                active={searchOpened}
+                onClick={handleOpenSearch}
+              />
+              {showAssistantToggle && onToggleAssistant && (
+                <NavLink
+                  label={assistantOpened ? 'Hide Assistant' : 'Show Assistant'}
+                  className="left-rail-link left-rail-control-action"
+                  leftSection={(
+                    <AiAssistantIcon
+                      size={18}
+                      style={{
+                        filter: assistantOpened
+                          ? `drop-shadow(0 0 8px ${styleTokens.accents.assistantGlow})`
+                          : undefined,
+                      }}
+                    />
+                  )}
+                  aria-label={assistantOpened ? 'Hide Assistant' : 'Show Assistant'}
+                  title={assistantOpened ? 'Hide Assistant' : 'Show Assistant'}
+                  px={navPaddingX}
+                  py={navPaddingY}
+                  active={assistantOpened}
+                  onClick={onToggleAssistant}
+                />
+              )}
+            </>
+          )}
         </Box>
 
         {(userLabel || (onSignOut && !desktopCompact)) && (
@@ -579,22 +754,43 @@ export function LeftRail({
             ) : (
               <Box className="left-rail-account-card">
                 <Box className="left-rail-account-head">
-                  <Box className="left-rail-account-avatar" aria-hidden>
-                    {userInitial}
+                  <Box className="left-rail-account-main">
+                    <Box className="left-rail-account-avatar" aria-hidden>
+                      {userInitial}
+                    </Box>
+                    <Box className="left-rail-account-user-block">
+                      <Text className="left-rail-account-label">
+                        Signed in as
+                      </Text>
+                      <Text className="left-rail-account-user" title={userLabel} truncate>
+                        {userLabel}
+                      </Text>
+                    </Box>
                   </Box>
-                  <Text className="left-rail-account-user" title={userLabel} truncate style={{ flex: 1, minWidth: 0 }}>
-                    {userLabel}
-                  </Text>
-                  {onSignOut && (
+
+                  <Box className="left-rail-account-actions">
+                    <UnstyledButton
+                      className="left-rail-account-action-icon"
+                      onClick={() => {
+                        navigate('/app/settings');
+                        onNavigate?.();
+                      }}
+                      aria-label="Settings"
+                      title="Settings"
+                    >
+                      <IconSettings size={ACCOUNT_ACTION_ICON.size} stroke={ACCOUNT_ACTION_ICON.stroke} />
+                    </UnstyledButton>
+                    {onSignOut && (
                     <UnstyledButton
                       className="left-rail-account-action-signout-icon"
                       onClick={onSignOut}
                       aria-label="Sign out"
                       title="Sign out"
                     >
-                      <IconLogout size={15} stroke={1.8} />
+                      <IconLogout size={ACCOUNT_ACTION_ICON.size} stroke={ACCOUNT_ACTION_ICON.stroke} />
                     </UnstyledButton>
-                  )}
+                    )}
+                  </Box>
                 </Box>
               </Box>
             )}
@@ -602,6 +798,54 @@ export function LeftRail({
         )}
       </Box>
     </Box>
+    <Modal
+      opened={searchOpened}
+      onClose={closeSearchModal}
+      title="Search pages"
+      centered
+      size="md"
+      withinPortal
+    >
+      <Stack gap="sm">
+        <TextInput
+          ref={searchInputRef}
+          placeholder="Type to filter pages..."
+          leftSection={<IconSearch size={14} stroke={1.8} />}
+          rightSection={<Kbd size="xs">Enter</Kbd>}
+          value={searchQuery}
+          onChange={(event) => {
+            setSearchQuery(event.currentTarget.value);
+            setSearchSelectedIndex(0);
+          }}
+          onKeyDown={handleSearchKeyDown}
+          autoComplete="off"
+        />
+        <Box className="left-rail-search-results" role="listbox" aria-label="Search results">
+          {filteredSearchActions.length > 0 ? (
+            filteredSearchActions.map((action, index) => {
+              const ResultIcon = action.icon;
+              return (
+                <button
+                  key={action.id}
+                  type="button"
+                  className={`left-rail-search-item${index === searchSelectedIndex ? ' selected' : ''}`}
+                  onMouseEnter={() => setSearchSelectedIndex(index)}
+                  onClick={() => pickSearchAction(action)}
+                >
+                  <ResultIcon size={16} stroke={1.7} />
+                  <span className="left-rail-search-item-main">
+                    <span className="left-rail-search-item-label">{action.label}</span>
+                    <span className="left-rail-search-item-group">{action.group}</span>
+                  </span>
+                </button>
+              );
+            })
+          ) : (
+            <Text className="left-rail-search-empty">No matching pages</Text>
+          )}
+        </Box>
+      </Stack>
+    </Modal>
     <Modal opened={createProjectOpened} onClose={closeCreateProject} title="New Project" centered>
       <Stack gap="md">
         <TextInput

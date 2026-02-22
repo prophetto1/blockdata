@@ -1,14 +1,10 @@
 import type { Icon } from '@tabler/icons-react';
 import {
-  IconBrain,
   IconDatabase,
   IconFolderPlus,
-  IconKey,
-  IconPlug,
   IconSchema,
   IconSettings,
 } from '@tabler/icons-react';
-import { featureFlags } from '@/lib/featureFlags';
 
 export type NavItem = {
   label: string;
@@ -36,20 +32,6 @@ export const NAV_GROUPS: NavGroup[] = [
       { label: 'Projects', icon: IconFolderPlus, path: '/app/projects' },
       { label: 'User Schemas', icon: IconSchema, path: '/app/schemas' },
       { label: 'Layout', icon: IconSchema, path: '/app/schemas/layout' },
-    ],
-  },
-  {
-    label: 'Automation',
-    items: [
-      ...(featureFlags.agentsConfigUI ? [{ label: 'Agents', icon: IconBrain, path: '/app/agents' }] : []),
-      ...(featureFlags.mcpPlaceholderUI ? [{ label: 'MCP', icon: IconPlug, path: '/app/mcp' }] : []),
-      ...(featureFlags.commandsUI ? [{ label: 'Commands', icon: IconKey, path: '/app/commands' }] : []),
-    ],
-  },
-  {
-    label: 'System',
-    items: [
-      { label: 'Settings', icon: IconSettings, path: '/app/settings' },
     ],
   },
 ];

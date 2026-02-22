@@ -61,6 +61,8 @@ export default function Upload() {
           <ProjectParseUppyUploader
             projectId={projectId}
             ingestMode="upload_only"
+            enableRemoteSources
+            companionUrl={import.meta.env.VITE_UPPY_COMPANION_URL as string | undefined}
             height={420}
           />
         </Stack>

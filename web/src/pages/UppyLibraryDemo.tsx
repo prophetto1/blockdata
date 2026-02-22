@@ -36,7 +36,7 @@ type IngestResponse = {
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
-const DEFAULT_COMPANION_URL = (import.meta.env.VITE_UPPY_COMPANION_URL as string | undefined) ?? 'http://localhost:3020';
+const DEFAULT_COMPANION_URL = (import.meta.env.VITE_UPPY_COMPANION_URL as string | undefined) ?? '';
 const DEFAULT_TUS_ENDPOINT = (import.meta.env.VITE_UPPY_TUS_ENDPOINT as string | undefined) ?? '';
 const DEFAULT_FINALIZE_ENDPOINT = (import.meta.env.VITE_UPPY_FINALIZE_ENDPOINT as string | undefined) ?? '';
 
@@ -313,7 +313,7 @@ export default function UppyLibraryDemo() {
               label="Companion URL"
               value={companionUrl}
               onChange={(event) => setCompanionUrl(event.currentTarget.value)}
-              placeholder="http://localhost:3020"
+              placeholder="https://companion.your-domain.example"
             />
           )}
 
