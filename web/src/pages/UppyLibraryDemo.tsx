@@ -131,6 +131,11 @@ export default function UppyLibraryDemo() {
         }
         instance.use(UppyRemoteSources, {
           companionUrl: endpoint,
+          companionHeaders: {
+            ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+            ...(SUPABASE_ANON_KEY ? { apikey: SUPABASE_ANON_KEY } : {}),
+          },
+          companionCookiesRule: 'include',
         });
         appendLog('info', `Companion remote sources enabled -> ${endpoint}`);
       }

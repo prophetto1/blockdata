@@ -1,0 +1,17 @@
+{
+  "name": "blockdata-uppy-companion",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Uppy Companion server for cloud file imports (Google Drive, Dropbox, OneDrive, Box)",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@uppy/companion": "^5.1.1",
+    "express": "^4.21.0"
+  }
+}
