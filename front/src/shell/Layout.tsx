@@ -12,6 +12,11 @@ import {
   PenTool,
   GitCompare,
   Terminal,
+  ShieldCheck,
+  Binary,
+  ShieldAlert,
+  ListChecks,
+  Lock,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -69,11 +74,18 @@ const navItems = [
   { to: '/apps/terminal', icon: Terminal, label: 'Terminal' },
 ]
 
+const adminNavItems = [
+  { to: '/admin/registry', icon: ShieldCheck, label: 'Registry map' },
+  { to: '/admin/executors', icon: Binary, label: 'Executors' },
+  { to: '/admin/gates', icon: ShieldAlert, label: 'CI gates' },
+  { to: '/admin/progress', icon: ListChecks, label: 'Progress' },
+  { to: '/admin/protected-files', icon: Lock, label: 'Protected files' },
+]
+
 function usePageLabel() {
   const { pathname } = useLocation()
-  const match = navItems.find(
-    (item) => pathname === item.to || pathname.startsWith(`${item.to}/`),
-  )
+  const allItems = [...navItems, ...adminNavItems]
+  const match = allItems.find((item) => pathname === item.to || pathname.startsWith(`${item.to}/`))
   return match?.label ?? 'Home'
 }
 
@@ -114,6 +126,28 @@ function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {navItems.map((item) => (
+                <SidebarMenuItem key={item.to}>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={pathname === item.to || pathname.startsWith(`${item.to}/`)}
+                    tooltip={item.label}
+                  >
+                    <NavLink to={item.to}>
+                      <item.icon />
+                      <span>{item.label}</span>
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel>Admin</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {adminNavItems.map((item) => (
                 <SidebarMenuItem key={item.to}>
                   <SidebarMenuButton
                     asChild
