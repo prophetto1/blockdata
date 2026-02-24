@@ -6,7 +6,6 @@
  * original.  The only difference is the rendering layer.
  */
 import { useMemo, useState, useCallback, useEffect } from 'react';
-import { createPortal } from 'react-dom';
 import {
   flexRender,
   useReactTable,
@@ -21,6 +20,7 @@ import {
   ActionIcon,
   Alert,
   Button,
+  Checkbox,
   Group,
   Menu,
   Paper,
@@ -144,7 +144,6 @@ type BlockViewerGridV2Props = {
   selectedRun: RunWithSchema | null;
   onExport?: () => void;
   onDelete?: () => void;
-  toolbarPortalTarget?: HTMLElement | null;
 };
 
 export function BlockViewerGridV2({
@@ -153,7 +152,6 @@ export function BlockViewerGridV2({
   selectedRun,
   onExport,
   onDelete,
-  toolbarPortalTarget,
 }: BlockViewerGridV2Props) {
   /* ---------- persisted UI state ---------- */
   const [pageIndex, setPageIndex] = useState(0);
@@ -197,7 +195,8 @@ export function BlockViewerGridV2({
   /* ---------- TanStack-specific state ---------- */
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnSizing, setColumnSizing] = useState<ColumnSizingState>({});
-  const [selectedCellId, setSelectedCellId] = useState<string | null>(null);
+  const [selectedCells, setSelectedCells] = useState<Set<string>>(new Set());
+  const [selectedColumns, setSelectedColumns] = useState<Set<string>>(new Set());
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const [lastClickedRowId, setLastClickedRowId] = useState<string | null>(null);
 
@@ -354,8 +353,8 @@ export function BlockViewerGridV2({
     localStorage.setItem(HIDDEN_COLS_KEY, JSON.stringify(Array.from(hiddenCols)));
   }, [hiddenCols]);
 
-  /* ---------- clear cell selection on page change ---------- */
-  useEffect(() => { setSelectedCellId(null); setRowSelection({}); setLastClickedRowId(null); }, [pageIndex, pageSize]);
+  /* ---------- clear selection on page change ---------- */
+  useEffect(() => { setSelectedCells(new Set()); setSelectedColumns(new Set()); setRowSelection({}); setLastClickedRowId(null); }, [pageIndex, pageSize]);
 
   /* ---------- block action handlers ---------- */
   const setBlockBusy = useCallback((blockUid: string, busy: boolean) => {
@@ -413,10 +412,43 @@ export function BlockViewerGridV2({
     }
   }, [refetchOverlays, selectedRunId, setBlockBusy]);
 
+  /* ---------- master checkbox column (V2-specific) ---------- */
+  const selectColumn = useMemo<ColumnDef<BlockRow, unknown>>(() => ({
+    id: 'select',
+    size: 36,
+    enableResizing: false,
+    enableSorting: false,
+    header: ({ table: tbl }) => (
+      <Checkbox
+        size="xs"
+        checked={tbl.getIsAllRowsSelected()}
+        indeterminate={tbl.getIsSomeRowsSelected()}
+        onChange={tbl.getToggleAllRowsSelectedHandler()}
+        onClick={(e: React.MouseEvent) => e.stopPropagation()}
+        aria-label="Select all rows"
+      />
+    ),
+    cell: ({ row }) => (
+      <Checkbox
+        size="xs"
+        checked={row.getIsSelected()}
+        onChange={row.getToggleSelectedHandler()}
+        onClick={(e: React.MouseEvent) => e.stopPropagation()}
+        aria-label="Select row"
+      />
+    ),
+  }), []);
+
+  /* ---------- columns with master select prepended ---------- */
+  const columnsWithSelect = useMemo<ColumnDef<BlockRow, unknown>[]>(
+    () => [selectColumn, ...columns],
+    [selectColumn, columns],
+  );
+
   /* ---------- TanStack table instance ---------- */
   const table = useReactTable<BlockRow>({
     data: rowData,
-    columns,
+    columns: columnsWithSelect,
     state: { sorting, columnSizing, rowSelection },
     onSortingChange: setSorting,
     onColumnSizingChange: setColumnSizing,
@@ -439,10 +471,42 @@ export function BlockViewerGridV2({
     },
   });
 
-  /* ---------- row selection handler ---------- */
+  /* ---------- effective selected cells (individual + column-selected) ---------- */
+  const effectiveSelectedCells = useMemo(() => {
+    if (selectedColumns.size === 0) return selectedCells;
+    const all = new Set(selectedCells);
+    for (const colId of selectedColumns)
+      for (const row of table.getRowModel().rows)
+        all.add(`${row.id}_${colId}`);
+    return all;
+  }, [selectedCells, selectedColumns, table]);
+
+  /* ---------- cell click handler ---------- */
+  const handleCellClick = useCallback((e: React.MouseEvent, cellId: string, row: { id: string }) => {
+    e.stopPropagation(); // prevent <tr> row handler
+
+    if (e.ctrlKey || e.metaKey) {
+      // Ctrl+click: toggle cell in multi-select; clear row/column selection
+      setSelectedCells((prev) => {
+        const next = new Set(prev);
+        if (next.has(cellId)) next.delete(cellId); else next.add(cellId);
+        return next;
+      });
+      setSelectedColumns(new Set());
+      setRowSelection({});
+      setLastClickedRowId(null);
+    } else {
+      // Plain click: select entire row (existing behavior)
+      setRowSelection({ [row.id]: true });
+      setLastClickedRowId(row.id);
+      setSelectedCells(new Set());
+      setSelectedColumns(new Set());
+    }
+  }, []);
+
+  /* ---------- row click handler (fallback for tr gaps + Shift range) ---------- */
   const handleRowClick = useCallback((e: React.MouseEvent, row: { id: string; getIsSelected: () => boolean; toggleSelected: (v: boolean) => void }) => {
     if (e.shiftKey && lastClickedRowId) {
-      // Range select: select all rows between lastClicked and current
       const rows = table.getRowModel().rows;
       const lastIdx = rows.findIndex((r) => r.id === lastClickedRowId);
       const curIdx = rows.findIndex((r) => r.id === row.id);
@@ -453,15 +517,47 @@ export function BlockViewerGridV2({
         setRowSelection((prev) => e.ctrlKey || e.metaKey ? { ...prev, ...next } : next);
       }
     } else if (e.ctrlKey || e.metaKey) {
-      // Toggle individual row
       row.toggleSelected(!row.getIsSelected());
     } else {
-      // Single select
       setRowSelection({ [row.id]: true });
     }
     setLastClickedRowId(row.id);
-    setSelectedCellId(null);
+    setSelectedCells(new Set());
+    setSelectedColumns(new Set());
   }, [lastClickedRowId, table]);
+
+  /* ---------- column header click handler ---------- */
+  const handleColumnHeaderClick = useCallback((e: React.MouseEvent, columnId: string) => {
+    if (e.ctrlKey || e.metaKey) {
+      setSelectedColumns((prev) => {
+        const next = new Set(prev);
+        if (next.has(columnId)) next.delete(columnId); else next.add(columnId);
+        return next;
+      });
+    } else {
+      setSelectedColumns(new Set([columnId]));
+    }
+    setSelectedCells(new Set());
+    setRowSelection({});
+    setLastClickedRowId(null);
+  }, []);
+
+  /* ---------- Escape to clear all selection ---------- */
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      const el = e.target as HTMLElement;
+      const tag = el.tagName?.toLowerCase();
+      if (tag === 'textarea' || tag === 'select') return;
+      if (tag === 'input' && (el as HTMLInputElement).type !== 'checkbox') return;
+      setSelectedCells(new Set());
+      setSelectedColumns(new Set());
+      setRowSelection({});
+      setLastClickedRowId(null);
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   /* ---------- derived ---------- */
   const totalPages = Math.ceil(totalCount / pageSize);
@@ -590,12 +686,7 @@ export function BlockViewerGridV2({
   /* ---------- render ---------- */
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
-      {toolbarPortalTarget ? createPortal(
-        <div className="block-grid-toolbar-portaled">{toolbarControls}</div>,
-        toolbarPortalTarget,
-      ) : (
-        <Paper p="xs" mb={4} style={{ flexShrink: 0 }}>{toolbarControls}</Paper>
-      )}
+      <Paper p="xs" mb={4} style={{ flexShrink: 0 }}>{toolbarControls}</Paper>
 
       {showGridConfigInspector && (
         <Paper withBorder p="xs" mb={4} style={{ flexShrink: 0, maxHeight: 200, overflow: 'auto' }}>
@@ -625,7 +716,7 @@ export function BlockViewerGridV2({
         style={{ flex: 1, minHeight: 0, width: '100%', opacity: blocksLoading || overlaysLoading ? 0.5 : 1, transition: 'opacity 0.15s' }}
       >
         <div className="tanstack-grid-shell">
-          <div className="tanstack-grid-scroll" onClick={(e) => { if ((e.target as HTMLElement).closest('.tanstack-grid-td') === null) { setSelectedCellId(null); setRowSelection({}); } }}>
+          <div className="tanstack-grid-scroll" onClick={(e) => { if ((e.target as HTMLElement).closest('.tanstack-grid-td, .tanstack-grid-th') === null) { setSelectedCells(new Set()); setSelectedColumns(new Set()); setRowSelection({}); setLastClickedRowId(null); } }}>
             <table className="tanstack-grid-table" style={{ width: table.getTotalSize() }}>
               <thead className="tanstack-grid-thead">
                 {table.getHeaderGroups().map((headerGroup) => (
@@ -636,12 +727,17 @@ export function BlockViewerGridV2({
                       }
                       const headerMeta = header.column.columnDef.meta as Record<string, unknown> | undefined;
                       const headerMetaClass = typeof headerMeta?.cellClassName === 'string' ? headerMeta.cellClassName : '';
+                      const isSelectCol = header.column.id === 'select';
                       const headerClasses = ['tanstack-grid-th'];
+                      if (isSelectCol) headerClasses.push('col-select-master');
                       if (header.column.id === 'block_index' || header.column.id === 'block_pages' || header.column.id === 'block_type_view') {
                         headerClasses.push('block-grid-col-center-header');
                       }
                       if (headerMetaClass.includes('dt-schema-boundary')) {
                         headerClasses.push('user-schema-boundary-header');
+                      }
+                      if (selectedColumns.has(header.column.id)) {
+                        headerClasses.push('column-selected');
                       }
                       return (
                         <th
@@ -649,6 +745,7 @@ export function BlockViewerGridV2({
                           className={headerClasses.join(' ')}
                           style={{ width: header.getSize() }}
                           colSpan={header.colSpan}
+                          onClick={isSelectCol ? undefined : (e) => handleColumnHeaderClick(e, header.column.id)}
                         >
                           <div className="tanstack-grid-th-content">
                             {flexRender(header.column.columnDef.header, header.getContext())}
@@ -693,13 +790,14 @@ export function BlockViewerGridV2({
                         if (status === 'ai_complete') cellClasses.push('overlay-staged-cell');
                         if (status === 'confirmed') cellClasses.push('overlay-confirmed-cell');
                       }
-                      if (selectedCellId === cell.id) cellClasses.push('cell-selected');
+                      if (cell.column.id === 'select') cellClasses.push('col-select-master');
+                      if (effectiveSelectedCells.has(cell.id)) cellClasses.push('cell-selected');
                       return (
                         <td
                           key={cell.id}
                           className={cellClasses.join(' ')}
                           style={{ width: cell.column.getSize() }}
-                          onClick={() => setSelectedCellId(cell.id)}
+                          onClick={(e) => handleCellClick(e, cell.id, row)}
                         >
                           {flexRender(cell.column.columnDef.cell, cell.getContext())}
                         </td>

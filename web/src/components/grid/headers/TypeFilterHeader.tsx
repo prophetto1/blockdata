@@ -20,12 +20,13 @@ export function TypeFilterHeader<T>({ column, table }: HeaderContext<T, unknown>
     <div className="dt-type-header">
       <span
         className="dt-header-label dt-header-sortable"
-        onClick={column.getToggleSortingHandler()}
+        onClick={(e) => { e.stopPropagation(); column.getToggleSortingHandler()?.(e); }}
         role="button"
         tabIndex={0}
         onKeyDown={(e) => {
           if (e.key !== 'Enter' && e.key !== ' ') return;
           e.preventDefault();
+          e.stopPropagation();
           column.getToggleSortingHandler()?.(e);
         }}
         aria-label="Sort by type"
@@ -38,6 +39,7 @@ export function TypeFilterHeader<T>({ column, table }: HeaderContext<T, unknown>
         )}
       </span>
       {blockTypes.length > 1 && (
+        <div onClick={(e) => e.stopPropagation()}>
         <Menu shadow="md" width={200} position="bottom-start" withinPortal closeOnItemClick={false}>
           <Menu.Target>
             <ActionIcon
@@ -72,6 +74,7 @@ export function TypeFilterHeader<T>({ column, table }: HeaderContext<T, unknown>
             )}
           </Menu.Dropdown>
         </Menu>
+        </div>
       )}
     </div>
   );

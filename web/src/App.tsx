@@ -8,6 +8,7 @@ import { theme, cssVariablesResolver } from './theme';
 import '@mantine/core/styles.css';
 import '@mantine/notifications/styles.css';
 import 'react-data-grid/lib/styles.css';
+import './tailwind.css';
 import './theme.css';
 
 export default function App() {

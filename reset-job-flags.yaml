@@ -1,0 +1,7 @@
+project: agchain
+region: us-central1
+command:
+- python
+args:
+- -c
+- "import os;from sqlalchemy import create_engine,text;from mage_ai.authentication.passwords import generate_salt,create_bcrypt_hash;engine=create_engine(os.environ['MAGE_DATABASE_CONNECTION_URL']);pwd=os.environ['DEFAULT_OWNER_PASSWORD'];conn=engine.connect();trans=conn.begin();row=conn.execute(text('select id,email,username from users order by id asc')).first();assert row is not None;h=create_bcrypt_hash(pwd,generate_salt());conn.execute(text('update users set password_hash=:h where id=:id'),{'h':h,'id':row.id});trans.commit();print(f'reset user id={row.id} email={row.email} username={row.username}')"

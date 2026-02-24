@@ -34,6 +34,8 @@ import AgentOnboardingConnect from '@/pages/AgentOnboardingConnect';
 import AgentOnboardingSelect from '@/pages/AgentOnboardingSelect';
 import McpServers from '@/pages/McpServers';
 import Commands from '@/pages/Commands';
+import DatabricksStyleLab from '@/pages/experiments/DatabricksStyleLab';
+import { AppLayoutDatabricksPreview } from '@/components/layout/AppLayoutDatabricksPreview';
 import { featureFlags } from '@/lib/featureFlags';
 
 
@@ -68,6 +70,12 @@ export const router = createBrowserRouter([
   {
     element: <AuthGuard />,
     children: [
+      {
+        element: <AppLayoutDatabricksPreview />,
+        children: [
+          { path: '/app/experiments/databricks', element: <DatabricksStyleLab /> },
+        ],
+      },
       {
         element: <AppLayout />,
         children: [

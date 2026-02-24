@@ -192,10 +192,10 @@ export function PdfPreview({
             className="parse-pdf-page-input"
             disabled={isPdfJsControlsDisabled}
           />
-          <Text size="md" fw={600} className="parse-pdf-page-separator" aria-hidden>
+          <Text size="xs" fw={600} className="parse-pdf-page-separator" aria-hidden>
             /
           </Text>
-          <Text size="md" fw={600} className="parse-pdf-page-total">
+          <Text size="xs" fw={600} className="parse-pdf-page-total">
             {pageCount ?? '--'}
           </Text>
           <ActionIcon
@@ -224,7 +224,7 @@ export function PdfPreview({
         >
           <svg xmlns="http://www.w3.org/2000/svg" height="18" viewBox="0 -960 960 960" width="18" fill="currentColor"><path d="M200-440v-80h560v80H200Z"/></svg>
         </ActionIcon>
-        <Text size="md" fw={600} className="parse-pdf-zoom-value">
+        <Text size="xs" fw={600} className="parse-pdf-zoom-value">
           {zoomPercent}%
         </Text>
         <ActionIcon

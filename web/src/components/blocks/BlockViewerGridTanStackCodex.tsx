@@ -1,5 +1,4 @@
 import { useMemo, useState, useCallback, useEffect } from "react";
-import { createPortal } from "react-dom";
 import {
   flexRender,
   getCoreRowModel,
@@ -58,7 +57,6 @@ type BlockViewerGridProps = {
   selectedRun: RunWithSchema | null;
   onExport?: () => void;
   onDelete?: () => void;
-  toolbarPortalTarget?: HTMLElement | null;
 };
 
 const PAGE_SIZES = ["50", "100", "250", "500", "1000"];
@@ -309,7 +307,6 @@ export function BlockViewerGridTanStackCodex({
   selectedRun,
   onExport,
   onDelete,
-  toolbarPortalTarget,
 }: BlockViewerGridProps) {
   const [pageIndex, setPageIndex] = useState(0);
   const [pageSize, setPageSize] = useState(50);
@@ -1463,16 +1460,9 @@ export function BlockViewerGridTanStackCodex({
 
   return (
     <>
-      {toolbarPortalTarget ? (
-        createPortal(
-          <div className="block-grid-toolbar-portaled">{toolbarControls}</div>,
-          toolbarPortalTarget,
-        )
-      ) : (
-        <Paper p="xs" mb={4}>
-          {toolbarControls}
-        </Paper>
-      )}
+      <Paper p="xs" mb={4}>
+        {toolbarControls}
+      </Paper>
 
       {showGridConfigInspector && (
         <Paper withBorder p="xs" mb={4}>

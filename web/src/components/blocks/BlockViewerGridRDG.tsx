@@ -1,10 +1,10 @@
 import { useMemo, useState, useCallback, useRef, useEffect } from 'react';
-import { createPortal } from 'react-dom';
 import {
   DataGrid,
   type CellMouseArgs,
   type CellMouseEvent,
   type Column,
+  type ColumnWidths,
   type ColumnOrColumnGroup,
   type RenderEditCellProps,
   type RowsChangeData,
@@ -59,8 +59,8 @@ type BlockTypeView = 'normalized' | 'parser_native';
 type ViewerFontSize = 'small' | 'medium' | 'large';
 type ViewerFontFamily = 'sans' | 'serif' | 'mono';
 type ViewerVerticalAlign = 'top' | 'center' | 'bottom';
-type WrapTextMode = 'off' | 'on';
 type RowStripeTone = 'gray' | 'blue' | 'none';
+type WrapMode = 'off' | 'on';
 
 type BlockViewerGridProps = {
   convUid: string;
@@ -68,7 +68,6 @@ type BlockViewerGridProps = {
   selectedRun: RunWithSchema | null;
   onExport?: () => void;
   onDelete?: () => void;
-  toolbarPortalTarget?: HTMLElement | null;
 };
 
 const PAGE_SIZES = ['50', '100', '250', '500', '1000'];
@@ -79,8 +78,10 @@ const DEFAULT_HIDDEN_COLS = ['block_uid', 'parser_path'];
 const VIEWER_FONT_SIZE_KEY = 'blockdata-viewer-font-size';
 const VIEWER_FONT_FAMILY_KEY = 'blockdata-viewer-font-family';
 const VIEWER_VERTICAL_ALIGN_KEY = 'blockdata-viewer-vertical-align';
-const WRAP_TEXT_MODE_KEY = 'blockdata-wrap-text-mode';
 const ROW_STRIPE_TONE_KEY = 'blockdata-row-stripe-tone';
+const WRAP_MODE_KEY = 'blockdata-wrap-mode';
+const COLUMN_WIDTHS_KEY_BASE = 'blockdata-rdg-column-widths';
+const RDG_RESIZE_SPACER_COLUMN_KEY = '_rdg_resize_spacer';
 
 function statusColor(status?: string): string {
   if (status === 'confirmed') return 'green';
@@ -98,6 +99,36 @@ function compareValues(a: unknown, b: unknown): number {
   if (typeof a === 'number' && typeof b === 'number') return a - b;
   if (typeof a === 'boolean' && typeof b === 'boolean') return Number(a) - Number(b);
   return String(a).localeCompare(String(b), undefined, { numeric: true, sensitivity: 'base' });
+}
+
+function readPersistedColumnWidths(storageKey: string): ColumnWidths {
+  if (typeof localStorage === 'undefined') return new Map();
+  const stored = localStorage.getItem(storageKey);
+  if (!stored) return new Map();
+  try {
+    const parsed = JSON.parse(stored);
+    if (!Array.isArray(parsed)) return new Map();
+    const entries = parsed
+      .map((entry): [string, { type: 'resized'; width: number }] | null => {
+        if (!Array.isArray(entry) || entry.length !== 3) return null;
+        const [key, type, width] = entry;
+        if (typeof key !== 'string') return null;
+        if (key === RDG_RESIZE_SPACER_COLUMN_KEY) return null;
+        if (type !== 'resized') return null;
+        if (typeof width !== 'number' || !Number.isFinite(width) || width <= 0) return null;
+        return [key, { type, width }];
+      })
+      .filter((entry): entry is [string, { type: 'resized'; width: number }] => entry !== null);
+    return new Map(entries);
+  } catch {
+    return new Map();
+  }
+}
+
+function keepResizedColumnWidths(columnWidths: ColumnWidths): ColumnWidths {
+  return new Map(
+    Array.from(columnWidths.entries()).filter(([key, value]) => value.type === 'resized' && key !== RDG_RESIZE_SPACER_COLUMN_KEY),
+  );
 }
 
 function SchemaValueCell({ row, column, fieldMeta }: { row: RowData; column: string; fieldMeta: SchemaFieldMeta }) {
@@ -222,7 +253,8 @@ function TypeHeaderCell({ blockTypes, typeFilter, onToggleType, onClearTypes }: 
   );
 }
 
-export function BlockViewerGridRDG({ convUid, selectedRunId, selectedRun, onExport, onDelete, toolbarPortalTarget }: BlockViewerGridProps) {
+export function BlockViewerGridRDG({ convUid, selectedRunId, selectedRun, onExport, onDelete }: BlockViewerGridProps) {
+  const columnWidthsStorageKey = `${COLUMN_WIDTHS_KEY_BASE}:${convUid}`;
   const [pageIndex, setPageIndex] = useState(0);
   const [pageSize, setPageSize] = useState(50);
   const [viewMode, setViewMode] = useState<string>(() => {
@@ -242,13 +274,13 @@ export function BlockViewerGridRDG({ convUid, selectedRunId, selectedRun, onExpo
     const stored = typeof localStorage !== 'undefined' ? localStorage.getItem(VIEWER_VERTICAL_ALIGN_KEY) : null;
     return stored === 'top' || stored === 'bottom' ? stored : 'center';
   });
-  const [wrapTextMode, setWrapTextMode] = useState<WrapTextMode>(() => {
-    const stored = typeof localStorage !== 'undefined' ? localStorage.getItem(WRAP_TEXT_MODE_KEY) : null;
-    return stored === 'on' ? 'on' : 'off';
-  });
   const [rowStripeTone, setRowStripeTone] = useState<RowStripeTone>(() => {
     const stored = typeof localStorage !== 'undefined' ? localStorage.getItem(ROW_STRIPE_TONE_KEY) : null;
     return stored === 'blue' || stored === 'none' ? stored : 'gray';
+  });
+  const [wrapMode, setWrapMode] = useState<WrapMode>(() => {
+    const stored = typeof localStorage !== 'undefined' ? localStorage.getItem(WRAP_MODE_KEY) : null;
+    return stored === 'on' ? 'on' : 'off';
   });
   const [blockTypeView, setBlockTypeView] = useState<BlockTypeView>(() => {
     const stored = typeof localStorage !== 'undefined' ? localStorage.getItem(BLOCK_TYPE_VIEW_KEY) : null;
@@ -272,6 +304,7 @@ export function BlockViewerGridRDG({ convUid, selectedRunId, selectedRun, onExpo
   const [showGridConfigInspector, setShowGridConfigInspector] = useState(false);
   const [configRefreshTick, setConfigRefreshTick] = useState(0);
   const [sortColumns, setSortColumns] = useState<readonly SortColumn[]>([]);
+  const [columnWidths, setColumnWidths] = useState<ColumnWidths>(() => readPersistedColumnWidths(columnWidthsStorageKey));
   const [selectedRows, setSelectedRows] = useState<ReadonlySet<string>>(new Set());
   const [selectionAnchorRowKey, setSelectionAnchorRowKey] = useState<string | null>(null);
   const [rows, setRows] = useState<RowData[]>([]);
@@ -527,6 +560,18 @@ export function BlockViewerGridRDG({ convUid, selectedRunId, selectedRun, onExpo
   }, [firstUserSchemaColId]);
 
   const columns = useMemo<readonly ColumnOrColumnGroup<RowData>[]>(() => {
+    const trailingResizeSpacer: Column<RowData> = {
+      key: RDG_RESIZE_SPACER_COLUMN_KEY,
+      name: '',
+      sortable: false,
+      resizable: true,
+      width: 24,
+      minWidth: 1,
+      headerCellClass: 'rdg-resize-spacer-header',
+      cellClass: 'rdg-resize-spacer-cell',
+      renderCell: () => null,
+    };
+
     const immutableCols: Column<RowData>[] = [
       { key: 'block_index', name: 'ID', sortable: true, resizable: true, headerCellClass: 'block-grid-col-center-header', cellClass: 'block-grid-col-center-cell', renderCell: ({ row }: { row: RowData }) => <Text size="xs">{String(row.block_index ?? '--')}</Text> },
       { key: 'block_pages', name: 'Pages', sortable: true, resizable: true, headerCellClass: 'block-grid-col-center-header', cellClass: 'block-grid-col-center-cell', renderCell: ({ row }: { row: RowData }) => <Text size="xs">{typeof row.block_pages === 'string' && row.block_pages.trim().length > 0 ? row.block_pages : '--'}</Text> },
@@ -548,6 +593,7 @@ export function BlockViewerGridRDG({ convUid, selectedRunId, selectedRun, onExpo
         name: 'Block',
         sortable: false,
         resizable: true,
+        minWidth: 240,
         headerCellClass: 'block-grid-col-center-header',
         cellClass: 'block-grid-col-block-cell',
         renderCell: ({ row }: { row: RowData }) => <Text size="xs" className="block-grid-block-text">{normalizeBlockContentForDisplay(row.block_content)}</Text>,
@@ -563,7 +609,7 @@ export function BlockViewerGridRDG({ convUid, selectedRunId, selectedRun, onExpo
       return true;
     });
 
-    if (!hasRun) return immutableCols;
+    if (!hasRun) return [...immutableCols, trailingResizeSpacer];
     const userDefinedCols: Column<RowData>[] = [
       {
         key: '_overlay_status',
@@ -631,7 +677,7 @@ export function BlockViewerGridRDG({ convUid, selectedRunId, selectedRun, onExpo
     return [
       { name: 'Immutable', children: immutableCols },
       { name: `User-Defined - ${selectedRun?.schemas?.schema_ref ?? 'unknown'}`, children: userDefinedCols },
-      { name: 'Overlay Metadata', children: overlayMetaCols },
+      { name: 'Overlay Metadata', children: [...overlayMetaCols, trailingResizeSpacer] },
     ];
   }, [
     badgeColorMap,
@@ -654,6 +700,17 @@ export function BlockViewerGridRDG({ convUid, selectedRunId, selectedRun, onExpo
     if (typeof localStorage === 'undefined') return;
     localStorage.setItem(HIDDEN_COLS_KEY, JSON.stringify(Array.from(hiddenCols)));
   }, [hiddenCols]);
+
+  useEffect(() => {
+    setColumnWidths(readPersistedColumnWidths(columnWidthsStorageKey));
+  }, [columnWidthsStorageKey]);
+
+  useEffect(() => {
+    if (typeof localStorage === 'undefined') return;
+    const resizedOnly = keepResizedColumnWidths(columnWidths);
+    const serialized = JSON.stringify(Array.from(resizedOnly.entries()).map(([key, value]) => [key, value.type, value.width]));
+    localStorage.setItem(columnWidthsStorageKey, serialized);
+  }, [columnWidths, columnWidthsStorageKey]);
 
   const sortedRows = useMemo(() => {
     if (sortColumns.length === 0) return rows;
@@ -752,16 +809,17 @@ export function BlockViewerGridRDG({ convUid, selectedRunId, selectedRun, onExpo
     if (typeof localStorage !== 'undefined') localStorage.setItem(VIEWER_VERTICAL_ALIGN_KEY, next);
   };
 
-  const handleWrapTextModeChange = (value: string) => {
-    const next: WrapTextMode = value === 'on' ? 'on' : 'off';
-    setWrapTextMode(next);
-    if (typeof localStorage !== 'undefined') localStorage.setItem(WRAP_TEXT_MODE_KEY, next);
-  };
-
   const handleRowStripeToneChange = (value: string) => {
     const next: RowStripeTone = value === 'blue' || value === 'none' ? value : 'gray';
     setRowStripeTone(next);
     if (typeof localStorage !== 'undefined') localStorage.setItem(ROW_STRIPE_TONE_KEY, next);
+  };
+
+  const handleWrapModeChange = (value: string) => {
+    const next: WrapMode = value === 'on' ? 'on' : 'off';
+    setWrapMode(next);
+    setColumnWidths((prev) => keepResizedColumnWidths(prev));
+    if (typeof localStorage !== 'undefined') localStorage.setItem(WRAP_MODE_KEY, next);
   };
 
   const toggleColumn = (colId: string) => {
@@ -814,16 +872,18 @@ export function BlockViewerGridRDG({ convUid, selectedRunId, selectedRun, onExpo
       viewerFontSize,
       viewerFontFamily,
       viewerVerticalAlign,
-      wrapTextMode,
+      wrapMode,
       rowStripeTone,
       blockTypeView,
       typeFilter,
       hiddenCols: Array.from(hiddenCols),
       sortColumns,
+      persistedColumnWidths: columnWidths.size,
     },
     columnGroupCount: columns.length,
   }), [
     blockTypeView,
+    columnWidths.size,
     columns,
     configRefreshTick,
     convUid,
@@ -838,41 +898,42 @@ export function BlockViewerGridRDG({ convUid, selectedRunId, selectedRun, onExpo
     typeFilter,
     viewMode,
     rowStripeTone,
-    wrapTextMode,
     viewerFontFamily,
     viewerFontSize,
     viewerVerticalAlign,
+    wrapMode,
   ]);
 
-  const rowHeight = useCallback((row: RowData) => {
-    const baseHeight = viewMode === 'compact' ? 28 : 36;
-    if (wrapTextMode === 'off') return baseHeight;
-
-    const blockText = normalizeBlockContentForDisplay(row.block_content);
-    if (!blockText) return baseHeight;
-
-    // Conservative estimate so wrapped rows don't clip when columns are narrowed.
-    const approxCharsPerLine = viewMode === 'compact' ? 42 : 34;
-    const estimatedLines = Math.max(2, Math.min(20, Math.ceil(blockText.length / approxCharsPerLine)));
-    const lineHeightPx = viewMode === 'compact' ? 14 : 18;
-    const verticalPaddingPx = viewMode === 'compact' ? 12 : 14;
-    return Math.max(baseHeight, estimatedLines * lineHeightPx + verticalPaddingPx);
-  }, [viewMode, wrapTextMode]);
+  const rowHeight = useMemo(
+    () => {
+      if (wrapMode === 'on') return viewMode === 'compact' ? 72 : 96;
+      return viewMode === 'compact' ? 28 : 36;
+    },
+    [viewMode, wrapMode],
+  );
 
   const gridConfigSnapshotJson = useMemo(() => stringifyDebugConfig(gridConfigSnapshot), [gridConfigSnapshot]);
 
   const toolbarControls = (
-    <Group className="block-grid-toolbar-row" justify="space-between" wrap="nowrap" gap={8}>
-      <Group className="block-grid-toolbar-main" gap="xs" wrap="nowrap">
-        <Group className="block-grid-toolbar-group" gap={6} wrap="nowrap">
+    <Group className="block-grid-toolbar-row min-w-0 w-full items-center gap-2 overflow-x-auto" justify="space-between" wrap="nowrap" gap={8}>
+      <Group className="block-grid-toolbar-main min-w-0 flex-1 overflow-x-auto" gap="xs" wrap="nowrap">
+        <Group className="block-grid-toolbar-group shrink-0" gap={6} wrap="nowrap">
           <SegmentedControl className="block-grid-segmented-boxed" data={[{ value: 'compact', label: 'Compact' }, { value: 'comfortable', label: 'Comfortable' }]} value={viewMode} onChange={handleViewModeChange} size="xs" />
-          <SegmentedControl className="block-grid-segmented-boxed" data={[{ value: 'off', label: 'Wrap Off' }, { value: 'on', label: 'Wrap On' }]} value={wrapTextMode} onChange={handleWrapTextModeChange} size="xs" />
           <SegmentedControl className="block-grid-segmented-boxed" data={[{ value: 'gray', label: 'Rows Gray' }, { value: 'blue', label: 'Rows Blue' }, { value: 'none', label: 'Rows None' }]} value={rowStripeTone} onChange={handleRowStripeToneChange} size="xs" />
+          <div className="block-grid-two-tab inline-flex items-stretch overflow-hidden border border-slate-300/80 bg-slate-100/70 dark:border-slate-600/60 dark:bg-slate-900/30" role="tablist" aria-label="Representation mode">
+            <button type="button" role="tab" aria-selected={blockTypeView === 'normalized'} className={`block-grid-two-tab-option h-6 px-3 text-[11px] font-semibold leading-none${blockTypeView === 'normalized' ? ' is-active bg-sky-100 text-sky-800 dark:bg-sky-900/35 dark:text-sky-200' : ' text-slate-700 dark:text-slate-200'} border-r border-slate-300/70 dark:border-slate-600/60`} onClick={() => handleBlockTypeViewChange('normalized')}>
+              Normalized
+            </button>
+            <button type="button" role="tab" aria-selected={blockTypeView === 'parser_native'} className={`block-grid-two-tab-option h-6 px-3 text-[11px] font-semibold leading-none${blockTypeView === 'parser_native' ? ' is-active bg-sky-100 text-sky-800 dark:bg-sky-900/35 dark:text-sky-200' : ' text-slate-700 dark:text-slate-200'}`} onClick={() => handleBlockTypeViewChange('parser_native')}>
+              Parser Native
+            </button>
+          </div>
+          <SegmentedControl className="block-grid-segmented-boxed" data={[{ value: 'off', label: 'Wrap Off' }, { value: 'on', label: 'Wrap On' }]} value={wrapMode} onChange={handleWrapModeChange} size="xs" />
           <SegmentedControl className="block-grid-segmented-boxed" data={[{ value: 'small', label: 'S' }, { value: 'medium', label: 'M' }, { value: 'large', label: 'L' }]} value={viewerFontSize} onChange={handleViewerFontSizeChange} size="xs" />
           <SegmentedControl className="block-grid-segmented-boxed" data={[{ value: 'sans', label: 'Sans' }, { value: 'serif', label: 'Serif' }, { value: 'mono', label: 'Mono' }]} value={viewerFontFamily} onChange={handleViewerFontFamilyChange} size="xs" />
         </Group>
 
-        <Group className="block-grid-toolbar-group" gap={6} wrap="nowrap">
+        <Group className="block-grid-toolbar-group shrink-0" gap={6} wrap="nowrap">
           <Menu shadow="md" width={170} position="bottom-start" withinPortal>
             <Menu.Target>
               <Button variant="default" className="block-grid-topline-button" size="compact-xs" px={6} rightSection={<IconChevronDown size={10} />} aria-label="Vertical align">
@@ -894,11 +955,6 @@ export function BlockViewerGridRDG({ convUid, selectedRunId, selectedRun, onExpo
               <Button variant="default" className="block-grid-topline-button" size="compact-xs" px={6} leftSection={<IconColumns size={14} />} rightSection={<IconChevronDown size={10} />} aria-label="Columns">Columns</Button>
             </Menu.Target>
             <Menu.Dropdown className="block-grid-topline-menu-dropdown">
-              <Menu.Label>Representation (affects columns)</Menu.Label>
-              <Text size="10px" c="dimmed" px="xs" pb={4}>Normalized shows baseline columns. Parser Native reveals Parser Type/Path columns for inspection.</Text>
-              <Menu.Item onClick={() => handleBlockTypeViewChange('normalized')} leftSection={blockTypeView === 'normalized' ? <IconCheck size={14} /> : <span style={{ width: 14, display: 'inline-block' }} />}><Text size="xs">Normalized</Text></Menu.Item>
-              <Menu.Item onClick={() => handleBlockTypeViewChange('parser_native')} leftSection={blockTypeView === 'parser_native' ? <IconCheck size={14} /> : <span style={{ width: 14, display: 'inline-block' }} />}><Text size="xs">Parser Native</Text></Menu.Item>
-              <Menu.Divider />
               <Menu.Label>Columns</Menu.Label>
               {allColumns.map((col) => <Menu.Item key={col.id} onClick={() => toggleColumn(col.id)} leftSection={<Text size="xs" fw={500}>{hiddenCols.has(col.id) ? '[ ]' : '[x]'}</Text>}><Text size="xs">{col.label}</Text></Menu.Item>)}
             </Menu.Dropdown>
@@ -907,7 +963,7 @@ export function BlockViewerGridRDG({ convUid, selectedRunId, selectedRun, onExpo
 
         {hasRun && <Text size="xs" c="dimmed" className="block-grid-toolbar-metrics">{confirmedCount} confirmed - {stagedCount} staged - {selectedRows.size} selected</Text>}
       </Group>
-      <Group className="block-grid-toolbar-actions" gap={4} wrap="nowrap">
+      <Group className="block-grid-toolbar-actions shrink-0" gap={4} wrap="nowrap">
         <Button variant={showGridConfigInspector ? 'filled' : 'default'} color="gray" className="block-grid-topline-button" size="compact-xs" px={8} onClick={() => { setShowGridConfigInspector((prev) => !prev); setConfigRefreshTick((prev) => prev + 1); }}>Grid Config</Button>
         {onExport && <Tooltip label="Export"><ActionIcon className="block-grid-topline-icon" variant="default" color="gray" size="md" onClick={onExport} aria-label="Export"><IconDownload size={16} /></ActionIcon></Tooltip>}
         {onDelete && <Tooltip label="Delete"><ActionIcon className="block-grid-topline-icon" variant="default" color="red" size="md" onClick={onDelete} aria-label="Delete"><IconTrash size={16} /></ActionIcon></Tooltip>}
@@ -917,7 +973,7 @@ export function BlockViewerGridRDG({ convUid, selectedRunId, selectedRun, onExpo
 
   return (
     <>
-      {toolbarPortalTarget ? createPortal(<div className="block-grid-toolbar-portaled">{toolbarControls}</div>, toolbarPortalTarget) : <Paper p="xs" mb={4}>{toolbarControls}</Paper>}
+      <Paper p="xs" mb={4} className="border border-slate-300/70 bg-slate-100/55 dark:border-slate-600/60 dark:bg-slate-900/20">{toolbarControls}</Paper>
 
       {showGridConfigInspector && (
         <Paper withBorder p="xs" mb={4}>
@@ -944,7 +1000,7 @@ export function BlockViewerGridRDG({ convUid, selectedRunId, selectedRun, onExpo
       {error && <ErrorAlert message={error} />}
 
       <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
-        <div className={`rdg-grid-wrapper block-viewer-grid grid-${viewMode} grid-font-${viewerFontSize} grid-font-family-${viewerFontFamily} grid-valign-${viewerVerticalAlign} grid-wrap-${wrapTextMode} grid-row-tone-${rowStripeTone}`} style={{ flex: 1, width: '100%', opacity: blocksLoading || overlaysLoading ? 0.5 : 1, transition: 'opacity 0.15s' }}>
+        <div className={`rdg-grid-wrapper block-viewer-grid grid-${viewMode} grid-font-${viewerFontSize} grid-font-family-${viewerFontFamily} grid-valign-${viewerVerticalAlign} grid-wrap-${wrapMode} grid-row-tone-${rowStripeTone}`} style={{ flex: 1, width: '100%', opacity: blocksLoading || overlaysLoading ? 0.5 : 1, transition: 'opacity 0.15s' }}>
           <DataGrid<RowData>
             className="block-viewer-rdg"
             columns={columns}
@@ -952,6 +1008,8 @@ export function BlockViewerGridRDG({ convUid, selectedRunId, selectedRun, onExpo
             direction="ltr"
             rowKeyGetter={(row: RowData) => String(row.block_uid ?? '')}
             defaultColumnOptions={{ sortable: true, resizable: true }}
+            columnWidths={columnWidths}
+            onColumnWidthsChange={(next) => setColumnWidths(new Map(next))}
             rowHeight={rowHeight}
             headerRowHeight={36}
             onRowsChange={handleRowsChange}

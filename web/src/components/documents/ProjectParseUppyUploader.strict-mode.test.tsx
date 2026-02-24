@@ -135,4 +135,32 @@ describe('ProjectParseUppyUploader strict mode lifecycle', () => {
     expect(options.companionHeaders).not.toHaveProperty('apikey');
     expect(options.sources).toEqual(['GoogleDrive']);
   });
+
+  it('disables remote sources when companion.uppy.io is configured', async () => {
+    render(
+      <MantineProvider>
+        <ProjectParseUppyUploader
+          projectId="project-1"
+          enableRemoteSources
+          companionUrl="https://companion.uppy.io"
+        />
+      </MantineProvider>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('uppy-dashboard')).toBeInTheDocument();
+    });
+
+    expect(screen.getByText(/companion\.uppy\.io is not the project companion service/i)).toBeInTheDocument();
+
+    const instance = dashboardUppyInstances.at(-1);
+    expect(instance).toBeDefined();
+
+    const remoteSourcesCall = instance?.use.mock.calls.find((call) => {
+      const opts = call[1] as Record<string, unknown> | undefined;
+      return opts?.companionCookiesRule === 'include';
+    });
+
+    expect(remoteSourcesCall).toBeUndefined();
+  });
 });

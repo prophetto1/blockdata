@@ -14,12 +14,13 @@ export function SortableHeader<T>({ column, header }: HeaderContext<T, unknown>)
   return (
     <span
       className="dt-header-label dt-header-sortable"
-      onClick={column.getToggleSortingHandler()}
+      onClick={(e) => { e.stopPropagation(); column.getToggleSortingHandler()?.(e); }}
       role="button"
       tabIndex={0}
       onKeyDown={(e) => {
         if (e.key !== 'Enter' && e.key !== ' ') return;
         e.preventDefault();
+        e.stopPropagation();
         column.getToggleSortingHandler()?.(e);
       }}
       aria-label={`Sort by ${label}`}

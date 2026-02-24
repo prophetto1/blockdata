@@ -418,7 +418,6 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
   const [middlePreviewTab, setMiddlePreviewTab] = useState<MiddlePreviewTab>('preview');
   const [testRightTab, setTestRightTab] = useState<TestRightTab>('preview');
   const [transformGridRenderer, setTransformGridRenderer] = useState<TransformGridRenderer>('rdg');
-  const [testBlocksToolbarHost, setTestBlocksToolbarHost] = useState<HTMLDivElement | null>(null);
   const [pdfToolbarHost, setPdfToolbarHost] = useState<HTMLDivElement | null>(null);
   const [testBlocks, setTestBlocks] = useState<TestBlockCardRow[]>([]);
   const [testBlocksLoading, setTestBlocksLoading] = useState(false);
@@ -1394,7 +1393,7 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
           className="top-command-bar-shell-slot"
         >
           {!isExplorerCollapsed ? (
-            <Text size="sm" fw={700} className="top-command-bar-shell-label">Documents</Text>
+            <Text size="xs" fw={700} className="top-command-bar-shell-label">Documents</Text>
           ) : null}
           <ActionIcon
             size="sm"
@@ -1420,7 +1419,7 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
           className="top-command-bar-shell-slot"
         >
           {!isConfigCollapsed ? (
-            <Text size="sm" fw={700} className="top-command-bar-shell-label">Configuration</Text>
+            <Text size="xs" fw={700} className="top-command-bar-shell-label">Configuration</Text>
           ) : null}
           <ActionIcon
             size="sm"
@@ -1438,11 +1437,32 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
           </ActionIcon>
         </Group>
       ),
-      right: (
-        <Text size="sm" fw={700} className="top-command-bar-shell-label">Preview</Text>
+      right: isTransformTestSurface ? (
+        <div className="top-bar-view-tabs" role="tablist" aria-label="View tabs">
+          {([
+            { value: 'preview', label: 'Preview' },
+            { value: 'grid', label: 'Grid' },
+            { value: 'blocks', label: 'Blocks' },
+            { value: 'metadata', label: 'Metadata' },
+            { value: 'outputs', label: 'Outputs' },
+          ] as const).map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              role="tab"
+              aria-selected={testRightTab === opt.value ? 'true' : 'false'}
+              className={`top-bar-view-tab${testRightTab === opt.value ? ' is-active' : ''}`}
+              onClick={() => setTestRightTab(opt.value)}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      ) : (
+        <Text size="xs" fw={700} className="top-command-bar-shell-label">Preview</Text>
       ),
     });
-  }, [handleConfigToggle, isConfigCollapsed, isExplorerCollapsed, isShellGrid, setShellTopSlots, topConfigToggleLabel]);
+  }, [handleConfigToggle, isConfigCollapsed, isExplorerCollapsed, isShellGrid, isTransformTestSurface, setShellTopSlots, testRightTab, setTestRightTab, topConfigToggleLabel]);
 
   useEffect(() => () => setShellTopSlots(null), [setShellTopSlots]);
 
@@ -1850,11 +1870,8 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
                 wrap="nowrap"
               >
                 <Group gap={12} align="center" wrap="nowrap">
-                  {middleTabsControl}
+                  {!isTransformTestSurface && middleTabsControl}
                 </Group>
-                {isRightGridTab && (
-                  <Box className="parse-middle-grid-toolbar-host" ref={setTestBlocksToolbarHost} />
-                )}
                 {shouldShowPdfToolbarHost && (
                   <Box className="schema-layout-middle-toolbar-host parse-preview-toolbar-host" ref={setPdfToolbarHost} />
                 )}
@@ -2264,8 +2281,8 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
                       </Center>
                     ) : (
                       <Stack gap="xs" h="100%" p="sm">
-                        <Group justify="space-between" align="center" wrap="nowrap">
-                          <Group gap="xs" align="center" wrap="nowrap">
+                        <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 border border-slate-300/70 bg-slate-100/55 px-2 py-1 dark:border-slate-600/60 dark:bg-slate-900/20">
+                          <Group gap="xs" align="center" wrap="nowrap" className="min-w-0">
                             <Text size="sm" fw={700}>Grid</Text>
                             <Select
                               size="xs"
@@ -2280,15 +2297,25 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
                               aria-label="Grid renderer"
                             />
                           </Group>
-                          <Button
-                            size="xs"
-                            variant="default"
-                            onClick={() => void handleRunCitations()}
-                            loading={runCitationsBusy}
-                          >
-                            {hasCitationsOutput ? 'Regenerate citations' : 'Run citations'}
-                          </Button>
-                        </Group>
+                          <div className="inline-flex items-stretch overflow-hidden border border-slate-300/80 bg-slate-100/80 dark:border-slate-600/60 dark:bg-slate-900/35" role="tablist" aria-label="Static tabs">
+                            <button type="button" role="tab" aria-selected className="h-6 border-r border-slate-300/70 bg-sky-100 px-3 text-[11px] font-semibold leading-none text-sky-800 dark:border-slate-600/60 dark:bg-sky-900/35 dark:text-sky-200" tabIndex={-1}>
+                              Tab One
+                            </button>
+                            <button type="button" role="tab" aria-selected={false} className="h-6 px-3 text-[11px] font-semibold leading-none text-slate-700 dark:text-slate-200" tabIndex={-1}>
+                              Tab Two
+                            </button>
+                          </div>
+                          <div className="justify-self-end">
+                            <Button
+                              size="xs"
+                              variant="default"
+                              onClick={() => void handleRunCitations()}
+                              loading={runCitationsBusy}
+                            >
+                              {hasCitationsOutput ? 'Regenerate citations' : 'Run citations'}
+                            </Button>
+                          </div>
+                        </div>
                         {(outputsNotice || outputsError) && (
                           <Text size="xs" c={outputsError ? 'red' : 'dimmed'}>
                             {outputsError ?? outputsNotice}
@@ -2300,21 +2327,18 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
                               convUid={selectedDoc.conv_uid}
                               selectedRunId={selectedRunId}
                               selectedRun={selectedRun}
-                              toolbarPortalTarget={testBlocksToolbarHost}
                             />
                           ) : transformGridRenderer === 'grid_v2' ? (
                             <BlockViewerGridV2
                               convUid={selectedDoc.conv_uid}
                               selectedRunId={selectedRunId}
                               selectedRun={selectedRun}
-                              toolbarPortalTarget={testBlocksToolbarHost}
                             />
                           ) : (
                             <BlockViewerGridTanStackCodex
                               convUid={selectedDoc.conv_uid}
                               selectedRunId={selectedRunId}
                               selectedRun={selectedRun}
-                              toolbarPortalTarget={testBlocksToolbarHost}
                             />
                           )}
                         </Box>

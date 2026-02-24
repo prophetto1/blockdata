@@ -18,6 +18,7 @@ type UppyMeta = { project_id: string; ingest_mode: IngestMode };
 type UppyBody = Record<string, never>;
 type UppyInstance = Uppy<UppyMeta, UppyBody>;
 const REMOTE_SOURCE_PLUGINS = ['GoogleDrive'] as const;
+const BLOCKED_COMPANION_HOSTS = new Set(['companion.uppy.io']);
 
 type IngestResponse = {
   source_uid?: string;
@@ -54,14 +55,38 @@ const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string | und
 const DEFAULT_MAX_FILES = 10;
 const DEFAULT_ALLOWED_EXTENSIONS = ['.md', '.docx', '.pdf', '.pptx', '.xlsx', '.html', '.csv', '.txt'];
 
+type CompanionUrlResolution = {
+  url: string | null;
+  warning: string | null;
+};
+
 function getIngestEndpoint(): string | null {
   if (!SUPABASE_URL) return null;
   return `${SUPABASE_URL.replace(/\/+$/, '')}/functions/v1/ingest`;
 }
 
-function resolveCompanionUrl(value: string | undefined): string | null {
+function resolveCompanionUrl(value: string | undefined): CompanionUrlResolution {
   const normalized = value?.trim();
-  return normalized && normalized.length > 0 ? normalized : null;
+  if (!normalized || normalized.length === 0) {
+    return { url: null, warning: null };
+  }
+
+  try {
+    const parsed = new URL(normalized);
+    if (BLOCKED_COMPANION_HOSTS.has(parsed.hostname.toLowerCase())) {
+      return {
+        url: null,
+        warning: 'Cloud import disabled: companion.uppy.io is not the project Companion service.',
+      };
+    }
+
+    return { url: normalized, warning: null };
+  } catch {
+    return {
+      url: null,
+      warning: 'Cloud import unavailable: VITE_UPPY_COMPANION_URL must be a valid URL.',
+    };
+  }
 }
 
 function normalizeAllowedExtensions(value: string[] | undefined): string[] {
@@ -92,10 +117,14 @@ export function ProjectParseUppyUploader({
   const [allowedExtensions, setAllowedExtensions] = useState<string[]>(DEFAULT_ALLOWED_EXTENSIONS);
 
   const ingestEndpoint = useMemo(() => getIngestEndpoint(), []);
-  const resolvedCompanionUrl = useMemo(() => resolveCompanionUrl(companionUrl), [companionUrl]);
+  const companionResolution = useMemo(() => resolveCompanionUrl(companionUrl), [companionUrl]);
+  const resolvedCompanionUrl = companionResolution.url;
   const remoteSourcesEnabled = enableRemoteSources && Boolean(resolvedCompanionUrl);
-  const remoteSourcesConfigWarning = enableRemoteSources && !resolvedCompanionUrl
-    ? 'Cloud import unavailable: set VITE_UPPY_COMPANION_URL to your Companion service URL.'
+  const remoteSourcesConfigWarning = enableRemoteSources
+    ? companionResolution.warning
+      ?? (!resolvedCompanionUrl
+        ? 'Cloud import unavailable: set VITE_UPPY_COMPANION_URL to your Companion service URL.'
+        : null)
     : null;
   const resolvedUiVariant: UppyUiVariant = remoteSourcesEnabled ? 'dashboard' : uiVariant;
   const dropzoneNote = ingestMode === 'upload_only'

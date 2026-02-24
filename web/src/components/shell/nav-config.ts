@@ -34,4 +34,10 @@ export const NAV_GROUPS: NavGroup[] = [
       { label: 'Layout', icon: IconSchema, path: '/app/schemas/layout' },
     ],
   },
+  {
+    label: 'Experiments',
+    items: [
+      { label: 'Style Lab', icon: IconSettings, path: '/app/experiments/databricks' },
+    ],
+  },
 ];

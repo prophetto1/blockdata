@@ -8,6 +8,7 @@ json-schemas/
 .codex-tmp/
 # Project-specific ignores
 ref-repos/
+
 -personal-/
 src-content/
 .mypy_cache/
@@ -52,3 +53,12 @@ ref-repos/remark
 # Supabase local CLI artifacts
 supabase/.temp/
 .env*.local
+
+# Deploy secrets (GCP credentials, passwords)
+.deploy-secrets/
+
+# Loose screenshots at repo root
+*.png
+
+# Infra scratch files
+infra/
