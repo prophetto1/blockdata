@@ -9,7 +9,7 @@ import {
   TextInput,
   Tooltip,
   UnstyledButton,
-} from '@mantine/core';
+} from '@/components/ui/primitives';
 import {
   IconArrowsLeftRight,
   IconChevronDown,

@@ -1,1 +1,76 @@
 @import "tailwindcss";
+@plugin "tailwindcss-animate";
+
+:root {
+  --radius: 0.625rem;
+  --app-font-sans: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --app-font-mono: "JetBrains Mono", "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  --app-font-size-nav-label: 0.6875rem;
+  --app-font-size-nav-caption: 0.75rem;
+  --app-font-size-nav: 0.875rem;
+  --app-font-size-nav-strong: 0.9375rem;
+  --app-font-size-brand: 1.6875rem;
+  --background: var(--mantine-color-body, #09090b);
+  --foreground: var(--mantine-color-text, #fafafa);
+  --card: var(--mantine-color-body, #09090b);
+  --card-foreground: var(--mantine-color-text, #fafafa);
+  --popover: var(--mantine-color-body, #09090b);
+  --popover-foreground: var(--mantine-color-text, #fafafa);
+  --primary: var(--mantine-primary-color-filled, #2563eb);
+  --primary-foreground: var(--mantine-color-white, #ffffff);
+  --secondary: var(--mantine-color-default-hover, #27272a);
+  --secondary-foreground: var(--mantine-color-text, #fafafa);
+  --muted: var(--mantine-color-default-hover, #27272a);
+  --muted-foreground: var(--mantine-color-dimmed, #a1a1aa);
+  --accent: var(--mantine-color-default-hover, #27272a);
+  --accent-foreground: var(--mantine-color-text, #fafafa);
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+  --border: var(--mantine-color-default-border, #27272a);
+  --input: var(--mantine-color-default-border, #27272a);
+  --ring: var(--mantine-primary-color-filled, #2563eb);
+  --sidebar: var(--mantine-color-body, #09090b);
+  --sidebar-foreground: var(--mantine-color-text, #fafafa);
+  --sidebar-primary: var(--mantine-primary-color-filled, #2563eb);
+  --sidebar-primary-foreground: var(--mantine-color-white, #ffffff);
+  --sidebar-accent: var(--mantine-color-default-hover, #27272a);
+  --sidebar-accent-foreground: var(--mantine-color-text, #fafafa);
+  --sidebar-border: var(--mantine-color-default-border, #27272a);
+  --sidebar-ring: var(--mantine-primary-color-filled, #2563eb);
+}
+
+@theme inline {
+  --font-sans: var(--app-font-sans);
+  --font-mono: var(--app-font-mono);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}

@@ -10,7 +10,7 @@ import { useDisclosure, useLocalStorage } from '@mantine/hooks';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/auth/AuthContext';
 import { TopCommandBar } from '@/components/shell/TopCommandBar';
-import { LeftRail } from '@/components/shell/LeftRail';
+import { LeftRailShadcn } from '@/components/shell/LeftRailShadcn';
 import { HeaderCenterProvider } from '@/components/shell/HeaderCenterContext';
 import { AssistantDockHost } from '@/components/shell/AssistantDockHost';
 import { AppPageShell } from '@/components/layout/AppPageShell';
@@ -144,7 +144,7 @@ export function AppLayoutDatabricksPreview() {
           <AppShell.Header>
             <TopCommandBar
               onToggleNav={toggleNav}
-              shellGuides={lockMainScroll}
+              shellGuides={isSchemaLayoutRoute}
             />
           </AppShell.Header>
 
@@ -153,7 +153,7 @@ export function AppLayoutDatabricksPreview() {
             pb={0}
             pt={0}
           >
-            <LeftRail
+            <LeftRailShadcn
               onNavigate={() => {
                 closeNav();
               }}

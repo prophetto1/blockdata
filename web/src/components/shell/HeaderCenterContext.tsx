@@ -5,6 +5,8 @@ type ShellTopSlots = {
   left?: ReactNode;
   middle?: ReactNode;
   right?: ReactNode;
+  hideLeftDivider?: boolean;
+  showRightInMinimal?: boolean;
 };
 
 type HeaderCenterState = {

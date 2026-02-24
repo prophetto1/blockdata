@@ -30,7 +30,7 @@ const teal: MantineColorsTuple = [
 ];
 
 export const theme = createTheme({
-  fontFamily: "DM Sans, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif",
+  fontFamily: 'var(--app-font-sans), -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif',
 
   fontSizes: {
     xs: '0.75rem',
@@ -49,7 +49,7 @@ export const theme = createTheme({
   },
 
   headings: {
-    fontFamily: "DM Sans, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif",
+    fontFamily: 'var(--app-font-sans), -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif',
     fontWeight: '700',
     sizes: {
       h1: { fontSize: '2.25rem', lineHeight: '1.2', fontWeight: '800' },
@@ -101,8 +101,15 @@ export const theme = createTheme({
 export const cssVariablesResolver: CSSVariablesResolver = () => ({
   variables: {
     '--mantine-heading-font-weight': '700',
-    '--app-shell-header-height': '48px',
-    '--app-shell-navbar-width': '270px',
+    '--app-font-sans': '"IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+    '--app-font-mono': '"JetBrains Mono", "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace',
+    '--app-font-size-nav-label': '0.6875rem',
+    '--app-font-size-nav-caption': '0.75rem',
+    '--app-font-size-nav': '0.875rem',
+    '--app-font-size-nav-strong': '0.9375rem',
+    '--app-font-size-brand': '1.6875rem',
+    '--app-shell-header-height': '72px',
+    '--app-shell-navbar-width': '296px',
     '--app-shell-content-max-width': '1460px',
     '--app-shell-page-gap': 'var(--mantine-spacing-md)',
     '--app-shell-page-bottom-padding': 'var(--mantine-spacing-xl)',

@@ -11,12 +11,12 @@ const SAMPLE_ROWS = [
 export default function DatabricksStyleLab() {
   return (
     <Box className="dbx-lab">
-      <PageHeader title="Style Lab" subtitle="Databricks-like chrome preview" />
+      <PageHeader title="Databricks Preview" subtitle="Databricks-like chrome preview" />
 
       <Box className="dbx-lab-hero">
         <Stack gap={6}>
           <Title order={2} className="dbx-lab-title">
-            Workspace
+            Preview
           </Title>
           <Text className="dbx-lab-subtitle">
             This page is an isolated styling sandbox. Changes here should not affect other pages.
@@ -130,4 +130,3 @@ export default function DatabricksStyleLab() {
     </Box>
   );
 }
-

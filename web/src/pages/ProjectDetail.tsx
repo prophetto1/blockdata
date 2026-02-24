@@ -364,6 +364,7 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
   const isParseMode = mode === 'parse';
   const isExtractMode = mode === 'extract';
   const isTransformMode = mode === 'transform';
+  const useSideRailDocumentNav = isParseMode || isExtractMode || isTransformMode;
   const isTestSurfacePage = surface === 'test';
   const isShellGrid = isTestSurfacePage && (isParseMode || isExtractMode || isTransformMode);
   const isTransformTestSurface = isTransformMode && isTestSurfacePage;
@@ -1385,6 +1386,8 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
     }
 
     setShellTopSlots({
+      hideLeftDivider: true,
+      showRightInMinimal: isTransformTestSurface,
       left: (
         <Group
           gap={8}
@@ -1392,9 +1395,6 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
           justify={isExplorerCollapsed ? 'flex-end' : 'space-between'}
           className="top-command-bar-shell-slot"
         >
-          {!isExplorerCollapsed ? (
-            <Text size="xs" fw={700} className="top-command-bar-shell-label">Documents</Text>
-          ) : null}
           <ActionIcon
             size="sm"
             variant="subtle"
@@ -1577,14 +1577,14 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
       </Menu.Dropdown>
     </Menu>
   );
-  const layoutClassName = `parse-playground-layout${surface === 'test' ? ' parse-playground-layout--test' : ''}${isShellGrid ? ` schema-layout-test-page${isExplorerCollapsed ? ' is-left-collapsed' : ''}` : ''}`;
+  const layoutClassName = `parse-playground-layout${surface === 'test' ? ' parse-playground-layout--test' : ''}${useSideRailDocumentNav ? ' parse-playground-layout--no-explorer' : ''}${isShellGrid ? ` schema-layout-test-page${isExplorerCollapsed ? ' is-left-collapsed' : ''}` : ''}`;
   const explorerClassName = `parse-playground-explorer${isExplorerCollapsed ? ' is-collapsed' : ''}${isShellGrid ? ' schema-layout-test-explorer' : ''}`;
   const rightPaneClassName = `parse-playground-right${isExtractMode && !isShellGrid ? ' is-extract' : ''}${isTestSurfacePage && isConfigCollapsed ? ' is-collapsed' : ''}${isShellGrid ? ' schema-layout-test-right' : ''}`;
   const middleTabsClassName = `parse-middle-view-tabs${isShellGrid ? ' schema-layout-middle-header' : ''}`;
   const parseConfigRootClassName = `parse-config-root${showCenterResultsList ? ' parse-results-side-root' : ''}${isShellGrid ? ' schema-layout-test-config-root' : ''}`;
   const parseConfigScrollClassName = `parse-config-scroll${isShellGrid ? ' schema-layout-test-config-scroll' : ''}`;
   const extractConfigRootClassName = `extract-config-root${isShellGrid ? ' schema-layout-test-config-root' : ''}`;
-  const extractConfigScrollClassName = isShellGrid ? 'schema-layout-test-config-scroll' : undefined;
+  const extractConfigScrollClassName = isShellGrid ? 'schema-layout-test-config-scroll' : 'extract-config-scroll';
   const parseConfigViewTabs = (
     <Group gap={10} wrap="nowrap" className="schema-layout-right-tabs">
       <Text
@@ -1643,7 +1643,7 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
       </Text>
     </Group>
   );
-  const explorerBodyContent = (
+  const explorerBodyContent = !useSideRailDocumentNav ? (
     <>
       <Box className="parse-playground-upload">
           <ProjectParseUppyUploader
@@ -1817,7 +1817,7 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
         </Stack>
       </Box>
     </>
-  );
+  ) : null;
   return (
     <>
       {error && <ErrorAlert message={error} />}
@@ -1827,39 +1827,41 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
         data-surface={surface}
         style={layoutStyle}
       >
-        <Box className={explorerClassName}>
-          {!isShellGrid && (
-            <Box
-              className={`parse-playground-resizer parse-playground-resizer-explorer${activeResizer === 'explorer' ? ' is-active' : ''}`}
-              role="separator"
-              aria-orientation="vertical"
-              aria-label="Resize documents pane"
-              onPointerDown={handleExplorerResizeStart}
-            />
-          )}
-          {!isShellGrid && (
-            <ActionIcon
-              size="sm"
-              variant="subtle"
-              className="parse-explorer-collapse-toggle"
-              aria-label={isExplorerCollapsed ? 'Expand Add Documents column' : 'Collapse Add Documents column'}
-              title={isExplorerCollapsed ? 'Expand Add Documents column' : 'Collapse Add Documents column'}
-              onClick={() => setIsExplorerCollapsed((current) => !current)}
-            >
-              {isExplorerCollapsed ? (
-                <DoubleArrowIcon size={PANE_CHEVRON_ICON.size} />
-              ) : (
-                <IconChevronLeft size={PANE_CHEVRON_ICON.size} stroke={PANE_CHEVRON_ICON.stroke} />
-              )}
-            </ActionIcon>
-          )}
+        {!useSideRailDocumentNav && (
+          <Box className={explorerClassName}>
+            {!isShellGrid && (
+              <Box
+                className={`parse-playground-resizer parse-playground-resizer-explorer${activeResizer === 'explorer' ? ' is-active' : ''}`}
+                role="separator"
+                aria-orientation="vertical"
+                aria-label="Resize documents pane"
+                onPointerDown={handleExplorerResizeStart}
+              />
+            )}
+            {!isShellGrid && (
+              <ActionIcon
+                size="sm"
+                variant="subtle"
+                className="parse-explorer-collapse-toggle"
+                aria-label={isExplorerCollapsed ? 'Expand Add Documents column' : 'Collapse Add Documents column'}
+                title={isExplorerCollapsed ? 'Expand Add Documents column' : 'Collapse Add Documents column'}
+                onClick={() => setIsExplorerCollapsed((current) => !current)}
+              >
+                {isExplorerCollapsed ? (
+                  <DoubleArrowIcon size={PANE_CHEVRON_ICON.size} />
+                ) : (
+                  <IconChevronLeft size={PANE_CHEVRON_ICON.size} stroke={PANE_CHEVRON_ICON.stroke} />
+                )}
+              </ActionIcon>
+            )}
 
-          {isShellGrid ? (
-            <Box className="schema-layout-left-body">
-              {explorerBodyContent}
-            </Box>
-          ) : explorerBodyContent}
-        </Box>
+            {isShellGrid ? (
+              <Box className="schema-layout-left-body">
+                {explorerBodyContent}
+              </Box>
+            ) : explorerBodyContent}
+          </Box>
+        )}
         <Box className="parse-playground-work">
           <Box className="parse-playground-preview">
             <Box className="parse-preview-frame">

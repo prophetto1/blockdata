@@ -30,9 +30,9 @@ vi.mock('@uppy/core', () => {
 });
 
 vi.mock('@uppy/react/dashboard', () => ({
-  default: ({ uppy }: { uppy: MockUppyInstance }) => {
+  default: ({ uppy, showSelectedFiles }: { uppy: MockUppyInstance; showSelectedFiles?: boolean }) => {
     dashboardUppyInstances.push(uppy);
-    return <div data-testid="uppy-dashboard">dashboard</div>;
+    return <div data-testid="uppy-dashboard" data-show-selected={String(Boolean(showSelectedFiles))}>dashboard</div>;
   },
 }));
 
@@ -134,6 +134,7 @@ describe('ProjectParseUppyUploader strict mode lifecycle', () => {
     });
     expect(options.companionHeaders).not.toHaveProperty('apikey');
     expect(options.sources).toEqual(['GoogleDrive']);
+    expect(screen.getByTestId('uppy-dashboard')).toHaveAttribute('data-show-selected', 'true');
   });
 
   it('disables remote sources when companion.uppy.io is configured', async () => {

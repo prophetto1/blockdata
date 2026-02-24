@@ -355,7 +355,7 @@ export function ProjectParseUppyUploader({
             uppy={uppy}
             height={height}
             width="100%"
-            showSelectedFiles={false}
+            showSelectedFiles={remoteSourcesEnabled}
             plugins={remoteSourcesEnabled ? [...REMOTE_SOURCE_PLUGINS] : []}
             disableStatusBar={compactUi}
             proudlyDisplayPoweredByUppy={false}

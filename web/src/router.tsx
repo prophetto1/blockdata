@@ -12,6 +12,8 @@ import UseCases from '@/pages/UseCases';
 import MarketingIntegrations from '@/pages/MarketingIntegrations';
 import AuthCallback from '@/pages/AuthCallback';
 import ProjectsHome from '@/pages/ProjectsHome';
+import Flows from '@/pages/Flows';
+import FlowDetail from '@/pages/FlowDetail';
 import ProjectDetail from '@/pages/ProjectDetail';
 import Upload from '@/pages/Upload';
 import UppyLibraryDemo from '@/pages/UppyLibraryDemo';
@@ -36,6 +38,7 @@ import McpServers from '@/pages/McpServers';
 import Commands from '@/pages/Commands';
 import DatabricksStyleLab from '@/pages/experiments/DatabricksStyleLab';
 import { AppLayoutDatabricksPreview } from '@/components/layout/AppLayoutDatabricksPreview';
+import { FlowsRouteShell } from '@/components/layout/FlowsRouteShell';
 import { featureFlags } from '@/lib/featureFlags';
 
 
@@ -83,6 +86,14 @@ export const router = createBrowserRouter([
           { path: '/app', element: <Navigate to="/app/projects" replace /> },
           { path: '/app/projects', element: <ProjectsHome /> },
           { path: '/app/projects/list', element: <Navigate to="/app/projects" replace /> },
+          {
+            path: '/app/flows',
+            element: <FlowsRouteShell />,
+            children: [
+              { index: true, element: <Flows /> },
+              { path: ':flowId/:tab?', element: <FlowDetail /> },
+            ],
+          },
 
           // Project-scoped routes
           { path: '/app/projects/:projectId', element: <ProjectDetail surface="test" /> },

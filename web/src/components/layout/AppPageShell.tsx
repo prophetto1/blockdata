@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Box } from '@mantine/core';
+import { Box } from '@/components/ui/primitives';
 import { styleTokens } from '@/lib/styleTokens';
 
 type AppPageShellMode = 'fluid' | 'constrained';

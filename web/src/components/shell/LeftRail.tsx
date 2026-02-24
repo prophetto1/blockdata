@@ -49,30 +49,42 @@ type SearchAction = {
 const PROJECTS_RPC_NEW = 'list_projects_overview';
 const PROJECTS_RPC_LEGACY = 'list_projects_overview_v2';
 const GLOBAL_MENU_ORDER: Record<string, number> = {
-  '/app/projects': 0, // Parse
-  '/app/extract': 1, // Extract
-  '/app/transform': 2, // Transform
-  '/app/projects/list': 3, // Database
-  '/app/schemas': 4, // Schema
+  '/app/flows': 0, // Flows
+  '/app/documents': 1, // Documents
+  '/app/projects/list': 2, // Database
+  '/app/schemas': 3, // Schema
 };
 const GLOBAL_MENU_COMPACT_CODE: Record<string, string> = {
-  '/app/projects': 'P',
-  '/app/extract': 'E',
-  '/app/transform': 'T',
-  '/app/projects/list': 'D',
+  '/app/flows': 'F',
+  '/app/documents': 'DOC',
+  '/app/projects/list': 'DB',
   '/app/schemas': 'S',
 };
 const ACCOUNT_ACTION_ICON = ICON_TOKENS.shell.configAction;
 
 function buildSearchActions(): SearchAction[] {
-  const globalPaths = new Set(GLOBAL_MENUS.map((item) => item.path));
-  const globalActions: SearchAction[] = GLOBAL_MENUS.map((item) => ({
-    id: `global-${item.path}`,
-    label: item.label,
-    group: 'Global',
-    path: item.path,
-    icon: item.icon,
-  }));
+  const globalPaths = new Set<string>();
+  const globalActions: SearchAction[] = GLOBAL_MENUS.flatMap((item) => {
+    globalPaths.add(item.path);
+    const actions: SearchAction[] = [{
+      id: `global-${item.path}`,
+      label: item.label,
+      group: 'Global',
+      path: item.path,
+      icon: item.icon,
+    }];
+    for (const child of item.children ?? []) {
+      globalPaths.add(child.path);
+      actions.push({
+        id: `global-${item.path}-${child.path}`,
+        label: child.label,
+        group: item.label,
+        path: child.path,
+        icon: child.icon,
+      });
+    }
+    return actions;
+  });
   const groupedActions: SearchAction[] = NAV_GROUPS.flatMap((group) =>
     group.items
       .filter((item) => !globalPaths.has(item.path))
@@ -117,7 +129,7 @@ export function LeftRail({
   const navPaddingX = 'xs';
   const navPaddingY = 4;
   const quickActionPaddingY = 6;
-  const activeProjectMatch = location.pathname.match(/^\/app\/(?:projects|extract|transform)\/([^/]+)/);
+  const activeProjectMatch = location.pathname.match(/^\/app\/(?:projects|extract|transform|flows)\/([^/]+)/);
   const activeProjectId = activeProjectMatch ? activeProjectMatch[1] : null;
   const [focusedProjectId, setFocusedProjectId] = useLocalStorage<string | null>({
     key: PROJECT_FOCUS_STORAGE_KEY,
@@ -132,6 +144,7 @@ export function LeftRail({
   const [creatingProject, setCreatingProject] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchSelectedIndex, setSearchSelectedIndex] = useState(0);
+  const [documentsMenuOpened, setDocumentsMenuOpened] = useState(true);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const allSearchActions = useMemo(() => buildSearchActions(), []);
   const getGroupKey = (label: string) => label.toLowerCase().replace(/\s+/g, '-');
@@ -252,10 +265,16 @@ export function LeftRail({
       ? candidate
       : null;
   }, [activeProjectId, focusedProjectId, projectOptions]);
-  const globalMenuPaths = useMemo(
-    () => new Set(GLOBAL_MENUS.map((menu) => menu.path)),
-    [],
-  );
+  const globalMenuPaths = useMemo(() => {
+    const paths = new Set<string>();
+    for (const menu of GLOBAL_MENUS) {
+      paths.add(menu.path);
+      for (const child of menu.children ?? []) {
+        paths.add(child.path);
+      }
+    }
+    return paths;
+  }, []);
   const orderedGlobalMenus = useMemo(
     () => [...GLOBAL_MENUS].sort((a, b) => (
       (GLOBAL_MENU_ORDER[a.path] ?? Number.MAX_SAFE_INTEGER)
@@ -263,14 +282,11 @@ export function LeftRail({
     )),
     [],
   );
-  const schemaMenu = useMemo(
-    () => orderedGlobalMenus.find((menu) => menu.path === '/app/schemas') ?? null,
+  const documentsMenu = useMemo(
+    () => orderedGlobalMenus.find((menu) => menu.path === '/app/documents') ?? null,
     [orderedGlobalMenus],
   );
-  const quickActionMenus = useMemo(
-    () => orderedGlobalMenus.filter((menu) => menu.path !== '/app/schemas'),
-    [orderedGlobalMenus],
-  );
+  const quickActionMenus = useMemo(() => orderedGlobalMenus, [orderedGlobalMenus]);
   const parsePath = projectSelectValue ? `/app/projects/${projectSelectValue}` : '/app/projects';
   const extractPath = projectSelectValue
     ? `/app/extract/${projectSelectValue}`
@@ -278,9 +294,18 @@ export function LeftRail({
   const transformPath = projectSelectValue
     ? `/app/transform/${projectSelectValue}`
     : '/app/transform';
+  const uploadPath = projectSelectValue
+    ? `/app/projects/${projectSelectValue}/upload`
+    : '/app/projects';
+  const flowsPath = projectSelectValue
+    ? `/app/flows/${projectSelectValue}/overview`
+    : '/app/flows';
   const globalPathOverrides: Record<string, string> = {
+    '/app/flows': flowsPath,
+    '/app/documents': parsePath,
     '/app/projects': parsePath,
     '/app/extract': extractPath,
+    '/app/upload': uploadPath,
     '/app/transform': transformPath,
   };
   const userInitial = useMemo(() => {
@@ -369,7 +394,7 @@ export function LeftRail({
   };
 
   const pickSearchAction = (action: SearchAction) => {
-    navigate(action.path);
+    navigate(globalPathOverrides[action.path] ?? action.path);
     closeSearchModal();
     onNavigate?.();
   };
@@ -403,15 +428,36 @@ export function LeftRail({
     return location.pathname.startsWith(path);
   };
   const isGlobalMenuActive = (path: string): boolean => {
-    if (path === '/app/projects') {
-      return location.pathname.startsWith('/app/projects') && !location.pathname.startsWith('/app/projects/list');
+    if (path === '/app/flows') return location.pathname.startsWith('/app/flows');
+    if (path === '/app/documents') {
+      return (
+        /^\/app\/projects\/[^/]+\/upload/.test(location.pathname)
+        || (
+          location.pathname.startsWith('/app/projects')
+          && !location.pathname.startsWith('/app/projects/list')
+        )
+        || location.pathname.startsWith('/app/extract')
+        || location.pathname.startsWith('/app/transform')
+      );
     }
+    if (path === '/app/projects') {
+      return (
+        location.pathname.startsWith('/app/projects')
+        && !location.pathname.startsWith('/app/projects/list')
+        && !/^\/app\/projects\/[^/]+\/upload/.test(location.pathname)
+      );
+    }
+    if (path === '/app/upload') return /^\/app\/projects\/[^/]+\/upload/.test(location.pathname);
     if (path === '/app/projects/list') return location.pathname.startsWith('/app/projects/list');
     if (path === '/app/extract') return location.pathname.startsWith('/app/extract');
     if (path === '/app/transform') return location.pathname.startsWith('/app/transform');
     if (path === '/app/schemas') return location.pathname.startsWith('/app/schemas');
     return location.pathname.startsWith(path);
   };
+  const documentsMenuExpanded = documentsMenu
+    ? isGlobalMenuActive(documentsMenu.path) || documentsMenuOpened
+    : documentsMenuOpened;
+
   const renderRailItem = ({
     key,
     label,
@@ -592,6 +638,10 @@ export function LeftRail({
               setFocusedProjectId(value);
               if (location.pathname.startsWith('/app/extract')) {
                 navigate(`/app/extract/${value}`);
+              } else if (location.pathname.startsWith('/app/flows')) {
+                navigate(`/app/flows/${value}/overview`);
+              } else if (/^\/app\/projects\/[^/]+\/upload/.test(location.pathname)) {
+                navigate(`/app/projects/${value}/upload`);
               } else if (location.pathname.startsWith('/app/transform')) {
                 navigate(`/app/transform/${value}`);
               } else {
@@ -608,6 +658,8 @@ export function LeftRail({
               navigate(globalPathOverrides[menu.path] ?? menu.path);
               onNavigate?.();
             };
+            const isDocumentsMenu = menu.path === '/app/documents';
+            const childMenus = menu.children ?? [];
 
             if (desktopCompact) {
               return (
@@ -625,6 +677,45 @@ export function LeftRail({
               );
             }
 
+            if (isDocumentsMenu) {
+              return (
+                <NavLink
+                  key={menu.path}
+                  label={menu.label}
+                  className="left-rail-link left-rail-quick-action"
+                  aria-label={menu.label}
+                  title={menu.label}
+                  px={navPaddingX}
+                  py={quickActionPaddingY}
+                  active={isGlobalMenuActive(menu.path)}
+                  opened={documentsMenuExpanded}
+                  onClick={() => {
+                    setDocumentsMenuOpened((previous) => !previous);
+                    onActivate();
+                  }}
+                >
+                  {childMenus.map((childMenu) => (
+                    <NavLink
+                      key={childMenu.path}
+                      label={childMenu.label}
+                      className="left-rail-link left-rail-quick-subaction"
+                      aria-label={childMenu.label}
+                      title={childMenu.label}
+                      px={navPaddingX}
+                      py={4}
+                      active={isGlobalMenuActive(childMenu.path)}
+                      onClick={(event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        navigate(globalPathOverrides[childMenu.path] ?? childMenu.path);
+                        onNavigate?.();
+                      }}
+                    />
+                  ))}
+                </NavLink>
+              );
+            }
+
             return (
               <NavLink
                 key={menu.path}
@@ -639,35 +730,6 @@ export function LeftRail({
               />
             );
           })}
-          {schemaMenu && (desktopCompact ? (
-            <UnstyledButton
-              className={`left-rail-icon-link left-rail-icon-link-code${isGlobalMenuActive(schemaMenu.path) ? ' is-active' : ''}`}
-              onClick={() => {
-                navigate(globalPathOverrides[schemaMenu.path] ?? schemaMenu.path);
-                onNavigate?.();
-              }}
-              aria-label={schemaMenu.label}
-              title={schemaMenu.label}
-            >
-              <Text className="left-rail-icon-link-text">
-                {GLOBAL_MENU_COMPACT_CODE[schemaMenu.path] ?? schemaMenu.label.charAt(0).toUpperCase()}
-              </Text>
-            </UnstyledButton>
-          ) : (
-            <NavLink
-              label={schemaMenu.label}
-              className="left-rail-link left-rail-quick-action"
-              aria-label={schemaMenu.label}
-              title={schemaMenu.label}
-              px={navPaddingX}
-              py={quickActionPaddingY}
-              active={isGlobalMenuActive(schemaMenu.path)}
-              onClick={() => {
-                navigate(globalPathOverrides[schemaMenu.path] ?? schemaMenu.path);
-                onNavigate?.();
-              }}
-            />
-          ))}
         </Box>
 
         <Box mt="auto" className="left-rail-bottom-nav">

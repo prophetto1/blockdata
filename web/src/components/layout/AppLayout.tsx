@@ -10,7 +10,7 @@ import { useDisclosure, useLocalStorage } from '@mantine/hooks';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/auth/AuthContext';
 import { TopCommandBar } from '@/components/shell/TopCommandBar';
-import { LeftRail } from '@/components/shell/LeftRail';
+import { LeftRailShadcn } from '@/components/shell/LeftRailShadcn';
 import { HeaderCenterProvider } from '@/components/shell/HeaderCenterContext';
 import { AssistantDockHost } from '@/components/shell/AssistantDockHost';
 import { AppPageShell } from '@/components/layout/AppPageShell';
@@ -76,6 +76,7 @@ export function AppLayout() {
   const isExtractCanvasRoute = /^\/app\/extract\/[^/]+$/.test(location.pathname);
   const isTransformCanvasRoute = /^\/app\/transform\/[^/]+$/.test(location.pathname);
   const isSchemaLayoutRoute = location.pathname === '/app/schemas/layout';
+  const isFlowsRoute = /^\/app\/flows(?:\/|$)/.test(location.pathname);
   const lockMainScroll = (
     isProjectCanvasRoute
     || isExtractCanvasRoute
@@ -118,7 +119,7 @@ export function AppLayout() {
         breakpoint: 'sm',
         collapsed: { mobile: !navOpened, desktop: false },
       }}
-      padding={styleTokens.shell.mainPadding}
+      padding={isFlowsRoute ? 0 : styleTokens.shell.mainPadding}
       styles={{
         header: {
           boxShadow: 'none',
@@ -134,7 +135,7 @@ export function AppLayout() {
       <AppShell.Header>
         <TopCommandBar
           onToggleNav={toggleNav}
-          shellGuides={lockMainScroll}
+          shellGuides={isSchemaLayoutRoute}
         />
       </AppShell.Header>
 
@@ -143,7 +144,7 @@ export function AppLayout() {
         pb={0}
         pt={0}
       >
-        <LeftRail
+        <LeftRailShadcn
           onNavigate={() => {
             closeNav();
           }}
@@ -158,9 +159,13 @@ export function AppLayout() {
       </AppShell.Navbar>
 
       <AppShell.Main style={lockedMainStyle}>
-        <AppPageShell mode="fluid">
+        {isFlowsRoute ? (
           <Outlet />
-        </AppPageShell>
+        ) : (
+          <AppPageShell mode="fluid">
+            <Outlet />
+          </AppPageShell>
+        )}
       </AppShell.Main>
 
     </AppShell>
