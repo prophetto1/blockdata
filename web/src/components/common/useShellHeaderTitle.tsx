@@ -63,22 +63,25 @@ async function fetchProjectName(projectId: string): Promise<string | null> {
   const pending = projectNameRequests.get(projectId);
   if (pending) return pending;
 
-  const request = supabase
-    .from(TABLES.projects)
-    .select('project_name')
-    .eq('project_id', projectId)
-    .maybeSingle()
-    .then(({ data, error }) => {
+  const request = (async (): Promise<string | null> => {
+    try {
+      const { data, error } = await supabase
+        .from(TABLES.projects)
+        .select('project_name')
+        .eq('project_id', projectId)
+        .maybeSingle();
+
       if (error) return null;
       const nextProjectName = String((data as { project_name?: string } | null)?.project_name ?? '').trim();
       if (!nextProjectName) return null;
       projectNameCache.set(projectId, nextProjectName);
       return nextProjectName;
-    })
-    .catch(() => null)
-    .finally(() => {
+    } catch {
+      return null;
+    } finally {
       projectNameRequests.delete(projectId);
-    });
+    }
+  })();
 
   projectNameRequests.set(projectId, request);
   return request;
