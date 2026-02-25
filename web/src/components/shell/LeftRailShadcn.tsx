@@ -83,6 +83,18 @@ function readStoredProjectId(): string | null {
   return window.localStorage.getItem(PROJECT_FOCUS_STORAGE_KEY);
 }
 
+export function isDocumentsMenuRoute(pathname: string): boolean {
+  return (
+    /^\/app\/projects\/[^/]+\/upload/.test(pathname)
+    || (
+      pathname.startsWith('/app/projects')
+      && !pathname.startsWith('/app/projects/list')
+    )
+    || pathname.startsWith('/app/extract')
+    || pathname.startsWith('/app/transform')
+  );
+}
+
 export function LeftRailShadcn({
   onNavigate,
   userLabel,
@@ -225,17 +237,7 @@ export function LeftRailShadcn({
 
   const isGlobalMenuActive = (path: string): boolean => {
     if (path === '/app/flows') return location.pathname.startsWith('/app/flows');
-    if (path === '/app/documents') {
-      return (
-        /^\/app\/projects\/[^/]+\/upload/.test(location.pathname)
-        || (
-          location.pathname.startsWith('/app/projects')
-          && !location.pathname.startsWith('/app/projects/list')
-        )
-        || location.pathname.startsWith('/app/extract')
-        || location.pathname.startsWith('/app/transform')
-      );
-    }
+    if (path === '/app/documents') return isDocumentsMenuRoute(location.pathname);
     if (path === '/app/projects') {
       return (
         location.pathname.startsWith('/app/projects')
@@ -250,6 +252,8 @@ export function LeftRailShadcn({
     if (path === '/app/schemas') return location.pathname.startsWith('/app/schemas');
     return location.pathname.startsWith(path);
   };
+
+  const documentsMenuOpen = isDocumentsMenuRoute(location.pathname) || documentsMenuExpanded;
 
   const navigateTo = (path: string) => {
     if (path !== '/app/documents') {
@@ -478,7 +482,7 @@ export function LeftRailShadcn({
                     return (
                       <SidebarMenuItem key={menu.path}>
                         <Collapsible.Root
-                          open={documentsMenuExpanded}
+                          open={documentsMenuOpen}
                           onOpenChange={(details) => setDocumentsMenuExpanded(details.open)}
                           lazyMount
                           unmountOnExit
@@ -492,7 +496,7 @@ export function LeftRailShadcn({
                                 : 'h-10 px-2 !text-lg !font-semibold leading-snug',
                             )}
                           onClick={() => setDocumentsMenuExpanded((current) => !current)}
-                          aria-expanded={documentsMenuExpanded}
+                          aria-expanded={documentsMenuOpen}
                           aria-controls={submenuId}
                         >
                           <span>{menu.label}</span>
@@ -501,7 +505,7 @@ export function LeftRailShadcn({
                               stroke={2}
                               className={cn(
                                 'ml-auto transition-transform duration-150',
-                                documentsMenuExpanded ? 'rotate-180' : '',
+                                documentsMenuOpen ? 'rotate-180' : '',
                               )}
                             />
                           </SidebarMenuButton>

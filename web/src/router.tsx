@@ -13,8 +13,8 @@ import MarketingIntegrations from '@/pages/MarketingIntegrations';
 import AuthCallback from '@/pages/AuthCallback';
 import ProjectsHome from '@/pages/ProjectsHome';
 import Projects from '@/pages/Projects';
-import Flows from '@/pages/Flows';
 import FlowDetail from '@/pages/FlowDetail';
+import FlowsIndexRedirect from '@/pages/FlowsIndexRedirect';
 import ProjectDetail from '@/pages/ProjectDetail';
 import Upload from '@/pages/Upload';
 import UiCatalog from '@/pages/UiCatalog';
@@ -84,7 +84,7 @@ export const router = createBrowserRouter([
             path: '/app/flows',
             element: <FlowsRouteShell />,
             children: [
-              { index: true, element: <Flows /> },
+              { index: true, element: <FlowsIndexRedirect /> },
               { path: ':flowId/:tab?', element: <FlowDetail /> },
             ],
           },
