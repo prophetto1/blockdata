@@ -193,6 +193,7 @@
 
 .schema-layout-test-config-root {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   grid-template-rows: var(--shell-pane-header-height, 50px) minmax(0, 1fr);
   flex: 1;
   min-height: 0;
@@ -221,7 +222,7 @@
   min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 0 10px;
+  padding: 0 2px 0 10px;
   scrollbar-gutter: stable;
 }
 

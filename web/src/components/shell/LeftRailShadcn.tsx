@@ -113,7 +113,7 @@ export function LeftRailShadcn({
   const [projectOptions, setProjectOptions] = useState<ProjectFocusOption[]>([]);
   const [projectOptionsLoading, setProjectOptionsLoading] = useState(false);
   const [projectPickerOpen, setProjectPickerOpen] = useState(false);
-  const [documentsMenuExpanded, setDocumentsMenuExpanded] = useState<boolean>(() => isDocumentsRoute(location.pathname));
+  const [documentsMenuExpanded, setDocumentsMenuExpanded] = useState(false);
   const projectPickerRef = useRef<HTMLDivElement | null>(null);
   const projectTriggerRef = useRef<HTMLButtonElement | null>(null);
 
@@ -211,8 +211,8 @@ export function LeftRailShadcn({
   }, [desktopCompact, location.pathname]);
 
   useEffect(() => {
-    if (!isDocumentsRoute(location.pathname)) return;
-    setDocumentsMenuExpanded(true);
+    if (isDocumentsRoute(location.pathname)) return;
+    setDocumentsMenuExpanded(false);
   }, [location.pathname]);
 
   useEffect(() => {
@@ -264,7 +264,7 @@ export function LeftRailShadcn({
 
   const globalPathOverrides: Record<string, string> = {
     '/app/flows': flowsPath,
-    '/app/documents': parsePath,
+    '/app/documents': desktopCompact ? uploadPath : parsePath,
     '/app/projects': parsePath,
     '/app/extract': extractPath,
     '/app/upload': uploadPath,
@@ -340,13 +340,29 @@ export function LeftRailShadcn({
         collapsible="none"
         className="h-full min-h-0 bg-sidebar font-sans text-sidebar-foreground"
       >
-        <SidebarHeader className="gap-2 border-b border-sidebar-border px-2 pb-2 pt-1.5">
-          <div className="flex h-[calc(var(--app-shell-header-height)-8px)] items-center justify-between">
+        <SidebarHeader
+          className={cn(
+            'border-b border-sidebar-border',
+            desktopCompact
+              ? 'h-[var(--app-shell-header-height)] gap-0 px-0 py-0'
+              : 'gap-0 px-0 py-0',
+          )}
+        >
+          <div
+            className={cn(
+              'flex items-center',
+              desktopCompact
+                ? 'h-full justify-center'
+                : 'h-[var(--app-shell-header-height)] justify-between px-2',
+            )}
+          >
             <button
               type="button"
               className={cn(
-                'inline-flex items-center rounded-md px-2 py-1 text-left font-semibold tracking-tight hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
-                desktopCompact ? 'justify-center text-base' : 'text-[length:var(--app-font-size-brand)]',
+                'inline-flex items-center rounded-md text-left font-semibold tracking-tight hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+                desktopCompact
+                  ? 'size-10 justify-center p-0 text-base'
+                  : 'px-2 py-1 text-[length:var(--app-font-size-brand)]',
               )}
               onClick={() => {
                 if (desktopCompact && onToggleDesktopCompact) {
@@ -374,101 +390,113 @@ export function LeftRailShadcn({
           </div>
 
           {!desktopCompact && (
-            <div className="space-y-2 rounded-lg border border-sidebar-border/80 bg-sidebar-accent/35 p-2.5">
-              <div className="flex items-center justify-between">
-                <span className="text-[length:var(--app-font-size-nav-label)] font-semibold uppercase tracking-[0.08em] text-sidebar-foreground/65">
-                  Project
-                </span>
-                <button
-                  type="button"
-                  className="inline-flex h-7 items-center gap-1 rounded-md px-2 text-[length:var(--app-font-size-nav-caption)] font-medium text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                  onClick={() => {
-                    navigate('/app/projects');
-                    onNavigate?.();
-                  }}
-                >
-                  <IconPlus size={13} stroke={2.1} />
-                  All projects
-                </button>
-              </div>
-
-              <div ref={projectPickerRef} className="relative">
-                <button
-                  ref={projectTriggerRef}
-                  type="button"
-                  className="flex h-11 w-full items-center justify-between rounded-md border border-input/80 bg-background/95 px-2.5 text-left shadow-sm transition-colors hover:bg-sidebar-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
-                  aria-haspopup="listbox"
-                  aria-expanded={projectPickerOpen}
-                  aria-label="Select project"
-                  onClick={() => setProjectPickerOpen((current) => !current)}
-                  disabled={projectOptionsLoading && projectOptions.length === 0}
-                >
-                  <span className="min-w-0 pr-2">
-                    <span className="block truncate text-[length:var(--app-font-size-nav-strong)] font-semibold leading-5 text-foreground">
-                      {projectOptionsLoading && projectOptions.length === 0
-                        ? 'Loading projects...'
-                        : (selectedProject?.label ?? 'Select project')}
-                    </span>
-                    <span className="block truncate text-[length:var(--app-font-size-nav-caption)] leading-4 text-sidebar-foreground/70">
-                      {projectOptionsLoading && projectOptions.length === 0
-                        ? 'Fetching project list'
-                        : (selectedProject ? `${selectedProject.docCount} docs` : 'Choose a project for menu routing')}
-                    </span>
+            <>
+              <div
+                data-testid="left-rail-project-separator"
+                className="-mx-2 h-px bg-sidebar-border"
+              />
+              <div className="space-y-2 px-2 pb-2 pt-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[length:var(--app-font-size-nav-label)] font-semibold uppercase tracking-[0.08em] text-sidebar-foreground/65">
+                    Project
                   </span>
-                  <IconChevronDown
-                    size={16}
-                    stroke={2}
-                    className={cn(
-                      'shrink-0 text-muted-foreground transition-transform duration-150',
-                      projectPickerOpen ? 'rotate-180' : '',
-                    )}
-                  />
-                </button>
-
-                {projectPickerOpen && (
-                  <div
-                    role="listbox"
-                    aria-label="Project list"
-                    className="absolute left-0 right-0 top-[calc(100%+6px)] z-40 max-h-72 overflow-y-auto rounded-md border border-sidebar-border bg-sidebar p-1 shadow-xl"
+                  <button
+                    type="button"
+                    className="inline-flex h-7 items-center gap-1 rounded-md px-2 text-[length:var(--app-font-size-nav-caption)] font-medium text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                    onClick={() => {
+                      navigate('/app/projects');
+                      onNavigate?.();
+                    }}
                   >
-                    {projectOptions.length === 0 ? (
-                      <div className="px-2.5 py-2 text-[length:var(--app-font-size-nav-caption)] text-sidebar-foreground/70">
-                        {projectOptionsLoading ? 'Loading projects...' : 'No projects found'}
-                      </div>
-                    ) : (
-                      projectOptions.map((project) => {
-                        const isSelected = project.value === projectSelectValue;
-                        return (
-                          <button
-                            key={project.value}
-                            type="button"
-                            role="option"
-                            aria-selected={isSelected}
-                            className={cn(
-                              'flex w-full items-center justify-between rounded-md px-2.5 py-2 text-left transition-colors',
-                              isSelected
-                                ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-                                : 'text-sidebar-foreground/90 hover:bg-sidebar-accent/70 hover:text-sidebar-accent-foreground',
-                            )}
-                            onClick={() => onProjectChanged(project.value)}
-                          >
-                            <span className="min-w-0 pr-2">
-                              <span className="block truncate text-[length:var(--app-font-size-nav)] font-medium leading-5">
-                                {project.label}
+                    <IconPlus size={13} stroke={2.1} />
+                    New Project
+                  </button>
+                </div>
+
+                <div ref={projectPickerRef} className="relative">
+                  <button
+                    ref={projectTriggerRef}
+                    type="button"
+                    className="flex h-11 w-full items-center justify-between rounded-md border border-input/80 bg-background/95 px-2.5 text-left shadow-sm transition-colors hover:bg-sidebar-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+                    aria-haspopup="listbox"
+                    aria-expanded={projectPickerOpen}
+                    aria-label="Select project"
+                    onClick={() => setProjectPickerOpen((current) => !current)}
+                    disabled={projectOptionsLoading && projectOptions.length === 0}
+                  >
+                    <span className="min-w-0 pr-2">
+                      <span className="block truncate text-[length:var(--app-font-size-nav-strong)] font-semibold leading-5 text-foreground">
+                        {projectOptionsLoading && projectOptions.length === 0
+                          ? 'Loading projects...'
+                          : (selectedProject?.label ?? 'Select project')}
+                      </span>
+                      <span className="block truncate text-[length:var(--app-font-size-nav-caption)] leading-4 text-sidebar-foreground/70">
+                        {projectOptionsLoading && projectOptions.length === 0
+                          ? 'Fetching project list'
+                          : (selectedProject ? `${selectedProject.docCount} docs` : 'Choose a project for menu routing')}
+                      </span>
+                    </span>
+                    <IconChevronDown
+                      size={16}
+                      stroke={2}
+                      className={cn(
+                        'shrink-0 text-muted-foreground transition-transform duration-150',
+                        projectPickerOpen ? 'rotate-180' : '',
+                      )}
+                    />
+                  </button>
+
+                  {projectPickerOpen && (
+                    <div
+                      role="listbox"
+                      aria-label="Project list"
+                      className="absolute left-0 right-0 top-[calc(100%+6px)] z-40 max-h-72 overflow-y-auto rounded-md border border-sidebar-border bg-sidebar p-1 shadow-xl"
+                    >
+                      {projectOptions.length === 0 ? (
+                        <div className="px-2.5 py-2 text-[length:var(--app-font-size-nav-caption)] text-sidebar-foreground/70">
+                          {projectOptionsLoading ? 'Loading projects...' : 'No projects found'}
+                        </div>
+                      ) : (
+                        projectOptions.map((project) => {
+                          const isSelected = project.value === projectSelectValue;
+                          return (
+                            <button
+                              key={project.value}
+                              type="button"
+                              role="option"
+                              aria-selected={isSelected}
+                              className={cn(
+                                'flex w-full items-center justify-between rounded-md px-2.5 py-2 text-left transition-colors',
+                                isSelected
+                                  ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                                  : 'text-sidebar-foreground/90 hover:bg-sidebar-accent/70 hover:text-sidebar-accent-foreground',
+                              )}
+                              onClick={() => onProjectChanged(project.value)}
+                            >
+                              <span className="min-w-0 pr-2">
+                                <span className="block truncate text-[length:var(--app-font-size-nav)] font-medium leading-5">
+                                  {project.label}
+                                </span>
+                                <span className="block text-[length:var(--app-font-size-nav-caption)] leading-4 text-sidebar-foreground/65">
+                                  {project.docCount} docs
+                                </span>
                               </span>
-                              <span className="block text-[length:var(--app-font-size-nav-caption)] leading-4 text-sidebar-foreground/65">
-                                {project.docCount} docs
-                              </span>
-                            </span>
-                            {isSelected ? <IconCheck size={15} stroke={2.2} className="shrink-0" /> : null}
-                          </button>
-                        );
-                      })
-                    )}
-                  </div>
-                )}
+                              {isSelected ? <IconCheck size={15} stroke={2.2} className="shrink-0" /> : null}
+                            </button>
+                          );
+                        })
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
+              <div className="flex items-center justify-between">
+                <div
+                  data-testid="left-rail-project-bottom-separator"
+                  className="-mx-2 h-px w-[calc(100%+1rem)] bg-sidebar-border"
+                />
+              </div>
+            </>
           )}
         </SidebarHeader>
 
@@ -491,8 +519,8 @@ export function LeftRailShadcn({
                         tooltip={menu.label}
                         className={cn(
                           desktopCompact
-                            ? 'h-10 justify-center'
-                            : 'h-11 text-[length:var(--app-font-size-nav-strong)] font-semibold tracking-tight',
+                            ? 'size-10 justify-center p-0'
+                            : 'h-11 text-[14px] font-semibold tracking-tight',
                         )}
                         {...(isCollapsibleDocumentsMenu
                           ? {
@@ -537,7 +565,7 @@ export function LeftRailShadcn({
                                 <SidebarMenuSubButton
                                   asChild
                                   isActive={isGlobalMenuActive(child.path)}
-                                  className="h-9 rounded-md px-2 text-[length:var(--app-font-size-nav)] font-medium text-sidebar-foreground/90 hover:text-sidebar-accent-foreground"
+                                  className="h-9 rounded-md px-2 text-[13px] font-medium text-sidebar-foreground/90 hover:text-sidebar-accent-foreground"
                                 >
                                   <a
                                     href={childPath}
@@ -572,8 +600,8 @@ export function LeftRailShadcn({
                 tooltip="Search"
                 className={cn(
                   desktopCompact
-                    ? 'h-9 justify-center'
-                    : 'h-10 text-[length:var(--app-font-size-nav)] font-medium',
+                    ? 'size-10 justify-center p-0'
+                    : 'h-10 text-[14px] font-medium',
                 )}
               >
                 <a
@@ -598,8 +626,8 @@ export function LeftRailShadcn({
                   tooltip={assistantOpened ? 'Hide Assistant' : 'Show Assistant'}
                   className={cn(
                     desktopCompact
-                      ? 'h-9 justify-center'
-                      : 'h-10 text-[length:var(--app-font-size-nav)] font-medium',
+                      ? 'size-10 justify-center p-0'
+                      : 'h-10 text-[14px] font-medium',
                   )}
                 >
                   <AiAssistantIcon
@@ -622,8 +650,8 @@ export function LeftRailShadcn({
                 tooltip="Settings"
                 className={cn(
                   desktopCompact
-                    ? 'h-9 justify-center'
-                    : 'h-10 text-[length:var(--app-font-size-nav)] font-medium',
+                    ? 'size-10 justify-center p-0'
+                    : 'h-10 text-[14px] font-medium',
                 )}
               >
                 <a
@@ -647,7 +675,7 @@ export function LeftRailShadcn({
                     void onSignOut();
                   }}
                   tooltip="Sign out"
-                  className="h-9 justify-center"
+                  className="size-10 justify-center p-0"
                 >
                   <IconLogout size={16} stroke={1.9} />
                 </SidebarMenuButton>
@@ -656,11 +684,16 @@ export function LeftRailShadcn({
           </SidebarMenu>
 
           {!desktopCompact && (
-            <div className="mt-2 border-t border-sidebar-border pt-2">
-              <div className="flex items-center justify-between rounded-lg border border-sidebar-border/80 bg-sidebar-accent/25 px-2.5 py-2">
+            <>
+              <div
+                data-testid="left-rail-account-separator"
+                className="-mx-2 mt-2 h-px bg-sidebar-border"
+              />
+              <div className="px-1.5 py-2">
+                <div className="flex items-center justify-between gap-2 px-1 py-0.5">
                 <div className="flex min-w-0 items-center gap-2">
                   <div
-                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-sidebar-border/70 bg-background text-[length:var(--app-font-size-nav-caption)] font-semibold text-sidebar-foreground/90"
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-sidebar-accent/35 text-[length:var(--app-font-size-nav-caption)] font-semibold text-sidebar-foreground/90"
                     aria-hidden
                   >
                     {userInitial}
@@ -677,7 +710,7 @@ export function LeftRailShadcn({
                 {onSignOut && (
                   <button
                     type="button"
-                    className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-sidebar-border/70 text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-md text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
                     aria-label="Sign out"
                     title="Sign out"
                     onClick={() => {
@@ -687,8 +720,9 @@ export function LeftRailShadcn({
                     <IconLogout size={15} stroke={2} />
                   </button>
                 )}
+                </div>
               </div>
-            </div>
+            </>
           )}
         </SidebarFooter>
       </Sidebar>

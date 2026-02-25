@@ -3981,7 +3981,7 @@ body {
 
 .flows-shell-paper {
   background:
-    radial-gradient(circle at top right, rgba(59, 130, 246, 0.08), transparent 44%),
+    radial-gradient(circle at top right, var(--flow-shell-glow), transparent 44%),
     light-dark(rgba(252, 253, 255, 0.98), rgba(11, 15, 24, 0.94));
 }
 
@@ -4056,7 +4056,7 @@ body {
   border-radius: 10px;
   overflow: hidden;
   background:
-    radial-gradient(circle at top left, rgba(56, 189, 248, 0.08), transparent 48%),
+    radial-gradient(circle at top left, var(--flow-shell-glow), transparent 48%),
     light-dark(rgba(251, 252, 255, 0.98), rgba(11, 16, 27, 0.92));
 }
 
@@ -4107,9 +4107,9 @@ body {
 }
 
 .flow-workbench-tab.is-active {
-  border-color: light-dark(rgba(59, 130, 246, 0.3), rgba(125, 211, 252, 0.35));
-  background: light-dark(rgba(239, 246, 255, 0.96), rgba(17, 54, 97, 0.46));
-  color: light-dark(var(--mantine-color-blue-8), var(--mantine-color-blue-0));
+  border-color: var(--flow-accent-soft-border);
+  background: var(--flow-accent-soft-bg);
+  color: var(--flow-active-tab-text);
 }
 
 .flow-workbench-pane-content {
@@ -4142,14 +4142,13 @@ body {
 
 .flow-workbench-resizer:hover::before,
 .flow-workbench-resizer.is-active::before {
-  background: var(--mantine-color-blue-6);
+  background: var(--flow-accent);
 }
 
-/* Upload workspace: draggable split with inner-pane scrolling */
+/* Upload workspace: fixed 50/50 split with full-height divider */
 .upload-workspace {
-  --upload-left-width: 560px;
   display: grid;
-  grid-template-columns: var(--upload-left-width) 8px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) 1px minmax(0, 1fr);
   min-height: 620px;
   height: calc(100dvh - var(--app-shell-header-height) - 92px);
   max-height: calc(100dvh - var(--app-shell-header-height) - 92px);
@@ -4162,7 +4161,7 @@ body {
 }
 
 .upload-workspace-pane-right {
-  padding-left: var(--mantine-spacing-md);
+  padding-left: 0;
 }
 
 .upload-left-stack {
@@ -4210,27 +4209,9 @@ body {
   overflow: hidden;
 }
 
-.upload-workspace-resizer {
-  position: relative;
-  cursor: col-resize;
-  touch-action: none;
-}
-
-.upload-workspace-resizer::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 3px;
-  width: 2px;
-  border-radius: 999px;
-  background: light-dark(rgba(148, 163, 184, 0.52), rgba(100, 116, 139, 0.58));
-  transition: background-color 120ms ease;
-}
-
-.upload-workspace-resizer:hover::before,
-.upload-workspace-resizer.is-active::before {
-  background: var(--mantine-color-blue-6);
+.upload-workspace-divider {
+  align-self: stretch;
+  background: var(--mantine-color-default-border);
 }
 
 @media (max-width: 75em) {
@@ -4243,7 +4224,7 @@ body {
     row-gap: var(--mantine-spacing-md);
   }
 
-  .upload-workspace-resizer {
+  .upload-workspace-divider {
     display: none;
   }
 

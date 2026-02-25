@@ -72,6 +72,7 @@ import { edgeJson } from '@/lib/edge';
 import { ICON_TOKENS } from '@/lib/iconTokens';
 import { TABLES } from '@/lib/tables';
 import type { DocumentRow, ProjectRow } from '@/lib/types';
+import { resolveProjectDetailHeaderTitle } from '@/pages/projectDetailHeader';
 import './SchemaLayout.css';
 
 const PAGE_SIZE = 10;
@@ -80,12 +81,12 @@ const SHELL_EXPLORER_WIDTH_DEFAULT = 392;
 const EXPLORER_WIDTH_MIN = 500;
 const EXPLORER_WIDTH_MAX = 500;
 const EXPLORER_WIDTH_COLLAPSED = 56;
-const CONFIG_WIDTH_DEFAULT = 300;
-const CONFIG_WIDTH_MIN = 300;
-const CONFIG_WIDTH_MAX = 300;
+const CONFIG_WIDTH_DEFAULT = 345;
+const CONFIG_WIDTH_MIN = 345;
+const CONFIG_WIDTH_MAX = 345;
 const CONFIG_WIDTH_COLLAPSED = 56;
-const TRANSFORM_TEST_CONFIG_WIDTH_MIN = 300;
-const TRANSFORM_TEST_CONFIG_WIDTH_MAX = 300;
+const TRANSFORM_TEST_CONFIG_WIDTH_MIN = 345;
+const TRANSFORM_TEST_CONFIG_WIDTH_MAX = 345;
 const SHELL_DOCS_PER_PAGE = 4;
 const DOCUMENTS_BUCKET = (import.meta.env.VITE_DOCUMENTS_BUCKET as string | undefined) ?? 'documents';
 const PANE_CHEVRON_ICON = ICON_TOKENS.shell.paneChevron;
@@ -1466,8 +1467,9 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
 
   useEffect(() => () => setShellTopSlots(null), [setShellTopSlots]);
 
+  const headerTitle = resolveProjectDetailHeaderTitle(mode);
   useShellHeaderTitle({
-    title: project?.project_name ?? 'Project',
+    title: headerTitle,
     subtitle: project?.description ?? undefined,
   });
 
@@ -1584,7 +1586,7 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
   const parseConfigRootClassName = `parse-config-root${showCenterResultsList ? ' parse-results-side-root' : ''}${isShellGrid ? ' schema-layout-test-config-root' : ''}`;
   const parseConfigScrollClassName = `parse-config-scroll${isShellGrid ? ' schema-layout-test-config-scroll' : ''}`;
   const extractConfigRootClassName = `extract-config-root${isShellGrid ? ' schema-layout-test-config-root' : ''}`;
-  const extractConfigScrollClassName = isShellGrid ? 'schema-layout-test-config-scroll' : 'extract-config-scroll';
+  const extractConfigScrollClassName = `extract-config-scroll${isShellGrid ? ' schema-layout-test-config-scroll' : ''}`;
   const parseConfigViewTabs = (
     <Group gap={10} wrap="nowrap" className="schema-layout-right-tabs">
       <Text
@@ -2400,43 +2402,42 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
                   </Group>
                 </Group>
               ) : (
-                <>
-                  <Group justify="space-between" wrap="nowrap" className="extract-config-top-tabs">
-                    <Text size="sm" fw={700}>Build</Text>
-                    <Group gap={6} wrap="nowrap" className="extract-config-run-btn">
-                      <ActionIcon
-                        size="sm"
-                        variant="transparent"
-                        aria-label="Run extract"
-                        title="Run extract"
-                      >
-                        <IconPlayerPlay size={CONFIG_ACTION_ICON.size} stroke={CONFIG_ACTION_ICON.stroke} />
-                      </ActionIcon>
-                    </Group>
+                <Group justify="space-between" wrap="nowrap" className="extract-config-top-tabs">
+                  <Text size="sm" fw={700}>Build</Text>
+                  <Group gap={6} wrap="nowrap" className="extract-config-run-btn">
+                    <ActionIcon
+                      size="sm"
+                      variant="transparent"
+                      aria-label="Run extract"
+                      title="Run extract"
+                    >
+                      <IconPlayerPlay size={CONFIG_ACTION_ICON.size} stroke={CONFIG_ACTION_ICON.stroke} />
+                    </ActionIcon>
                   </Group>
-
-                  <Group justify="space-between" wrap="nowrap" className="extract-config-subhead">
-                    <Group gap={6} wrap="nowrap">
-                      <Text fw={700} size="sm">Configuration</Text>
-                      <IconInfoCircle size={14} stroke={1.8} className="extract-config-info-icon" />
-                    </Group>
-                    <SegmentedControl
-                      value={extractConfigView}
-                      size="xs"
-                      radius="md"
-                      className="extract-config-view-switch"
-                      data={[
-                        { label: 'Basic', value: 'Basic' },
-                        { label: 'Advanced', value: 'Advanced' },
-                        { label: 'Schema', value: 'Schema' },
-                      ]}
-                      onChange={(value) => setExtractConfigView(value as ExtractConfigView)}
-                    />
-                  </Group>
-                </>
+                </Group>
               )}
 
               <Stack gap="sm" className={extractConfigScrollClassName}>
+              {!isShellGrid && (
+                <Group justify="space-between" wrap="nowrap" className="extract-config-subhead">
+                  <Group gap={6} wrap="nowrap">
+                    <Text fw={700} size="sm">Configuration</Text>
+                    <IconInfoCircle size={14} stroke={1.8} className="extract-config-info-icon" />
+                  </Group>
+                  <SegmentedControl
+                    value={extractConfigView}
+                    size="xs"
+                    radius="md"
+                    className="extract-config-view-switch"
+                    data={[
+                      { label: 'Basic', value: 'Basic' },
+                      { label: 'Advanced', value: 'Advanced' },
+                      { label: 'Schema', value: 'Schema' },
+                    ]}
+                    onChange={(value) => setExtractConfigView(value as ExtractConfigView)}
+                  />
+                </Group>
+              )}
 
               {extractConfigView === 'Basic' && (
                 <>

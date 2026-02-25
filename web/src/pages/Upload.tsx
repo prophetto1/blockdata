@@ -1,18 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  Alert,
-  Badge,
-  Box,
-  Button,
-  Center,
-  Group,
-  Loader,
-  Paper,
-  ScrollArea,
-  Stack,
-  Table,
-  Text,
-} from '@mantine/core';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useShellHeaderTitle } from '@/components/common/useShellHeaderTitle';
 import { DocxPreview } from '@/components/documents/DocxPreview';
@@ -22,6 +8,7 @@ import { ProjectParseUppyUploader, type UploadBatchResult } from '@/components/d
 import { supabase } from '@/lib/supabase';
 import { TABLES } from '@/lib/tables';
 import type { DocumentRow } from '@/lib/types';
+import { cn } from '@/lib/utils';
 
 type PreviewKind = 'none' | 'pdf' | 'image' | 'text' | 'docx' | 'pptx' | 'file';
 type UploadDocumentRow = DocumentRow & {
@@ -30,6 +17,7 @@ type UploadDocumentRow = DocumentRow & {
 };
 
 const DOCUMENTS_BUCKET = (import.meta.env.VITE_DOCUMENTS_BUCKET as string | undefined) ?? 'documents';
+const ROWS_PER_PAGE_OPTIONS = [10, 25, 50, 100] as const;
 const TEXT_SOURCE_TYPES = new Set([
   'md',
   'txt',
@@ -50,6 +38,34 @@ const DOCX_SOURCE_TYPES = new Set(['docx', 'docm', 'dotx', 'dotm']);
 const DOCX_EXTENSIONS = new Set(['docx', 'docm', 'dotx', 'dotm']);
 const PPTX_SOURCE_TYPES = new Set(['pptx', 'pptm', 'ppsx']);
 const PPTX_EXTENSIONS = new Set(['pptx', 'pptm', 'ppsx']);
+
+type ParserTrack = 'mdast' | 'docling' | 'pandoc';
+type TrackInfo = { track: ParserTrack; rep: string; badgeClass: string };
+
+const TRACK_MAP: Record<string, TrackInfo> = {
+  md: { track: 'mdast', rep: 'markdown_bytes', badgeClass: 'bg-teal-500/15 text-teal-400' },
+  txt: { track: 'mdast', rep: 'markdown_bytes', badgeClass: 'bg-teal-500/15 text-teal-400' },
+  docx: { track: 'docling', rep: 'doclingdocument_json', badgeClass: 'bg-violet-500/15 text-violet-400' },
+  pdf: { track: 'docling', rep: 'doclingdocument_json', badgeClass: 'bg-violet-500/15 text-violet-400' },
+  pptx: { track: 'docling', rep: 'doclingdocument_json', badgeClass: 'bg-violet-500/15 text-violet-400' },
+  xlsx: { track: 'docling', rep: 'doclingdocument_json', badgeClass: 'bg-violet-500/15 text-violet-400' },
+  html: { track: 'docling', rep: 'doclingdocument_json', badgeClass: 'bg-violet-500/15 text-violet-400' },
+  csv: { track: 'docling', rep: 'doclingdocument_json', badgeClass: 'bg-violet-500/15 text-violet-400' },
+  rst: { track: 'pandoc', rep: 'pandoc_ast_json', badgeClass: 'bg-orange-500/15 text-orange-400' },
+  latex: { track: 'pandoc', rep: 'pandoc_ast_json', badgeClass: 'bg-orange-500/15 text-orange-400' },
+  odt: { track: 'pandoc', rep: 'pandoc_ast_json', badgeClass: 'bg-orange-500/15 text-orange-400' },
+  epub: { track: 'pandoc', rep: 'pandoc_ast_json', badgeClass: 'bg-orange-500/15 text-orange-400' },
+  rtf: { track: 'pandoc', rep: 'pandoc_ast_json', badgeClass: 'bg-orange-500/15 text-orange-400' },
+  org: { track: 'pandoc', rep: 'pandoc_ast_json', badgeClass: 'bg-orange-500/15 text-orange-400' },
+};
+
+function getTrackInfo(sourceType: string): TrackInfo {
+  return TRACK_MAP[sourceType.toLowerCase()] ?? {
+    track: 'mdast' as ParserTrack,
+    rep: 'markdown_bytes',
+    badgeClass: 'bg-zinc-500/15 text-zinc-400',
+  };
+}
 
 function getExtension(name: string): string {
   const index = name.lastIndexOf('.');
@@ -88,10 +104,8 @@ function isPptxDocument(doc: UploadDocumentRow): boolean {
   return PPTX_EXTENSIONS.has(getSourceLocatorExtension(doc));
 }
 
-function getStatusColor(status: UploadDocumentRow['status']): 'green' | 'yellow' | 'red' {
-  if (status === 'conversion_failed' || status === 'ingest_failed') return 'red';
-  if (status === 'converting') return 'yellow';
-  return 'green';
+function isUploadFailed(status: UploadDocumentRow['status']): boolean {
+  return status === 'ingest_failed';
 }
 
 function formatDateTime(value: string): string {
@@ -139,6 +153,73 @@ async function resolveSignedUrlForLocators(locators: Array<string | null | undef
   };
 }
 
+/* ── Inline Pagination (Tailwind, zero Mantine) ── */
+
+const PAGE_BTN = 'flex h-6 min-w-6 items-center justify-center rounded text-xs select-none';
+
+function SimplePagination({
+  value,
+  total,
+  onChange,
+}: {
+  value: number;
+  total: number;
+  onChange: (page: number) => void;
+}) {
+  if (total <= 1) return null;
+
+  const pages: (number | 'ellipsis')[] = [];
+  for (let i = 1; i <= total; i++) {
+    if (i === 1 || i === total || (i >= value - 1 && i <= value + 1)) {
+      pages.push(i);
+    } else if (pages[pages.length - 1] !== 'ellipsis') {
+      pages.push('ellipsis');
+    }
+  }
+
+  return (
+    <div className="flex items-center gap-0.5">
+      <button
+        type="button"
+        disabled={value <= 1}
+        onClick={() => onChange(value - 1)}
+        className={cn(PAGE_BTN, 'text-muted-foreground hover:bg-accent disabled:opacity-30')}
+      >
+        &#8249;
+      </button>
+      {pages.map((p, i) =>
+        p === 'ellipsis' ? (
+          <span key={`e${i}`} className="px-1 text-xs text-muted-foreground">&#8230;</span>
+        ) : (
+          <button
+            type="button"
+            key={p}
+            onClick={() => onChange(p)}
+            className={cn(
+              PAGE_BTN,
+              p === value
+                ? 'bg-primary text-primary-foreground'
+                : 'text-muted-foreground hover:bg-accent',
+            )}
+          >
+            {p}
+          </button>
+        ),
+      )}
+      <button
+        type="button"
+        disabled={value >= total}
+        onClick={() => onChange(value + 1)}
+        className={cn(PAGE_BTN, 'text-muted-foreground hover:bg-accent disabled:opacity-30')}
+      >
+        &#8250;
+      </button>
+    </div>
+  );
+}
+
+/* ── Page Component ── */
+
 export default function Upload() {
   const { projectId } = useParams<{ projectId: string }>();
   const [projectName, setProjectName] = useState<string>('');
@@ -146,23 +227,16 @@ export default function Upload() {
   const [docsLoading, setDocsLoading] = useState(false);
   const [docsError, setDocsError] = useState<string | null>(null);
   const [selectedSourceUid, setSelectedSourceUid] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState<number>(25);
 
   const [previewKind, setPreviewKind] = useState<PreviewKind>('none');
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [previewText, setPreviewText] = useState<string | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewError, setPreviewError] = useState<string | null>(null);
-  const splitRootRef = useRef<HTMLDivElement | null>(null);
-  const splitResizeRef = useRef<{ startX: number; startWidth: number } | null>(null);
-  const [leftPaneWidth, setLeftPaneWidth] = useState<number>(() => {
-    if (typeof window === 'undefined') return 560;
-    const raw = window.localStorage.getItem('upload.workspace.left_width');
-    const parsed = Number.parseInt(raw ?? '', 10);
-    if (!Number.isFinite(parsed)) return 560;
-    return Math.max(380, Math.min(860, parsed));
-  });
-  const [isSplitResizing, setIsSplitResizing] = useState(false);
 
+  /* ── Draggable split resizer ── */
   const loadDocs = useCallback(async () => {
     if (!projectId) return;
     setDocsLoading(true);
@@ -198,83 +272,37 @@ export default function Upload() {
     void loadDocs();
   }, [loadDocs]);
 
-  const successfulDocs = useMemo(
-    () => docs.filter((doc) => doc.status !== 'conversion_failed' && doc.status !== 'ingest_failed'),
-    [docs],
-  );
+  /* ── Pagination ── */
+  const totalPages = Math.max(1, Math.ceil(docs.length / rowsPerPage));
+  const activePage = Math.min(page, totalPages);
+  const pagedDocs = useMemo(() => {
+    const offset = (activePage - 1) * rowsPerPage;
+    return docs.slice(offset, offset + rowsPerPage);
+  }, [activePage, rowsPerPage, docs]);
+  const docRangeStart = docs.length > 0 ? (activePage - 1) * rowsPerPage + 1 : 0;
+  const docRangeEnd = docs.length > 0 ? Math.min(docs.length, activePage * rowsPerPage) : 0;
 
   const resolvedSelectedSourceUid = useMemo(() => {
-    if (selectedSourceUid && successfulDocs.some((doc) => doc.source_uid === selectedSourceUid)) {
+    if (selectedSourceUid && docs.some((doc) => doc.source_uid === selectedSourceUid)) {
       return selectedSourceUid;
     }
-    return successfulDocs[0]?.source_uid ?? null;
-  }, [selectedSourceUid, successfulDocs]);
+    return docs[0]?.source_uid ?? null;
+  }, [selectedSourceUid, docs]);
 
   const selectedDoc = useMemo(
-    () => successfulDocs.find((doc) => doc.source_uid === resolvedSelectedSourceUid) ?? null,
-    [resolvedSelectedSourceUid, successfulDocs],
+    () => docs.find((doc) => doc.source_uid === resolvedSelectedSourceUid) ?? null,
+    [resolvedSelectedSourceUid, docs],
   );
 
   const handleBatchUploaded = useCallback(async (result: UploadBatchResult) => {
     await loadDocs();
+    setPage(1);
     if (result.uploadedSourceUids.length > 0) {
       setSelectedSourceUid(result.uploadedSourceUids[0]);
     }
   }, [loadDocs]);
 
-  const handleSplitResizeStart = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    splitResizeRef.current = {
-      startX: event.clientX,
-      startWidth: leftPaneWidth,
-    };
-    setIsSplitResizing(true);
-  }, [leftPaneWidth]);
-
-  useEffect(() => {
-    if (!isSplitResizing) return;
-
-    const onPointerMove = (event: PointerEvent) => {
-      const state = splitResizeRef.current;
-      const root = splitRootRef.current;
-      if (!state || !root) return;
-
-      const totalWidth = root.clientWidth;
-      if (!Number.isFinite(totalWidth) || totalWidth <= 0) return;
-
-      const LEFT_MIN = 380;
-      const RIGHT_MIN = 460;
-      const maxLeft = Math.max(LEFT_MIN, totalWidth - RIGHT_MIN - 8);
-      const delta = event.clientX - state.startX;
-      const nextWidth = Math.max(LEFT_MIN, Math.min(maxLeft, state.startWidth + delta));
-      setLeftPaneWidth(nextWidth);
-    };
-
-    const stopResize = () => {
-      splitResizeRef.current = null;
-      setIsSplitResizing(false);
-    };
-
-    document.body.style.cursor = 'col-resize';
-    document.body.style.userSelect = 'none';
-    window.addEventListener('pointermove', onPointerMove);
-    window.addEventListener('pointerup', stopResize);
-    window.addEventListener('pointercancel', stopResize);
-
-    return () => {
-      document.body.style.cursor = '';
-      document.body.style.userSelect = '';
-      window.removeEventListener('pointermove', onPointerMove);
-      window.removeEventListener('pointerup', stopResize);
-      window.removeEventListener('pointercancel', stopResize);
-    };
-  }, [isSplitResizing]);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    window.localStorage.setItem('upload.workspace.left_width', String(Math.round(leftPaneWidth)));
-  }, [leftPaneWidth]);
-
+  /* ── Preview loading ── */
   useEffect(() => {
     let cancelled = false;
     const loadPreview = async () => {
@@ -373,181 +401,244 @@ export default function Upload() {
   if (!projectId) return null;
 
   return (
-    <>
-      <Box
-        ref={splitRootRef}
-        className="upload-workspace"
-        style={{ ['--upload-left-width' as string]: `${leftPaneWidth}px` }}
-      >
-        <Box className="upload-workspace-pane upload-workspace-pane-left">
-          <Stack gap="md" className="upload-left-stack">
-            <Paper p="md" radius="md" className="upload-left-upload-card">
-              <Stack gap="xs">
-                <ProjectParseUppyUploader
-                  projectId={projectId}
-                  ingestMode="upload_only"
-                  onBatchUploaded={handleBatchUploaded}
-                  enableRemoteSources
-                  hideHeader
-                  companionUrl={import.meta.env.VITE_UPPY_COMPANION_URL as string | undefined}
-                  height={220}
-                />
-              </Stack>
-            </Paper>
+    <div className="upload-workspace">
+      {/* ── Left pane ── */}
+      <div className="upload-workspace-pane upload-workspace-pane-left">
+        <div className="upload-left-stack flex flex-col gap-4">
+          {/* Upload card */}
+          <div className="upload-left-upload-card bg-[var(--mantine-color-default)] p-4">
+            <ProjectParseUppyUploader
+              projectId={projectId}
+              ingestMode="upload_only"
+              onBatchUploaded={handleBatchUploaded}
+              enableRemoteSources
+              hideHeader
+              companionUrl={import.meta.env.VITE_UPPY_COMPANION_URL as string | undefined}
+              height={220}
+            />
+          </div>
 
-            <Paper p="md" radius="md" className="upload-left-table-card">
-              <Stack gap="xs" className="upload-left-table-content">
-                <Text size="sm" fw={700}>Upload Success List</Text>
-                {docsError && (
-                  <Alert color="red" variant="light">
-                    {docsError}
-                  </Alert>
+          {/* Table card */}
+          <div className="upload-left-table-card bg-[var(--mantine-color-default)] p-4">
+            <div className="upload-left-table-content flex flex-col gap-2">
+              {/* Header */}
+              <div className="flex min-h-[22px] items-center justify-between gap-2">
+                <span className="text-sm font-bold text-foreground">Uploads</span>
+                {docs.length > 0 && (
+                  <span className="text-xs text-muted-foreground">{docs.length} docs</span>
                 )}
-                {docsLoading ? (
-                  <Center style={{ flex: 1 }}>
-                    <Loader size="sm" />
-                  </Center>
-                ) : successfulDocs.length === 0 ? (
-                  <Center style={{ flex: 1 }}>
-                    <Text size="sm" c="dimmed">No successful uploads yet.</Text>
-                  </Center>
-                ) : (
-                  <ScrollArea type="auto" className="upload-left-table-scroll">
-                    <Table stickyHeader highlightOnHover horizontalSpacing="sm" verticalSpacing={6}>
-                      <Table.Thead>
-                        <Table.Tr>
-                          <Table.Th>Document</Table.Th>
-                          <Table.Th>Type</Table.Th>
-                          <Table.Th>Status</Table.Th>
-                          <Table.Th>Uploaded</Table.Th>
-                        </Table.Tr>
-                      </Table.Thead>
-                      <Table.Tbody>
-                        {successfulDocs.map((doc) => {
-                          const active = doc.source_uid === resolvedSelectedSourceUid;
-                          return (
-                            <Table.Tr
-                              key={doc.source_uid}
-                              onClick={() => setSelectedSourceUid(doc.source_uid)}
-                              style={{
-                                cursor: 'pointer',
-                                backgroundColor: active ? 'var(--mantine-color-blue-light)' : undefined,
-                              }}
-                            >
-                              <Table.Td>
-                                <Text size="xs" fw={active ? 700 : 600} lineClamp={1}>
-                                  {doc.doc_title}
-                                </Text>
-                              </Table.Td>
-                              <Table.Td>
-                                <Text size="xs">{doc.source_type.toUpperCase()}</Text>
-                              </Table.Td>
-                              <Table.Td>
-                                <Badge size="xs" color={getStatusColor(doc.status)} variant="light">
-                                  {doc.status}
-                                </Badge>
-                              </Table.Td>
-                              <Table.Td>
-                                <Text size="xs" c="dimmed">{formatDateTime(doc.uploaded_at)}</Text>
-                              </Table.Td>
-                            </Table.Tr>
-                          );
-                        })}
-                      </Table.Tbody>
-                    </Table>
-                  </ScrollArea>
-                )}
-              </Stack>
-            </Paper>
-          </Stack>
-        </Box>
+              </div>
 
-        <Box
-          className={`upload-workspace-resizer${isSplitResizing ? ' is-active' : ''}`}
-          role="separator"
-          aria-orientation="vertical"
-          aria-label="Resize upload and preview panes"
-          onPointerDown={handleSplitResizeStart}
-        />
+              {docsError && (
+                <div className="rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-400">
+                  {docsError}
+                </div>
+              )}
 
-        <Box className="upload-workspace-pane upload-workspace-pane-right">
-          <Paper p="md" radius="md" className="upload-preview-paper">
-            <Stack gap="xs" className="upload-preview-stack">
-              <Group justify="space-between" wrap="nowrap">
-                <Text size="sm" fw={700}>Preview</Text>
-                {selectedDoc && (
-                  <Text size="xs" c="dimmed" lineClamp={1}>{selectedDoc.doc_title}</Text>
-                )}
-              </Group>
+              {docsLoading ? (
+                <div className="flex flex-1 items-center justify-center">
+                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
+                </div>
+              ) : docs.length === 0 ? (
+                <div className="flex flex-1 items-center justify-center">
+                  <span className="text-sm text-muted-foreground">No uploads yet.</span>
+                </div>
+              ) : (
+                <div className="upload-left-table-scroll overflow-auto rounded-lg border border-border">
+                  <table className="w-full text-left">
+                    <thead className="sticky top-0 z-10 bg-[var(--mantine-color-default)] text-xs text-muted-foreground">
+                      <tr className="border-b border-border">
+                        <th className="px-3 py-1 font-medium">Document</th>
+                        <th className="px-3 py-1 font-medium">Type</th>
+                        <th className="px-3 py-1 font-medium">Track</th>
+                        <th className="px-3 py-1 font-medium">Status</th>
+                        <th className="px-3 py-1 font-medium">Uploaded</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {pagedDocs.map((doc) => {
+                        const active = doc.source_uid === resolvedSelectedSourceUid;
+                        const trackInfo = getTrackInfo(doc.source_type);
+                        return (
+                          <tr
+                            key={doc.source_uid}
+                            onClick={() => setSelectedSourceUid(doc.source_uid)}
+                            className={cn(
+                              'cursor-pointer border-b border-border/50 hover:bg-accent',
+                              active && 'bg-blue-500/10',
+                            )}
+                          >
+                            <td className="px-3 py-[3px]">
+                              <span className={cn('text-xs line-clamp-1', active ? 'font-bold' : 'font-semibold')}>
+                                {doc.doc_title}
+                              </span>
+                            </td>
+                            <td className="px-3 py-[3px]">
+                              <span className="text-xs">{doc.source_type.toUpperCase()}</span>
+                            </td>
+                            <td className="px-3 py-[3px]">
+                              <span className={cn(
+                                'inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium',
+                                trackInfo.badgeClass,
+                              )}>
+                                {trackInfo.track}
+                              </span>
+                            </td>
+                            <td className="px-3 py-[3px]">
+                              <span className={cn(
+                                'inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium',
+                                isUploadFailed(doc.status)
+                                  ? 'bg-red-500/15 text-red-400'
+                                  : 'bg-green-500/15 text-green-400',
+                              )}>
+                                {isUploadFailed(doc.status) ? 'failed' : 'success'}
+                              </span>
+                            </td>
+                            <td className="px-3 py-[3px]">
+                              <span className="text-xs text-muted-foreground">{formatDateTime(doc.uploaded_at)}</span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
 
-              <Box className="upload-preview-body">
-                {!selectedDoc && (
-                  <Center h="100%">
-                    <Text size="sm" c="dimmed">Select a document from Upload Success List.</Text>
-                  </Center>
-                )}
+              {/* Left footer: pagination */}
+              {!docsLoading && docs.length > 0 && (
+                <div className="flex h-9 flex-none items-center justify-between border-t border-border px-1">
+                  <span className="text-xs text-muted-foreground">
+                    {docRangeStart}-{docRangeEnd} of {docs.length}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs text-muted-foreground">Rows</span>
+                      <select
+                        className="h-[26px] rounded border border-border bg-card px-2 text-xs text-foreground"
+                        value={String(rowsPerPage)}
+                        onChange={(e) => {
+                          setRowsPerPage(Number(e.target.value));
+                          setPage(1);
+                        }}
+                      >
+                        {ROWS_PER_PAGE_OPTIONS.map((v) => (
+                          <option key={v} value={v}>{v}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <SimplePagination
+                      value={activePage}
+                      onChange={setPage}
+                      total={totalPages}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
 
-                {selectedDoc && previewLoading && (
-                  <Center h="100%">
-                    <Loader size="sm" />
-                  </Center>
-                )}
+      <div className="upload-workspace-divider" aria-hidden />
 
-                {selectedDoc && !previewLoading && previewError && (
-                  <Alert color="red" variant="light">
+      {/* ── Right pane: preview ── */}
+      <div className="upload-workspace-pane upload-workspace-pane-right">
+        <div className="upload-preview-paper bg-[var(--mantine-color-default)] p-4">
+          <div className="upload-preview-stack flex flex-col gap-2">
+            {/* Preview header */}
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-sm font-bold text-foreground">Preview</span>
+              {selectedDoc && (
+                <span className="text-xs text-muted-foreground truncate">{selectedDoc.doc_title}</span>
+              )}
+            </div>
+
+            {/* Preview content */}
+            <div className="upload-preview-body">
+              {!selectedDoc && (
+                <div className="flex h-full items-center justify-center">
+                  <span className="text-sm text-muted-foreground">Select a document to preview.</span>
+                </div>
+              )}
+
+              {selectedDoc && previewLoading && (
+                <div className="flex h-full items-center justify-center">
+                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
+                </div>
+              )}
+
+              {selectedDoc && !previewLoading && previewError && (
+                <div className="p-2">
+                  <div className="rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-400">
                     {previewError}
-                  </Alert>
-                )}
+                  </div>
+                </div>
+              )}
 
-                {selectedDoc && !previewLoading && previewKind === 'pdf' && previewUrl && (
-                  <PdfPreview
-                    key={`${selectedDoc.source_uid}:${previewUrl}`}
-                    title={selectedDoc.doc_title}
-                    url={previewUrl}
-                    hideToolbar
-                  />
-                )}
+              {selectedDoc && !previewLoading && previewKind === 'pdf' && previewUrl && (
+                <PdfPreview
+                  key={`${selectedDoc.source_uid}:${previewUrl}`}
+                  title={selectedDoc.doc_title}
+                  url={previewUrl}
+                  hideToolbar
+                />
+              )}
 
-                {selectedDoc && !previewLoading && previewKind === 'image' && previewUrl && (
-                  <Center h="100%">
-                    <img src={previewUrl} alt={selectedDoc.doc_title} style={{ maxWidth: '100%', maxHeight: '100%' }} />
-                  </Center>
-                )}
+              {selectedDoc && !previewLoading && previewKind === 'image' && previewUrl && (
+                <div className="flex h-full items-center justify-center">
+                  <img src={previewUrl} alt={selectedDoc.doc_title} className="max-h-full max-w-full" />
+                </div>
+              )}
 
-                {selectedDoc && !previewLoading && previewKind === 'text' && (
-                  <ScrollArea h="100%">
-                    <pre style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{previewText ?? ''}</pre>
-                  </ScrollArea>
-                )}
+              {selectedDoc && !previewLoading && previewKind === 'text' && (
+                <div className="h-full overflow-auto">
+                  <pre className="m-0 whitespace-pre-wrap">{previewText ?? ''}</pre>
+                </div>
+              )}
 
-                {selectedDoc && !previewLoading && previewKind === 'docx' && previewUrl && (
-                  <DocxPreview
-                    key={`${selectedDoc.source_uid}:${previewUrl}`}
-                    title={selectedDoc.doc_title}
-                    url={previewUrl}
-                  />
-                )}
+              {selectedDoc && !previewLoading && previewKind === 'docx' && previewUrl && (
+                <DocxPreview
+                  key={`${selectedDoc.source_uid}:${previewUrl}`}
+                  title={selectedDoc.doc_title}
+                  url={previewUrl}
+                />
+              )}
 
-                {selectedDoc && !previewLoading && previewKind === 'pptx' && previewUrl && (
-                  <PptxPreview
-                    key={`${selectedDoc.source_uid}:${previewUrl}`}
-                    title={selectedDoc.doc_title}
-                    url={previewUrl}
-                  />
-                )}
+              {selectedDoc && !previewLoading && previewKind === 'pptx' && previewUrl && (
+                <PptxPreview
+                  key={`${selectedDoc.source_uid}:${previewUrl}`}
+                  title={selectedDoc.doc_title}
+                  url={previewUrl}
+                />
+              )}
 
-                {selectedDoc && !previewLoading && previewKind === 'file' && (
-                  <Center h="100%">
-                    <Button component="a" href={previewUrl ?? undefined} target="_blank" rel="noreferrer" size="xs" variant="light">
-                      Open file
-                    </Button>
-                  </Center>
-                )}
-              </Box>
-            </Stack>
-          </Paper>
-        </Box>
-      </Box>
-    </>
+              {selectedDoc && !previewLoading && previewKind === 'file' && (
+                <div className="flex h-full items-center justify-center">
+                  <a
+                    href={previewUrl ?? undefined}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center rounded-md border border-border bg-transparent px-3 py-1.5 text-xs font-medium text-foreground hover:bg-accent"
+                  >
+                    Open file
+                  </a>
+                </div>
+              )}
+            </div>
+
+            {/* Preview footer */}
+            <div className="flex h-9 flex-none items-center justify-between border-t border-border px-2.5">
+              <span className="text-xs text-muted-foreground">
+                {selectedDoc ? selectedDoc.source_type.toUpperCase() : 'No document selected'}
+              </span>
+              {selectedDoc && (
+                <span className="text-xs text-muted-foreground truncate">{selectedDoc.doc_title}</span>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

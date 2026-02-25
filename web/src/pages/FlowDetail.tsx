@@ -108,7 +108,7 @@ export default function FlowDetail() {
                 'inline-flex h-10 shrink-0 items-center border-r border-slate-300/80 px-4 text-[12px] font-medium leading-none whitespace-nowrap text-slate-600 transition-colors',
                 'first:border-l first:border-l-slate-300/80 hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700/80 dark:text-slate-300 dark:first:border-l-slate-700/80 dark:hover:bg-slate-900/60 dark:hover:text-slate-50',
                 item.value === activeTab
-                  ? '-mb-px border-b border-b-white border-t-2 border-t-sky-500 bg-white text-slate-950 dark:border-b-slate-900 dark:border-t-sky-400 dark:bg-slate-900 dark:text-white'
+                  ? '-mb-px border-b border-b-white border-t-2 border-t-[color:var(--flow-accent)] bg-white text-slate-950 dark:border-b-slate-900 dark:bg-slate-900 dark:text-white'
                   : '',
               )}
             >

@@ -54,7 +54,10 @@ describe('FlowDetail page', () => {
       });
     });
 
-    expect(screen.getByRole('tab', { name: /overview/i })).toBeInTheDocument();
+    const overviewTab = screen.getByRole('tab', { name: /overview/i });
+    expect(overviewTab).toBeInTheDocument();
+    expect(overviewTab.className).toContain('border-t-[color:var(--flow-accent)]');
+    expect(overviewTab.className).not.toMatch(/sky-/);
     expect(screen.getByRole('tab', { name: /concurrency/i })).toBeInTheDocument();
   });
 });
