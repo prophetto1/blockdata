@@ -1,0 +1,32 @@
+.flow-detail-shell {
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+}
+
+.flow-detail-tabs {
+  width: 100%;
+  min-width: 0;
+  min-height: 620px;
+}
+
+.flow-detail-tabs-row {
+  width: 100%;
+  overflow: auto hidden;
+  scrollbar-width: thin;
+}
+
+.flow-detail-tab-panel {
+  min-height: 0;
+}
+
+.flow-detail-panel-placeholder {
+  background: var(--card);
+  border-color: var(--border);
+}
+
+@media (max-width: 48em) {
+  .flow-detail-tabs {
+    min-height: 520px;
+  }
+}

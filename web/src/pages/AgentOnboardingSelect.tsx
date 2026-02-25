@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Badge, Button, Card, Center, Group, Loader, SimpleGrid, Stack, Text } from '@mantine/core';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { PageHeader } from '@/components/common/PageHeader';
 import { useAgentConfigs } from '@/components/agents/useAgentConfigs';
 import { onboardingNextPath } from '@/components/agents/onboarding/constants';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 export default function AgentOnboardingSelect() {
   const navigate = useNavigate();
@@ -28,9 +29,9 @@ export default function AgentOnboardingSelect() {
     return (
       <>
         <PageHeader title="Agent onboarding" subtitle="Step 1 of 3: Select your default agent." />
-        <Center py="xl">
-          <Loader />
-        </Center>
+        <div className="flex items-center justify-center py-10">
+          <span className="h-6 w-6 animate-spin rounded-full border-2 border-border border-t-foreground" />
+        </div>
       </>
     );
   }
@@ -39,7 +40,7 @@ export default function AgentOnboardingSelect() {
     return (
       <>
         <PageHeader title="Agent onboarding" subtitle="Step 1 of 3: Select your default agent." />
-        <Text c="red">{error}</Text>
+        <p className="text-sm text-destructive">{error}</p>
       </>
     );
   }
@@ -47,40 +48,48 @@ export default function AgentOnboardingSelect() {
   return (
     <>
       <PageHeader title="Agent onboarding" subtitle="Step 1 of 3: Select your default agent." />
-      <Stack gap="md">
-        <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
+      <div className="space-y-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {catalog.map((cat) => {
             const readiness = data?.readiness?.[cat.agent_slug];
             const configured = Boolean(readiness?.is_ready);
             const isSelected = selectedSlug === cat.agent_slug;
             return (
-              <Card
+              <article
                 key={cat.agent_slug}
-                withBorder
-                radius="md"
-                p="lg"
-                style={{
-                  outline: isSelected ? '2px solid var(--mantine-color-blue-6)' : 'none',
-                  borderRadius: 10,
-                }}
+                className={cn(
+                  'rounded-lg border border-border bg-card p-6 transition-shadow',
+                  isSelected && 'ring-2 ring-ring',
+                )}
               >
-                <Stack gap="sm">
-                  <Group justify="space-between" align="flex-start">
-                    <Stack gap={2}>
-                      <Text fw={700}>{cat.display_name}</Text>
-                      <Text size="sm" c="dimmed">
+                <div className="space-y-3">
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div className="space-y-0.5">
+                      <p className="text-base font-semibold text-foreground">{cat.display_name}</p>
+                      <p className="text-sm text-muted-foreground">
                         {cat.provider_family}
-                      </Text>
-                    </Stack>
-                    <Group gap={6}>
-                      {isSelected && <Badge color="blue">Selected</Badge>}
-                      <Badge color={configured ? 'green' : 'gray'} variant={configured ? 'filled' : 'light'}>
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {isSelected && (
+                        <span className="inline-flex items-center rounded-full bg-primary/15 px-2 py-0.5 text-xs font-medium text-primary">
+                          Selected
+                        </span>
+                      )}
+                      <span
+                        className={cn(
+                          'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium',
+                          configured
+                            ? 'bg-emerald-500/15 text-emerald-500'
+                            : 'bg-muted text-muted-foreground',
+                        )}
+                      >
                         {configured ? 'Configured' : 'Needs setup'}
-                      </Badge>
-                    </Group>
-                  </Group>
+                      </span>
+                    </div>
+                  </div>
                   <Button
-                    variant={isSelected ? 'filled' : 'light'}
+                    variant={isSelected ? 'default' : 'outline'}
                     onClick={() => {
                       setSelectedSlug(cat.agent_slug);
                       navigate(onboardingNextPath(cat.agent_slug, cat.provider_family));
@@ -88,12 +97,12 @@ export default function AgentOnboardingSelect() {
                   >
                     Select
                   </Button>
-                </Stack>
-              </Card>
+                </div>
+              </article>
             );
           })}
-        </SimpleGrid>
-      </Stack>
+        </div>
+      </div>
     </>
   );
 }

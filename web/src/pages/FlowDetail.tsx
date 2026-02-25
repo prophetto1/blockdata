@@ -3,9 +3,9 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useShellHeaderTitle } from '@/components/common/useShellHeaderTitle';
 import FlowWorkbench from '@/components/flows/FlowWorkbench';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { cn } from '@/lib/cn';
 import { supabase } from '@/lib/supabase';
 import { TABLES } from '@/lib/tables';
+import './FlowDetail.css';
 
 const FLOW_TABS = [
   { value: 'overview', label: 'Overview' },
@@ -104,13 +104,7 @@ export default function FlowDetail() {
             <TabsTrigger
               key={item.value}
               value={item.value}
-              className={cn(
-                'inline-flex h-10 shrink-0 items-center border-r border-slate-300/80 px-4 text-[12px] font-medium leading-none whitespace-nowrap text-slate-600 transition-colors',
-                'first:border-l first:border-l-slate-300/80 hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700/80 dark:text-slate-300 dark:first:border-l-slate-700/80 dark:hover:bg-slate-900/60 dark:hover:text-slate-50',
-                item.value === activeTab
-                  ? '-mb-px border-b border-b-white border-t-2 border-t-[color:var(--flow-accent)] bg-white text-slate-950 dark:border-b-slate-900 dark:bg-slate-900 dark:text-white'
-                  : '',
-              )}
+              className="inline-flex h-10 shrink-0 items-center border-r border-slate-300/80 px-4 text-[12px] font-medium leading-none whitespace-nowrap text-slate-600 transition-colors first:border-l first:border-l-slate-300/80 hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700/80 dark:text-slate-300 dark:first:border-l-slate-700/80 dark:hover:bg-slate-900/60 dark:hover:text-slate-50 data-[selected]:-mb-px data-[selected]:border-b data-[selected]:border-b-white data-[selected]:border-t-2 data-[selected]:border-t-[color:var(--flow-accent)] data-[selected]:bg-white data-[selected]:text-slate-950 dark:data-[selected]:border-b-slate-900 dark:data-[selected]:bg-slate-900 dark:data-[selected]:text-white"
             >
               {item.label}
             </TabsTrigger>

@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
-import { Box } from '@/components/ui/primitives';
 import { styleTokens } from '@/lib/styleTokens';
+import './AppPageShell.css';
 
 type AppPageShellMode = 'fluid' | 'constrained';
 
@@ -17,8 +17,8 @@ export function AppPageShell({ children, mode = 'fluid' }: AppPageShellProps) {
     : 'app-page-shell-inner';
 
   return (
-    <Box className={outerClassName}>
-      <Box
+    <div className={outerClassName}>
+      <div
         className={innerClassName}
         style={
           constrained
@@ -31,7 +31,7 @@ export function AppPageShell({ children, mode = 'fluid' }: AppPageShellProps) {
         }
       >
         {children}
-      </Box>
-    </Box>
+      </div>
+    </div>
   );
 }

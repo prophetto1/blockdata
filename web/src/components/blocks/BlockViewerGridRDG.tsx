@@ -44,6 +44,7 @@ import { useOverlays } from '@/hooks/useOverlays';
 import { extractSchemaFields, type SchemaFieldMeta } from '@/lib/schema-fields';
 import type { RunWithSchema } from '@/lib/types';
 import { ErrorAlert } from '@/components/common/ErrorAlert';
+import { NativeSelect } from '@/components/ui/native-select';
 import {
   extractPagesFromLocator,
   formatPageLabels,
@@ -166,7 +167,7 @@ function SchemaValueEditor({ row, column, onRowChange, onClose, fieldMeta }: Ren
   if (fieldMeta.type === 'enum' || fieldMeta.type === 'boolean') {
     const options = fieldMeta.type === 'enum' ? fieldMeta.enumValues ?? [] : ['true', 'false'];
     return (
-      <select
+      <NativeSelect
         autoFocus
         value={draft}
         onChange={(event) => {
@@ -176,11 +177,12 @@ function SchemaValueEditor({ row, column, onRowChange, onClose, fieldMeta }: Ren
           onClose(true, true);
         }}
         onBlur={() => onClose(true, true)}
-        style={{ width: '100%', height: 24, fontSize: 12 }}
-      >
-        <option value="">--</option>
-        {options.map((option) => <option key={option} value={option}>{option}</option>)}
-      </select>
+        className="h-6 text-[12px]"
+        options={[
+          { value: '', label: '--' },
+          ...options.map((option) => ({ value: option, label: option })),
+        ]}
+      />
     );
   }
 

@@ -57,8 +57,6 @@ import { PdfPreview } from '@/components/documents/PdfPreview';
 import { PdfResultsHighlighter, type ParsedResultBlock } from '@/components/documents/PdfResultsHighlighter';
 import { PptxPreview } from '@/components/documents/PptxPreview';
 import { ProjectParseUppyUploader, type UploadBatchResult } from '@/components/documents/ProjectParseUppyUploader';
-import { BlockViewerGridTanStackCodex } from '@/components/blocks/BlockViewerGridTanStackCodex';
-import { BlockViewerGridV2 } from '@/components/blocks/BlockViewerGridV2';
 import { BlockViewerGridRDG } from '@/components/blocks/BlockViewerGridRDG';
 import { ErrorAlert } from '@/components/common/ErrorAlert';
 import { DoubleArrowIcon } from '@/components/icons/DoubleArrowIcon';
@@ -133,7 +131,6 @@ type ProjectDetailMode = 'parse' | 'extract' | 'transform';
 type ProjectDetailSurface = 'default' | 'test';
 type MiddlePreviewTab = 'preview' | 'results';
 type TestRightTab = 'preview' | 'metadata' | 'blocks' | 'grid' | 'outputs';
-type TransformGridRenderer = 'rdg' | 'tanstack_codex' | 'grid_v2';
 type ParseConfigView = 'Basic' | 'Advanced';
 type ExtractConfigView = 'Basic' | 'Advanced' | 'Schema';
 type ExtractSchemaMode = 'table' | 'code';
@@ -419,7 +416,6 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
   const [showMetadataBlocksPanel, setShowMetadataBlocksPanel] = useState(true);
   const [middlePreviewTab, setMiddlePreviewTab] = useState<MiddlePreviewTab>('preview');
   const [testRightTab, setTestRightTab] = useState<TestRightTab>('preview');
-  const [transformGridRenderer, setTransformGridRenderer] = useState<TransformGridRenderer>('rdg');
   const [pdfToolbarHost, setPdfToolbarHost] = useState<HTMLDivElement | null>(null);
   const [testBlocks, setTestBlocks] = useState<TestBlockCardRow[]>([]);
   const [testBlocksLoading, setTestBlocksLoading] = useState(false);
@@ -2288,18 +2284,7 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
                         <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 border border-slate-300/70 bg-slate-100/55 px-2 py-1 dark:border-slate-600/60 dark:bg-slate-900/20">
                           <Group gap="xs" align="center" wrap="nowrap" className="min-w-0">
                             <Text size="sm" fw={700}>Grid</Text>
-                            <Select
-                              size="xs"
-                              w={170}
-                              data={[
-                                { value: 'rdg', label: 'React Data Grid' },
-                                { value: 'tanstack_codex', label: 'TanStack Codex' },
-                                { value: 'grid_v2', label: 'Grid V2' },
-                              ]}
-                              value={transformGridRenderer}
-                              onChange={(value) => setTransformGridRenderer((value as TransformGridRenderer) ?? 'rdg')}
-                              aria-label="Grid renderer"
-                            />
+                            <Text size="xs" c="dimmed">React Data Grid</Text>
                           </Group>
                           <div className="inline-flex items-stretch overflow-hidden border border-slate-300/80 bg-slate-100/80 dark:border-slate-600/60 dark:bg-slate-900/35" role="tablist" aria-label="Static tabs">
                             <button type="button" role="tab" aria-selected className="h-6 border-r border-slate-300/70 bg-sky-100 px-3 text-[11px] font-semibold leading-none text-sky-800 dark:border-slate-600/60 dark:bg-sky-900/35 dark:text-sky-200" tabIndex={-1}>
@@ -2326,25 +2311,11 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
                           </Text>
                         )}
                         <Box style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-                          {transformGridRenderer === 'rdg' ? (
-                            <BlockViewerGridRDG
-                              convUid={selectedDoc.conv_uid}
-                              selectedRunId={selectedRunId}
-                              selectedRun={selectedRun}
-                            />
-                          ) : transformGridRenderer === 'grid_v2' ? (
-                            <BlockViewerGridV2
-                              convUid={selectedDoc.conv_uid}
-                              selectedRunId={selectedRunId}
-                              selectedRun={selectedRun}
-                            />
-                          ) : (
-                            <BlockViewerGridTanStackCodex
-                              convUid={selectedDoc.conv_uid}
-                              selectedRunId={selectedRunId}
-                              selectedRun={selectedRun}
-                            />
-                          )}
+                          <BlockViewerGridRDG
+                            convUid={selectedDoc.conv_uid}
+                            selectedRunId={selectedRunId}
+                            selectedRun={selectedRun}
+                          />
                         </Box>
                       </Stack>
                     )}

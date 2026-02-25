@@ -5,6 +5,7 @@ import { DocxPreview } from '@/components/documents/DocxPreview';
 import { PdfPreview } from '@/components/documents/PdfPreview';
 import { PptxPreview } from '@/components/documents/PptxPreview';
 import { ProjectParseUppyUploader, type UploadBatchResult } from '@/components/documents/ProjectParseUppyUploader';
+import { NativeSelect } from '@/components/ui/native-select';
 import { supabase } from '@/lib/supabase';
 import { TABLES } from '@/lib/tables';
 import type { DocumentRow } from '@/lib/types';
@@ -514,18 +515,19 @@ export default function Upload() {
                   <div className="flex items-center gap-2">
                     <div className="flex items-center gap-1.5">
                       <span className="text-xs text-muted-foreground">Rows</span>
-                      <select
-                        className="h-[26px] rounded border border-border bg-card px-2 text-xs text-foreground"
+                      <NativeSelect
+                        className="h-[26px] min-w-[58px]"
+                        aria-label="Rows per page"
                         value={String(rowsPerPage)}
-                        onChange={(e) => {
-                          setRowsPerPage(Number(e.target.value));
+                        onChange={(event) => {
+                          setRowsPerPage(Number(event.target.value));
                           setPage(1);
                         }}
-                      >
-                        {ROWS_PER_PAGE_OPTIONS.map((v) => (
-                          <option key={v} value={v}>{v}</option>
-                        ))}
-                      </select>
+                        options={ROWS_PER_PAGE_OPTIONS.map((value) => ({
+                          value: String(value),
+                          label: String(value),
+                        }))}
+                      />
                     </div>
                     <SimplePagination
                       value={activePage}
@@ -581,7 +583,6 @@ export default function Upload() {
                   key={`${selectedDoc.source_uid}:${previewUrl}`}
                   title={selectedDoc.doc_title}
                   url={previewUrl}
-                  hideToolbar
                 />
               )}
 

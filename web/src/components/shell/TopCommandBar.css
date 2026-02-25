@@ -1,0 +1,184 @@
+:root {
+  --shell-guide-left-width: 392px;
+  --shell-guide-middle-width: 300px;
+}
+
+.top-command-bar {
+  height: 100%;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 0.75rem;
+  padding-inline-start: calc(var(--app-shell-navbar-offset, 0px) + 0.75rem);
+  padding-inline-end: 1rem;
+  position: relative;
+}
+
+.top-command-bar--minimal {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+}
+
+.top-command-bar--minimal .top-command-bar-center {
+  padding-inline-start: 0.625rem;
+}
+
+.top-command-bar--shell-guides {
+  grid-template-columns:
+    var(--shell-guide-left-width)
+    var(--shell-guide-middle-width)
+    minmax(0, 1fr);
+  column-gap: 0;
+  padding-inline-start: var(--app-shell-navbar-offset, 0px);
+  padding-inline-end: 0;
+}
+
+.top-command-bar--shell-guides .top-command-bar-left,
+.top-command-bar--shell-guides .top-command-bar-center,
+.top-command-bar--shell-guides .top-command-bar-right {
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  padding-inline: 10px;
+}
+
+.top-command-bar--shell-guides .top-command-bar-left {
+  justify-content: space-between;
+}
+
+.top-command-bar--shell-guides .top-command-bar-center,
+.top-command-bar--shell-guides .top-command-bar-right {
+  justify-content: flex-start;
+}
+
+.top-command-bar-shell-label {
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+.top-command-bar-shell-slot {
+  min-width: 0;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.top-command-bar-shell-slot .top-command-bar-shell-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.top-command-bar-shell-toggle {
+  width: 24px;
+  min-width: 24px;
+  height: 24px;
+  flex: 0 0 auto;
+}
+
+@media (max-width: 1200px) {
+  .top-command-bar--shell-guides {
+    grid-template-columns: auto;
+    padding-inline-start: calc(var(--app-shell-navbar-offset, 0px) + 0.75rem);
+    padding-inline-end: 1rem;
+  }
+
+  .top-command-bar--shell-guides .top-command-bar-center,
+  .top-command-bar--shell-guides .top-command-bar-right,
+  .top-command-bar--shell-guides .top-command-bar-shell-slot,
+  .top-command-bar--shell-guides .top-command-bar-shell-label {
+    display: none;
+  }
+}
+
+.top-command-bar-left {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+}
+
+.top-command-bar-center {
+  min-width: 0;
+  max-width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  justify-self: stretch;
+  padding-inline-start: 0;
+  padding-inline-end: 0;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.top-command-bar-right {
+  min-width: max-content;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.top-command-bar-right-content {
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.top-command-bar-right-slot {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.top-command-bar-theme-toggle {
+  margin-left: auto;
+}
+
+/* Top-bar view tabs */
+.top-bar-view-tabs {
+  display: inline-flex;
+  align-items: stretch;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--muted);
+}
+
+.top-bar-view-tab {
+  border: 0;
+  border-right: 1px solid var(--border);
+  border-radius: 0;
+  background: transparent;
+  color: var(--muted-foreground);
+  min-height: 24px;
+  padding: 0 10px;
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 100ms ease, color 100ms ease;
+}
+
+.top-bar-view-tab:last-child {
+  border-right: 0;
+}
+
+.top-bar-view-tab:hover {
+  background: var(--accent);
+  color: var(--accent-foreground);
+}
+
+.top-bar-view-tab.is-active {
+  background: var(--background);
+  color: var(--foreground);
+  font-weight: 600;
+}
+
+.top-bar-view-tab:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: -2px;
+}

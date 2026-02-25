@@ -1,12 +1,12 @@
-import { useEffect, useMemo } from 'react';
-import { Button, Card, Group, Stack, Text } from '@mantine/core';
-import { notifications } from '@mantine/notifications';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { PageHeader } from '@/components/common/PageHeader';
 import { useAgentConfigs } from '@/components/agents/useAgentConfigs';
 import { ApiKeyPanel } from '@/components/agents/forms/ApiKeyPanel';
 import { GoogleAuthPanel } from '@/components/agents/forms/GoogleAuthPanel';
 import { featureFlags } from '@/lib/featureFlags';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import {
   DEFAULT_KEYWORDS,
   supportedAuthMethods,
@@ -19,6 +19,10 @@ export default function AgentOnboardingConnect() {
   const agentSlug = params.agentSlug ?? '';
   const authMethod = params.authMethod as OnboardingAuthMethod;
   const { data, loading, error, reload, saveConfig, keyByProvider, connectionsByProvider } = useAgentConfigs();
+  const [notice, setNotice] = useState<
+    | { tone: 'success' | 'warning' | 'error'; message: string }
+    | null
+  >(null);
 
   const selectedCatalog = useMemo(
     () => data?.catalog.find((c) => c.agent_slug === agentSlug) ?? null,
@@ -64,13 +68,13 @@ export default function AgentOnboardingConnect() {
         is_default: true,
       });
       if (!result.is_ready) {
-        notifications.show({ color: 'yellow', message: 'Agent saved, but credentials are still missing.' });
+        setNotice({ tone: 'warning', message: 'Agent saved, but credentials are still missing.' });
         return;
       }
-      notifications.show({ color: 'green', message: 'Onboarding complete' });
+      setNotice({ tone: 'success', message: 'Onboarding complete.' });
       navigate('/app/agents', { replace: true });
     } catch (e) {
-      notifications.show({ color: 'red', message: e instanceof Error ? e.message : String(e) });
+      setNotice({ tone: 'error', message: e instanceof Error ? e.message : String(e) });
     }
   };
 
@@ -78,7 +82,7 @@ export default function AgentOnboardingConnect() {
     return (
       <>
         <PageHeader title="Agent onboarding" subtitle="Connect credentials." />
-        <Text>Loading...</Text>
+        <p className="text-sm text-muted-foreground">Loading...</p>
       </>
     );
   }
@@ -87,7 +91,7 @@ export default function AgentOnboardingConnect() {
     return (
       <>
         <PageHeader title="Agent onboarding" subtitle="Connect credentials." />
-        <Text c="red">{error}</Text>
+        <p className="text-sm text-destructive">{error}</p>
       </>
     );
   }
@@ -108,8 +112,8 @@ export default function AgentOnboardingConnect() {
         title="Agent onboarding"
         subtitle={`${stepSubtitlePrefix}: Connect credentials for ${selectedCatalog.display_name}.`}
       />
-      <Card withBorder radius="md" p="lg">
-        <Stack gap="md">
+      <div className="rounded-lg border border-border bg-card p-6">
+        <div className="space-y-4">
           {providerFamily === 'google' && authMethod === 'vertex' ? (
             <GoogleAuthPanel
               providerKeyInfo={keyByProvider.get('google') ?? null}
@@ -125,27 +129,39 @@ export default function AgentOnboardingConnect() {
             />
           )}
 
-          <Group justify="space-between">
-            <Button variant="light" onClick={() => navigate(backPath)}>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <Button variant="outline" onClick={() => navigate(backPath)}>
               Back
             </Button>
-            <Group gap="xs">
-              <Button variant="light" onClick={() => reload()}>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button variant="outline" onClick={() => reload()}>
                 Refresh status
               </Button>
               <Button onClick={handleFinish} disabled={!selectedConfigured}>
                 Finish
               </Button>
-            </Group>
-          </Group>
+            </div>
+          </div>
 
           {!selectedConfigured && (
-            <Text size="sm" c="dimmed">
+            <p className="text-sm text-muted-foreground">
               Finish is enabled after credentials are configured.
-            </Text>
+            </p>
           )}
-        </Stack>
-      </Card>
+          {notice && (
+            <div
+              className={cn(
+                'rounded-md border px-3 py-2 text-sm',
+                notice.tone === 'success' && 'border-emerald-500/40 bg-emerald-500/10 text-emerald-600',
+                notice.tone === 'warning' && 'border-amber-500/40 bg-amber-500/10 text-amber-600',
+                notice.tone === 'error' && 'border-destructive/40 bg-destructive/10 text-destructive',
+              )}
+            >
+              {notice.message}
+            </div>
+          )}
+        </div>
+      </div>
     </>
   );
 }

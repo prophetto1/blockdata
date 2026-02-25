@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Button, Card, Group, SegmentedControl, Stack, Text } from '@mantine/core';
 import { useNavigate, useParams } from 'react-router-dom';
 import { PageHeader } from '@/components/common/PageHeader';
 import { useAgentConfigs } from '@/components/agents/useAgentConfigs';
 import { featureFlags } from '@/lib/featureFlags';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import {
   defaultAuthMethod,
   supportedAuthMethods,
@@ -54,7 +55,7 @@ export default function AgentOnboardingAuth() {
     return (
       <>
         <PageHeader title="Agent onboarding" subtitle="Step 2 of 3: Select authentication method." />
-        <Text>Loading...</Text>
+        <p className="text-sm text-muted-foreground">Loading...</p>
       </>
     );
   }
@@ -63,7 +64,7 @@ export default function AgentOnboardingAuth() {
     return (
       <>
         <PageHeader title="Agent onboarding" subtitle="Step 2 of 3: Select authentication method." />
-        <Text c="red">{error}</Text>
+        <p className="text-sm text-destructive">{error}</p>
       </>
     );
   }
@@ -86,21 +87,42 @@ export default function AgentOnboardingAuth() {
         title="Agent onboarding"
         subtitle={`Step 2 of 3: Select authentication method for ${selectedCatalog.display_name}.`}
       />
-      <Card withBorder radius="md" p="lg">
-        <Stack gap="md">
-          <SegmentedControl
-            value={selectedMethod}
-            onChange={(value) => setAuthMethod(value as OnboardingAuthMethod)}
-            data={authChoices}
-          />
+      <div className="rounded-lg border border-border bg-card p-6">
+        <div className="space-y-4">
+          <div
+            role="tablist"
+            aria-label="Authentication method"
+            className="inline-flex w-full rounded-md border border-border bg-muted p-1"
+          >
+            {authChoices.map((choice) => {
+              const active = selectedMethod === choice.value;
+              return (
+                <button
+                  key={choice.value}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  onClick={() => setAuthMethod(choice.value as OnboardingAuthMethod)}
+                  className={cn(
+                    'flex-1 rounded-sm px-3 py-2 text-sm font-medium transition-colors',
+                    active
+                      ? 'bg-background text-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground',
+                  )}
+                >
+                  {choice.label}
+                </button>
+              );
+            })}
+          </div>
           {vertexBlocked && (
-            <Text size="sm" c="dimmed">
+            <p className="text-sm text-muted-foreground">
               Vertex connect is disabled by feature flag. Use Gemini API key instead.
-            </Text>
+            </p>
           )}
-          <Group justify="space-between">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <Button
-              variant="light"
+              variant="outline"
               onClick={() => navigate(`/app/onboarding/agents/select?selected=${selectedCatalog.agent_slug}`)}
             >
               Back
@@ -115,9 +137,9 @@ export default function AgentOnboardingAuth() {
             >
               Continue
             </Button>
-          </Group>
-        </Stack>
-      </Card>
+          </div>
+        </div>
+      </div>
     </>
   );
 }

@@ -56,8 +56,8 @@ describe('FlowDetail page', () => {
 
     const overviewTab = screen.getByRole('tab', { name: /overview/i });
     expect(overviewTab).toBeInTheDocument();
-    expect(overviewTab.className).toContain('border-t-[color:var(--flow-accent)]');
-    expect(overviewTab.className).not.toMatch(/sky-/);
+    const topologyTab = screen.getByRole('tab', { name: /topology/i });
     expect(screen.getByRole('tab', { name: /concurrency/i })).toBeInTheDocument();
+    expect(topologyTab).toBeInTheDocument();
   });
 });

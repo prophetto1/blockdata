@@ -20,4 +20,22 @@ export default defineConfig([
       globals: globals.browser,
     },
   },
+  {
+    files: [
+      'src/components/common/PageHeader.tsx',
+      'src/pages/AgentOnboardingAuth.tsx',
+      'src/pages/AgentOnboardingConnect.tsx',
+      'src/pages/AgentOnboardingSelect.tsx',
+      'src/components/agents/forms/ApiKeyPanel.tsx',
+      'src/components/agents/forms/GoogleAuthPanel.tsx',
+    ],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: ['@mantine/*'],
+        },
+      ],
+    },
+  },
 ])

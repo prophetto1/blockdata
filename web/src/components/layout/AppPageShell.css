@@ -1,0 +1,19 @@
+.app-page-shell {
+  width: 100%;
+  min-width: 0;
+}
+
+.app-page-shell--constrained {
+  display: flex;
+  justify-content: center;
+}
+
+.app-page-shell-inner {
+  width: 100%;
+  min-width: 0;
+}
+
+.app-page-shell-inner--constrained {
+  display: flex;
+  flex-direction: column;
+}

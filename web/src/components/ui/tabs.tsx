@@ -1,84 +1,49 @@
-import { createContext, useContext, type ButtonHTMLAttributes, type HTMLAttributes, type ReactNode } from 'react';
+import { Tabs as ArkTabs } from '@ark-ui/react/tabs';
+import { type ComponentProps } from 'react';
 import { cn } from '@/lib/cn';
 
-type TabsContextValue = {
-  value: string;
+type TabsProps = Omit<ComponentProps<typeof ArkTabs.Root>, 'onValueChange'> & {
   onValueChange: (value: string) => void;
 };
 
-const TabsContext = createContext<TabsContextValue | null>(null);
-
-function useTabsContext() {
-  const context = useContext(TabsContext);
-  if (!context) {
-    throw new Error('Tabs components must be used within <Tabs>.');
-  }
-  return context;
-}
-
-type TabsProps = {
-  value: string;
-  onValueChange: (value: string) => void;
-  className?: string;
-  children: ReactNode;
-};
-
-export function Tabs({ value, onValueChange, className, children }: TabsProps) {
+export function Tabs({ value, onValueChange, className, children, ...props }: TabsProps) {
   return (
-    <TabsContext.Provider value={{ value, onValueChange }}>
-      <div className={className}>
-        {children}
-      </div>
-    </TabsContext.Provider>
-  );
-}
-
-type TabsListProps = HTMLAttributes<HTMLDivElement>;
-
-export function TabsList({ className, ...props }: TabsListProps) {
-  return <div role="tablist" className={className} {...props} />;
-}
-
-type TabsTriggerProps = ButtonHTMLAttributes<HTMLButtonElement> & {
-  value: string;
-};
-
-export function TabsTrigger({ value, className, onClick, ...props }: TabsTriggerProps) {
-  const { value: activeValue, onValueChange } = useTabsContext();
-  const active = activeValue === value;
-
-  return (
-    <button
-      type="button"
-      role="tab"
-      aria-selected={active}
-      data-state={active ? 'active' : 'inactive'}
+    <ArkTabs.Root
+      value={value}
+      onValueChange={(details) =>
+        onValueChange(typeof details === 'string' ? details : details.value)
+      }
+      lazyMount
+      unmountOnExit
       className={cn(className)}
-      onClick={(event) => {
-        onClick?.(event);
-        if (!event.defaultPrevented) {
-          onValueChange(value);
-        }
-      }}
+      data-slot="tabs"
+      {...props}
+    >
+      {children}
+    </ArkTabs.Root>
+  );
+}
+
+export function TabsList({ className, ...props }: ComponentProps<typeof ArkTabs.List>) {
+  return (
+    <ArkTabs.List
+      data-slot="tabs-list"
+      className={cn(className)}
       {...props}
     />
   );
 }
 
-type TabsContentProps = HTMLAttributes<HTMLDivElement> & {
-  value: string;
-};
-
-export function TabsContent({ value, className, ...props }: TabsContentProps) {
-  const { value: activeValue } = useTabsContext();
-  if (activeValue !== value) return null;
-
+export function TabsTrigger({ className, ...props }: ComponentProps<typeof ArkTabs.Trigger>) {
   return (
-    <div
-      role="tabpanel"
-      data-state="active"
-      className={className}
+    <ArkTabs.Trigger
+      data-slot="tabs-trigger"
+      className={cn(className)}
       {...props}
     />
   );
+}
+
+export function TabsContent({ className, ...props }: ComponentProps<typeof ArkTabs.Content>) {
+  return <ArkTabs.Content data-slot="tabs-content" className={cn(className)} {...props} />;
 }

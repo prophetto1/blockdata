@@ -20,7 +20,7 @@ import {
 } from '@mantine/core';
 import { useDebouncedValue, useDisclosure } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   IconClock,
   IconExternalLink,
@@ -81,8 +81,33 @@ export default function Projects() {
   const [totalCount, setTotalCount] = useState(0);
   const [debouncedSearch] = useDebouncedValue(search, 250);
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const computedColorScheme = useComputedColorScheme('dark');
   const isDark = computedColorScheme === 'dark';
+  const shouldOpenNewModal = searchParams.get('new') === '1';
+
+  const openCreateModal = () => {
+    if (!shouldOpenNewModal) {
+      const next = new URLSearchParams(searchParams);
+      next.set('new', '1');
+      setSearchParams(next, { replace: true });
+    }
+    open();
+  };
+
+  const closeCreateModal = () => {
+    close();
+    if (shouldOpenNewModal) {
+      const next = new URLSearchParams(searchParams);
+      next.delete('new');
+      setSearchParams(next, { replace: true });
+    }
+  };
+
+  useEffect(() => {
+    if (!shouldOpenNewModal || opened) return;
+    open();
+  }, [opened, open, shouldOpenNewModal]);
 
   useEffect(() => {
     let cancelled = false;
@@ -300,7 +325,7 @@ export default function Projects() {
     notifications.show({ color: 'green', title: 'Project created', message: name.trim() });
     setName('');
     setDesc('');
-    close();
+    closeCreateModal();
     setCreating(false);
     navigate(`/app/projects/${(data as ProjectRow).project_id}`);
   };
@@ -312,7 +337,7 @@ export default function Projects() {
   return (
     <>
       <PageHeader title="Projects" subtitle="Organize your documents and annotation runs.">
-        <Button size="xs" leftSection={<IconFolderPlus size={14} />} onClick={open}>
+        <Button size="xs" leftSection={<IconFolderPlus size={14} />} onClick={openCreateModal}>
           New project
         </Button>
       </PageHeader>
@@ -362,7 +387,7 @@ export default function Projects() {
                 : 'Create a project to start uploading documents and running annotations.'}
             </Text>
             {!hasFilters && (
-              <Button size="lg" leftSection={<IconFolderPlus size={18} />} onClick={open}>
+              <Button size="lg" leftSection={<IconFolderPlus size={18} />} onClick={openCreateModal}>
                 Create your first project
               </Button>
             )}
@@ -397,7 +422,7 @@ export default function Projects() {
         </Stack>
       )}
 
-      <Modal opened={opened} onClose={close} title="New Project" centered>
+      <Modal opened={opened} onClose={closeCreateModal} title="New Project" centered>
         <Stack gap="md">
           <TextInput
             label="Project name"
@@ -413,7 +438,7 @@ export default function Projects() {
             onChange={(e) => setDesc(e.currentTarget.value)}
           />
           <Group justify="flex-end">
-            <Button variant="default" onClick={close}>Cancel</Button>
+            <Button variant="default" onClick={closeCreateModal}>Cancel</Button>
             <Button onClick={handleCreate} loading={creating} disabled={!name.trim()}>
               Create
             </Button>

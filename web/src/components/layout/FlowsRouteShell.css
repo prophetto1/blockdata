@@ -1,0 +1,25 @@
+.flows-route-shell {
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.flows-route-shell-inner {
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.flows-route-shell--list .flows-route-shell-inner {
+  gap: var(--mantine-spacing-sm);
+  padding: var(--mantine-spacing-md);
+}
+
+.flows-route-shell--detail .flows-route-shell-inner {
+  gap: 0;
+  padding: 0;
+}

@@ -12,10 +12,12 @@ import UseCases from '@/pages/UseCases';
 import MarketingIntegrations from '@/pages/MarketingIntegrations';
 import AuthCallback from '@/pages/AuthCallback';
 import ProjectsHome from '@/pages/ProjectsHome';
+import Projects from '@/pages/Projects';
 import Flows from '@/pages/Flows';
 import FlowDetail from '@/pages/FlowDetail';
 import ProjectDetail from '@/pages/ProjectDetail';
 import Upload from '@/pages/Upload';
+import UiCatalog from '@/pages/UiCatalog';
 import UppyLibraryDemo from '@/pages/UppyLibraryDemo';
 import DocumentDetail from '@/pages/DocumentDetail';
 import Extract from '@/pages/Extract';
@@ -36,8 +38,6 @@ import AgentOnboardingConnect from '@/pages/AgentOnboardingConnect';
 import AgentOnboardingSelect from '@/pages/AgentOnboardingSelect';
 import McpServers from '@/pages/McpServers';
 import Commands from '@/pages/Commands';
-import DatabricksStyleLab from '@/pages/experiments/DatabricksStyleLab';
-import { AppLayoutDatabricksPreview } from '@/components/layout/AppLayoutDatabricksPreview';
 import { FlowsRouteShell } from '@/components/layout/FlowsRouteShell';
 import { featureFlags } from '@/lib/featureFlags';
 
@@ -74,18 +74,12 @@ export const router = createBrowserRouter([
     element: <AuthGuard />,
     children: [
       {
-        element: <AppLayoutDatabricksPreview />,
-        children: [
-          { path: '/app/experiments/databricks', element: <DatabricksStyleLab /> },
-        ],
-      },
-      {
         element: <AppLayout />,
         children: [
           // App landing + projects
           { path: '/app', element: <Navigate to="/app/projects" replace /> },
           { path: '/app/projects', element: <ProjectsHome /> },
-          { path: '/app/projects/list', element: <Navigate to="/app/projects" replace /> },
+          { path: '/app/projects/list', element: <Projects /> },
           {
             path: '/app/flows',
             element: <FlowsRouteShell />,
@@ -98,6 +92,8 @@ export const router = createBrowserRouter([
           // Project-scoped routes
           { path: '/app/projects/:projectId', element: <ProjectDetail surface="test" /> },
           { path: '/app/projects/:projectId/upload', element: <Upload /> },
+          { path: '/app/ui', element: <UiCatalog /> },
+          { path: '/app/ui/:section', element: <UiCatalog /> },
           { path: '/app/projects/:projectId/upload-uppy-demo', element: <UppyLibraryDemo /> },
           { path: '/app/projects/:projectId/documents/:sourceUid', element: <DocumentDetail /> },
           { path: '/app/projects/:projectId/runs/:runId', element: <RunDetail /> },

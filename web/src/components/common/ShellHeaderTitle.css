@@ -1,0 +1,50 @@
+.shell-header-title {
+  min-width: 0;
+  width: 100%;
+  max-width: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 2px;
+  padding-block: 6px 4px;
+  padding-inline-end: var(--mantine-spacing-sm);
+}
+
+.shell-header-title-main {
+  display: block;
+  width: 100%;
+  font-size: 21px;
+  line-height: 1.12;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.shell-header-title-subtitle {
+  display: block;
+  width: 100%;
+  font-size: 11px;
+  line-height: 1.2;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: light-dark(var(--mantine-color-gray-6), var(--mantine-color-gray-4));
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 62em) {
+  .shell-header-title-main {
+    font-size: 19px;
+  }
+}
+
+@media (max-width: 48em) {
+  .shell-header-title-main {
+    font-size: 17px;
+  }
+}

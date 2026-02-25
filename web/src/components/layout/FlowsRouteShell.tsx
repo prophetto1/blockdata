@@ -1,4 +1,5 @@
 import { Outlet, useLocation } from 'react-router-dom';
+import './FlowsRouteShell.css';
 
 export function FlowsRouteShell() {
   const location = useLocation();

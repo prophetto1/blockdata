@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react';
-import { Group } from '@mantine/core';
 import { useShellHeaderTitle } from '@/components/common/useShellHeaderTitle';
 
 type Props = {
@@ -14,8 +13,8 @@ export function PageHeader({ title, subtitle, children }: Props) {
   if (!children) return null;
 
   return (
-    <Group justify="flex-end" align="center" mb="md" gap="sm" wrap="wrap">
+    <div className="mb-4 flex flex-wrap items-center justify-end gap-2">
       {children}
-    </Group>
+    </div>
   );
 }

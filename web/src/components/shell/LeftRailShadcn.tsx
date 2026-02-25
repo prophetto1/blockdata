@@ -1,8 +1,11 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useMemo, useState, type CSSProperties } from 'react';
+import { Collapsible } from '@ark-ui/react/collapsible';
+import { Select, createListCollection } from '@ark-ui/react/select';
 import {
   IconCheck,
   IconChevronDown,
   IconChevronLeft,
+  IconComponents,
   IconLogout,
   IconPlus,
   IconSearch,
@@ -18,7 +21,6 @@ import {
   SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
@@ -27,7 +29,6 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
   SidebarProvider,
-  SidebarSeparator,
 } from '@/components/ui/sidebar';
 import { cn } from '@/lib/utils';
 import { PROJECT_FOCUS_STORAGE_KEY } from '@/lib/projectFocus';
@@ -82,18 +83,6 @@ function readStoredProjectId(): string | null {
   return window.localStorage.getItem(PROJECT_FOCUS_STORAGE_KEY);
 }
 
-function isDocumentsRoute(pathname: string): boolean {
-  return (
-    /^\/app\/projects\/[^/]+\/upload/.test(pathname)
-    || (
-      pathname.startsWith('/app/projects')
-      && !pathname.startsWith('/app/projects/list')
-    )
-    || pathname.startsWith('/app/extract')
-    || pathname.startsWith('/app/transform')
-  );
-}
-
 export function LeftRailShadcn({
   onNavigate,
   userLabel,
@@ -112,10 +101,7 @@ export function LeftRailShadcn({
   const [focusedProjectId, setFocusedProjectId] = useState<string | null>(() => readStoredProjectId());
   const [projectOptions, setProjectOptions] = useState<ProjectFocusOption[]>([]);
   const [projectOptionsLoading, setProjectOptionsLoading] = useState(false);
-  const [projectPickerOpen, setProjectPickerOpen] = useState(false);
   const [documentsMenuExpanded, setDocumentsMenuExpanded] = useState(false);
-  const projectPickerRef = useRef<HTMLDivElement | null>(null);
-  const projectTriggerRef = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -201,44 +187,10 @@ export function LeftRailShadcn({
       : '';
   }, [activeProjectId, focusedProjectId, projectOptions]);
 
-  const selectedProject = useMemo(
-    () => projectOptions.find((project) => project.value === projectSelectValue) ?? null,
-    [projectOptions, projectSelectValue],
+  const projectCollection = useMemo(
+    () => createListCollection({ items: projectOptions }),
+    [projectOptions],
   );
-
-  useEffect(() => {
-    setProjectPickerOpen(false);
-  }, [desktopCompact, location.pathname]);
-
-  useEffect(() => {
-    if (isDocumentsRoute(location.pathname)) return;
-    setDocumentsMenuExpanded(false);
-  }, [location.pathname]);
-
-  useEffect(() => {
-    if (!projectPickerOpen) return undefined;
-
-    const onPointerDown = (event: PointerEvent) => {
-      const target = event.target as Node | null;
-      if (!target) return;
-      if (projectPickerRef.current?.contains(target)) return;
-      setProjectPickerOpen(false);
-    };
-
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape') return;
-      setProjectPickerOpen(false);
-      projectTriggerRef.current?.focus();
-    };
-
-    document.addEventListener('pointerdown', onPointerDown);
-    window.addEventListener('keydown', onKeyDown);
-
-    return () => {
-      document.removeEventListener('pointerdown', onPointerDown);
-      window.removeEventListener('keydown', onKeyDown);
-    };
-  }, [projectPickerOpen]);
 
   const orderedGlobalMenus = useMemo(
     () => [...GLOBAL_MENUS].sort((a, b) => (
@@ -300,6 +252,9 @@ export function LeftRailShadcn({
   };
 
   const navigateTo = (path: string) => {
+    if (path !== '/app/documents') {
+      setDocumentsMenuExpanded(false);
+    }
     navigate(globalPathOverrides[path] ?? path);
     onNavigate?.();
   };
@@ -307,7 +262,6 @@ export function LeftRailShadcn({
   const onProjectChanged = (nextProjectId: string) => {
     if (!nextProjectId) return;
     setFocusedProjectId(nextProjectId);
-    setProjectPickerOpen(false);
 
     if (location.pathname.startsWith('/app/extract')) {
       navigate(`/app/extract/${nextProjectId}`);
@@ -342,7 +296,6 @@ export function LeftRailShadcn({
       >
         <SidebarHeader
           className={cn(
-            'border-b border-sidebar-border',
             desktopCompact
               ? 'h-[var(--app-shell-header-height)] gap-0 px-0 py-0'
               : 'gap-0 px-0 py-0',
@@ -362,7 +315,7 @@ export function LeftRailShadcn({
                 'inline-flex items-center rounded-md text-left font-semibold tracking-tight hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
                 desktopCompact
                   ? 'size-10 justify-center p-0 text-base'
-                  : 'px-2 py-1 text-[length:var(--app-font-size-brand)]',
+                  : 'px-2 py-1 text-[27px]',
               )}
               onClick={() => {
                 if (desktopCompact && onToggleDesktopCompact) {
@@ -389,113 +342,96 @@ export function LeftRailShadcn({
             )}
           </div>
 
+          <div
+            data-testid="left-rail-project-separator"
+            className="h-px w-full bg-sidebar-border"
+          />
           {!desktopCompact && (
             <>
-              <div
-                data-testid="left-rail-project-separator"
-                className="-mx-2 h-px bg-sidebar-border"
-              />
-              <div className="space-y-2 px-2 pb-2 pt-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-[length:var(--app-font-size-nav-label)] font-semibold uppercase tracking-[0.08em] text-sidebar-foreground/65">
-                    Project
-                  </span>
-                  <button
-                    type="button"
-                    className="inline-flex h-7 items-center gap-1 rounded-md px-2 text-[length:var(--app-font-size-nav-caption)] font-medium text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                    onClick={() => {
-                      navigate('/app/projects');
-                      onNavigate?.();
-                    }}
-                  >
-                    <IconPlus size={13} stroke={2.1} />
-                    New Project
-                  </button>
-                </div>
-
-                <div ref={projectPickerRef} className="relative">
-                  <button
-                    ref={projectTriggerRef}
-                    type="button"
-                    className="flex h-11 w-full items-center justify-between rounded-md border border-input/80 bg-background/95 px-2.5 text-left shadow-sm transition-colors hover:bg-sidebar-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
-                    aria-haspopup="listbox"
-                    aria-expanded={projectPickerOpen}
-                    aria-label="Select project"
-                    onClick={() => setProjectPickerOpen((current) => !current)}
-                    disabled={projectOptionsLoading && projectOptions.length === 0}
-                  >
-                    <span className="min-w-0 pr-2">
-                      <span className="block truncate text-[length:var(--app-font-size-nav-strong)] font-semibold leading-5 text-foreground">
-                        {projectOptionsLoading && projectOptions.length === 0
-                          ? 'Loading projects...'
-                          : (selectedProject?.label ?? 'Select project')}
-                      </span>
-                      <span className="block truncate text-[length:var(--app-font-size-nav-caption)] leading-4 text-sidebar-foreground/70">
-                        {projectOptionsLoading && projectOptions.length === 0
-                          ? 'Fetching project list'
-                          : (selectedProject ? `${selectedProject.docCount} docs` : 'Choose a project for menu routing')}
-                      </span>
-                    </span>
-                    <IconChevronDown
-                      size={16}
-                      stroke={2}
-                      className={cn(
-                        'shrink-0 text-muted-foreground transition-transform duration-150',
-                        projectPickerOpen ? 'rotate-180' : '',
-                      )}
-                    />
-                  </button>
-
-                  {projectPickerOpen && (
-                    <div
-                      role="listbox"
-                      aria-label="Project list"
-                      className="absolute left-0 right-0 top-[calc(100%+6px)] z-40 max-h-72 overflow-y-auto rounded-md border border-sidebar-border bg-sidebar p-1 shadow-xl"
+              <div className="px-2 pb-1.5 pt-1.5">
+                <div className="flex w-full items-center gap-1.5">
+                <Select.Root
+                  className="min-w-0 flex-1"
+                  collection={projectCollection}
+                  value={projectSelectValue ? [projectSelectValue] : []}
+                  onValueChange={(details) => {
+                    const nextProjectId = details.value[0];
+                    if (!nextProjectId || nextProjectId === projectSelectValue) return;
+                    onProjectChanged(nextProjectId);
+                  }}
+                  disabled={projectOptionsLoading && projectOptions.length === 0}
+                  positioning={{ placement: 'bottom-start', sameWidth: true, offset: { mainAxis: 6 }, strategy: 'fixed' }}
+                >
+                  <Select.Control className="relative flex-1">
+                    <Select.Trigger
+                      className="flex h-9 w-full items-center justify-between rounded-md border border-input/80 bg-background/95 px-2 text-left shadow-sm transition-colors hover:bg-sidebar-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+                      aria-label="Select project"
                     >
-                      {projectOptions.length === 0 ? (
-                        <div className="px-2.5 py-2 text-[length:var(--app-font-size-nav-caption)] text-sidebar-foreground/70">
-                          {projectOptionsLoading ? 'Loading projects...' : 'No projects found'}
-                        </div>
-                      ) : (
-                        projectOptions.map((project) => {
-                          const isSelected = project.value === projectSelectValue;
-                          return (
-                            <button
+                      <span className="min-w-0 pr-1.5">
+                        <Select.ValueText
+                          className="block truncate text-sm font-semibold leading-none text-foreground"
+                          placeholder={projectOptionsLoading && projectOptions.length === 0 ? 'Loading projects...' : 'Select project'}
+                        />
+                      </span>
+                      <Select.Indicator className="shrink-0 text-muted-foreground">
+                        <IconChevronDown size={16} stroke={2} />
+                      </Select.Indicator>
+                    </Select.Trigger>
+                  </Select.Control>
+
+                  <Select.Positioner className="!z-[220]">
+                      <Select.Content className="max-h-72 overflow-y-auto rounded-md border border-sidebar-border bg-sidebar p-1 shadow-xl">
+                        {projectCollection.items.length === 0 ? (
+                          <div className="px-2.5 py-2 text-xs text-sidebar-foreground/70">
+                            {projectOptionsLoading ? 'Loading projects...' : 'No projects found'}
+                          </div>
+                        ) : (
+                          projectCollection.items.map((project) => (
+                            <Select.Item
                               key={project.value}
-                              type="button"
-                              role="option"
-                              aria-selected={isSelected}
+                              item={project}
                               className={cn(
-                                'flex w-full items-center justify-between rounded-md px-2.5 py-2 text-left transition-colors',
-                                isSelected
-                                  ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-                                  : 'text-sidebar-foreground/90 hover:bg-sidebar-accent/70 hover:text-sidebar-accent-foreground',
+                                'flex w-full items-center justify-between rounded-md px-2.5 py-2 text-left text-sidebar-foreground/90 transition-colors',
+                                'data-[state=checked]:bg-sidebar-accent data-[state=checked]:text-sidebar-accent-foreground',
+                                'data-[highlighted]:bg-sidebar-accent/70 data-[highlighted]:text-sidebar-accent-foreground',
                               )}
-                              onClick={() => onProjectChanged(project.value)}
                             >
                               <span className="min-w-0 pr-2">
-                                <span className="block truncate text-[length:var(--app-font-size-nav)] font-medium leading-5">
+                                <Select.ItemText className="block truncate text-sm font-medium leading-5">
                                   {project.label}
-                                </span>
-                                <span className="block text-[length:var(--app-font-size-nav-caption)] leading-4 text-sidebar-foreground/65">
+                                </Select.ItemText>
+                                <span className="block text-xs leading-4 text-sidebar-foreground/65">
                                   {project.docCount} docs
                                 </span>
                               </span>
-                              {isSelected ? <IconCheck size={15} stroke={2.2} className="shrink-0" /> : null}
-                            </button>
-                          );
-                        })
-                      )}
-                    </div>
-                  )}
+                              <Select.ItemIndicator className="shrink-0">
+                                <IconCheck size={15} stroke={2.2} />
+                              </Select.ItemIndicator>
+                            </Select.Item>
+                          ))
+                        )}
+                      </Select.Content>
+                    </Select.Positioner>
+                  <Select.HiddenSelect name="project-focus" />
+                </Select.Root>
+                <button
+                  type="button"
+                  className="inline-flex h-9 w-12 shrink-0 items-center justify-center rounded-md border border-input/80 bg-background/95 text-sidebar-foreground/80 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+                  onClick={() => {
+                    navigate('/app/projects/list?new=1');
+                    onNavigate?.();
+                  }}
+                  aria-label="Create new project"
+                  title="Create new project"
+                >
+                  <IconPlus size={14} stroke={2.1} />
+                </button>
                 </div>
               </div>
-              <div className="flex items-center justify-between">
-                <div
-                  data-testid="left-rail-project-bottom-separator"
-                  className="-mx-2 h-px w-[calc(100%+1rem)] bg-sidebar-border"
-                />
-              </div>
+              <div
+                data-testid="left-rail-project-bottom-separator"
+                className="h-px w-full bg-sidebar-border"
+              />
             </>
           )}
         </SidebarHeader>
@@ -505,12 +441,77 @@ export function LeftRailShadcn({
             <SidebarGroupContent>
               <SidebarMenu>
                 {orderedGlobalMenus.map((menu) => {
-                  const IconComponent = menu.icon;
                   const menuPath = globalPathOverrides[menu.path] ?? menu.path;
+                  const compactMenuLabel = menu.label.slice(0, 3).toUpperCase();
                   const hasChildren = (menu.children?.length ?? 0) > 0;
                   const isCollapsibleDocumentsMenu = menu.path === '/app/documents' && hasChildren && !desktopCompact;
-                  const shouldShowChildren = hasChildren && (!isCollapsibleDocumentsMenu || documentsMenuExpanded);
                   const submenuId = isCollapsibleDocumentsMenu ? 'documents-submenu' : undefined;
+
+                  const childrenContent = hasChildren ? (
+                    <SidebarMenuSub id={submenuId} className="mx-0 mt-1 translate-x-0 border-l-0 px-0 py-0.5">
+                      {menu.children!.map((child) => {
+                        const childPath = globalPathOverrides[child.path] ?? child.path;
+                        return (
+                          <SidebarMenuSubItem key={child.path}>
+                            <SidebarMenuSubButton
+                              asChild
+                              isActive={isGlobalMenuActive(child.path)}
+                              className="h-9 rounded-md px-2 text-[13px] font-medium text-sidebar-foreground/90 hover:text-sidebar-accent-foreground"
+                            >
+                              <a
+                                href={childPath}
+                                onClick={(event) => {
+                                  event.preventDefault();
+                                  navigateTo(child.path);
+                                }}
+                              >
+                                <span>{child.label}</span>
+                              </a>
+                            </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                        );
+                      })}
+                    </SidebarMenuSub>
+                  ) : null;
+
+                  if (isCollapsibleDocumentsMenu) {
+                    return (
+                      <SidebarMenuItem key={menu.path}>
+                        <Collapsible.Root
+                          open={documentsMenuExpanded}
+                          onOpenChange={(details) => setDocumentsMenuExpanded(details.open)}
+                          lazyMount
+                          unmountOnExit
+                        >
+                          <SidebarMenuButton
+                            isActive={isGlobalMenuActive(menu.path)}
+                            tooltip={menu.label}
+                            className={cn(
+                              desktopCompact
+                                ? 'size-10 justify-center p-0'
+                                : 'h-10 px-2 !text-lg !font-semibold leading-snug',
+                            )}
+                          onClick={() => setDocumentsMenuExpanded((current) => !current)}
+                          aria-expanded={documentsMenuExpanded}
+                          aria-controls={submenuId}
+                        >
+                          <span>{menu.label}</span>
+                          <IconChevronDown
+                            size={16}
+                              stroke={2}
+                              className={cn(
+                                'ml-auto transition-transform duration-150',
+                                documentsMenuExpanded ? 'rotate-180' : '',
+                              )}
+                            />
+                          </SidebarMenuButton>
+                          <Collapsible.Content>
+                            {childrenContent}
+                          </Collapsible.Content>
+                        </Collapsible.Root>
+                      </SidebarMenuItem>
+                    );
+                  }
 
                   return (
                     <SidebarMenuItem key={menu.path}>
@@ -520,68 +521,27 @@ export function LeftRailShadcn({
                         className={cn(
                           desktopCompact
                             ? 'size-10 justify-center p-0'
-                            : 'h-11 text-[14px] font-semibold tracking-tight',
+                            : 'h-10 px-2 text-lg font-semibold leading-snug',
                         )}
-                        {...(isCollapsibleDocumentsMenu
-                          ? {
-                              onClick: () => setDocumentsMenuExpanded((current) => !current),
-                              'aria-expanded': documentsMenuExpanded,
-                              'aria-controls': submenuId,
-                            }
-                          : { asChild: true })}
+                        asChild
                       >
-                        {isCollapsibleDocumentsMenu ? (
-                          <>
-                            <IconComponent size={16} stroke={1.9} />
+                        <a
+                          href={menuPath}
+                          onClick={(event) => {
+                            event.preventDefault();
+                            navigateTo(menu.path);
+                          }}
+                        >
+                          {desktopCompact ? (
+                            <span className="text-[var(--app-font-size-nav-caption)] font-semibold uppercase tracking-[0.04em] leading-none">
+                              {compactMenuLabel}
+                            </span>
+                          ) : (
                             <span>{menu.label}</span>
-                            <IconChevronDown
-                              size={16}
-                              stroke={2}
-                              className={cn(
-                                'ml-auto transition-transform duration-150',
-                                documentsMenuExpanded ? 'rotate-180' : '',
-                              )}
-                            />
-                          </>
-                        ) : (
-                          <a
-                            href={menuPath}
-                            onClick={(event) => {
-                              event.preventDefault();
-                              navigateTo(menu.path);
-                            }}
-                          >
-                            <IconComponent size={16} stroke={1.9} />
-                            {!desktopCompact && <span>{menu.label}</span>}
-                          </a>
-                        )}
+                          )}
+                        </a>
                       </SidebarMenuButton>
-                      {!desktopCompact && shouldShowChildren && (
-                        <SidebarMenuSub id={submenuId} className="mx-0 mt-1 translate-x-0 border-l-0 px-0 py-0.5">
-                          {menu.children!.map((child) => {
-                            const childPath = globalPathOverrides[child.path] ?? child.path;
-                            return (
-                              <SidebarMenuSubItem key={child.path}>
-                                <SidebarMenuSubButton
-                                  asChild
-                                  isActive={isGlobalMenuActive(child.path)}
-                                  className="h-9 rounded-md px-2 text-[13px] font-medium text-sidebar-foreground/90 hover:text-sidebar-accent-foreground"
-                                >
-                                  <a
-                                    href={childPath}
-                                    onClick={(event) => {
-                                      event.preventDefault();
-                                      navigateTo(child.path);
-                                    }}
-                                  >
-                                    <span>{child.label}</span>
-                                  </a>
-                                </SidebarMenuSubButton>
-                              </SidebarMenuSubItem>
-                            );
-                          })}
-                        </SidebarMenuSub>
-                      )}
+                      {!desktopCompact && hasChildren && childrenContent}
                     </SidebarMenuItem>
                   );
                 })}
@@ -591,8 +551,9 @@ export function LeftRailShadcn({
 
         </SidebarContent>
 
-        <SidebarFooter className="border-t border-sidebar-border px-2 pt-1.5">
-          <SidebarMenu>
+        <SidebarFooter className="border-t border-sidebar-border px-0 pt-1.5">
+          <div className="px-2">
+            <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton
                 asChild
@@ -601,7 +562,7 @@ export function LeftRailShadcn({
                 className={cn(
                   desktopCompact
                     ? 'size-10 justify-center p-0'
-                    : 'h-10 text-[14px] font-medium',
+                    : 'h-10 text-base font-medium',
                 )}
               >
                 <a
@@ -627,7 +588,7 @@ export function LeftRailShadcn({
                   className={cn(
                     desktopCompact
                       ? 'size-10 justify-center p-0'
-                      : 'h-10 text-[14px] font-medium',
+                      : 'h-10 text-base font-medium',
                   )}
                 >
                   <AiAssistantIcon
@@ -651,7 +612,7 @@ export function LeftRailShadcn({
                 className={cn(
                   desktopCompact
                     ? 'size-10 justify-center p-0'
-                    : 'h-10 text-[14px] font-medium',
+                    : 'h-10 text-base font-medium',
                 )}
               >
                 <a
@@ -668,41 +629,74 @@ export function LeftRailShadcn({
               </SidebarMenuButton>
             </SidebarMenuItem>
 
-            {onSignOut && desktopCompact && (
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  onClick={() => {
-                    void onSignOut();
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                asChild
+                isActive={location.pathname.startsWith('/app/ui')}
+                tooltip="UI Catalog"
+                className={cn(
+                  desktopCompact
+                    ? 'size-10 justify-center p-0'
+                    : 'h-10 text-base font-medium',
+                )}
+              >
+                <a
+                  href="/app/ui"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    navigate('/app/ui');
+                    onNavigate?.();
                   }}
-                  tooltip="Sign out"
-                  className="size-10 justify-center p-0"
                 >
-                  <IconLogout size={16} stroke={1.9} />
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            )}
-          </SidebarMenu>
+                  <IconComponents size={16} stroke={1.9} />
+                  {!desktopCompact && <span>UI Catalog</span>}
+                </a>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
 
-          {!desktopCompact && (
-            <>
+            </SidebarMenu>
+          </div>
+
+          <>
+            <div
+              data-testid="left-rail-account-separator"
+              className={cn(
+                'h-px w-full bg-sidebar-border',
+                desktopCompact ? 'mt-3' : 'mt-4',
+              )}
+            />
+            <div className={cn(desktopCompact ? 'px-0 py-2' : 'px-1.5 py-2')}>
               <div
-                data-testid="left-rail-account-separator"
-                className="-mx-2 mt-2 h-px bg-sidebar-border"
-              />
-              <div className="px-1.5 py-2">
-                <div className="flex items-center justify-between gap-2 px-1 py-0.5">
-                <div className="flex min-w-0 items-center gap-2">
+                className={cn(
+                  'flex items-center gap-2',
+                  desktopCompact ? 'flex-col justify-center gap-1.5 px-0 py-0.5' : 'justify-between px-1 py-0.5',
+                )}
+              >
+                <div className={cn('flex min-w-0 items-center gap-2', desktopCompact && 'w-full flex-col gap-1 text-center')}>
                   <div
-                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-sidebar-accent/35 text-[length:var(--app-font-size-nav-caption)] font-semibold text-sidebar-foreground/90"
+                    className={cn(
+                      'flex shrink-0 items-center justify-center rounded-md bg-sidebar-accent/35 text-xs font-semibold text-sidebar-foreground/90',
+                      desktopCompact ? 'h-9 w-9' : 'h-8 w-8',
+                    )}
                     aria-hidden
                   >
                     {userInitial}
                   </div>
-                  <div className="min-w-0">
-                    <div className="text-[length:var(--app-font-size-nav-label)] leading-4 text-sidebar-foreground/65">
+                  <div className={cn('min-w-0', desktopCompact && 'w-full max-w-[4.5rem] px-1')}>
+                    <div
+                      className={cn(
+                        'text-[11px] leading-4 text-sidebar-foreground/65',
+                        desktopCompact && 'text-center text-[11px]',
+                      )}
+                    >
                       Signed in as
                     </div>
-                    <div className="truncate text-[length:var(--app-font-size-nav)] font-semibold leading-5 text-foreground">
+                    <div
+                      className={cn(
+                        'truncate text-sm font-semibold leading-5 text-foreground',
+                        desktopCompact && 'text-center text-[12px] leading-4',
+                      )}
+                    >
                       {userLabel ?? userInitial}
                     </div>
                   </div>
@@ -710,20 +704,22 @@ export function LeftRailShadcn({
                 {onSignOut && (
                   <button
                     type="button"
-                    className="inline-flex h-8 w-8 items-center justify-center rounded-md text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+                    className={cn(
+                      'inline-flex items-center justify-center rounded-md text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring',
+                      desktopCompact ? 'h-9 w-9' : 'h-8 w-8',
+                    )}
                     aria-label="Sign out"
                     title="Sign out"
                     onClick={() => {
                       void onSignOut();
                     }}
                   >
-                    <IconLogout size={15} stroke={2} />
+                    <IconLogout size={desktopCompact ? 16 : 15} stroke={desktopCompact ? 1.9 : 2} />
                   </button>
                 )}
-                </div>
               </div>
-            </>
-          )}
+            </div>
+          </>
         </SidebarFooter>
       </Sidebar>
     </SidebarProvider>

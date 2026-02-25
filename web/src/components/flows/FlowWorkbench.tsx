@@ -1,6 +1,7 @@
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { IconLayoutColumns, IconPlus, IconRefresh, IconX } from '@tabler/icons-react';
 import FlowCanvas from './FlowCanvas';
+import './FlowWorkbench.css';
 
 type FlowWorkbenchProps = {
   flowId: string;
@@ -71,8 +72,8 @@ function renderTabContent(tabId: PaneTabId, flowName: string, flowId: string) {
     case 'documentation':
       return (
         <div className="space-y-2 p-3">
-          <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Documentation</p>
-          <p className="text-sm text-slate-600 dark:text-slate-300">
+          <p className="text-sm font-semibold text-foreground">Documentation</p>
+          <p className="text-sm text-muted-foreground">
             Shared contract notes for {flowName}.
           </p>
         </div>
@@ -80,22 +81,22 @@ function renderTabContent(tabId: PaneTabId, flowName: string, flowId: string) {
     case 'files':
       return (
         <div className="space-y-2 p-3">
-          <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Files</p>
-          <p className="text-sm text-slate-600 dark:text-slate-300">No files yet for this flow.</p>
+          <p className="text-sm font-semibold text-foreground">Files</p>
+          <p className="text-sm text-muted-foreground">No files yet for this flow.</p>
         </div>
       );
     case 'nocode':
       return (
         <div className="space-y-2 p-3">
-          <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">No-code</p>
-          <p className="text-sm text-slate-600 dark:text-slate-300">No-code form shell placeholder.</p>
+          <p className="text-sm font-semibold text-foreground">No-code</p>
+          <p className="text-sm text-muted-foreground">No-code form shell placeholder.</p>
         </div>
       );
     case 'executions':
       return (
         <div className="space-y-2 p-3">
-          <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Executions</p>
-          <p className="text-sm text-slate-600 dark:text-slate-300">Flow ID: {flowId}</p>
+          <p className="text-sm font-semibold text-foreground">Executions</p>
+          <p className="text-sm text-muted-foreground">Flow ID: {flowId}</p>
         </div>
       );
     default:
@@ -291,7 +292,7 @@ export default function FlowWorkbench({ flowId, flowName }: FlowWorkbenchProps) 
           <button
             type="button"
             onClick={addColumn}
-            className="inline-flex items-center gap-1.5 rounded-md border border-slate-300/80 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700/80 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+            className="inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-accent hover:text-accent-foreground"
           >
             <IconLayoutColumns size={14} />
             <span>Add column</span>
@@ -299,7 +300,7 @@ export default function FlowWorkbench({ flowId, flowName }: FlowWorkbenchProps) 
           <button
             type="button"
             onClick={resetLayout}
-            className="inline-flex items-center gap-1.5 rounded-md border border-transparent px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:border-slate-300/80 hover:bg-slate-100 dark:text-slate-300 dark:hover:border-slate-700/80 dark:hover:bg-slate-800"
+            className="inline-flex items-center gap-1.5 rounded-md border border-transparent px-2.5 py-1.5 text-xs font-medium text-muted-foreground hover:border-border hover:bg-accent hover:text-accent-foreground"
           >
             <IconRefresh size={14} />
             <span>Reset split</span>
@@ -348,7 +349,7 @@ export default function FlowWorkbench({ flowId, flowName }: FlowWorkbenchProps) 
                     type="button"
                     aria-label="Add tab"
                     onClick={() => addTabToPane(pane.id)}
-                    className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-transparent text-slate-500 hover:border-slate-300/80 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:border-slate-700/80 dark:hover:bg-slate-800 dark:hover:text-slate-50"
+                    className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-transparent text-muted-foreground hover:border-border hover:bg-accent hover:text-accent-foreground"
                   >
                     <IconPlus size={14} />
                   </button>
@@ -357,7 +358,7 @@ export default function FlowWorkbench({ flowId, flowName }: FlowWorkbenchProps) 
                     aria-label="Remove column"
                     onClick={() => removeColumn(pane.id)}
                     disabled={panes.length <= 1}
-                    className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-transparent text-slate-500 hover:border-slate-300/80 hover:bg-slate-100 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-40 dark:text-slate-300 dark:hover:border-slate-700/80 dark:hover:bg-slate-800 dark:hover:text-slate-50"
+                    className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-transparent text-muted-foreground hover:border-border hover:bg-accent hover:text-accent-foreground disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     <IconX size={14} />
                   </button>

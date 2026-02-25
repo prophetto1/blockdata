@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react';
-import { Button, Group, SegmentedControl, Stack, Text, TextInput, Textarea } from '@mantine/core';
-import { notifications } from '@mantine/notifications';
 import { edgeJson } from '@/lib/edge';
 import type { ProviderConnectionView } from '@/components/agents/useAgentConfigs';
 import { ApiKeyPanel } from '@/components/agents/forms/ApiKeyPanel';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils';
 
 type GoogleAuthMode = 'gemini_key' | 'vertex_service_account';
 
@@ -32,14 +33,19 @@ export function GoogleAuthPanel({
   const [serviceAccountJson, setServiceAccountJson] = useState('');
   const [connecting, setConnecting] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
+  const [notice, setNotice] = useState<
+    | { tone: 'success' | 'warning' | 'error'; message: string }
+    | null
+  >(null);
 
   const connected = vertex?.status === 'connected';
 
   const handleConnect = async () => {
     if (!providerConnectionFlowsEnabled) {
-      notifications.show({ color: 'yellow', message: 'Vertex connection flows are disabled by feature flag.' });
+      setNotice({ tone: 'warning', message: 'Vertex connection flows are disabled by feature flag.' });
       return;
     }
+    setNotice(null);
     setConnecting(true);
     try {
       await edgeJson('provider-connections/connect', {
@@ -51,11 +57,11 @@ export function GoogleAuthPanel({
           service_account_json: serviceAccountJson,
         }),
       });
-      notifications.show({ color: 'green', message: 'Vertex connected' });
+      setNotice({ tone: 'success', message: 'Vertex connected.' });
       setServiceAccountJson('');
       await onReload();
     } catch (e) {
-      notifications.show({ color: 'red', message: e instanceof Error ? e.message : String(e) });
+      setNotice({ tone: 'error', message: e instanceof Error ? e.message : String(e) });
     } finally {
       setConnecting(false);
     }
@@ -63,6 +69,7 @@ export function GoogleAuthPanel({
 
   const handleDisconnect = async () => {
     if (!providerConnectionFlowsEnabled) return;
+    setNotice(null);
     setDisconnecting(true);
     try {
       await edgeJson('provider-connections/disconnect', {
@@ -72,82 +79,110 @@ export function GoogleAuthPanel({
           connection_type: 'gcp_service_account',
         }),
       });
-      notifications.show({ color: 'green', message: 'Vertex disconnected' });
+      setNotice({ tone: 'success', message: 'Vertex disconnected.' });
       await onReload();
     } catch (e) {
-      notifications.show({ color: 'red', message: e instanceof Error ? e.message : String(e) });
+      setNotice({ tone: 'error', message: e instanceof Error ? e.message : String(e) });
     } finally {
       setDisconnecting(false);
     }
   };
 
   return (
-    <Stack gap="sm">
-      <Group justify="space-between">
-        <Text fw={600}>Google auth</Text>
+    <div className="space-y-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-sm font-semibold text-foreground">Google auth</p>
         {connected && (
-          <Text size="sm" c="dimmed">
+          <p className="text-sm text-muted-foreground">
             Vertex connected
-          </Text>
+          </p>
         )}
-      </Group>
+      </div>
 
       {!vertexOnly && (
-        <SegmentedControl
-          value={mode}
-          onChange={(v) => setMode(v as GoogleAuthMode)}
-          data={[
+        <div className="inline-flex w-full rounded-md border border-border bg-muted p-1" role="tablist" aria-label="Google auth mode">
+          {[
             { value: 'gemini_key', label: 'Gemini API key' },
             { value: 'vertex_service_account', label: 'Vertex AI (service account)' },
-          ]}
-        />
+          ].map((item) => {
+            const active = mode === item.value;
+            return (
+              <button
+                key={item.value}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                onClick={() => setMode(item.value as GoogleAuthMode)}
+                className={cn(
+                  'flex-1 rounded-sm px-3 py-2 text-sm font-medium transition-colors',
+                  active ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground',
+                )}
+              >
+                {item.label}
+              </button>
+            );
+          })}
+        </div>
       )}
 
       {mode === 'gemini_key' ? (
         <ApiKeyPanel provider="google" providerKeyInfo={providerKeyInfo} onReload={onReload} />
       ) : (
-        <Stack gap="xs">
-          <TextInput
-            label="Location"
-            description="Vertex location (e.g., us-central1)"
-            value={location}
-            onChange={(e) => setLocation(e.currentTarget.value)}
-          />
-          <Textarea
-            label="Service account JSON"
-            description="Paste the full service account JSON. Stored encrypted server-side."
-            minRows={6}
-            value={serviceAccountJson}
-            onChange={(e) => setServiceAccountJson(e.currentTarget.value)}
-            disabled={connected}
-          />
-          <Group justify="flex-end">
+        <div className="space-y-3">
+          <label className="grid gap-1.5">
+            <span className="text-sm font-medium text-foreground">Location</span>
+            <span className="text-xs text-muted-foreground">Vertex location (e.g., us-central1)</span>
+            <Input value={location} onChange={(e) => setLocation(e.currentTarget.value)} />
+          </label>
+          <label className="grid gap-1.5">
+            <span className="text-sm font-medium text-foreground">Service account JSON</span>
+            <span className="text-xs text-muted-foreground">
+              Paste the full service account JSON. Stored encrypted server-side.
+            </span>
+            <textarea
+              className="min-h-32 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              value={serviceAccountJson}
+              onChange={(e) => setServiceAccountJson(e.currentTarget.value)}
+              disabled={connected}
+            />
+          </label>
+          <div className="flex justify-end">
             {connected ? (
               <Button
-                variant="light"
+                variant="outline"
                 onClick={handleDisconnect}
-                loading={disconnecting}
-                disabled={!providerConnectionFlowsEnabled}
+                disabled={disconnecting || !providerConnectionFlowsEnabled}
               >
                 Disconnect
               </Button>
             ) : (
               <Button
                 onClick={handleConnect}
-                loading={connecting}
-                disabled={!providerConnectionFlowsEnabled || !location.trim() || !serviceAccountJson.trim()}
+                disabled={connecting || !providerConnectionFlowsEnabled || !location.trim() || !serviceAccountJson.trim()}
               >
                 Connect
               </Button>
             )}
-          </Group>
+          </div>
           {!providerConnectionFlowsEnabled && (
-            <Text size="xs" c="dimmed">
+            <p className="text-xs text-muted-foreground">
               Vertex connect is disabled by feature flag.
-            </Text>
+            </p>
           )}
-        </Stack>
+        </div>
       )}
-    </Stack>
+      {notice && (
+        <div
+          className={cn(
+            'rounded-md border px-3 py-2 text-xs',
+            notice.tone === 'success' && 'border-emerald-500/40 bg-emerald-500/10 text-emerald-600',
+            notice.tone === 'warning' && 'border-amber-500/40 bg-amber-500/10 text-amber-600',
+            notice.tone === 'error' && 'border-destructive/40 bg-destructive/10 text-destructive',
+          )}
+        >
+          {notice.message}
+        </div>
+      )}
+    </div>
   );
 }

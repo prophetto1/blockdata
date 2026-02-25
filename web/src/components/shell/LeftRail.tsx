@@ -19,6 +19,7 @@ import { PROJECT_FOCUS_STORAGE_KEY } from '@/lib/projectFocus';
 import { styleTokens } from '@/lib/styleTokens';
 import { supabase } from '@/lib/supabase';
 import { TABLES } from '@/lib/tables';
+import './LeftRail.css';
 
 type LeftRailProps = {
   onNavigate?: () => void;

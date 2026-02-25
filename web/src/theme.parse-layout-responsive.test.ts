@@ -12,4 +12,5 @@ describe('parse layout responsive rules', () => {
     expect(themeCss).toMatch(/\.parse-playground-layout:not\(\.schema-layout-test-page\)\s*\{/);
     expect(themeCss).toMatch(/\.parse-playground-layout:not\(\.schema-layout-test-page\)\s+\.parse-playground-explorer\s*\{/);
   });
+
 });
