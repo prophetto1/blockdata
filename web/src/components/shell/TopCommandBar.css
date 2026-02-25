@@ -22,6 +22,39 @@
   padding-inline-start: 0.625rem;
 }
 
+.top-command-bar--shell-guides::before,
+.top-command-bar--shell-guides::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--mantine-color-default-border);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.top-command-bar--shell-guides::before {
+  left: calc(var(--app-shell-navbar-offset, 0px) + var(--shell-guide-left-width));
+}
+
+.top-command-bar--shell-guides[data-hide-left-divider='true']::before {
+  display: none;
+}
+
+.top-command-bar--shell-guides::after {
+  left: calc(
+    var(--app-shell-navbar-offset, 0px)
+    + var(--shell-guide-left-width)
+    + var(--shell-guide-middle-width)
+  );
+}
+
+.top-command-bar--shell-guides > * {
+  position: relative;
+  z-index: 1;
+}
+
 .top-command-bar--shell-guides {
   grid-template-columns:
     var(--shell-guide-left-width)
@@ -82,6 +115,11 @@
     grid-template-columns: auto;
     padding-inline-start: calc(var(--app-shell-navbar-offset, 0px) + 0.75rem);
     padding-inline-end: 1rem;
+  }
+
+  .top-command-bar--shell-guides::before,
+  .top-command-bar--shell-guides::after {
+    display: none;
   }
 
   .top-command-bar--shell-guides .top-command-bar-center,

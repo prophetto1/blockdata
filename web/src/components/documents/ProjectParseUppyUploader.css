@@ -1,0 +1,362 @@
+.parse-playground-upload .uppy-Dashboard {
+  background: transparent;
+  margin-top: 8px;
+}
+
+.parse-upload-header {
+  display: flex;
+  align-items: center;
+  margin-left: calc(var(--mantine-spacing-md) * -1);
+  margin-right: calc(var(--mantine-spacing-lg) * -1);
+  padding-left: calc(var(--mantine-spacing-md) + 6px);
+  padding-right: calc(var(--mantine-spacing-lg) + 6px);
+}
+
+.parse-upload-headless {
+  width: 100%;
+}
+
+.parse-upload-headless [data-uppy-element='dropzone'] > div {
+  border-radius: 12px;
+  border-color: var(--mantine-color-default-border);
+  background: light-dark(rgba(250, 251, 255, 0.9), rgba(6, 9, 14, 0.84));
+}
+
+.parse-upload-headless [data-uppy-element='dropzone'] > div:hover {
+  background: light-dark(rgba(245, 249, 255, 0.96), rgba(8, 14, 25, 0.94));
+}
+
+.parse-upload-headless [data-uppy-element='dropzone'] p {
+  font-size: 16px;
+  font-weight: 650;
+  color: light-dark(var(--mantine-color-gray-8), var(--mantine-color-gray-1));
+}
+
+.parse-upload-headless [data-uppy-element='dropzone'] .uppy\:text-sm {
+  color: light-dark(var(--mantine-color-gray-6), var(--mantine-color-gray-4));
+}
+
+.parse-upload-headless [data-uppy-element='files-list'] {
+  margin: 0;
+}
+
+.parse-upload-headless [data-uppy-element='files-list'] > li {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--mantine-color-default-border);
+}
+
+.parse-upload-headless [data-uppy-element='files-list'] > li:last-child {
+  border-bottom: 0;
+}
+
+.parse-upload-headless [data-uppy-element='upload-button'] {
+  border-radius: 10px;
+}
+
+.schema-layout-test-page .parse-upload-headless [data-uppy-element='dropzone'] > div {
+  border-radius: 12px;
+  border-color: light-dark(rgba(148, 163, 184, 0.45), rgba(71, 85, 105, 0.78));
+  background: light-dark(rgba(241, 245, 249, 0.88), rgba(14, 25, 46, 0.68));
+}
+
+.parse-playground-upload .uppy-Dashboard-inner {
+  width: 100% !important;
+  max-width: none !important;
+  border: 1px solid var(--mantine-color-default-border);
+  border-radius: 14px;
+  background:
+    linear-gradient(
+      180deg,
+      light-dark(rgba(255, 255, 255, 0.92), rgba(14, 18, 28, 0.92)) 0%,
+      light-dark(rgba(248, 250, 253, 0.86), rgba(12, 16, 24, 0.9)) 100%
+    );
+  box-shadow:
+    0 10px 28px light-dark(rgba(15, 23, 42, 0.08), rgba(2, 6, 23, 0.5)),
+    inset 0 1px 0 light-dark(rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.04));
+}
+
+.parse-playground-upload .uppy-Dashboard-AddFiles {
+  border: 1px dashed var(--mantine-color-default-border);
+  border-radius: 12px;
+  margin: 10px;
+  padding: 24px 16px;
+  min-height: 168px;
+  position: relative;
+  cursor: pointer;
+  background:
+    radial-gradient(
+      circle at 15% 10%,
+      light-dark(rgba(59, 130, 246, 0.08), rgba(56, 189, 248, 0.12)) 0%,
+      transparent 48%
+    ),
+    light-dark(rgba(250, 251, 255, 0.9), rgba(6, 9, 14, 0.84));
+  transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+}
+
+.parse-playground-upload .uppy-Dashboard-AddFiles::before {
+  content: '';
+  display: block;
+  width: 54px;
+  height: 54px;
+  margin-bottom: 12px;
+  border-radius: 14px;
+  border: 1px solid light-dark(rgba(148, 163, 184, 0.45), rgba(100, 116, 139, 0.5));
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none'%3E%3Cpath d='M12 16V8M12 8l-3 3M12 8l3 3' stroke='%233B82F6' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M5 16v1a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-1' stroke='%233B82F6' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E")
+      center / 24px 24px no-repeat,
+    linear-gradient(
+      180deg,
+      light-dark(rgba(255, 255, 255, 0.95), rgba(25, 33, 49, 0.92)) 0%,
+      light-dark(rgba(244, 247, 255, 0.9), rgba(17, 23, 35, 0.9)) 100%
+    );
+  box-shadow:
+    0 8px 20px light-dark(rgba(15, 23, 42, 0.08), rgba(2, 6, 23, 0.45)),
+    inset 0 1px 0 light-dark(rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0.06));
+}
+
+.parse-playground-upload .uppy-Dashboard-AddFiles::after {
+  content: 'PDF, DOCX, PPTX, XLSX, CSV, TXT, MD';
+  display: block;
+  margin-top: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: light-dark(var(--mantine-color-gray-6), var(--mantine-color-gray-4));
+  pointer-events: none;
+}
+
+.parse-playground-upload .uppy-Dashboard-AddFiles-title {
+  max-width: 520px;
+  margin-top: 0;
+  margin-bottom: 0;
+  padding: 0 20px;
+  font-size: clamp(22px, 2vw, 28px);
+  font-weight: 710;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  color: light-dark(var(--mantine-color-gray-9), var(--mantine-color-gray-0));
+  font-family: "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  text-align: center;
+}
+
+.parse-playground-upload .uppy-Dashboard-dropFilesHereHint {
+  font-size: 16px;
+  font-weight: 650;
+  color: light-dark(var(--mantine-color-gray-8), var(--mantine-color-gray-1));
+  border-radius: 12px;
+  border: 1px dashed light-dark(rgba(59, 130, 246, 0.55), rgba(56, 189, 248, 0.55));
+  background: light-dark(rgba(255, 255, 255, 0.9), rgba(3, 7, 18, 0.84));
+  background-image: none !important;
+  padding-top: 0;
+  font-family: "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.parse-playground-upload .uppy-Dashboard-note {
+  font-size: 12px;
+  color: var(--mantine-color-dimmed);
+}
+
+.parse-playground-upload .uppy-Dashboard.uppy-Dashboard--isDraggingOver .uppy-Dashboard-AddFiles {
+  opacity: 1;
+  border-color: light-dark(var(--mantine-color-blue-5), var(--mantine-color-blue-4));
+  background:
+    radial-gradient(
+      circle at 12% 8%,
+      light-dark(rgba(59, 130, 246, 0.16), rgba(56, 189, 248, 0.2)) 0%,
+      transparent 50%
+    ),
+    light-dark(rgba(245, 249, 255, 0.96), rgba(8, 14, 25, 0.94));
+  box-shadow: 0 0 0 3px light-dark(rgba(59, 130, 246, 0.2), rgba(56, 189, 248, 0.22));
+}
+
+.schema-layout-test-page .parse-playground-upload .uppy-Dashboard {
+  margin-top: 0;
+  min-height: 312px;
+}
+
+.schema-layout-test-page .parse-playground-upload .uppy-Dashboard-inner {
+  border-radius: 12px;
+  border-color: light-dark(rgba(148, 163, 184, 0.34), rgba(71, 85, 105, 0.58));
+  box-shadow: none;
+  background: light-dark(rgba(248, 250, 252, 0.92), rgba(9, 14, 26, 0.86));
+}
+
+.schema-layout-test-page .parse-playground-upload .uppy-Dashboard-AddFiles {
+  margin: 8px;
+  min-height: 210px;
+  border-radius: 12px;
+  border-color: light-dark(rgba(148, 163, 184, 0.45), rgba(71, 85, 105, 0.78));
+  background: light-dark(rgba(241, 245, 249, 0.88), rgba(14, 25, 46, 0.68));
+}
+
+.schema-layout-test-page .parse-playground-upload .uppy-Dashboard-AddFiles::before {
+  width: 44px;
+  height: 44px;
+  margin-bottom: 10px;
+}
+
+.schema-layout-test-page .parse-playground-upload .uppy-Dashboard-AddFiles-title {
+  padding: 0 16px;
+  font-size: 26px;
+  font-weight: 680;
+  line-height: 1.25;
+}
+
+.schema-layout-test-page .parse-playground-upload .uppy-Dashboard-AddFiles::after {
+  font-size: 12px;
+  letter-spacing: 0.02em;
+}
+
+.parse-playground-upload .uppy-Dashboard-AddFiles-info {
+  display: none;
+}
+
+.parse-playground-upload .uppy-Dashboard-AddFiles-list {
+  display: flex !important;
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none;
+  overflow-x: hidden;
+  overflow-y: auto;
+  position: relative;
+  z-index: 2;
+}
+
+.parse-playground-upload .uppy-Dashboard.uppy-Dashboard--isAddFilesPanelVisible .uppy-Dashboard-AddFiles {
+  margin: 0;
+  min-height: 0;
+  height: calc(100% - 54px);
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.parse-playground-upload .uppy-Dashboard.uppy-Dashboard--isAddFilesPanelVisible .uppy-Dashboard-AddFiles::before,
+.parse-playground-upload .uppy-Dashboard.uppy-Dashboard--isAddFilesPanelVisible .uppy-Dashboard-AddFiles::after {
+  display: none;
+  content: none;
+}
+
+.parse-playground-upload .uppy-Dashboard.uppy-Dashboard--isAddFilesPanelVisible .uppy-Dashboard-AddFiles-title {
+  margin-top: 8px;
+  margin-bottom: 6px;
+  padding: 0 12px;
+  font-size: 18px;
+  line-height: 1.25;
+}
+
+.parse-playground-upload .uppy-Dashboard.uppy-Dashboard--isAddFilesPanelVisible .uppy-Dashboard-AddFiles-list {
+  flex: 1 1 auto;
+  flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
+  width: 100%;
+  padding: 0;
+}
+
+.parse-playground-upload .uppy-Dashboard-browse {
+  font-weight: 650;
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 0;
+  transition: none;
+}
+
+.parse-playground-upload .uppy-Dashboard-browse:hover,
+.parse-playground-upload .uppy-Dashboard-browse:focus-visible {
+  color: inherit;
+  border-bottom: 0;
+}
+
+.parse-playground-upload .uppy-Dashboard-files {
+  padding: 8px 0 12px;
+}
+
+.parse-playground-upload .uppy-Dashboard-Item {
+  min-height: 74px;
+  padding: 12px 12px 12px 10px;
+}
+
+.parse-playground-upload .uppy-Dashboard-Item-preview {
+  width: 64px;
+  height: 64px;
+}
+
+.parse-playground-upload .uppy-Dashboard-Item-fileInfoAndButtons {
+  padding-inline-start: 14px;
+  padding-inline-end: 10px;
+}
+
+.parse-playground-upload .uppy-Dashboard-Item-name {
+  margin-bottom: 6px;
+  font-size: 13px;
+}
+
+.parse-playground-upload .uppy-Dashboard-Item-status {
+  font-size: 12px;
+  line-height: 1.25;
+}
+
+.parse-playground-upload .uppy-size--md .uppy-Dashboard-Item {
+  height: 246px;
+}
+
+.parse-playground-upload .uppy-size--md .uppy-Dashboard-Item-preview {
+  height: 160px;
+}
+
+.parse-playground-upload .uppy-DashboardContent-bar {
+  min-height: 42px;
+  padding: 0 12px;
+}
+
+.parse-playground-upload .uppy-DashboardContent-back,
+.parse-playground-upload .uppy-DashboardContent-addMore {
+  border: 1px solid var(--mantine-color-default-border);
+  border-radius: 8px;
+  background: light-dark(rgba(255, 255, 255, 0.82), rgba(15, 23, 42, 0.5));
+}
+
+.parse-playground-upload .uppy-DashboardContent-back {
+  margin-inline-start: 0;
+  padding: 6px 10px;
+}
+
+.parse-playground-upload .uppy-DashboardContent-addMore {
+  margin-inline-end: 0;
+  width: auto;
+  height: auto;
+  padding: 6px 10px;
+}
+
+.parse-playground-upload .uppy-StatusBar {
+  height: 52px;
+  border-top: 1px solid var(--mantine-color-default-border);
+}
+
+.parse-playground-upload .uppy-StatusBar-content {
+  padding-inline-start: 12px;
+}
+
+.parse-playground-upload .uppy-StatusBar-actions {
+  inset-inline-end: 12px;
+  gap: 6px;
+}
+
+.parse-playground-upload .uppy-StatusBar.is-waiting .uppy-StatusBar-actions {
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.parse-playground-upload .uppy-StatusBar-actionBtn--retry {
+  height: 22px;
+  padding: 3px 9px 3px 22px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.parse-playground-upload .uppy-StatusBar-actionBtn--retry svg {
+  inset-inline-start: 8px;
+  top: 5px;
+}

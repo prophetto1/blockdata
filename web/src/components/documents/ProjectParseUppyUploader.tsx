@@ -11,6 +11,7 @@ import { edgeJson } from '@/lib/edge';
 import '@uppy/core/css/style.min.css';
 import '@uppy/dashboard/css/style.min.css';
 import '@uppy/react/css/style.css';
+import './ProjectParseUppyUploader.css';
 
 type IngestMode = 'ingest' | 'upload_only';
 type UppyUiVariant = 'dashboard' | 'headless';

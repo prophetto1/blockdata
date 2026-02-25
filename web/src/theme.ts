@@ -98,46 +98,23 @@ export const theme = createTheme({
   },
 });
 
+// Mantine-only variables — kept temporarily for Mantine components (Flows.tsx, etc.).
+// Remove once all Mantine consumers are migrated to Ark UI / Tailwind.
+// All --app-*, --flow-*, layout, and semantic color tokens now live in tailwind.css.
 export const cssVariablesResolver: CSSVariablesResolver = () => ({
   variables: {
     '--mantine-heading-font-weight': '700',
-    '--app-font-sans': '"IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-    '--app-font-mono': '"JetBrains Mono", "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace',
-    '--app-font-size-nav-label': '0.75rem',
-    '--app-font-size-nav-caption': '0.8125rem',
-    '--app-font-size-nav': '1rem',
-    '--app-font-size-nav-strong': '1.125rem',
-    '--app-font-size-brand': '1.6875rem',
-    '--app-shell-header-height': '72px',
-    '--app-shell-navbar-width': '296px',
-    '--app-shell-content-max-width': '1460px',
-    '--app-shell-page-gap': 'var(--mantine-spacing-md)',
-    '--app-shell-page-bottom-padding': 'var(--mantine-spacing-xl)',
-    '--app-accent-assistant-glow': 'rgba(255, 77, 109, 0.25)',
-    '--app-window-dot-danger': '#ef4444',
-    '--app-window-dot-warning': '#f59e0b',
-    '--app-window-dot-success': '#22c55e',
-    '--app-window-dot-danger-soft': '#ff5f56',
-    '--app-window-dot-warning-soft': '#ffbd2e',
-    '--app-window-dot-success-soft': '#27c93f',
-    '--app-code-pane-bg': '#14161b',
-    '--app-code-pane-border': 'rgba(255,255,255,0.08)',
-    '--app-code-pane-fg': 'rgba(255,255,255,0.88)',
   },
   light: {
     '--mantine-color-body': '#ffffff',
     '--mantine-color-text': '#09090b',
-
     '--mantine-color-default': '#ffffff',
     '--mantine-color-default-hover': '#f4f4f5',
     '--mantine-color-default-color': '#09090b',
     '--mantine-color-default-border': '#e4e4e7',
-
     '--mantine-color-dimmed': '#52525b',
     '--mantine-color-placeholder': '#71717a',
     '--mantine-color-anchor': '#09090b',
-
-    // Shadcn-like "primary" (black button in light mode).
     '--mantine-primary-color-filled': '#09090b',
     '--mantine-primary-color-filled-hover': '#18181b',
     '--mantine-primary-color-contrast': '#fafafa',
@@ -146,43 +123,17 @@ export const cssVariablesResolver: CSSVariablesResolver = () => ({
     '--mantine-primary-color-light-color': '#09090b',
     '--mantine-primary-color-outline': '#09090b',
     '--mantine-primary-color-outline-hover': '#f4f4f5',
-
-    '--app-grid-background': '#ffffff',
-    '--app-grid-chrome-background': '#ffffff',
-    '--app-grid-foreground': '#09090b',
-    '--app-grid-border': '#e4e4e7',
-    '--app-grid-subtle-text': '#52525b',
-
-    '--app-overlay-staged-bg': 'rgba(250, 176, 5, 0.14)',
-    '--app-overlay-confirmed-bg': 'rgba(46, 189, 89, 0.12)',
-    '--app-card-hover-shadow': '0 8px 24px rgba(0, 0, 0, 0.12)',
-    '--app-marketing-demo-row-alt': 'rgba(9, 9, 11, 0.02)',
-    '--app-marketing-demo-footer-bg': 'rgba(9, 9, 11, 0.03)',
-    '--app-marketing-integration-hub-bg': 'rgba(32, 201, 151, 0.06)',
-    '--flow-accent': '#6b7f99',
-    '--flow-accent-soft-bg': 'rgba(107, 127, 153, 0.14)',
-    '--flow-accent-soft-border': 'rgba(107, 127, 153, 0.34)',
-    '--flow-active-tab-text': '#1f2937',
-    '--flow-shell-glow': 'rgba(107, 127, 153, 0.10)',
-    '--app-left-rail-track-a': '#2b6cb0',
-    '--app-left-rail-automation': '#2b6cb0',
-    '--app-left-rail-link-hover': 'rgba(0, 0, 0, 0.04)',
-    '--app-left-rail-link-active': 'rgba(0, 0, 0, 0.06)',
   },
   dark: {
     '--mantine-color-body': '#09090b',
     '--mantine-color-text': '#fafafa',
-
     '--mantine-color-default': '#09090b',
     '--mantine-color-default-hover': '#18181b',
     '--mantine-color-default-color': '#fafafa',
     '--mantine-color-default-border': '#27272a',
-
     '--mantine-color-dimmed': '#a1a1aa',
     '--mantine-color-placeholder': '#a1a1aa',
     '--mantine-color-anchor': '#fafafa',
-
-    // Shadcn-like "primary" (white button in dark mode).
     '--mantine-primary-color-filled': '#fafafa',
     '--mantine-primary-color-filled-hover': '#e4e4e7',
     '--mantine-primary-color-contrast': '#09090b',
@@ -191,27 +142,5 @@ export const cssVariablesResolver: CSSVariablesResolver = () => ({
     '--mantine-primary-color-light-color': '#fafafa',
     '--mantine-primary-color-outline': '#fafafa',
     '--mantine-primary-color-outline-hover': '#18181b',
-
-    '--app-grid-background': '#09090b',
-    '--app-grid-chrome-background': '#09090b',
-    '--app-grid-foreground': '#fafafa',
-    '--app-grid-border': '#27272a',
-    '--app-grid-subtle-text': '#a1a1aa',
-
-    '--app-overlay-staged-bg': 'rgba(250, 176, 5, 0.14)',
-    '--app-overlay-confirmed-bg': 'rgba(46, 189, 89, 0.12)',
-    '--app-card-hover-shadow': '0 8px 24px rgba(0, 0, 0, 0.12)',
-    '--app-marketing-demo-row-alt': 'rgba(255, 255, 255, 0.01)',
-    '--app-marketing-demo-footer-bg': 'rgba(255, 255, 255, 0.02)',
-    '--app-marketing-integration-hub-bg': 'rgba(32, 201, 151, 0.10)',
-    '--flow-accent': '#9eb0c7',
-    '--flow-accent-soft-bg': 'rgba(158, 176, 199, 0.22)',
-    '--flow-accent-soft-border': 'rgba(158, 176, 199, 0.40)',
-    '--flow-active-tab-text': '#e7eef8',
-    '--flow-shell-glow': 'rgba(122, 140, 162, 0.20)',
-    '--app-left-rail-track-a': '#8cc6ff',
-    '--app-left-rail-automation': '#8cc6ff',
-    '--app-left-rail-link-hover': 'rgba(255, 255, 255, 0.05)',
-    '--app-left-rail-link-active': 'rgba(255, 255, 255, 0.08)',
   },
 });

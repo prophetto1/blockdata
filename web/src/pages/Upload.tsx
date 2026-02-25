@@ -10,6 +10,7 @@ import { supabase } from '@/lib/supabase';
 import { TABLES } from '@/lib/tables';
 import type { DocumentRow } from '@/lib/types';
 import { cn } from '@/lib/utils';
+import './Upload.css';
 
 type PreviewKind = 'none' | 'pdf' | 'image' | 'text' | 'docx' | 'pptx' | 'file';
 type UploadDocumentRow = DocumentRow & {

@@ -10,6 +10,9 @@
   --app-font-size-nav: 1rem;
   --app-font-size-nav-strong: 1.125rem;
   --app-font-size-brand: 1.6875rem;
+  --heading-font-weight: 700;
+
+  /* Semantic color tokens (dark default) */
   --background: #0e0e0e;
   --foreground: #eeeeee;
   --card: #141414;
@@ -37,6 +40,57 @@
   --sidebar-accent-foreground: #eeeeee;
   --sidebar-border: #2a2a2a;
   --sidebar-ring: #eeeeee;
+
+  /* Shell layout */
+  --app-shell-header-height: 72px;
+  --app-shell-navbar-width: 296px;
+  --app-shell-content-max-width: 1460px;
+  --app-shell-page-gap: 1rem;
+  --app-shell-page-bottom-padding: 1.5rem;
+
+  /* Decorative / accent */
+  --app-accent-assistant-glow: rgba(255, 77, 109, 0.25);
+  --app-window-dot-danger: #ef4444;
+  --app-window-dot-warning: #f59e0b;
+  --app-window-dot-success: #22c55e;
+  --app-window-dot-danger-soft: #ff5f56;
+  --app-window-dot-warning-soft: #ffbd2e;
+  --app-window-dot-success-soft: #27c93f;
+
+  /* Code pane */
+  --app-code-pane-bg: #14161b;
+  --app-code-pane-border: rgba(255, 255, 255, 0.08);
+  --app-code-pane-fg: rgba(255, 255, 255, 0.88);
+
+  /* Grid (dark) */
+  --app-grid-background: #09090b;
+  --app-grid-chrome-background: #09090b;
+  --app-grid-foreground: #fafafa;
+  --app-grid-border: #27272a;
+  --app-grid-subtle-text: #a1a1aa;
+
+  /* Overlays (dark) */
+  --app-overlay-staged-bg: rgba(250, 176, 5, 0.14);
+  --app-overlay-confirmed-bg: rgba(46, 189, 89, 0.12);
+  --app-card-hover-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+
+  /* Marketing (dark) */
+  --app-marketing-demo-row-alt: rgba(255, 255, 255, 0.01);
+  --app-marketing-demo-footer-bg: rgba(255, 255, 255, 0.02);
+  --app-marketing-integration-hub-bg: rgba(32, 201, 151, 0.10);
+
+  /* Flow (dark) */
+  --flow-accent: #9eb0c7;
+  --flow-accent-soft-bg: rgba(158, 176, 199, 0.22);
+  --flow-accent-soft-border: rgba(158, 176, 199, 0.40);
+  --flow-active-tab-text: #e7eef8;
+  --flow-shell-glow: rgba(122, 140, 162, 0.20);
+
+  /* Left rail (dark) */
+  --app-left-rail-track-a: #8cc6ff;
+  --app-left-rail-automation: #8cc6ff;
+  --app-left-rail-link-hover: rgba(255, 255, 255, 0.05);
+  --app-left-rail-link-active: rgba(255, 255, 255, 0.08);
 }
 
 :root[data-theme='light'] {
@@ -67,6 +121,36 @@
   --sidebar-accent-foreground: #1c1917;
   --sidebar-border: #e7e5e4;
   --sidebar-ring: #1c1917;
+
+  /* Grid (light) */
+  --app-grid-background: #ffffff;
+  --app-grid-chrome-background: #ffffff;
+  --app-grid-foreground: #09090b;
+  --app-grid-border: #e4e4e7;
+  --app-grid-subtle-text: #52525b;
+
+  /* Overlays (light) */
+  --app-overlay-staged-bg: rgba(250, 176, 5, 0.14);
+  --app-overlay-confirmed-bg: rgba(46, 189, 89, 0.12);
+  --app-card-hover-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+
+  /* Marketing (light) */
+  --app-marketing-demo-row-alt: rgba(9, 9, 11, 0.02);
+  --app-marketing-demo-footer-bg: rgba(9, 9, 11, 0.03);
+  --app-marketing-integration-hub-bg: rgba(32, 201, 151, 0.06);
+
+  /* Flow (light) */
+  --flow-accent: #6b7f99;
+  --flow-accent-soft-bg: rgba(107, 127, 153, 0.14);
+  --flow-accent-soft-border: rgba(107, 127, 153, 0.34);
+  --flow-active-tab-text: #1f2937;
+  --flow-shell-glow: rgba(107, 127, 153, 0.10);
+
+  /* Left rail (light) */
+  --app-left-rail-track-a: #2b6cb0;
+  --app-left-rail-automation: #2b6cb0;
+  --app-left-rail-link-hover: rgba(0, 0, 0, 0.04);
+  --app-left-rail-link-active: rgba(0, 0, 0, 0.06);
 }
 
 @theme inline {
