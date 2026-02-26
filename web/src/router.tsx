@@ -4,7 +4,7 @@ import { PublicLayout } from '@/components/layout/PublicLayout';
 import { PublicFullBleedLayout } from '@/components/layout/PublicFullBleedLayout';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { AuthGuard } from '@/auth/AuthGuard';
-import { LegacyDocumentRedirect, LegacyRunRedirect } from '@/components/common/LegacyRedirect';
+import { LegacyRunRedirect } from '@/components/common/LegacyRedirect';
 
 import Landing from '@/pages/Landing';
 import HowItWorks from '@/pages/HowItWorks';
@@ -19,7 +19,6 @@ import ProjectDetail from '@/pages/ProjectDetail';
 import Upload from '@/pages/Upload';
 import UiCatalog from '@/pages/UiCatalog';
 import UppyLibraryDemo from '@/pages/UppyLibraryDemo';
-import DocumentDetail from '@/pages/DocumentDetail';
 import Extract from '@/pages/Extract';
 import Transform from '@/pages/Transform';
 import Schemas from '@/pages/Schemas';
@@ -95,7 +94,6 @@ export const router = createBrowserRouter([
           { path: '/app/ui', element: <UiCatalog /> },
           { path: '/app/ui/:section', element: <UiCatalog /> },
           { path: '/app/projects/:projectId/upload-uppy-demo', element: <UppyLibraryDemo /> },
-          { path: '/app/projects/:projectId/documents/:sourceUid', element: <DocumentDetail /> },
           { path: '/app/projects/:projectId/runs/:runId', element: <RunDetail /> },
           { path: '/app/extract', element: <Navigate to="/app/projects" replace /> },
           { path: '/app/extract/:projectId', element: <Extract /> },
@@ -152,7 +150,6 @@ export const router = createBrowserRouter([
           },
 
           // Legacy flat routes → redirect to project-scoped equivalents
-          { path: '/app/documents/:sourceUid', element: <LegacyDocumentRedirect /> },
           { path: '/app/runs/:runId', element: <LegacyRunRedirect /> },
           { path: '/app/upload', element: <Navigate to="/app/projects" replace /> },
         ],

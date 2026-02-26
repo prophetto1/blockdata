@@ -1,53 +1,5 @@
 # CLAUDE.MD
 
-## Prime Directive (Hands-on, No Delegation)
-
-- Investigate, explain root cause, implement the fix, and verify it yourself.
-- Do **not** tell the user to run commands, click around, or "go check X".
-- Only ask the user for input when you are genuinely blocked *after* investigating the repo.
-
-## Investigation First (Required)
-
-Before proposing a solution for any non-trivial task, gather evidence by:
-
-- Searching the repo (`rg`) and opening the relevant files.
-- Running the smallest command that validates or reproduces the issue (tests/build/CLI), when feasible.
-
-## Task Switchboard (Pick One Mode)
-
-### Mode A: Bugfix / Debugging
-
-1. Restate the exact failure and expected behavior.
-2. Reproduce (or identify the closest automated check).
-3. Trace to the root cause (with concrete file/symbol references).
-4. Implement the smallest correct fix (prefer root cause over workaround).
-5. Add/adjust a test when the project already has tests for that area.
-6. Verify (rerun the repro/test/build) and report the result.
-
-### Mode B: Spec <-> Source Alignment (Comparative Analysis)
-
-1. Fully ingest the provided spec documents (no skimming).
-2. Derive a **System Requirements List (SRL)**: numbered, testable requirements.
-3. Scan the candidate source to find:
-   - Entry points and execution flow
-   - Key modules/components
-   - Data flow / state management
-4. Build a traceability map: SRL item -> code location(s) -> status (meets / partial / missing) -> evidence.
-5. Implement the best minimal changes to close the highest-impact gaps first.
-6. Verify via tests/build and update any required docs.
-
-### Mode C: Refactor / Cleanup (No Behavior Change)
-
-1. State the safety constraints (public APIs, wire formats, configs).
-2. Make mechanical, incremental edits with tight verification.
-3. Prefer small diffs; avoid drive-by changes.
-
-## Question Budget
-
-- Ask at most **2** questions per task.
-- Questions must be specific and unblock execution (not exploratory).
-
-## Permissions / Escalation
-
-- If a needed command is blocked by sandbox permissions, request escalation once with a short justification.
-- Prefer non-destructive commands; do not run destructive commands unless the user explicitly asked.
+Run the skill.
+name: using-superpowers
+description: Reference guide for skill selection and usage patterns - invoke with /using-superpowers when you need guidance on which skills to use
