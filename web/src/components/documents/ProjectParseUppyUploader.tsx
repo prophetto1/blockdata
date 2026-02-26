@@ -1,379 +1,236 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Box, Center, Loader, Stack, Text, useComputedColorScheme } from '@mantine/core';
-import Uppy, { type UploadResult } from '@uppy/core';
-import { Dropzone, FilesList, UppyContextProvider, UploadButton } from '@uppy/react';
+import { useRef, useEffect, useState } from 'react';
+import { FileUpload as ArkFileUpload } from '@ark-ui/react/file-upload';
 import Dashboard from '@uppy/react/dashboard';
-import UppyRemoteSources from '@uppy/remote-sources';
-import XHRUpload from '@uppy/xhr-upload';
-import { useAuth } from '@/auth/AuthContext';
-import { edgeJson } from '@/lib/edge';
+import { FileIcon, UploadIcon, XIcon, AlertCircleIcon, CheckIcon, Loader2Icon, CloudIcon } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { useUppyTransport, type UploadBatchResult, type FileState } from './useUppyTransport';
 
 import '@uppy/core/css/style.min.css';
 import '@uppy/dashboard/css/style.min.css';
-import '@uppy/react/css/style.css';
-import './ProjectParseUppyUploader.css';
 
-type IngestMode = 'ingest' | 'upload_only';
-type UppyUiVariant = 'dashboard' | 'headless';
-type UppyMeta = { project_id: string; ingest_mode: IngestMode };
-type UppyBody = Record<string, never>;
-type UppyInstance = Uppy<UppyMeta, UppyBody>;
-const REMOTE_SOURCE_PLUGINS = ['GoogleDrive'] as const;
-const BLOCKED_COMPANION_HOSTS = new Set(['companion.uppy.io']);
-
-type IngestResponse = {
-  source_uid?: string;
-  status?: string;
-  error?: string;
-};
-
-type UploadPolicyResponse = {
-  upload: {
-    max_files_per_batch?: number;
-    allowed_extensions?: string[];
-  };
-};
-
-export type UploadBatchResult = {
-  uploadedSourceUids: string[];
-};
+export type { UploadBatchResult };
 
 type ProjectParseUppyUploaderProps = {
   projectId: string;
-  ingestMode?: IngestMode;
+  ingestMode?: 'ingest' | 'upload_only';
   onBatchUploaded?: (result: UploadBatchResult) => void | Promise<void>;
-  height?: number;
-  compactUi?: boolean;
-  uiVariant?: UppyUiVariant;
   enableRemoteSources?: boolean;
   companionUrl?: string;
   hideHeader?: boolean;
 };
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string | undefined;
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
-
-const DEFAULT_MAX_FILES = 10;
-const DEFAULT_ALLOWED_EXTENSIONS = ['.md', '.docx', '.pdf', '.pptx', '.xlsx', '.html', '.csv', '.txt'];
-
-type CompanionUrlResolution = {
-  url: string | null;
-  warning: string | null;
-};
-
-function getIngestEndpoint(): string | null {
-  if (!SUPABASE_URL) return null;
-  return `${SUPABASE_URL.replace(/\/+$/, '')}/functions/v1/ingest`;
-}
-
-function resolveCompanionUrl(value: string | undefined): CompanionUrlResolution {
-  const normalized = value?.trim();
-  if (!normalized || normalized.length === 0) {
-    return { url: null, warning: null };
-  }
-
-  try {
-    const parsed = new URL(normalized);
-    if (BLOCKED_COMPANION_HOSTS.has(parsed.hostname.toLowerCase())) {
-      return {
-        url: null,
-        warning: 'Cloud import disabled: companion.uppy.io is not the project Companion service.',
-      };
-    }
-
-    return { url: normalized, warning: null };
-  } catch {
-    return {
-      url: null,
-      warning: 'Cloud import unavailable: VITE_UPPY_COMPANION_URL must be a valid URL.',
-    };
+function FileStatusIcon({ status }: { status: FileState['status'] }) {
+  switch (status) {
+    case 'uploading':
+      return <Loader2Icon className="h-3.5 w-3.5 animate-spin text-primary" />;
+    case 'done':
+      return <CheckIcon className="h-3.5 w-3.5 text-green-500" />;
+    case 'error':
+      return <AlertCircleIcon className="h-3.5 w-3.5 text-destructive" />;
+    default:
+      return null;
   }
 }
 
-function normalizeAllowedExtensions(value: string[] | undefined): string[] {
-  if (!Array.isArray(value) || value.length === 0) return DEFAULT_ALLOWED_EXTENSIONS;
-  const normalized = value
-    .map((ext) => ext.trim().toLowerCase())
-    .filter((ext) => ext.length > 0)
-    .map((ext) => (ext.startsWith('.') ? ext : `.${ext}`));
-  return normalized.length > 0 ? normalized : DEFAULT_ALLOWED_EXTENSIONS;
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 export function ProjectParseUppyUploader({
   projectId,
   ingestMode = 'upload_only',
   onBatchUploaded,
-  height = 320,
-  compactUi = false,
-  uiVariant = 'dashboard',
   enableRemoteSources = false,
   companionUrl,
   hideHeader = false,
 }: ProjectParseUppyUploaderProps) {
-  const computedColorScheme = useComputedColorScheme('dark');
-  const { session } = useAuth();
-  const dashboardHostRef = useRef<HTMLDivElement | null>(null);
-  const [summary, setSummary] = useState<string | null>(null);
-  const [maxFiles, setMaxFiles] = useState<number>(DEFAULT_MAX_FILES);
-  const [allowedExtensions, setAllowedExtensions] = useState<string[]>(DEFAULT_ALLOWED_EXTENSIONS);
+  const {
+    uppy,
+    fileStates,
+    status,
+    error,
+    remoteWarning,
+    remoteSourcesActive,
+    allowedExtensions,
+    addFiles,
+    removeFile,
+    startUpload,
+  } = useUppyTransport({ projectId, ingestMode, onBatchUploaded, enableRemoteSources, companionUrl });
 
-  const ingestEndpoint = useMemo(() => getIngestEndpoint(), []);
-  const companionResolution = useMemo(() => resolveCompanionUrl(companionUrl), [companionUrl]);
-  const resolvedCompanionUrl = companionResolution.url;
-  const remoteSourcesEnabled = enableRemoteSources && Boolean(resolvedCompanionUrl);
-  const remoteSourcesConfigWarning = enableRemoteSources
-    ? companionResolution.warning
-      ?? (!resolvedCompanionUrl
-        ? 'Cloud import unavailable: set VITE_UPPY_COMPANION_URL to your Companion service URL.'
-        : null)
-    : null;
-  const resolvedUiVariant: UppyUiVariant = remoteSourcesEnabled ? 'dashboard' : uiVariant;
-  const dropzoneNote = ingestMode === 'upload_only'
-    ? 'Drop files here or browse files. Parsing runs later when you click Parse.'
-    : 'Drop files here or browse files';
+  const [showRemotePicker, setShowRemotePicker] = useState(false);
+  const dashboardHostRef = useRef<HTMLDivElement>(null);
 
+  // Close the remote picker when Dashboard completes or user navigates away
   useEffect(() => {
-    let cancelled = false;
+    if (!uppy || !showRemotePicker) return;
+    const handleComplete = () => setShowRemotePicker(false);
+    uppy.on('complete', handleComplete);
+    return () => { uppy.off('complete', handleComplete); };
+  }, [uppy, showRemotePicker]);
 
-    edgeJson<UploadPolicyResponse>('upload-policy', { method: 'GET' })
-      .then((data) => {
-        if (cancelled) return;
-        const nextMaxFiles = typeof data.upload.max_files_per_batch === 'number' && data.upload.max_files_per_batch > 0
-          ? data.upload.max_files_per_batch
-          : DEFAULT_MAX_FILES;
-        const nextAllowed = normalizeAllowedExtensions(data.upload.allowed_extensions);
-        setMaxFiles(nextMaxFiles);
-        setAllowedExtensions(nextAllowed);
-      })
-      .catch(() => {
-        // Keep defaults when policy endpoint is unavailable.
-      });
+  const files = Array.from(fileStates.values());
+  const pendingCount = files.filter((f) => f.status === 'pending').length;
+  const uploadingCount = files.filter((f) => f.status === 'uploading').length;
+  const doneCount = files.filter((f) => f.status === 'done').length;
+  const errorCount = files.filter((f) => f.status === 'error').length;
+  const hasFiles = files.length > 0;
 
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const summaryText = status === 'uploading'
+    ? `Uploading ${uploadingCount + doneCount} of ${files.length}`
+    : status === 'complete'
+      ? `${doneCount} uploaded${errorCount > 0 ? `, ${errorCount} failed` : ''}`
+      : hasFiles
+        ? `${files.length} file${files.length === 1 ? '' : 's'} ready`
+        : null;
 
-  const [uppy, setUppy] = useState<UppyInstance | null>(null);
-  const [setupError, setSetupError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!projectId) {
-      setUppy(null);
-      setSetupError('Missing project context.');
-      return;
-    }
-    if (!session?.access_token) {
-      setUppy(null);
-      setSetupError('No active auth session found.');
-      return;
-    }
-    if (!ingestEndpoint || !SUPABASE_ANON_KEY) {
-      setUppy(null);
-      setSetupError('Missing Supabase uploader configuration.');
-      return;
-    }
-
-    let instance: UppyInstance | null = null;
-
-    try {
-      instance = new Uppy<UppyMeta, UppyBody>({
-        autoProceed: compactUi,
-        restrictions: {
-          maxNumberOfFiles: maxFiles,
-          allowedFileTypes: allowedExtensions,
-        },
-        meta: {
-          project_id: projectId,
-          ingest_mode: ingestMode,
-        },
-      });
-
-      instance.use(XHRUpload, {
-        endpoint: ingestEndpoint,
-        method: 'post',
-        fieldName: 'file',
-        formData: true,
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-          apikey: SUPABASE_ANON_KEY,
-        },
-        allowedMetaFields: ['project_id', 'ingest_mode'],
-      });
-
-      if (remoteSourcesEnabled && resolvedCompanionUrl) {
-        instance.use(UppyRemoteSources, {
-          companionUrl: resolvedCompanionUrl,
-          sources: [...REMOTE_SOURCE_PLUGINS],
-          companionHeaders: {
-            Authorization: `Bearer ${session.access_token}`,
-          },
-          companionCookiesRule: 'include',
-        });
-      }
-
-      instance.on('upload', () => {
-        setSummary(null);
-      });
-
-      instance.on('complete', (result: UploadResult<UppyMeta, UppyBody>) => {
-        const successful = result.successful ?? [];
-        const failed = result.failed ?? [];
-        const uploadedSourceUids = Array.from(new Set(
-          successful
-            .map((file) => {
-              const body = (file.response?.body ?? null) as IngestResponse | null;
-              return body?.source_uid?.trim() ?? '';
-            })
-            .filter((sourceUid) => sourceUid.length > 0),
-        ));
-
-        const statusSummary = successful
-          .map((file) => {
-            const body = (file.response?.body ?? null) as IngestResponse | null;
-            if (!body?.status) return null;
-            const suffix = body.source_uid ? ` (${body.source_uid.slice(0, 8)}...)` : '';
-            return `${file.name}: ${body.status}${suffix}`;
-          })
-          .filter(Boolean)
-          .join(' | ');
-
-        const nextSummary = `Uploaded ${successful.length}, failed ${failed.length}${statusSummary ? ` - ${statusSummary}` : ''}`;
-        setSummary(nextSummary);
-
-        if (successful.length > 0 && onBatchUploaded) {
-          void onBatchUploaded({ uploadedSourceUids });
-        }
-      });
-
-      instance.on('upload-error', (_file, error) => {
-        setSummary(error.message);
-      });
-
-      setUppy(instance);
-      setSetupError(null);
-    } catch (error) {
-      if (instance) instance.destroy();
-      setUppy(null);
-      setSetupError(error instanceof Error ? error.message : String(error));
-      return;
-    }
-
-    return () => {
-      instance?.destroy();
-    };
-  }, [allowedExtensions, compactUi, ingestEndpoint, ingestMode, maxFiles, onBatchUploaded, projectId, remoteSourcesEnabled, resolvedCompanionUrl, session?.access_token]);
-
-  useEffect(() => {
-    if (resolvedUiVariant !== 'dashboard') return;
-
-    const root = dashboardHostRef.current;
-    if (!root) return;
-
-    const addFilesArea = root.querySelector<HTMLElement>('.uppy-Dashboard-AddFiles');
-    if (!addFilesArea) return;
-
-    const openFilePicker = () => {
-      const browseButton = addFilesArea.querySelector<HTMLButtonElement>('.uppy-Dashboard-browse');
-      if (browseButton) {
-        browseButton.click();
-        return;
-      }
-
-      const localFileInput = Array.from(
-        root.querySelectorAll<HTMLInputElement>('.uppy-Dashboard-input[type="file"]'),
-      ).find((input) => !input.hasAttribute('webkitdirectory'));
-
-      localFileInput?.click();
-    };
-
-    const handleClick = (event: MouseEvent) => {
-      const target = event.target as HTMLElement | null;
-      if (!target) return;
-      if (target.closest('button, a, input, textarea, select, label')) return;
-      openFilePicker();
-    };
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== 'Enter' && event.key !== ' ') return;
-      event.preventDefault();
-      openFilePicker();
-    };
-
-    addFilesArea.setAttribute('role', 'button');
-    addFilesArea.setAttribute('tabindex', '0');
-    addFilesArea.setAttribute('aria-label', 'Choose files to upload');
-    addFilesArea.addEventListener('click', handleClick);
-    addFilesArea.addEventListener('keydown', handleKeyDown);
-
-    return () => {
-      addFilesArea.removeEventListener('click', handleClick);
-      addFilesArea.removeEventListener('keydown', handleKeyDown);
-      addFilesArea.removeAttribute('role');
-      addFilesArea.removeAttribute('tabindex');
-      addFilesArea.removeAttribute('aria-label');
-    };
-  }, [compactUi, resolvedUiVariant, uppy]);
-
-  if (setupError) {
-    return <Alert color="red">{setupError}</Alert>;
-  }
-
-  if (!uppy) {
+  if (error) {
     return (
-      <Center py="xl">
-        <Loader size="sm" />
-      </Center>
+      <div className="rounded-lg border border-destructive bg-destructive/10 p-3 text-sm text-destructive">
+        {error}
+      </div>
     );
   }
 
+  const acceptMap: Record<string, string[]> = {};
+  for (const ext of allowedExtensions) {
+    acceptMap[`application/${ext.replace('.', '')}`] = [ext];
+  }
+
   return (
-    <Stack gap={0}>
+    <div className="flex flex-col gap-0">
       {!hideHeader && (
-        <Box className="parse-upload-header">
-          <Text fw={700} size="sm">Add Documents</Text>
-        </Box>
+        <div className="flex h-(--shell-pane-header-height,50px) items-center px-2.5 text-sm font-bold text-foreground">
+          Add Documents
+        </div>
       )}
-      {resolvedUiVariant === 'headless' ? (
-        <UppyContextProvider uppy={uppy as unknown as Uppy}>
-          <Stack gap={compactUi ? 0 : 'xs'} className={`parse-upload-headless${compactUi ? ' is-compact' : ''}`}>
-            <Dropzone
-              width="100%"
-              height={`${Math.max(120, height)}px`}
-              note={compactUi ? undefined : dropzoneNote}
-            />
-            {!compactUi && (
-              <>
-                <FilesList />
-                <UploadButton />
-              </>
-            )}
-          </Stack>
-        </UppyContextProvider>
-      ) : (
-        <div ref={dashboardHostRef}>
+
+      <ArkFileUpload.Root
+        maxFiles={20}
+        accept={acceptMap}
+        onFileChange={(details) => {
+          addFiles(details.acceptedFiles);
+        }}
+        className="flex flex-col gap-0"
+      >
+        <ArkFileUpload.Dropzone
+          className={cn(
+            'flex min-h-32 flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border p-4 text-center',
+            'cursor-pointer transition-colors duration-150',
+            'hover:bg-muted/50',
+            'data-dragging:border-primary data-dragging:border-solid data-dragging:bg-primary/5',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+          )}
+        >
+          <UploadIcon className="h-8 w-8 text-muted-foreground" />
+          <span className="text-sm font-medium text-foreground">
+            Drag files here or click to browse
+          </span>
+          <span className="text-xs text-muted-foreground">
+            {allowedExtensions.map((e) => e.replace('.', '').toUpperCase()).join(', ')}
+          </span>
+        </ArkFileUpload.Dropzone>
+        <ArkFileUpload.HiddenInput />
+      </ArkFileUpload.Root>
+
+      {/* Cloud import button — opens Uppy Dashboard for remote source picker */}
+      {remoteSourcesActive && (
+        <button
+          type="button"
+          onClick={() => setShowRemotePicker((v) => !v)}
+          className={cn(
+            'mt-1.5 flex items-center justify-center gap-2 rounded-md border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground',
+            'cursor-pointer transition-colors hover:bg-muted/50 hover:text-foreground',
+            showRemotePicker && 'bg-muted/50 text-foreground',
+          )}
+        >
+          <CloudIcon className="h-3.5 w-3.5" />
+          Import from cloud
+        </button>
+      )}
+
+      {/* Hidden Uppy Dashboard — only rendered when remote picker is open */}
+      {remoteSourcesActive && showRemotePicker && uppy && (
+        <div ref={dashboardHostRef} className="mt-1.5 rounded-lg border border-border overflow-hidden">
           <Dashboard
             uppy={uppy}
-            height={height}
+            height={320}
             width="100%"
-            showSelectedFiles={remoteSourcesEnabled}
-            plugins={remoteSourcesEnabled ? [...REMOTE_SOURCE_PLUGINS] : []}
-            disableStatusBar={compactUi}
+            showSelectedFiles
+            plugins={['GoogleDrive']}
             proudlyDisplayPoweredByUppy={false}
-            note={compactUi ? undefined : dropzoneNote}
             hideProgressDetails={false}
-            theme={computedColorScheme === 'dark' ? 'dark' : 'light'}
+            theme="dark"
           />
         </div>
       )}
-      {remoteSourcesConfigWarning && (
-        <Alert color="yellow" mt="xs">{remoteSourcesConfigWarning}</Alert>
+
+      {/* Summary bar + upload action */}
+      {hasFiles && (
+        <div className="flex items-center justify-between px-1 py-1.5">
+          <span className="text-xs text-muted-foreground">{summaryText}</span>
+          {pendingCount > 0 && status !== 'uploading' && (
+            <button
+              type="button"
+              onClick={startUpload}
+              className="rounded-md bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+            >
+              Upload
+            </button>
+          )}
+        </div>
       )}
-      {summary && (
-        <Text size="xs" c="dimmed" lineClamp={1} mt="xs">
-          {summary}
-        </Text>
+
+      {/* Scrollable compact file list */}
+      {hasFiles && (
+        <div className="max-h-48 overflow-y-auto">
+          <ul className="flex flex-col">
+            {files.map((file) => (
+              <li
+                key={file.id}
+                className={cn(
+                  'grid grid-cols-[1fr_auto_auto_auto] items-center gap-2 border-b border-border px-1 py-1.5',
+                  file.status === 'error' && 'bg-destructive/5',
+                )}
+              >
+                <div className="flex items-center gap-2 min-w-0">
+                  <FileIcon className="h-3.5 w-3.5 flex-none text-muted-foreground" />
+                  <span className="truncate text-xs text-foreground">{file.name}</span>
+                </div>
+                <span className="text-xs text-muted-foreground whitespace-nowrap">{formatBytes(file.size)}</span>
+                <FileStatusIcon status={file.status} />
+                {file.status !== 'uploading' && (
+                  <button
+                    type="button"
+                    onClick={() => removeFile(file.id)}
+                    className="flex h-5 w-5 items-center justify-center rounded text-muted-foreground hover:text-foreground cursor-pointer border-none bg-transparent"
+                    aria-label={`Remove ${file.name}`}
+                  >
+                    <XIcon className="h-3 w-3" />
+                  </button>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
-    </Stack>
+
+      {/* Aggregate progress bar */}
+      {status === 'uploading' && (
+        <div className="h-1 w-full overflow-hidden rounded-full bg-muted">
+          <div
+            className="h-full bg-primary transition-all duration-300"
+            style={{ width: `${files.length > 0 ? Math.round(files.reduce((sum, f) => sum + f.progress, 0) / files.length) : 0}%` }}
+          />
+        </div>
+      )}
+
+      {remoteWarning && (
+        <div className="rounded-md border border-yellow-500/30 bg-yellow-500/10 p-2 text-xs text-yellow-600 dark:text-yellow-400">
+          {remoteWarning}
+        </div>
+      )}
+    </div>
   );
 }

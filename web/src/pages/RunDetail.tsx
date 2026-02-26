@@ -1,7 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Card, Group, Text, Badge, Button, SimpleGrid, Loader, Center, Modal, Stack } from '@mantine/core';
-import { useDisclosure } from '@mantine/hooks';
+import { Card, Group, Text, Badge, Button, SimpleGrid, Loader, Center } from '@mantine/core';
+import {
+  DialogRoot,
+  DialogContent,
+  DialogTitle,
+  DialogCloseTrigger,
+  DialogBody,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { notifications } from '@mantine/notifications';
 import { IconTrash, IconPlayerStop } from '@tabler/icons-react';
 import { supabase } from '@/lib/supabase';
@@ -26,7 +33,9 @@ export default function RunDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [projectName, setProjectName] = useState<string>('');
-  const [deleteOpened, { open: openDelete, close: closeDelete }] = useDisclosure(false);
+  const [deleteOpened, setDeleteOpened] = useState(false);
+  const openDelete = () => setDeleteOpened(true);
+  const closeDelete = () => setDeleteOpened(false);
   const [deleting, setDeleting] = useState(false);
   const [cancelling, setCancelling] = useState(false);
 
@@ -161,17 +170,21 @@ export default function RunDetail() {
         </>
       )}
 
-      <Modal opened={deleteOpened} onClose={closeDelete} title="Delete run" centered>
-        <Stack gap="md">
-          <Text size="sm">
-            This will permanently delete this run and all its block overlays. This cannot be undone.
-          </Text>
-          <Group justify="flex-end">
+      <DialogRoot open={deleteOpened} onOpenChange={(e) => { if (!e.open) closeDelete(); }}>
+        <DialogContent>
+          <DialogCloseTrigger />
+          <DialogTitle>Delete run</DialogTitle>
+          <DialogBody>
+            <Text size="sm">
+              This will permanently delete this run and all its block overlays. This cannot be undone.
+            </Text>
+          </DialogBody>
+          <DialogFooter>
             <Button variant="default" onClick={closeDelete}>Cancel</Button>
             <Button color="red" onClick={handleDelete} loading={deleting}>Delete</Button>
-          </Group>
-        </Stack>
-      </Modal>
+          </DialogFooter>
+        </DialogContent>
+      </DialogRoot>
     </>
   );
 }

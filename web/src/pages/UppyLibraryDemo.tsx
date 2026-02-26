@@ -1,5 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Badge, Button, Code, Group, Paper, SegmentedControl, Stack, Switch, Text, TextInput } from '@mantine/core';
+import { Badge, Button, Code, Group, Paper, Stack, Switch, Text, TextInput } from '@mantine/core';
+import {
+  SegmentGroupRoot,
+  SegmentGroupIndicator,
+  SegmentGroupItem,
+  SegmentGroupItemText,
+  SegmentGroupItemHiddenInput,
+} from '@/components/ui/segment-group';
 import { useNavigate, useParams } from 'react-router-dom';
 import Uppy, { type UploadResult } from '@uppy/core';
 import Dashboard from '@uppy/react/dashboard';
@@ -290,14 +297,18 @@ export default function UppyLibraryDemo() {
 
       <Paper withBorder p="md" radius="md" mb="md">
         <Stack gap="sm">
-          <SegmentedControl
+          <SegmentGroupRoot
             value={uploadMode}
-            onChange={(value) => setUploadMode(value as UploadMode)}
-            data={[
-              { label: 'XHR -> ingest edge', value: 'xhr_ingest' },
-              { label: 'Tus resumable', value: 'tus' },
-            ]}
-          />
+            onValueChange={(e) => setUploadMode(e.value as UploadMode)}
+          >
+            <SegmentGroupIndicator />
+            {[{ label: 'XHR -> ingest edge', value: 'xhr_ingest' }, { label: 'Tus resumable', value: 'tus' }].map((opt) => (
+              <SegmentGroupItem key={opt.value} value={opt.value}>
+                <SegmentGroupItemText>{opt.label}</SegmentGroupItemText>
+                <SegmentGroupItemHiddenInput />
+              </SegmentGroupItem>
+            ))}
+          </SegmentGroupRoot>
 
           {uploadMode === 'tus' && (
             <TextInput

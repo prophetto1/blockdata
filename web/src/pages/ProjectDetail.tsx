@@ -20,11 +20,8 @@ import {
   Checkbox,
   Group,
   Loader,
-  Menu,
-  Modal,
   Pagination,
   Radio,
-  SegmentedControl,
   Select,
   Stack,
   Switch,
@@ -52,6 +49,23 @@ import {
   IconTable,
   IconTrash,
 } from '@tabler/icons-react';
+import {
+  MenuContent,
+  MenuItem,
+  MenuPortal,
+  MenuPositioner,
+  MenuRoot,
+  MenuTrigger,
+} from '@/components/ui/menu';
+import { SegmentedControl } from '@/components/ui/segmented-control';
+import {
+  DialogRoot,
+  DialogContent,
+  DialogTitle,
+  DialogCloseTrigger,
+  DialogBody,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { DocxPreview } from '@/components/documents/DocxPreview';
 import { PdfPreview } from '@/components/documents/PdfPreview';
 import { PdfResultsHighlighter, type ParsedResultBlock } from '@/components/documents/PdfResultsHighlighter';
@@ -1542,8 +1556,8 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
   const activePreviewOptions = isTestSurface ? testRightTabOptions : parsePreviewOptions;
   const activePreviewLabel = activePreviewOptions.find((option) => option.value === activePreviewView)?.label ?? activePreviewView;
   const middleTabsControl = (
-    <Menu shadow="md" width={180} position="bottom-start" withinPortal>
-      <Menu.Target>
+    <MenuRoot positioning={{ placement: 'bottom-start' }}>
+      <MenuTrigger asChild>
         <Button
           size="xs"
           variant="default"
@@ -1552,28 +1566,33 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
         >
           {activePreviewLabel}
         </Button>
-      </Menu.Target>
-      <Menu.Dropdown className="parse-view-menu-dropdown">
-        {activePreviewOptions.map((option) => {
-          const isActive = option.value === activePreviewView;
-          return (
-            <Menu.Item
-              key={option.value}
-              leftSection={isActive ? <IconCheck size={14} /> : <span style={{ width: 14 }} />}
-              onClick={() => {
-                if (isTestSurface) {
-                  setTestRightTab(option.value as TestRightTab);
-                  return;
-                }
-                setMiddlePreviewTab(option.value as MiddlePreviewTab);
-              }}
-            >
-              {option.label}
-            </Menu.Item>
-          );
-        })}
-      </Menu.Dropdown>
-    </Menu>
+      </MenuTrigger>
+      <MenuPortal>
+        <MenuPositioner>
+          <MenuContent className="parse-view-menu-dropdown min-w-[180px]">
+            {activePreviewOptions.map((option) => {
+              const isActive = option.value === activePreviewView;
+              return (
+                <MenuItem
+                  key={option.value}
+                  value={`preview-${option.value}`}
+                  leftSection={isActive ? <IconCheck size={14} /> : <span style={{ width: 14 }} />}
+                  onClick={() => {
+                    if (isTestSurface) {
+                      setTestRightTab(option.value as TestRightTab);
+                      return;
+                    }
+                    setMiddlePreviewTab(option.value as MiddlePreviewTab);
+                  }}
+                >
+                  {option.label}
+                </MenuItem>
+              );
+            })}
+          </MenuContent>
+        </MenuPositioner>
+      </MenuPortal>
+    </MenuRoot>
   );
   const layoutClassName = `parse-playground-layout${surface === 'test' ? ' parse-playground-layout--test' : ''}${useSideRailDocumentNav ? ' parse-playground-layout--no-explorer' : ''}${isShellGrid ? ` schema-layout-test-page${isExplorerCollapsed ? ' is-left-collapsed' : ''}` : ''}`;
   const explorerClassName = `parse-playground-explorer${isExplorerCollapsed ? ' is-collapsed' : ''}${isShellGrid ? ' schema-layout-test-explorer' : ''}`;
@@ -1647,13 +1666,10 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
           <ProjectParseUppyUploader
             projectId={project.project_id}
             ingestMode="upload_only"
-            compactUi
-            uiVariant={isShellGrid ? 'headless' : 'dashboard'}
             enableRemoteSources
             companionUrl={import.meta.env.VITE_UPPY_COMPANION_URL as string | undefined}
             hideHeader={isShellGrid}
             onBatchUploaded={handleBatchUploaded}
-            height={320}
           />
       </Box>
 
@@ -2988,19 +3004,23 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
         </Box>
       </Box>
 
-      <Modal opened={deleteTargetDoc !== null} onClose={closeDeleteDialog} title="Delete document" centered>
-        <Stack gap="md">
-          <Text size="sm">
-            This will permanently delete{' '}
-            <Text span fw={700}>{deleteTargetDoc?.doc_title ?? 'this document'}</Text>
-            {' '}and its related data. This cannot be undone.
-          </Text>
-          <Group justify="flex-end">
+      <DialogRoot open={deleteTargetDoc !== null} onOpenChange={(e) => { if (!e.open) closeDeleteDialog(); }}>
+        <DialogContent>
+          <DialogCloseTrigger />
+          <DialogTitle>Delete document</DialogTitle>
+          <DialogBody>
+            <Text size="sm">
+              This will permanently delete{' '}
+              <Text span fw={700}>{deleteTargetDoc?.doc_title ?? 'this document'}</Text>
+              {' '}and its related data. This cannot be undone.
+            </Text>
+          </DialogBody>
+          <DialogFooter>
             <Button variant="default" onClick={closeDeleteDialog} disabled={deletingDoc}>Cancel</Button>
             <Button color="red" onClick={() => void handleConfirmDeleteDocument()} loading={deletingDoc}>Delete</Button>
-          </Group>
-        </Stack>
-      </Modal>
+          </DialogFooter>
+        </DialogContent>
+      </DialogRoot>
     </>
   );
 }

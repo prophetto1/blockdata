@@ -27,7 +27,8 @@ function toTitleCase(value: string): string {
 
 function resolveMenuLevelOne(pathname: string): string {
   if (pathname.startsWith('/app/flows')) return 'Flows';
-  if (pathname.startsWith('/app/projects/list')) return 'Database';
+  if (pathname.startsWith('/app/database')) return 'Database';
+  if (pathname.startsWith('/app/projects/list')) return 'Projects';
   if (
     pathname.startsWith('/app/projects')
     || pathname.startsWith('/app/upload')

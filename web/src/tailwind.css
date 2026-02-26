@@ -10,6 +10,11 @@
   --app-font-size-nav: 1rem;
   --app-font-size-nav-strong: 1.125rem;
   --app-font-size-brand: 1.6875rem;
+  --app-font-size-xs: 0.75rem;
+  --app-space-xs: 0.5rem;
+  --app-space-sm: 0.75rem;
+  --app-space-md: 1rem;
+  --app-space-lg: 1.5rem;
   --heading-font-weight: 700;
 
   /* Semantic color tokens (dark default) */
@@ -40,6 +45,23 @@
   --sidebar-accent-foreground: #eeeeee;
   --sidebar-border: #2a2a2a;
   --sidebar-ring: #eeeeee;
+  --app-primary-contrast: #09090b;
+
+  /* Neutral and status palette tokens (Mantine-independent) */
+  --app-gray-1: #f4f4f5;
+  --app-gray-2: #e4e4e7;
+  --app-gray-3: #d4d4d8;
+  --app-gray-4: #a1a1aa;
+  --app-gray-5: #71717a;
+  --app-gray-6: #52525b;
+  --app-gray-7: #3f3f46;
+  --app-gray-8: #27272a;
+  --app-gray-9: #09090b;
+  --app-blue-5: #339af0;
+  --app-blue-6: #228be6;
+  --app-yellow-6: #fab005;
+  --app-green-6: #40c057;
+  --app-red-6: #fa5252;
 
   /* Shell layout */
   --app-shell-header-height: 72px;
@@ -121,6 +143,7 @@
   --sidebar-accent-foreground: #1c1917;
   --sidebar-border: #e7e5e4;
   --sidebar-ring: #1c1917;
+  --app-primary-contrast: #fafafa;
 
   /* Grid (light) */
   --app-grid-background: #ffffff;

@@ -2,7 +2,6 @@ import { useState } from 'react';
 import {
   Button,
   Group,
-  Modal,
   Select,
   Stack,
   Text,
@@ -10,6 +9,13 @@ import {
   Alert,
   Divider,
 } from '@mantine/core';
+import {
+  DialogRoot,
+  DialogContent,
+  DialogTitle,
+  DialogCloseTrigger,
+  DialogBody,
+} from '@/components/ui/dialog';
 import { notifications } from '@mantine/notifications';
 import { IconInfoCircle } from '@tabler/icons-react';
 import type { AgentCatalogRow, UserAgentConfigRow } from '@/lib/types';
@@ -93,66 +99,72 @@ export function AgentConfigModal({
   };
 
   return (
-    <Modal opened={opened} onClose={onClose} title={`Configure: ${catalog.display_name}`} size="lg">
-      <Stack gap="md">
-        {!configured && (
-          <Alert icon={<IconInfoCircle size={16} />} color="yellow" title="Needs setup">
-            {readinessText || 'Credentials are not configured yet.'}
-          </Alert>
-        )}
-
-        <TextInput
-          label="Keyword"
-          description="Slash command alias. Example: /claude"
-          value={keyword}
-          onChange={(e) => setKeyword(e.currentTarget.value)}
-        />
-
-        {modelOptions.length > 0 ? (
-          <Select label="Model" data={modelOptions} value={model} onChange={(v) => v && setModel(v)} />
-        ) : (
-          <TextInput
-            label="Model"
-            description="Model identifier (for custom providers)."
-            value={model}
-            onChange={(e) => setModel(e.currentTarget.value)}
-          />
-        )}
-
-        <Divider />
-
-        <ProviderCredentialsModule provider={provider} providerKeyInfo={providerKeyInfo} onReload={onReload} />
-
-        {provider === 'google' && (
-          <>
-            <Divider />
-            <GoogleAuthPanel
-              providerKeyInfo={providerKeyInfo}
-              providerConnections={providerConnections}
-              providerConnectionFlowsEnabled={featureFlags.providerConnectionFlows}
-              onReload={onReload}
-              vertexOnly
-            />
-          </>
-        )}
-
-        <Group justify="space-between" mt="xs">
-          <Group gap="xs">
-            <Button variant="light" onClick={handleSetDefault} disabled={!configured}>
-              Set default
-            </Button>
-            {!featureFlags.providerConnectionFlows && provider === 'google' && (
-              <Text size="xs" c="dimmed">
-                Vertex connect is behind `providerConnectionFlows`.
-              </Text>
+    <DialogRoot open={opened} onOpenChange={(e) => { if (!e.open) onClose(); }}>
+      <DialogContent className="w-lg">
+        <DialogCloseTrigger />
+        <DialogTitle>{`Configure: ${catalog.display_name}`}</DialogTitle>
+        <DialogBody>
+          <Stack gap="md">
+            {!configured && (
+              <Alert icon={<IconInfoCircle size={16} />} color="yellow" title="Needs setup">
+                {readinessText || 'Credentials are not configured yet.'}
+              </Alert>
             )}
-          </Group>
 
-          <Button onClick={handleSave} disabled={saveDisabled}>
-            Save
-          </Button>
-        </Group>
-      </Stack>
-    </Modal>
+            <TextInput
+              label="Keyword"
+              description="Slash command alias. Example: /claude"
+              value={keyword}
+              onChange={(e) => setKeyword(e.currentTarget.value)}
+            />
+
+            {modelOptions.length > 0 ? (
+              <Select label="Model" data={modelOptions} value={model} onChange={(v) => v && setModel(v)} />
+            ) : (
+              <TextInput
+                label="Model"
+                description="Model identifier (for custom providers)."
+                value={model}
+                onChange={(e) => setModel(e.currentTarget.value)}
+              />
+            )}
+
+            <Divider />
+
+            <ProviderCredentialsModule provider={provider} providerKeyInfo={providerKeyInfo} onReload={onReload} />
+
+            {provider === 'google' && (
+              <>
+                <Divider />
+                <GoogleAuthPanel
+                  providerKeyInfo={providerKeyInfo}
+                  providerConnections={providerConnections}
+                  providerConnectionFlowsEnabled={featureFlags.providerConnectionFlows}
+                  onReload={onReload}
+                  vertexOnly
+                />
+              </>
+            )}
+
+            <Group justify="space-between" mt="xs">
+              <Group gap="xs">
+                <Button variant="light" onClick={handleSetDefault} disabled={!configured}>
+                  Set default
+                </Button>
+                {!featureFlags.providerConnectionFlows && provider === 'google' && (
+                  <Text size="xs" c="dimmed">
+                    Vertex connect is behind `providerConnectionFlows`.
+                  </Text>
+                )}
+              </Group>
+
+              <Button onClick={handleSave} disabled={saveDisabled}>
+                Save
+              </Button>
+            </Group>
+          </Stack>
+        </DialogBody>
+      </DialogContent>
+    </DialogRoot>
   );
 }

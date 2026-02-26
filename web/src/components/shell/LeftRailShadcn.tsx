@@ -1,16 +1,17 @@
 import { useEffect, useMemo, useState, type CSSProperties } from 'react';
+import { Avatar } from '@ark-ui/react/avatar';
 import { Select, createListCollection } from '@ark-ui/react/select';
 import { TreeView, createTreeCollection, type TreeNode } from '@ark-ui/react/tree-view';
 import {
   IconCheck,
   IconChevronDown,
   IconChevronLeft,
-  IconLogout,
   IconPlus,
 } from '@tabler/icons-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 import { GLOBAL_MENUS } from '@/components/shell/nav-config';
+import { isDocumentsMenuRoute } from '@/components/shell/documentsMenuRoute';
 import {
   Sidebar,
   SidebarContent,
@@ -18,11 +19,16 @@ import {
   SidebarGroup,
   SidebarGroupContent,
   SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
   SidebarProvider,
 } from '@/components/ui/sidebar';
+import {
+  MenuRoot,
+  MenuTrigger,
+  MenuPositioner,
+  MenuContent,
+  MenuItem,
+  MenuSeparator,
+} from '@/components/ui/menu';
 import { cn } from '@/lib/utils';
 import { PROJECT_FOCUS_STORAGE_KEY } from '@/lib/projectFocus';
 import { supabase } from '@/lib/supabase';
@@ -34,9 +40,6 @@ type LeftRailShadcnProps = {
   onSignOut?: () => void | Promise<void>;
   desktopCompact?: boolean;
   onToggleDesktopCompact?: () => void;
-  showAssistantToggle?: boolean;
-  assistantOpened?: boolean;
-  onToggleAssistant?: () => void;
 };
 
 type ProjectFocusOption = {
@@ -59,7 +62,7 @@ const PROJECTS_RPC_LEGACY = 'list_projects_overview_v2';
 const GLOBAL_MENU_ORDER: Record<string, number> = {
   '/app/flows': 0,
   '/app/documents': 1,
-  '/app/projects/list': 2,
+  '/app/database': 2,
   '/app/schemas': 3,
 };
 
@@ -82,16 +85,8 @@ function readStoredProjectId(): string | null {
   return window.localStorage.getItem(PROJECT_FOCUS_STORAGE_KEY);
 }
 
-export function isDocumentsMenuRoute(pathname: string): boolean {
-  return (
-    /^\/app\/projects\/[^/]+\/upload/.test(pathname)
-    || (
-      pathname.startsWith('/app/projects')
-      && !pathname.startsWith('/app/projects/list')
-    )
-    || pathname.startsWith('/app/extract')
-    || pathname.startsWith('/app/transform')
-  );
+function menuPathToNodeId(path: string) {
+  return path.replace(/^\/app\//, '').replaceAll('/', '-');
 }
 
 export function LeftRailShadcn({
@@ -100,9 +95,6 @@ export function LeftRailShadcn({
   onSignOut,
   desktopCompact = false,
   onToggleDesktopCompact,
-  showAssistantToggle = true,
-  assistantOpened = false,
-  onToggleAssistant,
 }: LeftRailShadcnProps) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -210,7 +202,6 @@ export function LeftRailShadcn({
     [],
   );
 
-  const menuPathToNodeId = (path: string) => path.replace(/^\/app\//, '').replaceAll('/', '-');
   const documentsNodeId = menuPathToNodeId('/app/documents');
   const [userExpandedNodeIds, setUserExpandedNodeIds] = useState<string[]>(() => (
     isDocumentsMenuRoute(location.pathname) ? [documentsNodeId] : []
@@ -251,7 +242,7 @@ export function LeftRailShadcn({
     if (/^\/app\/projects\/[^/]+\/upload/.test(location.pathname)) return '/app/upload';
     if (location.pathname.startsWith('/app/extract')) return '/app/extract';
     if (location.pathname.startsWith('/app/transform')) return '/app/transform';
-    if (location.pathname.startsWith('/app/projects/list')) return '/app/projects/list';
+    if (location.pathname.startsWith('/app/database')) return '/app/database';
     if (location.pathname.startsWith('/app/projects')) return '/app/projects';
     if (location.pathname.startsWith('/app/schemas')) return '/app/schemas';
     return null;
@@ -287,6 +278,82 @@ export function LeftRailShadcn({
     navigate(globalPathOverrides[path] ?? path);
     onNavigate?.();
   };
+
+  const buildTreeRow = (node: RailTreeNode, indexPath: number[], state: {
+    selected?: boolean;
+    isBranch?: boolean;
+  }) => {
+    const rowPaddingLeft = desktopCompact
+      ? '0px'
+      : `${Math.max(0, indexPath.length - 1) * 14}px`;
+    const isNodeSelected = Boolean(state.selected) || (
+      node.id === documentsNodeId
+      && isDocumentsMenuRoute(location.pathname)
+    );
+    const rowClassName = cn(
+      'flex items-center gap-2 rounded-md text-sidebar-foreground/90 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+      desktopCompact ? 'h-10 px-2 text-sm font-semibold leading-snug' : 'h-10 px-2 text-[15px] font-semibold leading-snug',
+      isNodeSelected ? 'bg-sidebar-accent text-sidebar-accent-foreground' : null,
+    );
+
+    if (state.isBranch) {
+      return (
+        <TreeView.Branch>
+          <TreeView.BranchControl
+            className={rowClassName}
+            style={{ paddingLeft: rowPaddingLeft }}
+          >
+            <TreeView.BranchText className="truncate">
+              {node.label}
+            </TreeView.BranchText>
+          </TreeView.BranchControl>
+        </TreeView.Branch>
+      );
+    }
+
+    return (
+      <TreeView.Item
+        className={rowClassName}
+        style={{ paddingLeft: rowPaddingLeft }}
+      >
+        <TreeView.ItemText className="truncate">
+          {node.label}
+        </TreeView.ItemText>
+      </TreeView.Item>
+    );
+  };
+
+  const renderMenuTree = () => (
+    <TreeView.Root
+      collection={navTreeCollection}
+      selectionMode="single"
+      selectedValue={activeNodeId ? [activeNodeId] : []}
+      expandedValue={expandedNodeIds}
+      onExpandedChange={(details) => setUserExpandedNodeIds(details.expandedValue)}
+      onSelectionChange={(details) => {
+        const nextNodeId = details.selectedValue[0];
+        if (!nextNodeId) return;
+        const nextNode = navTreeCollection.findNode(nextNodeId);
+        if (!nextNode?.path) return;
+        navigateTo(nextNode.path);
+      }}
+    >
+      <TreeView.Tree className="space-y-1">
+        <TreeView.Context>
+          {(tree) => tree.getVisibleNodes().map(({ node, indexPath }) => (
+            <TreeView.NodeProvider key={node.id} node={node} indexPath={indexPath}>
+              <TreeView.NodeContext>
+                {(state) => {
+                  if (node.id === 'root') return null;
+                  return buildTreeRow(node, indexPath, state);
+                }}
+              </TreeView.NodeContext>
+            </TreeView.NodeProvider>
+          ))}
+        </TreeView.Context>
+      </TreeView.Tree>
+    </TreeView.Root>
+  );
 
   const onProjectChanged = (nextProjectId: string) => {
     if (!nextProjectId) return;
@@ -468,179 +535,84 @@ export function LeftRailShadcn({
         <SidebarContent className="px-2">
           <SidebarGroup className="p-1">
             <SidebarGroupContent>
-              <TreeView.Root
-                collection={navTreeCollection}
-                selectionMode="single"
-                selectedValue={activeNodeId ? [activeNodeId] : []}
-                expandedValue={expandedNodeIds}
-                onExpandedChange={(details) => setUserExpandedNodeIds(details.expandedValue)}
-                onSelectionChange={(details) => {
-                  const nextNodeId = details.selectedValue[0];
-                  if (!nextNodeId) return;
-                  const nextNode = navTreeCollection.findNode(nextNodeId);
-                  if (!nextNode?.path) return;
-                  navigateTo(nextNode.path);
-                }}
-              >
-                <TreeView.Tree className="space-y-1">
-                  <TreeView.Context>
-                    {(tree) => tree.getVisibleNodes().map(({ node, indexPath }) => (
-                      <TreeView.NodeProvider key={node.id} node={node} indexPath={indexPath}>
-                        <TreeView.NodeContext>
-                          {(state) => {
-                            if (node.id === 'root') return null;
-                            const rowPaddingLeft = desktopCompact
-                              ? '0px'
-                              : `${Math.max(0, indexPath.length - 1) * 14}px`;
-                            const isNodeSelected = Boolean(state.selected) || (
-                              node.id === documentsNodeId
-                              && isDocumentsMenuRoute(location.pathname)
-                            );
-                            const rowClassName = cn(
-                              'flex items-center gap-2 rounded-md text-sidebar-foreground/90 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
-                              desktopCompact ? 'h-10 px-2 text-sm font-semibold leading-snug' : 'h-10 px-2 text-[15px] font-semibold leading-snug',
-                              isNodeSelected ? 'bg-sidebar-accent text-sidebar-accent-foreground' : null,
-                            );
-
-                            if (state.isBranch) {
-                              return (
-                                <TreeView.Branch>
-                                  <TreeView.BranchControl
-                                    className={rowClassName}
-                                    style={{ paddingLeft: rowPaddingLeft }}
-                                  >
-                                    <TreeView.BranchText className="truncate">
-                                      {node.label}
-                                    </TreeView.BranchText>
-                                  </TreeView.BranchControl>
-                                </TreeView.Branch>
-                              );
-                            }
-
-                            return (
-                              <TreeView.Item
-                                className={rowClassName}
-                                style={{ paddingLeft: rowPaddingLeft }}
-                              >
-                                <TreeView.ItemText className="truncate">
-                                  {node.label}
-                                </TreeView.ItemText>
-                              </TreeView.Item>
-                            );
-                          }}
-                        </TreeView.NodeContext>
-                      </TreeView.NodeProvider>
-                    ))}
-                  </TreeView.Context>
-                </TreeView.Tree>
-              </TreeView.Root>
+              {renderMenuTree()}
             </SidebarGroupContent>
           </SidebarGroup>
 
         </SidebarContent>
 
         <SidebarFooter className="border-t border-sidebar-border px-0 pt-1.5">
-          <div className="px-2">
-            <SidebarMenu>
-            {showAssistantToggle && onToggleAssistant && (
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  isActive={assistantOpened}
-                  onClick={onToggleAssistant}
-                  tooltip={assistantOpened ? 'Hide Assistant' : 'Show Assistant'}
-                  className="h-10 px-2 text-base font-medium"
-                >
-                  <span>{assistantOpened ? 'Hide Assistant' : 'Show Assistant'}</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+          <div
+            data-testid="left-rail-account-separator"
+            className={cn(
+              'h-px w-full bg-sidebar-border',
+              desktopCompact ? 'mt-3' : 'mt-4',
             )}
-
-            <SidebarMenuItem>
-              <SidebarMenuButton
-                asChild
-                isActive={location.pathname.startsWith('/app/settings')}
-                tooltip="Settings"
-                className="h-10 px-2 text-base font-medium"
-              >
-                <a
-                  href="/app/settings"
-                  onClick={(event) => {
-                    event.preventDefault();
-                    navigate('/app/settings');
-                    onNavigate?.();
-                  }}
-                >
-                  <span>Settings</span>
-                </a>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-
-            </SidebarMenu>
-          </div>
-
-          <>
-            <div
-              data-testid="left-rail-account-separator"
-              className={cn(
-                'h-px w-full bg-sidebar-border',
-                desktopCompact ? 'mt-3' : 'mt-4',
-              )}
-            />
-            <div className={cn(desktopCompact ? 'px-0 py-2' : 'px-1.5 py-2')}>
-              <div
+          />
+          <div className={cn(desktopCompact ? 'px-0 py-2' : 'px-1.5 py-2')}>
+            <MenuRoot positioning={{ placement: 'top-start' }}>
+              <MenuTrigger
                 className={cn(
-                  'flex items-center gap-2',
-                  desktopCompact ? 'flex-col justify-center gap-1.5 px-0 py-0.5' : 'justify-between px-1 py-0.5',
+                  'flex w-full items-center gap-2 rounded-md border-none bg-transparent px-1 py-1 text-left',
+                  'transition-colors hover:bg-sidebar-accent/50',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring',
+                  desktopCompact && 'flex-col justify-center px-0',
                 )}
               >
-                <div className={cn('flex min-w-0 items-center gap-2', desktopCompact && 'w-full flex-col gap-1 text-center')}>
-                  <div
+                <Avatar.Root
+                  className={cn(
+                    'shrink-0',
+                    desktopCompact ? 'h-9 w-9' : 'h-8 w-8',
+                  )}
+                >
+                  <Avatar.Fallback
                     className={cn(
-                      'flex shrink-0 items-center justify-center rounded-md bg-sidebar-accent/35 text-xs font-semibold text-sidebar-foreground/90',
-                      desktopCompact ? 'h-9 w-9' : 'h-8 w-8',
+                      'flex h-full w-full items-center justify-center rounded-full bg-sidebar-accent/35 text-xs font-semibold text-sidebar-foreground/90',
                     )}
-                    aria-hidden
                   >
                     {userInitial}
-                  </div>
-                  <div className={cn('min-w-0', desktopCompact && 'w-full max-w-[4.5rem] px-1')}>
-                    <div
-                      className={cn(
-                        'text-[11px] leading-4 text-sidebar-foreground/65',
-                        desktopCompact && 'text-center text-[11px]',
-                      )}
-                    >
+                  </Avatar.Fallback>
+                </Avatar.Root>
+                {!desktopCompact && (
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[11px] leading-4 text-sidebar-foreground/65">
                       Signed in as
                     </div>
-                    <div
-                      className={cn(
-                        'truncate text-sm font-semibold leading-5 text-foreground',
-                        desktopCompact && 'text-center text-[12px] leading-4',
-                      )}
-                    >
+                    <div className="truncate text-sm font-semibold leading-5 text-foreground">
                       {userLabel ?? userInitial}
                     </div>
                   </div>
-                </div>
-                {onSignOut && (
-                  <button
-                    type="button"
-                    className={cn(
-                      'inline-flex items-center justify-center rounded-md text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring',
-                      desktopCompact ? 'h-9 w-9' : 'h-8 w-8',
-                    )}
-                    aria-label="Sign out"
-                    title="Sign out"
+                )}
+              </MenuTrigger>
+              <MenuPositioner>
+                <MenuContent className="min-w-48">
+                  <div className="truncate px-2 py-1.5 text-xs font-semibold text-muted-foreground">
+                    {userLabel ?? userInitial}
+                  </div>
+                  <MenuSeparator />
+                  <MenuItem
+                    value="settings"
+                    className="gap-2"
                     onClick={() => {
-                      void onSignOut();
+                      navigate('/app/settings');
+                      onNavigate?.();
                     }}
                   >
-                    <IconLogout size={desktopCompact ? 16 : 15} stroke={desktopCompact ? 1.9 : 2} />
-                  </button>
-                )}
-              </div>
-            </div>
-          </>
+                    Settings
+                  </MenuItem>
+                  {onSignOut && (
+                    <MenuItem
+                      value="sign-out"
+                      className="gap-2"
+                      onClick={() => { void onSignOut(); }}
+                    >
+                      Sign out
+                    </MenuItem>
+                  )}
+                </MenuContent>
+              </MenuPositioner>
+            </MenuRoot>
+          </div>
         </SidebarFooter>
       </Sidebar>
     </SidebarProvider>

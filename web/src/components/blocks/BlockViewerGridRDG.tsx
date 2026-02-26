@@ -16,9 +16,7 @@ import {
   Badge,
   Button,
   Group,
-  Menu,
   Paper,
-  SegmentedControl,
   Select,
   Text,
   TextInput,
@@ -45,6 +43,17 @@ import { extractSchemaFields, type SchemaFieldMeta } from '@/lib/schema-fields';
 import type { RunWithSchema } from '@/lib/types';
 import { ErrorAlert } from '@/components/common/ErrorAlert';
 import { NativeSelect } from '@/components/ui/native-select';
+import {
+  MenuContent,
+  MenuItem,
+  MenuLabel,
+  MenuPortal,
+  MenuPositioner,
+  MenuRoot,
+  MenuSeparator,
+  MenuTrigger,
+} from '@/components/ui/menu';
+import { SegmentedControl } from '@/components/ui/segmented-control';
 import {
   extractPagesFromLocator,
   formatPageLabels,
@@ -219,8 +228,8 @@ function TypeHeaderCell({ blockTypes, typeFilter, onToggleType, onClearTypes }: 
     <div className="rdg-type-header">
       <span className="rdg-type-header-label">Type</span>
       {blockTypes.length > 1 && (
-        <Menu shadow="md" width={200} position="bottom-start" withinPortal closeOnItemClick={false}>
-          <Menu.Target>
+        <MenuRoot positioning={{ placement: 'bottom-start' }} closeOnSelect={false}>
+          <MenuTrigger asChild>
             <ActionIcon
               className="rdg-type-header-filter"
               variant={selectedCount > 0 ? 'light' : 'subtle'}
@@ -231,25 +240,30 @@ function TypeHeaderCell({ blockTypes, typeFilter, onToggleType, onClearTypes }: 
             >
               <IconFilter size={12} />
             </ActionIcon>
-          </Menu.Target>
-          <Menu.Dropdown>
-            {blockTypes.map((type) => (
-              <Menu.Item
-                key={type}
-                leftSection={typeFilter.includes(type) ? <IconCheck size={14} /> : <span style={{ width: 14, display: 'inline-block' }} />}
-                onClick={() => onToggleType(type)}
-              >
-                <Text size="xs">{type}</Text>
-              </Menu.Item>
-            ))}
-            {selectedCount > 0 && (
-              <>
-                <Menu.Divider />
-                <Menu.Item c="dimmed" onClick={onClearTypes}><Text size="xs">Clear all</Text></Menu.Item>
-              </>
-            )}
-          </Menu.Dropdown>
-        </Menu>
+          </MenuTrigger>
+          <MenuPortal>
+            <MenuPositioner>
+              <MenuContent className="w-[200px]">
+                {blockTypes.map((type) => (
+                  <MenuItem
+                    key={type}
+                    value={`type-${type}`}
+                    leftSection={typeFilter.includes(type) ? <IconCheck size={14} /> : <span style={{ width: 14, display: 'inline-block' }} />}
+                    onClick={() => onToggleType(type)}
+                  >
+                    <Text size="xs">{type}</Text>
+                  </MenuItem>
+                ))}
+                {selectedCount > 0 && (
+                  <>
+                    <MenuSeparator />
+                    <MenuItem value="type-clear" className="text-muted-foreground" onClick={onClearTypes}><Text size="xs">Clear all</Text></MenuItem>
+                  </>
+                )}
+              </MenuContent>
+            </MenuPositioner>
+          </MenuPortal>
+        </MenuRoot>
       )}
     </div>
   );
@@ -936,31 +950,43 @@ export function BlockViewerGridRDG({ convUid, selectedRunId, selectedRun, onExpo
         </Group>
 
         <Group className="block-grid-toolbar-group shrink-0" gap={6} wrap="nowrap">
-          <Menu shadow="md" width={170} position="bottom-start" withinPortal>
-            <Menu.Target>
+          <MenuRoot positioning={{ placement: 'bottom-start' }}>
+            <MenuTrigger asChild>
               <Button variant="default" className="block-grid-topline-button" size="compact-xs" px={6} rightSection={<IconChevronDown size={10} />} aria-label="Vertical align">
                 <Group gap={6} wrap="nowrap">
                   <Text size="xs" fw={600}>Align</Text>
                   {viewerVerticalAlign === 'top' ? <IconArrowBarToUp size={14} /> : viewerVerticalAlign === 'center' ? <IconArrowsVertical size={14} /> : <IconArrowBarToDown size={14} />}
                 </Group>
               </Button>
-            </Menu.Target>
-            <Menu.Dropdown className="block-grid-topline-menu-dropdown">
-              <Menu.Item leftSection={<IconArrowBarToUp size={14} />} onClick={() => handleViewerVerticalAlignChange('top')}>Top</Menu.Item>
-              <Menu.Item leftSection={<IconArrowsVertical size={14} />} onClick={() => handleViewerVerticalAlignChange('center')}>Center</Menu.Item>
-              <Menu.Item leftSection={<IconArrowBarToDown size={14} />} onClick={() => handleViewerVerticalAlignChange('bottom')}>Bottom</Menu.Item>
-            </Menu.Dropdown>
-          </Menu>
+            </MenuTrigger>
+            <MenuPortal>
+              <MenuPositioner>
+                <MenuContent className="block-grid-topline-menu-dropdown min-w-[170px]">
+                  <MenuItem value="align-top" leftSection={<IconArrowBarToUp size={14} />} onClick={() => handleViewerVerticalAlignChange('top')}>Top</MenuItem>
+                  <MenuItem value="align-center" leftSection={<IconArrowsVertical size={14} />} onClick={() => handleViewerVerticalAlignChange('center')}>Center</MenuItem>
+                  <MenuItem value="align-bottom" leftSection={<IconArrowBarToDown size={14} />} onClick={() => handleViewerVerticalAlignChange('bottom')}>Bottom</MenuItem>
+                </MenuContent>
+              </MenuPositioner>
+            </MenuPortal>
+          </MenuRoot>
 
-          <Menu shadow="md" width={250} position="bottom-end" withinPortal closeOnItemClick={false}>
-            <Menu.Target>
+          <MenuRoot positioning={{ placement: 'bottom-end' }} closeOnSelect={false}>
+            <MenuTrigger asChild>
               <Button variant="default" className="block-grid-topline-button" size="compact-xs" px={6} leftSection={<IconColumns size={14} />} rightSection={<IconChevronDown size={10} />} aria-label="Columns">Columns</Button>
-            </Menu.Target>
-            <Menu.Dropdown className="block-grid-topline-menu-dropdown">
-              <Menu.Label>Columns</Menu.Label>
-              {allColumns.map((col) => <Menu.Item key={col.id} onClick={() => toggleColumn(col.id)} leftSection={<Text size="xs" fw={500}>{hiddenCols.has(col.id) ? '[ ]' : '[x]'}</Text>}><Text size="xs">{col.label}</Text></Menu.Item>)}
-            </Menu.Dropdown>
-          </Menu>
+            </MenuTrigger>
+            <MenuPortal>
+              <MenuPositioner>
+                <MenuContent className="block-grid-topline-menu-dropdown min-w-[250px]">
+                  <MenuLabel>Columns</MenuLabel>
+                  {allColumns.map((col) => (
+                    <MenuItem key={col.id} value={`column-${col.id}`} onClick={() => toggleColumn(col.id)} leftSection={<Text size="xs" fw={500}>{hiddenCols.has(col.id) ? '[ ]' : '[x]'}</Text>}>
+                      <Text size="xs">{col.label}</Text>
+                    </MenuItem>
+                  ))}
+                </MenuContent>
+              </MenuPositioner>
+            </MenuPortal>
+          </MenuRoot>
         </Group>
 
         {hasRun && <Text size="xs" c="dimmed" className="block-grid-toolbar-metrics">{confirmedCount} confirmed - {stagedCount} staged - {selectedRows.size} selected</Text>}

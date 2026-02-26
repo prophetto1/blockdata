@@ -10,7 +10,6 @@ import {
   Group,
   Paper,
   PasswordInput,
-  SegmentedControl,
   Select,
   Stack,
   Switch,
@@ -21,6 +20,13 @@ import {
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { IconCloud, IconCpu, IconPlugConnected, IconUser } from '@tabler/icons-react';
+import {
+  SegmentGroupRoot,
+  SegmentGroupIndicator,
+  SegmentGroupItem,
+  SegmentGroupItemText,
+  SegmentGroupItemHiddenInput,
+} from '@/components/ui/segment-group';
 import { PageHeader } from '@/components/common/PageHeader';
 
 type UserProvider = 'openai' | 'google' | 'custom';
@@ -212,14 +218,18 @@ export default function ModelRegistrationPreview() {
 
               <Stack gap="sm">
                 <Text size="sm" fw={500}>Transport</Text>
-                <SegmentedControl
+                <SegmentGroupRoot
                   value={transport}
-                  onChange={(value) => setTransport((value as PlatformTransport) ?? 'vertex_ai')}
-                  data={[
-                    { label: 'Vertex', value: 'vertex_ai' },
-                    { label: 'LiteLLM', value: 'litellm_openai' },
-                  ]}
-                />
+                  onValueChange={(e) => setTransport((e.value as PlatformTransport) ?? 'vertex_ai')}
+                >
+                  <SegmentGroupIndicator />
+                  {[{ label: 'Vertex', value: 'vertex_ai' }, { label: 'LiteLLM', value: 'litellm_openai' }].map((opt) => (
+                    <SegmentGroupItem key={opt.value} value={opt.value}>
+                      <SegmentGroupItemText>{opt.label}</SegmentGroupItemText>
+                      <SegmentGroupItemHiddenInput />
+                    </SegmentGroupItem>
+                  ))}
+                </SegmentGroupRoot>
 
                 {transport === 'litellm_openai' && (
                   <TextInput

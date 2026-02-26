@@ -1,7 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { Alert, Badge, Button, Loader, Center, Text, Group, Stack, Skeleton, Modal } from '@mantine/core';
-import { useDisclosure } from '@mantine/hooks';
+import { Alert, Badge, Button, Loader, Center, Text, Group, Stack, Skeleton } from '@mantine/core';
+import {
+  DialogRoot,
+  DialogContent,
+  DialogTitle,
+  DialogCloseTrigger,
+  DialogBody,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { notifications } from '@mantine/notifications';
 import { IconInfoCircle } from '@tabler/icons-react';
 import { supabase } from '@/lib/supabase';
@@ -35,7 +42,9 @@ export default function DocumentDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
-  const [deleteOpened, { open: openDelete, close: closeDelete }] = useDisclosure(false);
+  const [deleteOpened, setDeleteOpened] = useState(false);
+  const openDelete = () => setDeleteOpened(true);
+  const closeDelete = () => setDeleteOpened(false);
   const [deleting, setDeleting] = useState(false);
   const requestedRunId = useMemo(() => {
     const params = new URLSearchParams(location.search);
@@ -171,17 +180,21 @@ export default function DocumentDetail() {
         />
       )}
 
-      <Modal opened={deleteOpened} onClose={closeDelete} title="Delete document" centered>
-        <Stack gap="md">
-          <Text size="sm">
-            This will permanently delete <Text span fw={600}>{doc.doc_title}</Text> and all its blocks, overlays, and runs. This cannot be undone.
-          </Text>
-          <Group justify="flex-end">
+      <DialogRoot open={deleteOpened} onOpenChange={(e) => { if (!e.open) closeDelete(); }}>
+        <DialogContent>
+          <DialogCloseTrigger />
+          <DialogTitle>Delete document</DialogTitle>
+          <DialogBody>
+            <Text size="sm">
+              This will permanently delete <Text span fw={600}>{doc.doc_title}</Text> and all its blocks, overlays, and runs. This cannot be undone.
+            </Text>
+          </DialogBody>
+          <DialogFooter>
             <Button variant="default" onClick={closeDelete}>Cancel</Button>
             <Button color="red" onClick={handleDelete} loading={deleting}>Delete</Button>
-          </Group>
-        </Stack>
-      </Modal>
+          </DialogFooter>
+        </DialogContent>
+      </DialogRoot>
     </>
   );
 }

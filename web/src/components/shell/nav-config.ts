@@ -32,7 +32,7 @@ export const GLOBAL_MENUS: NavItem[] = [
       { label: 'Transform', icon: IconSettings, path: '/app/transform' },
     ],
   },
-  { label: 'Database', icon: IconDatabase, path: '/app/projects/list' },
+  { label: 'Database', icon: IconDatabase, path: '/app/database' },
   { label: 'Schema', icon: IconSchema, path: '/app/schemas' },
 ];
 

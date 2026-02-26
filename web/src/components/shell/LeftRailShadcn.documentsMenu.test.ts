@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isDocumentsMenuRoute } from './LeftRailShadcn';
+import { isDocumentsMenuRoute } from './documentsMenuRoute';
 
 describe('isDocumentsMenuRoute', () => {
   it('returns true for documents dropdown routes', () => {

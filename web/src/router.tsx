@@ -37,6 +37,7 @@ import AgentOnboardingConnect from '@/pages/AgentOnboardingConnect';
 import AgentOnboardingSelect from '@/pages/AgentOnboardingSelect';
 import McpServers from '@/pages/McpServers';
 import Commands from '@/pages/Commands';
+import DatabasePlaceholder from '@/pages/DatabasePlaceholder';
 import { FlowsRouteShell } from '@/components/layout/FlowsRouteShell';
 import { featureFlags } from '@/lib/featureFlags';
 
@@ -79,6 +80,7 @@ export const router = createBrowserRouter([
           { path: '/app', element: <Navigate to="/app/projects" replace /> },
           { path: '/app/projects', element: <ProjectsHome /> },
           { path: '/app/projects/list', element: <Projects /> },
+          { path: '/app/database', element: <DatabasePlaceholder /> },
           {
             path: '/app/flows',
             element: <FlowsRouteShell />,

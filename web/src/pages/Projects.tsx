@@ -8,9 +8,7 @@ import {
   Center,
   Group,
   Loader,
-  Modal,
   Pagination,
-  SegmentedControl,
   Stack,
   Text,
   TextInput,
@@ -18,7 +16,22 @@ import {
   Tooltip,
   useComputedColorScheme,
 } from '@mantine/core';
-import { useDebouncedValue, useDisclosure } from '@mantine/hooks';
+import { useDebouncedValue } from '@mantine/hooks';
+import {
+  SegmentGroupRoot,
+  SegmentGroupIndicator,
+  SegmentGroupItem,
+  SegmentGroupItemText,
+  SegmentGroupItemHiddenInput,
+} from '@/components/ui/segment-group';
+import {
+  DialogRoot,
+  DialogContent,
+  DialogTitle,
+  DialogCloseTrigger,
+  DialogBody,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { notifications } from '@mantine/notifications';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
@@ -71,7 +84,9 @@ export default function Projects() {
   const [projects, setProjects] = useState<ProjectOverviewRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [opened, { open, close }] = useDisclosure(false);
+  const [opened, setOpened] = useState(false);
+  const open = () => setOpened(true);
+  const close = () => setOpened(false);
   const [name, setName] = useState('');
   const [desc, setDesc] = useState('');
   const [creating, setCreating] = useState(false);
@@ -355,21 +370,22 @@ export default function Projects() {
           leftSection={<IconSearch size={14} />}
           w={320}
         />
-        <SegmentedControl
-          size="sm"
-          ml="auto"
+        <SegmentGroupRoot
           value={statusFilter}
-          onChange={(value) => {
-            setStatusFilter(value as StatusFilter);
+          onValueChange={(e) => {
+            setStatusFilter(e.value as StatusFilter);
             setPage(1);
           }}
-          data={[
-            { label: 'All', value: 'all' },
-            { label: 'Active', value: 'active' },
-            { label: 'Processing', value: 'processing' },
-            { label: 'Empty', value: 'empty' },
-          ]}
-        />
+          className="ml-auto"
+        >
+          <SegmentGroupIndicator />
+          {(['all', 'active', 'processing', 'empty'] as const).map((val) => (
+            <SegmentGroupItem key={val} value={val}>
+              <SegmentGroupItemText>{val.charAt(0).toUpperCase() + val.slice(1)}</SegmentGroupItemText>
+              <SegmentGroupItemHiddenInput />
+            </SegmentGroupItem>
+          ))}
+        </SegmentGroupRoot>
       </Group>
 
       {!loading && projects.length === 0 && (
@@ -422,29 +438,33 @@ export default function Projects() {
         </Stack>
       )}
 
-      <Modal opened={opened} onClose={closeCreateModal} title="New Project" centered>
-        <Stack gap="md">
-          <TextInput
-            label="Project name"
-            placeholder="e.g., SCOTUS Analysis"
-            value={name}
-            onChange={(e) => setName(e.currentTarget.value)}
-            data-autofocus
-          />
-          <TextInput
-            label="Description (optional)"
-            placeholder="Brief description of this project"
-            value={desc}
-            onChange={(e) => setDesc(e.currentTarget.value)}
-          />
-          <Group justify="flex-end">
+      <DialogRoot open={opened} onOpenChange={(e) => { if (!e.open) closeCreateModal(); }}>
+        <DialogContent>
+          <DialogCloseTrigger />
+          <DialogTitle>New Project</DialogTitle>
+          <DialogBody>
+            <TextInput
+              label="Project name"
+              placeholder="e.g., SCOTUS Analysis"
+              value={name}
+              onChange={(e) => setName(e.currentTarget.value)}
+              data-autofocus
+            />
+            <TextInput
+              label="Description (optional)"
+              placeholder="Brief description of this project"
+              value={desc}
+              onChange={(e) => setDesc(e.currentTarget.value)}
+            />
+          </DialogBody>
+          <DialogFooter>
             <Button variant="default" onClick={closeCreateModal}>Cancel</Button>
             <Button onClick={handleCreate} loading={creating} disabled={!name.trim()}>
               Create
             </Button>
-          </Group>
-        </Stack>
-      </Modal>
+          </DialogFooter>
+        </DialogContent>
+      </DialogRoot>
     </>
   );
 }

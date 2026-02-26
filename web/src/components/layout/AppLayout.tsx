@@ -183,6 +183,9 @@ export function AppLayout() {
           <TopCommandBar
             onToggleNav={toggleNav}
             shellGuides={isSchemaLayoutRoute}
+            showAssistantToggle={assistantDockEnabled}
+            assistantOpened={assistantOpened}
+            onToggleAssistant={toggleAssistant}
           />
           <div
             data-testid="app-shell-top-divider"
@@ -219,9 +222,6 @@ export function AppLayout() {
               onSignOut={handleSignOut}
               desktopCompact={!desktopNavOpened}
               onToggleDesktopCompact={toggleDesktopNav}
-              showAssistantToggle={assistantDockEnabled}
-              assistantOpened={assistantOpened}
-              onToggleAssistant={toggleAssistant}
             />
           </aside>
         )}
@@ -249,9 +249,6 @@ export function AppLayout() {
                 userLabel={profile?.display_name || profile?.email || user?.email}
                 onSignOut={handleSignOut}
                 desktopCompact={false}
-                showAssistantToggle={assistantDockEnabled}
-                assistantOpened={assistantOpened}
-                onToggleAssistant={toggleAssistant}
               />
             </aside>
             <button
