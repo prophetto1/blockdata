@@ -17,6 +17,7 @@ type ProjectParseUppyUploaderProps = {
   enableRemoteSources?: boolean;
   companionUrl?: string;
   hideHeader?: boolean;
+  height?: number;
 };
 
 function FileStatusIcon({ status }: { status: FileState['status'] }) {
@@ -45,6 +46,7 @@ export function ProjectParseUppyUploader({
   enableRemoteSources = false,
   companionUrl,
   hideHeader = false,
+  height,
 }: ProjectParseUppyUploaderProps) {
   const {
     uppy,
@@ -71,6 +73,9 @@ export function ProjectParseUppyUploader({
   }, [uppy, showRemotePicker]);
 
   const files = Array.from(fileStates.values());
+  const dashboardHeight = Number.isFinite(height) && (height ?? 0) > 0
+    ? Math.max(220, Math.round(height as number))
+    : 320;
   const pendingCount = files.filter((f) => f.status === 'pending').length;
   const uploadingCount = files.filter((f) => f.status === 'uploading').length;
   const doneCount = files.filter((f) => f.status === 'done').length;
@@ -155,7 +160,7 @@ export function ProjectParseUppyUploader({
         <div ref={dashboardHostRef} className="mt-1.5 rounded-lg border border-border overflow-hidden">
           <Dashboard
             uppy={uppy}
-            height={320}
+            height={dashboardHeight}
             width="100%"
             showSelectedFiles
             plugins={['GoogleDrive']}

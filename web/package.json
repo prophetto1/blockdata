@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build && cd ../docs-site && npm ci && npm run build && mkdir -p ../web/dist/docs && cp -r dist/* ../web/dist/docs/",
+    "build": "tsc -b && vite build && node ./scripts/build-docs-if-present.mjs",
     "build:meta-configurator-embed": "node ../scripts/build-meta-configurator-embed.mjs",
     "lint": "eslint .",
     "test": "vitest run",

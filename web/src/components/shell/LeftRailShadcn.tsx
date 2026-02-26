@@ -340,16 +340,20 @@ export function LeftRailShadcn({
     >
       <TreeView.Tree className="space-y-1">
         <TreeView.Context>
-          {(tree) => tree.getVisibleNodes().map(({ node, indexPath }) => (
-            <TreeView.NodeProvider key={node.id} node={node} indexPath={indexPath}>
-              <TreeView.NodeContext>
-                {(state) => {
-                  if (node.id === 'root') return null;
-                  return buildTreeRow(node, indexPath, state);
-                }}
-              </TreeView.NodeContext>
-            </TreeView.NodeProvider>
-          ))}
+          {(tree) => tree.getVisibleNodes().map((entry) => {
+            const node = entry.node as RailTreeNode;
+            const indexPath = entry.indexPath;
+            return (
+              <TreeView.NodeProvider key={node.id} node={node} indexPath={indexPath}>
+                <TreeView.NodeContext>
+                  {(state) => {
+                    if (node.id === 'root') return null;
+                    return buildTreeRow(node, indexPath, state);
+                  }}
+                </TreeView.NodeContext>
+              </TreeView.NodeProvider>
+            );
+          })}
         </TreeView.Context>
       </TreeView.Tree>
     </TreeView.Root>
