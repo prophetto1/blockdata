@@ -1860,7 +1860,7 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
             ) : explorerBodyContent}
           </Box>
         )}
-        <Box className="parse-playground-work">
+        <Box className={`parse-playground-work${isTransformTestSurface ? ' is-transform-grid' : ''}`}>
           <Box className="parse-playground-preview">
             <Box className="parse-preview-frame">
               <Group

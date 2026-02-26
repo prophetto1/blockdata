@@ -45,6 +45,17 @@ export function TopCommandBar({
   const className = `top-command-bar${shellGuides ? ' top-command-bar--shell-guides' : ' top-command-bar--minimal'}`;
   const leftNode = shellTopSlots?.left ?? null;
   const middleNode = shellGuides ? (shellTopSlots?.middle ?? null) : center;
+  const searchNode = !shellGuides ? (
+    <div className="top-command-bar-search-wrap">
+      <input
+        type="search"
+        className="top-command-bar-search-input"
+        placeholder="Search"
+        aria-label="Search"
+      />
+    </div>
+  ) : null;
+  const resolvedMiddleNode = middleNode ?? searchNode;
   const rightNode = shellTopSlots?.right ?? null;
   const showRightSlot = shellGuides || Boolean(shellTopSlots?.showRightInMinimal);
 
@@ -65,7 +76,7 @@ export function TopCommandBar({
         {shellGuides ? leftNode : null}
       </div>
       <div className="top-command-bar-center">
-        {middleNode}
+        {resolvedMiddleNode}
       </div>
       <div className="top-command-bar-right">
         <div className="top-command-bar-right-content">

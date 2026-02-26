@@ -1,19 +1,15 @@
 import { useEffect, useMemo, useState, type CSSProperties } from 'react';
-import { Collapsible } from '@ark-ui/react/collapsible';
 import { Select, createListCollection } from '@ark-ui/react/select';
+import { TreeView, createTreeCollection, type TreeNode } from '@ark-ui/react/tree-view';
 import {
   IconCheck,
   IconChevronDown,
   IconChevronLeft,
-  IconComponents,
   IconLogout,
   IconPlus,
-  IconSearch,
-  IconSettings,
 } from '@tabler/icons-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
-import { AiAssistantIcon } from '@/components/icons/AiAssistantIcon';
 import { GLOBAL_MENUS } from '@/components/shell/nav-config';
 import {
   Sidebar,
@@ -25,14 +21,10 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem,
   SidebarProvider,
 } from '@/components/ui/sidebar';
 import { cn } from '@/lib/utils';
 import { PROJECT_FOCUS_STORAGE_KEY } from '@/lib/projectFocus';
-import { styleTokens } from '@/lib/styleTokens';
 import { supabase } from '@/lib/supabase';
 import { TABLES } from '@/lib/tables';
 
@@ -52,6 +44,13 @@ type ProjectFocusOption = {
   label: string;
   docCount: number;
   workspaceId: string | null;
+};
+
+type RailTreeNode = TreeNode & {
+  id: string;
+  label: string;
+  path?: string;
+  children?: RailTreeNode[];
 };
 
 const PROJECTS_RPC_NEW = 'list_projects_overview';
@@ -113,7 +112,6 @@ export function LeftRailShadcn({
   const [focusedProjectId, setFocusedProjectId] = useState<string | null>(() => readStoredProjectId());
   const [projectOptions, setProjectOptions] = useState<ProjectFocusOption[]>([]);
   const [projectOptionsLoading, setProjectOptionsLoading] = useState(false);
-  const [documentsMenuExpanded, setDocumentsMenuExpanded] = useState(false);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -212,6 +210,12 @@ export function LeftRailShadcn({
     [],
   );
 
+  const menuPathToNodeId = (path: string) => path.replace(/^\/app\//, '').replaceAll('/', '-');
+  const documentsNodeId = menuPathToNodeId('/app/documents');
+  const [userExpandedNodeIds, setUserExpandedNodeIds] = useState<string[]>(() => (
+    isDocumentsMenuRoute(location.pathname) ? [documentsNodeId] : []
+  ));
+
   const parsePath = projectSelectValue ? `/app/projects/${projectSelectValue}` : '/app/projects';
   const extractPath = projectSelectValue
     ? `/app/extract/${projectSelectValue}`
@@ -235,30 +239,51 @@ export function LeftRailShadcn({
     '/app/transform': transformPath,
   };
 
-  const isGlobalMenuActive = (path: string): boolean => {
-    if (path === '/app/flows') return location.pathname.startsWith('/app/flows');
-    if (path === '/app/documents') return isDocumentsMenuRoute(location.pathname);
-    if (path === '/app/projects') {
-      return (
-        location.pathname.startsWith('/app/projects')
-        && !location.pathname.startsWith('/app/projects/list')
-        && !/^\/app\/projects\/[^/]+\/upload/.test(location.pathname)
-      );
-    }
-    if (path === '/app/upload') return /^\/app\/projects\/[^/]+\/upload/.test(location.pathname);
-    if (path === '/app/projects/list') return location.pathname.startsWith('/app/projects/list');
-    if (path === '/app/extract') return location.pathname.startsWith('/app/extract');
-    if (path === '/app/transform') return location.pathname.startsWith('/app/transform');
-    if (path === '/app/schemas') return location.pathname.startsWith('/app/schemas');
-    return location.pathname.startsWith(path);
-  };
+  const expandedNodeIds = useMemo(() => {
+    if (!isDocumentsMenuRoute(location.pathname)) return userExpandedNodeIds;
+    return userExpandedNodeIds.includes(documentsNodeId)
+      ? userExpandedNodeIds
+      : [...userExpandedNodeIds, documentsNodeId];
+  }, [documentsNodeId, location.pathname, userExpandedNodeIds]);
 
-  const documentsMenuOpen = isDocumentsMenuRoute(location.pathname) || documentsMenuExpanded;
+  const activeMenuPath = useMemo(() => {
+    if (location.pathname.startsWith('/app/flows')) return '/app/flows';
+    if (/^\/app\/projects\/[^/]+\/upload/.test(location.pathname)) return '/app/upload';
+    if (location.pathname.startsWith('/app/extract')) return '/app/extract';
+    if (location.pathname.startsWith('/app/transform')) return '/app/transform';
+    if (location.pathname.startsWith('/app/projects/list')) return '/app/projects/list';
+    if (location.pathname.startsWith('/app/projects')) return '/app/projects';
+    if (location.pathname.startsWith('/app/schemas')) return '/app/schemas';
+    return null;
+  }, [location.pathname]);
+
+  const activeNodeId = activeMenuPath ? menuPathToNodeId(activeMenuPath) : null;
+
+  const navTreeCollection = useMemo(() => {
+    const branchNodes: RailTreeNode[] = orderedGlobalMenus.map((menu) => ({
+      id: menuPathToNodeId(menu.path),
+      label: menu.label,
+      path: menu.path === '/app/documents' ? undefined : menu.path,
+      children: menu.children?.map((child) => ({
+        id: menuPathToNodeId(child.path),
+        label: child.label,
+        path: child.path,
+      })),
+    }));
+
+    return createTreeCollection<RailTreeNode>({
+      rootNode: {
+        id: 'root',
+        label: 'Root',
+        children: branchNodes,
+      },
+      nodeToValue: (node) => node.id,
+      nodeToString: (node) => node.label,
+      nodeToChildren: (node) => node.children ?? [],
+    });
+  }, [orderedGlobalMenus]);
 
   const navigateTo = (path: string) => {
-    if (path !== '/app/documents') {
-      setDocumentsMenuExpanded(false);
-    }
     navigate(globalPathOverrides[path] ?? path);
     onNavigate?.();
   };
@@ -443,113 +468,72 @@ export function LeftRailShadcn({
         <SidebarContent className="px-2">
           <SidebarGroup className="p-1">
             <SidebarGroupContent>
-              <SidebarMenu>
-                {orderedGlobalMenus.map((menu) => {
-                  const menuPath = globalPathOverrides[menu.path] ?? menu.path;
-                  const compactMenuLabel = menu.label.slice(0, 3).toUpperCase();
-                  const hasChildren = (menu.children?.length ?? 0) > 0;
-                  const isCollapsibleDocumentsMenu = menu.path === '/app/documents' && hasChildren && !desktopCompact;
-                  const submenuId = isCollapsibleDocumentsMenu ? 'documents-submenu' : undefined;
+              <TreeView.Root
+                collection={navTreeCollection}
+                selectionMode="single"
+                selectedValue={activeNodeId ? [activeNodeId] : []}
+                expandedValue={expandedNodeIds}
+                onExpandedChange={(details) => setUserExpandedNodeIds(details.expandedValue)}
+                onSelectionChange={(details) => {
+                  const nextNodeId = details.selectedValue[0];
+                  if (!nextNodeId) return;
+                  const nextNode = navTreeCollection.findNode(nextNodeId);
+                  if (!nextNode?.path) return;
+                  navigateTo(nextNode.path);
+                }}
+              >
+                <TreeView.Tree className="space-y-1">
+                  <TreeView.Context>
+                    {(tree) => tree.getVisibleNodes().map(({ node, indexPath }) => (
+                      <TreeView.NodeProvider key={node.id} node={node} indexPath={indexPath}>
+                        <TreeView.NodeContext>
+                          {(state) => {
+                            if (node.id === 'root') return null;
+                            const rowPaddingLeft = desktopCompact
+                              ? '0px'
+                              : `${Math.max(0, indexPath.length - 1) * 14}px`;
+                            const isNodeSelected = Boolean(state.selected) || (
+                              node.id === documentsNodeId
+                              && isDocumentsMenuRoute(location.pathname)
+                            );
+                            const rowClassName = cn(
+                              'flex items-center gap-2 rounded-md text-sidebar-foreground/90 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+                              desktopCompact ? 'h-10 px-2 text-sm font-semibold leading-snug' : 'h-10 px-2 text-[15px] font-semibold leading-snug',
+                              isNodeSelected ? 'bg-sidebar-accent text-sidebar-accent-foreground' : null,
+                            );
 
-                  const childrenContent = hasChildren ? (
-                    <SidebarMenuSub id={submenuId} className="mx-0 mt-1 translate-x-0 border-l-0 px-0 py-0.5">
-                      {menu.children!.map((child) => {
-                        const childPath = globalPathOverrides[child.path] ?? child.path;
-                        return (
-                          <SidebarMenuSubItem key={child.path}>
-                            <SidebarMenuSubButton
-                              asChild
-                              isActive={isGlobalMenuActive(child.path)}
-                              className="h-9 rounded-md px-2 text-[13px] font-medium text-sidebar-foreground/90 hover:text-sidebar-accent-foreground"
-                            >
-                              <a
-                                href={childPath}
-                                onClick={(event) => {
-                                  event.preventDefault();
-                                  navigateTo(child.path);
-                                }}
+                            if (state.isBranch) {
+                              return (
+                                <TreeView.Branch>
+                                  <TreeView.BranchControl
+                                    className={rowClassName}
+                                    style={{ paddingLeft: rowPaddingLeft }}
+                                  >
+                                    <TreeView.BranchText className="truncate">
+                                      {node.label}
+                                    </TreeView.BranchText>
+                                  </TreeView.BranchControl>
+                                </TreeView.Branch>
+                              );
+                            }
+
+                            return (
+                              <TreeView.Item
+                                className={rowClassName}
+                                style={{ paddingLeft: rowPaddingLeft }}
                               >
-                                <span>{child.label}</span>
-                              </a>
-                            </SidebarMenuSubButton>
-                          </SidebarMenuSubItem>
-                        );
-                      })}
-                    </SidebarMenuSub>
-                  ) : null;
-
-                  if (isCollapsibleDocumentsMenu) {
-                    return (
-                      <SidebarMenuItem key={menu.path}>
-                        <Collapsible.Root
-                          open={documentsMenuOpen}
-                          onOpenChange={(details) => setDocumentsMenuExpanded(details.open)}
-                          lazyMount
-                          unmountOnExit
-                        >
-                          <SidebarMenuButton
-                            isActive={isGlobalMenuActive(menu.path)}
-                            tooltip={menu.label}
-                            className={cn(
-                              desktopCompact
-                                ? 'size-10 justify-center p-0'
-                                : 'h-10 px-2 !text-lg !font-semibold leading-snug',
-                            )}
-                          onClick={() => setDocumentsMenuExpanded((current) => !current)}
-                          aria-expanded={documentsMenuOpen}
-                          aria-controls={submenuId}
-                        >
-                          <span>{menu.label}</span>
-                          <IconChevronDown
-                            size={16}
-                              stroke={2}
-                              className={cn(
-                                'ml-auto transition-transform duration-150',
-                                documentsMenuOpen ? 'rotate-180' : '',
-                              )}
-                            />
-                          </SidebarMenuButton>
-                          <Collapsible.Content>
-                            {childrenContent}
-                          </Collapsible.Content>
-                        </Collapsible.Root>
-                      </SidebarMenuItem>
-                    );
-                  }
-
-                  return (
-                    <SidebarMenuItem key={menu.path}>
-                      <SidebarMenuButton
-                        isActive={isGlobalMenuActive(menu.path)}
-                        tooltip={menu.label}
-                        className={cn(
-                          desktopCompact
-                            ? 'size-10 justify-center p-0'
-                            : 'h-10 px-2 text-lg font-semibold leading-snug',
-                        )}
-                        asChild
-                      >
-                        <a
-                          href={menuPath}
-                          onClick={(event) => {
-                            event.preventDefault();
-                            navigateTo(menu.path);
+                                <TreeView.ItemText className="truncate">
+                                  {node.label}
+                                </TreeView.ItemText>
+                              </TreeView.Item>
+                            );
                           }}
-                        >
-                          {desktopCompact ? (
-                            <span className="text-[var(--app-font-size-nav-caption)] font-semibold uppercase tracking-[0.04em] leading-none">
-                              {compactMenuLabel}
-                            </span>
-                          ) : (
-                            <span>{menu.label}</span>
-                          )}
-                        </a>
-                      </SidebarMenuButton>
-                      {!desktopCompact && hasChildren && childrenContent}
-                    </SidebarMenuItem>
-                  );
-                })}
-              </SidebarMenu>
+                        </TreeView.NodeContext>
+                      </TreeView.NodeProvider>
+                    ))}
+                  </TreeView.Context>
+                </TreeView.Tree>
+              </TreeView.Root>
             </SidebarGroupContent>
           </SidebarGroup>
 
@@ -558,52 +542,15 @@ export function LeftRailShadcn({
         <SidebarFooter className="border-t border-sidebar-border px-0 pt-1.5">
           <div className="px-2">
             <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton
-                asChild
-                isActive={false}
-                tooltip="Search"
-                className={cn(
-                  desktopCompact
-                    ? 'size-10 justify-center p-0'
-                    : 'h-10 text-base font-medium',
-                )}
-              >
-                <a
-                  href="/app/projects"
-                  onClick={(event) => {
-                    event.preventDefault();
-                    navigate('/app/projects');
-                    onNavigate?.();
-                  }}
-                >
-                  <IconSearch size={16} stroke={1.9} />
-                  {!desktopCompact && <span>Search</span>}
-                </a>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-
             {showAssistantToggle && onToggleAssistant && (
               <SidebarMenuItem>
                 <SidebarMenuButton
                   isActive={assistantOpened}
                   onClick={onToggleAssistant}
                   tooltip={assistantOpened ? 'Hide Assistant' : 'Show Assistant'}
-                  className={cn(
-                    desktopCompact
-                      ? 'size-10 justify-center p-0'
-                      : 'h-10 text-base font-medium',
-                  )}
+                  className="h-10 px-2 text-base font-medium"
                 >
-                  <AiAssistantIcon
-                    size={16}
-                    style={{
-                      filter: assistantOpened
-                        ? `drop-shadow(0 0 8px ${styleTokens.accents.assistantGlow})`
-                        : undefined,
-                    }}
-                  />
-                  {!desktopCompact && <span>{assistantOpened ? 'Hide Assistant' : 'Show Assistant'}</span>}
+                  <span>{assistantOpened ? 'Hide Assistant' : 'Show Assistant'}</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             )}
@@ -613,11 +560,7 @@ export function LeftRailShadcn({
                 asChild
                 isActive={location.pathname.startsWith('/app/settings')}
                 tooltip="Settings"
-                className={cn(
-                  desktopCompact
-                    ? 'size-10 justify-center p-0'
-                    : 'h-10 text-base font-medium',
-                )}
+                className="h-10 px-2 text-base font-medium"
               >
                 <a
                   href="/app/settings"
@@ -627,33 +570,7 @@ export function LeftRailShadcn({
                     onNavigate?.();
                   }}
                 >
-                  <IconSettings size={16} stroke={1.9} />
-                  {!desktopCompact && <span>Settings</span>}
-                </a>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-
-            <SidebarMenuItem>
-              <SidebarMenuButton
-                asChild
-                isActive={location.pathname.startsWith('/app/ui')}
-                tooltip="UI Catalog"
-                className={cn(
-                  desktopCompact
-                    ? 'size-10 justify-center p-0'
-                    : 'h-10 text-base font-medium',
-                )}
-              >
-                <a
-                  href="/app/ui"
-                  onClick={(event) => {
-                    event.preventDefault();
-                    navigate('/app/ui');
-                    onNavigate?.();
-                  }}
-                >
-                  <IconComponents size={16} stroke={1.9} />
-                  {!desktopCompact && <span>UI Catalog</span>}
+                  <span>Settings</span>
                 </a>
               </SidebarMenuButton>
             </SidebarMenuItem>
