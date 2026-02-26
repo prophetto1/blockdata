@@ -952,12 +952,13 @@ export function BlockViewerGridRDG({ convUid, selectedRunId, selectedRun, onExpo
         <Group className="block-grid-toolbar-group shrink-0" gap={6} wrap="nowrap">
           <MenuRoot positioning={{ placement: 'bottom-start' }}>
             <MenuTrigger asChild>
-              <Button variant="default" className="block-grid-topline-button" size="compact-xs" px={6} rightSection={<IconChevronDown size={10} />} aria-label="Vertical align">
-                <Group gap={6} wrap="nowrap">
-                  <Text size="xs" fw={600}>Align</Text>
+              <button type="button" className="block-grid-topline-button inline-flex h-6 items-center gap-1 rounded border border-border bg-background px-1.5 text-xs font-semibold text-foreground transition-colors hover:bg-accent" aria-label="Vertical align">
+                <span className="flex items-center gap-1.5">
+                  <span className="text-xs font-semibold">Align</span>
                   {viewerVerticalAlign === 'top' ? <IconArrowBarToUp size={14} /> : viewerVerticalAlign === 'center' ? <IconArrowsVertical size={14} /> : <IconArrowBarToDown size={14} />}
-                </Group>
-              </Button>
+                </span>
+                <IconChevronDown size={10} />
+              </button>
             </MenuTrigger>
             <MenuPortal>
               <MenuPositioner>
@@ -972,7 +973,7 @@ export function BlockViewerGridRDG({ convUid, selectedRunId, selectedRun, onExpo
 
           <MenuRoot positioning={{ placement: 'bottom-end' }} closeOnSelect={false}>
             <MenuTrigger asChild>
-              <Button variant="default" className="block-grid-topline-button" size="compact-xs" px={6} leftSection={<IconColumns size={14} />} rightSection={<IconChevronDown size={10} />} aria-label="Columns">Columns</Button>
+              <button type="button" className="block-grid-topline-button inline-flex h-6 items-center gap-1 rounded border border-border bg-background px-1.5 text-xs font-semibold text-foreground transition-colors hover:bg-accent" aria-label="Columns"><IconColumns size={14} />Columns<IconChevronDown size={10} /></button>
             </MenuTrigger>
             <MenuPortal>
               <MenuPositioner>
@@ -992,9 +993,9 @@ export function BlockViewerGridRDG({ convUid, selectedRunId, selectedRun, onExpo
         {hasRun && <Text size="xs" c="dimmed" className="block-grid-toolbar-metrics">{confirmedCount} confirmed - {stagedCount} staged - {selectedRows.size} selected</Text>}
       </Group>
       <Group className="block-grid-toolbar-actions shrink-0" gap={4} wrap="nowrap">
-        <Button variant={showGridConfigInspector ? 'filled' : 'default'} color="gray" className="block-grid-topline-button" size="compact-xs" px={8} onClick={() => { setShowGridConfigInspector((prev) => !prev); setConfigRefreshTick((prev) => prev + 1); }}>Grid Config</Button>
-        {onExport && <Tooltip label="Export"><ActionIcon className="block-grid-topline-icon" variant="default" color="gray" size="md" onClick={onExport} aria-label="Export"><IconDownload size={16} /></ActionIcon></Tooltip>}
-        {onDelete && <Tooltip label="Delete"><ActionIcon className="block-grid-topline-icon" variant="default" color="red" size="md" onClick={onDelete} aria-label="Delete"><IconTrash size={16} /></ActionIcon></Tooltip>}
+        <button type="button" className={`block-grid-topline-button inline-flex h-6 items-center gap-1 rounded border border-border px-2 text-xs font-semibold transition-colors ${showGridConfigInspector ? 'bg-accent text-accent-foreground' : 'bg-background text-foreground hover:bg-accent'}`} onClick={() => { setShowGridConfigInspector((prev) => !prev); setConfigRefreshTick((prev) => prev + 1); }}>Grid Config</button>
+        {onExport && <button type="button" className="block-grid-topline-icon inline-flex h-8 w-8 items-center justify-center rounded-md border border-border bg-background text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground" onClick={onExport} aria-label="Export" title="Export"><IconDownload size={16} /></button>}
+        {onDelete && <button type="button" className="block-grid-topline-icon inline-flex h-8 w-8 items-center justify-center rounded-md border border-border bg-background text-destructive transition-colors hover:bg-destructive/10" onClick={onDelete} aria-label="Delete" title="Delete"><IconTrash size={16} /></button>}
       </Group>
     </Group>
   );

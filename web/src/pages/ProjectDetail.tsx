@@ -1558,14 +1558,13 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
   const middleTabsControl = (
     <MenuRoot positioning={{ placement: 'bottom-start' }}>
       <MenuTrigger asChild>
-        <Button
-          size="xs"
-          variant="default"
-          className="parse-view-menu-button"
-          rightSection={<IconChevronDown size={12} />}
+        <button
+          type="button"
+          className="parse-view-menu-button inline-flex h-7 items-center gap-1.5 rounded border border-border bg-background px-2 text-xs font-medium text-foreground transition-colors hover:bg-accent"
         >
           {activePreviewLabel}
-        </Button>
+          <IconChevronDown size={12} />
+        </button>
       </MenuTrigger>
       <MenuPortal>
         <MenuPositioner>

@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
-import { ActionIcon, Box, Center, Group, Loader, Text, TextInput } from '@mantine/core';
 
 import { createPortal } from 'react-dom';
 import { Document, Page, pdfjs } from 'react-pdf';
@@ -162,111 +161,111 @@ export function PdfPreview({
     };
   }, [fallbackToIframe, loadError, pageCount, rotation, pageScale]);
 
+  const iconBtnClass = 'inline-flex items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-50';
+
   const toolbar = (
-    <Group justify="center" wrap="nowrap" className="parse-pdf-toolbar">
+    <div className="parse-pdf-toolbar flex items-center justify-center flex-nowrap">
       {showPageControls ? (
-        <Group
-          gap={2}
-          wrap="nowrap"
-          className="parse-pdf-page-controls parse-pdf-toolbar-pill"
+        <div
+          className="parse-pdf-page-controls parse-pdf-toolbar-pill flex items-center flex-nowrap gap-0.5"
           style={{ '--parse-pdf-page-digits': String(pageDigits) } as CSSProperties}
         >
-          <ActionIcon
-            size="sm"
-            variant="subtle"
+          <button
+            type="button"
+            className={`${iconBtnClass} h-7 w-7`}
             disabled={!canGoPrev || isPdfJsControlsDisabled}
             aria-label="Previous page"
             title="Previous page"
             onClick={() => scrollToPage(activePageNumber - 1)}
           >
             <svg xmlns="http://www.w3.org/2000/svg" height="20" viewBox="0 -960 960 960" width="20" fill="currentColor"><path d="M396-480 564-312 516-264 300-480l216-216 48 48-168 168Z"/></svg>
-          </ActionIcon>
-          <TextInput
-            size="xs"
+          </button>
+          <input
+            type="text"
             value={pageInput}
             onChange={(event) => setPageInput(event.currentTarget.value)}
             onBlur={commitPageInput}
             onKeyDown={(event) => {
               if (event.key === 'Enter') commitPageInput();
             }}
-            className="parse-pdf-page-input"
+            className="parse-pdf-page-input h-6 rounded border border-border bg-background px-1 text-center text-xs text-foreground outline-none focus:ring-2 focus:ring-ring"
             disabled={isPdfJsControlsDisabled}
           />
-          <Text size="xs" fw={600} className="parse-pdf-page-separator" aria-hidden>
+          <span className="parse-pdf-page-separator text-xs font-semibold text-muted-foreground" aria-hidden>
             /
-          </Text>
-          <Text size="xs" fw={600} className="parse-pdf-page-total">
+          </span>
+          <span className="parse-pdf-page-total text-xs font-semibold text-muted-foreground">
             {pageCount ?? '--'}
-          </Text>
-          <ActionIcon
-            size="sm"
-            variant="subtle"
+          </span>
+          <button
+            type="button"
+            className={`${iconBtnClass} h-7 w-7`}
             disabled={!canGoNext || isPdfJsControlsDisabled}
             aria-label="Next page"
             title="Next page"
             onClick={() => scrollToPage(activePageNumber + 1)}
           >
             <svg xmlns="http://www.w3.org/2000/svg" height="20" viewBox="0 -960 960 960" width="20" fill="currentColor"><path d="m375-264-48-48 168-168-168-168 48-48 216 216-216 216Z"/></svg>
-          </ActionIcon>
-        </Group>
+          </button>
+        </div>
       ) : (
-        <Box className="parse-pdf-toolbar-placeholder" />
+        <div className="parse-pdf-toolbar-placeholder" />
       )}
 
-      <Group gap={2} wrap="nowrap" className="parse-pdf-zoom-inline parse-pdf-toolbar-pill">
-        <ActionIcon
-          size="sm"
-          variant="subtle"
+      <div className="parse-pdf-zoom-inline parse-pdf-toolbar-pill flex items-center flex-nowrap gap-0.5">
+        <button
+          type="button"
+          className={`${iconBtnClass} h-7 w-7`}
           aria-label="Zoom out"
           title="Zoom out"
           onClick={() => stepZoom('out')}
           disabled={isPdfJsControlsDisabled || zoomPercent <= ZOOM_MIN}
         >
           <svg xmlns="http://www.w3.org/2000/svg" height="18" viewBox="0 -960 960 960" width="18" fill="currentColor"><path d="M200-440v-80h560v80H200Z"/></svg>
-        </ActionIcon>
-        <Text size="xs" fw={600} className="parse-pdf-zoom-value">
+        </button>
+        <span className="parse-pdf-zoom-value text-xs font-semibold text-muted-foreground">
           {zoomPercent}%
-        </Text>
-        <ActionIcon
-          size="sm"
-          variant="subtle"
+        </span>
+        <button
+          type="button"
+          className={`${iconBtnClass} h-7 w-7`}
           aria-label="Zoom in"
           title="Zoom in"
           onClick={() => stepZoom('in')}
           disabled={isPdfJsControlsDisabled || zoomPercent >= ZOOM_MAX}
         >
           <svg xmlns="http://www.w3.org/2000/svg" height="18" viewBox="0 -960 960 960" width="18" fill="currentColor"><path d="M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z"/></svg>
-        </ActionIcon>
-      </Group>
-    </Group>
+        </button>
+      </div>
+    </div>
   );
 
   return (
-    <Box className="parse-pdf-viewer">
+    <div className="parse-pdf-viewer">
       {!hideToolbar && (toolbarPortalTarget ? createPortal(toolbar, toolbarPortalTarget) : toolbar)}
 
-      <Box
+      <div
         ref={viewportRef}
         className="parse-pdf-preview-viewport"
       >
         {fallbackToIframe ? (
-          <Box className="parse-pdf-surface parse-pdf-surface--iframe">
+          <div className="parse-pdf-surface parse-pdf-surface--iframe">
             <iframe title={`${title} PDF preview`} src={url} className="parse-preview-iframe" />
-          </Box>
+          </div>
         ) : loadError ? (
-          <Center h="100%">
-            <Text size="sm" c="dimmed" ta="center">
+          <div className="flex h-full items-center justify-center">
+            <span className="text-sm text-muted-foreground text-center">
               {loadError}
-            </Text>
-          </Center>
+            </span>
+          </div>
         ) : (
-          <Box className="parse-pdf-surface">
+          <div className="parse-pdf-surface">
             <Document
               file={url}
               loading={
-                <Center h="100%">
-                  <Loader size="sm" />
-                </Center>
+                <div className="flex h-full items-center justify-center">
+                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
+                </div>
               }
               onLoadSuccess={(pdf) => {
                 setPageCount(pdf.numPages);
@@ -282,34 +281,34 @@ export function PdfPreview({
               {Array.from({ length: pageCount ?? 1 }, (_, index) => {
                 const pageNumber = index + 1;
                 return (
-                  <Box
+                  <div
                     key={pageNumber}
                     className="parse-pdf-page-shell"
                     data-page-number={pageNumber}
                     ref={(node) => setPageShellRef(pageNumber, node)}
                   >
-                    <Box className="parse-pdf-page-wrap">
+                    <div className="parse-pdf-page-wrap">
                       <Page
                         pageNumber={pageNumber}
                         width={PDF_BASE_WIDTH_PX}
                         scale={pageScale}
                         rotate={rotation}
                         loading={
-                          <Center h="100%">
-                            <Loader size="sm" />
-                          </Center>
+                          <div className="flex h-full items-center justify-center">
+                            <div className="h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
+                          </div>
                         }
                         renderTextLayer
                         renderAnnotationLayer
                       />
-                    </Box>
-                  </Box>
+                    </div>
+                  </div>
                 );
               })}
             </Document>
-          </Box>
+          </div>
         )}
-      </Box>
-    </Box>
+      </div>
+    </div>
   );
 }

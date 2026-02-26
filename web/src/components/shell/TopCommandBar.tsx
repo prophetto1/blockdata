@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Combobox, createListCollection } from '@ark-ui/react/combobox';
 import { IconMenu2, IconMoonStars, IconSparkles, IconSun, IconList } from '@tabler/icons-react';
 import { useNavigate } from 'react-router-dom';
+import { useMantineColorScheme } from '@mantine/core';
 import { useHeaderCenter } from '@/components/shell/HeaderCenterContext';
 import './TopCommandBar.css';
 
@@ -53,8 +54,13 @@ export function TopCommandBar({
   onToggleAssistant,
 }: TopCommandBarProps) {
   const navigate = useNavigate();
+  const { setColorScheme } = useMantineColorScheme();
   const { center, shellTopSlots } = useHeaderCenter();
-  const [isDark, setIsDark] = useState(resolveIsDark);
+  const [isDark, setIsDark] = useState(() => {
+    const dark = resolveIsDark();
+    setColorScheme(dark ? 'dark' : 'light');
+    return dark;
+  });
   const [searchValue, setSearchValue] = useState('');
   const searchCollection = useMemo(
     () => createListCollection({ items: TOP_SEARCH_OPTIONS }),
@@ -71,6 +77,7 @@ export function TopCommandBar({
     const next = isDark ? 'light' : 'dark';
     document.documentElement.setAttribute('data-theme', next);
     window.localStorage.setItem(UI_THEME_KEY, next);
+    setColorScheme(next);
     setIsDark((current) => !current);
   };
 
