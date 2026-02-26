@@ -1,13 +1,4 @@
 import {
-  Badge,
-  Box,
-  Group,
-  Paper,
-  Stack,
-  Text,
-  ThemeIcon,
-} from '@mantine/core';
-import {
   IconArrowDown,
   IconChevronRight,
   IconCloud,
@@ -18,9 +9,7 @@ import {
   IconVectorTriangle,
   type TablerIcon,
 } from '@tabler/icons-react';
-import { styleTokens } from '@/lib/styleTokens';
-
-// ─── Data ────────────────────────────────────────────────────────────────────
+import { Badge } from '@/components/ui/badge';
 
 type IntegrationGroup = {
   icon: TablerIcon;
@@ -44,216 +33,126 @@ const DESTINATIONS: IntegrationGroup[] = [
 const LEFT_LABELS = ['Upload', 'Parse', 'Sync'];
 const RIGHT_LABELS = ['Export', 'Push', 'Index'];
 
-// ─── Sub-components ──────────────────────────────────────────────────────────
-
 function IntegrationCard({ group }: { group: IntegrationGroup }) {
   return (
-    <Paper p="md" radius="md" withBorder>
-      <Group gap="sm" mb="xs">
-        <ThemeIcon variant="light" color="teal" size="sm" radius="sm">
+    <div className="rounded-md border p-4">
+      <div className="mb-2 flex items-center gap-2">
+        <span className="inline-flex h-6 w-6 items-center justify-center rounded bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
           <group.icon size={14} />
-        </ThemeIcon>
-        <Text fw={700} size="sm">{group.title}</Text>
-        {group.soon && (
-          <Badge size="xs" variant="light" color="teal">Soon</Badge>
-        )}
-      </Group>
-      <Group gap={6} wrap="wrap">
+        </span>
+        <span className="text-sm font-bold">{group.title}</span>
+        {group.soon && <Badge size="xs" variant="green">Soon</Badge>}
+      </div>
+      <div className="flex flex-wrap gap-1.5">
         {group.items.map((item) => (
-          <Badge
-            key={item}
-            variant="default"
-            size="xs"
-            radius="sm"
-            styles={{ root: { textTransform: 'none' } }}
-          >
-            {item}
-          </Badge>
+          <Badge key={item} size="xs" variant="secondary">{item}</Badge>
         ))}
-      </Group>
-    </Paper>
+      </div>
+    </div>
   );
 }
 
 function Connector({ label }: { label: string }) {
   return (
-    <Box
-      style={{
-        position: 'relative',
-        display: 'flex',
-        alignItems: 'center',
-        minHeight: 24,
-      }}
-    >
-      {/* Full-width line behind the label */}
-      <Box
-        style={{
-          position: 'absolute',
-          top: '50%',
-          left: 0,
-          right: 0,
-          height: 1,
-          background: 'var(--mantine-color-default-border)',
-        }}
-      />
-      {/* Label floating on the line */}
-      <Box
-        style={{
-          margin: '0 auto',
-          padding: '2px 8px',
-          background: 'var(--mantine-color-body)',
-          position: 'relative',
-          zIndex: 1,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 3,
-        }}
-      >
-        <Text
-          style={{ fontSize: 10, whiteSpace: 'nowrap', lineHeight: 1 }}
-          c="dimmed"
-          fw={500}
-        >
+    <div className="relative flex items-center" style={{ minHeight: 24 }}>
+      <div className="absolute inset-x-0 top-1/2 h-px bg-border" />
+      <div className="relative z-1 mx-auto flex items-center gap-0.5 bg-background px-2 py-0.5">
+        <span className="whitespace-nowrap text-[10px] font-medium leading-none text-muted-foreground">
           {label}
-        </Text>
-        <IconChevronRight
-          size={10}
-          style={{ color: 'var(--mantine-color-dimmed)', flexShrink: 0 }}
-        />
-      </Box>
-    </Box>
+        </span>
+        <IconChevronRight size={10} className="shrink-0 text-muted-foreground" />
+      </div>
+    </div>
   );
 }
 
-// ─── Main component ──────────────────────────────────────────────────────────
-
 export function IntegrationMap() {
   const hubCard = (
-    <Paper
-      p="xl"
-      radius="lg"
-      withBorder
-      bg={styleTokens.marketing.integrationHubBackground}
-      style={{
-        textAlign: 'center' as const,
-        borderColor: 'var(--mantine-color-teal-5)',
-        borderWidth: 2,
-      }}
+    <div
+      className="rounded-lg border-2 border-emerald-500 p-6 text-center"
+      style={{ background: 'var(--app-marketing-integration-hub-bg)' }}
     >
-      <Text fw={800} fz={22} style={{ letterSpacing: '-0.02em' }}>
+      <span className="text-[22px] font-extrabold" style={{ letterSpacing: '-0.02em' }}>
         BlockData
-      </Text>
-      <Text size="xs" c="dimmed" mt={4}>
+      </span>
+      <span className="mt-1 block text-xs text-muted-foreground">
         Schema-driven processing
-      </Text>
-    </Paper>
+      </span>
+    </div>
   );
 
   return (
-    <Box>
-      {/* ── Desktop layout (lg+) ── */}
-      <Box
-        visibleFrom="lg"
+    <div>
+      {/* Desktop layout (lg+) */}
+      <div
+        className="hidden lg:grid"
         style={{
-          display: 'grid',
           gridTemplateColumns: '1fr 110px minmax(160px, 200px) 110px 1fr',
           gridTemplateRows: 'auto repeat(3, auto)',
           gap: '12px 0',
           alignItems: 'center',
         }}
       >
-        {/* Column headers */}
-        <Text
-          size="xs"
-          fw={700}
-          tt="uppercase"
-          c="dimmed"
-          style={{ gridColumn: 1, gridRow: 1 }}
-        >
+        <span className="text-xs font-bold uppercase text-muted-foreground" style={{ gridColumn: 1, gridRow: 1 }}>
           Sources
-        </Text>
-        <Box style={{ gridColumn: '2 / 5', gridRow: 1 }} />
-        <Text
-          size="xs"
-          fw={700}
-          tt="uppercase"
-          c="dimmed"
-          ta="right"
-          style={{ gridColumn: 5, gridRow: 1 }}
-        >
+        </span>
+        <div style={{ gridColumn: '2 / 5', gridRow: 1 }} />
+        <span className="text-right text-xs font-bold uppercase text-muted-foreground" style={{ gridColumn: 5, gridRow: 1 }}>
           Destinations
-        </Text>
+        </span>
 
-        {/* Hub — spans rows 2–4, column 3 */}
-        <Box
-          style={{
-            gridColumn: 3,
-            gridRow: '2 / 5',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}
-        >
+        <div style={{ gridColumn: 3, gridRow: '2 / 5', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
           {hubCard}
-        </Box>
+        </div>
 
-        {/* Source cards — column 1, rows 2–4 */}
         {SOURCES.map((source, i) => (
-          <Box key={source.title} style={{ gridColumn: 1, gridRow: i + 2 }}>
+          <div key={source.title} style={{ gridColumn: 1, gridRow: i + 2 }}>
             <IntegrationCard group={source} />
-          </Box>
+          </div>
         ))}
-
-        {/* Left connectors — column 2, rows 2–4 */}
         {LEFT_LABELS.map((label, i) => (
-          <Box key={label} style={{ gridColumn: 2, gridRow: i + 2 }}>
+          <div key={label} style={{ gridColumn: 2, gridRow: i + 2 }}>
             <Connector label={label} />
-          </Box>
+          </div>
         ))}
-
-        {/* Right connectors — column 4, rows 2–4 */}
         {RIGHT_LABELS.map((label, i) => (
-          <Box key={label} style={{ gridColumn: 4, gridRow: i + 2 }}>
+          <div key={label} style={{ gridColumn: 4, gridRow: i + 2 }}>
             <Connector label={label} />
-          </Box>
+          </div>
         ))}
-
-        {/* Destination cards — column 5, rows 2–4 */}
         {DESTINATIONS.map((dest, i) => (
-          <Box key={dest.title} style={{ gridColumn: 5, gridRow: i + 2 }}>
+          <div key={dest.title} style={{ gridColumn: 5, gridRow: i + 2 }}>
             <IntegrationCard group={dest} />
-          </Box>
+          </div>
         ))}
-      </Box>
+      </div>
 
-      {/* ── Mobile layout (< lg) ── */}
-      <Box hiddenFrom="lg">
-        <Stack gap="md">
-          <Text size="xs" fw={700} tt="uppercase" c="dimmed" ta="center">
-            Sources
-          </Text>
-          {SOURCES.map((s) => (
-            <IntegrationCard key={s.title} group={s} />
-          ))}
+      {/* Mobile layout (< lg) */}
+      <div className="flex flex-col gap-4 lg:hidden">
+        <span className="text-center text-xs font-bold uppercase text-muted-foreground">
+          Sources
+        </span>
+        {SOURCES.map((s) => (
+          <IntegrationCard key={s.title} group={s} />
+        ))}
 
-          <Group justify="center" py="xs">
-            <IconArrowDown size={20} style={{ color: 'var(--mantine-color-dimmed)' }} />
-          </Group>
+        <div className="flex items-center justify-center py-2">
+          <IconArrowDown size={20} className="text-muted-foreground" />
+        </div>
 
-          {hubCard}
+        {hubCard}
 
-          <Group justify="center" py="xs">
-            <IconArrowDown size={20} style={{ color: 'var(--mantine-color-dimmed)' }} />
-          </Group>
+        <div className="flex items-center justify-center py-2">
+          <IconArrowDown size={20} className="text-muted-foreground" />
+        </div>
 
-          <Text size="xs" fw={700} tt="uppercase" c="dimmed" ta="center">
-            Destinations
-          </Text>
-          {DESTINATIONS.map((d) => (
-            <IntegrationCard key={d.title} group={d} />
-          ))}
-        </Stack>
-      </Box>
-    </Box>
+        <span className="text-center text-xs font-bold uppercase text-muted-foreground">
+          Destinations
+        </span>
+        {DESTINATIONS.map((d) => (
+          <IntegrationCard key={d.title} group={d} />
+        ))}
+      </div>
+    </div>
   );
 }

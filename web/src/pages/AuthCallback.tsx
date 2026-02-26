@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Center, Loader, Stack, Text } from '@mantine/core';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 
@@ -50,14 +49,13 @@ export default function AuthCallback() {
   }, [navigate, nextPath]);
 
   return (
-    <Center h="100vh">
-      <Stack align="center" gap="xs">
-        <Loader />
-        <Text size="sm" c={status === 'error' ? 'red' : 'dimmed'}>
+    <div className="flex h-screen items-center justify-center">
+      <div className="flex flex-col items-center gap-2">
+        <div className="h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
+        <span className={`text-sm ${status === 'error' ? 'text-destructive' : 'text-muted-foreground'}`}>
           {message}
-        </Text>
-      </Stack>
-    </Center>
+        </span>
+      </div>
+    </div>
   );
 }
-

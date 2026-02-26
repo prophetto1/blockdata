@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ChangeEvent, type DragEvent } from 'react';
-import { ActionIcon, Badge, Button, Group, Paper, Stack, Text } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { IconFileText, IconUpload, IconX } from '@tabler/icons-react';
+import { Badge } from '@/components/ui/badge';
 import { ErrorAlert } from '@/components/common/ErrorAlert';
 import { edgeJson } from '@/lib/edge';
 
@@ -30,6 +30,14 @@ type MultiDocumentUploaderProps = {
   showBackButton?: boolean;
   onBack?: () => void;
   onBatchUploaded?: () => void | Promise<void>;
+};
+
+const statusVariant: Record<UploadStatus, 'blue' | 'green' | 'yellow' | 'red' | 'gray'> = {
+  ready: 'gray',
+  uploading: 'blue',
+  uploaded: 'yellow',
+  ingested: 'green',
+  failed: 'red',
 };
 
 export function MultiDocumentUploader({
@@ -63,14 +71,6 @@ export function MultiDocumentUploader({
   ]);
 
   const subtitleText = subtitle === null ? null : (subtitle ?? `Drag files here or browse. Up to ${maxFiles} files per batch.`);
-
-  const statusColor: Record<UploadStatus, string> = {
-    ready: 'gray',
-    uploading: 'blue',
-    uploaded: 'yellow',
-    ingested: 'green',
-    failed: 'red',
-  };
 
   useEffect(() => {
     edgeJson<{ upload: { max_files_per_batch: number; allowed_extensions: string[] } }>('upload-policy', { method: 'GET' })
@@ -274,41 +274,38 @@ export function MultiDocumentUploader({
     if (!uploading) inputRef.current?.click();
   };
 
+  const btnClass = 'rounded-md px-3 py-1.5 text-xs font-medium transition-colors disabled:pointer-events-none disabled:opacity-50';
+  const btnDefault = `${btnClass} border bg-background hover:bg-accent`;
+  const btnLight = `${btnClass} bg-secondary text-secondary-foreground hover:bg-secondary/80`;
+  const btnPrimary = `${btnClass} bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center gap-1.5`;
+
   const queueRows = entries.map((entry) => {
     const status = statuses[entry.id] ?? 'ready';
     const message = messages[entry.id];
 
     return (
-      <Paper
+      <div
         key={entry.id}
-        withBorder
-        p="sm"
-        radius="sm"
+        className="rounded-sm border p-2"
         onClick={(event) => event.stopPropagation()}
       >
-        <Group justify="space-between" align="flex-start" wrap="nowrap">
-          <Stack gap={2} style={{ minWidth: 0 }}>
-            <Text size="sm" fw={500} style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {entry.file.name}
-            </Text>
-            <Text size="xs" c="dimmed">
-              {formatBytes(entry.file.size)}
-            </Text>
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex min-w-0 flex-col gap-0.5">
+            <span className="truncate text-sm font-medium">{entry.file.name}</span>
+            <span className="text-xs text-muted-foreground">{formatBytes(entry.file.size)}</span>
             {message && (
-              <Text size="xs" c={status === 'failed' ? 'red' : 'dimmed'}>
+              <span className={`text-xs ${status === 'failed' ? 'text-destructive' : 'text-muted-foreground'}`}>
                 {message}
-              </Text>
+              </span>
             )}
-          </Stack>
+          </div>
 
-          <Group gap="xs">
-            <Badge variant="light" color={statusColor[status]}>
-              {status}
-            </Badge>
+          <div className="flex items-center gap-2">
+            <Badge variant={statusVariant[status]}>{status}</Badge>
             {status === 'failed' && !uploading && (
-              <Button
-                size="compact-xs"
-                variant="light"
+              <button
+                type="button"
+                className={btnLight}
                 onClick={async (event) => {
                   event.stopPropagation();
                   try {
@@ -323,11 +320,11 @@ export function MultiDocumentUploader({
                 }}
               >
                 Retry
-              </Button>
+              </button>
             )}
-            <ActionIcon
-              variant="subtle"
-              color="gray"
+            <button
+              type="button"
+              className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-50"
               disabled={uploading || status === 'uploading'}
               onClick={(event) => {
                 event.stopPropagation();
@@ -335,143 +332,136 @@ export function MultiDocumentUploader({
               }}
             >
               <IconX size={14} />
-            </ActionIcon>
-          </Group>
-        </Group>
-      </Paper>
+            </button>
+          </div>
+        </div>
+      </div>
     );
   });
 
   const content = (
-    <Stack gap="md">
-        {title ? <Text fw={600} size="lg">{title}</Text> : null}
-        {subtitleText ? (
-          <Text size="sm" c="dimmed">
-            {subtitleText}
-          </Text>
-        ) : null}
+    <div className="flex flex-col gap-4">
+      {title ? <span className="text-lg font-semibold">{title}</span> : null}
+      {subtitleText ? (
+        <span className="text-sm text-muted-foreground">{subtitleText}</span>
+      ) : null}
 
-        <Paper
-          withBorder
-          p="xl"
-          radius="md"
-          style={{
-            borderStyle: 'dashed',
-            cursor: uploading ? 'not-allowed' : 'pointer',
-            backgroundColor: dragActive ? 'var(--mantine-color-blue-light)' : undefined,
-            opacity: uploading ? 0.65 : 1,
-            aspectRatio: dropzoneSquare ? '1 / 1' : undefined,
-            minHeight: dropzoneSquare ? 320 : undefined,
-            display: dropzoneSquare ? 'flex' : undefined,
-            alignItems: dropzoneSquare ? (entries.length === 0 ? 'center' : 'stretch') : undefined,
-            justifyContent: dropzoneSquare ? (entries.length === 0 ? 'center' : 'flex-start') : undefined,
-          }}
-          onClick={openFilePicker}
-          onDragEnter={(event) => {
-            event.preventDefault();
-            if (!uploading) setDragActive(true);
-          }}
-          onDragOver={(event) => {
-            event.preventDefault();
-          }}
-          onDragLeave={(event) => {
-            event.preventDefault();
-            setDragActive(false);
-          }}
-          onDrop={onDrop}
-        >
-          {entries.length === 0 ? (
-            <Stack align="center" gap="xs" style={dropzoneSquare ? { width: '100%' } : undefined}>
-              <IconFileText size={28} />
-              <Text size="sm" fw={500}>Drop files to add them</Text>
-              <Text size="xs" c="dimmed">
-                Supported: {allowedExtensions.join(', ')}
-              </Text>
-              <Button
-                variant="light"
-                size="xs"
+      <div
+        className="rounded-md border border-dashed p-6"
+        style={{
+          cursor: uploading ? 'not-allowed' : 'pointer',
+          backgroundColor: dragActive ? 'hsl(var(--accent))' : undefined,
+          opacity: uploading ? 0.65 : 1,
+          aspectRatio: dropzoneSquare ? '1 / 1' : undefined,
+          minHeight: dropzoneSquare ? 320 : undefined,
+          display: dropzoneSquare ? 'flex' : undefined,
+          alignItems: dropzoneSquare ? (entries.length === 0 ? 'center' : 'stretch') : undefined,
+          justifyContent: dropzoneSquare ? (entries.length === 0 ? 'center' : 'flex-start') : undefined,
+        }}
+        onClick={openFilePicker}
+        onDragEnter={(event) => {
+          event.preventDefault();
+          if (!uploading) setDragActive(true);
+        }}
+        onDragOver={(event) => {
+          event.preventDefault();
+        }}
+        onDragLeave={(event) => {
+          event.preventDefault();
+          setDragActive(false);
+        }}
+        onDrop={onDrop}
+      >
+        {entries.length === 0 ? (
+          <div className="flex flex-col items-center gap-2" style={dropzoneSquare ? { width: '100%' } : undefined}>
+            <IconFileText size={28} />
+            <span className="text-sm font-medium">Drop files to add them</span>
+            <span className="text-xs text-muted-foreground">
+              Supported: {allowedExtensions.join(', ')}
+            </span>
+            <button
+              type="button"
+              className={btnLight}
+              disabled={uploading}
+              onClick={(event) => {
+                event.stopPropagation();
+                openFilePicker();
+              }}
+            >
+              Browse files
+            </button>
+          </div>
+        ) : (
+          <div className="flex w-full flex-col gap-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-muted-foreground">Upload queue</span>
+              <Badge variant="blue">{entries.length} file(s) selected</Badge>
+            </div>
+
+            <div className="flex w-full flex-col gap-2 overflow-y-auto" style={{ maxHeight: dropzoneSquare ? 240 : 260 }}>
+              {queueRows}
+            </div>
+
+            <div className="flex justify-center">
+              <button
+                type="button"
+                className={btnLight}
                 disabled={uploading}
                 onClick={(event) => {
                   event.stopPropagation();
                   openFilePicker();
                 }}
               >
-                Browse files
-              </Button>
-            </Stack>
-          ) : (
-            <Stack gap="xs" style={{ width: '100%' }}>
-              <Group justify="space-between" align="center">
-                <Text size="xs" c="dimmed" fw={600}>
-                  Upload queue
-                </Text>
-                <Badge variant="light" color="blue">
-                  {entries.length} file(s) selected
-                </Badge>
-              </Group>
+                Add more files
+              </button>
+            </div>
+          </div>
+        )}
+        <input
+          ref={inputRef}
+          type="file"
+          multiple
+          accept={allowedExtensions.join(',')}
+          style={{ display: 'none' }}
+          onChange={onFileInputChange}
+        />
+      </div>
 
-              <Stack gap="xs" style={{ width: '100%', maxHeight: dropzoneSquare ? 240 : 260, overflowY: 'auto' }}>
-                {queueRows}
-              </Stack>
+      {error && <ErrorAlert message={error} />}
 
-              <Group justify="center">
-                <Button
-                  variant="light"
-                  size="xs"
-                  disabled={uploading}
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    openFilePicker();
-                  }}
-                >
-                  Add more files
-                </Button>
-              </Group>
-            </Stack>
-          )}
-          <input
-            ref={inputRef}
-            type="file"
-            multiple
-            accept={allowedExtensions.join(',')}
-            style={{ display: 'none' }}
-            onChange={onFileInputChange}
-          />
-        </Paper>
-
-        {error && <ErrorAlert message={error} />}
-
-        <Group justify={showBackButton ? 'space-between' : 'center'}>
-          {showBackButton ? (
-            <Button variant="default" onClick={onBack}>
-              Back to project
-            </Button>
-          ) : null}
-          <Group>
-            <Button
-              variant="default"
-              onClick={() => {
-                if (uploading) return;
-                setEntries([]);
-                setStatuses({});
-                setMessages({});
-                setError(null);
-              }}
-              disabled={uploading || entries.length === 0}
-            >
-              Clear
-            </Button>
-            <Button
-              onClick={handleUpload}
-              loading={uploading}
-              disabled={entries.length === 0}
-              leftSection={<IconUpload size={16} />}
-            >
-              Upload selected
-            </Button>
-          </Group>
-        </Group>
-    </Stack>
+      <div className={`flex ${showBackButton ? 'justify-between' : 'justify-center'}`}>
+        {showBackButton ? (
+          <button type="button" className={btnDefault} onClick={onBack}>
+            Back to project
+          </button>
+        ) : null}
+        <div className="flex gap-2">
+          <button
+            type="button"
+            className={btnDefault}
+            onClick={() => {
+              if (uploading) return;
+              setEntries([]);
+              setStatuses({});
+              setMessages({});
+              setError(null);
+            }}
+            disabled={uploading || entries.length === 0}
+          >
+            Clear
+          </button>
+          <button
+            type="button"
+            className={btnPrimary}
+            onClick={handleUpload}
+            disabled={uploading || entries.length === 0}
+          >
+            {uploading ? <div className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" /> : <IconUpload size={16} />}
+            Upload selected
+          </button>
+        </div>
+      </div>
+    </div>
   );
 
   if (!framed) {
@@ -479,8 +469,8 @@ export function MultiDocumentUploader({
   }
 
   return (
-    <Paper p="lg" withBorder maw={maxWidth}>
+    <div className="rounded-md border p-6" style={{ maxWidth }}>
       {content}
-    </Paper>
+    </div>
   );
 }

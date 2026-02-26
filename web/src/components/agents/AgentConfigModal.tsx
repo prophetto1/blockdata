@@ -1,15 +1,5 @@
 import { useState } from 'react';
 import {
-  Button,
-  Group,
-  Select,
-  Stack,
-  Text,
-  TextInput,
-  Alert,
-  Divider,
-} from '@mantine/core';
-import {
   DialogRoot,
   DialogContent,
   DialogTitle,
@@ -25,6 +15,9 @@ import type { ProviderConnectionView } from '@/components/agents/useAgentConfigs
 import { PROVIDERS } from '@/components/agents/providerRegistry';
 import { GoogleAuthPanel } from '@/components/agents/forms/GoogleAuthPanel';
 import { ProviderCredentialsModule } from '@/components/agents/forms/ProviderCredentialsModule';
+
+const btnLight = 'rounded-md px-3 py-1.5 text-sm font-medium bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors disabled:pointer-events-none disabled:opacity-50';
+const btnPrimary = 'rounded-md px-3 py-1.5 text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:pointer-events-none disabled:opacity-50';
 
 export function AgentConfigModal({
   opened,
@@ -98,44 +91,78 @@ export function AgentConfigModal({
     }
   };
 
+  const inputClass = 'flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring';
+  const selectClass = 'flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring';
+
   return (
     <DialogRoot open={opened} onOpenChange={(e) => { if (!e.open) onClose(); }}>
       <DialogContent className="w-lg">
         <DialogCloseTrigger />
         <DialogTitle>{`Configure: ${catalog.display_name}`}</DialogTitle>
         <DialogBody>
-          <Stack gap="md">
+          <div className="flex flex-col gap-4">
             {!configured && (
-              <Alert icon={<IconInfoCircle size={16} />} color="yellow" title="Needs setup">
-                {readinessText || 'Credentials are not configured yet.'}
-              </Alert>
+              <div className="flex gap-3 rounded-md border border-yellow-300 bg-yellow-50 p-3 dark:border-yellow-700 dark:bg-yellow-900/20">
+                <IconInfoCircle size={16} className="mt-0.5 shrink-0 text-yellow-600 dark:text-yellow-400" />
+                <div className="flex flex-col gap-1">
+                  <span className="text-sm font-medium text-yellow-800 dark:text-yellow-300">Needs setup</span>
+                  <span className="text-sm text-yellow-700 dark:text-yellow-400">
+                    {readinessText || 'Credentials are not configured yet.'}
+                  </span>
+                </div>
+              </div>
             )}
 
-            <TextInput
-              label="Keyword"
-              description="Slash command alias. Example: /claude"
-              value={keyword}
-              onChange={(e) => setKeyword(e.currentTarget.value)}
-            />
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-medium">Keyword</label>
+              <span className="text-xs text-muted-foreground">Slash command alias. Example: /claude</span>
+              <input
+                type="text"
+                className={inputClass}
+                value={keyword}
+                onChange={(e) => setKeyword(e.currentTarget.value)}
+              />
+            </div>
 
             {modelOptions.length > 0 ? (
-              <Select label="Model" data={modelOptions} value={model} onChange={(v) => v && setModel(v)} />
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm font-medium">Model</label>
+                <select
+                  className={selectClass}
+                  value={model}
+                  onChange={(e) => setModel(e.currentTarget.value)}
+                >
+                  {modelOptions.map((opt) => {
+                    const value = typeof opt === 'string' ? opt : opt.value;
+                    const label = typeof opt === 'string' ? opt : opt.label;
+                    return (
+                      <option key={value} value={value}>
+                        {label}
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
             ) : (
-              <TextInput
-                label="Model"
-                description="Model identifier (for custom providers)."
-                value={model}
-                onChange={(e) => setModel(e.currentTarget.value)}
-              />
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm font-medium">Model</label>
+                <span className="text-xs text-muted-foreground">Model identifier (for custom providers).</span>
+                <input
+                  type="text"
+                  className={inputClass}
+                  value={model}
+                  onChange={(e) => setModel(e.currentTarget.value)}
+                />
+              </div>
             )}
 
-            <Divider />
+            <div className="h-px bg-border" />
 
             <ProviderCredentialsModule provider={provider} providerKeyInfo={providerKeyInfo} onReload={onReload} />
 
             {provider === 'google' && (
               <>
-                <Divider />
+                <div className="h-px bg-border" />
                 <GoogleAuthPanel
                   providerKeyInfo={providerKeyInfo}
                   providerConnections={providerConnections}
@@ -146,23 +173,23 @@ export function AgentConfigModal({
               </>
             )}
 
-            <Group justify="space-between" mt="xs">
-              <Group gap="xs">
-                <Button variant="light" onClick={handleSetDefault} disabled={!configured}>
+            <div className="mt-1 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <button type="button" className={btnLight} onClick={handleSetDefault} disabled={!configured}>
                   Set default
-                </Button>
+                </button>
                 {!featureFlags.providerConnectionFlows && provider === 'google' && (
-                  <Text size="xs" c="dimmed">
+                  <span className="text-xs text-muted-foreground">
                     Vertex connect is behind `providerConnectionFlows`.
-                  </Text>
+                  </span>
                 )}
-              </Group>
+              </div>
 
-              <Button onClick={handleSave} disabled={saveDisabled}>
+              <button type="button" className={btnPrimary} onClick={handleSave} disabled={saveDisabled}>
                 Save
-              </Button>
-            </Group>
-          </Stack>
+              </button>
+            </div>
+          </div>
         </DialogBody>
       </DialogContent>
     </DialogRoot>

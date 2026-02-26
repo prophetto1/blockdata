@@ -1,4 +1,3 @@
-import { Box } from '@mantine/core';
 import { Outlet } from 'react-router-dom';
 import { PublicNavModern } from './PublicNavModern';
 import { PublicFooter } from './PublicFooter';
@@ -6,12 +5,12 @@ import { PublicFooter } from './PublicFooter';
 /** Full-width layout for landing page and future marketing pages. */
 export function MarketingLayout() {
   return (
-    <Box style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div className="flex min-h-screen flex-col">
       <PublicNavModern />
-      <Box style={{ flex: 1 }}>
+      <div className="flex-1">
         <Outlet />
-      </Box>
+      </div>
       <PublicFooter />
-    </Box>
+    </div>
   );
 }

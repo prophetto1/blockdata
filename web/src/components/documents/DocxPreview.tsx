@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import { ActionIcon, Box, Center, Group, Loader, Text, useComputedColorScheme } from '@mantine/core';
 import { IconDownload, IconFileText } from '@tabler/icons-react';
 import { renderAsync } from 'docx-preview';
+import { useIsDark } from '@/lib/useIsDark';
 
 type DocxPreviewProps = {
   title: string;
@@ -9,8 +9,7 @@ type DocxPreviewProps = {
 };
 
 export function DocxPreview({ title, url }: DocxPreviewProps) {
-  const computedColorScheme = useComputedColorScheme('light');
-  const isDark = computedColorScheme === 'dark';
+  const isDark = useIsDark();
   const renderHostRef = useRef<HTMLDivElement | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -59,44 +58,42 @@ export function DocxPreview({ title, url }: DocxPreviewProps) {
   }, [url]);
 
   return (
-    <Box className={`parse-docx-preview${isDark ? ' is-dark' : ' is-light'}`}>
-      <Group justify="space-between" wrap="nowrap" className="parse-text-preview-header">
-        <Group gap={6} wrap="nowrap" className="parse-text-preview-file">
+    <div className={`parse-docx-preview${isDark ? ' is-dark' : ' is-light'}`}>
+      <div className="parse-text-preview-header flex items-center justify-between flex-nowrap">
+        <div className="parse-text-preview-file flex items-center gap-1.5 flex-nowrap">
           <IconFileText size={14} />
-          <Text size="xs" className="parse-text-preview-filename" title={title}>
+          <span className="parse-text-preview-filename text-xs" title={title}>
             {title}
-          </Text>
-        </Group>
-        <ActionIcon
-          size="sm"
-          variant="subtle"
-          component="a"
+          </span>
+        </div>
+        <a
           href={url}
           target="_blank"
           rel="noreferrer"
           download
           aria-label="Download docx"
+          className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground"
         >
           <IconDownload size={14} />
-        </ActionIcon>
-      </Group>
+        </a>
+      </div>
 
-      <Box className="parse-docx-preview-viewport">
+      <div className="parse-docx-preview-viewport">
         {loading && (
-          <Center h="100%">
-            <Loader size="sm" />
-          </Center>
+          <div className="flex h-full items-center justify-center">
+            <div className="h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
+          </div>
         )}
         {!loading && error && (
-          <Center h="100%" p="sm">
-            <Text size="sm" c="dimmed" ta="center">{error}</Text>
-          </Center>
+          <div className="flex h-full items-center justify-center p-2">
+            <span className="text-center text-sm text-muted-foreground">{error}</span>
+          </div>
         )}
-        <Box
+        <div
           ref={renderHostRef}
           className={`parse-docx-render-host${loading || !!error ? ' is-hidden' : ''}`}
         />
-      </Box>
-    </Box>
+      </div>
+    </div>
   );
 }

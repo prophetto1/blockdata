@@ -1,22 +1,24 @@
 import type { ReactNode } from 'react';
-import { Grid, GridCol, Stack, type GridProps } from '@mantine/core';
 
-type Props = GridProps & {
+type Props = {
   leftSlot: ReactNode;
   rightSlot: ReactNode;
+  gap?: number;
+  className?: string;
 };
 
-export function MarketingSplitSection({ leftSlot, rightSlot, gutter = 48, ...props }: Props) {
+export function MarketingSplitSection({ leftSlot, rightSlot, gap = 48, className }: Props) {
   return (
-    <Grid gutter={gutter} align="center" {...props}>
-      <GridCol span={{ base: 12, md: 7 }}>
-        <Stack gap="lg">
-          {leftSlot}
-        </Stack>
-      </GridCol>
-      <GridCol span={{ base: 12, md: 5 }}>
+    <div
+      className={`grid items-center grid-cols-1 md:grid-cols-[7fr_5fr] ${className ?? ''}`}
+      style={{ gap }}
+    >
+      <div className="flex flex-col gap-6">
+        {leftSlot}
+      </div>
+      <div>
         {rightSlot}
-      </GridCol>
-    </Grid>
+      </div>
+    </div>
   );
 }

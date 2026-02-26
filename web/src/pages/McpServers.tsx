@@ -1,5 +1,4 @@
 import { useMemo, useState } from 'react';
-import { SimpleGrid, TextInput } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { PageHeader } from '@/components/common/PageHeader';
 import { MCP_CATALOG } from '@/components/mcp/mcp-catalog';
@@ -21,14 +20,15 @@ export default function McpServers() {
         subtitle="Catalog and placeholder connect state. Tool wiring and real connections come later."
       />
 
-      <TextInput
+      <input
+        type="text"
         placeholder="Search MCP servers..."
+        className="mb-4 flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
         value={query}
         onChange={(e) => setQuery(e.currentTarget.value)}
-        mb="md"
       />
 
-      <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         {filtered.map((server) => (
           <McpServerCard
             key={server.id}
@@ -40,8 +40,7 @@ export default function McpServers() {
             }}
           />
         ))}
-      </SimpleGrid>
+      </div>
     </>
   );
 }
-

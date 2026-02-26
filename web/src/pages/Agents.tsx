@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react';
-import { SimpleGrid, TextInput, Text, Center, Loader } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { useNavigate } from 'react-router-dom';
 import { PageHeader } from '@/components/common/PageHeader';
@@ -44,9 +43,9 @@ export default function Agents() {
     return (
       <>
         <PageHeader title="Agents" subtitle="Configure provider credentials, keywords, and default agent selection." />
-        <Center py="xl">
-          <Loader />
-        </Center>
+        <div className="flex items-center justify-center py-10">
+          <div className="h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
+        </div>
       </>
     );
   }
@@ -55,7 +54,7 @@ export default function Agents() {
     return (
       <>
         <PageHeader title="Agents" subtitle="Configure provider credentials, keywords, and default agent selection." />
-        <Text c="red">{error}</Text>
+        <span className="text-destructive">{error}</span>
       </>
     );
   }
@@ -64,14 +63,15 @@ export default function Agents() {
     <>
       <PageHeader title="Agents" subtitle="Configure provider credentials, keywords, and default agent selection." />
 
-      <TextInput
+      <input
+        type="text"
         placeholder="Search agents..."
+        className="mb-4 flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
         value={query}
         onChange={(e) => setQuery(e.currentTarget.value)}
-        mb="md"
       />
 
-      <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="md">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {filteredCatalog.map((cat) => {
           const readiness = data?.readiness?.[cat.agent_slug];
           const configured = Boolean(readiness?.is_ready);
@@ -100,7 +100,7 @@ export default function Agents() {
             />
           );
         })}
-      </SimpleGrid>
+      </div>
 
       {activeCatalog && (
         <AgentConfigModal

@@ -1,18 +1,17 @@
-import { Box } from '@mantine/core';
 import { Outlet } from 'react-router-dom';
 import { PublicNav } from './PublicNav';
 import { PublicFooter } from './PublicFooter';
 
 export function PublicFullBleedLayout() {
   return (
-    <Box>
+    <div>
       <PublicNav />
-      <Box pt={80} style={{ minHeight: 'calc(100vh - 80px)', display: 'flex', flexDirection: 'column' }}>
-        <Box style={{ flex: 1, display: 'flex' }}>
+      <div className="flex min-h-[calc(100vh-80px)] flex-col pt-20">
+        <div className="flex flex-1">
           <Outlet />
-        </Box>
+        </div>
         <PublicFooter />
-      </Box>
-    </Box>
+      </div>
+    </div>
   );
 }

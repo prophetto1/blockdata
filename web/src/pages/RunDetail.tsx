@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Card, Group, Text, Badge, Button, SimpleGrid, Loader, Center } from '@mantine/core';
 import {
   DialogRoot,
   DialogContent,
@@ -9,6 +8,7 @@ import {
   DialogBody,
   DialogFooter,
 } from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
 import { notifications } from '@mantine/notifications';
 import { IconTrash, IconPlayerStop } from '@tabler/icons-react';
 import { supabase } from '@/lib/supabase';
@@ -19,7 +19,7 @@ import { PageHeader } from '@/components/common/PageHeader';
 import { ErrorAlert } from '@/components/common/ErrorAlert';
 import { AppBreadcrumbs } from '@/components/common/AppBreadcrumbs';
 
-const STATUS_COLOR: Record<string, string> = {
+const STATUS_VARIANT: Record<string, 'blue' | 'green' | 'red' | 'gray'> = {
   running: 'blue',
   complete: 'green',
   failed: 'red',
@@ -51,7 +51,6 @@ export default function RunDetail() {
         if (err) { setError(err.message); setLoading(false); return; }
         if (!data) { setError('Run not found'); setLoading(false); return; }
         const r = data as RunRow;
-        // Route-entity validation: look up project via conv_uid, redirect if mismatch
         if (projectId && r.conv_uid) {
           supabase
             .from(TABLES.documents)
@@ -75,7 +74,6 @@ export default function RunDetail() {
 
   useEffect(load, [runId, projectId, navigate]);
 
-  // Fetch project name for breadcrumbs
   useEffect(() => {
     if (!projectId) return;
     supabase
@@ -127,7 +125,13 @@ export default function RunDetail() {
     }
   };
 
-  if (loading) return <Center mt="xl"><Loader /></Center>;
+  if (loading) {
+    return (
+      <div className="mt-5 flex items-center justify-center">
+        <div className="h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
+      </div>
+    );
+  }
 
   return (
     <>
@@ -137,36 +141,64 @@ export default function RunDetail() {
         { label: `Run ${row?.run_id?.slice(0, 8) ?? ''}...` },
       ]} />
       <PageHeader title="Run" subtitle={row?.run_id}>
-        <Button variant="light" size="xs" onClick={load}>Refresh</Button>
+        <button
+          type="button"
+          className="rounded-md bg-secondary px-3 py-1.5 text-xs font-medium text-secondary-foreground hover:bg-secondary/80"
+          onClick={load}
+        >
+          Refresh
+        </button>
         {row?.status === 'running' && (
-          <Button variant="light" color="yellow" size="xs" leftSection={<IconPlayerStop size={14} />} onClick={handleCancel} loading={cancelling}>
+          <button
+            type="button"
+            className="inline-flex items-center gap-1.5 rounded-md bg-yellow-100 px-3 py-1.5 text-xs font-medium text-yellow-800 hover:bg-yellow-200 disabled:opacity-50 dark:bg-yellow-900/30 dark:text-yellow-300 dark:hover:bg-yellow-900/50"
+            onClick={handleCancel}
+            disabled={cancelling}
+          >
+            {cancelling ? <div className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" /> : <IconPlayerStop size={14} />}
             Cancel
-          </Button>
+          </button>
         )}
-        <Button variant="subtle" color="red" size="xs" leftSection={<IconTrash size={14} />} onClick={openDelete}>
+        <button
+          type="button"
+          className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/10"
+          onClick={openDelete}
+        >
+          <IconTrash size={14} />
           Delete
-        </Button>
+        </button>
       </PageHeader>
       {error && <ErrorAlert message={error} />}
       {row && (
         <>
-          <SimpleGrid cols={{ base: 1, md: 3 }} spacing="md">
-            <Card withBorder padding="md">
-              <Text size="xs" c="dimmed">Status</Text>
-              <Badge mt={4} color={STATUS_COLOR[row.status] ?? 'gray'}>{row.status}</Badge>
-            </Card>
-            <Card withBorder padding="md">
-              <Text size="xs" c="dimmed">Total blocks</Text>
-              <Text fw={600} mt={4}>{row.total_blocks}</Text>
-            </Card>
-            <Card withBorder padding="md">
-              <Text size="xs" c="dimmed">Completed</Text>
-              <Text fw={600} mt={4}>{row.completed_blocks} <Text span c="dimmed" size="sm">(+{row.failed_blocks} failed)</Text></Text>
-            </Card>
-          </SimpleGrid>
-          <Group mt="lg">
-            <Button onClick={exportJsonl}>Export JSONL</Button>
-          </Group>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            <div className="rounded-md border p-4">
+              <span className="text-xs text-muted-foreground">Status</span>
+              <div className="mt-1">
+                <Badge variant={STATUS_VARIANT[row.status] ?? 'gray'}>{row.status}</Badge>
+              </div>
+            </div>
+            <div className="rounded-md border p-4">
+              <span className="text-xs text-muted-foreground">Total blocks</span>
+              <span className="mt-1 block font-semibold">{row.total_blocks}</span>
+            </div>
+            <div className="rounded-md border p-4">
+              <span className="text-xs text-muted-foreground">Completed</span>
+              <span className="mt-1 block font-semibold">
+                {row.completed_blocks}{' '}
+                <span className="text-sm text-muted-foreground">(+{row.failed_blocks} failed)</span>
+              </span>
+            </div>
+          </div>
+          <div className="mt-6 flex items-center gap-2">
+            <button
+              type="button"
+              className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+              onClick={exportJsonl}
+            >
+              Export JSONL
+            </button>
+          </div>
         </>
       )}
 
@@ -175,13 +207,27 @@ export default function RunDetail() {
           <DialogCloseTrigger />
           <DialogTitle>Delete run</DialogTitle>
           <DialogBody>
-            <Text size="sm">
+            <span className="text-sm">
               This will permanently delete this run and all its block overlays. This cannot be undone.
-            </Text>
+            </span>
           </DialogBody>
           <DialogFooter>
-            <Button variant="default" onClick={closeDelete}>Cancel</Button>
-            <Button color="red" onClick={handleDelete} loading={deleting}>Delete</Button>
+            <button
+              type="button"
+              className="rounded-md border bg-background px-4 py-2 text-sm font-medium hover:bg-accent"
+              onClick={closeDelete}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              className="rounded-md bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground hover:bg-destructive/90 disabled:opacity-50"
+              onClick={handleDelete}
+              disabled={deleting}
+            >
+              {deleting ? <div className="mr-2 inline-block h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" /> : null}
+              Delete
+            </button>
           </DialogFooter>
         </DialogContent>
       </DialogRoot>

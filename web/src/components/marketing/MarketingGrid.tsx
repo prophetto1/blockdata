@@ -6,16 +6,17 @@ import {
   type ColDef,
   type ICellRendererParams,
 } from 'ag-grid-community';
-import { Badge, Paper, Text, useComputedColorScheme } from '@mantine/core';
+import { Badge } from '@/components/ui/badge';
+import { useIsDark } from '@/lib/useIsDark';
 import { createAppGridTheme } from '@/lib/agGridTheme';
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
-const BLOCK_TYPE_COLOR: Record<string, string> = {
+const BLOCK_TYPE_VARIANT: Record<string, 'blue' | 'gray' | 'green' | 'default'> = {
   heading: 'blue',
   paragraph: 'gray',
-  list_item: 'teal',
-  code_block: 'violet',
+  list_item: 'green',
+  code_block: 'default',
 };
 
 type MarketingGridRow = {
@@ -27,8 +28,6 @@ type MarketingGridRow = {
   field_classification: string | null;
   field_is_binding: boolean | null;
 };
-
-// --- Mock Data ---
 
 const MOCK_ROWS: MarketingGridRow[] = [
   {
@@ -85,7 +84,7 @@ const MOCK_ROWS: MarketingGridRow[] = [
     field_classification: 'deliverable',
     field_is_binding: true,
   },
-   {
+  {
     block_index: 7,
     block_type: 'paragraph',
     block_content: 'Client shall pay an upfront fee of $50,000 upon execution of this Agreement.',
@@ -96,25 +95,20 @@ const MOCK_ROWS: MarketingGridRow[] = [
   },
 ];
 
-// --- Renderers ---
-
 function StatusRenderer(params: ICellRendererParams<MarketingGridRow, string>) {
-    const status = params.value ?? 'pending';
-    const color = status === 'confirmed' ? 'green' : status === 'ai_complete' ? 'yellow' : 'gray';
-    return <Badge size="xs" variant="light" color={color}>{status}</Badge>;
+  const status = params.value ?? 'pending';
+  const variant = status === 'confirmed' ? 'green' : status === 'ai_complete' ? 'yellow' : 'gray';
+  return <Badge size="xs" variant={variant}>{status}</Badge>;
 }
 
 function TypeRenderer(params: ICellRendererParams<MarketingGridRow, string>) {
-    const value = params.value ?? 'unknown';
-    return <Badge size="xs" variant="light" color={BLOCK_TYPE_COLOR[value] || 'gray'}>{value}</Badge>;
+  const value = params.value ?? 'unknown';
+  return <Badge size="xs" variant={BLOCK_TYPE_VARIANT[value] ?? 'gray'}>{value}</Badge>;
 }
-
-// --- Component ---
 
 export function MarketingGrid() {
   const [rowData] = useState(MOCK_ROWS);
-  const computedColorScheme = useComputedColorScheme('dark');
-  const isDark = computedColorScheme === 'dark';
+  const isDark = useIsDark();
   const gridTheme = useMemo(
     () => createAppGridTheme(isDark).withParams({ rowVerticalPaddingScale: 0.5 }),
     [isDark],
@@ -126,28 +120,28 @@ export function MarketingGrid() {
     { field: 'block_content', headerName: 'Content', flex: 1, minWidth: 300 },
     { field: 'status', headerName: 'Status', width: 100, cellRenderer: StatusRenderer },
     {
-        headerName: 'Schema Extraction (v1)',
-        marryChildren: true,
-        children: [
-            { field: 'field_classification', headerName: 'classification', width: 160 },
-            { field: 'field_is_binding', headerName: 'is_binding', width: 100 },
-        ]
-    }
+      headerName: 'Schema Extraction (v1)',
+      marryChildren: true,
+      children: [
+        { field: 'field_classification', headerName: 'classification', width: 160 },
+        { field: 'field_is_binding', headerName: 'is_binding', width: 100 },
+      ],
+    },
   ], []);
 
   return (
-    <Paper withBorder radius="md" style={{ overflow: 'hidden', height: 400, display: 'flex', flexDirection: 'column' }}>
-        <div style={{ padding: '8px 12px', borderBottom: '1px solid var(--mantine-color-default-border)', background: 'var(--mantine-color-body)' }}>
-            <Text size="xs" c="dimmed" fw={700}>PREVIEW: LEGAL_AGREEMENT_V1.PDF</Text>
-        </div>
-        <div className="block-viewer-grid grid-font-medium grid-font-family-sans grid-valign-center" style={{ flex: 1, width: '100%' }}>
-             <AgGridReact
-                theme={gridTheme}
-                rowData={rowData}
-                columnDefs={colDefs}
-                domLayout='autoHeight'
-             />
-        </div>
-    </Paper>
+    <div className="flex flex-col overflow-hidden rounded-md border" style={{ height: 400 }}>
+      <div className="border-b bg-background px-3 py-2">
+        <span className="text-xs font-bold text-muted-foreground">PREVIEW: LEGAL_AGREEMENT_V1.PDF</span>
+      </div>
+      <div className="block-viewer-grid grid-font-medium grid-font-family-sans grid-valign-center flex-1 w-full">
+        <AgGridReact
+          theme={gridTheme}
+          rowData={rowData}
+          columnDefs={colDefs}
+          domLayout="autoHeight"
+        />
+      </div>
+    </div>
   );
 }

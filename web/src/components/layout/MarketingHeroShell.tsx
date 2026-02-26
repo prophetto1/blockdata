@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react';
-import { Box, Container, useComputedColorScheme, type BoxProps } from '@mantine/core';
-import { marketingHeroGradient, styleTokens } from '@/lib/styleTokens';
+import { marketingHeroGradient } from '@/lib/styleTokens';
+import { useIsDark } from '@/lib/useIsDark';
+
+type ResponsiveNumber = number | { base: number; md?: number };
 
 type MarketingHeroShellProps = {
   children: ReactNode;
@@ -9,9 +11,15 @@ type MarketingHeroShellProps = {
   lightAlpha?: number;
   darkAlpha?: number;
   fadeStop?: number;
-  pt?: BoxProps['pt'];
-  pb?: BoxProps['pb'];
+  pt?: ResponsiveNumber;
+  pb?: ResponsiveNumber;
 };
+
+function resolveNumber(value: ResponsiveNumber | undefined): number | undefined {
+  if (value == null) return undefined;
+  if (typeof value === 'number') return value;
+  return value.base;
+}
 
 export function MarketingHeroShell({
   children,
@@ -23,14 +31,17 @@ export function MarketingHeroShell({
   pt,
   pb,
 }: MarketingHeroShellProps) {
-  const isDark = useComputedColorScheme('dark') === 'dark';
+  const isDark = useIsDark();
+  const ptPx = resolveNumber(pt);
+  const pbPx = resolveNumber(pb);
+  const defaultClasses = pt == null && pb == null ? 'pt-28 pb-16 md:pt-36 md:pb-24' : '';
 
   return (
-    <Box
-      pt={pt ?? styleTokens.marketing.heroPaddingTop}
-      pb={pb ?? styleTokens.marketing.heroPaddingBottom}
-      className="marketing-hero-shell"
+    <div
+      className={`marketing-hero-shell ${defaultClasses}`}
       style={{
+        ...(ptPx != null ? { paddingTop: ptPx } : {}),
+        ...(pbPx != null ? { paddingBottom: pbPx } : {}),
         background: marketingHeroGradient({
           isDark,
           x,
@@ -41,9 +52,9 @@ export function MarketingHeroShell({
         }),
       }}
     >
-      <Container px={styleTokens.marketing.sectionPaddingX} className="marketing-hero-shell-inner">
+      <div className="marketing-hero-shell-inner mx-auto px-4 sm:px-6 md:px-8">
         {children}
-      </Container>
-    </Box>
+      </div>
+    </div>
   );
 }

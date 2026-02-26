@@ -1,28 +1,34 @@
-import {
-  ActionIcon,
-  Box,
-  Button,
-  Container,
-  Group,
-  Menu,
-  Text,
-  UnstyledButton,
-  useComputedColorScheme,
-  useMantineColorScheme,
-} from '@mantine/core';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { IconMenu2, IconMoon, IconSun } from '@tabler/icons-react';
+import { useIsDark } from '@/lib/useIsDark';
+
+const UI_THEME_KEY = 'ui-theme';
 
 export function PublicNavModern() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { colorScheme, setColorScheme } = useMantineColorScheme();
-  const computedColorScheme = useComputedColorScheme('dark');
-  const isDark = (colorScheme === 'auto' ? computedColorScheme : colorScheme) === 'dark';
+  const isDark = useIsDark();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   const toggleColorScheme = () => {
-    setColorScheme(isDark ? 'light' : 'dark');
+    const next = isDark ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    window.localStorage.setItem(UI_THEME_KEY, next);
   };
+
+  // Close menu on outside click
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [menuOpen]);
 
   const isLoginPage = location.pathname === '/login';
   const isRegisterPage = location.pathname === '/register';
@@ -34,107 +40,125 @@ export function PublicNavModern() {
   ];
 
   return (
-    <Box
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        zIndex: 1000,
-        backgroundColor: 'var(--mantine-color-body)',
-        borderBottom: '1px solid var(--mantine-color-default-border)',
-        height: 62,
-      }}
+    <div
+      className="fixed inset-x-0 top-0 z-1000 border-b bg-background"
+      style={{ height: 62 }}
     >
-      <Container h="100%" px={{ base: 'md', sm: 'lg', md: 'xl' }}>
-        <Group h="100%" justify="space-between" wrap="nowrap">
-          <UnstyledButton
-            onClick={() => navigate('/')}
-            style={{ display: 'flex', alignItems: 'center' }}
-          >
-            <Text fw={800} fz={21} style={{ letterSpacing: '-0.02em' }}>
-              BlockData
-            </Text>
-          </UnstyledButton>
+      <div className="mx-auto flex h-full items-center justify-between px-4 sm:px-6 md:px-8">
+        <button
+          type="button"
+          className="flex items-center bg-transparent border-none cursor-pointer p-0"
+          onClick={() => navigate('/')}
+        >
+          <span className="text-[21px] font-extrabold" style={{ letterSpacing: '-0.02em' }}>
+            BlockData
+          </span>
+        </button>
 
-          <Group gap={32} visibleFrom="sm">
-            {links.map((l) => {
-              const isActive = location.pathname === l.to;
-              return (
-                <UnstyledButton key={l.to} onClick={() => navigate(l.to)}>
-                  <Text
-                    size="md"
-                    fw={500}
-                    c={isActive ? 'teal.5' : 'dimmed'}
-                    style={{
-                      letterSpacing: '-0.01em',
-                      transition: 'color 150ms ease',
-                    }}
+        <div className="hidden items-center gap-8 sm:flex">
+          {links.map((l) => {
+            const isActive = location.pathname === l.to;
+            return (
+              <button
+                key={l.to}
+                type="button"
+                className="bg-transparent border-none cursor-pointer p-0"
+                onClick={() => navigate(l.to)}
+              >
+                <span
+                  className={`text-base font-medium transition-colors ${isActive ? 'text-emerald-500' : 'text-muted-foreground hover:text-foreground'}`}
+                  style={{ letterSpacing: '-0.01em' }}
+                >
+                  {l.label}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            className="hidden h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground sm:inline-flex"
+            onClick={toggleColorScheme}
+            aria-label="Toggle color scheme"
+          >
+            {isDark ? <IconSun size={18} /> : <IconMoon size={18} />}
+          </button>
+          {!isLoginPage && (
+            <button
+              type="button"
+              className="hidden bg-transparent border-none cursor-pointer p-0 sm:block"
+              onClick={() => navigate('/login')}
+            >
+              <span className="text-base font-medium text-muted-foreground transition-colors hover:text-foreground">
+                Log in
+              </span>
+            </button>
+          )}
+          {!isRegisterPage && (
+            <button
+              type="button"
+              className="rounded-full bg-emerald-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-emerald-700"
+              onClick={() => navigate('/register')}
+            >
+              Get Started
+            </button>
+          )}
+
+          {/* Mobile menu */}
+          <div className="relative sm:hidden" ref={menuRef}>
+            <button
+              type="button"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+              aria-label="Open menu"
+              onClick={() => setMenuOpen((o) => !o)}
+            >
+              <IconMenu2 size={22} />
+            </button>
+            {menuOpen && (
+              <div className="absolute right-0 top-full mt-1 w-56 rounded-md border bg-popover p-1 shadow-md">
+                {links.map((l) => (
+                  <button
+                    key={l.to}
+                    type="button"
+                    className="w-full rounded-sm px-2 py-1.5 text-left text-sm text-popover-foreground hover:bg-accent"
+                    onClick={() => { navigate(l.to); setMenuOpen(false); }}
                   >
                     {l.label}
-                  </Text>
-                </UnstyledButton>
-              );
-            })}
-          </Group>
-
-          <Group gap="sm" wrap="nowrap">
-            <ActionIcon
-              variant="subtle"
-              color="gray"
-              size="lg"
-              onClick={toggleColorScheme}
-              aria-label="Toggle color scheme"
-              visibleFrom="sm"
-            >
-              {isDark ? <IconSun size={18} /> : <IconMoon size={18} />}
-            </ActionIcon>
-            {!isLoginPage && (
-              <UnstyledButton
-                onClick={() => navigate('/login')}
-                visibleFrom="sm"
-              >
-                <Text size="md" fw={500} c="dimmed" style={{ transition: 'color 150ms ease' }}>
-                  Log in
-                </Text>
-              </UnstyledButton>
+                  </button>
+                ))}
+                <div className="my-1 h-px bg-border" />
+                <button
+                  type="button"
+                  className="w-full rounded-sm px-2 py-1.5 text-left text-sm text-popover-foreground hover:bg-accent"
+                  onClick={() => { toggleColorScheme(); setMenuOpen(false); }}
+                >
+                  {isDark ? 'Light mode' : 'Dark mode'}
+                </button>
+                {!isLoginPage && (
+                  <button
+                    type="button"
+                    className="w-full rounded-sm px-2 py-1.5 text-left text-sm text-popover-foreground hover:bg-accent"
+                    onClick={() => { navigate('/login'); setMenuOpen(false); }}
+                  >
+                    Log in
+                  </button>
+                )}
+                {!isRegisterPage && (
+                  <button
+                    type="button"
+                    className="w-full rounded-sm px-2 py-1.5 text-left text-sm text-popover-foreground hover:bg-accent"
+                    onClick={() => { navigate('/register'); setMenuOpen(false); }}
+                  >
+                    Get Started
+                  </button>
+                )}
+              </div>
             )}
-            {!isRegisterPage && (
-              <Button
-                size="sm"
-                radius="xl"
-                color="teal"
-                onClick={() => navigate('/register')}
-              >
-                Get Started
-              </Button>
-            )}
-
-            <Box hiddenFrom="sm">
-              <Menu width={220} position="bottom-end">
-                <Menu.Target>
-                  <ActionIcon variant="subtle" size="lg" color="gray" aria-label="Open menu">
-                    <IconMenu2 size={22} />
-                  </ActionIcon>
-                </Menu.Target>
-                <Menu.Dropdown>
-                  {links.map((l) => (
-                    <Menu.Item key={l.to} onClick={() => navigate(l.to)}>
-                      {l.label}
-                    </Menu.Item>
-                  ))}
-                  <Menu.Divider />
-                  <Menu.Item onClick={toggleColorScheme}>
-                    {isDark ? 'Light mode' : 'Dark mode'}
-                  </Menu.Item>
-                  {!isLoginPage && <Menu.Item onClick={() => navigate('/login')}>Log in</Menu.Item>}
-                  {!isRegisterPage && <Menu.Item onClick={() => navigate('/register')}>Get Started</Menu.Item>}
-                </Menu.Dropdown>
-              </Menu>
-            </Box>
-          </Group>
-        </Group>
-      </Container>
-    </Box>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

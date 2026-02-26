@@ -1,5 +1,4 @@
 import { Navigate, Outlet } from 'react-router-dom';
-import { Center, Loader } from '@mantine/core';
 import { useAuth } from './AuthContext';
 
 export function AuthGuard() {
@@ -7,9 +6,9 @@ export function AuthGuard() {
 
   if (loading) {
     return (
-      <Center h="100vh">
-        <Loader size="lg" />
-      </Center>
+      <div className="flex h-screen items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
+      </div>
     );
   }
 

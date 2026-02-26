@@ -1,30 +1,27 @@
-import { Anchor, Box, Container, Group, Stack, Text } from '@mantine/core';
 import { Link } from 'react-router-dom';
 
 export function PublicFooter() {
   return (
-    <Box component="footer" py="xl" style={{ borderTop: '1px solid var(--mantine-color-default-border)' }}>
-      <Container px={{ base: 'md', sm: 'lg', md: 'xl' }}>
-        <Group justify="space-between" align="start">
-          <Stack gap={4}>
-            <Text fw={800} size="sm" style={{ letterSpacing: '-0.02em' }}>
-              BlockData
-            </Text>
-            <Text size="xs" c="dimmed">Document Intelligence Platform</Text>
-          </Stack>
-          <Group gap="xl">
-            <Anchor component={Link} to="/how-it-works" size="sm" c="dimmed">
-              How it works
-            </Anchor>
-            <Anchor component={Link} to="/use-cases" size="sm" c="dimmed">
-              Use cases
-            </Anchor>
-            <Anchor component={Link} to="/integrations" size="sm" c="dimmed">
-              Integrations
-            </Anchor>
-          </Group>
-        </Group>
-      </Container>
-    </Box>
+    <footer className="border-t py-8">
+      <div className="mx-auto flex items-start justify-between px-4 sm:px-6 md:px-8">
+        <div className="flex flex-col gap-1">
+          <span className="text-sm font-extrabold" style={{ letterSpacing: '-0.02em' }}>
+            BlockData
+          </span>
+          <span className="text-xs text-muted-foreground">Document Intelligence Platform</span>
+        </div>
+        <div className="flex items-center gap-6">
+          <Link to="/how-it-works" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+            How it works
+          </Link>
+          <Link to="/use-cases" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+            Use cases
+          </Link>
+          <Link to="/integrations" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+            Integrations
+          </Link>
+        </div>
+      </div>
+    </footer>
   );
 }

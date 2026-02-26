@@ -1,5 +1,7 @@
-import { Badge, Button, Card, Group, Stack, Text } from '@mantine/core';
+import { Badge } from '@/components/ui/badge';
 import type { McpServerDef } from '@/components/mcp/mcp-catalog';
+
+const btnLight = 'rounded-md px-3 py-1.5 text-sm font-medium bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors';
 
 export function McpServerCard({
   server,
@@ -12,30 +14,29 @@ export function McpServerCard({
   actionLabel: string;
   onAction: () => void;
 }) {
-  const badgeColor = status === 'connected' ? 'green' : status === 'configure' ? 'blue' : 'gray';
+  const badgeVariant = status === 'connected' ? 'green' : status === 'configure' ? 'blue' : 'gray';
   const badgeText = status === 'connected' ? 'Connected' : status === 'configure' ? 'Configure' : 'Not connected';
 
   return (
-    <Card withBorder radius="md" p="lg">
-      <Stack gap="sm">
-        <Group justify="space-between" align="flex-start">
-          <Stack gap={2}>
-            <Text fw={700}>{server.title}</Text>
-            <Text size="sm" c="dimmed">
+    <div className="rounded-lg border p-5">
+      <div className="flex flex-col gap-3">
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex flex-col gap-0.5">
+            <span className="font-bold">{server.title}</span>
+            <span className="text-sm text-muted-foreground">
               {server.description}
-            </Text>
-          </Stack>
-          <Badge color={badgeColor} variant={status === 'disconnected' ? 'light' : 'filled'}>
+            </span>
+          </div>
+          <Badge variant={badgeVariant}>
             {badgeText}
           </Badge>
-        </Group>
-        <Group justify="flex-end">
-          <Button variant="light" onClick={onAction}>
+        </div>
+        <div className="flex justify-end">
+          <button type="button" className={btnLight} onClick={onAction}>
             {actionLabel}
-          </Button>
-        </Group>
-      </Stack>
-    </Card>
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
-

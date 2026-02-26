@@ -1,5 +1,4 @@
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Box, Center, Group, Loader, Switch, Text } from '@mantine/core';
 import {
   PdfLoader,
   PdfHighlighter,
@@ -288,6 +287,28 @@ function buildDoclingHighlights(
   ));
 }
 
+function ToggleSwitch({ label, checked, onChange, className }: {
+  label: string;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  className?: string;
+}) {
+  return (
+    <label className={`inline-flex cursor-pointer items-center gap-1.5 ${className ?? ''}`}>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        onClick={() => onChange(!checked)}
+        className={`relative inline-flex h-4 w-7 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors ${checked ? 'bg-primary' : 'bg-muted'}`}
+      >
+        <span className={`pointer-events-none block h-3 w-3 rounded-full bg-background shadow-sm transition-transform ${checked ? 'translate-x-3' : 'translate-x-0'}`} />
+      </button>
+      <span className="text-xs text-muted-foreground select-none">{label}</span>
+    </label>
+  );
+}
+
 export function PdfResultsHighlighter({
   title,
   pdfUrl,
@@ -544,53 +565,51 @@ export function PdfResultsHighlighter({
 
   if (loading) {
     return (
-      <Center h="100%">
+      <div className="flex h-full items-center justify-center">
         <StackedLoader label="Loading parsed blocks..." />
-      </Center>
+      </div>
     );
   }
 
   if (error) {
     return (
-      <Center h="100%">
-        <Text size="sm" c="red" ta="center">{error}</Text>
-      </Center>
+      <div className="flex h-full items-center justify-center">
+        <span className="text-center text-sm text-destructive">{error}</span>
+      </div>
     );
   }
 
   if (highlights.length === 0) {
     return (
-      <Center h="100%">
-        <Text size="sm" c="dimmed" ta="center">
+      <div className="flex h-full items-center justify-center">
+        <span className="text-center text-sm text-muted-foreground">
           No Docling blocks with geometry were found for this document.
-        </Text>
-      </Center>
+        </span>
+      </div>
     );
   }
 
   return (
-    <Box className={`parse-docling-results${resolvedShowBlocksPanel ? '' : ' parse-docling-results--pdf-only'}`}>
-      <Box className="parse-docling-results-preview">
-        <Group justify="space-between" align="center" wrap="nowrap" className="parse-docling-results-toolbar">
-          <Group gap="xs" wrap="nowrap">
-            <Switch
+    <div className={`parse-docling-results${resolvedShowBlocksPanel ? '' : ' parse-docling-results--pdf-only'}`}>
+      <div className="parse-docling-results-preview">
+        <div className="parse-docling-results-toolbar flex items-center justify-between flex-nowrap">
+          <div className="flex items-center gap-3 flex-nowrap">
+            <ToggleSwitch
               className="parse-overlay-toggle"
-              size="xs"
               label="Show overlay"
               checked={showAllBoundingBoxes}
-              onChange={(event) => handleToggleShowAllBoundingBoxes(event.currentTarget.checked)}
+              onChange={handleToggleShowAllBoundingBoxes}
             />
-            <Switch
+            <ToggleSwitch
               className="parse-overlay-toggle"
-              size="xs"
               label="Show blocks"
               checked={resolvedShowBlocksPanel}
-              onChange={(event) => handleToggleShowBlocksPanel(event.currentTarget.checked)}
+              onChange={handleToggleShowBlocksPanel}
             />
-          </Group>
-          <Text size="xs" c="dimmed">{highlights.length} blocks</Text>
-        </Group>
-        <Box className="parse-docling-results-pdf" ref={pdfViewportRef}>
+          </div>
+          <span className="text-xs text-muted-foreground">{highlights.length} blocks</span>
+        </div>
+        <div className="parse-docling-results-pdf" ref={pdfViewportRef}>
           <PdfLoader
             workerSrc={PDF_WORKER_SRC}
             url={pdfUrl}
@@ -599,17 +618,17 @@ export function PdfResultsHighlighter({
               setPdfLoadError(message || 'Unknown PDF loader error.');
             }}
             beforeLoad={
-              <Center h="100%">
-                <Loader size="sm" />
-              </Center>
+              <div className="flex h-full items-center justify-center">
+                <div className="h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
+              </div>
             }
             errorMessage={
-              <Center h="100%">
-                <Text size="sm" c="dimmed" ta="center">
+              <div className="flex h-full items-center justify-center">
+                <span className="text-center text-sm text-muted-foreground">
                   PDF preview failed for {title}.
                   {pdfLoadError ? ` (${pdfLoadError})` : ''}
-                </Text>
-              </Center>
+                </span>
+              </div>
             }
           >
             {(pdfDocument) => (
@@ -632,14 +651,14 @@ export function PdfResultsHighlighter({
                     <Popup
                       key={highlight.id}
                       popupContent={(
-                        <Box className="parse-docling-box-popup">
-                          <Text size="xs" fw={700}>
+                        <div className="parse-docling-box-popup">
+                          <span className="text-xs font-bold">
                             {highlight.blockType} | #{highlight.blockIndex} | p.{highlight.pageNo}
-                          </Text>
-                          <Text size="xs" c="dimmed" lineClamp={4}>
+                          </span>
+                          <span className="text-xs text-muted-foreground line-clamp-4">
                             {highlight.snippet || '[no text]'}
-                          </Text>
-                        </Box>
+                          </span>
+                        </div>
                       )}
                       onMouseOver={(content) => setTip(highlight, () => content)}
                       onMouseOut={hideTip}
@@ -673,15 +692,15 @@ export function PdfResultsHighlighter({
               />
             )}
           </PdfLoader>
-        </Box>
-      </Box>
+        </div>
+      </div>
       {resolvedShowBlocksPanel && (
-        <Box className="parse-docling-results-panel">
-          <Group justify="space-between" align="center" wrap="nowrap" className="parse-docling-results-panel-head">
-            <Text size="sm" fw={700}>Result</Text>
-            <Text size="xs" c="dimmed">Formatted</Text>
-          </Group>
-          <Box className="parse-docling-results-list">
+        <div className="parse-docling-results-panel">
+          <div className="parse-docling-results-panel-head flex items-center justify-between flex-nowrap">
+            <span className="text-sm font-bold">Result</span>
+            <span className="text-xs text-muted-foreground">Formatted</span>
+          </div>
+          <div className="parse-docling-results-list">
             {highlights.map((highlight) => {
               const cardStyle = {
                 '--parse-block-card-accent': highlight.overlayBorderColor,
@@ -695,31 +714,31 @@ export function PdfResultsHighlighter({
                   onClick={() => focusHighlight(highlight)}
                   style={cardStyle}
                 >
-                  <Text size="xs" fw={700}>
+                  <span className="text-xs font-bold">
                     {highlight.blockType} | #{highlight.blockIndex} | p.{highlight.pageNo}
-                  </Text>
-                  <Text size="xs" c="dimmed" lineClamp={3}>
+                  </span>
+                  <span className="text-xs text-muted-foreground line-clamp-3">
                     {highlight.snippet || '[no text]'}
-                  </Text>
+                  </span>
                 </button>
               );
             })}
-          </Box>
-        </Box>
+          </div>
+        </div>
       )}
-    </Box>
+    </div>
   );
 }
 
 function StackedLoader({ label }: { label: string }) {
   return (
-    <Box>
-      <Center>
-        <Loader size="sm" />
-      </Center>
-      <Text size="sm" c="dimmed" mt={8} ta="center">
+    <div>
+      <div className="flex items-center justify-center">
+        <div className="h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
+      </div>
+      <span className="mt-2 block text-center text-sm text-muted-foreground">
         {label}
-      </Text>
-    </Box>
+      </span>
+    </div>
   );
 }

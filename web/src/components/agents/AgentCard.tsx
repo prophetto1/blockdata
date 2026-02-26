@@ -1,5 +1,8 @@
-import { Badge, Button, Card, Group, Stack, Text } from '@mantine/core';
+import { Badge } from '@/components/ui/badge';
 import type { AgentCatalogRow } from '@/lib/types';
+
+const btnLight = 'rounded-md px-3 py-1.5 text-sm font-medium bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors';
+const btnSubtle = 'rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors disabled:pointer-events-none disabled:opacity-50';
 
 export function AgentCard({
   catalog,
@@ -23,42 +26,43 @@ export function AgentCard({
   hideSetDefault?: boolean;
 }) {
   return (
-    <Card withBorder radius="md" p="lg">
-      <Stack gap="sm">
-        <Group justify="space-between" align="flex-start">
-          <Stack gap={2}>
-            <Text fw={700}>{catalog.display_name}</Text>
-            <Text size="sm" c="dimmed">
+    <div className="rounded-lg border p-5">
+      <div className="flex flex-col gap-3">
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex flex-col gap-0.5">
+            <span className="font-bold">{catalog.display_name}</span>
+            <span className="text-sm text-muted-foreground">
               {catalog.provider_family}
-            </Text>
-          </Stack>
-          <Group gap={6}>
-            {isDefault && <Badge color="blue">Default</Badge>}
-            <Badge color={configured ? 'green' : 'gray'} variant={configured ? 'filled' : 'light'}>
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            {isDefault && <Badge variant="blue">Default</Badge>}
+            <Badge variant={configured ? 'green' : 'gray'}>
               {configured ? 'Configured' : 'Needs setup'}
             </Badge>
-          </Group>
-        </Group>
+          </div>
+        </div>
 
-        <Text size="sm" c="dimmed">
-          Keyword: <Text span fw={600}>{keyword || '(none)'}</Text>
-        </Text>
+        <span className="text-sm text-muted-foreground">
+          Keyword: <span className="font-semibold text-foreground">{keyword || '(none)'}</span>
+        </span>
 
-        <Group justify="space-between">
-          <Button variant="light" onClick={onConfigure}>
+        <div className="flex items-center justify-between">
+          <button type="button" className={btnLight} onClick={onConfigure}>
             {configureLabel}
-          </Button>
+          </button>
           {!hideSetDefault && (
-            <Button
-              variant="subtle"
+            <button
+              type="button"
+              className={btnSubtle}
               onClick={onSetDefault}
               disabled={!canSetDefault || configured === false}
             >
               Make default
-            </Button>
+            </button>
           )}
-        </Group>
-      </Stack>
-    </Card>
+        </div>
+      </div>
+    </div>
   );
 }

@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-import { ActionIcon, Box, Center, Group, Loader, Text, TextInput } from '@mantine/core';
 import { IconChevronLeft, IconChevronRight, IconDownload } from '@tabler/icons-react';
 import { PPTXViewer } from 'pptx-viewer';
 
@@ -7,6 +6,8 @@ type PptxPreviewProps = {
   title: string;
   url: string;
 };
+
+const iconBtnClass = 'inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-50';
 
 export function PptxPreview({ title, url }: PptxPreviewProps) {
   const renderHostRef = useRef<HTMLDivElement | null>(null);
@@ -115,20 +116,20 @@ export function PptxPreview({ title, url }: PptxPreviewProps) {
   };
 
   return (
-    <Box className="parse-pptx-preview">
-      <Group justify="space-between" wrap="nowrap" className="parse-pptx-toolbar">
-        <Group gap={4} wrap="nowrap">
-          <ActionIcon
-            size="sm"
-            variant="subtle"
+    <div className="parse-pptx-preview">
+      <div className="parse-pptx-toolbar flex items-center justify-between flex-nowrap">
+        <div className="flex items-center gap-1 flex-nowrap">
+          <button
+            type="button"
+            className={iconBtnClass}
             aria-label="Previous slide"
             disabled={!canGoPrev}
             onClick={goPrev}
           >
             <IconChevronLeft size={14} />
-          </ActionIcon>
-          <TextInput
-            size="xs"
+          </button>
+          <input
+            type="text"
             value={slideInput}
             onChange={(event) => setSlideInput(event.currentTarget.value)}
             onBlur={commitSlideInput}
@@ -136,57 +137,55 @@ export function PptxPreview({ title, url }: PptxPreviewProps) {
               if (event.key === 'Enter') commitSlideInput();
             }}
             disabled={controlsDisabled}
-            className="parse-pptx-page-input"
+            className="parse-pptx-page-input h-6 w-10 rounded border border-border bg-background px-1 text-center text-xs text-foreground outline-none focus:ring-2 focus:ring-ring"
           />
-          <Text size="xs" c="dimmed">
+          <span className="text-xs text-muted-foreground">
             of {slideCount > 0 ? slideCount : '--'}
-          </Text>
-          <ActionIcon
-            size="sm"
-            variant="subtle"
+          </span>
+          <button
+            type="button"
+            className={iconBtnClass}
             aria-label="Next slide"
             disabled={!canGoNext}
             onClick={goNext}
           >
             <IconChevronRight size={14} />
-          </ActionIcon>
-        </Group>
+          </button>
+        </div>
 
-        <Group gap={6} wrap="nowrap">
-          <Text size="xs" c="dimmed" className="parse-pptx-title" title={title}>
+        <div className="flex items-center gap-1.5 flex-nowrap">
+          <span className="parse-pptx-title text-xs text-muted-foreground" title={title}>
             {title}
-          </Text>
-          <ActionIcon
-            size="sm"
-            variant="subtle"
-            component="a"
+          </span>
+          <a
             href={url}
             target="_blank"
             rel="noreferrer"
             download
             aria-label="Download pptx"
+            className={iconBtnClass}
           >
             <IconDownload size={14} />
-          </ActionIcon>
-        </Group>
-      </Group>
+          </a>
+        </div>
+      </div>
 
-      <Box className="parse-pptx-preview-viewport">
+      <div className="parse-pptx-preview-viewport">
         {loading && (
-          <Center h="100%">
-            <Loader size="sm" />
-          </Center>
+          <div className="flex h-full items-center justify-center">
+            <div className="h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
+          </div>
         )}
         {!loading && error && (
-          <Center h="100%" p="sm">
-            <Text size="sm" c="dimmed" ta="center">{error}</Text>
-          </Center>
+          <div className="flex h-full items-center justify-center p-2">
+            <span className="text-center text-sm text-muted-foreground">{error}</span>
+          </div>
         )}
-        <Box
+        <div
           ref={renderHostRef}
           className={`parse-pptx-render-host${loading || !!error ? ' is-hidden' : ''}`}
         />
-      </Box>
-    </Box>
+      </div>
+    </div>
   );
 }

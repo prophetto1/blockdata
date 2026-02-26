@@ -1,4 +1,3 @@
-import { Card, Stack, Text } from '@mantine/core';
 import { PageHeader } from '@/components/common/PageHeader';
 
 export default function Commands() {
@@ -8,15 +7,14 @@ export default function Commands() {
         title="Commands"
         subtitle="Placeholder surface for command catalog and execution (future)."
       />
-      <Card withBorder radius="md" p="lg">
-        <Stack gap="xs">
-          <Text fw={600}>Coming soon</Text>
-          <Text size="sm" c="dimmed">
+      <div className="rounded-md border p-6">
+        <div className="flex flex-col gap-2">
+          <span className="text-sm font-semibold">Coming soon</span>
+          <span className="text-sm text-muted-foreground">
             This page will host reusable commands that agents can invoke through MCP tooling.
-          </Text>
-        </Stack>
-      </Card>
+          </span>
+        </div>
+      </div>
     </>
   );
 }
-

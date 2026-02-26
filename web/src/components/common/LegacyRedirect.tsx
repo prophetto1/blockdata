@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Center, Loader, Text } from '@mantine/core';
 import { supabase } from '@/lib/supabase';
 import { TABLES } from '@/lib/tables';
 
@@ -30,8 +29,8 @@ export function LegacyDocumentRedirect() {
       });
   }, [sourceUid, navigate]);
 
-  if (error) return <Center mt="xl"><Text c="red">{error}</Text></Center>;
-  return <Center mt="xl"><Loader size="sm" /></Center>;
+  if (error) return <div className="mt-5 flex items-center justify-center"><span className="text-sm text-destructive">{error}</span></div>;
+  return <div className="mt-5 flex items-center justify-center"><div className="h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" /></div>;
 }
 
 export function LegacyRunRedirect() {
@@ -61,6 +60,6 @@ export function LegacyRunRedirect() {
       });
   }, [runId, navigate]);
 
-  if (error) return <Center mt="xl"><Text c="red">{error}</Text></Center>;
-  return <Center mt="xl"><Loader size="sm" /></Center>;
+  if (error) return <div className="mt-5 flex items-center justify-center"><span className="text-sm text-destructive">{error}</span></div>;
+  return <div className="mt-5 flex items-center justify-center"><div className="h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" /></div>;
 }
