@@ -6,6 +6,8 @@ const webDir = process.cwd();
 const docsDir = resolve(webDir, '../docs-site');
 const docsDistDir = resolve(docsDir, 'dist');
 const targetDir = resolve(webDir, 'dist', 'docs');
+const docsPackageLock = resolve(docsDir, 'package-lock.json');
+const docsNpmShrinkwrap = resolve(docsDir, 'npm-shrinkwrap.json');
 
 if (!existsSync(docsDir)) {
   console.log('[build] Skipping docs-site build: ../docs-site not found.');
@@ -13,7 +15,10 @@ if (!existsSync(docsDir)) {
 }
 
 console.log('[build] Building docs-site...');
-execSync('npm ci', { cwd: docsDir, stdio: 'inherit', shell: true });
+const docsInstallCommand = existsSync(docsPackageLock) || existsSync(docsNpmShrinkwrap)
+  ? 'npm ci'
+  : 'npm install';
+execSync(docsInstallCommand, { cwd: docsDir, stdio: 'inherit', shell: true });
 execSync('npm run build', { cwd: docsDir, stdio: 'inherit', shell: true });
 
 if (!existsSync(docsDistDir)) {
