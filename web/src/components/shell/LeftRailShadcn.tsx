@@ -5,13 +5,12 @@ import { TreeView, createTreeCollection, type TreeNode } from '@ark-ui/react/tre
 import {
   IconCheck,
   IconChevronDown,
-  IconChevronLeft,
+  IconLayoutColumns,
   IconPlus,
 } from '@tabler/icons-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 import { GLOBAL_MENUS } from '@/components/shell/nav-config';
-import { isDocumentsMenuRoute } from '@/components/shell/documentsMenuRoute';
 import {
   Sidebar,
   SidebarContent,
@@ -61,7 +60,7 @@ const PROJECTS_RPC_LEGACY = 'list_projects_overview_v2';
 
 const GLOBAL_MENU_ORDER: Record<string, number> = {
   '/app/flows': 0,
-  '/app/documents': 1,
+  '/app/elt': 1,
   '/app/database': 2,
   '/app/schemas': 3,
 };
@@ -98,7 +97,7 @@ export function LeftRailShadcn({
 }: LeftRailShadcnProps) {
   const navigate = useNavigate();
   const location = useLocation();
-  const activeProjectMatch = location.pathname.match(/^\/app\/(?:projects|extract|transform|flows)\/([^/]+)/);
+  const activeProjectMatch = location.pathname.match(/^\/app\/elt\/([^/]+)/);
   const activeProjectId = activeProjectMatch ? activeProjectMatch[1] : null;
 
   const [focusedProjectId, setFocusedProjectId] = useState<string | null>(() => readStoredProjectId());
@@ -202,48 +201,20 @@ export function LeftRailShadcn({
     [],
   );
 
-  const documentsNodeId = menuPathToNodeId('/app/documents');
-  const [userExpandedNodeIds, setUserExpandedNodeIds] = useState<string[]>(() => (
-    isDocumentsMenuRoute(location.pathname) ? [documentsNodeId] : []
-  ));
-
-  const parsePath = projectSelectValue ? `/app/projects/${projectSelectValue}` : '/app/projects';
-  const extractPath = projectSelectValue
-    ? `/app/extract/${projectSelectValue}`
-    : '/app/extract';
-  const transformPath = projectSelectValue
-    ? `/app/transform/${projectSelectValue}`
-    : '/app/transform';
-  const uploadPath = projectSelectValue
-    ? `/app/projects/${projectSelectValue}/upload`
-    : '/app/projects';
-  const flowsPath = projectSelectValue
-    ? `/app/flows/${projectSelectValue}/overview`
-    : '/app/flows';
+  const [userExpandedNodeIds, setUserExpandedNodeIds] = useState<string[]>([]);
+  const eltPath = projectSelectValue ? `/app/elt/${projectSelectValue}` : '/app/elt';
+  const flowsPath = '/app/flows';
 
   const globalPathOverrides: Record<string, string> = {
     '/app/flows': flowsPath,
-    '/app/documents': desktopCompact ? uploadPath : parsePath,
-    '/app/projects': parsePath,
-    '/app/extract': extractPath,
-    '/app/upload': uploadPath,
-    '/app/transform': transformPath,
+    '/app/elt': eltPath,
   };
-
-  const expandedNodeIds = useMemo(() => {
-    if (!isDocumentsMenuRoute(location.pathname)) return userExpandedNodeIds;
-    return userExpandedNodeIds.includes(documentsNodeId)
-      ? userExpandedNodeIds
-      : [...userExpandedNodeIds, documentsNodeId];
-  }, [documentsNodeId, location.pathname, userExpandedNodeIds]);
+  const expandedNodeIds = userExpandedNodeIds;
 
   const activeMenuPath = useMemo(() => {
     if (location.pathname.startsWith('/app/flows')) return '/app/flows';
-    if (/^\/app\/projects\/[^/]+\/upload/.test(location.pathname)) return '/app/upload';
-    if (location.pathname.startsWith('/app/extract')) return '/app/extract';
-    if (location.pathname.startsWith('/app/transform')) return '/app/transform';
+    if (location.pathname.startsWith('/app/elt')) return '/app/elt';
     if (location.pathname.startsWith('/app/database')) return '/app/database';
-    if (location.pathname.startsWith('/app/projects')) return '/app/projects';
     if (location.pathname.startsWith('/app/schemas')) return '/app/schemas';
     return null;
   }, [location.pathname]);
@@ -254,7 +225,7 @@ export function LeftRailShadcn({
     const branchNodes: RailTreeNode[] = orderedGlobalMenus.map((menu) => ({
       id: menuPathToNodeId(menu.path),
       label: menu.label,
-      path: menu.path === '/app/documents' ? undefined : menu.path,
+      path: menu.path,
       children: menu.children?.map((child) => ({
         id: menuPathToNodeId(child.path),
         label: child.label,
@@ -285,11 +256,8 @@ export function LeftRailShadcn({
   }) => {
     const rowPaddingLeft = desktopCompact
       ? '0px'
-      : `${Math.max(0, indexPath.length - 1) * 14}px`;
-    const isNodeSelected = Boolean(state.selected) || (
-      node.id === documentsNodeId
-      && isDocumentsMenuRoute(location.pathname)
-    );
+      : `${8 + Math.max(0, indexPath.length - 1) * 14}px`;
+    const isNodeSelected = Boolean(state.selected);
     const rowClassName = cn(
       'flex items-center gap-2 rounded-md text-sidebar-foreground/90 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
       desktopCompact ? 'h-10 px-2 text-sm font-semibold leading-snug' : 'h-10 px-2 text-[15px] font-semibold leading-snug',
@@ -363,16 +331,14 @@ export function LeftRailShadcn({
     if (!nextProjectId) return;
     setFocusedProjectId(nextProjectId);
 
-    if (location.pathname.startsWith('/app/extract')) {
-      navigate(`/app/extract/${nextProjectId}`);
-    } else if (location.pathname.startsWith('/app/flows')) {
-      navigate(`/app/flows/${nextProjectId}/overview`);
-    } else if (/^\/app\/projects\/[^/]+\/upload/.test(location.pathname)) {
-      navigate(`/app/projects/${nextProjectId}/upload`);
-    } else if (location.pathname.startsWith('/app/transform')) {
-      navigate(`/app/transform/${nextProjectId}`);
+    if (location.pathname.startsWith('/app/flows')) {
+      navigate('/app/flows');
+    } else if (location.pathname.startsWith('/app/database')) {
+      navigate('/app/database');
+    } else if (location.pathname.startsWith('/app/schemas')) {
+      navigate('/app/schemas');
     } else {
-      navigate(`/app/projects/${nextProjectId}`);
+      navigate(`/app/elt/${nextProjectId}`);
     }
     onNavigate?.();
   };
@@ -422,7 +388,7 @@ export function LeftRailShadcn({
                   onToggleDesktopCompact();
                   return;
                 }
-                navigate('/app/projects');
+                navigate('/app/elt');
                 onNavigate?.();
               }}
               aria-label={desktopCompact ? 'Expand side navigation' : 'Go to home'}
@@ -437,7 +403,7 @@ export function LeftRailShadcn({
                 aria-label="Collapse side navigation"
                 title="Collapse side navigation"
               >
-                <IconChevronLeft size={16} stroke={2.1} />
+                <IconLayoutColumns size={16} stroke={2.1} />
               </button>
             )}
           </div>
@@ -536,23 +502,41 @@ export function LeftRailShadcn({
           )}
         </SidebarHeader>
 
-        <SidebarContent className="px-2">
-          <SidebarGroup className="p-1">
+        <SidebarContent className={desktopCompact ? 'px-0' : 'px-2'}>
+          <SidebarGroup className={desktopCompact ? 'p-0' : 'p-1'}>
             <SidebarGroupContent>
-              {renderMenuTree()}
+              {desktopCompact ? (
+                <div className="flex flex-col items-center gap-1 pt-1">
+                  {orderedGlobalMenus.map((menu) => {
+                    const MenuIcon = menu.icon;
+                    const isActive = activeMenuPath === menu.path;
+                    return (
+                      <button
+                        key={menu.path}
+                        type="button"
+                        onClick={() => navigateTo(menu.path)}
+                        className={cn(
+                          'flex h-10 w-10 items-center justify-center rounded-md transition-colors',
+                          isActive
+                            ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                            : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+                        )}
+                        title={menu.label}
+                        aria-label={menu.label}
+                      >
+                        <MenuIcon size={22} stroke={1.8} />
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                renderMenuTree()
+              )}
             </SidebarGroupContent>
           </SidebarGroup>
-
         </SidebarContent>
 
         <SidebarFooter className="border-t border-sidebar-border px-0 pt-1.5">
-          <div
-            data-testid="left-rail-account-separator"
-            className={cn(
-              'h-px w-full bg-sidebar-border',
-              desktopCompact ? 'mt-3' : 'mt-4',
-            )}
-          />
           <div className={cn(desktopCompact ? 'px-0 py-2' : 'px-1.5 py-2')}>
             <MenuRoot positioning={{ placement: 'top-start' }}>
               <MenuTrigger

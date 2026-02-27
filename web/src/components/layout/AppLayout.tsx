@@ -110,15 +110,11 @@ export function AppLayout() {
   const mainInsetStart = isMobile ? 0 : desktopNavbarWidth;
   const navbarWidth = isMobile ? styleTokens.shell.navbarWidth : desktopNavbarWidth;
 
-  const isProjectCanvasRoute = /^\/app\/projects\/[^/]+$/.test(location.pathname);
-  const isExtractCanvasRoute = /^\/app\/extract\/[^/]+$/.test(location.pathname);
-  const isTransformCanvasRoute = /^\/app\/transform\/[^/]+$/.test(location.pathname);
+  const isEltRoute = /^\/app\/elt(?:\/|$)/.test(location.pathname);
   const isSchemaLayoutRoute = location.pathname === '/app/schemas/layout';
   const isFlowsRoute = /^\/app\/flows(?:\/|$)/.test(location.pathname);
   const lockMainScroll = (
-    isProjectCanvasRoute
-    || isExtractCanvasRoute
-    || isTransformCanvasRoute
+    isEltRoute
     || isSchemaLayoutRoute
   );
 
@@ -161,7 +157,6 @@ export function AppLayout() {
     window.localStorage.setItem(DESKTOP_NAV_OPEN_KEY, String(desktopNavOpened));
   }, [desktopNavOpened]);
 
-  // Command search is handled in LeftRail; AppLayout intentionally has no Spotlight provider.
   return (
     <HeaderCenterProvider>
       <div

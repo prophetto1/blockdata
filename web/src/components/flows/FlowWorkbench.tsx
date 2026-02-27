@@ -1,14 +1,20 @@
-import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import Editor from '@monaco-editor/react';
 import {
   IconCheck,
   IconCode,
   IconDotsVertical,
+  IconFilePlus,
   IconFileText,
   IconFolder,
+  IconFolderPlus,
   IconLayoutColumns,
   IconPlayerPlay,
+  IconTrash,
+  IconUpload,
   IconX,
 } from '@tabler/icons-react';
+import { TreeView, createTreeCollection } from '@ark-ui/react/tree-view';
 import {
   MenuContent,
   MenuItem,
@@ -17,22 +23,11 @@ import {
   MenuRoot,
   MenuTrigger,
 } from '@/components/ui/menu';
-import {
-  DialogBody,
-  DialogCloseTrigger,
-  DialogContent,
-  DialogFooter,
-  DialogRoot,
-  DialogTrigger,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import { Clipboard } from '@ark-ui/react/clipboard';
-import { FileUpload as ArkFileUpload } from '@ark-ui/react/file-upload';
 import { Portal } from '@ark-ui/react/portal';
 import { Splitter } from '@ark-ui/react/splitter';
 import { Switch } from '@ark-ui/react/switch';
 import { Tooltip } from '@ark-ui/react/tooltip';
-import { TreeView, createTreeCollection, type TreeNode } from '@ark-ui/react/tree-view';
 import { edgeJson } from '@/lib/edge';
 import FlowCanvas from './FlowCanvas';
 import {
@@ -45,6 +40,24 @@ import {
   type PaneTabId,
 } from './flowWorkbenchState';
 import './FlowWorkbench.css';
+
+// ─── Monaco theme sync ──────────────────────────────────────────────────────
+
+function subscribeTheme(cb: () => void) {
+  const observer = new MutationObserver(cb);
+  observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  return () => observer.disconnect();
+}
+
+function getMonacoTheme(): string {
+  return document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'vs-dark';
+}
+
+function useMonacoTheme(): string {
+  return useSyncExternalStore(subscribeTheme, getMonacoTheme, () => 'vs-dark');
+}
+
+// ─── Types ───────────────────────────────────────────────────────────────────
 
 type FlowWorkbenchProps = {
   flowId: string;
@@ -83,8 +96,8 @@ type PanelButtonDescriptor = {
 };
 
 const MIN_PANE_PERCENT = 18;
-const MAX_COLUMNS = 4;
 const SAVE_KEY_PREFIX = 'flow-workbench-layout';
+const FILES_SAVE_KEY_PREFIX = 'flow-workbench-files';
 const DRAG_PAYLOAD_MIME = 'application/x-flow-workbench-drag';
 
 const TAB_IDS = FLOW_WORKBENCH_TABS.map((tab) => tab.id) as readonly PaneTabId[];
@@ -105,25 +118,11 @@ type PersistedPane = {
   width: number;
 };
 
-type FileTreeNode = TreeNode & {
-  id: string;
-  label: string;
-  path: string;
-  isFile?: boolean;
-  children?: FileTreeNode[];
-};
-
 type FileTreeEntry = {
   path: string;
   isFile: boolean;
-};
-
-type MutableFileTreeNode = {
-  id: string;
-  label: string;
-  path: string;
-  isFile: boolean;
-  children: Map<string, MutableFileTreeNode>;
+  size?: number;
+  date?: Date;
 };
 
 type FlowMetadataResponse = {
@@ -253,7 +252,7 @@ function readPersistedPanes(saveKey: string): Pane[] | null {
       };
     });
 
-    return normalizePaneWidths(normalized.slice(0, MAX_COLUMNS));
+    return normalizePaneWidths(normalized);
   } catch {
     return null;
   }
@@ -265,284 +264,540 @@ function getUploadedPath(file: File): string {
   return next.replace(/^\/+/, '');
 }
 
-function buildFileTreeNodes(entries: FileTreeEntry[]): FileTreeNode[] {
-  const root: MutableFileTreeNode = {
-    id: 'files-root',
-    label: 'Files',
-    path: '',
-    isFile: false,
-    children: new Map(),
-  };
-
-  for (const entry of entries) {
-    const normalizedPath = entry.path.trim().replace(/^\/+/, '').replace(/\/+$/, '');
-    if (!normalizedPath) continue;
-    const segments = normalizedPath.split('/').filter(Boolean);
-    if (segments.length === 0) continue;
-
-    let current = root;
-    for (let index = 0; index < segments.length; index += 1) {
-      const segment = segments[index];
-      const path = current.path ? `${current.path}/${segment}` : segment;
-      const existing = current.children.get(segment);
-      if (existing) {
-        if (index === segments.length - 1) {
-          existing.isFile = true;
-        }
-        current = existing;
-        continue;
-      }
-
-      const nextNode: MutableFileTreeNode = {
-        id: `file:${path}`,
-        label: segment,
-        path,
-        isFile: false,
-        children: new Map(),
-      };
-      current.children.set(segment, nextNode);
-      current = nextNode;
-    }
-
-    current.isFile = entry.isFile;
-  }
-
-  const toNodes = (input: Map<string, MutableFileTreeNode>): FileTreeNode[] => Array.from(input.values())
-    .sort((left, right) => {
-      const leftIsFile = left.children.size === 0 && left.isFile;
-      const rightIsFile = right.children.size === 0 && right.isFile;
-      if (leftIsFile !== rightIsFile) {
-        return leftIsFile ? 1 : -1;
-      }
-      return left.label.localeCompare(right.label);
-    })
-    .map((node) => ({
-      id: node.id,
-      label: node.label,
-      path: node.path,
-      isFile: node.children.size === 0 && node.isFile,
-      children: node.children.size > 0 ? toNodes(node.children) : undefined,
-    }));
-
-  return toNodes(root.children);
+function normalizeFilePath(input: string): string {
+  return input.trim().replace(/^\/+/, '').replace(/\/+$/, '');
 }
 
-function FilesTree({ acceptedFiles }: { acceptedFiles: File[] }) {
-  const [createdEntries, setCreatedEntries] = useState<FileTreeEntry[]>([]);
-  const uploadedEntries = useMemo<FileTreeEntry[]>(
-    () => acceptedFiles
-      .map((file) => ({ path: getUploadedPath(file), isFile: true }))
-      .filter((entry) => entry.path.length > 0),
-    [acceptedFiles],
-  );
-  const allEntries = useMemo(() => {
-    const map = new Map<string, FileTreeEntry>();
-    uploadedEntries.forEach((entry) => map.set(entry.path, entry));
-    createdEntries.forEach((entry) => map.set(entry.path, entry));
-    return Array.from(map.values());
-  }, [createdEntries, uploadedEntries]);
-  const treeNodes = useMemo(() => buildFileTreeNodes(allEntries), [allEntries]);
-  const fileNodeIds = useMemo(() => {
-    const ids: string[] = [];
-    const walk = (nodes: FileTreeNode[]) => {
-      nodes.forEach((node) => {
-        if (node.isFile) {
-          ids.push(node.id);
-          return;
-        }
-        if (node.children) walk(node.children);
-      });
-    };
-    walk(treeNodes);
-    return ids;
-  }, [treeNodes]);
+function readPersistedFileEntries(storageKey: string): FileTreeEntry[] {
+  if (typeof window === 'undefined') return [];
+  const raw = window.localStorage.getItem(storageKey);
+  if (!raw) return [];
 
-  const collection = useMemo(() => createTreeCollection<FileTreeNode>({
-    rootNode: {
-      id: 'root',
-      label: 'Files',
-      path: '',
-      children: treeNodes,
-    },
+  try {
+    const parsed = JSON.parse(raw) as Array<{
+      path?: unknown;
+      isFile?: unknown;
+      size?: unknown;
+      date?: unknown;
+    }>;
+    if (!Array.isArray(parsed)) return [];
+
+    const deduped = new Map<string, FileTreeEntry>();
+    parsed.forEach((item) => {
+      const normalizedPath = normalizeFilePath(typeof item.path === 'string' ? item.path : '');
+      if (!normalizedPath) return;
+      const size = typeof item.size === 'number' && Number.isFinite(item.size) ? item.size : undefined;
+      const dateValue = item.date instanceof Date
+        ? item.date
+        : (typeof item.date === 'string' || typeof item.date === 'number')
+          ? new Date(item.date)
+          : undefined;
+
+      deduped.set(normalizedPath, {
+        path: normalizedPath,
+        isFile: item.isFile !== false,
+        size,
+        date: dateValue && !Number.isNaN(dateValue.valueOf()) ? dateValue : undefined,
+      });
+    });
+
+    return Array.from(deduped.values());
+  } catch {
+    return [];
+  }
+}
+
+function writePersistedFileEntries(storageKey: string, entries: FileTreeEntry[]) {
+  if (typeof window === 'undefined') return;
+  const normalized = entries
+    .map((entry) => {
+      const path = normalizeFilePath(entry.path);
+      if (!path) return null;
+      return {
+        path,
+        isFile: entry.isFile,
+        size: typeof entry.size === 'number' && Number.isFinite(entry.size) ? entry.size : undefined,
+        date: entry.date ? entry.date.toISOString() : undefined,
+      };
+    })
+    .filter((entry) => entry !== null);
+  window.localStorage.setItem(storageKey, JSON.stringify(normalized));
+}
+
+type FilesTreeNode = {
+  id: string;
+  label: string;
+  kind: 'folder' | 'file';
+  path: string;
+  children?: FilesTreeNode[];
+  size?: number;
+  date?: Date;
+};
+
+type MutableFolderNode = {
+  id: string;
+  label: string;
+  path: string;
+  folders: Map<string, MutableFolderNode>;
+  files: FilesTreeNode[];
+};
+
+function parseTreeNodeId(id: string | null): { kind: 'folder' | 'file'; path: string } | null {
+  if (!id) return null;
+  if (id.startsWith('folder:')) return { kind: 'folder', path: normalizeFilePath(id.slice('folder:'.length)) };
+  if (id.startsWith('file:')) return { kind: 'file', path: normalizeFilePath(id.slice('file:'.length)) };
+  return null;
+}
+
+function getParentPath(path: string): string {
+  const normalized = normalizeFilePath(path);
+  if (!normalized.includes('/')) return '';
+  return normalized.split('/').slice(0, -1).join('/');
+}
+
+function formatBytes(value?: number): string {
+  if (!value || !Number.isFinite(value) || value <= 0) return '0 B';
+  const units = ['B', 'KB', 'MB', 'GB'];
+  let size = value;
+  let index = 0;
+  while (size >= 1024 && index < units.length - 1) {
+    size /= 1024;
+    index += 1;
+  }
+  const precision = index === 0 ? 0 : 1;
+  return `${size.toFixed(precision)} ${units[index]}`;
+}
+
+function buildFilesTreeNodes(entries: FileTreeEntry[]): FilesTreeNode[] {
+  const root: MutableFolderNode = {
+    id: 'folder:',
+    label: '',
+    path: '',
+    folders: new Map(),
+    files: [],
+  };
+
+  const ensureFolder = (folderPath: string): MutableFolderNode => {
+    const normalized = normalizeFilePath(folderPath);
+    if (!normalized) return root;
+    const segments = normalized.split('/').filter(Boolean);
+    let cursor = root;
+    let cursorPath = '';
+    segments.forEach((segment) => {
+      cursorPath = cursorPath ? `${cursorPath}/${segment}` : segment;
+      const existing = cursor.folders.get(segment);
+      if (existing) {
+        cursor = existing;
+        return;
+      }
+      const created: MutableFolderNode = {
+        id: `folder:${cursorPath}`,
+        label: segment,
+        path: cursorPath,
+        folders: new Map(),
+        files: [],
+      };
+      cursor.folders.set(segment, created);
+      cursor = created;
+    });
+    return cursor;
+  };
+
+  entries.forEach((entry) => {
+    const normalizedPath = normalizeFilePath(entry.path);
+    if (!normalizedPath) return;
+    if (!entry.isFile) {
+      ensureFolder(normalizedPath);
+      return;
+    }
+
+    const fileName = normalizedPath.split('/').pop();
+    if (!fileName) return;
+    const parent = ensureFolder(getParentPath(normalizedPath));
+    if (parent.files.some((file) => file.path === normalizedPath)) return;
+    parent.files.push({
+      id: `file:${normalizedPath}`,
+      label: fileName,
+      kind: 'file',
+      path: normalizedPath,
+      size: entry.size,
+      date: entry.date,
+    });
+  });
+
+  const toNodes = (folder: MutableFolderNode): FilesTreeNode[] => {
+    const folderNodes = Array.from(folder.folders.values())
+      .sort((left, right) => left.label.localeCompare(right.label))
+      .map((child) => ({
+        id: child.id,
+        label: child.label,
+        kind: 'folder' as const,
+        path: child.path,
+        children: toNodes(child),
+      }));
+    const fileNodes = [...folder.files]
+      .sort((left, right) => left.label.localeCompare(right.label))
+      .map((file) => ({ ...file }));
+    return [...folderNodes, ...fileNodes];
+  };
+
+  return toNodes(root);
+}
+
+function filterFilesTreeNodes(nodes: FilesTreeNode[], query: string): FilesTreeNode[] {
+  const normalizedQuery = query.trim().toLowerCase();
+  if (!normalizedQuery) return nodes;
+
+  const walk = (input: FilesTreeNode[]): FilesTreeNode[] => input.flatMap((node) => {
+    const filteredChildren = node.children ? walk(node.children) : undefined;
+    const matches = node.label.toLowerCase().includes(normalizedQuery)
+      || node.path.toLowerCase().includes(normalizedQuery);
+    if (!matches && (!filteredChildren || filteredChildren.length === 0)) return [];
+    return [{ ...node, children: filteredChildren }];
+  });
+
+  return walk(nodes);
+}
+
+function collectFolderNodeIds(nodes: FilesTreeNode[]): string[] {
+  const result: string[] = [];
+  const walk = (input: FilesTreeNode[]) => {
+    input.forEach((node) => {
+      if (node.kind !== 'folder') return;
+      result.push(node.id);
+      if (node.children && node.children.length > 0) walk(node.children);
+    });
+  };
+  walk(nodes);
+  return result;
+}
+
+function FilesTree({ storageKey }: { storageKey: string }) {
+  const [localEntries, setLocalEntries] = useState<FileTreeEntry[]>(() => readPersistedFileEntries(storageKey));
+  const [filesQuery, setFilesQuery] = useState('');
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [expandedValue, setExpandedValue] = useState<string[]>([]);
+  const [creatingType, setCreatingType] = useState<'file' | 'folder' | null>(null);
+  const [createName, setCreateName] = useState('');
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const hasAutoExpandedRef = useRef(false);
+
+  useEffect(() => {
+    const persisted = readPersistedFileEntries(storageKey);
+    setLocalEntries(persisted);
+    setSelectedNodeId(null);
+    setExpandedValue([]);
+    hasAutoExpandedRef.current = false;
+  }, [storageKey]);
+
+  const mergeUploadedFiles = useCallback((files: File[]) => {
+    if (files.length === 0) return;
+    setLocalEntries((current) => {
+      const map = new Map<string, FileTreeEntry>(current.map((entry) => [entry.path, entry]));
+      files.forEach((file) => {
+        const normalized = normalizeFilePath(getUploadedPath(file));
+        if (!normalized) return;
+        map.set(normalized, {
+          path: normalized,
+          isFile: true,
+          size: file.size,
+          date: new Date(file.lastModified || Date.now()),
+        });
+      });
+      return Array.from(map.values());
+    });
+  }, []);
+
+  useEffect(() => {
+    writePersistedFileEntries(storageKey, localEntries);
+  }, [localEntries, storageKey]);
+
+  const treeNodes = useMemo(() => filterFilesTreeNodes(buildFilesTreeNodes(localEntries), filesQuery), [filesQuery, localEntries]);
+  const treeCollection = useMemo(() => createTreeCollection<FilesTreeNode>({
     nodeToValue: (node) => node.id,
     nodeToString: (node) => node.label,
-    nodeToChildren: (node) => node.children ?? [],
+    rootNode: { id: 'root', label: '', kind: 'folder', path: '', children: treeNodes } as FilesTreeNode,
   }), [treeNodes]);
-
-  const [selectedValue, setSelectedValue] = useState<string[]>([]);
-  const [expandedValue, setExpandedValue] = useState<string[]>([]);
-  const [createFileOpen, setCreateFileOpen] = useState(false);
-  const [createFileName, setCreateFileName] = useState('');
+  const folderNodeIds = useMemo(() => collectFolderNodeIds(treeNodes), [treeNodes]);
 
   useEffect(() => {
-    setSelectedValue((current) => current.filter((id) => fileNodeIds.includes(id)));
-  }, [fileNodeIds]);
+    setExpandedValue((current) => {
+      if (folderNodeIds.length === 0) return [];
+      if (!hasAutoExpandedRef.current) {
+        hasAutoExpandedRef.current = true;
+        return folderNodeIds;
+      }
+      const allowed = new Set(folderNodeIds);
+      return current.filter((id) => allowed.has(id));
+    });
+  }, [folderNodeIds]);
 
-  useEffect(() => {
-    const nextExpanded: string[] = [];
-    const walk = (nodes: FileTreeNode[]) => {
-      nodes.forEach((node) => {
-        if (!node.isFile) {
-          nextExpanded.push(node.id);
-          if (node.children) walk(node.children);
-        }
-      });
-    };
-    walk(treeNodes);
-    setExpandedValue(nextExpanded);
-  }, [treeNodes]);
+  const selectedNode = useMemo(() => parseTreeNodeId(selectedNodeId), [selectedNodeId]);
 
-  const selectedNode = selectedValue[0]
-    ? collection.findNode(selectedValue[0]) as FileTreeNode | null
-    : null;
+  const createTargetFolderPath = useMemo(() => {
+    if (!creatingType) return '';
+    if (selectedNode?.kind === 'folder') return selectedNode.path;
+    if (selectedNode?.kind === 'file') return getParentPath(selectedNode.path);
+    return '';
+  }, [creatingType, selectedNode]);
 
-  const onCreateFile = useCallback(() => {
-    const nextPath = createFileName.trim().replace(/^\/+/, '');
+  const createTargetFolderId = createTargetFolderPath ? `folder:${createTargetFolderPath}` : null;
+
+  const handleCreateEntry = useCallback((name: string, kind: 'file' | 'folder') => {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    const targetFolder = createTargetFolderPath;
+    const nextPath = normalizeFilePath(targetFolder ? `${targetFolder}/${trimmed}` : trimmed);
     if (!nextPath) return;
+    setLocalEntries((current) => {
+      const map = new Map<string, FileTreeEntry>(current.map((entry) => [entry.path, entry]));
+      if (map.has(nextPath)) return current;
+      map.set(nextPath, {
+        path: nextPath,
+        isFile: kind === 'file',
+        size: kind === 'file' ? 0 : undefined,
+        date: new Date(),
+      });
+      return Array.from(map.values());
+    });
+    setCreatingType(null);
+    setCreateName('');
+    setSelectedNodeId(`${kind}:${nextPath}`);
+  }, [createTargetFolderPath]);
 
-    setCreatedEntries((current) => (
-      current.some((entry) => entry.path === nextPath)
-        ? current
-        : [...current, { path: nextPath, isFile: true }]
-    ));
-    setSelectedValue([`file:${nextPath}`]);
-    setCreateFileName('');
-    setCreateFileOpen(false);
-  }, [createFileName]);
+  const handleDeleteSelected = useCallback(() => {
+    const selectedPath = selectedNode?.path;
+    if (!selectedPath) return;
+    setLocalEntries((current) => current.filter((entry) => (
+      entry.path !== selectedPath && !entry.path.startsWith(`${selectedPath}/`)
+    )));
+    setSelectedNodeId(null);
+  }, [selectedNode]);
+
+  const handleRenameComplete = useCallback((details: { value: string; indexPath: number[] }) => {
+    const node = treeCollection.at(details.indexPath) as FilesTreeNode | undefined;
+    if (!node) return;
+    const parsed = parseTreeNodeId(node.id);
+    if (!parsed) return;
+    const newLabel = details.value.trim();
+    if (!newLabel || newLabel === node.label) return;
+    const oldPath = parsed.path;
+    const parentPath = getParentPath(oldPath);
+    const newPath = normalizeFilePath(parentPath ? `${parentPath}/${newLabel}` : newLabel);
+    if (!newPath || newPath === oldPath) return;
+    setLocalEntries((current) => current.map((entry) => {
+      if (entry.path === oldPath || entry.path.startsWith(`${oldPath}/`)) {
+        const suffix = entry.path.slice(oldPath.length);
+        return { ...entry, path: `${newPath}${suffix}` };
+      }
+      return entry;
+    }));
+    setSelectedNodeId(`${parsed.kind}:${newPath}`);
+  }, [treeCollection]);
 
   return (
-    <DialogRoot
-      open={createFileOpen}
-      onOpenChange={(details) => {
-        setCreateFileOpen(details.open);
-        if (!details.open) {
-          setCreateFileName('');
-        }
-      }}
-    >
-      <div className="space-y-2">
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-sm font-semibold text-foreground">Files</p>
-        <div className="flex items-center gap-2">
-          <DialogTrigger asChild>
+    <div className="flow-workbench-filemanager-wrap flow-workbench-files-ark">
+      <input
+        ref={fileInputRef}
+        type="file"
+        multiple
+        className="sr-only"
+        onChange={(event) => {
+          const files = event.currentTarget.files ? Array.from(event.currentTarget.files) : [];
+          mergeUploadedFiles(files);
+          event.currentTarget.value = '';
+        }}
+      />
+      <div className="flow-workbench-files-header">
+        <div className="flow-workbench-files-toolbar">
+          <input
+            type="text"
+            value={filesQuery}
+            onChange={(event) => setFilesQuery(event.currentTarget.value)}
+            placeholder="Search files"
+            aria-label="Search files"
+            className="flow-workbench-files-search"
+          />
+          <div className="flow-workbench-files-actions">
             <button
               type="button"
-              onClick={() => setCreateFileOpen(true)}
-              className="inline-flex items-center rounded-md border border-border bg-background px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-accent hover:text-accent-foreground"
+              title="Upload files"
+              onClick={() => fileInputRef.current?.click()}
+              className="flow-workbench-files-action-btn"
             >
-              Create file
+              <IconUpload size={15} />
             </button>
-          </DialogTrigger>
+            <button
+              type="button"
+              title="Create file"
+              onClick={() => {
+                setCreatingType('file');
+                setCreateName('');
+                if (selectedNode?.kind === 'folder') {
+                  const folderId = `folder:${selectedNode.path}`;
+                  setExpandedValue((prev) => prev.includes(folderId) ? prev : [...prev, folderId]);
+                }
+              }}
+              className="flow-workbench-files-action-btn"
+            >
+              <IconFilePlus size={15} />
+            </button>
+            <button
+              type="button"
+              title="Create folder"
+              onClick={() => {
+                setCreatingType('folder');
+                setCreateName('');
+                if (selectedNode?.kind === 'folder') {
+                  const folderId = `folder:${selectedNode.path}`;
+                  setExpandedValue((prev) => prev.includes(folderId) ? prev : [...prev, folderId]);
+                }
+              }}
+              className="flow-workbench-files-action-btn"
+            >
+              <IconFolderPlus size={15} />
+            </button>
+            <button
+              type="button"
+              title="Delete selected"
+              disabled={!selectedNode?.path}
+              onClick={handleDeleteSelected}
+              className="flow-workbench-files-action-btn flow-workbench-files-action-btn-danger"
+            >
+              <IconTrash size={15} />
+            </button>
+          </div>
         </div>
       </div>
-
-      <div className="rounded-md border border-border bg-card p-2">
-        <TreeView.Root
-          collection={collection}
-          selectionMode="single"
-          selectedValue={selectedValue}
-          expandedValue={expandedValue}
-          onExpandedChange={(details) => setExpandedValue(details.expandedValue)}
-          onSelectionChange={(details) => setSelectedValue(details.selectedValue)}
-        >
-          <TreeView.Tree className="space-y-1" aria-label="Files tree">
-            <TreeView.Context>
-              {(tree) => tree.getVisibleNodes().map((entry) => {
-                const node = entry.node as FileTreeNode;
-                if (node.id === 'root') return null;
-                const rowPaddingLeft = `${Math.max(0, entry.indexPath.length - 1) * 12}px`;
-
-                return (
-                  <TreeView.NodeProvider key={node.id} node={node} indexPath={entry.indexPath}>
-                    <TreeView.NodeContext>
-                      {(state) => {
-                        const className = `flex h-8 items-center rounded px-2 text-xs ${
-                          state.selected
-                            ? 'bg-accent text-accent-foreground'
-                            : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
-                        }`;
-
-                        if (state.isBranch) {
+      <div className="flow-workbench-files-tree-area">
+        {treeNodes.length === 0 ? (
+          <div className="flow-workbench-files-empty">
+            {filesQuery.trim().length > 0 ? 'No files match that filter.' : 'No files yet.'}
+          </div>
+        ) : (
+          <TreeView.Root
+            collection={treeCollection}
+            selectionMode="single"
+            selectedValue={selectedNodeId ? [selectedNodeId] : []}
+            expandedValue={expandedValue}
+            expandOnClick
+            onExpandedChange={(details) => setExpandedValue(details.expandedValue)}
+            onSelectionChange={(details) => {
+              const nextSelected = details.selectedValue[0];
+              setSelectedNodeId(nextSelected ?? null);
+            }}
+            canRename={() => true}
+            onRenameComplete={handleRenameComplete}
+            className="text-xs"
+          >
+            <TreeView.Tree className="flex flex-col" aria-label="Flow files">
+              {creatingType && !createTargetFolderId ? (
+                <div className="flow-workbench-files-create" style={{ paddingLeft: '0px' }}>
+                  {creatingType === 'folder' ? (
+                    <IconFolder size={14} className="shrink-0 text-muted-foreground" />
+                  ) : (
+                    <IconFileText size={14} className="shrink-0 text-muted-foreground" />
+                  )}
+                  <input
+                    autoFocus
+                    type="text"
+                    value={createName}
+                    onChange={(event) => setCreateName(event.currentTarget.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter') handleCreateEntry(createName, creatingType);
+                      if (event.key === 'Escape') { setCreatingType(null); setCreateName(''); }
+                    }}
+                    placeholder={creatingType === 'folder' ? 'Folder name' : 'File name'}
+                    className="flow-workbench-files-create-input"
+                  />
+                  <button type="button" disabled={!createName.trim()} onClick={() => handleCreateEntry(createName, creatingType)} className="flow-workbench-files-create-submit">Create</button>
+                  <button type="button" onClick={() => { setCreatingType(null); setCreateName(''); }} className="flow-workbench-files-create-cancel"><IconX size={12} /></button>
+                </div>
+              ) : null}
+              <TreeView.Context>
+                {(tree) => tree.getVisibleNodes().map((entry) => {
+                  const node = entry.node as FilesTreeNode;
+                  if (node.id === 'root') return null;
+                  const depth = Math.max(0, entry.indexPath.length - 1);
+                  const rowPaddingLeft = `${depth * 12}px`;
+                  const isCreateTarget = creatingType && node.id === createTargetFolderId;
+                  const createRow = isCreateTarget ? (
+                    <div key="__create__" className="flow-workbench-files-create" style={{ paddingLeft: `${(depth + 1) * 12}px` }}>
+                      {creatingType === 'folder' ? (
+                        <IconFolder size={14} className="shrink-0 text-muted-foreground" />
+                      ) : (
+                        <IconFileText size={14} className="shrink-0 text-muted-foreground" />
+                      )}
+                      <input
+                        autoFocus
+                        type="text"
+                        value={createName}
+                        onChange={(event) => setCreateName(event.currentTarget.value)}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter') handleCreateEntry(createName, creatingType);
+                          if (event.key === 'Escape') { setCreatingType(null); setCreateName(''); }
+                        }}
+                        placeholder={creatingType === 'folder' ? 'Folder name' : 'File name'}
+                        className="flow-workbench-files-create-input"
+                      />
+                      <button type="button" disabled={!createName.trim()} onClick={() => handleCreateEntry(createName, creatingType!)} className="flow-workbench-files-create-submit">Create</button>
+                      <button type="button" onClick={() => { setCreatingType(null); setCreateName(''); }} className="flow-workbench-files-create-cancel"><IconX size={12} /></button>
+                    </div>
+                  ) : null;
+                  return (
+                    <TreeView.NodeProvider key={node.id} node={node} indexPath={entry.indexPath}>
+                      <TreeView.NodeContext>
+                        {(state) => {
+                          const rowClassName = `flow-workbench-files-row ${
+                            state.selected
+                              ? 'flow-workbench-files-row-selected'
+                              : 'flow-workbench-files-row-hover'
+                          }`;
+                          if (state.isBranch || node.kind === 'folder') {
+                            return (
+                              <>
+                                <TreeView.Branch>
+                                  <TreeView.BranchControl className={rowClassName} style={{ paddingLeft: rowPaddingLeft }}>
+                                    <IconFolder size={14} className="shrink-0 text-muted-foreground" />
+                                    {state.renaming ? (
+                                      <TreeView.NodeRenameInput className="flow-workbench-files-rename-input" />
+                                    ) : (
+                                      <TreeView.BranchText className="min-w-0 flex-1 truncate text-foreground">
+                                        {node.label}
+                                      </TreeView.BranchText>
+                                    )}
+                                  </TreeView.BranchControl>
+                                </TreeView.Branch>
+                                {createRow}
+                              </>
+                            );
+                          }
                           return (
-                            <TreeView.Branch>
-                              <TreeView.BranchControl className={className} style={{ paddingLeft: rowPaddingLeft }}>
-                                <TreeView.BranchText className="truncate">
-                                  {node.label}
-                                </TreeView.BranchText>
-                              </TreeView.BranchControl>
-                            </TreeView.Branch>
+                            <TreeView.Item className={rowClassName} style={{ paddingLeft: rowPaddingLeft }}>
+                              <TreeView.ItemText className="flex min-w-0 flex-1 items-center gap-2">
+                                <IconFileText size={14} className="shrink-0 text-muted-foreground" />
+                                {state.renaming ? (
+                                  <TreeView.NodeRenameInput className="flow-workbench-files-rename-input" />
+                                ) : (
+                                  <>
+                                    <span className="min-w-0 flex-1 truncate text-foreground">{node.label}</span>
+                                    <span className="shrink-0 text-muted-foreground">{formatBytes(node.size)}</span>
+                                  </>
+                                )}
+                              </TreeView.ItemText>
+                            </TreeView.Item>
                           );
-                        }
-
-                        return (
-                          <TreeView.Item className={className} style={{ paddingLeft: rowPaddingLeft }}>
-                            <TreeView.ItemText className="truncate">
-                              {node.label}
-                            </TreeView.ItemText>
-                          </TreeView.Item>
-                        );
-                      }}
-                    </TreeView.NodeContext>
-                  </TreeView.NodeProvider>
-                );
-              })}
-            </TreeView.Context>
-          </TreeView.Tree>
-        </TreeView.Root>
+                        }}
+                      </TreeView.NodeContext>
+                    </TreeView.NodeProvider>
+                  );
+                })}
+              </TreeView.Context>
+            </TreeView.Tree>
+          </TreeView.Root>
+        )}
       </div>
-
-      {acceptedFiles.length === 0 ? (
-        <p className="text-sm text-muted-foreground">
-          No files uploaded yet.
-        </p>
-      ) : selectedNode?.isFile ? (
-        <p className="text-xs text-muted-foreground">
-          Selected: {selectedNode.path}
-        </p>
-      ) : (
-        <p className="text-xs text-muted-foreground">
-          Select a file to preview.
-        </p>
-      )}
-
-        <DialogContent className="w-[26rem]">
-          <DialogTitle>Create file</DialogTitle>
-          <DialogCloseTrigger />
-          <DialogBody>
-            <label htmlFor="flow-workbench-create-file-name" className="text-sm text-muted-foreground">
-              File name
-            </label>
-            <input
-              id="flow-workbench-create-file-name"
-              aria-label="File name"
-              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              value={createFileName}
-              onChange={(event) => setCreateFileName(event.currentTarget.value)}
-            />
-          </DialogBody>
-          <DialogFooter>
-            <button
-              type="button"
-              className="inline-flex items-center rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground hover:bg-accent hover:text-accent-foreground"
-              onClick={() => {
-                setCreateFileOpen(false);
-                setCreateFileName('');
-              }}
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              className="inline-flex items-center rounded-md bg-primary px-3 py-2 text-sm text-primary-foreground hover:opacity-90 disabled:opacity-50"
-              disabled={createFileName.trim().length === 0}
-              onClick={onCreateFile}
-            >
-              Create
-            </button>
-          </DialogFooter>
-        </DialogContent>
-      </div>
-    </DialogRoot>
+    </div>
   );
 }
 
@@ -551,16 +806,36 @@ function renderTabContent(
   flowName: string,
   codeDraft: string,
   setCodeDraft: (next: string) => void,
+  monacoTheme: string,
+  filesStorageKey: string,
 ) {
   switch (tabId) {
     case 'flowCode':
       return (
         <div className="flow-workbench-code-panel">
-          <textarea
-            aria-label="Flow code editor"
-            className="flow-workbench-code-textarea"
+          <Editor
+            language="yaml"
+            theme={monacoTheme}
             value={codeDraft}
-            onChange={(event) => setCodeDraft(event.currentTarget.value)}
+            onChange={(value) => setCodeDraft(value ?? '')}
+            options={{
+              minimap: { enabled: false },
+              fontSize: 13,
+              lineHeight: 1.6,
+              fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+              scrollBeyondLastLine: false,
+              automaticLayout: true,
+              tabSize: 2,
+              wordWrap: 'on',
+              padding: { top: 12, bottom: 12 },
+              renderLineHighlight: 'gutter',
+              folding: true,
+              lineNumbersMinChars: 3,
+              overviewRulerLanes: 0,
+              hideCursorInOverviewRuler: true,
+              overviewRulerBorder: false,
+              scrollbar: { verticalScrollbarSize: 8, horizontalScrollbarSize: 8 },
+            }}
           />
         </div>
       );
@@ -577,40 +852,7 @@ function renderTabContent(
       );
     case 'files':
       return (
-        <ArkFileUpload.Root maxFiles={20} allowDrop={false} className="space-y-3 p-3">
-          <div className="flex items-center justify-end gap-3">
-            <ArkFileUpload.Trigger className="inline-flex items-center rounded-md border border-border bg-background px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-accent hover:text-accent-foreground">
-              Upload file
-            </ArkFileUpload.Trigger>
-          </div>
-          <ArkFileUpload.Context>
-            {({ acceptedFiles }) => (
-              <>
-                <FilesTree acceptedFiles={acceptedFiles} />
-                {acceptedFiles.length > 0 ? (
-                  <ArkFileUpload.ItemGroup className="space-y-2">
-                    {acceptedFiles.map((file) => (
-                      <ArkFileUpload.Item
-                        key={file.name}
-                        file={file}
-                        className="flex items-center justify-between gap-3 rounded-md border border-border bg-card px-3 py-2"
-                      >
-                        <div className="min-w-0">
-                          <ArkFileUpload.ItemName className="truncate text-sm font-medium text-foreground" />
-                          <ArkFileUpload.ItemSizeText className="text-xs text-muted-foreground" />
-                        </div>
-                        <ArkFileUpload.ItemDeleteTrigger className="inline-flex items-center rounded border border-border bg-background px-2 py-1 text-xs text-muted-foreground hover:text-foreground">
-                          Remove
-                        </ArkFileUpload.ItemDeleteTrigger>
-                      </ArkFileUpload.Item>
-                    ))}
-                  </ArkFileUpload.ItemGroup>
-                ) : null}
-              </>
-            )}
-          </ArkFileUpload.Context>
-          <ArkFileUpload.HiddenInput aria-label="Upload files input" />
-        </ArkFileUpload.Root>
+        <FilesTree storageKey={filesStorageKey} />
       );
     case 'blueprints':
       return (
@@ -636,11 +878,13 @@ export default function FlowWorkbench({ flowId, flowName, namespace }: FlowWorkb
   const dragPaneStateRef = useRef<DragPaneState | null>(null);
   const pointerPaneStateRef = useRef<PointerPaneState | null>(null);
   const saveKey = `${SAVE_KEY_PREFIX}:${namespace}:${flowId}`;
+  const filesSaveKey = `${FILES_SAVE_KEY_PREFIX}:${namespace}:${flowId}`;
   const flowPath = useMemo(
     () => `flows/${encodeURIComponent(namespace)}/${encodeURIComponent(flowId)}`,
     [flowId, namespace],
   );
 
+  const monacoTheme = useMonacoTheme();
   const [panes, setPanes] = useState<Pane[]>(createInitialPanes);
   const [codeDraft, setCodeDraft] = useState(() => buildDefaultFlowCode(flowName, namespace));
   const [savedCode, setSavedCode] = useState(() => buildDefaultFlowCode(flowName, namespace));
@@ -698,11 +942,9 @@ export default function FlowWorkbench({ flowId, flowName, namespace }: FlowWorkb
         setCodeDraft(nextSource);
         setSavedCode(nextSource);
         setValidationIssues([]);
-      } catch (e) {
+      } catch {
         if (cancelled) return;
-        const message = e instanceof Error ? e.message : String(e);
-        const nextNotice = `Unable to load flow source: ${message}`;
-        setActionNotice((current) => (current === nextNotice ? current : nextNotice));
+        setValidationIssues([]);
       }
     };
 
@@ -750,7 +992,20 @@ export default function FlowWorkbench({ flowId, flowName, namespace }: FlowWorkb
     let createdPaneId: string | null = null;
     setPanes((current) => {
       const panel = current[panelIndex];
-      if (!panel || panel.tabs.length <= 1 || current.length >= MAX_COLUMNS) return current;
+      if (!panel) return current;
+
+      if (panel.tabs.length <= 1) {
+        createdPaneId = createPaneId(current);
+        const duplicatedTab = panel.activeTab;
+        const next = [...current];
+        next.splice(panelIndex + 1, 0, {
+          id: createdPaneId,
+          tabs: [duplicatedTab],
+          activeTab: duplicatedTab,
+          width: panel.width,
+        });
+        return normalizePaneWidths(next);
+      }
 
       const activeTabIndex = panel.tabs.findIndex((tab) => tab === panel.activeTab);
       if (activeTabIndex < 0) return current;
@@ -871,9 +1126,8 @@ export default function FlowWorkbench({ flowId, flowName, namespace }: FlowWorkb
         ? first.message
         : 'Flow source is invalid.';
       setActionNotice(`Validation failed (${path}${message})`);
-    } catch (e) {
-      const message = e instanceof Error ? e.message : String(e);
-      setActionNotice(`Validation failed: ${message}`);
+    } catch {
+      setValidationIssues([]);
     } finally {
       setIsValidating(false);
     }
@@ -900,9 +1154,8 @@ export default function FlowWorkbench({ flowId, flowName, namespace }: FlowWorkb
       setValidationIssues([]);
       const revisionLabel = typeof saved.revision === 'number' ? ` revision ${saved.revision}` : '';
       setActionNotice(`Saved${revisionLabel}.`);
-    } catch (e) {
-      const message = e instanceof Error ? e.message : String(e);
-      setActionNotice(`Save failed: ${message}`);
+    } catch {
+      setValidationIssues([]);
     } finally {
       setIsSaving(false);
     }
@@ -915,16 +1168,6 @@ export default function FlowWorkbench({ flowId, flowName, namespace }: FlowWorkb
 
     setFocusedPaneId(toPaneId);
     setPanes((current) => activateTabInPane(current, toPaneId, drag.tabId));
-  }, []);
-
-  const startPaneDrag = useCallback((event: React.DragEvent<HTMLButtonElement>, fromIndex: number) => {
-    dragPaneStateRef.current = { fromIndex };
-    dragStateRef.current = null;
-    pointerPaneStateRef.current = null;
-    event.dataTransfer.effectAllowed = 'move';
-    const payload = `pane:${fromIndex}`;
-    event.dataTransfer.setData(DRAG_PAYLOAD_MIME, payload);
-    event.dataTransfer.setData('text/plain', payload);
   }, []);
 
   const endPaneDrag = useCallback(() => {
@@ -1220,7 +1463,7 @@ export default function FlowWorkbench({ flowId, flowName, namespace }: FlowWorkb
         orientation="horizontal"
         panels={splitterPanels}
         size={paneTemplateStyle.map((pane) => pane.widthPercent)}
-        onResizeEnd={({ size }) => {
+        onResize={({ size }) => {
           setPanes((current) => {
             if (!Array.isArray(size) || size.length !== current.length) return current;
             const next = current.map((pane, index) => {
@@ -1253,7 +1496,17 @@ export default function FlowWorkbench({ flowId, flowName, namespace }: FlowWorkb
                   type="button"
                   aria-label="Move column"
                   title="Drag to move column"
-                  draggable={false}
+                  draggable
+                  onDragStart={(event) => {
+                    dragPaneStateRef.current = { fromIndex: index };
+                    dragStateRef.current = null;
+                    event.dataTransfer.effectAllowed = 'move';
+                    const payload = `pane:${index}`;
+                    event.dataTransfer.setData(DRAG_PAYLOAD_MIME, payload);
+                    event.dataTransfer.setData('text/plain', payload);
+                    setDragOverPaneIndex(index);
+                  }}
+                  onDragEnd={endPaneDrag}
                   onPointerDown={(event) => startPointerPaneDrag(event, index)}
                   onPointerUp={endPointerPaneDrag}
                   onPointerCancel={endPointerPaneDrag}
@@ -1296,63 +1549,62 @@ export default function FlowWorkbench({ flowId, flowName, namespace }: FlowWorkb
                   ))}
                 </div>
 
-                {pane.tabs.length > 1 ? (
+                <div className="flow-workbench-pane-actions">
                   <button
                     type="button"
                     title="Split panel"
                     aria-label="Split panel"
                     onClick={() => splitPanel(index)}
-                    disabled={panes.length >= MAX_COLUMNS}
                     className="flow-workbench-pane-split-trigger"
                   >
                     <IconLayoutColumns size={14} />
                   </button>
-                ) : null}
 
-                <MenuRoot positioning={{ placement: 'bottom-end', offset: { mainAxis: 6 } }}>
-                  <MenuTrigger asChild>
-                    <button
-                      type="button"
-                      aria-label="Pane actions"
-                      className="flow-workbench-pane-menu-trigger"
-                    >
-                      <IconDotsVertical size={14} />
-                    </button>
-                  </MenuTrigger>
-                  <MenuPortal>
-                    <MenuPositioner>
-                      <MenuContent>
-                        <MenuItem
-                          value={`${pane.id}-move-right`}
-                          onClick={() => movePaneByOffset(pane.id, 1)}
-                          disabled={index >= panes.length - 1}
-                        >
-                          Move right
-                        </MenuItem>
-                        <MenuItem
-                          value={`${pane.id}-move-left`}
-                          onClick={() => movePaneByOffset(pane.id, -1)}
-                          disabled={index <= 0}
-                        >
-                          Move left
-                        </MenuItem>
-                        <MenuItem
-                          value={`${pane.id}-close-all`}
-                          onClick={() => closeAllPanelsInPane(pane.id)}
-                        >
-                          Close all panels
-                        </MenuItem>
-                        <MenuItem
-                          value={`${pane.id}-remove`}
-                          onClick={() => removeColumn(pane.id)}
-                          disabled={panes.length <= 1}
-                        >
-                          Remove pane
-                        </MenuItem>
-                      </MenuContent>
-                    </MenuPositioner>
-                  </MenuPortal>
-                </MenuRoot>
+                  <MenuRoot positioning={{ placement: 'bottom-end', offset: { mainAxis: 6 } }}>
+                    <MenuTrigger asChild>
+                      <button
+                        type="button"
+                        aria-label="Pane actions"
+                        className="flow-workbench-pane-menu-trigger"
+                      >
+                        <IconDotsVertical size={14} />
+                      </button>
+                    </MenuTrigger>
+                    <MenuPortal>
+                      <MenuPositioner>
+                        <MenuContent>
+                          <MenuItem
+                            value={`${pane.id}-move-right`}
+                            onClick={() => movePaneByOffset(pane.id, 1)}
+                            disabled={index >= panes.length - 1}
+                          >
+                            Move right
+                          </MenuItem>
+                          <MenuItem
+                            value={`${pane.id}-move-left`}
+                            onClick={() => movePaneByOffset(pane.id, -1)}
+                            disabled={index <= 0}
+                          >
+                            Move left
+                          </MenuItem>
+                          <MenuItem
+                            value={`${pane.id}-close-all`}
+                            onClick={() => closeAllPanelsInPane(pane.id)}
+                          >
+                            Close all panels
+                          </MenuItem>
+                          <MenuItem
+                            value={`${pane.id}-remove`}
+                            onClick={() => removeColumn(pane.id)}
+                            disabled={panes.length <= 1}
+                          >
+                            Remove pane
+                          </MenuItem>
+                        </MenuContent>
+                      </MenuPositioner>
+                    </MenuPortal>
+                  </MenuRoot>
+                </div>
               </div>
 
               <div
@@ -1360,7 +1612,14 @@ export default function FlowWorkbench({ flowId, flowName, namespace }: FlowWorkb
                 onDragOver={(event) => handlePaneDragOver(event, index)}
                 onDrop={(event) => handlePaneDrop(event, index, pane.id)}
               >
-                {renderTabContent(pane.activeTab, flowName, codeDraft, setCodeDraft)}
+                {renderTabContent(
+                  pane.activeTab,
+                  flowName,
+                  codeDraft,
+                  setCodeDraft,
+                  monacoTheme,
+                  filesSaveKey,
+                )}
               </div>
             </Splitter.Panel>
 

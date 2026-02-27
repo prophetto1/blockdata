@@ -6,6 +6,7 @@ import FlowCanvas from '@/components/flows/FlowCanvas';
 import FlowWorkbench from '@/components/flows/FlowWorkbench';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { edgeJson } from '@/lib/edge';
+import { fetchAllProjectDocuments } from '@/lib/projectDocuments';
 import { supabase } from '@/lib/supabase';
 import { TABLES } from '@/lib/tables';
 import {
@@ -99,6 +100,10 @@ type FlowTriggerSummary = {
   nextExecutionDate: string | null;
   disabled: boolean;
 };
+
+function isSuppressedFlowMetadataError(message: string): boolean {
+  return /^Network request failed \(flows\/default\/[^)]+\)\.$/.test(message);
+}
 
 function toTriggerTypeLabel(type: string): string {
   const trimmed = type.trim();
@@ -207,6 +212,11 @@ export default function FlowDetail() {
       } catch (e) {
         if (cancelled) return;
         const message = e instanceof Error ? e.message : String(e);
+        if (isSuppressedFlowMetadataError(message)) {
+          setError(null);
+          setFlowTriggers([]);
+          return;
+        }
         setError(message);
         setFlowTriggers([]);
       }
@@ -224,18 +234,19 @@ export default function FlowDetail() {
 
     const loadRuns = async () => {
       setRunsError(null);
-      const { data: docs, error: docsError } = await supabase
-        .from(TABLES.documents)
-        .select('source_uid, doc_title, status, uploaded_at, source_type, conv_uid')
-        .eq('project_id', flowId)
-        .order('uploaded_at', { ascending: false })
-        .limit(300);
-
-      if (cancelled) return;
-      if (docsError) {
-        setRunsError(docsError.message);
+      let docs: Array<Record<string, unknown>> = [];
+      try {
+        docs = await fetchAllProjectDocuments<Record<string, unknown>>({
+          projectId: flowId,
+          select: 'source_uid, doc_title, status, uploaded_at, source_type, conv_uid',
+        });
+      } catch (error) {
+        if (cancelled) return;
+        setRunsError(error instanceof Error ? error.message : String(error));
         return;
       }
+
+      if (cancelled) return;
 
       const nextDocuments: FlowDocumentSummary[] = (docs ?? []).map((row) => {
         const item = row as Record<string, unknown>;

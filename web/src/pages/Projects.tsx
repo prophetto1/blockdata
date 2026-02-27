@@ -207,7 +207,7 @@ export default function Projects() {
             variant="subtle"
             size="compact-sm"
             px={0}
-            onClick={() => navigate(`/app/projects/${row.project_id}`)}
+            onClick={() => navigate(`/app/elt/${row.project_id}`)}
           >
             {row.project_name}
           </Button>
@@ -279,7 +279,7 @@ export default function Projects() {
             <Tooltip label="Open project">
               <ActionIcon
                 variant="subtle"
-                onClick={() => navigate(`/app/projects/${row.project_id}`)}
+                onClick={() => navigate(`/app/elt/${row.project_id}`)}
                 aria-label={`Open ${row.project_name}`}
               >
                 <IconExternalLink size={15} />
@@ -289,7 +289,7 @@ export default function Projects() {
               size="compact-xs"
               variant="light"
               leftSection={<IconUpload size={12} />}
-              onClick={() => navigate(`/app/projects/${row.project_id}/upload`)}
+              onClick={() => navigate(`/app/elt/${row.project_id}`)}
             >
               Upload
             </Button>
@@ -342,7 +342,7 @@ export default function Projects() {
     setDesc('');
     closeCreateModal();
     setCreating(false);
-    navigate(`/app/projects/${(data as ProjectRow).project_id}`);
+    navigate(`/app/elt/${(data as ProjectRow).project_id}`);
   };
 
   if (loading && projects.length === 0) return <Center mt="xl"><Loader /></Center>;

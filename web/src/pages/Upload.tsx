@@ -582,7 +582,6 @@ export default function Upload() {
               {selectedDoc && !previewLoading && previewKind === 'pdf' && previewUrl && (
                 <PdfPreview
                   key={`${selectedDoc.source_uid}:${previewUrl}`}
-                  title={selectedDoc.doc_title}
                   url={previewUrl}
                 />
               )}

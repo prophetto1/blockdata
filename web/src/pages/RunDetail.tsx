@@ -59,7 +59,7 @@ export default function RunDetail() {
             .maybeSingle()
             .then(({ data: docData }) => {
               if (docData && (docData as { project_id: string }).project_id !== projectId) {
-                navigate(`/app/projects/${(docData as { project_id: string }).project_id}/runs/${runId}`, { replace: true });
+                navigate(`/app/elt/${(docData as { project_id: string }).project_id}/runs/${runId}`, { replace: true });
                 return;
               }
               setRow(r);
@@ -117,7 +117,7 @@ export default function RunDetail() {
       const { error: err } = await supabase.rpc('delete_run', { p_run_id: runId });
       if (err) throw new Error(err.message);
       notifications.show({ color: 'green', title: 'Deleted', message: 'Run and all overlays removed' });
-      navigate(`/app/projects/${projectId}`);
+      navigate(`/app/elt/${projectId}`);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
       setDeleting(false);
@@ -136,8 +136,8 @@ export default function RunDetail() {
   return (
     <>
       <AppBreadcrumbs items={[
-        { label: 'Projects', href: '/app/projects' },
-        { label: projectName || 'Project', href: `/app/projects/${projectId}` },
+        { label: 'ELT', href: '/app/elt' },
+        { label: projectName || 'Project', href: `/app/elt/${projectId}` },
         { label: `Run ${row?.run_id?.slice(0, 8) ?? ''}...` },
       ]} />
       <PageHeader title="Run" subtitle={row?.run_id}>

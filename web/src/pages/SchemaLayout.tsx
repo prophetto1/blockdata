@@ -249,7 +249,6 @@ export default function SchemaLayout() {
                     <Box className="schema-layout-middle-toolbar-host" ref={setPdfToolbarHost} />
                   </Group>
                   <PdfPreview
-                    title="Layout Sample"
                     url="/layout-sample.pdf"
                     hideToolbar={!pdfToolbarHost}
                     toolbarPortalTarget={pdfToolbarHost}

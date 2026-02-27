@@ -91,7 +91,7 @@ export default function ProjectsHome() {
       const targetProject = focusedProject ?? defaultProject ?? projects[0];
 
       writeFocusedProjectId(targetProject.project_id);
-      navigate(`/app/projects/${targetProject.project_id}`, { replace: true });
+      navigate(`/app/elt/${targetProject.project_id}`, { replace: true });
     } catch (bootstrapError) {
       setError(bootstrapError instanceof Error ? bootstrapError.message : String(bootstrapError));
     } finally {

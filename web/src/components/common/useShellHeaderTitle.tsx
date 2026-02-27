@@ -27,17 +27,9 @@ function toTitleCase(value: string): string {
 
 function resolveMenuLevelOne(pathname: string): string {
   if (pathname.startsWith('/app/flows')) return 'Flows';
+  if (pathname.startsWith('/app/elt')) return 'ELT';
   if (pathname.startsWith('/app/database')) return 'Database';
   if (pathname.startsWith('/app/projects/list')) return 'Projects';
-  if (
-    pathname.startsWith('/app/projects')
-    || pathname.startsWith('/app/upload')
-    || pathname.startsWith('/app/extract')
-    || pathname.startsWith('/app/transform')
-    || pathname.startsWith('/app/documents')
-  ) {
-    return 'Documents';
-  }
   if (pathname.startsWith('/app/schemas')) return 'Schema';
   if (pathname.startsWith('/app/settings') || pathname.startsWith('/app/superuser')) return 'Settings';
   if (pathname.startsWith('/app/agents') || pathname.startsWith('/app/agent-onboarding')) return 'Agents';
@@ -52,7 +44,7 @@ function resolveMenuLevelOne(pathname: string): string {
 function resolveRouteProjectId(pathname: string): string | null {
   if (pathname.startsWith('/app/projects/list')) return null;
 
-  const match = pathname.match(/^\/app\/(?:projects|extract|transform|flows)\/([^/]+)(?:\/|$)/);
+  const match = pathname.match(/^\/app\/elt\/([^/]+)(?:\/|$)/);
   if (!match) return null;
   return match[1] ?? null;
 }

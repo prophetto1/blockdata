@@ -1,4 +1,4 @@
-import { createBrowserRouter, Navigate } from 'react-router-dom';
+import { createBrowserRouter, Navigate, useParams } from 'react-router-dom';
 import { MarketingLayout } from '@/components/layout/MarketingLayout';
 import { PublicLayout } from '@/components/layout/PublicLayout';
 import { PublicFullBleedLayout } from '@/components/layout/PublicFullBleedLayout';
@@ -11,16 +11,11 @@ import HowItWorks from '@/pages/HowItWorks';
 import UseCases from '@/pages/UseCases';
 import MarketingIntegrations from '@/pages/MarketingIntegrations';
 import AuthCallback from '@/pages/AuthCallback';
-import ProjectsHome from '@/pages/ProjectsHome';
 import Projects from '@/pages/Projects';
 import FlowDetail from '@/pages/FlowDetail';
-import FlowsIndexRedirect from '@/pages/FlowsIndexRedirect';
-import ProjectDetail from '@/pages/ProjectDetail';
-import Upload from '@/pages/Upload';
+import FlowsList from '@/pages/FlowsList';
 import UiCatalog from '@/pages/UiCatalog';
 import UppyLibraryDemo from '@/pages/UppyLibraryDemo';
-import Extract from '@/pages/Extract';
-import Transform from '@/pages/Transform';
 import Schemas from '@/pages/Schemas';
 import SchemaLayout from '@/pages/SchemaLayout';
 import RunDetail from '@/pages/RunDetail';
@@ -37,9 +32,32 @@ import AgentOnboardingConnect from '@/pages/AgentOnboardingConnect';
 import AgentOnboardingSelect from '@/pages/AgentOnboardingSelect';
 import McpServers from '@/pages/McpServers';
 import Commands from '@/pages/Commands';
+import DocumentTest from '@/pages/DocumentTest';
 import DatabasePlaceholder from '@/pages/DatabasePlaceholder';
 import { FlowsRouteShell } from '@/components/layout/FlowsRouteShell';
 import { featureFlags } from '@/lib/featureFlags';
+
+function LegacyToElt() {
+  return <Navigate to="/app/elt" replace />;
+}
+
+function LegacyToEltProject() {
+  const { projectId } = useParams<{ projectId: string }>();
+  const target = projectId ? `/app/elt/${projectId}` : '/app/elt';
+  return <Navigate to={target} replace />;
+}
+
+function LegacyToEltProjectRun() {
+  const { projectId, runId } = useParams<{ projectId: string; runId: string }>();
+  if (!projectId || !runId) return <Navigate to="/app/elt" replace />;
+  return <Navigate to={`/app/elt/${projectId}/runs/${runId}`} replace />;
+}
+
+function LegacyToEltProjectUppyDemo() {
+  const { projectId } = useParams<{ projectId: string }>();
+  if (!projectId) return <Navigate to="/app/elt" replace />;
+  return <Navigate to={`/app/elt/${projectId}/upload-uppy-demo`} replace />;
+}
 
 
 export const router = createBrowserRouter([
@@ -77,30 +95,36 @@ export const router = createBrowserRouter([
         element: <AppLayout />,
         children: [
           // App landing + projects
-          { path: '/app', element: <Navigate to="/app/projects" replace /> },
-          { path: '/app/projects', element: <ProjectsHome /> },
+          { path: '/app', element: <Navigate to="/app/elt" replace /> },
+          { path: '/app/elt', element: <DocumentTest /> },
+          { path: '/app/elt/:projectId', element: <DocumentTest /> },
+          { path: '/app/elt/:projectId/upload-uppy-demo', element: <UppyLibraryDemo /> },
+          { path: '/app/elt/:projectId/runs/:runId', element: <RunDetail /> },
           { path: '/app/projects/list', element: <Projects /> },
           { path: '/app/database', element: <DatabasePlaceholder /> },
           {
             path: '/app/flows',
             element: <FlowsRouteShell />,
             children: [
-              { index: true, element: <FlowsIndexRedirect /> },
+              { index: true, element: <FlowsList /> },
               { path: ':flowId/:tab?', element: <FlowDetail /> },
             ],
           },
 
           // Project-scoped routes
-          { path: '/app/projects/:projectId', element: <ProjectDetail /> },
-          { path: '/app/projects/:projectId/upload', element: <Upload /> },
+          { path: '/app/projects', element: <LegacyToElt /> },
+          { path: '/app/projects/:projectId', element: <LegacyToEltProject /> },
+          { path: '/app/projects/:projectId/upload', element: <LegacyToEltProject /> },
           { path: '/app/ui', element: <UiCatalog /> },
           { path: '/app/ui/:section', element: <UiCatalog /> },
-          { path: '/app/projects/:projectId/upload-uppy-demo', element: <UppyLibraryDemo /> },
-          { path: '/app/projects/:projectId/runs/:runId', element: <RunDetail /> },
-          { path: '/app/extract', element: <Navigate to="/app/projects" replace /> },
-          { path: '/app/extract/:projectId', element: <Extract /> },
-          { path: '/app/transform', element: <Navigate to="/app/projects" replace /> },
-          { path: '/app/transform/:projectId', element: <Transform /> },
+          { path: '/app/projects/:projectId/upload-uppy-demo', element: <LegacyToEltProjectUppyDemo /> },
+          { path: '/app/projects/:projectId/runs/:runId', element: <LegacyToEltProjectRun /> },
+          { path: '/app/extract', element: <LegacyToElt /> },
+          { path: '/app/extract/:projectId', element: <LegacyToEltProject /> },
+          { path: '/app/transform', element: <LegacyToElt /> },
+          { path: '/app/transform/:projectId', element: <LegacyToEltProject /> },
+          { path: '/app/upload', element: <LegacyToElt /> },
+          { path: '/app/documents', element: <LegacyToElt /> },
 
           // Global schemas (not project-scoped)
           { path: '/app/schemas', element: <Schemas /> },
@@ -152,8 +176,9 @@ export const router = createBrowserRouter([
           },
 
           // Legacy flat routes → redirect to project-scoped equivalents
+          { path: '/app/test', element: <LegacyToElt /> },
+          { path: '/app/test/:projectId', element: <LegacyToEltProject /> },
           { path: '/app/runs/:runId', element: <LegacyRunRedirect /> },
-          { path: '/app/upload', element: <Navigate to="/app/projects" replace /> },
         ],
       },
     ],

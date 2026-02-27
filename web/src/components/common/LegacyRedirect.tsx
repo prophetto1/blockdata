@@ -22,7 +22,7 @@ export function LegacyDocumentRedirect() {
       .maybeSingle()
       .then(({ data }) => {
         if (data?.project_id) {
-          navigate(`/app/projects/${data.project_id}/documents/${sourceUid}`, { replace: true });
+          navigate(`/app/elt/${data.project_id}`, { replace: true });
         } else {
           setError('Document not found');
         }
@@ -53,7 +53,7 @@ export function LegacyRunRedirect() {
           .eq('conv_uid', run.conv_uid)
           .maybeSingle();
         if (doc?.project_id) {
-          navigate(`/app/projects/${doc.project_id}/runs/${runId}`, { replace: true });
+          navigate(`/app/elt/${doc.project_id}/runs/${runId}`, { replace: true });
         } else {
           setError('Run not found');
         }

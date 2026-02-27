@@ -35,7 +35,7 @@ export default function FlowsIndexRedirect() {
   const defaultTab = readDefaultFlowTab();
 
   if (!focusedProjectId) {
-    return <Navigate to="/app/projects" replace />;
+    return <Navigate to="/app/elt" replace />;
   }
 
   return <Navigate to={`/app/flows/${focusedProjectId}/${defaultTab}`} replace />;

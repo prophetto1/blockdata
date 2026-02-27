@@ -8,7 +8,6 @@ import 'react-pdf/dist/Page/TextLayer.css';
 pdfjs.GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url).toString();
 
 type PdfPreviewProps = {
-  title: string;
   url: string;
   hideToolbar?: boolean;
   toolbarPortalTarget?: HTMLElement | null;
@@ -21,7 +20,6 @@ const PDF_BASE_WIDTH_PX = 700;
 
 
 export function PdfPreview({
-  title,
   url,
   hideToolbar = false,
   toolbarPortalTarget = null,
@@ -35,8 +33,6 @@ export function PdfPreview({
   const [zoomPercent, setZoomPercent] = useState(100);
   const [rotation, setRotation] = useState(0);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [fallbackToIframe, setFallbackToIframe] = useState(false);
-
   useEffect(() => {
     pageShellRefs.current.clear();
     activePageRef.current = 1;
@@ -46,7 +42,6 @@ export function PdfPreview({
     setZoomPercent(100);
     setRotation(0);
     setLoadError(null);
-    setFallbackToIframe(false);
   }, [url]);
 
   useEffect(() => {
@@ -59,7 +54,7 @@ export function PdfPreview({
 
   const canGoPrev = activePageNumber > 1;
   const canGoNext = pageCount !== null && activePageNumber < pageCount;
-  const isPdfJsControlsDisabled = fallbackToIframe || pageCount === null || !!loadError;
+  const isPdfJsControlsDisabled = pageCount === null || !!loadError;
   const showPageControls = !isPdfJsControlsDisabled && (pageCount ?? 0) > 1;
   const pageScale = Math.max(0.1, zoomPercent / 100);
   const pageDigits = Math.max(2, String(pageCount ?? activePageNumber).length);
@@ -113,7 +108,7 @@ export function PdfPreview({
   };
 
   useEffect(() => {
-    if (fallbackToIframe || loadError || pageCount === null) return undefined;
+    if (loadError || pageCount === null) return undefined;
     const viewportNode = viewportRef.current;
     if (!viewportNode) return undefined;
 
@@ -159,7 +154,7 @@ export function PdfPreview({
       viewportNode.removeEventListener('scroll', scheduleUpdate);
       if (frameId) window.cancelAnimationFrame(frameId);
     };
-  }, [fallbackToIframe, loadError, pageCount, rotation, pageScale]);
+  }, [loadError, pageCount, rotation, pageScale]);
 
   const iconBtnClass = 'inline-flex items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-50';
 
@@ -248,11 +243,7 @@ export function PdfPreview({
         ref={viewportRef}
         className="parse-pdf-preview-viewport"
       >
-        {fallbackToIframe ? (
-          <div className="parse-pdf-surface parse-pdf-surface--iframe">
-            <iframe title={`${title} PDF preview`} src={url} className="parse-preview-iframe" />
-          </div>
-        ) : loadError ? (
+        {loadError ? (
           <div className="flex h-full items-center justify-center">
             <span className="text-sm text-muted-foreground text-center">
               {loadError}
@@ -273,9 +264,8 @@ export function PdfPreview({
                 setLoadError(null);
               }}
               onLoadError={() => {
-                setLoadError('PDF.js preview failed. Falling back to browser preview.');
+                setLoadError('PDF preview failed to load.');
                 setPageCount(null);
-                setFallbackToIframe(true);
               }}
             >
               {Array.from({ length: pageCount ?? 1 }, (_, index) => {

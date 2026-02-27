@@ -268,8 +268,8 @@ export default function UppyLibraryDemo() {
     <>
       <AppBreadcrumbs
         items={[
-          { label: 'Projects', href: '/app/projects' },
-          { label: 'Project', href: `/app/projects/${projectId}` },
+          { label: 'ELT', href: '/app/elt' },
+          { label: 'Project', href: `/app/elt/${projectId}` },
           { label: 'Upload' },
           { label: 'Uppy Library Demo' },
         ]}
@@ -279,7 +279,7 @@ export default function UppyLibraryDemo() {
         title="Uppy Library Demo"
         subtitle="Separate sandbox page to validate uploader behavior before schema-level integration."
       >
-        <Button variant="default" onClick={() => navigate(`/app/projects/${projectId}/upload`)}>
+        <Button variant="default" onClick={() => navigate(`/app/elt/${projectId}`)}>
           Back to Current Uploader
         </Button>
       </PageHeader>

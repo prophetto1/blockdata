@@ -1,8 +1,14 @@
-import { memo } from 'react';
+import { memo, useCallback } from 'react';
 import {
+  Background,
+  BackgroundVariant,
+  Controls,
   Handle,
+  MiniMap,
   Position,
   ReactFlow,
+  addEdge,
+  type Connection,
   type Edge,
   type Node,
   type NodeProps,
@@ -104,7 +110,12 @@ const nodeTypes = { pmNode: FlowNode };
 
 export default function FlowCanvas() {
   const [nodes, , onNodesChange] = useNodesState(initialNodes);
-  const [edges, , onEdgesChange] = useEdgesState(initialEdges);
+  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+
+  const onConnect = useCallback(
+    (connection: Connection) => setEdges((eds) => addEdge(connection, eds)),
+    [setEdges],
+  );
 
   return (
     <div className="pm-reactflow-wrap">
@@ -113,8 +124,11 @@ export default function FlowCanvas() {
         edges={edges}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
+        onConnect={onConnect}
         nodeTypes={nodeTypes}
         fitView
+        snapToGrid
+        snapGrid={[16, 16]}
         nodeDragThreshold={3}
         connectionDragThreshold={3}
         paneClickDistance={3}
@@ -125,8 +139,15 @@ export default function FlowCanvas() {
         nodesConnectable
         nodesFocusable
         nodesDraggable
+        deleteKeyCode="Delete"
+        selectionKeyCode="Shift"
+        multiSelectionKeyCode="Shift"
         proOptions={{ hideAttribution: true }}
-      />
+      >
+        <Background variant={BackgroundVariant.Dots} gap={16} size={1} />
+        <Controls showInteractive={false} />
+        <MiniMap pannable zoomable nodeColor="var(--card)" maskColor="rgba(0, 0, 0, 0.3)" />
+      </ReactFlow>
     </div>
   );
 }

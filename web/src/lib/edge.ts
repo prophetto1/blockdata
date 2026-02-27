@@ -61,7 +61,9 @@ async function hasLocalAuthenticatedUser(): Promise<boolean> {
 
 export async function edgeFetch(path: string, init: RequestInit = {}): Promise<Response> {
   let token = await requireAccessToken();
-  const url = `${functionsBaseUrl()}/${path.replace(/^\/+/, '')}`;
+  const normalizedPath = path.replace(/^\/+/, '');
+  const url = `${functionsBaseUrl()}/${normalizedPath}`;
+  const suppressVerboseNetworkHints = normalizedPath.startsWith('flows/');
   const runFetch = async (accessToken: string): Promise<Response> => {
     const headers = new Headers(init.headers);
     headers.set('Authorization', `Bearer ${accessToken}`);
@@ -70,6 +72,9 @@ export async function edgeFetch(path: string, init: RequestInit = {}): Promise<R
       return await fetch(url, { ...init, headers });
     } catch (e) {
       const reason = e instanceof Error ? e.message : String(e);
+      if (suppressVerboseNetworkHints) {
+        throw new Error(`Network request failed (${normalizedPath}).`);
+      }
       throw new Error(
         `Network error calling edge function (${path}): ${reason}. ` +
           'If this is a newly added function, confirm it is deployed and reachable for this Supabase project.',
