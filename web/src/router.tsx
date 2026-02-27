@@ -19,9 +19,8 @@ import RunDetail from '@/pages/RunDetail';
 import Settings from '@/pages/Settings';
 import SuperuserSettings from '@/pages/SuperuserSettings';
 import LoginSplit from '@/pages/LoginSplit';
-import RegisterSplit from '@/pages/RegisterSplit';
 import PlatformLanding from '@/pages/experiments/PlatformLanding';
-import LandingV2 from '@/pages/LandingV2';
+import Landing from '@/pages/Landing';
 import Agents from '@/pages/Agents';
 import ModelRegistrationPreview from '@/pages/ModelRegistrationPreview';
 import AgentOnboarding from '@/pages/AgentOnboarding';
@@ -32,6 +31,7 @@ import McpServers from '@/pages/McpServers';
 import Commands from '@/pages/Commands';
 import DocumentTest from '@/pages/DocumentTest';
 import DatabasePlaceholder from '@/pages/DatabasePlaceholder';
+import EarlyAccess from '@/pages/EarlyAccess';
 import { FlowsRouteShell } from '@/components/layout/FlowsRouteShell';
 import { featureFlags } from '@/lib/featureFlags';
 
@@ -63,10 +63,15 @@ export const router = createBrowserRouter([
   {
     element: <MarketingLayout />,
     children: [
-      { path: '/', element: <LandingV2 /> },
       { path: '/integrations', element: <MarketingIntegrations /> },
       { path: '/experiments/platform', element: <PlatformLanding /> },
-      { path: '/v2', element: <LandingV2 /> },
+    ],
+  },
+  // Landing: marketing layout with nav + footer
+  {
+    element: <MarketingLayout />,
+    children: [
+      { path: '/', element: <Landing /> },
     ],
   },
   // Auth pages: full-bleed (use the split concepts)
@@ -74,7 +79,8 @@ export const router = createBrowserRouter([
     element: <PublicFullBleedLayout />,
     children: [
       { path: '/login', element: <LoginSplit /> },
-      { path: '/register', element: <RegisterSplit /> },
+      { path: '/register', element: <Navigate to="/early-access" replace /> },
+      { path: '/early-access', element: <EarlyAccess /> },
     ],
   },
   // Auth callback: PublicNav + centered content

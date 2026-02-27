@@ -1,13 +1,13 @@
 import { Outlet, ScrollRestoration } from 'react-router-dom';
-import { PublicNav } from './PublicNav';
+import { PublicNavModern } from './PublicNavModern';
 import { PublicFooter } from './PublicFooter';
 
 export function PublicFullBleedLayout() {
   return (
     <div>
       <ScrollRestoration />
-      <PublicNav />
-      <div className="flex min-h-[calc(100vh-80px)] flex-col pt-20">
+      <PublicNavModern />
+      <div className="flex min-h-screen flex-col pt-14">
         <div className="flex flex-1">
           <Outlet />
         </div>
