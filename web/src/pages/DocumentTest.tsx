@@ -1,7 +1,9 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Field } from '@ark-ui/react/field';
 import { Splitter } from '@ark-ui/react/splitter';
 import { TreeView, createTreeCollection } from '@ark-ui/react/tree-view';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import {
   MenuContent,
   MenuItem,
@@ -12,6 +14,7 @@ import {
 } from '@/components/ui/menu';
 import {
   IconDotsVertical,
+  IconDownload,
   IconEye,
   IconFilePlus,
   IconFiles,
@@ -39,8 +42,22 @@ import {
   sortDocumentsByUploadedAt,
 } from '@/lib/projectDetailHelpers';
 import { supabase } from '@/lib/supabase';
+import {
+  FALLBACK_TAB,
+  getTab,
+  getTabLabel,
+  getTabsByGroup,
+  hasTab,
+  registerTab,
+  registerTabs,
+  type TabRenderProps,
+} from '@/lib/tabRegistry';
+import { DltPullPanel } from '@/components/elt/DltPullPanel';
+import { DltLoadPanel } from '@/components/elt/DltLoadPanel';
+import { ParseEasyPanel } from '@/components/elt/ParseEasyPanel';
 
-type TabId = 'files' | 'preview' | 'canvas';
+// --- Tab type is now a plain string; the registry is the source of truth. ---
+type TabId = string;
 
 type Pane = {
   id: string;
@@ -49,18 +66,26 @@ type Pane = {
   width: number;
 };
 
-const TABS: Array<{ id: TabId; label: string }> = [
-  { id: 'files', label: 'Files' },
-  { id: 'preview', label: 'Preview' },
-  { id: 'canvas', label: 'Canvas' },
-];
-
-const FALLBACK_TAB: TabId = 'preview';
 const MIN_PANE_PERCENT = 18;
 const MAX_COLUMNS = 7;
 const DRAG_PAYLOAD_MIME = 'application/x-doc-test-drag';
 const DOCUMENTS_BUCKET = (import.meta.env.VITE_DOCUMENTS_BUCKET as string | undefined) ?? 'documents';
 const VIRTUAL_FOLDERS_STORAGE_KEY_PREFIX = 'blockdata.elt.virtual_folders.';
+
+// ---------------------------------------------------------------------------
+// Register tabs — view tabs are fixed; action tabs are dynamic.
+// This runs once at module load. Later this will hydrate from Supabase.
+// ---------------------------------------------------------------------------
+registerTab({ id: 'assets', label: 'Assets', group: 'view', render: () => null }); // rendered inline
+registerTab({ id: 'preview', label: 'Preview', group: 'view', render: () => null });
+registerTab({ id: 'canvas', label: 'Canvas', group: 'view', render: () => null });
+registerTabs('pull', [
+  { suffix: 'github', label: 'GitHub', render: ({ projectId }) => <DltPullPanel projectId={projectId} scriptLabel="GitHub" /> },
+  { suffix: 'stripe', label: 'Stripe', render: ({ projectId }) => <DltPullPanel projectId={projectId} scriptLabel="Stripe" /> },
+  { suffix: 'sql_database', label: 'SQL Database', render: ({ projectId }) => <DltPullPanel projectId={projectId} scriptLabel="SQL Database" /> },
+]);
+registerTab({ id: 'load', label: 'Load', group: 'load', render: ({ projectId }) => <DltLoadPanel projectId={projectId} /> });
+registerTab({ id: 'parse:easy', label: 'Parse: Easy', group: 'parse', render: ({ projectId }) => <ParseEasyPanel projectId={projectId} /> });
 
 const TEXT_SOURCE_TYPES = new Set([
   'md',
@@ -95,7 +120,7 @@ const DOCX_EXTENSIONS = new Set(['docx', 'docm', 'dotx', 'dotm']);
 const PPTX_SOURCE_TYPES = new Set(['pptx', 'pptm', 'ppsx']);
 const PPTX_EXTENSIONS = new Set(['pptx', 'pptm', 'ppsx']);
 
-type PreviewKind = 'none' | 'pdf' | 'image' | 'text' | 'docx' | 'pptx' | 'file';
+type PreviewKind = 'none' | 'pdf' | 'image' | 'text' | 'markdown' | 'docx' | 'pptx' | 'file';
 
 type DragPayload =
   | { kind: 'tab'; fromPaneId: string; tabId: TabId }
@@ -353,6 +378,13 @@ function isTextDocument(doc: ProjectDocumentRow): boolean {
   return TEXT_EXTENSIONS.has(getSourceLocatorExtension(doc));
 }
 
+function isMarkdownDocument(doc: ProjectDocumentRow): boolean {
+  const sourceType = doc.source_type.toLowerCase();
+  if (sourceType === 'md' || sourceType === 'markdown' || sourceType === 'mdx') return true;
+  const extension = getSourceLocatorExtension(doc);
+  return extension === 'md' || extension === 'markdown' || extension === 'mdx';
+}
+
 function isDocxDocument(doc: ProjectDocumentRow): boolean {
   const sourceType = doc.source_type.toLowerCase();
   if (DOCX_SOURCE_TYPES.has(sourceType)) return true;
@@ -475,11 +507,10 @@ function parseDragPayload(raw: string): DragPayload | null {
   if (value.startsWith('tab:')) {
     const segments = value.split(':');
     const fromPaneId = segments[1];
-    const tabIdRaw = segments[2];
+    const tabIdRaw = segments.slice(2).join(':');
     if (!fromPaneId || !tabIdRaw) return null;
-    const isTabId = TABS.some((tab) => tab.id === tabIdRaw);
-    if (!isTabId) return null;
-    return { kind: 'tab', fromPaneId, tabId: tabIdRaw as TabId };
+    if (!hasTab(tabIdRaw)) return null;
+    return { kind: 'tab', fromPaneId, tabId: tabIdRaw };
   }
 
   return null;
@@ -594,14 +625,31 @@ export default function DocumentTest() {
   const [previewError, setPreviewError] = useState<string | null>(null);
 
   const [panes, setPanes] = useState<Pane[]>(() => normalizePaneWidths([
-    { id: 'pane-1', tabs: ['files'], activeTab: 'files', width: 50 },
+    { id: 'pane-1', tabs: ['assets'], activeTab: 'assets', width: 50 },
     { id: 'pane-2', tabs: ['preview'], activeTab: 'preview', width: 50 },
   ]));
-  const [, setFocusedPaneId] = useState<string>('pane-1');
+  const [focusedPaneId, setFocusedPaneId] = useState<string>('pane-1');
   const [dragOverPaneIndex, setDragOverPaneIndex] = useState<number | null>(null);
   const [tabDropTarget, setTabDropTarget] = useState<{ paneId: string; insertIndex: number } | null>(null);
   const tabDragRef = useRef<{ fromPaneId: string; tabId: TabId } | null>(null);
   const paneDragRef = useRef<{ fromIndex: number } | null>(null);
+
+  const [pullMenuOpen, setPullMenuOpen] = useState(false);
+  const pullMenuCloseTimeoutRef = useRef<number | null>(null);
+  const cancelPullMenuClose = useCallback(() => {
+    if (pullMenuCloseTimeoutRef.current === null) return;
+    window.clearTimeout(pullMenuCloseTimeoutRef.current);
+    pullMenuCloseTimeoutRef.current = null;
+  }, []);
+  const openPullMenu = useCallback(() => {
+    cancelPullMenuClose();
+    setPullMenuOpen(true);
+  }, [cancelPullMenuClose]);
+  const schedulePullMenuClose = useCallback(() => {
+    cancelPullMenuClose();
+    pullMenuCloseTimeoutRef.current = window.setTimeout(() => setPullMenuOpen(false), 160);
+  }, [cancelPullMenuClose]);
+  useEffect(() => () => cancelPullMenuClose(), [cancelPullMenuClose]);
 
   const supportsDirectoryUpload = useMemo(() => {
     if (typeof document === 'undefined') return false;
@@ -897,8 +945,8 @@ export default function DocumentTest() {
           ...next,
           {
             id: createPaneId(next),
-            tabs: ['preview' as TabId],
-            activeTab: 'preview' as TabId,
+            tabs: ['preview'],
+            activeTab: 'preview',
             width: next[0]?.width ?? 50,
           },
         ]);
@@ -912,9 +960,9 @@ export default function DocumentTest() {
       const updated = next.map((pane, paneIndex) => {
         if (paneIndex !== 1) return pane;
         if (pane.tabs.includes('preview')) {
-          return { ...pane, activeTab: 'preview' as TabId };
+          return { ...pane, activeTab: 'preview' };
         }
-        return { ...pane, tabs: [...pane.tabs, 'preview' as TabId], activeTab: 'preview' as TabId };
+        return { ...pane, tabs: [...pane.tabs, 'preview'], activeTab: 'preview' };
       });
 
       return normalizePaneWidths(updated);
@@ -978,8 +1026,8 @@ export default function DocumentTest() {
           const text = await response.text();
           if (cancelled) return;
           const truncated = text.length > 200000 ? `${text.slice(0, 200000)}\n\n[Preview truncated]` : text;
-          setPreviewKind('text');
-          setPreviewText(truncated.length > 0 ? truncated : '[Empty text file]');
+          setPreviewKind(isMarkdownDocument(selectedDoc) ? 'markdown' : 'text');
+          setPreviewText(truncated.length > 0 ? truncated : '[Empty file]');
           setPreviewUrl(signedUrl);
           setPreviewLoading(false);
           return;
@@ -1025,7 +1073,7 @@ export default function DocumentTest() {
     if (!projectId) {
       return (
         <div className="flex h-full w-full items-center justify-center p-4 text-sm text-muted-foreground">
-          Select a project from the left rail to load files.
+          Select a project from the left rail to load assets.
         </div>
       );
     }
@@ -1046,9 +1094,9 @@ export default function DocumentTest() {
                 type="text"
                 value={filesQuery}
                 onChange={(event) => setFilesQuery(event.currentTarget.value)}
-                placeholder="Search files"
-                className="h-7 w-full rounded border border-border bg-background px-2 text-xs text-foreground outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                aria-label="Search files"
+                placeholder="Search"
+                className="h-6 w-full rounded border border-border bg-background px-2 text-[11px] leading-none text-foreground outline-none placeholder:text-[11px] placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring"
+                aria-label="Search assets"
               />
             </Field.Root>
             <div className="ml-auto flex shrink-0 items-center gap-1.5">
@@ -1148,7 +1196,7 @@ export default function DocumentTest() {
 
           {docsLoading ? (
             <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
-              Loading project files...
+              Loading project assets...
             </div>
           ) : null}
 
@@ -1160,13 +1208,13 @@ export default function DocumentTest() {
 
           {!docsLoading && !docsError && !hasFilesTreeNodes && filesQuery.trim().length === 0 ? (
             <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
-              No files in this project yet.
+              No assets in this project yet.
             </div>
           ) : null}
 
           {!docsLoading && !docsError && !hasFilesTreeNodes && filesQuery.trim().length > 0 ? (
             <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
-              No files match that filter.
+              No assets match that filter.
             </div>
           ) : null}
 
@@ -1207,7 +1255,7 @@ export default function DocumentTest() {
                 }}
                 className="text-xs"
               >
-                <TreeView.Tree className="flex flex-col" aria-label="Project files">
+                <TreeView.Tree className="flex flex-col" aria-label="Project assets">
                   <TreeView.Context>
                     {(tree) => tree.getVisibleNodes().map((entry) => {
                       const node = entry.node as FilesTreeNode;
@@ -1279,85 +1327,105 @@ export default function DocumentTest() {
   }, [createName, creatingType, docsError, docsLoading, expandedValue, filesQuery, filesTreeCollection, filesTreeNodes, filteredDocs, handleCreateEntry, handleDeleteSelected, handleSelectFile, hasFilesTreeNodes, openNativeFilePicker, projectId, resolvedSelectedSourceUid, selectedSourceUidForActions, selectedTreeNodeId, supportsDirectoryUpload, uploadFiles]);
 
   const previewTabContent = useMemo(() => {
-    if (!selectedDoc) {
-      return (
-        <div className="flex h-full w-full items-center justify-center p-4 text-sm text-muted-foreground">
-          Select a file in Files to preview.
+    const renderPreviewFrame = (
+      content: ReactNode,
+      options?: { scroll?: boolean; padded?: boolean },
+    ) => (
+      <div className="h-full w-full min-h-0 p-2">
+        <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-md border border-border bg-card">
+          <div
+            className={[
+              'min-h-0 flex-1',
+              options?.scroll === false ? 'overflow-hidden' : 'overflow-auto',
+              options?.padded === false ? '' : 'p-3',
+            ].join(' ')}
+          >
+            {content}
+          </div>
         </div>
-      );
+      </div>
+    );
+
+    const renderCenteredMessage = (message: ReactNode, isError = false) => (
+      <div
+        className={[
+          'flex h-full w-full items-center justify-center text-sm',
+          isError ? 'text-red-500' : 'text-muted-foreground',
+        ].join(' ')}
+      >
+        {message}
+      </div>
+    );
+
+    if (!selectedDoc) {
+      return renderPreviewFrame(renderCenteredMessage('Select an asset to preview.'));
     }
 
     if (previewLoading) {
-      return (
-        <div className="flex h-full w-full items-center justify-center p-4 text-sm text-muted-foreground">
-          Loading preview...
-        </div>
-      );
+      return renderPreviewFrame(renderCenteredMessage('Loading preview...'));
     }
 
     if (previewError) {
-      return (
-        <div className="flex h-full w-full items-center justify-center p-4 text-sm text-red-500">
-          {previewError}
-        </div>
-      );
+      return renderPreviewFrame(renderCenteredMessage(previewError, true));
     }
 
     if (previewKind === 'pdf' && previewUrl) {
-      return (
-        <div className="h-full w-full">
-          <PdfPreview key={`${selectedDoc.source_uid}:${previewUrl}`} url={previewUrl} />
-        </div>
+      return renderPreviewFrame(
+        <PdfPreview key={`${selectedDoc.source_uid}:${previewUrl}`} url={previewUrl} />,
+        { scroll: false, padded: false },
       );
     }
 
     if (previewKind === 'image' && previewUrl) {
-      return (
+      return renderPreviewFrame(
         <div className="flex h-full w-full items-center justify-center overflow-auto p-4">
           <img src={previewUrl} alt={selectedDoc.doc_title} className="max-h-full max-w-full" />
-        </div>
+        </div>,
+        { scroll: false, padded: false },
       );
     }
 
     if (previewKind === 'text') {
-      return (
-        <div className="h-full w-full overflow-auto p-3 text-xs">
-          <pre className="m-0 whitespace-pre-wrap">{previewText ?? ''}</pre>
-        </div>
+      return renderPreviewFrame(
+        <pre className="m-0 whitespace-pre-wrap text-xs">{previewText ?? ''}</pre>,
+      );
+    }
+
+    if (previewKind === 'markdown') {
+      return renderPreviewFrame(
+        <div className="parse-markdown-preview">
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+            {previewText ?? ''}
+          </ReactMarkdown>
+        </div>,
       );
     }
 
     if (previewKind === 'docx' && previewUrl) {
-      return (
-        <div className="h-full w-full">
-          <DocxPreview key={`${selectedDoc.source_uid}:${previewUrl}`} title={selectedDoc.doc_title} url={previewUrl} />
-        </div>
+      return renderPreviewFrame(
+        <DocxPreview key={`${selectedDoc.source_uid}:${previewUrl}`} title={selectedDoc.doc_title} url={previewUrl} />,
+        { scroll: false, padded: false },
       );
     }
 
     if (previewKind === 'pptx' && previewUrl) {
-      return (
-        <div className="h-full w-full">
-          <PptxPreview key={`${selectedDoc.source_uid}:${previewUrl}`} title={selectedDoc.doc_title} url={previewUrl} />
-        </div>
+      return renderPreviewFrame(
+        <PptxPreview key={`${selectedDoc.source_uid}:${previewUrl}`} title={selectedDoc.doc_title} url={previewUrl} />,
+        { scroll: false, padded: false },
       );
     }
 
     if (previewUrl) {
-      return (
-        <div className="flex h-full w-full items-center justify-center p-4 text-sm text-muted-foreground">
+      return renderPreviewFrame(
+        <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
           <a href={previewUrl} target="_blank" rel="noreferrer" className="text-primary hover:underline">
             Open file
           </a>
-        </div>
+        </div>,
       );
     }
 
-    return (
-      <div className="flex h-full w-full items-center justify-center p-4 text-sm text-muted-foreground">
-        Preview unavailable.
-      </div>
-    );
+    return renderPreviewFrame(renderCenteredMessage('Preview unavailable.'));
   }, [previewError, previewKind, previewLoading, previewText, previewUrl, selectedDoc]);
 
   const canvasTabContent = useMemo(() => (
@@ -1367,10 +1435,15 @@ export default function DocumentTest() {
   ), []);
 
   const renderTabContent = (tab: TabId) => {
-    if (tab === 'files') return filesTabContent;
+    // View tabs have inline-rendered content (memoized above)
+    if (tab === 'assets') return filesTabContent;
     if (tab === 'preview') return previewTabContent;
     if (tab === 'canvas') return canvasTabContent;
-    return null;
+
+    // All other tabs resolve through the registry
+    const entry = getTab(tab);
+    if (!entry) return <div className="flex h-full items-center justify-center text-sm text-muted-foreground">Unknown tab: {tab}</div>;
+    return <div className="h-full w-full min-h-0">{entry.render({ projectId })}</div>;
   };
 
   const handleCloseTabOrPane = (pane: Pane, tabId: TabId) => {
@@ -1426,7 +1499,7 @@ export default function DocumentTest() {
       if (!source) return current;
 
       if (source.tabs.length <= 1) {
-        const duplicatedTab: TabId = source.activeTab === 'files' ? 'preview' : source.activeTab;
+        const duplicatedTab: TabId = source.activeTab === 'assets' ? 'preview' : source.activeTab;
         const next = [...current];
         nextFocusedPaneId = createPaneId(current);
         next.splice(index + 1, 0, {
@@ -1438,9 +1511,9 @@ export default function DocumentTest() {
         return normalizePaneWidths(next);
       }
 
-      // Files is pinned to column 1 — never split it out
-      const movingTab = source.activeTab === 'files'
-        ? source.tabs.find((t) => t !== 'files')
+      // Assets is pinned to column 1 — never split it out
+      const movingTab = source.activeTab === 'assets'
+        ? source.tabs.find((t) => t !== 'assets')
         : source.activeTab;
       if (!movingTab) return current;
       const remainingTabs = source.tabs.filter((tab) => tab !== movingTab);
@@ -1524,22 +1597,22 @@ export default function DocumentTest() {
         <button
           type="button"
           onClick={() => {
-            const currentIndex = panes.findIndex((p) => p.tabs.includes('files'));
+            const currentIndex = panes.findIndex((p) => p.tabs.includes('assets'));
             if (currentIndex === -1) {
-              setPanes((current) => activateTabInPane(current, current[0]?.id ?? 'pane-1', 'files'));
+              setPanes((current) => activateTabInPane(current, current[0]?.id ?? 'pane-1', 'assets'));
             } else {
-              setPanes((current) => closeTab(current, current[currentIndex].id, 'files'));
+              setPanes((current) => closeTab(current, current[currentIndex].id, 'assets'));
             }
           }}
           style={{ fontSize: '12px', fontWeight: 500, lineHeight: '16px' }}
           className={`inline-flex h-7 items-center gap-1.5 rounded border px-2 ${
-            panes.some((p) => p.tabs.includes('files'))
+            panes.some((p) => p.tabs.includes('assets'))
               ? 'border-border bg-background text-foreground'
               : 'border-transparent text-muted-foreground hover:bg-background hover:text-foreground'
           }`}
         >
           <IconFiles size={14} />
-          Files
+          Assets
         </button>
         <button
           type="button"
@@ -1587,19 +1660,100 @@ export default function DocumentTest() {
 
         <div className="mx-1 h-4 w-px bg-border" />
 
+        <MenuRoot>
+          <MenuTrigger asChild>
+            <button
+              type="button"
+              style={{ fontSize: '12px', fontWeight: 500, lineHeight: '16px' }}
+              className={`inline-flex h-7 items-center rounded border px-2 ${
+                panes.some((p) => p.tabs.some((t) => t.startsWith('parse:')))
+                  ? 'border-border bg-background text-foreground'
+                  : 'border-transparent text-muted-foreground hover:bg-background hover:text-foreground'
+              }`}
+            >
+              Parse
+            </button>
+          </MenuTrigger>
+          <MenuPortal>
+            <MenuPositioner>
+              <MenuContent>
+                {getTabsByGroup('parse').map((entry) => (
+                  <MenuItem
+                    key={entry.id}
+                    value={entry.id}
+                    onClick={() => {
+                      setPanes((current) => {
+                        const targetPaneId = focusedPaneId ?? current[current.length - 1]?.id ?? 'pane-1';
+                        return activateTabInPane(current, targetPaneId, entry.id);
+                      });
+                    }}
+                  >
+                    {entry.label}
+                  </MenuItem>
+                ))}
+              </MenuContent>
+            </MenuPositioner>
+          </MenuPortal>
+        </MenuRoot>
+        <MenuRoot
+          open={pullMenuOpen}
+          onOpenChange={(details) => setPullMenuOpen(details.open)}
+          positioning={{ placement: 'bottom-start', offset: { mainAxis: 6 } }}
+        >
+          <MenuTrigger asChild>
+            <button
+              type="button"
+              onPointerEnter={openPullMenu}
+              onPointerLeave={schedulePullMenuClose}
+              style={{ fontSize: '12px', fontWeight: 500, lineHeight: '16px' }}
+              className={`inline-flex h-7 items-center rounded border px-2 ${
+                panes.some((p) => p.tabs.some((t) => t.startsWith('pull:')))
+                  ? 'border-border bg-background text-foreground'
+                  : 'border-transparent text-muted-foreground hover:bg-background hover:text-foreground'
+              }`}
+              aria-label="Open Pull (DLT)"
+              title="Open Pull (DLT)"
+            >
+              Pull
+            </button>
+          </MenuTrigger>
+          <MenuPortal>
+            <MenuPositioner>
+              <MenuContent onPointerEnter={openPullMenu} onPointerLeave={schedulePullMenuClose}>
+                {getTabsByGroup('pull').map((entry) => (
+                  <MenuItem
+                    key={entry.id}
+                    value={entry.id}
+                    onClick={() => {
+                      setPullMenuOpen(false);
+                      setPanes((current) => {
+                        const targetPaneId = focusedPaneId ?? current[current.length - 1]?.id ?? 'pane-1';
+                        return activateTabInPane(current, targetPaneId, entry.id);
+                      });
+                    }}
+                  >
+                    {entry.label}
+                  </MenuItem>
+                ))}
+              </MenuContent>
+            </MenuPositioner>
+          </MenuPortal>
+        </MenuRoot>
         <button
           type="button"
+          onClick={() => {
+            setPanes((current) => {
+              const targetPaneId = focusedPaneId ?? current[current.length - 1]?.id ?? 'pane-1';
+              return activateTabInPane(current, targetPaneId, 'load');
+            });
+          }}
           style={{ fontSize: '12px', fontWeight: 500, lineHeight: '16px' }}
-          className="inline-flex h-7 items-center rounded border border-transparent px-2 text-muted-foreground hover:bg-background hover:text-foreground"
+          className="inline-flex h-7 items-center gap-1.5 rounded border border-transparent px-2 text-muted-foreground hover:bg-background hover:text-foreground"
+          aria-label="Open Load (DLT)"
+          title="Open Load (DLT)"
         >
-          Parse
-        </button>
-        <button
-          type="button"
-          style={{ fontSize: '12px', fontWeight: 500, lineHeight: '16px' }}
-          className="inline-flex h-7 items-center rounded border border-transparent px-2 text-muted-foreground hover:bg-background hover:text-foreground"
-        >
-          Extract
+          <IconDownload size={14} />
+          Load
         </button>
         <button
           type="button"
@@ -1722,7 +1876,7 @@ export default function DocumentTest() {
                       ].join(' ')}
                     >
                       <button type="button" onClick={() => setPanes((current) => setActiveTab(current, pane.id, tab))} className="py-1">
-                        {TABS.find((item) => item.id === tab)?.label ?? tab}
+                        {getTabLabel(tab)}
                       </button>
                       <button
                         type="button"
@@ -1796,7 +1950,7 @@ export default function DocumentTest() {
               </div>
               <div className={[
                 'flex min-h-0 flex-1',
-                pane.activeTab === 'files' || pane.activeTab === 'preview' || pane.activeTab === 'canvas'
+                hasTab(pane.activeTab)
                   ? ''
                   : 'items-center justify-center text-sm text-muted-foreground',
               ].join(' ')}>

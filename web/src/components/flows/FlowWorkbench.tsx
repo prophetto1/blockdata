@@ -4,6 +4,7 @@ import {
   IconCheck,
   IconCode,
   IconDotsVertical,
+  IconEye,
   IconFilePlus,
   IconFileText,
   IconFolder,
@@ -28,9 +29,23 @@ import { Portal } from '@ark-ui/react/portal';
 import { Splitter } from '@ark-ui/react/splitter';
 import { Switch } from '@ark-ui/react/switch';
 import { Tooltip } from '@ark-ui/react/tooltip';
+import { DocxPreview } from '@/components/documents/DocxPreview';
+import { PdfPreview } from '@/components/documents/PdfPreview';
+import { PptxPreview } from '@/components/documents/PptxPreview';
 import { edgeFetch, edgeJson } from '@/lib/edge';
 import { fetchAllProjectDocuments } from '@/lib/projectDocuments';
-import { getDocumentFormat, type ProjectDocumentRow, sortDocumentsByUploadedAt } from '@/lib/projectDetailHelpers';
+import {
+  getDocumentFormat,
+  isDocxDocument,
+  isImageDocument,
+  isPdfDocument,
+  isPptxDocument,
+  isTextDocument,
+  type PreviewKind,
+  type ProjectDocumentRow,
+  resolveSignedUrlForLocators,
+  sortDocumentsByUploadedAt,
+} from '@/lib/projectDetailHelpers';
 import { supabase } from '@/lib/supabase';
 import FlowCanvas from './FlowCanvas';
 import {
@@ -101,6 +116,7 @@ type PanelButtonDescriptor = {
 const MIN_PANE_PERCENT = 18;
 const SAVE_KEY_PREFIX = 'flow-workbench-layout';
 const FILES_SAVE_KEY_PREFIX = 'flow-workbench-files';
+const VIRTUAL_FOLDERS_STORAGE_KEY_PREFIX = 'blockdata.elt.virtual_folders.';
 const DRAG_PAYLOAD_MIME = 'application/x-flow-workbench-drag';
 const DOCUMENTS_BUCKET = (import.meta.env.VITE_DOCUMENTS_BUCKET as string | undefined) ?? 'documents';
 
@@ -111,7 +127,8 @@ const PANEL_BUTTONS: PanelButtonDescriptor[] = [
   { tabId: 'nocode', label: 'No-code', Icon: IconLayoutColumns },
   { tabId: 'topology', label: 'Topology', Icon: IconLayoutColumns },
   { tabId: 'documentation', label: 'Documentation', Icon: IconFileText },
-  { tabId: 'files', label: 'Files', Icon: IconFolder },
+  { tabId: 'assets', label: 'Assets', Icon: IconFolder },
+  { tabId: 'preview', label: 'Preview', Icon: IconEye },
   { tabId: 'blueprints', label: 'Blueprints', Icon: IconPlayerPlay },
 ];
 
@@ -355,6 +372,37 @@ function normalizeFilePath(input: string): string {
   return normalizePath(input).replace(/^\/+/, '').replace(/\/+$/, '');
 }
 
+function readStoredVirtualFolders(projectId: string | null): string[] {
+  if (typeof window === 'undefined' || !projectId) return [];
+
+  try {
+    const raw = window.localStorage.getItem(`${VIRTUAL_FOLDERS_STORAGE_KEY_PREFIX}${projectId}`);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return [];
+
+    const normalized = parsed
+      .map((value) => normalizeFilePath(typeof value === 'string' ? value : ''))
+      .filter((value) => value.length > 0);
+    return normalized.filter((value, index, input) => input.indexOf(value) === index);
+  } catch {
+    return [];
+  }
+}
+
+function writeStoredVirtualFolders(projectId: string | null, folders: string[]) {
+  if (typeof window === 'undefined' || !projectId) return;
+
+  const normalized = folders
+    .map((folder) => normalizeFilePath(folder))
+    .filter((folder, index, input) => folder.length > 0 && input.indexOf(folder) === index);
+
+  window.localStorage.setItem(
+    `${VIRTUAL_FOLDERS_STORAGE_KEY_PREFIX}${projectId}`,
+    JSON.stringify(normalized),
+  );
+}
+
 function readPersistedFileEntries(storageKey: string): FileTreeEntry[] {
   if (typeof window === 'undefined') return [];
   const raw = window.localStorage.getItem(storageKey);
@@ -519,8 +567,22 @@ function filterFilesTreeNodes(nodes: FilesTreeNode[], query: string): FilesTreeN
   return walk(nodes);
 }
 
-function FilesTree({ storageKey, projectId }: { storageKey: string; projectId: string | null }) {
-  const [localEntries, setLocalEntries] = useState<FileTreeEntry[]>(() => readPersistedFileEntries(storageKey));
+function FilesTree({
+  storageKey,
+  projectId,
+  onSelectedDocChange,
+}: {
+  storageKey: string;
+  projectId: string | null;
+  onSelectedDocChange?: (doc: ProjectDocumentRow | null) => void;
+}) {
+  const [localEntries, setLocalEntries] = useState<FileTreeEntry[]>(() => {
+    const persisted = readPersistedFileEntries(storageKey).filter((entry) => !entry.isFile);
+    const sharedFolders = readStoredVirtualFolders(projectId).map((path) => ({ path, isFile: false }));
+    const merged = new Map<string, FileTreeEntry>();
+    [...sharedFolders, ...persisted].forEach((entry) => merged.set(entry.path, entry));
+    return Array.from(merged.values());
+  });
   const [docByPath, setDocByPath] = useState<Map<string, ProjectDocumentRow>>(() => new Map());
   const [docsLoading, setDocsLoading] = useState(false);
   const [docsError, setDocsError] = useState<string | null>(null);
@@ -535,13 +597,17 @@ function FilesTree({ storageKey, projectId }: { storageKey: string; projectId: s
 
   useEffect(() => {
     const persisted = readPersistedFileEntries(storageKey).filter((entry) => !entry.isFile);
-    setLocalEntries(persisted);
+    const sharedFolders = readStoredVirtualFolders(projectId).map((path) => ({ path, isFile: false }));
+    const merged = new Map<string, FileTreeEntry>();
+    [...sharedFolders, ...persisted].forEach((entry) => merged.set(entry.path, entry));
+    setLocalEntries(Array.from(merged.values()));
     setSelectedNodeId(null);
     setExpandedValue([]);
     setDocByPath(new Map());
     setDocsError(null);
     hasAutoExpandedRef.current = false;
-  }, [storageKey]);
+    onSelectedDocChange?.(null);
+  }, [onSelectedDocChange, projectId, storageKey]);
 
   const loadProjectDocs = useCallback(async () => {
     if (!projectId) {
@@ -653,8 +719,10 @@ function FilesTree({ storageKey, projectId }: { storageKey: string; projectId: s
   }, [projectId, loadProjectDocs]);
 
   useEffect(() => {
-    writePersistedFileEntries(storageKey, localEntries);
-  }, [localEntries, storageKey]);
+    const folders = localEntries.filter((entry) => !entry.isFile);
+    writePersistedFileEntries(storageKey, folders);
+    writeStoredVirtualFolders(projectId, folders.map((entry) => entry.path));
+  }, [localEntries, projectId, storageKey]);
 
   const treeNodes = useMemo(() => filterFilesTreeNodes(buildFilesTreeNodesFromEntries(localEntries), filesQuery), [filesQuery, localEntries]);
   const treeCollection = useMemo(() => createTreeCollection<FilesTreeNode>({
@@ -677,6 +745,15 @@ function FilesTree({ storageKey, projectId }: { storageKey: string; projectId: s
   }, [folderNodeIds]);
 
   const selectedNode = useMemo(() => parseTreeNodeId(selectedNodeId), [selectedNodeId]);
+
+  useEffect(() => {
+    if (!onSelectedDocChange) return;
+    if (!selectedNode || selectedNode.kind !== 'file') {
+      onSelectedDocChange(null);
+      return;
+    }
+    onSelectedDocChange(docByPath.get(selectedNode.path) ?? null);
+  }, [docByPath, onSelectedDocChange, selectedNode]);
 
   const createTargetFolderPath = useMemo(() => {
     if (!creatingType) return '';
@@ -1000,6 +1077,189 @@ function FilesTree({ storageKey, projectId }: { storageKey: string; projectId: s
   );
 }
 
+function FilesPreview({ selectedDoc }: { selectedDoc: ProjectDocumentRow | null }) {
+  const [previewKind, setPreviewKind] = useState<PreviewKind>('none');
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewText, setPreviewText] = useState<string | null>(null);
+  const [previewError, setPreviewError] = useState<string | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadPreview = async () => {
+      if (!selectedDoc) {
+        setPreviewKind('none');
+        setPreviewUrl(null);
+        setPreviewText(null);
+        setPreviewError(null);
+        setPreviewLoading(false);
+        return;
+      }
+
+      setPreviewLoading(true);
+      setPreviewError(null);
+      setPreviewUrl(null);
+      setPreviewText(null);
+
+      const { url: signedUrl, error: signedUrlError } = await resolveSignedUrlForLocators([
+        selectedDoc.source_locator,
+        selectedDoc.conv_locator,
+      ]);
+
+      if (cancelled) return;
+
+      if (!signedUrl) {
+        setPreviewKind('none');
+        setPreviewError(
+          signedUrlError
+            ? `Preview unavailable: ${signedUrlError}`
+            : 'Preview unavailable for this file.',
+        );
+        setPreviewLoading(false);
+        return;
+      }
+
+      if (isPdfDocument(selectedDoc)) {
+        setPreviewKind('pdf');
+        setPreviewUrl(signedUrl);
+        setPreviewLoading(false);
+        return;
+      }
+
+      if (isImageDocument(selectedDoc)) {
+        setPreviewKind('image');
+        setPreviewUrl(signedUrl);
+        setPreviewLoading(false);
+        return;
+      }
+
+      if (isTextDocument(selectedDoc)) {
+        try {
+          const response = await fetch(signedUrl);
+          const text = await response.text();
+          if (cancelled) return;
+          const truncated = text.length > 200000 ? `${text.slice(0, 200000)}\n\n[Preview truncated]` : text;
+          setPreviewKind('text');
+          setPreviewText(truncated.length > 0 ? truncated : '[Empty text file]');
+          setPreviewUrl(signedUrl);
+          setPreviewLoading(false);
+          return;
+        } catch {
+          if (cancelled) return;
+          setPreviewKind('file');
+          setPreviewUrl(signedUrl);
+          setPreviewLoading(false);
+          return;
+        }
+      }
+
+      if (isDocxDocument(selectedDoc)) {
+        setPreviewKind('docx');
+        setPreviewUrl(signedUrl);
+        setPreviewLoading(false);
+        return;
+      }
+
+      if (isPptxDocument(selectedDoc)) {
+        setPreviewKind('pptx');
+        setPreviewUrl(signedUrl);
+        setPreviewLoading(false);
+        return;
+      }
+
+      setPreviewKind('file');
+      setPreviewUrl(signedUrl);
+      setPreviewLoading(false);
+    };
+
+    void loadPreview();
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedDoc]);
+
+  if (!selectedDoc) {
+    return (
+      <div className="flex h-full w-full items-center justify-center p-4 text-sm text-muted-foreground">
+        Select a file in Assets to preview.
+      </div>
+    );
+  }
+
+  if (previewLoading) {
+    return (
+      <div className="flex h-full w-full items-center justify-center p-4 text-sm text-muted-foreground">
+        Loading preview...
+      </div>
+    );
+  }
+
+  if (previewError) {
+    return (
+      <div className="flex h-full w-full items-center justify-center p-4 text-sm text-red-500">
+        {previewError}
+      </div>
+    );
+  }
+
+  if (previewKind === 'pdf' && previewUrl) {
+    return (
+      <div className="h-full w-full">
+        <PdfPreview key={`${selectedDoc.source_uid}:${previewUrl}`} url={previewUrl} />
+      </div>
+    );
+  }
+
+  if (previewKind === 'image' && previewUrl) {
+    return (
+      <div className="flex h-full w-full items-center justify-center overflow-auto p-4">
+        <img src={previewUrl} alt={selectedDoc.doc_title} className="max-h-full max-w-full" />
+      </div>
+    );
+  }
+
+  if (previewKind === 'text') {
+    return (
+      <div className="h-full w-full overflow-auto p-3 text-xs">
+        <pre className="m-0 whitespace-pre-wrap">{previewText ?? ''}</pre>
+      </div>
+    );
+  }
+
+  if (previewKind === 'docx' && previewUrl) {
+    return (
+      <div className="h-full w-full">
+        <DocxPreview key={`${selectedDoc.source_uid}:${previewUrl}`} title={selectedDoc.doc_title} url={previewUrl} />
+      </div>
+    );
+  }
+
+  if (previewKind === 'pptx' && previewUrl) {
+    return (
+      <div className="h-full w-full">
+        <PptxPreview key={`${selectedDoc.source_uid}:${previewUrl}`} title={selectedDoc.doc_title} url={previewUrl} />
+      </div>
+    );
+  }
+
+  if (previewUrl) {
+    return (
+      <div className="flex h-full w-full items-center justify-center p-4 text-sm text-muted-foreground">
+        <a href={previewUrl} target="_blank" rel="noreferrer" className="text-primary hover:underline">
+          Open file
+        </a>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex h-full w-full items-center justify-center p-4 text-sm text-muted-foreground">
+      Preview unavailable.
+    </div>
+  );
+}
+
 function renderTabContent(
   tabId: PaneTabId,
   flowName: string,
@@ -1008,6 +1268,8 @@ function renderTabContent(
   monacoTheme: string,
   filesStorageKey: string,
   projectId: string,
+  selectedDoc: ProjectDocumentRow | null,
+  onSelectedDocChange: (doc: ProjectDocumentRow | null) => void,
 ) {
   switch (tabId) {
     case 'flowCode':
@@ -1050,9 +1312,13 @@ function renderTabContent(
           </p>
         </div>
       );
-    case 'files':
+    case 'assets':
       return (
-        <FilesTree storageKey={filesStorageKey} projectId={projectId} />
+        <FilesTree storageKey={filesStorageKey} projectId={projectId} onSelectedDocChange={onSelectedDocChange} />
+      );
+    case 'preview':
+      return (
+        <FilesPreview selectedDoc={selectedDoc} />
       );
     case 'blueprints':
       return (
@@ -1091,6 +1357,7 @@ export default function FlowWorkbench({ flowId, flowName, namespace }: FlowWorkb
   const [playgroundOpen, setPlaygroundOpen] = useState(false);
   const [focusedPaneId, setFocusedPaneId] = useState<string | null>(null);
   const [actionNotice, setActionNotice] = useState<string | null>(null);
+  const [selectedDoc, setSelectedDoc] = useState<ProjectDocumentRow | null>(null);
   const [validationIssues, setValidationIssues] = useState<FlowValidationViolation[]>([]);
   const [dragOverPaneIndex, setDragOverPaneIndex] = useState<number | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -1127,6 +1394,10 @@ export default function FlowWorkbench({ flowId, flowName, namespace }: FlowWorkb
       return buildDefaultFlowCode(flowName, namespace);
     });
   }, [flowName, namespace]);
+
+  useEffect(() => {
+    setSelectedDoc(null);
+  }, [flowId, namespace]);
 
   useEffect(() => {
     let cancelled = false;
@@ -1281,6 +1552,64 @@ export default function FlowWorkbench({ flowId, flowName, namespace }: FlowWorkb
     setFocusedPaneId(targetPaneId);
     setPanes((current) => activateTabInPane(current, targetPaneId, tabId));
   }, [focusedPaneId, panes]);
+
+  const focusPreviewNextToFiles = useCallback(() => {
+    let nextFocusedPaneId: string | null = null;
+    setPanes((current) => {
+      if (current.length === 0) return current;
+
+      const existingPreviewIndex = current.findIndex((pane) => pane.tabs.includes('preview'));
+      if (existingPreviewIndex >= 0) {
+        const previewPane = current[existingPreviewIndex];
+        if (!previewPane) return current;
+        nextFocusedPaneId = previewPane.id;
+        return current.map((pane, index) => (
+          index === existingPreviewIndex ? { ...pane, activeTab: 'preview' } : pane
+        ));
+      }
+
+      const filesIndex = current.findIndex((pane) => pane.tabs.includes('assets'));
+      const sourceIndex = filesIndex >= 0 ? filesIndex : 0;
+      const insertIndex = Math.min(sourceIndex + 1, current.length);
+      const sourcePane = current[sourceIndex] ?? current[0];
+      if (!sourcePane) return current;
+
+      const next = [...current];
+      const targetPane = next[insertIndex];
+      if (!targetPane) {
+        const createdId = createPaneId(next);
+        nextFocusedPaneId = createdId;
+        next.splice(insertIndex, 0, {
+          id: createdId,
+          tabs: ['preview'],
+          activeTab: 'preview',
+          width: sourcePane.width,
+        });
+        return normalizePaneWidths(next);
+      }
+
+      nextFocusedPaneId = targetPane.id;
+      next[insertIndex] = targetPane.tabs.includes('preview')
+        ? { ...targetPane, activeTab: 'preview' }
+        : { ...targetPane, tabs: [...targetPane.tabs, 'preview'], activeTab: 'preview' };
+      return normalizePaneWidths(next);
+    });
+
+    if (nextFocusedPaneId) {
+      setFocusedPaneId(nextFocusedPaneId);
+    }
+  }, []);
+
+  const handleSelectedDocChange = useCallback((doc: ProjectDocumentRow | null) => {
+    setSelectedDoc((previous) => {
+      const prevId = previous?.source_uid ?? null;
+      const nextId = doc?.source_uid ?? null;
+      if (doc && prevId !== nextId) {
+        focusPreviewNextToFiles();
+      }
+      return doc;
+    });
+  }, [focusPreviewNextToFiles]);
 
   const handleExportFlow = useCallback(() => {
     const fallbackName = flowId.slice(0, 8);
@@ -1820,6 +2149,8 @@ export default function FlowWorkbench({ flowId, flowName, namespace }: FlowWorkb
                   monacoTheme,
                   filesSaveKey,
                   flowId,
+                  selectedDoc,
+                  handleSelectedDocChange,
                 )}
               </div>
             </Splitter.Panel>

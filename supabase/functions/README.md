@@ -10,6 +10,8 @@ execution, and export.
   (`status='uploaded'`) so parsing can be started explicitly later.
 - `conversion-complete`: Callback endpoint invoked by the Python conversion
   service after it uploads Markdown back to Storage.
+- `dbt-projects`: Registers a dbt project bundle (zip) for a project (control-plane only).
+- `dbt-runs`: Creates/polls dbt runs and proxies artifacts/events; dispatches execution to the Python dbt service.
 - `export-jsonl`: Emits JSONL for a `run_id`, joining `blocks` + `block_overlays`
   into the canonical two-key export format.
 - `schemas`: CRUD for user-defined extraction schemas in `public.schemas`.
@@ -30,9 +32,12 @@ execution, and export.
 - `SUPABASE_ANON_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY`
 - `DOCUMENTS_BUCKET` (default: `documents`)
+- `DBT_BUCKET` (default: `dbt`)
 - `CONVERSION_SERVICE_URL` (URL of the FastAPI service)
 - `CONVERSION_SERVICE_KEY` (shared secret; used in header
   `X-Conversion-Service-Key`)
+- `DBT_SERVICE_URL` (URL of the dbt-runner service)
+- `DBT_SERVICE_KEY` (shared secret; used in header `X-DBT-Service-Key`)
 
 ## JWT mode
 

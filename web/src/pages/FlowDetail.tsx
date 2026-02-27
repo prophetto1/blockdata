@@ -390,7 +390,7 @@ export default function FlowDetail() {
                 value={item.value}
                 disabled={isDisabled}
                 aria-disabled={isDisabled}
-                className="inline-flex h-full shrink-0 items-center gap-1 border-r border-border px-3 text-xs font-medium leading-none whitespace-nowrap text-muted-foreground transition-colors first:border-l first:border-l-border hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-muted-foreground data-[selected]:bg-background data-[selected]:text-foreground data-[selected]:shadow-[inset_0_-1px_0_var(--primary)]"
+                className="inline-flex h-full shrink-0 items-center gap-1 border-r border-border px-3 text-xs font-medium leading-none whitespace-nowrap text-muted-foreground transition-colors first:border-l first:border-l-border hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-muted-foreground data-[selected]:bg-background data-[selected]:text-foreground"
               >
                 <span>{label}</span>
                 {isLocked ? <IconLock size={11} aria-hidden /> : null}

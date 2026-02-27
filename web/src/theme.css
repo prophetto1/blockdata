@@ -1565,6 +1565,108 @@ body {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
 
+.parse-markdown-preview {
+  color: var(--foreground);
+  line-height: 1.55;
+  word-break: break-word;
+  width: min(100%, 920px);
+  margin-inline: auto;
+}
+
+.parse-markdown-preview > :first-child {
+  margin-top: 0;
+}
+
+.parse-markdown-preview > :last-child {
+  margin-bottom: 0;
+}
+
+.parse-markdown-preview h1,
+.parse-markdown-preview h2,
+.parse-markdown-preview h3 {
+  margin: 0.95rem 0 0.55rem;
+  font-weight: 650;
+  line-height: 1.25;
+}
+
+.parse-markdown-preview h1 {
+  font-size: 1.18rem;
+}
+
+.parse-markdown-preview h2 {
+  font-size: 1.06rem;
+}
+
+.parse-markdown-preview h3 {
+  font-size: 0.96rem;
+}
+
+.parse-markdown-preview p,
+.parse-markdown-preview ul,
+.parse-markdown-preview ol,
+.parse-markdown-preview blockquote,
+.parse-markdown-preview table,
+.parse-markdown-preview pre {
+  margin: 0.6rem 0;
+}
+
+.parse-markdown-preview ul,
+.parse-markdown-preview ol {
+  padding-left: 1.1rem;
+}
+
+.parse-markdown-preview li + li {
+  margin-top: 0.2rem;
+}
+
+.parse-markdown-preview a {
+  color: var(--primary);
+  text-decoration: underline;
+}
+
+.parse-markdown-preview code {
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0 0.3em;
+  background: light-dark(rgba(15, 23, 42, 0.04), rgba(148, 163, 184, 0.14));
+  font-size: 0.86em;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+.parse-markdown-preview pre {
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.7rem 0.8rem;
+  background: light-dark(rgba(15, 23, 42, 0.04), rgba(148, 163, 184, 0.14));
+}
+
+.parse-markdown-preview pre code {
+  border: 0;
+  padding: 0;
+  background: transparent;
+}
+
+.parse-markdown-preview blockquote {
+  border-left: 3px solid var(--border);
+  padding: 0.12rem 0 0.12rem 0.72rem;
+  color: var(--muted-foreground);
+}
+
+.parse-markdown-preview table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+.parse-markdown-preview th,
+.parse-markdown-preview td {
+  border: 1px solid var(--border);
+  padding: 0.45rem 0.5rem;
+  text-align: left;
+  vertical-align: top;
+}
+
 .parse-playground-resizer {
   position: absolute;
   top: 0;

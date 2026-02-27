@@ -1,9 +1,10 @@
 export type PaneTabId =
   | 'flowCode'
+  | 'preview'
   | 'documentation'
   | 'nocode'
   | 'topology'
-  | 'files'
+  | 'assets'
   | 'blueprints';
 
 export type Pane = {
@@ -15,10 +16,11 @@ export type Pane = {
 
 export const FLOW_WORKBENCH_TABS: Array<{ id: PaneTabId; label: string }> = [
   { id: 'flowCode', label: 'Flow Code' },
+  { id: 'preview', label: 'Preview' },
   { id: 'nocode', label: 'No-code' },
   { id: 'topology', label: 'Topology' },
   { id: 'documentation', label: 'Documentation' },
-  { id: 'files', label: 'Files' },
+  { id: 'assets', label: 'Assets' },
   { id: 'blueprints', label: 'Blueprints' },
 ];
 

@@ -4,7 +4,9 @@
   --flow-workbench-editor-bg: color-mix(in oklab, var(--card) 92%, var(--background) 8%);
   width: 100%;
   min-width: 0;
-  min-height: 720px;
+  min-height: 0;
+  height: 100%;
+  flex: 1;
 }
 
 .flow-workbench-toolbar {
@@ -208,7 +210,8 @@
 }
 
 .flow-workbench-multipane {
-  min-height: 680px;
+  min-height: 0;
+  flex: 1;
   display: flex;
   align-items: stretch;
   border: 1px solid var(--border);

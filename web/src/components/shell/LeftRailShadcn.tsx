@@ -414,7 +414,7 @@ export function LeftRailShadcn({
           />
           {!desktopCompact && (
             <>
-              <div className="px-2 pb-1.5 pt-1.5">
+              <div className="px-2 py-1">
                 <div className="flex w-full items-center gap-1.5">
                 <Select.Root
                   className="min-w-0 flex-1"
@@ -430,7 +430,7 @@ export function LeftRailShadcn({
                 >
                   <Select.Control className="relative flex-1">
                     <Select.Trigger
-                      className="flex h-9 w-full items-center justify-between rounded-md border border-input/80 bg-background/95 px-2 text-left shadow-sm transition-colors hover:bg-sidebar-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+                      className="flex h-8 w-full items-center justify-between rounded-md border border-input/80 bg-background/95 px-2 text-left shadow-sm transition-colors hover:bg-sidebar-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
                       aria-label="Select project"
                     >
                       <span className="min-w-0 pr-1.5">
@@ -482,7 +482,7 @@ export function LeftRailShadcn({
                 </Select.Root>
                 <button
                   type="button"
-                  className="inline-flex h-9 w-12 shrink-0 items-center justify-center rounded-md border border-input/80 bg-background/95 text-sidebar-foreground/80 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+                  className="inline-flex h-8 w-10 shrink-0 items-center justify-center rounded-md border border-input/80 bg-background/95 text-sidebar-foreground/80 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
                   onClick={() => {
                     navigate('/app/projects/list?new=1');
                     onNavigate?.();
