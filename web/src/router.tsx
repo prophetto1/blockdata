@@ -6,9 +6,6 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { AuthGuard } from '@/auth/AuthGuard';
 import { LegacyRunRedirect } from '@/components/common/LegacyRedirect';
 
-import Landing from '@/pages/Landing';
-import HowItWorks from '@/pages/HowItWorks';
-import UseCases from '@/pages/UseCases';
 import MarketingIntegrations from '@/pages/MarketingIntegrations';
 import AuthCallback from '@/pages/AuthCallback';
 import Projects from '@/pages/Projects';
@@ -24,6 +21,7 @@ import SuperuserSettings from '@/pages/SuperuserSettings';
 import LoginSplit from '@/pages/LoginSplit';
 import RegisterSplit from '@/pages/RegisterSplit';
 import PlatformLanding from '@/pages/experiments/PlatformLanding';
+import LandingV2 from '@/pages/LandingV2';
 import Agents from '@/pages/Agents';
 import ModelRegistrationPreview from '@/pages/ModelRegistrationPreview';
 import AgentOnboarding from '@/pages/AgentOnboarding';
@@ -65,11 +63,10 @@ export const router = createBrowserRouter([
   {
     element: <MarketingLayout />,
     children: [
-      { path: '/', element: <Landing /> },
-      { path: '/how-it-works', element: <HowItWorks /> },
-      { path: '/use-cases', element: <UseCases /> },
+      { path: '/', element: <LandingV2 /> },
       { path: '/integrations', element: <MarketingIntegrations /> },
       { path: '/experiments/platform', element: <PlatformLanding /> },
+      { path: '/v2', element: <LandingV2 /> },
     ],
   },
   // Auth pages: full-bleed (use the split concepts)

@@ -6,13 +6,15 @@ import {
   IconChevronRight,
   IconDatabase,
   IconEye,
-  IconFileExport,
-  IconFileSearch,
-  IconGitBranch,
   IconPencil,
   IconShieldCheck,
   IconTransform,
   IconVectorTriangle,
+  IconServer,
+  IconTopologyStarRing3,
+  IconApi,
+  IconFileText,
+  IconSparkles,
 } from '@tabler/icons-react';
 import { Badge } from '@/components/ui/badge';
 import { BottomCTA } from '@/components/marketing/BottomCTA';
@@ -125,15 +127,74 @@ const FEATURED = [
   },
 ];
 
-const SECONDARY = [
-  { icon: IconFileSearch, title: 'Contract review and compliance', text: 'Extract obligations, deadlines, and risk clauses with block-level provenance.' },
-  { icon: IconDatabase, title: 'Database enrichment', text: 'Load tables from Postgres or BigQuery, run transforms, and add AI-generated fields.' },
-  { icon: IconFileExport, title: 'Multi-format export', text: 'Route confirmed data to JSONL, databases, vector stores, or webhooks in a single pipeline.' },
-  { icon: IconBrain, title: 'Fine-tuning datasets', text: 'Confirmed overlays become supervised training examples. Versioned exports become gold-standard test sets.' },
-  { icon: IconVectorTriangle, title: 'Vector stores', text: 'Ship content plus metadata to vector indexes for semantic search and RAG pipelines.' },
-  { icon: IconGitBranch, title: 'Cross-schema joins', text: 'Join outputs from multiple schemas on stable block IDs across systems and runs.' },
-  { icon: IconTransform, title: 'Pipeline automation', text: 'Schedule recurring runs, trigger on events, chain flows for continuous processing.' },
-  { icon: IconShieldCheck, title: 'Compliance and audit', text: 'Every row traces to source, model, and review decisions. Full provenance chain.' },
+type SecondaryItem = {
+  icon: typeof IconBrain;
+  title: string;
+  text: string;
+  span: string;
+  tag?: string;
+  accent?: boolean;
+};
+
+const SECONDARY: SecondaryItem[] = [
+  {
+    icon: IconServer,
+    title: 'AI-searchable knowledge base',
+    text: 'Upload documents and databases. Get a live, queryable knowledge base served via MCP — any AI tool in your org can search and retrieve from it instantly.',
+    span: 'md:col-span-2',
+    tag: 'MCP',
+    accent: true,
+  },
+  {
+    icon: IconTopologyStarRing3,
+    title: 'Knowledge graphs',
+    text: 'Structured metadata becomes traversable graph nodes and edges. Export to ArangoDB or Neo4j. Traverse relationships your AI can reason over.',
+    span: 'md:col-span-1',
+    tag: 'Graph',
+    accent: true,
+  },
+  {
+    icon: IconVectorTriangle,
+    title: 'Semantic search & RAG',
+    text: 'Embed content chunks with metadata into vector indexes. Power semantic search and retrieval-augmented generation pipelines.',
+    span: 'md:col-span-1',
+    tag: 'Vectors',
+    accent: true,
+  },
+  {
+    icon: IconApi,
+    title: 'Workflow automation',
+    text: 'Chain 3rd-party API calls and custom scripts into any pipeline. Pull external data, enrich blocks, push results — no-code or code. One run, start to finish.',
+    span: 'md:col-span-1',
+    tag: 'APIs',
+  },
+  {
+    icon: IconFileText,
+    title: 'Document reconstruction',
+    text: 'Reassemble revised atomic blocks back into publishable documents via XML transforms. Edit at block level, export as whole documents.',
+    span: 'md:col-span-1',
+    tag: 'Export',
+  },
+  {
+    icon: IconDatabase,
+    title: 'Database enrichment',
+    text: 'Pull from Postgres, BigQuery, or any dlt source. Run dbt transforms. Add AI-generated fields. Push enriched data back to your warehouse.',
+    span: 'md:col-span-1',
+    tag: 'Data',
+  },
+  {
+    icon: IconSparkles,
+    title: 'Fine-tuning datasets',
+    text: 'Confirmed extractions with full provenance become supervised training examples. Versioned exports become gold-standard evaluation sets.',
+    span: 'md:col-span-1',
+    tag: 'ML',
+  },
+  {
+    icon: IconShieldCheck,
+    title: 'Compliance & audit trail',
+    text: 'Every output traces to source document, model version, prompt, and human review decision. Full provenance chain, always.',
+    span: 'md:col-span-2',
+  },
 ];
 
 // ─── Component ───────────────────────────────────────────────────────────────

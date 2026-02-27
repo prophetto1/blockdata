@@ -50,7 +50,6 @@ import {
   hasTab,
   registerTab,
   registerTabs,
-  type TabRenderProps,
 } from '@/lib/tabRegistry';
 import { DltPullPanel } from '@/components/elt/DltPullPanel';
 import { DltLoadPanel } from '@/components/elt/DltLoadPanel';
@@ -1327,6 +1326,8 @@ export default function DocumentTest() {
   }, [createName, creatingType, docsError, docsLoading, expandedValue, filesQuery, filesTreeCollection, filesTreeNodes, filteredDocs, handleCreateEntry, handleDeleteSelected, handleSelectFile, hasFilesTreeNodes, openNativeFilePicker, projectId, resolvedSelectedSourceUid, selectedSourceUidForActions, selectedTreeNodeId, supportsDirectoryUpload, uploadFiles]);
 
   const previewTabContent = useMemo(() => {
+    const selectedDocTitle = selectedDoc?.doc_title ?? 'Asset';
+
     const renderPreviewFrame = (
       content: ReactNode,
       options?: { scroll?: boolean; padded?: boolean },
@@ -1357,6 +1358,30 @@ export default function DocumentTest() {
       </div>
     );
 
+    const renderStandardContentPreview = (
+      formatLabel: string,
+      content: ReactNode,
+      options?: { contentClassName?: string },
+    ) => renderPreviewFrame(
+      <div className="parse-text-preview">
+        <div className="parse-pdf-toolbar flex items-center justify-between flex-nowrap">
+          <div className="parse-text-preview-file flex items-center gap-1.5 flex-nowrap">
+            <IconFileText size={14} />
+            <span className="parse-text-preview-filename text-xs" title={selectedDocTitle}>
+              {selectedDocTitle}
+            </span>
+          </div>
+          <span className="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
+            {formatLabel}
+          </span>
+        </div>
+        <div className={['parse-docx-preview-viewport', options?.contentClassName ?? ''].join(' ').trim()}>
+          {content}
+        </div>
+      </div>,
+      { scroll: false, padded: false },
+    );
+
     if (!selectedDoc) {
       return renderPreviewFrame(renderCenteredMessage('Select an asset to preview.'));
     }
@@ -1377,26 +1402,30 @@ export default function DocumentTest() {
     }
 
     if (previewKind === 'image' && previewUrl) {
-      return renderPreviewFrame(
+      return renderStandardContentPreview(
+        'IMAGE',
         <div className="flex h-full w-full items-center justify-center overflow-auto p-4">
           <img src={previewUrl} alt={selectedDoc.doc_title} className="max-h-full max-w-full" />
         </div>,
-        { scroll: false, padded: false },
       );
     }
 
     if (previewKind === 'text') {
-      return renderPreviewFrame(
-        <pre className="m-0 whitespace-pre-wrap text-xs">{previewText ?? ''}</pre>,
+      return renderStandardContentPreview(
+        'TEXT',
+        <pre className="parse-preview-text">{previewText ?? ''}</pre>,
       );
     }
 
     if (previewKind === 'markdown') {
-      return renderPreviewFrame(
-        <div className="parse-markdown-preview">
-          <ReactMarkdown remarkPlugins={[remarkGfm]}>
-            {previewText ?? ''}
-          </ReactMarkdown>
+      return renderStandardContentPreview(
+        'MARKDOWN',
+        <div className="px-3 py-2">
+          <div className="parse-markdown-preview">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              {previewText ?? ''}
+            </ReactMarkdown>
+          </div>
         </div>,
       );
     }
@@ -1416,7 +1445,8 @@ export default function DocumentTest() {
     }
 
     if (previewUrl) {
-      return renderPreviewFrame(
+      return renderStandardContentPreview(
+        'FILE',
         <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
           <a href={previewUrl} target="_blank" rel="noreferrer" className="text-primary hover:underline">
             Open file

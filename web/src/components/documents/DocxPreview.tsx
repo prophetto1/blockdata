@@ -59,7 +59,7 @@ export function DocxPreview({ title, url }: DocxPreviewProps) {
 
   return (
     <div className={`parse-docx-preview${isDark ? ' is-dark' : ' is-light'}`}>
-      <div className="parse-text-preview-header flex items-center justify-between flex-nowrap">
+      <div className="parse-pdf-toolbar flex items-center justify-between flex-nowrap">
         <div className="parse-text-preview-file flex items-center gap-1.5 flex-nowrap">
           <IconFileText size={14} />
           <span className="parse-text-preview-filename text-xs" title={title}>

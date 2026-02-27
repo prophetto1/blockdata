@@ -25,6 +25,7 @@ import {
   IconCode,
   IconRoute,
   IconBrain,
+  IconApi,
 } from '@tabler/icons-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -111,7 +112,7 @@ const BENTO_ITEMS = [
   {
     icon: IconRoute,
     title: 'Composable pipeline',
-    description: 'Chain stages in any order. Linear for simple jobs, visual DAG for complex workflows.',
+    description: 'Chain stages in any order. Call 3rd-party APIs, add no-code or code scripts, build workflows that run end-to-end.',
     span: 'md:col-span-2',
   },
 ];
@@ -128,6 +129,7 @@ const FORMAT_ITEMS = [
   { name: 'Parquet', icon: IconDatabase },
   { name: 'Neo4j', icon: IconDatabase },
   { name: 'S3 / GCS', icon: IconCloud },
+  { name: 'REST APIs', icon: IconApi },
   { name: 'Webhooks', icon: IconBolt },
 ];
 
@@ -384,6 +386,7 @@ export default function Landing() {
                 { value: 'analysis', label: 'Document analysis' },
                 { value: 'pipeline', label: 'Data pipeline' },
                 { value: 'transformation', label: 'Batch transformation' },
+                { value: 'workflow', label: 'API workflows' },
               ].map((t) => (
                 <Tabs.Trigger
                   key={t.value}
@@ -422,6 +425,15 @@ export default function Landing() {
                 highlights: ['per block', 'side-by-side', 'full provenance'],
                 fields: ['revised_content', 'tone_target', 'readability_score'],
                 json: { revised_content: 'The licensee shall indemnify…', tone_target: 'plain_language', readability_score: '8th_grade' },
+              },
+              {
+                key: 'workflow',
+                badge: 'Runs + APIs',
+                title: 'Connect APIs and scripts into automated workflows',
+                body: 'Pull data from 3rd-party APIs, chain no-code or code-based steps, and run end-to-end pipelines. Like a workflow app, but your data stays structured.',
+                highlights: ['3rd-party APIs', 'no-code or code-based', 'end-to-end'],
+                fields: ['source_api', 'step_type', 'output_format', 'status'],
+                json: { source_api: 'stripe/invoices', step_type: 'python_script', output_format: 'jsonl', status: 'completed', records_processed: 1842 },
               },
             ].map((uc) => (
               <Tabs.Content key={uc.key} value={uc.key}>

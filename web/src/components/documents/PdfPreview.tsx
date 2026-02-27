@@ -17,6 +17,7 @@ const ZOOM_MIN = 50;
 const ZOOM_MAX = 300;
 const ZOOM_PRESETS = [50, 75, 100, 125, 150, 200, 300] as const;
 const PDF_BASE_WIDTH_PX = 700;
+const PDF_MIN_WIDTH_PX = 280;
 
 
 export function PdfPreview({
@@ -33,6 +34,7 @@ export function PdfPreview({
   const [zoomPercent, setZoomPercent] = useState(100);
   const [rotation, setRotation] = useState(0);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [pageBaseWidth, setPageBaseWidth] = useState(PDF_BASE_WIDTH_PX);
   useEffect(() => {
     pageShellRefs.current.clear();
     activePageRef.current = 1;
@@ -51,6 +53,23 @@ export function PdfPreview({
   useEffect(() => {
     setPageInput(String(activePageNumber));
   }, [activePageNumber]);
+
+  useEffect(() => {
+    const viewportNode = viewportRef.current;
+    if (!viewportNode) return undefined;
+
+    const updateBaseWidth = () => {
+      const width = Math.floor(viewportNode.clientWidth - 8);
+      setPageBaseWidth(Math.max(PDF_MIN_WIDTH_PX, width));
+    };
+
+    updateBaseWidth();
+    const observer = new ResizeObserver(updateBaseWidth);
+    observer.observe(viewportNode);
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
 
   const canGoPrev = activePageNumber > 1;
   const canGoNext = pageCount !== null && activePageNumber < pageCount;
@@ -280,7 +299,7 @@ export function PdfPreview({
                     <div className="parse-pdf-page-wrap">
                       <Page
                         pageNumber={pageNumber}
-                        width={PDF_BASE_WIDTH_PX}
+                        width={pageBaseWidth}
                         scale={pageScale}
                         rotate={rotation}
                         loading={

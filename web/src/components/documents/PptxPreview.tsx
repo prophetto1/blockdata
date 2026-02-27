@@ -117,7 +117,7 @@ export function PptxPreview({ title, url }: PptxPreviewProps) {
 
   return (
     <div className="parse-pptx-preview">
-      <div className="parse-pptx-toolbar flex items-center justify-between flex-nowrap">
+      <div className="parse-pdf-toolbar parse-pptx-toolbar flex items-center justify-between flex-nowrap">
         <div className="flex items-center gap-1 flex-nowrap">
           <button
             type="button"
