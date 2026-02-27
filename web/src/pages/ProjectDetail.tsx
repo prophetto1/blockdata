@@ -6,10 +6,8 @@ import {
   useRef,
   useState,
   type CSSProperties,
-  type PointerEvent as ReactPointerEvent,
 } from 'react';
 import { useParams } from 'react-router-dom';
-import { useLocalStorage } from '@mantine/hooks';
 import {
   ActionIcon,
   Alert,
@@ -17,10 +15,8 @@ import {
   Box,
   Button,
   Center,
-  Checkbox,
   Group,
   Loader,
-  Pagination,
   Radio,
   Select,
   Stack,
@@ -33,7 +29,6 @@ import {
   IconAlertTriangle,
   IconArrowsMaximize,
   IconChevronLeft,
-  IconChevronRight,
   IconChevronDown,
   IconCheck,
   IconCirclePlus,
@@ -42,10 +37,8 @@ import {
   IconDotsVertical,
   IconDownload,
   IconFileText,
-  IconInfoCircle,
   IconPencil,
   IconPlayerPlay,
-  IconRotateClockwise,
   IconTable,
   IconTrash,
 } from '@tabler/icons-react';
@@ -57,7 +50,6 @@ import {
   MenuRoot,
   MenuTrigger,
 } from '@/components/ui/menu';
-import { SegmentedControl } from '@/components/ui/segmented-control';
 import {
   DialogRoot,
   DialogContent,
@@ -70,8 +62,9 @@ import { DocxPreview } from '@/components/documents/DocxPreview';
 import { PdfPreview } from '@/components/documents/PdfPreview';
 import { PdfResultsHighlighter, type ParsedResultBlock } from '@/components/documents/PdfResultsHighlighter';
 import { PptxPreview } from '@/components/documents/PptxPreview';
-import { ProjectParseUppyUploader, type UploadBatchResult } from '@/components/documents/ProjectParseUppyUploader';
 import { BlockViewerGridRDG } from '@/components/blocks/BlockViewerGridRDG';
+import { BlocksTab } from '@/components/project-detail/BlocksTab';
+import { MetadataTab } from '@/components/project-detail/MetadataTab';
 import { ErrorAlert } from '@/components/common/ErrorAlert';
 import { DoubleArrowIcon } from '@/components/icons/DoubleArrowIcon';
 import { useShellHeaderTitle } from '@/components/common/useShellHeaderTitle';
@@ -83,67 +76,38 @@ import { supabase } from '@/lib/supabase';
 import { edgeJson } from '@/lib/edge';
 import { ICON_TOKENS } from '@/lib/iconTokens';
 import { TABLES } from '@/lib/tables';
-import type { DocumentRow, ProjectRow } from '@/lib/types';
+import type { ProjectRow } from '@/lib/types';
+import {
+  downloadFromSignedUrl,
+  resolveSignedUrlForLocators,
+  toDoclingJsonLocator,
+  toArtifactLocator,
+  getFilenameFromLocator,
+  dedupeLocators,
+  sortDocumentsByUploadedAt,
+  formatBytes,
+  isPdfDocument,
+  isImageDocument,
+  isTextDocument,
+  isDocxDocument,
+  isPptxDocument,
+  getDocumentFormat,
+  type ProjectDocumentRow,
+  type PreviewKind,
+  type TestBlockCardRow,
+} from '@/lib/projectDetailHelpers';
 import { resolveProjectDetailHeaderTitle } from '@/pages/projectDetailHeader';
 import './SchemaLayout.css';
 
-const PAGE_SIZE = 10;
-const EXPLORER_WIDTH_DEFAULT = 500;
 const SHELL_EXPLORER_WIDTH_DEFAULT = 392;
-const EXPLORER_WIDTH_MIN = 500;
-const EXPLORER_WIDTH_MAX = 500;
 const EXPLORER_WIDTH_COLLAPSED = 56;
 const CONFIG_WIDTH_DEFAULT = 345;
-const CONFIG_WIDTH_MIN = 345;
-const CONFIG_WIDTH_MAX = 345;
 const CONFIG_WIDTH_COLLAPSED = 56;
-const TRANSFORM_TEST_CONFIG_WIDTH_MIN = 345;
-const TRANSFORM_TEST_CONFIG_WIDTH_MAX = 345;
 const SHELL_DOCS_PER_PAGE = 4;
-const DOCUMENTS_BUCKET = (import.meta.env.VITE_DOCUMENTS_BUCKET as string | undefined) ?? 'documents';
 const PANE_CHEVRON_ICON = ICON_TOKENS.shell.paneChevron;
 const CONFIG_ACTION_ICON = ICON_TOKENS.shell.configAction;
 
-const TEXT_SOURCE_TYPES = new Set([
-  'md',
-  'txt',
-  'csv',
-  'html',
-  'asciidoc',
-  'xml_uspto',
-  'xml_jats',
-  'json_docling',
-  'rst',
-  'latex',
-  'org',
-  'vtt',
-]);
-const IMAGE_SOURCE_TYPES = new Set(['image']);
-const IMAGE_EXTENSIONS = new Set(['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'svg', 'tif', 'tiff']);
-const DOCX_SOURCE_TYPES = new Set([
-  'docx',
-  'docm',
-  'dotx',
-  'dotm',
-]);
-const DOCX_EXTENSIONS = new Set([
-  'docx',
-  'docm',
-  'dotx',
-  'dotm',
-]);
-const PPTX_SOURCE_TYPES = new Set(['pptx', 'pptm', 'ppsx']);
-const PPTX_EXTENSIONS = new Set(['pptx', 'pptm', 'ppsx']);
-
-type ProjectDocumentRow = DocumentRow & {
-  source_locator?: string | null;
-  conv_locator?: string | null;
-};
-
-type PreviewKind = 'none' | 'pdf' | 'image' | 'text' | 'docx' | 'pptx' | 'file';
 type ProjectDetailMode = 'parse' | 'extract' | 'transform';
-type ProjectDetailSurface = 'default' | 'test';
-type MiddlePreviewTab = 'preview' | 'results';
 type TestRightTab = 'preview' | 'metadata' | 'blocks' | 'grid' | 'outputs';
 type ParseConfigView = 'Basic' | 'Advanced';
 type ExtractConfigView = 'Basic' | 'Advanced' | 'Schema';
@@ -167,15 +131,6 @@ type ExtractSchemaField = {
 };
 type ProjectDetailProps = {
   mode?: ProjectDetailMode;
-  surface?: ProjectDetailSurface;
-};
-
-type TestBlockCardRow = {
-  blockUid: string;
-  blockIndex: number;
-  blockType: string;
-  parserBlockType: string | null;
-  snippet: string;
 };
 
 const EXTRACT_SCHEMA_TYPE_OPTIONS: Array<{ value: ExtractSchemaFieldType; label: string }> = [
@@ -189,197 +144,12 @@ const EXTRACT_SCHEMA_TYPE_OPTIONS: Array<{ value: ExtractSchemaFieldType; label:
   { value: 'array:object', label: 'array > object' },
 ];
 
-const DOC_STATUS_META: Record<ProjectDocumentRow['status'], { label: string; tone: 'yellow' | 'green' | 'red' }> = {
-  uploaded: { label: 'Uploaded', tone: 'green' },
-  converting: { label: 'In progress', tone: 'yellow' },
-  ingested: { label: 'Uploaded', tone: 'green' },
-  conversion_failed: { label: 'Failed', tone: 'red' },
-  ingest_failed: { label: 'Failed', tone: 'red' },
-} as const;
-
-type SignedUrlResult = {
-  url: string | null;
-  error: string | null;
-};
-
-async function downloadFromSignedUrl(signedUrl: string, filename: string): Promise<void> {
-  const response = await fetch(signedUrl);
-  if (!response.ok) {
-    const text = await response.text().catch(() => '');
-    throw new Error(`HTTP ${response.status} ${text.slice(0, 500)}`);
-  }
-  const blob = await response.blob();
-  const blobUrl = URL.createObjectURL(blob);
-  const anchor = document.createElement('a');
-  anchor.href = blobUrl;
-  anchor.download = filename;
-  document.body.appendChild(anchor);
-  anchor.click();
-  anchor.remove();
-  URL.revokeObjectURL(blobUrl);
-}
-
-async function createSignedUrlForLocator(locator: string | null | undefined): Promise<SignedUrlResult> {
-  const normalized = locator?.trim();
-  if (!normalized) {
-    return { url: null, error: 'No file locator was found.' };
-  }
-
-  const sourceKey = normalized.replace(/^\/+/, '');
-  const { data, error: signedUrlError } = await supabase.storage
-    .from(DOCUMENTS_BUCKET)
-    .createSignedUrl(sourceKey, 60 * 20);
-
-  if (signedUrlError) {
-    return { url: null, error: signedUrlError.message };
-  }
-  if (!data?.signedUrl) {
-    return { url: null, error: 'Storage did not return a signed URL.' };
-  }
-  return { url: data.signedUrl, error: null };
-}
-
-async function resolveSignedUrlForLocators(locators: Array<string | null | undefined>): Promise<SignedUrlResult> {
-  const errors: string[] = [];
-  for (const locator of locators) {
-    if (!locator?.trim()) continue;
-    const result = await createSignedUrlForLocator(locator);
-    if (result.url) return result;
-    if (result.error) errors.push(result.error);
-  }
-  return {
-    url: null,
-    error: errors[0] ?? 'No previewable file was available for this document.',
-  };
-}
-
-function toDoclingJsonLocator(locator: string | null | undefined): string | null {
-  const normalized = locator?.trim();
-  if (!normalized) return null;
-  if (normalized.toLowerCase().endsWith('.docling.json')) return normalized;
-
-  const sibling = toArtifactLocator(normalized, 'docling.json');
-  return sibling;
-}
-
-function toArtifactLocator(locator: string | null | undefined, nextExtension: string): string | null {
-  const normalized = locator?.trim();
-  if (!normalized) return null;
-
-  const lastSlash = normalized.lastIndexOf('/');
-  const dir = lastSlash >= 0 ? normalized.slice(0, lastSlash + 1) : '';
-  const filename = lastSlash >= 0 ? normalized.slice(lastSlash + 1) : normalized;
-  const lowered = filename.toLowerCase();
-  let basename = filename;
-  const knownSuffixes = ['.docling.json', '.pandoc.ast.json', '.citations.json', '.doctags', '.md', '.html'];
-  for (const suffix of knownSuffixes) {
-    if (lowered.endsWith(suffix)) {
-      basename = filename.slice(0, filename.length - suffix.length);
-      break;
-    }
-  }
-  if (basename === filename) {
-    const lastDot = filename.lastIndexOf('.');
-    basename = lastDot > 0 ? filename.slice(0, lastDot) : filename;
-  }
-  if (!basename) return null;
-  const normalizedExt = nextExtension.replace(/^\.+/, '');
-  return `${dir}${basename}.${normalizedExt}`;
-}
-
-function getFilenameFromLocator(locator: string | null | undefined): string | null {
-  const normalized = locator?.trim();
-  if (!normalized) return null;
-  const lastSlash = normalized.lastIndexOf('/');
-  const filename = lastSlash >= 0 ? normalized.slice(lastSlash + 1) : normalized;
-  return filename || null;
-}
-
-function dedupeLocators(locators: Array<string | null | undefined>): string[] {
-  const seen = new Set<string>();
-  const normalized: string[] = [];
-  for (const locator of locators) {
-    const value = locator?.trim();
-    if (!value) continue;
-    if (seen.has(value)) continue;
-    seen.add(value);
-    normalized.push(value);
-  }
-  return normalized;
-}
-
-function sortDocumentsByUploadedAt(rows: ProjectDocumentRow[]) {
-  return [...rows].sort((a, b) => new Date(b.uploaded_at).getTime() - new Date(a.uploaded_at).getTime());
-}
-
-function formatBytes(bytes: number | null | undefined): string {
-  const value = typeof bytes === 'number' ? bytes : 0;
-  if (!Number.isFinite(value) || value <= 0) return '0 B';
-  const units = ['B', 'KB', 'MB', 'GB'];
-  let index = 0;
-  let size = value;
-  while (size >= 1024 && index < units.length - 1) {
-    size /= 1024;
-    index += 1;
-  }
-  const rounded = size >= 10 || index === 0 ? Math.round(size) : Math.round(size * 10) / 10;
-  return `${rounded} ${units[index]}`;
-}
-
-function getExtension(name: string): string {
-  const index = name.lastIndexOf('.');
-  if (index < 0 || index === name.length - 1) return '';
-  return name.slice(index + 1).toLowerCase();
-}
-
-function getSourceLocatorExtension(doc: ProjectDocumentRow): string {
-  return getExtension(doc.source_locator ?? '');
-}
-
-function isPdfDocument(doc: ProjectDocumentRow): boolean {
-  if (doc.source_type.toLowerCase() === 'pdf') return true;
-  return getSourceLocatorExtension(doc) === 'pdf';
-}
-
-function isImageDocument(doc: ProjectDocumentRow): boolean {
-  const sourceType = doc.source_type.toLowerCase();
-  if (IMAGE_SOURCE_TYPES.has(sourceType)) return true;
-  return IMAGE_EXTENSIONS.has(getSourceLocatorExtension(doc));
-}
-
-function isTextDocument(doc: ProjectDocumentRow): boolean {
-  return TEXT_SOURCE_TYPES.has(doc.source_type.toLowerCase());
-}
-
-function isDocxDocument(doc: ProjectDocumentRow): boolean {
-  const sourceType = doc.source_type.toLowerCase();
-  if (DOCX_SOURCE_TYPES.has(sourceType)) return true;
-  return DOCX_EXTENSIONS.has(getSourceLocatorExtension(doc));
-}
-
-function isPptxDocument(doc: ProjectDocumentRow): boolean {
-  const sourceType = doc.source_type.toLowerCase();
-  if (PPTX_SOURCE_TYPES.has(sourceType)) return true;
-  return PPTX_EXTENSIONS.has(getSourceLocatorExtension(doc));
-}
-
-function getDocumentFormat(doc: ProjectDocumentRow): string {
-  const type = typeof doc.source_type === 'string' ? doc.source_type.trim() : '';
-  if (type.length > 0) return type.toUpperCase();
-  const extension = getExtension(doc.source_locator ?? '');
-  if (extension) return extension.toUpperCase();
-  return '--';
-}
-
-export default function ProjectDetail({ mode = 'parse', surface = 'default' }: ProjectDetailProps) {
+export default function ProjectDetail({ mode = 'parse' }: ProjectDetailProps) {
   const { projectId } = useParams<{ projectId: string }>();
   const isParseMode = mode === 'parse';
   const isExtractMode = mode === 'extract';
   const isTransformMode = mode === 'transform';
-  const useSideRailDocumentNav = isParseMode || isExtractMode || isTransformMode;
-  const isTestSurfacePage = surface === 'test';
-  const isShellGrid = isTestSurfacePage && (isParseMode || isExtractMode || isTransformMode);
-  const isTransformTestSurface = isTransformMode && isTestSurfacePage;
+  const isTransformTestSurface = isTransformMode;
   const { setShellTopSlots } = useHeaderCenter();
   const { registry: blockTypeRegistry } = useBlockTypeRegistry();
 
@@ -388,12 +158,10 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
-  const [docsPerPage] = useState<number>(PAGE_SIZE);
   const [selectedSourceUid, setSelectedSourceUid] = useState<string | null>(null);
   const [selectedSourceUids, setSelectedSourceUids] = useState<string[]>([]);
   const [deleteTargetDoc, setDeleteTargetDoc] = useState<ProjectDocumentRow | null>(null);
   const [deletingDoc, setDeletingDoc] = useState(false);
-  const [retryingSourceUids, setRetryingSourceUids] = useState<Record<string, boolean>>({});
 
   const [previewKind, setPreviewKind] = useState<PreviewKind>('none');
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -428,7 +196,6 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
   const [activeResultsBlockId, setActiveResultsBlockId] = useState<string | null>(null);
   const [showAllBboxes, setShowAllBboxes] = useState(true);
   const [showMetadataBlocksPanel, setShowMetadataBlocksPanel] = useState(true);
-  const [middlePreviewTab, setMiddlePreviewTab] = useState<MiddlePreviewTab>('preview');
   const [testRightTab, setTestRightTab] = useState<TestRightTab>('preview');
   const [pdfToolbarHost, setPdfToolbarHost] = useState<HTMLDivElement | null>(null);
   const [testBlocks, setTestBlocks] = useState<TestBlockCardRow[]>([]);
@@ -444,18 +211,10 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
   const [extractSchemaFields, setExtractSchemaFields] = useState<ExtractSchemaField[]>([]);
   const [extractSchemaDraft, setExtractSchemaDraft] = useState('');
 
-  const [explorerWidth, setExplorerWidth] = useState(EXPLORER_WIDTH_DEFAULT);
   const [isExplorerCollapsed, setIsExplorerCollapsed] = useState(false);
-  const [configWidth, setConfigWidth] = useState(CONFIG_WIDTH_DEFAULT);
   const [configCollapseState, setConfigCollapseState] = useState<ConfigCollapseState>('full');
-  const [activeResizer, setActiveResizer] = useState<'explorer' | 'config' | null>(null);
-  const [desktopNavOpened] = useLocalStorage<boolean>({
-    key: 'blockdata.shell.nav_open_desktop',
-    defaultValue: true,
-  });
-  const isConfigCollapsed = isTestSurfacePage && configCollapseState === 'collapsed';
+  const isConfigCollapsed = configCollapseState === 'collapsed';
 
-  const resizeStateRef = useRef<{ startX: number; startWidth: number } | null>(null);
   const pendingUploadedSelectionRef = useRef<string[] | null>(null);
   const selectNewestAfterUploadRef = useRef(false);
 
@@ -602,7 +361,7 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
     };
   }, [load, projectId]);
 
-  const effectiveDocsPerPage = isShellGrid ? SHELL_DOCS_PER_PAGE : docsPerPage;
+  const effectiveDocsPerPage = SHELL_DOCS_PER_PAGE;
 
   useEffect(() => {
     const totalPages = Math.max(1, Math.ceil(docs.length / effectiveDocsPerPage));
@@ -673,38 +432,6 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
     () => selectedDocRuns.find((run) => run.run_id === selectedRunId) ?? null,
     [selectedDocRuns, selectedRunId],
   );
-  const selectedSourceUidSet = useMemo(() => new Set(selectedSourceUids), [selectedSourceUids]);
-  const allPagedSelected = useMemo(
-    () => pagedDocs.length > 0 && pagedDocs.every((doc) => selectedSourceUidSet.has(doc.source_uid)),
-    [pagedDocs, selectedSourceUidSet],
-  );
-  const somePagedSelected = useMemo(
-    () => !allPagedSelected && pagedDocs.some((doc) => selectedSourceUidSet.has(doc.source_uid)),
-    [allPagedSelected, pagedDocs, selectedSourceUidSet],
-  );
-  const docSelectorCheckboxStyles = useMemo(() => ({
-    input: {
-      borderRadius: 4,
-      width: '14px',
-      height: '14px',
-      backgroundColor: 'light-dark(var(--mantine-color-gray-1), var(--mantine-color-gray-7))',
-      borderColor: 'light-dark(var(--mantine-color-gray-4), var(--mantine-color-gray-6))',
-      '&[data-checked], &[data-indeterminate]': {
-        backgroundColor: 'light-dark(var(--mantine-color-gray-5), var(--mantine-color-gray-4))',
-        borderColor: 'light-dark(var(--mantine-color-gray-5), var(--mantine-color-gray-4))',
-      },
-    },
-    icon: { color: 'var(--mantine-color-white)' },
-  }), []);
-
-  const handleBatchUploaded = useCallback((result: UploadBatchResult) => {
-    const uploadedSourceUids = result.uploadedSourceUids.filter((sourceUid) => sourceUid.length > 0);
-    pendingUploadedSelectionRef.current = uploadedSourceUids.length > 0 ? uploadedSourceUids : null;
-    selectNewestAfterUploadRef.current = true;
-    setPage(1);
-    void load();
-  }, [load]);
-
   const handleRunParse = useCallback(async () => {
     // Parse all checked documents, or the currently viewed document if none checked.
     const targets = selectedSourceUids.length > 0
@@ -729,47 +456,6 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
       setParseLoading(false);
     }
   }, [selectedSourceUids, selectedSourceUid, load]);
-
-  const handleRetryDocument = useCallback(async (sourceUid: string) => {
-    setRetryingSourceUids((prev) => ({ ...prev, [sourceUid]: true }));
-    setError(null);
-    try {
-      await edgeJson('trigger-parse', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ source_uid: sourceUid }),
-      });
-      setDocs((prev) => prev.map((doc) => (
-        doc.source_uid === sourceUid ? { ...doc, status: 'converting' } : doc
-      )));
-      void load();
-    } catch (retryError) {
-      setError(retryError instanceof Error ? retryError.message : String(retryError));
-    } finally {
-      setRetryingSourceUids((prev) => {
-        const next = { ...prev };
-        delete next[sourceUid];
-        return next;
-      });
-    }
-  }, [load]);
-
-  const toggleDocSelection = useCallback((sourceUid: string, checked: boolean) => {
-    setSelectedSourceUids((prev) => {
-      if (checked) {
-        if (prev.includes(sourceUid)) return prev;
-        return [...prev, sourceUid];
-      }
-      return prev.filter((value) => value !== sourceUid);
-    });
-  }, []);
-  const toggleAllPagedDocSelection = useCallback((checked: boolean) => {
-    if (!checked) {
-      setSelectedSourceUids([]);
-      return;
-    }
-    setSelectedSourceUids(pagedDocs.map((doc) => doc.source_uid));
-  }, [pagedDocs]);
 
   const closeDeleteDialog = useCallback(() => {
     if (deletingDoc) return;
@@ -1230,12 +916,6 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
     let cancelled = false;
 
     const loadTestBlocks = async () => {
-      if (surface !== 'test') {
-        setTestBlocks([]);
-        setTestBlocksError(null);
-        setTestBlocksLoading(false);
-        return;
-      }
       if (!selectedDoc?.conv_uid) {
         setTestBlocks([]);
         setTestBlocksError(null);
@@ -1292,13 +972,7 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
     return () => {
       cancelled = true;
     };
-  }, [selectedDoc?.conv_uid, surface]);
-
-  useEffect(() => {
-    if (!isTestSurfacePage) {
-      if (configCollapseState !== 'full') setConfigCollapseState('full');
-    }
-  }, [configCollapseState, isTestSurfacePage]);
+  }, [selectedDoc?.conv_uid]);
 
   useEffect(() => {
     if (isTransformTestSurface) return;
@@ -1307,79 +981,15 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
     }
   }, [isTransformTestSurface, testRightTab]);
 
-  const handleExplorerResizeStart = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
-    if (isShellGrid) return;
-    if (isExplorerCollapsed) return;
-    event.preventDefault();
-    resizeStateRef.current = { startX: event.clientX, startWidth: explorerWidth };
-    setActiveResizer('explorer');
-  }, [explorerWidth, isExplorerCollapsed, isShellGrid]);
-
-  const handleConfigResizeStart = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
-    if (isShellGrid) return;
-    if (isTestSurfacePage && configCollapseState !== 'full') return;
-    event.preventDefault();
-    resizeStateRef.current = { startX: event.clientX, startWidth: configWidth };
-    setActiveResizer('config');
-  }, [configCollapseState, configWidth, isShellGrid, isTestSurfacePage]);
-
   const handleConfigToggle = useCallback(() => {
-    if (!isTestSurfacePage) return;
     setConfigCollapseState((current) => (current === 'collapsed' ? 'full' : 'collapsed'));
-  }, [isTestSurfacePage]);
-
-  useEffect(() => {
-    if (!activeResizer) return;
-
-    const onPointerMove = (event: PointerEvent) => {
-      const state = resizeStateRef.current;
-      if (!state) return;
-      if (activeResizer === 'explorer') {
-        const delta = event.clientX - state.startX;
-        const nextWidth = Math.max(
-          EXPLORER_WIDTH_MIN,
-          Math.min(EXPLORER_WIDTH_MAX, state.startWidth + delta),
-        );
-        setExplorerWidth(nextWidth);
-        return;
-      }
-      const delta = state.startX - event.clientX;
-      const configMin = isTestSurfacePage ? TRANSFORM_TEST_CONFIG_WIDTH_MIN : CONFIG_WIDTH_MIN;
-      const configMax = isTestSurfacePage ? TRANSFORM_TEST_CONFIG_WIDTH_MAX : CONFIG_WIDTH_MAX;
-      const nextWidth = Math.max(
-        configMin,
-        Math.min(configMax, state.startWidth + delta),
-      );
-      setConfigWidth(nextWidth);
-    };
-
-    const onPointerUp = () => {
-      resizeStateRef.current = null;
-      setActiveResizer(null);
-    };
-
-    document.body.style.cursor = 'col-resize';
-    document.body.style.userSelect = 'none';
-    window.addEventListener('pointermove', onPointerMove);
-    window.addEventListener('pointerup', onPointerUp);
-    window.addEventListener('pointercancel', onPointerUp);
-
-    return () => {
-      document.body.style.cursor = '';
-      document.body.style.userSelect = '';
-      window.removeEventListener('pointermove', onPointerMove);
-      window.removeEventListener('pointerup', onPointerUp);
-      window.removeEventListener('pointercancel', onPointerUp);
-    };
-  }, [activeResizer, isTestSurfacePage]);
+  }, []);
 
   const shellGuideLeftWidth = isExplorerCollapsed ? EXPLORER_WIDTH_COLLAPSED : SHELL_EXPLORER_WIDTH_DEFAULT;
   const shellGuideMiddleWidth = isConfigCollapsed ? CONFIG_WIDTH_COLLAPSED : CONFIG_WIDTH_DEFAULT;
   const topConfigToggleLabel = isConfigCollapsed ? 'Expand Configuration column' : 'Collapse Configuration column';
 
   useEffect(() => {
-    if (!isShellGrid) return undefined;
-
     const root = document.documentElement;
     root.style.setProperty('--shell-guide-left-width', `${shellGuideLeftWidth}px`);
     root.style.setProperty('--shell-guide-middle-width', `${shellGuideMiddleWidth}px`);
@@ -1388,14 +998,9 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
       root.style.removeProperty('--shell-guide-left-width');
       root.style.removeProperty('--shell-guide-middle-width');
     };
-  }, [isShellGrid, shellGuideLeftWidth, shellGuideMiddleWidth]);
+  }, [shellGuideLeftWidth, shellGuideMiddleWidth]);
 
   useLayoutEffect(() => {
-    if (!isShellGrid) {
-      setShellTopSlots(null);
-      return;
-    }
-
     setShellTopSlots({
       hideLeftDivider: true,
       showRightInMinimal: isTransformTestSurface,
@@ -1473,7 +1078,7 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
         <Text size="xs" fw={700} className="top-command-bar-shell-label">Preview</Text>
       ),
     });
-  }, [handleConfigToggle, isConfigCollapsed, isExplorerCollapsed, isShellGrid, isTransformTestSurface, setShellTopSlots, testRightTab, setTestRightTab, topConfigToggleLabel]);
+  }, [handleConfigToggle, isConfigCollapsed, isExplorerCollapsed, isTransformTestSurface, setShellTopSlots, testRightTab, setTestRightTab, topConfigToggleLabel]);
 
   useEffect(() => () => setShellTopSlots(null), [setShellTopSlots]);
 
@@ -1486,26 +1091,8 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
   if (loading) return <Center mt="xl"><Loader /></Center>;
   if (!project) return <ErrorAlert message={error ?? 'Project not found'} />;
 
-  const isTestSurface = isTestSurfacePage;
-  const parseExplorerWidth = isExplorerCollapsed ? EXPLORER_WIDTH_COLLAPSED : SHELL_EXPLORER_WIDTH_DEFAULT;
-  const parseConfigWidth = isConfigCollapsed
-    ? CONFIG_WIDTH_COLLAPSED
-    : CONFIG_WIDTH_DEFAULT;
-  const shouldRouteCollapsedSpaceToConfig = !isShellGrid && (isTestSurface || (isExtractMode && extractConfigView === 'Schema'));
-  const navCompactionExplorerBoost = desktopNavOpened ? 0 : (isTestSurface ? 0 : 20);
-  const navCompactionConfigBoost = desktopNavOpened ? 0 : (isTestSurface ? 0 : 130);
-  const expandedExplorerWidth = explorerWidth + navCompactionExplorerBoost;
-  const collapsedDelta = isExplorerCollapsed
-    ? Math.max(0, expandedExplorerWidth - EXPLORER_WIDTH_COLLAPSED)
-    : 0;
-  const nonParseExplorerWidth = isExplorerCollapsed ? EXPLORER_WIDTH_COLLAPSED : expandedExplorerWidth;
-  const expandedConfigWidth = configWidth + navCompactionConfigBoost + (shouldRouteCollapsedSpaceToConfig ? collapsedDelta : 0);
-  const nonParseConfigWidth = isConfigCollapsed
-    ? CONFIG_WIDTH_COLLAPSED
-    : expandedConfigWidth;
-  const effectiveExplorerWidth = isShellGrid ? parseExplorerWidth : nonParseExplorerWidth;
-  const effectiveConfigWidth = isShellGrid ? parseConfigWidth : nonParseConfigWidth;
-  const configToggleLabel = isConfigCollapsed ? 'Expand Configuration column' : 'Collapse Configuration column';
+  const effectiveExplorerWidth = isExplorerCollapsed ? EXPLORER_WIDTH_COLLAPSED : SHELL_EXPLORER_WIDTH_DEFAULT;
+  const effectiveConfigWidth = isConfigCollapsed ? CONFIG_WIDTH_COLLAPSED : CONFIG_WIDTH_DEFAULT;
   const layoutStyle = {
     '--parse-explorer-width': `${effectiveExplorerWidth}px`,
     '--parse-config-width': `${effectiveConfigWidth}px`,
@@ -1515,11 +1102,11 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
     previewKind === 'text'
     && selectedDoc?.source_type?.toLowerCase() === 'md'
   );
-  const isRightPreviewTab = isTestSurface ? testRightTab === 'preview' : middlePreviewTab === 'preview';
-  const isRightMetadataTab = isTestSurface ? testRightTab === 'metadata' : middlePreviewTab === 'results';
-  const isRightBlocksTab = isTestSurface && testRightTab === 'blocks';
+  const isRightPreviewTab = testRightTab === 'preview';
+  const isRightMetadataTab = testRightTab === 'metadata';
+  const isRightBlocksTab = testRightTab === 'blocks';
   const isRightGridTab = isTransformTestSurface && testRightTab === 'grid';
-  const isRightOutputsTab = isTestSurface && testRightTab === 'outputs';
+  const isRightOutputsTab = testRightTab === 'outputs';
   const hasDoclingOutput = outputDoclingJsonLocators.length > 0 || !!outputDoclingJsonUrl;
   const hasMarkdownOutput = outputMarkdownLocators.length > 0 || !!outputMarkdownUrl;
   const hasHtmlOutput = outputHtmlLocators.length > 0 || !!outputHtmlUrl;
@@ -1532,9 +1119,7 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
     && isPdfDocument(selectedDoc)
     && !!selectedDoc.conv_uid
   );
-  const showCenterResultsList = !isTestSurface && middlePreviewTab === 'results';
-  const showCenterConfig = isTestSurface || middlePreviewTab !== 'results';
-  const testRightTabOptions = isTransformTestSurface
+  const activePreviewOptions = isTransformTestSurface
     ? [
         { value: 'preview', label: 'Preview' },
         { value: 'metadata', label: 'Metadata' },
@@ -1548,13 +1133,7 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
         { value: 'blocks', label: 'Blocks' },
         { value: 'outputs', label: 'Outputs' },
       ];
-  const parsePreviewOptions = [
-    { value: 'preview', label: 'Preview' },
-    { value: 'results', label: 'Results' },
-  ];
-  const activePreviewView = isTestSurface ? testRightTab : middlePreviewTab;
-  const activePreviewOptions = isTestSurface ? testRightTabOptions : parsePreviewOptions;
-  const activePreviewLabel = activePreviewOptions.find((option) => option.value === activePreviewView)?.label ?? activePreviewView;
+  const activePreviewLabel = activePreviewOptions.find((option) => option.value === testRightTab)?.label ?? testRightTab;
   const middleTabsControl = (
     <MenuRoot positioning={{ placement: 'bottom-start' }}>
       <MenuTrigger asChild>
@@ -1570,18 +1149,14 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
         <MenuPositioner>
           <MenuContent className="parse-view-menu-dropdown min-w-[180px]">
             {activePreviewOptions.map((option) => {
-              const isActive = option.value === activePreviewView;
+              const isActive = option.value === testRightTab;
               return (
                 <MenuItem
                   key={option.value}
                   value={`preview-${option.value}`}
                   leftSection={isActive ? <IconCheck size={14} /> : <span style={{ width: 14 }} />}
                   onClick={() => {
-                    if (isTestSurface) {
-                      setTestRightTab(option.value as TestRightTab);
-                      return;
-                    }
-                    setMiddlePreviewTab(option.value as MiddlePreviewTab);
+                    setTestRightTab(option.value as TestRightTab);
                   }}
                 >
                   {option.label}
@@ -1593,14 +1168,13 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
       </MenuPortal>
     </MenuRoot>
   );
-  const layoutClassName = `parse-playground-layout${surface === 'test' ? ' parse-playground-layout--test' : ''}${useSideRailDocumentNav ? ' parse-playground-layout--no-explorer' : ''}${isShellGrid ? ` schema-layout-test-page${isExplorerCollapsed ? ' is-left-collapsed' : ''}` : ''}`;
-  const explorerClassName = `parse-playground-explorer${isExplorerCollapsed ? ' is-collapsed' : ''}${isShellGrid ? ' schema-layout-test-explorer' : ''}`;
-  const rightPaneClassName = `parse-playground-right${isExtractMode && !isShellGrid ? ' is-extract' : ''}${isTestSurfacePage && isConfigCollapsed ? ' is-collapsed' : ''}${isShellGrid ? ' schema-layout-test-right' : ''}`;
-  const middleTabsClassName = `parse-middle-view-tabs${isShellGrid ? ' schema-layout-middle-header' : ''}`;
-  const parseConfigRootClassName = `parse-config-root${showCenterResultsList ? ' parse-results-side-root' : ''}${isShellGrid ? ' schema-layout-test-config-root' : ''}`;
-  const parseConfigScrollClassName = `parse-config-scroll${isShellGrid ? ' schema-layout-test-config-scroll' : ''}`;
-  const extractConfigRootClassName = `extract-config-root${isShellGrid ? ' schema-layout-test-config-root' : ''}`;
-  const extractConfigScrollClassName = `extract-config-scroll${isShellGrid ? ' schema-layout-test-config-scroll' : ''}`;
+  const layoutClassName = `parse-playground-layout parse-playground-layout--test parse-playground-layout--no-explorer schema-layout-test-page${isExplorerCollapsed ? ' is-left-collapsed' : ''}`;
+  const rightPaneClassName = `parse-playground-right${isConfigCollapsed ? ' is-collapsed' : ''} schema-layout-test-right`;
+  const middleTabsClassName = 'parse-middle-view-tabs schema-layout-middle-header';
+  const parseConfigRootClassName = 'parse-config-root schema-layout-test-config-root';
+  const parseConfigScrollClassName = 'parse-config-scroll schema-layout-test-config-scroll';
+  const extractConfigRootClassName = 'extract-config-root schema-layout-test-config-root';
+  const extractConfigScrollClassName = 'extract-config-scroll schema-layout-test-config-scroll';
   const parseConfigViewTabs = (
     <Group gap={10} wrap="nowrap" className="schema-layout-right-tabs">
       <Text
@@ -1659,222 +1233,15 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
       </Text>
     </Group>
   );
-  const explorerBodyContent = !useSideRailDocumentNav ? (
-    <>
-      <Box className="parse-playground-upload">
-          <ProjectParseUppyUploader
-            projectId={project.project_id}
-            ingestMode="upload_only"
-            enableRemoteSources
-            companionUrl={import.meta.env.VITE_UPPY_COMPANION_URL as string | undefined}
-            hideHeader={isShellGrid}
-            onBatchUploaded={handleBatchUploaded}
-          />
-      </Box>
-
-      <Box className="parse-playground-docs">
-          <Stack
-            gap="xs"
-            style={{ minHeight: 0, height: '100%' }}
-            className={isShellGrid ? 'schema-layout-left-scroll' : undefined}
-          >
-          <Group justify="space-between" align="center" wrap="nowrap" className="parse-docs-toolbar">
-            <Group
-              gap={8}
-              wrap="nowrap"
-              className="parse-docs-select-all"
-              onClick={() => toggleAllPagedDocSelection(!allPagedSelected)}
-            >
-              <Checkbox
-                checked={allPagedSelected}
-                indeterminate={somePagedSelected}
-                size="xs"
-                styles={docSelectorCheckboxStyles}
-                onClick={(event) => event.stopPropagation()}
-                onChange={(event) => toggleAllPagedDocSelection(event.currentTarget.checked)}
-                aria-label={allPagedSelected || somePagedSelected ? 'Deselect all documents on this page' : 'Select all documents on this page'}
-              />
-              <Text size="xs" c="dimmed" style={{ userSelect: 'none' }}>
-                Select all
-              </Text>
-            </Group>
-          </Group>
-
-          {docs.length === 0 ? (
-            <Center py="lg">
-              <Text size="sm" c="dimmed">No documents yet.</Text>
-            </Center>
-          ) : (
-            <>
-              <Box className="parse-doc-card-list">
-                {pagedDocs.map((doc) => {
-                  const selected = doc.source_uid === selectedSourceUid;
-                  const checked = selectedSourceUidSet.has(doc.source_uid);
-                  const statusMeta = DOC_STATUS_META[doc.status];
-                  const retryable = doc.status === 'conversion_failed' || doc.status === 'ingest_failed';
-                  const retrying = !!retryingSourceUids[doc.source_uid];
-                  return (
-                    <Box
-                      key={doc.source_uid}
-                      className={`parse-doc-card${selected ? ' is-active' : ''}${retryable ? ' is-failed' : ''}`}
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => setSelectedSourceUid(doc.source_uid)}
-                      onKeyDown={(event) => {
-                        if (event.key !== 'Enter' && event.key !== ' ') return;
-                        event.preventDefault();
-                        setSelectedSourceUid(doc.source_uid);
-                      }}
-                    >
-                      <Checkbox
-                        checked={checked}
-                        size="xs"
-                        styles={docSelectorCheckboxStyles}
-                        aria-label={`Select ${doc.doc_title}`}
-                        onClick={(event) => event.stopPropagation()}
-                        onChange={(event) => toggleDocSelection(doc.source_uid, event.currentTarget.checked)}
-                      />
-                      <Box className="parse-doc-card-main">
-                        <Text size="xs" fw={selected ? 700 : 600} className="parse-doc-card-name" title={doc.doc_title}>
-                          {doc.doc_title}
-                        </Text>
-                        <Text size="xs" className="parse-doc-card-size">{formatBytes(doc.source_filesize)}</Text>
-                      </Box>
-                      <Text size="xs" className="parse-doc-card-format">{getDocumentFormat(doc)}</Text>
-                      <Group
-                        gap={6}
-                        wrap="nowrap"
-                        className="parse-doc-card-actions"
-                        aria-label={`Status: ${statusMeta.label}`}
-                        title={statusMeta.label}
-                      >
-                        <span className={`parse-doc-card-status-dot is-${statusMeta.tone}`} />
-                        {retryable && (
-                          <ActionIcon
-                            size="sm"
-                            variant="subtle"
-                            color="red"
-                            aria-label={`Retry ${doc.doc_title}`}
-                            disabled={retrying}
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              void handleRetryDocument(doc.source_uid);
-                            }}
-                          >
-                            {retrying ? <Loader size={12} /> : <IconRotateClockwise size={13} />}
-                          </ActionIcon>
-                        )}
-                      </Group>
-                      <ActionIcon
-                        size="sm"
-                        variant="subtle"
-                        color={retryable ? 'red' : 'gray'}
-                        aria-label={`Delete ${doc.doc_title}`}
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          setDeleteTargetDoc(doc);
-                        }}
-                      >
-                        <IconTrash size={14} />
-                      </ActionIcon>
-                    </Box>
-                  );
-                })}
-              </Box>
-              {isShellGrid ? (
-                <Group justify="space-between" align="center" wrap="nowrap" className="schema-layout-docs-footer">
-                  <Text size="xs" c="dimmed">{docRangeStart}-{docRangeEnd} of {docs.length}</Text>
-                  <Group gap={4} align="center" wrap="nowrap" className="parse-docs-footer-nav">
-                    <ActionIcon
-                      size="sm"
-                      variant="subtle"
-                      className="parse-docs-footer-nav-btn"
-                      aria-label="Previous documents page"
-                      disabled={page <= 1}
-                      onClick={() => setPage((current) => Math.max(1, current - 1))}
-                    >
-                      <IconChevronLeft size={14} />
-                    </ActionIcon>
-                    <Text size="xs" fw={600} className="parse-docs-footer-page">{page}</Text>
-                    <ActionIcon
-                      size="sm"
-                      variant="subtle"
-                      className="parse-docs-footer-nav-btn"
-                      aria-label="Next documents page"
-                      disabled={page >= totalPages}
-                      onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
-                    >
-                      <IconChevronRight size={14} />
-                    </ActionIcon>
-                  </Group>
-                </Group>
-              ) : (
-                totalPages > 1 && (
-                  <Group justify="center" className="parse-docs-pagination-wrap">
-                    <Pagination
-                      value={page}
-                      onChange={setPage}
-                      total={totalPages}
-                      siblings={1}
-                      boundaries={1}
-                      size="xs"
-                      className="parse-docs-pagination"
-                      withControls={false}
-                      withEdges={false}
-                    />
-                  </Group>
-                )
-              )}
-            </>
-          )}
-        </Stack>
-      </Box>
-    </>
-  ) : null;
   return (
     <>
       {error && <ErrorAlert message={error} />}
 
       <Box
         className={layoutClassName}
-        data-surface={surface}
+        data-surface="test"
         style={layoutStyle}
       >
-        {!useSideRailDocumentNav && (
-          <Box className={explorerClassName}>
-            {!isShellGrid && (
-              <Box
-                className={`parse-playground-resizer parse-playground-resizer-explorer${activeResizer === 'explorer' ? ' is-active' : ''}`}
-                role="separator"
-                aria-orientation="vertical"
-                aria-label="Resize documents pane"
-                onPointerDown={handleExplorerResizeStart}
-              />
-            )}
-            {!isShellGrid && (
-              <ActionIcon
-                size="sm"
-                variant="subtle"
-                className="parse-explorer-collapse-toggle"
-                aria-label={isExplorerCollapsed ? 'Expand Add Documents column' : 'Collapse Add Documents column'}
-                title={isExplorerCollapsed ? 'Expand Add Documents column' : 'Collapse Add Documents column'}
-                onClick={() => setIsExplorerCollapsed((current) => !current)}
-              >
-                {isExplorerCollapsed ? (
-                  <DoubleArrowIcon size={PANE_CHEVRON_ICON.size} />
-                ) : (
-                  <IconChevronLeft size={PANE_CHEVRON_ICON.size} stroke={PANE_CHEVRON_ICON.stroke} />
-                )}
-              </ActionIcon>
-            )}
-
-            {isShellGrid ? (
-              <Box className="schema-layout-left-body">
-                {explorerBodyContent}
-              </Box>
-            ) : explorerBodyContent}
-          </Box>
-        )}
         <Box className={`parse-playground-work${isTransformTestSurface ? ' is-transform-grid' : ''}`}>
           <Box className="parse-playground-preview">
             <Box className="parse-preview-frame">
@@ -2028,140 +1395,32 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
                 )}
 
                 {isRightMetadataTab && (
-                  <>
-                    {!selectedDoc && (
-                      <Center h="100%">
-                        <Text size="sm" c="dimmed" ta="center">
-                          Select a document to view parse results.
-                        </Text>
-                      </Center>
-                    )}
-
-                    {selectedDoc && isPdfDocument(selectedDoc) && !selectedDoc.conv_uid && (
-                      <Center h="100%">
-                        <Text size="sm" c="dimmed" ta="center">
-                          No parsed result artifacts exist for this file yet (status: {selectedDoc.status}).
-                        </Text>
-                      </Center>
-                    )}
-
-                    {selectedDoc && !isPdfDocument(selectedDoc) && (
-                      <Center h="100%">
-                        <Text size="sm" c="dimmed" ta="center">
-                          Parse results preview is currently enabled for PDFs.
-                        </Text>
-                      </Center>
-                    )}
-
-                    {selectedDoc && isPdfDocument(selectedDoc) && selectedDoc.conv_uid && (
-                      <>
-                        {(previewLoading || resultsDoclingLoading) && (
-                          <Center h="100%">
-                            <Stack align="center" gap="xs">
-                              <Loader size="sm" />
-                              <Text size="sm" c="dimmed">Loading parsed PDF results...</Text>
-                            </Stack>
-                          </Center>
-                        )}
-
-                        {!previewLoading && !resultsDoclingLoading && (!previewUrl || previewKind !== 'pdf') && (
-                          <Center h="100%">
-                            <Text size="sm" c="dimmed" ta="center">
-                              PDF preview is unavailable for this parsed document.
-                            </Text>
-                          </Center>
-                        )}
-
-                        {!previewLoading && !resultsDoclingLoading && previewKind === 'pdf' && previewUrl && resultsDoclingError && (
-                          <Center h="100%">
-                            <Text size="sm" c="dimmed" ta="center">
-                              {resultsDoclingError}
-                            </Text>
-                          </Center>
-                        )}
-
-                        {!previewLoading
-                          && !resultsDoclingLoading
-                          && previewKind === 'pdf'
-                          && previewUrl
-                          && resultsDoclingJsonUrl
-                          && selectedDoc.conv_uid && (
-                            <PdfResultsHighlighter
-                              key={`${selectedDoc.source_uid}:${selectedDoc.conv_uid}:${resultsDoclingJsonUrl}`}
-                              title={selectedDoc.doc_title}
-                              pdfUrl={previewUrl}
-                              doclingJsonUrl={resultsDoclingJsonUrl}
-                              convUid={selectedDoc.conv_uid}
-                              activeHighlightId={activeResultsBlockId}
-                              onActiveHighlightIdChange={setActiveResultsBlockId}
-                              showAllBoundingBoxes={showAllBboxes}
-                              onShowAllBoundingBoxesChange={setShowAllBboxes}
-                              showBlocksPanel={showMetadataBlocksPanel}
-                              onShowBlocksPanelChange={setShowMetadataBlocksPanel}
-                              onBlocksChange={handleResultsBlocksChange}
-                            />
-                        )}
-                      </>
-                    )}
-                  </>
+                  <MetadataTab
+                    selectedDoc={selectedDoc}
+                    previewUrl={previewUrl}
+                    previewKind={previewKind}
+                    previewLoading={previewLoading}
+                    resultsDoclingJsonUrl={resultsDoclingJsonUrl}
+                    resultsDoclingLoading={resultsDoclingLoading}
+                    resultsDoclingError={resultsDoclingError}
+                    activeResultsBlockId={activeResultsBlockId}
+                    showAllBboxes={showAllBboxes}
+                    showMetadataBlocksPanel={showMetadataBlocksPanel}
+                    onActiveResultsBlockIdChange={setActiveResultsBlockId}
+                    onShowAllBboxesChange={setShowAllBboxes}
+                    onShowMetadataBlocksPanelChange={setShowMetadataBlocksPanel}
+                    onResultsBlocksChange={handleResultsBlocksChange}
+                  />
                 )}
 
                 {isRightBlocksTab && (
-                  <Box className="parse-docling-results-list">
-                    {!selectedDoc ? (
-                      <Center h="100%">
-                        <Text size="sm" c="dimmed" ta="center">
-                          Select a document to view parsed blocks.
-                        </Text>
-                      </Center>
-                    ) : !selectedDoc.conv_uid ? (
-                      <Center h="100%">
-                        <Text size="sm" c="dimmed" ta="center">
-                          No parsed blocks are available for this document yet.
-                        </Text>
-                      </Center>
-                    ) : testBlocksLoading ? (
-                      <Center h="100%">
-                        <Loader size="sm" />
-                      </Center>
-                    ) : testBlocksError ? (
-                      <Center h="100%">
-                        <Text size="sm" c="red" ta="center">
-                          {testBlocksError}
-                        </Text>
-                      </Center>
-                    ) : testBlocks.length === 0 ? (
-                      <Center h="100%">
-                        <Text size="sm" c="dimmed" ta="center">
-                          Parsed blocks returned empty for this document.
-                        </Text>
-                      </Center>
-                    ) : (
-                      testBlocks.map((block) => {
-                        const overlayColors = resolveOverlayColors(
-                          block.blockType,
-                          block.parserBlockType,
-                          null,
-                          blockTypeRegistry?.overlayBorder,
-                          blockTypeRegistry?.overlayBg,
-                        );
-                        const cardStyle = {
-                          '--parse-block-card-accent': overlayColors.border,
-                          '--parse-block-card-fill': overlayColors.bg,
-                        } as CSSProperties;
-                        return (
-                          <Box key={block.blockUid} className="parse-docling-results-item" style={cardStyle}>
-                            <Text size="xs" fw={700}>
-                              {block.blockType} | #{block.blockIndex}
-                            </Text>
-                            <Text size="xs" c="dimmed" lineClamp={3}>
-                              {block.snippet || '[no text]'}
-                            </Text>
-                          </Box>
-                        );
-                      })
-                    )}
-                  </Box>
+                  <BlocksTab
+                    selectedDoc={selectedDoc}
+                    testBlocks={testBlocks}
+                    testBlocksLoading={testBlocksLoading}
+                    testBlocksError={testBlocksError}
+                    blockTypeRegistry={blockTypeRegistry}
+                  />
                 )}
 
                 {isRightOutputsTab && (
@@ -2342,38 +1601,10 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
         </Box>
 
         <Box className={rightPaneClassName}>
-          {!isShellGrid && CONFIG_WIDTH_MAX > CONFIG_WIDTH_MIN && (
-            <Box
-              className={`parse-playground-resizer parse-playground-resizer-config${activeResizer === 'config' ? ' is-active' : ''}`}
-              role="separator"
-              aria-orientation="vertical"
-              aria-label="Resize config pane"
-              onPointerDown={handleConfigResizeStart}
-            />
-          )}
-          {!isShellGrid && (
-            isTestSurfacePage && (
-              <ActionIcon
-                size="sm"
-                variant="subtle"
-                className="parse-config-collapse-toggle"
-                aria-label={configToggleLabel}
-                title={configToggleLabel}
-                onClick={handleConfigToggle}
-              >
-                {isConfigCollapsed ? (
-                  <DoubleArrowIcon size={PANE_CHEVRON_ICON.size} />
-                ) : (
-                  <IconChevronLeft size={PANE_CHEVRON_ICON.size} stroke={PANE_CHEVRON_ICON.stroke} />
-                )}
-              </ActionIcon>
-            )
-          )}
-          {isTestSurfacePage && isConfigCollapsed
-            ? (isShellGrid ? <Box className="schema-layout-right-collapsed-body" /> : null)
+          {isConfigCollapsed
+            ? <Box className="schema-layout-right-collapsed-body" />
             : (isExtractMode ? (
             <Stack gap={0} className={extractConfigRootClassName}>
-              {isShellGrid ? (
                 <Group justify="space-between" gap={10} wrap="nowrap" className="schema-layout-right-controls">
                   {extractConfigViewTabs}
                   <Group gap={6} wrap="nowrap" className="parse-config-run-btn">
@@ -2387,43 +1618,8 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
                     </ActionIcon>
                   </Group>
                 </Group>
-              ) : (
-                <Group justify="space-between" wrap="nowrap" className="extract-config-top-tabs">
-                  <Text size="sm" fw={700}>Build</Text>
-                  <Group gap={6} wrap="nowrap" className="extract-config-run-btn">
-                    <ActionIcon
-                      size="sm"
-                      variant="transparent"
-                      aria-label="Run extract"
-                      title="Run extract"
-                    >
-                      <IconPlayerPlay size={CONFIG_ACTION_ICON.size} stroke={CONFIG_ACTION_ICON.stroke} />
-                    </ActionIcon>
-                  </Group>
-                </Group>
-              )}
 
               <Stack gap="sm" className={extractConfigScrollClassName}>
-              {!isShellGrid && (
-                <Group justify="space-between" wrap="nowrap" className="extract-config-subhead">
-                  <Group gap={6} wrap="nowrap">
-                    <Text fw={700} size="sm">Configuration</Text>
-                    <IconInfoCircle size={14} stroke={1.8} className="extract-config-info-icon" />
-                  </Group>
-                  <SegmentedControl
-                    value={extractConfigView}
-                    size="xs"
-                    radius="md"
-                    className="extract-config-view-switch"
-                    data={[
-                      { label: 'Basic', value: 'Basic' },
-                      { label: 'Advanced', value: 'Advanced' },
-                      { label: 'Schema', value: 'Schema' },
-                    ]}
-                    onChange={(value) => setExtractConfigView(value as ExtractConfigView)}
-                  />
-                </Group>
-              )}
 
               {extractConfigView === 'Basic' && (
                 <>
@@ -2724,20 +1920,9 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
               </Stack>
             </Stack>
             ) : isTransformMode ? (
-            <Stack gap={0} className="parse-config-root">
-              {!isShellGrid && (
-                <Group
-                  justify="space-between"
-                  wrap="nowrap"
-                  className="parse-config-top-tabs"
-                >
-                  <Text size="sm" fw={700}>Configuration</Text>
-                </Group>
-              )}
-            </Stack>
+            <Stack gap={0} className="parse-config-root" />
             ) : (
             <Stack gap={0} className={parseConfigRootClassName}>
-              {isShellGrid ? (
                 <Group justify="space-between" gap={10} wrap="nowrap" className="schema-layout-right-controls">
                   {parseConfigViewTabs}
                   <Group gap={6} wrap="nowrap" className="parse-config-run-btn">
@@ -2761,123 +1946,13 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
                     </ActionIcon>
                   </Group>
                 </Group>
-              ) : (
-                <Group
-                  justify="space-between"
-                  wrap="nowrap"
-                  className={`parse-config-top-tabs${showCenterConfig ? ' parse-config-top-tabs--with-subhead' : ''}`}
-                >
-                  {isTestSurface ? (
-                    <Text size="sm" fw={700}>Build</Text>
-                  ) : (
-                    <Group gap={12} wrap="nowrap">
-                      <Text
-                        size="sm"
-                        fw={middlePreviewTab !== 'results' ? 700 : 600}
-                        c={middlePreviewTab !== 'results' ? undefined : 'dimmed'}
-                        className={`parse-middle-tab${middlePreviewTab !== 'results' ? ' is-active' : ''}`}
-                        onClick={() => setMiddlePreviewTab('preview')}
-                        style={{ cursor: 'pointer', userSelect: 'none' }}
-                      >
-                        Build
-                      </Text>
-                      <Text
-                        size="sm"
-                        fw={middlePreviewTab === 'results' ? 700 : 600}
-                        c={middlePreviewTab === 'results' ? undefined : 'dimmed'}
-                        className={`parse-middle-tab${middlePreviewTab === 'results' ? ' is-active' : ''}`}
-                        onClick={() => setMiddlePreviewTab('results')}
-                        style={{ cursor: 'pointer', userSelect: 'none' }}
-                      >
-                        Results
-                      </Text>
-                    </Group>
-                  )}
-                  {showCenterConfig && (
-                    <Group gap={6} wrap="nowrap" className="parse-config-run-btn">
-                      <ActionIcon
-                        size="sm"
-                        variant="transparent"
-                        aria-label="Save config"
-                        title="Save config"
-                      >
-                        <IconDeviceFloppy size={CONFIG_ACTION_ICON.size} stroke={CONFIG_ACTION_ICON.stroke} />
-                      </ActionIcon>
-                      <ActionIcon
-                        size="sm"
-                        variant="transparent"
-                        aria-label="Run parse"
-                        title="Run parse"
-                        loading={parseLoading}
-                        onClick={() => void handleRunParse()}
-                      >
-                        <IconPlayerPlay size={CONFIG_ACTION_ICON.size} stroke={CONFIG_ACTION_ICON.stroke} />
-                      </ActionIcon>
-                    </Group>
-                  )}
-                  {showCenterResultsList && (
-                    <Text size="xs" c="dimmed">
-                      {resultsBlocks.length} blocks
-                    </Text>
-                  )}
-                </Group>
-              )}
 
-              {showCenterResultsList && (
-                <Box className="parse-results-side-list">
-                  {resultsBlocks.length === 0 ? (
-                    <Center className="parse-results-side-empty">
-                      <Text size="sm" c="dimmed" ta="center">
-                        No parsed blocks are available for this document yet.
-                      </Text>
-                    </Center>
-                  ) : (
-                    resultsBlocks.map((block) => (
-                      <button
-                        key={block.id}
-                        type="button"
-                        className={`parse-docling-results-item${activeResultsBlockId === block.id ? ' is-active' : ''}`}
-                        onClick={() => setActiveResultsBlockId(block.id)}
-                      >
-                        <Text size="xs" fw={700}>
-                          {block.blockType} | #{block.blockIndex} | p.{block.pageNo}
-                        </Text>
-                        <Text size="xs" c="dimmed" lineClamp={3}>
-                          {block.snippet || '[no text]'}
-                        </Text>
-                      </button>
-                    ))
-                  )}
-                </Box>
-              )}
-
-              {showCenterConfig && (
                 <Stack gap="sm" className={parseConfigScrollClassName}>
 
               {parseError && (
                 <Alert color="red" variant="light" withCloseButton onClose={() => setParseError(null)}>
                   <Text size="xs">{parseError}</Text>
                 </Alert>
-              )}
-
-              {!isShellGrid && (
-                <Group justify="space-between" wrap="nowrap" className="parse-config-subhead">
-                  <Group gap={6} wrap="nowrap">
-                    <Text fw={700} size="sm">Configuration</Text>
-                    <IconInfoCircle size={14} stroke={1.8} className="extract-config-info-icon" />
-                  </Group>
-                  <SegmentedControl
-                    value={parseConfigView}
-                    size="xs"
-                    radius="md"
-                    className="parse-config-view-switch"
-                    data={[
-                      { label: 'Basic', value: 'Basic' },
-                      { label: 'Advanced', value: 'Advanced' },
-                    ]}
-                    onChange={(value) => setParseConfigView(value as ParseConfigView)}
-                  />
-                </Group>
               )}
 
               {parseConfigView === 'Basic' && (
@@ -2997,7 +2072,6 @@ export default function ProjectDetail({ mode = 'parse', surface = 'default' }: P
               )}
 
                 </Stack>
-              )}
             </Stack>
           ))}
         </Box>

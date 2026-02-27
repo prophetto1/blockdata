@@ -1,22 +1,135 @@
 .flow-workbench-shell {
-  --flow-workbench-accent: #f97316;
-}
-
-.flow-workbench-shell {
+  --flow-workbench-accent: var(--flow-accent, var(--primary));
+  --flow-workbench-panel-bg: color-mix(in oklab, var(--background) 88%, var(--foreground) 12%);
+  --flow-workbench-editor-bg: color-mix(in oklab, var(--card) 92%, var(--background) 8%);
   width: 100%;
   min-width: 0;
   min-height: 640px;
 }
 
 .flow-workbench-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
   border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px;
+  background: var(--flow-workbench-panel-bg);
+}
+
+.flow-workbench-toolbar-panels {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.flow-workbench-panel-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  border: 1px solid transparent;
   border-radius: 6px;
-  padding: 6px 8px;
+  background: transparent;
+  color: var(--muted-foreground);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 0 8px;
+  cursor: pointer;
+}
+
+.flow-workbench-panel-button:hover {
+  background: color-mix(in oklab, var(--background) 80%, transparent);
+  color: var(--foreground);
+}
+
+.flow-workbench-panel-button.is-open {
   background: var(--background);
+  border-color: var(--border);
+  color: var(--foreground);
+}
+
+.flow-workbench-panel-button.is-focused {
+  box-shadow: inset 0 -2px 0 color-mix(in oklab, var(--flow-workbench-accent) 70%, transparent);
 }
 
 .flow-workbench-toolbar-actions {
-  flex-wrap: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.flow-workbench-playground-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--foreground);
+}
+
+.flow-workbench-playground-toggle input {
+  accent-color: var(--flow-workbench-accent);
+}
+
+.flow-workbench-validate-button,
+.flow-workbench-actions-trigger,
+.flow-workbench-save-button {
+  height: 32px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--background);
+  color: var(--foreground);
+  padding: 0 10px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.flow-workbench-validate-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  padding: 0;
+}
+
+.flow-workbench-save-button:disabled {
+  color: var(--muted-foreground);
+  opacity: 0.7;
+}
+
+.flow-workbench-action-notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border: 1px solid color-mix(in oklab, var(--flow-workbench-accent) 45%, var(--border));
+  background: color-mix(in oklab, var(--flow-workbench-accent) 8%, var(--background));
+  border-radius: 8px;
+  padding: 6px 8px;
+  font-size: 12px;
+  color: color-mix(in oklab, var(--flow-workbench-accent) 55%, var(--foreground));
+}
+
+.flow-workbench-action-notice-dismiss {
+  border: 1px solid color-mix(in oklab, var(--flow-workbench-accent) 35%, var(--border));
+  background: transparent;
+  color: inherit;
+  border-radius: 4px;
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.flow-workbench-action-notice-dismiss:hover {
+  background: color-mix(in oklab, var(--flow-workbench-accent) 16%, transparent);
 }
 
 .flow-workbench-multipane {
@@ -24,7 +137,7 @@
   display: flex;
   align-items: stretch;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 8px;
   overflow: hidden;
   background: var(--background);
 }
@@ -41,18 +154,17 @@
 }
 
 .flow-workbench-pane-tabs {
-  min-height: 36px;
+  min-height: 34px;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 0;
-  padding: 0;
   border-bottom: 1px solid var(--border);
-  background: var(--card);
+  background: var(--flow-workbench-panel-bg);
 }
 
 .flow-workbench-pane-grip {
-  width: 28px;
+  width: 26px;
   height: 100%;
   border: 0;
   border-right: 1px solid var(--border);
@@ -66,11 +178,11 @@
   position: absolute;
   inset: 0;
   margin: auto;
-  width: 10px;
+  width: 9px;
   height: 12px;
   background-image: radial-gradient(var(--muted-foreground) 1px, transparent 1px);
   background-size: 4px 4px;
-  opacity: 0.6;
+  opacity: 0.55;
 }
 
 .flow-workbench-pane-grip:active {
@@ -86,10 +198,7 @@
 }
 
 .flow-workbench-tab {
-  border: 0;
   border-right: 1px solid var(--border);
-  background: transparent;
-  border-radius: 0;
   color: var(--muted-foreground);
   display: inline-flex;
   align-items: center;
@@ -102,14 +211,14 @@
 }
 
 .flow-workbench-tab:hover {
-  background: var(--accent);
-  color: var(--accent-foreground);
+  background: color-mix(in oklab, var(--background) 75%, transparent);
+  color: var(--foreground);
 }
 
 .flow-workbench-tab.is-active {
   background: var(--background);
   color: var(--foreground);
-  box-shadow: inset 0 -2px 0 var(--flow-workbench-accent);
+  box-shadow: inset 0 -2px 0 color-mix(in oklab, var(--flow-workbench-accent) 70%, transparent);
 }
 
 .flow-workbench-tab-button {
@@ -118,7 +227,7 @@
   color: inherit;
   font: inherit;
   line-height: inherit;
-  padding: 10px 0;
+  padding: 9px 0;
   cursor: pointer;
 }
 
@@ -133,7 +242,7 @@
   height: 16px;
   border-radius: 2px;
   cursor: pointer;
-  opacity: 0.7;
+  opacity: 0.65;
 }
 
 .flow-workbench-tab-close:hover {
@@ -141,10 +250,45 @@
   opacity: 1;
 }
 
-.flow-workbench-pane-actions {
+.flow-workbench-pane-split-trigger {
   height: 100%;
-  padding: 0 6px;
+  width: 30px;
+  border: 0;
   border-left: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted-foreground);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.flow-workbench-pane-split-trigger:hover:not(:disabled) {
+  color: var(--foreground);
+  background: color-mix(in oklab, var(--background) 80%, transparent);
+}
+
+.flow-workbench-pane-split-trigger:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.flow-workbench-pane-menu-trigger {
+  height: 100%;
+  width: 30px;
+  border: 0;
+  border-left: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted-foreground);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.flow-workbench-pane-menu-trigger:hover {
+  color: var(--foreground);
+  background: color-mix(in oklab, var(--background) 80%, transparent);
 }
 
 .flow-workbench-pane-content {
@@ -154,13 +298,34 @@
   padding: 0;
 }
 
+.flow-workbench-code-panel {
+  height: 100%;
+}
+
+.flow-workbench-code-textarea {
+  width: 100%;
+  min-height: 560px;
+  border: 0;
+  padding: 12px;
+  background: var(--flow-workbench-editor-bg);
+  color: var(--foreground);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 12px;
+  line-height: 1.45;
+  resize: vertical;
+}
+
+.flow-workbench-code-textarea:focus {
+  outline: none;
+}
+
 .flow-workbench-resizer {
   position: relative;
   width: 6px;
   flex: 0 0 6px;
   cursor: col-resize;
   touch-action: none;
-  background: var(--card);
+  background: var(--flow-workbench-panel-bg);
 }
 
 .flow-workbench-resizer::before {
@@ -176,15 +341,18 @@
 
 .flow-workbench-resizer:hover::before,
 .flow-workbench-resizer.is-active::before {
-  background: var(--flow-workbench-accent);
+  background: color-mix(in oklab, var(--flow-workbench-accent) 70%, transparent);
 }
 
 @media (max-width: 48em) {
   .flow-workbench-toolbar {
     align-items: stretch;
+    flex-direction: column;
   }
 
   .flow-workbench-toolbar-actions {
+    justify-content: flex-end;
+    width: 100%;
     flex-wrap: wrap;
   }
 

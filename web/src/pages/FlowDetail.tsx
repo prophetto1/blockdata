@@ -5,6 +5,7 @@ import { useShellHeaderTitle } from '@/components/common/useShellHeaderTitle';
 import FlowCanvas from '@/components/flows/FlowCanvas';
 import FlowWorkbench from '@/components/flows/FlowWorkbench';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { edgeJson } from '@/lib/edge';
 import { supabase } from '@/lib/supabase';
 import { TABLES } from '@/lib/tables';
 import {
@@ -24,7 +25,13 @@ import {
 } from './flowRouteState';
 import './FlowDetail.css';
 
-const FLOW_TABS = [
+type FlowTabConfig = {
+  value: string;
+  label: string;
+  locked?: boolean;
+};
+
+const FLOW_TABS: readonly FlowTabConfig[] = [
   { value: 'overview', label: 'Overview' },
   { value: 'topology', label: 'Topology' },
   { value: 'executions', label: 'Executions' },
@@ -35,15 +42,24 @@ const FLOW_TABS = [
   { value: 'metrics', label: 'Metrics' },
   { value: 'dependencies', label: 'Dependencies' },
   { value: 'concurrency', label: 'Concurrency' },
-  { value: 'auditlogs', label: 'Audit Logs' },
+  { value: 'auditlogs', label: 'Audit Logs', locked: true },
 ] as const;
 
 type FlowTab = (typeof FLOW_TABS)[number]['value'];
-const FLOW_TAB_VALUES = FLOW_TABS.map((tab) => tab.value) as readonly FlowTab[];
+const LOCKED_FLOW_TAB_VALUES = FLOW_TABS
+  .filter((tab) => tab.locked)
+  .map((tab) => tab.value) as readonly FlowTab[];
+const OPEN_FLOW_TAB_VALUES = FLOW_TABS
+  .filter((tab) => !tab.locked)
+  .map((tab) => tab.value) as readonly FlowTab[];
 const FLOW_DEFAULT_TAB_STORAGE_KEY = 'flowDefaultTab';
 
 function isFlowTab(value: string | undefined): value is FlowTab {
   return FLOW_TABS.some((tab) => tab.value === value);
+}
+
+function isLockedFlowTab(value: string | undefined): value is FlowTab {
+  return Boolean(value) && LOCKED_FLOW_TAB_VALUES.some((tab) => tab === value);
 }
 
 function formatPercent(value: number): string {
@@ -61,6 +77,55 @@ function timeRangeFromSearch(searchParams: URLSearchParams): string | null {
   return searchParams.get('filters[timeRange][EQUALS]');
 }
 
+type FlowMetadataResponse = {
+  id?: string;
+  namespace?: string;
+  revision?: number;
+  description?: string | null;
+  deleted?: boolean;
+  disabled?: boolean;
+  triggers?: Array<Record<string, unknown>>;
+  labels?: Array<{
+    key?: string;
+    value?: string;
+  }>;
+  updated_at?: string | null;
+};
+
+type FlowTriggerSummary = {
+  id: string;
+  type: string;
+  workerId: string | null;
+  nextExecutionDate: string | null;
+  disabled: boolean;
+};
+
+function toTriggerTypeLabel(type: string): string {
+  const trimmed = type.trim();
+  if (trimmed.length === 0) return 'Unknown';
+  const parts = trimmed.split('.');
+  return parts[parts.length - 1] ?? trimmed;
+}
+
+function toFlowTriggers(input: FlowMetadataResponse['triggers']): FlowTriggerSummary[] {
+  if (!Array.isArray(input)) return [];
+  return input.map((entry, index) => {
+    const idRaw = entry.id;
+    const typeRaw = entry.type;
+    const workerIdRaw = entry.workerId ?? entry.worker_id ?? null;
+    const nextExecutionRaw = entry.nextExecutionDate ?? entry.next_execution_date ?? null;
+    return {
+      id: typeof idRaw === 'string' && idRaw.trim().length > 0 ? idRaw : `trigger-${index + 1}`,
+      type: typeof typeRaw === 'string' ? typeRaw : 'Unknown',
+      workerId: typeof workerIdRaw === 'string' && workerIdRaw.trim().length > 0 ? workerIdRaw : null,
+      nextExecutionDate: typeof nextExecutionRaw === 'string' && nextExecutionRaw.trim().length > 0
+        ? nextExecutionRaw
+        : null,
+      disabled: Boolean(entry.disabled),
+    };
+  });
+}
+
 export default function FlowDetail() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -70,8 +135,8 @@ export default function FlowDetail() {
   const [workspaceId, setWorkspaceId] = useState<string | null>(null);
   const [projectUpdatedAt, setProjectUpdatedAt] = useState<string | null>(null);
   const [flowDescription, setFlowDescription] = useState<string | null>(null);
-  const [isDeleted] = useState(false);
-  const [isAllowedToEdit] = useState(true);
+  const [isDeleted, setIsDeleted] = useState(false);
+  const [isAllowedToEdit, setIsAllowedToEdit] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [documents, setDocuments] = useState<FlowDocumentSummary[]>([]);
   const [runs, setRuns] = useState<FlowRunSummary[]>([]);
@@ -79,10 +144,13 @@ export default function FlowDetail() {
   const [runsError, setRunsError] = useState<string | null>(null);
   const [dependencyError, setDependencyError] = useState<string | null>(null);
   const [runNotice, setRunNotice] = useState<string | null>(null);
+  const [flowTriggers, setFlowTriggers] = useState<FlowTriggerSummary[]>([]);
+  const [triggerQuery, setTriggerQuery] = useState('');
 
   const activeTab: FlowTab = useMemo(() => {
     const storedTab = typeof window === 'undefined' ? null : window.localStorage.getItem(FLOW_DEFAULT_TAB_STORAGE_KEY);
-    return getPreferredFlowTab(tab, storedTab, FLOW_TAB_VALUES, 'overview');
+    if (isLockedFlowTab(tab)) return tab;
+    return getPreferredFlowTab(tab, storedTab, OPEN_FLOW_TAB_VALUES, 'overview');
   }, [tab]);
 
   const searchSuffix = useMemo(() => {
@@ -99,7 +167,7 @@ export default function FlowDetail() {
       navigate(`/app/flows/${flowId}/${activeTab}${searchSuffix}`, { replace: true });
       return;
     }
-    if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined' && !isLockedFlowTab(activeTab)) {
       window.localStorage.setItem(FLOW_DEFAULT_TAB_STORAGE_KEY, activeTab);
     }
   }, [activeTab, flowId, navigate, searchSuffix, tab]);
@@ -117,30 +185,31 @@ export default function FlowDetail() {
 
     const load = async () => {
       setError(null);
-      const { data, error: queryError } = await supabase
-        .from(TABLES.projects)
-        .select('project_name, workspace_id, description, updated_at')
-        .eq('project_id', flowId)
-        .maybeSingle();
+      try {
+        const metadata = await edgeJson<FlowMetadataResponse>(`flows/default/${encodeURIComponent(flowId)}`);
+        if (cancelled) return;
 
-      if (cancelled) return;
-      if (queryError) {
-        setError(queryError.message);
-        return;
+        const flowNameFromLabel = (metadata.labels ?? []).find((label) =>
+          label.key === 'name' && typeof label.value === 'string' && label.value.trim().length > 0
+        )?.value?.trim();
+
+        const resolvedNamespace = (typeof metadata.namespace === 'string' && metadata.namespace.length > 0)
+          ? metadata.namespace
+          : 'default';
+        setFlowName(flowNameFromLabel ?? `Flow ${flowId.slice(0, 8)}`);
+        setWorkspaceId(resolvedNamespace === 'default' ? null : resolvedNamespace);
+        setNamespace(resolvedNamespace);
+        setFlowDescription(metadata.description ?? null);
+        setProjectUpdatedAt(typeof metadata.updated_at === 'string' ? metadata.updated_at : null);
+        setIsDeleted(Boolean(metadata.deleted));
+        setIsAllowedToEdit(!Boolean(metadata.disabled));
+        setFlowTriggers(toFlowTriggers(metadata.triggers));
+      } catch (e) {
+        if (cancelled) return;
+        const message = e instanceof Error ? e.message : String(e);
+        setError(message);
+        setFlowTriggers([]);
       }
-
-      const row = (data as {
-        project_name?: string;
-        workspace_id?: string | null;
-        description?: string | null;
-        updated_at?: string | null;
-      } | null);
-
-      setFlowName(String(row?.project_name ?? `Flow ${flowId.slice(0, 8)}`));
-      setWorkspaceId(row?.workspace_id ?? null);
-      setNamespace(String(row?.workspace_id ?? 'default'));
-      setFlowDescription(row?.description ?? null);
-      setProjectUpdatedAt(row?.updated_at ?? null);
     };
 
     void load();
@@ -259,11 +328,17 @@ export default function FlowDetail() {
     () => buildDependencyItems(flowId ?? '', workspaceProjects),
     [flowId, workspaceProjects],
   );
+  const dependenciesTabCount = dependencies.length;
+  const filteredTriggers = useMemo(() => {
+    const needle = triggerQuery.trim().toLowerCase();
+    if (needle.length === 0) return flowTriggers;
+    return flowTriggers.filter((trigger) =>
+      trigger.id.toLowerCase().includes(needle) ||
+      trigger.type.toLowerCase().includes(needle) ||
+      (trigger.workerId ?? '').toLowerCase().includes(needle),
+    );
+  }, [flowTriggers, triggerQuery]);
   const peakConcurrency = useMemo(() => estimatePeakConcurrency(scopedRuns), [scopedRuns]);
-  const derivedAuditItems = useMemo(
-    () => revisions.filter((item) => item.type === 'flow-update' || item.type === 'run-complete' || item.type === 'document-status'),
-    [revisions],
-  );
 
   const activeTabLabel = useMemo(
     () => FLOW_TABS.find((item) => item.value === activeTab)?.label ?? activeTab,
@@ -307,6 +382,8 @@ export default function FlowDetail() {
         value={activeTab}
         onValueChange={(value) => {
           if (!value || !isFlowTab(value)) return;
+          if (isLockedFlowTab(value)) return;
+          if (value === 'dependencies' && dependenciesTabCount === 0) return;
           if (typeof window !== 'undefined') {
             window.localStorage.setItem(FLOW_DEFAULT_TAB_STORAGE_KEY, value);
           }
@@ -318,23 +395,42 @@ export default function FlowDetail() {
           aria-label="Flow sections"
           className="flow-detail-tabs-row flex h-10 min-h-10 w-full items-stretch overflow-x-auto border-b border-slate-300/90 bg-slate-100/95 dark:border-slate-700/80 dark:bg-slate-950/80"
         >
-          {FLOW_TABS.map((item) => (
-            <TabsTrigger
-              key={item.value}
-              value={item.value}
-              className="inline-flex h-10 shrink-0 items-center border-r border-slate-300/80 px-4 text-[12px] font-medium leading-none whitespace-nowrap text-slate-600 transition-colors first:border-l first:border-l-slate-300/80 hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700/80 dark:text-slate-300 dark:first:border-l-slate-700/80 dark:hover:bg-slate-900/60 dark:hover:text-slate-50 data-[selected]:-mb-px data-[selected]:border-b data-[selected]:border-b-white data-[selected]:border-t-2 data-[selected]:border-t-[color:var(--flow-accent)] data-[selected]:bg-white data-[selected]:text-slate-950 dark:data-[selected]:border-b-slate-900 dark:data-[selected]:bg-slate-900 dark:data-[selected]:text-white"
-            >
-              {item.label}
-            </TabsTrigger>
-          ))}
+          {FLOW_TABS.map((item) => {
+            const isLocked = Boolean(item.locked);
+            const isDependenciesTab = item.value === 'dependencies';
+            const isDisabled = isLocked || (isDependenciesTab && dependenciesTabCount === 0);
+            const label = isDependenciesTab && dependenciesTabCount > 0
+              ? `${item.label} (${dependenciesTabCount})`
+              : item.label;
+            return (
+              <TabsTrigger
+                key={item.value}
+                value={item.value}
+                disabled={isDisabled}
+                aria-disabled={isDisabled}
+                className="inline-flex h-10 shrink-0 items-center gap-1 border-r border-slate-300/80 px-4 text-[12px] font-medium leading-none whitespace-nowrap text-slate-600 transition-colors first:border-l first:border-l-slate-300/80 hover:bg-slate-50 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-75 disabled:hover:bg-transparent dark:border-slate-700/80 dark:text-slate-300 dark:first:border-l-slate-700/80 dark:hover:bg-slate-900/60 dark:hover:text-slate-50 data-[selected]:-mb-px data-[selected]:border-b data-[selected]:border-b-white data-[selected]:border-t-2 data-[selected]:border-t-[color:var(--flow-accent)] data-[selected]:bg-white data-[selected]:text-slate-950 dark:data-[selected]:border-b-slate-900 dark:data-[selected]:bg-slate-900 dark:data-[selected]:text-white"
+              >
+                <span>{label}</span>
+                {isLocked ? <IconLock size={11} aria-hidden /> : null}
+              </TabsTrigger>
+            );
+          })}
         </TabsList>
 
         {error ? (
           <div
             role="alert"
-            className="mx-4 mt-4 rounded-md border border-red-300/80 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-500/40 dark:bg-red-950/50 dark:text-red-200"
+            className="mx-4 mt-4 flex items-start justify-between gap-3 rounded-md border border-red-300/80 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-500/40 dark:bg-red-950/50 dark:text-red-200"
           >
-            {error}
+            <span>{error}</span>
+            <button
+              type="button"
+              aria-label="Dismiss flow error"
+              className="shrink-0 rounded border border-red-300/80 px-1.5 py-0.5 text-xs text-red-700 hover:bg-red-100 dark:border-red-400/40 dark:text-red-200 dark:hover:bg-red-900/40"
+              onClick={() => setError(null)}
+            >
+              Dismiss
+            </button>
           </div>
         ) : null}
         {runNotice ? (
@@ -428,21 +524,55 @@ export default function FlowDetail() {
               </div>
             ) : item.value === 'triggers' ? (
               <div className="flow-detail-panel-placeholder rounded-md border border-slate-300/80 bg-white/95 p-4 dark:border-slate-700/70 dark:bg-slate-900/80">
-                <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Triggers</h3>
-                <div className="mt-3 grid gap-3 md:grid-cols-3">
-                  <div className="rounded-md border border-border bg-background p-3">
-                    <p className="text-xs text-muted-foreground">Manual trigger</p>
-                    <p className="text-sm font-semibold">Enabled</p>
-                  </div>
-                  <div className="rounded-md border border-border bg-background p-3">
-                    <p className="text-xs text-muted-foreground">Document upload trigger</p>
-                    <p className="text-sm font-semibold">{documents.length > 0 ? 'Detected' : 'Idle'}</p>
-                  </div>
-                  <div className="rounded-md border border-border bg-background p-3">
-                    <p className="text-xs text-muted-foreground">Schedule trigger</p>
-                    <p className="text-sm font-semibold">Not configured</p>
-                  </div>
+                <div className="flex items-center justify-between gap-3">
+                  <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Triggers</h3>
+                  <button
+                    type="button"
+                    className="rounded-md border border-border bg-background px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-accent hover:text-accent-foreground"
+                    onClick={() => navigate(`/app/flows/${flowId}/edit`)}
+                  >
+                    Add trigger
+                  </button>
                 </div>
+                {flowTriggers.length === 0 ? (
+                  <p className="mt-3 text-sm text-muted-foreground">
+                    No triggers configured for this flow.
+                  </p>
+                ) : (
+                  <div className="mt-3 space-y-2">
+                    <input
+                      aria-label="Filter triggers"
+                      value={triggerQuery}
+                      onChange={(event) => setTriggerQuery(event.currentTarget.value)}
+                      placeholder="Filter triggers"
+                      className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    />
+                    {filteredTriggers.map((trigger) => (
+                      <div key={trigger.id} className="rounded-md border border-border bg-background px-3 py-2 text-xs">
+                        <div className="flex items-center justify-between gap-2">
+                          <code className="font-medium">{trigger.id}</code>
+                          <span className={trigger.disabled ? 'text-amber-600 dark:text-amber-300' : 'text-emerald-600 dark:text-emerald-300'}>
+                            {trigger.disabled ? 'Disabled' : 'Enabled'}
+                          </span>
+                        </div>
+                        <div className="mt-1 text-muted-foreground">
+                          Type: {toTriggerTypeLabel(trigger.type)}
+                        </div>
+                        {trigger.workerId ? (
+                          <div className="mt-1 text-muted-foreground">Worker: {trigger.workerId}</div>
+                        ) : null}
+                        {trigger.nextExecutionDate ? (
+                          <div className="mt-1 text-muted-foreground">
+                            Next execution: {new Date(trigger.nextExecutionDate).toLocaleString()}
+                          </div>
+                        ) : null}
+                      </div>
+                    ))}
+                    {filteredTriggers.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">No triggers match this filter.</p>
+                    ) : null}
+                  </div>
+                )}
               </div>
             ) : item.value === 'logs' ? (
               <div className="flow-detail-panel-placeholder rounded-md border border-slate-300/80 bg-white/95 p-4 dark:border-slate-700/70 dark:bg-slate-900/80">
@@ -516,18 +646,9 @@ export default function FlowDetail() {
             ) : item.value === 'auditlogs' ? (
               <div className="flow-detail-panel-placeholder rounded-md border border-slate-300/80 bg-white/95 p-4 dark:border-slate-700/70 dark:bg-slate-900/80">
                 <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Audit log</h3>
-                <div className="mt-3 space-y-2">
-                  {derivedAuditItems.slice(0, 40).map((entry) => (
-                    <div key={`audit-${entry.id}`} className="rounded-md border border-border bg-background px-3 py-2 text-xs">
-                      <div className="flex items-center justify-between gap-3">
-                        <span className="font-medium">{entry.type}</span>
-                        <span>{new Date(entry.timestamp).toLocaleString()}</span>
-                      </div>
-                      <div className="mt-1 text-muted-foreground">{entry.detail}</div>
-                    </div>
-                  ))}
-                  {derivedAuditItems.length === 0 ? <p className="text-sm text-muted-foreground">No audit events yet.</p> : null}
-                </div>
+                <p className="mt-3 text-sm text-muted-foreground">
+                  Audit logs are unavailable in this edition.
+                </p>
               </div>
             ) : (
               <div className="flow-detail-panel-placeholder rounded-md border border-slate-300/80 bg-white/95 p-4 dark:border-slate-700/70 dark:bg-slate-900/80">

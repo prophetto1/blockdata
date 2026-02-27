@@ -1,72 +1,63 @@
-import { Container, Title, Text, Stack, Group, Button, Box, SimpleGrid, ThemeIcon, Paper, Badge } from '@mantine/core';
-import { IconBolt, IconSchema, IconListDetails } from '@tabler/icons-react';
-import { MarketingGrid } from '@/components/marketing/MarketingGrid';
 import { useNavigate } from 'react-router-dom';
+import { IconListDetails, IconBrain, IconRoute } from '@tabler/icons-react';
+import { MarketingGrid } from '@/components/marketing/MarketingGrid';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 
 export default function PlatformLanding() {
   const navigate = useNavigate();
 
   return (
-    <Box>
-      {/* Hero Section */}
-      <Box pt={100} pb={80}>
-        <Container size="xl">
-          <SimpleGrid cols={{ base: 1, lg: 2 }} spacing={60}>
-            <Stack justify="center" gap="xl">
-              <Badge variant="light" size="lg" color="gray">Enterprise Document Intelligence</Badge>
-              <Title order={1} size={48} style={{ lineHeight: 1.1 }}>
-                Structured data,<br />
-                <span style={{ color: 'var(--mantine-color-dimmed)' }}>block by block.</span>
-              </Title>
-              <Text c="dimmed" size="xl" maw={500}>
-                Stop treating documents as blobs of text. Decompose them into typed blocks, apply rigorous schemas, and export deterministic data.
-              </Text>
-              <Group>
-                <Button size="xl" onClick={() => navigate('/register')}>Get Started</Button>
-                <Button size="xl" variant="default" onClick={() => navigate('/how-it-works')}>Read the Docs</Button>
-              </Group>
-            </Stack>
+    <div className="overflow-hidden">
+      <section className="pt-28 pb-20">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 md:px-8">
+          <div className="grid grid-cols-1 items-center gap-16 lg:grid-cols-2">
+            <div className="flex flex-col gap-6">
+              <Badge variant="secondary" className="w-fit">Data Pipeline Platform</Badge>
+              <h1 className="text-5xl font-extrabold leading-[1.1] tracking-tight">
+                Structured output,
+                <br />
+                <span className="text-muted-foreground">block by block.</span>
+              </h1>
+              <p className="max-w-lg text-xl leading-relaxed text-muted-foreground">
+                Ingest documents and databases. Transform with code.
+                Extract with AI. Review and export deterministic data with full provenance.
+              </p>
+              <div className="flex gap-3">
+                <Button size="lg" onClick={() => navigate('/register')}>Get Started</Button>
+                <Button size="lg" variant="outline" onClick={() => navigate('/how-it-works')}>Read the Docs</Button>
+              </div>
+            </div>
+            <div>
+              <MarketingGrid />
+              <div className="mt-2 flex justify-between text-xs text-muted-foreground">
+                <span>Live processing preview</span>
+                <span>7 blocks &middot; 2 extracted fields</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
-            {/* The "Glass Box" - Actual Grid Component */}
-            <Box>
-               <MarketingGrid />
-               <Group justify="space-between" mt="xs">
-                  <Text size="xs" c="dimmed">● Live processing preview</Text>
-                  <Text size="xs" c="dimmed">7 blocks • 2 extracted fields</Text>
-               </Group>
-            </Box>
-          </SimpleGrid>
-        </Container>
-      </Box>
-
-      {/* Feature Strip */}
-      <Box bg="var(--mantine-color-default-hover)" py={80}>
-        <Container size="xl">
-          <SimpleGrid cols={3} spacing="xl">
-            <Paper p="xl" withBorder radius="md">
-              <ThemeIcon size="lg" radius="md" variant="light" color="blue" mb="md">
-                <IconListDetails />
-              </ThemeIcon>
-              <Text fw={700} size="lg" mb="sm">Block-Level Granularity</Text>
-              <Text c="dimmed" size="sm">Every paragraph, heading, and list item is addressed individually with a stable ID.</Text>
-            </Paper>
-             <Paper p="xl" withBorder radius="md">
-              <ThemeIcon size="lg" radius="md" variant="light" color="violet" mb="md">
-                <IconSchema />
-              </ThemeIcon>
-              <Text fw={700} size="lg" mb="sm">Strict Schemas</Text>
-              <Text c="dimmed" size="sm">Define exactly what you want extracted or revised. Type-safe outputs, every time.</Text>
-            </Paper>
-             <Paper p="xl" withBorder radius="md">
-               <ThemeIcon size="lg" radius="md" variant="light" color="orange" mb="md">
-                <IconBolt />
-              </ThemeIcon>
-              <Text fw={700} size="lg" mb="sm">Parallel Execution</Text>
-              <Text c="dimmed" size="sm">Workers fan out to process thousands of blocks concurrently. Zero bottlenecks.</Text>
-            </Paper>
-          </SimpleGrid>
-        </Container>
-      </Box>
-    </Box>
+      <section className="py-20" style={{ background: 'var(--muted)' }}>
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 md:px-8">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            {[
+              { icon: IconListDetails, title: 'Block-Level Granularity', text: 'Every paragraph, heading, and list item is addressed individually with a stable ID.' },
+              { icon: IconBrain, title: 'Schema-Driven Extraction', text: 'Define fields per block. The AI fills them. You review before export.' },
+              { icon: IconRoute, title: 'Composable Pipeline', text: 'Chain ingest, transform, extract, review, and export. Linear or DAG.' },
+            ].map((f) => (
+              <div key={f.title} className="rounded-2xl border border-border/60 bg-card/80 p-8">
+                <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                  <f.icon size={20} />
+                </div>
+                <h3 className="mb-2 text-lg font-bold">{f.title}</h3>
+                <p className="text-sm leading-relaxed text-muted-foreground">{f.text}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    </div>
   );
 }

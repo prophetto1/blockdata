@@ -91,7 +91,7 @@ export const router = createBrowserRouter([
           },
 
           // Project-scoped routes
-          { path: '/app/projects/:projectId', element: <ProjectDetail surface="test" /> },
+          { path: '/app/projects/:projectId', element: <ProjectDetail /> },
           { path: '/app/projects/:projectId/upload', element: <Upload /> },
           { path: '/app/ui', element: <UiCatalog /> },
           { path: '/app/ui/:section', element: <UiCatalog /> },

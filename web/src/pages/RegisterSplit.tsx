@@ -1,17 +1,10 @@
 import { useState } from 'react';
-import {
-  TextInput,
-  PasswordInput,
-  Button,
-  Title,
-  Stack,
-  Text,
-  Anchor,
-  Box,
-} from '@mantine/core';
-import { notifications } from '@mantine/notifications';
+import { PasswordInput } from '@ark-ui/react/password-input';
+import { Field } from '@ark-ui/react/field';
+import { IconEye, IconEyeOff } from '@tabler/icons-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/auth/AuthContext';
+import { Button } from '@/components/ui/button';
 
 export default function RegisterSplit() {
   const [displayName, setDisplayName] = useState('');
@@ -19,13 +12,17 @@ export default function RegisterSplit() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
   const { signUp } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
+    setInfo(null);
     if (password !== confirmPassword) {
-      notifications.show({ color: 'red', title: 'Error', message: 'Passwords do not match' });
+      setError('Passwords do not match');
       return;
     }
     setLoading(true);
@@ -37,76 +34,110 @@ export default function RegisterSplit() {
       });
 
       if (needsEmailConfirmation) {
-        notifications.show({
-          color: 'blue',
-          title: 'Confirm your email',
-          message: 'Check your inbox to confirm your email, then sign in.',
-        });
+        setInfo('Check your inbox to confirm your email, then sign in.');
         navigate('/login');
       } else {
-        notifications.show({ color: 'green', title: 'Account created', message: 'Welcome! You are now signed in.' });
         navigate('/app');
       }
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Unknown error';
-      notifications.show({ color: 'red', title: 'Registration failed', message: msg });
+      setError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
       setLoading(false);
     }
   };
 
-  return (
-    <Box style={{ display: 'flex', flex: 1, alignItems: 'center', justifyContent: 'center', padding: 'var(--mantine-spacing-xl)' }}>
-      <Box maw={440} w="100%">
-        <Title order={2} mb="xs" ta="center">Create your account</Title>
-        <Text c="dimmed" mb="xl" ta="center">Start building structure from your unstructured data.</Text>
+  const inputClass =
+    'w-full rounded-md border border-input bg-transparent px-3 py-2.5 text-sm text-foreground shadow-sm transition-colors placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring';
 
-        <form onSubmit={handleSubmit}>
-          <Stack gap="md">
-            <TextInput
-              label="Full Name"
+  return (
+    <div className="flex flex-1 items-center justify-center p-6">
+      <div className="w-full max-w-110">
+        <h2 className="mb-1 text-center text-2xl font-bold tracking-tight">Create your account</h2>
+        <p className="mb-8 text-center text-muted-foreground">
+          Start building pipelines from your data.
+        </p>
+
+        {error && (
+          <div className="mb-4 rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+            {error}
+          </div>
+        )}
+        {info && (
+          <div className="mb-4 rounded-md border border-blue-500/30 bg-blue-500/10 px-4 py-3 text-sm text-blue-400">
+            {info}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <Field.Root>
+            <Field.Label className="mb-1.5 text-sm font-medium text-foreground">Full Name</Field.Label>
+            <Field.Input
+              className={inputClass}
               placeholder="Jane Doe"
               value={displayName}
-              onChange={(e) => setDisplayName(e.currentTarget.value)}
-              size="md"
+              onChange={(e) => setDisplayName(e.target.value)}
             />
-            <TextInput
-              label="Email"
+          </Field.Root>
+
+          <Field.Root required>
+            <Field.Label className="mb-1.5 text-sm font-medium text-foreground">Email</Field.Label>
+            <Field.Input
+              className={inputClass}
+              type="email"
               placeholder="name@work-email.com"
               value={email}
-              onChange={(e) => setEmail(e.currentTarget.value)}
-              required
-              size="md"
+              onChange={(e) => setEmail(e.target.value)}
             />
-            <PasswordInput
-              label="Password"
-              placeholder="Create a password"
-              value={password}
-              onChange={(e) => setPassword(e.currentTarget.value)}
-              required
-              size="md"
-            />
-            <PasswordInput
-              label="Confirm Password"
-              placeholder="Confirm your password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.currentTarget.value)}
-              required
-              size="md"
-            />
-            <Button type="submit" loading={loading} fullWidth size="md" mt="sm">
-              Create account
-            </Button>
-          </Stack>
+          </Field.Root>
+
+          <PasswordInput.Root className="flex flex-col gap-1.5">
+            <PasswordInput.Label className="text-sm font-medium text-foreground">Password</PasswordInput.Label>
+            <PasswordInput.Control className="relative flex items-center">
+              <PasswordInput.Input
+                className={inputClass + ' pr-10'}
+                placeholder="Create a password"
+                value={password}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
+                required
+              />
+              <PasswordInput.VisibilityTrigger className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex h-7 w-7 items-center justify-center rounded text-muted-foreground transition-colors hover:text-foreground">
+                <PasswordInput.Indicator fallback={<IconEyeOff size={16} />}>
+                  <IconEye size={16} />
+                </PasswordInput.Indicator>
+              </PasswordInput.VisibilityTrigger>
+            </PasswordInput.Control>
+          </PasswordInput.Root>
+
+          <PasswordInput.Root className="flex flex-col gap-1.5">
+            <PasswordInput.Label className="text-sm font-medium text-foreground">Confirm Password</PasswordInput.Label>
+            <PasswordInput.Control className="relative flex items-center">
+              <PasswordInput.Input
+                className={inputClass + ' pr-10'}
+                placeholder="Confirm your password"
+                value={confirmPassword}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setConfirmPassword(e.target.value)}
+                required
+              />
+              <PasswordInput.VisibilityTrigger className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex h-7 w-7 items-center justify-center rounded text-muted-foreground transition-colors hover:text-foreground">
+                <PasswordInput.Indicator fallback={<IconEyeOff size={16} />}>
+                  <IconEye size={16} />
+                </PasswordInput.Indicator>
+              </PasswordInput.VisibilityTrigger>
+            </PasswordInput.Control>
+          </PasswordInput.Root>
+
+          <Button type="submit" disabled={loading} className="mt-2 w-full">
+            {loading ? 'Creating account…' : 'Create account'}
+          </Button>
         </form>
 
-        <Text size="sm" c="dimmed" mt="xl" ta="center">
+        <p className="mt-8 text-center text-sm text-muted-foreground">
           Already have an account?{' '}
-          <Anchor component={Link} to="/login" fw={600} c="teal">
+          <Link to="/login" className="font-semibold text-primary hover:underline">
             Sign in
-          </Anchor>
-        </Text>
-      </Box>
-    </Box>
+          </Link>
+        </p>
+      </div>
+    </div>
   );
 }

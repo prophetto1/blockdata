@@ -13,7 +13,6 @@ const FLOW_TAB_VALUES = new Set([
   'metrics',
   'dependencies',
   'concurrency',
-  'auditlogs',
 ]);
 
 function readFocusedProjectId(): string | null {

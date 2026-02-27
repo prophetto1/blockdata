@@ -1,4 +1,4 @@
-import { Outlet } from 'react-router-dom';
+import { Outlet, ScrollRestoration } from 'react-router-dom';
 import { PublicNavModern } from './PublicNavModern';
 import { PublicFooter } from './PublicFooter';
 
@@ -6,6 +6,7 @@ import { PublicFooter } from './PublicFooter';
 export function MarketingLayout() {
   return (
     <div className="flex min-h-screen flex-col">
+      <ScrollRestoration />
       <PublicNavModern />
       <div className="flex-1">
         <Outlet />

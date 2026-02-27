@@ -1,16 +1,17 @@
-import { render, screen, waitFor } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import FlowDetail from './FlowDetail';
 
-const { fromMock, navigateMock, setSearchParamsMock, useShellHeaderTitleMock } = vi.hoisted(() => {
-  const maybeSingle = vi.fn().mockResolvedValue({
-    data: {
-      project_name: 'Default Project',
-      workspace_id: 'workspace-1',
-      description: 'Flow description',
-      updated_at: '2026-02-26T10:00:00.000Z',
-    },
-    error: null,
+const { fromMock, navigateMock, setSearchParamsMock, useShellHeaderTitleMock, edgeJsonMock, routeState, workspaceProjectsLimitMock } = vi.hoisted(() => {
+  const route = { tab: 'overview' as string | undefined };
+  const edgeJson = vi.fn().mockResolvedValue({
+    id: 'flow-1',
+    namespace: 'workspace-1',
+    revision: 1,
+    description: 'Flow description',
+    deleted: false,
+    disabled: false,
+    labels: [{ key: 'name', value: 'Default Project' }],
   });
 
   const docsLimit = vi.fn().mockResolvedValue({
@@ -51,10 +52,7 @@ const { fromMock, navigateMock, setSearchParamsMock, useShellHeaderTitleMock } =
     if (table === 'projects') {
       return {
         select: vi.fn(() => ({
-          eq: vi.fn((column: string) => {
-            if (column === 'project_id') {
-              return { maybeSingle };
-            }
+          eq: vi.fn(() => {
             return {
               order: vi.fn(() => ({
                 limit: workspaceProjectsLimit,
@@ -99,6 +97,9 @@ const { fromMock, navigateMock, setSearchParamsMock, useShellHeaderTitleMock } =
     navigateMock: vi.fn(),
     setSearchParamsMock: vi.fn(),
     useShellHeaderTitleMock: vi.fn(),
+    edgeJsonMock: edgeJson,
+    routeState: route,
+    workspaceProjectsLimitMock: workspaceProjectsLimit,
   };
 });
 
@@ -107,7 +108,7 @@ vi.mock('react-router-dom', async () => {
   return {
     ...actual,
     useNavigate: () => navigateMock,
-    useParams: () => ({ flowId: 'flow-1', tab: 'overview' }),
+    useParams: () => ({ flowId: 'flow-1', tab: routeState.tab }),
     useSearchParams: () => [new URLSearchParams(), setSearchParamsMock] as const,
   };
 });
@@ -118,11 +119,63 @@ vi.mock('@/lib/supabase', () => ({
   },
 }));
 
+vi.mock('@/lib/edge', () => ({
+  edgeJson: edgeJsonMock,
+}));
+
 vi.mock('@/components/common/useShellHeaderTitle', () => ({
   useShellHeaderTitle: useShellHeaderTitleMock,
 }));
 
 describe('FlowDetail page', () => {
+  beforeEach(() => {
+    routeState.tab = 'overview';
+    window.localStorage.clear();
+    navigateMock.mockReset();
+    setSearchParamsMock.mockReset();
+    useShellHeaderTitleMock.mockReset();
+    edgeJsonMock.mockClear();
+    fromMock.mockClear();
+    workspaceProjectsLimitMock.mockReset();
+    workspaceProjectsLimitMock.mockResolvedValue({
+      data: [{
+        project_id: 'flow-1',
+        project_name: 'Default Project',
+        updated_at: '2026-02-26T10:00:00.000Z',
+      }],
+      error: null,
+    });
+  });
+
+  afterEach(() => {
+    cleanup();
+  });
+
+  it('renders all Kestra parity tabs in canonical order', async () => {
+    render(<FlowDetail />);
+
+    await waitFor(() => {
+      expect(screen.getByLabelText('Flow sections')).toBeInTheDocument();
+    });
+
+    const tabsRoot = screen.getByLabelText('Flow sections');
+    const tabLabels = within(tabsRoot).getAllByRole('tab')
+      .map((tab) => tab.textContent?.replace(/\s+/g, ' ').trim());
+    expect(tabLabels).toEqual([
+      'Overview',
+      'Topology',
+      'Executions',
+      'Edit',
+      'Revisions',
+      'Triggers',
+      'Logs',
+      'Metrics',
+      'Dependencies',
+      'Concurrency',
+      'Audit Logs',
+    ]);
+  });
+
   it('renders flow tabs and pushes breadcrumb/title metadata to shell header', async () => {
     render(
       <FlowDetail />,
@@ -130,6 +183,10 @@ describe('FlowDetail page', () => {
 
     await waitFor(() => {
       expect(fromMock).toHaveBeenCalled();
+    });
+
+    await waitFor(() => {
+      expect(edgeJsonMock).toHaveBeenCalledWith('flows/default/flow-1');
     });
 
     await waitFor(() => {
@@ -143,10 +200,75 @@ describe('FlowDetail page', () => {
       });
     });
 
-    const overviewTab = screen.getByRole('tab', { name: /overview/i });
+    const tabsRoot = screen.getByLabelText('Flow sections');
+    const overviewTab = within(tabsRoot).getByRole('tab', { name: /overview/i });
     expect(overviewTab).toBeInTheDocument();
-    const topologyTab = screen.getByRole('tab', { name: /topology/i });
-    expect(screen.getByRole('tab', { name: /concurrency/i })).toBeInTheDocument();
+    const topologyTab = within(tabsRoot).getByRole('tab', { name: /topology/i });
+    expect(within(tabsRoot).getByRole('tab', { name: /concurrency/i })).toBeInTheDocument();
     expect(topologyTab).toBeInTheDocument();
+  });
+
+  it('keeps audit logs tab locked and prevents tab navigation when clicked', async () => {
+    render(<FlowDetail />);
+
+    await waitFor(() => {
+      expect(screen.getByLabelText('Flow sections')).toBeInTheDocument();
+    });
+
+    const tabsRoot = screen.getByLabelText('Flow sections');
+    navigateMock.mockClear();
+    const auditLogsTab = within(tabsRoot).getByRole('tab', { name: /audit logs/i });
+    fireEvent.click(auditLogsTab);
+    expect(navigateMock).not.toHaveBeenCalled();
+    expect(auditLogsTab).toHaveAttribute('aria-disabled', 'true');
+  });
+
+  it('renders locked audit logs panel without overwriting remembered open tab', async () => {
+    routeState.tab = 'auditlogs';
+    window.localStorage.setItem('flowDefaultTab', 'edit');
+    render(<FlowDetail />);
+
+    expect(await screen.findByText('Audit logs are unavailable in this edition.')).toBeInTheDocument();
+    expect(window.localStorage.getItem('flowDefaultTab')).toBe('edit');
+  });
+
+  it('disables dependencies tab when there are no sibling dependencies', async () => {
+    render(<FlowDetail />);
+
+    await waitFor(() => {
+      expect(screen.getByLabelText('Flow sections')).toBeInTheDocument();
+    });
+
+    const tabsRoot = screen.getByLabelText('Flow sections');
+    const dependenciesTab = within(tabsRoot).getByRole('tab', { name: /dependencies/i });
+    expect(dependenciesTab).toHaveAttribute('aria-disabled', 'true');
+
+    navigateMock.mockClear();
+    fireEvent.click(dependenciesTab);
+    expect(navigateMock).not.toHaveBeenCalled();
+  });
+
+  it('shows dependency count badge in tab label when sibling dependencies exist', async () => {
+    workspaceProjectsLimitMock.mockResolvedValueOnce({
+      data: [
+        {
+          project_id: 'flow-1',
+          project_name: 'Default Project',
+          updated_at: '2026-02-26T10:00:00.000Z',
+        },
+        {
+          project_id: 'flow-2',
+          project_name: 'Sibling Flow',
+          updated_at: '2026-02-26T11:00:00.000Z',
+        },
+      ],
+      error: null,
+    });
+
+    render(<FlowDetail />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('tab', { name: /dependencies \(1\)/i })).toBeInTheDocument();
+    });
   });
 });
