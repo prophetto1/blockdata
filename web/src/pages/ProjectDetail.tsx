@@ -60,18 +60,18 @@ import {
 } from '@/components/ui/dialog';
 import { DocxPreview } from '@/components/documents/DocxPreview';
 import { PdfPreview } from '@/components/documents/PdfPreview';
-import { PdfResultsHighlighter, type ParsedResultBlock } from '@/components/documents/PdfResultsHighlighter';
+import { type ParsedResultBlock } from '@/components/documents/PdfResultsHighlighter';
 import { PptxPreview } from '@/components/documents/PptxPreview';
-import { BlockViewerGridRDG } from '@/components/blocks/BlockViewerGridRDG';
 import { BlocksTab } from '@/components/project-detail/BlocksTab';
 import { MetadataTab } from '@/components/project-detail/MetadataTab';
+import { OutputsTab, type OutputFileRow } from '@/components/project-detail/OutputsTab';
+import { GridTab } from '@/components/project-detail/GridTab';
 import { ErrorAlert } from '@/components/common/ErrorAlert';
 import { DoubleArrowIcon } from '@/components/icons/DoubleArrowIcon';
 import { useShellHeaderTitle } from '@/components/common/useShellHeaderTitle';
 import { useHeaderCenter } from '@/components/shell/HeaderCenterContext';
 import { useBlockTypeRegistry } from '@/hooks/useBlockTypeRegistry';
 import { useRuns } from '@/hooks/useRuns';
-import { resolveOverlayColors } from '@/lib/doclingOverlayColors';
 import { supabase } from '@/lib/supabase';
 import { edgeJson } from '@/lib/edge';
 import { ICON_TOKENS } from '@/lib/iconTokens';
@@ -85,13 +85,11 @@ import {
   getFilenameFromLocator,
   dedupeLocators,
   sortDocumentsByUploadedAt,
-  formatBytes,
   isPdfDocument,
   isImageDocument,
   isTextDocument,
   isDocxDocument,
   isPptxDocument,
-  getDocumentFormat,
   type ProjectDocumentRow,
   type PreviewKind,
   type TestBlockCardRow,
@@ -1112,6 +1110,19 @@ export default function ProjectDetail({ mode = 'parse' }: ProjectDetailProps) {
   const hasHtmlOutput = outputHtmlLocators.length > 0 || !!outputHtmlUrl;
   const hasDoctagsOutput = outputDoctagsLocators.length > 0 || !!outputDoctagsUrl;
   const hasCitationsOutput = outputCitationsLocators.length > 0 || !!outputCitationsUrl;
+  const outputFiles: OutputFileRow[] = useMemo(() => [
+    { kind: 'docling', name: outputDoclingJsonName, available: hasDoclingOutput },
+    { kind: 'markdown', name: outputMarkdownName, available: hasMarkdownOutput },
+    { kind: 'html', name: outputHtmlName, available: hasHtmlOutput },
+    { kind: 'doctags', name: outputDoctagsName, available: hasDoctagsOutput },
+    { kind: 'citations', name: outputCitationsName, available: hasCitationsOutput },
+  ], [
+    outputDoclingJsonName, hasDoclingOutput,
+    outputMarkdownName, hasMarkdownOutput,
+    outputHtmlName, hasHtmlOutput,
+    outputDoctagsName, hasDoctagsOutput,
+    outputCitationsName, hasCitationsOutput,
+  ]);
   const shouldShowPdfToolbarHost = isRightPreviewTab && previewKind === 'pdf';
   const showMetadataOverlayToggle = (
     isRightMetadataTab
@@ -1424,176 +1435,27 @@ export default function ProjectDetail({ mode = 'parse' }: ProjectDetailProps) {
                 )}
 
                 {isRightOutputsTab && (
-                  <Box className="parse-text-preview">
-                    {!selectedDoc && (
-                      <Center h="100%">
-                        <Text size="sm" c="dimmed" ta="center">
-                          Select a document to view parser outputs.
-                        </Text>
-                      </Center>
-                    )}
-
-                    {selectedDoc && !selectedDoc.conv_uid && (
-                      <Center h="100%">
-                        <Text size="sm" c="dimmed" ta="center">
-                          No parsed outputs are available for this document yet.
-                        </Text>
-                      </Center>
-                    )}
-
-                    {selectedDoc && selectedDoc.conv_uid && outputsLoading && (
-                      <Center h="100%">
-                        <Stack align="center" gap="xs">
-                          <Loader size="sm" />
-                          <Text size="sm" c="dimmed">Loading parser outputs...</Text>
-                        </Stack>
-                      </Center>
-                    )}
-
-                    {selectedDoc && selectedDoc.conv_uid && !outputsLoading && outputsError && (
-                      <Center h="100%">
-                        <Text size="sm" c="red" ta="center">
-                          {outputsError}
-                        </Text>
-                      </Center>
-                    )}
-
-                    {selectedDoc
-                      && selectedDoc.conv_uid
-                      && !outputsLoading
-                      && !outputsError && (
-                        <Stack gap="xs" p="sm">
-                          <Text size="sm" fw={700}>Output Files</Text>
-                          <Group justify="space-between" wrap="nowrap">
-                            <Text size="sm" c={hasDoclingOutput ? undefined : 'dimmed'}>
-                              {outputDoclingJsonName ?? '[docling json unavailable]'}
-                            </Text>
-                            <Button
-                              size="xs"
-                              variant="light"
-                              onClick={() => void handleOutputDownload('docling')}
-                              loading={outputDownloadBusy === 'docling'}
-                              disabled={!hasDoclingOutput}
-                            >
-                              Download
-                            </Button>
-                          </Group>
-                          <Group justify="space-between" wrap="nowrap">
-                            <Text size="sm" c={hasMarkdownOutput ? undefined : 'dimmed'}>
-                              {outputMarkdownName ?? '[markdown unavailable]'}
-                            </Text>
-                            <Button
-                              size="xs"
-                              variant="light"
-                              onClick={() => void handleOutputDownload('markdown')}
-                              loading={outputDownloadBusy === 'markdown'}
-                              disabled={!hasMarkdownOutput}
-                            >
-                              Download
-                            </Button>
-                          </Group>
-                          <Group justify="space-between" wrap="nowrap">
-                            <Text size="sm" c={hasHtmlOutput ? undefined : 'dimmed'}>
-                              {outputHtmlName ?? '[html unavailable]'}
-                            </Text>
-                            <Button
-                              size="xs"
-                              variant="light"
-                              onClick={() => void handleOutputDownload('html')}
-                              loading={outputDownloadBusy === 'html'}
-                              disabled={!hasHtmlOutput}
-                            >
-                              Download
-                            </Button>
-                          </Group>
-                          <Group justify="space-between" wrap="nowrap">
-                            <Text size="sm" c={hasDoctagsOutput ? undefined : 'dimmed'}>
-                              {outputDoctagsName ?? '[doctags unavailable]'}
-                            </Text>
-                            <Button
-                              size="xs"
-                              variant="light"
-                              onClick={() => void handleOutputDownload('doctags')}
-                              loading={outputDownloadBusy === 'doctags'}
-                              disabled={!hasDoctagsOutput}
-                            >
-                              Download
-                            </Button>
-                          </Group>
-                          <Group justify="space-between" wrap="nowrap">
-                            <Text size="sm" c={hasCitationsOutput ? undefined : 'dimmed'}>
-                              {outputCitationsName ?? '[citations unavailable]'}
-                            </Text>
-                            <Button
-                              size="xs"
-                              variant="light"
-                              onClick={() => void handleOutputDownload('citations')}
-                              loading={outputDownloadBusy === 'citations'}
-                              disabled={!hasCitationsOutput}
-                            >
-                              Download
-                            </Button>
-                          </Group>
-                        </Stack>
-                      )}
-                  </Box>
+                  <OutputsTab
+                    selectedDoc={selectedDoc}
+                    loading={outputsLoading}
+                    error={outputsError}
+                    files={outputFiles}
+                    downloadBusy={outputDownloadBusy}
+                    onDownload={(kind) => void handleOutputDownload(kind)}
+                  />
                 )}
 
                 {isRightGridTab && (
-                  <Box style={{ height: '100%', minHeight: 0, overflow: 'hidden' }}>
-                    {!selectedDoc ? (
-                      <Center h="100%">
-                        <Text size="sm" c="dimmed" ta="center">
-                          Select a document to view parsed blocks.
-                        </Text>
-                      </Center>
-                    ) : !selectedDoc.conv_uid ? (
-                      <Center h="100%">
-                        <Text size="sm" c="dimmed" ta="center">
-                          No parsed blocks are available for this document yet.
-                        </Text>
-                      </Center>
-                    ) : (
-                      <Stack gap="xs" h="100%" p="sm">
-                        <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 border border-slate-300/70 bg-slate-100/55 px-2 py-1 dark:border-slate-600/60 dark:bg-slate-900/20">
-                          <Group gap="xs" align="center" wrap="nowrap" className="min-w-0">
-                            <Text size="sm" fw={700}>Grid</Text>
-                            <Text size="xs" c="dimmed">React Data Grid</Text>
-                          </Group>
-                          <div className="inline-flex items-stretch overflow-hidden border border-slate-300/80 bg-slate-100/80 dark:border-slate-600/60 dark:bg-slate-900/35" role="tablist" aria-label="Static tabs">
-                            <button type="button" role="tab" aria-selected className="h-6 border-r border-slate-300/70 bg-sky-100 px-3 text-[11px] font-semibold leading-none text-sky-800 dark:border-slate-600/60 dark:bg-sky-900/35 dark:text-sky-200" tabIndex={-1}>
-                              Tab One
-                            </button>
-                            <button type="button" role="tab" aria-selected={false} className="h-6 px-3 text-[11px] font-semibold leading-none text-slate-700 dark:text-slate-200" tabIndex={-1}>
-                              Tab Two
-                            </button>
-                          </div>
-                          <div className="justify-self-end">
-                            <Button
-                              size="xs"
-                              variant="default"
-                              onClick={() => void handleRunCitations()}
-                              loading={runCitationsBusy}
-                            >
-                              {hasCitationsOutput ? 'Regenerate citations' : 'Run citations'}
-                            </Button>
-                          </div>
-                        </div>
-                        {(outputsNotice || outputsError) && (
-                          <Text size="xs" c={outputsError ? 'red' : 'dimmed'}>
-                            {outputsError ?? outputsNotice}
-                          </Text>
-                        )}
-                        <Box style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-                          <BlockViewerGridRDG
-                            convUid={selectedDoc.conv_uid}
-                            selectedRunId={selectedRunId}
-                            selectedRun={selectedRun}
-                          />
-                        </Box>
-                      </Stack>
-                    )}
-                  </Box>
+                  <GridTab
+                    selectedDoc={selectedDoc}
+                    selectedRunId={selectedRunId}
+                    selectedRun={selectedRun}
+                    outputsNotice={outputsNotice}
+                    outputsError={outputsError}
+                    runCitationsBusy={runCitationsBusy}
+                    hasCitationsOutput={hasCitationsOutput}
+                    onRunCitations={() => void handleRunCitations()}
+                  />
                 )}
               </Box>
             </Box>

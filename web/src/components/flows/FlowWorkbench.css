@@ -66,13 +66,44 @@
 .flow-workbench-playground-toggle {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   font-size: 13px;
   color: var(--foreground);
+  cursor: pointer;
 }
 
-.flow-workbench-playground-toggle input {
-  accent-color: var(--flow-workbench-accent);
+.flow-workbench-switch-control {
+  display: inline-flex;
+  align-items: center;
+  width: 32px;
+  height: 18px;
+  border-radius: 9px;
+  background: color-mix(in oklab, var(--muted-foreground) 30%, transparent);
+  transition: background-color 150ms ease;
+  flex-shrink: 0;
+}
+
+.flow-workbench-switch-control[data-state='checked'] {
+  background: var(--flow-workbench-accent);
+}
+
+.flow-workbench-switch-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--background);
+  transform: translateX(2px);
+  transition: transform 150ms ease;
+}
+
+.flow-workbench-switch-thumb[data-state='checked'] {
+  transform: translateX(16px);
+}
+
+.flow-workbench-switch-label {
+  font-size: 13px;
+  font-weight: 600;
+  user-select: none;
 }
 
 .flow-workbench-validate-button,
@@ -94,6 +125,49 @@
   justify-content: center;
   width: 32px;
   padding: 0;
+}
+
+.flow-workbench-copy-button {
+  height: 32px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--background);
+  color: var(--foreground);
+  padding: 0 10px;
+  font-size: 13px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+}
+
+.flow-workbench-copy-button:hover {
+  background: color-mix(in oklab, var(--background) 80%, var(--foreground) 20%);
+}
+
+.flow-workbench-copy-button[data-copied] {
+  color: var(--flow-workbench-accent);
+  border-color: color-mix(in oklab, var(--flow-workbench-accent) 40%, var(--border));
+}
+
+.flow-workbench-tooltip {
+  background: var(--foreground);
+  color: var(--background);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 4px 8px;
+  border-radius: 4px;
+  z-index: 50;
+}
+
+.flow-workbench-tooltip[data-state='open'] {
+  animation: flow-tooltip-in 120ms ease-out;
+}
+
+@keyframes flow-tooltip-in {
+  from { opacity: 0; transform: translateY(2px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .flow-workbench-save-button:disabled {

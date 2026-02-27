@@ -26,8 +26,12 @@ import {
   DialogTrigger,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { Clipboard } from '@ark-ui/react/clipboard';
 import { FileUpload as ArkFileUpload } from '@ark-ui/react/file-upload';
+import { Portal } from '@ark-ui/react/portal';
 import { Splitter } from '@ark-ui/react/splitter';
+import { Switch } from '@ark-ui/react/switch';
+import { Tooltip } from '@ark-ui/react/tooltip';
 import { TreeView, createTreeCollection, type TreeNode } from '@ark-ui/react/tree-view';
 import { edgeJson } from '@/lib/edge';
 import FlowCanvas from './FlowCanvas';
@@ -837,14 +841,11 @@ export default function FlowWorkbench({ flowId, flowName, namespace }: FlowWorkb
     setActionNotice('Flow code cleared.');
   }, []);
 
-  const handleCopyFlow = useCallback(async () => {
-    if (typeof navigator === 'undefined' || !navigator.clipboard?.writeText) {
-      setActionNotice('Clipboard not available in this browser.');
-      return;
+  const onCopyStatusChange = useCallback((details: { copied: boolean }) => {
+    if (details.copied) {
+      setActionNotice('Flow code copied.');
     }
-    await navigator.clipboard.writeText(codeDraft);
-    setActionNotice('Flow code copied.');
-  }, [codeDraft]);
+  }, []);
 
   const handleValidateFlow = useCallback(async () => {
     setIsValidating(true);
@@ -1107,26 +1108,38 @@ export default function FlowWorkbench({ flowId, flowName, namespace }: FlowWorkb
         </div>
 
         <div className="flow-workbench-toolbar-actions">
-          <label className="flow-workbench-playground-toggle">
-            <input
-              type="checkbox"
-              checked={playgroundOpen}
-              onChange={(event) => setPlaygroundOpen(event.currentTarget.checked)}
-              aria-label="Playground"
-            />
-            <span>Playground</span>
-          </label>
-
-          <button
-            type="button"
-            aria-label="Validate flow"
-            className="flow-workbench-validate-button"
-            onClick={() => { void handleValidateFlow(); }}
-            title="Validate flow"
-            disabled={isValidating}
+          <Switch.Root
+            checked={playgroundOpen}
+            onCheckedChange={(details) => setPlaygroundOpen(details.checked)}
+            className="flow-workbench-playground-toggle"
           >
-            <IconCheck size={14} />
-          </button>
+            <Switch.Control className="flow-workbench-switch-control">
+              <Switch.Thumb className="flow-workbench-switch-thumb" />
+            </Switch.Control>
+            <Switch.Label className="flow-workbench-switch-label">Playground</Switch.Label>
+            <Switch.HiddenInput />
+          </Switch.Root>
+
+          <Tooltip.Root openDelay={400} closeDelay={100}>
+            <Tooltip.Trigger asChild>
+              <button
+                type="button"
+                aria-label="Validate flow"
+                className="flow-workbench-validate-button"
+                onClick={() => { void handleValidateFlow(); }}
+                disabled={isValidating}
+              >
+                <IconCheck size={14} />
+              </button>
+            </Tooltip.Trigger>
+            <Portal>
+              <Tooltip.Positioner>
+                <Tooltip.Content className="flow-workbench-tooltip">
+                  Validate flow
+                </Tooltip.Content>
+              </Tooltip.Positioner>
+            </Portal>
+          </Tooltip.Root>
 
           <MenuRoot positioning={{ placement: 'bottom-end', offset: { mainAxis: 6 } }}>
             <MenuTrigger className="flow-workbench-actions-trigger">
@@ -1137,11 +1150,19 @@ export default function FlowWorkbench({ flowId, flowName, namespace }: FlowWorkb
                 <MenuContent>
                   <MenuItem value="export-flow" onClick={handleExportFlow}>Export flow</MenuItem>
                   <MenuItem value="delete-flow" onClick={handleDeleteFlow}>Delete</MenuItem>
-                  <MenuItem value="copy-flow" onClick={() => { void handleCopyFlow(); }}>Copy</MenuItem>
                 </MenuContent>
               </MenuPositioner>
             </MenuPortal>
           </MenuRoot>
+
+          <Clipboard.Root value={codeDraft} onStatusChange={onCopyStatusChange}>
+            <Clipboard.Trigger className="flow-workbench-copy-button">
+              <Clipboard.Indicator copied={<IconCheck size={14} />}>
+                <IconCode size={14} />
+              </Clipboard.Indicator>
+              <span>Copy</span>
+            </Clipboard.Trigger>
+          </Clipboard.Root>
 
           {isDirty ? (
             <span className="flow-workbench-dirty-indicator" role="status">
