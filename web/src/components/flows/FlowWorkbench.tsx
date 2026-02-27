@@ -28,7 +28,10 @@ import { Portal } from '@ark-ui/react/portal';
 import { Splitter } from '@ark-ui/react/splitter';
 import { Switch } from '@ark-ui/react/switch';
 import { Tooltip } from '@ark-ui/react/tooltip';
-import { edgeJson } from '@/lib/edge';
+import { edgeFetch, edgeJson } from '@/lib/edge';
+import { fetchAllProjectDocuments } from '@/lib/projectDocuments';
+import { getDocumentFormat, type ProjectDocumentRow, sortDocumentsByUploadedAt } from '@/lib/projectDetailHelpers';
+import { supabase } from '@/lib/supabase';
 import FlowCanvas from './FlowCanvas';
 import {
   activateTabInPane,
@@ -99,6 +102,7 @@ const MIN_PANE_PERCENT = 18;
 const SAVE_KEY_PREFIX = 'flow-workbench-layout';
 const FILES_SAVE_KEY_PREFIX = 'flow-workbench-files';
 const DRAG_PAYLOAD_MIME = 'application/x-flow-workbench-drag';
+const DOCUMENTS_BUCKET = (import.meta.env.VITE_DOCUMENTS_BUCKET as string | undefined) ?? 'documents';
 
 const TAB_IDS = FLOW_WORKBENCH_TABS.map((tab) => tab.id) as readonly PaneTabId[];
 
@@ -251,11 +255,94 @@ function readPersistedPanes(saveKey: string): Pane[] | null {
         width: Number.isFinite(item.width) && item.width > 0 ? item.width : 100 / parsed.length,
       };
     });
+    if (!normalized.some((pane) => pane.tabs.includes('topology'))) {
+      const targetIndex = normalized.length > 1 ? 1 : 0;
+      const targetPane = normalized[targetIndex];
+      if (targetPane) {
+        const nextTabs = targetPane.tabs.includes('topology')
+          ? targetPane.tabs
+          : [...targetPane.tabs, 'topology' as PaneTabId];
+        normalized[targetIndex] = {
+          ...targetPane,
+          tabs: nextTabs,
+          activeTab: targetPane.activeTab,
+        };
+      }
+    }
 
     return normalizePaneWidths(normalized);
   } catch {
     return null;
   }
+}
+
+function normalizePath(value: string): string {
+  return value
+    .replace(/\\/g, '/')
+    .split('/')
+    .map((part) => part.trim())
+    .filter((part) => part.length > 0)
+    .join('/');
+}
+
+function ensureFileExtension(path: string, fallbackExtension = '.txt'): string {
+  const parts = normalizePath(path).split('/').filter((part) => part.length > 0);
+  if (parts.length === 0) return '';
+  const fileName = parts[parts.length - 1] ?? '';
+  if (fileName.includes('.')) return parts.join('/');
+  parts[parts.length - 1] = `${fileName}${fallbackExtension}`;
+  return parts.join('/');
+}
+
+function createDefaultTextFileContents(fileName: string): string {
+  const timestamp = new Date().toISOString();
+  return `# ${fileName}\n\nCreated ${timestamp}\n`;
+}
+
+type FilesTreeNode = {
+  id: string;
+  label: string;
+  kind: 'folder' | 'file';
+  path?: string;
+  children?: FilesTreeNode[];
+  size?: number;
+  date?: Date;
+};
+
+type MutableFolderNode = {
+  id: string;
+  label: string;
+  path?: string;
+  folders: Map<string, MutableFolderNode>;
+  files: FilesTreeNode[];
+};
+
+function formatBytes(value?: number): string {
+  if (!value || !Number.isFinite(value) || value <= 0) return '0 B';
+  const units = ['B', 'KB', 'MB', 'GB'];
+  let size = value;
+  let index = 0;
+  while (size >= 1024 && index < units.length - 1) {
+    size /= 1024;
+    index += 1;
+  }
+  const precision = index === 0 ? 0 : 1;
+  return `${size.toFixed(precision)} ${units[index]}`;
+}
+
+function collectFolderNodeIds(nodes: FilesTreeNode[]): string[] {
+  const result: string[] = [];
+  const walk = (input: FilesTreeNode[]) => {
+    for (const node of input) {
+      if (node.kind !== 'folder') continue;
+      result.push(node.id);
+      if (node.children?.length) {
+        walk(node.children);
+      }
+    }
+  };
+  walk(nodes);
+  return result;
 }
 
 function getUploadedPath(file: File): string {
@@ -265,7 +352,7 @@ function getUploadedPath(file: File): string {
 }
 
 function normalizeFilePath(input: string): string {
-  return input.trim().replace(/^\/+/, '').replace(/\/+$/, '');
+  return normalizePath(input).replace(/^\/+/, '').replace(/\/+$/, '');
 }
 
 function readPersistedFileEntries(storageKey: string): FileTreeEntry[] {
@@ -324,24 +411,6 @@ function writePersistedFileEntries(storageKey: string, entries: FileTreeEntry[])
   window.localStorage.setItem(storageKey, JSON.stringify(normalized));
 }
 
-type FilesTreeNode = {
-  id: string;
-  label: string;
-  kind: 'folder' | 'file';
-  path: string;
-  children?: FilesTreeNode[];
-  size?: number;
-  date?: Date;
-};
-
-type MutableFolderNode = {
-  id: string;
-  label: string;
-  path: string;
-  folders: Map<string, MutableFolderNode>;
-  files: FilesTreeNode[];
-};
-
 function parseTreeNodeId(id: string | null): { kind: 'folder' | 'file'; path: string } | null {
   if (!id) return null;
   if (id.startsWith('folder:')) return { kind: 'folder', path: normalizeFilePath(id.slice('folder:'.length)) };
@@ -355,25 +424,19 @@ function getParentPath(path: string): string {
   return normalized.split('/').slice(0, -1).join('/');
 }
 
-function formatBytes(value?: number): string {
-  if (!value || !Number.isFinite(value) || value <= 0) return '0 B';
-  const units = ['B', 'KB', 'MB', 'GB'];
-  let size = value;
-  let index = 0;
-  while (size >= 1024 && index < units.length - 1) {
-    size /= 1024;
-    index += 1;
-  }
-  const precision = index === 0 ? 0 : 1;
-  return `${size.toFixed(precision)} ${units[index]}`;
+function getDisplayPathFromDoc(doc: ProjectDocumentRow): string {
+  const titlePath = normalizeFilePath(doc.doc_title ?? '');
+  if (titlePath) return titlePath;
+  const locatorPath = normalizeFilePath(doc.source_locator ?? '');
+  if (locatorPath) return locatorPath.split('/').pop() ?? locatorPath;
+  return doc.source_uid;
 }
 
-function buildFilesTreeNodes(entries: FileTreeEntry[]): FilesTreeNode[] {
+function buildFilesTreeNodesFromEntries(entries: FileTreeEntry[]): FilesTreeNode[] {
   const root: MutableFolderNode = {
     id: 'folder:',
     label: '',
-    path: '',
-    folders: new Map(),
+    folders: new Map<string, MutableFolderNode>(),
     files: [],
   };
 
@@ -393,8 +456,7 @@ function buildFilesTreeNodes(entries: FileTreeEntry[]): FilesTreeNode[] {
       const created: MutableFolderNode = {
         id: `folder:${cursorPath}`,
         label: segment,
-        path: cursorPath,
-        folders: new Map(),
+        folders: new Map<string, MutableFolderNode>(),
         files: [],
       };
       cursor.folders.set(segment, created);
@@ -435,9 +497,7 @@ function buildFilesTreeNodes(entries: FileTreeEntry[]): FilesTreeNode[] {
         path: child.path,
         children: toNodes(child),
       }));
-    const fileNodes = [...folder.files]
-      .sort((left, right) => left.label.localeCompare(right.label))
-      .map((file) => ({ ...file }));
+    const fileNodes = folder.files.map((file) => ({ ...file }));
     return [...folderNodes, ...fileNodes];
   };
 
@@ -451,7 +511,7 @@ function filterFilesTreeNodes(nodes: FilesTreeNode[], query: string): FilesTreeN
   const walk = (input: FilesTreeNode[]): FilesTreeNode[] => input.flatMap((node) => {
     const filteredChildren = node.children ? walk(node.children) : undefined;
     const matches = node.label.toLowerCase().includes(normalizedQuery)
-      || node.path.toLowerCase().includes(normalizedQuery);
+      || (node.path ?? '').toLowerCase().includes(normalizedQuery);
     if (!matches && (!filteredChildren || filteredChildren.length === 0)) return [];
     return [{ ...node, children: filteredChildren }];
   });
@@ -459,21 +519,12 @@ function filterFilesTreeNodes(nodes: FilesTreeNode[], query: string): FilesTreeN
   return walk(nodes);
 }
 
-function collectFolderNodeIds(nodes: FilesTreeNode[]): string[] {
-  const result: string[] = [];
-  const walk = (input: FilesTreeNode[]) => {
-    input.forEach((node) => {
-      if (node.kind !== 'folder') return;
-      result.push(node.id);
-      if (node.children && node.children.length > 0) walk(node.children);
-    });
-  };
-  walk(nodes);
-  return result;
-}
-
-function FilesTree({ storageKey }: { storageKey: string }) {
+function FilesTree({ storageKey, projectId }: { storageKey: string; projectId: string | null }) {
   const [localEntries, setLocalEntries] = useState<FileTreeEntry[]>(() => readPersistedFileEntries(storageKey));
+  const [docByPath, setDocByPath] = useState<Map<string, ProjectDocumentRow>>(() => new Map());
+  const [docsLoading, setDocsLoading] = useState(false);
+  const [docsError, setDocsError] = useState<string | null>(null);
+  const [sortMode, setSortMode] = useState<'recent' | 'name'>('recent');
   const [filesQuery, setFilesQuery] = useState('');
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [expandedValue, setExpandedValue] = useState<string[]>([]);
@@ -483,36 +534,129 @@ function FilesTree({ storageKey }: { storageKey: string }) {
   const hasAutoExpandedRef = useRef(false);
 
   useEffect(() => {
-    const persisted = readPersistedFileEntries(storageKey);
+    const persisted = readPersistedFileEntries(storageKey).filter((entry) => !entry.isFile);
     setLocalEntries(persisted);
     setSelectedNodeId(null);
     setExpandedValue([]);
+    setDocByPath(new Map());
+    setDocsError(null);
     hasAutoExpandedRef.current = false;
   }, [storageKey]);
 
-  const mergeUploadedFiles = useCallback((files: File[]) => {
-    if (files.length === 0) return;
-    setLocalEntries((current) => {
-      const map = new Map<string, FileTreeEntry>(current.map((entry) => [entry.path, entry]));
-      files.forEach((file) => {
-        const normalized = normalizeFilePath(getUploadedPath(file));
-        if (!normalized) return;
-        map.set(normalized, {
-          path: normalized,
+  const loadProjectDocs = useCallback(async () => {
+    if (!projectId) {
+      setDocsLoading(false);
+      setDocsError(null);
+      setDocByPath(new Map());
+      setLocalEntries((current) => current.filter((entry) => !entry.isFile));
+      return;
+    }
+
+    setDocsLoading(true);
+    setDocsError(null);
+    try {
+      const docs = await fetchAllProjectDocuments<ProjectDocumentRow>({
+        projectId,
+        select: '*',
+      });
+      const sortedDocs = sortMode === 'recent'
+        ? sortDocumentsByUploadedAt(docs)
+        : [...docs].sort((left, right) =>
+          getDisplayPathFromDoc(left).localeCompare(
+            getDisplayPathFromDoc(right),
+            undefined,
+            { sensitivity: 'base', numeric: true },
+          ),
+        );
+      const docEntries: FileTreeEntry[] = [];
+      const nextDocMap = new Map<string, ProjectDocumentRow>();
+      sortedDocs.forEach((doc) => {
+        const displayPath = normalizeFilePath(getDisplayPathFromDoc(doc));
+        if (!displayPath) return;
+        let uniqueDisplayPath = displayPath;
+        let duplicateIndex = 2;
+        while (nextDocMap.has(uniqueDisplayPath)) {
+          const parentPath = getParentPath(displayPath);
+          const fileName = displayPath.split('/').pop() ?? displayPath;
+          const suffixName = `${fileName} (${duplicateIndex})`;
+          uniqueDisplayPath = parentPath ? `${parentPath}/${suffixName}` : suffixName;
+          duplicateIndex += 1;
+        }
+        nextDocMap.set(uniqueDisplayPath, doc);
+        docEntries.push({
+          path: uniqueDisplayPath,
           isFile: true,
-          size: file.size,
-          date: new Date(file.lastModified || Date.now()),
+          size: typeof doc.source_filesize === 'number' ? doc.source_filesize : undefined,
+          date: doc.uploaded_at ? new Date(doc.uploaded_at) : undefined,
         });
       });
-      return Array.from(map.values());
-    });
-  }, []);
+      setDocByPath(nextDocMap);
+      setLocalEntries((current) => {
+        const folders = current.filter((entry) => !entry.isFile);
+        return [...folders, ...docEntries];
+      });
+      setDocsLoading(false);
+    } catch (error) {
+      setDocsLoading(false);
+      setDocsError(error instanceof Error ? error.message : String(error));
+    }
+  }, [projectId, sortMode]);
+
+  useEffect(() => {
+    void loadProjectDocs();
+  }, [loadProjectDocs]);
+
+  const uploadFiles = useCallback(async (files: File[]) => {
+    if (!projectId || files.length === 0) return;
+    setDocsError(null);
+    let firstError: string | null = null;
+
+    for (const file of files) {
+      const relativePath = normalizeFilePath(getUploadedPath(file));
+      const formData = new FormData();
+      formData.append('file', file, file.name);
+      formData.append('project_id', projectId);
+      formData.append('ingest_mode', 'upload_only');
+      if (relativePath.length > 0) {
+        formData.append('doc_title', relativePath);
+      }
+
+      try {
+        const response = await edgeFetch('ingest', { method: 'POST', body: formData });
+        const text = await response.text();
+        if (!response.ok) {
+          let message = text || `HTTP ${response.status}`;
+          try {
+            const parsed = JSON.parse(text) as { error?: string };
+            if (typeof parsed.error === 'string' && parsed.error.trim().length > 0) {
+              message = parsed.error.trim();
+            }
+          } catch {
+            // Keep raw response text when JSON parsing fails.
+          }
+          if (!firstError) {
+            firstError = `Upload failed for ${file.name}: ${message}`;
+          }
+        }
+      } catch (error) {
+        if (!firstError) {
+          const message = error instanceof Error ? error.message : String(error);
+          firstError = `Upload failed for ${file.name}: ${message}`;
+        }
+      }
+    }
+
+    await loadProjectDocs();
+    if (firstError) {
+      setDocsError(firstError);
+    }
+  }, [projectId, loadProjectDocs]);
 
   useEffect(() => {
     writePersistedFileEntries(storageKey, localEntries);
   }, [localEntries, storageKey]);
 
-  const treeNodes = useMemo(() => filterFilesTreeNodes(buildFilesTreeNodes(localEntries), filesQuery), [filesQuery, localEntries]);
+  const treeNodes = useMemo(() => filterFilesTreeNodes(buildFilesTreeNodesFromEntries(localEntries), filesQuery), [filesQuery, localEntries]);
   const treeCollection = useMemo(() => createTreeCollection<FilesTreeNode>({
     nodeToValue: (node) => node.id,
     nodeToString: (node) => node.label,
@@ -543,57 +687,77 @@ function FilesTree({ storageKey }: { storageKey: string }) {
 
   const createTargetFolderId = createTargetFolderPath ? `folder:${createTargetFolderPath}` : null;
 
-  const handleCreateEntry = useCallback((name: string, kind: 'file' | 'folder') => {
+  const handleCreateEntry = useCallback(async (name: string, kind: 'file' | 'folder') => {
     const trimmed = name.trim();
     if (!trimmed) return;
     const targetFolder = createTargetFolderPath;
     const nextPath = normalizeFilePath(targetFolder ? `${targetFolder}/${trimmed}` : trimmed);
     if (!nextPath) return;
-    setLocalEntries((current) => {
-      const map = new Map<string, FileTreeEntry>(current.map((entry) => [entry.path, entry]));
-      if (map.has(nextPath)) return current;
-      map.set(nextPath, {
-        path: nextPath,
-        isFile: kind === 'file',
-        size: kind === 'file' ? 0 : undefined,
-        date: new Date(),
+
+    if (kind === 'folder') {
+      setLocalEntries((current) => {
+        const map = new Map<string, FileTreeEntry>(current.map((entry) => [entry.path, entry]));
+        if (map.has(nextPath)) return current;
+        map.set(nextPath, { path: nextPath, isFile: false, date: new Date() });
+        return Array.from(map.values());
       });
-      return Array.from(map.values());
-    });
+      setCreatingType(null);
+      setCreateName('');
+      setSelectedNodeId(`folder:${nextPath}`);
+      return;
+    }
+
+    if (!projectId) return;
+    const filePath = ensureFileExtension(nextPath);
+    if (!filePath) return;
+    const fileName = filePath.split('/').filter((part) => part.length > 0).pop() ?? filePath;
+    const createdFile = new File([createDefaultTextFileContents(fileName)], fileName, { type: 'text/plain' });
     setCreatingType(null);
     setCreateName('');
-    setSelectedNodeId(`${kind}:${nextPath}`);
-  }, [createTargetFolderPath]);
+    const formData = new FormData();
+    formData.append('file', createdFile, createdFile.name);
+    formData.append('project_id', projectId);
+    formData.append('ingest_mode', 'upload_only');
+    formData.append('doc_title', filePath);
+    const response = await edgeFetch('ingest', { method: 'POST', body: formData });
+    if (!response.ok) {
+      const text = await response.text();
+      setDocsError(text || `Upload failed: HTTP ${response.status}`);
+      return;
+    }
+    await loadProjectDocs();
+    setSelectedNodeId(`file:${filePath}`);
+  }, [createTargetFolderPath, loadProjectDocs, projectId]);
 
-  const handleDeleteSelected = useCallback(() => {
+  const handleDeleteSelected = useCallback(async () => {
     const selectedPath = selectedNode?.path;
     if (!selectedPath) return;
+    const doc = docByPath.get(selectedPath);
+
+    if (doc) {
+      setDocsError(null);
+      const { error: deleteError } = await supabase.rpc('delete_document', { p_source_uid: doc.source_uid });
+      if (deleteError) {
+        setDocsError(deleteError.message);
+        return;
+      }
+      const locator = doc.source_locator?.replace(/^\/+/, '');
+      if (locator) {
+        const { error: storageError } = await supabase.storage.from(DOCUMENTS_BUCKET).remove([locator]);
+        if (storageError) {
+          setDocsError(`Deleted record, but failed to remove file: ${storageError.message}`);
+        }
+      }
+      setSelectedNodeId(null);
+      await loadProjectDocs();
+      return;
+    }
+
     setLocalEntries((current) => current.filter((entry) => (
       entry.path !== selectedPath && !entry.path.startsWith(`${selectedPath}/`)
     )));
     setSelectedNodeId(null);
-  }, [selectedNode]);
-
-  const handleRenameComplete = useCallback((details: { value: string; indexPath: number[] }) => {
-    const node = treeCollection.at(details.indexPath) as FilesTreeNode | undefined;
-    if (!node) return;
-    const parsed = parseTreeNodeId(node.id);
-    if (!parsed) return;
-    const newLabel = details.value.trim();
-    if (!newLabel || newLabel === node.label) return;
-    const oldPath = parsed.path;
-    const parentPath = getParentPath(oldPath);
-    const newPath = normalizeFilePath(parentPath ? `${parentPath}/${newLabel}` : newLabel);
-    if (!newPath || newPath === oldPath) return;
-    setLocalEntries((current) => current.map((entry) => {
-      if (entry.path === oldPath || entry.path.startsWith(`${oldPath}/`)) {
-        const suffix = entry.path.slice(oldPath.length);
-        return { ...entry, path: `${newPath}${suffix}` };
-      }
-      return entry;
-    }));
-    setSelectedNodeId(`${parsed.kind}:${newPath}`);
-  }, [treeCollection]);
+  }, [docByPath, loadProjectDocs, selectedNode]);
 
   return (
     <div className="flow-workbench-filemanager-wrap flow-workbench-files-ark">
@@ -604,7 +768,7 @@ function FilesTree({ storageKey }: { storageKey: string }) {
         className="sr-only"
         onChange={(event) => {
           const files = event.currentTarget.files ? Array.from(event.currentTarget.files) : [];
-          mergeUploadedFiles(files);
+          void uploadFiles(files);
           event.currentTarget.value = '';
         }}
       />
@@ -618,6 +782,22 @@ function FilesTree({ storageKey }: { storageKey: string }) {
             aria-label="Search files"
             className="flow-workbench-files-search"
           />
+          <div className="flow-workbench-files-sort" role="group" aria-label="Sort files">
+            <button
+              type="button"
+              className={`flow-workbench-files-sort-btn${sortMode === 'recent' ? ' is-active' : ''}`}
+              onClick={() => setSortMode('recent')}
+            >
+              Recent
+            </button>
+            <button
+              type="button"
+              className={`flow-workbench-files-sort-btn${sortMode === 'name' ? ' is-active' : ''}`}
+              onClick={() => setSortMode('name')}
+            >
+              A-Z
+            </button>
+          </div>
           <div className="flow-workbench-files-actions">
             <button
               type="button"
@@ -670,11 +850,17 @@ function FilesTree({ storageKey }: { storageKey: string }) {
         </div>
       </div>
       <div className="flow-workbench-files-tree-area">
-        {treeNodes.length === 0 ? (
+        {docsLoading ? (
+          <div className="flow-workbench-files-empty">Loading project files...</div>
+        ) : null}
+        {!docsLoading && docsError ? (
+          <div className="flow-workbench-files-empty">{docsError}</div>
+        ) : null}
+        {!docsLoading && !docsError && treeNodes.length === 0 ? (
           <div className="flow-workbench-files-empty">
             {filesQuery.trim().length > 0 ? 'No files match that filter.' : 'No files yet.'}
           </div>
-        ) : (
+        ) : !docsLoading && !docsError ? (
           <TreeView.Root
             collection={treeCollection}
             selectionMode="single"
@@ -686,8 +872,6 @@ function FilesTree({ storageKey }: { storageKey: string }) {
               const nextSelected = details.selectedValue[0];
               setSelectedNodeId(nextSelected ?? null);
             }}
-            canRename={() => true}
-            onRenameComplete={handleRenameComplete}
             className="text-xs"
           >
             <TreeView.Tree className="flex flex-col" aria-label="Flow files">
@@ -753,6 +937,8 @@ function FilesTree({ storageKey }: { storageKey: string }) {
                               ? 'flow-workbench-files-row-selected'
                               : 'flow-workbench-files-row-hover'
                           }`;
+                          const fileDoc = node.path ? docByPath.get(node.path) : undefined;
+                          const failed = (fileDoc?.status ?? '').toLowerCase().includes('failed');
                           if (state.isBranch || node.kind === 'folder') {
                             return (
                               <>
@@ -781,7 +967,20 @@ function FilesTree({ storageKey }: { storageKey: string }) {
                                 ) : (
                                   <>
                                     <span className="min-w-0 flex-1 truncate text-foreground">{node.label}</span>
+                                    <span className="shrink-0 text-muted-foreground">{fileDoc ? getDocumentFormat(fileDoc) : '--'}</span>
                                     <span className="shrink-0 text-muted-foreground">{formatBytes(node.size)}</span>
+                                    {fileDoc ? (
+                                      <span
+                                        className={[
+                                          'shrink-0 rounded px-1.5 py-0.5 text-[10px]',
+                                          failed
+                                            ? 'bg-red-500/15 text-red-700 dark:text-red-300'
+                                            : 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300',
+                                        ].join(' ')}
+                                      >
+                                        {failed ? 'failed' : 'success'}
+                                      </span>
+                                    ) : null}
                                   </>
                                 )}
                               </TreeView.ItemText>
@@ -795,7 +994,7 @@ function FilesTree({ storageKey }: { storageKey: string }) {
               </TreeView.Context>
             </TreeView.Tree>
           </TreeView.Root>
-        )}
+        ) : null}
       </div>
     </div>
   );
@@ -808,6 +1007,7 @@ function renderTabContent(
   setCodeDraft: (next: string) => void,
   monacoTheme: string,
   filesStorageKey: string,
+  projectId: string,
 ) {
   switch (tabId) {
     case 'flowCode':
@@ -852,7 +1052,7 @@ function renderTabContent(
       );
     case 'files':
       return (
-        <FilesTree storageKey={filesStorageKey} />
+        <FilesTree storageKey={filesStorageKey} projectId={projectId} />
       );
     case 'blueprints':
       return (
@@ -1619,6 +1819,7 @@ export default function FlowWorkbench({ flowId, flowName, namespace }: FlowWorkb
                   setCodeDraft,
                   monacoTheme,
                   filesSaveKey,
+                  flowId,
                 )}
               </div>
             </Splitter.Panel>

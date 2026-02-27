@@ -4,7 +4,7 @@
   --flow-workbench-editor-bg: color-mix(in oklab, var(--card) 92%, var(--background) 8%);
   width: 100%;
   min-width: 0;
-  min-height: 640px;
+  min-height: 720px;
 }
 
 .flow-workbench-toolbar {
@@ -208,7 +208,7 @@
 }
 
 .flow-workbench-multipane {
-  min-height: 600px;
+  min-height: 680px;
   display: flex;
   align-items: stretch;
   border: 1px solid var(--border);
@@ -229,10 +229,10 @@
 }
 
 .flow-workbench-pane-tabs {
-  min-height: 32px;
+  min-height: 33px;
   display: grid;
   grid-template-columns: 28px minmax(0, 1fr) auto;
-  align-items: center;
+  align-items: stretch;
   gap: 0;
   border-bottom: 1px solid var(--border);
   background: var(--card);
@@ -267,7 +267,7 @@
 .flow-workbench-tab-list {
   min-width: 0;
   display: flex;
-  align-items: center;
+  align-items: stretch;
   overflow: auto hidden;
   scrollbar-width: none;
 }
@@ -423,6 +423,35 @@
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+}
+
+.flow-workbench-files-sort {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.flow-workbench-files-sort-btn {
+  height: 24px;
+  border: 0;
+  background: transparent;
+  color: var(--muted-foreground);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 0 8px;
+  cursor: pointer;
+}
+
+.flow-workbench-files-sort-btn + .flow-workbench-files-sort-btn {
+  border-left: 1px solid var(--border);
+}
+
+.flow-workbench-files-sort-btn.is-active {
+  background: var(--background);
+  color: var(--foreground);
+  box-shadow: inset 0 -1px 0 var(--primary);
 }
 
 .flow-workbench-files-search {

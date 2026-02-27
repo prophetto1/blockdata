@@ -25,6 +25,20 @@ type ProjectRow = {
   updated_at: string | null;
 };
 
+function readFocusedProjectId(): string | null {
+  if (typeof window === 'undefined') return null;
+  const raw = window.localStorage.getItem(PROJECT_FOCUS_STORAGE_KEY);
+  const value = raw?.trim() ?? '';
+  if (!value) return null;
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    if (typeof parsed === 'string' && parsed.trim().length > 0) return parsed.trim();
+  } catch {
+    // Keep non-JSON storage format for backward compatibility.
+  }
+  return value;
+}
+
 function formatDate(value: string | null | undefined): string {
   if (!value) return '--';
   const parsed = new Date(value);
@@ -94,26 +108,6 @@ export default function FlowsList() {
         .order('updated_at', { ascending: false })
         .limit(FLOW_LIST_LIMIT);
 
-      const selectBase = 'project_id, source, revision, created_at, updated_at';
-      const withProject = await supabase
-        .from('flow_sources')
-        .select(`${selectBase}, projects(project_name)`)
-        .order('updated_at', { ascending: false })
-        .limit(FLOW_LIST_LIMIT);
-
-      let data = withProject.data as Array<Record<string, unknown>> | null;
-      let queryError = withProject.error;
-
-      if (queryError) {
-        const fallback = await supabase
-          .from('flow_sources')
-          .select(selectBase)
-          .order('updated_at', { ascending: false })
-          .limit(FLOW_LIST_LIMIT);
-        data = fallback.data as Array<Record<string, unknown>> | null;
-        queryError = fallback.error;
-      }
-
       if (cancelled) return;
 
       if (projectsQuery.error) {
@@ -123,12 +117,53 @@ export default function FlowsList() {
         return;
       }
 
-      if (queryError) {
-        queryError = null;
-        data = [];
+      const projectRows = (projectsQuery.data ?? []) as ProjectRow[];
+      const focusedProjectId = readFocusedProjectId();
+      const targetProject = (
+        projectRows.find((project) => project.project_id === focusedProjectId)
+        ?? projectRows.find((project) => project.project_name?.trim().toLowerCase() === 'default project')
+        ?? projectRows[0]
+        ?? null
+      );
+
+      if (!targetProject) {
+        setRows([]);
+        setLoading(false);
+        return;
       }
 
-      const realFlowRows = ((data ?? []) as Array<Record<string, unknown>>).map((row) => {
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem(PROJECT_FOCUS_STORAGE_KEY, targetProject.project_id);
+      }
+
+      const selectBase = 'project_id, source, revision, created_at, updated_at';
+      const withProject = await supabase
+        .from('flow_sources')
+        .select(`${selectBase}, projects(project_name)`)
+        .eq('project_id', targetProject.project_id)
+        .maybeSingle();
+
+      let rowData = withProject.data as Record<string, unknown> | null;
+      let queryError = withProject.error;
+
+      if (queryError) {
+        const fallback = await supabase
+          .from('flow_sources')
+          .select(selectBase)
+          .eq('project_id', targetProject.project_id)
+          .maybeSingle();
+        rowData = fallback.data as Record<string, unknown> | null;
+        queryError = fallback.error;
+      }
+
+      if (cancelled) return;
+
+      if (queryError) {
+        queryError = null;
+        rowData = null;
+      }
+
+      const nextRows: FlowListRow[] = rowData ? [rowData].map((row) => {
         const source = String(row.source ?? '');
         const { flowId, namespace } = parseFlowSource(source);
         const revisionRaw = Number(row.revision);
@@ -140,34 +175,18 @@ export default function FlowsList() {
           namespace,
           revision,
           updated_at: typeof row.updated_at === 'string' ? row.updated_at : null,
-          project_name: readJoinedProjectName(row.projects),
+          project_name: readJoinedProjectName(row.projects) ?? targetProject.project_name ?? null,
           synthetic: false,
         };
-      }).filter((row) => row.project_id.length > 0);
-
-      const realByProjectId = new Map(realFlowRows.map((row) => [row.project_id, row]));
-      const projectRows = (projectsQuery.data ?? []) as ProjectRow[];
-
-      const nextRows: FlowListRow[] = projectRows.map((projectRow) => {
-        const projectId = String(projectRow.project_id ?? '');
-        const existingFlow = realByProjectId.get(projectId);
-        if (existingFlow) {
-          return {
-            ...existingFlow,
-            project_name: existingFlow.project_name ?? projectRow.project_name ?? null,
-          };
-        }
-
-        return {
-          project_id: projectId,
-          flow_id: syntheticFlowId(projectRow.project_name ?? null, projectId),
+      }).filter((row) => row.project_id.length > 0) : [{
+          project_id: targetProject.project_id,
+          flow_id: syntheticFlowId(targetProject.project_name ?? null, targetProject.project_id),
           namespace: 'default',
           revision: 1,
-          updated_at: typeof projectRow.updated_at === 'string' ? projectRow.updated_at : null,
-          project_name: projectRow.project_name ?? null,
+          updated_at: typeof targetProject.updated_at === 'string' ? targetProject.updated_at : null,
+          project_name: targetProject.project_name ?? null,
           synthetic: true,
-        };
-      }).filter((row) => row.project_id.length > 0);
+      }];
 
       setRows(nextRows);
       setLoading(false);

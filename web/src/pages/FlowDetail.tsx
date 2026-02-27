@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { IconAlertTriangle, IconLock, IconPlayerPlay } from '@tabler/icons-react';
+import { IconLock } from '@tabler/icons-react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useShellHeaderTitle } from '@/components/common/useShellHeaderTitle';
 import FlowCanvas from '@/components/flows/FlowCanvas';
@@ -140,15 +140,12 @@ export default function FlowDetail() {
   const [workspaceId, setWorkspaceId] = useState<string | null>(null);
   const [projectUpdatedAt, setProjectUpdatedAt] = useState<string | null>(null);
   const [flowDescription, setFlowDescription] = useState<string | null>(null);
-  const [isDeleted, setIsDeleted] = useState(false);
-  const [isAllowedToEdit, setIsAllowedToEdit] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [documents, setDocuments] = useState<FlowDocumentSummary[]>([]);
   const [runs, setRuns] = useState<FlowRunSummary[]>([]);
   const [workspaceProjects, setWorkspaceProjects] = useState<FlowDependencyProject[]>([]);
   const [runsError, setRunsError] = useState<string | null>(null);
   const [dependencyError, setDependencyError] = useState<string | null>(null);
-  const [runNotice, setRunNotice] = useState<string | null>(null);
   const [flowTriggers, setFlowTriggers] = useState<FlowTriggerSummary[]>([]);
   const [triggerQuery, setTriggerQuery] = useState('');
 
@@ -206,8 +203,6 @@ export default function FlowDetail() {
         setNamespace(resolvedNamespace);
         setFlowDescription(metadata.description ?? null);
         setProjectUpdatedAt(typeof metadata.updated_at === 'string' ? metadata.updated_at : null);
-        setIsDeleted(Boolean(metadata.deleted));
-        setIsAllowedToEdit(!Boolean(metadata.disabled));
         setFlowTriggers(toFlowTriggers(metadata.triggers));
       } catch (e) {
         if (cancelled) return;
@@ -365,30 +360,6 @@ export default function FlowDetail() {
 
   return (
     <section className="flow-detail-shell">
-      <header className="flow-detail-topbar">
-        <div className="flow-detail-topbar-main">
-          <p className="flow-detail-breadcrumb">Flows / {namespace ?? 'default'}</p>
-          <h1 className="flow-detail-title">
-            {isDeleted ? <IconAlertTriangle size={16} className="text-amber-500" /> : null}
-            {!isDeleted && !isAllowedToEdit ? <IconLock size={16} className="text-slate-500" /> : null}
-            <span>{flowName}</span>
-          </h1>
-        </div>
-        <div className="flow-detail-topbar-actions">
-          <button
-            type="button"
-            className="flow-action-btn"
-            onClick={() => {
-              const now = new Date().toLocaleString();
-              setRunNotice(`Manual run requested at ${now}.`);
-            }}
-          >
-            <IconPlayerPlay size={14} />
-            <span>Run</span>
-          </button>
-        </div>
-      </header>
-
       <Tabs
         value={activeTab}
         onValueChange={(value) => {
@@ -404,7 +375,7 @@ export default function FlowDetail() {
       >
         <TabsList
           aria-label="Flow sections"
-          className="flow-detail-tabs-row flex h-10 min-h-10 w-full items-stretch overflow-x-auto border-b border-slate-300/90 bg-slate-100/95 dark:border-slate-700/80 dark:bg-slate-950/80"
+          className="flow-detail-tabs-row flex h-10 min-h-10 w-full items-stretch overflow-x-auto bg-card shadow-[inset_0_-1px_0_var(--border)]"
         >
           {FLOW_TABS.map((item) => {
             const isLocked = Boolean(item.locked);
@@ -419,7 +390,7 @@ export default function FlowDetail() {
                 value={item.value}
                 disabled={isDisabled}
                 aria-disabled={isDisabled}
-                className="inline-flex h-10 shrink-0 items-center gap-1 border-r border-slate-300/80 px-4 text-[12px] font-medium leading-none whitespace-nowrap text-slate-600 transition-colors first:border-l first:border-l-slate-300/80 hover:bg-slate-50 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-75 disabled:hover:bg-transparent dark:border-slate-700/80 dark:text-slate-300 dark:first:border-l-slate-700/80 dark:hover:bg-slate-900/60 dark:hover:text-slate-50 data-[selected]:-mb-px data-[selected]:border-b data-[selected]:border-b-white data-[selected]:border-t-2 data-[selected]:border-t-[color:var(--flow-accent)] data-[selected]:bg-white data-[selected]:text-slate-950 dark:data-[selected]:border-b-slate-900 dark:data-[selected]:bg-slate-900 dark:data-[selected]:text-white"
+                className="inline-flex h-full shrink-0 items-center gap-1 border-r border-border px-3 text-xs font-medium leading-none whitespace-nowrap text-muted-foreground transition-colors first:border-l first:border-l-border hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-muted-foreground data-[selected]:bg-background data-[selected]:text-foreground data-[selected]:shadow-[inset_0_-1px_0_var(--primary)]"
               >
                 <span>{label}</span>
                 {isLocked ? <IconLock size={11} aria-hidden /> : null}
@@ -442,11 +413,6 @@ export default function FlowDetail() {
             >
               Dismiss
             </button>
-          </div>
-        ) : null}
-        {runNotice ? (
-          <div className="mx-4 mt-2 rounded-md border border-emerald-300/70 bg-emerald-50 px-3 py-2 text-sm text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-950/40 dark:text-emerald-200">
-            {runNotice}
           </div>
         ) : null}
 

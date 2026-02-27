@@ -1,9 +1,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Field } from '@ark-ui/react/field';
-import { FileUpload } from '@ark-ui/react/file-upload';
 import { Splitter } from '@ark-ui/react/splitter';
 import { TreeView, createTreeCollection } from '@ark-ui/react/tree-view';
 import {
+  MenuContent,
+  MenuItem,
+  MenuPortal,
+  MenuPositioner,
+  MenuRoot,
+  MenuTrigger,
+} from '@/components/ui/menu';
+import {
+  IconDotsVertical,
   IconEye,
   IconFilePlus,
   IconFiles,
@@ -13,7 +21,6 @@ import {
   IconLayoutColumns,
   IconPlus,
   IconTrash,
-  IconUpload,
   IconX,
 } from '@tabler/icons-react';
 import { useLocation } from 'react-router-dom';
@@ -1267,38 +1274,6 @@ export default function DocumentTest() {
             </div>
           ) : null}
         </div>
-
-        <FileUpload.Root
-          maxFiles={10}
-          directory
-          onFileChange={({ acceptedFiles }) => {
-            void uploadFiles(acceptedFiles.map((file) => ({ file })));
-          }}
-          className="border-t border-border p-2"
-        >
-          <FileUpload.Dropzone className="flex items-center justify-center gap-2 rounded border border-dashed border-border px-3 py-3 text-xs text-muted-foreground transition-colors data-[dragging]:border-primary data-[dragging]:bg-primary/5">
-            <IconUpload size={14} />
-            <span>Drop files/folders or</span>
-            <FileUpload.Trigger className="font-medium text-primary hover:underline">browse</FileUpload.Trigger>
-          </FileUpload.Dropzone>
-          <FileUpload.ItemGroup className="mt-1.5 flex flex-col gap-1">
-            <FileUpload.Context>
-              {({ acceptedFiles }) =>
-                acceptedFiles.map((file) => (
-                  <FileUpload.Item key={file.name} file={file} className="flex items-center gap-2 rounded bg-accent/30 px-2 py-1 text-xs">
-                    <IconFileText size={14} className="shrink-0 text-muted-foreground" />
-                    <FileUpload.ItemName className="min-w-0 flex-1 truncate" />
-                    <FileUpload.ItemSizeText className="shrink-0 text-muted-foreground" />
-                    <FileUpload.ItemDeleteTrigger className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded hover:bg-accent">
-                      <IconX size={12} />
-                    </FileUpload.ItemDeleteTrigger>
-                  </FileUpload.Item>
-                ))
-              }
-            </FileUpload.Context>
-          </FileUpload.ItemGroup>
-          <FileUpload.HiddenInput />
-        </FileUpload.Root>
       </div>
     );
   }, [createName, creatingType, docsError, docsLoading, expandedValue, filesQuery, filesTreeCollection, filesTreeNodes, filteredDocs, handleCreateEntry, handleDeleteSelected, handleSelectFile, hasFilesTreeNodes, openNativeFilePicker, projectId, resolvedSelectedSourceUid, selectedSourceUidForActions, selectedTreeNodeId, supportsDirectoryUpload, uploadFiles]);
@@ -1407,6 +1382,41 @@ export default function DocumentTest() {
     if (panes.length <= 1) return;
     setPanes((current) => normalizePaneWidths(current.filter((candidate) => candidate.id !== pane.id)));
   };
+
+  const removePane = useCallback((paneId: string) => {
+    setPanes((current) => {
+      if (current.length <= 1) return current;
+      const filtered = current.filter((pane) => pane.id !== paneId);
+      if (filtered.length === current.length) return current;
+      return normalizePaneWidths(filtered);
+    });
+  }, []);
+
+  const movePaneByOffset = useCallback((paneId: string, offset: number) => {
+    setPanes((current) => {
+      const fromIndex = current.findIndex((pane) => pane.id === paneId);
+      if (fromIndex < 0) return current;
+      const toIndex = fromIndex + offset;
+      if (toIndex < 0 || toIndex >= current.length) return current;
+
+      const next = [...current];
+      const [moved] = next.splice(fromIndex, 1);
+      if (!moved) return current;
+      next.splice(toIndex, 0, moved);
+      return next;
+    });
+  }, []);
+
+  const closeAllPanelsInPane = useCallback((paneId: string) => {
+    setPanes((current) => current.map((pane) => {
+      if (pane.id !== paneId) return pane;
+      return {
+        ...pane,
+        tabs: [FALLBACK_TAB],
+        activeTab: FALLBACK_TAB,
+      };
+    }));
+  }, []);
 
   const handleSplitPane = (index: number) => {
     let nextFocusedPaneId: string | null = null;
@@ -1738,6 +1748,50 @@ export default function DocumentTest() {
                       <IconLayoutColumns size={14} />
                     </button>
                   )}
+                  <MenuRoot positioning={{ placement: 'bottom-end', offset: { mainAxis: 6 } }}>
+                    <MenuTrigger asChild>
+                      <button
+                        type="button"
+                        aria-label="Pane actions"
+                        className="inline-flex h-6 w-6 items-center justify-center rounded border border-border text-xs text-muted-foreground hover:bg-accent hover:text-foreground"
+                      >
+                        <IconDotsVertical size={14} />
+                      </button>
+                    </MenuTrigger>
+                    <MenuPortal>
+                      <MenuPositioner>
+                        <MenuContent>
+                          <MenuItem
+                            value={`${pane.id}-move-right`}
+                            onClick={() => movePaneByOffset(pane.id, 1)}
+                            disabled={index >= panes.length - 1}
+                          >
+                            Move right
+                          </MenuItem>
+                          <MenuItem
+                            value={`${pane.id}-move-left`}
+                            onClick={() => movePaneByOffset(pane.id, -1)}
+                            disabled={index <= 0}
+                          >
+                            Move left
+                          </MenuItem>
+                          <MenuItem
+                            value={`${pane.id}-close-all`}
+                            onClick={() => closeAllPanelsInPane(pane.id)}
+                          >
+                            Close all panels
+                          </MenuItem>
+                          <MenuItem
+                            value={`${pane.id}-remove`}
+                            onClick={() => removePane(pane.id)}
+                            disabled={panes.length <= 1}
+                          >
+                            Remove pane
+                          </MenuItem>
+                        </MenuContent>
+                      </MenuPositioner>
+                    </MenuPortal>
+                  </MenuRoot>
                 </div>
               </div>
               <div className={[

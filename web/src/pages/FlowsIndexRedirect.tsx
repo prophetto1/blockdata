@@ -19,7 +19,14 @@ function readFocusedProjectId(): string | null {
   if (typeof window === 'undefined') return null;
   const raw = window.localStorage.getItem(PROJECT_FOCUS_STORAGE_KEY);
   const value = raw?.trim() ?? '';
-  return value.length > 0 ? value : null;
+  if (!value) return null;
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    if (typeof parsed === 'string' && parsed.trim().length > 0) return parsed.trim();
+  } catch {
+    // Keep non-JSON storage format for backward compatibility.
+  }
+  return value;
 }
 
 function readDefaultFlowTab(): string {

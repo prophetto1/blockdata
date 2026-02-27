@@ -79,8 +79,8 @@ export function createInitialPanes(): Pane[] {
     },
     {
       id: 'pane-2',
-      tabs: ['documentation'],
-      activeTab: 'documentation',
+      tabs: ['topology'],
+      activeTab: 'topology',
       width: 50,
     },
   ]);
