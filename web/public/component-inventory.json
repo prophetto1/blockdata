@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-02-28T11:40:11.591Z",
+  "generatedAt": "2026-02-28T12:24:15.129Z",
   "scope": "auth",
   "pages": [
     {
@@ -923,23 +923,14 @@
     },
     {
       "page": "src/pages/Projects.tsx",
-      "componentCount": 33,
+      "componentCount": 34,
       "categoryCounts": {
-        "mantine": 12,
         "external-package": 1,
-        "local-components": 13,
-        "tabler-icons": 7
+        "local-components": 18,
+        "tabler-icons": 9,
+        "ark-ui": 6
       },
       "components": [
-        {
-          "component": "ActionIcon",
-          "usedAs": "ActionIcon",
-          "source": "@mantine/core",
-          "importKind": "named",
-          "importedAs": "ActionIcon",
-          "category": "mantine",
-          "definition": "ActionIcon comes from @mantine/core (named import of ActionIcon)"
-        },
         {
           "component": "AgGridReact",
           "usedAs": "AgGridReact",
@@ -952,29 +943,20 @@
         {
           "component": "Badge",
           "usedAs": "Badge",
-          "source": "@mantine/core",
+          "source": "@/components/ui/badge",
           "importKind": "named",
           "importedAs": "Badge",
-          "category": "mantine",
-          "definition": "Badge comes from @mantine/core (named import of Badge)"
+          "category": "local-components",
+          "definition": "Badge comes from @/components/ui/badge (named import of Badge)"
         },
         {
           "component": "Button",
           "usedAs": "Button",
-          "source": "@mantine/core",
+          "source": "@/components/ui/button",
           "importKind": "named",
           "importedAs": "Button",
-          "category": "mantine",
-          "definition": "Button comes from @mantine/core (named import of Button)"
-        },
-        {
-          "component": "Center",
-          "usedAs": "Center",
-          "source": "@mantine/core",
-          "importKind": "named",
-          "importedAs": "Center",
-          "category": "mantine",
-          "definition": "Center comes from @mantine/core (named import of Center)"
+          "category": "local-components",
+          "definition": "Button comes from @/components/ui/button (named import of Button)"
         },
         {
           "component": "DialogBody",
@@ -1040,13 +1022,22 @@
           "definition": "ErrorAlert comes from @/components/common/ErrorAlert (named import of ErrorAlert)"
         },
         {
-          "component": "Group",
-          "usedAs": "Group",
-          "source": "@mantine/core",
+          "component": "IconChevronLeft",
+          "usedAs": "IconChevronLeft",
+          "source": "@tabler/icons-react",
           "importKind": "named",
-          "importedAs": "Group",
-          "category": "mantine",
-          "definition": "Group comes from @mantine/core (named import of Group)"
+          "importedAs": "IconChevronLeft",
+          "category": "tabler-icons",
+          "definition": "IconChevronLeft comes from @tabler/icons-react (named import of IconChevronLeft)"
+        },
+        {
+          "component": "IconChevronRight",
+          "usedAs": "IconChevronRight",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconChevronRight",
+          "category": "tabler-icons",
+          "definition": "IconChevronRight comes from @tabler/icons-react (named import of IconChevronRight)"
         },
         {
           "component": "IconClock",
@@ -1112,15 +1103,6 @@
           "definition": "IconUpload comes from @tabler/icons-react (named import of IconUpload)"
         },
         {
-          "component": "Loader",
-          "usedAs": "Loader",
-          "source": "@mantine/core",
-          "importKind": "named",
-          "importedAs": "Loader",
-          "category": "mantine",
-          "definition": "Loader comes from @mantine/core (named import of Loader)"
-        },
-        {
           "component": "PageHeader",
           "usedAs": "PageHeader",
           "source": "@/components/common/PageHeader",
@@ -1131,12 +1113,57 @@
         },
         {
           "component": "Pagination",
-          "usedAs": "Pagination",
-          "source": "@mantine/core",
+          "usedAs": "Pagination.Context",
+          "source": "@ark-ui/react/pagination",
           "importKind": "named",
           "importedAs": "Pagination",
-          "category": "mantine",
-          "definition": "Pagination comes from @mantine/core (named import of Pagination)"
+          "category": "ark-ui",
+          "definition": "Pagination.Context comes from @ark-ui/react/pagination (named import of Pagination)"
+        },
+        {
+          "component": "Pagination",
+          "usedAs": "Pagination.Ellipsis",
+          "source": "@ark-ui/react/pagination",
+          "importKind": "named",
+          "importedAs": "Pagination",
+          "category": "ark-ui",
+          "definition": "Pagination.Ellipsis comes from @ark-ui/react/pagination (named import of Pagination)"
+        },
+        {
+          "component": "Pagination",
+          "usedAs": "Pagination.Item",
+          "source": "@ark-ui/react/pagination",
+          "importKind": "named",
+          "importedAs": "Pagination",
+          "category": "ark-ui",
+          "definition": "Pagination.Item comes from @ark-ui/react/pagination (named import of Pagination)"
+        },
+        {
+          "component": "Pagination",
+          "usedAs": "Pagination.NextTrigger",
+          "source": "@ark-ui/react/pagination",
+          "importKind": "named",
+          "importedAs": "Pagination",
+          "category": "ark-ui",
+          "definition": "Pagination.NextTrigger comes from @ark-ui/react/pagination (named import of Pagination)"
+        },
+        {
+          "component": "Pagination",
+          "usedAs": "Pagination.PrevTrigger",
+          "source": "@ark-ui/react/pagination",
+          "importKind": "named",
+          "importedAs": "Pagination",
+          "category": "ark-ui",
+          "definition": "Pagination.PrevTrigger comes from @ark-ui/react/pagination (named import of Pagination)"
+        },
+        {
+          "component": "Pagination",
+          "usedAs": "Pagination.Root",
+          "source": "@ark-ui/react/pagination",
+          "importKind": "named",
+          "importedAs": "Pagination",
+          "category": "ark-ui",
+          "definition": "Pagination.Root comes from @ark-ui/react/pagination (named import of Pagination)"
         },
         {
           "component": "SegmentGroupIndicator",
@@ -1184,49 +1211,31 @@
           "definition": "SegmentGroupRoot comes from @/components/ui/segment-group (named import of SegmentGroupRoot)"
         },
         {
-          "component": "Stack",
-          "usedAs": "Stack",
-          "source": "@mantine/core",
-          "importKind": "named",
-          "importedAs": "Stack",
-          "category": "mantine",
-          "definition": "Stack comes from @mantine/core (named import of Stack)"
-        },
-        {
-          "component": "Text",
-          "usedAs": "Text",
-          "source": "@mantine/core",
-          "importKind": "named",
-          "importedAs": "Text",
-          "category": "mantine",
-          "definition": "Text comes from @mantine/core (named import of Text)"
-        },
-        {
-          "component": "TextInput",
-          "usedAs": "TextInput",
-          "source": "@mantine/core",
-          "importKind": "named",
-          "importedAs": "TextInput",
-          "category": "mantine",
-          "definition": "TextInput comes from @mantine/core (named import of TextInput)"
-        },
-        {
-          "component": "ThemeIcon",
-          "usedAs": "ThemeIcon",
-          "source": "@mantine/core",
-          "importKind": "named",
-          "importedAs": "ThemeIcon",
-          "category": "mantine",
-          "definition": "ThemeIcon comes from @mantine/core (named import of ThemeIcon)"
-        },
-        {
           "component": "Tooltip",
           "usedAs": "Tooltip",
-          "source": "@mantine/core",
+          "source": "@/components/ui/tooltip",
           "importKind": "named",
           "importedAs": "Tooltip",
-          "category": "mantine",
-          "definition": "Tooltip comes from @mantine/core (named import of Tooltip)"
+          "category": "local-components",
+          "definition": "Tooltip comes from @/components/ui/tooltip (named import of Tooltip)"
+        },
+        {
+          "component": "TooltipContent",
+          "usedAs": "TooltipContent",
+          "source": "@/components/ui/tooltip",
+          "importKind": "named",
+          "importedAs": "TooltipContent",
+          "category": "local-components",
+          "definition": "TooltipContent comes from @/components/ui/tooltip (named import of TooltipContent)"
+        },
+        {
+          "component": "TooltipTrigger",
+          "usedAs": "TooltipTrigger",
+          "source": "@/components/ui/tooltip",
+          "importKind": "named",
+          "importedAs": "TooltipTrigger",
+          "category": "local-components",
+          "definition": "TooltipTrigger comes from @/components/ui/tooltip (named import of TooltipTrigger)"
         }
       ]
     },
@@ -1977,6 +1986,33 @@
       ]
     },
     {
+      "page": "src/pages/settings/IntegrationCatalogPanel.tsx",
+      "componentCount": 2,
+      "categoryCounts": {
+        "local-components": 2
+      },
+      "components": [
+        {
+          "component": "Button",
+          "usedAs": "Button",
+          "source": "@/components/ui/button",
+          "importKind": "named",
+          "importedAs": "Button",
+          "category": "local-components",
+          "definition": "Button comes from @/components/ui/button (named import of Button)"
+        },
+        {
+          "component": "ErrorAlert",
+          "usedAs": "ErrorAlert",
+          "source": "@/components/common/ErrorAlert",
+          "importKind": "named",
+          "importedAs": "ErrorAlert",
+          "category": "local-components",
+          "definition": "ErrorAlert comes from @/components/common/ErrorAlert (named import of ErrorAlert)"
+        }
+      ]
+    },
+    {
       "page": "src/pages/settings/McpServers.tsx",
       "componentCount": 4,
       "categoryCounts": {
@@ -2163,12 +2199,13 @@
     },
     {
       "page": "src/pages/settings/SettingsAdmin.tsx",
-      "componentCount": 39,
+      "componentCount": 40,
       "categoryCounts": {
         "local-components": 10,
         "in-file component": 5,
         "external-package": 2,
-        "ark-ui": 22
+        "ark-ui": 22,
+        "relative-local": 1
       },
       "components": [
         {
@@ -2350,6 +2387,15 @@
           "importedAs": null,
           "category": "in-file component",
           "definition": "IconStandardsPreview is defined in the same page file"
+        },
+        {
+          "component": "IntegrationCatalogPanel",
+          "usedAs": "IntegrationCatalogPanel",
+          "source": "./IntegrationCatalogPanel",
+          "importKind": "named",
+          "importedAs": "IntegrationCatalogPanel",
+          "category": "relative-local",
+          "definition": "IntegrationCatalogPanel comes from ./IntegrationCatalogPanel (named import of IntegrationCatalogPanel)"
         },
         {
           "component": "Navigate",
@@ -3360,14 +3406,13 @@
       ]
     }
   ],
-  "totalComponentUsages": 344,
+  "totalComponentUsages": 348,
   "categoryTotals": {
     "external-package": 10,
-    "local-components": 101,
-    "tabler-icons": 68,
-    "ark-ui": 135,
+    "local-components": 108,
+    "tabler-icons": 70,
+    "ark-ui": 141,
     "in-file component": 10,
-    "mantine": 12,
-    "relative-local": 8
+    "relative-local": 9
   }
 }

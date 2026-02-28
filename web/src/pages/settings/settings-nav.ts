@@ -4,6 +4,7 @@ import {
   IconUserCircle,
   IconCpu,
   IconServer,
+  IconPlug,
 } from '@tabler/icons-react';
 import type { Icon } from '@tabler/icons-react';
 
@@ -35,6 +36,7 @@ export const SETTINGS_NAV: SettingsNavGroup[] = [
       { id: 'ai-api', label: 'AI Stack', icon: IconBrain, path: '/app/settings/ai' },
       { id: 'admin-models', label: 'Runtime Policy', icon: IconCpu, path: '/app/settings/admin/models' },
       { id: 'admin-services', label: 'Services', icon: IconServer, path: '/app/settings/admin/services' },
+      { id: 'admin-integrations', label: 'Integration Catalog', icon: IconPlug, path: '/app/settings/admin/integration-catalog' },
       { id: 'admin-design', label: 'Design Standards', icon: IconPalette, path: '/app/settings/admin/design' },
     ],
   },
@@ -50,6 +52,7 @@ const ADMIN_PATH_ALIASES: Array<{ prefix: string; targetId: string }> = [
   { prefix: '/app/settings/admin/worker', targetId: 'admin-models' },
   { prefix: '/app/settings/admin/upload', targetId: 'admin-models' },
   { prefix: '/app/settings/admin/audit', targetId: 'admin-services' },
+  { prefix: '/app/settings/admin/integration-catalog', targetId: 'admin-integrations' },
   { prefix: '/app/settings/admin/design-shell', targetId: 'admin-design' },
   { prefix: '/app/settings/admin/design-icons', targetId: 'admin-design' },
 ];

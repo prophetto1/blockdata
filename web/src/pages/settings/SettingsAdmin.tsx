@@ -45,6 +45,7 @@ import { styleTokens } from '@/lib/styleTokens';
 import { cn } from '@/lib/utils';
 import { edgeFetch } from '@/lib/edge';
 import { supabase } from '@/lib/supabase';
+import { IntegrationCatalogPanel } from './IntegrationCatalogPanel';
 
 type PolicyValueType = 'boolean' | 'integer' | 'number' | 'string' | 'object' | 'array';
 
@@ -217,7 +218,7 @@ const APP_SHELL_SPEC_ROWS: AppShellSpecRow[] = [
   },
 ];
 
-const CATEGORY_IDS = ['models', 'worker', 'upload', 'services', 'design', 'design-shell', 'design-icons', 'audit'] as const;
+const CATEGORY_IDS = ['models', 'worker', 'upload', 'services', 'integration-catalog', 'design', 'design-shell', 'design-icons', 'audit'] as const;
 type CategoryId = (typeof CATEGORY_IDS)[number];
 
 type Category = {
@@ -250,6 +251,11 @@ const CATEGORIES: Category[] = [
   {
     id: 'services',
     label: 'Services',
+    match: () => false,
+  },
+  {
+    id: 'integration-catalog',
+    label: 'Integration Catalog',
     match: () => false,
   },
   {
@@ -1016,7 +1022,12 @@ export default function SettingsAdmin() {
   }, [selectedCategory, forbiddenMessage, loadServices]);
 
   const filteredPolicies = useMemo(() => {
-    if (!selectedCategoryDef || selectedCategoryDef.id === 'audit' || selectedCategoryDef.id === 'services') return [];
+    if (
+      !selectedCategoryDef ||
+      selectedCategoryDef.id === 'audit' ||
+      selectedCategoryDef.id === 'services' ||
+      selectedCategoryDef.id === 'integration-catalog'
+    ) return [];
     return policies.filter((p) => selectedCategoryDef.match(p.policy_key));
   }, [policies, selectedCategoryDef]);
   const policyPanelClassName = 'space-y-3';
@@ -2003,7 +2014,7 @@ export default function SettingsAdmin() {
               </div>
             )}
 
-            {selectedCategory !== 'upload' && selectedCategory !== 'audit' && selectedCategory !== 'services' && selectedCategory !== 'design' && selectedCategory !== 'design-shell' && selectedCategory !== 'design-icons' && (
+            {selectedCategory !== 'upload' && selectedCategory !== 'audit' && selectedCategory !== 'services' && selectedCategory !== 'integration-catalog' && selectedCategory !== 'design' && selectedCategory !== 'design-shell' && selectedCategory !== 'design-icons' && (
               <div className={policyPanelClassName}>
                 {filteredPolicies.map((row) => {
                   const numericDraft = typeof draftValues[row.policy_key] === 'number'
@@ -2677,6 +2688,9 @@ export default function SettingsAdmin() {
                   </DialogContent>
                 </DialogRoot>
               </div>
+            )}
+            {selectedCategory === 'integration-catalog' && (
+              <IntegrationCatalogPanel />
             )}
             {selectedCategory === 'design' && (
               <div className="space-y-8">

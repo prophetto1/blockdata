@@ -135,10 +135,10 @@ function keepResizedColumnWidths(columnWidths: ColumnWidths): ColumnWidths {
 function SchemaValueCell({ row, column, fieldMeta }: { row: RowData; column: string; fieldMeta: SchemaFieldMeta }) {
   const value = row[column];
   if (value === null || value === undefined) return <span className="text-xs text-muted-foreground">--</span>;
-  if (typeof value === 'boolean') return <Badge size="xs" color={value ? 'green' : 'gray'}>{value ? 'Yes' : 'No'}</Badge>;
+  if (typeof value === 'boolean') return <Badge size="xs" variant={value ? 'green' : 'gray'}>{value ? 'Yes' : 'No'}</Badge>;
   if (typeof value === 'number') return <span className="text-xs font-medium">{value}</span>;
   if (typeof value === 'string') {
-    if (fieldMeta.enumValues?.includes(value)) return <Badge size="xs" variant="light">{value}</Badge>;
+    if (fieldMeta.enumValues?.includes(value)) return <Badge size="xs" variant="secondary">{value}</Badge>;
     return <span className="text-xs line-clamp-1 break-words">{value}</span>;
   }
   if (Array.isArray(value)) return <span className="text-xs text-muted-foreground">[{value.length} items]</span>;
@@ -187,13 +187,14 @@ function SchemaValueEditor({ row, column, onRowChange, onClose, fieldMeta }: Ren
   }
 
   return (
-    <TextInput
+    <input
+      type="text"
       autoFocus
-      size="xs"
+      className="h-6 w-full rounded border border-input bg-background px-1.5 text-xs text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
       value={draft}
-      onChange={(event) => setDraft(event.currentTarget.value)}
+      onChange={(event: React.ChangeEvent<HTMLInputElement>) => setDraft(event.currentTarget.value)}
       onBlur={() => commit()}
-      onKeyDown={(event) => {
+      onKeyDown={(event: React.KeyboardEvent<HTMLInputElement>) => {
         if (event.key === 'Enter') {
           event.preventDefault();
           commit();
@@ -453,7 +454,7 @@ export function BlockViewerGridRDG({ convUid, selectedRunId, selectedRun, onExpo
       toast.success(`Staged overlays confirmed: ${Number(data ?? 0)} block(s) confirmed.`);
       await refetchOverlays();
     } catch (e) {
-      notifications.show({ color: 'red', title: 'Confirm all failed', message: e instanceof Error ? e.message : String(e) });
+      toast.error(e instanceof Error ? e.message : String(e));
     } finally {
       setConfirmingAll(false);
     }
@@ -465,10 +466,10 @@ export function BlockViewerGridRDG({ convUid, selectedRunId, selectedRun, onExpo
     try {
       const { data, error } = await supabase.rpc('confirm_overlays', { p_run_id: selectedRunId, p_block_uids: [blockUid] });
       if (error) throw new Error(error.message);
-      if (Number(data ?? 0) === 0) notifications.show({ color: 'blue', title: 'No change', message: 'Block is no longer staged.' });
+      if (Number(data ?? 0) === 0) toast.info('Block is no longer staged.');
       await refetchOverlays();
     } catch (e) {
-      notifications.show({ color: 'red', title: 'Confirm block failed', message: e instanceof Error ? e.message : String(e) });
+      toast.error(e instanceof Error ? e.message : String(e));
     } finally {
       setBlockBusy(blockUid, false);
     }
@@ -480,10 +481,10 @@ export function BlockViewerGridRDG({ convUid, selectedRunId, selectedRun, onExpo
     try {
       const { data, error } = await supabase.rpc('reject_overlays_to_pending', { p_run_id: selectedRunId, p_block_uids: [blockUid] });
       if (error) throw new Error(error.message);
-      if (Number(data ?? 0) === 0) notifications.show({ color: 'blue', title: 'No change', message: 'Block is no longer staged.' });
+      if (Number(data ?? 0) === 0) toast.info('Block is no longer staged.');
       await refetchOverlays();
     } catch (e) {
-      notifications.show({ color: 'red', title: 'Reject block failed', message: e instanceof Error ? e.message : String(e) });
+      toast.error(e instanceof Error ? e.message : String(e));
     } finally {
       setBlockBusy(blockUid, false);
     }
@@ -516,7 +517,7 @@ export function BlockViewerGridRDG({ convUid, selectedRunId, selectedRun, onExpo
       patchOverlay(blockUid, (current) => ({ ...current, overlay_jsonb_staging: nextStaging }));
       return true;
     } catch (e) {
-      notifications.show({ color: 'red', title: 'Save failed', message: e instanceof Error ? e.message : String(e) });
+      toast.error(e instanceof Error ? e.message : String(e));
       return false;
     }
   }, [overlayMap, patchOverlay, schemaFieldByKey, selectedRunId]);
@@ -579,8 +580,8 @@ export function BlockViewerGridRDG({ convUid, selectedRunId, selectedRun, onExpo
     };
 
     const immutableCols: Column<RowData>[] = [
-      { key: 'block_index', name: 'ID', sortable: true, resizable: true, headerCellClass: 'block-grid-col-center-header', cellClass: 'block-grid-col-center-cell', renderCell: ({ row }: { row: RowData }) => <Text size="xs">{String(row.block_index ?? '--')}</Text> },
-      { key: 'block_pages', name: 'Pages', sortable: true, resizable: true, headerCellClass: 'block-grid-col-center-header', cellClass: 'block-grid-col-center-cell', renderCell: ({ row }: { row: RowData }) => <Text size="xs">{typeof row.block_pages === 'string' && row.block_pages.trim().length > 0 ? row.block_pages : '--'}</Text> },
+      { key: 'block_index', name: 'ID', sortable: true, resizable: true, headerCellClass: 'block-grid-col-center-header', cellClass: 'block-grid-col-center-cell', renderCell: ({ row }: { row: RowData }) => <span className="text-xs">{String(row.block_index ?? '--')}</span> },
+      { key: 'block_pages', name: 'Pages', sortable: true, resizable: true, headerCellClass: 'block-grid-col-center-header', cellClass: 'block-grid-col-center-cell', renderCell: ({ row }: { row: RowData }) => <span className="text-xs">{typeof row.block_pages === 'string' && row.block_pages.trim().length > 0 ? row.block_pages : '--'}</span> },
       {
         key: 'block_type',
         name: 'Type',
@@ -591,7 +592,7 @@ export function BlockViewerGridRDG({ convUid, selectedRunId, selectedRun, onExpo
         renderHeaderCell: () => <TypeHeaderCell blockTypes={blockTypes} typeFilter={typeFilter} onToggleType={(type) => setTypeFilter((prev) => prev.includes(type) ? prev.filter((entry) => entry !== type) : [...prev, type])} onClearTypes={() => setTypeFilter([])} />,
         renderCell: ({ row }: { row: RowData }) => {
           const type = typeof row.block_type_view === 'string' ? row.block_type_view : String(row.block_type ?? '--');
-          return <Badge size="xs" variant="light" color={badgeColorMap[type] ?? 'gray'}>{type}</Badge>;
+          return <Badge size="xs" variant={badgeColorMap[type] as 'gray' | 'green' | 'blue' | 'yellow' | 'red' ?? 'gray'}>{type}</Badge>;
         },
       },
       {
@@ -602,12 +603,12 @@ export function BlockViewerGridRDG({ convUid, selectedRunId, selectedRun, onExpo
         minWidth: 240,
         headerCellClass: 'block-grid-col-center-header',
         cellClass: 'block-grid-col-block-cell',
-        renderCell: ({ row }: { row: RowData }) => <Text size="xs" className="block-grid-block-text">{normalizeBlockContentForDisplay(row.block_content)}</Text>,
+        renderCell: ({ row }: { row: RowData }) => <span className="text-xs block-grid-block-text">{normalizeBlockContentForDisplay(row.block_content)}</span>,
       },
-      { key: 'block_uid', name: 'Block UID', sortable: false, resizable: true, cellClass: 'cell-break-anywhere', renderCell: ({ row }: { row: RowData }) => <Text size="xs">{prettyCellValue(row.block_uid)}</Text> },
-      { key: 'block_locator', name: 'Locator', sortable: false, resizable: true, renderCell: ({ row }: { row: RowData }) => <Text size="xs">{prettyCellValue(row.block_locator_view)}</Text> },
-      { key: 'parser_block_type', name: 'Parser Type', sortable: true, resizable: true, renderCell: ({ row }: { row: RowData }) => <Text size="xs">{prettyCellValue(row.parser_block_type)}</Text> },
-      { key: 'parser_path', name: 'Parser Path', sortable: false, resizable: true, renderCell: ({ row }: { row: RowData }) => <Text size="xs">{prettyCellValue(row.parser_path)}</Text> },
+      { key: 'block_uid', name: 'Block UID', sortable: false, resizable: true, cellClass: 'cell-break-anywhere', renderCell: ({ row }: { row: RowData }) => <span className="text-xs">{prettyCellValue(row.block_uid)}</span> },
+      { key: 'block_locator', name: 'Locator', sortable: false, resizable: true, renderCell: ({ row }: { row: RowData }) => <span className="text-xs">{prettyCellValue(row.block_locator_view)}</span> },
+      { key: 'parser_block_type', name: 'Parser Type', sortable: true, resizable: true, renderCell: ({ row }: { row: RowData }) => <span className="text-xs">{prettyCellValue(row.parser_block_type)}</span> },
+      { key: 'parser_path', name: 'Parser Path', sortable: false, resizable: true, renderCell: ({ row }: { row: RowData }) => <span className="text-xs">{prettyCellValue(row.parser_path)}</span> },
     ].filter((column) => {
       if (hiddenCols.has(column.key)) return false;
       if (column.key === 'parser_block_type' && (blockTypeView !== 'parser_native' || !hasParserTypeData)) return false;
@@ -627,7 +628,7 @@ export function BlockViewerGridRDG({ convUid, selectedRunId, selectedRun, onExpo
         renderCell: ({ row }: { row: RowData }) => {
           const status = typeof row._overlay_status === 'string' ? row._overlay_status : undefined;
           if (!status) return <span className="text-xs text-muted-foreground">--</span>;
-          return <Badge size="xs" variant="light" color={statusColor(status)}>{status}</Badge>;
+          return <Badge size="xs" variant={statusColor(status) as 'green' | 'yellow' | 'gray' | 'blue' | 'red'}>{status}</Badge>;
         },
       },
       {
@@ -643,18 +644,24 @@ export function BlockViewerGridRDG({ convUid, selectedRunId, selectedRun, onExpo
           if (!blockUid || status !== 'ai_complete') return <span className="text-xs text-muted-foreground">--</span>;
           const busy = isBusyForBlock(blockUid);
           return (
-            <Group gap={4} wrap="nowrap">
-              <Tooltip label="Confirm block">
-                <ActionIcon size="sm" variant="light" color="green" loading={busy} disabled={busy} onClick={() => void handleConfirmBlock(blockUid)}>
-                  <IconCheck size={12} />
-                </ActionIcon>
+            <div className="flex items-center gap-1">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button type="button" className="inline-flex h-6 w-6 items-center justify-center rounded border border-green-300 bg-green-50 text-green-700 hover:bg-green-100 disabled:opacity-50 dark:border-green-700 dark:bg-green-900/30 dark:text-green-300 dark:hover:bg-green-900/50" disabled={busy} onClick={() => void handleConfirmBlock(blockUid)}>
+                    {busy ? <div className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" /> : <IconCheck size={12} />}
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>Confirm block</TooltipContent>
               </Tooltip>
-              <Tooltip label="Reject to pending">
-                <ActionIcon size="sm" variant="light" color="yellow" loading={busy} disabled={busy} onClick={() => void handleRejectBlock(blockUid)}>
-                  <IconRotateClockwise size={12} />
-                </ActionIcon>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button type="button" className="inline-flex h-6 w-6 items-center justify-center rounded border border-yellow-300 bg-yellow-50 text-yellow-700 hover:bg-yellow-100 disabled:opacity-50 dark:border-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300 dark:hover:bg-yellow-900/50" disabled={busy} onClick={() => void handleRejectBlock(blockUid)}>
+                    {busy ? <div className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" /> : <IconRotateClockwise size={12} />}
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>Reject to pending</TooltipContent>
               </Tooltip>
-            </Group>
+            </div>
           );
         },
       },
@@ -921,9 +928,9 @@ export function BlockViewerGridRDG({ convUid, selectedRunId, selectedRun, onExpo
   const gridConfigSnapshotJson = useMemo(() => stringifyDebugConfig(gridConfigSnapshot), [gridConfigSnapshot]);
 
   const toolbarControls = (
-    <Group className="block-grid-toolbar-row min-w-0 w-full items-center gap-2 overflow-x-auto" justify="space-between" wrap="nowrap" gap={8}>
-      <Group className="block-grid-toolbar-main min-w-0 flex-1 overflow-x-auto" gap="xs" wrap="nowrap">
-        <Group className="block-grid-toolbar-group shrink-0" gap={6} wrap="nowrap">
+    <div className="block-grid-toolbar-row flex min-w-0 w-full items-center justify-between gap-2 overflow-x-auto flex-nowrap">
+      <div className="block-grid-toolbar-main flex min-w-0 flex-1 items-center gap-2 overflow-x-auto flex-nowrap">
+        <div className="block-grid-toolbar-group flex shrink-0 items-center gap-1.5 flex-nowrap">
           <SegmentedControl className="block-grid-segmented-boxed" data={[{ value: 'compact', label: 'Compact' }, { value: 'comfortable', label: 'Comfortable' }]} value={viewMode} onChange={handleViewModeChange} size="xs" />
           <SegmentedControl className="block-grid-segmented-boxed" data={[{ value: 'gray', label: 'Rows Gray' }, { value: 'blue', label: 'Rows Blue' }, { value: 'none', label: 'Rows None' }]} value={rowStripeTone} onChange={handleRowStripeToneChange} size="xs" />
           <div className="block-grid-two-tab inline-flex items-stretch overflow-hidden border border-slate-300/80 bg-slate-100/70 dark:border-slate-600/60 dark:bg-slate-900/30" role="tablist" aria-label="Representation mode">
@@ -937,9 +944,9 @@ export function BlockViewerGridRDG({ convUid, selectedRunId, selectedRun, onExpo
           <SegmentedControl className="block-grid-segmented-boxed" data={[{ value: 'off', label: 'Wrap Off' }, { value: 'on', label: 'Wrap On' }]} value={wrapMode} onChange={handleWrapModeChange} size="xs" />
           <SegmentedControl className="block-grid-segmented-boxed" data={[{ value: 'small', label: 'S' }, { value: 'medium', label: 'M' }, { value: 'large', label: 'L' }]} value={viewerFontSize} onChange={handleViewerFontSizeChange} size="xs" />
           <SegmentedControl className="block-grid-segmented-boxed" data={[{ value: 'sans', label: 'Sans' }, { value: 'serif', label: 'Serif' }, { value: 'mono', label: 'Mono' }]} value={viewerFontFamily} onChange={handleViewerFontFamilyChange} size="xs" />
-        </Group>
+        </div>
 
-        <Group className="block-grid-toolbar-group shrink-0" gap={6} wrap="nowrap">
+        <div className="block-grid-toolbar-group flex shrink-0 items-center gap-1.5 flex-nowrap">
           <MenuRoot positioning={{ placement: 'bottom-start' }}>
             <MenuTrigger asChild>
               <button type="button" className="block-grid-topline-button inline-flex h-6 items-center gap-1 rounded border border-border bg-background px-1.5 text-xs font-semibold text-foreground transition-colors hover:bg-accent" aria-label="Vertical align">
@@ -970,50 +977,54 @@ export function BlockViewerGridRDG({ convUid, selectedRunId, selectedRun, onExpo
                 <MenuContent className="block-grid-topline-menu-dropdown min-w-[250px]">
                   <MenuLabel>Columns</MenuLabel>
                   {allColumns.map((col) => (
-                    <MenuItem key={col.id} value={`column-${col.id}`} onClick={() => toggleColumn(col.id)} leftSection={<Text size="xs" fw={500}>{hiddenCols.has(col.id) ? '[ ]' : '[x]'}</Text>}>
-                      <Text size="xs">{col.label}</Text>
+                    <MenuItem key={col.id} value={`column-${col.id}`} onClick={() => toggleColumn(col.id)} leftSection={<span className="text-xs font-medium">{hiddenCols.has(col.id) ? '[ ]' : '[x]'}</span>}>
+                      <span className="text-xs">{col.label}</span>
                     </MenuItem>
                   ))}
                 </MenuContent>
               </MenuPositioner>
             </MenuPortal>
           </MenuRoot>
-        </Group>
+        </div>
 
-        {hasRun && <Text size="xs" c="dimmed" className="block-grid-toolbar-metrics">{confirmedCount} confirmed - {stagedCount} staged - {selectedRows.size} selected</Text>}
-      </Group>
-      <Group className="block-grid-toolbar-actions shrink-0" gap={4} wrap="nowrap">
+        {hasRun && <span className="block-grid-toolbar-metrics text-xs text-muted-foreground">{confirmedCount} confirmed - {stagedCount} staged - {selectedRows.size} selected</span>}
+      </div>
+      <div className="block-grid-toolbar-actions flex shrink-0 items-center gap-1 flex-nowrap">
         <button type="button" className={`block-grid-topline-button inline-flex h-6 items-center gap-1 rounded border border-border px-2 text-xs font-semibold transition-colors ${showGridConfigInspector ? 'bg-accent text-accent-foreground' : 'bg-background text-foreground hover:bg-accent'}`} onClick={() => { setShowGridConfigInspector((prev) => !prev); setConfigRefreshTick((prev) => prev + 1); }}>Grid Config</button>
         {onExport && <button type="button" className="block-grid-topline-icon inline-flex h-8 w-8 items-center justify-center rounded-md border border-border bg-background text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground" onClick={onExport} aria-label="Export" title="Export"><IconDownload size={16} /></button>}
         {onDelete && <button type="button" className="block-grid-topline-icon inline-flex h-8 w-8 items-center justify-center rounded-md border border-border bg-background text-destructive transition-colors hover:bg-destructive/10" onClick={onDelete} aria-label="Delete" title="Delete"><IconTrash size={16} /></button>}
-      </Group>
-    </Group>
+      </div>
+    </div>
   );
 
   return (
     <>
-      <Paper p="xs" mb={4} className="border border-slate-300/70 bg-slate-100/55 dark:border-slate-600/60 dark:bg-slate-900/20">{toolbarControls}</Paper>
+      <div className="mb-1 rounded border border-slate-300/70 bg-slate-100/55 p-2 dark:border-slate-600/60 dark:bg-slate-900/20">{toolbarControls}</div>
 
       {showGridConfigInspector && (
-        <Paper withBorder p="xs" mb={4}>
-          <Group justify="space-between" mb={6}>
-            <Text size="xs" fw={600}>React Data Grid Config Inspector</Text>
-            <Group gap={4}>
-              <Button variant="subtle" size="compact-xs" onClick={() => setConfigRefreshTick((prev) => prev + 1)}>Refresh</Button>
-              <Button variant="subtle" size="compact-xs" onClick={() => setShowGridConfigInspector(false)}>Hide</Button>
-            </Group>
-          </Group>
+        <div className="mb-1 rounded-md border p-2">
+          <div className="mb-1.5 flex items-center justify-between">
+            <span className="text-xs font-semibold">React Data Grid Config Inspector</span>
+            <div className="flex items-center gap-1">
+              <Button variant="ghost" size="sm" onClick={() => setConfigRefreshTick((prev) => prev + 1)}>Refresh</Button>
+              <Button variant="ghost" size="sm" onClick={() => setShowGridConfigInspector(false)}>Hide</Button>
+            </div>
+          </div>
           <pre className="block-grid-config-inspector">{gridConfigSnapshotJson}</pre>
-        </Paper>
+        </div>
       )}
 
       {hasRun && stagedCount > 0 && (
-        <Alert color="yellow" variant="light" mb={4}>
-          <Group justify="space-between" wrap="wrap" gap="xs">
-            <Text size="xs">Staged - awaiting review: {stagedCount} block(s). Edit staged cells, confirm per block, or confirm all.</Text>
-            <Button size="compact-xs" variant="light" leftSection={<IconCheck size={12} />} onClick={handleConfirmAllStaged} loading={confirmingAll} disabled={!selectedRunId || stagedCount === 0}>Confirm All Staged</Button>
-          </Group>
-        </Alert>
+        <div role="alert" className="mb-1 rounded-md border border-yellow-300 bg-yellow-50 p-2 dark:border-yellow-700 dark:bg-yellow-900/20">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <span className="text-xs">Staged - awaiting review: {stagedCount} block(s). Edit staged cells, confirm per block, or confirm all.</span>
+            <Button variant="secondary" size="sm" onClick={handleConfirmAllStaged} disabled={confirmingAll || !selectedRunId || stagedCount === 0}>
+              {confirmingAll && <div className="mr-1.5 h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />}
+              <IconCheck size={12} />
+              Confirm All Staged
+            </Button>
+          </div>
+        </div>
       )}
 
       {error && <ErrorAlert message={error} />}
@@ -1041,26 +1052,33 @@ export function BlockViewerGridRDG({ convUid, selectedRunId, selectedRun, onExpo
             onCellClick={handleGridCellClick}
             sortColumns={sortColumns}
             onSortColumnsChange={(next: SortColumn[]) => setSortColumns(next.slice(-1))}
-            renderers={{ noRowsFallback: <div className="block-grid-empty-rdg"><Text size="xs" c="dimmed">No rows for current filters.</Text></div> }}
+            renderers={{ noRowsFallback: <div className="block-grid-empty-rdg"><span className="text-xs text-muted-foreground">No rows for current filters.</span></div> }}
           />
         </div>
 
         {totalCount > 0 && (
-          <Group justify="center" className="block-grid-pagination-wrap">
-            <Group gap="md" wrap="nowrap" className="block-grid-pagination-row">
-              <Group gap={6} wrap="nowrap" className="block-grid-page-size-control">
-                <Text size="xs" c="dimmed">Blocks / page</Text>
-                <Select data={PAGE_SIZES} value={String(pageSize)} onChange={(value) => { setPageSize(Number(value) || 50); setPageIndex(0); }} w={72} size="xs" aria-label="Blocks per page" />
-              </Group>
+          <div className="block-grid-pagination-wrap flex justify-center">
+            <div className="block-grid-pagination-row flex items-center gap-4 flex-nowrap">
+              <div className="block-grid-page-size-control flex items-center gap-1.5 flex-nowrap">
+                <span className="text-xs text-muted-foreground">Blocks / page</span>
+                <select
+                  className="h-7 rounded border border-input bg-background px-1.5 text-xs text-foreground"
+                  value={String(pageSize)}
+                  onChange={(e: React.ChangeEvent<HTMLSelectElement>) => { setPageSize(Number(e.currentTarget.value) || 50); setPageIndex(0); }}
+                  aria-label="Blocks per page"
+                >
+                  {PAGE_SIZES.map((s) => <option key={s} value={s}>{s}</option>)}
+                </select>
+              </div>
               {totalPages > 1 && (
-                <Group gap={8} wrap="nowrap" className="block-grid-page-nav">
-                  <Text size="xs" fw={600} className={`block-grid-page-nav-action${canGoToPrevPage ? '' : ' is-disabled'}`} onClick={() => { if (canGoToPrevPage) setPageIndex((current) => Math.max(0, current - 1)); }}>Previous</Text>
-                  <Text size="xs" c="dimmed" className="block-grid-page-nav-status">{pageIndex + 1} / {totalPages}</Text>
-                  <Text size="xs" fw={600} className={`block-grid-page-nav-action${canGoToNextPage ? '' : ' is-disabled'}`} onClick={() => { if (canGoToNextPage) setPageIndex((current) => Math.min(totalPages - 1, current + 1)); }}>Next</Text>
-                </Group>
+                <div className="block-grid-page-nav flex items-center gap-2 flex-nowrap">
+                  <span className={`block-grid-page-nav-action text-xs font-semibold${canGoToPrevPage ? ' cursor-pointer' : ' is-disabled opacity-40'}`} onClick={() => { if (canGoToPrevPage) setPageIndex((current) => Math.max(0, current - 1)); }}>Previous</span>
+                  <span className="block-grid-page-nav-status text-xs text-muted-foreground">{pageIndex + 1} / {totalPages}</span>
+                  <span className={`block-grid-page-nav-action text-xs font-semibold${canGoToNextPage ? ' cursor-pointer' : ' is-disabled opacity-40'}`} onClick={() => { if (canGoToNextPage) setPageIndex((current) => Math.min(totalPages - 1, current + 1)); }}>Next</span>
+                </div>
               )}
-            </Group>
-          </Group>
+            </div>
+          </div>
         )}
       </div>
     </>
