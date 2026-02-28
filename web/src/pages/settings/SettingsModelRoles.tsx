@@ -1,7 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { IconCheck, IconGripVertical, IconPlus, IconTrash } from '@tabler/icons-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { IconCheck, IconGripVertical, IconTrash } from '@tabler/icons-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/lib/supabase';
