@@ -1,11 +1,10 @@
 import { useMemo, useState } from 'react';
-import { notifications } from '@mantine/notifications';
-import { PageHeader } from '@/components/common/PageHeader';
 import { MCP_CATALOG } from '@/components/mcp/mcp-catalog';
 import { McpServerCard } from '@/components/mcp/McpServerCard';
 
 export default function McpServers() {
   const [query, setQuery] = useState('');
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -14,16 +13,23 @@ export default function McpServers() {
   }, [query]);
 
   return (
-    <>
-      <PageHeader
-        title="MCP"
-        subtitle="Catalog and placeholder connect state. Tool wiring and real connections come later."
-      />
+    <div className="space-y-4">
+      {statusMessage && (
+        <div className="rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground" role="status" aria-live="polite">
+          {statusMessage}
+        </div>
+      )}
+      <div>
+        <h2 className="text-sm font-semibold text-foreground">MCP Servers</h2>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Catalog and connection state for Model Context Protocol servers.
+        </p>
+      </div>
 
       <input
         type="text"
         placeholder="Search MCP servers..."
-        className="mb-4 flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+        className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
         value={query}
         onChange={(e) => setQuery(e.currentTarget.value)}
       />
@@ -36,11 +42,11 @@ export default function McpServers() {
             status={server.id === 'context7' || server.id === 'playwright' ? 'connected' : 'disconnected'}
             actionLabel={server.id === 'firecrawl' || server.id === 'postgres' ? 'Configure' : 'Connect'}
             onAction={() => {
-              notifications.show({ color: 'blue', message: 'Placeholder action (not wired yet).' });
+              setStatusMessage('Placeholder action (not wired yet).');
             }}
           />
         ))}
       </div>
-    </>
+    </div>
   );
 }

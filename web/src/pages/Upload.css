@@ -64,7 +64,7 @@
 
 .upload-workspace-divider {
   align-self: stretch;
-  background: var(--mantine-color-default-border);
+  background: var(--border);
 }
 
 @media (max-width: 75em) {
@@ -74,7 +74,7 @@
     height: auto;
     max-height: none;
     min-height: 0;
-    row-gap: var(--mantine-spacing-md);
+    row-gap: 1rem;
   }
 
   .upload-workspace-divider {

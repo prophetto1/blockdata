@@ -173,7 +173,7 @@ CREATE POLICY service_runs_select
   USING (
     project_id IS NULL
     OR project_id IN (
-      SELECT p.project_id FROM public.projects p WHERE p.user_id = auth.uid()
+      SELECT p.project_id FROM public.projects p WHERE p.owner_id = auth.uid()
     )
   );
 CREATE POLICY service_runs_insert
@@ -181,7 +181,7 @@ CREATE POLICY service_runs_insert
   WITH CHECK (
     project_id IS NULL
     OR project_id IN (
-      SELECT p.project_id FROM public.projects p WHERE p.user_id = auth.uid()
+      SELECT p.project_id FROM public.projects p WHERE p.owner_id = auth.uid()
     )
   );
 CREATE POLICY service_runs_service_role

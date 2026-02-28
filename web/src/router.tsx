@@ -11,13 +11,13 @@ import AuthCallback from '@/pages/AuthCallback';
 import Projects from '@/pages/Projects';
 import FlowDetail from '@/pages/FlowDetail';
 import FlowsList from '@/pages/FlowsList';
-import UiCatalog from '@/pages/UiCatalog';
+import Editor from '@/pages/Editor';
+import Integrations from '@/pages/Integrations';
 import UppyLibraryDemo from '@/pages/UppyLibraryDemo';
 import Schemas from '@/pages/Schemas';
 import SchemaLayout from '@/pages/SchemaLayout';
 import RunDetail from '@/pages/RunDetail';
-import Settings from '@/pages/Settings';
-import SuperuserSettings from '@/pages/SuperuserSettings';
+import { SettingsLayout, SettingsAccount, SettingsAiOverview, SettingsProviderForm, SettingsAdmin } from '@/pages/settings';
 import LoginSplit from '@/pages/LoginSplit';
 import PlatformLanding from '@/pages/experiments/PlatformLanding';
 import Landing from '@/pages/Landing';
@@ -27,7 +27,7 @@ import AgentOnboarding from '@/pages/AgentOnboarding';
 import AgentOnboardingAuth from '@/pages/AgentOnboardingAuth';
 import AgentOnboardingConnect from '@/pages/AgentOnboardingConnect';
 import AgentOnboardingSelect from '@/pages/AgentOnboardingSelect';
-import McpServers from '@/pages/McpServers';
+import McpServers from '@/pages/settings/McpServers';
 import Commands from '@/pages/Commands';
 import DocumentTest from '@/pages/DocumentTest';
 import DatabasePlaceholder from '@/pages/DatabasePlaceholder';
@@ -105,6 +105,8 @@ export const router = createBrowserRouter([
           { path: '/app/elt/:projectId/runs/:runId', element: <RunDetail /> },
           { path: '/app/projects/list', element: <Projects /> },
           { path: '/app/database', element: <DatabasePlaceholder /> },
+          { path: '/app/editor', element: <Editor /> },
+          { path: '/app/integrations', element: <Integrations /> },
           {
             path: '/app/flows',
             element: <FlowsRouteShell />,
@@ -118,8 +120,8 @@ export const router = createBrowserRouter([
           { path: '/app/projects', element: <LegacyToElt /> },
           { path: '/app/projects/:projectId', element: <LegacyToEltProject /> },
           { path: '/app/projects/:projectId/upload', element: <LegacyToEltProject /> },
-          { path: '/app/ui', element: <UiCatalog /> },
-          { path: '/app/ui/:section', element: <UiCatalog /> },
+          { path: '/app/ui', element: <Navigate to="/app/editor" replace /> },
+          { path: '/app/ui/:section', element: <Navigate to="/app/editor" replace /> },
           { path: '/app/projects/:projectId/upload-uppy-demo', element: <LegacyToEltProjectUppyDemo /> },
           { path: '/app/projects/:projectId/runs/:runId', element: <LegacyToEltProjectRun /> },
           { path: '/app/extract', element: <LegacyToElt /> },
@@ -140,9 +142,20 @@ export const router = createBrowserRouter([
           { path: '/app/schemas/advanced', element: <Navigate to="/app/schemas" replace /> },
           { path: '/app/schemas/advanced/:schemaId', element: <Navigate to="/app/schemas" replace /> },
 
-          // Settings (API keys, model defaults)
-          { path: '/app/settings', element: <Settings /> },
-          { path: '/app/settings/superuser', element: <SuperuserSettings /> },
+          // Settings (API keys, model defaults, MCP, admin)
+          {
+            path: '/app/settings',
+            element: <SettingsLayout />,
+            children: [
+              { index: true, element: <Navigate to="/app/settings/profile" replace /> },
+              { path: 'profile', element: <SettingsAccount /> },
+              { path: 'ai', element: <SettingsAiOverview /> },
+              { path: 'ai/:providerId', element: <SettingsProviderForm /> },
+              { path: 'mcp', element: <McpServers /> },
+              { path: 'admin', element: <Navigate to="/app/settings/admin/models" replace /> },
+              { path: 'admin/:category', element: <SettingsAdmin /> },
+            ],
+          },
 
           // Agents + MCP (config surfaces; execution deferred)
           {
@@ -169,10 +182,8 @@ export const router = createBrowserRouter([
             path: '/app/onboarding/agents/connect/:agentSlug/:authMethod',
             element: featureFlags.agentsConfigUI ? <AgentOnboardingConnect /> : <Navigate to="/app/settings" replace />,
           },
-          {
-            path: '/app/mcp',
-            element: featureFlags.mcpPlaceholderUI ? <McpServers /> : <Navigate to="/app/settings" replace />,
-          },
+          // /app/mcp removed — MCP now lives at /app/settings/mcp
+          { path: '/app/mcp', element: <Navigate to="/app/settings/mcp" replace /> },
           {
             path: '/app/commands',
             element: featureFlags.commandsUI ? <Commands /> : <Navigate to="/app/settings" replace />,

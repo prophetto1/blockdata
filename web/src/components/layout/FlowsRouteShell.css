@@ -15,8 +15,8 @@
 }
 
 .flows-route-shell--list .flows-route-shell-inner {
-  gap: var(--mantine-spacing-sm);
-  padding: var(--mantine-spacing-md);
+  gap: 0.75rem;
+  padding: 1rem;
 }
 
 .flows-route-shell--detail .flows-route-shell-inner {

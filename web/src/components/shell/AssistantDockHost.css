@@ -4,8 +4,8 @@
   padding-top: 0;
   background: linear-gradient(180deg, #3a3e45 0%, #252a31 46%, #15191f 100%);
   color: #ffffff;
-  --mantine-color-text: #ffffff;
-  --mantine-color-dimmed: #d2d9e6;
+  --foreground: #ffffff;
+  --muted-foreground: #d2d9e6;
   font-family: "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-weight: 430;
   border-radius: inherit;

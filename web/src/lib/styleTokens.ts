@@ -1,8 +1,8 @@
 export const styleTokens = {
   shell: {
     headerHeight: 72,
-    navbarWidth: 296,
-    navbarCompactWidth: 56,
+    navbarWidth: 280,
+    navbarCompactWidth: 60,
     assistantWidth: 360,
     mainPadding: 'md' as const,
     contentMaxWidth: 'var(--app-shell-content-max-width)',
@@ -11,18 +11,18 @@ export const styleTokens = {
   },
   grid: {
     light: {
-      background: '#ffffff',
+      background: '#fafaf9',
       chromeBackground: '#ffffff',
-      foreground: '#09090b',
-      border: '#e4e4e7',
-      subtleText: '#52525b',
+      foreground: '#1c1917',
+      border: '#e7e5e4',
+      subtleText: '#78716c',
     },
     dark: {
-      background: '#09090b',
-      chromeBackground: '#09090b',
-      foreground: '#fafafa',
-      border: '#27272a',
-      subtleText: '#a1a1aa',
+      background: '#0e0e0e',
+      chromeBackground: '#0e0e0e',
+      foreground: '#eeeeee',
+      border: '#2a2a2a',
+      subtleText: '#a0a0a0',
     },
   },
   accents: {

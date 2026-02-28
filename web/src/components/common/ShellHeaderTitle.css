@@ -8,7 +8,7 @@
   justify-content: center;
   gap: 2px;
   padding-block: 6px 4px;
-  padding-inline-end: var(--mantine-spacing-sm);
+  padding-inline-end: 0.75rem;
 }
 
 .shell-header-title-main {
@@ -31,7 +31,7 @@
   line-height: 1.2;
   font-weight: 600;
   letter-spacing: 0.01em;
-  color: light-dark(var(--mantine-color-gray-6), var(--mantine-color-gray-4));
+  color: light-dark(var(--app-gray-6), var(--app-gray-4));
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

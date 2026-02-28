@@ -30,10 +30,9 @@ CREATE POLICY service_runs_insert
 -- ---------------------------------------------------------------------------
 -- 2. Seed: conversion-service runtime (FastAPI)
 -- ---------------------------------------------------------------------------
-INSERT INTO public.service_registry (service_id, service_type, service_name, base_url, config)
+INSERT INTO public.service_registry (service_type, service_name, base_url, config)
 VALUES
   (
-    'a0000000-0000-0000-0000-000000000004',
     'conversion',
     'conversion-service',
     'http://localhost:5002',
@@ -161,4 +160,3 @@ JOIN (
 ON CONFLICT (service_id, function_name) DO NOTHING;
 
 NOTIFY pgrst, 'reload schema';
-

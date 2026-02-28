@@ -1,5 +1,5 @@
 .schema-layout-test-page {
-  background: var(--mantine-color-body);
+  background: var(--background);
   transition: grid-template-columns 180ms ease;
   position: relative;
   isolation: isolate;
@@ -14,12 +14,12 @@
 }
 
 .schema-layout-test-page:not(.is-left-collapsed) > .parse-playground-right {
-  border-left: 1px solid var(--mantine-color-default-border);
+  border-left: 1px solid var(--border);
 }
 
 .schema-layout-test-page > .parse-playground-work {
   grid-column: 3;
-  border-left: 1px solid var(--mantine-color-default-border);
+  border-left: 1px solid var(--border);
 }
 
 .schema-layout-test-page .parse-playground-explorer {
@@ -57,7 +57,7 @@
   border-radius: 10px;
   padding: 9px 10px;
   border-color: light-dark(rgba(148, 163, 184, 0.34), rgba(71, 85, 105, 0.5));
-  background: var(--mantine-color-default);
+  background: var(--background);
 }
 
 .schema-layout-test-page .parse-doc-card:hover {
@@ -81,7 +81,7 @@
 
 .schema-layout-test-page .parse-doc-card-size {
   font-size: 12px;
-  color: light-dark(var(--mantine-color-gray-6), var(--mantine-color-gray-4));
+  color: light-dark(var(--app-gray-6), var(--app-gray-4));
   text-transform: none;
 }
 
@@ -94,7 +94,7 @@
   padding: 2px 7px;
   line-height: 1.2;
   font-weight: 600;
-  color: light-dark(var(--mantine-color-gray-6), var(--mantine-color-gray-3));
+  color: light-dark(var(--app-gray-6), var(--app-gray-3));
   justify-self: end;
 }
 
@@ -104,9 +104,9 @@
   height: var(--shell-pane-header-height, 50px);
   min-height: var(--shell-pane-header-height, 50px);
   padding: 0 10px;
-  border-bottom: 1px solid var(--mantine-color-default-border);
+  border-bottom: 1px solid var(--border);
   align-items: center;
-  background: var(--mantine-color-body);
+  background: var(--background);
   box-sizing: border-box;
 }
 
@@ -152,7 +152,7 @@
 
 .schema-layout-test-upload-card {
   min-height: 200px;
-  border: 1px dashed var(--mantine-color-default-border);
+  border: 1px dashed var(--border);
   border-radius: 12px;
   display: grid;
   place-content: center;
@@ -239,7 +239,7 @@
 .schema-layout-test-checkbox {
   width: 12px;
   height: 12px;
-  border: 1px solid var(--mantine-color-default-border);
+  border: 1px solid var(--border);
   border-radius: 3px;
 }
 
@@ -262,7 +262,7 @@
 .schema-layout-test-preview-sheet {
   width: min(96%, 920px);
   min-height: 1200px;
-  border: 1px solid var(--mantine-color-default-border);
+  border: 1px solid var(--border);
   border-radius: 8px;
   background: light-dark(#ffffff, #111827);
   box-shadow: 0 2px 8px light-dark(rgba(15, 23, 42, 0.08), rgba(2, 6, 23, 0.35));
@@ -273,7 +273,7 @@
   min-height: var(--shell-pane-header-height, 50px);
   padding: 0 10px;
   align-items: center;
-  background: var(--mantine-color-body);
+  background: var(--background);
   gap: 12px;
 }
 
@@ -286,7 +286,7 @@
 }
 
 .schema-layout-test-config-card {
-  border-top: 1px solid var(--mantine-color-default-border);
+  border-top: 1px solid var(--border);
   padding: 10px 0;
 }
 
@@ -365,18 +365,18 @@
 .schema-layout-view-stepper-action {
   cursor: pointer;
   user-select: none;
-  color: light-dark(#0f766e, var(--mantine-color-gray-3));
+  color: light-dark(#0f766e, var(--app-gray-3));
   transition: color 120ms ease;
 }
 
 .schema-layout-view-stepper-action:hover {
-  color: light-dark(#0d9488, var(--mantine-color-gray-1));
+  color: light-dark(#0d9488, var(--app-gray-1));
 }
 
 .schema-layout-view-stepper-action.is-disabled {
   cursor: default;
   pointer-events: none;
-  color: var(--mantine-color-dimmed);
+  color: var(--muted-foreground);
 }
 
 .schema-layout-view-stepper-current {
@@ -389,7 +389,7 @@
 }
 
 .schema-layout-view-label {
-  color: var(--mantine-color-text);
+  color: var(--foreground);
 }
 
 .schema-layout-docs-size-tabs {
@@ -399,15 +399,15 @@
 .schema-layout-test-pill {
   font-size: 11px;
   line-height: 1;
-  border: 1px solid var(--mantine-color-default-border);
+  border: 1px solid var(--border);
   border-radius: 999px;
   padding: 5px 8px;
-  color: var(--mantine-color-dimmed);
+  color: var(--muted-foreground);
   background: light-dark(rgba(255, 255, 255, 0.84), rgba(17, 24, 39, 0.36));
 }
 
 .schema-layout-test-pill.is-active {
-  color: var(--mantine-color-text);
-  border-color: light-dark(var(--mantine-color-gray-4), var(--mantine-color-gray-6));
+  color: var(--foreground);
+  border-color: light-dark(var(--app-gray-4), var(--app-gray-6));
   background: light-dark(rgba(15, 23, 42, 0.08), rgba(148, 163, 184, 0.2));
 }
