@@ -113,11 +113,13 @@ export function AppLayout() {
   const isEltRoute = /^\/app\/elt(?:\/|$)/.test(location.pathname);
   const isSchemaLayoutRoute = location.pathname === '/app/schemas/layout';
   const isSchemasRoute = /^\/app\/schemas(?:\/|$)/.test(location.pathname);
+  const isSettingsRoute = /^\/app\/settings(?:\/|$)/.test(location.pathname);
   const isFlowsRoute = /^\/app\/flows(?:\/|$)/.test(location.pathname);
   const lockMainScroll = (
     isEltRoute
     || isSchemaLayoutRoute
     || isSchemasRoute
+    || isSettingsRoute
   );
 
   useEffect(() => {

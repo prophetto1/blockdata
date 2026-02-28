@@ -149,6 +149,7 @@ export default function FlowDetail() {
   const [dependencyError, setDependencyError] = useState<string | null>(null);
   const [flowTriggers, setFlowTriggers] = useState<FlowTriggerSummary[]>([]);
   const [triggerQuery, setTriggerQuery] = useState('');
+  const [topologyResetNonce, setTopologyResetNonce] = useState(0);
 
   const activeTab: FlowTab = useMemo(() => {
     const storedTab = typeof window === 'undefined' ? null : window.localStorage.getItem(FLOW_DEFAULT_TAB_STORAGE_KEY);
@@ -181,6 +182,13 @@ export default function FlowDetail() {
     next.set('filters[timeRange][EQUALS]', DEFAULT_FLOW_TIME_RANGE);
     setSearchParams(next, { replace: true });
   }, [activeTab, searchParams, setSearchParams]);
+
+  useEffect(() => {
+    if (!flowId) return;
+    if (activeTab !== 'topology') return;
+    // Remount canvas when entering Topology so it resets to default layout.
+    setTopologyResetNonce((current) => current + 1);
+  }, [activeTab, flowId]);
 
   useEffect(() => {
     if (!flowId) return;
@@ -421,7 +429,7 @@ export default function FlowDetail() {
           <TabsContent key={item.value} value={item.value} className="flow-detail-tab-panel p-4">
             {item.value === 'topology' ? (
               <div className="flow-detail-panel-placeholder rounded-md border border-slate-300/80 bg-white/95 p-0 dark:border-slate-700/70 dark:bg-slate-900/80">
-                <FlowCanvas />
+                <FlowCanvas key={`topology-canvas:${flowId}:${topologyResetNonce}`} />
               </div>
             ) : item.value === 'edit' ? (
               <FlowWorkbench

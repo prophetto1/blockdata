@@ -90,6 +90,46 @@ Deno.serve(async (req) => {
       return json(200, { valid: false, error: `API returned ${resp.status}: ${errText.slice(0, 200)}` });
     }
 
+    // Bearer-token providers with standard /models endpoint
+    if (provider === "voyage") {
+      const resp = await fetch("https://api.voyageai.com/v1/models", {
+        method: "GET",
+        headers: { "Authorization": `Bearer ${api_key}` },
+      });
+      if (resp.ok) return json(200, { valid: true });
+      if (resp.status === 401 || resp.status === 403) {
+        return json(200, { valid: false, error: "Invalid or disabled API key" });
+      }
+      const errText = await resp.text().catch(() => "");
+      return json(200, { valid: false, error: `API returned ${resp.status}: ${errText.slice(0, 200)}` });
+    }
+
+    if (provider === "cohere") {
+      const resp = await fetch("https://api.cohere.com/v2/models", {
+        method: "GET",
+        headers: { "Authorization": `Bearer ${api_key}` },
+      });
+      if (resp.ok) return json(200, { valid: true });
+      if (resp.status === 401 || resp.status === 403) {
+        return json(200, { valid: false, error: "Invalid or disabled API key" });
+      }
+      const errText = await resp.text().catch(() => "");
+      return json(200, { valid: false, error: `API returned ${resp.status}: ${errText.slice(0, 200)}` });
+    }
+
+    if (provider === "jina") {
+      const resp = await fetch("https://api.jina.ai/v1/models", {
+        method: "GET",
+        headers: { "Authorization": `Bearer ${api_key}` },
+      });
+      if (resp.ok) return json(200, { valid: true });
+      if (resp.status === 401 || resp.status === 403) {
+        return json(200, { valid: false, error: "Invalid or disabled API key" });
+      }
+      const errText = await resp.text().catch(() => "");
+      return json(200, { valid: false, error: `API returned ${resp.status}: ${errText.slice(0, 200)}` });
+    }
+
     if (provider === "custom") {
       const parsedBase = parseHttpUrl(base_url);
       if (!parsedBase.ok) {

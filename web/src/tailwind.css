@@ -122,6 +122,19 @@
   --app-left-rail-automation: #8cc6ff;
   --app-left-rail-link-hover: rgba(255, 255, 255, 0.05);
   --app-left-rail-link-active: rgba(255, 255, 255, 0.08);
+
+  /* Settings/Admin contract (dark) */
+  --admin-config-rail-bg: #101113;
+  --admin-config-rail-border: #2a2a2a;
+  --admin-config-frame-bg: #141414;
+  --admin-config-header-bg: #181818;
+  --admin-config-content-bg: #0f0f10;
+  --admin-config-status-success-bg: rgba(34, 197, 94, 0.16);
+  --admin-config-status-success-border: rgba(34, 197, 94, 0.40);
+  --admin-config-status-success-fg: #86efac;
+  --admin-config-status-error-bg: rgba(220, 38, 38, 0.18);
+  --admin-config-status-error-border: rgba(248, 113, 113, 0.42);
+  --admin-config-status-error-fg: #fca5a5;
 }
 
 :root[data-theme='light'] {
@@ -147,16 +160,16 @@
   --ring: #EB5E41;
 
   /* ── Chrome (shared header + sidebar surface) ── */
-  --chrome: #f2f1ef;
+  --chrome: #ffffff;
 
   /* ── Sidebar (warm, visible hover states) ── */
-  --sidebar: #f2f1ef;
+  --sidebar: #ffffff;
   --sidebar-foreground: #1c1917;
   --sidebar-primary: #EB5E41;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #ebe8e5;
+  --sidebar-accent: #f5f3f1;
   --sidebar-accent-foreground: #1c1917;
-  --sidebar-border: #d6d3d1;
+  --sidebar-border: #e8e5e3;
   --sidebar-ring: #1c1917;
   --app-primary-contrast: #fafafa;
 
@@ -197,6 +210,19 @@
   --app-left-rail-automation: #2b6cb0;
   --app-left-rail-link-hover: rgba(28, 25, 23, 0.06);
   --app-left-rail-link-active: rgba(28, 25, 23, 0.10);
+
+  /* Settings/Admin contract (light) */
+  --admin-config-rail-bg: #ffffff;
+  --admin-config-rail-border: #e8e5e3;
+  --admin-config-frame-bg: #ffffff;
+  --admin-config-header-bg: #f5f3f1;
+  --admin-config-content-bg: #faf9f7;
+  --admin-config-status-success-bg: rgba(22, 163, 74, 0.12);
+  --admin-config-status-success-border: rgba(22, 163, 74, 0.38);
+  --admin-config-status-success-fg: #166534;
+  --admin-config-status-error-bg: rgba(220, 38, 38, 0.10);
+  --admin-config-status-error-border: rgba(220, 38, 38, 0.32);
+  --admin-config-status-error-fg: #b91c1c;
 }
 
 @theme inline {

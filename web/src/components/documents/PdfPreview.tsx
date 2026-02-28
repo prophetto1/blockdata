@@ -2,6 +2,19 @@ import { useEffect, useRef, useState, type CSSProperties } from 'react';
 
 import { createPortal } from 'react-dom';
 import { Document, Page, pdfjs } from 'react-pdf';
+import {
+  ArrowLeft01Icon,
+  ArrowRight01Icon,
+  MinusSignIcon,
+  PlusSignIcon,
+} from '@hugeicons/core-free-icons';
+import { HugeiconsIcon } from '@hugeicons/react';
+import {
+  ICON_CONTEXT_SIZE,
+  ICON_SIZES,
+  ICON_STANDARD,
+  ICON_STROKES,
+} from '@/lib/icon-contract';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 
@@ -13,11 +26,15 @@ type PdfPreviewProps = {
   toolbarPortalTarget?: HTMLElement | null;
 };
 
+// PDF rendering standard used across all preview surfaces.
+const PDF_DEFAULT_PAGE_NUMBER = 1;
+const PDF_DEFAULT_ZOOM_PERCENT = 100;
 const ZOOM_MIN = 50;
 const ZOOM_MAX = 300;
 const ZOOM_PRESETS = [50, 75, 100, 125, 150, 200, 300] as const;
 const PDF_BASE_WIDTH_PX = 700;
-const PDF_MIN_WIDTH_PX = 280;
+const PDF_RENDER_DPR_MIN = 1;
+const PDF_RENDER_DPR_MAX = 2;
 
 
 export function PdfPreview({
@@ -27,21 +44,25 @@ export function PdfPreview({
 }: PdfPreviewProps) {
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const pageShellRefs = useRef<Map<number, HTMLDivElement>>(new Map());
-  const activePageRef = useRef(1);
-  const [activePageNumber, setActivePageNumber] = useState(1);
+  const activePageRef = useRef(PDF_DEFAULT_PAGE_NUMBER);
+  const [activePageNumber, setActivePageNumber] = useState(PDF_DEFAULT_PAGE_NUMBER);
   const [pageCount, setPageCount] = useState<number | null>(null);
-  const [pageInput, setPageInput] = useState('1');
-  const [zoomPercent, setZoomPercent] = useState(100);
+  const [pageInput, setPageInput] = useState(String(PDF_DEFAULT_PAGE_NUMBER));
+  const [zoomPercent, setZoomPercent] = useState(PDF_DEFAULT_ZOOM_PERCENT);
   const [rotation, setRotation] = useState(0);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [pageBaseWidth, setPageBaseWidth] = useState(PDF_BASE_WIDTH_PX);
+  const utilityIconSize = ICON_SIZES[ICON_CONTEXT_SIZE[ICON_STANDARD.utilityTopRight.context]];
+  const utilityIconStroke = ICON_STROKES[ICON_STANDARD.utilityTopRight.stroke];
+  const renderDevicePixelRatio = typeof window === 'undefined'
+    ? PDF_RENDER_DPR_MIN
+    : Math.min(PDF_RENDER_DPR_MAX, Math.max(PDF_RENDER_DPR_MIN, window.devicePixelRatio || PDF_RENDER_DPR_MIN));
   useEffect(() => {
     pageShellRefs.current.clear();
-    activePageRef.current = 1;
-    setActivePageNumber(1);
-    setPageInput('1');
+    activePageRef.current = PDF_DEFAULT_PAGE_NUMBER;
+    setActivePageNumber(PDF_DEFAULT_PAGE_NUMBER);
+    setPageInput(String(PDF_DEFAULT_PAGE_NUMBER));
     setPageCount(null);
-    setZoomPercent(100);
+    setZoomPercent(PDF_DEFAULT_ZOOM_PERCENT);
     setRotation(0);
     setLoadError(null);
   }, [url]);
@@ -53,23 +74,6 @@ export function PdfPreview({
   useEffect(() => {
     setPageInput(String(activePageNumber));
   }, [activePageNumber]);
-
-  useEffect(() => {
-    const viewportNode = viewportRef.current;
-    if (!viewportNode) return undefined;
-
-    const updateBaseWidth = () => {
-      const width = Math.floor(viewportNode.clientWidth - 8);
-      setPageBaseWidth(Math.max(PDF_MIN_WIDTH_PX, width));
-    };
-
-    updateBaseWidth();
-    const observer = new ResizeObserver(updateBaseWidth);
-    observer.observe(viewportNode);
-    return () => {
-      observer.disconnect();
-    };
-  }, []);
 
   const canGoPrev = activePageNumber > 1;
   const canGoNext = pageCount !== null && activePageNumber < pageCount;
@@ -175,7 +179,7 @@ export function PdfPreview({
     };
   }, [loadError, pageCount, rotation, pageScale]);
 
-  const iconBtnClass = 'inline-flex items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-50';
+  const iconBtnClass = `${ICON_STANDARD.utilityTopRight.buttonClass} disabled:pointer-events-none disabled:opacity-50`;
 
   const toolbar = (
     <div className="parse-pdf-toolbar flex items-center justify-center flex-nowrap">
@@ -186,13 +190,13 @@ export function PdfPreview({
         >
           <button
             type="button"
-            className={`${iconBtnClass} h-7 w-7`}
+            className={iconBtnClass}
             disabled={!canGoPrev || isPdfJsControlsDisabled}
             aria-label="Previous page"
             title="Previous page"
             onClick={() => scrollToPage(activePageNumber - 1)}
           >
-            <svg xmlns="http://www.w3.org/2000/svg" height="20" viewBox="0 -960 960 960" width="20" fill="currentColor"><path d="M396-480 564-312 516-264 300-480l216-216 48 48-168 168Z"/></svg>
+            <HugeiconsIcon icon={ArrowLeft01Icon} size={utilityIconSize} strokeWidth={utilityIconStroke} />
           </button>
           <input
             type="text"
@@ -202,7 +206,7 @@ export function PdfPreview({
             onKeyDown={(event) => {
               if (event.key === 'Enter') commitPageInput();
             }}
-            className="parse-pdf-page-input h-6 rounded border border-border bg-background px-1 text-center text-xs text-foreground outline-none focus:ring-2 focus:ring-ring"
+            className="parse-pdf-page-input h-7 rounded border border-border bg-background px-1 text-center text-xs text-foreground outline-none focus:ring-2 focus:ring-ring"
             disabled={isPdfJsControlsDisabled}
           />
           <span className="parse-pdf-page-separator text-xs font-semibold text-muted-foreground" aria-hidden>
@@ -213,13 +217,13 @@ export function PdfPreview({
           </span>
           <button
             type="button"
-            className={`${iconBtnClass} h-7 w-7`}
+            className={iconBtnClass}
             disabled={!canGoNext || isPdfJsControlsDisabled}
             aria-label="Next page"
             title="Next page"
             onClick={() => scrollToPage(activePageNumber + 1)}
           >
-            <svg xmlns="http://www.w3.org/2000/svg" height="20" viewBox="0 -960 960 960" width="20" fill="currentColor"><path d="m375-264-48-48 168-168-168-168 48-48 216 216-216 216Z"/></svg>
+            <HugeiconsIcon icon={ArrowRight01Icon} size={utilityIconSize} strokeWidth={utilityIconStroke} />
           </button>
         </div>
       ) : (
@@ -229,26 +233,26 @@ export function PdfPreview({
       <div className="parse-pdf-zoom-inline parse-pdf-toolbar-pill flex items-center flex-nowrap gap-0.5">
         <button
           type="button"
-          className={`${iconBtnClass} h-7 w-7`}
+          className={iconBtnClass}
           aria-label="Zoom out"
           title="Zoom out"
           onClick={() => stepZoom('out')}
           disabled={isPdfJsControlsDisabled || zoomPercent <= ZOOM_MIN}
         >
-          <svg xmlns="http://www.w3.org/2000/svg" height="18" viewBox="0 -960 960 960" width="18" fill="currentColor"><path d="M200-440v-80h560v80H200Z"/></svg>
+          <HugeiconsIcon icon={MinusSignIcon} size={utilityIconSize} strokeWidth={utilityIconStroke} />
         </button>
         <span className="parse-pdf-zoom-value text-xs font-semibold text-muted-foreground">
           {zoomPercent}%
         </span>
         <button
           type="button"
-          className={`${iconBtnClass} h-7 w-7`}
+          className={iconBtnClass}
           aria-label="Zoom in"
           title="Zoom in"
           onClick={() => stepZoom('in')}
           disabled={isPdfJsControlsDisabled || zoomPercent >= ZOOM_MAX}
         >
-          <svg xmlns="http://www.w3.org/2000/svg" height="18" viewBox="0 -960 960 960" width="18" fill="currentColor"><path d="M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z"/></svg>
+          <HugeiconsIcon icon={PlusSignIcon} size={utilityIconSize} strokeWidth={utilityIconStroke} />
         </button>
       </div>
     </div>
@@ -299,8 +303,9 @@ export function PdfPreview({
                     <div className="parse-pdf-page-wrap">
                       <Page
                         pageNumber={pageNumber}
-                        width={pageBaseWidth}
+                        width={PDF_BASE_WIDTH_PX}
                         scale={pageScale}
+                        devicePixelRatio={renderDevicePixelRatio}
                         rotate={rotation}
                         loading={
                           <div className="flex h-full items-center justify-center">

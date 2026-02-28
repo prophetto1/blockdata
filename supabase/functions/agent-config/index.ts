@@ -70,7 +70,8 @@ export function computeReadiness(
   key: KeyRow | undefined,
   connections: ConnectionRow[],
 ): { is_ready: boolean; reasons: string[] } {
-  if (providerFamily === "anthropic" || providerFamily === "openai") {
+  // API-key-only providers (standard Bearer token auth)
+  if (["anthropic", "openai", "voyage", "cohere", "jina"].includes(providerFamily)) {
     const isReady = keyConfigured(key);
     return { is_ready: isReady, reasons: isReady ? [] : ["Missing API key"] };
   }

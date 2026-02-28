@@ -1,0 +1,3362 @@
+{
+  "generatedAt": "2026-02-28T08:14:10.886Z",
+  "scope": "auth",
+  "pages": [
+    {
+      "page": "src/pages/AgentOnboarding.tsx",
+      "componentCount": 1,
+      "categoryCounts": {
+        "external-package": 1
+      },
+      "components": [
+        {
+          "component": "Navigate",
+          "usedAs": "Navigate",
+          "source": "react-router-dom",
+          "importKind": "named",
+          "importedAs": "Navigate",
+          "category": "external-package",
+          "definition": "Navigate comes from react-router-dom (named import of Navigate)"
+        }
+      ]
+    },
+    {
+      "page": "src/pages/AgentOnboardingAuth.tsx",
+      "componentCount": 2,
+      "categoryCounts": {
+        "local-components": 2
+      },
+      "components": [
+        {
+          "component": "Button",
+          "usedAs": "Button",
+          "source": "@/components/ui/button",
+          "importKind": "named",
+          "importedAs": "Button",
+          "category": "local-components",
+          "definition": "Button comes from @/components/ui/button (named import of Button)"
+        },
+        {
+          "component": "PageHeader",
+          "usedAs": "PageHeader",
+          "source": "@/components/common/PageHeader",
+          "importKind": "named",
+          "importedAs": "PageHeader",
+          "category": "local-components",
+          "definition": "PageHeader comes from @/components/common/PageHeader (named import of PageHeader)"
+        }
+      ]
+    },
+    {
+      "page": "src/pages/AgentOnboardingConnect.tsx",
+      "componentCount": 4,
+      "categoryCounts": {
+        "local-components": 4
+      },
+      "components": [
+        {
+          "component": "ApiKeyPanel",
+          "usedAs": "ApiKeyPanel",
+          "source": "@/components/agents/forms/ApiKeyPanel",
+          "importKind": "named",
+          "importedAs": "ApiKeyPanel",
+          "category": "local-components",
+          "definition": "ApiKeyPanel comes from @/components/agents/forms/ApiKeyPanel (named import of ApiKeyPanel)"
+        },
+        {
+          "component": "Button",
+          "usedAs": "Button",
+          "source": "@/components/ui/button",
+          "importKind": "named",
+          "importedAs": "Button",
+          "category": "local-components",
+          "definition": "Button comes from @/components/ui/button (named import of Button)"
+        },
+        {
+          "component": "GoogleAuthPanel",
+          "usedAs": "GoogleAuthPanel",
+          "source": "@/components/agents/forms/GoogleAuthPanel",
+          "importKind": "named",
+          "importedAs": "GoogleAuthPanel",
+          "category": "local-components",
+          "definition": "GoogleAuthPanel comes from @/components/agents/forms/GoogleAuthPanel (named import of GoogleAuthPanel)"
+        },
+        {
+          "component": "PageHeader",
+          "usedAs": "PageHeader",
+          "source": "@/components/common/PageHeader",
+          "importKind": "named",
+          "importedAs": "PageHeader",
+          "category": "local-components",
+          "definition": "PageHeader comes from @/components/common/PageHeader (named import of PageHeader)"
+        }
+      ]
+    },
+    {
+      "page": "src/pages/AgentOnboardingSelect.tsx",
+      "componentCount": 2,
+      "categoryCounts": {
+        "local-components": 2
+      },
+      "components": [
+        {
+          "component": "Button",
+          "usedAs": "Button",
+          "source": "@/components/ui/button",
+          "importKind": "named",
+          "importedAs": "Button",
+          "category": "local-components",
+          "definition": "Button comes from @/components/ui/button (named import of Button)"
+        },
+        {
+          "component": "PageHeader",
+          "usedAs": "PageHeader",
+          "source": "@/components/common/PageHeader",
+          "importKind": "named",
+          "importedAs": "PageHeader",
+          "category": "local-components",
+          "definition": "PageHeader comes from @/components/common/PageHeader (named import of PageHeader)"
+        }
+      ]
+    },
+    {
+      "page": "src/pages/Agents.tsx",
+      "componentCount": 3,
+      "categoryCounts": {
+        "local-components": 3
+      },
+      "components": [
+        {
+          "component": "AgentCard",
+          "usedAs": "AgentCard",
+          "source": "@/components/agents/AgentCard",
+          "importKind": "named",
+          "importedAs": "AgentCard",
+          "category": "local-components",
+          "definition": "AgentCard comes from @/components/agents/AgentCard (named import of AgentCard)"
+        },
+        {
+          "component": "AgentConfigModal",
+          "usedAs": "AgentConfigModal",
+          "source": "@/components/agents/AgentConfigModal",
+          "importKind": "named",
+          "importedAs": "AgentConfigModal",
+          "category": "local-components",
+          "definition": "AgentConfigModal comes from @/components/agents/AgentConfigModal (named import of AgentConfigModal)"
+        },
+        {
+          "component": "PageHeader",
+          "usedAs": "PageHeader",
+          "source": "@/components/common/PageHeader",
+          "importKind": "named",
+          "importedAs": "PageHeader",
+          "category": "local-components",
+          "definition": "PageHeader comes from @/components/common/PageHeader (named import of PageHeader)"
+        }
+      ]
+    },
+    {
+      "page": "src/pages/Commands.tsx",
+      "componentCount": 1,
+      "categoryCounts": {
+        "local-components": 1
+      },
+      "components": [
+        {
+          "component": "PageHeader",
+          "usedAs": "PageHeader",
+          "source": "@/components/common/PageHeader",
+          "importKind": "named",
+          "importedAs": "PageHeader",
+          "category": "local-components",
+          "definition": "PageHeader comes from @/components/common/PageHeader (named import of PageHeader)"
+        }
+      ]
+    },
+    {
+      "page": "src/pages/DatabasePlaceholder.tsx",
+      "componentCount": 2,
+      "categoryCounts": {
+        "tabler-icons": 1,
+        "local-components": 1
+      },
+      "components": [
+        {
+          "component": "IconDatabase",
+          "usedAs": "IconDatabase",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconDatabase",
+          "category": "tabler-icons",
+          "definition": "IconDatabase comes from @tabler/icons-react (named import of IconDatabase)"
+        },
+        {
+          "component": "PageHeader",
+          "usedAs": "PageHeader",
+          "source": "@/components/common/PageHeader",
+          "importKind": "named",
+          "importedAs": "PageHeader",
+          "category": "local-components",
+          "definition": "PageHeader comes from @/components/common/PageHeader (named import of PageHeader)"
+        }
+      ]
+    },
+    {
+      "page": "src/pages/DocumentTest.tsx",
+      "componentCount": 43,
+      "categoryCounts": {
+        "local-components": 13,
+        "ark-ui": 16,
+        "tabler-icons": 12,
+        "in-file component": 1,
+        "external-package": 1
+      },
+      "components": [
+        {
+          "component": "DltLoadPanel",
+          "usedAs": "DltLoadPanel",
+          "source": "@/components/elt/DltLoadPanel",
+          "importKind": "named",
+          "importedAs": "DltLoadPanel",
+          "category": "local-components",
+          "definition": "DltLoadPanel comes from @/components/elt/DltLoadPanel (named import of DltLoadPanel)"
+        },
+        {
+          "component": "DltPullPanel",
+          "usedAs": "DltPullPanel",
+          "source": "@/components/elt/DltPullPanel",
+          "importKind": "named",
+          "importedAs": "DltPullPanel",
+          "category": "local-components",
+          "definition": "DltPullPanel comes from @/components/elt/DltPullPanel (named import of DltPullPanel)"
+        },
+        {
+          "component": "DocxPreview",
+          "usedAs": "DocxPreview",
+          "source": "@/components/documents/DocxPreview",
+          "importKind": "named",
+          "importedAs": "DocxPreview",
+          "category": "local-components",
+          "definition": "DocxPreview comes from @/components/documents/DocxPreview (named import of DocxPreview)"
+        },
+        {
+          "component": "Field",
+          "usedAs": "Field.Input",
+          "source": "@ark-ui/react/field",
+          "importKind": "named",
+          "importedAs": "Field",
+          "category": "ark-ui",
+          "definition": "Field.Input comes from @ark-ui/react/field (named import of Field)"
+        },
+        {
+          "component": "Field",
+          "usedAs": "Field.Root",
+          "source": "@ark-ui/react/field",
+          "importKind": "named",
+          "importedAs": "Field",
+          "category": "ark-ui",
+          "definition": "Field.Root comes from @ark-ui/react/field (named import of Field)"
+        },
+        {
+          "component": "FlowCanvas",
+          "usedAs": "FlowCanvas",
+          "source": "@/components/flows/FlowCanvas",
+          "importKind": "default",
+          "importedAs": "default",
+          "category": "local-components",
+          "definition": "FlowCanvas comes from @/components/flows/FlowCanvas (default import of default)"
+        },
+        {
+          "component": "IconDotsVertical",
+          "usedAs": "IconDotsVertical",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconDotsVertical",
+          "category": "tabler-icons",
+          "definition": "IconDotsVertical comes from @tabler/icons-react (named import of IconDotsVertical)"
+        },
+        {
+          "component": "IconDownload",
+          "usedAs": "IconDownload",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconDownload",
+          "category": "tabler-icons",
+          "definition": "IconDownload comes from @tabler/icons-react (named import of IconDownload)"
+        },
+        {
+          "component": "IconEye",
+          "usedAs": "IconEye",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconEye",
+          "category": "tabler-icons",
+          "definition": "IconEye comes from @tabler/icons-react (named import of IconEye)"
+        },
+        {
+          "component": "IconFilePlus",
+          "usedAs": "IconFilePlus",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconFilePlus",
+          "category": "tabler-icons",
+          "definition": "IconFilePlus comes from @tabler/icons-react (named import of IconFilePlus)"
+        },
+        {
+          "component": "IconFiles",
+          "usedAs": "IconFiles",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconFiles",
+          "category": "tabler-icons",
+          "definition": "IconFiles comes from @tabler/icons-react (named import of IconFiles)"
+        },
+        {
+          "component": "IconFileText",
+          "usedAs": "IconFileText",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconFileText",
+          "category": "tabler-icons",
+          "definition": "IconFileText comes from @tabler/icons-react (named import of IconFileText)"
+        },
+        {
+          "component": "IconFolder",
+          "usedAs": "IconFolder",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconFolder",
+          "category": "tabler-icons",
+          "definition": "IconFolder comes from @tabler/icons-react (named import of IconFolder)"
+        },
+        {
+          "component": "IconFolderPlus",
+          "usedAs": "IconFolderPlus",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconFolderPlus",
+          "category": "tabler-icons",
+          "definition": "IconFolderPlus comes from @tabler/icons-react (named import of IconFolderPlus)"
+        },
+        {
+          "component": "IconLayoutColumns",
+          "usedAs": "IconLayoutColumns",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconLayoutColumns",
+          "category": "tabler-icons",
+          "definition": "IconLayoutColumns comes from @tabler/icons-react (named import of IconLayoutColumns)"
+        },
+        {
+          "component": "IconPlus",
+          "usedAs": "IconPlus",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconPlus",
+          "category": "tabler-icons",
+          "definition": "IconPlus comes from @tabler/icons-react (named import of IconPlus)"
+        },
+        {
+          "component": "IconTrash",
+          "usedAs": "IconTrash",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconTrash",
+          "category": "tabler-icons",
+          "definition": "IconTrash comes from @tabler/icons-react (named import of IconTrash)"
+        },
+        {
+          "component": "IconX",
+          "usedAs": "IconX",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconX",
+          "category": "tabler-icons",
+          "definition": "IconX comes from @tabler/icons-react (named import of IconX)"
+        },
+        {
+          "component": "MenuContent",
+          "usedAs": "MenuContent",
+          "source": "@/components/ui/menu",
+          "importKind": "named",
+          "importedAs": "MenuContent",
+          "category": "local-components",
+          "definition": "MenuContent comes from @/components/ui/menu (named import of MenuContent)"
+        },
+        {
+          "component": "MenuItem",
+          "usedAs": "MenuItem",
+          "source": "@/components/ui/menu",
+          "importKind": "named",
+          "importedAs": "MenuItem",
+          "category": "local-components",
+          "definition": "MenuItem comes from @/components/ui/menu (named import of MenuItem)"
+        },
+        {
+          "component": "MenuPortal",
+          "usedAs": "MenuPortal",
+          "source": "@/components/ui/menu",
+          "importKind": "named",
+          "importedAs": "MenuPortal",
+          "category": "local-components",
+          "definition": "MenuPortal comes from @/components/ui/menu (named import of MenuPortal)"
+        },
+        {
+          "component": "MenuPositioner",
+          "usedAs": "MenuPositioner",
+          "source": "@/components/ui/menu",
+          "importKind": "named",
+          "importedAs": "MenuPositioner",
+          "category": "local-components",
+          "definition": "MenuPositioner comes from @/components/ui/menu (named import of MenuPositioner)"
+        },
+        {
+          "component": "MenuRoot",
+          "usedAs": "MenuRoot",
+          "source": "@/components/ui/menu",
+          "importKind": "named",
+          "importedAs": "MenuRoot",
+          "category": "local-components",
+          "definition": "MenuRoot comes from @/components/ui/menu (named import of MenuRoot)"
+        },
+        {
+          "component": "MenuTrigger",
+          "usedAs": "MenuTrigger",
+          "source": "@/components/ui/menu",
+          "importKind": "named",
+          "importedAs": "MenuTrigger",
+          "category": "local-components",
+          "definition": "MenuTrigger comes from @/components/ui/menu (named import of MenuTrigger)"
+        },
+        {
+          "component": "ParseEasyPanel",
+          "usedAs": "ParseEasyPanel",
+          "source": "@/components/elt/ParseEasyPanel",
+          "importKind": "named",
+          "importedAs": "ParseEasyPanel",
+          "category": "local-components",
+          "definition": "ParseEasyPanel comes from @/components/elt/ParseEasyPanel (named import of ParseEasyPanel)"
+        },
+        {
+          "component": "PdfPreview",
+          "usedAs": "PdfPreview",
+          "source": "@/components/documents/PdfPreview",
+          "importKind": "named",
+          "importedAs": "PdfPreview",
+          "category": "local-components",
+          "definition": "PdfPreview comes from @/components/documents/PdfPreview (named import of PdfPreview)"
+        },
+        {
+          "component": "PptxPreview",
+          "usedAs": "PptxPreview",
+          "source": "@/components/documents/PptxPreview",
+          "importKind": "named",
+          "importedAs": "PptxPreview",
+          "category": "local-components",
+          "definition": "PptxPreview comes from @/components/documents/PptxPreview (named import of PptxPreview)"
+        },
+        {
+          "component": "PreviewTabPanel",
+          "usedAs": "PreviewTabPanel",
+          "source": "(in-file or unresolved)",
+          "importKind": null,
+          "importedAs": null,
+          "category": "in-file component",
+          "definition": "PreviewTabPanel is defined in the same page file"
+        },
+        {
+          "component": "ReactMarkdown",
+          "usedAs": "ReactMarkdown",
+          "source": "react-markdown",
+          "importKind": "default",
+          "importedAs": "default",
+          "category": "external-package",
+          "definition": "ReactMarkdown comes from react-markdown (default import of default)"
+        },
+        {
+          "component": "Splitter",
+          "usedAs": "Splitter.Panel",
+          "source": "@ark-ui/react/splitter",
+          "importKind": "named",
+          "importedAs": "Splitter",
+          "category": "ark-ui",
+          "definition": "Splitter.Panel comes from @ark-ui/react/splitter (named import of Splitter)"
+        },
+        {
+          "component": "Splitter",
+          "usedAs": "Splitter.ResizeTrigger",
+          "source": "@ark-ui/react/splitter",
+          "importKind": "named",
+          "importedAs": "Splitter",
+          "category": "ark-ui",
+          "definition": "Splitter.ResizeTrigger comes from @ark-ui/react/splitter (named import of Splitter)"
+        },
+        {
+          "component": "Splitter",
+          "usedAs": "Splitter.ResizeTriggerIndicator",
+          "source": "@ark-ui/react/splitter",
+          "importKind": "named",
+          "importedAs": "Splitter",
+          "category": "ark-ui",
+          "definition": "Splitter.ResizeTriggerIndicator comes from @ark-ui/react/splitter (named import of Splitter)"
+        },
+        {
+          "component": "Splitter",
+          "usedAs": "Splitter.Root",
+          "source": "@ark-ui/react/splitter",
+          "importKind": "named",
+          "importedAs": "Splitter",
+          "category": "ark-ui",
+          "definition": "Splitter.Root comes from @ark-ui/react/splitter (named import of Splitter)"
+        },
+        {
+          "component": "TreeView",
+          "usedAs": "TreeView.Branch",
+          "source": "@ark-ui/react/tree-view",
+          "importKind": "named",
+          "importedAs": "TreeView",
+          "category": "ark-ui",
+          "definition": "TreeView.Branch comes from @ark-ui/react/tree-view (named import of TreeView)"
+        },
+        {
+          "component": "TreeView",
+          "usedAs": "TreeView.BranchControl",
+          "source": "@ark-ui/react/tree-view",
+          "importKind": "named",
+          "importedAs": "TreeView",
+          "category": "ark-ui",
+          "definition": "TreeView.BranchControl comes from @ark-ui/react/tree-view (named import of TreeView)"
+        },
+        {
+          "component": "TreeView",
+          "usedAs": "TreeView.BranchText",
+          "source": "@ark-ui/react/tree-view",
+          "importKind": "named",
+          "importedAs": "TreeView",
+          "category": "ark-ui",
+          "definition": "TreeView.BranchText comes from @ark-ui/react/tree-view (named import of TreeView)"
+        },
+        {
+          "component": "TreeView",
+          "usedAs": "TreeView.Context",
+          "source": "@ark-ui/react/tree-view",
+          "importKind": "named",
+          "importedAs": "TreeView",
+          "category": "ark-ui",
+          "definition": "TreeView.Context comes from @ark-ui/react/tree-view (named import of TreeView)"
+        },
+        {
+          "component": "TreeView",
+          "usedAs": "TreeView.Item",
+          "source": "@ark-ui/react/tree-view",
+          "importKind": "named",
+          "importedAs": "TreeView",
+          "category": "ark-ui",
+          "definition": "TreeView.Item comes from @ark-ui/react/tree-view (named import of TreeView)"
+        },
+        {
+          "component": "TreeView",
+          "usedAs": "TreeView.ItemText",
+          "source": "@ark-ui/react/tree-view",
+          "importKind": "named",
+          "importedAs": "TreeView",
+          "category": "ark-ui",
+          "definition": "TreeView.ItemText comes from @ark-ui/react/tree-view (named import of TreeView)"
+        },
+        {
+          "component": "TreeView",
+          "usedAs": "TreeView.NodeContext",
+          "source": "@ark-ui/react/tree-view",
+          "importKind": "named",
+          "importedAs": "TreeView",
+          "category": "ark-ui",
+          "definition": "TreeView.NodeContext comes from @ark-ui/react/tree-view (named import of TreeView)"
+        },
+        {
+          "component": "TreeView",
+          "usedAs": "TreeView.NodeProvider",
+          "source": "@ark-ui/react/tree-view",
+          "importKind": "named",
+          "importedAs": "TreeView",
+          "category": "ark-ui",
+          "definition": "TreeView.NodeProvider comes from @ark-ui/react/tree-view (named import of TreeView)"
+        },
+        {
+          "component": "TreeView",
+          "usedAs": "TreeView.Root",
+          "source": "@ark-ui/react/tree-view",
+          "importKind": "named",
+          "importedAs": "TreeView",
+          "category": "ark-ui",
+          "definition": "TreeView.Root comes from @ark-ui/react/tree-view (named import of TreeView)"
+        },
+        {
+          "component": "TreeView",
+          "usedAs": "TreeView.Tree",
+          "source": "@ark-ui/react/tree-view",
+          "importKind": "named",
+          "importedAs": "TreeView",
+          "category": "ark-ui",
+          "definition": "TreeView.Tree comes from @ark-ui/react/tree-view (named import of TreeView)"
+        }
+      ]
+    },
+    {
+      "page": "src/pages/FlowDetail.tsx",
+      "componentCount": 7,
+      "categoryCounts": {
+        "local-components": 6,
+        "tabler-icons": 1
+      },
+      "components": [
+        {
+          "component": "FlowCanvas",
+          "usedAs": "FlowCanvas",
+          "source": "@/components/flows/FlowCanvas",
+          "importKind": "default",
+          "importedAs": "default",
+          "category": "local-components",
+          "definition": "FlowCanvas comes from @/components/flows/FlowCanvas (default import of default)"
+        },
+        {
+          "component": "FlowWorkbench",
+          "usedAs": "FlowWorkbench",
+          "source": "@/components/flows/FlowWorkbench",
+          "importKind": "default",
+          "importedAs": "default",
+          "category": "local-components",
+          "definition": "FlowWorkbench comes from @/components/flows/FlowWorkbench (default import of default)"
+        },
+        {
+          "component": "IconLock",
+          "usedAs": "IconLock",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconLock",
+          "category": "tabler-icons",
+          "definition": "IconLock comes from @tabler/icons-react (named import of IconLock)"
+        },
+        {
+          "component": "Tabs",
+          "usedAs": "Tabs",
+          "source": "@/components/ui/tabs",
+          "importKind": "named",
+          "importedAs": "Tabs",
+          "category": "local-components",
+          "definition": "Tabs comes from @/components/ui/tabs (named import of Tabs)"
+        },
+        {
+          "component": "TabsContent",
+          "usedAs": "TabsContent",
+          "source": "@/components/ui/tabs",
+          "importKind": "named",
+          "importedAs": "TabsContent",
+          "category": "local-components",
+          "definition": "TabsContent comes from @/components/ui/tabs (named import of TabsContent)"
+        },
+        {
+          "component": "TabsList",
+          "usedAs": "TabsList",
+          "source": "@/components/ui/tabs",
+          "importKind": "named",
+          "importedAs": "TabsList",
+          "category": "local-components",
+          "definition": "TabsList comes from @/components/ui/tabs (named import of TabsList)"
+        },
+        {
+          "component": "TabsTrigger",
+          "usedAs": "TabsTrigger",
+          "source": "@/components/ui/tabs",
+          "importKind": "named",
+          "importedAs": "TabsTrigger",
+          "category": "local-components",
+          "definition": "TabsTrigger comes from @/components/ui/tabs (named import of TabsTrigger)"
+        }
+      ]
+    },
+    {
+      "page": "src/pages/FlowsList.tsx",
+      "componentCount": 5,
+      "categoryCounts": {
+        "local-components": 2,
+        "external-package": 1,
+        "tabler-icons": 2
+      },
+      "components": [
+        {
+          "component": "ErrorAlert",
+          "usedAs": "ErrorAlert",
+          "source": "@/components/common/ErrorAlert",
+          "importKind": "named",
+          "importedAs": "ErrorAlert",
+          "category": "local-components",
+          "definition": "ErrorAlert comes from @/components/common/ErrorAlert (named import of ErrorAlert)"
+        },
+        {
+          "component": "HugeiconsIcon",
+          "usedAs": "HugeiconsIcon",
+          "source": "@hugeicons/react",
+          "importKind": "named",
+          "importedAs": "HugeiconsIcon",
+          "category": "external-package",
+          "definition": "HugeiconsIcon comes from @hugeicons/react (named import of HugeiconsIcon)"
+        },
+        {
+          "component": "IconClock",
+          "usedAs": "IconClock",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconClock",
+          "category": "tabler-icons",
+          "definition": "IconClock comes from @tabler/icons-react (named import of IconClock)"
+        },
+        {
+          "component": "IconExternalLink",
+          "usedAs": "IconExternalLink",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconExternalLink",
+          "category": "tabler-icons",
+          "definition": "IconExternalLink comes from @tabler/icons-react (named import of IconExternalLink)"
+        },
+        {
+          "component": "PageHeader",
+          "usedAs": "PageHeader",
+          "source": "@/components/common/PageHeader",
+          "importKind": "named",
+          "importedAs": "PageHeader",
+          "category": "local-components",
+          "definition": "PageHeader comes from @/components/common/PageHeader (named import of PageHeader)"
+        }
+      ]
+    },
+    {
+      "page": "src/pages/Integrations.tsx",
+      "componentCount": 1,
+      "categoryCounts": {
+        "local-components": 1
+      },
+      "components": [
+        {
+          "component": "PageHeader",
+          "usedAs": "PageHeader",
+          "source": "@/components/common/PageHeader",
+          "importKind": "named",
+          "importedAs": "PageHeader",
+          "category": "local-components",
+          "definition": "PageHeader comes from @/components/common/PageHeader (named import of PageHeader)"
+        }
+      ]
+    },
+    {
+      "page": "src/pages/ModelRegistrationPreview.tsx",
+      "componentCount": 33,
+      "categoryCounts": {
+        "mantine": 23,
+        "tabler-icons": 4,
+        "local-components": 6
+      },
+      "components": [
+        {
+          "component": "Badge",
+          "usedAs": "Badge",
+          "source": "@mantine/core",
+          "importKind": "named",
+          "importedAs": "Badge",
+          "category": "mantine",
+          "definition": "Badge comes from @mantine/core (named import of Badge)"
+        },
+        {
+          "component": "Box",
+          "usedAs": "Box",
+          "source": "@mantine/core",
+          "importKind": "named",
+          "importedAs": "Box",
+          "category": "mantine",
+          "definition": "Box comes from @mantine/core (named import of Box)"
+        },
+        {
+          "component": "Button",
+          "usedAs": "Button",
+          "source": "@mantine/core",
+          "importKind": "named",
+          "importedAs": "Button",
+          "category": "mantine",
+          "definition": "Button comes from @mantine/core (named import of Button)"
+        },
+        {
+          "component": "Card",
+          "usedAs": "Card",
+          "source": "@mantine/core",
+          "importKind": "named",
+          "importedAs": "Card",
+          "category": "mantine",
+          "definition": "Card comes from @mantine/core (named import of Card)"
+        },
+        {
+          "component": "Code",
+          "usedAs": "Code",
+          "source": "@mantine/core",
+          "importKind": "named",
+          "importedAs": "Code",
+          "category": "mantine",
+          "definition": "Code comes from @mantine/core (named import of Code)"
+        },
+        {
+          "component": "Divider",
+          "usedAs": "Divider",
+          "source": "@mantine/core",
+          "importKind": "named",
+          "importedAs": "Divider",
+          "category": "mantine",
+          "definition": "Divider comes from @mantine/core (named import of Divider)"
+        },
+        {
+          "component": "Grid",
+          "usedAs": "Grid",
+          "source": "@mantine/core",
+          "importKind": "named",
+          "importedAs": "Grid",
+          "category": "mantine",
+          "definition": "Grid comes from @mantine/core (named import of Grid)"
+        },
+        {
+          "component": "Grid",
+          "usedAs": "Grid.Col",
+          "source": "@mantine/core",
+          "importKind": "named",
+          "importedAs": "Grid",
+          "category": "mantine",
+          "definition": "Grid.Col comes from @mantine/core (named import of Grid)"
+        },
+        {
+          "component": "Group",
+          "usedAs": "Group",
+          "source": "@mantine/core",
+          "importKind": "named",
+          "importedAs": "Group",
+          "category": "mantine",
+          "definition": "Group comes from @mantine/core (named import of Group)"
+        },
+        {
+          "component": "IconCloud",
+          "usedAs": "IconCloud",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconCloud",
+          "category": "tabler-icons",
+          "definition": "IconCloud comes from @tabler/icons-react (named import of IconCloud)"
+        },
+        {
+          "component": "IconCpu",
+          "usedAs": "IconCpu",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconCpu",
+          "category": "tabler-icons",
+          "definition": "IconCpu comes from @tabler/icons-react (named import of IconCpu)"
+        },
+        {
+          "component": "IconPlugConnected",
+          "usedAs": "IconPlugConnected",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconPlugConnected",
+          "category": "tabler-icons",
+          "definition": "IconPlugConnected comes from @tabler/icons-react (named import of IconPlugConnected)"
+        },
+        {
+          "component": "IconUser",
+          "usedAs": "IconUser",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconUser",
+          "category": "tabler-icons",
+          "definition": "IconUser comes from @tabler/icons-react (named import of IconUser)"
+        },
+        {
+          "component": "PageHeader",
+          "usedAs": "PageHeader",
+          "source": "@/components/common/PageHeader",
+          "importKind": "named",
+          "importedAs": "PageHeader",
+          "category": "local-components",
+          "definition": "PageHeader comes from @/components/common/PageHeader (named import of PageHeader)"
+        },
+        {
+          "component": "Paper",
+          "usedAs": "Paper",
+          "source": "@mantine/core",
+          "importKind": "named",
+          "importedAs": "Paper",
+          "category": "mantine",
+          "definition": "Paper comes from @mantine/core (named import of Paper)"
+        },
+        {
+          "component": "PasswordInput",
+          "usedAs": "PasswordInput",
+          "source": "@mantine/core",
+          "importKind": "named",
+          "importedAs": "PasswordInput",
+          "category": "mantine",
+          "definition": "PasswordInput comes from @mantine/core (named import of PasswordInput)"
+        },
+        {
+          "component": "SegmentGroupIndicator",
+          "usedAs": "SegmentGroupIndicator",
+          "source": "@/components/ui/segment-group",
+          "importKind": "named",
+          "importedAs": "SegmentGroupIndicator",
+          "category": "local-components",
+          "definition": "SegmentGroupIndicator comes from @/components/ui/segment-group (named import of SegmentGroupIndicator)"
+        },
+        {
+          "component": "SegmentGroupItem",
+          "usedAs": "SegmentGroupItem",
+          "source": "@/components/ui/segment-group",
+          "importKind": "named",
+          "importedAs": "SegmentGroupItem",
+          "category": "local-components",
+          "definition": "SegmentGroupItem comes from @/components/ui/segment-group (named import of SegmentGroupItem)"
+        },
+        {
+          "component": "SegmentGroupItemHiddenInput",
+          "usedAs": "SegmentGroupItemHiddenInput",
+          "source": "@/components/ui/segment-group",
+          "importKind": "named",
+          "importedAs": "SegmentGroupItemHiddenInput",
+          "category": "local-components",
+          "definition": "SegmentGroupItemHiddenInput comes from @/components/ui/segment-group (named import of SegmentGroupItemHiddenInput)"
+        },
+        {
+          "component": "SegmentGroupItemText",
+          "usedAs": "SegmentGroupItemText",
+          "source": "@/components/ui/segment-group",
+          "importKind": "named",
+          "importedAs": "SegmentGroupItemText",
+          "category": "local-components",
+          "definition": "SegmentGroupItemText comes from @/components/ui/segment-group (named import of SegmentGroupItemText)"
+        },
+        {
+          "component": "SegmentGroupRoot",
+          "usedAs": "SegmentGroupRoot",
+          "source": "@/components/ui/segment-group",
+          "importKind": "named",
+          "importedAs": "SegmentGroupRoot",
+          "category": "local-components",
+          "definition": "SegmentGroupRoot comes from @/components/ui/segment-group (named import of SegmentGroupRoot)"
+        },
+        {
+          "component": "Select",
+          "usedAs": "Select",
+          "source": "@mantine/core",
+          "importKind": "named",
+          "importedAs": "Select",
+          "category": "mantine",
+          "definition": "Select comes from @mantine/core (named import of Select)"
+        },
+        {
+          "component": "Stack",
+          "usedAs": "Stack",
+          "source": "@mantine/core",
+          "importKind": "named",
+          "importedAs": "Stack",
+          "category": "mantine",
+          "definition": "Stack comes from @mantine/core (named import of Stack)"
+        },
+        {
+          "component": "Switch",
+          "usedAs": "Switch",
+          "source": "@mantine/core",
+          "importKind": "named",
+          "importedAs": "Switch",
+          "category": "mantine",
+          "definition": "Switch comes from @mantine/core (named import of Switch)"
+        },
+        {
+          "component": "Table",
+          "usedAs": "Table",
+          "source": "@mantine/core",
+          "importKind": "named",
+          "importedAs": "Table",
+          "category": "mantine",
+          "definition": "Table comes from @mantine/core (named import of Table)"
+        },
+        {
+          "component": "Table",
+          "usedAs": "Table.Tbody",
+          "source": "@mantine/core",
+          "importKind": "named",
+          "importedAs": "Table",
+          "category": "mantine",
+          "definition": "Table.Tbody comes from @mantine/core (named import of Table)"
+        },
+        {
+          "component": "Table",
+          "usedAs": "Table.Td",
+          "source": "@mantine/core",
+          "importKind": "named",
+          "importedAs": "Table",
+          "category": "mantine",
+          "definition": "Table.Td comes from @mantine/core (named import of Table)"
+        },
+        {
+          "component": "Table",
+          "usedAs": "Table.Th",
+          "source": "@mantine/core",
+          "importKind": "named",
+          "importedAs": "Table",
+          "category": "mantine",
+          "definition": "Table.Th comes from @mantine/core (named import of Table)"
+        },
+        {
+          "component": "Table",
+          "usedAs": "Table.Thead",
+          "source": "@mantine/core",
+          "importKind": "named",
+          "importedAs": "Table",
+          "category": "mantine",
+          "definition": "Table.Thead comes from @mantine/core (named import of Table)"
+        },
+        {
+          "component": "Table",
+          "usedAs": "Table.Tr",
+          "source": "@mantine/core",
+          "importKind": "named",
+          "importedAs": "Table",
+          "category": "mantine",
+          "definition": "Table.Tr comes from @mantine/core (named import of Table)"
+        },
+        {
+          "component": "Text",
+          "usedAs": "Text",
+          "source": "@mantine/core",
+          "importKind": "named",
+          "importedAs": "Text",
+          "category": "mantine",
+          "definition": "Text comes from @mantine/core (named import of Text)"
+        },
+        {
+          "component": "TextInput",
+          "usedAs": "TextInput",
+          "source": "@mantine/core",
+          "importKind": "named",
+          "importedAs": "TextInput",
+          "category": "mantine",
+          "definition": "TextInput comes from @mantine/core (named import of TextInput)"
+        },
+        {
+          "component": "Title",
+          "usedAs": "Title",
+          "source": "@mantine/core",
+          "importKind": "named",
+          "importedAs": "Title",
+          "category": "mantine",
+          "definition": "Title comes from @mantine/core (named import of Title)"
+        }
+      ]
+    },
+    {
+      "page": "src/pages/Projects.tsx",
+      "componentCount": 33,
+      "categoryCounts": {
+        "mantine": 12,
+        "external-package": 1,
+        "local-components": 13,
+        "tabler-icons": 7
+      },
+      "components": [
+        {
+          "component": "ActionIcon",
+          "usedAs": "ActionIcon",
+          "source": "@mantine/core",
+          "importKind": "named",
+          "importedAs": "ActionIcon",
+          "category": "mantine",
+          "definition": "ActionIcon comes from @mantine/core (named import of ActionIcon)"
+        },
+        {
+          "component": "AgGridReact",
+          "usedAs": "AgGridReact",
+          "source": "ag-grid-react",
+          "importKind": "named",
+          "importedAs": "AgGridReact",
+          "category": "external-package",
+          "definition": "AgGridReact comes from ag-grid-react (named import of AgGridReact)"
+        },
+        {
+          "component": "Badge",
+          "usedAs": "Badge",
+          "source": "@mantine/core",
+          "importKind": "named",
+          "importedAs": "Badge",
+          "category": "mantine",
+          "definition": "Badge comes from @mantine/core (named import of Badge)"
+        },
+        {
+          "component": "Button",
+          "usedAs": "Button",
+          "source": "@mantine/core",
+          "importKind": "named",
+          "importedAs": "Button",
+          "category": "mantine",
+          "definition": "Button comes from @mantine/core (named import of Button)"
+        },
+        {
+          "component": "Center",
+          "usedAs": "Center",
+          "source": "@mantine/core",
+          "importKind": "named",
+          "importedAs": "Center",
+          "category": "mantine",
+          "definition": "Center comes from @mantine/core (named import of Center)"
+        },
+        {
+          "component": "DialogBody",
+          "usedAs": "DialogBody",
+          "source": "@/components/ui/dialog",
+          "importKind": "named",
+          "importedAs": "DialogBody",
+          "category": "local-components",
+          "definition": "DialogBody comes from @/components/ui/dialog (named import of DialogBody)"
+        },
+        {
+          "component": "DialogCloseTrigger",
+          "usedAs": "DialogCloseTrigger",
+          "source": "@/components/ui/dialog",
+          "importKind": "named",
+          "importedAs": "DialogCloseTrigger",
+          "category": "local-components",
+          "definition": "DialogCloseTrigger comes from @/components/ui/dialog (named import of DialogCloseTrigger)"
+        },
+        {
+          "component": "DialogContent",
+          "usedAs": "DialogContent",
+          "source": "@/components/ui/dialog",
+          "importKind": "named",
+          "importedAs": "DialogContent",
+          "category": "local-components",
+          "definition": "DialogContent comes from @/components/ui/dialog (named import of DialogContent)"
+        },
+        {
+          "component": "DialogFooter",
+          "usedAs": "DialogFooter",
+          "source": "@/components/ui/dialog",
+          "importKind": "named",
+          "importedAs": "DialogFooter",
+          "category": "local-components",
+          "definition": "DialogFooter comes from @/components/ui/dialog (named import of DialogFooter)"
+        },
+        {
+          "component": "DialogRoot",
+          "usedAs": "DialogRoot",
+          "source": "@/components/ui/dialog",
+          "importKind": "named",
+          "importedAs": "DialogRoot",
+          "category": "local-components",
+          "definition": "DialogRoot comes from @/components/ui/dialog (named import of DialogRoot)"
+        },
+        {
+          "component": "DialogTitle",
+          "usedAs": "DialogTitle",
+          "source": "@/components/ui/dialog",
+          "importKind": "named",
+          "importedAs": "DialogTitle",
+          "category": "local-components",
+          "definition": "DialogTitle comes from @/components/ui/dialog (named import of DialogTitle)"
+        },
+        {
+          "component": "ErrorAlert",
+          "usedAs": "ErrorAlert",
+          "source": "@/components/common/ErrorAlert",
+          "importKind": "named",
+          "importedAs": "ErrorAlert",
+          "category": "local-components",
+          "definition": "ErrorAlert comes from @/components/common/ErrorAlert (named import of ErrorAlert)"
+        },
+        {
+          "component": "Group",
+          "usedAs": "Group",
+          "source": "@mantine/core",
+          "importKind": "named",
+          "importedAs": "Group",
+          "category": "mantine",
+          "definition": "Group comes from @mantine/core (named import of Group)"
+        },
+        {
+          "component": "IconClock",
+          "usedAs": "IconClock",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconClock",
+          "category": "tabler-icons",
+          "definition": "IconClock comes from @tabler/icons-react (named import of IconClock)"
+        },
+        {
+          "component": "IconExternalLink",
+          "usedAs": "IconExternalLink",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconExternalLink",
+          "category": "tabler-icons",
+          "definition": "IconExternalLink comes from @tabler/icons-react (named import of IconExternalLink)"
+        },
+        {
+          "component": "IconFileText",
+          "usedAs": "IconFileText",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconFileText",
+          "category": "tabler-icons",
+          "definition": "IconFileText comes from @tabler/icons-react (named import of IconFileText)"
+        },
+        {
+          "component": "IconFolder",
+          "usedAs": "IconFolder",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconFolder",
+          "category": "tabler-icons",
+          "definition": "IconFolder comes from @tabler/icons-react (named import of IconFolder)"
+        },
+        {
+          "component": "IconFolderPlus",
+          "usedAs": "IconFolderPlus",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconFolderPlus",
+          "category": "tabler-icons",
+          "definition": "IconFolderPlus comes from @tabler/icons-react (named import of IconFolderPlus)"
+        },
+        {
+          "component": "IconSearch",
+          "usedAs": "IconSearch",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconSearch",
+          "category": "tabler-icons",
+          "definition": "IconSearch comes from @tabler/icons-react (named import of IconSearch)"
+        },
+        {
+          "component": "IconUpload",
+          "usedAs": "IconUpload",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconUpload",
+          "category": "tabler-icons",
+          "definition": "IconUpload comes from @tabler/icons-react (named import of IconUpload)"
+        },
+        {
+          "component": "Loader",
+          "usedAs": "Loader",
+          "source": "@mantine/core",
+          "importKind": "named",
+          "importedAs": "Loader",
+          "category": "mantine",
+          "definition": "Loader comes from @mantine/core (named import of Loader)"
+        },
+        {
+          "component": "PageHeader",
+          "usedAs": "PageHeader",
+          "source": "@/components/common/PageHeader",
+          "importKind": "named",
+          "importedAs": "PageHeader",
+          "category": "local-components",
+          "definition": "PageHeader comes from @/components/common/PageHeader (named import of PageHeader)"
+        },
+        {
+          "component": "Pagination",
+          "usedAs": "Pagination",
+          "source": "@mantine/core",
+          "importKind": "named",
+          "importedAs": "Pagination",
+          "category": "mantine",
+          "definition": "Pagination comes from @mantine/core (named import of Pagination)"
+        },
+        {
+          "component": "SegmentGroupIndicator",
+          "usedAs": "SegmentGroupIndicator",
+          "source": "@/components/ui/segment-group",
+          "importKind": "named",
+          "importedAs": "SegmentGroupIndicator",
+          "category": "local-components",
+          "definition": "SegmentGroupIndicator comes from @/components/ui/segment-group (named import of SegmentGroupIndicator)"
+        },
+        {
+          "component": "SegmentGroupItem",
+          "usedAs": "SegmentGroupItem",
+          "source": "@/components/ui/segment-group",
+          "importKind": "named",
+          "importedAs": "SegmentGroupItem",
+          "category": "local-components",
+          "definition": "SegmentGroupItem comes from @/components/ui/segment-group (named import of SegmentGroupItem)"
+        },
+        {
+          "component": "SegmentGroupItemHiddenInput",
+          "usedAs": "SegmentGroupItemHiddenInput",
+          "source": "@/components/ui/segment-group",
+          "importKind": "named",
+          "importedAs": "SegmentGroupItemHiddenInput",
+          "category": "local-components",
+          "definition": "SegmentGroupItemHiddenInput comes from @/components/ui/segment-group (named import of SegmentGroupItemHiddenInput)"
+        },
+        {
+          "component": "SegmentGroupItemText",
+          "usedAs": "SegmentGroupItemText",
+          "source": "@/components/ui/segment-group",
+          "importKind": "named",
+          "importedAs": "SegmentGroupItemText",
+          "category": "local-components",
+          "definition": "SegmentGroupItemText comes from @/components/ui/segment-group (named import of SegmentGroupItemText)"
+        },
+        {
+          "component": "SegmentGroupRoot",
+          "usedAs": "SegmentGroupRoot",
+          "source": "@/components/ui/segment-group",
+          "importKind": "named",
+          "importedAs": "SegmentGroupRoot",
+          "category": "local-components",
+          "definition": "SegmentGroupRoot comes from @/components/ui/segment-group (named import of SegmentGroupRoot)"
+        },
+        {
+          "component": "Stack",
+          "usedAs": "Stack",
+          "source": "@mantine/core",
+          "importKind": "named",
+          "importedAs": "Stack",
+          "category": "mantine",
+          "definition": "Stack comes from @mantine/core (named import of Stack)"
+        },
+        {
+          "component": "Text",
+          "usedAs": "Text",
+          "source": "@mantine/core",
+          "importKind": "named",
+          "importedAs": "Text",
+          "category": "mantine",
+          "definition": "Text comes from @mantine/core (named import of Text)"
+        },
+        {
+          "component": "TextInput",
+          "usedAs": "TextInput",
+          "source": "@mantine/core",
+          "importKind": "named",
+          "importedAs": "TextInput",
+          "category": "mantine",
+          "definition": "TextInput comes from @mantine/core (named import of TextInput)"
+        },
+        {
+          "component": "ThemeIcon",
+          "usedAs": "ThemeIcon",
+          "source": "@mantine/core",
+          "importKind": "named",
+          "importedAs": "ThemeIcon",
+          "category": "mantine",
+          "definition": "ThemeIcon comes from @mantine/core (named import of ThemeIcon)"
+        },
+        {
+          "component": "Tooltip",
+          "usedAs": "Tooltip",
+          "source": "@mantine/core",
+          "importKind": "named",
+          "importedAs": "Tooltip",
+          "category": "mantine",
+          "definition": "Tooltip comes from @mantine/core (named import of Tooltip)"
+        }
+      ]
+    },
+    {
+      "page": "src/pages/RunDetail.tsx",
+      "componentCount": 12,
+      "categoryCounts": {
+        "local-components": 10,
+        "tabler-icons": 2
+      },
+      "components": [
+        {
+          "component": "AppBreadcrumbs",
+          "usedAs": "AppBreadcrumbs",
+          "source": "@/components/common/AppBreadcrumbs",
+          "importKind": "named",
+          "importedAs": "AppBreadcrumbs",
+          "category": "local-components",
+          "definition": "AppBreadcrumbs comes from @/components/common/AppBreadcrumbs (named import of AppBreadcrumbs)"
+        },
+        {
+          "component": "Badge",
+          "usedAs": "Badge",
+          "source": "@/components/ui/badge",
+          "importKind": "named",
+          "importedAs": "Badge",
+          "category": "local-components",
+          "definition": "Badge comes from @/components/ui/badge (named import of Badge)"
+        },
+        {
+          "component": "DialogBody",
+          "usedAs": "DialogBody",
+          "source": "@/components/ui/dialog",
+          "importKind": "named",
+          "importedAs": "DialogBody",
+          "category": "local-components",
+          "definition": "DialogBody comes from @/components/ui/dialog (named import of DialogBody)"
+        },
+        {
+          "component": "DialogCloseTrigger",
+          "usedAs": "DialogCloseTrigger",
+          "source": "@/components/ui/dialog",
+          "importKind": "named",
+          "importedAs": "DialogCloseTrigger",
+          "category": "local-components",
+          "definition": "DialogCloseTrigger comes from @/components/ui/dialog (named import of DialogCloseTrigger)"
+        },
+        {
+          "component": "DialogContent",
+          "usedAs": "DialogContent",
+          "source": "@/components/ui/dialog",
+          "importKind": "named",
+          "importedAs": "DialogContent",
+          "category": "local-components",
+          "definition": "DialogContent comes from @/components/ui/dialog (named import of DialogContent)"
+        },
+        {
+          "component": "DialogFooter",
+          "usedAs": "DialogFooter",
+          "source": "@/components/ui/dialog",
+          "importKind": "named",
+          "importedAs": "DialogFooter",
+          "category": "local-components",
+          "definition": "DialogFooter comes from @/components/ui/dialog (named import of DialogFooter)"
+        },
+        {
+          "component": "DialogRoot",
+          "usedAs": "DialogRoot",
+          "source": "@/components/ui/dialog",
+          "importKind": "named",
+          "importedAs": "DialogRoot",
+          "category": "local-components",
+          "definition": "DialogRoot comes from @/components/ui/dialog (named import of DialogRoot)"
+        },
+        {
+          "component": "DialogTitle",
+          "usedAs": "DialogTitle",
+          "source": "@/components/ui/dialog",
+          "importKind": "named",
+          "importedAs": "DialogTitle",
+          "category": "local-components",
+          "definition": "DialogTitle comes from @/components/ui/dialog (named import of DialogTitle)"
+        },
+        {
+          "component": "ErrorAlert",
+          "usedAs": "ErrorAlert",
+          "source": "@/components/common/ErrorAlert",
+          "importKind": "named",
+          "importedAs": "ErrorAlert",
+          "category": "local-components",
+          "definition": "ErrorAlert comes from @/components/common/ErrorAlert (named import of ErrorAlert)"
+        },
+        {
+          "component": "IconPlayerStop",
+          "usedAs": "IconPlayerStop",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconPlayerStop",
+          "category": "tabler-icons",
+          "definition": "IconPlayerStop comes from @tabler/icons-react (named import of IconPlayerStop)"
+        },
+        {
+          "component": "IconTrash",
+          "usedAs": "IconTrash",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconTrash",
+          "category": "tabler-icons",
+          "definition": "IconTrash comes from @tabler/icons-react (named import of IconTrash)"
+        },
+        {
+          "component": "PageHeader",
+          "usedAs": "PageHeader",
+          "source": "@/components/common/PageHeader",
+          "importKind": "named",
+          "importedAs": "PageHeader",
+          "category": "local-components",
+          "definition": "PageHeader comes from @/components/common/PageHeader (named import of PageHeader)"
+        }
+      ]
+    },
+    {
+      "page": "src/pages/SchemaLayout.tsx",
+      "componentCount": 25,
+      "categoryCounts": {
+        "in-file component": 3,
+        "local-components": 3,
+        "tabler-icons": 2,
+        "ark-ui": 16,
+        "relative-local": 1
+      },
+      "components": [
+        {
+          "component": "ConfigSwitch",
+          "usedAs": "ConfigSwitch",
+          "source": "(in-file or unresolved)",
+          "importKind": null,
+          "importedAs": null,
+          "category": "in-file component",
+          "definition": "ConfigSwitch is defined in the same page file"
+        },
+        {
+          "component": "DoubleArrowIcon",
+          "usedAs": "DoubleArrowIcon",
+          "source": "@/components/icons/DoubleArrowIcon",
+          "importKind": "named",
+          "importedAs": "DoubleArrowIcon",
+          "category": "local-components",
+          "definition": "DoubleArrowIcon comes from @/components/icons/DoubleArrowIcon (named import of DoubleArrowIcon)"
+        },
+        {
+          "component": "IconChevronLeft",
+          "usedAs": "IconChevronLeft",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconChevronLeft",
+          "category": "tabler-icons",
+          "definition": "IconChevronLeft comes from @tabler/icons-react (named import of IconChevronLeft)"
+        },
+        {
+          "component": "IconChevronRight",
+          "usedAs": "IconChevronRight",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconChevronRight",
+          "category": "tabler-icons",
+          "definition": "IconChevronRight comes from @tabler/icons-react (named import of IconChevronRight)"
+        },
+        {
+          "component": "Input",
+          "usedAs": "Input",
+          "source": "@/components/ui/input",
+          "importKind": "named",
+          "importedAs": "Input",
+          "category": "local-components",
+          "definition": "Input comes from @/components/ui/input (named import of Input)"
+        },
+        {
+          "component": "LabeledInput",
+          "usedAs": "LabeledInput",
+          "source": "(in-file or unresolved)",
+          "importKind": null,
+          "importedAs": null,
+          "category": "in-file component",
+          "definition": "LabeledInput is defined in the same page file"
+        },
+        {
+          "component": "Pagination",
+          "usedAs": "Pagination.Context",
+          "source": "@ark-ui/react/pagination",
+          "importKind": "named",
+          "importedAs": "Pagination",
+          "category": "ark-ui",
+          "definition": "Pagination.Context comes from @ark-ui/react/pagination (named import of Pagination)"
+        },
+        {
+          "component": "Pagination",
+          "usedAs": "Pagination.Ellipsis",
+          "source": "@ark-ui/react/pagination",
+          "importKind": "named",
+          "importedAs": "Pagination",
+          "category": "ark-ui",
+          "definition": "Pagination.Ellipsis comes from @ark-ui/react/pagination (named import of Pagination)"
+        },
+        {
+          "component": "Pagination",
+          "usedAs": "Pagination.Item",
+          "source": "@ark-ui/react/pagination",
+          "importKind": "named",
+          "importedAs": "Pagination",
+          "category": "ark-ui",
+          "definition": "Pagination.Item comes from @ark-ui/react/pagination (named import of Pagination)"
+        },
+        {
+          "component": "Pagination",
+          "usedAs": "Pagination.NextTrigger",
+          "source": "@ark-ui/react/pagination",
+          "importKind": "named",
+          "importedAs": "Pagination",
+          "category": "ark-ui",
+          "definition": "Pagination.NextTrigger comes from @ark-ui/react/pagination (named import of Pagination)"
+        },
+        {
+          "component": "Pagination",
+          "usedAs": "Pagination.PrevTrigger",
+          "source": "@ark-ui/react/pagination",
+          "importKind": "named",
+          "importedAs": "Pagination",
+          "category": "ark-ui",
+          "definition": "Pagination.PrevTrigger comes from @ark-ui/react/pagination (named import of Pagination)"
+        },
+        {
+          "component": "Pagination",
+          "usedAs": "Pagination.Root",
+          "source": "@ark-ui/react/pagination",
+          "importKind": "named",
+          "importedAs": "Pagination",
+          "category": "ark-ui",
+          "definition": "Pagination.Root comes from @ark-ui/react/pagination (named import of Pagination)"
+        },
+        {
+          "component": "PdfPreview",
+          "usedAs": "PdfPreview",
+          "source": "../components/documents/PdfPreview",
+          "importKind": "named",
+          "importedAs": "PdfPreview",
+          "category": "relative-local",
+          "definition": "PdfPreview comes from ../components/documents/PdfPreview (named import of PdfPreview)"
+        },
+        {
+          "component": "RadioGroup",
+          "usedAs": "RadioGroup.Item",
+          "source": "@ark-ui/react/radio-group",
+          "importKind": "named",
+          "importedAs": "RadioGroup",
+          "category": "ark-ui",
+          "definition": "RadioGroup.Item comes from @ark-ui/react/radio-group (named import of RadioGroup)"
+        },
+        {
+          "component": "RadioGroup",
+          "usedAs": "RadioGroup.ItemControl",
+          "source": "@ark-ui/react/radio-group",
+          "importKind": "named",
+          "importedAs": "RadioGroup",
+          "category": "ark-ui",
+          "definition": "RadioGroup.ItemControl comes from @ark-ui/react/radio-group (named import of RadioGroup)"
+        },
+        {
+          "component": "RadioGroup",
+          "usedAs": "RadioGroup.ItemHiddenInput",
+          "source": "@ark-ui/react/radio-group",
+          "importKind": "named",
+          "importedAs": "RadioGroup",
+          "category": "ark-ui",
+          "definition": "RadioGroup.ItemHiddenInput comes from @ark-ui/react/radio-group (named import of RadioGroup)"
+        },
+        {
+          "component": "RadioGroup",
+          "usedAs": "RadioGroup.ItemText",
+          "source": "@ark-ui/react/radio-group",
+          "importKind": "named",
+          "importedAs": "RadioGroup",
+          "category": "ark-ui",
+          "definition": "RadioGroup.ItemText comes from @ark-ui/react/radio-group (named import of RadioGroup)"
+        },
+        {
+          "component": "RadioGroup",
+          "usedAs": "RadioGroup.Root",
+          "source": "@ark-ui/react/radio-group",
+          "importKind": "named",
+          "importedAs": "RadioGroup",
+          "category": "ark-ui",
+          "definition": "RadioGroup.Root comes from @ark-ui/react/radio-group (named import of RadioGroup)"
+        },
+        {
+          "component": "ScrollArea",
+          "usedAs": "ScrollArea",
+          "source": "@/components/ui/scroll-area",
+          "importKind": "named",
+          "importedAs": "ScrollArea",
+          "category": "local-components",
+          "definition": "ScrollArea comes from @/components/ui/scroll-area (named import of ScrollArea)"
+        },
+        {
+          "component": "Switch",
+          "usedAs": "Switch.Control",
+          "source": "@ark-ui/react/switch",
+          "importKind": "named",
+          "importedAs": "Switch",
+          "category": "ark-ui",
+          "definition": "Switch.Control comes from @ark-ui/react/switch (named import of Switch)"
+        },
+        {
+          "component": "Switch",
+          "usedAs": "Switch.HiddenInput",
+          "source": "@ark-ui/react/switch",
+          "importKind": "named",
+          "importedAs": "Switch",
+          "category": "ark-ui",
+          "definition": "Switch.HiddenInput comes from @ark-ui/react/switch (named import of Switch)"
+        },
+        {
+          "component": "Switch",
+          "usedAs": "Switch.Label",
+          "source": "@ark-ui/react/switch",
+          "importKind": "named",
+          "importedAs": "Switch",
+          "category": "ark-ui",
+          "definition": "Switch.Label comes from @ark-ui/react/switch (named import of Switch)"
+        },
+        {
+          "component": "Switch",
+          "usedAs": "Switch.Root",
+          "source": "@ark-ui/react/switch",
+          "importKind": "named",
+          "importedAs": "Switch",
+          "category": "ark-ui",
+          "definition": "Switch.Root comes from @ark-ui/react/switch (named import of Switch)"
+        },
+        {
+          "component": "Switch",
+          "usedAs": "Switch.Thumb",
+          "source": "@ark-ui/react/switch",
+          "importKind": "named",
+          "importedAs": "Switch",
+          "category": "ark-ui",
+          "definition": "Switch.Thumb comes from @ark-ui/react/switch (named import of Switch)"
+        },
+        {
+          "component": "TabLabel",
+          "usedAs": "TabLabel",
+          "source": "(in-file or unresolved)",
+          "importKind": null,
+          "importedAs": null,
+          "category": "in-file component",
+          "definition": "TabLabel is defined in the same page file"
+        }
+      ]
+    },
+    {
+      "page": "src/pages/Schemas.tsx",
+      "componentCount": 42,
+      "categoryCounts": {
+        "local-components": 2,
+        "tabler-icons": 12,
+        "external-package": 1,
+        "ark-ui": 27
+      },
+      "components": [
+        {
+          "component": "Button",
+          "usedAs": "Button",
+          "source": "@/components/ui/button",
+          "importKind": "named",
+          "importedAs": "Button",
+          "category": "local-components",
+          "definition": "Button comes from @/components/ui/button (named import of Button)"
+        },
+        {
+          "component": "Icon",
+          "usedAs": "Icon",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "Icon",
+          "category": "tabler-icons",
+          "definition": "Icon comes from @tabler/icons-react (named import of Icon)"
+        },
+        {
+          "component": "IconAsterisk",
+          "usedAs": "IconAsterisk",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconAsterisk",
+          "category": "tabler-icons",
+          "definition": "IconAsterisk comes from @tabler/icons-react (named import of IconAsterisk)"
+        },
+        {
+          "component": "IconBrackets",
+          "usedAs": "IconBrackets",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconBrackets",
+          "category": "tabler-icons",
+          "definition": "IconBrackets comes from @tabler/icons-react (named import of IconBrackets)"
+        },
+        {
+          "component": "IconCheck",
+          "usedAs": "IconCheck",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconCheck",
+          "category": "tabler-icons",
+          "definition": "IconCheck comes from @tabler/icons-react (named import of IconCheck)"
+        },
+        {
+          "component": "IconChevronDown",
+          "usedAs": "IconChevronDown",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconChevronDown",
+          "category": "tabler-icons",
+          "definition": "IconChevronDown comes from @tabler/icons-react (named import of IconChevronDown)"
+        },
+        {
+          "component": "IconChevronRight",
+          "usedAs": "IconChevronRight",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconChevronRight",
+          "category": "tabler-icons",
+          "definition": "IconChevronRight comes from @tabler/icons-react (named import of IconChevronRight)"
+        },
+        {
+          "component": "IconCode",
+          "usedAs": "IconCode",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconCode",
+          "category": "tabler-icons",
+          "definition": "IconCode comes from @tabler/icons-react (named import of IconCode)"
+        },
+        {
+          "component": "IconDeviceFloppy",
+          "usedAs": "IconDeviceFloppy",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconDeviceFloppy",
+          "category": "tabler-icons",
+          "definition": "IconDeviceFloppy comes from @tabler/icons-react (named import of IconDeviceFloppy)"
+        },
+        {
+          "component": "IconEye",
+          "usedAs": "IconEye",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconEye",
+          "category": "tabler-icons",
+          "definition": "IconEye comes from @tabler/icons-react (named import of IconEye)"
+        },
+        {
+          "component": "IconLayoutColumns",
+          "usedAs": "IconLayoutColumns",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconLayoutColumns",
+          "category": "tabler-icons",
+          "definition": "IconLayoutColumns comes from @tabler/icons-react (named import of IconLayoutColumns)"
+        },
+        {
+          "component": "IconRefresh",
+          "usedAs": "IconRefresh",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconRefresh",
+          "category": "tabler-icons",
+          "definition": "IconRefresh comes from @tabler/icons-react (named import of IconRefresh)"
+        },
+        {
+          "component": "IconTrash",
+          "usedAs": "IconTrash",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconTrash",
+          "category": "tabler-icons",
+          "definition": "IconTrash comes from @tabler/icons-react (named import of IconTrash)"
+        },
+        {
+          "component": "Input",
+          "usedAs": "Input",
+          "source": "@/components/ui/input",
+          "importKind": "named",
+          "importedAs": "Input",
+          "category": "local-components",
+          "definition": "Input comes from @/components/ui/input (named import of Input)"
+        },
+        {
+          "component": "MonacoEditor",
+          "usedAs": "MonacoEditor",
+          "source": "@monaco-editor/react",
+          "importKind": "default",
+          "importedAs": "default",
+          "category": "external-package",
+          "definition": "MonacoEditor comes from @monaco-editor/react (default import of default)"
+        },
+        {
+          "component": "Select",
+          "usedAs": "Select.Content",
+          "source": "@ark-ui/react/select",
+          "importKind": "named",
+          "importedAs": "Select",
+          "category": "ark-ui",
+          "definition": "Select.Content comes from @ark-ui/react/select (named import of Select)"
+        },
+        {
+          "component": "Select",
+          "usedAs": "Select.Control",
+          "source": "@ark-ui/react/select",
+          "importKind": "named",
+          "importedAs": "Select",
+          "category": "ark-ui",
+          "definition": "Select.Control comes from @ark-ui/react/select (named import of Select)"
+        },
+        {
+          "component": "Select",
+          "usedAs": "Select.HiddenSelect",
+          "source": "@ark-ui/react/select",
+          "importKind": "named",
+          "importedAs": "Select",
+          "category": "ark-ui",
+          "definition": "Select.HiddenSelect comes from @ark-ui/react/select (named import of Select)"
+        },
+        {
+          "component": "Select",
+          "usedAs": "Select.Indicator",
+          "source": "@ark-ui/react/select",
+          "importKind": "named",
+          "importedAs": "Select",
+          "category": "ark-ui",
+          "definition": "Select.Indicator comes from @ark-ui/react/select (named import of Select)"
+        },
+        {
+          "component": "Select",
+          "usedAs": "Select.Item",
+          "source": "@ark-ui/react/select",
+          "importKind": "named",
+          "importedAs": "Select",
+          "category": "ark-ui",
+          "definition": "Select.Item comes from @ark-ui/react/select (named import of Select)"
+        },
+        {
+          "component": "Select",
+          "usedAs": "Select.ItemIndicator",
+          "source": "@ark-ui/react/select",
+          "importKind": "named",
+          "importedAs": "Select",
+          "category": "ark-ui",
+          "definition": "Select.ItemIndicator comes from @ark-ui/react/select (named import of Select)"
+        },
+        {
+          "component": "Select",
+          "usedAs": "Select.ItemText",
+          "source": "@ark-ui/react/select",
+          "importKind": "named",
+          "importedAs": "Select",
+          "category": "ark-ui",
+          "definition": "Select.ItemText comes from @ark-ui/react/select (named import of Select)"
+        },
+        {
+          "component": "Select",
+          "usedAs": "Select.Positioner",
+          "source": "@ark-ui/react/select",
+          "importKind": "named",
+          "importedAs": "Select",
+          "category": "ark-ui",
+          "definition": "Select.Positioner comes from @ark-ui/react/select (named import of Select)"
+        },
+        {
+          "component": "Select",
+          "usedAs": "Select.Root",
+          "source": "@ark-ui/react/select",
+          "importKind": "named",
+          "importedAs": "Select",
+          "category": "ark-ui",
+          "definition": "Select.Root comes from @ark-ui/react/select (named import of Select)"
+        },
+        {
+          "component": "Select",
+          "usedAs": "Select.Trigger",
+          "source": "@ark-ui/react/select",
+          "importKind": "named",
+          "importedAs": "Select",
+          "category": "ark-ui",
+          "definition": "Select.Trigger comes from @ark-ui/react/select (named import of Select)"
+        },
+        {
+          "component": "Select",
+          "usedAs": "Select.ValueText",
+          "source": "@ark-ui/react/select",
+          "importKind": "named",
+          "importedAs": "Select",
+          "category": "ark-ui",
+          "definition": "Select.ValueText comes from @ark-ui/react/select (named import of Select)"
+        },
+        {
+          "component": "Splitter",
+          "usedAs": "Splitter.Panel",
+          "source": "@ark-ui/react/splitter",
+          "importKind": "named",
+          "importedAs": "Splitter",
+          "category": "ark-ui",
+          "definition": "Splitter.Panel comes from @ark-ui/react/splitter (named import of Splitter)"
+        },
+        {
+          "component": "Splitter",
+          "usedAs": "Splitter.ResizeTrigger",
+          "source": "@ark-ui/react/splitter",
+          "importKind": "named",
+          "importedAs": "Splitter",
+          "category": "ark-ui",
+          "definition": "Splitter.ResizeTrigger comes from @ark-ui/react/splitter (named import of Splitter)"
+        },
+        {
+          "component": "Splitter",
+          "usedAs": "Splitter.ResizeTriggerIndicator",
+          "source": "@ark-ui/react/splitter",
+          "importKind": "named",
+          "importedAs": "Splitter",
+          "category": "ark-ui",
+          "definition": "Splitter.ResizeTriggerIndicator comes from @ark-ui/react/splitter (named import of Splitter)"
+        },
+        {
+          "component": "Splitter",
+          "usedAs": "Splitter.Root",
+          "source": "@ark-ui/react/splitter",
+          "importKind": "named",
+          "importedAs": "Splitter",
+          "category": "ark-ui",
+          "definition": "Splitter.Root comes from @ark-ui/react/splitter (named import of Splitter)"
+        },
+        {
+          "component": "TreeView",
+          "usedAs": "TreeView.Branch",
+          "source": "@ark-ui/react/tree-view",
+          "importKind": "named",
+          "importedAs": "TreeView",
+          "category": "ark-ui",
+          "definition": "TreeView.Branch comes from @ark-ui/react/tree-view (named import of TreeView)"
+        },
+        {
+          "component": "TreeView",
+          "usedAs": "TreeView.BranchContent",
+          "source": "@ark-ui/react/tree-view",
+          "importKind": "named",
+          "importedAs": "TreeView",
+          "category": "ark-ui",
+          "definition": "TreeView.BranchContent comes from @ark-ui/react/tree-view (named import of TreeView)"
+        },
+        {
+          "component": "TreeView",
+          "usedAs": "TreeView.BranchControl",
+          "source": "@ark-ui/react/tree-view",
+          "importKind": "named",
+          "importedAs": "TreeView",
+          "category": "ark-ui",
+          "definition": "TreeView.BranchControl comes from @ark-ui/react/tree-view (named import of TreeView)"
+        },
+        {
+          "component": "TreeView",
+          "usedAs": "TreeView.BranchIndicator",
+          "source": "@ark-ui/react/tree-view",
+          "importKind": "named",
+          "importedAs": "TreeView",
+          "category": "ark-ui",
+          "definition": "TreeView.BranchIndicator comes from @ark-ui/react/tree-view (named import of TreeView)"
+        },
+        {
+          "component": "TreeView",
+          "usedAs": "TreeView.BranchText",
+          "source": "@ark-ui/react/tree-view",
+          "importKind": "named",
+          "importedAs": "TreeView",
+          "category": "ark-ui",
+          "definition": "TreeView.BranchText comes from @ark-ui/react/tree-view (named import of TreeView)"
+        },
+        {
+          "component": "TreeView",
+          "usedAs": "TreeView.Context",
+          "source": "@ark-ui/react/tree-view",
+          "importKind": "named",
+          "importedAs": "TreeView",
+          "category": "ark-ui",
+          "definition": "TreeView.Context comes from @ark-ui/react/tree-view (named import of TreeView)"
+        },
+        {
+          "component": "TreeView",
+          "usedAs": "TreeView.Item",
+          "source": "@ark-ui/react/tree-view",
+          "importKind": "named",
+          "importedAs": "TreeView",
+          "category": "ark-ui",
+          "definition": "TreeView.Item comes from @ark-ui/react/tree-view (named import of TreeView)"
+        },
+        {
+          "component": "TreeView",
+          "usedAs": "TreeView.ItemText",
+          "source": "@ark-ui/react/tree-view",
+          "importKind": "named",
+          "importedAs": "TreeView",
+          "category": "ark-ui",
+          "definition": "TreeView.ItemText comes from @ark-ui/react/tree-view (named import of TreeView)"
+        },
+        {
+          "component": "TreeView",
+          "usedAs": "TreeView.NodeContext",
+          "source": "@ark-ui/react/tree-view",
+          "importKind": "named",
+          "importedAs": "TreeView",
+          "category": "ark-ui",
+          "definition": "TreeView.NodeContext comes from @ark-ui/react/tree-view (named import of TreeView)"
+        },
+        {
+          "component": "TreeView",
+          "usedAs": "TreeView.NodeProvider",
+          "source": "@ark-ui/react/tree-view",
+          "importKind": "named",
+          "importedAs": "TreeView",
+          "category": "ark-ui",
+          "definition": "TreeView.NodeProvider comes from @ark-ui/react/tree-view (named import of TreeView)"
+        },
+        {
+          "component": "TreeView",
+          "usedAs": "TreeView.Root",
+          "source": "@ark-ui/react/tree-view",
+          "importKind": "named",
+          "importedAs": "TreeView",
+          "category": "ark-ui",
+          "definition": "TreeView.Root comes from @ark-ui/react/tree-view (named import of TreeView)"
+        },
+        {
+          "component": "TreeView",
+          "usedAs": "TreeView.Tree",
+          "source": "@ark-ui/react/tree-view",
+          "importKind": "named",
+          "importedAs": "TreeView",
+          "category": "ark-ui",
+          "definition": "TreeView.Tree comes from @ark-ui/react/tree-view (named import of TreeView)"
+        }
+      ]
+    },
+    {
+      "page": "src/pages/settings/McpServers.tsx",
+      "componentCount": 4,
+      "categoryCounts": {
+        "external-package": 1,
+        "local-components": 2,
+        "relative-local": 1
+      },
+      "components": [
+        {
+          "component": "HugeiconsIcon",
+          "usedAs": "HugeiconsIcon",
+          "source": "@hugeicons/react",
+          "importKind": "named",
+          "importedAs": "HugeiconsIcon",
+          "category": "external-package",
+          "definition": "HugeiconsIcon comes from @hugeicons/react (named import of HugeiconsIcon)"
+        },
+        {
+          "component": "Input",
+          "usedAs": "Input",
+          "source": "@/components/ui/input",
+          "importKind": "named",
+          "importedAs": "Input",
+          "category": "local-components",
+          "definition": "Input comes from @/components/ui/input (named import of Input)"
+        },
+        {
+          "component": "McpServerCard",
+          "usedAs": "McpServerCard",
+          "source": "@/components/mcp/McpServerCard",
+          "importKind": "named",
+          "importedAs": "McpServerCard",
+          "category": "local-components",
+          "definition": "McpServerCard comes from @/components/mcp/McpServerCard (named import of McpServerCard)"
+        },
+        {
+          "component": "SettingsPageFrame",
+          "usedAs": "SettingsPageFrame",
+          "source": "./SettingsPageHeader",
+          "importKind": "named",
+          "importedAs": "SettingsPageFrame",
+          "category": "relative-local",
+          "definition": "SettingsPageFrame comes from ./SettingsPageHeader (named import of SettingsPageFrame)"
+        }
+      ]
+    },
+    {
+      "page": "src/pages/settings/SettingsAccount.tsx",
+      "componentCount": 14,
+      "categoryCounts": {
+        "local-components": 2,
+        "ark-ui": 8,
+        "tabler-icons": 2,
+        "relative-local": 2
+      },
+      "components": [
+        {
+          "component": "Button",
+          "usedAs": "Button",
+          "source": "@/components/ui/button",
+          "importKind": "named",
+          "importedAs": "Button",
+          "category": "local-components",
+          "definition": "Button comes from @/components/ui/button (named import of Button)"
+        },
+        {
+          "component": "Field",
+          "usedAs": "Field.Label",
+          "source": "@ark-ui/react/field",
+          "importKind": "named",
+          "importedAs": "Field",
+          "category": "ark-ui",
+          "definition": "Field.Label comes from @ark-ui/react/field (named import of Field)"
+        },
+        {
+          "component": "Field",
+          "usedAs": "Field.Root",
+          "source": "@ark-ui/react/field",
+          "importKind": "named",
+          "importedAs": "Field",
+          "category": "ark-ui",
+          "definition": "Field.Root comes from @ark-ui/react/field (named import of Field)"
+        },
+        {
+          "component": "IconEye",
+          "usedAs": "IconEye",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconEye",
+          "category": "tabler-icons",
+          "definition": "IconEye comes from @tabler/icons-react (named import of IconEye)"
+        },
+        {
+          "component": "IconEyeOff",
+          "usedAs": "IconEyeOff",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconEyeOff",
+          "category": "tabler-icons",
+          "definition": "IconEyeOff comes from @tabler/icons-react (named import of IconEyeOff)"
+        },
+        {
+          "component": "Input",
+          "usedAs": "Input",
+          "source": "@/components/ui/input",
+          "importKind": "named",
+          "importedAs": "Input",
+          "category": "local-components",
+          "definition": "Input comes from @/components/ui/input (named import of Input)"
+        },
+        {
+          "component": "PasswordInput",
+          "usedAs": "PasswordInput.Control",
+          "source": "@ark-ui/react/password-input",
+          "importKind": "named",
+          "importedAs": "PasswordInput",
+          "category": "ark-ui",
+          "definition": "PasswordInput.Control comes from @ark-ui/react/password-input (named import of PasswordInput)"
+        },
+        {
+          "component": "PasswordInput",
+          "usedAs": "PasswordInput.Indicator",
+          "source": "@ark-ui/react/password-input",
+          "importKind": "named",
+          "importedAs": "PasswordInput",
+          "category": "ark-ui",
+          "definition": "PasswordInput.Indicator comes from @ark-ui/react/password-input (named import of PasswordInput)"
+        },
+        {
+          "component": "PasswordInput",
+          "usedAs": "PasswordInput.Input",
+          "source": "@ark-ui/react/password-input",
+          "importKind": "named",
+          "importedAs": "PasswordInput",
+          "category": "ark-ui",
+          "definition": "PasswordInput.Input comes from @ark-ui/react/password-input (named import of PasswordInput)"
+        },
+        {
+          "component": "PasswordInput",
+          "usedAs": "PasswordInput.Label",
+          "source": "@ark-ui/react/password-input",
+          "importKind": "named",
+          "importedAs": "PasswordInput",
+          "category": "ark-ui",
+          "definition": "PasswordInput.Label comes from @ark-ui/react/password-input (named import of PasswordInput)"
+        },
+        {
+          "component": "PasswordInput",
+          "usedAs": "PasswordInput.Root",
+          "source": "@ark-ui/react/password-input",
+          "importKind": "named",
+          "importedAs": "PasswordInput",
+          "category": "ark-ui",
+          "definition": "PasswordInput.Root comes from @ark-ui/react/password-input (named import of PasswordInput)"
+        },
+        {
+          "component": "PasswordInput",
+          "usedAs": "PasswordInput.VisibilityTrigger",
+          "source": "@ark-ui/react/password-input",
+          "importKind": "named",
+          "importedAs": "PasswordInput",
+          "category": "ark-ui",
+          "definition": "PasswordInput.VisibilityTrigger comes from @ark-ui/react/password-input (named import of PasswordInput)"
+        },
+        {
+          "component": "SettingsPageFrame",
+          "usedAs": "SettingsPageFrame",
+          "source": "./SettingsPageHeader",
+          "importKind": "named",
+          "importedAs": "SettingsPageFrame",
+          "category": "relative-local",
+          "definition": "SettingsPageFrame comes from ./SettingsPageHeader (named import of SettingsPageFrame)"
+        },
+        {
+          "component": "SettingsSection",
+          "usedAs": "SettingsSection",
+          "source": "./SettingsPageHeader",
+          "importKind": "named",
+          "importedAs": "SettingsSection",
+          "category": "relative-local",
+          "definition": "SettingsSection comes from ./SettingsPageHeader (named import of SettingsSection)"
+        }
+      ]
+    },
+    {
+      "page": "src/pages/settings/SettingsAdmin.tsx",
+      "componentCount": 31,
+      "categoryCounts": {
+        "local-components": 3,
+        "in-file component": 5,
+        "ark-ui": 22,
+        "external-package": 1
+      },
+      "components": [
+        {
+          "component": "AppIcon",
+          "usedAs": "AppIcon",
+          "source": "@/components/ui/app-icon",
+          "importKind": "named",
+          "importedAs": "AppIcon",
+          "category": "local-components",
+          "definition": "AppIcon comes from @/components/ui/app-icon (named import of AppIcon)"
+        },
+        {
+          "component": "AppShellSpecsPreview",
+          "usedAs": "AppShellSpecsPreview",
+          "source": "(in-file or unresolved)",
+          "importKind": null,
+          "importedAs": null,
+          "category": "in-file component",
+          "definition": "AppShellSpecsPreview is defined in the same page file"
+        },
+        {
+          "component": "Button",
+          "usedAs": "Button",
+          "source": "@/components/ui/button",
+          "importKind": "named",
+          "importedAs": "Button",
+          "category": "local-components",
+          "definition": "Button comes from @/components/ui/button (named import of Button)"
+        },
+        {
+          "component": "ColorContractPreview",
+          "usedAs": "ColorContractPreview",
+          "source": "(in-file or unresolved)",
+          "importKind": null,
+          "importedAs": null,
+          "category": "in-file component",
+          "definition": "ColorContractPreview is defined in the same page file"
+        },
+        {
+          "component": "ColorSwatch",
+          "usedAs": "ColorSwatch",
+          "source": "(in-file or unresolved)",
+          "importKind": null,
+          "importedAs": null,
+          "category": "in-file component",
+          "definition": "ColorSwatch is defined in the same page file"
+        },
+        {
+          "component": "ErrorAlert",
+          "usedAs": "ErrorAlert",
+          "source": "@/components/common/ErrorAlert",
+          "importKind": "named",
+          "importedAs": "ErrorAlert",
+          "category": "local-components",
+          "definition": "ErrorAlert comes from @/components/common/ErrorAlert (named import of ErrorAlert)"
+        },
+        {
+          "component": "Field",
+          "usedAs": "Field.Input",
+          "source": "@ark-ui/react/field",
+          "importKind": "named",
+          "importedAs": "Field",
+          "category": "ark-ui",
+          "definition": "Field.Input comes from @ark-ui/react/field (named import of Field)"
+        },
+        {
+          "component": "Field",
+          "usedAs": "Field.Label",
+          "source": "@ark-ui/react/field",
+          "importKind": "named",
+          "importedAs": "Field",
+          "category": "ark-ui",
+          "definition": "Field.Label comes from @ark-ui/react/field (named import of Field)"
+        },
+        {
+          "component": "Field",
+          "usedAs": "Field.Root",
+          "source": "@ark-ui/react/field",
+          "importKind": "named",
+          "importedAs": "Field",
+          "category": "ark-ui",
+          "definition": "Field.Root comes from @ark-ui/react/field (named import of Field)"
+        },
+        {
+          "component": "Field",
+          "usedAs": "Field.Textarea",
+          "source": "@ark-ui/react/field",
+          "importKind": "named",
+          "importedAs": "Field",
+          "category": "ark-ui",
+          "definition": "Field.Textarea comes from @ark-ui/react/field (named import of Field)"
+        },
+        {
+          "component": "FontStandardsPreview",
+          "usedAs": "FontStandardsPreview",
+          "source": "(in-file or unresolved)",
+          "importKind": null,
+          "importedAs": null,
+          "category": "in-file component",
+          "definition": "FontStandardsPreview is defined in the same page file"
+        },
+        {
+          "component": "IconStandardsPreview",
+          "usedAs": "IconStandardsPreview",
+          "source": "(in-file or unresolved)",
+          "importKind": null,
+          "importedAs": null,
+          "category": "in-file component",
+          "definition": "IconStandardsPreview is defined in the same page file"
+        },
+        {
+          "component": "Navigate",
+          "usedAs": "Navigate",
+          "source": "react-router-dom",
+          "importKind": "named",
+          "importedAs": "Navigate",
+          "category": "external-package",
+          "definition": "Navigate comes from react-router-dom (named import of Navigate)"
+        },
+        {
+          "component": "NumberInput",
+          "usedAs": "NumberInput.Control",
+          "source": "@ark-ui/react/number-input",
+          "importKind": "named",
+          "importedAs": "NumberInput",
+          "category": "ark-ui",
+          "definition": "NumberInput.Control comes from @ark-ui/react/number-input (named import of NumberInput)"
+        },
+        {
+          "component": "NumberInput",
+          "usedAs": "NumberInput.DecrementTrigger",
+          "source": "@ark-ui/react/number-input",
+          "importKind": "named",
+          "importedAs": "NumberInput",
+          "category": "ark-ui",
+          "definition": "NumberInput.DecrementTrigger comes from @ark-ui/react/number-input (named import of NumberInput)"
+        },
+        {
+          "component": "NumberInput",
+          "usedAs": "NumberInput.IncrementTrigger",
+          "source": "@ark-ui/react/number-input",
+          "importKind": "named",
+          "importedAs": "NumberInput",
+          "category": "ark-ui",
+          "definition": "NumberInput.IncrementTrigger comes from @ark-ui/react/number-input (named import of NumberInput)"
+        },
+        {
+          "component": "NumberInput",
+          "usedAs": "NumberInput.Input",
+          "source": "@ark-ui/react/number-input",
+          "importKind": "named",
+          "importedAs": "NumberInput",
+          "category": "ark-ui",
+          "definition": "NumberInput.Input comes from @ark-ui/react/number-input (named import of NumberInput)"
+        },
+        {
+          "component": "NumberInput",
+          "usedAs": "NumberInput.Root",
+          "source": "@ark-ui/react/number-input",
+          "importKind": "named",
+          "importedAs": "NumberInput",
+          "category": "ark-ui",
+          "definition": "NumberInput.Root comes from @ark-ui/react/number-input (named import of NumberInput)"
+        },
+        {
+          "component": "Switch",
+          "usedAs": "Switch.Control",
+          "source": "@ark-ui/react/switch",
+          "importKind": "named",
+          "importedAs": "Switch",
+          "category": "ark-ui",
+          "definition": "Switch.Control comes from @ark-ui/react/switch (named import of Switch)"
+        },
+        {
+          "component": "Switch",
+          "usedAs": "Switch.HiddenInput",
+          "source": "@ark-ui/react/switch",
+          "importKind": "named",
+          "importedAs": "Switch",
+          "category": "ark-ui",
+          "definition": "Switch.HiddenInput comes from @ark-ui/react/switch (named import of Switch)"
+        },
+        {
+          "component": "Switch",
+          "usedAs": "Switch.Label",
+          "source": "@ark-ui/react/switch",
+          "importKind": "named",
+          "importedAs": "Switch",
+          "category": "ark-ui",
+          "definition": "Switch.Label comes from @ark-ui/react/switch (named import of Switch)"
+        },
+        {
+          "component": "Switch",
+          "usedAs": "Switch.Root",
+          "source": "@ark-ui/react/switch",
+          "importKind": "named",
+          "importedAs": "Switch",
+          "category": "ark-ui",
+          "definition": "Switch.Root comes from @ark-ui/react/switch (named import of Switch)"
+        },
+        {
+          "component": "Switch",
+          "usedAs": "Switch.Thumb",
+          "source": "@ark-ui/react/switch",
+          "importKind": "named",
+          "importedAs": "Switch",
+          "category": "ark-ui",
+          "definition": "Switch.Thumb comes from @ark-ui/react/switch (named import of Switch)"
+        },
+        {
+          "component": "TagsInput",
+          "usedAs": "TagsInput.Control",
+          "source": "@ark-ui/react/tags-input",
+          "importKind": "named",
+          "importedAs": "TagsInput",
+          "category": "ark-ui",
+          "definition": "TagsInput.Control comes from @ark-ui/react/tags-input (named import of TagsInput)"
+        },
+        {
+          "component": "TagsInput",
+          "usedAs": "TagsInput.Input",
+          "source": "@ark-ui/react/tags-input",
+          "importKind": "named",
+          "importedAs": "TagsInput",
+          "category": "ark-ui",
+          "definition": "TagsInput.Input comes from @ark-ui/react/tags-input (named import of TagsInput)"
+        },
+        {
+          "component": "TagsInput",
+          "usedAs": "TagsInput.Item",
+          "source": "@ark-ui/react/tags-input",
+          "importKind": "named",
+          "importedAs": "TagsInput",
+          "category": "ark-ui",
+          "definition": "TagsInput.Item comes from @ark-ui/react/tags-input (named import of TagsInput)"
+        },
+        {
+          "component": "TagsInput",
+          "usedAs": "TagsInput.ItemDeleteTrigger",
+          "source": "@ark-ui/react/tags-input",
+          "importKind": "named",
+          "importedAs": "TagsInput",
+          "category": "ark-ui",
+          "definition": "TagsInput.ItemDeleteTrigger comes from @ark-ui/react/tags-input (named import of TagsInput)"
+        },
+        {
+          "component": "TagsInput",
+          "usedAs": "TagsInput.ItemInput",
+          "source": "@ark-ui/react/tags-input",
+          "importKind": "named",
+          "importedAs": "TagsInput",
+          "category": "ark-ui",
+          "definition": "TagsInput.ItemInput comes from @ark-ui/react/tags-input (named import of TagsInput)"
+        },
+        {
+          "component": "TagsInput",
+          "usedAs": "TagsInput.ItemPreview",
+          "source": "@ark-ui/react/tags-input",
+          "importKind": "named",
+          "importedAs": "TagsInput",
+          "category": "ark-ui",
+          "definition": "TagsInput.ItemPreview comes from @ark-ui/react/tags-input (named import of TagsInput)"
+        },
+        {
+          "component": "TagsInput",
+          "usedAs": "TagsInput.ItemText",
+          "source": "@ark-ui/react/tags-input",
+          "importKind": "named",
+          "importedAs": "TagsInput",
+          "category": "ark-ui",
+          "definition": "TagsInput.ItemText comes from @ark-ui/react/tags-input (named import of TagsInput)"
+        },
+        {
+          "component": "TagsInput",
+          "usedAs": "TagsInput.Root",
+          "source": "@ark-ui/react/tags-input",
+          "importKind": "named",
+          "importedAs": "TagsInput",
+          "category": "ark-ui",
+          "definition": "TagsInput.Root comes from @ark-ui/react/tags-input (named import of TagsInput)"
+        }
+      ]
+    },
+    {
+      "page": "src/pages/settings/SettingsAiOverview.tsx",
+      "componentCount": 4,
+      "categoryCounts": {
+        "tabler-icons": 3,
+        "relative-local": 1
+      },
+      "components": [
+        {
+          "component": "IconCheck",
+          "usedAs": "IconCheck",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconCheck",
+          "category": "tabler-icons",
+          "definition": "IconCheck comes from @tabler/icons-react (named import of IconCheck)"
+        },
+        {
+          "component": "IconKey",
+          "usedAs": "IconKey",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconKey",
+          "category": "tabler-icons",
+          "definition": "IconKey comes from @tabler/icons-react (named import of IconKey)"
+        },
+        {
+          "component": "IconX",
+          "usedAs": "IconX",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconX",
+          "category": "tabler-icons",
+          "definition": "IconX comes from @tabler/icons-react (named import of IconX)"
+        },
+        {
+          "component": "SettingsPageFrame",
+          "usedAs": "SettingsPageFrame",
+          "source": "./SettingsPageHeader",
+          "importKind": "named",
+          "importedAs": "SettingsPageFrame",
+          "category": "relative-local",
+          "definition": "SettingsPageFrame comes from ./SettingsPageHeader (named import of SettingsPageFrame)"
+        }
+      ]
+    },
+    {
+      "page": "src/pages/settings/SettingsLayout.tsx",
+      "componentCount": 3,
+      "categoryCounts": {
+        "local-components": 1,
+        "in-file component": 1,
+        "external-package": 1
+      },
+      "components": [
+        {
+          "component": "AppIcon",
+          "usedAs": "AppIcon",
+          "source": "@/components/ui/app-icon",
+          "importKind": "named",
+          "importedAs": "AppIcon",
+          "category": "local-components",
+          "definition": "AppIcon comes from @/components/ui/app-icon (named import of AppIcon)"
+        },
+        {
+          "component": "NavGroup",
+          "usedAs": "NavGroup",
+          "source": "(in-file or unresolved)",
+          "importKind": null,
+          "importedAs": null,
+          "category": "in-file component",
+          "definition": "NavGroup is defined in the same page file"
+        },
+        {
+          "component": "Outlet",
+          "usedAs": "Outlet",
+          "source": "react-router-dom",
+          "importKind": "named",
+          "importedAs": "Outlet",
+          "category": "external-package",
+          "definition": "Outlet comes from react-router-dom (named import of Outlet)"
+        }
+      ]
+    },
+    {
+      "page": "src/pages/settings/SettingsPageHeader.tsx",
+      "componentCount": 0,
+      "categoryCounts": {},
+      "components": []
+    },
+    {
+      "page": "src/pages/settings/SettingsProviderForm.tsx",
+      "componentCount": 54,
+      "categoryCounts": {
+        "local-components": 3,
+        "ark-ui": 36,
+        "tabler-icons": 14,
+        "relative-local": 1
+      },
+      "components": [
+        {
+          "component": "Badge",
+          "usedAs": "Badge",
+          "source": "@/components/ui/badge",
+          "importKind": "named",
+          "importedAs": "Badge",
+          "category": "local-components",
+          "definition": "Badge comes from @/components/ui/badge (named import of Badge)"
+        },
+        {
+          "component": "Button",
+          "usedAs": "Button",
+          "source": "@/components/ui/button",
+          "importKind": "named",
+          "importedAs": "Button",
+          "category": "local-components",
+          "definition": "Button comes from @/components/ui/button (named import of Button)"
+        },
+        {
+          "component": "Field",
+          "usedAs": "Field.HelperText",
+          "source": "@ark-ui/react/field",
+          "importKind": "named",
+          "importedAs": "Field",
+          "category": "ark-ui",
+          "definition": "Field.HelperText comes from @ark-ui/react/field (named import of Field)"
+        },
+        {
+          "component": "Field",
+          "usedAs": "Field.Label",
+          "source": "@ark-ui/react/field",
+          "importKind": "named",
+          "importedAs": "Field",
+          "category": "ark-ui",
+          "definition": "Field.Label comes from @ark-ui/react/field (named import of Field)"
+        },
+        {
+          "component": "Field",
+          "usedAs": "Field.Root",
+          "source": "@ark-ui/react/field",
+          "importKind": "named",
+          "importedAs": "Field",
+          "category": "ark-ui",
+          "definition": "Field.Root comes from @ark-ui/react/field (named import of Field)"
+        },
+        {
+          "component": "IconBrain",
+          "usedAs": "IconBrain",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconBrain",
+          "category": "tabler-icons",
+          "definition": "IconBrain comes from @tabler/icons-react (named import of IconBrain)"
+        },
+        {
+          "component": "IconCheck",
+          "usedAs": "IconCheck",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconCheck",
+          "category": "tabler-icons",
+          "definition": "IconCheck comes from @tabler/icons-react (named import of IconCheck)"
+        },
+        {
+          "component": "IconChevronDown",
+          "usedAs": "IconChevronDown",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconChevronDown",
+          "category": "tabler-icons",
+          "definition": "IconChevronDown comes from @tabler/icons-react (named import of IconChevronDown)"
+        },
+        {
+          "component": "IconChevronLeft",
+          "usedAs": "IconChevronLeft",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconChevronLeft",
+          "category": "tabler-icons",
+          "definition": "IconChevronLeft comes from @tabler/icons-react (named import of IconChevronLeft)"
+        },
+        {
+          "component": "IconCloud",
+          "usedAs": "IconCloud",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconCloud",
+          "category": "tabler-icons",
+          "definition": "IconCloud comes from @tabler/icons-react (named import of IconCloud)"
+        },
+        {
+          "component": "IconDeviceFloppy",
+          "usedAs": "IconDeviceFloppy",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconDeviceFloppy",
+          "category": "tabler-icons",
+          "definition": "IconDeviceFloppy comes from @tabler/icons-react (named import of IconDeviceFloppy)"
+        },
+        {
+          "component": "IconEye",
+          "usedAs": "IconEye",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconEye",
+          "category": "tabler-icons",
+          "definition": "IconEye comes from @tabler/icons-react (named import of IconEye)"
+        },
+        {
+          "component": "IconEyeOff",
+          "usedAs": "IconEyeOff",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconEyeOff",
+          "category": "tabler-icons",
+          "definition": "IconEyeOff comes from @tabler/icons-react (named import of IconEyeOff)"
+        },
+        {
+          "component": "IconKey",
+          "usedAs": "IconKey",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconKey",
+          "category": "tabler-icons",
+          "definition": "IconKey comes from @tabler/icons-react (named import of IconKey)"
+        },
+        {
+          "component": "IconMinus",
+          "usedAs": "IconMinus",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconMinus",
+          "category": "tabler-icons",
+          "definition": "IconMinus comes from @tabler/icons-react (named import of IconMinus)"
+        },
+        {
+          "component": "IconPlugConnected",
+          "usedAs": "IconPlugConnected",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconPlugConnected",
+          "category": "tabler-icons",
+          "definition": "IconPlugConnected comes from @tabler/icons-react (named import of IconPlugConnected)"
+        },
+        {
+          "component": "IconPlus",
+          "usedAs": "IconPlus",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconPlus",
+          "category": "tabler-icons",
+          "definition": "IconPlus comes from @tabler/icons-react (named import of IconPlus)"
+        },
+        {
+          "component": "IconServer",
+          "usedAs": "IconServer",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconServer",
+          "category": "tabler-icons",
+          "definition": "IconServer comes from @tabler/icons-react (named import of IconServer)"
+        },
+        {
+          "component": "IconX",
+          "usedAs": "IconX",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconX",
+          "category": "tabler-icons",
+          "definition": "IconX comes from @tabler/icons-react (named import of IconX)"
+        },
+        {
+          "component": "Input",
+          "usedAs": "Input",
+          "source": "@/components/ui/input",
+          "importKind": "named",
+          "importedAs": "Input",
+          "category": "local-components",
+          "definition": "Input comes from @/components/ui/input (named import of Input)"
+        },
+        {
+          "component": "NumberInput",
+          "usedAs": "NumberInput.Control",
+          "source": "@ark-ui/react/number-input",
+          "importKind": "named",
+          "importedAs": "NumberInput",
+          "category": "ark-ui",
+          "definition": "NumberInput.Control comes from @ark-ui/react/number-input (named import of NumberInput)"
+        },
+        {
+          "component": "NumberInput",
+          "usedAs": "NumberInput.DecrementTrigger",
+          "source": "@ark-ui/react/number-input",
+          "importKind": "named",
+          "importedAs": "NumberInput",
+          "category": "ark-ui",
+          "definition": "NumberInput.DecrementTrigger comes from @ark-ui/react/number-input (named import of NumberInput)"
+        },
+        {
+          "component": "NumberInput",
+          "usedAs": "NumberInput.IncrementTrigger",
+          "source": "@ark-ui/react/number-input",
+          "importKind": "named",
+          "importedAs": "NumberInput",
+          "category": "ark-ui",
+          "definition": "NumberInput.IncrementTrigger comes from @ark-ui/react/number-input (named import of NumberInput)"
+        },
+        {
+          "component": "NumberInput",
+          "usedAs": "NumberInput.Input",
+          "source": "@ark-ui/react/number-input",
+          "importKind": "named",
+          "importedAs": "NumberInput",
+          "category": "ark-ui",
+          "definition": "NumberInput.Input comes from @ark-ui/react/number-input (named import of NumberInput)"
+        },
+        {
+          "component": "NumberInput",
+          "usedAs": "NumberInput.Root",
+          "source": "@ark-ui/react/number-input",
+          "importKind": "named",
+          "importedAs": "NumberInput",
+          "category": "ark-ui",
+          "definition": "NumberInput.Root comes from @ark-ui/react/number-input (named import of NumberInput)"
+        },
+        {
+          "component": "PasswordInput",
+          "usedAs": "PasswordInput.Control",
+          "source": "@ark-ui/react/password-input",
+          "importKind": "named",
+          "importedAs": "PasswordInput",
+          "category": "ark-ui",
+          "definition": "PasswordInput.Control comes from @ark-ui/react/password-input (named import of PasswordInput)"
+        },
+        {
+          "component": "PasswordInput",
+          "usedAs": "PasswordInput.Indicator",
+          "source": "@ark-ui/react/password-input",
+          "importKind": "named",
+          "importedAs": "PasswordInput",
+          "category": "ark-ui",
+          "definition": "PasswordInput.Indicator comes from @ark-ui/react/password-input (named import of PasswordInput)"
+        },
+        {
+          "component": "PasswordInput",
+          "usedAs": "PasswordInput.Input",
+          "source": "@ark-ui/react/password-input",
+          "importKind": "named",
+          "importedAs": "PasswordInput",
+          "category": "ark-ui",
+          "definition": "PasswordInput.Input comes from @ark-ui/react/password-input (named import of PasswordInput)"
+        },
+        {
+          "component": "PasswordInput",
+          "usedAs": "PasswordInput.Root",
+          "source": "@ark-ui/react/password-input",
+          "importKind": "named",
+          "importedAs": "PasswordInput",
+          "category": "ark-ui",
+          "definition": "PasswordInput.Root comes from @ark-ui/react/password-input (named import of PasswordInput)"
+        },
+        {
+          "component": "PasswordInput",
+          "usedAs": "PasswordInput.VisibilityTrigger",
+          "source": "@ark-ui/react/password-input",
+          "importKind": "named",
+          "importedAs": "PasswordInput",
+          "category": "ark-ui",
+          "definition": "PasswordInput.VisibilityTrigger comes from @ark-ui/react/password-input (named import of PasswordInput)"
+        },
+        {
+          "component": "Select",
+          "usedAs": "Select.Content",
+          "source": "@ark-ui/react/select",
+          "importKind": "named",
+          "importedAs": "Select",
+          "category": "ark-ui",
+          "definition": "Select.Content comes from @ark-ui/react/select (named import of Select)"
+        },
+        {
+          "component": "Select",
+          "usedAs": "Select.Control",
+          "source": "@ark-ui/react/select",
+          "importKind": "named",
+          "importedAs": "Select",
+          "category": "ark-ui",
+          "definition": "Select.Control comes from @ark-ui/react/select (named import of Select)"
+        },
+        {
+          "component": "Select",
+          "usedAs": "Select.HiddenSelect",
+          "source": "@ark-ui/react/select",
+          "importKind": "named",
+          "importedAs": "Select",
+          "category": "ark-ui",
+          "definition": "Select.HiddenSelect comes from @ark-ui/react/select (named import of Select)"
+        },
+        {
+          "component": "Select",
+          "usedAs": "Select.Indicator",
+          "source": "@ark-ui/react/select",
+          "importKind": "named",
+          "importedAs": "Select",
+          "category": "ark-ui",
+          "definition": "Select.Indicator comes from @ark-ui/react/select (named import of Select)"
+        },
+        {
+          "component": "Select",
+          "usedAs": "Select.Item",
+          "source": "@ark-ui/react/select",
+          "importKind": "named",
+          "importedAs": "Select",
+          "category": "ark-ui",
+          "definition": "Select.Item comes from @ark-ui/react/select (named import of Select)"
+        },
+        {
+          "component": "Select",
+          "usedAs": "Select.ItemIndicator",
+          "source": "@ark-ui/react/select",
+          "importKind": "named",
+          "importedAs": "Select",
+          "category": "ark-ui",
+          "definition": "Select.ItemIndicator comes from @ark-ui/react/select (named import of Select)"
+        },
+        {
+          "component": "Select",
+          "usedAs": "Select.ItemText",
+          "source": "@ark-ui/react/select",
+          "importKind": "named",
+          "importedAs": "Select",
+          "category": "ark-ui",
+          "definition": "Select.ItemText comes from @ark-ui/react/select (named import of Select)"
+        },
+        {
+          "component": "Select",
+          "usedAs": "Select.Positioner",
+          "source": "@ark-ui/react/select",
+          "importKind": "named",
+          "importedAs": "Select",
+          "category": "ark-ui",
+          "definition": "Select.Positioner comes from @ark-ui/react/select (named import of Select)"
+        },
+        {
+          "component": "Select",
+          "usedAs": "Select.Root",
+          "source": "@ark-ui/react/select",
+          "importKind": "named",
+          "importedAs": "Select",
+          "category": "ark-ui",
+          "definition": "Select.Root comes from @ark-ui/react/select (named import of Select)"
+        },
+        {
+          "component": "Select",
+          "usedAs": "Select.Trigger",
+          "source": "@ark-ui/react/select",
+          "importKind": "named",
+          "importedAs": "Select",
+          "category": "ark-ui",
+          "definition": "Select.Trigger comes from @ark-ui/react/select (named import of Select)"
+        },
+        {
+          "component": "Select",
+          "usedAs": "Select.ValueText",
+          "source": "@ark-ui/react/select",
+          "importKind": "named",
+          "importedAs": "Select",
+          "category": "ark-ui",
+          "definition": "Select.ValueText comes from @ark-ui/react/select (named import of Select)"
+        },
+        {
+          "component": "SettingsPageFrame",
+          "usedAs": "SettingsPageFrame",
+          "source": "./SettingsPageHeader",
+          "importKind": "named",
+          "importedAs": "SettingsPageFrame",
+          "category": "relative-local",
+          "definition": "SettingsPageFrame comes from ./SettingsPageHeader (named import of SettingsPageFrame)"
+        },
+        {
+          "component": "Slider",
+          "usedAs": "Slider.Control",
+          "source": "@ark-ui/react/slider",
+          "importKind": "named",
+          "importedAs": "Slider",
+          "category": "ark-ui",
+          "definition": "Slider.Control comes from @ark-ui/react/slider (named import of Slider)"
+        },
+        {
+          "component": "Slider",
+          "usedAs": "Slider.HiddenInput",
+          "source": "@ark-ui/react/slider",
+          "importKind": "named",
+          "importedAs": "Slider",
+          "category": "ark-ui",
+          "definition": "Slider.HiddenInput comes from @ark-ui/react/slider (named import of Slider)"
+        },
+        {
+          "component": "Slider",
+          "usedAs": "Slider.Marker",
+          "source": "@ark-ui/react/slider",
+          "importKind": "named",
+          "importedAs": "Slider",
+          "category": "ark-ui",
+          "definition": "Slider.Marker comes from @ark-ui/react/slider (named import of Slider)"
+        },
+        {
+          "component": "Slider",
+          "usedAs": "Slider.MarkerGroup",
+          "source": "@ark-ui/react/slider",
+          "importKind": "named",
+          "importedAs": "Slider",
+          "category": "ark-ui",
+          "definition": "Slider.MarkerGroup comes from @ark-ui/react/slider (named import of Slider)"
+        },
+        {
+          "component": "Slider",
+          "usedAs": "Slider.Range",
+          "source": "@ark-ui/react/slider",
+          "importKind": "named",
+          "importedAs": "Slider",
+          "category": "ark-ui",
+          "definition": "Slider.Range comes from @ark-ui/react/slider (named import of Slider)"
+        },
+        {
+          "component": "Slider",
+          "usedAs": "Slider.Root",
+          "source": "@ark-ui/react/slider",
+          "importKind": "named",
+          "importedAs": "Slider",
+          "category": "ark-ui",
+          "definition": "Slider.Root comes from @ark-ui/react/slider (named import of Slider)"
+        },
+        {
+          "component": "Slider",
+          "usedAs": "Slider.Thumb",
+          "source": "@ark-ui/react/slider",
+          "importKind": "named",
+          "importedAs": "Slider",
+          "category": "ark-ui",
+          "definition": "Slider.Thumb comes from @ark-ui/react/slider (named import of Slider)"
+        },
+        {
+          "component": "Slider",
+          "usedAs": "Slider.Track",
+          "source": "@ark-ui/react/slider",
+          "importKind": "named",
+          "importedAs": "Slider",
+          "category": "ark-ui",
+          "definition": "Slider.Track comes from @ark-ui/react/slider (named import of Slider)"
+        },
+        {
+          "component": "Tooltip",
+          "usedAs": "Tooltip.Content",
+          "source": "@ark-ui/react/tooltip",
+          "importKind": "named",
+          "importedAs": "Tooltip",
+          "category": "ark-ui",
+          "definition": "Tooltip.Content comes from @ark-ui/react/tooltip (named import of Tooltip)"
+        },
+        {
+          "component": "Tooltip",
+          "usedAs": "Tooltip.Positioner",
+          "source": "@ark-ui/react/tooltip",
+          "importKind": "named",
+          "importedAs": "Tooltip",
+          "category": "ark-ui",
+          "definition": "Tooltip.Positioner comes from @ark-ui/react/tooltip (named import of Tooltip)"
+        },
+        {
+          "component": "Tooltip",
+          "usedAs": "Tooltip.Root",
+          "source": "@ark-ui/react/tooltip",
+          "importKind": "named",
+          "importedAs": "Tooltip",
+          "category": "ark-ui",
+          "definition": "Tooltip.Root comes from @ark-ui/react/tooltip (named import of Tooltip)"
+        },
+        {
+          "component": "Tooltip",
+          "usedAs": "Tooltip.Trigger",
+          "source": "@ark-ui/react/tooltip",
+          "importKind": "named",
+          "importedAs": "Tooltip",
+          "category": "ark-ui",
+          "definition": "Tooltip.Trigger comes from @ark-ui/react/tooltip (named import of Tooltip)"
+        }
+      ]
+    },
+    {
+      "page": "src/pages/UppyLibraryDemo.tsx",
+      "componentCount": 18,
+      "categoryCounts": {
+        "local-components": 8,
+        "mantine": 9,
+        "external-package": 1
+      },
+      "components": [
+        {
+          "component": "AppBreadcrumbs",
+          "usedAs": "AppBreadcrumbs",
+          "source": "@/components/common/AppBreadcrumbs",
+          "importKind": "named",
+          "importedAs": "AppBreadcrumbs",
+          "category": "local-components",
+          "definition": "AppBreadcrumbs comes from @/components/common/AppBreadcrumbs (named import of AppBreadcrumbs)"
+        },
+        {
+          "component": "Badge",
+          "usedAs": "Badge",
+          "source": "@mantine/core",
+          "importKind": "named",
+          "importedAs": "Badge",
+          "category": "mantine",
+          "definition": "Badge comes from @mantine/core (named import of Badge)"
+        },
+        {
+          "component": "Button",
+          "usedAs": "Button",
+          "source": "@mantine/core",
+          "importKind": "named",
+          "importedAs": "Button",
+          "category": "mantine",
+          "definition": "Button comes from @mantine/core (named import of Button)"
+        },
+        {
+          "component": "Code",
+          "usedAs": "Code",
+          "source": "@mantine/core",
+          "importKind": "named",
+          "importedAs": "Code",
+          "category": "mantine",
+          "definition": "Code comes from @mantine/core (named import of Code)"
+        },
+        {
+          "component": "Dashboard",
+          "usedAs": "Dashboard",
+          "source": "@uppy/react/dashboard",
+          "importKind": "default",
+          "importedAs": "default",
+          "category": "external-package",
+          "definition": "Dashboard comes from @uppy/react/dashboard (default import of default)"
+        },
+        {
+          "component": "ErrorAlert",
+          "usedAs": "ErrorAlert",
+          "source": "@/components/common/ErrorAlert",
+          "importKind": "named",
+          "importedAs": "ErrorAlert",
+          "category": "local-components",
+          "definition": "ErrorAlert comes from @/components/common/ErrorAlert (named import of ErrorAlert)"
+        },
+        {
+          "component": "Group",
+          "usedAs": "Group",
+          "source": "@mantine/core",
+          "importKind": "named",
+          "importedAs": "Group",
+          "category": "mantine",
+          "definition": "Group comes from @mantine/core (named import of Group)"
+        },
+        {
+          "component": "PageHeader",
+          "usedAs": "PageHeader",
+          "source": "@/components/common/PageHeader",
+          "importKind": "named",
+          "importedAs": "PageHeader",
+          "category": "local-components",
+          "definition": "PageHeader comes from @/components/common/PageHeader (named import of PageHeader)"
+        },
+        {
+          "component": "Paper",
+          "usedAs": "Paper",
+          "source": "@mantine/core",
+          "importKind": "named",
+          "importedAs": "Paper",
+          "category": "mantine",
+          "definition": "Paper comes from @mantine/core (named import of Paper)"
+        },
+        {
+          "component": "SegmentGroupIndicator",
+          "usedAs": "SegmentGroupIndicator",
+          "source": "@/components/ui/segment-group",
+          "importKind": "named",
+          "importedAs": "SegmentGroupIndicator",
+          "category": "local-components",
+          "definition": "SegmentGroupIndicator comes from @/components/ui/segment-group (named import of SegmentGroupIndicator)"
+        },
+        {
+          "component": "SegmentGroupItem",
+          "usedAs": "SegmentGroupItem",
+          "source": "@/components/ui/segment-group",
+          "importKind": "named",
+          "importedAs": "SegmentGroupItem",
+          "category": "local-components",
+          "definition": "SegmentGroupItem comes from @/components/ui/segment-group (named import of SegmentGroupItem)"
+        },
+        {
+          "component": "SegmentGroupItemHiddenInput",
+          "usedAs": "SegmentGroupItemHiddenInput",
+          "source": "@/components/ui/segment-group",
+          "importKind": "named",
+          "importedAs": "SegmentGroupItemHiddenInput",
+          "category": "local-components",
+          "definition": "SegmentGroupItemHiddenInput comes from @/components/ui/segment-group (named import of SegmentGroupItemHiddenInput)"
+        },
+        {
+          "component": "SegmentGroupItemText",
+          "usedAs": "SegmentGroupItemText",
+          "source": "@/components/ui/segment-group",
+          "importKind": "named",
+          "importedAs": "SegmentGroupItemText",
+          "category": "local-components",
+          "definition": "SegmentGroupItemText comes from @/components/ui/segment-group (named import of SegmentGroupItemText)"
+        },
+        {
+          "component": "SegmentGroupRoot",
+          "usedAs": "SegmentGroupRoot",
+          "source": "@/components/ui/segment-group",
+          "importKind": "named",
+          "importedAs": "SegmentGroupRoot",
+          "category": "local-components",
+          "definition": "SegmentGroupRoot comes from @/components/ui/segment-group (named import of SegmentGroupRoot)"
+        },
+        {
+          "component": "Stack",
+          "usedAs": "Stack",
+          "source": "@mantine/core",
+          "importKind": "named",
+          "importedAs": "Stack",
+          "category": "mantine",
+          "definition": "Stack comes from @mantine/core (named import of Stack)"
+        },
+        {
+          "component": "Switch",
+          "usedAs": "Switch",
+          "source": "@mantine/core",
+          "importKind": "named",
+          "importedAs": "Switch",
+          "category": "mantine",
+          "definition": "Switch comes from @mantine/core (named import of Switch)"
+        },
+        {
+          "component": "Text",
+          "usedAs": "Text",
+          "source": "@mantine/core",
+          "importKind": "named",
+          "importedAs": "Text",
+          "category": "mantine",
+          "definition": "Text comes from @mantine/core (named import of Text)"
+        },
+        {
+          "component": "TextInput",
+          "usedAs": "TextInput",
+          "source": "@mantine/core",
+          "importKind": "named",
+          "importedAs": "TextInput",
+          "category": "mantine",
+          "definition": "TextInput comes from @mantine/core (named import of TextInput)"
+        }
+      ]
+    }
+  ],
+  "totalComponentUsages": 344,
+  "categoryTotals": {
+    "external-package": 9,
+    "local-components": 88,
+    "tabler-icons": 62,
+    "ark-ui": 125,
+    "in-file component": 10,
+    "mantine": 44,
+    "relative-local": 6
+  }
+}

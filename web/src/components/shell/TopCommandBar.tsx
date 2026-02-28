@@ -1,9 +1,18 @@
 import { useMemo, useState } from 'react';
 import { Combobox, createListCollection } from '@ark-ui/react/combobox';
-import { IconMenu2, IconMoonStars, IconSparkles, IconSun, IconList } from '@tabler/icons-react';
+import { IconMenu2, IconSparkles, IconList } from '@tabler/icons-react';
+import { Moon02Icon, Sun03Icon } from '@hugeicons/core-free-icons';
+import { HugeiconsIcon } from '@hugeicons/react';
 import { useNavigate } from 'react-router-dom';
 import { useMantineColorScheme } from '@mantine/core';
 import { useHeaderCenter } from '@/components/shell/HeaderCenterContext';
+import { AppIcon } from '@/components/ui/app-icon';
+import {
+  ICON_CONTEXT_SIZE,
+  ICON_SIZES,
+  ICON_STANDARD,
+  ICON_STROKES,
+} from '@/lib/icon-contract';
 import './TopCommandBar.css';
 
 type TopCommandBarProps = {
@@ -71,6 +80,8 @@ export function TopCommandBar({
     if (!query) return searchCollection.items;
     return searchCollection.items.filter((item) => item.label.toLowerCase().includes(query));
   }, [searchCollection, searchValue]);
+  const utilityIconSize = ICON_SIZES[ICON_CONTEXT_SIZE[ICON_STANDARD.utilityTopRight.context]];
+  const utilityIconStroke = ICON_STROKES[ICON_STANDARD.utilityTopRight.stroke];
 
   const toggleColorScheme = () => {
     if (typeof document === 'undefined' || typeof window === 'undefined') return;
@@ -147,7 +158,7 @@ export function TopCommandBar({
           onClick={onToggleNav}
           className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:hidden"
         >
-          <IconMenu2 size={18} />
+          <AppIcon icon={IconMenu2} size="lg" />
         </button>
         {shellGuides ? leftNode : null}
       </div>
@@ -173,7 +184,7 @@ export function TopCommandBar({
             title="Project List"
             onClick={() => navigate('/app/projects/list')}
           >
-            <IconList size={16} />
+            <AppIcon icon={IconList} size="md" />
             <span className="hidden sm:inline">Project List</span>
           </button>
           {showAssistantToggle && onToggleAssistant ? (
@@ -184,17 +195,31 @@ export function TopCommandBar({
               title={assistantOpened ? 'Hide Assistant' : 'Show Assistant'}
               onClick={onToggleAssistant}
             >
-              <IconSparkles size={16} />
+              <AppIcon icon={IconSparkles} size="md" />
             </button>
           ) : null}
           <button
             type="button"
-            className="top-command-bar-theme-toggle inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className={`top-command-bar-theme-toggle ${ICON_STANDARD.utilityTopRight.buttonClass}`}
             aria-label="Toggle color scheme"
             title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
             onClick={toggleColorScheme}
           >
-            {isDark ? <IconSun size={20} /> : <IconMoonStars size={20} />}
+            {isDark
+              ? (
+                <HugeiconsIcon
+                  icon={Sun03Icon}
+                  size={utilityIconSize}
+                  strokeWidth={utilityIconStroke}
+                />
+              )
+              : (
+                <HugeiconsIcon
+                  icon={Moon02Icon}
+                  size={utilityIconSize}
+                  strokeWidth={utilityIconStroke}
+                />
+              )}
           </button>
         </div>
       </div>

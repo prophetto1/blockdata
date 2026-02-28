@@ -11,8 +11,8 @@ export function McpServerCard({
 }: {
   server: McpServerDef;
   status: 'connected' | 'disconnected' | 'configure';
-  actionLabel: string;
-  onAction: () => void;
+  actionLabel?: string;
+  onAction?: () => void;
 }) {
   const badgeVariant = status === 'connected' ? 'green' : status === 'configure' ? 'blue' : 'gray';
   const badgeText = status === 'connected' ? 'Connected' : status === 'configure' ? 'Configure' : 'Not connected';
@@ -31,11 +31,13 @@ export function McpServerCard({
             {badgeText}
           </Badge>
         </div>
-        <div className="flex justify-end">
-          <button type="button" className={btnLight} onClick={onAction}>
-            {actionLabel}
-          </button>
-        </div>
+        {actionLabel && onAction && (
+          <div className="flex justify-end">
+            <button type="button" className={btnLight} onClick={onAction}>
+              {actionLabel}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

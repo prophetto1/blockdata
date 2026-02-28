@@ -16,7 +16,7 @@ import UppyLibraryDemo from '@/pages/UppyLibraryDemo';
 import Schemas from '@/pages/Schemas';
 import SchemaLayout from '@/pages/SchemaLayout';
 import RunDetail from '@/pages/RunDetail';
-import { SettingsLayout, SettingsAccount, SettingsAiOverview, SettingsProviderForm, SettingsAdmin } from '@/pages/settings';
+import { SettingsLayout, SettingsAccount, SettingsAiOverview, SettingsProviderForm, SettingsModelRoles, SettingsAdmin } from '@/pages/settings';
 import LoginSplit from '@/pages/LoginSplit';
 import PlatformLanding from '@/pages/experiments/PlatformLanding';
 import Landing from '@/pages/Landing';
@@ -149,6 +149,7 @@ export const router = createBrowserRouter([
               { path: 'profile', element: <SettingsAccount /> },
               { path: 'ai', element: <SettingsAiOverview /> },
               { path: 'ai/:providerId', element: <SettingsProviderForm /> },
+              { path: 'model-roles', element: <SettingsModelRoles /> },
               { path: 'mcp', element: <McpServers /> },
               { path: 'admin', element: <Navigate to="/app/settings/admin/models" replace /> },
               { path: 'admin/:category', element: <SettingsAdmin /> },

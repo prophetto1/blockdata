@@ -1,8 +1,16 @@
 import { useEffect, useMemo, useState } from 'react';
-import { IconClock, IconExternalLink, IconSearch } from '@tabler/icons-react';
+import { IconClock, IconExternalLink } from '@tabler/icons-react';
+import { Search01Icon } from '@hugeicons/core-free-icons';
+import { HugeiconsIcon } from '@hugeicons/react';
 import { useNavigate } from 'react-router-dom';
 import { ErrorAlert } from '@/components/common/ErrorAlert';
 import { PageHeader } from '@/components/common/PageHeader';
+import {
+  ICON_CONTEXT_SIZE,
+  ICON_SIZES,
+  ICON_STANDARD,
+  ICON_STROKES,
+} from '@/lib/icon-contract';
 import { PROJECT_FOCUS_STORAGE_KEY } from '@/lib/projectFocus';
 import { supabase } from '@/lib/supabase';
 import { cn } from '@/lib/utils';
@@ -94,6 +102,8 @@ export default function FlowsList() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState('');
+  const utilityIconSize = ICON_SIZES[ICON_CONTEXT_SIZE[ICON_STANDARD.utilityTopRight.context]];
+  const utilityIconStroke = ICON_STROKES[ICON_STANDARD.utilityTopRight.stroke];
 
   useEffect(() => {
     let cancelled = false;
@@ -226,10 +236,9 @@ export default function FlowsList() {
       <section className="flex min-h-0 flex-1 flex-col rounded-lg border border-border bg-card">
         <div className="flex items-center justify-between gap-3 border-b border-border px-3 py-2">
           <label className="relative min-w-0 flex-1">
-            <IconSearch
-              size={14}
-              className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground"
-            />
+            <span className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2">
+              <HugeiconsIcon icon={Search01Icon} size={utilityIconSize} strokeWidth={utilityIconStroke} className="text-muted-foreground" />
+            </span>
             <input
               type="text"
               value={query}

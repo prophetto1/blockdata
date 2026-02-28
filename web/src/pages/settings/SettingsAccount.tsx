@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/lib/supabase';
 import { TABLES } from '@/lib/tables';
+import { SettingsPageFrame, SettingsSection } from './SettingsPageHeader';
 
 type InlineStatus = {
   kind: 'success' | 'error' | 'info';
@@ -134,10 +135,13 @@ export default function SettingsAccount() {
   }
 
   return (
-    <div className="space-y-4">
+    <SettingsPageFrame
+      title="Account"
+      description="Manage your profile and security settings."
+    >
       {status && (
         <div
-          className="rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground"
+          className="rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground"
           role="status"
           aria-live="polite"
         >
@@ -145,88 +149,80 @@ export default function SettingsAccount() {
         </div>
       )}
 
-      <section className="rounded-md border border-border bg-card p-4 md:p-6">
-        <h2 className="text-sm font-semibold text-foreground">Profile</h2>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Update your account display name and email address.
-        </p>
-
-        <div className="mt-4 space-y-4">
-          <Field.Root>
-            <Field.Label className="mb-1.5 block text-sm font-medium text-foreground">Display name</Field.Label>
-            <Input
-              value={displayName}
-              onChange={(e) => setDisplayName(e.currentTarget.value)}
-              placeholder="Your name"
-            />
-          </Field.Root>
-
-          <Field.Root>
-            <Field.Label className="mb-1.5 block text-sm font-medium text-foreground">Email</Field.Label>
-            <Input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.currentTarget.value)}
-              placeholder="name@company.com"
-            />
-          </Field.Root>
-
-          <div className="flex justify-end">
-            <Button type="button" onClick={handleSaveProfile} disabled={savingProfile}>
-              {savingProfile ? 'Saving...' : 'Save profile'}
-            </Button>
-          </div>
-        </div>
-      </section>
-
-      <section className="rounded-md border border-border bg-card p-4 md:p-6">
-        <h2 className="text-sm font-semibold text-foreground">Password</h2>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Set a new password for this account.
-        </p>
-
-        <div className="mt-4 space-y-4">
-          <PasswordInput.Root className="space-y-1.5">
-            <PasswordInput.Label className="block text-sm font-medium text-foreground">New password</PasswordInput.Label>
-            <PasswordInput.Control className="relative flex items-center">
-              <PasswordInput.Input
-                className={`${inputClass} pr-10`}
-                value={newPassword}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewPassword(e.currentTarget.value)}
-                placeholder="At least 8 characters"
+      <div className="space-y-6">
+        <SettingsSection title="Profile" description="Update your display name and email address.">
+          <div className="space-y-4">
+            <Field.Root>
+              <Field.Label className="mb-1.5 block text-sm font-medium text-foreground">Display name</Field.Label>
+              <Input
+                value={displayName}
+                onChange={(e) => setDisplayName(e.currentTarget.value)}
+                placeholder="Your name"
               />
-              <PasswordInput.VisibilityTrigger className="absolute right-2 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded text-muted-foreground transition-colors hover:text-foreground">
-                <PasswordInput.Indicator fallback={<IconEyeOff size={16} />}>
-                  <IconEye size={16} />
-                </PasswordInput.Indicator>
-              </PasswordInput.VisibilityTrigger>
-            </PasswordInput.Control>
-          </PasswordInput.Root>
+            </Field.Root>
 
-          <PasswordInput.Root className="space-y-1.5">
-            <PasswordInput.Label className="block text-sm font-medium text-foreground">Confirm password</PasswordInput.Label>
-            <PasswordInput.Control className="relative flex items-center">
-              <PasswordInput.Input
-                className={`${inputClass} pr-10`}
-                value={confirmPassword}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setConfirmPassword(e.currentTarget.value)}
-                placeholder="Repeat new password"
+            <Field.Root>
+              <Field.Label className="mb-1.5 block text-sm font-medium text-foreground">Email</Field.Label>
+              <Input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.currentTarget.value)}
+                placeholder="name@company.com"
               />
-              <PasswordInput.VisibilityTrigger className="absolute right-2 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded text-muted-foreground transition-colors hover:text-foreground">
-                <PasswordInput.Indicator fallback={<IconEyeOff size={16} />}>
-                  <IconEye size={16} />
-                </PasswordInput.Indicator>
-              </PasswordInput.VisibilityTrigger>
-            </PasswordInput.Control>
-          </PasswordInput.Root>
+            </Field.Root>
 
-          <div className="flex justify-end">
-            <Button type="button" onClick={handleUpdatePassword} disabled={savingPassword}>
-              {savingPassword ? 'Updating...' : 'Update password'}
-            </Button>
+            <div className="flex justify-end">
+              <Button type="button" onClick={handleSaveProfile} disabled={savingProfile}>
+                {savingProfile ? 'Saving...' : 'Save profile'}
+              </Button>
+            </div>
           </div>
-        </div>
-      </section>
-    </div>
+        </SettingsSection>
+
+        <SettingsSection title="Password" description="Set a new password for this account.">
+          <div className="space-y-4">
+            <PasswordInput.Root className="space-y-1.5">
+              <PasswordInput.Label className="block text-sm font-medium text-foreground">New password</PasswordInput.Label>
+              <PasswordInput.Control className="relative flex items-center">
+                <PasswordInput.Input
+                  className={`${inputClass} pr-10`}
+                  value={newPassword}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewPassword(e.currentTarget.value)}
+                  placeholder="At least 8 characters"
+                />
+                <PasswordInput.VisibilityTrigger className="absolute right-2 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded text-muted-foreground transition-colors hover:text-foreground">
+                  <PasswordInput.Indicator fallback={<IconEyeOff size={16} />}>
+                    <IconEye size={16} />
+                  </PasswordInput.Indicator>
+                </PasswordInput.VisibilityTrigger>
+              </PasswordInput.Control>
+            </PasswordInput.Root>
+
+            <PasswordInput.Root className="space-y-1.5">
+              <PasswordInput.Label className="block text-sm font-medium text-foreground">Confirm password</PasswordInput.Label>
+              <PasswordInput.Control className="relative flex items-center">
+                <PasswordInput.Input
+                  className={`${inputClass} pr-10`}
+                  value={confirmPassword}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setConfirmPassword(e.currentTarget.value)}
+                  placeholder="Repeat new password"
+                />
+                <PasswordInput.VisibilityTrigger className="absolute right-2 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded text-muted-foreground transition-colors hover:text-foreground">
+                  <PasswordInput.Indicator fallback={<IconEyeOff size={16} />}>
+                    <IconEye size={16} />
+                  </PasswordInput.Indicator>
+                </PasswordInput.VisibilityTrigger>
+              </PasswordInput.Control>
+            </PasswordInput.Root>
+
+            <div className="flex justify-end">
+              <Button type="button" onClick={handleUpdatePassword} disabled={savingPassword}>
+                {savingPassword ? 'Updating...' : 'Update password'}
+              </Button>
+            </div>
+          </div>
+        </SettingsSection>
+      </div>
+    </SettingsPageFrame>
   );
 }

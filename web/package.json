@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build && node ./scripts/build-docs-if-present.mjs",
+    "inventory:refresh": "node ./scripts/generate-component-inventory.mjs",
+    "build": "npm run inventory:refresh && tsc -b && vite build && node ./scripts/build-docs-if-present.mjs",
     "build:meta-configurator-embed": "node ../scripts/build-meta-configurator-embed.mjs",
     "lint": "eslint .",
     "test": "vitest run",
@@ -17,6 +18,8 @@
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
     "@fontsource/ibm-plex-sans": "^5.2.7",
+    "@hugeicons/core-free-icons": "^3.3.0",
+    "@hugeicons/react": "^1.1.5",
     "@mantine/core": "^8.3.14",
     "@mantine/form": "^8.3.14",
     "@mantine/hooks": "^8.3.14",

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Field } from '@ark-ui/react/field';
 import { NumberInput } from '@ark-ui/react/number-input';
 import { PasswordInput } from '@ark-ui/react/password-input';
@@ -8,6 +8,7 @@ import { Slider } from '@ark-ui/react/slider';
 import { Tooltip } from '@ark-ui/react/tooltip';
 import {
   IconBrain,
+  IconChevronLeft,
   IconCheck,
   IconChevronDown,
   IconCloud,
@@ -18,7 +19,10 @@ import {
   IconMinus,
   IconPlugConnected,
   IconPlus,
+  IconRocket,
+  IconSearch,
   IconServer,
+  IconVectorTriangle,
   IconX,
 } from '@tabler/icons-react';
 import { Badge } from '@/components/ui/badge';
@@ -29,8 +33,15 @@ import { edgeJson } from '@/lib/edge';
 import { supabase } from '@/lib/supabase';
 import { TABLES } from '@/lib/tables';
 import type { UserApiKeyRow } from '@/lib/types';
+import { SettingsPageFrame } from './SettingsPageHeader';
 
-type ProviderModelOption = { value: string; label: string };
+type ModelPurpose = 'chat' | 'extraction' | 'embedding' | 'parsing' | 'reasoning';
+
+type ProviderModelOption = {
+  value: string;
+  label: string;
+  purposes?: ModelPurpose[];
+};
 
 type ProviderDef = {
   id: string;
@@ -48,13 +59,13 @@ export const PROVIDERS: ProviderDef[] = [
   {
     id: 'anthropic',
     label: 'Anthropic',
-    description: 'Claude models',
+    description: 'Claude models — chat, extraction, reasoning',
     icon: <IconBrain size={20} />,
     enabled: true,
     models: [
-      { value: 'claude-opus-4-6', label: 'Claude Opus 4.6 - most capable' },
-      { value: 'claude-sonnet-4-5-20250929', label: 'Claude Sonnet 4.5 - balanced (default)' },
-      { value: 'claude-haiku-4-5-20251001', label: 'Claude Haiku 4.5 - fastest' },
+      { value: 'claude-opus-4-6', label: 'Claude Opus 4.6 — most capable', purposes: ['chat', 'extraction', 'reasoning'] },
+      { value: 'claude-sonnet-4-5-20250929', label: 'Claude Sonnet 4.5 — balanced (default)', purposes: ['chat', 'extraction'] },
+      { value: 'claude-haiku-4-5-20251001', label: 'Claude Haiku 4.5 — fastest', purposes: ['chat', 'extraction'] },
     ],
     keyPlaceholder: 'sk-ant-api03-...',
     keyHelpUrl: 'https://console.anthropic.com/settings/keys',
@@ -63,15 +74,17 @@ export const PROVIDERS: ProviderDef[] = [
   {
     id: 'openai',
     label: 'OpenAI',
-    description: 'GPT and reasoning models',
+    description: 'GPT, reasoning, and embedding models',
     icon: <IconCloud size={20} />,
     enabled: true,
     models: [
-      { value: 'gpt-4.1', label: 'GPT-4.1 - most capable' },
-      { value: 'gpt-4.1-mini', label: 'GPT-4.1 Mini - balanced (default)' },
-      { value: 'gpt-4.1-nano', label: 'GPT-4.1 Nano - fastest' },
-      { value: 'o3', label: 'o3 - reasoning' },
-      { value: 'o4-mini', label: 'o4-mini - reasoning, faster' },
+      { value: 'gpt-4.1', label: 'GPT-4.1 — most capable', purposes: ['chat', 'extraction'] },
+      { value: 'gpt-4.1-mini', label: 'GPT-4.1 Mini — balanced (default)', purposes: ['chat', 'extraction'] },
+      { value: 'gpt-4.1-nano', label: 'GPT-4.1 Nano — fastest', purposes: ['chat'] },
+      { value: 'o3', label: 'o3 — reasoning', purposes: ['reasoning'] },
+      { value: 'o4-mini', label: 'o4-mini — reasoning, faster', purposes: ['reasoning'] },
+      { value: 'text-embedding-3-small', label: 'text-embedding-3-small — 1536d', purposes: ['embedding'] },
+      { value: 'text-embedding-3-large', label: 'text-embedding-3-large — 3072d', purposes: ['embedding'] },
     ],
     keyPlaceholder: 'sk-...',
     keyHelpUrl: 'https://platform.openai.com/api-keys',
@@ -80,17 +93,62 @@ export const PROVIDERS: ProviderDef[] = [
   {
     id: 'google',
     label: 'Google AI',
-    description: 'Gemini models',
+    description: 'Gemini and embedding models',
     icon: <IconCloud size={20} />,
     enabled: true,
     models: [
-      { value: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro - most capable' },
-      { value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash - balanced (default)' },
-      { value: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash - fastest' },
+      { value: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro — most capable', purposes: ['chat', 'extraction', 'parsing'] },
+      { value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash — balanced (default)', purposes: ['chat', 'extraction', 'parsing'] },
+      { value: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash — fastest', purposes: ['chat', 'parsing'] },
+      { value: 'text-embedding-004', label: 'text-embedding-004 — 768d', purposes: ['embedding'] },
     ],
     keyPlaceholder: 'AIza...',
     keyHelpUrl: 'https://aistudio.google.com/apikey',
     defaultModel: 'gemini-2.5-flash',
+  },
+  {
+    id: 'voyage',
+    label: 'Voyage AI',
+    description: 'Dedicated embedding models',
+    icon: <IconRocket size={20} />,
+    enabled: true,
+    models: [
+      { value: 'voyage-3-large', label: 'voyage-3-large — 1024d (default)', purposes: ['embedding'] },
+      { value: 'voyage-3-lite', label: 'voyage-3-lite — 512d, fastest', purposes: ['embedding'] },
+      { value: 'voyage-code-3', label: 'voyage-code-3 — code-optimized', purposes: ['embedding'] },
+    ],
+    keyPlaceholder: 'pa-...',
+    keyHelpUrl: 'https://dash.voyageai.com/api-keys',
+    defaultModel: 'voyage-3-large',
+  },
+  {
+    id: 'cohere',
+    label: 'Cohere',
+    description: 'Embeddings and reranking',
+    icon: <IconSearch size={20} />,
+    enabled: true,
+    models: [
+      { value: 'embed-v4.0', label: 'Embed v4.0 — latest (default)', purposes: ['embedding'] },
+      { value: 'embed-multilingual-v3.0', label: 'Embed Multilingual v3.0', purposes: ['embedding'] },
+      { value: 'rerank-v3.5', label: 'Rerank v3.5', purposes: [] },
+    ],
+    keyPlaceholder: 'co-...',
+    keyHelpUrl: 'https://dashboard.cohere.com/api-keys',
+    defaultModel: 'embed-v4.0',
+  },
+  {
+    id: 'jina',
+    label: 'Jina AI',
+    description: 'Embeddings and reranking',
+    icon: <IconVectorTriangle size={20} />,
+    enabled: true,
+    models: [
+      { value: 'jina-embeddings-v3', label: 'jina-embeddings-v3 — 1024d (default)', purposes: ['embedding'] },
+      { value: 'jina-reranker-v2-base-multilingual', label: 'jina-reranker-v2 — reranking', purposes: [] },
+    ],
+    keyPlaceholder: 'jina_...',
+    keyHelpUrl: 'https://jina.ai/api-key',
+    defaultModel: 'jina-embeddings-v3',
   },
   {
     id: 'custom',
@@ -126,6 +184,7 @@ function getProviderAccentClasses(enabled: boolean) {
 }
 
 export default function SettingsProviderForm() {
+  const navigate = useNavigate();
   const { providerId } = useParams<{ providerId: string }>();
   const provider = PROVIDERS.find((p) => p.id === providerId) ?? PROVIDERS[0];
 
@@ -348,7 +407,22 @@ export default function SettingsProviderForm() {
   if (loading) return null;
 
   return (
-    <div className="w-full rounded-md border border-border bg-card p-4 md:p-6">
+    <SettingsPageFrame
+      title={provider.label}
+      description={provider.description}
+      headerAction={(
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="h-8 gap-1.5 px-2 text-xs"
+          onClick={() => navigate('/app/settings/ai')}
+        >
+          <IconChevronLeft size={14} />
+          Back
+        </Button>
+      )}
+    >
       {status && (
         <div
           className={cn(
@@ -365,7 +439,7 @@ export default function SettingsProviderForm() {
           {status.message}
         </div>
       )}
-      <header className="mb-5 flex flex-wrap items-start gap-3">
+      <div className="mb-5 flex flex-wrap items-start gap-3">
         <div
           className={cn(
             'inline-flex h-10 w-10 items-center justify-center rounded-md border',
@@ -400,9 +474,9 @@ export default function SettingsProviderForm() {
                 : `Key ....${existing.key_suffix}`}
           </Badge>
         )}
-      </header>
+      </div>
 
-      <section className="rounded-md border border-border p-4">
+      <section className="rounded-md bg-transparent p-0">
         <h3 className="mb-2 text-sm font-medium text-foreground">API Key</h3>
 
         {existing && !hasKeyChanged && (
@@ -489,7 +563,7 @@ export default function SettingsProviderForm() {
       </section>
 
       {provider.id === 'custom' && (
-        <section className="mt-4 rounded-md border border-border p-4">
+        <section className="mt-4 rounded-md bg-transparent p-0">
           <Field.Root required>
             <Field.Label className="mb-1.5 text-sm font-medium text-foreground">Base URL</Field.Label>
             <Input
@@ -667,6 +741,6 @@ export default function SettingsProviderForm() {
           </Button>
         )}
       </div>
-    </div>
+    </SettingsPageFrame>
   );
 }

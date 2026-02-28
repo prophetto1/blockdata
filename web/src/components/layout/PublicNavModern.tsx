@@ -1,8 +1,15 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Swap } from '@ark-ui/react/swap';
-import { IconMoon, IconSun } from '@tabler/icons-react';
+import { Moon02Icon, Sun03Icon } from '@hugeicons/core-free-icons';
+import { HugeiconsIcon } from '@hugeicons/react';
 import { useIsDark } from '@/lib/useIsDark';
 import { Button } from '@/components/ui/button';
+import {
+  ICON_CONTEXT_SIZE,
+  ICON_SIZES,
+  ICON_STANDARD,
+  ICON_STROKES,
+} from '@/lib/icon-contract';
 
 const UI_THEME_KEY = 'ui-theme';
 
@@ -10,6 +17,8 @@ export function PublicNavModern() {
   const navigate = useNavigate();
   const location = useLocation();
   const isDark = useIsDark();
+  const utilityIconSize = ICON_SIZES[ICON_CONTEXT_SIZE[ICON_STANDARD.utilityTopRight.context]];
+  const utilityIconStroke = ICON_STROKES[ICON_STANDARD.utilityTopRight.stroke];
 
   const toggleColorScheme = () => {
     const next = isDark ? 'light' : 'dark';
@@ -45,7 +54,7 @@ export function PublicNavModern() {
           {/* Theme toggle */}
           <button
             type="button"
-            className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            className={ICON_STANDARD.utilityTopRight.buttonClass}
             onClick={toggleColorScheme}
             aria-label="Toggle color scheme"
           >
@@ -54,13 +63,21 @@ export function PublicNavModern() {
                 type="on"
                 className="inline-flex data-[state=open]:animate-in data-[state=open]:spin-in-90 data-[state=open]:fade-in data-[state=closed]:animate-out data-[state=closed]:spin-out-90 data-[state=closed]:fade-out"
               >
-                <IconSun size={16} />
+                <HugeiconsIcon
+                  icon={Sun03Icon}
+                  size={utilityIconSize}
+                  strokeWidth={utilityIconStroke}
+                />
               </Swap.Indicator>
               <Swap.Indicator
                 type="off"
                 className="inline-flex data-[state=open]:animate-in data-[state=open]:spin-in-[-90deg] data-[state=open]:fade-in data-[state=closed]:animate-out data-[state=closed]:spin-out-[-90deg] data-[state=closed]:fade-out"
               >
-                <IconMoon size={16} />
+                <HugeiconsIcon
+                  icon={Moon02Icon}
+                  size={utilityIconSize}
+                  strokeWidth={utilityIconStroke}
+                />
               </Swap.Indicator>
             </Swap.Root>
           </button>

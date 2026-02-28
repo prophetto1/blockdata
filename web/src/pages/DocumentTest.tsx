@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { Field } from '@ark-ui/react/field';
 import { Splitter } from '@ark-ui/react/splitter';
 import { TreeView, createTreeCollection } from '@ark-ui/react/tree-view';
@@ -12,6 +12,7 @@ import {
   MenuRoot,
   MenuTrigger,
 } from '@/components/ui/menu';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   IconDotsVertical,
   IconDownload,
@@ -43,6 +44,7 @@ import {
 } from '@/lib/projectDetailHelpers';
 import { supabase } from '@/lib/supabase';
 import {
+  allTabIds,
   FALLBACK_TAB,
   getTab,
   getTabLabel,
@@ -67,9 +69,20 @@ type Pane = {
 
 const MIN_PANE_PERCENT = 18;
 const MAX_COLUMNS = 7;
+const MAX_CONCURRENT_PREVIEW_TABS = 8;
 const DRAG_PAYLOAD_MIME = 'application/x-doc-test-drag';
 const DOCUMENTS_BUCKET = (import.meta.env.VITE_DOCUMENTS_BUCKET as string | undefined) ?? 'documents';
 const VIRTUAL_FOLDERS_STORAGE_KEY_PREFIX = 'blockdata.elt.virtual_folders.';
+const PREVIEW_INSTANCE_TAB_PREFIX = 'preview:';
+const NEW_PANE_TAB_PRIORITY: TabId[] = [
+  'parse',
+  'load',
+  'pull:github',
+  'pull:stripe',
+  'pull:sql_database',
+  'preview',
+  'canvas',
+];
 
 // ---------------------------------------------------------------------------
 // Register tabs — view tabs are fixed; action tabs are dynamic.
@@ -84,7 +97,7 @@ registerTabs('pull', [
   { suffix: 'sql_database', label: 'SQL Database', render: ({ projectId }) => <DltPullPanel projectId={projectId} scriptLabel="SQL Database" /> },
 ]);
 registerTab({ id: 'load', label: 'Load', group: 'load', render: ({ projectId }) => <DltLoadPanel projectId={projectId} /> });
-registerTab({ id: 'parse:easy', label: 'Parse: Easy', group: 'parse', render: ({ projectId }) => <ParseEasyPanel projectId={projectId} /> });
+registerTab({ id: 'parse', label: 'Parse', group: 'parse', render: ({ projectId }) => <ParseEasyPanel projectId={projectId} /> });
 
 const TEXT_SOURCE_TYPES = new Set([
   'md',
@@ -143,6 +156,57 @@ type FilesTreeNode = {
   doc?: ProjectDocumentRow;
   children?: FilesTreeNode[];
 };
+
+function isPreviewInstanceTab(tabId: TabId): boolean {
+  return tabId.startsWith(PREVIEW_INSTANCE_TAB_PREFIX);
+}
+
+function createPreviewInstanceTabId(sourceUid: string, sequence: number): TabId {
+  return `${PREVIEW_INSTANCE_TAB_PREFIX}${sourceUid}:${sequence}`;
+}
+
+function getPreviewSourceUidFromTabId(tabId: TabId): string | null {
+  if (!isPreviewInstanceTab(tabId)) return null;
+  const value = tabId.slice(PREVIEW_INSTANCE_TAB_PREFIX.length);
+  const separator = value.lastIndexOf(':');
+  if (separator <= 0) return null;
+  return value.slice(0, separator);
+}
+
+function getPreviewTabSequence(tabId: TabId): number {
+  const sourceUid = getPreviewSourceUidFromTabId(tabId);
+  if (!sourceUid) return Number.MAX_SAFE_INTEGER;
+  const suffix = tabId.slice((`${PREVIEW_INSTANCE_TAB_PREFIX}${sourceUid}:`).length);
+  const sequence = Number.parseInt(suffix, 10);
+  return Number.isFinite(sequence) ? sequence : Number.MAX_SAFE_INTEGER;
+}
+
+function isKnownTab(tabId: TabId): boolean {
+  return hasTab(tabId) || isPreviewInstanceTab(tabId);
+}
+
+function enforcePreviewTabCap(input: Pane[], maxConcurrent: number): Pane[] {
+  if (maxConcurrent <= 0) return input;
+
+  const previewInstances = input.flatMap((pane) => pane.tabs)
+    .filter((tabId) => isPreviewInstanceTab(tabId));
+  if (previewInstances.length <= maxConcurrent) return input;
+
+  const removeSet = new Set(
+    [...previewInstances]
+      .sort((a, b) => getPreviewTabSequence(a) - getPreviewTabSequence(b))
+      .slice(0, previewInstances.length - maxConcurrent),
+  );
+
+  return input.map((pane) => {
+    const tabs = pane.tabs.filter((tabId) => !removeSet.has(tabId));
+    return {
+      ...pane,
+      tabs,
+      activeTab: tabs.includes(pane.activeTab) ? pane.activeTab : (tabs[0] ?? FALLBACK_TAB),
+    };
+  });
+}
 
 type MutableFolderNode = {
   id: string;
@@ -508,7 +572,7 @@ function parseDragPayload(raw: string): DragPayload | null {
     const fromPaneId = segments[1];
     const tabIdRaw = segments.slice(2).join(':');
     if (!fromPaneId || !tabIdRaw) return null;
-    if (!hasTab(tabIdRaw)) return null;
+    if (!isKnownTab(tabIdRaw)) return null;
     return { kind: 'tab', fromPaneId, tabId: tabIdRaw };
   }
 
@@ -579,6 +643,21 @@ function moveTabToPosition(input: Pane[], tabId: TabId, toPaneId: string, insert
   return finalizePanes(next);
 }
 
+function pickNewPaneTab(input: Pane[], sourceActiveTab: TabId): TabId {
+  const openTabs = new Set(input.flatMap((pane) => pane.tabs));
+
+  for (const candidate of NEW_PANE_TAB_PRIORITY) {
+    if (hasTab(candidate) && !openTabs.has(candidate)) return candidate;
+  }
+
+  const nextRegistryTab = allTabIds().find((tabId) => tabId !== 'assets' && !openTabs.has(tabId));
+  if (nextRegistryTab) return nextRegistryTab;
+
+  if (sourceActiveTab !== 'assets' && hasTab(sourceActiveTab)) return sourceActiveTab;
+  if (hasTab('parse')) return 'parse';
+  return FALLBACK_TAB;
+}
+
 function setActiveTab(input: Pane[], paneId: string, tabId: TabId): Pane[] {
   return input.map((pane) => {
     if (pane.id !== paneId) return pane;
@@ -600,6 +679,295 @@ function closeTab(input: Pane[], paneId: string, tabId: TabId): Pane[] {
   return finalizePanes(next);
 }
 
+function PreviewTabPanel({ doc }: { doc: ProjectDocumentRow | null }) {
+  const [previewKind, setPreviewKind] = useState<PreviewKind>('none');
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewText, setPreviewText] = useState<string | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewError, setPreviewError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadPreview = async () => {
+      if (!doc) {
+        setPreviewKind('none');
+        setPreviewUrl(null);
+        setPreviewText(null);
+        setPreviewError(null);
+        setPreviewLoading(false);
+        return;
+      }
+
+      setPreviewLoading(true);
+      setPreviewError(null);
+      setPreviewUrl(null);
+      setPreviewText(null);
+
+      const { url: signedUrl, error: signedUrlError } = await resolveSignedUrlForLocators([
+        doc.source_locator,
+        doc.conv_locator,
+      ]);
+
+      if (cancelled) return;
+
+      if (!signedUrl) {
+        setPreviewKind('none');
+        setPreviewError(
+          signedUrlError
+            ? `Preview unavailable: ${signedUrlError}`
+            : 'Preview unavailable for this document.',
+        );
+        setPreviewLoading(false);
+        return;
+      }
+
+      if (isPdfDocument(doc)) {
+        setPreviewKind('pdf');
+        setPreviewUrl(signedUrl);
+        setPreviewLoading(false);
+        return;
+      }
+      if (isImageDocument(doc)) {
+        setPreviewKind('image');
+        setPreviewUrl(signedUrl);
+        setPreviewLoading(false);
+        return;
+      }
+      if (isTextDocument(doc)) {
+        try {
+          const response = await fetch(signedUrl);
+          const text = await response.text();
+          if (cancelled) return;
+          const truncated = text.length > 200000 ? `${text.slice(0, 200000)}\n\n[Preview truncated]` : text;
+          setPreviewKind(isMarkdownDocument(doc) ? 'markdown' : 'text');
+          setPreviewText(truncated.length > 0 ? truncated : '[Empty file]');
+          setPreviewUrl(signedUrl);
+          setPreviewLoading(false);
+          return;
+        } catch {
+          if (cancelled) return;
+          setPreviewKind('file');
+          setPreviewUrl(signedUrl);
+          setPreviewLoading(false);
+          return;
+        }
+      }
+      if (isDocxDocument(doc)) {
+        setPreviewKind('docx');
+        setPreviewUrl(signedUrl);
+        setPreviewLoading(false);
+        return;
+      }
+      if (isPptxDocument(doc)) {
+        setPreviewKind('pptx');
+        setPreviewUrl(signedUrl);
+        setPreviewLoading(false);
+        return;
+      }
+
+      setPreviewKind('file');
+      setPreviewUrl(signedUrl);
+      setPreviewLoading(false);
+    };
+
+    void loadPreview();
+    return () => {
+      cancelled = true;
+    };
+  }, [doc]);
+
+  const selectedDocPath = normalizePath(doc?.doc_title ?? '');
+  const selectedDocPathParts = selectedDocPath.split('/').filter((part) => part.length > 0);
+  const selectedDocTitle = selectedDocPathParts[selectedDocPathParts.length - 1]
+    ?? doc?.doc_title
+    ?? 'Asset';
+  const selectedDocFormat = doc ? getDocumentFormat(doc) : 'FILE';
+
+  const renderPreviewFrame = (
+    content: ReactNode,
+    options?: { scroll?: boolean; padded?: boolean },
+  ) => (
+    <div className="h-full w-full min-h-0 p-2">
+      <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-md border border-border bg-card">
+        {options?.scroll === false ? (
+          <div
+            className={[
+              'min-h-0 flex-1 overflow-hidden',
+              options?.padded === false ? '' : 'p-3',
+            ].join(' ')}
+          >
+            {content}
+          </div>
+        ) : (
+          <ScrollArea
+            className="min-h-0 h-full flex-1"
+            viewportClass={[
+              'h-full overflow-y-auto overflow-x-hidden',
+              options?.padded === false ? '' : 'p-3',
+            ].join(' ').trim()}
+          >
+            {content}
+          </ScrollArea>
+        )}
+      </div>
+    </div>
+  );
+
+  const renderCenteredMessage = (message: ReactNode, isError = false) => (
+    <div
+      className={[
+        'flex h-full w-full items-center justify-center text-sm',
+        isError ? 'text-red-500' : 'text-muted-foreground',
+      ].join(' ')}
+    >
+      {message}
+    </div>
+  );
+
+  const renderUnifiedPreviewHeader = (downloadUrl?: string | null) => (
+    <div className="grid min-h-10 grid-cols-[auto_1fr_auto] items-center border-b border-border bg-card px-2">
+      <span className="inline-flex min-w-[34px] justify-center rounded border border-border bg-muted/60 px-1 py-0.5 text-[11px] font-semibold text-muted-foreground">
+        {selectedDocFormat}
+      </span>
+      <span
+        className="min-w-0 px-2 text-center text-[13px] font-medium text-foreground truncate"
+        title={selectedDocTitle}
+      >
+        {selectedDocTitle}
+      </span>
+      {downloadUrl ? (
+        <a
+          href={downloadUrl}
+          target="_blank"
+          rel="noreferrer"
+          download
+          aria-label="Download file"
+          className="ml-auto inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+        >
+          <IconDownload size={16} />
+        </a>
+      ) : (
+        <span aria-hidden className="h-8 w-8" />
+      )}
+    </div>
+  );
+
+  const renderPreviewWithUnifiedHeader = (
+    content: ReactNode,
+    options?: { downloadUrl?: string | null; contentClassName?: string },
+  ) => renderPreviewFrame(
+    <div className="flex h-full min-h-0 flex-col">
+      {renderUnifiedPreviewHeader(options?.downloadUrl)}
+      <ScrollArea
+        className="min-h-0 flex-1"
+        viewportClass={[
+          'h-full overflow-y-auto overflow-x-hidden',
+          options?.contentClassName ?? '',
+        ].join(' ').trim()}
+      >
+        {content}
+      </ScrollArea>
+    </div>,
+    { scroll: false, padded: false },
+  );
+
+  const renderStandardContentPreview = (
+    content: ReactNode,
+    options?: { contentClassName?: string; downloadUrl?: string | null },
+  ) => renderPreviewWithUnifiedHeader(
+    <div className={['parse-docx-preview-viewport', options?.contentClassName ?? ''].join(' ').trim()}>
+      {content}
+    </div>,
+    { downloadUrl: options?.downloadUrl },
+  );
+
+  if (!doc) {
+    return renderPreviewFrame(renderCenteredMessage('Select an asset to preview.'));
+  }
+
+  if (previewLoading) {
+    return renderPreviewWithUnifiedHeader(renderCenteredMessage('Loading preview...'));
+  }
+
+  if (previewError) {
+    return renderPreviewWithUnifiedHeader(renderCenteredMessage(previewError, true));
+  }
+
+  if (previewKind === 'pdf' && previewUrl) {
+    return renderPreviewWithUnifiedHeader(
+      <PdfPreview key={`${doc.source_uid}:${previewUrl}`} url={previewUrl} />,
+      { downloadUrl: previewUrl, contentClassName: 'overflow-hidden' },
+    );
+  }
+
+  if (previewKind === 'image' && previewUrl) {
+    return renderStandardContentPreview(
+      <div className="flex h-full w-full items-center justify-center overflow-auto p-4">
+        <img src={previewUrl} alt={doc.doc_title} className="max-h-full max-w-full" />
+      </div>,
+      { downloadUrl: previewUrl },
+    );
+  }
+
+  if (previewKind === 'text') {
+    return renderStandardContentPreview(
+      <pre className="parse-preview-text">{previewText ?? ''}</pre>,
+      { downloadUrl: previewUrl },
+    );
+  }
+
+  if (previewKind === 'markdown') {
+    return renderStandardContentPreview(
+      <div className="px-3 py-2">
+        <div className="parse-markdown-preview">
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+            {previewText ?? ''}
+          </ReactMarkdown>
+        </div>
+      </div>,
+      { downloadUrl: previewUrl },
+    );
+  }
+
+  if (previewKind === 'docx' && previewUrl) {
+    return renderPreviewWithUnifiedHeader(
+      <DocxPreview
+        key={`${doc.source_uid}:${previewUrl}`}
+        title={doc.doc_title}
+        url={previewUrl}
+        hideToolbar
+      />,
+      { downloadUrl: previewUrl },
+    );
+  }
+
+  if (previewKind === 'pptx' && previewUrl) {
+    return renderPreviewWithUnifiedHeader(
+      <PptxPreview
+        key={`${doc.source_uid}:${previewUrl}`}
+        title={doc.doc_title}
+        url={previewUrl}
+        hideHeaderMeta
+      />,
+      { downloadUrl: previewUrl },
+    );
+  }
+
+  if (previewUrl) {
+    return renderStandardContentPreview(
+      <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
+        <a href={previewUrl} target="_blank" rel="noreferrer" className="text-primary hover:underline">
+          Open file
+        </a>
+      </div>,
+      { downloadUrl: previewUrl },
+    );
+  }
+
+  return renderPreviewWithUnifiedHeader(renderCenteredMessage('Preview unavailable.'));
+}
+
 export default function DocumentTest() {
   useShellHeaderTitle({
     title: 'Document Workbench',
@@ -615,17 +983,14 @@ export default function DocumentTest() {
   const [docs, setDocs] = useState<ProjectDocumentRow[]>([]);
   const [docsLoading, setDocsLoading] = useState(false);
   const [docsError, setDocsError] = useState<string | null>(null);
+  const [filesQueryInput, setFilesQueryInput] = useState('');
   const [filesQuery, setFilesQuery] = useState('');
   const [selectedSourceUid, setSelectedSourceUid] = useState<string | null>(null);
-  const [previewKind, setPreviewKind] = useState<PreviewKind>('none');
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [previewText, setPreviewText] = useState<string | null>(null);
-  const [previewLoading, setPreviewLoading] = useState(false);
-  const [previewError, setPreviewError] = useState<string | null>(null);
+  const previewTabSequenceRef = useRef(1);
 
   const [panes, setPanes] = useState<Pane[]>(() => normalizePaneWidths([
-    { id: 'pane-1', tabs: ['assets'], activeTab: 'assets', width: 50 },
-    { id: 'pane-2', tabs: ['preview'], activeTab: 'preview', width: 50 },
+    { id: 'pane-1', tabs: ['assets'], activeTab: 'assets', width: 28 },
+    { id: 'pane-2', tabs: ['preview'], activeTab: 'preview', width: 72 },
   ]));
   const [focusedPaneId, setFocusedPaneId] = useState<string>('pane-1');
   const [dragOverPaneIndex, setDragOverPaneIndex] = useState<number | null>(null);
@@ -703,6 +1068,15 @@ export default function DocumentTest() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     void loadDocs();
   }, [loadDocs]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setFilesQuery(filesQueryInput);
+    }, 160);
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [filesQueryInput]);
 
   const uploadFiles = useCallback(
     async (pending: readonly PendingUpload[]) => {
@@ -859,6 +1233,10 @@ export default function DocumentTest() {
     () => docs.find((doc) => doc.source_uid === resolvedSelectedSourceUid) ?? null,
     [resolvedSelectedSourceUid, docs],
   );
+  const docsBySourceUid = useMemo(
+    () => new Map(docs.map((doc) => [doc.source_uid, doc])),
+    [docs],
+  );
 
   const handleDeleteSelected = useCallback(async () => {
     if (!selectedSourceUidForActions || !projectId) return;
@@ -935,138 +1313,51 @@ export default function DocumentTest() {
     setExpandedValue((current) => current.filter((id) => folderNodeIds.includes(id)));
   }, [folderNodeIds]);
 
-  const focusPreviewInSecondColumn = useCallback(() => {
+  const openPreviewInRightmostPane = useCallback((sourceUid: string) => {
+    const previewTabId = createPreviewInstanceTabId(sourceUid, previewTabSequenceRef.current);
+    previewTabSequenceRef.current += 1;
     let nextFocusedPaneId: string | null = null;
     setPanes((current) => {
-      let next: Pane[] = [...current];
-      if (next.length < 2) {
-        next = normalizePaneWidths([
-          ...next,
+      if (current.length === 0) {
+        const paneId = 'pane-1';
+        nextFocusedPaneId = paneId;
+        return normalizePaneWidths([
           {
-            id: createPaneId(next),
-            tabs: ['preview'],
-            activeTab: 'preview',
-            width: next[0]?.width ?? 50,
+            id: paneId,
+            tabs: [previewTabId],
+            activeTab: previewTabId,
+            width: 100,
           },
         ]);
       }
 
-      const secondPane = next[1];
-      if (!secondPane) return next;
-      nextFocusedPaneId = secondPane.id;
+      const targetIndex = current.length - 1;
+      const targetPane = current[targetIndex];
+      if (!targetPane) return current;
+      nextFocusedPaneId = targetPane.id;
 
-      // Keep current column count intact; only ensure column 2 has/activates Preview.
-      const updated = next.map((pane, paneIndex) => {
-        if (paneIndex !== 1) return pane;
-        if (pane.tabs.includes('preview')) {
-          return { ...pane, activeTab: 'preview' };
-        }
-        return { ...pane, tabs: [...pane.tabs, 'preview'], activeTab: 'preview' };
+      const updated = current.map((pane, paneIndex) => {
+        if (paneIndex !== targetIndex) return pane;
+        return {
+          ...pane,
+          tabs: [...pane.tabs, previewTabId],
+          activeTab: previewTabId,
+        };
       });
 
-      return normalizePaneWidths(updated);
+      const capped = enforcePreviewTabCap(updated, MAX_CONCURRENT_PREVIEW_TABS);
+      return normalizePaneWidths(capped);
     });
     if (nextFocusedPaneId) {
       setFocusedPaneId(nextFocusedPaneId);
     }
   }, []);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    const loadPreview = async () => {
-      if (!selectedDoc) {
-        setPreviewKind('none');
-        setPreviewUrl(null);
-        setPreviewText(null);
-        setPreviewError(null);
-        setPreviewLoading(false);
-        return;
-      }
-
-      setPreviewLoading(true);
-      setPreviewError(null);
-      setPreviewUrl(null);
-      setPreviewText(null);
-
-      const { url: signedUrl, error: signedUrlError } = await resolveSignedUrlForLocators([
-        selectedDoc.source_locator,
-        selectedDoc.conv_locator,
-      ]);
-
-      if (cancelled) return;
-
-      if (!signedUrl) {
-        setPreviewKind('none');
-        setPreviewError(
-          signedUrlError
-            ? `Preview unavailable: ${signedUrlError}`
-            : 'Preview unavailable for this document.',
-        );
-        setPreviewLoading(false);
-        return;
-      }
-
-      if (isPdfDocument(selectedDoc)) {
-        setPreviewKind('pdf');
-        setPreviewUrl(signedUrl);
-        setPreviewLoading(false);
-        return;
-      }
-      if (isImageDocument(selectedDoc)) {
-        setPreviewKind('image');
-        setPreviewUrl(signedUrl);
-        setPreviewLoading(false);
-        return;
-      }
-      if (isTextDocument(selectedDoc)) {
-        try {
-          const response = await fetch(signedUrl);
-          const text = await response.text();
-          if (cancelled) return;
-          const truncated = text.length > 200000 ? `${text.slice(0, 200000)}\n\n[Preview truncated]` : text;
-          setPreviewKind(isMarkdownDocument(selectedDoc) ? 'markdown' : 'text');
-          setPreviewText(truncated.length > 0 ? truncated : '[Empty file]');
-          setPreviewUrl(signedUrl);
-          setPreviewLoading(false);
-          return;
-        } catch {
-          if (cancelled) return;
-          setPreviewKind('file');
-          setPreviewUrl(signedUrl);
-          setPreviewLoading(false);
-          return;
-        }
-      }
-      if (isDocxDocument(selectedDoc)) {
-        setPreviewKind('docx');
-        setPreviewUrl(signedUrl);
-        setPreviewLoading(false);
-        return;
-      }
-      if (isPptxDocument(selectedDoc)) {
-        setPreviewKind('pptx');
-        setPreviewUrl(signedUrl);
-        setPreviewLoading(false);
-        return;
-      }
-
-      setPreviewKind('file');
-      setPreviewUrl(signedUrl);
-      setPreviewLoading(false);
-    };
-
-    void loadPreview();
-    return () => {
-      cancelled = true;
-    };
-  }, [selectedDoc]);
-
   const handleSelectFile = useCallback((sourceUid: string) => {
     setSelectedSourceUid(sourceUid);
     setSelectedTreeNodeId(`doc:${sourceUid}`);
-    focusPreviewInSecondColumn();
-  }, [focusPreviewInSecondColumn]);
+    openPreviewInRightmostPane(sourceUid);
+  }, [openPreviewInRightmostPane]);
 
   const filesTabContent = useMemo(() => {
     if (!projectId) {
@@ -1085,72 +1376,71 @@ export default function DocumentTest() {
       : (selectedDocNodeId ? [selectedDocNodeId] : []);
 
     return (
-      <div className="flex h-full w-full flex-col">
-        <div className="border-b border-border p-2">
-          <div className="mb-1.5 flex items-center gap-2">
-            <Field.Root className="min-w-0 max-w-[50%]">
-              <Field.Input
-                type="text"
-                value={filesQuery}
-                onChange={(event) => setFilesQuery(event.currentTarget.value)}
-                placeholder="Search"
-                className="h-6 w-full rounded border border-border bg-background px-2 text-[11px] leading-none text-foreground outline-none placeholder:text-[11px] placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring"
-                aria-label="Search assets"
-              />
-            </Field.Root>
-            <div className="ml-auto flex shrink-0 items-center gap-1.5">
-              <button
-                type="button"
-                title="Add file"
-                onClick={() => openNativeFilePicker('file')}
-                className="inline-flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground"
-              >
-                <IconFilePlus size={15} />
-              </button>
-              <button
-                type="button"
-                title="Add folder"
-                onClick={() => {
-                  if (!supportsDirectoryUpload) {
-                    setDocsError('Folder picker is not supported in this browser. Use drag/drop or Add file.');
-                    return;
-                  }
-                  openNativeFilePicker('folder');
-                }}
-                className="inline-flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground"
-              >
-                <IconFolderPlus size={15} />
-              </button>
-              <button
-                type="button"
-                title="Create file"
-                onClick={() => { setCreatingType('file'); setCreateName(''); }}
-                className="inline-flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground"
-              >
-                <IconPlus size={15} />
-              </button>
-              <button
-                type="button"
-                title="Create folder"
-                onClick={() => { setCreatingType('folder'); setCreateName(''); }}
-                className="inline-flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground"
-              >
-                <IconFolder size={15} />
-              </button>
-              <button
-                type="button"
-                title="Delete selected"
-                disabled={!selectedSourceUidForActions}
-                onClick={() => void handleDeleteSelected()}
-                className="inline-flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-red-500 disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-muted-foreground"
-              >
-                <IconTrash size={15} />
-              </button>
-            </div>
+      <div className="h-full w-full min-h-0 p-2">
+        <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-md border border-border bg-card">
+          <div className="grid min-h-10 grid-cols-[1fr_auto] items-center gap-2 border-b border-border bg-card px-2">
+              <Field.Root className="min-w-0 flex-1 md:max-w-[56%]">
+                <Field.Input
+                  type="text"
+                  value={filesQueryInput}
+                  onChange={(event) => setFilesQueryInput(event.currentTarget.value)}
+                  placeholder="Search"
+                  className="h-8 w-full rounded-md border border-border bg-background px-3 text-xs leading-none text-foreground shadow-sm outline-none placeholder:text-[11px] placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring"
+                  aria-label="Search assets"
+                />
+              </Field.Root>
+              <div className="ml-auto flex shrink-0 items-center gap-1.5">
+                <button
+                  type="button"
+                  title="Add file"
+                  onClick={() => openNativeFilePicker('file')}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-transparent bg-background/70 text-muted-foreground hover:border-border hover:bg-accent hover:text-foreground"
+                >
+                  <IconFilePlus size={16} />
+                </button>
+                <button
+                  type="button"
+                  title="Add folder"
+                  onClick={() => {
+                    if (!supportsDirectoryUpload) {
+                      setDocsError('Folder picker is not supported in this browser. Use drag/drop or Add file.');
+                      return;
+                    }
+                    openNativeFilePicker('folder');
+                  }}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-transparent bg-background/70 text-muted-foreground hover:border-border hover:bg-accent hover:text-foreground"
+                >
+                  <IconFolderPlus size={16} />
+                </button>
+                <button
+                  type="button"
+                  title="Create file"
+                  onClick={() => { setCreatingType('file'); setCreateName(''); }}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-transparent bg-background/70 text-muted-foreground hover:border-border hover:bg-accent hover:text-foreground"
+                >
+                  <IconPlus size={16} />
+                </button>
+                <button
+                  type="button"
+                  title="Create folder"
+                  onClick={() => { setCreatingType('folder'); setCreateName(''); }}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-transparent bg-background/70 text-muted-foreground hover:border-border hover:bg-accent hover:text-foreground"
+                >
+                  <IconFolder size={16} />
+                </button>
+                <button
+                  type="button"
+                  title="Delete selected"
+                  disabled={!selectedSourceUidForActions}
+                  onClick={() => void handleDeleteSelected()}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-transparent bg-background/70 text-muted-foreground hover:border-border hover:bg-accent hover:text-red-500 disabled:opacity-30 disabled:hover:border-transparent disabled:hover:bg-background/70 disabled:hover:text-muted-foreground"
+                >
+                  <IconTrash size={16} />
+                </button>
+              </div>
           </div>
-        </div>
 
-        <div className="flex-1 overflow-y-auto p-2">
+          <ScrollArea className="min-h-0 h-full flex-1" viewportClass="h-full overflow-y-auto bg-background p-2">
           {creatingType ? (
             <div className="mb-2 flex items-center gap-1.5 rounded border border-primary/40 bg-accent/30 px-2 py-1.5">
               {creatingType === 'folder' ? (
@@ -1173,13 +1463,13 @@ export default function DocumentTest() {
                   }
                 }}
                 placeholder={creatingType === 'folder' ? 'Folder name' : 'File name'}
-                className="h-5 min-w-0 flex-1 border-none bg-transparent text-xs text-foreground outline-none"
+                className="h-7 min-w-0 flex-1 border-none bg-transparent text-sm text-foreground outline-none"
               />
               <button
                 type="button"
                 onClick={() => void handleCreateEntry(createName, creatingType)}
                 disabled={!createName.trim()}
-                className="text-[10px] font-medium text-primary hover:underline disabled:opacity-40 disabled:no-underline"
+                className="text-xs font-semibold text-primary hover:underline disabled:opacity-40 disabled:no-underline"
               >
                 Create
               </button>
@@ -1205,13 +1495,13 @@ export default function DocumentTest() {
             </div>
           ) : null}
 
-          {!docsLoading && !docsError && !hasFilesTreeNodes && filesQuery.trim().length === 0 ? (
+          {!docsLoading && !docsError && !hasFilesTreeNodes && filesQueryInput.trim().length === 0 ? (
             <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
               No assets in this project yet.
             </div>
           ) : null}
 
-          {!docsLoading && !docsError && !hasFilesTreeNodes && filesQuery.trim().length > 0 ? (
+          {!docsLoading && !docsError && !hasFilesTreeNodes && filesQueryInput.trim().length > 0 ? (
             <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
               No assets match that filter.
             </div>
@@ -1252,7 +1542,7 @@ export default function DocumentTest() {
                   }
                   handleSelectFile(nextId.slice('doc:'.length));
                 }}
-                className="text-xs"
+                className="text-[13px]"
               >
                 <TreeView.Tree className="flex flex-col" aria-label="Project assets">
                   <TreeView.Context>
@@ -1265,18 +1555,23 @@ export default function DocumentTest() {
                         <TreeView.NodeProvider key={node.id} node={node} indexPath={entry.indexPath}>
                           <TreeView.NodeContext>
                             {(state) => {
-                              const rowClassName = `flex items-center gap-2 rounded px-2 py-1.5 ${
+                              const rowClassName = `flex items-center gap-2 rounded-md px-2.5 py-1.5 ${
                                 state.selected
-                                  ? 'bg-accent text-accent-foreground'
-                                  : 'hover:bg-accent/50'
+                                  ? 'bg-accent/70 text-foreground'
+                                  : 'hover:bg-accent/60'
                               }`;
+                              const rowStyle: CSSProperties = {
+                                paddingLeft: rowPaddingLeft,
+                                contentVisibility: 'auto',
+                                containIntrinsicSize: '30px',
+                              };
 
                               if (state.isBranch || node.kind === 'folder') {
                                 return (
                                   <TreeView.Branch>
-                                    <TreeView.BranchControl className={rowClassName} style={{ paddingLeft: rowPaddingLeft }}>
-                                      <IconFolder size={14} className="shrink-0 text-muted-foreground" />
-                                      <TreeView.BranchText className="min-w-0 flex-1 truncate text-foreground">
+                                    <TreeView.BranchControl className={rowClassName} style={rowStyle}>
+                                      <IconFolder size={15} className="shrink-0 text-muted-foreground" />
+                                      <TreeView.BranchText className="min-w-0 flex-1 truncate text-[13px] text-foreground">
                                         {node.label}
                                       </TreeView.BranchText>
                                     </TreeView.BranchControl>
@@ -1289,23 +1584,33 @@ export default function DocumentTest() {
                               const failed = fileDoc.status.includes('failed');
 
                               return (
-                                <TreeView.Item className={rowClassName} style={{ paddingLeft: rowPaddingLeft }}>
-                                  <TreeView.ItemText className="flex min-w-0 flex-1 items-center gap-2">
-                                    <IconFileText size={14} className="shrink-0 text-muted-foreground" />
-                                    <span className="min-w-0 flex-1 truncate text-foreground" title={node.label}>
+                                <TreeView.Item className={rowClassName} style={rowStyle}>
+                                  <TreeView.ItemText className="flex w-full min-w-0 items-center gap-2">
+                                    <IconFileText size={15} className="shrink-0 text-muted-foreground" />
+                                    <span className="min-w-0 max-w-[52%] truncate text-[13px] font-medium text-foreground" title={node.label}>
                                       {node.label}
                                     </span>
-                                    <span className="shrink-0 text-muted-foreground">{getDocumentFormat(fileDoc)}</span>
-                                    <span className="shrink-0 text-muted-foreground">{formatBytes(fileDoc.source_filesize)}</span>
-                                    <span
-                                      className={[
-                                        'shrink-0 rounded px-1.5 py-0.5 text-[10px]',
-                                        failed
-                                          ? 'bg-red-500/15 text-red-700 dark:text-red-300'
-                                          : 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300',
-                                      ].join(' ')}
-                                    >
-                                      {failed ? 'failed' : 'success'}
+                                    <span className="ml-auto inline-flex shrink-0 items-center gap-2">
+                                      <span className="w-12 text-right font-mono text-[11px] text-muted-foreground">
+                                        {formatBytes(fileDoc.source_filesize)}
+                                      </span>
+                                      <span className="inline-flex min-w-[34px] justify-center rounded border border-border bg-muted/60 px-1 py-0.5 text-[11px] font-semibold text-muted-foreground">
+                                        {getDocumentFormat(fileDoc)}
+                                      </span>
+                                      <span
+                                        className="inline-flex h-3 w-3 items-center justify-center"
+                                        aria-label={failed ? 'failed' : 'success'}
+                                        title={failed ? 'failed' : 'success'}
+                                      >
+                                        <span
+                                          className={[
+                                            'h-2.5 w-2.5 rounded-full',
+                                            failed
+                                              ? 'bg-red-600 dark:bg-red-400'
+                                              : 'bg-emerald-600 dark:bg-emerald-400',
+                                          ].join(' ')}
+                                        />
+                                      </span>
                                     </span>
                                   </TreeView.ItemText>
                                 </TreeView.Item>
@@ -1320,143 +1625,11 @@ export default function DocumentTest() {
               </TreeView.Root>
             </div>
           ) : null}
+          </ScrollArea>
         </div>
       </div>
     );
-  }, [createName, creatingType, docsError, docsLoading, expandedValue, filesQuery, filesTreeCollection, filesTreeNodes, filteredDocs, handleCreateEntry, handleDeleteSelected, handleSelectFile, hasFilesTreeNodes, openNativeFilePicker, projectId, resolvedSelectedSourceUid, selectedSourceUidForActions, selectedTreeNodeId, supportsDirectoryUpload, uploadFiles]);
-
-  const previewTabContent = useMemo(() => {
-    const selectedDocTitle = selectedDoc?.doc_title ?? 'Asset';
-
-    const renderPreviewFrame = (
-      content: ReactNode,
-      options?: { scroll?: boolean; padded?: boolean },
-    ) => (
-      <div className="h-full w-full min-h-0 p-2">
-        <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-md border border-border bg-card">
-          <div
-            className={[
-              'min-h-0 flex-1',
-              options?.scroll === false ? 'overflow-hidden' : 'overflow-auto',
-              options?.padded === false ? '' : 'p-3',
-            ].join(' ')}
-          >
-            {content}
-          </div>
-        </div>
-      </div>
-    );
-
-    const renderCenteredMessage = (message: ReactNode, isError = false) => (
-      <div
-        className={[
-          'flex h-full w-full items-center justify-center text-sm',
-          isError ? 'text-red-500' : 'text-muted-foreground',
-        ].join(' ')}
-      >
-        {message}
-      </div>
-    );
-
-    const renderStandardContentPreview = (
-      formatLabel: string,
-      content: ReactNode,
-      options?: { contentClassName?: string },
-    ) => renderPreviewFrame(
-      <div className="parse-text-preview">
-        <div className="parse-pdf-toolbar flex items-center justify-between flex-nowrap">
-          <div className="parse-text-preview-file flex items-center gap-1.5 flex-nowrap">
-            <IconFileText size={14} />
-            <span className="parse-text-preview-filename text-xs" title={selectedDocTitle}>
-              {selectedDocTitle}
-            </span>
-          </div>
-          <span className="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
-            {formatLabel}
-          </span>
-        </div>
-        <div className={['parse-docx-preview-viewport', options?.contentClassName ?? ''].join(' ').trim()}>
-          {content}
-        </div>
-      </div>,
-      { scroll: false, padded: false },
-    );
-
-    if (!selectedDoc) {
-      return renderPreviewFrame(renderCenteredMessage('Select an asset to preview.'));
-    }
-
-    if (previewLoading) {
-      return renderPreviewFrame(renderCenteredMessage('Loading preview...'));
-    }
-
-    if (previewError) {
-      return renderPreviewFrame(renderCenteredMessage(previewError, true));
-    }
-
-    if (previewKind === 'pdf' && previewUrl) {
-      return renderPreviewFrame(
-        <PdfPreview key={`${selectedDoc.source_uid}:${previewUrl}`} url={previewUrl} />,
-        { scroll: false, padded: false },
-      );
-    }
-
-    if (previewKind === 'image' && previewUrl) {
-      return renderStandardContentPreview(
-        'IMAGE',
-        <div className="flex h-full w-full items-center justify-center overflow-auto p-4">
-          <img src={previewUrl} alt={selectedDoc.doc_title} className="max-h-full max-w-full" />
-        </div>,
-      );
-    }
-
-    if (previewKind === 'text') {
-      return renderStandardContentPreview(
-        'TEXT',
-        <pre className="parse-preview-text">{previewText ?? ''}</pre>,
-      );
-    }
-
-    if (previewKind === 'markdown') {
-      return renderStandardContentPreview(
-        'MARKDOWN',
-        <div className="px-3 py-2">
-          <div className="parse-markdown-preview">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>
-              {previewText ?? ''}
-            </ReactMarkdown>
-          </div>
-        </div>,
-      );
-    }
-
-    if (previewKind === 'docx' && previewUrl) {
-      return renderPreviewFrame(
-        <DocxPreview key={`${selectedDoc.source_uid}:${previewUrl}`} title={selectedDoc.doc_title} url={previewUrl} />,
-        { scroll: false, padded: false },
-      );
-    }
-
-    if (previewKind === 'pptx' && previewUrl) {
-      return renderPreviewFrame(
-        <PptxPreview key={`${selectedDoc.source_uid}:${previewUrl}`} title={selectedDoc.doc_title} url={previewUrl} />,
-        { scroll: false, padded: false },
-      );
-    }
-
-    if (previewUrl) {
-      return renderStandardContentPreview(
-        'FILE',
-        <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
-          <a href={previewUrl} target="_blank" rel="noreferrer" className="text-primary hover:underline">
-            Open file
-          </a>
-        </div>,
-      );
-    }
-
-    return renderPreviewFrame(renderCenteredMessage('Preview unavailable.'));
-  }, [previewError, previewKind, previewLoading, previewText, previewUrl, selectedDoc]);
+  }, [createName, creatingType, docsError, docsLoading, expandedValue, filesQueryInput, filesTreeCollection, filesTreeNodes, filteredDocs, handleCreateEntry, handleDeleteSelected, handleSelectFile, hasFilesTreeNodes, openNativeFilePicker, projectId, resolvedSelectedSourceUid, selectedSourceUidForActions, selectedTreeNodeId, supportsDirectoryUpload, uploadFiles]);
 
   const canvasTabContent = useMemo(() => (
     <div className="h-full w-full min-h-0">
@@ -1464,11 +1637,49 @@ export default function DocumentTest() {
     </div>
   ), []);
 
+  const previewTabLabels = useMemo(() => {
+    const previewTabs = Array.from(new Set(
+      panes
+        .flatMap((pane) => pane.tabs)
+        .filter((tabId) => tabId === 'preview' || isPreviewInstanceTab(tabId)),
+    ));
+
+    previewTabs.sort((a, b) => {
+      if (a === 'preview' && b !== 'preview') return -1;
+      if (a !== 'preview' && b === 'preview') return 1;
+      if (a === 'preview' && b === 'preview') return 0;
+      return getPreviewTabSequence(a) - getPreviewTabSequence(b);
+    });
+
+    return new Map(
+      previewTabs.map((tabId, index) => [tabId, index === 0 ? 'Preview' : `Preview-${index + 1}`]),
+    );
+  }, [panes]);
+
+  const getTabDisplayLabel = useCallback((tabId: TabId) => {
+    if (tabId === 'preview' || isPreviewInstanceTab(tabId)) {
+      return previewTabLabels.get(tabId) ?? 'Preview';
+    }
+    return getTabLabel(tabId);
+  }, [previewTabLabels]);
+
   const renderTabContent = (tab: TabId) => {
     // View tabs have inline-rendered content (memoized above)
     if (tab === 'assets') return filesTabContent;
-    if (tab === 'preview') return previewTabContent;
+    if (tab === 'preview') return <PreviewTabPanel doc={selectedDoc} />;
+    if (isPreviewInstanceTab(tab)) {
+      const sourceUid = getPreviewSourceUidFromTabId(tab);
+      const previewDoc = sourceUid ? (docsBySourceUid.get(sourceUid) ?? null) : null;
+      return <PreviewTabPanel doc={previewDoc} />;
+    }
     if (tab === 'canvas') return canvasTabContent;
+    if (tab === 'parse') {
+      return (
+        <div className="h-full w-full min-h-0">
+          <ParseEasyPanel projectId={projectId} selectedDocument={selectedDoc} onParseQueued={loadDocs} />
+        </div>
+      );
+    }
 
     // All other tabs resolve through the registry
     const entry = getTab(tab);
@@ -1527,36 +1738,13 @@ export default function DocumentTest() {
       if (current.length >= MAX_COLUMNS) return current;
       const source = current[index];
       if (!source) return current;
-
-      if (source.tabs.length <= 1) {
-        const duplicatedTab: TabId = source.activeTab === 'assets' ? 'preview' : source.activeTab;
-        const next = [...current];
-        nextFocusedPaneId = createPaneId(current);
-        next.splice(index + 1, 0, {
-          id: nextFocusedPaneId,
-          tabs: [duplicatedTab],
-          activeTab: duplicatedTab,
-          width: source.width,
-        });
-        return normalizePaneWidths(next);
-      }
-
-      // Assets is pinned to column 1 — never split it out
-      const movingTab = source.activeTab === 'assets'
-        ? source.tabs.find((t) => t !== 'assets')
-        : source.activeTab;
-      if (!movingTab) return current;
-      const remainingTabs = source.tabs.filter((tab) => tab !== movingTab);
-      if (remainingTabs.length === 0) return current;
-
-      const nextActive = remainingTabs[0] ?? FALLBACK_TAB;
       const next = [...current];
-      next[index] = { ...source, tabs: remainingTabs, activeTab: nextActive };
+      const nextTab = pickNewPaneTab(current, source.activeTab);
       nextFocusedPaneId = createPaneId(current);
       next.splice(index + 1, 0, {
         id: nextFocusedPaneId,
-        tabs: [movingTab],
-        activeTab: movingTab,
+        tabs: [nextTab],
+        activeTab: nextTab,
         width: source.width,
       });
       return normalizePaneWidths(next);
@@ -1635,7 +1823,7 @@ export default function DocumentTest() {
             }
           }}
           style={{ fontSize: '12px', fontWeight: 500, lineHeight: '16px' }}
-          className={`inline-flex h-7 items-center gap-1.5 rounded border px-2 ${
+          className={`inline-flex h-10 items-center gap-1.5 rounded border px-2 ${
             panes.some((p) => p.tabs.includes('assets'))
               ? 'border-border bg-background text-foreground'
               : 'border-transparent text-muted-foreground hover:bg-background hover:text-foreground'
@@ -1658,8 +1846,8 @@ export default function DocumentTest() {
             }
           }}
           style={{ fontSize: '12px', fontWeight: 500, lineHeight: '16px' }}
-          className={`inline-flex h-7 items-center gap-1.5 rounded border px-2 ${
-            panes.some((p) => p.tabs.includes('preview'))
+          className={`inline-flex h-10 items-center gap-1.5 rounded border px-2 ${
+            panes.some((p) => p.tabs.some((tabId) => tabId === 'preview' || isPreviewInstanceTab(tabId)))
               ? 'border-border bg-background text-foreground'
               : 'border-transparent text-muted-foreground hover:bg-background hover:text-foreground'
           }`}
@@ -1690,41 +1878,28 @@ export default function DocumentTest() {
 
         <div className="mx-1 h-4 w-px bg-border" />
 
-        <MenuRoot>
-          <MenuTrigger asChild>
-            <button
-              type="button"
-              style={{ fontSize: '12px', fontWeight: 500, lineHeight: '16px' }}
-              className={`inline-flex h-7 items-center rounded border px-2 ${
-                panes.some((p) => p.tabs.some((t) => t.startsWith('parse:')))
-                  ? 'border-border bg-background text-foreground'
-                  : 'border-transparent text-muted-foreground hover:bg-background hover:text-foreground'
-              }`}
-            >
-              Parse
-            </button>
-          </MenuTrigger>
-          <MenuPortal>
-            <MenuPositioner>
-              <MenuContent>
-                {getTabsByGroup('parse').map((entry) => (
-                  <MenuItem
-                    key={entry.id}
-                    value={entry.id}
-                    onClick={() => {
-                      setPanes((current) => {
-                        const targetPaneId = focusedPaneId ?? current[current.length - 1]?.id ?? 'pane-1';
-                        return activateTabInPane(current, targetPaneId, entry.id);
-                      });
-                    }}
-                  >
-                    {entry.label}
-                  </MenuItem>
-                ))}
-              </MenuContent>
-            </MenuPositioner>
-          </MenuPortal>
-        </MenuRoot>
+        <button
+          type="button"
+          onClick={() => {
+            const currentIndex = panes.findIndex((p) => p.tabs.includes('parse'));
+            if (currentIndex === -1) {
+              setPanes((current) => {
+                const targetPaneId = focusedPaneId ?? current[current.length - 1]?.id ?? 'pane-1';
+                return activateTabInPane(current, targetPaneId, 'parse');
+              });
+            } else {
+              setPanes((current) => closeTab(current, current[currentIndex].id, 'parse'));
+            }
+          }}
+          style={{ fontSize: '12px', fontWeight: 500, lineHeight: '16px' }}
+          className={`inline-flex h-10 items-center rounded border px-2 ${
+            panes.some((p) => p.tabs.includes('parse') || p.tabs.some((t) => t.startsWith('parse:')))
+              ? 'border-border bg-background text-foreground'
+              : 'border-transparent text-muted-foreground hover:bg-background hover:text-foreground'
+          }`}
+        >
+          Parse
+        </button>
         <MenuRoot
           open={pullMenuOpen}
           onOpenChange={(details) => setPullMenuOpen(details.open)}
@@ -1736,7 +1911,7 @@ export default function DocumentTest() {
               onPointerEnter={openPullMenu}
               onPointerLeave={schedulePullMenuClose}
               style={{ fontSize: '12px', fontWeight: 500, lineHeight: '16px' }}
-              className={`inline-flex h-7 items-center rounded border px-2 ${
+              className={`inline-flex h-10 items-center rounded border px-2 ${
                 panes.some((p) => p.tabs.some((t) => t.startsWith('pull:')))
                   ? 'border-border bg-background text-foreground'
                   : 'border-transparent text-muted-foreground hover:bg-background hover:text-foreground'
@@ -1778,7 +1953,7 @@ export default function DocumentTest() {
             });
           }}
           style={{ fontSize: '12px', fontWeight: 500, lineHeight: '16px' }}
-          className="inline-flex h-7 items-center gap-1.5 rounded border border-transparent px-2 text-muted-foreground hover:bg-background hover:text-foreground"
+          className="inline-flex h-10 items-center gap-1.5 rounded border border-transparent px-2 text-muted-foreground hover:bg-background hover:text-foreground"
           aria-label="Open Load (DLT)"
           title="Open Load (DLT)"
         >
@@ -1788,7 +1963,7 @@ export default function DocumentTest() {
         <button
           type="button"
           style={{ fontSize: '12px', fontWeight: 500, lineHeight: '16px' }}
-          className="inline-flex h-7 items-center rounded border border-transparent px-2 text-muted-foreground hover:bg-background hover:text-foreground"
+          className="inline-flex h-10 items-center rounded border border-transparent px-2 text-muted-foreground hover:bg-background hover:text-foreground"
         >
           Transform
         </button>
@@ -1824,7 +1999,7 @@ export default function DocumentTest() {
               onDrop={(event) => handlePaneDrop(event, index, pane.id)}
             >
               <div
-                className="grid min-h-8 grid-cols-[auto_1fr_auto] border-b border-border bg-card"
+                className="grid min-h-10 grid-cols-[auto_1fr_auto] border-b border-border bg-card"
               >
                 <button
                   type="button"
@@ -1841,7 +2016,7 @@ export default function DocumentTest() {
                     paneDragRef.current = null;
                     setDragOverPaneIndex(null);
                   }}
-                  className="inline-flex min-h-8 w-7 items-center justify-center border-r border-border text-xs text-muted-foreground"
+                  className="inline-flex min-h-10 w-8 items-center justify-center border-r border-border text-xs text-muted-foreground"
                   aria-label="Drag pane"
                   title="Drag pane"
                 >
@@ -1906,7 +2081,7 @@ export default function DocumentTest() {
                       ].join(' ')}
                     >
                       <button type="button" onClick={() => setPanes((current) => setActiveTab(current, pane.id, tab))} className="py-1">
-                        {getTabLabel(tab)}
+                        {getTabDisplayLabel(tab)}
                       </button>
                       <button
                         type="button"
@@ -1980,7 +2155,7 @@ export default function DocumentTest() {
               </div>
               <div className={[
                 'flex min-h-0 flex-1',
-                hasTab(pane.activeTab)
+                isKnownTab(pane.activeTab)
                   ? ''
                   : 'items-center justify-center text-sm text-muted-foreground',
               ].join(' ')}>

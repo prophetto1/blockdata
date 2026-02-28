@@ -1,52 +1,72 @@
 import { useMemo, useState } from 'react';
+import { Search01Icon } from '@hugeicons/core-free-icons';
+import { HugeiconsIcon } from '@hugeicons/react';
+import { Input } from '@/components/ui/input';
+import {
+  ICON_CONTEXT_SIZE,
+  ICON_SIZES,
+  ICON_STANDARD,
+  ICON_STROKES,
+} from '@/lib/icon-contract';
 import { MCP_CATALOG } from '@/components/mcp/mcp-catalog';
 import { McpServerCard } from '@/components/mcp/McpServerCard';
+import { SettingsPageFrame } from './SettingsPageHeader';
+
+const ACTIVE_MCP_SERVER_IDS = new Set(['context7', 'playwright']);
+
+function getServerStatus(serverId: string): 'connected' | 'disconnected' {
+  return serverId === 'context7' || serverId === 'playwright' ? 'connected' : 'disconnected';
+}
 
 export default function McpServers() {
   const [query, setQuery] = useState('');
-  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const utilityIconSize = ICON_SIZES[ICON_CONTEXT_SIZE[ICON_STANDARD.utilityTopRight.context]];
+  const utilityIconStroke = ICON_STROKES[ICON_STANDARD.utilityTopRight.stroke];
 
   const filtered = useMemo(() => {
+    let list = MCP_CATALOG.filter((s) => ACTIVE_MCP_SERVER_IDS.has(s.id));
+
     const q = query.trim().toLowerCase();
-    if (!q) return MCP_CATALOG;
-    return MCP_CATALOG.filter((s) => `${s.title} ${s.description} ${s.id}`.toLowerCase().includes(q));
+    if (q) {
+      list = list.filter((s) => `${s.title} ${s.description} ${s.id}`.toLowerCase().includes(q));
+    }
+
+    return list;
   }, [query]);
 
+  const toolbar = (
+    <>
+      <div role="toolbar" aria-label="MCP server filters" className="flex items-center gap-1.5">
+        <HugeiconsIcon icon={Search01Icon} size={utilityIconSize} strokeWidth={utilityIconStroke} className="shrink-0 text-muted-foreground" />
+        <Input
+          type="text"
+          placeholder="Search servers..."
+          className="h-7 w-48 border-transparent bg-transparent px-1.5 text-xs shadow-none focus-visible:ring-0 focus-visible:border-border"
+          value={query}
+          onChange={(e) => setQuery(e.currentTarget.value)}
+        />
+      </div>
+    </>
+  );
+
   return (
-    <div className="space-y-4">
-      {statusMessage && (
-        <div className="rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground" role="status" aria-live="polite">
-          {statusMessage}
-        </div>
-      )}
-      <div>
-        <h2 className="text-sm font-semibold text-foreground">MCP Servers</h2>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Catalog and connection state for Model Context Protocol servers.
-        </p>
-      </div>
-
-      <input
-        type="text"
-        placeholder="Search MCP servers..."
-        className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-        value={query}
-        onChange={(e) => setQuery(e.currentTarget.value)}
-      />
-
+    <SettingsPageFrame
+      title="MCP Servers"
+      description="Catalog and connection state for Model Context Protocol servers."
+      toolbar={toolbar}
+    >
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        {filtered.map((server) => (
-          <McpServerCard
-            key={server.id}
-            server={server}
-            status={server.id === 'context7' || server.id === 'playwright' ? 'connected' : 'disconnected'}
-            actionLabel={server.id === 'firecrawl' || server.id === 'postgres' ? 'Configure' : 'Connect'}
-            onAction={() => {
-              setStatusMessage('Placeholder action (not wired yet).');
-            }}
-          />
-        ))}
+        {filtered.map((server) => {
+          const status = getServerStatus(server.id);
+          return (
+            <McpServerCard
+              key={server.id}
+              server={server}
+              status={status}
+            />
+          );
+        })}
       </div>
-    </div>
+    </SettingsPageFrame>
   );
 }

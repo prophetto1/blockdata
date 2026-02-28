@@ -26,7 +26,7 @@ import {
   MenuPositioner,
   MenuContent,
   MenuItem,
-  MenuSeparator,
+
 } from '@/components/ui/menu';
 import { cn } from '@/lib/utils';
 import { PROJECT_FOCUS_STORAGE_KEY } from '@/lib/projectFocus';
@@ -382,10 +382,10 @@ export function LeftRailShadcn({
             <button
               type="button"
               className={cn(
-                'inline-flex items-center rounded-md text-left font-semibold tracking-tight hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+                'inline-flex items-center gap-2.5 rounded-md text-left transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
                 desktopCompact
-                  ? 'size-10 justify-center p-0 text-base'
-                  : 'px-2 py-1 text-[27px]',
+                  ? 'size-10 justify-center p-0'
+                  : 'px-2 py-1',
               )}
               onClick={() => {
                 if (desktopCompact && onToggleDesktopCompact) {
@@ -397,7 +397,16 @@ export function LeftRailShadcn({
               }}
               aria-label={desktopCompact ? 'Expand side navigation' : 'Go to home'}
             >
-              {desktopCompact ? 'B' : 'BlockData'}
+              {desktopCompact ? (
+                <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary text-xs font-bold text-primary-foreground">
+                  B
+                </span>
+              ) : (
+                <span className="inline-flex items-baseline text-sm font-semibold uppercase tracking-[0.2em]">
+                  <span className="text-sidebar-foreground">Block</span>
+                  <span className="text-primary">Data</span>
+                </span>
+              )}
             </button>
             {!desktopCompact && onToggleDesktopCompact && (
               <button
@@ -540,12 +549,12 @@ export function LeftRailShadcn({
           </SidebarGroup>
         </SidebarContent>
 
-        <SidebarFooter className="border-t border-sidebar-border px-0 pt-1.5">
-          <div className={cn(desktopCompact ? 'px-0 py-2' : 'px-1.5 py-2')}>
-            <MenuRoot positioning={{ placement: 'top-start' }}>
+        <SidebarFooter className="border-t border-sidebar-border px-0 pt-0">
+          <div className={cn(desktopCompact ? 'px-0 py-2' : 'px-1.5 py-1.5')}>
+            <MenuRoot positioning={{ placement: 'top-start', offset: { mainAxis: 8, crossAxis: 0 } }}>
               <MenuTrigger
                 className={cn(
-                  'flex w-full items-center gap-2 rounded-md border-none bg-transparent px-1 py-1 text-left',
+                  'flex w-full items-center gap-2.5 rounded-md border-none bg-transparent px-1.5 py-1.5 text-left',
                   'transition-colors hover:bg-sidebar-accent/50',
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring',
                   desktopCompact && 'flex-col justify-center px-0',
@@ -557,50 +566,52 @@ export function LeftRailShadcn({
                     desktopCompact ? 'h-9 w-9' : 'h-8 w-8',
                   )}
                 >
-                  <Avatar.Fallback
-                    className={cn(
-                      'flex h-full w-full items-center justify-center rounded-full bg-sidebar-accent/35 text-xs font-semibold text-sidebar-foreground/90',
-                    )}
-                  >
+                  <Avatar.Fallback className="flex h-full w-full items-center justify-center rounded-full bg-primary/15 text-xs font-bold text-primary">
                     {userInitial}
                   </Avatar.Fallback>
                 </Avatar.Root>
                 {!desktopCompact && (
                   <div className="min-w-0 flex-1">
-                    <div className="text-[11px] leading-4 text-sidebar-foreground/65">
-                      Signed in as
-                    </div>
-                    <div className="truncate text-sm font-semibold leading-5 text-foreground">
+                    <div className="truncate text-sm font-semibold leading-5 text-sidebar-foreground">
                       {userLabel ?? userInitial}
+                    </div>
+                    <div className="truncate text-[11px] leading-4 text-sidebar-foreground/50">
+                      Personal account
                     </div>
                   </div>
                 )}
+                {!desktopCompact && (
+                  <IconChevronDown size={14} stroke={2} className="shrink-0 text-sidebar-foreground/40" />
+                )}
               </MenuTrigger>
               <MenuPositioner>
-                <MenuContent className="min-w-48">
-                  <div className="truncate px-2 py-1.5 text-xs font-semibold text-muted-foreground">
-                    {userLabel ?? userInitial}
+                <MenuContent className="min-w-48 p-0">
+                  <div className="px-3 pb-1 pt-2.5">
+                    <p className="truncate text-xs text-muted-foreground">
+                      {userLabel ?? 'No email'}
+                    </p>
                   </div>
-                  <MenuSeparator />
-                  <MenuItem
-                    value="settings"
-                    className="gap-2"
-                    onClick={() => {
-                      navigate('/app/settings');
-                      onNavigate?.();
-                    }}
-                  >
-                    Settings
-                  </MenuItem>
-                  {onSignOut && (
+                  <div className="p-1">
                     <MenuItem
-                      value="sign-out"
+                      value="settings"
                       className="gap-2"
-                      onClick={() => { void onSignOut(); }}
+                      onClick={() => {
+                        navigate('/app/settings');
+                        onNavigate?.();
+                      }}
                     >
-                      Sign out
+                      Settings
                     </MenuItem>
-                  )}
+                    {onSignOut && (
+                      <MenuItem
+                        value="sign-out"
+                        className="gap-2 text-red-500 data-highlighted:text-red-500"
+                        onClick={() => { void onSignOut(); }}
+                      >
+                        Sign out
+                      </MenuItem>
+                    )}
+                  </div>
                 </MenuContent>
               </MenuPositioner>
             </MenuRoot>

@@ -6,9 +6,10 @@ import { useIsDark } from '@/lib/useIsDark';
 type DocxPreviewProps = {
   title: string;
   url: string;
+  hideToolbar?: boolean;
 };
 
-export function DocxPreview({ title, url }: DocxPreviewProps) {
+export function DocxPreview({ title, url, hideToolbar = false }: DocxPreviewProps) {
   const isDark = useIsDark();
   const renderHostRef = useRef<HTMLDivElement | null>(null);
   const [loading, setLoading] = useState(true);
@@ -59,24 +60,26 @@ export function DocxPreview({ title, url }: DocxPreviewProps) {
 
   return (
     <div className={`parse-docx-preview${isDark ? ' is-dark' : ' is-light'}`}>
-      <div className="parse-pdf-toolbar flex items-center justify-between flex-nowrap">
-        <div className="parse-text-preview-file flex items-center gap-1.5 flex-nowrap">
-          <IconFileText size={14} />
-          <span className="parse-text-preview-filename text-xs" title={title}>
-            {title}
-          </span>
+      {!hideToolbar && (
+        <div className="parse-pdf-toolbar flex items-center justify-between flex-nowrap">
+          <div className="parse-text-preview-file flex items-center gap-1.5 flex-nowrap">
+            <IconFileText size={14} />
+            <span className="parse-text-preview-filename text-xs" title={title}>
+              {title}
+            </span>
+          </div>
+          <a
+            href={url}
+            target="_blank"
+            rel="noreferrer"
+            download
+            aria-label="Download docx"
+            className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+          >
+            <IconDownload size={14} />
+          </a>
         </div>
-        <a
-          href={url}
-          target="_blank"
-          rel="noreferrer"
-          download
-          aria-label="Download docx"
-          className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-        >
-          <IconDownload size={14} />
-        </a>
-      </div>
+      )}
 
       <div className="parse-docx-preview-viewport">
         {loading && (

@@ -5,11 +5,12 @@ import { PPTXViewer } from 'pptx-viewer';
 type PptxPreviewProps = {
   title: string;
   url: string;
+  hideHeaderMeta?: boolean;
 };
 
 const iconBtnClass = 'inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-50';
 
-export function PptxPreview({ title, url }: PptxPreviewProps) {
+export function PptxPreview({ title, url, hideHeaderMeta = false }: PptxPreviewProps) {
   const renderHostRef = useRef<HTMLDivElement | null>(null);
   const viewerRef = useRef<PPTXViewer | null>(null);
   const [loading, setLoading] = useState(true);
@@ -117,7 +118,12 @@ export function PptxPreview({ title, url }: PptxPreviewProps) {
 
   return (
     <div className="parse-pptx-preview">
-      <div className="parse-pdf-toolbar parse-pptx-toolbar flex items-center justify-between flex-nowrap">
+      <div
+        className={[
+          'parse-pdf-toolbar parse-pptx-toolbar flex items-center flex-nowrap',
+          hideHeaderMeta ? 'justify-start' : 'justify-between',
+        ].join(' ')}
+      >
         <div className="flex items-center gap-1 flex-nowrap">
           <button
             type="button"
@@ -153,21 +159,23 @@ export function PptxPreview({ title, url }: PptxPreviewProps) {
           </button>
         </div>
 
-        <div className="flex items-center gap-1.5 flex-nowrap">
-          <span className="parse-pptx-title text-xs text-muted-foreground" title={title}>
-            {title}
-          </span>
-          <a
-            href={url}
-            target="_blank"
-            rel="noreferrer"
-            download
-            aria-label="Download pptx"
-            className={iconBtnClass}
-          >
-            <IconDownload size={14} />
-          </a>
-        </div>
+        {!hideHeaderMeta && (
+          <div className="flex items-center gap-1.5 flex-nowrap">
+            <span className="parse-pptx-title text-xs text-muted-foreground" title={title}>
+              {title}
+            </span>
+            <a
+              href={url}
+              target="_blank"
+              rel="noreferrer"
+              download
+              aria-label="Download pptx"
+              className={iconBtnClass}
+            >
+              <IconDownload size={14} />
+            </a>
+          </div>
+        )}
       </div>
 
       <div className="parse-pptx-preview-viewport">

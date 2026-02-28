@@ -36,6 +36,25 @@ export const styleTokens = {
     warningSoft: 'var(--app-window-dot-warning-soft)',
     successSoft: 'var(--app-window-dot-success-soft)',
   },
+  adminConfig: {
+    railBackground: 'var(--admin-config-rail-bg)',
+    railBorder: 'var(--admin-config-rail-border)',
+    frameBackground: 'var(--admin-config-frame-bg)',
+    headerBackground: 'var(--admin-config-header-bg)',
+    contentBackground: 'var(--admin-config-content-bg)',
+    status: {
+      success: {
+        background: 'var(--admin-config-status-success-bg)',
+        border: 'var(--admin-config-status-success-border)',
+        foreground: 'var(--admin-config-status-success-fg)',
+      },
+      error: {
+        background: 'var(--admin-config-status-error-bg)',
+        border: 'var(--admin-config-status-error-border)',
+        foreground: 'var(--admin-config-status-error-fg)',
+      },
+    },
+  },
   marketing: {
     heroPaddingTop: { base: 112, md: 146 },
     heroPaddingBottom: { base: 64, md: 96 },

@@ -146,3 +146,41 @@ export type UserProviderConnectionRow = {
   created_at: string;
   updated_at: string;
 };
+
+export type ModelRoleCatalogRow = {
+  role_key: string;
+  display_name: string;
+  description: string | null;
+  allows_multiple: boolean;
+};
+
+export type ModelRoleAssignmentRow = {
+  id: string;
+  role_key: string;
+  provider: string;
+  model_id: string;
+  priority: number;
+  config_jsonb: Record<string, unknown>;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type AssistantThreadRow = {
+  id: string;
+  user_id: string;
+  title: string | null;
+  model: string | null;
+  context_jsonb: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
+};
+
+export type AssistantMessageRow = {
+  id: string;
+  thread_id: string;
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  metadata_jsonb: Record<string, unknown>;
+  created_at: string;
+};

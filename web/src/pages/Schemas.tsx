@@ -633,7 +633,7 @@ export default function Schemas() {
                 aria-pressed={editorView === 'visual'}
                 onClick={() => setEditorView('visual')}
                 style={{ fontSize: '12px', fontWeight: 500, lineHeight: '16px' }}
-                className={`inline-flex h-7 items-center gap-1.5 rounded border px-2 ${viewButtonClass(editorView === 'visual')}`}
+                className={`inline-flex h-10 items-center gap-1.5 rounded border px-2 ${viewButtonClass(editorView === 'visual')}`}
               >
                 <IconEye size={14} />
                 Visual
@@ -643,7 +643,7 @@ export default function Schemas() {
                 aria-pressed={editorView === 'split'}
                 onClick={() => setEditorView('split')}
                 style={{ fontSize: '12px', fontWeight: 500, lineHeight: '16px' }}
-                className={`inline-flex h-7 items-center gap-1.5 rounded border px-2 ${viewButtonClass(editorView === 'split')}`}
+                className={`inline-flex h-10 items-center gap-1.5 rounded border px-2 ${viewButtonClass(editorView === 'split')}`}
               >
                 <IconLayoutColumns size={14} />
                 Split
@@ -653,7 +653,7 @@ export default function Schemas() {
                 aria-pressed={editorView === 'code'}
                 onClick={() => setEditorView('code')}
                 style={{ fontSize: '12px', fontWeight: 500, lineHeight: '16px' }}
-                className={`inline-flex h-7 items-center gap-1.5 rounded border px-2 ${viewButtonClass(editorView === 'code')}`}
+                className={`inline-flex h-10 items-center gap-1.5 rounded border px-2 ${viewButtonClass(editorView === 'code')}`}
               >
                 <IconCode size={14} />
                 Code
@@ -666,7 +666,7 @@ export default function Schemas() {
                   type="button"
                   variant="ghost"
                   size="sm"
-                  className="h-7 gap-1.5 px-2 text-xs text-muted-foreground"
+                  className="h-10 gap-1.5 px-2 text-xs text-muted-foreground"
                   onClick={() => {
                     setExtractSchemaReady(false);
                     setExtractSchemaFields([]);
@@ -678,7 +678,7 @@ export default function Schemas() {
                 <Button
                   type="button"
                   size="sm"
-                  className="h-7 gap-1.5 px-2 text-xs"
+                  className="h-10 gap-1.5 px-2 text-xs"
                   onClick={() => {
                     // TODO: persist schema to backend
                     console.log('Save schema:', extractSchemaPreviewJson);
@@ -710,8 +710,8 @@ export default function Schemas() {
           {extractSchemaReady && editorView !== 'split' && (
             <div className="flex min-h-0 flex-1 overflow-hidden rounded-md border border-border bg-background">
               <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-                <div className="grid min-h-8 grid-cols-[1fr] border-b border-border bg-card">
-                  <div className="inline-flex min-h-8 items-center px-2 text-xs font-medium text-muted-foreground">
+                <div className="grid min-h-10 grid-cols-[1fr] border-b border-border bg-card">
+                  <div className="inline-flex min-h-10 items-center px-2 text-xs font-medium text-muted-foreground">
                     {editorView === 'visual' ? 'Visual' : 'Code'}
                   </div>
                 </div>
@@ -738,8 +738,8 @@ export default function Schemas() {
               }}
             >
               <Splitter.Panel id="schema-visual" className="flex min-h-0 min-w-0 flex-col">
-                <div className="grid min-h-8 grid-cols-[1fr] border-b border-border bg-card">
-                  <div className="inline-flex min-h-8 items-center px-2 text-xs font-medium text-muted-foreground">
+                <div className="grid min-h-10 grid-cols-[1fr] border-b border-border bg-card">
+                  <div className="inline-flex min-h-10 items-center px-2 text-xs font-medium text-muted-foreground">
                     Visual
                   </div>
                 </div>
@@ -758,8 +758,8 @@ export default function Schemas() {
               </Splitter.ResizeTrigger>
 
               <Splitter.Panel id="schema-code" className="flex min-h-0 min-w-0 flex-col">
-                <div className="grid min-h-8 grid-cols-[1fr] border-b border-border bg-card">
-                  <div className="inline-flex min-h-8 items-center px-2 text-xs font-medium text-muted-foreground">
+                <div className="grid min-h-10 grid-cols-[1fr] border-b border-border bg-card">
+                  <div className="inline-flex min-h-10 items-center px-2 text-xs font-medium text-muted-foreground">
                     Code
                   </div>
                 </div>
