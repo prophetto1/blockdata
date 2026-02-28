@@ -61,10 +61,9 @@ const PROJECTS_RPC_LEGACY = 'list_projects_overview_v2';
 const GLOBAL_MENU_ORDER: Record<string, number> = {
   '/app/flows': 0,
   '/app/elt': 1,
-  '/app/editor': 2,
-  '/app/integrations': 3,
-  '/app/database': 4,
-  '/app/schemas': 5,
+  '/app/integrations': 2,
+  '/app/database': 3,
+  '/app/schemas': 4,
 };
 
 function toCount(value: unknown): number {
@@ -216,7 +215,6 @@ export function LeftRailShadcn({
   const activeMenuPath = useMemo(() => {
     if (location.pathname.startsWith('/app/flows')) return '/app/flows';
     if (location.pathname.startsWith('/app/elt')) return '/app/elt';
-    if (location.pathname.startsWith('/app/editor')) return '/app/editor';
     if (location.pathname.startsWith('/app/integrations')) return '/app/integrations';
     if (location.pathname.startsWith('/app/database')) return '/app/database';
     if (location.pathname.startsWith('/app/schemas')) return '/app/schemas';
@@ -337,8 +335,6 @@ export function LeftRailShadcn({
 
     if (location.pathname.startsWith('/app/flows')) {
       navigate('/app/flows');
-    } else if (location.pathname.startsWith('/app/editor')) {
-      navigate('/app/editor');
     } else if (location.pathname.startsWith('/app/integrations')) {
       navigate('/app/integrations');
     } else if (location.pathname.startsWith('/app/database')) {

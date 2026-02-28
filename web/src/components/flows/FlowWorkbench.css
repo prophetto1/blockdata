@@ -384,7 +384,6 @@
 .flow-workbench-pane-content {
   flex: 1;
   min-height: 0;
-  overflow: auto;
   padding: 0;
 }
 
@@ -511,7 +510,6 @@
 .flow-workbench-files-tree-area {
   flex: 1;
   min-height: 0;
-  overflow-y: auto;
   padding: 8px;
 }
 

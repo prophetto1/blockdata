@@ -144,10 +144,7 @@
 
 .schema-layout-left-scroll {
   min-height: 0;
-  overflow-y: auto;
-  overflow-x: hidden;
   padding-right: 0;
-  scrollbar-gutter: stable;
 }
 
 .schema-layout-test-upload-card {
@@ -279,10 +276,7 @@
 
 .schema-layout-test-config-scroll {
   min-height: 0;
-  overflow-y: auto;
-  overflow-x: hidden;
   padding: 0 2px 0 10px;
-  scrollbar-gutter: stable;
 }
 
 .schema-layout-test-config-card {

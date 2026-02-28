@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 type Props = {
   projectId: string | null;
@@ -18,7 +19,8 @@ export function ParseEasyPanel({ projectId }: Props) {
   const activeTier = TIERS.find((t) => t.key === selectedTier) ?? TIERS[2];
 
   return (
-    <div className="flex h-full w-full min-h-0 flex-col gap-3 overflow-y-auto p-4">
+    <ScrollArea className="h-full w-full" viewportClass="p-4">
+      <div className="flex min-h-0 flex-col gap-3">
       <div className="min-w-0">
         <div className="text-sm font-semibold text-foreground">
           Parse — Easy{projectId ? ` • Project ${projectId.slice(0, 8)}` : ''}
@@ -59,6 +61,7 @@ export function ParseEasyPanel({ projectId }: Props) {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </ScrollArea>
   );
 }

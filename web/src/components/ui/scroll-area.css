@@ -1,0 +1,75 @@
+/* ------------------------------------------------------------------ */
+/*  Ark UI ScrollArea — custom thin scrollbar                          */
+/* ------------------------------------------------------------------ */
+
+.scroll-area-root {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  position: relative;
+}
+
+.scroll-area-viewport {
+  min-height: 0;
+  flex: 1;
+  scrollbar-width: none;
+}
+
+.scroll-area-viewport::-webkit-scrollbar {
+  display: none;
+}
+
+/* ---- scrollbar track ---- */
+
+.scroll-area-scrollbar {
+  position: absolute;
+  z-index: 10;
+  opacity: 0;
+  transition: opacity 150ms ease;
+  pointer-events: none;
+  user-select: none;
+  touch-action: none;
+  background: transparent;
+}
+
+.scroll-area-scrollbar[data-hover],
+.scroll-area-scrollbar[data-dragging],
+.scroll-area-scrollbar[data-scrolling] {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.scroll-area-scrollbar[data-orientation='vertical'] {
+  top: 2px;
+  right: 2px;
+  bottom: 2px;
+  width: 6px;
+}
+
+.scroll-area-scrollbar[data-orientation='horizontal'] {
+  left: 2px;
+  right: 2px;
+  bottom: 2px;
+  height: 6px;
+}
+
+/* ---- thumb ---- */
+
+.scroll-area-thumb {
+  border-radius: 999px;
+  background: light-dark(rgba(0, 0, 0, 0.22), rgba(255, 255, 255, 0.22));
+  transition: background 120ms ease;
+}
+
+.scroll-area-thumb:hover,
+.scroll-area-scrollbar[data-dragging] .scroll-area-thumb {
+  background: light-dark(rgba(0, 0, 0, 0.38), rgba(255, 255, 255, 0.38));
+}
+
+.scroll-area-scrollbar[data-orientation='vertical'] .scroll-area-thumb {
+  min-height: 24px;
+}
+
+.scroll-area-scrollbar[data-orientation='horizontal'] .scroll-area-thumb {
+  min-width: 24px;
+}

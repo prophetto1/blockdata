@@ -11,7 +11,6 @@ import AuthCallback from '@/pages/AuthCallback';
 import Projects from '@/pages/Projects';
 import FlowDetail from '@/pages/FlowDetail';
 import FlowsList from '@/pages/FlowsList';
-import Editor from '@/pages/Editor';
 import Integrations from '@/pages/Integrations';
 import UppyLibraryDemo from '@/pages/UppyLibraryDemo';
 import Schemas from '@/pages/Schemas';
@@ -105,7 +104,6 @@ export const router = createBrowserRouter([
           { path: '/app/elt/:projectId/runs/:runId', element: <RunDetail /> },
           { path: '/app/projects/list', element: <Projects /> },
           { path: '/app/database', element: <DatabasePlaceholder /> },
-          { path: '/app/editor', element: <Editor /> },
           { path: '/app/integrations', element: <Integrations /> },
           {
             path: '/app/flows',
@@ -120,8 +118,8 @@ export const router = createBrowserRouter([
           { path: '/app/projects', element: <LegacyToElt /> },
           { path: '/app/projects/:projectId', element: <LegacyToEltProject /> },
           { path: '/app/projects/:projectId/upload', element: <LegacyToEltProject /> },
-          { path: '/app/ui', element: <Navigate to="/app/editor" replace /> },
-          { path: '/app/ui/:section', element: <Navigate to="/app/editor" replace /> },
+          { path: '/app/ui', element: <Navigate to="/app/schemas" replace /> },
+          { path: '/app/ui/:section', element: <Navigate to="/app/schemas" replace /> },
           { path: '/app/projects/:projectId/upload-uppy-demo', element: <LegacyToEltProjectUppyDemo /> },
           { path: '/app/projects/:projectId/runs/:runId', element: <LegacyToEltProjectRun /> },
           { path: '/app/extract', element: <LegacyToElt /> },

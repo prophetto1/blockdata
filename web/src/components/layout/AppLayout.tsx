@@ -112,10 +112,12 @@ export function AppLayout() {
 
   const isEltRoute = /^\/app\/elt(?:\/|$)/.test(location.pathname);
   const isSchemaLayoutRoute = location.pathname === '/app/schemas/layout';
+  const isSchemasRoute = /^\/app\/schemas(?:\/|$)/.test(location.pathname);
   const isFlowsRoute = /^\/app\/flows(?:\/|$)/.test(location.pathname);
   const lockMainScroll = (
     isEltRoute
     || isSchemaLayoutRoute
+    || isSchemasRoute
   );
 
   useEffect(() => {
@@ -171,7 +173,7 @@ export function AppLayout() {
             top: 0,
             height: `${styleTokens.shell.headerHeight}px`,
             zIndex: 110,
-            backgroundColor: 'var(--background)',
+            backgroundColor: 'var(--chrome, var(--background))',
             borderBottom: 'none',
           }}
         >
@@ -205,7 +207,7 @@ export function AppLayout() {
               bottom: 0,
               width: `${navbarWidth}px`,
               borderInlineEnd: '1px solid var(--border)',
-              backgroundColor: 'var(--background)',
+              backgroundColor: 'var(--chrome, var(--background))',
               zIndex: 105,
             }}
           >
@@ -231,7 +233,7 @@ export function AppLayout() {
                 bottom: 0,
                 width: `${navbarWidth}px`,
                 borderInlineEnd: '1px solid var(--border)',
-                backgroundColor: 'var(--background)',
+                backgroundColor: 'var(--chrome, var(--background))',
                 zIndex: 130,
                 transform: navOpened ? 'translateX(0)' : 'translateX(-100%)',
               }}

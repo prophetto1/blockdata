@@ -29,6 +29,7 @@ import { Portal } from '@ark-ui/react/portal';
 import { Splitter } from '@ark-ui/react/splitter';
 import { Switch } from '@ark-ui/react/switch';
 import { Tooltip } from '@ark-ui/react/tooltip';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { DocxPreview } from '@/components/documents/DocxPreview';
 import { PdfPreview } from '@/components/documents/PdfPreview';
 import { PptxPreview } from '@/components/documents/PptxPreview';
@@ -926,7 +927,7 @@ function FilesTree({
           </div>
         </div>
       </div>
-      <div className="flow-workbench-files-tree-area">
+      <ScrollArea className="flow-workbench-files-tree-area">
         {docsLoading ? (
           <div className="flow-workbench-files-empty">Loading project files...</div>
         ) : null}
@@ -1072,7 +1073,7 @@ function FilesTree({
             </TreeView.Tree>
           </TreeView.Root>
         ) : null}
-      </div>
+      </ScrollArea>
     </div>
   );
 }
@@ -2136,7 +2137,7 @@ export default function FlowWorkbench({ flowId, flowName, namespace }: FlowWorkb
                 </div>
               </div>
 
-              <div
+              <ScrollArea
                 className="flow-workbench-pane-content"
                 onDragOver={(event) => handlePaneDragOver(event, index)}
                 onDrop={(event) => handlePaneDrop(event, index, pane.id)}
@@ -2152,7 +2153,7 @@ export default function FlowWorkbench({ flowId, flowName, namespace }: FlowWorkb
                   selectedDoc,
                   handleSelectedDocChange,
                 )}
-              </div>
+              </ScrollArea>
             </Splitter.Panel>
 
             {index < paneTemplateStyle.length - 1 && (

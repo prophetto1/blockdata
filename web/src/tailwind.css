@@ -37,6 +37,7 @@
   --border: #2a2a2a;
   --input: #2a2a2a;
   --ring: #EB5E41;
+  --chrome: #0e0e0e;
   --sidebar: #0e0e0e;
   --sidebar-foreground: #eeeeee;
   --sidebar-primary: #EB5E41;
@@ -124,7 +125,8 @@
 }
 
 :root[data-theme='light'] {
-  --background: #fafaf9;
+  /* ── Core surfaces & text (warm stone scale) ── */
+  --background: #faf9f7;
   --foreground: #1c1917;
   --card: #ffffff;
   --card-foreground: #1c1917;
@@ -132,40 +134,45 @@
   --popover-foreground: #1c1917;
   --primary: #EB5E41;
   --primary-foreground: #ffffff;
-  --secondary: #eeedec;
-  --secondary-foreground: #1c1917;
-  --muted: #eeedec;
-  --muted-foreground: #57534e;
-  --accent: #eeedec;
+  --secondary: #f0eeed;
+  --secondary-foreground: #292524;
+  --muted: #e8e6e3;
+  --muted-foreground: #44403c;
+  --accent: #f5ebe6;
   --accent-foreground: #1c1917;
   --destructive: #dc2626;
   --destructive-foreground: #ffffff;
-  --border: #d9d6d3;
-  --input: #d9d6d3;
+  --border: #d6d3d1;
+  --input: #d6d3d1;
   --ring: #EB5E41;
-  --sidebar: #fafaf9;
+
+  /* ── Chrome (shared header + sidebar surface) ── */
+  --chrome: #f2f1ef;
+
+  /* ── Sidebar (warm, visible hover states) ── */
+  --sidebar: #f2f1ef;
   --sidebar-foreground: #1c1917;
   --sidebar-primary: #EB5E41;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #f5f5f4;
+  --sidebar-accent: #ebe8e5;
   --sidebar-accent-foreground: #1c1917;
-  --sidebar-border: #e7e5e4;
+  --sidebar-border: #d6d3d1;
   --sidebar-ring: #1c1917;
   --app-primary-contrast: #fafafa;
 
-  /* Grid (light) */
+  /* ── Grid (aligned to warm stone scale) ── */
   --app-grid-background: #ffffff;
-  --app-grid-chrome-background: #ffffff;
-  --app-grid-foreground: #09090b;
-  --app-grid-border: #e4e4e7;
-  --app-grid-subtle-text: #52525b;
+  --app-grid-chrome-background: #faf9f7;
+  --app-grid-foreground: #1c1917;
+  --app-grid-border: #d6d3d1;
+  --app-grid-subtle-text: #78716c;
 
-  /* Overlays (light) */
+  /* ── Overlays ── */
   --app-overlay-staged-bg: rgba(250, 176, 5, 0.14);
   --app-overlay-confirmed-bg: rgba(46, 189, 89, 0.12);
-  --app-card-hover-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  --app-card-hover-shadow: 0 8px 24px rgba(28, 25, 23, 0.08);
 
-  /* JSON Tree View syntax tokens (light) */
+  /* ── JSON Tree View syntax tokens (light) ── */
   --json-string: #2e7d32;
   --json-number: #1565c0;
   --json-boolean: #7b1fa2;
@@ -173,23 +180,23 @@
   --json-accent: #e65100;
   --json-null: #546e7a;
 
-  /* Marketing (light) */
-  --app-marketing-demo-row-alt: rgba(9, 9, 11, 0.02);
-  --app-marketing-demo-footer-bg: rgba(9, 9, 11, 0.03);
+  /* ── Marketing (light) ── */
+  --app-marketing-demo-row-alt: rgba(28, 25, 23, 0.02);
+  --app-marketing-demo-footer-bg: rgba(28, 25, 23, 0.03);
   --app-marketing-integration-hub-bg: rgba(32, 201, 151, 0.06);
 
-  /* Flow (light) */
+  /* ── Flow (light) ── */
   --flow-accent: #6b7f99;
   --flow-accent-soft-bg: rgba(107, 127, 153, 0.14);
   --flow-accent-soft-border: rgba(107, 127, 153, 0.34);
-  --flow-active-tab-text: #1f2937;
+  --flow-active-tab-text: #1c1917;
   --flow-shell-glow: rgba(107, 127, 153, 0.10);
 
-  /* Left rail (light) */
+  /* ── Left rail (light) ── */
   --app-left-rail-track-a: #2b6cb0;
   --app-left-rail-automation: #2b6cb0;
-  --app-left-rail-link-hover: rgba(0, 0, 0, 0.04);
-  --app-left-rail-link-active: rgba(0, 0, 0, 0.06);
+  --app-left-rail-link-hover: rgba(28, 25, 23, 0.06);
+  --app-left-rail-link-active: rgba(28, 25, 23, 0.10);
 }
 
 @theme inline {

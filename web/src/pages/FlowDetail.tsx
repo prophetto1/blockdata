@@ -4,6 +4,7 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useShellHeaderTitle } from '@/components/common/useShellHeaderTitle';
 import FlowCanvas from '@/components/flows/FlowCanvas';
 import FlowWorkbench from '@/components/flows/FlowWorkbench';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { edgeJson } from '@/lib/edge';
 import { fetchAllProjectDocuments } from '@/lib/projectDocuments';
