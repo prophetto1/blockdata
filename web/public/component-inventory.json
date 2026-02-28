@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-02-28T08:14:10.886Z",
+  "generatedAt": "2026-02-28T11:40:11.591Z",
   "scope": "auth",
   "pages": [
     {
@@ -203,9 +203,9 @@
     },
     {
       "page": "src/pages/DocumentTest.tsx",
-      "componentCount": 43,
+      "componentCount": 44,
       "categoryCounts": {
-        "local-components": 13,
+        "local-components": 14,
         "ark-ui": 16,
         "tabler-icons": 12,
         "in-file component": 1,
@@ -472,6 +472,15 @@
           "importedAs": "default",
           "category": "external-package",
           "definition": "ReactMarkdown comes from react-markdown (default import of default)"
+        },
+        {
+          "component": "ScrollArea",
+          "usedAs": "ScrollArea",
+          "source": "@/components/ui/scroll-area",
+          "importKind": "named",
+          "importedAs": "ScrollArea",
+          "category": "local-components",
+          "definition": "ScrollArea comes from @/components/ui/scroll-area (named import of ScrollArea)"
         },
         {
           "component": "Splitter",
@@ -750,93 +759,30 @@
     },
     {
       "page": "src/pages/ModelRegistrationPreview.tsx",
-      "componentCount": 33,
+      "componentCount": 17,
       "categoryCounts": {
-        "mantine": 23,
+        "local-components": 8,
         "tabler-icons": 4,
-        "local-components": 6
+        "ark-ui": 5
       },
       "components": [
         {
           "component": "Badge",
           "usedAs": "Badge",
-          "source": "@mantine/core",
+          "source": "@/components/ui/badge",
           "importKind": "named",
           "importedAs": "Badge",
-          "category": "mantine",
-          "definition": "Badge comes from @mantine/core (named import of Badge)"
-        },
-        {
-          "component": "Box",
-          "usedAs": "Box",
-          "source": "@mantine/core",
-          "importKind": "named",
-          "importedAs": "Box",
-          "category": "mantine",
-          "definition": "Box comes from @mantine/core (named import of Box)"
+          "category": "local-components",
+          "definition": "Badge comes from @/components/ui/badge (named import of Badge)"
         },
         {
           "component": "Button",
           "usedAs": "Button",
-          "source": "@mantine/core",
+          "source": "@/components/ui/button",
           "importKind": "named",
           "importedAs": "Button",
-          "category": "mantine",
-          "definition": "Button comes from @mantine/core (named import of Button)"
-        },
-        {
-          "component": "Card",
-          "usedAs": "Card",
-          "source": "@mantine/core",
-          "importKind": "named",
-          "importedAs": "Card",
-          "category": "mantine",
-          "definition": "Card comes from @mantine/core (named import of Card)"
-        },
-        {
-          "component": "Code",
-          "usedAs": "Code",
-          "source": "@mantine/core",
-          "importKind": "named",
-          "importedAs": "Code",
-          "category": "mantine",
-          "definition": "Code comes from @mantine/core (named import of Code)"
-        },
-        {
-          "component": "Divider",
-          "usedAs": "Divider",
-          "source": "@mantine/core",
-          "importKind": "named",
-          "importedAs": "Divider",
-          "category": "mantine",
-          "definition": "Divider comes from @mantine/core (named import of Divider)"
-        },
-        {
-          "component": "Grid",
-          "usedAs": "Grid",
-          "source": "@mantine/core",
-          "importKind": "named",
-          "importedAs": "Grid",
-          "category": "mantine",
-          "definition": "Grid comes from @mantine/core (named import of Grid)"
-        },
-        {
-          "component": "Grid",
-          "usedAs": "Grid.Col",
-          "source": "@mantine/core",
-          "importKind": "named",
-          "importedAs": "Grid",
-          "category": "mantine",
-          "definition": "Grid.Col comes from @mantine/core (named import of Grid)"
-        },
-        {
-          "component": "Group",
-          "usedAs": "Group",
-          "source": "@mantine/core",
-          "importKind": "named",
-          "importedAs": "Group",
-          "category": "mantine",
-          "definition": "Group comes from @mantine/core (named import of Group)"
+          "category": "local-components",
+          "definition": "Button comes from @/components/ui/button (named import of Button)"
         },
         {
           "component": "IconCloud",
@@ -884,24 +830,6 @@
           "definition": "PageHeader comes from @/components/common/PageHeader (named import of PageHeader)"
         },
         {
-          "component": "Paper",
-          "usedAs": "Paper",
-          "source": "@mantine/core",
-          "importKind": "named",
-          "importedAs": "Paper",
-          "category": "mantine",
-          "definition": "Paper comes from @mantine/core (named import of Paper)"
-        },
-        {
-          "component": "PasswordInput",
-          "usedAs": "PasswordInput",
-          "source": "@mantine/core",
-          "importKind": "named",
-          "importedAs": "PasswordInput",
-          "category": "mantine",
-          "definition": "PasswordInput comes from @mantine/core (named import of PasswordInput)"
-        },
-        {
           "component": "SegmentGroupIndicator",
           "usedAs": "SegmentGroupIndicator",
           "source": "@/components/ui/segment-group",
@@ -947,112 +875,49 @@
           "definition": "SegmentGroupRoot comes from @/components/ui/segment-group (named import of SegmentGroupRoot)"
         },
         {
-          "component": "Select",
-          "usedAs": "Select",
-          "source": "@mantine/core",
+          "component": "Switch",
+          "usedAs": "Switch.Control",
+          "source": "@ark-ui/react/switch",
           "importKind": "named",
-          "importedAs": "Select",
-          "category": "mantine",
-          "definition": "Select comes from @mantine/core (named import of Select)"
-        },
-        {
-          "component": "Stack",
-          "usedAs": "Stack",
-          "source": "@mantine/core",
-          "importKind": "named",
-          "importedAs": "Stack",
-          "category": "mantine",
-          "definition": "Stack comes from @mantine/core (named import of Stack)"
+          "importedAs": "Switch",
+          "category": "ark-ui",
+          "definition": "Switch.Control comes from @ark-ui/react/switch (named import of Switch)"
         },
         {
           "component": "Switch",
-          "usedAs": "Switch",
-          "source": "@mantine/core",
+          "usedAs": "Switch.HiddenInput",
+          "source": "@ark-ui/react/switch",
           "importKind": "named",
           "importedAs": "Switch",
-          "category": "mantine",
-          "definition": "Switch comes from @mantine/core (named import of Switch)"
+          "category": "ark-ui",
+          "definition": "Switch.HiddenInput comes from @ark-ui/react/switch (named import of Switch)"
         },
         {
-          "component": "Table",
-          "usedAs": "Table",
-          "source": "@mantine/core",
+          "component": "Switch",
+          "usedAs": "Switch.Label",
+          "source": "@ark-ui/react/switch",
           "importKind": "named",
-          "importedAs": "Table",
-          "category": "mantine",
-          "definition": "Table comes from @mantine/core (named import of Table)"
+          "importedAs": "Switch",
+          "category": "ark-ui",
+          "definition": "Switch.Label comes from @ark-ui/react/switch (named import of Switch)"
         },
         {
-          "component": "Table",
-          "usedAs": "Table.Tbody",
-          "source": "@mantine/core",
+          "component": "Switch",
+          "usedAs": "Switch.Root",
+          "source": "@ark-ui/react/switch",
           "importKind": "named",
-          "importedAs": "Table",
-          "category": "mantine",
-          "definition": "Table.Tbody comes from @mantine/core (named import of Table)"
+          "importedAs": "Switch",
+          "category": "ark-ui",
+          "definition": "Switch.Root comes from @ark-ui/react/switch (named import of Switch)"
         },
         {
-          "component": "Table",
-          "usedAs": "Table.Td",
-          "source": "@mantine/core",
+          "component": "Switch",
+          "usedAs": "Switch.Thumb",
+          "source": "@ark-ui/react/switch",
           "importKind": "named",
-          "importedAs": "Table",
-          "category": "mantine",
-          "definition": "Table.Td comes from @mantine/core (named import of Table)"
-        },
-        {
-          "component": "Table",
-          "usedAs": "Table.Th",
-          "source": "@mantine/core",
-          "importKind": "named",
-          "importedAs": "Table",
-          "category": "mantine",
-          "definition": "Table.Th comes from @mantine/core (named import of Table)"
-        },
-        {
-          "component": "Table",
-          "usedAs": "Table.Thead",
-          "source": "@mantine/core",
-          "importKind": "named",
-          "importedAs": "Table",
-          "category": "mantine",
-          "definition": "Table.Thead comes from @mantine/core (named import of Table)"
-        },
-        {
-          "component": "Table",
-          "usedAs": "Table.Tr",
-          "source": "@mantine/core",
-          "importKind": "named",
-          "importedAs": "Table",
-          "category": "mantine",
-          "definition": "Table.Tr comes from @mantine/core (named import of Table)"
-        },
-        {
-          "component": "Text",
-          "usedAs": "Text",
-          "source": "@mantine/core",
-          "importKind": "named",
-          "importedAs": "Text",
-          "category": "mantine",
-          "definition": "Text comes from @mantine/core (named import of Text)"
-        },
-        {
-          "component": "TextInput",
-          "usedAs": "TextInput",
-          "source": "@mantine/core",
-          "importKind": "named",
-          "importedAs": "TextInput",
-          "category": "mantine",
-          "definition": "TextInput comes from @mantine/core (named import of TextInput)"
-        },
-        {
-          "component": "Title",
-          "usedAs": "Title",
-          "source": "@mantine/core",
-          "importKind": "named",
-          "importedAs": "Title",
-          "category": "mantine",
-          "definition": "Title comes from @mantine/core (named import of Title)"
+          "importedAs": "Switch",
+          "category": "ark-ui",
+          "definition": "Switch.Thumb comes from @ark-ui/react/switch (named import of Switch)"
         }
       ]
     },
@@ -2298,12 +2163,12 @@
     },
     {
       "page": "src/pages/settings/SettingsAdmin.tsx",
-      "componentCount": 31,
+      "componentCount": 39,
       "categoryCounts": {
-        "local-components": 3,
+        "local-components": 10,
         "in-file component": 5,
-        "ark-ui": 22,
-        "external-package": 1
+        "external-package": 2,
+        "ark-ui": 22
       },
       "components": [
         {
@@ -2350,6 +2215,78 @@
           "importedAs": null,
           "category": "in-file component",
           "definition": "ColorSwatch is defined in the same page file"
+        },
+        {
+          "component": "DialogBody",
+          "usedAs": "DialogBody",
+          "source": "@/components/ui/dialog",
+          "importKind": "named",
+          "importedAs": "DialogBody",
+          "category": "local-components",
+          "definition": "DialogBody comes from @/components/ui/dialog (named import of DialogBody)"
+        },
+        {
+          "component": "DialogCloseTrigger",
+          "usedAs": "DialogCloseTrigger",
+          "source": "@/components/ui/dialog",
+          "importKind": "named",
+          "importedAs": "DialogCloseTrigger",
+          "category": "local-components",
+          "definition": "DialogCloseTrigger comes from @/components/ui/dialog (named import of DialogCloseTrigger)"
+        },
+        {
+          "component": "DialogContent",
+          "usedAs": "DialogContent",
+          "source": "@/components/ui/dialog",
+          "importKind": "named",
+          "importedAs": "DialogContent",
+          "category": "local-components",
+          "definition": "DialogContent comes from @/components/ui/dialog (named import of DialogContent)"
+        },
+        {
+          "component": "DialogDescription",
+          "usedAs": "DialogDescription",
+          "source": "@/components/ui/dialog",
+          "importKind": "named",
+          "importedAs": "DialogDescription",
+          "category": "local-components",
+          "definition": "DialogDescription comes from @/components/ui/dialog (named import of DialogDescription)"
+        },
+        {
+          "component": "DialogFooter",
+          "usedAs": "DialogFooter",
+          "source": "@/components/ui/dialog",
+          "importKind": "named",
+          "importedAs": "DialogFooter",
+          "category": "local-components",
+          "definition": "DialogFooter comes from @/components/ui/dialog (named import of DialogFooter)"
+        },
+        {
+          "component": "DialogRoot",
+          "usedAs": "DialogRoot",
+          "source": "@/components/ui/dialog",
+          "importKind": "named",
+          "importedAs": "DialogRoot",
+          "category": "local-components",
+          "definition": "DialogRoot comes from @/components/ui/dialog (named import of DialogRoot)"
+        },
+        {
+          "component": "DialogTitle",
+          "usedAs": "DialogTitle",
+          "source": "@/components/ui/dialog",
+          "importKind": "named",
+          "importedAs": "DialogTitle",
+          "category": "local-components",
+          "definition": "DialogTitle comes from @/components/ui/dialog (named import of DialogTitle)"
+        },
+        {
+          "component": "Editor",
+          "usedAs": "Editor",
+          "source": "@monaco-editor/react",
+          "importKind": "default",
+          "importedAs": "default",
+          "category": "external-package",
+          "definition": "Editor comes from @monaco-editor/react (default import of default)"
         },
         {
           "component": "ErrorAlert",
@@ -2672,6 +2609,71 @@
       ]
     },
     {
+      "page": "src/pages/settings/SettingsModelRoles.tsx",
+      "componentCount": 6,
+      "categoryCounts": {
+        "local-components": 1,
+        "tabler-icons": 3,
+        "relative-local": 2
+      },
+      "components": [
+        {
+          "component": "Badge",
+          "usedAs": "Badge",
+          "source": "@/components/ui/badge",
+          "importKind": "named",
+          "importedAs": "Badge",
+          "category": "local-components",
+          "definition": "Badge comes from @/components/ui/badge (named import of Badge)"
+        },
+        {
+          "component": "IconCheck",
+          "usedAs": "IconCheck",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconCheck",
+          "category": "tabler-icons",
+          "definition": "IconCheck comes from @tabler/icons-react (named import of IconCheck)"
+        },
+        {
+          "component": "IconGripVertical",
+          "usedAs": "IconGripVertical",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconGripVertical",
+          "category": "tabler-icons",
+          "definition": "IconGripVertical comes from @tabler/icons-react (named import of IconGripVertical)"
+        },
+        {
+          "component": "IconTrash",
+          "usedAs": "IconTrash",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconTrash",
+          "category": "tabler-icons",
+          "definition": "IconTrash comes from @tabler/icons-react (named import of IconTrash)"
+        },
+        {
+          "component": "SettingsPageFrame",
+          "usedAs": "SettingsPageFrame",
+          "source": "./SettingsPageHeader",
+          "importKind": "named",
+          "importedAs": "SettingsPageFrame",
+          "category": "relative-local",
+          "definition": "SettingsPageFrame comes from ./SettingsPageHeader (named import of SettingsPageFrame)"
+        },
+        {
+          "component": "SettingsSection",
+          "usedAs": "SettingsSection",
+          "source": "./SettingsPageHeader",
+          "importKind": "named",
+          "importedAs": "SettingsSection",
+          "category": "relative-local",
+          "definition": "SettingsSection comes from ./SettingsPageHeader (named import of SettingsSection)"
+        }
+      ]
+    },
+    {
       "page": "src/pages/settings/SettingsPageHeader.tsx",
       "componentCount": 0,
       "categoryCounts": {},
@@ -2679,11 +2681,11 @@
     },
     {
       "page": "src/pages/settings/SettingsProviderForm.tsx",
-      "componentCount": 54,
+      "componentCount": 57,
       "categoryCounts": {
         "local-components": 3,
         "ark-ui": 36,
-        "tabler-icons": 14,
+        "tabler-icons": 17,
         "relative-local": 1
       },
       "components": [
@@ -2841,6 +2843,24 @@
           "definition": "IconPlus comes from @tabler/icons-react (named import of IconPlus)"
         },
         {
+          "component": "IconRocket",
+          "usedAs": "IconRocket",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconRocket",
+          "category": "tabler-icons",
+          "definition": "IconRocket comes from @tabler/icons-react (named import of IconRocket)"
+        },
+        {
+          "component": "IconSearch",
+          "usedAs": "IconSearch",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconSearch",
+          "category": "tabler-icons",
+          "definition": "IconSearch comes from @tabler/icons-react (named import of IconSearch)"
+        },
+        {
           "component": "IconServer",
           "usedAs": "IconServer",
           "source": "@tabler/icons-react",
@@ -2848,6 +2868,15 @@
           "importedAs": "IconServer",
           "category": "tabler-icons",
           "definition": "IconServer comes from @tabler/icons-react (named import of IconServer)"
+        },
+        {
+          "component": "IconVectorTriangle",
+          "usedAs": "IconVectorTriangle",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconVectorTriangle",
+          "category": "tabler-icons",
+          "definition": "IconVectorTriangle comes from @tabler/icons-react (named import of IconVectorTriangle)"
         },
         {
           "component": "IconX",
@@ -3177,11 +3206,11 @@
     },
     {
       "page": "src/pages/UppyLibraryDemo.tsx",
-      "componentCount": 18,
+      "componentCount": 16,
       "categoryCounts": {
-        "local-components": 8,
-        "mantine": 9,
-        "external-package": 1
+        "local-components": 10,
+        "external-package": 1,
+        "ark-ui": 5
       },
       "components": [
         {
@@ -3196,29 +3225,20 @@
         {
           "component": "Badge",
           "usedAs": "Badge",
-          "source": "@mantine/core",
+          "source": "@/components/ui/badge",
           "importKind": "named",
           "importedAs": "Badge",
-          "category": "mantine",
-          "definition": "Badge comes from @mantine/core (named import of Badge)"
+          "category": "local-components",
+          "definition": "Badge comes from @/components/ui/badge (named import of Badge)"
         },
         {
           "component": "Button",
           "usedAs": "Button",
-          "source": "@mantine/core",
+          "source": "@/components/ui/button",
           "importKind": "named",
           "importedAs": "Button",
-          "category": "mantine",
-          "definition": "Button comes from @mantine/core (named import of Button)"
-        },
-        {
-          "component": "Code",
-          "usedAs": "Code",
-          "source": "@mantine/core",
-          "importKind": "named",
-          "importedAs": "Code",
-          "category": "mantine",
-          "definition": "Code comes from @mantine/core (named import of Code)"
+          "category": "local-components",
+          "definition": "Button comes from @/components/ui/button (named import of Button)"
         },
         {
           "component": "Dashboard",
@@ -3239,15 +3259,6 @@
           "definition": "ErrorAlert comes from @/components/common/ErrorAlert (named import of ErrorAlert)"
         },
         {
-          "component": "Group",
-          "usedAs": "Group",
-          "source": "@mantine/core",
-          "importKind": "named",
-          "importedAs": "Group",
-          "category": "mantine",
-          "definition": "Group comes from @mantine/core (named import of Group)"
-        },
-        {
           "component": "PageHeader",
           "usedAs": "PageHeader",
           "source": "@/components/common/PageHeader",
@@ -3255,15 +3266,6 @@
           "importedAs": "PageHeader",
           "category": "local-components",
           "definition": "PageHeader comes from @/components/common/PageHeader (named import of PageHeader)"
-        },
-        {
-          "component": "Paper",
-          "usedAs": "Paper",
-          "source": "@mantine/core",
-          "importKind": "named",
-          "importedAs": "Paper",
-          "category": "mantine",
-          "definition": "Paper comes from @mantine/core (named import of Paper)"
         },
         {
           "component": "SegmentGroupIndicator",
@@ -3311,52 +3313,61 @@
           "definition": "SegmentGroupRoot comes from @/components/ui/segment-group (named import of SegmentGroupRoot)"
         },
         {
-          "component": "Stack",
-          "usedAs": "Stack",
-          "source": "@mantine/core",
+          "component": "Switch",
+          "usedAs": "Switch.Control",
+          "source": "@ark-ui/react/switch",
           "importKind": "named",
-          "importedAs": "Stack",
-          "category": "mantine",
-          "definition": "Stack comes from @mantine/core (named import of Stack)"
+          "importedAs": "Switch",
+          "category": "ark-ui",
+          "definition": "Switch.Control comes from @ark-ui/react/switch (named import of Switch)"
         },
         {
           "component": "Switch",
-          "usedAs": "Switch",
-          "source": "@mantine/core",
+          "usedAs": "Switch.HiddenInput",
+          "source": "@ark-ui/react/switch",
           "importKind": "named",
           "importedAs": "Switch",
-          "category": "mantine",
-          "definition": "Switch comes from @mantine/core (named import of Switch)"
+          "category": "ark-ui",
+          "definition": "Switch.HiddenInput comes from @ark-ui/react/switch (named import of Switch)"
         },
         {
-          "component": "Text",
-          "usedAs": "Text",
-          "source": "@mantine/core",
+          "component": "Switch",
+          "usedAs": "Switch.Label",
+          "source": "@ark-ui/react/switch",
           "importKind": "named",
-          "importedAs": "Text",
-          "category": "mantine",
-          "definition": "Text comes from @mantine/core (named import of Text)"
+          "importedAs": "Switch",
+          "category": "ark-ui",
+          "definition": "Switch.Label comes from @ark-ui/react/switch (named import of Switch)"
         },
         {
-          "component": "TextInput",
-          "usedAs": "TextInput",
-          "source": "@mantine/core",
+          "component": "Switch",
+          "usedAs": "Switch.Root",
+          "source": "@ark-ui/react/switch",
           "importKind": "named",
-          "importedAs": "TextInput",
-          "category": "mantine",
-          "definition": "TextInput comes from @mantine/core (named import of TextInput)"
+          "importedAs": "Switch",
+          "category": "ark-ui",
+          "definition": "Switch.Root comes from @ark-ui/react/switch (named import of Switch)"
+        },
+        {
+          "component": "Switch",
+          "usedAs": "Switch.Thumb",
+          "source": "@ark-ui/react/switch",
+          "importKind": "named",
+          "importedAs": "Switch",
+          "category": "ark-ui",
+          "definition": "Switch.Thumb comes from @ark-ui/react/switch (named import of Switch)"
         }
       ]
     }
   ],
   "totalComponentUsages": 344,
   "categoryTotals": {
-    "external-package": 9,
-    "local-components": 88,
-    "tabler-icons": 62,
-    "ark-ui": 125,
+    "external-package": 10,
+    "local-components": 101,
+    "tabler-icons": 68,
+    "ark-ui": 135,
     "in-file component": 10,
-    "mantine": 44,
-    "relative-local": 6
+    "mantine": 12,
+    "relative-local": 8
   }
 }

@@ -812,6 +812,8 @@ body {
   height: 100%;
   min-height: 0;
   overflow: hidden;
+  --parse-preview-surface-bg: var(--background);
+  --parse-preview-surface-padding: 8px;
 }
 
 .parse-pdf-viewer {
@@ -1218,11 +1220,9 @@ body {
 
 
 .parse-pdf-page-input {
-  width: auto;
-}
-
-.parse-pdf-page-input input {
   width: calc((var(--parse-pdf-page-digits, 3) + 0.3) * 1ch);
+  min-width: 2.3ch;
+  max-width: 8.3ch;
   text-align: center;
   padding-inline: 0;
   border: 0;
@@ -1236,8 +1236,8 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
-.parse-pdf-page-input input:focus,
-.parse-pdf-page-input input:focus-visible {
+.parse-pdf-page-input:focus,
+.parse-pdf-page-input:focus-visible {
   outline: none;
 }
 
@@ -1289,9 +1289,9 @@ body {
   min-height: 32px;
   height: 32px;
   padding: 0 4px;
-  border: 1px solid var(--border);
+  border: 0;
   border-radius: 6px;
-  background: var(--background);
+  background: transparent;
   backdrop-filter: none;
   align-items: center;
 }
@@ -1354,8 +1354,8 @@ body {
   overflow-y: auto;
   scrollbar-gutter: stable;
   overscroll-behavior: contain;
-  background: light-dark(rgba(0, 0, 0, 0.015), rgba(255, 255, 255, 0.015));
-  padding: 4px;
+  background: var(--parse-preview-surface-bg);
+  padding: var(--parse-preview-surface-padding);
 }
 
 .parse-pdf-surface {
@@ -1447,13 +1447,13 @@ body {
   flex: 1;
   min-height: 0;
   overflow: auto;
-  background: light-dark(rgba(0, 0, 0, 0.015), rgba(255, 255, 255, 0.015));
-  padding: 4px;
+  background: var(--parse-preview-surface-bg);
+  padding: var(--parse-preview-surface-padding);
 }
 
 .parse-docx-render-host {
   min-height: 100%;
-  background: light-dark(#ffffff, #0f172a);
+  background: light-dark(#ffffff, var(--background));
   border-radius: 4px;
 }
 
@@ -1484,7 +1484,7 @@ body {
 .parse-docx-preview.is-dark .parse-docx-render-host .docx {
   margin: 0 auto;
   min-height: 100%;
-  background: #0f172a !important;
+  background: var(--background) !important;
   color: #e5e7eb !important;
 }
 
@@ -1535,8 +1535,8 @@ body {
   flex: 1;
   min-height: 0;
   overflow: auto;
-  background: light-dark(rgba(0, 0, 0, 0.015), rgba(255, 255, 255, 0.015));
-  padding: 4px;
+  background: var(--parse-preview-surface-bg);
+  padding: var(--parse-preview-surface-padding);
 }
 
 .parse-pptx-render-host {
@@ -1556,7 +1556,7 @@ body {
   margin: 0;
   flex: 1;
   min-height: 0;
-  padding: var(--app-space-xs);
+  padding: var(--parse-preview-surface-padding);
   overflow: auto;
   white-space: pre-wrap;
   word-break: break-word;
@@ -1570,6 +1570,7 @@ body {
   line-height: 1.55;
   word-break: break-word;
   width: min(100%, 920px);
+  padding: var(--parse-preview-surface-padding);
   margin-inline: auto;
 }
 

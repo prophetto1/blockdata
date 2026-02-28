@@ -53,6 +53,8 @@ export function PdfPreview({
   const [loadError, setLoadError] = useState<string | null>(null);
   const utilityIconSize = ICON_SIZES[ICON_CONTEXT_SIZE[ICON_STANDARD.utilityTopRight.context]];
   const utilityIconStroke = ICON_STROKES[ICON_STANDARD.utilityTopRight.stroke];
+  const pdfControlIconSize = Math.max(12, utilityIconSize - 2);
+  const pdfControlIconStroke = Math.max(1.3, utilityIconStroke - 0.35);
   const renderDevicePixelRatio = typeof window === 'undefined'
     ? PDF_RENDER_DPR_MIN
     : Math.min(PDF_RENDER_DPR_MAX, Math.max(PDF_RENDER_DPR_MIN, window.devicePixelRatio || PDF_RENDER_DPR_MIN));
@@ -196,7 +198,7 @@ export function PdfPreview({
             title="Previous page"
             onClick={() => scrollToPage(activePageNumber - 1)}
           >
-            <HugeiconsIcon icon={ArrowLeft01Icon} size={utilityIconSize} strokeWidth={utilityIconStroke} />
+            <HugeiconsIcon icon={ArrowLeft01Icon} size={pdfControlIconSize} strokeWidth={pdfControlIconStroke} />
           </button>
           <input
             type="text"
@@ -223,7 +225,7 @@ export function PdfPreview({
             title="Next page"
             onClick={() => scrollToPage(activePageNumber + 1)}
           >
-            <HugeiconsIcon icon={ArrowRight01Icon} size={utilityIconSize} strokeWidth={utilityIconStroke} />
+            <HugeiconsIcon icon={ArrowRight01Icon} size={pdfControlIconSize} strokeWidth={pdfControlIconStroke} />
           </button>
         </div>
       ) : (
@@ -239,7 +241,7 @@ export function PdfPreview({
           onClick={() => stepZoom('out')}
           disabled={isPdfJsControlsDisabled || zoomPercent <= ZOOM_MIN}
         >
-          <HugeiconsIcon icon={MinusSignIcon} size={utilityIconSize} strokeWidth={utilityIconStroke} />
+          <HugeiconsIcon icon={MinusSignIcon} size={pdfControlIconSize} strokeWidth={pdfControlIconStroke} />
         </button>
         <span className="parse-pdf-zoom-value text-xs font-semibold text-muted-foreground">
           {zoomPercent}%
@@ -252,7 +254,7 @@ export function PdfPreview({
           onClick={() => stepZoom('in')}
           disabled={isPdfJsControlsDisabled || zoomPercent >= ZOOM_MAX}
         >
-          <HugeiconsIcon icon={PlusSignIcon} size={utilityIconSize} strokeWidth={utilityIconStroke} />
+          <HugeiconsIcon icon={PlusSignIcon} size={pdfControlIconSize} strokeWidth={pdfControlIconStroke} />
         </button>
       </div>
     </div>

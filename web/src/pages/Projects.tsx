@@ -1,22 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { AgGridReact } from 'ag-grid-react';
 import { AllCommunityModule, ModuleRegistry, type ColDef, type ICellRendererParams } from 'ag-grid-community';
-import {
-  ActionIcon,
-  Badge,
-  Button,
-  Center,
-  Group,
-  Loader,
-  Pagination,
-  Stack,
-  Text,
-  TextInput,
-  ThemeIcon,
-  Tooltip,
-  useComputedColorScheme,
-} from '@mantine/core';
-import { useDebouncedValue } from '@mantine/hooks';
+import { Pagination } from '@ark-ui/react/pagination';
+import { toast } from 'sonner';
 import {
   SegmentGroupRoot,
   SegmentGroupIndicator,
@@ -32,9 +18,15 @@ import {
   DialogBody,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { notifications } from '@mantine/notifications';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { useIsDark } from '@/lib/useIsDark';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
+  IconChevronLeft,
+  IconChevronRight,
   IconClock,
   IconExternalLink,
   IconFileText,
@@ -94,11 +86,10 @@ export default function Projects() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [page, setPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
-  const [debouncedSearch] = useDebouncedValue(search, 250);
+  const debouncedSearch = useDebouncedValue(search, 250);
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const computedColorScheme = useComputedColorScheme('dark');
-  const isDark = computedColorScheme === 'dark';
+  const isDark = useIsDark();
   const shouldOpenNewModal = searchParams.get('new') === '1';
 
   const openCreateModal = () => {
@@ -203,14 +194,13 @@ export default function Projects() {
         const row = params.data;
         if (!row) return null;
         return (
-          <Button
-            variant="subtle"
-            size="compact-sm"
-            px={0}
+          <button
+            type="button"
+            className="inline-flex items-center text-sm font-medium text-primary hover:underline"
             onClick={() => navigate(`/app/elt/${row.project_id}`)}
           >
             {row.project_name}
-          </Button>
+          </button>
         );
       },
     },
@@ -220,9 +210,9 @@ export default function Projects() {
       flex: 1.8,
       minWidth: 280,
       cellRenderer: (params: ICellRendererParams<ProjectOverviewRow>) => (
-        <Text size="sm" c="dimmed" lineClamp={2}>
+        <span className="text-sm text-muted-foreground line-clamp-2">
           {params.data?.description || 'No description'}
-        </Text>
+        </span>
       ),
     },
     {
@@ -230,11 +220,11 @@ export default function Projects() {
       field: 'doc_count',
       width: 130,
       cellRenderer: (params: ICellRendererParams<ProjectOverviewRow>) => (
-        <Badge size="sm" variant="light">
-          <Group gap={4} wrap="nowrap">
+        <Badge variant="secondary" size="sm">
+          <span className="flex items-center gap-1">
             <IconFileText size={12} />
             {params.data?.doc_count ?? 0}
-          </Group>
+          </span>
         </Badge>
       ),
     },
@@ -245,7 +235,7 @@ export default function Projects() {
       cellRenderer: (params: ICellRendererParams<ProjectOverviewRow>) => {
         const count = params.data?.processing_count ?? 0;
         return (
-          <Badge size="sm" variant="light" color={count > 0 ? 'yellow' : 'gray'}>
+          <Badge size="sm" variant={count > 0 ? 'yellow' : 'gray'}>
             {count}
           </Badge>
         );
@@ -256,12 +246,10 @@ export default function Projects() {
       field: 'updated_at',
       width: 140,
       cellRenderer: (params: ICellRendererParams<ProjectOverviewRow>) => (
-        <Group gap={4} wrap="nowrap">
-          <IconClock size={12} color="var(--mantine-color-dimmed)" />
-          <Text size="xs" c="dimmed">
-            {formatDate(params.data?.updated_at)}
-          </Text>
-        </Group>
+        <span className="flex items-center gap-1 text-xs text-muted-foreground">
+          <IconClock size={12} />
+          {formatDate(params.data?.updated_at)}
+        </span>
       ),
     },
     {
@@ -275,25 +263,30 @@ export default function Projects() {
         const row = params.data;
         if (!row) return null;
         return (
-          <Group gap={6} justify="flex-end" wrap="nowrap">
-            <Tooltip label="Open project">
-              <ActionIcon
-                variant="subtle"
-                onClick={() => navigate(`/app/elt/${row.project_id}`)}
-                aria-label={`Open ${row.project_name}`}
-              >
-                <IconExternalLink size={15} />
-              </ActionIcon>
+          <div className="flex items-center justify-end gap-1.5">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => navigate(`/app/elt/${row.project_id}`)}
+                  aria-label={`Open ${row.project_name}`}
+                >
+                  <IconExternalLink size={15} />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Open project</TooltipContent>
             </Tooltip>
             <Button
-              size="compact-xs"
-              variant="light"
-              leftSection={<IconUpload size={12} />}
+              variant="secondary"
+              size="sm"
               onClick={() => navigate(`/app/elt/${row.project_id}`)}
             >
+              <IconUpload size={12} />
               Upload
             </Button>
-          </Group>
+          </div>
         );
       },
     },
@@ -337,7 +330,7 @@ export default function Projects() {
       setCreating(false);
       return;
     }
-    notifications.show({ color: 'green', title: 'Project created', message: name.trim() });
+    toast.success(`Project created: ${name.trim()}`);
     setName('');
     setDesc('');
     closeCreateModal();
@@ -345,31 +338,37 @@ export default function Projects() {
     navigate(`/app/elt/${(data as ProjectRow).project_id}`);
   };
 
-  if (loading && projects.length === 0) return <Center mt="xl"><Loader /></Center>;
+  if (loading && projects.length === 0) return <div className="flex justify-center pt-10"><div className="h-8 w-8 animate-spin rounded-full border-4 border-muted border-t-primary" /></div>;
 
   const hasFilters = debouncedSearch.length > 0 || statusFilter !== 'all';
+
+  const inputClass = 'flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring';
 
   return (
     <>
       <PageHeader title="Projects" subtitle="Organize your documents and annotation runs.">
-        <Button size="xs" leftSection={<IconFolderPlus size={14} />} onClick={openCreateModal}>
+        <Button size="sm" onClick={openCreateModal}>
+          <IconFolderPlus size={14} />
           New project
         </Button>
       </PageHeader>
 
       {error && <ErrorAlert message={error} />}
 
-      <Group gap="sm" mb="md" align="center">
-        <TextInput
-          value={search}
-          onChange={(e) => {
-            setSearch(e.currentTarget.value);
-            setPage(1);
-          }}
-          placeholder="Search by project name or description"
-          leftSection={<IconSearch size={14} />}
-          w={320}
-        />
+      <div className="mb-4 flex items-center gap-3">
+        <div className="relative w-80">
+          <IconSearch size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <input
+            type="text"
+            className={`${inputClass} pl-8`}
+            value={search}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+              setSearch(e.currentTarget.value);
+              setPage(1);
+            }}
+            placeholder="Search by project name or description"
+          />
+        </div>
         <SegmentGroupRoot
           value={statusFilter}
           onValueChange={(e) => {
@@ -386,33 +385,34 @@ export default function Projects() {
             </SegmentGroupItem>
           ))}
         </SegmentGroupRoot>
-      </Group>
+      </div>
 
       {!loading && projects.length === 0 && (
-        <Center py="xl">
-          <Stack align="center" gap="md">
-            <ThemeIcon size={80} radius="xl" variant="light">
-              <IconFolder size={40} />
-            </ThemeIcon>
-            <Text size="lg" fw={600}>
+        <div className="flex justify-center py-10">
+          <div className="flex flex-col items-center gap-4">
+            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-muted">
+              <IconFolder size={40} className="text-muted-foreground" />
+            </div>
+            <span className="text-lg font-semibold">
               {hasFilters ? 'No matching projects' : 'No projects yet'}
-            </Text>
-            <Text size="sm" c="dimmed" maw={420} ta="center">
+            </span>
+            <span className="max-w-[420px] text-center text-sm text-muted-foreground">
               {hasFilters
                 ? 'Try a broader search or a different filter.'
                 : 'Create a project to start uploading documents and running annotations.'}
-            </Text>
+            </span>
             {!hasFilters && (
-              <Button size="lg" leftSection={<IconFolderPlus size={18} />} onClick={openCreateModal}>
+              <Button size="lg" onClick={openCreateModal}>
+                <IconFolderPlus size={18} />
                 Create your first project
               </Button>
             )}
-          </Stack>
-        </Center>
+          </div>
+        </div>
       )}
 
       {projects.length > 0 && (
-        <Stack gap="sm">
+        <div className="flex flex-col gap-3">
           <div
             className="block-viewer-grid grid-font-medium grid-font-family-sans grid-valign-center"
             style={{ height: 560, width: '100%' }}
@@ -426,16 +426,49 @@ export default function Projects() {
               headerHeight={44}
               animateRows={false}
               domLayout="normal"
-              overlayNoRowsTemplate='<span style="color: var(--mantine-color-dimmed);">No projects found.</span>'
+              overlayNoRowsTemplate='<span class="text-muted-foreground">No projects found.</span>'
             />
           </div>
 
           {totalPages > 1 && (
-            <Group justify="flex-end">
-              <Pagination value={page} onChange={setPage} total={totalPages} />
-            </Group>
+            <div className="flex justify-end">
+              <Pagination.Root
+                count={totalCount}
+                pageSize={PAGE_SIZE}
+                siblingCount={1}
+                page={page}
+                onPageChange={(details) => setPage(details.page)}
+                className="flex items-center gap-1"
+              >
+                <Pagination.PrevTrigger className="inline-flex h-8 w-8 items-center justify-center rounded text-sm text-muted-foreground hover:text-foreground disabled:opacity-40">
+                  <IconChevronLeft size={16} />
+                </Pagination.PrevTrigger>
+                <Pagination.Context>
+                  {(pagination) =>
+                    pagination.pages.map((pg, index) =>
+                      pg.type === 'page' ? (
+                        <Pagination.Item
+                          key={index}
+                          {...pg}
+                          className="inline-flex h-8 min-w-8 items-center justify-center rounded text-sm font-medium text-muted-foreground hover:text-foreground data-selected:bg-accent data-selected:text-foreground"
+                        >
+                          {pg.value}
+                        </Pagination.Item>
+                      ) : (
+                        <Pagination.Ellipsis key={index} index={index} className="text-sm text-muted-foreground">
+                          &hellip;
+                        </Pagination.Ellipsis>
+                      ),
+                    )
+                  }
+                </Pagination.Context>
+                <Pagination.NextTrigger className="inline-flex h-8 w-8 items-center justify-center rounded text-sm text-muted-foreground hover:text-foreground disabled:opacity-40">
+                  <IconChevronRight size={16} />
+                </Pagination.NextTrigger>
+              </Pagination.Root>
+            </div>
           )}
-        </Stack>
+        </div>
       )}
 
       <DialogRoot open={opened} onOpenChange={(e) => { if (!e.open) closeCreateModal(); }}>
@@ -443,23 +476,34 @@ export default function Projects() {
           <DialogCloseTrigger />
           <DialogTitle>New Project</DialogTitle>
           <DialogBody>
-            <TextInput
-              label="Project name"
-              placeholder="e.g., SCOTUS Analysis"
-              value={name}
-              onChange={(e) => setName(e.currentTarget.value)}
-              data-autofocus
-            />
-            <TextInput
-              label="Description (optional)"
-              placeholder="Brief description of this project"
-              value={desc}
-              onChange={(e) => setDesc(e.currentTarget.value)}
-            />
+            <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-1">
+                <label className="text-sm font-medium">Project name</label>
+                <input
+                  type="text"
+                  className={inputClass}
+                  placeholder="e.g., SCOTUS Analysis"
+                  value={name}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setName(e.currentTarget.value)}
+                  autoFocus
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-sm font-medium">Description (optional)</label>
+                <input
+                  type="text"
+                  className={inputClass}
+                  placeholder="Brief description of this project"
+                  value={desc}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDesc(e.currentTarget.value)}
+                />
+              </div>
+            </div>
           </DialogBody>
           <DialogFooter>
-            <Button variant="default" onClick={closeCreateModal}>Cancel</Button>
-            <Button onClick={handleCreate} loading={creating} disabled={!name.trim()}>
+            <Button variant="outline" onClick={closeCreateModal}>Cancel</Button>
+            <Button onClick={handleCreate} disabled={creating || !name.trim()}>
+              {creating && <div className="mr-1.5 h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />}
               Create
             </Button>
           </DialogFooter>

@@ -53,6 +53,18 @@ Deno.test("GET returns service registry inventory payload", async () => {
           }),
         };
       }
+      if (table === "service_type_catalog") {
+        return {
+          select: () => Promise.resolve({
+            data: [{
+              service_type: "conversion",
+              label: "Conversion",
+              description: "File conversion services",
+            }],
+            error: null,
+          }),
+        };
+      }
       throw new Error(`Unexpected table: ${table}`);
     },
   };
@@ -70,6 +82,7 @@ Deno.test("GET returns service registry inventory payload", async () => {
 
   assertEquals(resp.status, 200);
   assertEquals(body.superuser.email, "admin@example.com");
+  assertEquals(body.service_types.length, 1);
   assertEquals(body.services.length, 1);
   assertEquals(body.functions.length, 1);
   assertEquals(body.services[0].service_name, "conversion-service");

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Badge, Button, Code, Group, Paper, Stack, Switch, Text, TextInput } from '@mantine/core';
+import { Switch } from '@ark-ui/react/switch';
 import {
   SegmentGroupRoot,
   SegmentGroupIndicator,
@@ -7,6 +7,8 @@ import {
   SegmentGroupItemText,
   SegmentGroupItemHiddenInput,
 } from '@/components/ui/segment-group';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { useNavigate, useParams } from 'react-router-dom';
 import Uppy, { type UploadResult } from '@uppy/core';
 import Dashboard from '@uppy/react/dashboard';
@@ -279,24 +281,24 @@ export default function UppyLibraryDemo() {
         title="Uppy Library Demo"
         subtitle="Separate sandbox page to validate uploader behavior before schema-level integration."
       >
-        <Button variant="default" onClick={() => navigate(`/app/elt/${projectId}`)}>
+        <Button variant="outline" onClick={() => navigate(`/app/elt/${projectId}`)}>
           Back to Current Uploader
         </Button>
       </PageHeader>
 
-      <Paper withBorder p="md" radius="md" mb="md">
-        <Stack gap="xs">
-          <Text fw={600}>Integration Steps (restart-safe)</Text>
-          <Text size="sm">1. Uppy is used only as the UI upload library.</Text>
-          <Text size="sm">2. Upload transport is plugin-based: <Code>XHR ingest</Code> (active pipeline) or <Code>Tus</Code> (resumable).</Text>
-          <Text size="sm">3. Companion is optional and only for remote cloud source selection.</Text>
-          <Text size="sm">4. Optional finalize callback can be enabled to wire post-upload orchestration later.</Text>
-          <Text size="sm">5. This page is isolated from current production uploader behavior.</Text>
-        </Stack>
-      </Paper>
+      <div className="mb-4 rounded-lg border p-4">
+        <div className="flex flex-col gap-1.5">
+          <span className="font-semibold">Integration Steps (restart-safe)</span>
+          <span className="text-sm">1. Uppy is used only as the UI upload library.</span>
+          <span className="text-sm">2. Upload transport is plugin-based: <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">XHR ingest</code> (active pipeline) or <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">Tus</code> (resumable).</span>
+          <span className="text-sm">3. Companion is optional and only for remote cloud source selection.</span>
+          <span className="text-sm">4. Optional finalize callback can be enabled to wire post-upload orchestration later.</span>
+          <span className="text-sm">5. This page is isolated from current production uploader behavior.</span>
+        </div>
+      </div>
 
-      <Paper withBorder p="md" radius="md" mb="md">
-        <Stack gap="sm">
+      <div className="mb-4 rounded-lg border p-4">
+        <div className="flex flex-col gap-3">
           <SegmentGroupRoot
             value={uploadMode}
             onValueChange={(e) => setUploadMode(e.value as UploadMode)}
@@ -311,75 +313,99 @@ export default function UppyLibraryDemo() {
           </SegmentGroupRoot>
 
           {uploadMode === 'tus' && (
-            <TextInput
-              label="Tus Endpoint"
-              value={tusEndpoint}
-              onChange={(event) => setTusEndpoint(event.currentTarget.value)}
-              placeholder="https://your-tusd.example/files/"
-            />
+            <div className="flex flex-col gap-1">
+              <label className="text-sm font-medium">Tus Endpoint</label>
+              <input
+                type="text"
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                value={tusEndpoint}
+                onChange={(e) => setTusEndpoint(e.currentTarget.value)}
+                placeholder="https://your-tusd.example/files/"
+              />
+            </div>
           )}
 
-          <Switch
+          <Switch.Root
             checked={useCompanion}
-            onChange={(event) => setUseCompanion(event.currentTarget.checked)}
-            label="Enable Companion Remote Sources"
-          />
+            onCheckedChange={(details) => setUseCompanion(details.checked)}
+            className="inline-flex items-center gap-2"
+          >
+            <Switch.HiddenInput />
+            <Switch.Control className="relative h-6 w-11 rounded-full border border-input bg-muted transition-colors data-[state=checked]:border-primary data-[state=checked]:bg-primary">
+              <Switch.Thumb className="block h-5 w-5 translate-x-0 rounded-full bg-background shadow transition-transform data-[state=checked]:translate-x-5" />
+            </Switch.Control>
+            <Switch.Label className="text-sm">Enable Companion Remote Sources</Switch.Label>
+          </Switch.Root>
 
           {useCompanion && (
-            <TextInput
-              label="Companion URL"
-              value={companionUrl}
-              onChange={(event) => setCompanionUrl(event.currentTarget.value)}
-              placeholder="https://companion.your-domain.example"
-            />
+            <div className="flex flex-col gap-1">
+              <label className="text-sm font-medium">Companion URL</label>
+              <input
+                type="text"
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                value={companionUrl}
+                onChange={(e) => setCompanionUrl(e.currentTarget.value)}
+                placeholder="https://companion.your-domain.example"
+              />
+            </div>
           )}
 
-          <Switch
+          <Switch.Root
             checked={enableFinalize}
-            onChange={(event) => setEnableFinalize(event.currentTarget.checked)}
-            label="Enable finalize callback after successful uploads"
-          />
+            onCheckedChange={(details) => setEnableFinalize(details.checked)}
+            className="inline-flex items-center gap-2"
+          >
+            <Switch.HiddenInput />
+            <Switch.Control className="relative h-6 w-11 rounded-full border border-input bg-muted transition-colors data-[state=checked]:border-primary data-[state=checked]:bg-primary">
+              <Switch.Thumb className="block h-5 w-5 translate-x-0 rounded-full bg-background shadow transition-transform data-[state=checked]:translate-x-5" />
+            </Switch.Control>
+            <Switch.Label className="text-sm">Enable finalize callback after successful uploads</Switch.Label>
+          </Switch.Root>
 
           {enableFinalize && (
-            <TextInput
-              label="Finalize Endpoint"
-              value={finalizeEndpoint}
-              onChange={(event) => setFinalizeEndpoint(event.currentTarget.value)}
-              placeholder="https://your-api.example/upload/finalize"
-            />
+            <div className="flex flex-col gap-1">
+              <label className="text-sm font-medium">Finalize Endpoint</label>
+              <input
+                type="text"
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                value={finalizeEndpoint}
+                onChange={(e) => setFinalizeEndpoint(e.currentTarget.value)}
+                placeholder="https://your-api.example/upload/finalize"
+              />
+            </div>
           )}
 
-          <Group gap="xs" wrap="wrap">
-            <Badge color={ingestEndpoint ? 'green' : 'gray'} variant="light">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <Badge variant={ingestEndpoint ? 'green' : 'gray'}>
               XHR ingest {ingestEndpoint ? 'ready' : 'missing'}
             </Badge>
-            <Badge color={tusEndpoint.trim() ? 'green' : 'gray'} variant="light">
+            <Badge variant={tusEndpoint.trim() ? 'green' : 'gray'}>
               Tus {tusEndpoint.trim() ? 'ready' : 'missing'}
             </Badge>
-            <Badge color={!useCompanion || companionUrl.trim() ? 'green' : 'yellow'} variant="light">
+            <Badge variant={!useCompanion || companionUrl.trim() ? 'green' : 'yellow'}>
               Companion {!useCompanion ? 'off' : companionUrl.trim() ? 'ready' : 'missing'}
             </Badge>
-            <Badge color={!enableFinalize || finalizeEndpoint.trim() ? 'green' : 'yellow'} variant="light">
+            <Badge variant={!enableFinalize || finalizeEndpoint.trim() ? 'green' : 'yellow'}>
               Finalize {!enableFinalize ? 'off' : finalizeEndpoint.trim() ? 'ready' : 'missing'}
             </Badge>
-          </Group>
+          </div>
 
-          <Group justify="space-between" wrap="wrap">
-            <Text size="xs" c="dimmed">
-              Project scope: <Code>{projectId}</Code>
-            </Text>
-            <Button size="compact-sm" variant="subtle" onClick={clearLogs}>
+          <div className="flex flex-wrap items-center justify-between">
+            <span className="text-xs text-muted-foreground">
+              Project scope: <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">{projectId}</code>
+            </span>
+            <Button variant="ghost" size="sm" onClick={clearLogs}>
               Clear logs
             </Button>
-          </Group>
-        </Stack>
-      </Paper>
+          </div>
+        </div>
+      </div>
 
       {setupError && (
         <ErrorAlert message={setupError} />
       )}
 
-      <Paper withBorder p="md" radius="md" mb="md">
+      <div className="mb-4 rounded-lg border p-4">
         {uppy ? (
           <Dashboard
             uppy={uppy}
@@ -389,37 +415,37 @@ export default function UppyLibraryDemo() {
             note="Demo page: uploader transport is tested here; database writes remain backend-owned."
           />
         ) : (
-          <Text size="sm" c="dimmed">
+          <span className="text-sm text-muted-foreground">
             Uppy is not initialized due to setup constraints.
-          </Text>
+          </span>
         )}
-      </Paper>
+      </div>
 
-      <Paper withBorder p="md" radius="md" mb="md">
-        <Group justify="space-between">
-          <Text fw={600}>Latest Completion</Text>
-          <Badge variant="light" color={lastCompleteSummary ? 'green' : 'gray'}>
+      <div className="mb-4 rounded-lg border p-4">
+        <div className="flex items-center justify-between">
+          <span className="font-semibold">Latest Completion</span>
+          <Badge variant={lastCompleteSummary ? 'green' : 'gray'}>
             {lastCompleteSummary ? 'available' : 'none yet'}
           </Badge>
-        </Group>
-        <Text size="sm" mt="xs" c={lastCompleteSummary ? undefined : 'dimmed'}>
+        </div>
+        <span className={`mt-1.5 block text-sm ${lastCompleteSummary ? '' : 'text-muted-foreground'}`}>
           {lastCompleteSummary ?? 'Upload a batch to view completion summary.'}
-        </Text>
-      </Paper>
+        </span>
+      </div>
 
-      <Paper withBorder p="md" radius="md">
-        <Text fw={600} mb="xs">Runtime Log</Text>
-        <Stack gap={4}>
+      <div className="rounded-lg border p-4">
+        <span className="mb-1.5 block font-semibold">Runtime Log</span>
+        <div className="flex flex-col gap-1">
           {logs.length === 0 && (
-            <Text size="sm" c="dimmed">No events yet.</Text>
+            <span className="text-sm text-muted-foreground">No events yet.</span>
           )}
           {logs.map((entry, idx) => (
-            <Text key={`${entry.at}-${idx}`} size="xs" c={entry.level === 'error' ? 'red' : 'dimmed'}>
+            <span key={`${entry.at}-${idx}`} className={`text-xs ${entry.level === 'error' ? 'text-destructive' : 'text-muted-foreground'}`}>
               [{entry.at}] {entry.level.toUpperCase()}: {entry.message}
-            </Text>
+            </span>
           ))}
-        </Stack>
-      </Paper>
+        </div>
+      </div>
     </>
   );
 }

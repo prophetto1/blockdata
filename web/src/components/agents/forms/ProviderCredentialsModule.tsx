@@ -1,20 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
-import {
-  Button,
-  Divider,
-  Group,
-  NumberInput,
-  Paper,
-  PasswordInput,
-  Select,
-  Slider,
-  Stack,
-  Text,
-  TextInput,
-  Tooltip,
-} from '@mantine/core';
-import { notifications } from '@mantine/notifications';
+import { NumberInput } from '@ark-ui/react/number-input';
+import { Slider } from '@ark-ui/react/slider';
+import { toast } from 'sonner';
 import { IconDeviceFloppy, IconPlugConnected } from '@tabler/icons-react';
+import { Button } from '@/components/ui/button';
 import { edgeJson } from '@/lib/edge';
 import { PROVIDERS } from '@/components/agents/providerRegistry';
 
@@ -106,10 +95,7 @@ export function ProviderCredentialsModule({
   const handleSaveKey = async () => {
     if (!apiKey.trim()) return;
     if (requiresBaseUrl && !baseUrl.trim()) {
-      notifications.show({
-        color: 'yellow',
-        message: 'Custom provider requires a base URL.',
-      });
+      toast.warning('Custom provider requires a base URL.');
       return;
     }
 
@@ -130,9 +116,9 @@ export function ProviderCredentialsModule({
       setTestStatus('idle');
       setTestError(null);
       await onReload();
-      notifications.show({ color: 'green', message: 'Saved API key and provider defaults.' });
+      toast.success('Saved API key and provider defaults.');
     } catch (e) {
-      notifications.show({ color: 'red', message: e instanceof Error ? e.message : String(e) });
+      toast.error(e instanceof Error ? e.message : String(e));
     } finally {
       setSavingKey(false);
     }
@@ -140,10 +126,7 @@ export function ProviderCredentialsModule({
 
   const handleSaveDefaults = async () => {
     if (!providerKeyInfo) {
-      notifications.show({
-        color: 'yellow',
-        message: 'Save an API key first, then update defaults.',
-      });
+      toast.warning('Save an API key first, then update defaults.');
       return;
     }
 
@@ -160,9 +143,9 @@ export function ProviderCredentialsModule({
         }),
       });
       await onReload();
-      notifications.show({ color: 'green', message: 'Saved provider defaults.' });
+      toast.success('Saved provider defaults.');
     } catch (e) {
-      notifications.show({ color: 'red', message: e instanceof Error ? e.message : String(e) });
+      toast.error(e instanceof Error ? e.message : String(e));
     } finally {
       setSavingDefaults(false);
     }
@@ -179,138 +162,169 @@ export function ProviderCredentialsModule({
       setTestStatus('idle');
       setTestError(null);
       await onReload();
-      notifications.show({ color: 'green', message: 'Removed API key.' });
+      toast.success('Removed API key.');
     } catch (e) {
-      notifications.show({ color: 'red', message: e instanceof Error ? e.message : String(e) });
+      toast.error(e instanceof Error ? e.message : String(e));
     } finally {
       setDeleting(false);
     }
   };
 
+  const inputClass = 'flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring';
+
   return (
-    <Stack gap="md">
-      <Paper p="md" radius="sm" withBorder>
-        <Text fw={600} mb="xs">API key</Text>
+    <div className="flex flex-col gap-4">
+      <div className="rounded-md border p-4">
+        <span className="mb-1.5 block font-semibold">API key</span>
         {hasExistingKey && (
-          <Group justify="space-between" mb="xs">
-            <Text size="sm" c="dimmed">Saved key ending in {existingSuffix}</Text>
-            <Button
-              variant="subtle"
-              color="red"
-              size="xs"
-              onClick={handleDeleteKey}
-              loading={deleting}
-            >
+          <div className="mb-1.5 flex items-center justify-between">
+            <span className="text-sm text-muted-foreground">Saved key ending in {existingSuffix}</span>
+            <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={handleDeleteKey} disabled={deleting}>
+              {deleting && <div className="mr-1.5 h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />}
               Remove
             </Button>
-          </Group>
+          </div>
         )}
-        <Group gap="xs" align="flex-end">
-          <PasswordInput
-            label="New API key"
-            placeholder={providerDef?.keyPlaceholder ?? 'Paste API key...'}
-            value={apiKey}
-            onChange={(e) => {
-              setApiKey(e.currentTarget.value);
-              setTestStatus('idle');
-              setTestError(null);
-            }}
-            style={{ flex: 1 }}
-          />
-          <Tooltip label="Send a minimal API call to verify the key">
-            <Button
-              variant="light"
-              onClick={handleTest}
-              loading={testStatus === 'testing'}
-              disabled={!canTest}
-              leftSection={<IconPlugConnected size={16} />}
-            >
-              {testStatus === 'valid' ? 'Valid' : testStatus === 'invalid' ? 'Failed' : 'Test'}
-            </Button>
-          </Tooltip>
-          <Button onClick={handleSaveKey} loading={savingKey} disabled={!apiKey.trim() || (provider === 'custom' && !baseUrl.trim())}>
+        <div className="flex items-end gap-1.5">
+          <div className="flex min-w-0 flex-1 flex-col gap-1">
+            <label className="text-sm font-medium">New API key</label>
+            <input
+              type="password"
+              className={inputClass}
+              placeholder={providerDef?.keyPlaceholder ?? 'Paste API key...'}
+              value={apiKey}
+              onChange={(e) => {
+                setApiKey(e.currentTarget.value);
+                setTestStatus('idle');
+                setTestError(null);
+              }}
+            />
+          </div>
+          <Button variant="secondary" onClick={handleTest} disabled={!canTest || testStatus === 'testing'} title="Send a minimal API call to verify the key">
+            {testStatus === 'testing' && <div className="mr-1.5 h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />}
+            <IconPlugConnected size={16} />
+            {testStatus === 'valid' ? 'Valid' : testStatus === 'invalid' ? 'Failed' : 'Test'}
+          </Button>
+          <Button onClick={handleSaveKey} disabled={savingKey || !apiKey.trim() || (provider === 'custom' && !baseUrl.trim())}>
+            {savingKey && <div className="mr-1.5 h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />}
             Save key
           </Button>
-        </Group>
-        {testStatus === 'valid' && <Text size="xs" c="green" mt={4}>Key verified.</Text>}
-        {testStatus === 'invalid' && testError && <Text size="xs" c="red" mt={4}>{testError}</Text>}
-      </Paper>
+        </div>
+        {testStatus === 'valid' && <span className="mt-1 block text-xs text-green-600 dark:text-green-400">Key verified.</span>}
+        {testStatus === 'invalid' && testError && <span className="mt-1 block text-xs text-destructive">{testError}</span>}
+      </div>
 
       {hasBaseUrlField && (
-        <Paper p="md" radius="sm" withBorder>
-          <TextInput
-            label="Base URL"
-            description={
-              'OpenAI-compatible endpoint (for example: http://localhost:1234/v1)'
-            }
-            placeholder="https://your-endpoint.example.com/v1"
-            value={baseUrl}
-            onChange={(e) => setBaseUrl(e.currentTarget.value)}
-            required={requiresBaseUrl}
-          />
-        </Paper>
+        <div className="rounded-md border p-4">
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-medium">Base URL {requiresBaseUrl && <span className="text-destructive">*</span>}</label>
+            <span className="text-xs text-muted-foreground">OpenAI-compatible endpoint (for example: http://localhost:1234/v1)</span>
+            <input
+              type="text"
+              className={inputClass}
+              placeholder="https://your-endpoint.example.com/v1"
+              value={baseUrl}
+              onChange={(e) => setBaseUrl(e.currentTarget.value)}
+            />
+          </div>
+        </div>
       )}
 
-      <Paper p="md" radius="sm" withBorder>
-        <Text fw={600} mb={4}>Provider defaults</Text>
-        <Text size="xs" c="dimmed" mb="sm">
+      <div className="rounded-md border p-4">
+        <span className="mb-1 block font-semibold">Provider defaults</span>
+        <span className="mb-3 block text-xs text-muted-foreground">
           Used when run config does not override model parameters.
-        </Text>
-        <Stack gap="sm">
+        </span>
+        <div className="flex flex-col gap-3">
           {modelOptions.length > 0 ? (
-            <Select
-              label="Default model"
-              data={modelOptions}
-              value={model}
-              onChange={(value) => setModel(value ?? '')}
-            />
+            <div className="flex flex-col gap-1">
+              <label className="text-sm font-medium">Default model</label>
+              <select
+                className={inputClass}
+                value={model}
+                onChange={(e) => setModel(e.currentTarget.value)}
+              >
+                {modelOptions.map((opt) => {
+                  const value = typeof opt === 'string' ? opt : opt.value;
+                  const label = typeof opt === 'string' ? opt : opt.label;
+                  return <option key={value} value={value}>{label}</option>;
+                })}
+              </select>
+            </div>
           ) : (
-            <TextInput
-              label="Default model"
-              placeholder="model-name"
-              value={model}
-              onChange={(e) => setModel(e.currentTarget.value)}
-            />
+            <div className="flex flex-col gap-1">
+              <label className="text-sm font-medium">Default model</label>
+              <input
+                type="text"
+                className={inputClass}
+                placeholder="model-name"
+                value={model}
+                onChange={(e) => setModel(e.currentTarget.value)}
+              />
+            </div>
           )}
 
           <div>
-            <Text size="sm" mb={4}>Temperature: {temperature.toFixed(1)}</Text>
-            <Slider
+            <span className="mb-1 block text-sm">Temperature: {temperature.toFixed(1)}</span>
+            <Slider.Root
               min={0}
               max={1}
               step={0.1}
-              value={temperature}
-              onChange={setTemperature}
-              marks={[
-                { value: 0, label: '0' },
-                { value: 0.3, label: '0.3' },
-                { value: 1, label: '1.0' },
-              ]}
-            />
+              value={[temperature]}
+              onValueChange={(details) => setTemperature(details.value[0])}
+            >
+              <Slider.Control className="relative flex h-6 w-full items-center">
+                <Slider.Track className="h-2 w-full rounded-full bg-muted">
+                  <Slider.Range className="h-full rounded-full bg-primary" />
+                </Slider.Track>
+                <Slider.Thumb index={0} className="block h-5 w-5 rounded-full border-2 border-primary bg-background shadow">
+                  <Slider.HiddenInput />
+                </Slider.Thumb>
+              </Slider.Control>
+              <Slider.MarkerGroup className="mt-1 flex justify-between text-xs text-muted-foreground">
+                <Slider.Marker value={0}>0</Slider.Marker>
+                <Slider.Marker value={0.3}>0.3</Slider.Marker>
+                <Slider.Marker value={1}>1.0</Slider.Marker>
+              </Slider.MarkerGroup>
+            </Slider.Root>
           </div>
 
-          <NumberInput
-            label="Max tokens"
-            min={100}
-            max={8000}
-            step={100}
-            value={maxTokens}
-            onChange={(value) => typeof value === 'number' && setMaxTokens(value)}
-          />
-        </Stack>
-        <Divider my="sm" />
-        <Group justify="flex-end">
-          <Button
-            variant="light"
-            leftSection={<IconDeviceFloppy size={16} />}
-            onClick={handleSaveDefaults}
-            loading={savingDefaults}
-            disabled={!hasDefaultsChanged}
-          >
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-medium">Max tokens</label>
+            <NumberInput.Root
+              min={100}
+              max={8000}
+              step={100}
+              value={String(maxTokens)}
+              onValueChange={(details) => {
+                if (typeof details.valueAsNumber === 'number' && !Number.isNaN(details.valueAsNumber)) {
+                  setMaxTokens(details.valueAsNumber);
+                }
+              }}
+            >
+              <NumberInput.Control className="relative">
+                <NumberInput.Input className="h-9 w-full rounded-md border border-input bg-background px-3 pr-10 text-sm text-foreground" />
+                <div className="absolute inset-y-0 right-1 flex items-center gap-1">
+                  <NumberInput.DecrementTrigger className="h-6 w-4 rounded border border-input text-muted-foreground hover:bg-accent hover:text-accent-foreground">
+                    -
+                  </NumberInput.DecrementTrigger>
+                  <NumberInput.IncrementTrigger className="h-6 w-4 rounded border border-input text-muted-foreground hover:bg-accent hover:text-accent-foreground">
+                    +
+                  </NumberInput.IncrementTrigger>
+                </div>
+              </NumberInput.Control>
+            </NumberInput.Root>
+          </div>
+        </div>
+        <div className="my-3 h-px bg-border" />
+        <div className="flex justify-end">
+          <Button variant="secondary" onClick={handleSaveDefaults} disabled={savingDefaults || !hasDefaultsChanged}>
+            {savingDefaults && <div className="mr-1.5 h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />}
+            <IconDeviceFloppy size={16} />
             Save defaults
           </Button>
-        </Group>
-      </Paper>
-    </Stack>
+        </div>
+      </div>
+    </div>
   );
 }

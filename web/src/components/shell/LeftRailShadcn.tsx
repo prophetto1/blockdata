@@ -21,6 +21,13 @@ import {
   SidebarProvider,
 } from '@/components/ui/sidebar';
 import {
+  ScrollAreaContent,
+  ScrollAreaRoot,
+  ScrollAreaScrollbar,
+  ScrollAreaThumb,
+  ScrollAreaViewport,
+} from '@/components/ui/scroll-area';
+import {
   MenuRoot,
   MenuTrigger,
   MenuPositioner,
@@ -459,38 +466,47 @@ export function LeftRailShadcn({
                   </Select.Control>
 
                   <Select.Positioner className="!z-[220]">
-                      <Select.Content className="max-h-72 overflow-y-auto rounded-md border border-sidebar-border bg-sidebar p-1 shadow-xl">
-                        {projectCollection.items.length === 0 ? (
-                          <div className="px-2.5 py-2 text-xs text-sidebar-foreground/70">
-                            {projectOptionsLoading ? 'Loading projects...' : 'No projects found'}
-                          </div>
-                        ) : (
-                          projectCollection.items.map((project) => (
-                            <Select.Item
-                              key={project.value}
-                              item={project}
-                              className={cn(
-                                'flex w-full items-center justify-between rounded-md px-2.5 py-2 text-left text-sidebar-foreground/90 transition-colors',
-                                'data-[state=checked]:bg-sidebar-accent data-[state=checked]:text-sidebar-accent-foreground',
-                                'data-[highlighted]:bg-sidebar-accent/70 data-[highlighted]:text-sidebar-accent-foreground',
-                              )}
-                            >
-                              <span className="min-w-0 pr-2">
-                                <Select.ItemText className="block truncate text-sm font-medium leading-5">
-                                  {project.label}
-                                </Select.ItemText>
-                                <span className="block text-xs leading-4 text-sidebar-foreground/65">
-                                  {project.docCount} docs
-                                </span>
-                              </span>
-                              <Select.ItemIndicator className="shrink-0">
-                                <IconCheck size={15} stroke={2.2} />
-                              </Select.ItemIndicator>
-                            </Select.Item>
-                          ))
-                        )}
-                      </Select.Content>
-                    </Select.Positioner>
+                    <Select.Content className="rounded-md border border-sidebar-border bg-sidebar p-0 shadow-xl">
+                      <ScrollAreaRoot className="max-h-72">
+                        <ScrollAreaViewport className="max-h-72 overflow-y-auto p-1">
+                          <ScrollAreaContent>
+                            {projectCollection.items.length === 0 ? (
+                              <div className="px-2.5 py-2 text-xs text-sidebar-foreground/70">
+                                {projectOptionsLoading ? 'Loading projects...' : 'No projects found'}
+                              </div>
+                            ) : (
+                              projectCollection.items.map((project) => (
+                                <Select.Item
+                                  key={project.value}
+                                  item={project}
+                                  className={cn(
+                                    'flex w-full items-center justify-between rounded-md px-2.5 py-2 text-left text-sidebar-foreground/90 transition-colors',
+                                    'data-[state=checked]:bg-sidebar-accent data-[state=checked]:text-sidebar-accent-foreground',
+                                    'data-[highlighted]:bg-sidebar-accent/70 data-[highlighted]:text-sidebar-accent-foreground',
+                                  )}
+                                >
+                                  <span className="min-w-0 pr-2">
+                                    <Select.ItemText className="block truncate text-sm font-medium leading-5">
+                                      {project.label}
+                                    </Select.ItemText>
+                                    <span className="block text-xs leading-4 text-sidebar-foreground/65">
+                                      {project.docCount} docs
+                                    </span>
+                                  </span>
+                                  <Select.ItemIndicator className="shrink-0">
+                                    <IconCheck size={15} stroke={2.2} />
+                                  </Select.ItemIndicator>
+                                </Select.Item>
+                              ))
+                            )}
+                          </ScrollAreaContent>
+                        </ScrollAreaViewport>
+                        <ScrollAreaScrollbar orientation="vertical">
+                          <ScrollAreaThumb />
+                        </ScrollAreaScrollbar>
+                      </ScrollAreaRoot>
+                    </Select.Content>
+                  </Select.Positioner>
                   <Select.HiddenSelect name="project-focus" />
                 </Select.Root>
                 <button

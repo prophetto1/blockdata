@@ -6,7 +6,7 @@ import {
   DialogCloseTrigger,
   DialogBody,
 } from '@/components/ui/dialog';
-import { notifications } from '@mantine/notifications';
+import { toast } from 'sonner';
 import { IconInfoCircle } from '@tabler/icons-react';
 import type { AgentCatalogRow, UserAgentConfigRow } from '@/lib/types';
 import { edgeJson } from '@/lib/edge';
@@ -71,10 +71,10 @@ export function AgentConfigModal({
         keyword,
         model,
       });
-      notifications.show({ color: 'green', message: 'Saved agent config' });
+      toast.success('Saved agent config');
       onClose();
     } catch (e) {
-      notifications.show({ color: 'red', message: e instanceof Error ? e.message : String(e) });
+      toast.error(e instanceof Error ? e.message : String(e));
     }
   };
 
@@ -85,9 +85,9 @@ export function AgentConfigModal({
         body: JSON.stringify({ agent_slug: catalog.agent_slug, is_default: true }),
       });
       await onReload();
-      notifications.show({ color: 'green', message: 'Set as default agent' });
+      toast.success('Set as default agent');
     } catch (e) {
-      notifications.show({ color: 'red', message: e instanceof Error ? e.message : String(e) });
+      toast.error(e instanceof Error ? e.message : String(e));
     }
   };
 

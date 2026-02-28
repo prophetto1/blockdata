@@ -4,7 +4,6 @@ import { IconMenu2, IconSparkles, IconList } from '@tabler/icons-react';
 import { Moon02Icon, Sun03Icon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { useNavigate } from 'react-router-dom';
-import { useMantineColorScheme } from '@mantine/core';
 import { useHeaderCenter } from '@/components/shell/HeaderCenterContext';
 import { AppIcon } from '@/components/ui/app-icon';
 import {
@@ -63,13 +62,8 @@ export function TopCommandBar({
   onToggleAssistant,
 }: TopCommandBarProps) {
   const navigate = useNavigate();
-  const { setColorScheme } = useMantineColorScheme();
   const { center, shellTopSlots } = useHeaderCenter();
-  const [isDark, setIsDark] = useState(() => {
-    const dark = resolveIsDark();
-    setColorScheme(dark ? 'dark' : 'light');
-    return dark;
-  });
+  const [isDark, setIsDark] = useState(resolveIsDark);
   const [searchValue, setSearchValue] = useState('');
   const searchCollection = useMemo(
     () => createListCollection({ items: TOP_SEARCH_OPTIONS }),
@@ -88,7 +82,6 @@ export function TopCommandBar({
     const next = isDark ? 'light' : 'dark';
     document.documentElement.setAttribute('data-theme', next);
     window.localStorage.setItem(UI_THEME_KEY, next);
-    setColorScheme(next);
     setIsDark((current) => !current);
   };
 

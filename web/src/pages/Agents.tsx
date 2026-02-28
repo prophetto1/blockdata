@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { notifications } from '@mantine/notifications';
+import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { PageHeader } from '@/components/common/PageHeader';
 import { AgentCard } from '@/components/agents/AgentCard';
@@ -92,9 +92,9 @@ export default function Agents() {
               onSetDefault={async () => {
                 try {
                   await saveConfig({ agent_slug: cat.agent_slug, is_default: true });
-                  notifications.show({ color: 'green', message: 'Set default agent' });
+                  toast.success('Set default agent');
                 } catch (e) {
-                  notifications.show({ color: 'red', message: e instanceof Error ? e.message : String(e) });
+                  toast.error(e instanceof Error ? e.message : String(e));
                 }
               }}
             />

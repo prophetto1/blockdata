@@ -9,7 +9,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { notifications } from '@mantine/notifications';
+import { toast } from 'sonner';
 import { IconTrash, IconPlayerStop } from '@tabler/icons-react';
 import { supabase } from '@/lib/supabase';
 import { downloadFromEdge } from '@/lib/edge';
@@ -101,7 +101,7 @@ export default function RunDetail() {
     try {
       const { error: err } = await supabase.rpc('cancel_run', { p_run_id: runId });
       if (err) throw new Error(err.message);
-      notifications.show({ color: 'yellow', title: 'Cancelled', message: 'Run has been cancelled' });
+      toast.warning('Run has been cancelled');
       load();
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -116,7 +116,7 @@ export default function RunDetail() {
     try {
       const { error: err } = await supabase.rpc('delete_run', { p_run_id: runId });
       if (err) throw new Error(err.message);
-      notifications.show({ color: 'green', title: 'Deleted', message: 'Run and all overlays removed' });
+      toast.success('Run and all overlays removed');
       navigate(`/app/elt/${projectId}`);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));

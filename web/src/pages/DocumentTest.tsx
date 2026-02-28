@@ -685,6 +685,7 @@ function PreviewTabPanel({ doc }: { doc: ProjectDocumentRow | null }) {
   const [previewText, setPreviewText] = useState<string | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewError, setPreviewError] = useState<string | null>(null);
+  const [pdfToolbarHost, setPdfToolbarHost] = useState<HTMLDivElement | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -825,20 +826,22 @@ function PreviewTabPanel({ doc }: { doc: ProjectDocumentRow | null }) {
     </div>
   );
 
-  const renderUnifiedPreviewHeader = (downloadUrl?: string | null) => (
+  const renderUnifiedPreviewHeader = (options?: { downloadUrl?: string | null; centerContent?: ReactNode }) => (
     <div className="grid min-h-10 grid-cols-[auto_1fr_auto] items-center border-b border-border bg-card px-2">
       <span className="inline-flex min-w-[34px] justify-center rounded border border-border bg-muted/60 px-1 py-0.5 text-[11px] font-semibold text-muted-foreground">
         {selectedDocFormat}
       </span>
-      <span
-        className="min-w-0 px-2 text-center text-[13px] font-medium text-foreground truncate"
-        title={selectedDocTitle}
-      >
-        {selectedDocTitle}
-      </span>
-      {downloadUrl ? (
+      {options?.centerContent ?? (
+        <span
+          className="min-w-0 px-2 text-center text-[13px] font-medium text-foreground truncate"
+          title={selectedDocTitle}
+        >
+          {selectedDocTitle}
+        </span>
+      )}
+      {options?.downloadUrl ? (
         <a
-          href={downloadUrl}
+          href={options.downloadUrl}
           target="_blank"
           rel="noreferrer"
           download
@@ -855,19 +858,33 @@ function PreviewTabPanel({ doc }: { doc: ProjectDocumentRow | null }) {
 
   const renderPreviewWithUnifiedHeader = (
     content: ReactNode,
-    options?: { downloadUrl?: string | null; contentClassName?: string },
+    options?: {
+      downloadUrl?: string | null;
+      contentClassName?: string;
+      useScrollArea?: boolean;
+      headerCenterContent?: ReactNode;
+    },
   ) => renderPreviewFrame(
     <div className="flex h-full min-h-0 flex-col">
-      {renderUnifiedPreviewHeader(options?.downloadUrl)}
-      <ScrollArea
-        className="min-h-0 flex-1"
-        viewportClass={[
-          'h-full overflow-y-auto overflow-x-hidden',
-          options?.contentClassName ?? '',
-        ].join(' ').trim()}
-      >
-        {content}
-      </ScrollArea>
+      {renderUnifiedPreviewHeader({
+        downloadUrl: options?.downloadUrl,
+        centerContent: options?.headerCenterContent,
+      })}
+      {options?.useScrollArea === false ? (
+        <div className={['min-h-0 flex-1', options?.contentClassName ?? ''].join(' ').trim()}>
+          {content}
+        </div>
+      ) : (
+        <ScrollArea
+          className="min-h-0 flex-1"
+          viewportClass={[
+            'h-full overflow-y-auto overflow-x-hidden',
+            options?.contentClassName ?? '',
+          ].join(' ').trim()}
+        >
+          {content}
+        </ScrollArea>
+      )}
     </div>,
     { scroll: false, padded: false },
   );
@@ -896,8 +913,18 @@ function PreviewTabPanel({ doc }: { doc: ProjectDocumentRow | null }) {
 
   if (previewKind === 'pdf' && previewUrl) {
     return renderPreviewWithUnifiedHeader(
-      <PdfPreview key={`${doc.source_uid}:${previewUrl}`} url={previewUrl} />,
-      { downloadUrl: previewUrl, contentClassName: 'overflow-hidden' },
+      <PdfPreview
+        key={`${doc.source_uid}:${previewUrl}`}
+        url={previewUrl}
+        hideToolbar={!pdfToolbarHost}
+        toolbarPortalTarget={pdfToolbarHost}
+      />,
+      {
+        downloadUrl: previewUrl,
+        contentClassName: 'overflow-hidden',
+        useScrollArea: false,
+        headerCenterContent: <div className="parse-preview-toolbar-host flex min-w-0 items-center" ref={setPdfToolbarHost} />,
+      },
     );
   }
 
@@ -919,12 +946,10 @@ function PreviewTabPanel({ doc }: { doc: ProjectDocumentRow | null }) {
 
   if (previewKind === 'markdown') {
     return renderStandardContentPreview(
-      <div className="px-3 py-2">
-        <div className="parse-markdown-preview">
-          <ReactMarkdown remarkPlugins={[remarkGfm]}>
-            {previewText ?? ''}
-          </ReactMarkdown>
-        </div>
+      <div className="parse-markdown-preview">
+        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+          {previewText ?? ''}
+        </ReactMarkdown>
       </div>,
       { downloadUrl: previewUrl },
     );
@@ -1394,7 +1419,7 @@ export default function DocumentTest() {
                   type="button"
                   title="Add file"
                   onClick={() => openNativeFilePicker('file')}
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-transparent bg-background/70 text-muted-foreground hover:border-border hover:bg-accent hover:text-foreground"
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-transparent bg-transparent text-muted-foreground transition-colors hover:bg-accent/70 hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 >
                   <IconFilePlus size={16} />
                 </button>
@@ -1408,7 +1433,7 @@ export default function DocumentTest() {
                     }
                     openNativeFilePicker('folder');
                   }}
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-transparent bg-background/70 text-muted-foreground hover:border-border hover:bg-accent hover:text-foreground"
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-transparent bg-transparent text-muted-foreground transition-colors hover:bg-accent/70 hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 >
                   <IconFolderPlus size={16} />
                 </button>
@@ -1416,7 +1441,7 @@ export default function DocumentTest() {
                   type="button"
                   title="Create file"
                   onClick={() => { setCreatingType('file'); setCreateName(''); }}
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-transparent bg-background/70 text-muted-foreground hover:border-border hover:bg-accent hover:text-foreground"
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-transparent bg-transparent text-muted-foreground transition-colors hover:bg-accent/70 hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 >
                   <IconPlus size={16} />
                 </button>
@@ -1424,7 +1449,7 @@ export default function DocumentTest() {
                   type="button"
                   title="Create folder"
                   onClick={() => { setCreatingType('folder'); setCreateName(''); }}
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-transparent bg-background/70 text-muted-foreground hover:border-border hover:bg-accent hover:text-foreground"
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-transparent bg-transparent text-muted-foreground transition-colors hover:bg-accent/70 hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 >
                   <IconFolder size={16} />
                 </button>
@@ -1433,7 +1458,7 @@ export default function DocumentTest() {
                   title="Delete selected"
                   disabled={!selectedSourceUidForActions}
                   onClick={() => void handleDeleteSelected()}
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-transparent bg-background/70 text-muted-foreground hover:border-border hover:bg-accent hover:text-red-500 disabled:opacity-30 disabled:hover:border-transparent disabled:hover:bg-background/70 disabled:hover:text-muted-foreground"
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-transparent bg-transparent text-muted-foreground transition-colors hover:bg-accent/70 hover:text-red-500 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-muted-foreground"
                 >
                   <IconTrash size={16} />
                 </button>

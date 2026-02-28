@@ -10,19 +10,10 @@ import {
   type RowsChangeData,
   type SortColumn,
 } from 'react-data-grid';
-import {
-  ActionIcon,
-  Alert,
-  Badge,
-  Button,
-  Group,
-  Paper,
-  Select,
-  Text,
-  TextInput,
-  Tooltip,
-} from '@mantine/core';
-import { notifications } from '@mantine/notifications';
+import { toast } from 'sonner';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import {
   IconArrowBarToDown,
   IconArrowBarToUp,
@@ -143,16 +134,16 @@ function keepResizedColumnWidths(columnWidths: ColumnWidths): ColumnWidths {
 
 function SchemaValueCell({ row, column, fieldMeta }: { row: RowData; column: string; fieldMeta: SchemaFieldMeta }) {
   const value = row[column];
-  if (value === null || value === undefined) return <Text size="xs" c="dimmed">--</Text>;
+  if (value === null || value === undefined) return <span className="text-xs text-muted-foreground">--</span>;
   if (typeof value === 'boolean') return <Badge size="xs" color={value ? 'green' : 'gray'}>{value ? 'Yes' : 'No'}</Badge>;
-  if (typeof value === 'number') return <Text size="xs" fw={500}>{value}</Text>;
+  if (typeof value === 'number') return <span className="text-xs font-medium">{value}</span>;
   if (typeof value === 'string') {
     if (fieldMeta.enumValues?.includes(value)) return <Badge size="xs" variant="light">{value}</Badge>;
-    return <Text size="xs" lineClamp={1} style={{ wordBreak: 'break-word' }}>{value}</Text>;
+    return <span className="text-xs line-clamp-1 break-words">{value}</span>;
   }
-  if (Array.isArray(value)) return <Text size="xs" c="dimmed">[{value.length} items]</Text>;
-  if (typeof value === 'object') return <Text size="xs" c="dimmed">{prettyCellValue(value)}</Text>;
-  return <Text size="xs">{String(value)}</Text>;
+  if (Array.isArray(value)) return <span className="text-xs text-muted-foreground">[{value.length} items]</span>;
+  if (typeof value === 'object') return <span className="text-xs text-muted-foreground">{prettyCellValue(value)}</span>;
+  return <span className="text-xs">{String(value)}</span>;
 }
 
 function SchemaValueEditor({ row, column, onRowChange, onClose, fieldMeta }: RenderEditCellProps<RowData> & { fieldMeta: SchemaFieldMeta }) {
@@ -230,16 +221,15 @@ function TypeHeaderCell({ blockTypes, typeFilter, onToggleType, onClearTypes }: 
       {blockTypes.length > 1 && (
         <MenuRoot positioning={{ placement: 'bottom-start' }} closeOnSelect={false}>
           <MenuTrigger asChild>
-            <ActionIcon
-              className="rdg-type-header-filter"
-              variant={selectedCount > 0 ? 'light' : 'subtle'}
-              size="xs"
+            <button
+              type="button"
+              className={`rdg-type-header-filter inline-flex h-5 w-5 items-center justify-center rounded ${selectedCount > 0 ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:text-foreground'}`}
               aria-label="Filter block types"
               onMouseDown={(event) => event.stopPropagation()}
               onClick={(event) => event.stopPropagation()}
             >
               <IconFilter size={12} />
-            </ActionIcon>
+            </button>
           </MenuTrigger>
           <MenuPortal>
             <MenuPositioner>
@@ -251,13 +241,13 @@ function TypeHeaderCell({ blockTypes, typeFilter, onToggleType, onClearTypes }: 
                     leftSection={typeFilter.includes(type) ? <IconCheck size={14} /> : <span style={{ width: 14, display: 'inline-block' }} />}
                     onClick={() => onToggleType(type)}
                   >
-                    <Text size="xs">{type}</Text>
+                    <span className="text-xs">{type}</span>
                   </MenuItem>
                 ))}
                 {selectedCount > 0 && (
                   <>
                     <MenuSeparator />
-                    <MenuItem value="type-clear" className="text-muted-foreground" onClick={onClearTypes}><Text size="xs">Clear all</Text></MenuItem>
+                    <MenuItem value="type-clear" className="text-muted-foreground" onClick={onClearTypes}><span className="text-xs">Clear all</span></MenuItem>
                   </>
                 )}
               </MenuContent>
@@ -460,7 +450,7 @@ export function BlockViewerGridRDG({ convUid, selectedRunId, selectedRun, onExpo
     try {
       const { data, error } = await supabase.rpc('confirm_overlays', { p_run_id: selectedRunId });
       if (error) throw new Error(error.message);
-      notifications.show({ color: 'green', title: 'Staged overlays confirmed', message: `${Number(data ?? 0)} block(s) confirmed.` });
+      toast.success(`Staged overlays confirmed: ${Number(data ?? 0)} block(s) confirmed.`);
       await refetchOverlays();
     } catch (e) {
       notifications.show({ color: 'red', title: 'Confirm all failed', message: e instanceof Error ? e.message : String(e) });
@@ -636,7 +626,7 @@ export function BlockViewerGridRDG({ convUid, selectedRunId, selectedRun, onExpo
         cellClass: (row: RowData) => getUserSchemaCellClass('_overlay_status', row),
         renderCell: ({ row }: { row: RowData }) => {
           const status = typeof row._overlay_status === 'string' ? row._overlay_status : undefined;
-          if (!status) return <Text size="xs" c="dimmed">--</Text>;
+          if (!status) return <span className="text-xs text-muted-foreground">--</span>;
           return <Badge size="xs" variant="light" color={statusColor(status)}>{status}</Badge>;
         },
       },
@@ -650,7 +640,7 @@ export function BlockViewerGridRDG({ convUid, selectedRunId, selectedRun, onExpo
         renderCell: ({ row }: { row: RowData }) => {
           const status = typeof row._overlay_status === 'string' ? row._overlay_status : undefined;
           const blockUid = typeof row.block_uid === 'string' ? row.block_uid : null;
-          if (!blockUid || status !== 'ai_complete') return <Text size="xs" c="dimmed">--</Text>;
+          if (!blockUid || status !== 'ai_complete') return <span className="text-xs text-muted-foreground">--</span>;
           const busy = isBusyForBlock(blockUid);
           return (
             <Group gap={4} wrap="nowrap">

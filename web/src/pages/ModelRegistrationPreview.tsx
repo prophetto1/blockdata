@@ -1,24 +1,6 @@
 import { useMemo, useState } from 'react';
-import {
-  Badge,
-  Box,
-  Button,
-  Card,
-  Code,
-  Divider,
-  Grid,
-  Group,
-  Paper,
-  PasswordInput,
-  Select,
-  Stack,
-  Switch,
-  Table,
-  Text,
-  TextInput,
-  Title,
-} from '@mantine/core';
-import { notifications } from '@mantine/notifications';
+import { Switch } from '@ark-ui/react/switch';
+import { toast } from 'sonner';
 import { IconCloud, IconCpu, IconPlugConnected, IconUser } from '@tabler/icons-react';
 import {
   SegmentGroupRoot,
@@ -27,6 +9,8 @@ import {
   SegmentGroupItemText,
   SegmentGroupItemHiddenInput,
 } from '@/components/ui/segment-group';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/common/PageHeader';
 
 type UserProvider = 'openai' | 'google' | 'custom';
@@ -93,20 +77,14 @@ export default function ModelRegistrationPreview() {
   }, [baseUrl, model, platformBaseUrl, platformModel, projectOverride, showBaseUrl, transport]);
 
   const handleMockTest = () => {
-    notifications.show({
-      color: 'blue',
-      title: 'Mock test only',
-      message: 'No API call executed. This page is visual-only for UX validation.',
-    });
+    toast.info('No API call executed. This page is visual-only for UX validation.');
   };
 
   const handleMockSave = () => {
-    notifications.show({
-      color: 'green',
-      title: 'Mock save complete',
-      message: 'No backend write executed. Wire `user-api-keys` and runtime policy later.',
-    });
+    toast.success('No backend write executed. Wire `user-api-keys` and runtime policy later.');
   };
+
+  const inputClass = 'flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring';
 
   return (
     <>
@@ -115,109 +93,125 @@ export default function ModelRegistrationPreview() {
         subtitle="Visual-only dashboard for user BYO models + platform LiteLLM policy."
       />
 
-      <Grid gutter="md">
-        <Grid.Col span={{ base: 12, lg: 7 }}>
-          <Stack gap="md">
-            <Card withBorder radius="md" p="md">
-              <Group justify="space-between" mb="sm">
-                <Group gap="xs">
+      <div className="grid grid-cols-12 gap-4">
+        <div className="col-span-12 lg:col-span-7">
+          <div className="flex flex-col gap-4">
+            <div className="rounded-lg border p-4">
+              <div className="mb-3 flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
                   <IconUser size={18} />
-                  <Title order={4}>User Model Connection</Title>
-                </Group>
-                <Badge variant="light" color="blue">Preview</Badge>
-              </Group>
+                  <h4 className="text-lg font-semibold">User Model Connection</h4>
+                </div>
+                <Badge variant="blue">Preview</Badge>
+              </div>
 
-              <Stack gap="sm">
-                <Select
-                  label="Provider"
-                  value={provider}
-                  onChange={(value) => setProvider((value as UserProvider) ?? 'openai')}
-                  data={[
-                    { value: 'openai', label: 'OpenAI Direct' },
-                    { value: 'google', label: 'Google AI Studio' },
-                    { value: 'custom', label: 'Custom OpenAI-compatible' },
-                  ]}
-                />
+              <div className="flex flex-col gap-3">
+                <div className="flex flex-col gap-1">
+                  <label className="text-sm font-medium">Provider</label>
+                  <select
+                    className={inputClass}
+                    value={provider}
+                    onChange={(e) => setProvider(e.currentTarget.value as UserProvider)}
+                  >
+                    <option value="openai">OpenAI Direct</option>
+                    <option value="google">Google AI Studio</option>
+                    <option value="custom">Custom OpenAI-compatible</option>
+                  </select>
+                </div>
 
-                <PasswordInput
-                  label="API Key"
-                  placeholder="Paste key..."
-                  value={apiKey}
-                  onChange={(e) => setApiKey(e.currentTarget.value)}
-                />
+                <div className="flex flex-col gap-1">
+                  <label className="text-sm font-medium">API Key</label>
+                  <input
+                    type="password"
+                    className={inputClass}
+                    placeholder="Paste key..."
+                    value={apiKey}
+                    onChange={(e) => setApiKey(e.currentTarget.value)}
+                  />
+                </div>
 
                 {showBaseUrl && (
-                  <TextInput
-                    label="Base URL"
-                    description="Required for custom endpoints"
-                    value={baseUrl}
-                    onChange={(e) => setBaseUrl(e.currentTarget.value)}
-                    required={requiresBaseUrl}
-                  />
+                  <div className="flex flex-col gap-1">
+                    <label className="text-sm font-medium">Base URL {requiresBaseUrl && <span className="text-destructive">*</span>}</label>
+                    <span className="text-xs text-muted-foreground">Required for custom endpoints</span>
+                    <input
+                      type="text"
+                      className={inputClass}
+                      value={baseUrl}
+                      onChange={(e) => setBaseUrl(e.currentTarget.value)}
+                    />
+                  </div>
                 )}
 
-                <TextInput
-                  label="Default Model"
-                  value={model}
-                  onChange={(e) => setModel(e.currentTarget.value)}
-                />
+                <div className="flex flex-col gap-1">
+                  <label className="text-sm font-medium">Default Model</label>
+                  <input
+                    type="text"
+                    className={inputClass}
+                    value={model}
+                    onChange={(e) => setModel(e.currentTarget.value)}
+                  />
+                </div>
 
-                <Group>
-                  <Button variant="light" leftSection={<IconPlugConnected size={16} />} onClick={handleMockTest}>
+                <div className="flex items-center gap-2">
+                  <Button variant="secondary" onClick={handleMockTest}>
+                    <IconPlugConnected size={16} />
                     Test Connection
                   </Button>
                   <Button onClick={handleMockSave}>
                     Save Connection
                   </Button>
-                </Group>
-              </Stack>
-            </Card>
+                </div>
+              </div>
+            </div>
 
-            <Card withBorder radius="md" p="md">
-              <Group justify="space-between" mb="sm">
-                <Title order={5}>Registered Connections (Mock)</Title>
-                <Badge variant="dot" color="gray">Local state only</Badge>
-              </Group>
-              <Table striped highlightOnHover withTableBorder>
-                <Table.Thead>
-                  <Table.Tr>
-                    <Table.Th>Label</Table.Th>
-                    <Table.Th>Provider</Table.Th>
-                    <Table.Th>Model</Table.Th>
-                    <Table.Th>Status</Table.Th>
-                    <Table.Th>Updated</Table.Th>
-                  </Table.Tr>
-                </Table.Thead>
-                <Table.Tbody>
-                  {MOCK_CONNECTIONS.map((conn) => (
-                    <Table.Tr key={conn.id}>
-                      <Table.Td>{conn.label}</Table.Td>
-                      <Table.Td><Code>{conn.provider}</Code></Table.Td>
-                      <Table.Td><Code>{conn.model}</Code></Table.Td>
-                      <Table.Td>
-                        <Badge color={conn.status === 'active' ? 'green' : 'gray'} variant="light">
-                          {conn.status}
-                        </Badge>
-                      </Table.Td>
-                      <Table.Td>{conn.updatedAt}</Table.Td>
-                    </Table.Tr>
-                  ))}
-                </Table.Tbody>
-              </Table>
-            </Card>
-          </Stack>
-        </Grid.Col>
+            <div className="rounded-lg border p-4">
+              <div className="mb-3 flex items-center justify-between">
+                <h5 className="font-semibold">Registered Connections (Mock)</h5>
+                <Badge variant="gray">Local state only</Badge>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b text-left">
+                      <th className="px-2 py-2 font-medium">Label</th>
+                      <th className="px-2 py-2 font-medium">Provider</th>
+                      <th className="px-2 py-2 font-medium">Model</th>
+                      <th className="px-2 py-2 font-medium">Status</th>
+                      <th className="px-2 py-2 font-medium">Updated</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {MOCK_CONNECTIONS.map((conn) => (
+                      <tr key={conn.id} className="border-b transition-colors hover:bg-muted/50 even:bg-muted/20">
+                        <td className="px-2 py-2">{conn.label}</td>
+                        <td className="px-2 py-2"><code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">{conn.provider}</code></td>
+                        <td className="px-2 py-2"><code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">{conn.model}</code></td>
+                        <td className="px-2 py-2">
+                          <Badge variant={conn.status === 'active' ? 'green' : 'gray'}>
+                            {conn.status}
+                          </Badge>
+                        </td>
+                        <td className="px-2 py-2">{conn.updatedAt}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
 
-        <Grid.Col span={{ base: 12, lg: 5 }}>
-          <Stack gap="md">
-            <Card withBorder radius="md" p="md">
-              <Group gap="xs" mb="sm">
+        <div className="col-span-12 lg:col-span-5">
+          <div className="flex flex-col gap-4">
+            <div className="rounded-lg border p-4">
+              <div className="mb-3 flex items-center gap-1.5">
                 <IconCpu size={18} />
-                <Title order={4}>Platform AI (Admin)</Title>
-              </Group>
+                <h4 className="text-lg font-semibold">Platform AI (Admin)</h4>
+              </div>
 
-              <Stack gap="sm">
-                <Text size="sm" fw={500}>Transport</Text>
+              <div className="flex flex-col gap-3">
+                <span className="text-sm font-medium">Transport</span>
                 <SegmentGroupRoot
                   value={transport}
                   onValueChange={(e) => setTransport((e.value as PlatformTransport) ?? 'vertex_ai')}
@@ -232,65 +226,68 @@ export default function ModelRegistrationPreview() {
                 </SegmentGroupRoot>
 
                 {transport === 'litellm_openai' && (
-                  <TextInput
-                    label="LiteLLM Base URL"
-                    value={platformBaseUrl}
-                    onChange={(e) => setPlatformBaseUrl(e.currentTarget.value)}
-                  />
+                  <div className="flex flex-col gap-1">
+                    <label className="text-sm font-medium">LiteLLM Base URL</label>
+                    <input type="text" className={inputClass} value={platformBaseUrl} onChange={(e) => setPlatformBaseUrl(e.currentTarget.value)} />
+                  </div>
                 )}
 
-                <TextInput
-                  label="Platform Default Model"
-                  value={platformModel}
-                  onChange={(e) => setPlatformModel(e.currentTarget.value)}
-                />
+                <div className="flex flex-col gap-1">
+                  <label className="text-sm font-medium">Platform Default Model</label>
+                  <input type="text" className={inputClass} value={platformModel} onChange={(e) => setPlatformModel(e.currentTarget.value)} />
+                </div>
 
-                <TextInput
-                  label="Routing Policy Key"
-                  value={platformRoutingKey}
-                  onChange={(e) => setPlatformRoutingKey(e.currentTarget.value)}
-                />
+                <div className="flex flex-col gap-1">
+                  <label className="text-sm font-medium">Routing Policy Key</label>
+                  <input type="text" className={inputClass} value={platformRoutingKey} onChange={(e) => setPlatformRoutingKey(e.currentTarget.value)} />
+                </div>
 
-                <Button variant="default" onClick={handleMockSave}>
+                <Button variant="outline" onClick={handleMockSave}>
                   Save Platform Policy
                 </Button>
-              </Stack>
-            </Card>
+              </div>
+            </div>
 
-            <Card withBorder radius="md" p="md">
-              <Group gap="xs" mb="sm">
+            <div className="rounded-lg border p-4">
+              <div className="mb-3 flex items-center gap-1.5">
                 <IconCloud size={18} />
-                <Title order={5}>Effective Runtime Preview</Title>
-              </Group>
-              <Stack gap="xs">
-                <Switch
-                  label="Use user connection override for current project"
+                <h5 className="font-semibold">Effective Runtime Preview</h5>
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Switch.Root
                   checked={projectOverride}
-                  onChange={(e) => setProjectOverride(e.currentTarget.checked)}
-                />
+                  onCheckedChange={(details) => setProjectOverride(details.checked)}
+                  className="inline-flex items-center gap-2"
+                >
+                  <Switch.HiddenInput />
+                  <Switch.Control className="relative h-6 w-11 rounded-full border border-input bg-muted transition-colors data-[state=checked]:border-primary data-[state=checked]:bg-primary">
+                    <Switch.Thumb className="block h-5 w-5 translate-x-0 rounded-full bg-background shadow transition-transform data-[state=checked]:translate-x-5" />
+                  </Switch.Control>
+                  <Switch.Label className="text-sm">Use user connection override for current project</Switch.Label>
+                </Switch.Root>
 
-                <Divider />
+                <div className="h-px bg-border" />
 
-                <Paper withBorder p="sm" radius="sm">
-                  <Stack gap={4}>
-                    <Text size="sm"><strong>Source:</strong> {effectiveRuntime.source}</Text>
-                    <Text size="sm"><strong>Transport:</strong> <Code>{effectiveRuntime.transport}</Code></Text>
-                    <Text size="sm"><strong>Endpoint:</strong> <Code>{effectiveRuntime.endpoint}</Code></Text>
-                    <Text size="sm"><strong>Model:</strong> <Code>{effectiveRuntime.model}</Code></Text>
-                  </Stack>
-                </Paper>
-              </Stack>
-            </Card>
+                <div className="rounded-md border p-3">
+                  <div className="flex flex-col gap-1">
+                    <span className="text-sm"><strong>Source:</strong> {effectiveRuntime.source}</span>
+                    <span className="text-sm"><strong>Transport:</strong> <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">{effectiveRuntime.transport}</code></span>
+                    <span className="text-sm"><strong>Endpoint:</strong> <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">{effectiveRuntime.endpoint}</code></span>
+                    <span className="text-sm"><strong>Model:</strong> <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">{effectiveRuntime.model}</code></span>
+                  </div>
+                </div>
+              </div>
+            </div>
 
-            <Box>
-              <Text c="dimmed" size="xs">
+            <div>
+              <span className="text-xs text-muted-foreground">
                 This screen is intentionally isolated from Supabase Edge Functions and DB writes.
                 It is a UX prototype only.
-              </Text>
-            </Box>
-          </Stack>
-        </Grid.Col>
-      </Grid>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
     </>
   );
 }
