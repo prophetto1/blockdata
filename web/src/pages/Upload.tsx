@@ -408,7 +408,7 @@ export default function Upload() {
       <div className="upload-workspace-pane upload-workspace-pane-left">
         <div className="upload-left-stack flex flex-col gap-4">
           {/* Upload card */}
-          <div className="upload-left-upload-card bg-[var(--mantine-color-default)] p-4">
+          <div className="upload-left-upload-card bg-card p-4">
             <ProjectParseUppyUploader
               projectId={projectId}
               ingestMode="upload_only"
@@ -421,7 +421,7 @@ export default function Upload() {
           </div>
 
           {/* Table card */}
-          <div className="upload-left-table-card bg-[var(--mantine-color-default)] p-4">
+          <div className="upload-left-table-card bg-card p-4">
             <div className="upload-left-table-content flex flex-col gap-2">
               {/* Header */}
               <div className="flex min-h-[22px] items-center justify-between gap-2">
@@ -448,7 +448,7 @@ export default function Upload() {
               ) : (
                 <div className="upload-left-table-scroll overflow-auto rounded-lg border border-border">
                   <table className="w-full text-left">
-                    <thead className="sticky top-0 z-10 bg-[var(--mantine-color-default)] text-xs text-muted-foreground">
+                    <thead className="sticky top-0 z-10 bg-card text-xs text-muted-foreground">
                       <tr className="border-b border-border">
                         <th className="px-3 py-1 font-medium">Document</th>
                         <th className="px-3 py-1 font-medium">Type</th>
@@ -547,7 +547,7 @@ export default function Upload() {
 
       {/* ── Right pane: preview ── */}
       <div className="upload-workspace-pane upload-workspace-pane-right">
-        <div className="upload-preview-paper bg-[var(--mantine-color-default)] p-4">
+        <div className="upload-preview-paper bg-card p-4">
           <div className="upload-preview-stack flex flex-col gap-2">
             {/* Preview header */}
             <div className="flex items-center justify-between gap-2">

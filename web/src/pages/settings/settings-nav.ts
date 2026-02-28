@@ -62,10 +62,10 @@ export function findNavItemByPath(pathname: string): SettingsNavItem | null {
   // Check longest paths first (admin children before admin root)
   const sorted = [...ALL_NAV_ITEMS].sort((a, b) => b.path.length - a.path.length);
   for (const item of sorted) {
-    if (pathname.startsWith(item.path)) return item;
+    if (pathname === item.path || pathname.startsWith(item.path + '/')) return item;
   }
   for (const alias of ADMIN_PATH_ALIASES) {
-    if (!pathname.startsWith(alias.prefix)) continue;
+    if (pathname !== alias.prefix && !pathname.startsWith(alias.prefix + '/')) continue;
     return NAV_ITEM_BY_ID.get(alias.targetId) ?? null;
   }
   return null;

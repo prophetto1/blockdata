@@ -1,12 +1,10 @@
 import { useMemo } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { useAuth } from '@/auth/AuthContext';
 import { AppIcon } from '@/components/ui/app-icon';
+import { useSuperuserProbe } from '@/hooks/useSuperuserProbe';
 import { styleTokens } from '@/lib/styleTokens';
 import { cn } from '@/lib/utils';
 import { SETTINGS_NAV, findNavItemByPath, type SettingsNavGroup } from './settings-nav';
-
-const SUPERUSER_EMAILS = new Set(['jondev717@gmail.com']);
 const AI_STACK_TABS = [
   { id: 'ai-providers', label: 'AI Providers', path: '/app/settings/ai' },
   { id: 'model-roles', label: 'Model Roles', path: '/app/settings/model-roles' },
@@ -63,9 +61,7 @@ function NavGroup({
 export default function SettingsLayout() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user } = useAuth();
-
-  const isSuperuser = SUPERUSER_EMAILS.has((user?.email ?? '').toLowerCase());
+  const isSuperuser = useSuperuserProbe() === true;
   const primaryGroups = SETTINGS_NAV.filter((g) => g.id !== 'admin');
   const adminGroup = isSuperuser ? SETTINGS_NAV.find((g) => g.id === 'admin') : null;
 

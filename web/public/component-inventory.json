@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-02-28T12:24:15.129Z",
+  "generatedAt": "2026-02-28T16:06:53.917Z",
   "scope": "auth",
   "pages": [
     {
@@ -2060,6 +2060,115 @@
       ]
     },
     {
+      "page": "src/pages/settings/ServicesPanel.tsx",
+      "componentCount": 11,
+      "categoryCounts": {
+        "local-components": 9,
+        "external-package": 2
+      },
+      "components": [
+        {
+          "component": "Button",
+          "usedAs": "Button",
+          "source": "@/components/ui/button",
+          "importKind": "named",
+          "importedAs": "Button",
+          "category": "local-components",
+          "definition": "Button comes from @/components/ui/button (named import of Button)"
+        },
+        {
+          "component": "DialogBody",
+          "usedAs": "DialogBody",
+          "source": "@/components/ui/dialog",
+          "importKind": "named",
+          "importedAs": "DialogBody",
+          "category": "local-components",
+          "definition": "DialogBody comes from @/components/ui/dialog (named import of DialogBody)"
+        },
+        {
+          "component": "DialogCloseTrigger",
+          "usedAs": "DialogCloseTrigger",
+          "source": "@/components/ui/dialog",
+          "importKind": "named",
+          "importedAs": "DialogCloseTrigger",
+          "category": "local-components",
+          "definition": "DialogCloseTrigger comes from @/components/ui/dialog (named import of DialogCloseTrigger)"
+        },
+        {
+          "component": "DialogContent",
+          "usedAs": "DialogContent",
+          "source": "@/components/ui/dialog",
+          "importKind": "named",
+          "importedAs": "DialogContent",
+          "category": "local-components",
+          "definition": "DialogContent comes from @/components/ui/dialog (named import of DialogContent)"
+        },
+        {
+          "component": "DialogDescription",
+          "usedAs": "DialogDescription",
+          "source": "@/components/ui/dialog",
+          "importKind": "named",
+          "importedAs": "DialogDescription",
+          "category": "local-components",
+          "definition": "DialogDescription comes from @/components/ui/dialog (named import of DialogDescription)"
+        },
+        {
+          "component": "DialogFooter",
+          "usedAs": "DialogFooter",
+          "source": "@/components/ui/dialog",
+          "importKind": "named",
+          "importedAs": "DialogFooter",
+          "category": "local-components",
+          "definition": "DialogFooter comes from @/components/ui/dialog (named import of DialogFooter)"
+        },
+        {
+          "component": "DialogRoot",
+          "usedAs": "DialogRoot",
+          "source": "@/components/ui/dialog",
+          "importKind": "named",
+          "importedAs": "DialogRoot",
+          "category": "local-components",
+          "definition": "DialogRoot comes from @/components/ui/dialog (named import of DialogRoot)"
+        },
+        {
+          "component": "DialogTitle",
+          "usedAs": "DialogTitle",
+          "source": "@/components/ui/dialog",
+          "importKind": "named",
+          "importedAs": "DialogTitle",
+          "category": "local-components",
+          "definition": "DialogTitle comes from @/components/ui/dialog (named import of DialogTitle)"
+        },
+        {
+          "component": "Editor",
+          "usedAs": "Editor",
+          "source": "@monaco-editor/react",
+          "importKind": "default",
+          "importedAs": "default",
+          "category": "external-package",
+          "definition": "Editor comes from @monaco-editor/react (default import of default)"
+        },
+        {
+          "component": "ErrorAlert",
+          "usedAs": "ErrorAlert",
+          "source": "@/components/common/ErrorAlert",
+          "importKind": "named",
+          "importedAs": "ErrorAlert",
+          "category": "local-components",
+          "definition": "ErrorAlert comes from @/components/common/ErrorAlert (named import of ErrorAlert)"
+        },
+        {
+          "component": "React",
+          "usedAs": "React.Fragment",
+          "source": "react",
+          "importKind": "default",
+          "importedAs": "default",
+          "category": "external-package",
+          "definition": "React.Fragment comes from react (default import of default)"
+        }
+      ]
+    },
+    {
       "page": "src/pages/settings/SettingsAccount.tsx",
       "componentCount": 14,
       "categoryCounts": {
@@ -2199,13 +2308,13 @@
     },
     {
       "page": "src/pages/settings/SettingsAdmin.tsx",
-      "componentCount": 40,
+      "componentCount": 33,
       "categoryCounts": {
-        "local-components": 10,
+        "local-components": 3,
         "in-file component": 5,
-        "external-package": 2,
         "ark-ui": 22,
-        "relative-local": 1
+        "relative-local": 2,
+        "external-package": 1
       },
       "components": [
         {
@@ -2252,78 +2361,6 @@
           "importedAs": null,
           "category": "in-file component",
           "definition": "ColorSwatch is defined in the same page file"
-        },
-        {
-          "component": "DialogBody",
-          "usedAs": "DialogBody",
-          "source": "@/components/ui/dialog",
-          "importKind": "named",
-          "importedAs": "DialogBody",
-          "category": "local-components",
-          "definition": "DialogBody comes from @/components/ui/dialog (named import of DialogBody)"
-        },
-        {
-          "component": "DialogCloseTrigger",
-          "usedAs": "DialogCloseTrigger",
-          "source": "@/components/ui/dialog",
-          "importKind": "named",
-          "importedAs": "DialogCloseTrigger",
-          "category": "local-components",
-          "definition": "DialogCloseTrigger comes from @/components/ui/dialog (named import of DialogCloseTrigger)"
-        },
-        {
-          "component": "DialogContent",
-          "usedAs": "DialogContent",
-          "source": "@/components/ui/dialog",
-          "importKind": "named",
-          "importedAs": "DialogContent",
-          "category": "local-components",
-          "definition": "DialogContent comes from @/components/ui/dialog (named import of DialogContent)"
-        },
-        {
-          "component": "DialogDescription",
-          "usedAs": "DialogDescription",
-          "source": "@/components/ui/dialog",
-          "importKind": "named",
-          "importedAs": "DialogDescription",
-          "category": "local-components",
-          "definition": "DialogDescription comes from @/components/ui/dialog (named import of DialogDescription)"
-        },
-        {
-          "component": "DialogFooter",
-          "usedAs": "DialogFooter",
-          "source": "@/components/ui/dialog",
-          "importKind": "named",
-          "importedAs": "DialogFooter",
-          "category": "local-components",
-          "definition": "DialogFooter comes from @/components/ui/dialog (named import of DialogFooter)"
-        },
-        {
-          "component": "DialogRoot",
-          "usedAs": "DialogRoot",
-          "source": "@/components/ui/dialog",
-          "importKind": "named",
-          "importedAs": "DialogRoot",
-          "category": "local-components",
-          "definition": "DialogRoot comes from @/components/ui/dialog (named import of DialogRoot)"
-        },
-        {
-          "component": "DialogTitle",
-          "usedAs": "DialogTitle",
-          "source": "@/components/ui/dialog",
-          "importKind": "named",
-          "importedAs": "DialogTitle",
-          "category": "local-components",
-          "definition": "DialogTitle comes from @/components/ui/dialog (named import of DialogTitle)"
-        },
-        {
-          "component": "Editor",
-          "usedAs": "Editor",
-          "source": "@monaco-editor/react",
-          "importKind": "default",
-          "importedAs": "default",
-          "category": "external-package",
-          "definition": "Editor comes from @monaco-editor/react (default import of default)"
         },
         {
           "component": "ErrorAlert",
@@ -2450,6 +2487,15 @@
           "importedAs": "NumberInput",
           "category": "ark-ui",
           "definition": "NumberInput.Root comes from @ark-ui/react/number-input (named import of NumberInput)"
+        },
+        {
+          "component": "ServicesPanel",
+          "usedAs": "ServicesPanel",
+          "source": "./ServicesPanel",
+          "importKind": "named",
+          "importedAs": "ServicesPanel",
+          "category": "relative-local",
+          "definition": "ServicesPanel comes from ./ServicesPanel (named import of ServicesPanel)"
         },
         {
           "component": "Switch",
@@ -3406,13 +3452,13 @@
       ]
     }
   ],
-  "totalComponentUsages": 348,
+  "totalComponentUsages": 352,
   "categoryTotals": {
-    "external-package": 10,
-    "local-components": 108,
+    "external-package": 11,
+    "local-components": 110,
     "tabler-icons": 70,
     "ark-ui": 141,
     "in-file component": 10,
-    "relative-local": 9
+    "relative-local": 10
   }
 }

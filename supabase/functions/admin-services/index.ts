@@ -124,7 +124,7 @@ export async function handleAdminServicesRequest(req: Request, deps: AdminServic
         supabaseAdmin
           .from("service_functions")
           .select(
-            "function_id,service_id,function_name,function_type,label,description,entrypoint,http_method,enabled,tags,created_at,updated_at",
+            "function_id,service_id,function_name,function_type,label,description,entrypoint,http_method,parameter_schema,result_schema,enabled,tags,created_at,updated_at",
           ),
         supabaseAdmin
           .from("service_type_catalog")
@@ -573,6 +573,16 @@ export async function handleAdminServicesRequest(req: Request, deps: AdminServic
           return json(400, { error: "tags must be an array of strings" });
         }
 
+        const parameterSchema = body.parameter_schema === undefined ? [] : body.parameter_schema;
+        if (!Array.isArray(parameterSchema)) {
+          return json(400, { error: "parameter_schema must be an array" });
+        }
+
+        const resultSchema = body.result_schema === undefined ? null : body.result_schema;
+        if (resultSchema !== null && !isPlainObject(resultSchema)) {
+          return json(400, { error: "result_schema must be an object or null" });
+        }
+
         const { data, error: insertErr } = await supabaseAdmin
           .from("service_functions")
           .insert({
@@ -583,6 +593,8 @@ export async function handleAdminServicesRequest(req: Request, deps: AdminServic
             description,
             entrypoint,
             http_method: httpMethod,
+            parameter_schema: parameterSchema,
+            result_schema: resultSchema,
             enabled,
             tags,
           })
@@ -734,6 +746,20 @@ export async function handleAdminServicesRequest(req: Request, deps: AdminServic
             return json(400, { error: "tags must be an array of strings" });
           }
           update.tags = body.tags;
+        }
+
+        if (body.parameter_schema !== undefined) {
+          if (!Array.isArray(body.parameter_schema)) {
+            return json(400, { error: "parameter_schema must be an array" });
+          }
+          update.parameter_schema = body.parameter_schema;
+        }
+
+        if (body.result_schema !== undefined) {
+          if (body.result_schema !== null && !isPlainObject(body.result_schema)) {
+            return json(400, { error: "result_schema must be an object or null" });
+          }
+          update.result_schema = body.result_schema;
         }
 
         if (Object.keys(update).length === 0) {

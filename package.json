@@ -1,5 +1,8 @@
 {
   "dependencies": {
     "@uppy/react": "^5.2.0"
+  },
+  "devDependencies": {
+    "mintlify": "^4.2.391"
   }
 }
