@@ -5,7 +5,7 @@ description: "Where everything lives and where to put new things."
 
 ## Monorepo Layout
 
-```
+```markdown
 blockdata/
 ├── web/                 Frontend (React + Vite + TypeScript)
 ├── web-docs/            This docs site (Mintlify)
@@ -26,17 +26,17 @@ The main React app. Vite build, Tailwind styling, Ark UI + shadcn components.
 
 ### Where to add things
 
-| You want to...                     | Put it in                              |
-| ---------------------------------- | -------------------------------------- |
-| New page / route                   | `web/src/pages/`                       |
-| New settings panel                 | `web/src/pages/settings/`              |
-| Reusable UI component              | `web/src/components/ui/`               |
-| Feature-scoped component           | `web/src/components/<feature>/`        |
-| App shell (header, sidebar, nav)   | `web/src/components/shell/`            |
-| Shared hooks                       | `web/src/hooks/`                       |
-| Utility functions                  | `web/src/lib/`                         |
-| Design tokens (color, font, icon)  | `web/src/lib/*-contract.ts`            |
-| Supabase client / edge helpers     | `web/src/lib/edge.ts`, `supabase.ts`   |
+| You want to...                    | Put it in                            |
+| --------------------------------- | ------------------------------------ |
+| New page / route                  | `web/src/pages/`                     |
+| New settings panel                | `web/src/pages/settings/`            |
+| Reusable UI component             | `web/src/components/ui/`             |
+| Feature-scoped component          | `web/src/components/<feature>/`      |
+| App shell (header, sidebar, nav)  | `web/src/components/shell/`          |
+| Shared hooks                      | `web/src/hooks/`                     |
+| Utility functions                 | `web/src/lib/`                       |
+| Design tokens (color, font, icon) | `web/src/lib/*-contract.ts`          |
+| Supabase client / edge helpers    | `web/src/lib/edge.ts`, `supabase.ts` |
 
 ### Key conventions
 
@@ -100,6 +100,7 @@ supabase/functions/
 ```
 
 **Adding a new edge function:**
+
 1. Create `supabase/functions/<name>/index.ts`
 2. Import shared modules from `../_shared/`
 3. Auth: use `verify_jwt: true` unless you have a documented reason not to
@@ -116,17 +117,20 @@ YYYYMMDDHHMMSS_NNN_description.sql
 Example: `20260301001000_060_admin_database_browser_rpc.sql`
 
 **Key catalog tables** (FK-enforced lookups, replace string CHECKs):
+
 - `block_type_catalog`, `run_status_catalog`, `overlay_status_catalog`
 - `source_type_catalog`, `document_status_catalog`, `parsing_tool_catalog`
 - `representation_type_catalog`, `conv_status_catalog`
 - `service_type_catalog` (for service registry)
 
 **Service registry tables:**
+
 - `service_registry` — registered services
 - `service_functions` — callable functions per service
 - `service_runs`, `service_run_events`, `service_run_artifacts` — execution tracking
 
 **Adding a new migration:**
+
 1. Use `apply_migration` via Supabase MCP (preferred) or create the file manually
 2. Follow the `NNN` sequence number (next is 061)
 3. DDL only in migrations — use `execute_sql` for one-off data queries
@@ -145,6 +149,7 @@ services/
 ```
 
 **Adding a new service:**
+
 1. Create `services/<name>/` with its own `requirements.txt` and `main.py`
 2. FastAPI is the standard framework
 3. Runs alongside dlt and dbt executors on the same Ubuntu box
@@ -172,6 +177,7 @@ docs/
 ```
 
 **When to add here vs. web-docs:**
+
 - `docs/` — working design docs, plans, analysis, specs in progress
 - `web-docs/` — polished internal dev reference (this site)
 
@@ -197,6 +203,7 @@ web-docs/
 ```
 
 **Adding a new page:**
+
 1. Create an `.mdx` file in the appropriate directory
 2. Add it to the `navigation` array in `docs.json`
 3. Frontmatter requires `title` and `description`
@@ -205,27 +212,27 @@ web-docs/
 
 ## Config Files at Root
 
-| File                  | Purpose                                    |
-| --------------------- | ------------------------------------------ |
+| File                  | Purpose                                       |
+| --------------------- | --------------------------------------------- |
 | `CLAUDE.md`           | Claude Code instructions (overrides defaults) |
-| `AGENTS.md`           | Agent configuration reference              |
-| `vercel.json`         | Vercel deployment routing                  |
-| `package.json`        | Root npm config                            |
-| `deno.lock`           | Deno lock (for edge functions)             |
-| `.env` / `.env.local` | Secrets (gitignored)                       |
-| `.mcp.json`           | MCP server config (gitignored)             |
+| `AGENTS.md`           | Agent configuration reference                 |
+| `vercel.json`         | Vercel deployment routing                     |
+| `package.json`        | Root npm config                               |
+| `deno.lock`           | Deno lock (for edge functions)                |
+| `.env` / `.env.local` | Secrets (gitignored)                          |
+| `.mcp.json`           | MCP server config (gitignored)                |
 
 ---
 
 ## Infrastructure Quick Reference
 
-| Resource            | Value                                      |
-| ------------------- | ------------------------------------------ |
-| Supabase project    | `dbdzzhshmigewyprahej`                     |
-| GCP project         | `agchain`                                  |
-| LLM provider        | Vertex AI Claude (not direct Anthropic)    |
-| Embedding model     | Vertex AI `text-embedding-004` (768-dim)   |
-| Default Claude model | `claude-sonnet-4-5-20250929`              |
-| Vertex region       | `global`                                   |
-| Frontend deploy     | Vercel                                     |
-| Pipeline box        | Ubuntu (FastAPI + dlt + dbt + ArangoDB)    |
+| Resource             | Value                                    |
+| -------------------- | ---------------------------------------- |
+| Supabase project     | `dbdzzhshmigewyprahej`                   |
+| GCP project          | `agchain`                                |
+| LLM provider         | Vertex AI Claude (not direct Anthropic)  |
+| Embedding model      | Vertex AI `text-embedding-004` (768-dim) |
+| Default Claude model | `claude-sonnet-4-5-20250929`             |
+| Vertex region        | `global`                                 |
+| Frontend deploy      | Vercel                                   |
+| Pipeline box         | Ubuntu (FastAPI + dlt + dbt + ArangoDB)  |
