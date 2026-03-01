@@ -1,4 +1,5 @@
 import {
+  IconAdjustments,
   IconBrain,
   IconPalette,
   IconUserCircle,
@@ -40,6 +41,13 @@ export const SETTINGS_NAV: SettingsNavGroup[] = [
       { id: 'admin-design', label: 'Design Standards', icon: IconPalette, path: '/app/settings/admin/design' },
     ],
   },
+  {
+    id: 'designs',
+    label: 'Designs',
+    items: [
+      { id: 'designs-instance', label: 'Instance Config', icon: IconAdjustments, path: '/app/settings/admin/instance-config' },
+    ],
+  },
 ];
 
 /** Flat list of all nav items for lookup */
@@ -55,6 +63,7 @@ const ADMIN_PATH_ALIASES: Array<{ prefix: string; targetId: string }> = [
   { prefix: '/app/settings/admin/integration-catalog', targetId: 'admin-integrations' },
   { prefix: '/app/settings/admin/design-shell', targetId: 'admin-design' },
   { prefix: '/app/settings/admin/design-icons', targetId: 'admin-design' },
+  { prefix: '/app/settings/admin/instance-config', targetId: 'designs-instance' },
 ];
 
 /** Find the nav item whose path matches a pathname */

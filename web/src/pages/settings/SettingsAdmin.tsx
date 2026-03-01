@@ -34,6 +34,7 @@ import { coerceTextInputValue } from '@/lib/input-value';
 import { styleTokens } from '@/lib/styleTokens';
 import { cn } from '@/lib/utils';
 import { edgeFetch } from '@/lib/edge';
+import { InstanceConfigPanel } from './InstanceConfigPanel';
 import { IntegrationCatalogPanel } from './IntegrationCatalogPanel';
 import { ServicesPanel } from './ServicesPanel';
 
@@ -148,7 +149,7 @@ const APP_SHELL_SPEC_ROWS: AppShellSpecRow[] = [
   },
 ];
 
-const CATEGORY_IDS = ['models', 'worker', 'upload', 'services', 'integration-catalog', 'design', 'design-shell', 'design-icons', 'audit'] as const;
+const CATEGORY_IDS = ['models', 'worker', 'upload', 'services', 'integration-catalog', 'design', 'design-shell', 'design-icons', 'audit', 'instance-config'] as const;
 type CategoryId = (typeof CATEGORY_IDS)[number];
 
 type Category = {
@@ -208,10 +209,15 @@ const CATEGORIES: Category[] = [
     label: 'Audit History',
     match: () => false,
   },
+  {
+    id: 'instance-config',
+    label: 'Instance Config',
+    match: () => false,
+  },
 ];
 
 type AdminSubTabGroup = {
-  id: 'runtime' | 'operations' | 'design';
+  id: 'runtime' | 'operations' | 'design' | 'designs';
   label: string;
   tabs: Array<{ id: CategoryId; label: string }>;
 };
@@ -241,6 +247,13 @@ const ADMIN_SUBTAB_GROUPS: AdminSubTabGroup[] = [
       { id: 'design', label: 'Design Standards' },
       { id: 'design-shell', label: 'App Shell Specs' },
       { id: 'design-icons', label: 'Icon Inventory' },
+    ],
+  },
+  {
+    id: 'designs',
+    label: 'Designs',
+    tabs: [
+      { id: 'instance-config', label: 'Instance Config' },
     ],
   },
 ];
@@ -1459,6 +1472,9 @@ export default function SettingsAdmin() {
             )}
             {selectedCategory === 'integration-catalog' && (
               <IntegrationCatalogPanel />
+            )}
+            {selectedCategory === 'instance-config' && (
+              <InstanceConfigPanel />
             )}
             {selectedCategory === 'design' && (
               <div className="space-y-8">

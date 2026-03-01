@@ -62,8 +62,11 @@ export default function SettingsLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const isSuperuser = useSuperuserProbe() === true;
-  const primaryGroups = SETTINGS_NAV.filter((g) => g.id !== 'admin');
-  const adminGroup = isSuperuser ? SETTINGS_NAV.find((g) => g.id === 'admin') : null;
+  const SUPERUSER_GROUP_IDS = new Set(['admin', 'designs']);
+  const primaryGroups = SETTINGS_NAV.filter((g) => !SUPERUSER_GROUP_IDS.has(g.id));
+  const superuserGroups = isSuperuser
+    ? SETTINGS_NAV.filter((g) => SUPERUSER_GROUP_IDS.has(g.id))
+    : [];
 
   const activeItem = useMemo(
     () => findNavItemByPath(location.pathname),
@@ -95,13 +98,16 @@ export default function SettingsLayout() {
             ))}
           </div>
 
-          {adminGroup && (
-            <div className="mt-5 border-t border-sidebar-border pt-4">
-              <NavGroup
-                group={adminGroup}
-                activeId={activeId}
-                onNavigate={(path) => navigate(path)}
-              />
+          {superuserGroups.length > 0 && (
+            <div className="mt-5 border-t border-sidebar-border pt-4 space-y-5">
+              {superuserGroups.map((group) => (
+                <NavGroup
+                  key={group.id}
+                  group={group}
+                  activeId={activeId}
+                  onNavigate={(path) => navigate(path)}
+                />
+              ))}
             </div>
           )}
         </nav>
