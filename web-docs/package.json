@@ -1,0 +1,11 @@
+{
+  "private": true,
+  "scripts": {
+    "dev": "mint dev",
+    "build": "mint build",
+    "check": "mint broken-links && mint validate"
+  },
+  "devDependencies": {
+    "mintlify": "^4.2.391"
+  }
+}

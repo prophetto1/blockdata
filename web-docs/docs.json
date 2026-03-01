@@ -1,0 +1,65 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "name": "Blockdata",
+  "theme": "mint",
+  "description": "Documentation for the Blockdata platform — schema-driven structured extraction, pipeline orchestration, and data management.",
+  "logo": {
+    "light": "/images/logo-light.png",
+    "dark": "/images/logo-dark.png",
+    "href": "https://blockdata.mintlify.app"
+  },
+  "favicon": "/images/favicon.ico",
+  "colors": {
+    "primary": "#6366f1",
+    "light": "#818cf8",
+    "dark": "#4f46e5"
+  },
+  "appearance": {
+    "default": "system"
+  },
+  "fonts": {
+    "body": {
+      "family": "IBM Plex Sans"
+    }
+  },
+  "styling": {
+    "eyebrows": "breadcrumbs",
+    "codeblocks": "system"
+  },
+  "icons": {
+    "library": "lucide"
+  },
+  "search": {
+    "prompt": "Search docs..."
+  },
+  "seo": {
+    "indexing": "all"
+  },
+  "metadata": {
+    "timestamp": true
+  },
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Guides",
+        "groups": [
+          {
+            "group": "Getting started",
+            "pages": [
+              "index",
+              "guides/quickstart"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "navbar": {
+    "links": [
+      {
+        "label": "App",
+        "href": "https://blockdata.run"
+      }
+    ]
+  }
+}
