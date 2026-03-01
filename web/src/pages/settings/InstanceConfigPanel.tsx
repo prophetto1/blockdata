@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Field } from '@ark-ui/react/field';
 import { NumberInput } from '@ark-ui/react/number-input';
 import { PasswordInput } from '@ark-ui/react/password-input';
@@ -10,6 +10,8 @@ import {
   IconEye,
   IconEyeOff,
 } from '@tabler/icons-react';
+import { Button } from '@/components/ui/button';
+import { edgeFetch } from '@/lib/edge';
 import { cn } from '@/lib/utils';
 
 /* ------------------------------------------------------------------ */
@@ -34,6 +36,28 @@ type SectionDef = {
   settings: SettingDef[];
 };
 
+type PolicyRow = {
+  policy_key: string;
+  value: unknown;
+  value_type: string;
+  description: string | null;
+  updated_at: string;
+  updated_by: string | null;
+};
+
+/* ------------------------------------------------------------------ */
+/*  Instance config key prefixes (filter from full policy list)        */
+/* ------------------------------------------------------------------ */
+
+const INSTANCE_PREFIXES = [
+  'platform.', 'jobs.', 'workers.', 'registries.',
+  'alerts.', 'observability.', 'secret_storage.',
+];
+
+function isInstanceKey(key: string): boolean {
+  return INSTANCE_PREFIXES.some((p) => key.startsWith(p));
+}
+
 /* ------------------------------------------------------------------ */
 /*  Shared input class (matches SettingsAdmin pattern)                 */
 /* ------------------------------------------------------------------ */
@@ -42,7 +66,7 @@ const inputClass =
   'h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring';
 
 /* ------------------------------------------------------------------ */
-/*  Static section definitions (mirrors Windmill's instanceSettings)   */
+/*  Static section definitions                                         */
 /* ------------------------------------------------------------------ */
 
 const SECTIONS: SectionDef[] = [
@@ -262,6 +286,9 @@ const SECTIONS: SectionDef[] = [
   },
 ];
 
+/** All instance config keys from SECTIONS */
+const ALL_INSTANCE_KEYS = new Set(SECTIONS.flatMap((s) => s.settings.map((st) => st.key)));
+
 /* ------------------------------------------------------------------ */
 /*  Setting card component                                             */
 /* ------------------------------------------------------------------ */
@@ -270,10 +297,16 @@ function SettingCard({
   setting,
   value,
   onChange,
+  dirty,
+  saving,
+  onSave,
 }: {
   setting: SettingDef;
   value: unknown;
   onChange: (key: string, val: unknown) => void;
+  dirty: boolean;
+  saving: boolean;
+  onSave: (key: string) => void;
 }) {
   const selectCollection = useMemo(() => {
     if (setting.fieldType !== 'select' || !setting.selectItems) return null;
@@ -429,7 +462,10 @@ function SettingCard({
   };
 
   return (
-    <div className="rounded-lg border border-border bg-card p-4">
+    <div className={cn(
+      'rounded-lg border bg-card p-4',
+      dirty ? 'border-primary/40' : 'border-border',
+    )}>
       <div className={cn(
         'flex gap-4',
         setting.fieldType === 'textarea' ? 'flex-col' : 'items-start justify-between',
@@ -445,6 +481,18 @@ function SettingCard({
           {renderInput()}
         </div>
       </div>
+      {dirty && (
+        <div className="mt-2 flex justify-end">
+          <Button
+            size="sm"
+            className="h-7 px-3 text-xs"
+            disabled={saving}
+            onClick={() => onSave(setting.key)}
+          >
+            {saving ? 'Saving...' : 'Save'}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
@@ -455,6 +503,14 @@ function SettingCard({
 
 export function InstanceConfigPanel() {
   const [activeSection, setActiveSection] = useState(SECTIONS[0].id);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [status, setStatus] = useState<{ kind: 'success' | 'error'; message: string } | null>(null);
+  const [savingKey, setSavingKey] = useState<string | null>(null);
+
+  // Server values (last loaded from DB)
+  const [serverValues, setServerValues] = useState<Record<string, unknown>>({});
+  // Local draft values (what the user sees / edits)
   const [values, setValues] = useState<Record<string, unknown>>(() => {
     const initial: Record<string, unknown> = {};
     for (const section of SECTIONS) {
@@ -465,8 +521,113 @@ export function InstanceConfigPanel() {
     return initial;
   });
 
+  const dirtyKeys = useMemo(() => {
+    const dirty = new Set<string>();
+    for (const key of ALL_INSTANCE_KEYS) {
+      if (JSON.stringify(values[key]) !== JSON.stringify(serverValues[key])) {
+        dirty.add(key);
+      }
+    }
+    return dirty;
+  }, [values, serverValues]);
+
+  const loadConfig = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const resp = await edgeFetch('admin-config', { method: 'GET' });
+      const text = await resp.text();
+      let payload: { policies?: PolicyRow[]; error?: string } = {};
+      try { payload = text ? JSON.parse(text) : {}; } catch { /* fallback */ }
+      if (!resp.ok) throw new Error(payload.error ?? text ?? `HTTP ${resp.status}`);
+
+      const policies = Array.isArray(payload.policies) ? payload.policies : [];
+      const instancePolicies = policies.filter((p) => isInstanceKey(p.policy_key));
+
+      const loaded: Record<string, unknown> = {};
+      // Start from defaults
+      for (const section of SECTIONS) {
+        for (const setting of section.settings) {
+          loaded[setting.key] = setting.defaultValue;
+        }
+      }
+      // Overlay DB values
+      for (const row of instancePolicies) {
+        if (ALL_INSTANCE_KEYS.has(row.policy_key)) {
+          loaded[row.policy_key] = row.value;
+        }
+      }
+
+      setServerValues({ ...loaded });
+      setValues({ ...loaded });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { void loadConfig(); }, [loadConfig]);
+
   const handleChange = (key: string, val: unknown) => {
     setValues((prev) => ({ ...prev, [key]: val }));
+  };
+
+  const handleSave = async (key: string) => {
+    setStatus(null);
+    setSavingKey(key);
+    try {
+      const resp = await edgeFetch('admin-config', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          policy_key: key,
+          value: values[key],
+          reason: 'Instance config update',
+        }),
+      });
+      const text = await resp.text();
+      let payload: { ok?: boolean; error?: string } = {};
+      try { payload = text ? JSON.parse(text) : {}; } catch { /* fallback */ }
+      if (!resp.ok) throw new Error(payload.error ?? text ?? `HTTP ${resp.status}`);
+
+      // Sync server value
+      setServerValues((prev) => ({ ...prev, [key]: values[key] }));
+      setStatus({ kind: 'success', message: `Saved ${key}` });
+    } catch (e) {
+      setStatus({ kind: 'error', message: e instanceof Error ? e.message : String(e) });
+    } finally {
+      setSavingKey(null);
+    }
+  };
+
+  const handleSaveAll = async () => {
+    if (dirtyKeys.size === 0) return;
+    setStatus(null);
+    setSavingKey('__all__');
+    try {
+      const updates = [...dirtyKeys].map((key) => ({
+        policy_key: key,
+        value: values[key],
+        reason: 'Instance config bulk update',
+      }));
+      const resp = await edgeFetch('admin-config', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ updates }),
+      });
+      const text = await resp.text();
+      let payload: { ok?: boolean; error?: string } = {};
+      try { payload = text ? JSON.parse(text) : {}; } catch { /* fallback */ }
+      if (!resp.ok) throw new Error(payload.error ?? text ?? `HTTP ${resp.status}`);
+
+      setServerValues({ ...values });
+      setStatus({ kind: 'success', message: `Saved ${updates.length} setting${updates.length !== 1 ? 's' : ''}` });
+    } catch (e) {
+      setStatus({ kind: 'error', message: e instanceof Error ? e.message : String(e) });
+    } finally {
+      setSavingKey(null);
+    }
   };
 
   const currentSection = SECTIONS.find((s) => s.id === activeSection) ?? SECTIONS[0];
@@ -476,39 +637,70 @@ export function InstanceConfigPanel() {
       {/* Section sidebar */}
       <nav className="w-44 shrink-0 overflow-y-auto border-r border-border pr-2">
         <ul className="space-y-0.5 py-1">
-          {SECTIONS.map((section) => (
-            <li key={section.id}>
-              <button
-                type="button"
-                onClick={() => setActiveSection(section.id)}
-                className={cn(
-                  'flex w-full items-center rounded-md px-2.5 py-1.5 text-sm font-medium transition-colors',
-                  section.id === activeSection
-                    ? 'bg-accent text-accent-foreground'
-                    : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground',
-                )}
-              >
-                {section.label}
-              </button>
-            </li>
-          ))}
+          {SECTIONS.map((section) => {
+            const sectionDirtyCount = section.settings.filter((s) => dirtyKeys.has(s.key)).length;
+            return (
+              <li key={section.id}>
+                <button
+                  type="button"
+                  onClick={() => setActiveSection(section.id)}
+                  className={cn(
+                    'flex w-full items-center justify-between rounded-md px-2.5 py-1.5 text-sm font-medium transition-colors',
+                    section.id === activeSection
+                      ? 'bg-accent text-accent-foreground'
+                      : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground',
+                  )}
+                >
+                  <span>{section.label}</span>
+                  {sectionDirtyCount > 0 && (
+                    <span className="ml-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary/20 px-1 text-[10px] font-semibold text-primary">
+                      {sectionDirtyCount}
+                    </span>
+                  )}
+                </button>
+              </li>
+            );
+          })}
         </ul>
 
-        {/* Sample-only indicator */}
-        <div className="mt-6 rounded-md border border-dashed border-amber-500/40 bg-amber-500/5 px-2.5 py-2">
-          <p className="text-[11px] font-medium text-amber-600 dark:text-amber-400">Sample only</p>
-          <p className="mt-0.5 text-[10px] text-muted-foreground">
-            Settings are interactive but not persisted. Design reference for future wiring.
-          </p>
-        </div>
+        {dirtyKeys.size > 0 && (
+          <div className="mt-4 px-1">
+            <Button
+              size="sm"
+              className="w-full text-xs"
+              disabled={savingKey === '__all__'}
+              onClick={() => void handleSaveAll()}
+            >
+              {savingKey === '__all__' ? 'Saving...' : `Save all (${dirtyKeys.size})`}
+            </Button>
+          </div>
+        )}
       </nav>
 
       {/* Settings content */}
       <div className="min-w-0 flex-1 overflow-y-auto pl-6">
+        {status && (
+          <div className={cn(
+            'mb-3 rounded-md border p-2 text-xs',
+            status.kind === 'error'
+              ? 'border-red-400/40 bg-red-500/10 text-red-200'
+              : 'border-emerald-400/40 bg-emerald-500/10 text-emerald-100',
+          )}>
+            {status.message}
+          </div>
+        )}
+
+        {error && (
+          <div className="mb-3 rounded-md border border-red-400/40 bg-red-500/10 p-2 text-xs text-red-200">
+            {error}
+          </div>
+        )}
+
         <div className="mb-4">
           <h2 className="text-lg font-semibold">{currentSection.label}</h2>
           <p className="text-xs text-muted-foreground">
             {currentSection.settings.length} setting{currentSection.settings.length !== 1 ? 's' : ''}
+            {loading && ' — loading...'}
           </p>
         </div>
 
@@ -519,6 +711,9 @@ export function InstanceConfigPanel() {
               setting={setting}
               value={values[setting.key]}
               onChange={handleChange}
+              dirty={dirtyKeys.has(setting.key)}
+              saving={savingKey === setting.key}
+              onSave={(k) => void handleSave(k)}
             />
           ))}
         </div>

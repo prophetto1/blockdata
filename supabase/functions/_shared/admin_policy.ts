@@ -430,6 +430,18 @@ export function applyPolicyValue(
     policy.upload.parser_artifact_source_types = parsed;
     return true;
   }
+
+  // Instance config keys — stored in admin_runtime_policy but not part of
+  // the typed RuntimePolicy object. Passthrough: the edge function already
+  // validates value_type against the DB row, so no extra validation needed.
+  const INSTANCE_CONFIG_PREFIXES = [
+    "platform.", "jobs.", "workers.", "registries.",
+    "alerts.", "observability.", "secret_storage.",
+  ];
+  if (INSTANCE_CONFIG_PREFIXES.some((p) => key.startsWith(p))) {
+    return true;
+  }
+
   return false;
 }
 
