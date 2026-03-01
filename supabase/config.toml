@@ -368,6 +368,66 @@ deno_version = 2
 # [edge_runtime.secrets]
 # secret_key = "env(SECRET_VALUE)"
 
+# Edge function JWT verification overrides.
+# Functions that enforce auth internally (requireUserId / requireSuperuser)
+# must disable the Supabase gateway JWT check (ES256 JWT incompatibility).
+[functions.worker]
+verify_jwt = false
+
+[functions.admin-config]
+verify_jwt = false
+
+[functions.admin-integration-catalog]
+verify_jwt = false
+
+[functions.admin-services]
+verify_jwt = false
+
+[functions.admin-database-browser]
+verify_jwt = false
+
+[functions.user-api-keys]
+verify_jwt = false
+
+[functions.ingest]
+verify_jwt = false
+
+[functions.trigger-parse]
+verify_jwt = false
+
+[functions.conversion-complete]
+verify_jwt = false
+
+[functions.runs]
+verify_jwt = false
+
+[functions.schemas]
+verify_jwt = false
+
+[functions.export-jsonl]
+verify_jwt = false
+
+[functions.generate-citations]
+verify_jwt = false
+
+[functions.agent-config]
+verify_jwt = false
+
+[functions.assistant-chat]
+verify_jwt = false
+
+[functions.flows]
+verify_jwt = false
+
+[functions.upload-policy]
+verify_jwt = false
+
+[functions.test-api-key]
+verify_jwt = false
+
+[functions.provider-connections]
+verify_jwt = false
+
 [analytics]
 enabled = true
 port = 54327

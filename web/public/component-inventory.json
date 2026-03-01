@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-02-28T16:06:53.917Z",
+  "generatedAt": "2026-03-01T04:56:56.817Z",
   "scope": "auth",
   "pages": [
     {
@@ -1986,10 +1986,13 @@
       ]
     },
     {
-      "page": "src/pages/settings/IntegrationCatalogPanel.tsx",
-      "componentCount": 2,
+      "page": "src/pages/settings/InstanceConfigPanel.tsx",
+      "componentCount": 35,
       "categoryCounts": {
-        "local-components": 2
+        "local-components": 1,
+        "ark-ui": 29,
+        "tabler-icons": 4,
+        "in-file component": 1
       },
       "components": [
         {
@@ -2000,6 +2003,395 @@
           "importedAs": "Button",
           "category": "local-components",
           "definition": "Button comes from @/components/ui/button (named import of Button)"
+        },
+        {
+          "component": "Field",
+          "usedAs": "Field.Input",
+          "source": "@ark-ui/react/field",
+          "importKind": "named",
+          "importedAs": "Field",
+          "category": "ark-ui",
+          "definition": "Field.Input comes from @ark-ui/react/field (named import of Field)"
+        },
+        {
+          "component": "Field",
+          "usedAs": "Field.Root",
+          "source": "@ark-ui/react/field",
+          "importKind": "named",
+          "importedAs": "Field",
+          "category": "ark-ui",
+          "definition": "Field.Root comes from @ark-ui/react/field (named import of Field)"
+        },
+        {
+          "component": "Field",
+          "usedAs": "Field.Textarea",
+          "source": "@ark-ui/react/field",
+          "importKind": "named",
+          "importedAs": "Field",
+          "category": "ark-ui",
+          "definition": "Field.Textarea comes from @ark-ui/react/field (named import of Field)"
+        },
+        {
+          "component": "IconCheck",
+          "usedAs": "IconCheck",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconCheck",
+          "category": "tabler-icons",
+          "definition": "IconCheck comes from @tabler/icons-react (named import of IconCheck)"
+        },
+        {
+          "component": "IconChevronDown",
+          "usedAs": "IconChevronDown",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconChevronDown",
+          "category": "tabler-icons",
+          "definition": "IconChevronDown comes from @tabler/icons-react (named import of IconChevronDown)"
+        },
+        {
+          "component": "IconEye",
+          "usedAs": "IconEye",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconEye",
+          "category": "tabler-icons",
+          "definition": "IconEye comes from @tabler/icons-react (named import of IconEye)"
+        },
+        {
+          "component": "IconEyeOff",
+          "usedAs": "IconEyeOff",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconEyeOff",
+          "category": "tabler-icons",
+          "definition": "IconEyeOff comes from @tabler/icons-react (named import of IconEyeOff)"
+        },
+        {
+          "component": "NumberInput",
+          "usedAs": "NumberInput.Control",
+          "source": "@ark-ui/react/number-input",
+          "importKind": "named",
+          "importedAs": "NumberInput",
+          "category": "ark-ui",
+          "definition": "NumberInput.Control comes from @ark-ui/react/number-input (named import of NumberInput)"
+        },
+        {
+          "component": "NumberInput",
+          "usedAs": "NumberInput.DecrementTrigger",
+          "source": "@ark-ui/react/number-input",
+          "importKind": "named",
+          "importedAs": "NumberInput",
+          "category": "ark-ui",
+          "definition": "NumberInput.DecrementTrigger comes from @ark-ui/react/number-input (named import of NumberInput)"
+        },
+        {
+          "component": "NumberInput",
+          "usedAs": "NumberInput.IncrementTrigger",
+          "source": "@ark-ui/react/number-input",
+          "importKind": "named",
+          "importedAs": "NumberInput",
+          "category": "ark-ui",
+          "definition": "NumberInput.IncrementTrigger comes from @ark-ui/react/number-input (named import of NumberInput)"
+        },
+        {
+          "component": "NumberInput",
+          "usedAs": "NumberInput.Input",
+          "source": "@ark-ui/react/number-input",
+          "importKind": "named",
+          "importedAs": "NumberInput",
+          "category": "ark-ui",
+          "definition": "NumberInput.Input comes from @ark-ui/react/number-input (named import of NumberInput)"
+        },
+        {
+          "component": "NumberInput",
+          "usedAs": "NumberInput.Root",
+          "source": "@ark-ui/react/number-input",
+          "importKind": "named",
+          "importedAs": "NumberInput",
+          "category": "ark-ui",
+          "definition": "NumberInput.Root comes from @ark-ui/react/number-input (named import of NumberInput)"
+        },
+        {
+          "component": "PasswordInput",
+          "usedAs": "PasswordInput.Control",
+          "source": "@ark-ui/react/password-input",
+          "importKind": "named",
+          "importedAs": "PasswordInput",
+          "category": "ark-ui",
+          "definition": "PasswordInput.Control comes from @ark-ui/react/password-input (named import of PasswordInput)"
+        },
+        {
+          "component": "PasswordInput",
+          "usedAs": "PasswordInput.Indicator",
+          "source": "@ark-ui/react/password-input",
+          "importKind": "named",
+          "importedAs": "PasswordInput",
+          "category": "ark-ui",
+          "definition": "PasswordInput.Indicator comes from @ark-ui/react/password-input (named import of PasswordInput)"
+        },
+        {
+          "component": "PasswordInput",
+          "usedAs": "PasswordInput.Input",
+          "source": "@ark-ui/react/password-input",
+          "importKind": "named",
+          "importedAs": "PasswordInput",
+          "category": "ark-ui",
+          "definition": "PasswordInput.Input comes from @ark-ui/react/password-input (named import of PasswordInput)"
+        },
+        {
+          "component": "PasswordInput",
+          "usedAs": "PasswordInput.Root",
+          "source": "@ark-ui/react/password-input",
+          "importKind": "named",
+          "importedAs": "PasswordInput",
+          "category": "ark-ui",
+          "definition": "PasswordInput.Root comes from @ark-ui/react/password-input (named import of PasswordInput)"
+        },
+        {
+          "component": "PasswordInput",
+          "usedAs": "PasswordInput.VisibilityTrigger",
+          "source": "@ark-ui/react/password-input",
+          "importKind": "named",
+          "importedAs": "PasswordInput",
+          "category": "ark-ui",
+          "definition": "PasswordInput.VisibilityTrigger comes from @ark-ui/react/password-input (named import of PasswordInput)"
+        },
+        {
+          "component": "Select",
+          "usedAs": "Select.Content",
+          "source": "@ark-ui/react/select",
+          "importKind": "named",
+          "importedAs": "Select",
+          "category": "ark-ui",
+          "definition": "Select.Content comes from @ark-ui/react/select (named import of Select)"
+        },
+        {
+          "component": "Select",
+          "usedAs": "Select.Control",
+          "source": "@ark-ui/react/select",
+          "importKind": "named",
+          "importedAs": "Select",
+          "category": "ark-ui",
+          "definition": "Select.Control comes from @ark-ui/react/select (named import of Select)"
+        },
+        {
+          "component": "Select",
+          "usedAs": "Select.HiddenSelect",
+          "source": "@ark-ui/react/select",
+          "importKind": "named",
+          "importedAs": "Select",
+          "category": "ark-ui",
+          "definition": "Select.HiddenSelect comes from @ark-ui/react/select (named import of Select)"
+        },
+        {
+          "component": "Select",
+          "usedAs": "Select.Indicator",
+          "source": "@ark-ui/react/select",
+          "importKind": "named",
+          "importedAs": "Select",
+          "category": "ark-ui",
+          "definition": "Select.Indicator comes from @ark-ui/react/select (named import of Select)"
+        },
+        {
+          "component": "Select",
+          "usedAs": "Select.Item",
+          "source": "@ark-ui/react/select",
+          "importKind": "named",
+          "importedAs": "Select",
+          "category": "ark-ui",
+          "definition": "Select.Item comes from @ark-ui/react/select (named import of Select)"
+        },
+        {
+          "component": "Select",
+          "usedAs": "Select.ItemIndicator",
+          "source": "@ark-ui/react/select",
+          "importKind": "named",
+          "importedAs": "Select",
+          "category": "ark-ui",
+          "definition": "Select.ItemIndicator comes from @ark-ui/react/select (named import of Select)"
+        },
+        {
+          "component": "Select",
+          "usedAs": "Select.ItemText",
+          "source": "@ark-ui/react/select",
+          "importKind": "named",
+          "importedAs": "Select",
+          "category": "ark-ui",
+          "definition": "Select.ItemText comes from @ark-ui/react/select (named import of Select)"
+        },
+        {
+          "component": "Select",
+          "usedAs": "Select.Positioner",
+          "source": "@ark-ui/react/select",
+          "importKind": "named",
+          "importedAs": "Select",
+          "category": "ark-ui",
+          "definition": "Select.Positioner comes from @ark-ui/react/select (named import of Select)"
+        },
+        {
+          "component": "Select",
+          "usedAs": "Select.Root",
+          "source": "@ark-ui/react/select",
+          "importKind": "named",
+          "importedAs": "Select",
+          "category": "ark-ui",
+          "definition": "Select.Root comes from @ark-ui/react/select (named import of Select)"
+        },
+        {
+          "component": "Select",
+          "usedAs": "Select.Trigger",
+          "source": "@ark-ui/react/select",
+          "importKind": "named",
+          "importedAs": "Select",
+          "category": "ark-ui",
+          "definition": "Select.Trigger comes from @ark-ui/react/select (named import of Select)"
+        },
+        {
+          "component": "Select",
+          "usedAs": "Select.ValueText",
+          "source": "@ark-ui/react/select",
+          "importKind": "named",
+          "importedAs": "Select",
+          "category": "ark-ui",
+          "definition": "Select.ValueText comes from @ark-ui/react/select (named import of Select)"
+        },
+        {
+          "component": "SettingCard",
+          "usedAs": "SettingCard",
+          "source": "(in-file or unresolved)",
+          "importKind": null,
+          "importedAs": null,
+          "category": "in-file component",
+          "definition": "SettingCard is defined in the same page file"
+        },
+        {
+          "component": "Switch",
+          "usedAs": "Switch.Control",
+          "source": "@ark-ui/react/switch",
+          "importKind": "named",
+          "importedAs": "Switch",
+          "category": "ark-ui",
+          "definition": "Switch.Control comes from @ark-ui/react/switch (named import of Switch)"
+        },
+        {
+          "component": "Switch",
+          "usedAs": "Switch.HiddenInput",
+          "source": "@ark-ui/react/switch",
+          "importKind": "named",
+          "importedAs": "Switch",
+          "category": "ark-ui",
+          "definition": "Switch.HiddenInput comes from @ark-ui/react/switch (named import of Switch)"
+        },
+        {
+          "component": "Switch",
+          "usedAs": "Switch.Label",
+          "source": "@ark-ui/react/switch",
+          "importKind": "named",
+          "importedAs": "Switch",
+          "category": "ark-ui",
+          "definition": "Switch.Label comes from @ark-ui/react/switch (named import of Switch)"
+        },
+        {
+          "component": "Switch",
+          "usedAs": "Switch.Root",
+          "source": "@ark-ui/react/switch",
+          "importKind": "named",
+          "importedAs": "Switch",
+          "category": "ark-ui",
+          "definition": "Switch.Root comes from @ark-ui/react/switch (named import of Switch)"
+        },
+        {
+          "component": "Switch",
+          "usedAs": "Switch.Thumb",
+          "source": "@ark-ui/react/switch",
+          "importKind": "named",
+          "importedAs": "Switch",
+          "category": "ark-ui",
+          "definition": "Switch.Thumb comes from @ark-ui/react/switch (named import of Switch)"
+        }
+      ]
+    },
+    {
+      "page": "src/pages/settings/IntegrationCatalogPanel.tsx",
+      "componentCount": 3,
+      "categoryCounts": {
+        "local-components": 2,
+        "external-package": 1
+      },
+      "components": [
+        {
+          "component": "Button",
+          "usedAs": "Button",
+          "source": "@/components/ui/button",
+          "importKind": "named",
+          "importedAs": "Button",
+          "category": "local-components",
+          "definition": "Button comes from @/components/ui/button (named import of Button)"
+        },
+        {
+          "component": "DataGrid",
+          "usedAs": "DataGrid",
+          "source": "react-data-grid",
+          "importKind": "named",
+          "importedAs": "DataGrid",
+          "category": "external-package",
+          "definition": "DataGrid comes from react-data-grid (named import of DataGrid)"
+        },
+        {
+          "component": "ErrorAlert",
+          "usedAs": "ErrorAlert",
+          "source": "@/components/common/ErrorAlert",
+          "importKind": "named",
+          "importedAs": "ErrorAlert",
+          "category": "local-components",
+          "definition": "ErrorAlert comes from @/components/common/ErrorAlert (named import of ErrorAlert)"
+        }
+      ]
+    },
+    {
+      "page": "src/pages/settings/IntegrationCatalogPanelTemp.test.tsx",
+      "componentCount": 1,
+      "categoryCounts": {
+        "relative-local": 1
+      },
+      "components": [
+        {
+          "component": "IntegrationCatalogPanelTemp",
+          "usedAs": "IntegrationCatalogPanelTemp",
+          "source": "./IntegrationCatalogPanelTemp",
+          "importKind": "named",
+          "importedAs": "IntegrationCatalogPanelTemp",
+          "category": "relative-local",
+          "definition": "IntegrationCatalogPanelTemp comes from ./IntegrationCatalogPanelTemp (named import of IntegrationCatalogPanelTemp)"
+        }
+      ]
+    },
+    {
+      "page": "src/pages/settings/IntegrationCatalogPanelTemp.tsx",
+      "componentCount": 3,
+      "categoryCounts": {
+        "local-components": 2,
+        "external-package": 1
+      },
+      "components": [
+        {
+          "component": "Button",
+          "usedAs": "Button",
+          "source": "@/components/ui/button",
+          "importKind": "named",
+          "importedAs": "Button",
+          "category": "local-components",
+          "definition": "Button comes from @/components/ui/button (named import of Button)"
+        },
+        {
+          "component": "DataGrid",
+          "usedAs": "DataGrid",
+          "source": "react-data-grid",
+          "importKind": "default",
+          "importedAs": "default",
+          "category": "external-package",
+          "definition": "DataGrid comes from react-data-grid (default import of default)"
         },
         {
           "component": "ErrorAlert",
@@ -2308,12 +2700,12 @@
     },
     {
       "page": "src/pages/settings/SettingsAdmin.tsx",
-      "componentCount": 33,
+      "componentCount": 35,
       "categoryCounts": {
         "local-components": 3,
         "in-file component": 5,
         "ark-ui": 22,
-        "relative-local": 2,
+        "relative-local": 4,
         "external-package": 1
       },
       "components": [
@@ -2426,6 +2818,15 @@
           "definition": "IconStandardsPreview is defined in the same page file"
         },
         {
+          "component": "InstanceConfigPanel",
+          "usedAs": "InstanceConfigPanel",
+          "source": "./InstanceConfigPanel",
+          "importKind": "named",
+          "importedAs": "InstanceConfigPanel",
+          "category": "relative-local",
+          "definition": "InstanceConfigPanel comes from ./InstanceConfigPanel (named import of InstanceConfigPanel)"
+        },
+        {
           "component": "IntegrationCatalogPanel",
           "usedAs": "IntegrationCatalogPanel",
           "source": "./IntegrationCatalogPanel",
@@ -2433,6 +2834,15 @@
           "importedAs": "IntegrationCatalogPanel",
           "category": "relative-local",
           "definition": "IntegrationCatalogPanel comes from ./IntegrationCatalogPanel (named import of IntegrationCatalogPanel)"
+        },
+        {
+          "component": "IntegrationCatalogPanelTemp",
+          "usedAs": "IntegrationCatalogPanelTemp",
+          "source": "./IntegrationCatalogPanelTemp",
+          "importKind": "named",
+          "importedAs": "IntegrationCatalogPanelTemp",
+          "category": "relative-local",
+          "definition": "IntegrationCatalogPanelTemp comes from ./IntegrationCatalogPanelTemp (named import of IntegrationCatalogPanelTemp)"
         },
         {
           "component": "Navigate",
@@ -3452,13 +3862,13 @@
       ]
     }
   ],
-  "totalComponentUsages": 352,
+  "totalComponentUsages": 394,
   "categoryTotals": {
-    "external-package": 11,
-    "local-components": 110,
-    "tabler-icons": 70,
-    "ark-ui": 141,
-    "in-file component": 10,
-    "relative-local": 10
+    "external-package": 13,
+    "local-components": 113,
+    "tabler-icons": 74,
+    "ark-ui": 170,
+    "in-file component": 11,
+    "relative-local": 13
   }
 }

@@ -22,6 +22,7 @@ execution, and export.
 - `user-api-keys`: Encrypted storage for per-user provider API keys.
 - `admin-config`: Superuser-only admin runtime policy management.
 - `admin-integration-catalog`: Superuser-only integration catalog sync and mapping management (Kestra-compatible).
+- `admin-database-browser`: Superuser-only database browser API for table/schema discovery and read-only row inspection.
 - `agent-config`: Returns agent catalog + per-user agent configuration; computes
   readiness based on saved keys/connections (config-first).
 - `provider-connections`: Stores non-key provider connections (v1: Vertex AI

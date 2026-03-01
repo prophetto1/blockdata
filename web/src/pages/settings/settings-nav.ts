@@ -1,9 +1,9 @@
 import {
   IconAdjustments,
   IconBrain,
+  IconNetwork,
   IconPalette,
   IconUserCircle,
-  IconCpu,
   IconServer,
   IconPlug,
 } from '@tabler/icons-react';
@@ -35,10 +35,9 @@ export const SETTINGS_NAV: SettingsNavGroup[] = [
     label: 'Superuser',
     items: [
       { id: 'ai-api', label: 'AI Stack', icon: IconBrain, path: '/app/settings/ai' },
-      { id: 'admin-models', label: 'Runtime Policy', icon: IconCpu, path: '/app/settings/admin/models' },
       { id: 'admin-services', label: 'Services', icon: IconServer, path: '/app/settings/admin/services' },
-      { id: 'admin-integrations', label: 'Integration Catalog', icon: IconPlug, path: '/app/settings/admin/integration-catalog' },
-      { id: 'admin-integrations-temp', label: 'Integration Catalog - Temp', icon: IconPlug, path: '/app/settings/admin/integration-catalog-temp' },
+      { id: 'admin-platform', label: 'Platform', icon: IconNetwork, path: '/app/settings/admin/platform-config' },
+      { id: 'admin-integrations-temp', label: 'Integration Catalog', icon: IconPlug, path: '/app/settings/admin/integration-catalog-temp' },
       { id: 'admin-design', label: 'Design Standards', icon: IconPalette, path: '/app/settings/admin/design' },
     ],
   },
@@ -58,10 +57,8 @@ const NAV_ITEM_BY_ID = new Map(ALL_NAV_ITEMS.map((item) => [item.id, item] as co
 const ADMIN_PATH_ALIASES: Array<{ prefix: string; targetId: string }> = [
   { prefix: '/app/settings/model-roles', targetId: 'ai-api' },
   { prefix: '/app/settings/mcp', targetId: 'ai-api' },
-  { prefix: '/app/settings/admin/worker', targetId: 'admin-models' },
-  { prefix: '/app/settings/admin/upload', targetId: 'admin-models' },
+  { prefix: '/app/settings/admin/platform-config', targetId: 'admin-platform' },
   { prefix: '/app/settings/admin/audit', targetId: 'admin-services' },
-  { prefix: '/app/settings/admin/integration-catalog', targetId: 'admin-integrations' },
   { prefix: '/app/settings/admin/integration-catalog-temp', targetId: 'admin-integrations-temp' },
   { prefix: '/app/settings/admin/design-shell', targetId: 'admin-design' },
   { prefix: '/app/settings/admin/design-icons', targetId: 'admin-design' },

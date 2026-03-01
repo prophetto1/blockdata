@@ -1,11 +1,8 @@
 import { Field } from '@ark-ui/react/field';
-import { NumberInput } from '@ark-ui/react/number-input';
-import { Switch } from '@ark-ui/react/switch';
-import { TagsInput } from '@ark-ui/react/tags-input';
 import * as TablerIcons from '@tabler/icons-react';
 import { IconAlertTriangle, IconDatabase, IconSparkles } from '@tabler/icons-react';
 import { useEffect, useMemo, useState } from 'react';
-import { Navigate, useNavigate, useParams } from 'react-router-dom';
+import { Navigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { AppIcon } from '@/components/ui/app-icon';
 import { ErrorAlert } from '@/components/common/ErrorAlert';
@@ -30,26 +27,15 @@ import {
   type FontWeightToken,
 } from '@/lib/font-contract';
 import { COLOR_CONTRACT_GROUPS, type ColorPair } from '@/lib/color-contract';
-import { coerceTextInputValue } from '@/lib/input-value';
 import { styleTokens } from '@/lib/styleTokens';
 import { cn } from '@/lib/utils';
 import { edgeFetch } from '@/lib/edge';
 import { InstanceConfigPanel } from './InstanceConfigPanel';
 import { IntegrationCatalogPanel } from './IntegrationCatalogPanel';
 import { IntegrationCatalogPanelTemp } from './IntegrationCatalogPanelTemp';
+import { PlatformConfigPanel } from './PlatformConfigPanel';
 import { ServicesPanel } from './ServicesPanel';
-import { CATEGORY_IDS, findAdminSubTabGroup, type CategoryId } from './settings-tabs';
-
-type PolicyValueType = 'boolean' | 'integer' | 'number' | 'string' | 'object' | 'array';
-
-type PolicyRow = {
-  policy_key: string;
-  value: unknown;
-  value_type: PolicyValueType;
-  description: string | null;
-  updated_at: string;
-  updated_by: string | null;
-};
+import { CATEGORY_IDS, type CategoryId } from './settings-tabs';
 
 type AuditRow = {
   audit_id: number;
@@ -63,7 +49,6 @@ type AuditRow = {
 
 type AdminConfigResponse = {
   superuser: { user_id: string; email: string };
-  policies: PolicyRow[];
   audit: AuditRow[];
 };
 
@@ -151,10 +136,33 @@ const APP_SHELL_SPEC_ROWS: AppShellSpecRow[] = [
   },
 ];
 
+type PageLayoutRule = {
+  rule: string;
+  detail: string;
+};
+
+const PAGE_LAYOUT_RULES: PageLayoutRule[] = [
+  {
+    rule: 'Header title only',
+    detail: 'Each admin page frame shows the page title in the header bar. No group label pills, no sub-tab buttons, no separator below the header.',
+  },
+  {
+    rule: 'Sidebar owns navigation',
+    detail: 'The settings second rail (left nav) is the sole navigation surface. Peer pages within a group are listed there — never duplicated inside the content area.',
+  },
+  {
+    rule: 'No redundant context badges',
+    detail: 'Group names (Runtime, Operations, Design) appear only in the sidebar group headers, not repeated as pills or breadcrumbs inside the page.',
+  },
+  {
+    rule: 'Full-bleed content',
+    detail: 'After the header, the content area fills all remaining vertical space with standard padding (p-3 md:p-4). No intermediate chrome between header and content.',
+  },
+];
+
 type Category = {
   id: CategoryId;
   label: string;
-  match: (policyKey: string) => boolean;
 };
 
 type InlineStatus = {
@@ -163,61 +171,14 @@ type InlineStatus = {
 };
 
 const CATEGORIES: Category[] = [
-  {
-    id: 'models',
-    label: 'Models',
-    match: (key) => key.startsWith('models.'),
-  },
-  {
-    id: 'worker',
-    label: 'Worker',
-    match: (key) => key.startsWith('worker.'),
-  },
-  {
-    id: 'upload',
-    label: 'Upload',
-    match: (key) => key.startsWith('upload.'),
-  },
-  {
-    id: 'services',
-    label: 'Services',
-    match: () => false,
-  },
-  {
-    id: 'integration-catalog',
-    label: 'Integration Catalog',
-    match: () => false,
-  },
-  {
-    id: 'integration-catalog-temp',
-    label: 'Integration Catalog - Temp',
-    match: () => false,
-  },
-  {
-    id: 'design',
-    label: 'Design Standards',
-    match: () => false,
-  },
-  {
-    id: 'design-shell',
-    label: 'App Shell Specs',
-    match: () => false,
-  },
-  {
-    id: 'design-icons',
-    label: 'Icon Inventory',
-    match: () => false,
-  },
-  {
-    id: 'audit',
-    label: 'Audit History',
-    match: () => false,
-  },
-  {
-    id: 'instance-config',
-    label: 'Instance Config',
-    match: () => false,
-  },
+  { id: 'services', label: 'Services' },
+  { id: 'platform-config', label: 'Platform' },
+  { id: 'integration-catalog-temp', label: 'Integration Catalog' },
+  { id: 'design', label: 'Design Standards' },
+  { id: 'design-shell', label: 'App Shell Specs' },
+  { id: 'design-icons', label: 'Icon Inventory' },
+  { id: 'audit', label: 'Audit History' },
+  { id: 'instance-config', label: 'Instance Config' },
 ];
 
 function toCategoryId(value: string | undefined): CategoryId | null {
@@ -228,17 +189,6 @@ function toCategoryId(value: string | undefined): CategoryId | null {
 function formatTimestamp(value: string): string {
   const d = new Date(value);
   return Number.isNaN(d.getTime()) ? value : d.toLocaleString();
-}
-
-function parseJsonTextarea(input: string): { ok: true; value: unknown } | { ok: false; error: string } {
-  try {
-    return { ok: true, value: JSON.parse(input) };
-  } catch (err) {
-    return {
-      ok: false,
-      error: err instanceof Error ? err.message : 'Invalid JSON',
-    };
-  }
 }
 
 function stringifyValue(value: unknown): string {
@@ -530,6 +480,53 @@ function IconStandardsPreview() {
   );
 }
 
+function PageLayoutStandardPreview() {
+  return (
+    <div className="space-y-4">
+      <article className="rounded-lg bg-transparent p-4">
+        <h3 className="text-sm font-semibold text-foreground">Admin Page Frame Standard</h3>
+        <p className="mt-2 text-xs text-muted-foreground">
+          Every admin settings page follows a single layout contract. The sidebar nav is the sole navigation surface;
+          the page frame shows only a header title and content. No group pills, sub-tab bars, or extra separators.
+        </p>
+      </article>
+
+      <div className="overflow-auto rounded-md border border-border">
+        <table className="min-w-full border-collapse text-left text-xs">
+          <thead className="bg-muted/50 text-muted-foreground">
+            <tr>
+              <th className="px-3 py-2 font-medium">Rule</th>
+              <th className="px-3 py-2 font-medium">Detail</th>
+            </tr>
+          </thead>
+          <tbody>
+            {PAGE_LAYOUT_RULES.map((r) => (
+              <tr key={r.rule} className="border-t border-border align-top">
+                <td className="px-3 py-2 font-semibold text-foreground whitespace-nowrap">{r.rule}</td>
+                <td className="px-3 py-2 text-muted-foreground">{r.detail}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <article className="rounded-lg bg-transparent p-4">
+        <h3 className="text-sm font-semibold text-foreground">Frame Anatomy</h3>
+        <pre className="mt-2 rounded-md border border-border bg-muted/30 p-3 font-mono text-xs text-muted-foreground leading-relaxed">{
+`┌─────────────────────────────────────┐
+│  Header: page title  │  action btn  │  ← border-b only
+├─────────────────────────────────────┤
+│                                     │
+│  Content area (p-3 md:p-4)          │
+│  Full remaining height              │
+│                                     │
+└─────────────────────────────────────┘`
+        }</pre>
+      </article>
+    </div>
+  );
+}
+
 function AppShellSpecsPreview() {
   const appShellHeaderHeight = useLiveCssVar('--app-shell-header-height');
   const shellPaneHeaderHeight = useLiveCssVar('--shell-pane-header-height');
@@ -627,23 +624,14 @@ function AppShellSpecsPreview() {
 
 export default function SettingsAdmin() {
   const { category } = useParams<{ category?: string }>();
-  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [forbiddenMessage, setForbiddenMessage] = useState<string | null>(null);
-  const [policies, setPolicies] = useState<PolicyRow[]>([]);
   const [auditRows, setAuditRows] = useState<AuditRow[]>([]);
-  const [draftValues, setDraftValues] = useState<Record<string, unknown>>({});
-  const [jsonDrafts, setJsonDrafts] = useState<Record<string, string>>({});
-  const [reasons, setReasons] = useState<Record<string, string>>({});
   const [auditSearch, setAuditSearch] = useState('');
   const [auditActorFilter, setAuditActorFilter] = useState<string>('all');
   const [auditRangeFilter, setAuditRangeFilter] = useState<AuditTimeRange>('7d');
   const [selectedAuditId, setSelectedAuditId] = useState<number | null>(null);
-  const [uploadSearch, setUploadSearch] = useState('');
-  const [uploadTypeFilter, setUploadTypeFilter] = useState<PolicyValueType | 'all'>('all');
-  const [selectedUploadPolicyKey, setSelectedUploadPolicyKey] = useState<string | null>(null);
-  const [savingKey, setSavingKey] = useState<string | null>(null);
   const [status, setStatus] = useState<InlineStatus | null>(null);
   const [refreshingInventory, setRefreshingInventory] = useState(false);
   const [inventoryLoading, setInventoryLoading] = useState(false);
@@ -712,20 +700,7 @@ export default function SettingsAdmin() {
       }
 
       const data = payload as AdminConfigResponse;
-      setPolicies(data.policies);
       setAuditRows(data.audit);
-
-      const nextDraftValues: Record<string, unknown> = {};
-      const nextJsonDrafts: Record<string, string> = {};
-      for (const row of data.policies) {
-        nextDraftValues[row.policy_key] = row.value;
-        if (row.value_type === 'object' || row.value_type === 'array') {
-          nextJsonDrafts[row.policy_key] = stringifyValue(row.value);
-        }
-      }
-      setDraftValues(nextDraftValues);
-      setJsonDrafts(nextJsonDrafts);
-      setReasons({});
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -743,106 +718,6 @@ export default function SettingsAdmin() {
     if (!selectedCategory) return null;
     return CATEGORIES.find((c) => c.id === selectedCategory) ?? null;
   }, [selectedCategory]);
-
-  const selectedSubTabGroup = useMemo(() => {
-    return findAdminSubTabGroup(selectedCategory);
-  }, [selectedCategory]);
-
-  const filteredPolicies = useMemo(() => {
-    if (
-      !selectedCategoryDef ||
-      selectedCategoryDef.id === 'audit' ||
-      selectedCategoryDef.id === 'services' ||
-      selectedCategoryDef.id === 'integration-catalog' ||
-      selectedCategoryDef.id === 'integration-catalog-temp'
-    ) return [];
-    return policies.filter((p) => selectedCategoryDef.match(p.policy_key));
-  }, [policies, selectedCategoryDef]);
-  const policyPanelClassName = 'space-y-3';
-
-  const uploadPolicies = useMemo(
-    () => filteredPolicies.filter((row) => row.policy_key.startsWith('upload.')),
-    [filteredPolicies],
-  );
-
-  const filteredUploadPolicies = useMemo(() => {
-    const query = uploadSearch.trim().toLowerCase();
-    return uploadPolicies.filter((row) => {
-      if (uploadTypeFilter !== 'all' && row.value_type !== uploadTypeFilter) return false;
-      if (!query) return true;
-      const haystack = `${row.policy_key} ${row.description ?? ''}`.toLowerCase();
-      return haystack.includes(query);
-    });
-  }, [uploadPolicies, uploadSearch, uploadTypeFilter]);
-
-  const selectedUploadPolicy = useMemo(() => {
-    if (filteredUploadPolicies.length === 0) return null;
-    if (selectedUploadPolicyKey) {
-      const found = filteredUploadPolicies.find((row) => row.policy_key === selectedUploadPolicyKey);
-      if (found) return found;
-    }
-    return filteredUploadPolicies[0] ?? null;
-  }, [filteredUploadPolicies, selectedUploadPolicyKey]);
-
-  useEffect(() => {
-    if (selectedCategory !== 'upload') return;
-    if (!selectedUploadPolicy) return;
-    if (selectedUploadPolicy.policy_key !== selectedUploadPolicyKey) {
-      setSelectedUploadPolicyKey(selectedUploadPolicy.policy_key);
-    }
-  }, [selectedCategory, selectedUploadPolicy, selectedUploadPolicyKey]);
-
-  const savePolicy = async (row: PolicyRow) => {
-    setStatus(null);
-    let nextValue: unknown = draftValues[row.policy_key];
-    if (row.value_type === 'object') {
-      const parsed = parseJsonTextarea(jsonDrafts[row.policy_key] ?? '');
-      if (!parsed.ok) {
-        setStatus({
-          kind: 'error',
-          message: `${row.policy_key}: ${parsed.error}`,
-        });
-        return;
-      }
-      nextValue = parsed.value;
-    }
-
-    setSavingKey(row.policy_key);
-    try {
-      const resp = await edgeFetch('admin-config', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          policy_key: row.policy_key,
-          value: nextValue,
-          reason: reasons[row.policy_key]?.trim() || null,
-        }),
-      });
-      const text = await resp.text();
-      let payload: { error?: string } = {};
-      try {
-        payload = text ? JSON.parse(text) : {};
-      } catch {
-        // Keep raw text fallback below.
-      }
-      if (!resp.ok) {
-        throw new Error(payload.error ?? text ?? `HTTP ${resp.status}`);
-      }
-
-      await load();
-      setStatus({
-        kind: 'success',
-        message: `${row.policy_key} updated.`,
-      });
-    } catch (e) {
-      setStatus({
-        kind: 'error',
-        message: e instanceof Error ? e.message : String(e),
-      });
-    } finally {
-      setSavingKey(null);
-    }
-  };
 
   const loadComponentInventory = async () => {
     setInventoryLoading(true);
@@ -949,7 +824,7 @@ export default function SettingsAdmin() {
   const categoryAction = null;
 
   if (!selectedCategory) {
-    return <Navigate to="/app/settings/admin/models" replace />;
+    return <Navigate to="/app/settings/admin/services" replace />;
   }
 
   return (
@@ -980,7 +855,7 @@ export default function SettingsAdmin() {
         <ErrorAlert message={`${forbiddenMessage} Set SUPERUSER_EMAIL_ALLOWLIST to grant access.`} />
       )}
       {loading && !error && !forbiddenMessage && (
-        <p className="text-sm text-muted-foreground">Loading superuser policies...</p>
+        <p className="text-sm text-muted-foreground">Loading admin configuration...</p>
       )}
 
       {!loading && !error && !forbiddenMessage && selectedCategoryDef && (
@@ -997,438 +872,12 @@ export default function SettingsAdmin() {
             </div>
             {categoryAction}
           </header>
-          {selectedSubTabGroup && (
-            <div className="border-b border-border bg-background/60 px-3 py-2">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="rounded border border-border bg-muted px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                  {selectedSubTabGroup.label}
-                </span>
-                {selectedSubTabGroup.tabs.map((tab) => {
-                  const isActive = tab.id === selectedCategory;
-                  return (
-                    <button
-                      key={tab.id}
-                      type="button"
-                      onClick={() => navigate(`/app/settings/admin/${tab.id}`)}
-                      className={cn(
-                        'inline-flex h-8 items-center rounded-md border px-3 text-xs font-medium transition-colors',
-                        isActive
-                          ? 'border-primary/40 bg-primary/15 text-foreground'
-                          : 'border-border bg-background text-muted-foreground hover:bg-accent hover:text-foreground',
-                      )}
-                    >
-                      {tab.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
           <div className="min-h-0 flex-1 overflow-y-auto p-3 md:p-4" style={{ backgroundColor: styleTokens.adminConfig.contentBackground }}>
-            {selectedCategory === 'upload' && (
-              <div className="space-y-4">
-                <div className="grid gap-2 md:grid-cols-4">
-                  <div className="rounded-md border border-border bg-background px-3 py-2">
-                    <p className="text-xs text-muted-foreground">Upload policies</p>
-                    <p className="text-lg font-semibold text-foreground">{uploadPolicies.length}</p>
-                  </div>
-                  <div className="rounded-md border border-border bg-background px-3 py-2">
-                    <p className="text-xs text-muted-foreground">Boolean toggles</p>
-                    <p className="text-lg font-semibold text-foreground">{uploadPolicies.filter((row) => row.value_type === 'boolean').length}</p>
-                  </div>
-                  <div className="rounded-md border border-border bg-background px-3 py-2">
-                    <p className="text-xs text-muted-foreground">Numeric limits</p>
-                    <p className="text-lg font-semibold text-foreground">{uploadPolicies.filter((row) => row.value_type === 'integer' || row.value_type === 'number').length}</p>
-                  </div>
-                  <div className="rounded-md border border-border bg-background px-3 py-2">
-                    <p className="text-xs text-muted-foreground">Structured fields</p>
-                    <p className="text-lg font-semibold text-foreground">{uploadPolicies.filter((row) => row.value_type === 'array' || row.value_type === 'object').length}</p>
-                  </div>
-                </div>
-
-                <div className="grid gap-4 lg:grid-cols-[minmax(340px,1fr)_minmax(420px,1fr)]">
-                  <article className="rounded-lg border border-border bg-background p-3">
-                    <div className="grid gap-2 md:grid-cols-[minmax(0,1fr)_150px]">
-                      <Field.Root>
-                        <Field.Input
-                          className={inputClass}
-                          value={uploadSearch}
-                          onChange={(event) => setUploadSearch(event.currentTarget.value)}
-                          placeholder="Search upload policies"
-                        />
-                      </Field.Root>
-                      <select
-                        className={inputClass}
-                        value={uploadTypeFilter}
-                        onChange={(event) => setUploadTypeFilter(event.currentTarget.value as PolicyValueType | 'all')}
-                      >
-                        <option value="all">All types</option>
-                        <option value="boolean">boolean</option>
-                        <option value="integer">integer</option>
-                        <option value="number">number</option>
-                        <option value="string">string</option>
-                        <option value="array">array</option>
-                        <option value="object">object</option>
-                      </select>
-                    </div>
-                    <div className="mt-3 overflow-auto rounded-md border border-border">
-                      <table className="min-w-full border-collapse text-left text-xs">
-                        <thead className="bg-muted/50 text-muted-foreground">
-                          <tr>
-                            <th className="px-3 py-2 font-medium">Policy</th>
-                            <th className="px-3 py-2 font-medium">Type</th>
-                            <th className="px-3 py-2 font-medium">Draft value</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {filteredUploadPolicies.map((row) => {
-                            const selected = selectedUploadPolicy?.policy_key === row.policy_key;
-                            return (
-                              <tr
-                                key={row.policy_key}
-                                className={cn(
-                                  'cursor-pointer border-t border-border align-top hover:bg-accent/40',
-                                  selected && 'bg-accent/55',
-                                )}
-                                onClick={() => setSelectedUploadPolicyKey(row.policy_key)}
-                              >
-                                <td className="max-w-[260px] px-3 py-2 font-medium text-foreground" title={row.policy_key}>
-                                  <span className="block truncate">{row.policy_key}</span>
-                                </td>
-                                <td className="px-3 py-2 text-muted-foreground">{row.value_type}</td>
-                                <td className="max-w-[220px] px-3 py-2 text-muted-foreground" title={row.value_type === 'object' ? (jsonDrafts[row.policy_key] ?? '{}') : stringifyValue(draftValues[row.policy_key])}>
-                                  <span className="block truncate">
-                                    {row.value_type === 'object'
-                                      ? `${(jsonDrafts[row.policy_key] ?? '{}').length} chars`
-                                      : summarizePreviewValue(draftValues[row.policy_key])}
-                                  </span>
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-                    {filteredUploadPolicies.length === 0 && (
-                      <p className="mt-3 text-sm text-muted-foreground">No upload policies match current filters.</p>
-                    )}
-                  </article>
-
-                  <article className="rounded-lg border border-border bg-background p-4">
-                    {!selectedUploadPolicy && (
-                      <p className="text-sm text-muted-foreground">Select an upload policy to edit.</p>
-                    )}
-                    {selectedUploadPolicy && (
-                      <div className="space-y-3">
-                        <div className="flex flex-wrap items-start justify-between gap-2">
-                          <div>
-                            <h3 className="text-sm font-semibold text-foreground">{selectedUploadPolicy.policy_key}</h3>
-                            <p className="mt-1 text-xs text-muted-foreground">
-                              {selectedUploadPolicy.description ?? 'No description'}
-                            </p>
-                          </div>
-                          <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-                            {selectedUploadPolicy.value_type}
-                          </span>
-                        </div>
-
-                        {selectedUploadPolicy.value_type === 'boolean' && (
-                          <Switch.Root
-                            checked={Boolean(draftValues[selectedUploadPolicy.policy_key])}
-                            onCheckedChange={(details) => {
-                              setDraftValues((prev) => ({ ...prev, [selectedUploadPolicy.policy_key]: details.checked }));
-                            }}
-                            className="inline-flex items-center gap-2"
-                          >
-                            <Switch.HiddenInput />
-                            <Switch.Control className="relative h-6 w-11 rounded-full border border-input bg-muted transition-colors data-[state=checked]:border-primary data-[state=checked]:bg-primary">
-                              <Switch.Thumb className="block h-5 w-5 translate-x-0 rounded-full bg-background shadow transition-transform data-[state=checked]:translate-x-5" />
-                            </Switch.Control>
-                            <Switch.Label className="text-sm text-foreground">Enabled</Switch.Label>
-                          </Switch.Root>
-                        )}
-
-                        {(selectedUploadPolicy.value_type === 'integer' || selectedUploadPolicy.value_type === 'number') && (
-                          <NumberInput.Root
-                            value={String(typeof draftValues[selectedUploadPolicy.policy_key] === 'number' ? draftValues[selectedUploadPolicy.policy_key] : 0)}
-                            min={Number.MIN_SAFE_INTEGER}
-                            max={Number.MAX_SAFE_INTEGER}
-                            step={selectedUploadPolicy.value_type === 'integer' ? 1 : 0.001}
-                            formatOptions={selectedUploadPolicy.value_type === 'integer'
-                              ? { maximumFractionDigits: 0 }
-                              : { maximumFractionDigits: 3 }}
-                            onValueChange={(details) => {
-                              if (Number.isFinite(details.valueAsNumber)) {
-                                const next = selectedUploadPolicy.value_type === 'integer'
-                                  ? Math.trunc(details.valueAsNumber)
-                                  : details.valueAsNumber;
-                                setDraftValues((prev) => ({ ...prev, [selectedUploadPolicy.policy_key]: next }));
-                              }
-                            }}
-                            className="w-full"
-                          >
-                            <NumberInput.Control className="relative">
-                              <NumberInput.Input className={`${inputClass} pr-16`} />
-                              <div className="absolute inset-y-0 right-1 flex items-center gap-1">
-                                <NumberInput.DecrementTrigger className="h-8 w-6 rounded border border-input text-muted-foreground hover:bg-accent hover:text-accent-foreground">
-                                  -
-                                </NumberInput.DecrementTrigger>
-                                <NumberInput.IncrementTrigger className="h-8 w-6 rounded border border-input text-muted-foreground hover:bg-accent hover:text-accent-foreground">
-                                  +
-                                </NumberInput.IncrementTrigger>
-                              </div>
-                            </NumberInput.Control>
-                          </NumberInput.Root>
-                        )}
-
-                        {selectedUploadPolicy.value_type === 'string' && (
-                          <Field.Root>
-                            <Field.Input
-                              className={inputClass}
-                              value={String(draftValues[selectedUploadPolicy.policy_key] ?? '')}
-                              onChange={(input) =>
-                                setDraftValues((prev) => ({ ...prev, [selectedUploadPolicy.policy_key]: coerceTextInputValue(input) }))}
-                            />
-                          </Field.Root>
-                        )}
-
-                        {selectedUploadPolicy.value_type === 'array' && (
-                          <TagsInput.Root
-                            value={Array.isArray(draftValues[selectedUploadPolicy.policy_key]) ? (draftValues[selectedUploadPolicy.policy_key] as unknown[]).map((item) => String(item)) : []}
-                            onValueChange={(details) => setDraftValues((prev) => ({ ...prev, [selectedUploadPolicy.policy_key]: details.value }))}
-                            addOnPaste
-                            blurBehavior="add"
-                            className="w-full"
-                          >
-                            <TagsInput.Control className="flex min-h-10 w-full flex-wrap items-center gap-2 rounded-md border border-input bg-background px-2 py-1 focus-within:ring-1 focus-within:ring-ring">
-                              {(Array.isArray(draftValues[selectedUploadPolicy.policy_key]) ? (draftValues[selectedUploadPolicy.policy_key] as unknown[]).map((item) => String(item)) : []).map((item, index) => (
-                                <TagsInput.Item
-                                  key={`${selectedUploadPolicy.policy_key}-${index}-${item}`}
-                                  index={index}
-                                  value={item}
-                                  className="rounded-md bg-muted px-2 py-1 text-xs text-foreground"
-                                >
-                                  <TagsInput.ItemPreview className="inline-flex items-center gap-1">
-                                    <TagsInput.ItemText />
-                                    <TagsInput.ItemDeleteTrigger className="text-muted-foreground hover:text-foreground">
-                                      x
-                                    </TagsInput.ItemDeleteTrigger>
-                                  </TagsInput.ItemPreview>
-                                  <TagsInput.ItemInput className="rounded border border-input bg-background px-1 text-xs text-foreground focus:outline-none" />
-                                </TagsInput.Item>
-                              ))}
-                              <TagsInput.Input
-                                className="h-8 min-w-[120px] flex-1 border-none bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
-                                placeholder="Add value and press Enter"
-                              />
-                            </TagsInput.Control>
-                          </TagsInput.Root>
-                        )}
-
-                        {selectedUploadPolicy.value_type === 'object' && (
-                          <Field.Root>
-                            <Field.Textarea
-                              className="min-h-36 w-full rounded-md border border-input bg-background p-3 font-mono text-xs text-foreground shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                              value={jsonDrafts[selectedUploadPolicy.policy_key] ?? '{}'}
-                              onChange={(input) =>
-                                setJsonDrafts((prev) => ({ ...prev, [selectedUploadPolicy.policy_key]: coerceTextInputValue(input) }))}
-                            />
-                          </Field.Root>
-                        )}
-
-                        <Field.Root>
-                          <Field.Label className="mb-1 block text-xs font-medium text-muted-foreground">Reason (optional)</Field.Label>
-                          <Field.Input
-                            className={inputClass}
-                            placeholder="Why are you changing this?"
-                            value={reasons[selectedUploadPolicy.policy_key] ?? ''}
-                            onChange={(input) =>
-                              setReasons((prev) => ({ ...prev, [selectedUploadPolicy.policy_key]: coerceTextInputValue(input) }))}
-                          />
-                        </Field.Root>
-
-                        <div className="flex items-center justify-between gap-2">
-                          <p className="text-xs text-muted-foreground">
-                            Updated {formatTimestamp(selectedUploadPolicy.updated_at)}
-                          </p>
-                          <Button
-                            size="sm"
-                            className="h-8 px-3 text-xs"
-                            disabled={savingKey === selectedUploadPolicy.policy_key}
-                            onClick={() => savePolicy(selectedUploadPolicy)}
-                          >
-                            {savingKey === selectedUploadPolicy.policy_key ? 'Saving...' : 'Save'}
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-                  </article>
-                </div>
-              </div>
-            )}
-
-            {selectedCategory !== 'upload' && selectedCategory !== 'audit' && selectedCategory !== 'services' && selectedCategory !== 'integration-catalog' && selectedCategory !== 'integration-catalog-temp' && selectedCategory !== 'design' && selectedCategory !== 'design-shell' && selectedCategory !== 'design-icons' && (
-              <div className={policyPanelClassName}>
-                {filteredPolicies.map((row) => {
-                  const numericDraft = typeof draftValues[row.policy_key] === 'number'
-                    ? (draftValues[row.policy_key] as number)
-                    : 0;
-                  const tagDraft = Array.isArray(draftValues[row.policy_key])
-                    ? (draftValues[row.policy_key] as unknown[]).map((item) => String(item))
-                    : [];
-                  return (
-                    <article key={row.policy_key} className="rounded-lg bg-transparent p-4">
-                      <div className="flex flex-wrap items-start justify-between gap-3">
-                        <div>
-                          <h3 className="text-sm font-semibold text-foreground">{row.policy_key}</h3>
-                          <p className="mt-1 text-xs text-muted-foreground">{row.description ?? 'No description'}</p>
-                        </div>
-                        <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-                          {row.value_type}
-                        </span>
-                      </div>
-
-                      <div className="mt-3 space-y-3">
-                        {row.value_type === 'boolean' && (
-                          <Switch.Root
-                            checked={Boolean(draftValues[row.policy_key])}
-                            onCheckedChange={(details) => {
-                              setDraftValues((prev) => ({ ...prev, [row.policy_key]: details.checked }));
-                            }}
-                            className="inline-flex items-center gap-2"
-                          >
-                            <Switch.HiddenInput />
-                            <Switch.Control className="relative h-6 w-11 rounded-full border border-input bg-muted transition-colors data-[state=checked]:border-primary data-[state=checked]:bg-primary">
-                              <Switch.Thumb className="block h-5 w-5 translate-x-0 rounded-full bg-background shadow transition-transform data-[state=checked]:translate-x-5" />
-                            </Switch.Control>
-                            <Switch.Label className="text-sm text-foreground">Enabled</Switch.Label>
-                          </Switch.Root>
-                        )}
-
-                        {(row.value_type === 'integer' || row.value_type === 'number') && (
-                          <NumberInput.Root
-                            value={String(numericDraft)}
-                            min={Number.MIN_SAFE_INTEGER}
-                            max={Number.MAX_SAFE_INTEGER}
-                            step={row.value_type === 'integer' ? 1 : 0.001}
-                            formatOptions={row.value_type === 'integer'
-                              ? { maximumFractionDigits: 0 }
-                              : { maximumFractionDigits: 3 }}
-                            onValueChange={(details) => {
-                              if (Number.isFinite(details.valueAsNumber)) {
-                                const next = row.value_type === 'integer'
-                                  ? Math.trunc(details.valueAsNumber)
-                                  : details.valueAsNumber;
-                                setDraftValues((prev) => ({ ...prev, [row.policy_key]: next }));
-                              }
-                            }}
-                            className="w-full"
-                          >
-                            <NumberInput.Control className="relative">
-                              <NumberInput.Input className={`${inputClass} pr-16`} />
-                              <div className="absolute inset-y-0 right-1 flex items-center gap-1">
-                                <NumberInput.DecrementTrigger className="h-8 w-6 rounded border border-input text-muted-foreground hover:bg-accent hover:text-accent-foreground">
-                                  -
-                                </NumberInput.DecrementTrigger>
-                                <NumberInput.IncrementTrigger className="h-8 w-6 rounded border border-input text-muted-foreground hover:bg-accent hover:text-accent-foreground">
-                                  +
-                                </NumberInput.IncrementTrigger>
-                              </div>
-                            </NumberInput.Control>
-                          </NumberInput.Root>
-                        )}
-
-                        {row.value_type === 'string' && (
-                          <Field.Root>
-                            <Field.Input
-                              className={inputClass}
-                              value={String(draftValues[row.policy_key] ?? '')}
-                              onChange={(input) =>
-                                setDraftValues((prev) => ({ ...prev, [row.policy_key]: coerceTextInputValue(input) }))}
-                            />
-                          </Field.Root>
-                        )}
-
-                        {row.value_type === 'array' && (
-                          <TagsInput.Root
-                            value={tagDraft}
-                            onValueChange={(details) => setDraftValues((prev) => ({ ...prev, [row.policy_key]: details.value }))}
-                            addOnPaste
-                            blurBehavior="add"
-                            className="w-full"
-                          >
-                            <TagsInput.Control className="flex min-h-10 w-full flex-wrap items-center gap-2 rounded-md border border-input bg-background px-2 py-1 focus-within:ring-1 focus-within:ring-ring">
-                              {tagDraft.map((item, index) => (
-                                <TagsInput.Item
-                                  key={`${row.policy_key}-${index}-${item}`}
-                                  index={index}
-                                  value={item}
-                                  className="rounded-md bg-muted px-2 py-1 text-xs text-foreground"
-                                >
-                                  <TagsInput.ItemPreview className="inline-flex items-center gap-1">
-                                    <TagsInput.ItemText />
-                                    <TagsInput.ItemDeleteTrigger className="text-muted-foreground hover:text-foreground">
-                                      x
-                                    </TagsInput.ItemDeleteTrigger>
-                                  </TagsInput.ItemPreview>
-                                  <TagsInput.ItemInput className="rounded border border-input bg-background px-1 text-xs text-foreground focus:outline-none" />
-                                </TagsInput.Item>
-                              ))}
-                              <TagsInput.Input
-                                className="h-8 min-w-[120px] flex-1 border-none bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
-                                placeholder="Add value and press Enter"
-                              />
-                            </TagsInput.Control>
-                          </TagsInput.Root>
-                        )}
-
-                        {row.value_type === 'object' && (
-                          <Field.Root>
-                            <Field.Textarea
-                              className="min-h-36 w-full rounded-md border border-input bg-background p-3 font-mono text-xs text-foreground shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                              value={jsonDrafts[row.policy_key] ?? '{}'}
-                              onChange={(input) =>
-                                setJsonDrafts((prev) => ({ ...prev, [row.policy_key]: coerceTextInputValue(input) }))}
-                            />
-                          </Field.Root>
-                        )}
-
-                        <Field.Root>
-                          <Field.Label className="mb-1 block text-xs font-medium text-muted-foreground">Reason (optional)</Field.Label>
-                          <Field.Input
-                            className={inputClass}
-                            placeholder="Why are you changing this?"
-                            value={reasons[row.policy_key] ?? ''}
-                            onChange={(input) =>
-                              setReasons((prev) => ({ ...prev, [row.policy_key]: coerceTextInputValue(input) }))}
-                          />
-                        </Field.Root>
-
-                        <div className="flex items-center justify-between gap-2">
-                          <p className="text-xs text-muted-foreground">
-                            Updated {formatTimestamp(row.updated_at)}
-                          </p>
-                          <Button
-                            size="sm"
-                            className="h-8 px-3 text-xs"
-                            disabled={savingKey === row.policy_key}
-                            onClick={() => savePolicy(row)}
-                          >
-                            {savingKey === row.policy_key ? 'Saving...' : 'Save'}
-                          </Button>
-                        </div>
-                      </div>
-                    </article>
-                  );
-                })}
-                {filteredPolicies.length === 0 && (
-                  <p className="text-sm text-muted-foreground">No policies in this category.</p>
-                )}
-              </div>
-            )}
-
             {selectedCategory === 'services' && (
               <ServicesPanel />
+            )}
+            {selectedCategory === 'platform-config' && (
+              <PlatformConfigPanel />
             )}
             {selectedCategory === 'integration-catalog' && (
               <IntegrationCatalogPanel />
@@ -1441,6 +890,10 @@ export default function SettingsAdmin() {
             )}
             {selectedCategory === 'design' && (
               <div className="space-y-8">
+                <div>
+                  <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">Page Layout</h2>
+                  <PageLayoutStandardPreview />
+                </div>
                 <div>
                   <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">Icons</h2>
                   <IconStandardsPreview />

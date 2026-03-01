@@ -1,8 +1,6 @@
 export const CATEGORY_IDS = [
-  'models',
-  'worker',
-  'upload',
   'services',
+  'platform-config',
   'integration-catalog',
   'integration-catalog-temp',
   'design',
@@ -15,35 +13,21 @@ export const CATEGORY_IDS = [
 export type CategoryId = (typeof CATEGORY_IDS)[number];
 
 export type AdminSubTabGroup = {
-  id: 'runtime' | 'operations' | 'temp' | 'design' | 'designs';
+  id: 'operations' | 'design' | 'designs';
   label: string;
   tabs: Array<{ id: CategoryId; label: string }>;
 };
 
 export const ADMIN_SUBTAB_GROUPS: AdminSubTabGroup[] = [
   {
-    id: 'runtime',
-    label: 'Runtime',
-    tabs: [
-      { id: 'models', label: 'Runtime Policy' },
-      { id: 'worker', label: 'Worker' },
-      { id: 'upload', label: 'Upload' },
-    ],
-  },
-  {
     id: 'operations',
     label: 'Operations',
     tabs: [
       { id: 'services', label: 'Services' },
+      { id: 'platform-config', label: 'Platform' },
       { id: 'integration-catalog', label: 'Integration Catalog' },
+      { id: 'integration-catalog-temp', label: 'Integration Catalog (RDG)' },
       { id: 'audit', label: 'Audit History' },
-    ],
-  },
-  {
-    id: 'temp',
-    label: 'Temp',
-    tabs: [
-      { id: 'integration-catalog-temp', label: 'Integration Catalog - Temp' },
     ],
   },
   {

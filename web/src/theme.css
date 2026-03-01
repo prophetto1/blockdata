@@ -1,4 +1,3 @@
-/* MantineHub (Shadcn-inspired) surface + border alignment.
    Keep this small and focused: layout consistency + dark-mode surfaces. */
 
 :root {
@@ -423,6 +422,75 @@ body {
 .block-viewer-rdg .rdg-header-cell.user-schema-boundary-header,
 .block-viewer-rdg .rdg-cell.user-schema-boundary-cell {
   border-left: 1px solid var(--border) !important;
+}
+
+/* ── Catalog grid ── */
+/* Match RDG CommonFeatures reference: zero --rdg-* overrides.
+   Only bind color-scheme to our data-theme attribute. */
+
+.catalog-rdg {
+  --rdg-color-scheme: dark;
+}
+
+[data-theme="light"] .catalog-rdg {
+  --rdg-color-scheme: light;
+}
+
+.catalog-rdg-group-header {
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.catalog-rdg-row-disabled {
+  opacity: 0.45;
+}
+
+/* ---- Ark UI Checkbox in RDG ---- */
+
+.catalog-rdg-checkbox {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.catalog-rdg-checkbox-control {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 15px;
+  height: 15px;
+  border-radius: 3px;
+  border: 1.5px solid rgba(148, 163, 184, 0.35);
+  background: transparent;
+  transition: all 120ms ease;
+  color: transparent;
+  flex-shrink: 0;
+}
+
+.catalog-rdg-checkbox-control[data-state='checked'],
+.catalog-rdg-checkbox-control[data-state='indeterminate'] {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: white;
+}
+
+.catalog-rdg-checkbox-control:hover {
+  border-color: rgba(148, 163, 184, 0.55);
+}
+
+.catalog-rdg-checkbox-control[data-state='checked']:hover,
+.catalog-rdg-checkbox-control[data-state='indeterminate']:hover {
+  border-color: var(--primary);
+}
+
+[data-theme="light"] .catalog-rdg-checkbox-control {
+  border-color: rgba(120, 113, 108, 0.3);
+}
+
+[data-theme="light"] .catalog-rdg-checkbox-control:hover {
+  border-color: rgba(120, 113, 108, 0.5);
 }
 
 .block-grid-empty-rdg {

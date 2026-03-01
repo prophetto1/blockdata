@@ -16,7 +16,7 @@ import UppyLibraryDemo from '@/pages/UppyLibraryDemo';
 import Schemas from '@/pages/Schemas';
 import SchemaLayout from '@/pages/SchemaLayout';
 import RunDetail from '@/pages/RunDetail';
-import { SettingsLayout, SettingsAccount, SettingsAiOverview, SettingsProviderForm, SettingsModelRoles, SettingsAdmin } from '@/pages/settings';
+import { SettingsLayout, SettingsAccount, SettingsAiOverview, SettingsProviderForm, SettingsModelRoles, SettingsAdmin, SettingsGridSample } from '@/pages/settings';
 import LoginSplit from '@/pages/LoginSplit';
 import PlatformLanding from '@/pages/experiments/PlatformLanding';
 import Landing from '@/pages/Landing';
@@ -89,7 +89,7 @@ export const router = createBrowserRouter([
       { path: '/auth/callback', element: <AuthCallback /> },
     ],
   },
-  
+
   {
     element: <AuthGuard />,
     children: [
@@ -98,6 +98,7 @@ export const router = createBrowserRouter([
         children: [
           // App landing + projects
           { path: '/app', element: <Navigate to="/app/elt" replace /> },
+
           { path: '/app/elt', element: <DocumentTest /> },
           { path: '/app/elt/:projectId', element: <DocumentTest /> },
           { path: '/app/elt/:projectId/upload-uppy-demo', element: <UppyLibraryDemo /> },
@@ -151,7 +152,8 @@ export const router = createBrowserRouter([
               { path: 'ai/:providerId', element: <SettingsProviderForm /> },
               { path: 'model-roles', element: <SettingsModelRoles /> },
               { path: 'mcp', element: <McpServers /> },
-              { path: 'admin', element: <Navigate to="/app/settings/admin/models" replace /> },
+              { path: 'grid-sample', element: <SettingsGridSample /> },
+              { path: 'admin', element: <Navigate to="/app/settings/admin/services" replace /> },
               { path: 'admin/:category', element: <SettingsAdmin /> },
             ],
           },
