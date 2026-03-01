@@ -10,16 +10,26 @@
   },
   "favicon": "/images/favicon.ico",
   "colors": {
-    "primary": "#6366f1",
-    "light": "#818cf8",
-    "dark": "#4f46e5"
+    "primary": "#EB5E41",
+    "light": "#F07D65",
+    "dark": "#D94E32",
+    "background": {
+      "dark": "#0e0e0e",
+      "light": "#faf9f7"
+    }
   },
   "appearance": {
-    "default": "system"
+    "default": "dark"
   },
   "fonts": {
     "body": {
       "family": "IBM Plex Sans"
+    },
+    "heading": {
+      "family": "IBM Plex Sans"
+    },
+    "code": {
+      "family": "JetBrains Mono"
     }
   },
   "styling": {
@@ -41,18 +51,30 @@
   "navigation": {
     "tabs": [
       {
-        "tab": "Untitled Tab",
-        "anchors": [
+        "tab": "Internal Guides",
+        "icon": "book-open",
+        "groups": [
           {
-            "anchor": "Internal Guides",
-            "icon": "album",
-            "tabs": [
-              {
-                "tab": "Infrastructure",
-                "pages": [
-                  "s"
-                ]
-              }
+            "group": "Infrastructure",
+            "icon": "server",
+            "pages": [
+              "s",
+              "edge-functions"
+            ]
+          },
+          {
+            "group": "Frontend",
+            "icon": "layout",
+            "pages": [
+              "frontend/app-shell",
+              "frontend/design-system"
+            ]
+          },
+          {
+            "group": "Plans",
+            "icon": "clipboard-list",
+            "pages": [
+              "plans/services-scalability-plan"
             ]
           }
         ]

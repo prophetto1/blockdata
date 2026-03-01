@@ -7,6 +7,13 @@ import { Button } from '@/components/ui/button';
 import { AppIcon } from '@/components/ui/app-icon';
 import { ErrorAlert } from '@/components/common/ErrorAlert';
 import {
+  ScrollAreaContent,
+  ScrollAreaRoot,
+  ScrollAreaScrollbar,
+  ScrollAreaThumb,
+  ScrollAreaViewport,
+} from '@/components/ui/scroll-area';
+import {
   ICON_SIZES,
   ICON_STROKES,
   ICON_STANDARD,
@@ -872,10 +879,53 @@ export default function SettingsAdmin() {
             </div>
             {categoryAction}
           </header>
-          <div className="min-h-0 flex-1 overflow-y-auto p-3 md:p-4" style={{ backgroundColor: styleTokens.adminConfig.contentBackground }}>
-            {selectedCategory === 'services' && (
-              <ServicesPanel />
-            )}
+          {selectedCategory === 'services'
+            || selectedCategory === 'integration-catalog'
+            || selectedCategory === 'integration-catalog-temp'
+            || selectedCategory === 'design' ? (
+            <ScrollAreaRoot className="min-h-0 flex-1">
+              <ScrollAreaViewport
+                className="h-full p-3 md:p-4"
+                style={{ backgroundColor: styleTokens.adminConfig.contentBackground }}
+              >
+                <ScrollAreaContent>
+                  {selectedCategory === 'services' && (
+                    <ServicesPanel />
+                  )}
+                  {selectedCategory === 'integration-catalog' && (
+                    <IntegrationCatalogPanel />
+                  )}
+                  {selectedCategory === 'integration-catalog-temp' && (
+                    <IntegrationCatalogPanelTemp />
+                  )}
+                  {selectedCategory === 'design' && (
+                    <div className="space-y-8">
+                      <div>
+                        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">Page Layout</h2>
+                        <PageLayoutStandardPreview />
+                      </div>
+                      <div>
+                        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">Icons</h2>
+                        <IconStandardsPreview />
+                      </div>
+                      <div>
+                        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">Typography</h2>
+                        <FontStandardsPreview />
+                      </div>
+                      <div>
+                        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">Color Contract (Day / Night)</h2>
+                        <ColorContractPreview />
+                      </div>
+                    </div>
+                  )}
+                </ScrollAreaContent>
+              </ScrollAreaViewport>
+              <ScrollAreaScrollbar orientation="vertical">
+                <ScrollAreaThumb />
+              </ScrollAreaScrollbar>
+            </ScrollAreaRoot>
+          ) : (
+            <div className="min-h-0 flex-1 overflow-y-auto p-3 md:p-4" style={{ backgroundColor: styleTokens.adminConfig.contentBackground }}>
             {selectedCategory === 'platform-config' && (
               <PlatformConfigPanel />
             )}
@@ -1126,7 +1176,8 @@ export default function SettingsAdmin() {
                 )}
               </div>
             )}
-          </div>
+            </div>
+          )}
         </section>
       )}
     </div>

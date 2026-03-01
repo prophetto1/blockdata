@@ -1,0 +1,262 @@
+---
+title: "App Shell"
+description: "Master layout architecture — header, sidebar, content regions, assistant dock, and route-specific shells."
+---
+
+## Overview
+
+The app shell is the fixed chrome that wraps every `/app/*` route. It provides the header, left sidebar navigation, and main content region. Route-specific shells (Flows, Settings) customize the content area without replacing the outer frame.
+
+```
+┌──────────────────────────────────────────────────┐
+│  TopCommandBar (fixed, 72px)                     │
+├────────┬─────────────────────────────────────────┤
+│        │                                         │
+│ Left   │   Main content area                     │
+│ Rail   │   (scrollable or locked per route)       │
+│ 280px  │                                         │
+│        │   ┌─────────────────────────────────┐   │
+│        │   │ AppPageShell (fluid/constrained) │   │
+│        │   │ — or —                           │   │
+│        │   │ Route-specific shell (Flows,     │   │
+│        │   │ Settings, Schemas)               │   │
+│        │   └─────────────────────────────────┘   │
+│        │                                         │
+├────────┴─────────────────────────────────────────┤
+│                  (optional) AssistantDockHost     │
+└──────────────────────────────────────────────────┘
+```
+
+---
+
+## Component Map
+
+| Component | File | Role |
+|---|---|---|
+| `AppLayout` | `web/src/components/layout/AppLayout.tsx` | Master shell — header, sidebar, main, assistant dock |
+| `TopCommandBar` | `web/src/components/shell/TopCommandBar.tsx` | Fixed header bar — search, theme toggle, project list, assistant toggle |
+| `LeftRailShadcn` | `web/src/components/shell/LeftRailShadcn.tsx` | Left sidebar — brand, project selector, nav tree, user menu |
+| `AppPageShell` | `web/src/components/layout/AppPageShell.tsx` | Content wrapper — fluid (default) or constrained mode |
+| `FlowsRouteShell` | `web/src/components/layout/FlowsRouteShell.tsx` | Flows-specific shell (list vs detail layout) |
+| `SettingsLayout` | `web/src/pages/settings/SettingsLayout.tsx` | Settings/admin shell — second rail + content area |
+| `HeaderCenterContext` | `web/src/components/shell/HeaderCenterContext.tsx` | Context for injecting content into header center/slots |
+| `AssistantDockHost` | `web/src/components/shell/AssistantDockHost.tsx` | AI assistant panel — docked or detached |
+| `nav-config` | `web/src/components/shell/nav-config.ts` | Global menu items (Flows, ELT, Integrations, Database, Schema) |
+
+---
+
+## Shell Dimensions
+
+From `styleTokens.shell`:
+
+| Property | Value | Notes |
+|---|---|---|
+| Header height | `72px` | Fixed position, z-index 110 |
+| Sidebar width (expanded) | `280px` | Collapsible via localStorage toggle |
+| Sidebar width (compact) | `60px` | Icon-only mode |
+| Assistant width | `360px` | Docked panel |
+| Content max-width | `var(--app-shell-content-max-width)` | Only in constrained mode |
+
+CSS variables set on the shell root:
+- `--app-shell-navbar-offset: 0px`
+- `--app-shell-header-height: 72px`
+
+---
+
+## AppLayout
+
+The master shell component. Renders three fixed regions plus an optional assistant dock.
+
+### Layout structure
+
+1. **Header** (`<header>`) — fixed at top, offset by sidebar width. Contains `TopCommandBar`.
+2. **Left sidebar** (`<aside>`) — fixed left, full height. Contains `LeftRailShadcn`. On mobile, slides in as overlay with backdrop.
+3. **Main content** (`<main>`) — absolute positioned, padded by header and sidebar. Scroll behavior varies by route.
+4. **Assistant dock** — portal to `document.body`. Two modes: docked (bottom corner) or detached (centered modal).
+
+### Scroll locking
+
+Certain routes lock `<main>` scroll and manage their own internal scrolling:
+
+| Route pattern | Locks scroll |
+|---|---|
+| `/app/elt/*` | Yes |
+| `/app/schemas/*` | Yes |
+| `/app/schemas/layout` | Yes |
+| `/app/settings/*` | Yes |
+| All other `/app/*` | No (main scrolls) |
+
+### Content wrapping
+
+```
+Routes → AppLayout
+  ├── /app/flows/*  → <Outlet /> directly (FlowsRouteShell handles its own layout)
+  └── everything else → <AppPageShell mode="fluid"><Outlet /></AppPageShell>
+```
+
+### Feature flags
+
+- `featureFlags.shellV2` — enables the v2 shell layout
+- `featureFlags.assistantDock` — enables assistant dock (requires shellV2)
+
+### Persisted state (localStorage)
+
+| Key | Type | Default | Purpose |
+|---|---|---|---|
+| `blockdata.shell.nav_open_desktop` | boolean | `true` | Sidebar expanded/collapsed |
+| `blockdata.shell.assistant_open` | boolean | `false` | Assistant panel visibility |
+| `blockdata.shell.assistant_detached` | boolean | `false` | Detached (modal) mode |
+| `blockdata.shell.assistant_side` | `'left'` \| `'right'` | `'right'` | Docked side |
+
+---
+
+## TopCommandBar
+
+Fixed header bar. Two visual modes controlled by the `shellGuides` prop:
+
+- **Minimal mode** (default) — left hamburger (mobile), center slot from `HeaderCenterContext`, search combobox, right utilities.
+- **Shell guides mode** — used by Schema Layout. Left/middle/right slots injected via `shellTopSlots` from `HeaderCenterContext`.
+
+### Right-side utilities
+
+1. **Project List** button — navigates to `/app/projects/list`
+2. **Assistant toggle** — shows/hides assistant dock (feature-flagged)
+3. **Theme toggle** — dark/light mode via `data-theme` attribute on `<html>`
+
+### Search
+
+Ark UI `Combobox` with static options: Upload, Parse, Extract, Transform, Settings. Filters client-side. Hidden in shell-guides mode.
+
+---
+
+## LeftRailShadcn
+
+Left sidebar navigation built on `shadcn/ui Sidebar` + Ark UI `TreeView` + Ark UI `Select`.
+
+### Sections (top to bottom)
+
+1. **Brand header** — "BlockData" text or "B" icon (compact mode). Click navigates to `/app/elt` or expands sidebar.
+2. **Project selector** — Ark UI Select. Loads projects via `list_projects_overview` RPC (falls back to `list_projects_overview_v2` then direct table query). Selection persisted to `blockdata.projectFocus` in localStorage.
+3. **Nav tree** — Ark UI TreeView. Items from `nav-config.ts`:
+   - Flows (`/app/flows`)
+   - ELT (`/app/elt`)
+   - Integrations (`/app/integrations`)
+   - Database (`/app/database`)
+   - Schema (`/app/schemas`)
+4. **User footer** — Ark UI Avatar + Menu. Shows Settings link and Sign out.
+
+### Compact mode
+
+When `desktopCompact=true`, the sidebar shrinks to 60px. Project selector and nav labels are hidden. Navigation becomes icon-only buttons.
+
+---
+
+## AppPageShell
+
+Thin content wrapper with two modes:
+
+| Mode | Behavior |
+|---|---|
+| `fluid` (default) | No max-width constraint. Content fills available space. |
+| `constrained` | Applies `maxWidth`, `gap`, and `paddingBottom` from `styleTokens.shell`. Centers content. |
+
+Currently, `AppLayout` always wraps non-Flows routes in `<AppPageShell mode="fluid">`.
+
+### History note
+
+The global `AppPageShell` wrapper was previously mounted in constrained mode inside `AppLayout`, causing layout drift across all routes. This was fixed on 2026-02-20 by switching to fluid mode and letting individual routes opt into constrained layout. See `docs/plans/docling/fixes-required/2026-02-20-platform-shell-and-grid-fix-note.md`.
+
+---
+
+## FlowsRouteShell
+
+Dedicated shell for `/app/flows/*`. Detects list vs detail routes via regex and applies different CSS classes:
+
+- `flows-route-shell--list` — list view layout
+- `flows-route-shell--detail` — detail/canvas layout
+
+Flows routes bypass `AppPageShell` entirely — `AppLayout` renders `<Outlet />` directly for flows.
+
+---
+
+## SettingsLayout
+
+Two-column admin layout rendered inside the main content area.
+
+### Structure
+
+```
+┌──────────────────────────────────────┐
+│  Settings second rail   │  Content   │
+│  (250px, scrollable)    │  (flex-1)  │
+│                         │            │
+│  ┌─ General ──────────┐ │            │
+│  │  Account           │ │            │
+│  └────────────────────┘ │            │
+│                         │            │
+│  ┌─ Superuser ────────┐ │            │
+│  │  AI Stack          │ │            │
+│  │  Services          │ │            │
+│  │  Platform          │ │            │
+│  │  Integration Cat.  │ │            │
+│  │  Design Standards  │ │            │
+│  └────────────────────┘ │            │
+│                         │            │
+│  ┌─ Designs ──────────┐ │            │
+│  │  Instance Config   │ │            │
+│  └────────────────────┘ │            │
+└─────────────────────────┴────────────┘
+```
+
+### Nav groups
+
+Defined in `settings-nav.ts`. Groups labeled `admin` and `designs` are **superuser-only** — hidden unless `useSuperuserProbe()` returns `true`.
+
+| Group | Visibility | Items |
+|---|---|---|
+| General | All users | Account |
+| Superuser | Superuser only | AI Stack, Services, Platform, Integration Catalog, Design Standards |
+| Designs | Superuser only | Instance Config |
+
+### AI Stack tabs
+
+When the route matches `/app/settings/ai`, `/app/settings/model-roles`, or `/app/settings/mcp`, a horizontal tab bar renders above the content: **AI Providers**, **Model Roles**, **MCP Servers**.
+
+---
+
+## HeaderCenterContext
+
+React context that allows any child component to inject content into the header bar.
+
+### API
+
+```typescript
+const { center, setCenter, shellTopSlots, setShellTopSlots } = useHeaderCenter();
+```
+
+| Field | Type | Purpose |
+|---|---|---|
+| `center` | `ReactNode` | Content for the header center slot (minimal mode) |
+| `shellTopSlots` | `{ left?, middle?, right?, hideLeftDivider?, showRightInMinimal? }` | Slot overrides for shell-guides mode |
+
+Used by the Schema Layout page to inject its own toolbar into the header.
+
+---
+
+## AssistantDockHost
+
+AI chat panel powered by `useAssistantChat` hook. SSE streaming to the `assistant-chat` edge function.
+
+### Display modes
+
+| Mode | Trigger | Appearance |
+|---|---|---|
+| Docked | Default when opened | Fixed panel, bottom-left or bottom-right, 560px wide, 78vh tall |
+| Detached | Click detach button | Centered modal with backdrop blur, 1180px wide, 92vh tall |
+
+### Controls
+
+- **Side toggle** — flip between left/right docking
+- **Detach/attach** — switch between docked and modal
+- **New thread** — clears conversation
+- **Model selector** — displays "Sonnet 4.5" (currently static)
