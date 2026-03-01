@@ -9,6 +9,8 @@ type AdminIntegrationCatalogDeps = {
   nowIso: () => string;
 };
 
+type CatalogSource = "primary" | "temp";
+
 const defaultDeps: AdminIntegrationCatalogDeps = {
   requireSuperuser,
   createAdminClient,
@@ -21,6 +23,15 @@ function json(status: number, body: unknown): Response {
     status,
     headers: withCorsHeaders({ "Content-Type": "application/json" }),
   });
+}
+
+function parseCatalogSource(url: URL): CatalogSource {
+  const raw = (url.searchParams.get("catalog_source") ?? "").trim().toLowerCase();
+  return raw === "temp" ? "temp" : "primary";
+}
+
+function catalogTableName(source: CatalogSource): "integration_catalog_items" | "integration_catalog_items_temp" {
+  return source === "temp" ? "integration_catalog_items_temp" : "integration_catalog_items";
 }
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
@@ -55,6 +66,55 @@ function inferSuggestedServiceType(taskClass: string, pluginGroup: string | null
   if (value.includes("convert")) return "conversion";
   if (value.includes(".edge.") || value.includes("supabase")) return "edge";
   return "custom";
+}
+
+function localhostFallbackUrl(sourceUrl: string): string | null {
+  let parsed: URL;
+  try {
+    parsed = new URL(sourceUrl);
+  } catch {
+    return null;
+  }
+
+  const host = parsed.hostname.toLowerCase();
+  const isLocalHost = host === "localhost" || host === "127.0.0.1" || host === "::1";
+  if (!isLocalHost) return null;
+
+  parsed.hostname = "host.docker.internal";
+  return parsed.toString();
+}
+
+type FetchWithFallbackResult = {
+  response: Response;
+  fetchedFromUrl: string;
+  usedFallback: boolean;
+};
+
+async function fetchWithLocalhostFallback(
+  deps: AdminIntegrationCatalogDeps,
+  sourceUrl: string,
+  init: RequestInit,
+  errorPrefix: string,
+): Promise<FetchWithFallbackResult> {
+  const fallbackUrl = localhostFallbackUrl(sourceUrl);
+
+  try {
+    const response = await deps.fetch(sourceUrl, init);
+    return { response, fetchedFromUrl: sourceUrl, usedFallback: false };
+  } catch (primaryErr) {
+    if (!fallbackUrl || fallbackUrl === sourceUrl) {
+      throw new Error(`${errorPrefix}: ${primaryErr instanceof Error ? primaryErr.message : String(primaryErr)}`);
+    }
+
+    try {
+      const response = await deps.fetch(fallbackUrl, init);
+      return { response, fetchedFromUrl: fallbackUrl, usedFallback: true };
+    } catch (fallbackErr) {
+      const primaryMessage = primaryErr instanceof Error ? primaryErr.message : String(primaryErr);
+      const fallbackMessage = fallbackErr instanceof Error ? fallbackErr.message : String(fallbackErr);
+      throw new Error(`${errorPrefix}: ${primaryMessage}; fallback ${fallbackUrl} failed: ${fallbackMessage}`);
+    }
+  }
 }
 
 type KestraTask = {
@@ -167,6 +227,9 @@ export async function handleAdminIntegrationCatalogRequest(
   try {
     const superuser = await deps.requireSuperuser(req);
     const supabaseAdmin = deps.createAdminClient();
+    const url = new URL(req.url);
+    const source = parseCatalogSource(url);
+    const catalogTable = catalogTableName(source);
 
     if (req.method === "GET") {
       const [{ data: items, error: itemsErr }, { data: services, error: servicesErr }, {
@@ -174,7 +237,7 @@ export async function handleAdminIntegrationCatalogRequest(
         error: functionsErr,
       }] = await Promise.all([
         supabaseAdmin
-          .from("integration_catalog_items")
+          .from(catalogTable)
           .select(
             "item_id,source,external_id,plugin_name,plugin_title,plugin_group,plugin_version,categories,task_class,task_title,task_description,task_schema,task_markdown,enabled,suggested_service_type,mapped_service_id,mapped_function_id,mapping_notes,source_updated_at,last_synced_at,updated_at",
           ),
@@ -219,6 +282,7 @@ export async function handleAdminIntegrationCatalogRequest(
           user_id: superuser.userId,
           email: superuser.email,
         },
+        catalog_source: source,
         items: itemRows,
         services: serviceRows,
         functions: functionRows,
@@ -242,12 +306,15 @@ export async function handleAdminIntegrationCatalogRequest(
           ? new Set(body.only_task_classes.map((value) => normalizeTaskClassInput(value)).filter((value) => value.length > 0))
           : null;
 
-        const resp = await deps.fetch(sourceUrl, {
-          method: "GET",
-          headers: { Accept: "application/json" },
-        }).catch((err) => {
-          throw new Error(`Failed to fetch Kestra plugins: ${err instanceof Error ? err.message : String(err)}`);
-        });
+        const { response: resp, fetchedFromUrl, usedFallback } = await fetchWithLocalhostFallback(
+          deps,
+          sourceUrl,
+          {
+            method: "GET",
+            headers: { Accept: "application/json" },
+          },
+          "Failed to fetch Kestra plugins",
+        );
         if (!resp.ok) {
           const text = await resp.text().catch(() => "");
           return json(502, { error: `Kestra request failed: HTTP ${resp.status} ${text.slice(0, 500)}` });
@@ -261,7 +328,7 @@ export async function handleAdminIntegrationCatalogRequest(
           : normalized.rows;
 
         const { data: existingRows, error: existingErr } = await supabaseAdmin
-          .from("integration_catalog_items")
+          .from(catalogTable)
           .select("source,external_id");
         if (existingErr) return json(500, { error: `Failed to load existing catalog items: ${existingErr.message}` });
 
@@ -282,6 +349,8 @@ export async function handleAdminIntegrationCatalogRequest(
             ok: true,
             dry_run: true,
             source_url: sourceUrl,
+            fetched_from_url: fetchedFromUrl,
+            used_fallback: usedFallback,
             summary: {
               total_normalized: rows.length,
               would_insert: insertCount,
@@ -295,7 +364,7 @@ export async function handleAdminIntegrationCatalogRequest(
 
         if (rows.length > 0) {
           const { error: upsertErr } = await supabaseAdmin
-            .from("integration_catalog_items")
+            .from(catalogTable)
             .upsert(rows, { onConflict: "source,external_id" });
           if (upsertErr) return json(500, { error: `Failed to sync catalog items: ${upsertErr.message}` });
         }
@@ -304,6 +373,8 @@ export async function handleAdminIntegrationCatalogRequest(
           ok: true,
           dry_run: false,
           source_url: sourceUrl,
+          fetched_from_url: fetchedFromUrl,
+          used_fallback: usedFallback,
           summary: {
             total_normalized: rows.length,
             inserted: insertCount,
@@ -314,7 +385,7 @@ export async function handleAdminIntegrationCatalogRequest(
         });
       }
 
-      if (target === "hydrate_detail") {
+      if (target === "hydrate_detail" || target === "hydrate_schema" || target === "hydrate_markdown") {
         const taskClassInput = typeof body.task_class === "string" ? body.task_class : "";
         const taskClass = normalizeTaskClassInput(taskClassInput);
         if (!taskClass) return json(400, { error: "Missing task_class" });
@@ -323,12 +394,15 @@ export async function handleAdminIntegrationCatalogRequest(
           ? body.source_url.trim()
           : `http://localhost:8080/api/v1/plugins/${encodeURIComponent(taskClass)}`;
 
-        const resp = await deps.fetch(sourceUrl, {
-          method: "GET",
-          headers: { Accept: "application/json" },
-        }).catch((err) => {
-          throw new Error(`Failed to fetch Kestra task detail: ${err instanceof Error ? err.message : String(err)}`);
-        });
+        const { response: resp, fetchedFromUrl, usedFallback } = await fetchWithLocalhostFallback(
+          deps,
+          sourceUrl,
+          {
+            method: "GET",
+            headers: { Accept: "application/json" },
+          },
+          "Failed to fetch Kestra task detail",
+        );
         if (!resp.ok) {
           const text = await resp.text().catch(() => "");
           return json(502, { error: `Kestra detail request failed: HTTP ${resp.status} ${text.slice(0, 500)}` });
@@ -342,16 +416,23 @@ export async function handleAdminIntegrationCatalogRequest(
         const nextSchema = isPlainObject(detail.schema) ? detail.schema : {};
         const nextMarkdown = typeof detail.markdown === "string" ? detail.markdown : null;
         const nowIso = deps.nowIso();
+        const updatePayload: Record<string, unknown> = {
+          source_updated_at: nowIso,
+          last_synced_at: nowIso,
+          updated_at: nowIso,
+        };
+
+        if (target === "hydrate_detail" || target === "hydrate_schema") {
+          updatePayload.task_schema = nextSchema;
+        }
+
+        if (target === "hydrate_detail" || target === "hydrate_markdown") {
+          updatePayload.task_markdown = nextMarkdown;
+        }
 
         const { error: updateErr } = await supabaseAdmin
-          .from("integration_catalog_items")
-          .update({
-            task_schema: nextSchema,
-            task_markdown: nextMarkdown,
-            source_updated_at: nowIso,
-            last_synced_at: nowIso,
-            updated_at: nowIso,
-          })
+          .from(catalogTable)
+          .update(updatePayload)
           .eq("source", "kestra")
           .eq("external_id", taskClass);
 
@@ -359,12 +440,17 @@ export async function handleAdminIntegrationCatalogRequest(
 
         return json(200, {
           ok: true,
-          updated_target: "detail",
+          updated_target: target,
           external_id: taskClass,
+          source_url: sourceUrl,
+          fetched_from_url: fetchedFromUrl,
+          used_fallback: usedFallback,
         });
       }
 
-      return json(400, { error: "Invalid target. Use target=sync_kestra or target=hydrate_detail" });
+      return json(400, {
+        error: "Invalid target. Use target=sync_kestra, hydrate_schema, hydrate_markdown, or hydrate_detail",
+      });
     }
 
     if (req.method === "PATCH" || req.method === "PUT") {
@@ -429,7 +515,7 @@ export async function handleAdminIntegrationCatalogRequest(
       update.updated_at = deps.nowIso();
 
       const { error: updateErr } = await supabaseAdmin
-        .from("integration_catalog_items")
+        .from(catalogTable)
         .update(update)
         .eq("item_id", itemId);
 

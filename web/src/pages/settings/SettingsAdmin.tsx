@@ -36,7 +36,9 @@ import { cn } from '@/lib/utils';
 import { edgeFetch } from '@/lib/edge';
 import { InstanceConfigPanel } from './InstanceConfigPanel';
 import { IntegrationCatalogPanel } from './IntegrationCatalogPanel';
+import { IntegrationCatalogPanelTemp } from './IntegrationCatalogPanelTemp';
 import { ServicesPanel } from './ServicesPanel';
+import { CATEGORY_IDS, findAdminSubTabGroup, type CategoryId } from './settings-tabs';
 
 type PolicyValueType = 'boolean' | 'integer' | 'number' | 'string' | 'object' | 'array';
 
@@ -149,9 +151,6 @@ const APP_SHELL_SPEC_ROWS: AppShellSpecRow[] = [
   },
 ];
 
-const CATEGORY_IDS = ['models', 'worker', 'upload', 'services', 'integration-catalog', 'design', 'design-shell', 'design-icons', 'audit', 'instance-config'] as const;
-type CategoryId = (typeof CATEGORY_IDS)[number];
-
 type Category = {
   id: CategoryId;
   label: string;
@@ -190,6 +189,11 @@ const CATEGORIES: Category[] = [
     match: () => false,
   },
   {
+    id: 'integration-catalog-temp',
+    label: 'Integration Catalog - Temp',
+    match: () => false,
+  },
+  {
     id: 'design',
     label: 'Design Standards',
     match: () => false,
@@ -213,48 +217,6 @@ const CATEGORIES: Category[] = [
     id: 'instance-config',
     label: 'Instance Config',
     match: () => false,
-  },
-];
-
-type AdminSubTabGroup = {
-  id: 'runtime' | 'operations' | 'design' | 'designs';
-  label: string;
-  tabs: Array<{ id: CategoryId; label: string }>;
-};
-
-const ADMIN_SUBTAB_GROUPS: AdminSubTabGroup[] = [
-  {
-    id: 'runtime',
-    label: 'Runtime',
-    tabs: [
-      { id: 'models', label: 'Runtime Policy' },
-      { id: 'worker', label: 'Worker' },
-      { id: 'upload', label: 'Upload' },
-    ],
-  },
-  {
-    id: 'operations',
-    label: 'Operations',
-    tabs: [
-      { id: 'services', label: 'Services' },
-      { id: 'audit', label: 'Audit History' },
-    ],
-  },
-  {
-    id: 'design',
-    label: 'Design',
-    tabs: [
-      { id: 'design', label: 'Design Standards' },
-      { id: 'design-shell', label: 'App Shell Specs' },
-      { id: 'design-icons', label: 'Icon Inventory' },
-    ],
-  },
-  {
-    id: 'designs',
-    label: 'Designs',
-    tabs: [
-      { id: 'instance-config', label: 'Instance Config' },
-    ],
   },
 ];
 
@@ -783,10 +745,7 @@ export default function SettingsAdmin() {
   }, [selectedCategory]);
 
   const selectedSubTabGroup = useMemo(() => {
-    if (!selectedCategory) return null;
-    return ADMIN_SUBTAB_GROUPS.find((group) =>
-      group.tabs.some((tab) => tab.id === selectedCategory),
-    ) ?? null;
+    return findAdminSubTabGroup(selectedCategory);
   }, [selectedCategory]);
 
   const filteredPolicies = useMemo(() => {
@@ -794,7 +753,8 @@ export default function SettingsAdmin() {
       !selectedCategoryDef ||
       selectedCategoryDef.id === 'audit' ||
       selectedCategoryDef.id === 'services' ||
-      selectedCategoryDef.id === 'integration-catalog'
+      selectedCategoryDef.id === 'integration-catalog' ||
+      selectedCategoryDef.id === 'integration-catalog-temp'
     ) return [];
     return policies.filter((p) => selectedCategoryDef.match(p.policy_key));
   }, [policies, selectedCategoryDef]);
@@ -1307,7 +1267,7 @@ export default function SettingsAdmin() {
               </div>
             )}
 
-            {selectedCategory !== 'upload' && selectedCategory !== 'audit' && selectedCategory !== 'services' && selectedCategory !== 'integration-catalog' && selectedCategory !== 'design' && selectedCategory !== 'design-shell' && selectedCategory !== 'design-icons' && (
+            {selectedCategory !== 'upload' && selectedCategory !== 'audit' && selectedCategory !== 'services' && selectedCategory !== 'integration-catalog' && selectedCategory !== 'integration-catalog-temp' && selectedCategory !== 'design' && selectedCategory !== 'design-shell' && selectedCategory !== 'design-icons' && (
               <div className={policyPanelClassName}>
                 {filteredPolicies.map((row) => {
                   const numericDraft = typeof draftValues[row.policy_key] === 'number'
@@ -1472,6 +1432,9 @@ export default function SettingsAdmin() {
             )}
             {selectedCategory === 'integration-catalog' && (
               <IntegrationCatalogPanel />
+            )}
+            {selectedCategory === 'integration-catalog-temp' && (
+              <IntegrationCatalogPanelTemp />
             )}
             {selectedCategory === 'instance-config' && (
               <InstanceConfigPanel />
@@ -1716,5 +1679,3 @@ export default function SettingsAdmin() {
     </div>
   );
 }
-
-

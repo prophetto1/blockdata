@@ -246,3 +246,70 @@ Deno.test("admin-integration-catalog sync_kestra dry-run summarizes inserts/upda
   assertEquals(body.summary.would_update, 1);
   assertEquals(body.summary.would_insert, 1);
 });
+
+Deno.test("admin-integration-catalog GET with catalog_source=temp reads from temp table", async () => {
+  let selectedTable = "";
+
+  const fakeAdminClient = {
+    from: (table: string) => {
+      if (table === "integration_catalog_items_temp") {
+        selectedTable = table;
+        return {
+          select: () =>
+            Promise.resolve({
+              data: [
+                {
+                  item_id: "temp-1",
+                  source: "kestra",
+                  external_id: "io.kestra.plugin.core.log.Log",
+                  plugin_name: "plugin-core",
+                  plugin_title: "Core",
+                  plugin_group: "io.kestra.plugin.core",
+                  plugin_version: "1.0.0",
+                  categories: ["CORE"],
+                  task_class: "io.kestra.plugin.core.log.Log",
+                  task_title: "Log",
+                  task_description: "Temp catalog row",
+                  task_schema: {},
+                  task_markdown: null,
+                  enabled: true,
+                  suggested_service_type: "custom",
+                  mapped_service_id: null,
+                  mapped_function_id: null,
+                  mapping_notes: null,
+                  source_updated_at: null,
+                  last_synced_at: "2026-02-28T00:00:00Z",
+                  updated_at: "2026-02-28T00:00:00Z",
+                },
+              ],
+              error: null,
+            }),
+        };
+      }
+      if (table === "service_registry") {
+        return { select: () => Promise.resolve({ data: [], error: null }) };
+      }
+      if (table === "service_functions") {
+        return { select: () => Promise.resolve({ data: [], error: null }) };
+      }
+      throw new Error(`Unexpected table: ${table}`);
+    },
+  };
+
+  const req = new Request("https://example.com/functions/v1/admin-integration-catalog?catalog_source=temp", {
+    method: "GET",
+    headers: { Authorization: "Bearer test" },
+  });
+  const resp = await handleAdminIntegrationCatalogRequest(req, {
+    requireSuperuser: () => Promise.resolve({ userId: "u1", email: "admin@example.com" }),
+    createAdminClient: (() => fakeAdminClient) as never,
+    fetch: (() => Promise.reject(new Error("not used"))) as never,
+    nowIso: () => "2026-02-28T00:00:00Z",
+  });
+  const body = await resp.json();
+
+  assertEquals(resp.status, 200);
+  assertEquals(selectedTable, "integration_catalog_items_temp");
+  assertEquals(body.items.length, 1);
+  assertEquals(body.items[0].item_id, "temp-1");
+});
