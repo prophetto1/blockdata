@@ -41,13 +41,18 @@
   "navigation": {
     "tabs": [
       {
-        "tab": "Guides",
-        "groups": [
+        "tab": "Untitled Tab",
+        "anchors": [
           {
-            "group": "Getting started",
-            "pages": [
-              "index",
-              "guides/quickstart"
+            "anchor": "Internal Guides",
+            "icon": "album",
+            "tabs": [
+              {
+                "tab": "Infrastructure",
+                "pages": [
+                  "s"
+                ]
+              }
             ]
           }
         ]
