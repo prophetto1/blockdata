@@ -250,7 +250,7 @@ function SchemaDetail({ schema, markdown }: { schema: ParsedTaskSchema; markdown
 export function IntegrationCatalogPanel() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [status, setStatus] = useState<InlineStatus | null>(null);
+  const [_status, _setStatus] = useState<InlineStatus | null>(null);
   const [items, setItems] = useState<CatalogItemRow[]>([]);
   const [search, setSearch] = useState('');
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);

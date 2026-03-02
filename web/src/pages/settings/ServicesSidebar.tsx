@@ -39,7 +39,7 @@ function healthDotClass(status: string): string {
 export function ServicesSidebar({
   services,
   functions,
-  serviceTypes,
+  serviceTypes: _serviceTypes,
   selectedServiceId,
   onSelectService,
   loading,

@@ -838,7 +838,7 @@ export function GridTestPanel() {
   }, [filteredItems, sortColumns]);
 
   /* ---- Summary rows ---- */
-  const topSummaryRows = useMemo<readonly SummaryRow[]>(() => [{
+  const _topSummaryRows = useMemo<readonly SummaryRow[]>(() => [{
     id: 'top-summary',
     totalCount: items.length,
     filteredCount: sortedRows.length,

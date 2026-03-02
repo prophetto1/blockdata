@@ -12,6 +12,9 @@ import { formatTimestamp } from './services-panel.types';
 type ServiceDetailPanelProps = {
   service: ServiceRow;
   functions: ServiceFunctionRow[];
+  savingKey: string | null;
+  onToggleServiceEnabled: (service: ServiceRow) => void;
+  onToggleFunctionEnabled: (fn: ServiceFunctionRow) => void;
   onClose: () => void;
 };
 
