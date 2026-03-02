@@ -213,17 +213,202 @@ Each phase is independently deployable. Frontend switches one router at a time. 
 
 ---
 
+## Design Review
+
+### Service boundary: blockdata-api vs pipeline-worker
+
+Both services talk to Vertex AI — blockdata-api for the worker (extraction) and chat (streaming), pipeline-worker for Kestra plugin execution. Two services with duplicate Vertex AI clients, duplicate auth, and duplicate credential resolution is wasteful.
+
+**Decision needed:** Does pipeline-worker eventually absorb the worker function, or does blockdata-api stay the sole Vertex AI consumer? The cleaner boundary is:
+- **blockdata-api** = web API gateway, CRUD, orchestration dispatch
+- **pipeline-worker** = all compute (LLM extraction, plugin execution, chat)
+
+This avoids duplicating Vertex AI infra across two services.
+
+### Phase 4 (worker) is 40% of the total work
+
+The worker function is 1,442 lines that evolved through 15 production iterations: adaptive batching, prompt cache management, overflow recovery, Vertex AI streaming, cost tracking, policy snapshot enforcement. Porting this is a rewrite, not a translation. **Phase 4 needs its own sub-plan with an explicit test matrix for each behavior.**
+
+### Database access: pick one pattern
+
+Don't mix `asyncpg` and `supabase-py` in the same service. Two connection pools, two query styles, two error handling paths. Use `asyncpg` exclusively with a connection pool (`asyncpg.create_pool`). Write a thin auth helper that queries the same pool. The edge functions use PostgREST because they have to — this migration removes that constraint.
+
+### Encryption compatibility is a pre-Phase-2 gate
+
+XChaCha20-Poly1305 keys encrypted by Deno's `tweetnacl` must be decryptable by Python's `pynacl`. Same algorithm, but nonce handling and key derivation details can differ between implementations. If decryption fails, existing API keys are unreadable. **Run a compatibility spike before Phase 2, not during it.**
+
+### Connection pooling not addressed
+
+19 edge functions each create ephemeral Supabase clients per invocation. A single FastAPI service with `asyncpg` holds persistent connections. Size the pool for concurrent request load. Not hard, but must be configured explicitly in `db.py`.
+
+### Conversion-complete callback is a deploy sequencing problem
+
+conversion-service POSTs to the edge function URL. When blockdata-api takes over, conversion-service must POST to `http://localhost:8001/parse/conversion-complete` instead. Deploy order matters — if either side switches before the other, callbacks fail. Options:
+- Run both endpoints in parallel during transition (edge function forwards to FastAPI)
+- Deploy atomically (update conversion-service config and FastAPI endpoint together)
+
+---
+
+## Execution System
+
+### Design Decisions
+
+**Triggers:** Phase 2. Get manual "user clicks Run" execution working first. Automatic triggers (schedules, webhooks, file watchers, event-driven hooks) come later. Everything built so far — service registry, integration catalog, flow_sources — assumes manual execution as the first mode.
+
+**Flow node references:** Nodes reference `task_class` (e.g. `io.kestra.plugin.dbt.cli.DbtCLI`), not `function_id`. Reasons:
+- Kestra's naming system becomes the universal plugin vocabulary across the platform
+- `function_id` is a UUID that changes if you re-provision services
+- The catalog → service mapping is an admin concern, not a flow author concern
+- A flow built against `io.kestra.plugin.dbt.cli.DbtCLI` stays valid even if the backing service is swapped
+
+### Execution Chain (end to end)
+
+User clicks Run → resolution → dispatch → execute → track → return result
+
+| Step | What It Does | Status | Evidence |
+|------|-------------|--------|----------|
+| 1. Plugin catalog | task_classes with input/output schemas | **Schema ready, 0 rows** | `integration_catalog_items` (migration 059) — columns: task_class, task_schema (JSONB), mapped_service_id, mapped_function_id. No Kestra sync done yet. |
+| 2. Service registry | Services with base_url + functions with entrypoint | **Built, seeded** | `service_registry` (5 rows), `service_functions` (21 rows), `service_functions_view` (joined). Migration 050. |
+| 3. Mapping | task_class → mapped_function_id → service | **Schema built, 0 mappings** | Mapping columns exist on `integration_catalog_items` but catalog has 0 rows, so nothing to map. |
+| 4. Resolution | Code that walks task_class → catalog → function → service.base_url + entrypoint | **Missing** | No blockdata-api resolution function exists. pipeline-worker has its own internal `registry.resolve()` but that's local plugin dispatch, not DB-level catalog resolution. |
+| 5. Parameter form | UI renders task_schema inputs, user fills values, clicks Execute | **Missing** | ServicesPanel is CRUD-only. No form generation from parameter_schema. |
+| 6. Dispatch | HTTP POST to resolved service URL with params + context | **Missing** | No edge function or API endpoint creates service_runs rows or POSTs to backing services. |
+| 7. Backing services | Something listening at base_url that executes the task | **Partially built** | pipeline-worker: 13 plugin classes, 15+ task_types, POST `/execute` endpoint (`services/pipeline-worker/`). dlt/dbt: endpoints seeded in service_functions but no backing FastAPI handlers yet. |
+| 8. Run tracking | Create run row, update status, store result/artifacts | **Schema built, no code writes to them** | `service_runs`, `service_run_events`, `service_run_artifacts` (migrations 050-051). Full column set with indexes and RLS. |
+| 9. Flow execution | Walk a DAG of tasks, execute in order, pass outputs downstream | **Missing** | `flow_sources` table (migration 049) stores YAML source + revision. No execution engine. |
+| 10. Orchestrator | DAG dependency resolution, fan-out, branching, retry, timeout | **Missing** | This is the hard one. |
+
+### What's Built (verified against code 2026-03-02)
+
+**Database (Supabase Postgres):**
+
+| Table | Migration | Rows | Purpose |
+|-------|-----------|------|---------|
+| `integration_catalog_items` | 059 | 0 | task_class, task_schema (JSONB), mapped_service_id, mapped_function_id |
+| `service_registry` | 050 | 5 | load-runner :8000, transform-runner :8000, docling :5001, conversion :5002, supabase-edge |
+| `service_functions` | 050 | 21 | 3 dlt, 7 dbt, 4 conversion, 7 edge — each with entrypoint, http_method, parameter_schema |
+| `service_functions_view` | 050 | — | Joined view (functions + registry + type_catalog), filters by enabled |
+| `service_runs` | 050 | 0 | status (pending/running/complete/failed/cancelled), config_snapshot, result, duration_ms |
+| `service_run_events` | 051 | 0 | Append-only log stream (level, message, raw_event) |
+| `service_run_artifacts` | 051 | 0 | Storage pointers (bucket, key, sha256, bytes) |
+| `flow_sources` | 049 | 0 | YAML source + revision per project |
+| `project_service_config` | 054 | 0 | Per-project service overrides |
+| `service_type_catalog` | 050 | 6 | dlt, dbt, docling, edge, conversion, custom |
+
+**Pipeline-worker (`services/pipeline-worker/`):**
+- FastAPI app: POST `/execute`, GET `/health`, GET `/plugins`
+- Auto-discovery plugin registry (`app/registry.py`) — scans `app/plugins/` on startup
+- 13 plugin classes across 4 modules:
+  - `core.py` — Log, Sleep, Pause, If, Switch, ForEach, Parallel, Sequential
+  - `http.py` — HttpRequest, HttpDownload (with auth, form data, response truncation)
+  - `scripts.py` — PythonScript, ShellScript, NodeScript (with env vars, timeout, output files)
+- Each plugin: `task_types` list (Kestra-compatible identifiers) + `parameter_schema()`
+- Execution contract: `{task_type, params, execution_id, task_run_id, variables}` → `{task_type, output{state, data, logs}}`
+- Template rendering: `context.render()` for `{{ expression }}` interpolation
+
+**Conversion service (`services/conversion-service/`):**
+- Standalone FastAPI at :5002 — POST `/convert`, POST `/citations`
+- Callback mechanism (POSTs back to Supabase on completion)
+- Not integrated with service_registry dispatch chain yet
+
+**Admin UI (`web/src/pages/settings/`):**
+- ServicesPanel — sidebar-detail layout, CRUD for services and functions
+- Integration catalog admin — sync from Kestra, per-item mapping (via edge function)
+
+### What's Missing (5 items to build)
+
+**1. Resolution function** — `resolve(task_class) → {base_url, entrypoint, http_method, params_schema}`
+- Small function in blockdata-api
+- Reads `integration_catalog_items` → `service_functions` → `service_registry` in one joined query
+- Falls back to pipeline-worker's internal registry for unmapped task_classes
+
+**2. Dispatch + run tracking** — blockdata-api endpoint: `POST /execute`
+- Accepts `{task_class, params, project_id?}`
+- Calls resolution function
+- Creates `service_runs` row (status=pending)
+- POSTs to the resolved `base_url + entrypoint`
+- Updates row (status=complete/failed), stores output
+- Writes events to `service_run_events`
+- Stores artifacts in `service_run_artifacts` if applicable
+
+**3. Parameter form UI** — React component renders `task_schema.properties` as a form
+- Text inputs, selects for enums, toggles for booleans, JSON editor for objects
+- User fills in values, clicks Execute, submits to dispatch endpoint
+- This is the "Run a plugin" surface
+
+**4. Flow orchestrator** — Backend reads flow definition (YAML from flow_sources)
+- Topologically sorts tasks by `dependsOn`
+- Executes each task via dispatch (sequential or parallel for independent branches)
+- Passes outputs from upstream tasks as variable context to downstream tasks
+- Handles If/Switch branching by evaluating conditions
+- Creates one `service_runs` row per task in the flow
+
+**5. Bulk mapping + catalog sync** — Populate `integration_catalog_items` and map to services
+- Kestra sync: pull 821+ task_classes into catalog (admin-integration-catalog edge function exists)
+- Pattern-based mapping rules: all `io.kestra.plugin.dbt.*` → dbt service, all `io.kestra.plugin.scripts.*` → pipeline-worker
+- Regex rules that bulk-set `mapped_service_id` + `mapped_function_id`, not 821 manual clicks
+
+### Minimum Viable Execution Path
+
+Items 1-3 are the minimum: **resolve → dispatch → parameter form**. That gets "user clicks Run on a single plugin task, sees result" working. Items 4-5 make it usable for flows and real plugin coverage.
+
+### Execution Phases
+
+| Phase | What | Depends On |
+|-------|------|------------|
+| E1 | Resolution function + dispatch endpoint + run tracking | blockdata-api exists (Migration Phase 1) |
+| E2 | Parameter form UI | E1 (needs dispatch endpoint to call) |
+| E3 | Bulk catalog sync + pattern mapping | E1 (needs resolution to validate mappings) |
+| E4 | Flow orchestrator | E1 + E3 (needs resolution + populated catalog) |
+| E5 | Triggers (schedule, webhook, event-driven) | E4 (needs flow orchestrator to trigger) |
+
+---
+
+## Missing Sections
+
+### Testing strategy
+
+Each router needs integration tests against a test database. Minimum coverage:
+- Auth gates (superuser rejected for user endpoints, user rejected for admin endpoints)
+- CRUD round-trips (create → read → update → delete)
+- Edge cases from the original TypeScript (overflow recovery, idempotency, hash derivation)
+
+### Rollback plan
+
+If a phase goes wrong, the frontend must switch back to edge functions. During migration:
+- Keep edge functions deployed and functional
+- Frontend `apiBase` toggle per router (not global) so one broken router doesn't force full rollback
+- Edge functions archived only after 30 days of stable FastAPI operation per phase
+
+### Environment variables
+
+Edge functions read secrets from Supabase Secrets (Vault). FastAPI reads from `.env`. Enumerate every secret and ensure availability:
+
+| Secret | Edge Function Source | FastAPI Source |
+|--------|---------------------|---------------|
+| `SUPABASE_URL` | Built-in | `.env` |
+| `SUPABASE_SERVICE_ROLE_KEY` | Built-in | `.env` |
+| `SUPABASE_JWT_SECRET` | Supabase Secrets | `.env` |
+| `SUPERUSER_EMAIL_ALLOWLIST` | Supabase Secrets | `.env` |
+| `GCP_VERTEX_SA_KEY` | Supabase Secrets | `.env` or file path |
+| `GCP_VERTEX_PROJECT_ID` | Supabase Secrets | `.env` |
+| `GCP_VERTEX_LOCATION` | Supabase Secrets | `.env` |
+| `CONVERSION_SERVICE_KEY` | Supabase Secrets | `.env` |
+| `API_KEY_ENCRYPTION_KEY` | Supabase Secrets | `.env` |
+
+---
+
 ## Open Questions
 
-1. **Port or connection string?** Should blockdata-api use `supabase-py` (REST, same as edge functions use the JS client) or `asyncpg` (direct Postgres connection, faster, no REST overhead)? Recommendation: `asyncpg` for reads, `supabase-py` for auth-related operations.
+1. ~~**Port or connection string?**~~ **Resolved:** Use `asyncpg` exclusively. No `supabase-py` for database operations. Connection pool in `db.py`, thin auth helper querying the same pool.
 
-2. **Crypto compatibility.** The edge functions encrypt API keys with XChaCha20-Poly1305 via Deno's `tweetnacl`. The Python side must use the same algorithm and key to decrypt existing encrypted keys. Need to verify `pynacl` produces identical ciphertext.
+2. **Crypto compatibility.** Must verify `pynacl` can decrypt existing `tweetnacl`-encrypted API keys before Phase 2 starts. Run a compatibility spike with real encrypted data.
 
-3. **Vertex AI SDK.** The edge functions use raw `fetch()` to Vertex AI. Python has `anthropic[vertex]` SDK which is cleaner. But need to verify prompt caching and streaming work identically.
+3. **Vertex AI SDK.** The `anthropic[vertex]` SDK is cleaner than raw HTTP. Verify prompt caching and streaming work identically. If blockdata-api keeps the worker, both services need this SDK.
 
-4. **Conversion-complete callback.** Currently conversion-service POSTs back to the edge function. After migration, it POSTs to `http://localhost:8001/parse/conversion-complete` instead. Both services run locally so this is a config change in conversion-service.
+4. **Conversion-complete callback.** Config change in conversion-service. Deploy both sides atomically or run edge function as a forwarding proxy during transition.
 
-5. **Edge function retirement.** After all phases complete, do we delete the edge functions from the repo or keep them as reference? Recommendation: archive to a `_deprecated/` directory, delete after 30 days of stable FastAPI operation.
+5. ~~**Edge function retirement.**~~ **Resolved:** Keep deployed during migration. Archive to `_deprecated/` per phase after 30 days stable. Delete after all phases complete.
 
 ---
 
@@ -232,3 +417,5 @@ Each phase is independently deployable. Frontend switches one router at a time. 
 | Date | Update |
 |------|--------|
 | 2026-03-02 | Initial scope document created. 19 functions inventoried, 5 migration phases defined. |
+| 2026-03-02 | Design review added. Resolved DB access (asyncpg only), added testing/rollback/env sections, flagged worker complexity and encryption compatibility as gates. |
+| 2026-03-02 | Execution System section. Verified 10-step chain against migrations + code. Design decisions (triggers=Phase 2, task_class references). What's built (pipeline-worker 13 plugins, 10 DB tables). What's missing (5 items). Execution phases E1-E5. |

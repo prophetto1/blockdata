@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 import { execSync } from 'node:child_process';
 
 const webDir = process.cwd();
-const docsDir = resolve(webDir, '../docs-site');
+const docsDir = resolve(webDir, '../web-docs');
 const docsPackageJson = resolve(docsDir, 'package.json');
 const docsDistDir = resolve(docsDir, 'dist');
 const targetDir = resolve(webDir, 'dist', 'docs');
@@ -11,7 +11,7 @@ const docsPackageLock = resolve(docsDir, 'package-lock.json');
 const docsNpmShrinkwrap = resolve(docsDir, 'npm-shrinkwrap.json');
 
 if (!existsSync(docsDir) || !existsSync(docsPackageJson)) {
-  console.log('[build] Skipping docs-site build: ../docs-site/package.json not found.');
+  console.log('[build] Skipping docs-site build: ../web-docs/package.json not found.');
   process.exit(0);
 }
 
