@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-03-02T12:10:53.754Z",
+  "generatedAt": "2026-03-02T12:52:58.213Z",
   "scope": "auth",
   "pages": [
     {
@@ -973,6 +973,24 @@
           "importedAs": "Switch",
           "category": "ark-ui",
           "definition": "Switch.Thumb comes from @ark-ui/react/switch (named import of Switch)"
+        }
+      ]
+    },
+    {
+      "page": "src/pages/NotFound.tsx",
+      "componentCount": 1,
+      "categoryCounts": {
+        "external-package": 1
+      },
+      "components": [
+        {
+          "component": "Link",
+          "usedAs": "Link",
+          "source": "react-router-dom",
+          "importKind": "named",
+          "importedAs": "Link",
+          "category": "external-package",
+          "definition": "Link comes from react-router-dom (named import of Link)"
         }
       ]
     },
@@ -3947,9 +3965,9 @@
       ]
     }
   ],
-  "totalComponentUsages": 396,
+  "totalComponentUsages": 397,
   "categoryTotals": {
-    "external-package": 15,
+    "external-package": 16,
     "local-components": 115,
     "tabler-icons": 77,
     "ark-ui": 159,

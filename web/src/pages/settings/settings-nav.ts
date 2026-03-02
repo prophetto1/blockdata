@@ -32,7 +32,7 @@ export const SETTINGS_NAV: SettingsNavGroup[] = [
   },
   {
     id: 'admin',
-    label: 'Superuser',
+    label: 'Operations',
     items: [
       { id: 'ai-api', label: 'AI Stack', icon: IconBrain, path: '/app/settings/ai' },
       { id: 'admin-services', label: 'Services', icon: IconServer, path: '/app/settings/admin/services' },

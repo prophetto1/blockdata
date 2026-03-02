@@ -8,6 +8,8 @@ import type {
   AdminServicesResponse,
   FunctionDraft,
   ServiceDraft,
+  ServiceFunctionRow,
+  ServiceRow,
   ServiceTypeRow,
 } from './services-panel.types';
 import { isPlainRecord, parseJsonTextarea, parseTagsText } from './services-panel.types';
@@ -52,6 +54,13 @@ async function servicesMutation(
 /*  Data loading                                                       */
 /* ------------------------------------------------------------------ */
 
+/** Public response shape — no superuser field. */
+export type PublicServicesResponse = {
+  service_types: ServiceTypeRow[];
+  services: ServiceRow[];
+  functions: ServiceFunctionRow[];
+};
+
 export async function loadAllServices(): Promise<
   | { ok: true; data: AdminServicesResponse }
   | { ok: false; error: string }
@@ -81,6 +90,51 @@ export async function loadAllServices(): Promise<
           : [],
         services: Array.isArray(data.services) ? data.services : [],
         functions: Array.isArray(data.functions) ? data.functions : [],
+      },
+    };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : String(e) };
+  }
+}
+
+/**
+ * Load only enabled services + functions via direct Supabase query.
+ * Uses authenticated RLS — no superuser gate.
+ */
+export async function loadPublicServices(): Promise<
+  | { ok: true; data: PublicServicesResponse }
+  | { ok: false; error: string }
+> {
+  try {
+    const [typesRes, servicesRes, functionsRes] = await Promise.all([
+      supabase
+        .from('service_type_catalog')
+        .select('service_type,label,description')
+        .order('service_type'),
+      supabase
+        .from('service_registry')
+        .select('service_id,service_type,service_name,base_url,health_status,last_heartbeat,enabled,config,created_at,updated_at')
+        .eq('enabled', true)
+        .order('service_type')
+        .order('service_name'),
+      supabase
+        .from('service_functions')
+        .select('function_id,service_id,function_name,function_type,label,description,entrypoint,http_method,parameter_schema,result_schema,enabled,tags,created_at,updated_at')
+        .eq('enabled', true)
+        .order('service_id')
+        .order('function_name'),
+    ]);
+
+    if (typesRes.error) throw new Error(typesRes.error.message);
+    if (servicesRes.error) throw new Error(servicesRes.error.message);
+    if (functionsRes.error) throw new Error(functionsRes.error.message);
+
+    return {
+      ok: true,
+      data: {
+        service_types: (typesRes.data ?? []) as ServiceTypeRow[],
+        services: (servicesRes.data ?? []) as ServiceRow[],
+        functions: (functionsRes.data ?? []) as ServiceFunctionRow[],
       },
     };
   } catch (e) {

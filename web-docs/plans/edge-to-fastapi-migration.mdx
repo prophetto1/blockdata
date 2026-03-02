@@ -267,14 +267,14 @@ User clicks Run → resolution → dispatch → execute → track → return res
 
 | Step | What It Does | Status | Evidence |
 |------|-------------|--------|----------|
-| 1. Plugin catalog | task_classes with input/output schemas | **Schema ready, 0 rows** | `integration_catalog_items` (migration 059) — columns: task_class, task_schema (JSONB), mapped_service_id, mapped_function_id. No Kestra sync done yet. |
-| 2. Service registry | Services with base_url + functions with entrypoint | **Built, seeded** | `service_registry` (5 rows), `service_functions` (21 rows), `service_functions_view` (joined). Migration 050. |
-| 3. Mapping | task_class → mapped_function_id → service | **Schema built, 0 mappings** | Mapping columns exist on `integration_catalog_items` but catalog has 0 rows, so nothing to map. |
+| 1. Plugin catalog | task_classes with input/output schemas | **Built, 945 items** | `integration_catalog_items` (migration 059) — columns: task_class, task_schema (JSONB), mapped_service_id, mapped_function_id. Kestra sync complete. |
+| 2. Service registry | Services with base_url + functions with entrypoint | **Built, seeded** | `service_registry` (6 rows), `service_functions` (31 rows), `service_functions_view` (joined). Migration 050. |
+| 3. Mapping | task_class → mapped_function_id → service | **Schema built, 2/945 mapped** | Only Slack (SlackIncomingWebhook, SlackExecution) mapped. Rest unmapped. |
 | 4. Resolution | Code that walks task_class → catalog → function → service.base_url + entrypoint | **Missing** | No blockdata-api resolution function exists. pipeline-worker has its own internal `registry.resolve()` but that's local plugin dispatch, not DB-level catalog resolution. |
 | 5. Parameter form | UI renders task_schema inputs, user fills values, clicks Execute | **Missing** | ServicesPanel is CRUD-only. No form generation from parameter_schema. |
 | 6. Dispatch | HTTP POST to resolved service URL with params + context | **Missing** | No edge function or API endpoint creates service_runs rows or POSTs to backing services. |
-| 7. Backing services | Something listening at base_url that executes the task | **Partially built** | pipeline-worker: 13 plugin classes, 15+ task_types, POST `/execute` endpoint (`services/pipeline-worker/`). dlt/dbt: endpoints seeded in service_functions but no backing FastAPI handlers yet. |
-| 8. Run tracking | Create run row, update status, store result/artifacts | **Schema built, no code writes to them** | `service_runs`, `service_run_events`, `service_run_artifacts` (migrations 050-051). Full column set with indexes and RLS. |
+| 7. Backing services | Something listening at base_url that executes the task | **Partially built** | pipeline-worker: 13 plugin classes, 26 task_class strings, POST `/execute` endpoint (`services/pipeline-worker/`). dlt/dbt: endpoints seeded in service_functions but no backing FastAPI handlers yet. |
+| 8. Run tracking | Create run row, update status, store result/artifacts | **`service_runs` built, `service_run_events` + `service_run_artifacts` do not exist** | `service_runs` (migration 050). `service_run_events` and `service_run_artifacts` migrations exist in code (051) but were never applied to live DB. |
 | 9. Flow execution | Walk a DAG of tasks, execute in order, pass outputs downstream | **Missing** | `flow_sources` table (migration 049) stores YAML source + revision. No execution engine. |
 | 10. Orchestrator | DAG dependency resolution, fan-out, branching, retry, timeout | **Missing** | This is the hard one. |
 
@@ -284,16 +284,16 @@ User clicks Run → resolution → dispatch → execute → track → return res
 
 | Table | Migration | Rows | Purpose |
 |-------|-----------|------|---------|
-| `integration_catalog_items` | 059 | 0 | task_class, task_schema (JSONB), mapped_service_id, mapped_function_id |
-| `service_registry` | 050 | 5 | load-runner :8000, transform-runner :8000, docling :5001, conversion :5002, supabase-edge |
-| `service_functions` | 050 | 21 | 3 dlt, 7 dbt, 4 conversion, 7 edge — each with entrypoint, http_method, parameter_schema |
+| `integration_catalog_items` | 059 | 945 | task_class, task_schema (JSONB), mapped_service_id, mapped_function_id |
+| `service_registry` | 050 | 6 | load-runner :8000, transform-runner :8000, docling :5001, conversion :5002, supabase-edge, slack |
+| `service_functions` | 050 | 31 | Linked to services via service_id — each with entrypoint, http_method, parameter_schema |
 | `service_functions_view` | 050 | — | Joined view (functions + registry + type_catalog), filters by enabled |
 | `service_runs` | 050 | 0 | status (pending/running/complete/failed/cancelled), config_snapshot, result, duration_ms |
-| `service_run_events` | 051 | 0 | Append-only log stream (level, message, raw_event) |
-| `service_run_artifacts` | 051 | 0 | Storage pointers (bucket, key, sha256, bytes) |
+| `service_run_events` | 051 | **NOT APPLIED** | Migration exists in code but was never applied to live DB |
+| `service_run_artifacts` | 051 | **NOT APPLIED** | Migration exists in code but was never applied to live DB |
 | `flow_sources` | 049 | 0 | YAML source + revision per project |
 | `project_service_config` | 054 | 0 | Per-project service overrides |
-| `service_type_catalog` | 050 | 6 | dlt, dbt, docling, edge, conversion, custom |
+| `service_type_catalog` | 050 | 7 | dlt, dbt, docling, edge, conversion, custom, notification |
 
 **Pipeline-worker (`services/pipeline-worker/`):**
 - FastAPI app: POST `/execute`, GET `/health`, GET `/plugins`
@@ -302,7 +302,7 @@ User clicks Run → resolution → dispatch → execute → track → return res
   - `core.py` — Log, Sleep, Pause, If, Switch, ForEach, Parallel, Sequential
   - `http.py` — HttpRequest, HttpDownload (with auth, form data, response truncation)
   - `scripts.py` — PythonScript, ShellScript, NodeScript (with env vars, timeout, output files)
-- Each plugin: `task_types` list (Kestra-compatible identifiers) + `parameter_schema()`
+- Each plugin: `task_types` list (26 Kestra-compatible task_class strings total, including aliases) + `parameter_schema()`
 - Execution contract: `{task_type, params, execution_id, task_run_id, variables}` → `{task_type, output{state, data, logs}}`
 - Template rendering: `context.render()` for `{{ expression }}` interpolation
 
@@ -328,8 +328,7 @@ User clicks Run → resolution → dispatch → execute → track → return res
 - Creates `service_runs` row (status=pending)
 - POSTs to the resolved `base_url + entrypoint`
 - Updates row (status=complete/failed), stores output
-- Writes events to `service_run_events`
-- Stores artifacts in `service_run_artifacts` if applicable
+- Note: `service_run_events` and `service_run_artifacts` tables do not exist yet (migration 051 not applied). Create them if detailed run history / file artifacts are needed.
 
 **3. Parameter form UI** — React component renders `task_schema.properties` as a form
 - Text inputs, selects for enums, toggles for booleans, JSON editor for objects
@@ -343,10 +342,10 @@ User clicks Run → resolution → dispatch → execute → track → return res
 - Handles If/Switch branching by evaluating conditions
 - Creates one `service_runs` row per task in the flow
 
-**5. Bulk mapping + catalog sync** — Populate `integration_catalog_items` and map to services
-- Kestra sync: pull 821+ task_classes into catalog (admin-integration-catalog edge function exists)
+**5. Bulk mapping** — Map the 945 catalog items to services (only 2 mapped today)
+- Catalog already populated (945 items with task_schema). Sync is done.
 - Pattern-based mapping rules: all `io.kestra.plugin.dbt.*` → dbt service, all `io.kestra.plugin.scripts.*` → pipeline-worker
-- Regex rules that bulk-set `mapped_service_id` + `mapped_function_id`, not 821 manual clicks
+- Regex rules that bulk-set `mapped_service_id` + `mapped_function_id`, not 945 manual clicks
 
 ### Minimum Viable Execution Path
 

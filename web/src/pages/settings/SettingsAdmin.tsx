@@ -130,7 +130,6 @@ export default function SettingsAdmin() {
   const { category } = useParams<{ category?: string }>();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [forbiddenMessage, setForbiddenMessage] = useState<string | null>(null);
   const [auditRows, setAuditRows] = useState<AuditRow[]>([]);
   const [auditSearch, setAuditSearch] = useState('');
   const [auditActorFilter, setAuditActorFilter] = useState<string>('all');
@@ -175,8 +174,6 @@ export default function SettingsAdmin() {
   const load = async () => {
     setLoading(true);
     setError(null);
-    setForbiddenMessage(null);
-
     try {
       const resp = await edgeFetch('admin-config?audit_limit=100', { method: 'GET' });
       const text = await resp.text();
@@ -187,21 +184,18 @@ export default function SettingsAdmin() {
         // Keep raw text fallback below.
       }
 
-      if (resp.status === 403 || resp.status === 503) {
-        const msg = (payload as { error?: string }).error ?? text ?? 'Superuser access required.';
-        setForbiddenMessage(msg);
+      if (!resp.ok) {
+        // Non-superusers get 403 — skip audit data but don't block panels
+        setAuditRows([]);
         setLoading(false);
         return;
-      }
-      if (!resp.ok) {
-        const msg = (payload as { error?: string }).error ?? text ?? `HTTP ${resp.status}`;
-        throw new Error(msg);
       }
 
       const data = payload as AdminConfigResponse;
       setAuditRows(data.audit);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+    } catch (_e) {
+      // Failed to load admin config — panels still render, audit tab is empty
+      setAuditRows([]);
     } finally {
       setLoading(false);
     }
@@ -227,14 +221,11 @@ export default function SettingsAdmin() {
   return (
     <div className="flex h-full min-h-0 flex-col">
       {error && <ErrorAlert message={error} />}
-      {forbiddenMessage && (
-        <ErrorAlert message={`${forbiddenMessage} Set SUPERUSER_EMAIL_ALLOWLIST to grant access.`} />
-      )}
-      {loading && !error && !forbiddenMessage && (
+      {loading && !error && (
         <p className="text-sm text-muted-foreground">Loading admin configuration...</p>
       )}
 
-      {!loading && !error && !forbiddenMessage && selectedCategoryDef && (
+      {!loading && !error && selectedCategoryDef && (
         <section
           className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-md border border-border"
           style={{ backgroundColor: styleTokens.adminConfig.frameBackground }}

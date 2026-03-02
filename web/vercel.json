@@ -1,6 +1,7 @@
 {
   "outputDirectory": "dist",
   "routes": [
+    { "src": "/docs(.*)", "headers": { "Location": "https://blockdata.mintlify.app$1" }, "status": 308 },
     { "handle": "filesystem" },
     { "src": "/(.*)", "dest": "/index.html" }
   ]

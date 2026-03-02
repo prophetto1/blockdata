@@ -45,7 +45,6 @@ export function ServicesSidebar({
   loading,
 }: ServicesSidebarProps) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeTypeFilter, setActiveTypeFilter] = useState<string | null>(null);
 
   /* Function count by service */
   const fnCountByService = useMemo(() => {
@@ -56,19 +55,9 @@ export function ServicesSidebar({
     return map;
   }, [functions]);
 
-  /* Distinct types present in data */
-  const distinctTypes = useMemo(() => {
-    const seen = new Set<string>();
-    for (const s of services) seen.add(s.service_type);
-    return Array.from(seen).sort();
-  }, [services]);
-
   /* Filtered list */
   const filteredServices = useMemo(() => {
-    let rows = services;
-    if (activeTypeFilter) {
-      rows = rows.filter((s) => s.service_type === activeTypeFilter);
-    }
+    const rows = services;
     if (!searchQuery.trim()) return rows;
     const q = searchQuery.trim().toLowerCase();
     const matchingIds = new Set<string>();
@@ -93,7 +82,7 @@ export function ServicesSidebar({
       }
     }
     return rows.filter((s) => matchingIds.has(s.service_id));
-  }, [services, functions, searchQuery, activeTypeFilter]);
+  }, [services, functions, searchQuery]);
 
   return (
     <nav className="flex w-56 shrink-0 flex-col overflow-hidden border-r border-border pr-2">
@@ -106,41 +95,6 @@ export function ServicesSidebar({
           onChange={(e) => setSearchQuery(e.currentTarget.value)}
         />
       </div>
-
-      {/* Type filter chips */}
-      {distinctTypes.length > 1 && (
-        <div className="flex flex-wrap gap-1 px-1 pb-2">
-          <button
-            type="button"
-            className={cn(
-              'rounded-full border px-2 py-0.5 text-[10px] transition-colors',
-              activeTypeFilter === null
-                ? 'border-primary bg-primary text-primary-foreground'
-                : 'border-border bg-muted text-muted-foreground hover:bg-accent',
-            )}
-            onClick={() => setActiveTypeFilter(null)}
-          >
-            All
-          </button>
-          {distinctTypes.map((t) => (
-            <button
-              key={t}
-              type="button"
-              className={cn(
-                'rounded-full border px-2 py-0.5 text-[10px] transition-colors',
-                activeTypeFilter === t
-                  ? 'border-primary bg-primary text-primary-foreground'
-                  : 'border-border bg-muted text-muted-foreground hover:bg-accent',
-              )}
-              onClick={() =>
-                setActiveTypeFilter(activeTypeFilter === t ? null : t)
-              }
-            >
-              {t}
-            </button>
-          ))}
-        </div>
-      )}
 
       {/* Count */}
       <p className="px-2 pb-1 text-[10px] text-muted-foreground">

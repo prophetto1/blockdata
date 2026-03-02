@@ -10,6 +10,7 @@ import type {
 } from './services-panel.types';
 import {
   loadAllServices,
+  loadPublicServices,
   subscribeToServiceChanges,
   toggleFunctionEnabled,
   toggleServiceEnabled,
@@ -18,10 +19,20 @@ import { ServicesSidebar } from './ServicesSidebar';
 import { ServiceDetailPanel } from './ServiceDetailPanel';
 
 /* ------------------------------------------------------------------ */
+/*  Props                                                              */
+/* ------------------------------------------------------------------ */
+
+type ServicesPanelProps = {
+  /** 'admin' = full CRUD (default), 'browse' = read-only for end users */
+  mode?: 'admin' | 'browse';
+};
+
+/* ------------------------------------------------------------------ */
 /*  Orchestrator                                                       */
 /* ------------------------------------------------------------------ */
 
-export function ServicesPanel() {
+export function ServicesPanel({ mode = 'admin' }: ServicesPanelProps) {
+  const isAdmin = mode === 'admin';
   /* ---- Core state ---- */
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

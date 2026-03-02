@@ -1,7 +1,6 @@
 import { useMemo } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { AppIcon } from '@/components/ui/app-icon';
-import { useSuperuserProbe } from '@/hooks/useSuperuserProbe';
 import { styleTokens } from '@/lib/styleTokens';
 import { cn } from '@/lib/utils';
 import { SETTINGS_NAV, findNavItemByPath, type SettingsNavGroup } from './settings-nav';
@@ -61,12 +60,7 @@ function NavGroup({
 export default function SettingsLayout() {
   const location = useLocation();
   const navigate = useNavigate();
-  const isSuperuser = useSuperuserProbe() === true;
-  const SUPERUSER_GROUP_IDS = new Set(['admin', 'designs']);
-  const primaryGroups = SETTINGS_NAV.filter((g) => !SUPERUSER_GROUP_IDS.has(g.id));
-  const superuserGroups = isSuperuser
-    ? SETTINGS_NAV.filter((g) => SUPERUSER_GROUP_IDS.has(g.id))
-    : [];
+  const primaryGroups = SETTINGS_NAV;
 
   const activeItem = useMemo(
     () => findNavItemByPath(location.pathname),
@@ -98,18 +92,6 @@ export default function SettingsLayout() {
             ))}
           </div>
 
-          {superuserGroups.length > 0 && (
-            <div className="mt-5 border-t border-sidebar-border pt-4 space-y-5">
-              {superuserGroups.map((group) => (
-                <NavGroup
-                  key={group.id}
-                  group={group}
-                  activeId={activeId}
-                  onNavigate={(path) => navigate(path)}
-                />
-              ))}
-            </div>
-          )}
         </nav>
       </aside>
 

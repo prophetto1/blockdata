@@ -33,6 +33,7 @@ import DatabasePlaceholder from '@/pages/DatabasePlaceholder';
 import EarlyAccess from '@/pages/EarlyAccess';
 import { FlowsRouteShell } from '@/components/layout/FlowsRouteShell';
 import { featureFlags } from '@/lib/featureFlags';
+import NotFound from '@/pages/NotFound';
 
 function LegacyToElt() {
   return <Navigate to="/app/elt" replace />;
@@ -194,8 +195,11 @@ export const router = createBrowserRouter([
           { path: '/app/test', element: <LegacyToElt /> },
           { path: '/app/test/:projectId', element: <LegacyToEltProject /> },
           { path: '/app/runs/:runId', element: <LegacyRunRedirect /> },
+          { path: '*', element: <NotFound /> },
         ],
       },
     ],
   },
+  // Catch-all 404 for routes outside /app
+  { path: '*', element: <NotFound /> },
 ]);
