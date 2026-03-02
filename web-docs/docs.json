@@ -62,7 +62,8 @@
                                           "group":  "Plans",
                                           "pages":  [
                                                         "plans/services-scalability-plan",
-                                                        "plans/edge-to-fastapi-migration"
+                                                        "plans/edge-to-fastapi-migration",
+                                                        "plans/execution-system"
                                                     ]
                                       }
                                   ]
