@@ -15,12 +15,14 @@ Deno.test("admin-integration-catalog rejects requests without auth header", asyn
 });
 
 Deno.test("admin-integration-catalog GET returns items + mapping options", async () => {
+  let selectedColumns = "";
   const fakeAdminClient = {
     from: (table: string) => {
       if (table === "integration_catalog_items") {
         return {
-          select: () =>
-            Promise.resolve({
+          select: (columns: string) => {
+            selectedColumns = columns;
+            return Promise.resolve({
               data: [
                 {
                   item_id: "i-1",
@@ -37,17 +39,16 @@ Deno.test("admin-integration-catalog GET returns items + mapping options", async
                   task_schema: {},
                   task_markdown: null,
                   enabled: true,
-                  suggested_service_type: "dbt",
                   mapped_service_id: null,
                   mapped_function_id: null,
                   mapping_notes: null,
                   source_updated_at: null,
-                  last_synced_at: "2026-02-28T00:00:00Z",
-                  updated_at: "2026-02-28T00:00:00Z",
+                  created_at: "2026-02-28T00:00:00Z",
                 },
               ],
               error: null,
-            }),
+            });
+          },
         };
       }
       if (table === "service_registry") {
@@ -108,6 +109,7 @@ Deno.test("admin-integration-catalog GET returns items + mapping options", async
   assertEquals(body.services.length, 1);
   assertEquals(body.functions.length, 1);
   assertEquals(body.items[0].task_class, "io.kestra.plugin.dbt.cli.DbtCLI");
+  assertEquals(selectedColumns.includes("suggested_service_type"), false);
 });
 
 Deno.test("admin-integration-catalog PATCH updates mapping fields", async () => {
@@ -168,7 +170,8 @@ Deno.test("admin-integration-catalog PATCH updates mapping fields", async () => 
   assertEquals(typeof updated?.["updated_at"], "string");
 });
 
-Deno.test("admin-integration-catalog sync_kestra dry-run summarizes inserts/updates", async () => {
+Deno.test("admin-integration-catalog sync_kestra dry-run summarizes internal catalog rows", async () => {
+  let fetchCalled = false;
   const fakeAdminClient = {
     from: (table: string) => {
       if (table !== "integration_catalog_items") throw new Error(`Unexpected table: ${table}`);
@@ -179,6 +182,7 @@ Deno.test("admin-integration-catalog sync_kestra dry-run summarizes inserts/upda
               {
                 source: "kestra",
                 external_id: "io.kestra.plugin.dbt.cli.DbtCLI",
+                task_class: "io.kestra.plugin.dbt.cli.DbtCLI",
               },
             ],
             error: null,
@@ -187,36 +191,10 @@ Deno.test("admin-integration-catalog sync_kestra dry-run summarizes inserts/upda
     },
   };
 
-  const fakeFetch = () =>
-    Promise.resolve(
-      new Response(
-        JSON.stringify([
-          {
-            name: "plugin-dbt",
-            title: "DBT",
-            group: "io.kestra.plugin.dbt",
-            version: "1.2.1",
-            categories: ["DATA"],
-            tasks: [
-              {
-                cls: "io.kestra.plugin.dbt.cli.DbtCLI",
-                title: "Run dbt commands via CLI",
-                description: "Run dbt",
-              },
-              {
-                cls: "io.kestra.plugin.jdbc.vectorwise.Batch",
-                title: "Run vectorwise batch",
-                description: "Batch",
-              },
-            ],
-          },
-        ]),
-        {
-          status: 200,
-          headers: { "Content-Type": "application/json" },
-        },
-      ),
-    );
+  const fakeFetch = () => {
+    fetchCalled = true;
+    return Promise.reject(new Error("not used"));
+  };
 
   const req = new Request("https://example.com/functions/v1/admin-integration-catalog", {
     method: "POST",
@@ -226,7 +204,6 @@ Deno.test("admin-integration-catalog sync_kestra dry-run summarizes inserts/upda
     },
     body: JSON.stringify({
       target: "sync_kestra",
-      source_url: "http://localhost:8080/api/v1/plugins",
       dry_run: true,
     }),
   });
@@ -242,9 +219,58 @@ Deno.test("admin-integration-catalog sync_kestra dry-run summarizes inserts/upda
   assertEquals(resp.status, 200, JSON.stringify(body));
   assertEquals(body.ok, true);
   assertEquals(body.dry_run, true);
-  assertEquals(body.summary.total_normalized, 2);
+  assertEquals(body.summary.total_normalized, 1);
   assertEquals(body.summary.would_update, 1);
-  assertEquals(body.summary.would_insert, 1);
+  assertEquals(body.summary.would_insert, 0);
+  assertEquals(fetchCalled, false);
+  assertEquals(body.mode, "internal_catalog_only");
+});
+
+Deno.test("admin-integration-catalog sync_kestra does not call external fetch even when source_url is provided", async () => {
+  let fetchCalled = false;
+  const fakeAdminClient = {
+    from: (table: string) => {
+      if (table !== "integration_catalog_items") throw new Error(`Unexpected table: ${table}`);
+      return {
+        select: () =>
+          Promise.resolve({
+            data: [{ source: "kestra", external_id: "io.kestra.plugin.core.log.Log", task_class: "io.kestra.plugin.core.log.Log" }],
+            error: null,
+          }),
+      };
+    },
+  };
+
+  const fakeFetch = () => {
+    fetchCalled = true;
+    return Promise.reject(new Error("not used"));
+  };
+
+  const req = new Request("https://example.com/functions/v1/admin-integration-catalog", {
+    method: "POST",
+    headers: {
+      Authorization: "Bearer test",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      target: "sync_kestra",
+      source_url: "http://example-kestra:8080/api/v1/plugins",
+      dry_run: true,
+    }),
+  });
+
+  const resp = await handleAdminIntegrationCatalogRequest(req, {
+    requireSuperuser: () => Promise.resolve({ userId: "u1", email: "admin@example.com" }),
+    createAdminClient: (() => fakeAdminClient) as never,
+    fetch: fakeFetch as never,
+    nowIso: () => "2026-02-28T00:00:00Z",
+  });
+  const body = await resp.json();
+
+  assertEquals(resp.status, 200, JSON.stringify(body));
+  assertEquals(body.ok, true);
+  assertEquals(fetchCalled, false);
+  assertEquals(body.mode, "internal_catalog_only");
 });
 
 Deno.test("admin-integration-catalog GET with catalog_source=temp reads from temp table", async () => {
@@ -273,13 +299,11 @@ Deno.test("admin-integration-catalog GET with catalog_source=temp reads from tem
                   task_schema: {},
                   task_markdown: null,
                   enabled: true,
-                  suggested_service_type: "custom",
                   mapped_service_id: null,
                   mapped_function_id: null,
                   mapping_notes: null,
                   source_updated_at: null,
-                  last_synced_at: "2026-02-28T00:00:00Z",
-                  updated_at: "2026-02-28T00:00:00Z",
+                  created_at: "2026-02-28T00:00:00Z",
                 },
               ],
               error: null,
@@ -312,4 +336,38 @@ Deno.test("admin-integration-catalog GET with catalog_source=temp reads from tem
   assertEquals(selectedTable, "integration_catalog_items_temp");
   assertEquals(body.items.length, 1);
   assertEquals(body.items[0].item_id, "temp-1");
+});
+
+Deno.test("admin-integration-catalog PATCH does not accept suggested_service_type field", async () => {
+  const fakeAdminClient = {
+    from: (_table: string) => ({
+      update: (_payload: Record<string, unknown>) => ({
+        eq: (_column: string, _value: string) => Promise.resolve({ error: null }),
+      }),
+    }),
+  };
+
+  const req = new Request("https://example.com/functions/v1/admin-integration-catalog", {
+    method: "PATCH",
+    headers: {
+      Authorization: "Bearer test",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      target: "item",
+      item_id: "i-1",
+      suggested_service_type: "dbt",
+    }),
+  });
+
+  const resp = await handleAdminIntegrationCatalogRequest(req, {
+    requireSuperuser: () => Promise.resolve({ userId: "u1", email: "admin@example.com" }),
+    createAdminClient: (() => fakeAdminClient) as never,
+    fetch: (() => Promise.reject(new Error("not used"))) as never,
+    nowIso: () => "2026-02-28T00:00:00Z",
+  });
+  const body = await resp.json();
+
+  assertEquals(resp.status, 400);
+  assertEquals(body.error, "No updatable fields provided for item");
 });

@@ -39,14 +39,11 @@ type CatalogRow = {
   task_title: string | null;
   task_description: string | null;
   enabled: boolean;
-  suggested_service_type: string | null;
   mapped_service_id: string | null;
   mapped_function_id: string | null;
   mapping_notes: string | null;
   source_updated_at: string | null;
-  last_synced_at: string;
-  created_at: string;
-  updated_at: string;
+  created_at: string | null;
 };
 
 /* ── Lightweight select (no task_schema / task_markdown — those are ~50 MB total) ── */
@@ -55,9 +52,9 @@ const LIGHT_SELECT = [
   'item_id', 'source', 'external_id',
   'plugin_name', 'plugin_title', 'plugin_group', 'plugin_version', 'categories',
   'task_class', 'task_title', 'task_description',
-  'enabled', 'suggested_service_type',
+  'enabled',
   'mapped_service_id', 'mapped_function_id', 'mapping_notes',
-  'source_updated_at', 'last_synced_at', 'created_at', 'updated_at',
+  'source_updated_at', 'created_at',
 ].join(',');
 
 /* ── Summary row type ── */
@@ -71,7 +68,7 @@ type SummaryRow = {
 
 /* ── Editable columns ── */
 
-const EDITABLE_KEYS = new Set(['enabled', 'suggested_service_type', 'mapping_notes']);
+const EDITABLE_KEYS = new Set(['enabled', 'mapping_notes']);
 
 /* ── Helpers ── */
 
@@ -396,12 +393,6 @@ const CONFIG_COLUMNS: Column<CatalogRow, SummaryRow>[] = [
     renderEditCell: EnabledEditor,
     renderSummaryCell: makeSummaryRenderer((r) => `${r.enabledCount} on`),
   },
-  {
-    key: 'suggested_service_type',
-    name: 'Service Type',
-    width: 155,
-    renderEditCell: renderTextEditor,
-  },
 ];
 
 const MAPPING_COLUMNS: Column<CatalogRow, SummaryRow>[] = [
@@ -450,25 +441,11 @@ const TIMESTAMP_COLUMNS: Column<CatalogRow, SummaryRow>[] = [
     renderCell: ({ row }) => formatTs(row.source_updated_at),
   },
   {
-    key: 'last_synced_at',
-    name: 'Last Synced',
-    width: 170,
-    sortDescendingFirst: true,
-    renderCell: ({ row }) => formatTs(row.last_synced_at),
-  },
-  {
     key: 'created_at',
     name: 'Created',
     width: 170,
     sortDescendingFirst: true,
     renderCell: ({ row }) => formatTs(row.created_at),
-  },
-  {
-    key: 'updated_at',
-    name: 'Updated',
-    width: 170,
-    sortDescendingFirst: true,
-    renderCell: ({ row }) => formatTs(row.updated_at),
   },
 ];
 
@@ -628,7 +605,7 @@ export function IntegrationCatalogPanelTemp() {
     const q = search.trim().toLowerCase();
     if (!q) return rows;
     return rows.filter((r) =>
-      [r.task_class, r.task_title ?? '', r.task_description ?? '', r.plugin_name, r.plugin_group ?? '', r.suggested_service_type ?? '']
+      [r.task_class, r.task_title ?? '', r.task_description ?? '', r.plugin_name, r.plugin_group ?? '']
         .join(' ')
         .toLowerCase()
         .includes(q),

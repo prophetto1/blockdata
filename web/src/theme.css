@@ -13,6 +13,7 @@ body,
 body {
   background: var(--background);
   color: var(--foreground);
+  font-family: var(--app-font-sans);
 }
 
 .marketing-hero-shell {
@@ -31,7 +32,7 @@ body {
   --ag-header-height: 36px;
   --viewer-font-size: 14px;
   --viewer-font-size-effective: var(--viewer-font-size);
-  --viewer-font-family: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --viewer-font-family: var(--app-font-sans);
   --viewer-line-height-compact: 1.3;
   --viewer-line-height-comfortable: 1.5;
   --viewer-letter-spacing: 0;
@@ -51,7 +52,7 @@ body {
 }
 
 .block-viewer-grid.grid-font-family-sans {
-  --viewer-font-family: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --viewer-font-family: var(--app-font-sans);
 }
 
 .block-viewer-grid.grid-font-family-serif {
@@ -118,7 +119,7 @@ body {
 .block-viewer-grid .ag-header-cell,
 .block-viewer-grid .ag-header-group-cell,
 .block-viewer-grid .ag-header-cell-text {
-  font-family: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+  font-family: var(--app-font-sans) !important;
   font-size: 14px !important;
 }
 
@@ -138,7 +139,7 @@ body {
 }
 
 .block-grid-header-label {
-  font-family: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+  font-family: var(--app-font-sans) !important;
   font-size: 14px !important;
   font-weight: 600 !important;
   line-height: 1.2;
@@ -291,7 +292,7 @@ body {
 }
 
 .block-viewer-rdg .rdg-header-cell {
-  font-family: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+  font-family: var(--app-font-sans) !important;
   font-size: 13px !important;
   font-weight: 600 !important;
   color: light-dark(var(--app-gray-7), var(--app-gray-2)) !important;
@@ -430,10 +431,77 @@ body {
 
 .catalog-rdg {
   --rdg-color-scheme: dark;
+  --rdg-border-color: rgba(148, 163, 184, 0.15);
+  font-family: var(--app-font-sans);
+  font-size: 11px;
+  border: 1px solid var(--rdg-border-color);
+  border-radius: 4px;
+}
+
+.catalog-rdg .rdg-header-cell,
+.catalog-rdg .rdg-cell,
+.catalog-rdg .rdg-summary-row .rdg-cell {
+  font-family: inherit;
+  font-size: inherit;
 }
 
 [data-theme="light"] .catalog-rdg {
   --rdg-color-scheme: light;
+  --rdg-border-color: rgba(120, 113, 108, 0.2);
+}
+
+.catalog-rdg .rdg-cell {
+  padding-inline: 4px;
+  border-inline-end: 1px solid var(--rdg-border-color);
+  border-block-end: 1px solid var(--rdg-border-color);
+  background: var(--background);
+}
+
+.catalog-rdg .rdg-header-cell {
+  padding-inline: 4px;
+  border-inline-end: 1px solid var(--rdg-border-color);
+  border-block-end: 1px solid var(--rdg-border-color);
+  background: var(--background);
+}
+
+.catalog-rdg .rdg-summary-row .rdg-cell {
+  border-block-start: 2px solid var(--rdg-border-color);
+}
+
+/* Visible scrollbars */
+.catalog-rdg::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.catalog-rdg::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.catalog-rdg::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.3);
+  border-radius: 4px;
+}
+
+.catalog-rdg::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.5);
+}
+
+[data-theme="light"] .catalog-rdg::-webkit-scrollbar-thumb {
+  background: rgba(120, 113, 108, 0.25);
+}
+
+[data-theme="light"] .catalog-rdg::-webkit-scrollbar-thumb:hover {
+  background: rgba(120, 113, 108, 0.45);
+}
+
+.catalog-rdg {
+  scrollbar-color: rgba(148, 163, 184, 0.3) transparent;
+  scrollbar-width: thin;
+}
+
+[data-theme="light"] .catalog-rdg {
+  scrollbar-color: rgba(120, 113, 108, 0.25) transparent;
 }
 
 .catalog-rdg-group-header {
@@ -444,6 +512,22 @@ body {
 
 .catalog-rdg-row-disabled {
   opacity: 0.45;
+}
+
+/* ---- Detail panel rows ---- */
+
+.catalog-detail-row {
+  background: var(--background) !important;
+}
+
+.catalog-detail-cell {
+  overflow: visible !important;
+  padding: 0 !important;
+}
+
+[data-theme="light"] .catalog-detail-row {
+  background: var(--background) !important;
+  border-block-end: 1px solid rgba(120, 113, 108, 0.15);
 }
 
 /* ---- Ark UI Checkbox in RDG ---- */

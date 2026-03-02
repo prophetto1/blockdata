@@ -8,8 +8,8 @@
 
 export const FONT_FAMILIES = {
   sans: {
-    stack: '"IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-    label: 'IBM Plex Sans',
+    stack: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+    label: 'Inter',
     cssVar: '--app-font-sans',
     use: 'All UI text, headings, nav, labels, body copy',
   },
@@ -52,7 +52,7 @@ export const FONT_WEIGHTS = {
 export type FontWeightToken = keyof typeof FONT_WEIGHTS;
 
 export const FONT_STANDARD = {
-  primaryFamily: 'IBM Plex Sans',
+  primaryFamily: 'Inter',
   monoFamily: 'JetBrains Mono',
   note: 'Use font-sans for all UI. Use font-mono for code, data cells, and technical values.',
 } as const;

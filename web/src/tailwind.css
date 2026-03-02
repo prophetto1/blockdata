@@ -3,7 +3,7 @@
 
 :root {
   --radius: 0.625rem;
-  --app-font-sans: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --app-font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --app-font-mono: "JetBrains Mono", "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
   --app-font-size-nav-label: 0.75rem;
   --app-font-size-nav-caption: 0.8125rem;

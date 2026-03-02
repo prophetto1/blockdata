@@ -1,7 +1,7 @@
 export const styleTokens = {
   shell: {
     headerHeight: 72,
-    navbarWidth: 280,
+    navbarWidth: 224,
     navbarCompactWidth: 60,
     assistantWidth: 360,
     mainPadding: 'md' as const,

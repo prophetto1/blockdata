@@ -39,7 +39,7 @@ import { cn } from '@/lib/utils';
 import { edgeFetch } from '@/lib/edge';
 import { InstanceConfigPanel } from './InstanceConfigPanel';
 import { IntegrationCatalogPanel } from './IntegrationCatalogPanel';
-import { IntegrationCatalogPanelTemp } from './IntegrationCatalogPanelTemp';
+import { GridTestPanel } from './GridTestPanel';
 import { PlatformConfigPanel } from './PlatformConfigPanel';
 import { ServicesPanel } from './ServicesPanel';
 import { CATEGORY_IDS, type CategoryId } from './settings-tabs';
@@ -180,7 +180,8 @@ type InlineStatus = {
 const CATEGORIES: Category[] = [
   { id: 'services', label: 'Services' },
   { id: 'platform-config', label: 'Platform' },
-  { id: 'integration-catalog-temp', label: 'Integration Catalog' },
+  { id: 'integration-catalog', label: 'Integration Catalog' },
+  { id: 'grid-test', label: 'Grid Test' },
   { id: 'design', label: 'Design Standards' },
   { id: 'design-shell', label: 'App Shell Specs' },
   { id: 'design-icons', label: 'Icon Inventory' },
@@ -879,9 +880,21 @@ export default function SettingsAdmin() {
             </div>
             {categoryAction}
           </header>
-          {selectedCategory === 'services'
-            || selectedCategory === 'integration-catalog'
-            || selectedCategory === 'integration-catalog-temp'
+          {selectedCategory === 'integration-catalog' ? (
+            <div
+              className="min-h-0 flex-1 p-3 md:p-4"
+              style={{ backgroundColor: styleTokens.adminConfig.contentBackground }}
+            >
+              <IntegrationCatalogPanel />
+            </div>
+          ) : selectedCategory === 'grid-test' ? (
+            <div
+              className="min-h-0 flex-1 p-3 md:p-4"
+              style={{ backgroundColor: styleTokens.adminConfig.contentBackground }}
+            >
+              <GridTestPanel />
+            </div>
+          ) : selectedCategory === 'services'
             || selectedCategory === 'design' ? (
             <ScrollAreaRoot className="min-h-0 flex-1">
               <ScrollAreaViewport
@@ -891,12 +904,6 @@ export default function SettingsAdmin() {
                 <ScrollAreaContent>
                   {selectedCategory === 'services' && (
                     <ServicesPanel />
-                  )}
-                  {selectedCategory === 'integration-catalog' && (
-                    <IntegrationCatalogPanel />
-                  )}
-                  {selectedCategory === 'integration-catalog-temp' && (
-                    <IntegrationCatalogPanelTemp />
                   )}
                   {selectedCategory === 'design' && (
                     <div className="space-y-8">
@@ -931,9 +938,6 @@ export default function SettingsAdmin() {
             )}
             {selectedCategory === 'integration-catalog' && (
               <IntegrationCatalogPanel />
-            )}
-            {selectedCategory === 'integration-catalog-temp' && (
-              <IntegrationCatalogPanelTemp />
             )}
             {selectedCategory === 'instance-config' && (
               <InstanceConfigPanel />

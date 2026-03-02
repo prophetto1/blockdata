@@ -33,7 +33,7 @@ function NavGroup({
               <button
                 type="button"
                 onClick={() => onNavigate(item.path)}
-                style={{ fontSize: '15px', fontWeight: 600 }}
+                style={{ fontSize: '13px', fontWeight: 500 }}
                 className={cn(
                   'flex w-full items-center gap-2 rounded-md px-2 h-9 leading-snug transition-colors',
                   isActive
@@ -80,7 +80,7 @@ export default function SettingsLayout() {
     <div className="flex h-[calc(100vh-var(--app-shell-header-height))] overflow-hidden">
       {/* Second rail — matches Schemas rail styling */}
       <aside
-        className="w-[250px] shrink-0 overflow-y-auto border-r font-sans text-sidebar-foreground"
+        className="w-56 shrink-0 overflow-y-auto border-r font-sans text-sidebar-foreground"
         style={{
           borderColor: styleTokens.adminConfig.railBorder,
           backgroundColor: styleTokens.adminConfig.railBackground,

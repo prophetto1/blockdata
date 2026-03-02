@@ -30,8 +30,8 @@ type CatalogItemRow = {
   task_markdown: string | null;
   enabled: boolean;
   suggested_service_type: string | null;
-  last_synced_at: string;
-  updated_at: string;
+  source_updated_at: string | null;
+  created_at: string | null;
 };
 
 type AdminIntegrationCatalogResponse = {

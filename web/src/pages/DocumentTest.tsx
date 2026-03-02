@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { forwardRef, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { Field } from '@ark-ui/react/field';
 import { Splitter } from '@ark-ui/react/splitter';
 import { TreeView, createTreeCollection } from '@ark-ui/react/tree-view';
@@ -993,6 +993,35 @@ function PreviewTabPanel({ doc }: { doc: ProjectDocumentRow | null }) {
   return renderPreviewWithUnifiedHeader(renderCenteredMessage('Preview unavailable.'));
 }
 
+/* ------------------------------------------------------------------ */
+/*  ToolbarBtn — standardized toolbar button                           */
+/* ------------------------------------------------------------------ */
+
+const TOOLBAR_BTN_BASE = 'inline-flex h-8 items-center gap-1.5 rounded border px-3 text-xs font-medium leading-4 transition-colors';
+const TOOLBAR_BTN_ACTIVE = 'border-border bg-background text-foreground';
+const TOOLBAR_BTN_INACTIVE = 'border-transparent text-muted-foreground hover:bg-background hover:text-foreground';
+
+type ToolbarBtnProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
+  active?: boolean;
+  icon?: React.ReactNode;
+};
+
+const ToolbarBtn = forwardRef<HTMLButtonElement, ToolbarBtnProps>(
+  function ToolbarBtn({ active, icon, children, className, ...props }, ref) {
+    return (
+      <button
+        ref={ref}
+        type="button"
+        className={`${TOOLBAR_BTN_BASE} ${active ? TOOLBAR_BTN_ACTIVE : TOOLBAR_BTN_INACTIVE}${className ? ` ${className}` : ''}`}
+        {...props}
+      >
+        {icon}
+        {children}
+      </button>
+    );
+  },
+);
+
 export default function DocumentTest() {
   useShellHeaderTitle({
     title: 'Document Workbench',
@@ -1837,8 +1866,9 @@ export default function DocumentTest() {
   return (
     <div className="flex h-[calc(100vh-var(--app-shell-header-height))] flex-col gap-3 p-3">
       <div className="flex items-center gap-2 rounded-md border border-border bg-card p-2">
-        <button
-          type="button"
+        <ToolbarBtn
+          active={panes.some((p) => p.tabs.includes('assets'))}
+          icon={<IconFiles size={14} />}
           onClick={() => {
             const currentIndex = panes.findIndex((p) => p.tabs.includes('assets'));
             if (currentIndex === -1) {
@@ -1847,18 +1877,12 @@ export default function DocumentTest() {
               setPanes((current) => closeTab(current, current[currentIndex].id, 'assets'));
             }
           }}
-          style={{ fontSize: '12px', fontWeight: 500, lineHeight: '16px' }}
-          className={`inline-flex h-10 items-center gap-1.5 rounded border px-2 ${
-            panes.some((p) => p.tabs.includes('assets'))
-              ? 'border-border bg-background text-foreground'
-              : 'border-transparent text-muted-foreground hover:bg-background hover:text-foreground'
-          }`}
         >
-          <IconFiles size={14} />
           Assets
-        </button>
-        <button
-          type="button"
+        </ToolbarBtn>
+        <ToolbarBtn
+          active={panes.some((p) => p.tabs.some((tabId) => tabId === 'preview' || isPreviewInstanceTab(tabId)))}
+          icon={<IconEye size={14} />}
           onClick={() => {
             const currentIndex = panes.findIndex((p) => p.tabs.includes('preview'));
             if (currentIndex === -1) {
@@ -1870,18 +1894,12 @@ export default function DocumentTest() {
               setPanes((current) => activateTabInPane(current, nextPaneId, 'preview'));
             }
           }}
-          style={{ fontSize: '12px', fontWeight: 500, lineHeight: '16px' }}
-          className={`inline-flex h-10 items-center gap-1.5 rounded border px-2 ${
-            panes.some((p) => p.tabs.some((tabId) => tabId === 'preview' || isPreviewInstanceTab(tabId)))
-              ? 'border-border bg-background text-foreground'
-              : 'border-transparent text-muted-foreground hover:bg-background hover:text-foreground'
-          }`}
         >
-          <IconEye size={14} />
           Preview
-        </button>
-        <button
-          type="button"
+        </ToolbarBtn>
+        <ToolbarBtn
+          active={panes.some((p) => p.tabs.includes('canvas'))}
+          icon={<IconLayoutColumns size={14} />}
           onClick={() => {
             const currentIndex = panes.findIndex((p) => p.tabs.includes('canvas'));
             if (currentIndex === -1) {
@@ -1890,21 +1908,14 @@ export default function DocumentTest() {
               setPanes((current) => closeTab(current, current[currentIndex].id, 'canvas'));
             }
           }}
-          style={{ fontSize: '12px', fontWeight: 500, lineHeight: '16px' }}
-          className={`inline-flex h-7 items-center gap-1.5 rounded border px-2 ${
-            panes.some((p) => p.tabs.includes('canvas'))
-              ? 'border-border bg-background text-foreground'
-              : 'border-transparent text-muted-foreground hover:bg-background hover:text-foreground'
-          }`}
         >
-          <IconLayoutColumns size={14} />
           Canvas
-        </button>
+        </ToolbarBtn>
 
         <div className="mx-1 h-4 w-px bg-border" />
 
-        <button
-          type="button"
+        <ToolbarBtn
+          active={panes.some((p) => p.tabs.includes('parse') || p.tabs.some((t) => t.startsWith('parse:')))}
           onClick={() => {
             const currentIndex = panes.findIndex((p) => p.tabs.includes('parse'));
             if (currentIndex === -1) {
@@ -1916,36 +1927,24 @@ export default function DocumentTest() {
               setPanes((current) => closeTab(current, current[currentIndex].id, 'parse'));
             }
           }}
-          style={{ fontSize: '12px', fontWeight: 500, lineHeight: '16px' }}
-          className={`inline-flex h-10 items-center rounded border px-2 ${
-            panes.some((p) => p.tabs.includes('parse') || p.tabs.some((t) => t.startsWith('parse:')))
-              ? 'border-border bg-background text-foreground'
-              : 'border-transparent text-muted-foreground hover:bg-background hover:text-foreground'
-          }`}
         >
           Parse
-        </button>
+        </ToolbarBtn>
         <MenuRoot
           open={pullMenuOpen}
           onOpenChange={(details) => setPullMenuOpen(details.open)}
           positioning={{ placement: 'bottom-start', offset: { mainAxis: 6 } }}
         >
           <MenuTrigger asChild>
-            <button
-              type="button"
+            <ToolbarBtn
+              active={panes.some((p) => p.tabs.some((t) => t.startsWith('pull:')))}
               onPointerEnter={openPullMenu}
               onPointerLeave={schedulePullMenuClose}
-              style={{ fontSize: '12px', fontWeight: 500, lineHeight: '16px' }}
-              className={`inline-flex h-10 items-center rounded border px-2 ${
-                panes.some((p) => p.tabs.some((t) => t.startsWith('pull:')))
-                  ? 'border-border bg-background text-foreground'
-                  : 'border-transparent text-muted-foreground hover:bg-background hover:text-foreground'
-              }`}
               aria-label="Open Pull (DLT)"
               title="Open Pull (DLT)"
             >
               Pull
-            </button>
+            </ToolbarBtn>
           </MenuTrigger>
           <MenuPortal>
             <MenuPositioner>
@@ -1969,29 +1968,23 @@ export default function DocumentTest() {
             </MenuPositioner>
           </MenuPortal>
         </MenuRoot>
-        <button
-          type="button"
+        <ToolbarBtn
+          active={panes.some((p) => p.tabs.includes('load'))}
+          icon={<IconDownload size={14} />}
           onClick={() => {
             setPanes((current) => {
               const targetPaneId = focusedPaneId ?? current[current.length - 1]?.id ?? 'pane-1';
               return activateTabInPane(current, targetPaneId, 'load');
             });
           }}
-          style={{ fontSize: '12px', fontWeight: 500, lineHeight: '16px' }}
-          className="inline-flex h-10 items-center gap-1.5 rounded border border-transparent px-2 text-muted-foreground hover:bg-background hover:text-foreground"
           aria-label="Open Load (DLT)"
           title="Open Load (DLT)"
         >
-          <IconDownload size={14} />
           Load
-        </button>
-        <button
-          type="button"
-          style={{ fontSize: '12px', fontWeight: 500, lineHeight: '16px' }}
-          className="inline-flex h-10 items-center rounded border border-transparent px-2 text-muted-foreground hover:bg-background hover:text-foreground"
-        >
+        </ToolbarBtn>
+        <ToolbarBtn active={false}>
           Transform
-        </button>
+        </ToolbarBtn>
       </div>
 
       <Splitter.Root

@@ -64,37 +64,6 @@ function syntheticFlowId(projectName: string | null, projectId: string): string 
   return slug.length > 0 ? slug : `flow-${projectId.slice(0, 8)}`;
 }
 
-function parseYamlScalar(source: string, key: 'id' | 'namespace'): string | null {
-  const pattern = new RegExp(`^\\s*${key}\\s*:\\s*([^\\n#]+?)\\s*$`, 'm');
-  const match = source.match(pattern);
-  if (!match) return null;
-  return match[1]?.trim().replace(/^['"]|['"]$/g, '') ?? null;
-}
-
-function parseFlowSource(source: string): { flowId: string; namespace: string } {
-  const flowId = parseYamlScalar(source, 'id') ?? '';
-  const namespace = parseYamlScalar(source, 'namespace') ?? 'default';
-  return {
-    flowId: flowId.length > 0 ? flowId : 'unknown',
-    namespace: namespace.length > 0 ? namespace : 'default',
-  };
-}
-
-function readJoinedProjectName(value: unknown): string | null {
-  if (Array.isArray(value)) {
-    const first = value[0] as { project_name?: unknown } | undefined;
-    return typeof first?.project_name === 'string' && first.project_name.trim().length > 0
-      ? first.project_name.trim()
-      : null;
-  }
-  if (value && typeof value === 'object') {
-    const maybe = value as { project_name?: unknown };
-    return typeof maybe.project_name === 'string' && maybe.project_name.trim().length > 0
-      ? maybe.project_name.trim()
-      : null;
-  }
-  return null;
-}
 
 export default function FlowsList() {
   const navigate = useNavigate();
@@ -146,57 +115,18 @@ export default function FlowsList() {
         window.localStorage.setItem(PROJECT_FOCUS_STORAGE_KEY, targetProject.project_id);
       }
 
-      const selectBase = 'project_id, source, revision, created_at, updated_at';
-      const withProject = await supabase
-        .from('flow_sources')
-        .select(`${selectBase}, projects(project_name)`)
-        .eq('project_id', targetProject.project_id)
-        .maybeSingle();
-
-      let rowData = withProject.data as Record<string, unknown> | null;
-      let queryError = withProject.error;
-
-      if (queryError) {
-        const fallback = await supabase
-          .from('flow_sources')
-          .select(selectBase)
-          .eq('project_id', targetProject.project_id)
-          .maybeSingle();
-        rowData = fallback.data as Record<string, unknown> | null;
-        queryError = fallback.error;
-      }
-
-      if (cancelled) return;
-
-      if (queryError) {
-        queryError = null;
-        rowData = null;
-      }
-
-      const nextRows: FlowListRow[] = rowData ? [rowData].map((row) => {
-        const source = String(row.source ?? '');
-        const { flowId, namespace } = parseFlowSource(source);
-        const revisionRaw = Number(row.revision);
-        const revision = Number.isFinite(revisionRaw) && revisionRaw > 0 ? revisionRaw : 1;
-
-        return {
-          project_id: String(row.project_id ?? ''),
-          flow_id: flowId,
-          namespace,
-          revision,
-          updated_at: typeof row.updated_at === 'string' ? row.updated_at : null,
-          project_name: readJoinedProjectName(row.projects) ?? targetProject.project_name ?? null,
-          synthetic: false,
-        };
-      }).filter((row) => row.project_id.length > 0) : [{
-          project_id: targetProject.project_id,
-          flow_id: syntheticFlowId(targetProject.project_name ?? null, targetProject.project_id),
+      // flow_sources table doesn't exist yet — generate entries from projects.
+      const nextRows: FlowListRow[] = projectRows
+        .filter((p) => p.project_id === targetProject.project_id)
+        .map((p) => ({
+          project_id: p.project_id,
+          flow_id: syntheticFlowId(p.project_name ?? null, p.project_id),
           namespace: 'default',
           revision: 1,
-          updated_at: typeof targetProject.updated_at === 'string' ? targetProject.updated_at : null,
-          project_name: targetProject.project_name ?? null,
+          updated_at: typeof p.updated_at === 'string' ? p.updated_at : null,
+          project_name: p.project_name ?? null,
           synthetic: true,
-      }];
+        }));
 
       setRows(nextRows);
       setLoading(false);

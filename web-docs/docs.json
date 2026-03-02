@@ -4,19 +4,15 @@
   "theme": "mint",
   "description": "Documentation for the Blockdata platform — schema-driven structured extraction, pipeline orchestration, and data management.",
   "logo": {
-    "light": "/images/logo-light.png",
-    "dark": "/images/logo-dark.png",
-    "href": "https://blockdata.mintlify.app"
+    "light": "/images/logo-light.svg",
+    "dark": "/images/logo-dark.svg",
+    "href": "/"
   },
   "favicon": "/images/favicon.ico",
   "colors": {
     "primary": "#EB5E41",
     "light": "#F07D65",
-    "dark": "#D94E32",
-    "background": {
-      "dark": "#0e0e0e",
-      "light": "#faf9f7"
-    }
+    "dark": "#D94E32"
   },
   "appearance": {
     "default": "dark"
@@ -27,9 +23,6 @@
     },
     "heading": {
       "family": "IBM Plex Sans"
-    },
-    "code": {
-      "family": "JetBrains Mono"
     }
   },
   "styling": {
@@ -49,34 +42,25 @@
     "timestamp": true
   },
   "navigation": {
-    "tabs": [
+    "groups": [
       {
-        "tab": "Internal Guides",
-        "icon": "book-open",
-        "groups": [
-          {
-            "group": "Infrastructure",
-            "icon": "server",
-            "pages": [
-              "s",
-              "edge-functions"
-            ]
-          },
-          {
-            "group": "Frontend",
-            "icon": "layout",
-            "pages": [
-              "frontend/app-shell",
-              "frontend/design-system"
-            ]
-          },
-          {
-            "group": "Plans",
-            "icon": "clipboard-list",
-            "pages": [
-              "plans/services-scalability-plan"
-            ]
-          }
+        "group": "Infrastructure",
+        "pages": [
+          "s",
+          "edge-functions"
+        ]
+      },
+      {
+        "group": "Frontend",
+        "pages": [
+          "frontend/app-shell",
+          "frontend/design-system"
+        ]
+      },
+      {
+        "group": "Plans",
+        "pages": [
+          "plans/services-scalability-plan"
         ]
       }
     ]
