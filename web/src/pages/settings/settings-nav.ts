@@ -1,10 +1,7 @@
 import {
   IconAdjustments,
   IconBrain,
-  IconLayout,
   IconNetwork,
-  IconPalette,
-  IconStack2,
   IconUserCircle,
   IconServer,
   IconPlug,
@@ -41,9 +38,6 @@ export const SETTINGS_NAV: SettingsNavGroup[] = [
       { id: 'admin-services', label: 'Services', icon: IconServer, path: '/app/settings/admin/services' },
       { id: 'admin-platform', label: 'Platform', icon: IconNetwork, path: '/app/settings/admin/platform-config' },
       { id: 'admin-integrations', label: 'Integration Catalog', icon: IconPlug, path: '/app/settings/admin/integration-catalog' },
-      { id: 'admin-design', label: 'Design Standards', icon: IconPalette, path: '/app/settings/admin/design' },
-      { id: 'admin-design-shell', label: 'App Shell Specs', icon: IconLayout, path: '/app/settings/admin/design-shell' },
-      { id: 'admin-design-icons', label: 'Icon Inventory', icon: IconStack2, path: '/app/settings/admin/design-icons' },
       { id: 'admin-grid-test', label: 'Grid Test', icon: IconTable, path: '/app/settings/admin/grid-test' },
     ],
   },
@@ -67,8 +61,6 @@ const ADMIN_PATH_ALIASES: Array<{ prefix: string; targetId: string }> = [
   { prefix: '/app/settings/admin/audit', targetId: 'admin-services' },
   { prefix: '/app/settings/admin/integration-catalog', targetId: 'admin-integrations' },
   { prefix: '/app/settings/admin/grid-test', targetId: 'admin-grid-test' },
-  { prefix: '/app/settings/admin/design-shell', targetId: 'admin-design-shell' },
-  { prefix: '/app/settings/admin/design-icons', targetId: 'admin-design-icons' },
   { prefix: '/app/settings/admin/instance-config', targetId: 'designs-instance' },
 ];
 

@@ -1,0 +1,234 @@
+---
+title: "Edge Functions → FastAPI Migration"
+description: "Plan for migrating 19 Supabase edge functions to a new blockdata-api FastAPI service running locally on Windows."
+---
+
+## Decision
+
+Replace all Supabase edge functions (Deno/TypeScript) with a single FastAPI service (`blockdata-api`) running locally alongside the existing `pipeline-worker` and `conversion-service`.
+
+**Why:**
+- Edge functions hit memory limits (WORKER_LIMIT / status 546) on large payloads
+- No local debugging — deploy-to-test cycle is slow
+- Deno runtime quirks (ES256 JWT incompatibility forced `verify_jwt=false` on multiple functions)
+- Python ecosystem is richer for the data/ML work blockdata does
+- Three FastAPI services already exist locally; adding a fourth is consistent
+
+**What stays in Supabase:** Auth (Supabase Auth tokens), the Postgres database, Storage buckets. FastAPI talks to the same Supabase Postgres via direct connection string or `supabase-py`.
+
+---
+
+## Scope
+
+| Metric | Value |
+|--------|-------|
+| Edge functions to convert | 19 |
+| Total lines (TypeScript) | ~5,700 |
+| Shared modules to port | 12 |
+| Auth patterns | 3 (superuser, user JWT, shared secret) |
+| Database tables touched | 25+ |
+| Frontend API calls to rewire | All `edgeFetch()` calls in `web/src/` |
+
+---
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  Frontend (Vite dev server, localhost:5173)              │
+│  edgeFetch() → fetch('http://localhost:8001/...')        │
+└────────────────────────┬────────────────────────────────┘
+                         │
+          ┌──────────────┼──────────────────┐
+          ▼              ▼                  ▼
+   blockdata-api    pipeline-worker    conversion-service
+   :8001             :8000              :5002
+   (web app API)    (plugin exec)      (doc parsing)
+          │              │                  │
+          └──────────────┼──────────────────┘
+                         ▼
+              Supabase Postgres (cloud)
+              Supabase Storage (cloud)
+              Supabase Auth (cloud)
+```
+
+**blockdata-api** owns all web app API endpoints. It does NOT execute plugins (that's pipeline-worker) or parse documents (that's conversion-service). It is the API gateway between the frontend and the database.
+
+---
+
+## Function Inventory
+
+### Tier 1 — Admin Endpoints (superuser auth)
+
+These are admin-only, read-heavy, lowest risk to migrate first.
+
+| Function | Lines | Methods | Tables | What It Does |
+|----------|-------|---------|--------|-------------|
+| `admin-config` | 225 | GET, PUT, PATCH | `admin_runtime_policy`, `admin_runtime_policy_audit` | Read/update platform runtime policy; audit trail |
+| `admin-database-browser` | 190 | GET | any (via RPC) | Query any table with limit/offset/search |
+| `admin-integration-catalog` | 418 | GET, POST, PATCH | `integration_catalog_items`, `service_registry`, `service_functions` | Plugin catalog CRUD, Kestra sync |
+| `admin-services` | 851 | GET, POST, PATCH, DELETE | `service_type_catalog`, `service_registry`, `service_functions`, `service_runs` | Service registry CRUD |
+
+**Subtotal: 1,684 lines, 4 functions**
+
+### Tier 2 — User-Facing CRUD (user JWT auth)
+
+Standard CRUD endpoints. Auth changes from Supabase JWT to whatever blockdata-api uses.
+
+| Function | Lines | Methods | Tables | What It Does |
+|----------|-------|---------|--------|-------------|
+| `schemas` | 151 | GET, POST, PATCH, DELETE | `user_schemas`, `user_schema_audit` | Extraction schema CRUD; hash derivation, slug, circular ref check |
+| `runs` | 127 | POST, GET | `runs`, `model_config`, `model_config_audit` | Create extraction run with policy snapshot; fetch status |
+| `flows` | 297 | GET, POST, PATCH, DELETE | `flows` | Flow definition CRUD (YAML validation) |
+| `user-api-keys` | 141 | GET, POST, PATCH, DELETE | `user_api_keys` | Encrypted API key CRUD (XChaCha20-Poly1305) |
+| `provider-connections` | 205 | GET, POST, PATCH, DELETE | `user_provider_connections`, `user_agent_configs` | Provider connection CRUD; credential encryption |
+| `agent-config` | 260 | GET, POST, PATCH | `agent_catalog`, `user_agent_configs` | Agent config per user; readiness checks |
+| `upload-policy` | 35 | GET | (reads policy) | Return upload limits and allowed extensions |
+| `export-jsonl` | 187 | GET | `blocks`, `source_documents` | Export blocks as NDJSON |
+| `test-api-key` | 167 | POST | (none) | Validate API key against provider with HTTP test call |
+
+**Subtotal: 1,570 lines, 9 functions**
+
+### Tier 3 — Pipeline Engine (stateful, complex)
+
+The core extraction and parsing pipeline. Most complex, most risk.
+
+| Function | Lines | Methods | Tables | What It Does |
+|----------|-------|---------|--------|-------------|
+| `worker` | 1,442 | POST | `runs`, `blocks`, `model_config`, `run_snapshots` | LLM extraction engine; batches blocks, calls Vertex Claude, prompt caching, overflow recovery |
+| `conversion-complete` | 537 | POST | `source_documents`, `conversion_representations`, `blocks` | Webhook callback from conversion-service; block extraction, hashing, artifact storage |
+| `trigger-parse` | 267 | POST | `source_documents`, `conversion_parsing` | Re-trigger parsing; ownership check, idempotency timeout |
+| `ingest` | 98 | POST | `source_documents`, `conversion_parsing` | Upload + route file; parse mode selection, idempotency |
+| `generate-citations` | 114 | POST | `blocks`, `citation_artifacts` | Generate citation metadata for all blocks in a source |
+
+**Subtotal: 2,458 lines, 5 functions**
+
+### Tier 4 — Streaming / Chat
+
+| Function | Lines | Methods | Tables | What It Does |
+|----------|-------|---------|--------|-------------|
+| `assistant-chat` | 408 | POST | `agent_threads`, `agent_messages`, `user_agent_configs` | SSE streaming chat; Vertex Claude integration |
+
+**Subtotal: 408 lines, 1 function**
+
+---
+
+## Shared Modules to Port
+
+These TypeScript modules in `supabase/functions/_shared/` must be rewritten in Python:
+
+| Module | Purpose | Python Equivalent |
+|--------|---------|-------------------|
+| `cors.ts` | CORS headers | FastAPI CORSMiddleware (built-in) |
+| `superuser.ts` | Superuser email allowlist gate | Python middleware or dependency |
+| `supabase.ts` | Admin/user Supabase client, requireUserId | `supabase-py` or `asyncpg` + auth middleware |
+| `env.ts` | Environment variable helpers | `os.environ` / `pydantic-settings` |
+| `vertex_auth.ts` | GCP service account JWT → OAuth2 token | `google-auth` library |
+| `vertex_claude.ts` | Vertex AI Claude transport | `anthropic[vertex]` SDK or `httpx` |
+| `vertex_claude_stream.ts` | Streaming variant | Same SDK, streaming mode |
+| `api_key_crypto.ts` | XChaCha20-Poly1305 encryption | `pynacl` or `cryptography` library |
+| `admin_policy.ts` | Runtime policy resolution | Direct SQL query |
+| `hash.ts` | SHA-256 hashing | `hashlib` (stdlib) |
+| `sanitize.ts` | Input sanitization | Python equivalent |
+| `user_schema.ts` | Schema validation helpers | Python equivalent |
+
+**Not ported** (handled by conversion-service already): `citations.ts`, `docling.ts`, `markdown.ts`, `pandoc.ts`, `representation.ts`, `conversion-ack-timeout.ts`
+
+---
+
+## Auth Migration
+
+| Current Pattern | Used By | FastAPI Approach |
+|----------------|---------|-----------------|
+| `requireSuperuser` (JWT + email allowlist) | admin-config, admin-database-browser, admin-integration-catalog, admin-services | Dependency that decodes Supabase JWT, checks email against `SUPERUSER_EMAIL_ALLOWLIST` env var |
+| `requireUserId` (JWT → user_id) | 14 user-facing functions | Dependency that decodes Supabase JWT, extracts `sub` claim as user_id |
+| `X-Conversion-Service-Key` (shared secret) | conversion-complete | Header check against env var |
+
+Supabase Auth stays. The frontend still gets JWTs from Supabase. FastAPI validates those same JWTs using the Supabase JWT secret (available as `SUPABASE_JWT_SECRET` env var). No auth system change — just moving the verification from Deno to Python.
+
+---
+
+## Frontend Migration
+
+Every `edgeFetch('function-name')` call in `web/src/` switches to `fetch('http://localhost:8001/...')`.
+
+The response shapes stay identical — same JSON structure, same field names. This means UI components don't change, only the transport layer in the API client files.
+
+**API client files to update:**
+- `integration-catalog.api.ts` — `edgeFetch('admin-integration-catalog')`
+- `services-panel.api.ts` — `edgeFetch('admin-services')`
+- Other API files in `web/src/` that call `edgeFetch()`
+
+A single `apiBase` constant or environment variable controls the base URL, so the switch is one line per API client file.
+
+---
+
+## Service Structure
+
+```
+services/blockdata-api/
+├── app/
+│   ├── main.py                 # FastAPI app, CORS, lifespan
+│   ├── auth.py                 # JWT decode, superuser gate, user_id extraction
+│   ├── db.py                   # Supabase/Postgres connection
+│   ├── routers/
+│   │   ├── admin_config.py     # /admin/config
+│   │   ├── admin_catalog.py    # /admin/catalog
+│   │   ├── admin_services.py   # /admin/services
+│   │   ├── admin_browser.py    # /admin/browser
+│   │   ├── schemas.py          # /schemas
+│   │   ├── runs.py             # /runs
+│   │   ├── flows.py            # /flows
+│   │   ├── api_keys.py         # /api-keys
+│   │   ├── providers.py        # /providers
+│   │   ├── agents.py           # /agents
+│   │   ├── ingest.py           # /ingest
+│   │   ├── export.py           # /export
+│   │   ├── worker.py           # /worker
+│   │   ├── parse.py            # /parse
+│   │   ├── chat.py             # /chat
+│   │   └── ...
+│   └── shared/
+│       ├── crypto.py           # XChaCha20-Poly1305
+│       ├── vertex.py           # Vertex AI Claude client
+│       └── policy.py           # Runtime policy resolution
+├── pyproject.toml
+├── requirements.txt
+└── Dockerfile
+```
+
+---
+
+## Migration Order
+
+| Phase | Functions | Rationale |
+|-------|-----------|-----------|
+| **Phase 1** | admin-config, admin-database-browser, admin-integration-catalog, admin-services | Admin-only, superuser auth, lowest user impact, proves the pattern |
+| **Phase 2** | schemas, runs, flows, user-api-keys, provider-connections, agent-config, upload-policy, export-jsonl, test-api-key | User-facing CRUD, standard auth, no external service calls |
+| **Phase 3** | ingest, trigger-parse, conversion-complete, generate-citations | Pipeline orchestration, callback handling, conversion-service integration |
+| **Phase 4** | worker | The big one — 1,442 lines, Vertex AI integration, prompt caching, batch processing |
+| **Phase 5** | assistant-chat | SSE streaming, Vertex Claude, thread management |
+
+Each phase is independently deployable. Frontend switches one router at a time. Old edge functions stay deployed until their FastAPI replacement is verified.
+
+---
+
+## Open Questions
+
+1. **Port or connection string?** Should blockdata-api use `supabase-py` (REST, same as edge functions use the JS client) or `asyncpg` (direct Postgres connection, faster, no REST overhead)? Recommendation: `asyncpg` for reads, `supabase-py` for auth-related operations.
+
+2. **Crypto compatibility.** The edge functions encrypt API keys with XChaCha20-Poly1305 via Deno's `tweetnacl`. The Python side must use the same algorithm and key to decrypt existing encrypted keys. Need to verify `pynacl` produces identical ciphertext.
+
+3. **Vertex AI SDK.** The edge functions use raw `fetch()` to Vertex AI. Python has `anthropic[vertex]` SDK which is cleaner. But need to verify prompt caching and streaming work identically.
+
+4. **Conversion-complete callback.** Currently conversion-service POSTs back to the edge function. After migration, it POSTs to `http://localhost:8001/parse/conversion-complete` instead. Both services run locally so this is a config change in conversion-service.
+
+5. **Edge function retirement.** After all phases complete, do we delete the edge functions from the repo or keep them as reference? Recommendation: archive to a `_deprecated/` directory, delete after 30 days of stable FastAPI operation.
+
+---
+
+## Changelog
+
+| Date | Update |
+|------|--------|
+| 2026-03-02 | Initial scope document created. 19 functions inventoried, 5 migration phases defined. |

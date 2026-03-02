@@ -3,9 +3,6 @@ export const CATEGORY_IDS = [
   'platform-config',
   'integration-catalog',
   'grid-test',
-  'design',
-  'design-shell',
-  'design-icons',
   'audit',
   'instance-config',
 ] as const;
@@ -13,7 +10,7 @@ export const CATEGORY_IDS = [
 export type CategoryId = (typeof CATEGORY_IDS)[number];
 
 export type AdminSubTabGroup = {
-  id: 'operations' | 'design' | 'designs';
+  id: 'operations' | 'designs';
   label: string;
   tabs: Array<{ id: CategoryId; label: string }>;
 };
@@ -28,15 +25,6 @@ export const ADMIN_SUBTAB_GROUPS: AdminSubTabGroup[] = [
       { id: 'integration-catalog', label: 'Integration Catalog' },
       { id: 'grid-test', label: 'Grid Test' },
       { id: 'audit', label: 'Audit History' },
-    ],
-  },
-  {
-    id: 'design',
-    label: 'Design',
-    tabs: [
-      { id: 'design', label: 'Design Standards' },
-      { id: 'design-shell', label: 'App Shell Specs' },
-      { id: 'design-icons', label: 'Icon Inventory' },
     ],
   },
   {

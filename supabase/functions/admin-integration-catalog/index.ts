@@ -294,7 +294,38 @@ export async function handleAdminIntegrationCatalogRequest(
       }
 
       if (target === "hydrate_detail" || target === "hydrate_schema" || target === "hydrate_markdown") {
-        return json(400, { error: "hydrate_* targets are disabled in internal catalog mode" });
+        const taskClassInput = typeof body.task_class === "string" ? body.task_class : "";
+        const taskClass = normalizeTaskClassInput(taskClassInput);
+        if (!taskClass) return json(400, { error: "Missing task_class" });
+
+        const { data: itemRows, error: itemErr } = await supabaseAdmin
+          .from(catalogTable)
+          .select("item_id,source,external_id,task_class,task_schema,task_markdown")
+          .or(`external_id.eq.${taskClass},task_class.eq.${taskClass}`)
+          .limit(1);
+        if (itemErr) return json(500, { error: `Failed to load catalog item detail: ${itemErr.message}` });
+
+        const row = Array.isArray(itemRows) ? itemRows[0] : null;
+        if (!row) {
+          return json(404, { error: `Catalog item not found for task_class: ${taskClass}` });
+        }
+
+        const hasSchema = isPlainObject((row as { task_schema?: unknown }).task_schema);
+        const markdownValue = (row as { task_markdown?: unknown }).task_markdown;
+        const hasMarkdown = typeof markdownValue === "string" && markdownValue.trim().length > 0;
+
+        return json(200, {
+          ok: true,
+          updated_target: target,
+          external_id: taskClass,
+          mode: "internal_catalog_only",
+          source_url: null,
+          fetched_from_url: null,
+          used_fallback: false,
+          has_schema: hasSchema,
+          has_markdown: hasMarkdown,
+          message: "Hydration resolved from internal catalog storage.",
+        });
       }
 
       return json(400, {

@@ -4,7 +4,6 @@ import { ErrorAlert } from '@/components/common/ErrorAlert';
 import { edgeFetch } from '@/lib/edge';
 import { supabase } from '@/lib/supabase';
 import {
-  buildTaskDetailSourceUrl,
   extractTaskSchemaSummary,
   parseTaskSchema,
   taskClassHoverText,
@@ -39,23 +38,6 @@ type AdminIntegrationCatalogResponse = {
   items: CatalogItemRow[];
   services: unknown[];
   functions: unknown[];
-};
-
-type SyncSummary = {
-  total_normalized: number;
-  would_insert?: number;
-  would_update?: number;
-  inserted?: number;
-  updated?: number;
-  duplicate_classes_in_payload: number;
-};
-
-type SyncResponse = {
-  ok: boolean;
-  dry_run: boolean;
-  source_url: string;
-  summary: SyncSummary;
-  warnings?: string[];
 };
 
 type InlineStatus = {
@@ -270,10 +252,7 @@ export function IntegrationCatalogPanel() {
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<InlineStatus | null>(null);
   const [items, setItems] = useState<CatalogItemRow[]>([]);
-  const [savingKey, setSavingKey] = useState<string | null>(null);
-  const [sourceUrl, setSourceUrl] = useState('http://localhost:8080/api/v1/plugins');
   const [search, setSearch] = useState('');
-  const [lastSync, setLastSync] = useState<SyncResponse | null>(null);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [page, setPage] = useState(1);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
@@ -311,62 +290,6 @@ export function IntegrationCatalogPanel() {
     return () => { void supabase.removeChannel(channel); };
   }, [loadCatalog]);
 
-  /* ---- Sync ---- */
-  const runSync = async (dryRun: boolean) => {
-    setStatus(null);
-    const key = dryRun ? 'sync:dry-run' : 'sync:apply';
-    setSavingKey(key);
-    try {
-      const resp = await edgeFetch(catalogEndpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ target: 'sync_kestra', source_url: sourceUrl.trim() || undefined, dry_run: dryRun }),
-      });
-      const text = await resp.text();
-      let payload: SyncResponse | { error?: string } = {};
-      try { payload = text ? JSON.parse(text) : {}; } catch { /* fallback */ }
-      if (!resp.ok) throw new Error((payload as { error?: string }).error ?? text ?? `HTTP ${resp.status}`);
-      const data = payload as SyncResponse;
-      setLastSync(data);
-      if (!dryRun) await loadCatalog();
-      const warnCount = data.warnings?.length ?? 0;
-      setStatus({
-        kind: 'success',
-        message: dryRun
-          ? `Dry run: ${data.summary.total_normalized} items (${data.summary.would_insert ?? 0} insert, ${data.summary.would_update ?? 0} update, ${warnCount} warnings).`
-          : `Sync applied: ${data.summary.total_normalized} items (${data.summary.inserted ?? 0} inserted, ${data.summary.updated ?? 0} updated, ${warnCount} warnings).`,
-      });
-    } catch (e) {
-      setStatus({ kind: 'error', message: e instanceof Error ? e.message : String(e) });
-    } finally {
-      setSavingKey(null);
-    }
-  };
-
-  /* ---- Hydrate ---- */
-  const hydrateDetail = async (taskClass: string) => {
-    setStatus(null);
-    const key = `item:hydrate:${taskClass}`;
-    setSavingKey(key);
-    try {
-      const resp = await edgeFetch(catalogEndpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ target: 'hydrate_detail', task_class: taskClass, source_url: buildTaskDetailSourceUrl(sourceUrl, taskClass) }),
-      });
-      const text = await resp.text();
-      let payload: { error?: string } = {};
-      try { payload = text ? JSON.parse(text) : {}; } catch { /* fallback */ }
-      if (!resp.ok) throw new Error(payload.error ?? text ?? `HTTP ${resp.status}`);
-      await loadCatalog();
-      setStatus({ kind: 'success', message: 'Task detail hydrated from source.' });
-    } catch (e) {
-      setStatus({ kind: 'error', message: e instanceof Error ? e.message : String(e) });
-    } finally {
-      setSavingKey(null);
-    }
-  };
-
   /* ---- Filter + paginate ---- */
   const filteredItems = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -395,83 +318,63 @@ export function IntegrationCatalogPanel() {
 
   /* ---- Render ---- */
   return (
-    <div className="space-y-3">
-      {/* Toolbar */}
-      <div className="flex flex-wrap items-end gap-2">
-        <label className="text-xs text-muted-foreground">
-          Kestra Source URL
-          <input
-            className="mt-1 h-8 w-[460px] max-w-full rounded-md border border-input bg-background px-2 text-xs text-foreground"
-            value={sourceUrl}
-            onChange={(e) => setSourceUrl(e.currentTarget.value)}
-            placeholder="http://localhost:8080/api/v1/plugins"
-          />
-        </label>
-        <Button size="sm" className="h-8 px-3 text-xs" disabled={loading} onClick={() => void loadCatalog()}>
-          {loading ? 'Refreshing...' : 'Refresh'}
-        </Button>
-        <Button size="sm" className="h-8 px-3 text-xs" disabled={savingKey === 'sync:dry-run'} onClick={() => void runSync(true)}>
-          {savingKey === 'sync:dry-run' ? 'Running...' : 'Dry-Run Sync'}
-        </Button>
-        <Button size="sm" className="h-8 px-3 text-xs" disabled={savingKey === 'sync:apply'} onClick={() => void runSync(false)}>
-          {savingKey === 'sync:apply' ? 'Applying...' : 'Apply Sync'}
-        </Button>
-      </div>
-
-      {/* Search + pagination controls */}
-      <div className="flex flex-wrap items-center gap-2">
-        <p className="text-xs text-muted-foreground">
-          <span className="font-mono">{items.length}</span> items |
-          Showing <span className="font-mono">{filteredItems.length}</span>
-        </p>
-        <input
-          className="h-8 min-w-[240px] rounded-md border border-input bg-background px-2 text-xs text-foreground"
-          value={search}
-          onChange={(e) => { setSearch(e.currentTarget.value); setPage(1); }}
-          placeholder="Search class, plugin, title, category..."
-        />
-        <label className="text-xs text-muted-foreground">
-          Page size
-          <select
-            className="ml-1 h-8 rounded-md border border-input bg-background px-2 text-xs text-foreground"
-            value={pageSize}
-            onChange={(e) => { setPageSize(Number(e.currentTarget.value) || DEFAULT_PAGE_SIZE); setPage(1); }}
-          >
-            {PAGE_SIZE_OPTIONS.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
-          </select>
-        </label>
-        <div className="ml-auto flex items-center gap-1">
-          <Button size="sm" className="h-8 px-2 text-xs" disabled={pagination.page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>
-            Prev
+    <div className="h-full min-h-0 flex flex-col gap-3 overflow-hidden">
+      <div className="flex-none space-y-3">
+        {/* Toolbar */}
+        <div className="flex flex-wrap items-end gap-2">
+          <Button size="sm" className="h-8 px-3 text-xs" disabled={loading} onClick={() => void loadCatalog()}>
+            {loading ? 'Refreshing...' : 'Refresh'}
           </Button>
-          <p className="px-2 text-xs text-muted-foreground">
-            Page <span className="font-mono">{pagination.page}</span> / <span className="font-mono">{pagination.totalPages}</span>
+        </div>
+
+        {/* Search + pagination controls */}
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="text-xs text-muted-foreground">
+            <span className="font-mono">{items.length}</span> items |
+            Showing <span className="font-mono">{filteredItems.length}</span>
           </p>
-          <Button size="sm" className="h-8 px-2 text-xs" disabled={pagination.page >= pagination.totalPages} onClick={() => setPage((p) => Math.min(pagination.totalPages, p + 1))}>
-            Next
-          </Button>
+          <input
+            className="h-8 min-w-[240px] rounded-md border border-input bg-background px-2 text-xs text-foreground"
+            value={search}
+            onChange={(e) => { setSearch(e.currentTarget.value); setPage(1); }}
+            placeholder="Search class, plugin, title, category..."
+          />
+          <label className="text-xs text-muted-foreground">
+            Page size
+            <select
+              className="ml-1 h-8 rounded-md border border-input bg-background px-2 text-xs text-foreground"
+              value={pageSize}
+              onChange={(e) => { setPageSize(Number(e.currentTarget.value) || DEFAULT_PAGE_SIZE); setPage(1); }}
+            >
+              {PAGE_SIZE_OPTIONS.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
+            </select>
+          </label>
+          <div className="ml-auto flex items-center gap-1">
+            <Button size="sm" className="h-8 px-2 text-xs" disabled={pagination.page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>
+              Prev
+            </Button>
+            <p className="px-2 text-xs text-muted-foreground">
+              Page <span className="font-mono">{pagination.page}</span> / <span className="font-mono">{pagination.totalPages}</span>
+            </p>
+            <Button size="sm" className="h-8 px-2 text-xs" disabled={pagination.page >= pagination.totalPages} onClick={() => setPage((p) => Math.min(pagination.totalPages, p + 1))}>
+              Next
+            </Button>
+          </div>
         </div>
+
+        {status && (
+          <div className={status.kind === 'error'
+            ? 'rounded-md border border-red-400/40 bg-red-500/10 p-2 text-xs text-red-200'
+            : 'rounded-md border border-emerald-400/40 bg-emerald-500/10 p-2 text-xs text-emerald-100'
+          }>
+            {status.message}
+          </div>
+        )}
+        {error && <ErrorAlert message={error} />}
       </div>
-
-      {lastSync && (
-        <p className="text-xs text-muted-foreground">
-          Last sync: <span className="font-mono">{lastSync.summary.total_normalized}</span> items,
-          {' '}<span className="font-mono">{lastSync.summary.duplicate_classes_in_payload}</span> duplicates.
-        </p>
-      )}
-
-      {status && (
-        <div className={status.kind === 'error'
-          ? 'rounded-md border border-red-400/40 bg-red-500/10 p-2 text-xs text-red-200'
-          : 'rounded-md border border-emerald-400/40 bg-emerald-500/10 p-2 text-xs text-emerald-100'
-        }>
-          {status.message}
-        </div>
-      )}
-      {error && <ErrorAlert message={error} />}
 
       {/* Table */}
-      <div className="overflow-x-auto rounded-md border border-border">
+      <div className="catalog-rdg min-h-0 flex-1 overflow-auto rounded-md border border-border">
         <table className="w-full min-w-[1200px] border-collapse text-xs">
           <thead className="bg-muted/50 text-left text-muted-foreground">
             <tr>
@@ -483,15 +386,13 @@ export function IntegrationCatalogPanel() {
               <th className="px-2 py-2 font-medium">Categories</th>
               <th className="px-2 py-2 font-medium">Schema</th>
               <th className="px-2 py-2 font-medium">Docs</th>
-              <th className="px-2 py-2 font-medium">Synced</th>
-              <th className="px-2 py-2 font-medium">Actions</th>
+              <th className="px-2 py-2 font-medium">Source Updated</th>
             </tr>
           </thead>
           <tbody>
             {pagination.rows.map((row) => {
               const isExpanded = expandedIds.has(row.item_id);
               const summary = extractTaskSchemaSummary(row.task_schema);
-              const hydrateKey = `item:hydrate:${row.task_class}`;
               const hasSchema = summary.propertyKeys.length > 0 || summary.outputKeys.length > 0;
 
               return (
@@ -508,7 +409,7 @@ export function IntegrationCatalogPanel() {
                   </td>
 
                   {/* Task (class + title + description) */}
-                  <td className="px-2 py-2" colSpan={isExpanded ? 9 : 1}>
+                  <td className="px-2 py-2" colSpan={isExpanded ? 8 : 1}>
                     <p
                       className="font-mono text-[11px] text-foreground cursor-pointer hover:underline"
                       title={taskClassHoverText(row.task_description, row.task_title, row.task_class)}
@@ -560,17 +461,7 @@ export function IntegrationCatalogPanel() {
                         {row.task_markdown && row.task_markdown.trim().length > 0 ? 'yes' : 'no'}
                       </td>
                       <td className="px-2 py-2 text-muted-foreground/60 text-[11px]">
-                        {formatTimestamp(row.last_synced_at)}
-                      </td>
-                      <td className="px-2 py-2">
-                        <Button
-                          size="sm"
-                          className="h-7 px-2 text-xs"
-                          disabled={savingKey === hydrateKey}
-                          onClick={() => void hydrateDetail(row.task_class)}
-                        >
-                          {savingKey === hydrateKey ? 'Fetching...' : 'Fetch Schema'}
-                        </Button>
+                        {formatTimestamp(row.source_updated_at)}
                       </td>
                     </>
                   )}
@@ -579,7 +470,7 @@ export function IntegrationCatalogPanel() {
             })}
             {!loading && !error && filteredItems.length === 0 && (
               <tr>
-                <td className="px-2 py-3 text-muted-foreground" colSpan={10}>
+                <td className="px-2 py-3 text-muted-foreground" colSpan={9}>
                   No catalog items match the current filter.
                 </td>
               </tr>

@@ -3,6 +3,7 @@ import { Avatar } from '@ark-ui/react/avatar';
 import { Select, createListCollection } from '@ark-ui/react/select';
 import { TreeView, createTreeCollection, type TreeNode } from '@ark-ui/react/tree-view';
 import {
+  IconBook2,
   IconCheck,
   IconChevronDown,
   IconLayoutColumns,
@@ -608,6 +609,16 @@ export function LeftRailShadcn({
                     </p>
                   </div>
                   <div className="p-1">
+                    <MenuItem
+                      value="docs"
+                      className="gap-2"
+                      onClick={() => {
+                        window.open('https://blockdata.run/docs', '_blank', 'noopener');
+                      }}
+                    >
+                      <IconBook2 size={16} stroke={1.8} />
+                      Docs
+                    </MenuItem>
                     <MenuItem
                       value="settings"
                       className="gap-2"
