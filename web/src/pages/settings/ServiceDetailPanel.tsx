@@ -16,6 +16,8 @@ type ServiceDetailPanelProps = {
   onToggleServiceEnabled: (service: ServiceRow) => void;
   onToggleFunctionEnabled: (fn: ServiceFunctionRow) => void;
   onClose: () => void;
+  /** When false, hides admin controls (enabled toggles). Default true. */
+  isAdmin?: boolean;
 };
 
 /* ------------------------------------------------------------------ */
@@ -46,6 +48,7 @@ export function ServiceDetailPanel({
   onToggleServiceEnabled,
   onToggleFunctionEnabled,
   onClose,
+  isAdmin = true,
 }: ServiceDetailPanelProps) {
   const [expandedParams, setExpandedParams] = useState<Set<string>>(new Set());
 
@@ -89,19 +92,21 @@ export function ServiceDetailPanel({
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-3">
-          <Switch.Root
-            checked={service.enabled}
-            onCheckedChange={() => onToggleServiceEnabled(service)}
-            className="inline-flex items-center gap-2"
-          >
-            <Switch.HiddenInput />
-            <Switch.Control className="relative h-5 w-9 rounded-full border border-input bg-muted transition-colors data-[state=checked]:border-primary data-[state=checked]:bg-primary">
-              <Switch.Thumb className="block h-4 w-4 translate-x-0 rounded-full bg-background shadow transition-transform data-[state=checked]:translate-x-4" />
-            </Switch.Control>
-            <Switch.Label className="text-xs text-muted-foreground">
-              {service.enabled ? 'Enabled' : 'Disabled'}
-            </Switch.Label>
-          </Switch.Root>
+          {isAdmin && (
+            <Switch.Root
+              checked={service.enabled}
+              onCheckedChange={() => onToggleServiceEnabled(service)}
+              className="inline-flex items-center gap-2"
+            >
+              <Switch.HiddenInput />
+              <Switch.Control className="relative h-5 w-9 rounded-full border border-input bg-muted transition-colors data-[state=checked]:border-primary data-[state=checked]:bg-primary">
+                <Switch.Thumb className="block h-4 w-4 translate-x-0 rounded-full bg-background shadow transition-transform data-[state=checked]:translate-x-4" />
+              </Switch.Control>
+              <Switch.Label className="text-xs text-muted-foreground">
+                {service.enabled ? 'Enabled' : 'Disabled'}
+              </Switch.Label>
+            </Switch.Root>
+          )}
           <button
             type="button"
             onClick={onClose}
@@ -139,7 +144,7 @@ export function ServiceDetailPanel({
                   <th className="px-3 py-2 font-medium">Label</th>
                   <th className="px-3 py-2 font-medium">Method</th>
                   <th className="px-3 py-2 font-medium">Entrypoint</th>
-                  <th className="px-3 py-2 font-medium">Enabled</th>
+                  {isAdmin && <th className="px-3 py-2 font-medium">Enabled</th>}
                 </tr>
               </thead>
               <tbody>
@@ -173,27 +178,29 @@ export function ServiceDetailPanel({
                         <td className="px-3 py-2 font-mono text-muted-foreground">
                           {fn.entrypoint}
                         </td>
-                        <td className="px-3 py-2">
-                          <Switch.Root
-                            checked={fn.enabled}
-                            onCheckedChange={() =>
-                              onToggleFunctionEnabled(fn)
-                            }
-                            disabled={savingKey === fnToggleKey}
-                            className="inline-flex items-center"
-                          >
-                            <Switch.HiddenInput />
-                            <Switch.Control className="relative h-5 w-9 rounded-full border border-input bg-muted transition-colors data-[state=checked]:border-primary data-[state=checked]:bg-primary">
-                              <Switch.Thumb className="block h-4 w-4 translate-x-0 rounded-full bg-background shadow transition-transform data-[state=checked]:translate-x-4" />
-                            </Switch.Control>
-                          </Switch.Root>
-                        </td>
+                        {isAdmin && (
+                          <td className="px-3 py-2">
+                            <Switch.Root
+                              checked={fn.enabled}
+                              onCheckedChange={() =>
+                                onToggleFunctionEnabled(fn)
+                              }
+                              disabled={savingKey === fnToggleKey}
+                              className="inline-flex items-center"
+                            >
+                              <Switch.HiddenInput />
+                              <Switch.Control className="relative h-5 w-9 rounded-full border border-input bg-muted transition-colors data-[state=checked]:border-primary data-[state=checked]:bg-primary">
+                                <Switch.Thumb className="block h-4 w-4 translate-x-0 rounded-full bg-background shadow transition-transform data-[state=checked]:translate-x-4" />
+                              </Switch.Control>
+                            </Switch.Root>
+                          </td>
+                        )}
                       </tr>
 
                       {/* Params sub-row */}
                       {params.length > 0 && (
                         <tr className="bg-muted/30">
-                          <td colSpan={6} className="px-3 py-1.5">
+                          <td colSpan={isAdmin ? 6 : 5} className="px-3 py-1.5">
                             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
                               <span className="font-medium text-foreground/70">
                                 Params:

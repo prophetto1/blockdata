@@ -61,7 +61,9 @@ export function ServicesPanel({ mode = 'admin' }: ServicesPanelProps) {
   const loadData = useCallback(async () => {
     setLoading(true);
     setError(null);
-    const result = await loadAllServices();
+    const result = isAdmin
+      ? await loadAllServices()
+      : await loadPublicServices();
     if (result.ok) {
       setServiceTypes(result.data.service_types);
       setServices(result.data.services);
@@ -70,7 +72,7 @@ export function ServicesPanel({ mode = 'admin' }: ServicesPanelProps) {
       setError(result.error);
     }
     setLoading(false);
-  }, []);
+  }, [isAdmin]);
 
   useEffect(() => {
     void loadData();
@@ -195,6 +197,7 @@ export function ServicesPanel({ mode = 'admin' }: ServicesPanelProps) {
             onToggleServiceEnabled={handleToggleServiceEnabled}
             onToggleFunctionEnabled={handleToggleFunctionEnabled}
             onClose={() => setSelectedServiceId(null)}
+            isAdmin={isAdmin}
           />
         ) : (
           <div className="flex min-w-0 flex-1 items-center justify-center text-sm text-muted-foreground">

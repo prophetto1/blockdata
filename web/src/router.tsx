@@ -30,6 +30,7 @@ import McpServers from '@/pages/settings/McpServers';
 import Commands from '@/pages/Commands';
 import DocumentTest from '@/pages/DocumentTest';
 import DatabasePlaceholder from '@/pages/DatabasePlaceholder';
+import ServicesPage from '@/pages/ServicesPage';
 import EarlyAccess from '@/pages/EarlyAccess';
 import { FlowsRouteShell } from '@/components/layout/FlowsRouteShell';
 import { featureFlags } from '@/lib/featureFlags';
@@ -107,6 +108,7 @@ export const router = createBrowserRouter([
           { path: '/app/projects/list', element: <Projects /> },
           { path: '/app/database', element: <DatabasePlaceholder /> },
           { path: '/app/integrations', element: <Integrations /> },
+          { path: '/app/services', element: <ServicesPage /> },
           {
             path: '/app/flows',
             element: <FlowsRouteShell />,
