@@ -837,17 +837,6 @@ export function GridTestPanel() {
     return sorted;
   }, [filteredItems, sortColumns]);
 
-  /* ---- Summary rows ---- */
-  const _topSummaryRows = useMemo<readonly SummaryRow[]>(() => [{
-    id: 'top-summary',
-    totalCount: items.length,
-    filteredCount: sortedRows.length,
-    withSchema: sortedRows.filter((r) => !!r.task_schema).length,
-    withMarkdown: sortedRows.filter((r) => !!r.task_markdown).length,
-    enabledCount: sortedRows.filter((r) => r.enabled).length,
-    isFiltered: items.length !== sortedRows.length,
-  }], [items.length, sortedRows]);
-
   /* ---- Reset page on filter/sort change ---- */
   useEffect(() => { setPage(1); }, [search, sortColumns]);
 

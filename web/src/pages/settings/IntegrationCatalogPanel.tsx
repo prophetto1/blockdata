@@ -40,11 +40,6 @@ type AdminIntegrationCatalogResponse = {
   functions: unknown[];
 };
 
-type InlineStatus = {
-  kind: 'success' | 'error';
-  message: string;
-};
-
 function formatTimestamp(value: string | null): string {
   if (!value) return 'n/a';
   const d = new Date(value);
@@ -250,7 +245,6 @@ function SchemaDetail({ schema, markdown }: { schema: ParsedTaskSchema; markdown
 export function IntegrationCatalogPanel() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [_status, _setStatus] = useState<InlineStatus | null>(null);
   const [items, setItems] = useState<CatalogItemRow[]>([]);
   const [search, setSearch] = useState('');
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
@@ -362,14 +356,6 @@ export function IntegrationCatalogPanel() {
           </div>
         </div>
 
-        {status && (
-          <div className={status.kind === 'error'
-            ? 'rounded-md border border-red-400/40 bg-red-500/10 p-2 text-xs text-red-200'
-            : 'rounded-md border border-emerald-400/40 bg-emerald-500/10 p-2 text-xs text-emerald-100'
-          }>
-            {status.message}
-          </div>
-        )}
         {error && <ErrorAlert message={error} />}
       </div>
 
