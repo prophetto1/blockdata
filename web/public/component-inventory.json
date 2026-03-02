@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-03-02T12:52:58.213Z",
+  "generatedAt": "2026-03-02T13:35:26.943Z",
   "scope": "auth",
   "pages": [
     {
@@ -2059,6 +2059,34 @@
       ]
     },
     {
+      "page": "src/pages/ServicesPage.tsx",
+      "componentCount": 2,
+      "categoryCounts": {
+        "local-components": 1,
+        "local-pages": 1
+      },
+      "components": [
+        {
+          "component": "PageHeader",
+          "usedAs": "PageHeader",
+          "source": "@/components/common/PageHeader",
+          "importKind": "named",
+          "importedAs": "PageHeader",
+          "category": "local-components",
+          "definition": "PageHeader comes from @/components/common/PageHeader (named import of PageHeader)"
+        },
+        {
+          "component": "ServicesPanel",
+          "usedAs": "ServicesPanel",
+          "source": "@/pages/settings/ServicesPanel",
+          "importKind": "named",
+          "importedAs": "ServicesPanel",
+          "category": "local-pages",
+          "definition": "ServicesPanel comes from @/pages/settings/ServicesPanel (named import of ServicesPanel)"
+        }
+      ]
+    },
+    {
       "page": "src/pages/settings/GridTestPanel.tsx",
       "componentCount": 6,
       "categoryCounts": {
@@ -3965,14 +3993,15 @@
       ]
     }
   ],
-  "totalComponentUsages": 397,
+  "totalComponentUsages": 399,
   "categoryTotals": {
     "external-package": 16,
-    "local-components": 115,
+    "local-components": 116,
     "tabler-icons": 77,
     "ark-ui": 159,
     "in-file component": 9,
     "unknown": 1,
-    "relative-local": 20
+    "relative-local": 20,
+    "local-pages": 1
   }
 }

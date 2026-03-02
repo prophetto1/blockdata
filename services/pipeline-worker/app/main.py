@@ -6,9 +6,11 @@ from contextlib import asynccontextmanager
 from typing import Any
 
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from . import registry
+from .routes.admin_services import router as admin_services_router
 from .shared.base import PluginOutput
 from .shared.context import ExecutionContext
 
@@ -25,6 +27,16 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="Pipeline Worker", lifespan=lifespan)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.include_router(admin_services_router)
 
 
 class TaskExecuteRequest(BaseModel):

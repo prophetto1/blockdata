@@ -1,8 +1,8 @@
 /* ------------------------------------------------------------------ */
 /*  ServicesPanel — API layer (zero React dependency)                  */
+/*  Targets FastAPI pipeline-worker at PIPELINE_WORKER_URL             */
 /* ------------------------------------------------------------------ */
 
-import { edgeFetch } from '@/lib/edge';
 import { supabase } from '@/lib/supabase';
 import type {
   AdminServicesResponse,
@@ -15,22 +15,57 @@ import type {
 import { isPlainRecord, parseJsonTextarea, parseTagsText } from './services-panel.types';
 
 /* ------------------------------------------------------------------ */
-/*  Generic mutation executor                                          */
+/*  Base URL + auth helper                                             */
+/* ------------------------------------------------------------------ */
+
+const PIPELINE_WORKER_URL = (
+  import.meta.env.VITE_PIPELINE_WORKER_URL ?? 'http://localhost:8000'
+).replace(/\/+$/, '');
+
+async function requireAccessToken(): Promise<string> {
+  const sessionResult = await supabase.auth.getSession();
+  if (sessionResult.error) throw new Error(sessionResult.error.message);
+
+  let token = sessionResult.data.session?.access_token ?? null;
+  if (!token) {
+    const refreshed = await supabase.auth.refreshSession();
+    if (refreshed.error) throw new Error(refreshed.error.message);
+    token = refreshed.data.session?.access_token ?? null;
+  }
+
+  if (!token) throw new Error('Not authenticated');
+  return token;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Generic fetch to pipeline-worker                                   */
 /* ------------------------------------------------------------------ */
 
 type MutationResult =
   | { ok: true; payload: Record<string, unknown> }
   | { ok: false; error: string };
 
-async function servicesMutation(
+async function pipelineFetch(
+  path: string,
+  init: RequestInit = {},
+): Promise<Response> {
+  const token = await requireAccessToken();
+  const url = `${PIPELINE_WORKER_URL}${path}`;
+  const headers = new Headers(init.headers);
+  headers.set('Authorization', `Bearer ${token}`);
+  headers.set('Content-Type', 'application/json');
+  return fetch(url, { ...init, headers });
+}
+
+async function pipelineMutation(
   method: 'POST' | 'PATCH' | 'DELETE',
-  body: Record<string, unknown>,
+  path: string,
+  body?: Record<string, unknown>,
 ): Promise<MutationResult> {
   try {
-    const resp = await edgeFetch('admin-services', {
+    const resp = await pipelineFetch(path, {
       method,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
+      body: body ? JSON.stringify(body) : undefined,
     });
     const text = await resp.text();
     let payload: Record<string, unknown> = {};
@@ -40,9 +75,8 @@ async function servicesMutation(
       // Keep raw fallback.
     }
     if (!resp.ok) {
-      throw new Error(
-        (payload.error as string) ?? text ?? `HTTP ${resp.status}`,
-      );
+      const detail = (payload.detail as string) ?? (payload.error as string) ?? text ?? `HTTP ${resp.status}`;
+      throw new Error(detail);
     }
     return { ok: true, payload };
   } catch (e) {
@@ -66,9 +100,9 @@ export async function loadAllServices(): Promise<
   | { ok: false; error: string }
 > {
   try {
-    const resp = await edgeFetch('admin-services', { method: 'GET' });
+    const resp = await pipelineFetch('/admin/services');
     const text = await resp.text();
-    let payload: AdminServicesResponse | { error?: string } = {};
+    let payload: AdminServicesResponse | { error?: string; detail?: string } = {};
     try {
       payload = text
         ? (JSON.parse(text) as AdminServicesResponse)
@@ -77,8 +111,8 @@ export async function loadAllServices(): Promise<
       // Keep raw fallback.
     }
     if (!resp.ok) {
-      const errPayload = payload as { error?: string };
-      throw new Error(errPayload.error ?? text ?? `HTTP ${resp.status}`);
+      const errPayload = payload as { error?: string; detail?: string };
+      throw new Error(errPayload.detail ?? errPayload.error ?? text ?? `HTTP ${resp.status}`);
     }
     const data = payload as AdminServicesResponse;
     return {
@@ -150,9 +184,7 @@ export async function toggleServiceEnabled(
   serviceId: string,
   enabled: boolean,
 ): Promise<MutationResult> {
-  return servicesMutation('PATCH', {
-    target: 'service',
-    service_id: serviceId,
+  return pipelineMutation('PATCH', `/admin/services/service/${serviceId}`, {
     enabled,
   });
 }
@@ -185,25 +217,20 @@ export async function saveService(
       error: 'Service type, service name, and base URL are required.',
     };
   }
-  return servicesMutation('PATCH', {
-    target: 'service',
-    service_id: serviceId,
+  return pipelineMutation('PATCH', `/admin/services/service/${serviceId}`, {
     service_type: draft.service_type.trim(),
     service_name: draft.service_name.trim(),
     base_url: draft.base_url.trim(),
     health_status: draft.health_status,
     enabled: draft.enabled,
-    config: parsedConfig.value,
+    config: parsedConfig.value as Record<string, unknown>,
   });
 }
 
 export async function deleteService(
   serviceId: string,
 ): Promise<MutationResult> {
-  return servicesMutation('DELETE', {
-    target: 'service',
-    service_id: serviceId,
-  });
+  return pipelineMutation('DELETE', `/admin/services/service/${serviceId}`);
 }
 
 export async function createService(
@@ -234,14 +261,13 @@ export async function createService(
       error: 'Service type, service name, and base URL are required.',
     };
   }
-  return servicesMutation('POST', {
-    target: 'service',
+  return pipelineMutation('POST', '/admin/services/service', {
     service_type: draft.service_type.trim(),
     service_name: draft.service_name.trim(),
     base_url: draft.base_url.trim(),
     health_status: draft.health_status,
     enabled: draft.enabled,
-    config: parsedConfig.value,
+    config: parsedConfig.value as Record<string, unknown>,
   });
 }
 
@@ -253,9 +279,7 @@ export async function toggleFunctionEnabled(
   functionId: string,
   enabled: boolean,
 ): Promise<MutationResult> {
-  return servicesMutation('PATCH', {
-    target: 'function',
-    function_id: functionId,
+  return pipelineMutation('PATCH', `/admin/services/function/${functionId}`, {
     enabled,
   });
 }
@@ -274,9 +298,7 @@ export async function saveFunction(
       error: 'Function name, label, and entrypoint are required.',
     };
   }
-  return servicesMutation('PATCH', {
-    target: 'function',
-    function_id: functionId,
+  return pipelineMutation('PATCH', `/admin/services/function/${functionId}`, {
     function_name: draft.function_name.trim(),
     function_type: draft.function_type,
     label: draft.label.trim(),
@@ -291,10 +313,7 @@ export async function saveFunction(
 export async function deleteFunction(
   functionId: string,
 ): Promise<MutationResult> {
-  return servicesMutation('DELETE', {
-    target: 'function',
-    function_id: functionId,
-  });
+  return pipelineMutation('DELETE', `/admin/services/function/${functionId}`);
 }
 
 export async function createFunction(
@@ -311,8 +330,7 @@ export async function createFunction(
       error: 'Function name, label, and entrypoint are required.',
     };
   }
-  return servicesMutation('POST', {
-    target: 'function',
+  return pipelineMutation('POST', '/admin/services/function', {
     service_id: serviceId,
     function_name: draft.function_name.trim(),
     function_type: draft.function_type,
@@ -349,15 +367,14 @@ export async function importRegistryJson(
     };
   }
 
-  return servicesMutation('POST', {
-    target: 'import_registry',
+  return pipelineMutation('POST', '/admin/services/import', {
     import_mode: 'upsert',
     ...payload,
   });
 }
 
 /* ------------------------------------------------------------------ */
-/*  Real-time subscription                                             */
+/*  Real-time subscription (stays on Supabase — no change)             */
 /* ------------------------------------------------------------------ */
 
 export function subscribeToServiceChanges(

@@ -48,7 +48,8 @@
                                           "pages":  [
                                                         "s",
                                                         "edge-functions",
-                                                        "infrastructure/plugin-registry"
+                                                        "infrastructure/plugin-registry",
+                                                        "infrastructure/eyecite-reference"
                                                     ]
                                       },
                                       {

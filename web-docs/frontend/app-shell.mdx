@@ -14,7 +14,7 @@ The app shell is the fixed chrome that wraps every `/app/*` route. It provides t
 │        │                                         │
 │ Left   │   Main content area                     │
 │ Rail   │   (scrollable or locked per route)       │
-│ 280px  │                                         │
+│ 224px  │                                         │
 │        │   ┌─────────────────────────────────┐   │
 │        │   │ AppPageShell (fluid/constrained) │   │
 │        │   │ — or —                           │   │
@@ -47,14 +47,14 @@ The app shell is the fixed chrome that wraps every `/app/*` route. It provides t
 
 ## Shell Dimensions
 
-From `styleTokens.shell`:
+From `styleTokens.shell` and `AppLayout`:
 
 | Property | Value | Notes |
 |---|---|---|
 | Header height | `72px` | Fixed position, z-index 110 |
-| Sidebar width (expanded) | `280px` | Collapsible via localStorage toggle |
+| Sidebar width (expanded) | `224px` | Collapsible via localStorage toggle |
 | Sidebar width (compact) | `60px` | Icon-only mode |
-| Assistant width | `360px` | Docked panel |
+| Assistant dock width (runtime) | `min(560px, calc(100vw - 24px))` | Defined in `AppLayout` |
 | Content max-width | `var(--app-shell-content-max-width)` | Only in constrained mode |
 
 CSS variables set on the shell root:
@@ -188,18 +188,18 @@ Two-column admin layout rendered inside the main content area.
 ```
 ┌──────────────────────────────────────┐
 │  Settings second rail   │  Content   │
-│  (250px, scrollable)    │  (flex-1)  │
+│  (224px, scrollable)    │  (flex-1)  │
 │                         │            │
 │  ┌─ General ──────────┐ │            │
 │  │  Account           │ │            │
 │  └────────────────────┘ │            │
 │                         │            │
-│  ┌─ Superuser ────────┐ │            │
+│  ┌─ Operations (temp) ─┐ │            │
 │  │  AI Stack          │ │            │
 │  │  Services          │ │            │
 │  │  Platform          │ │            │
 │  │  Integration Cat.  │ │            │
-│  │  Design Standards  │ │            │
+│  │  Grid Test         │ │            │
 │  └────────────────────┘ │            │
 │                         │            │
 │  ┌─ Designs ──────────┐ │            │
@@ -210,13 +210,13 @@ Two-column admin layout rendered inside the main content area.
 
 ### Nav groups
 
-Defined in `settings-nav.ts`. Groups labeled `admin` and `designs` are **superuser-only** — hidden unless `useSuperuserProbe()` returns `true`.
+Defined in `settings-nav.ts`. The `admin` group label is currently `Operations` (temporary naming). The nav is currently rendered from `SETTINGS_NAV` directly; backend endpoints still enforce authorization where required.
 
 | Group | Visibility | Items |
 |---|---|---|
 | General | All users | Account |
-| Superuser | Superuser only | AI Stack, Services, Platform, Integration Catalog, Design Standards |
-| Designs | Superuser only | Instance Config |
+| Operations (temporary) | Visible in nav; backend auth enforced per panel | AI Stack, Services, Platform, Integration Catalog, Grid Test |
+| Designs | Visible in nav; backend auth enforced per panel | Instance Config |
 
 ### AI Stack tabs
 
@@ -245,7 +245,7 @@ Used by the Schema Layout page to inject its own toolbar into the header.
 
 ## AssistantDockHost
 
-AI chat panel powered by `useAssistantChat` hook. SSE streaming to the `assistant-chat` edge function.
+AI chat panel powered by `useAssistantChat` hook. Current transport streams via the `assistant-chat` edge function; migration planning targets FastAPI transport.
 
 ### Display modes
 

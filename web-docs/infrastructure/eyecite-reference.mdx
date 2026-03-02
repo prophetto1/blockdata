@@ -1,0 +1,972 @@
+---
+title: "eyecite Endpoint Configuration"
+description: "Complete guide to configuring and firing the 5 eyecite citation endpoints — every parameter, return shape, error condition, and registry entry."
+---
+
+## What eyecite Does
+
+eyecite is [Free Law Project's](https://free.law/) legal citation extraction library. It reads a block of legal text — a court opinion, brief, law review article, or statute — and finds every citation in it. Then it tells you:
+
+- **What** was cited (volume, reporter, page — e.g. `410 U.S. 113`)
+- **Who** was involved (plaintiff: `Roe`, defendant: `Wade`)
+- **Where** it was decided (court code: `scotus`, `ca2`, `fld`)
+- **When** it was decided (year: `1973`)
+- **How** it was referenced later in the same text (`Id. at 846`, `Roe, supra, at 120`, `515 U.S., at 241`)
+
+It also links all the short references (`Id.`, `supra`, short-form cites) back to the original full citation, so you know that "Id. at 846" on page 12 refers to Casey, not Roe.
+
+### What it recognizes
+
+| Citation type | Example | What you get back |
+|---|---|---|
+| Full case citation | `Roe v. Wade, 410 U.S. 113 (1973)` | volume, reporter, page, plaintiff, defendant, court, year |
+| Statutory / law citation | `42 U.S.C. § 1983` | reporter, section, publisher, year |
+| Journal / law review citation | `85 Minn. L. Rev. 1205` | volume, reporter, page, year |
+| Short-form citation | `515 U.S., at 241` | volume, reporter, pin cite, antecedent guess |
+| Supra citation | `Adarand, supra, at 240` | antecedent guess, pin cite |
+| Id. / ibid. citation | `Id. at 846` | pin cite (resolves to preceding citation) |
+| Party-name reference | `Roe at 240` | plaintiff/defendant, pin cite |
+| Placeholder / slip opinion | `--- U.S. ---` | (recognized as pending citation) |
+
+### Jurisdiction coverage
+
+**United States only.** The underlying `reporters-db` database contains:
+
+| Category | Count | Examples |
+|---|---|---|
+| Case reporters | 1,167 reporters / 2,102 name variations | U.S., S. Ct., F.2d, F.3d, F.Supp., A.2d, N.E., P.2d, Cal.App.4th |
+| SCOTUS reporters | 6+ (all eras) | U.S., S. Ct., L. Ed., L. Ed. 2d, Cranch, Wheat. |
+| Federal circuit reporters | All 13 circuits | F.2d, F.3d, F.Supp., F.Supp.2d, F.Supp.3d |
+| State reporters | All 50 states + territories | Cal., Mass., Idaho, N.Y.2d, Wis. 2d, Pa. D. & C.5th |
+| Specialty reporters | Tax, bankruptcy, military, etc. | T.C., T.C. Memo., Bankr. L. Rep. (CCH), WL, LEXIS |
+| Statutory reporters | Federal + state statutes | U.S.C., Mass. Gen. Laws, Fla. Stat., Ohio Rev. Code Ann. |
+| Journal abbreviations | US law reviews | Minn. L. Rev., B.U. L. Rev., Marq. L. Rev. |
+
+The `courts-db` database maps ~400 court strings (e.g. `4th Cir.`, `C.D. Cal.`, `S.D.N.Y.`) to standardized court codes.
+
+**Not supported:** Non-US jurisdictions, international courts, EU law, UK law reports. No reporters outside the US are in the database.
+
+### Input formats that work
+
+| Format | Clean steps to use | Notes |
+|---|---|---|
+| Plain text | `[]` (none) | Best case — just pass it directly |
+| HTML court opinions | `["html", "inline_whitespace"]` | Strips tags, preserves text. Default. |
+| HTML with `<em>` / `<i>` tags | Pass as `markup_text` instead | Enables markup-aware plaintiff/defendant extraction |
+| XML-wrapped HTML | `["xml", "html", "inline_whitespace"]` | Harvard CAP XML format |
+| PDF-extracted text | `["underscores", "all_whitespace"]` | Handles OCR artifacts and blank-line underscores |
+| Slip opinions with `--- U.S. ---` | Any | Placeholder citations detected automatically |
+| California-style `(2009) 1 U.S. 1` | Any | Year-before-citation format supported since v2.7.0 |
+
+### Production track record
+
+- **Status:** Production/Stable (PyPI classifier `Development Status :: 5`)
+- **Used by:** CourtListener (55M+ opinions, Free Law Project), Harvard Caselaw Access Project
+- **Published:** Journal of Open Source Software, 2021
+- **CI benchmark:** Every PR runs extraction against a bulk corpus of real opinions; gains/losses are tracked per commit
+
+---
+
+## Setup
+
+### Prerequisites
+
+The pipeline worker runs on a Linux host (the Ubuntu box) with Python 3.11+ and Docker.
+
+### 1. Install eyecite on the pipeline worker
+
+eyecite and lxml are already in `requirements.txt`. If deploying fresh:
+
+```bash
+cd services/pipeline-worker
+pip install -r requirements.txt
+```
+
+This installs eyecite and all its transitive dependencies:
+
+| Package | Purpose |
+|---|---|
+| `eyecite >= 2.6` | Core extraction library |
+| `lxml >= 5.0` | HTML parsing |
+| `courts-db` | Court string → code lookup (~400 courts) |
+| `reporters-db` | Reporter regex patterns (1,167 reporters) |
+| `pyahocorasick` | Default tokenizer (Aho-Corasick string matching) |
+| `fast-diff-match-patch` | Offset translation for HTML annotation |
+| `regex` | Extended regex for metadata extraction |
+
+<Warning>
+Do NOT install the `diff_match_patch` package alongside `fast-diff-match-patch` — they conflict. If both are present, annotation with `source_text` raises `AttributeError`.
+</Warning>
+
+### 2. Verify the plugin loaded
+
+Start the worker and check that the eyecite plugins registered:
+
+```bash
+uvicorn app.main:app --host 0.0.0.0 --port 8000
+```
+
+Then hit the plugins endpoint:
+
+```bash
+curl http://localhost:8000/plugins | jq '.[] | select(.class | startswith("eyecite") or startswith("Clean") or startswith("Extract") or startswith("Resolve") or startswith("Annotate") or startswith("Pipeline"))'
+```
+
+You should see 5 entries: `CleanTextPlugin`, `ExtractCitationsPlugin`, `ResolveCitationsPlugin`, `AnnotateCitationsPlugin`, `PipelinePlugin`.
+
+### 3. Register in the service catalog
+
+Run migration 062 against Supabase, OR use the admin API to import:
+
+```bash
+curl -X POST https://dbdzzhshmigewyprahej.supabase.co/functions/v1/admin-services \
+  -H "Authorization: Bearer <your-supabase-jwt>" \
+  -H "Content-Type: application/json" \
+  -d @eyecite-registry.json
+```
+
+The full JSON payload is in the [Service Registry Import](#service-registry-import) section at the bottom of this page.
+
+### 4. Verify in the UI
+
+Go to **Settings → Services**. You should see "eyecite" in the sidebar with 5 functions listed in the detail panel.
+
+---
+
+## How to Call the Endpoints
+
+### How URL resolution works
+
+Every service function in blockdata has two pieces stored in the database:
+
+```
+service_registry.base_url  →  "http://localhost:8000"     (where the service lives)
+service_functions.entrypoint  →  "/execute"                (the path on that service)
+```
+
+The full URL is `base_url + entrypoint`. For eyecite, all 5 functions share the same URL because the pipeline worker uses a **single dispatch endpoint** — the `task_type` field in the request body determines which plugin handles it. This is the same pattern Kestra uses: one execution endpoint, differentiated by task type string.
+
+```
+Full URL = http://localhost:8000/execute
+Routing  = task_type field in the JSON body
+```
+
+<Note>
+Kestra OSS has no centralized URL management — each plugin embeds its own full URL inline. Blockdata's `service_registry` + `service_functions` split is a layer on top of that: the registry holds the base URL per service, the function holds the path. The pipeline worker happens to use a single `/execute` path for all plugins, but other services (e.g. the conversion service) use different paths per function (`/convert`, `/citations`).
+</Note>
+
+### Network access
+
+The pipeline worker is an **internal service** on the private network. It is designed to be reached only from the Supabase edge function layer or other backend services on the same LAN.
+
+| Environment | URL |
+|---|---|
+| Local development | `http://localhost:8000/execute` |
+| Same Docker network | `http://pipeline-worker:8000/execute` |
+| LAN (Ubuntu box) | `http://<ubuntu-box-ip>:8000/execute` |
+
+<Warning>
+There is no public-facing URL. A task dispatcher edge function (planned, not yet built) will proxy requests from the frontend through Supabase to the pipeline worker. Until that exists, you call the worker directly over the private network.
+</Warning>
+
+### Authentication
+
+The pipeline worker has **no authentication**. No API keys, no JWT, no bearer tokens. It trusts all requests from the private network.
+
+This matches Kestra OSS's model: auth is per-task (configured on each outbound call the plugin makes), not on the inbound execution endpoint. The Kestra executor calls plugin `.run()` directly; the blockdata pipeline worker calls plugin `.run()` via `POST /execute`. Neither requires auth on the inbound side.
+
+When the task dispatcher edge function is built, it will add Supabase JWT verification on the public-facing side and proxy authenticated requests to the worker. The worker itself stays unauthenticated.
+
+| Layer | Auth | Who enforces |
+|---|---|---|
+| Browser → Supabase edge function | Supabase JWT (required) | Edge function |
+| Edge function → pipeline worker | None (private network) | Network isolation |
+| Pipeline worker → external APIs | Per-task (API keys, OAuth, etc.) | Plugin code |
+
+### Request format
+
+```
+POST http://<worker-host>:8000/execute
+Content-Type: application/json
+```
+
+```json
+{
+  "task_type": "blockdata.eyecite.<endpoint>",
+  "params": { ... },
+  "execution_id": "",
+  "task_run_id": "",
+  "variables": {}
+}
+```
+
+Only `task_type` and `params` are required. The other fields (`execution_id`, `task_run_id`, `variables`) are for orchestration context — leave them empty for direct calls.
+
+### Full curl example
+
+```bash
+curl -X POST http://localhost:8000/execute \
+  -H "Content-Type: application/json" \
+  -d '{
+    "task_type": "blockdata.eyecite.pipeline",
+    "params": {
+      "text": "In Roe v. Wade, 410 U.S. 113 (1973), the Court held that the right to privacy extended to a woman'\''s decision. See also Planned Parenthood v. Casey, 505 U.S. 833 (1992). Id. at 846.",
+      "output_format": "full"
+    }
+  }'
+```
+
+### Response shape (all endpoints)
+
+```json
+{
+  "task_type": "blockdata.eyecite.<endpoint>",
+  "output": {
+    "data": { },
+    "state": "SUCCESS",
+    "logs": ["..."]
+  }
+}
+```
+
+`state` is `"SUCCESS"` or `"FAILED"`. On failure, `logs[0]` contains the error message and `data` is empty.
+
+### Health check
+
+Verify the worker is running and eyecite loaded:
+
+```bash
+# Is the worker alive?
+curl http://localhost:8000/health
+# → {"status":"ok","plugins":18}
+
+# Are eyecite plugins registered?
+curl http://localhost:8000/plugins
+# → [...5 entries with task_types starting with "blockdata.eyecite."...]
+```
+
+---
+
+## When to Use Which Endpoint
+
+| I want to... | Use this | Why not pipeline? |
+|---|---|---|
+| Do everything in one call | `blockdata.eyecite.pipeline` | This IS pipeline. Start here. |
+| Just clean HTML before doing something else with it | `blockdata.eyecite.clean` | Pipeline always extracts too. Use clean when you only need text normalization. |
+| Extract citations but skip resolution | `blockdata.eyecite.extract` with `resolve: false` | Pipeline always resolves. Use extract when you don't need short-form linking. |
+| Extract AND resolve in one call | `blockdata.eyecite.extract` with `resolve: true` | Same result as pipeline, but no cleaning stage and no annotation option. |
+| Only get the grouped resource list | `blockdata.eyecite.resolve` | Simpler response — just resources and counts, no raw citation array. |
+| Insert custom HTML around citations | `blockdata.eyecite.annotate` | Pipeline annotation uses fixed `before_tag`/`after_tag`. Use annotate when you need `source_text` offset translation or `unbalanced_tags` control. |
+| Process HTML and get annotations in the original HTML | `blockdata.eyecite.annotate` with `source_text` | Pipeline doesn't support `source_text` — it always annotates the cleaned text. |
+
+**If unsure, start with `blockdata.eyecite.pipeline`** using `output_format: "full"`. It runs all four stages and returns everything. Use the individual endpoints only when you need finer control over a specific stage.
+
+---
+
+## Quick Start
+
+Extract and resolve citations in one call:
+
+```json
+{
+  "task_type": "blockdata.eyecite.pipeline",
+  "params": {
+    "text": "In Roe v. Wade, 410 U.S. 113 (1973), the Court held that the right to privacy extended to a woman's decision. See also Planned Parenthood v. Casey, 505 U.S. 833 (1992). Id. at 846.",
+    "output_format": "full"
+  }
+}
+```
+
+Response (abbreviated):
+
+```json
+{
+  "task_type": "blockdata.eyecite.pipeline",
+  "output": {
+    "state": "SUCCESS",
+    "data": {
+      "cleaned_text": "In Roe v. Wade, 410 U.S. 113 (1973), the Court held ...",
+      "count": 3,
+      "citations": [
+        {
+          "type": "FullCaseCitation",
+          "matched_text": "410 U.S. 113",
+          "span": [16, 28],
+          "full_span": [3, 35],
+          "groups": { "volume": "410", "reporter": "U.S.", "page": "113" },
+          "metadata": { "plaintiff": "Roe", "defendant": "Wade", "court": "scotus", "year": "1973" },
+          "corrected_citation": "410 U.S. 113",
+          "corrected_citation_full": "Roe v. Wade, 410 U.S. 113 (1973)"
+        },
+        {
+          "type": "FullCaseCitation",
+          "matched_text": "505 U.S. 833",
+          "span": [107, 119],
+          "groups": { "volume": "505", "reporter": "U.S.", "page": "833" },
+          "metadata": { "plaintiff": "Planned Parenthood", "defendant": "Casey", "court": "scotus", "year": "1992" },
+          "corrected_citation_full": "Planned Parenthood v. Casey, 505 U.S. 833 (1992)"
+        },
+        {
+          "type": "IdCitation",
+          "matched_text": "Id.",
+          "span": [128, 131],
+          "metadata": { "pin_cite": "at 846" }
+        }
+      ],
+      "unique_resources": 2,
+      "resolutions": [
+        {
+          "resource": "Resource(FullCaseCitation: 410 U.S. 113)",
+          "citation_count": 1,
+          "citations": [ "..." ]
+        },
+        {
+          "resource": "Resource(FullCaseCitation: 505 U.S. 833)",
+          "citation_count": 2,
+          "citations": [ "..." ]
+        }
+      ]
+    },
+    "logs": [
+      "Cleaned: 181 → 181 chars",
+      "Extracted: 3 citations",
+      "Resolved: 2 unique resources"
+    ]
+  }
+}
+```
+
+The `IdCitation` ("Id. at 846") resolved to the Casey resource because it immediately follows that full citation.
+
+---
+
+## Endpoints
+
+### 1. `blockdata.eyecite.clean`
+
+Pre-process raw text before citation extraction.
+
+#### Parameters
+
+| Name | Type | Required | Default | Valid Values | Description |
+|---|---|---|---|---|---|
+| `text` | string | **yes** | — | any string | Raw input text. May contain HTML, XML, PDF artifacts. |
+| `steps` | json (array) | no | `["html", "inline_whitespace"]` | See [Clean Steps Reference](#clean-steps-reference) | Ordered list of cleaner names. Applied left-to-right. |
+
+#### Example Request
+
+```json
+{
+  "task_type": "blockdata.eyecite.clean",
+  "params": {
+    "text": "<p>See <em>Roe v. Wade</em>, 410 U.S. 113 (1973).</p>",
+    "steps": ["html", "inline_whitespace"]
+  }
+}
+```
+
+#### Example Response
+
+```json
+{
+  "output": {
+    "state": "SUCCESS",
+    "data": {
+      "cleaned_text": "See Roe v. Wade , 410 U.S. 113 (1973).",
+      "original_length": 54,
+      "cleaned_length": 39
+    },
+    "logs": ["Cleaned text: 54 → 39 chars using steps ['html', 'inline_whitespace']"]
+  }
+}
+```
+
+#### Errors
+
+| Condition | Error |
+|---|---|
+| `text` is empty or missing | `FAILED`: `"text is required"` |
+| Invalid step name (e.g. `"markdown"`) | `FAILED`: `ValueError` — lists valid options |
+
+---
+
+### 2. `blockdata.eyecite.extract`
+
+Extract all legal citations from text.
+
+#### Parameters
+
+| Name | Type | Required | Default | Valid Values | Description |
+|---|---|---|---|---|---|
+| `text` | string | **yes** | — | any string | Plain text to extract citations from. Should already be cleaned, OR use `clean_steps`. |
+| `markup_text` | string | no | `""` | HTML/XML string | Original markup. Enables markup-aware case name extraction using `<em>`/`<i>` tags. Do NOT pass both `markup_text` and `clean_steps`. |
+| `clean_steps` | json (array) | no | `null` | See [Clean Steps Reference](#clean-steps-reference) | Applied to `text` before tokenizing. Cannot combine with `markup_text`. |
+| `remove_ambiguous` | boolean | no | `false` | `true` / `false` | When `true`, drops citations where the reporter string matches multiple reporter databases and the year cannot disambiguate. |
+| `resolve` | boolean | no | `false` | `true` / `false` | When `true`, also runs resolution and returns `resolutions` + `unique_resources` in the response. |
+
+#### Response Fields
+
+| Field | Type | Always present | Description |
+|---|---|---|---|
+| `citations` | array | yes | Array of citation objects. See [Citation Types Reference](#citation-types-reference). |
+| `count` | integer | yes | Number of citations found. |
+| `resolutions` | array | only if `resolve=true` | Array of resource groups. See [Resolution Output](#resolution-output). |
+| `unique_resources` | integer | only if `resolve=true` | Number of distinct cases/statutes found. |
+
+#### Example Request
+
+```json
+{
+  "task_type": "blockdata.eyecite.extract",
+  "params": {
+    "text": "The Court in Brown v. Board of Education, 347 U.S. 483 (1954), overruled Plessy v. Ferguson, 163 U.S. 537 (1896).",
+    "resolve": true
+  }
+}
+```
+
+#### Example Response
+
+```json
+{
+  "output": {
+    "state": "SUCCESS",
+    "data": {
+      "count": 2,
+      "citations": [
+        {
+          "type": "FullCaseCitation",
+          "matched_text": "347 U.S. 483",
+          "span": [42, 54],
+          "full_span": [14, 62],
+          "groups": { "volume": "347", "reporter": "U.S.", "page": "483" },
+          "metadata": {
+            "plaintiff": "Brown",
+            "defendant": "Board of Education",
+            "court": "scotus",
+            "year": "1954"
+          },
+          "corrected_citation": "347 U.S. 483",
+          "corrected_citation_full": "Brown v. Board of Education, 347 U.S. 483 (1954)"
+        },
+        {
+          "type": "FullCaseCitation",
+          "matched_text": "163 U.S. 537",
+          "span": [92, 104],
+          "full_span": [73, 112],
+          "groups": { "volume": "163", "reporter": "U.S.", "page": "537" },
+          "metadata": {
+            "plaintiff": "Plessy",
+            "defendant": "Ferguson",
+            "court": "scotus",
+            "year": "1896"
+          },
+          "corrected_citation": "163 U.S. 537",
+          "corrected_citation_full": "Plessy v. Ferguson, 163 U.S. 537 (1896)"
+        }
+      ],
+      "unique_resources": 2,
+      "resolutions": [
+        {
+          "resource": "Resource(FullCaseCitation: 347 U.S. 483)",
+          "citation_count": 1,
+          "citations": ["..."]
+        },
+        {
+          "resource": "Resource(FullCaseCitation: 163 U.S. 537)",
+          "citation_count": 1,
+          "citations": ["..."]
+        }
+      ]
+    },
+    "logs": ["Found 2 citations, resolved to 2 resources"]
+  }
+}
+```
+
+#### Errors
+
+| Condition | Error |
+|---|---|
+| `text` is empty or missing | `FAILED`: `"text is required"` |
+| Both `markup_text` and `clean_steps` provided | `FAILED`: `ValueError` — ambiguous which text to clean |
+| No citations found | `SUCCESS` with `count: 0`, `citations: []` (not an error) |
+
+---
+
+### 3. `blockdata.eyecite.resolve`
+
+Resolve short-form, supra, id, and reference citations back to their full citation.
+
+Internally runs `get_citations()` then `resolve_citations()`. You do not pass raw citation objects — pass the original text.
+
+#### Parameters
+
+| Name | Type | Required | Default | Valid Values | Description |
+|---|---|---|---|---|---|
+| `text` | string | **yes** | — | any string | Text containing citations to resolve. |
+| `clean_steps` | json (array) | no | `null` | See [Clean Steps Reference](#clean-steps-reference) | Cleaning steps to apply first. |
+
+#### Response Fields
+
+| Field | Type | Description |
+|---|---|---|
+| `resolutions` | array | Array of resource groups. Each has `resource` (string), `citation_count`, `citations`. |
+| `unique_resources` | integer | Number of distinct cases/statutes. |
+| `total_citations` | integer | Sum of all `citation_count` values (counts only resolved citations). |
+
+#### Resolution Behavior
+
+| Citation Type | How it resolves | When it fails |
+|---|---|---|
+| `FullCaseCitation` | Always resolves. Creates a new resource entry. | Never fails. |
+| `FullLawCitation` | Always resolves. Creates a new resource entry. | Never fails. |
+| `FullJournalCitation` | Always resolves. Creates a new resource entry. | Never fails. |
+| `ShortCaseCitation` | Matches by reporter + volume to earlier full cites. Refines with `antecedent_guess` if ambiguous. | Dropped silently if no match or multiple ambiguous matches. |
+| `SupraCitation` | Matches `antecedent_guess` against plaintiff/defendant of earlier full cites. | Dropped if no guess, no match, or multiple matches. |
+| `IdCitation` | Resolves to the same resource as the immediately preceding resolved citation. Validates pin cite is numerically plausible. | Dropped if prior citation was unresolved, or pin cite < page number, or pin cite > page + 150. |
+| `ReferenceCitation` | Matches party name fields against full citation metadata. | Dropped if no match or multiple matches. |
+| `UnknownCitation` | Never resolves. | Always dropped. |
+
+<Warning>
+Unresolved citations are silently dropped from the response — no error, no warning. If a short-form cite doesn't match any full citation, it simply won't appear in `resolutions`. Compare `total_citations` against the raw `count` from extraction to detect unresolved cites.
+</Warning>
+
+#### Errors
+
+| Condition | Error |
+|---|---|
+| `text` is empty or missing | `FAILED`: `"text is required"` |
+
+---
+
+### 4. `blockdata.eyecite.annotate`
+
+Insert HTML markup around citation spans in text.
+
+#### Parameters
+
+| Name | Type | Required | Default | Valid Values | Description |
+|---|---|---|---|---|---|
+| `text` | string | **yes** | — | any string | Plain text to annotate. |
+| `source_text` | string | no | `""` | HTML/XML string | If your `text` was cleaned from HTML, pass the original here. Annotations will land at the correct positions in the original via diff-based offset translation. |
+| `before_tag` | string | no | `<span class="citation">` | any string | Inserted before each citation span. |
+| `after_tag` | string | no | `</span>` | any string | Inserted after each citation span. |
+| `unbalanced_tags` | enum | no | `"skip"` | `"unchecked"`, `"skip"`, `"wrap"` | How to handle HTML tags that span a citation boundary. See [Unbalanced Tags Modes](#unbalanced-tags-modes). |
+| `clean_steps` | json (array) | no | `null` | See [Clean Steps Reference](#clean-steps-reference) | Cleaning steps to apply to `text` first. |
+
+#### Response Fields
+
+| Field | Type | Description |
+|---|---|---|
+| `annotated_text` | string | The input text with `before_tag`/`after_tag` inserted around each citation. |
+| `citation_count` | integer | Number of citations annotated. |
+
+#### Example Request
+
+```json
+{
+  "task_type": "blockdata.eyecite.annotate",
+  "params": {
+    "text": "See Roe v. Wade, 410 U.S. 113 (1973).",
+    "before_tag": "<a href=\"/case/410-us-113\">",
+    "after_tag": "</a>"
+  }
+}
+```
+
+#### Example Response
+
+```json
+{
+  "output": {
+    "state": "SUCCESS",
+    "data": {
+      "annotated_text": "See Roe v. Wade, <a href=\"/case/410-us-113\">410 U.S. 113</a> (1973).",
+      "citation_count": 1
+    },
+    "logs": ["Annotated 1 citations"]
+  }
+}
+```
+
+#### Errors
+
+| Condition | Error |
+|---|---|
+| `text` is empty or missing | `FAILED`: `"text is required"` |
+| No citations found | `SUCCESS` with `citation_count: 0` and `annotated_text` unchanged |
+
+---
+
+### 5. `blockdata.eyecite.pipeline`
+
+Full pipeline in one call: clean → extract → resolve → optionally annotate. Configurable output format.
+
+#### Parameters
+
+| Name | Type | Required | Default | Valid Values | Description |
+|---|---|---|---|---|---|
+| `text` | string | **yes** | — | any string | Raw text. May contain HTML. |
+| `clean_steps` | json (array) | no | `["html", "inline_whitespace"]` | See [Clean Steps Reference](#clean-steps-reference) | Cleaning pipeline applied as the first stage. |
+| `remove_ambiguous` | boolean | no | `false` | `true` / `false` | Drop citations with ambiguous reporters. |
+| `annotate` | boolean | no | `false` | `true` / `false` | When `true`, runs annotation and includes `annotated_text` in response. |
+| `before_tag` | string | no | `<span class="citation">` | any string | HTML before each citation. Only used when `annotate=true`. |
+| `after_tag` | string | no | `</span>` | any string | HTML after each citation. Only used when `annotate=true`. |
+| `output_format` | enum | no | `"full"` | `"full"`, `"citations_only"`, `"resolved_only"`, `"annotated_only"` | Controls which fields appear in the response. See [Output Format Options](#output-format-options). |
+
+#### Response Fields by Output Format
+
+| Field | `full` | `citations_only` | `resolved_only` | `annotated_only` |
+|---|---|---|---|---|
+| `cleaned_text` | yes | — | — | — |
+| `citations` | yes | yes | — | — |
+| `count` | yes | yes | — | — |
+| `resolutions` | yes | — | yes | — |
+| `unique_resources` | yes | — | yes | — |
+| `annotated_text` | only if `annotate=true` | — | — | yes |
+
+#### Errors
+
+| Condition | Error |
+|---|---|
+| `text` is empty or missing | `FAILED`: `"text is required"` |
+
+---
+
+## Reference Tables
+
+### Clean Steps Reference
+
+Steps apply left-to-right. Each step receives the output of the previous step.
+
+| Step Name | Input | Output | Details |
+|---|---|---|---|
+| `html` | HTML string | Plain text | Parses with `lxml.html.fromstring`. Strips `<style>`, `<script>`, `<link>`, `<head>`, `<page-number>`, and elements with `class="star-pagination"`. Extracts visible text nodes joined by spaces. |
+| `inline_whitespace` | Any string | Normalized string | Collapses consecutive spaces and tabs (`[ \t]+`) to a single space. Does NOT collapse newlines. |
+| `all_whitespace` | Any string | Normalized string | Collapses ALL whitespace including newlines and Unicode zero-width spaces (`[\u200b\s]+`) to a single space. |
+| `underscores` | Any string | Cleaned string | Removes runs of 2+ underscores (`__+` → `""`). Common in PDF-extracted text where blanks appear as underscores. |
+| `xml` | XML string | Cleaned string | Strips the leading `<?xml ...?>` declaration. Use this BEFORE `html` when input starts with an XML declaration. |
+
+**Common step combos:**
+
+| Use case | Steps |
+|---|---|
+| HTML court opinions | `["html", "inline_whitespace"]` (default) |
+| XML-wrapped HTML | `["xml", "html", "inline_whitespace"]` |
+| PDF-extracted text | `["underscores", "all_whitespace"]` |
+| Already clean plain text | `[]` (empty array, no cleaning) |
+
+<Warning>
+`xml` must come BEFORE `html` if both are used — `lxml.html.fromstring` will fail on text that starts with `<?xml ?>`.
+
+An invalid step name raises `ValueError` listing valid options: `html`, `inline_whitespace`, `all_whitespace`, `underscores`, `xml`.
+</Warning>
+
+---
+
+### Citation Types Reference
+
+Every citation in the `citations` array has these base fields:
+
+| Field | Type | Description |
+|---|---|---|
+| `type` | string | Class name — identifies the citation type. |
+| `matched_text` | string | The raw text that was matched by the tokenizer. |
+| `span` | `[int, int]` | Character offsets `[start, end]` of the citation token in the input text. |
+| `full_span` | `[int, int]` | Character offsets including the case name (for full citations). Falls back to `span` if no case name found. |
+| `groups` | object | Parsed components from the regex match. Varies by type. |
+| `metadata` | object | Enriched metadata. Only non-null fields are included. |
+| `corrected_citation` | string | Normalized citation text (standardized reporter name and page). |
+| `corrected_citation_full` | string | Full formatted citation with parties, court, and year. |
+
+#### Type-specific fields
+
+<Tabs>
+  <Tab title="FullCaseCitation">
+    Case law citation. Example: `Roe v. Wade, 410 U.S. 113 (1973)`
+
+    **groups:**
+    | Field | Example |
+    |---|---|
+    | `volume` | `"410"` |
+    | `reporter` | `"U.S."` |
+    | `page` | `"113"` (null if page is underscores like `"___"`) |
+
+    **metadata:**
+    | Field | Type | Description |
+    |---|---|---|
+    | `plaintiff` | string | Party before "v." |
+    | `defendant` | string | Party after "v." |
+    | `court` | string | Court code from `courts-db` (e.g. `"scotus"`, `"ca2"`, `"fld"`) |
+    | `year` | string | Year from parenthetical |
+    | `month` | string | Month if present |
+    | `day` | string | Day if present |
+    | `pin_cite` | string | Pin cite (e.g. `"at 120"`) |
+    | `parenthetical` | string | Non-date parenthetical text |
+    | `extra` | string | Text between page number and parenthetical |
+    | `antecedent_guess` | string | Pre-citation case name guess |
+
+    `year` (top-level integer) is also present when the year string is valid (1600 to current+1).
+  </Tab>
+  <Tab title="FullLawCitation">
+    Statutory citation. Example: `42 U.S.C. § 1983`
+
+    **groups:** `volume`, `reporter`, `page`
+
+    **metadata:** `publisher`, `day`, `month`, `year`, `pin_cite`, `parenthetical`
+  </Tab>
+  <Tab title="FullJournalCitation">
+    Academic journal citation. Example: `85 Minn. L. Rev. 1205`
+
+    **groups:** `volume`, `reporter`, `page`
+
+    **metadata:** `year`, `pin_cite`, `parenthetical`
+  </Tab>
+  <Tab title="ShortCaseCitation">
+    Short-form reference to an earlier case. Example: `Adarand, 515 U.S., at 241`
+
+    **groups:** `volume`, `reporter`, `page`
+
+    **metadata:** `antecedent_guess` (the case name fragment, e.g. `"Adarand"`), `court`, `pin_cite`
+  </Tab>
+  <Tab title="SupraCitation">
+    Supra reference. Example: `Adarand, supra, at 240`
+
+    **groups:** (none meaningful — token is a SupraToken)
+
+    **metadata:** `antecedent_guess`, `volume`, `pin_cite`, `parenthetical`
+  </Tab>
+  <Tab title="IdCitation">
+    Id./ibid. reference to the immediately preceding citation. Example: `Id. at 846`
+
+    **groups:** (none meaningful — token is an IdToken)
+
+    **metadata:** `pin_cite`, `parenthetical`
+
+    Each IdCitation is unique — two `Id.` tokens are never merged even if identical.
+  </Tab>
+  <Tab title="ReferenceCitation">
+    Party-name reference with pincite. Example: `Roe at 240`
+
+    Requires either the party name to appear in plain text with a pin cite, or in an HTML `<em>`/`<i>` tag.
+
+    **metadata:** `plaintiff`, `defendant`, `pin_cite`, `parenthetical`
+  </Tab>
+  <Tab title="UnknownCitation">
+    Section marker (`§`) that doesn't match a known reporter. Always unique.
+
+    **groups:** (section token content)
+
+    **metadata:** `pin_cite`, `parenthetical`
+  </Tab>
+</Tabs>
+
+---
+
+### Resolution Output
+
+Each item in the `resolutions` array:
+
+| Field | Type | Description |
+|---|---|---|
+| `resource` | string | String representation of the `Resource` object (e.g. `"Resource(FullCaseCitation: 410 U.S. 113)"`). |
+| `citation_count` | integer | How many citations in the text refer to this resource. |
+| `citations` | array | Full citation objects (same shape as the `citations` array) for every reference to this resource. |
+
+Two citations resolve to the same resource when they share the same volume + reporter + page (after normalization). Citations with `page=null` are always treated as unique.
+
+---
+
+### Unbalanced Tags Modes
+
+Controls what happens when a citation span clips an HTML tag boundary.
+
+| Mode | Behavior | Use when |
+|---|---|---|
+| `unchecked` | No HTML checking. Inserts tags as-is even if it breaks HTML structure. | Input is plain text with no HTML. Fastest. |
+| `skip` | Attempts to extend the span ±10 characters to capture a dangling `<i>`, `<em>`, or `<b>` tag. If still unbalanced, **skips the annotation entirely** (that citation gets no markup). | Input may contain HTML. Safe default. |
+| `wrap` | If the span contains unbalanced HTML, wraps each individual HTML tag inside the span with the before/after text separately. | You need every citation annotated even in messy HTML, at the cost of more complex output. |
+
+---
+
+### Output Format Options
+
+For `blockdata.eyecite.pipeline` only.
+
+| Value | Returns | Use when |
+|---|---|---|
+| `full` | `cleaned_text` + `citations` + `count` + `resolutions` + `unique_resources` + optionally `annotated_text` | You want everything. Default. |
+| `citations_only` | `citations` + `count` | You only need the raw citation list, no resolution. |
+| `resolved_only` | `resolutions` + `unique_resources` | You only need grouped resources, not individual citations. |
+| `annotated_only` | `annotated_text` | You only need the marked-up text. Requires `annotate: true` to be meaningful. |
+
+---
+
+## Dependencies
+
+These are installed on the pipeline worker. Listed here for manual deployment reference.
+
+| Package | Min Version | Purpose | Notes |
+|---|---|---|---|
+| `eyecite` | 2.6 | Core library | Brings in all below as transitive deps. |
+| `courts-db` | 0.10.9 | Court name → code lookup | ~400 courts. Auto-installed. |
+| `reporters-db` | 3.2.53 | Reporter/law/journal regex patterns | ~600 reporters. Auto-installed. |
+| `lxml` | 4.6.3 | HTML parsing for `html` clean step | Requires C compiler or binary wheel. |
+| `pyahocorasick` | 1.2 | Default tokenizer (AhocorasickTokenizer) | Requires C compiler or binary wheel. |
+| `fast-diff-match-patch` | 2.0.0 | Offset translation for `source_text` annotation | Pure Python. |
+| `regex` | 2020.1.8 | Extended regex in metadata extraction | Pure Python. |
+
+<Warning>
+Do NOT install the `diff_match_patch` package alongside `fast-diff-match-patch` — they conflict. If both are present, annotation with `source_text` raises `AttributeError`.
+</Warning>
+
+**Optional:** The `hyperscan` package enables `HyperscanTokenizer` (single-pass multi-regex, slightly faster on very large texts). It requires the Intel Hyperscan C library and only works on Linux/macOS. Not needed for the default `AhocorasickTokenizer`.
+
+---
+
+## Tokenizer Options
+
+The pipeline worker uses `AhocorasickTokenizer` (the default). These are the three options if you need to override at the library level:
+
+| Tokenizer | How it works | Speed | Deps | Platform |
+|---|---|---|---|---|
+| `AhocorasickTokenizer` | Pre-filters regex extractors using Aho-Corasick string matching, then runs only relevant regexes. | Fast (default) | `pyahocorasick` (included) | All |
+| `Tokenizer` (base) | Runs ALL regex extractors against the full text. No pre-filtering. | Slowest | None extra | All |
+| `HyperscanTokenizer` | Compiles all regexes into one Intel Hyperscan database, scans in a single pass. Requires secondary regex pass for capture groups. | Fastest (after initial compile) | `hyperscan` (optional, manual install) | Linux, macOS only |
+
+The pipeline worker endpoints do not expose a tokenizer parameter — they always use the default `AhocorasickTokenizer`. If you need hyperscan, configure it at the Python level.
+
+---
+
+## Known Limitations
+
+Before configuring these endpoints, understand what eyecite **cannot** do:
+
+| Limitation | Detail |
+|---|---|
+| **US only** | No non-US reporters in the database. UK, EU, Canadian, Australian citations are not recognized. |
+| **No semantic resolution** | `resolve` uses only textual heuristics (volume + reporter + page matching). It does not query any external case database. It cannot tell you if a citation is valid or if the case exists. |
+| **Reference citations need a prior full cite** | `Roe at 240` is only found if `Roe v. Wade, 410 U.S. 113` appears earlier in the same text. Standalone party-name references without a full cite are not detected. |
+| **Reference citations need a pincite** | `See Roe` alone is not detected — it must be `Roe at 240` (name + page). Pincite-less name references are not yet supported. |
+| **Ambiguous reporters** | Some abbreviations map to multiple reporters (e.g. `Rob.` = Robards or Louisiana or Virginia). Year is the only disambiguation tool. If the year doesn't narrow it to one, the citation is either returned with multiple candidates or dropped (if `remove_ambiguous: true`). |
+| **Plaintiff/defendant extraction is heuristic** | Works by scanning backward from the citation for capitalized words separated by "v." Unusual party names, multi-entity names with internal commas, or government parties (`United States`, `Commonwealth`) may be missed or incorrectly bounded. |
+| **Court detection is pattern-based** | The parenthetical string (e.g. `4th Cir.`) is matched against courts-db. Unusual abbreviations or non-standard court strings may not match. |
+| **Unresolved cites are silently dropped** | If a short-form or Id. citation can't be linked to a full cite, it simply doesn't appear in `resolutions`. No error, no warning. Compare `total_citations` vs raw `count` to detect this. |
+| **No document structure awareness** | Paragraph boundaries reset Id./supra tracking, but there's no section, footnote, or heading awareness. |
+| **Id. pin cite validation is strict** | An `Id. at 1` after a `410 U.S. 113` is dropped because page 1 < page 113. An `Id. at 999` is dropped because 999 > 113 + 150. |
+| **Disallowed party names** | Common institutional names (`State`, `United States`, `People`, `Commissioner`, all US AG surnames) are blacklisted from reference citation matching to prevent false positives. |
+| **Year range** | Only years 1600 to current+1 are recognized. |
+| **No input size limit** | No explicit cap, but very large texts (100K+ chars) will be slower. The metadata scan window is capped at 300 characters per citation. |
+
+---
+
+## Service Registry Import
+
+Copy-paste this JSON into the `POST /admin-services` `import_registry` endpoint to register the eyecite service and all 5 functions in one call.
+
+```json
+{
+  "target": "import_registry",
+  "import_mode": "upsert",
+  "services": [
+    {
+      "service_id": "a0000000-0000-0000-0000-000000000010",
+      "service_type": "custom",
+      "service_name": "eyecite",
+      "base_url": "http://localhost:8000",
+      "config": {
+        "version": "2.7.6",
+        "library": "eyecite",
+        "description": "Legal citation extraction, resolution, and annotation"
+      }
+    }
+  ],
+  "functions": [
+    {
+      "service_id": "a0000000-0000-0000-0000-000000000010",
+      "function_name": "eyecite_clean",
+      "function_type": "utility",
+      "label": "Clean Text",
+      "description": "Pre-process raw text before citation extraction. Strips HTML, normalizes whitespace, removes PDF artifacts.",
+      "entrypoint": "/execute",
+      "http_method": "POST",
+      "tags": ["eyecite", "citation", "clean", "utility"],
+      "parameter_schema": [
+        {"name": "text", "type": "string", "required": true, "description": "Raw input text (may contain HTML)."},
+        {"name": "steps", "type": "json", "required": false, "default": ["html", "inline_whitespace"], "description": "Ordered list of cleaner names: html, inline_whitespace, all_whitespace, underscores, xml."}
+      ]
+    },
+    {
+      "service_id": "a0000000-0000-0000-0000-000000000010",
+      "function_name": "eyecite_extract",
+      "function_type": "utility",
+      "label": "Extract Citations",
+      "description": "Extract all legal citations from text. Finds case, law, journal, short-form, supra, id, and reference citations.",
+      "entrypoint": "/execute",
+      "http_method": "POST",
+      "tags": ["eyecite", "citation", "extract", "legal"],
+      "parameter_schema": [
+        {"name": "text", "type": "string", "required": true, "description": "Plain text to extract citations from."},
+        {"name": "markup_text", "type": "string", "required": false, "description": "Original HTML/XML for markup-aware extraction."},
+        {"name": "clean_steps", "type": "json", "required": false, "description": "Cleaning steps to apply before extraction."},
+        {"name": "remove_ambiguous", "type": "boolean", "required": false, "default": false, "description": "Drop citations with ambiguous reporters."},
+        {"name": "resolve", "type": "boolean", "required": false, "default": false, "description": "Also resolve citations after extraction."}
+      ]
+    },
+    {
+      "service_id": "a0000000-0000-0000-0000-000000000010",
+      "function_name": "eyecite_resolve",
+      "function_type": "utility",
+      "label": "Resolve Citations",
+      "description": "Link short-form, supra, id, and reference citations back to their full citation. Groups all references to the same case.",
+      "entrypoint": "/execute",
+      "http_method": "POST",
+      "tags": ["eyecite", "citation", "resolve", "legal"],
+      "parameter_schema": [
+        {"name": "text", "type": "string", "required": true, "description": "Text containing citations to resolve."},
+        {"name": "clean_steps", "type": "json", "required": false, "description": "Cleaning steps to apply before extraction."}
+      ]
+    },
+    {
+      "service_id": "a0000000-0000-0000-0000-000000000010",
+      "function_name": "eyecite_annotate",
+      "function_type": "utility",
+      "label": "Annotate Citations",
+      "description": "Insert HTML markup around citation spans. Supports source-text offset translation for annotating original HTML.",
+      "entrypoint": "/execute",
+      "http_method": "POST",
+      "tags": ["eyecite", "citation", "annotate", "legal"],
+      "parameter_schema": [
+        {"name": "text", "type": "string", "required": true, "description": "Plain text to annotate."},
+        {"name": "source_text", "type": "string", "required": false, "description": "Original HTML — annotations land in correct positions via diff."},
+        {"name": "before_tag", "type": "string", "required": false, "default": "<span class=\"citation\">", "description": "HTML inserted before each citation."},
+        {"name": "after_tag", "type": "string", "required": false, "default": "</span>", "description": "HTML inserted after each citation."},
+        {"name": "unbalanced_tags", "type": "enum", "required": false, "default": "skip", "values": ["unchecked", "skip", "wrap"], "description": "How to handle unbalanced HTML tags."},
+        {"name": "clean_steps", "type": "json", "required": false, "description": "Cleaning steps to apply before extraction."}
+      ]
+    },
+    {
+      "service_id": "a0000000-0000-0000-0000-000000000010",
+      "function_name": "eyecite_pipeline",
+      "function_type": "utility",
+      "label": "Citation Pipeline",
+      "description": "Full eyecite pipeline: clean → extract → resolve → annotate. Configurable output format.",
+      "entrypoint": "/execute",
+      "http_method": "POST",
+      "tags": ["eyecite", "citation", "pipeline", "legal"],
+      "parameter_schema": [
+        {"name": "text", "type": "string", "required": true, "description": "Raw text (may contain HTML)."},
+        {"name": "clean_steps", "type": "json", "required": false, "default": ["html", "inline_whitespace"], "description": "Cleaning pipeline."},
+        {"name": "remove_ambiguous", "type": "boolean", "required": false, "default": false, "description": "Drop ambiguous reporter citations."},
+        {"name": "annotate", "type": "boolean", "required": false, "default": false, "description": "Return annotated text with citation markup."},
+        {"name": "before_tag", "type": "string", "required": false, "default": "<span class=\"citation\">", "description": "HTML before each citation (when annotate=true)."},
+        {"name": "after_tag", "type": "string", "required": false, "default": "</span>", "description": "HTML after each citation (when annotate=true)."},
+        {"name": "output_format", "type": "enum", "required": false, "default": "full", "values": ["full", "citations_only", "resolved_only", "annotated_only"], "description": "What to include in the response."}
+      ]
+    }
+  ]
+}
+```
+
+This is also seeded automatically by [migration 062](../../supabase/migrations/20260302140000_062_eyecite_service_functions.sql).
