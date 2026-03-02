@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Button } from '@/components/ui/button';
 import { ErrorAlert } from '@/components/common/ErrorAlert';
 import { styleTokens } from '@/lib/styleTokens';
 import type {
@@ -11,12 +10,13 @@ import type {
 import {
   loadAllServices,
   loadPublicServices,
+  saveFunction,
   subscribeToServiceChanges,
   toggleFunctionEnabled,
-  toggleServiceEnabled,
 } from './services-panel.api';
 import { ServicesSidebar } from './ServicesSidebar';
-import { ServiceDetailPanel } from './ServiceDetailPanel';
+import { ServiceDetailRailView } from './ServiceDetailRailView';
+import { functionToDraft } from './services-panel.types';
 
 /* ------------------------------------------------------------------ */
 /*  Props                                                              */
@@ -69,7 +69,12 @@ export function ServicesPanel({ mode = 'admin' }: ServicesPanelProps) {
       setServices(result.data.services);
       setFunctions(result.data.functions);
     } else {
-      setError(result.error);
+      const msg = result.error ?? '';
+      if (!msg.toLowerCase().includes('failed to fetch')) {
+        setError(result.error);
+      } else {
+        setError(null);
+      }
     }
     setLoading(false);
   }, [isAdmin]);
@@ -112,19 +117,20 @@ export function ServicesPanel({ mode = 'admin' }: ServicesPanelProps) {
     setSavingKey(null);
   };
 
-  const handleToggleServiceEnabled = (service: ServiceRow) => {
-    void withMutation(
-      `service:${service.service_id}`,
-      () => toggleServiceEnabled(service.service_id, !service.enabled),
-      `${service.service_name} ${service.enabled ? 'disabled' : 'enabled'}.`,
-    );
-  };
-
   const handleToggleFunctionEnabled = (fn: ServiceFunctionRow) => {
     void withMutation(
       `function:${fn.function_id}`,
       () => toggleFunctionEnabled(fn.function_id, !fn.enabled),
       `${fn.function_name} ${fn.enabled ? 'disabled' : 'enabled'}.`,
+    );
+  };
+
+  const handleSaveFunctionJson = (fn: ServiceFunctionRow, json: Record<string, unknown>) => {
+    const draft = functionToDraft({ ...fn, ...json } as ServiceFunctionRow);
+    void withMutation(
+      `function:${fn.function_id}`,
+      () => saveFunction(fn.function_id, draft),
+      `${fn.function_name} saved.`,
     );
   };
 
@@ -163,16 +169,7 @@ export function ServicesPanel({ mode = 'admin' }: ServicesPanelProps) {
         </div>
       )}
 
-      {/* Toolbar */}
-      <div className="mb-2 flex items-center gap-2 px-1">
-        <Button
-          size="sm"
-          className="h-7 px-3 text-xs"
-          disabled={loading}
-          onClick={() => void loadData()}
-        >
-          {loading ? 'Refreshing...' : 'Refresh'}
-        </Button>
+      <div className="mb-2 flex items-center px-1">
         <span className="ml-auto text-[10px] text-muted-foreground">
           {services.length} services, {functions.length} functions
         </span>
@@ -190,13 +187,13 @@ export function ServicesPanel({ mode = 'admin' }: ServicesPanelProps) {
         />
 
         {selectedService ? (
-          <ServiceDetailPanel
+          <ServiceDetailRailView
             service={selectedService}
             functions={functionsForSelected}
             savingKey={savingKey}
-            onToggleServiceEnabled={handleToggleServiceEnabled}
+            notice={null}
             onToggleFunctionEnabled={handleToggleFunctionEnabled}
-            onClose={() => setSelectedServiceId(null)}
+            onSaveFunctionJson={handleSaveFunctionJson}
             isAdmin={isAdmin}
           />
         ) : (

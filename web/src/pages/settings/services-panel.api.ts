@@ -100,30 +100,34 @@ export async function loadAllServices(): Promise<
   | { ok: false; error: string }
 > {
   try {
-    const resp = await pipelineFetch('/admin/services');
-    const text = await resp.text();
-    let payload: AdminServicesResponse | { error?: string; detail?: string } = {};
-    try {
-      payload = text
-        ? (JSON.parse(text) as AdminServicesResponse)
-        : (payload as AdminServicesResponse);
-    } catch {
-      // Keep raw fallback.
-    }
-    if (!resp.ok) {
-      const errPayload = payload as { error?: string; detail?: string };
-      throw new Error(errPayload.detail ?? errPayload.error ?? text ?? `HTTP ${resp.status}`);
-    }
-    const data = payload as AdminServicesResponse;
+    const [typesRes, servicesRes, functionsRes] = await Promise.all([
+      supabase
+        .from('service_type_catalog')
+        .select('service_type,label,description')
+        .order('service_type'),
+      supabase
+        .from('service_registry')
+        .select('service_id,service_type,service_name,base_url,health_status,last_heartbeat,enabled,config,created_at,updated_at')
+        .order('service_type')
+        .order('service_name'),
+      supabase
+        .from('service_functions')
+        .select('function_id,service_id,function_name,function_type,label,description,entrypoint,http_method,parameter_schema,result_schema,enabled,tags,created_at,updated_at')
+        .order('service_id')
+        .order('function_name'),
+    ]);
+
+    if (typesRes.error) throw new Error(typesRes.error.message);
+    if (servicesRes.error) throw new Error(servicesRes.error.message);
+    if (functionsRes.error) throw new Error(functionsRes.error.message);
+
     return {
       ok: true,
       data: {
-        superuser: data.superuser,
-        service_types: Array.isArray(data.service_types)
-          ? data.service_types
-          : [],
-        services: Array.isArray(data.services) ? data.services : [],
-        functions: Array.isArray(data.functions) ? data.functions : [],
+        superuser: { user_id: '', email: '' },
+        service_types: (typesRes.data ?? []) as ServiceTypeRow[],
+        services: (servicesRes.data ?? []) as ServiceRow[],
+        functions: (functionsRes.data ?? []) as ServiceFunctionRow[],
       },
     };
   } catch (e) {
@@ -366,7 +370,6 @@ export async function importRegistryJson(
       error: 'Import JSON must be an object or an array of plugins.',
     };
   }
-
   return pipelineMutation('POST', '/admin/services/import', {
     import_mode: 'upsert',
     ...payload,

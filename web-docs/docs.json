@@ -44,10 +44,21 @@
     "navigation":  {
                        "groups":  [
                                       {
+                                          "group":  "API",
+                                          "pages":  [
+                                                        "api/overview",
+                                                        "api/core",
+                                                        "api/http",
+                                                        "api/scripts",
+                                                        "api/eyecite"
+                                                    ]
+                                      },
+                                      {
                                           "group":  "Infrastructure",
                                           "pages":  [
                                                         "s",
                                                         "edge-functions",
+                                                        "infrastructure/service-registry-schema",
                                                         "infrastructure/plugin-registry",
                                                         "infrastructure/eyecite-reference"
                                                     ]

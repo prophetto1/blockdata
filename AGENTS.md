@@ -41,6 +41,22 @@ Check the plan for:
 - Operational readiness (monitoring, failure modes)
 - Test/verification clarity
 
+## File Access Rules
+
+### NEVER modify these directories (backend / infrastructure):
+- `services/` — Python FastAPI microservices
+- `supabase/functions/` — Deno edge functions
+- `supabase/migrations/` — Database migrations
+- `scripts/` — Operations scripts
+- `.env`, `.env.*`, `.mcp.json` — Secrets and config
+
+### Safe to modify:
+- `web/src/` — React frontend
+- `web-docs/` — Documentation site (plans, assessments, API docs)
+- `AGENTS.md` — Only to update these rules with owner approval
+
+If a task requires backend changes, stop and report that the task is out of scope. Do not attempt workarounds.
+
 ## File/Path Conventions
 
 - Plan source: typically `web-docs/plans/*.mdx` (or user-specified Mintlify path)

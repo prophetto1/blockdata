@@ -87,7 +87,7 @@ export function ServicesSidebar({
   return (
     <nav className="flex w-56 shrink-0 flex-col overflow-hidden border-r border-border pr-2">
       {/* Search */}
-      <div className="px-1 pb-2 pt-1">
+      <div className="border-b border-border px-1 pb-2 pt-1">
         <input
           className="h-8 w-full rounded-md border border-input bg-background px-2 text-xs text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
           placeholder="Search services..."
@@ -95,12 +95,6 @@ export function ServicesSidebar({
           onChange={(e) => setSearchQuery(e.currentTarget.value)}
         />
       </div>
-
-      {/* Count */}
-      <p className="px-2 pb-1 text-[10px] text-muted-foreground">
-        {filteredServices.length} service{filteredServices.length !== 1 ? 's' : ''}
-        {loading && ' — loading...'}
-      </p>
 
       {/* Service list */}
       <ul className="min-h-0 flex-1 space-y-0.5 overflow-y-auto py-1">

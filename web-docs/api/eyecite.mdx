@@ -1,0 +1,334 @@
+---
+title: "eyecite provider"
+description: "Legal citation extraction, resolution, annotation, and reference database queries powered by Free Law Project's eyecite library."
+---
+
+The eyecite provider wraps [Free Law Project's eyecite library](https://github.com/freelawproject/eyecite) for legal citation work. Two categories of functionality:
+
+**Citation processing** — extract, resolve, and annotate citations in legal text (court opinions, briefs, law review articles, statutes).
+
+**Reference data** — query the underlying databases that power extraction: 1,167 reporters with 2,102 name variations (reporters-db), ~400 US courts with hierarchy and date ranges (courts-db).
+
+For detailed coverage of what eyecite recognizes (reporter databases, jurisdiction coverage, input formats), see the [eyecite reference guide](/infrastructure/eyecite-reference).
+
+8 plugins, 8 task types.
+
+---
+
+## Clean text
+
+Pre-process raw text before citation extraction. Strips HTML, normalizes whitespace, removes PDF artifacts.
+
+**Task type:** `blockdata.eyecite.clean`
+
+### Parameters
+
+| Name | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `text` | string | yes | — | Raw input text (may contain HTML). |
+| `steps` | json | no | `["html", "inline_whitespace"]` | Ordered list of cleaner names. |
+
+### Available clean steps
+
+| Step | What it does |
+|---|---|
+| `html` | Strips HTML tags, preserves text content. |
+| `inline_whitespace` | Collapses runs of spaces/tabs to single space. |
+| `all_whitespace` | Collapses all whitespace including newlines. |
+| `underscores` | Removes underscore lines (common PDF artifact). |
+| `xml` | Strips XML tags (Harvard CAP format). |
+
+### Example
+
+```json
+{
+  "task_type": "blockdata.eyecite.clean",
+  "params": {
+    "text": "<p>See <em>Roe v. Wade</em>, 410 U.S. 113 (1973).</p>",
+    "steps": ["html", "inline_whitespace"]
+  }
+}
+```
+
+### Response
+
+```json
+{
+  "output": {
+    "data": {
+      "cleaned_text": "See Roe v. Wade, 410 U.S. 113 (1973).",
+      "original_length": 52,
+      "cleaned_length": 38
+    },
+    "state": "SUCCESS",
+    "logs": ["Cleaned text: 52 → 38 chars using steps ['html', 'inline_whitespace']"]
+  }
+}
+```
+
+---
+
+## Extract citations
+
+Finds all legal citations in text. Returns typed citation objects with span offsets, matched text, and metadata.
+
+**Task type:** `blockdata.eyecite.extract`
+
+### Parameters
+
+| Name | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `text` | string | yes | — | Plain text to extract citations from. |
+| `markup_text` | string | no | — | Original HTML/XML for markup-aware extraction (enables plaintiff/defendant extraction from `<em>` tags). |
+| `clean_steps` | json | no | — | Cleaning steps to apply before extraction. |
+| `remove_ambiguous` | boolean | no | `false` | Drop citations with ambiguous reporters. |
+| `resolve` | boolean | no | `false` | Also resolve citations after extraction (combines extract + resolve in one call). |
+
+### Example
+
+```json
+{
+  "task_type": "blockdata.eyecite.extract",
+  "params": {
+    "text": "In Roe v. Wade, 410 U.S. 113 (1973), the Court held that the right to privacy extends to a woman's decision to have an abortion. See also Planned Parenthood v. Casey, 505 U.S. 833 (1992).",
+    "resolve": true
+  }
+}
+```
+
+### Response
+
+```json
+{
+  "output": {
+    "data": {
+      "citations": [
+        {
+          "type": "FullCaseCitation",
+          "matched_text": "410 U.S. 113",
+          "span": [16, 28],
+          "full_span": [16, 35],
+          "volume": 410,
+          "reporter": "U.S.",
+          "page": "113",
+          "year": 1973,
+          "plaintiff": "Roe",
+          "defendant": "Wade"
+        },
+        {
+          "type": "FullCaseCitation",
+          "matched_text": "505 U.S. 833",
+          "span": [139, 151],
+          "full_span": [139, 158],
+          "volume": 505,
+          "reporter": "U.S.",
+          "page": "833",
+          "year": 1992,
+          "plaintiff": "Planned Parenthood",
+          "defendant": "Casey"
+        }
+      ],
+      "count": 2,
+      "resolutions": [
+        {
+          "resource": "Resource(FullCaseCitation: 410 U.S. 113)",
+          "citation_count": 1,
+          "citations": [...]
+        },
+        {
+          "resource": "Resource(FullCaseCitation: 505 U.S. 833)",
+          "citation_count": 1,
+          "citations": [...]
+        }
+      ],
+      "unique_resources": 2
+    },
+    "state": "SUCCESS",
+    "logs": ["Found 2 citations, resolved to 2 resources"]
+  }
+}
+```
+
+### Citation types returned
+
+| Type | Description |
+|---|---|
+| `FullCaseCitation` | Full case cite (e.g. `410 U.S. 113`) |
+| `FullLawCitation` | Statutory cite (e.g. `42 U.S.C. § 1983`) |
+| `FullJournalCitation` | Law review cite (e.g. `85 Minn. L. Rev. 1205`) |
+| `ShortCaseCitation` | Short-form cite (e.g. `515 U.S., at 241`) |
+| `SupraCitation` | Supra reference (e.g. `Adarand, supra, at 240`) |
+| `IdCitation` | Id. reference (e.g. `Id. at 846`) |
+| `UnknownCitation` | Recognized but unclassified citation |
+
+---
+
+## Resolve citations
+
+Links short-form, supra, id, and reference citations back to their full citation. Groups all references to the same case.
+
+**Task type:** `blockdata.eyecite.resolve`
+
+### Parameters
+
+| Name | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `text` | string | yes | — | Text containing citations to resolve. |
+| `clean_steps` | json | no | — | Cleaning steps to apply before extraction. |
+
+### Example
+
+```json
+{
+  "task_type": "blockdata.eyecite.resolve",
+  "params": {
+    "text": "In Roe v. Wade, 410 U.S. 113 (1973), the Court held X. Id. at 120. Later, in Casey, 505 U.S. 833 (1992), the Court revisited this. See Roe, supra, at 115."
+  }
+}
+```
+
+### Response
+
+```json
+{
+  "output": {
+    "data": {
+      "resolutions": [
+        {
+          "resource": "Resource(FullCaseCitation: 410 U.S. 113)",
+          "citation_count": 3,
+          "citations": [
+            { "type": "FullCaseCitation", "matched_text": "410 U.S. 113", "..." : "..." },
+            { "type": "IdCitation", "matched_text": "Id. at 120", "..." : "..." },
+            { "type": "SupraCitation", "matched_text": "Roe, supra, at 115", "..." : "..." }
+          ]
+        },
+        {
+          "resource": "Resource(FullCaseCitation: 505 U.S. 833)",
+          "citation_count": 1,
+          "citations": [
+            { "type": "FullCaseCitation", "matched_text": "505 U.S. 833", "..." : "..." }
+          ]
+        }
+      ],
+      "unique_resources": 2,
+      "total_citations": 4
+    },
+    "state": "SUCCESS",
+    "logs": ["Resolved 4 citations to 2 unique resources"]
+  }
+}
+```
+
+---
+
+## Annotate citations
+
+Inserts HTML markup around citation spans in text. Supports source-text offset translation for annotating original HTML.
+
+**Task type:** `blockdata.eyecite.annotate`
+
+### Parameters
+
+| Name | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `text` | string | yes | — | Plain text to annotate. |
+| `source_text` | string | no | — | Original HTML. Annotations land in correct positions via diff-based offset translation. |
+| `before_tag` | string | no | `<span class="citation">` | HTML inserted before each citation. |
+| `after_tag` | string | no | `</span>` | HTML inserted after each citation. |
+| `unbalanced_tags` | enum | no | `skip` | How to handle unbalanced HTML tags: `unchecked`, `skip`, `wrap`. |
+| `clean_steps` | json | no | — | Cleaning steps to apply before extraction. |
+
+### Example
+
+```json
+{
+  "task_type": "blockdata.eyecite.annotate",
+  "params": {
+    "text": "See Roe v. Wade, 410 U.S. 113 (1973).",
+    "before_tag": "<a class=\"cite\" href=\"/case/\">",
+    "after_tag": "</a>"
+  }
+}
+```
+
+### Response
+
+```json
+{
+  "output": {
+    "data": {
+      "annotated_text": "See Roe v. Wade, <a class=\"cite\" href=\"/case/\">410 U.S. 113</a> (1973).",
+      "citation_count": 1
+    },
+    "state": "SUCCESS",
+    "logs": ["Annotated 1 citations"]
+  }
+}
+```
+
+---
+
+## Pipeline
+
+Full eyecite pipeline: clean, extract, resolve, and optionally annotate in one call. Configurable output format.
+
+**Task type:** `blockdata.eyecite.pipeline`
+
+### Parameters
+
+| Name | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `text` | string | yes | — | Raw text (may contain HTML). |
+| `clean_steps` | json | no | `["html", "inline_whitespace"]` | Cleaning pipeline. |
+| `remove_ambiguous` | boolean | no | `false` | Drop ambiguous reporter citations. |
+| `annotate` | boolean | no | `false` | Return annotated text with citation markup. |
+| `before_tag` | string | no | `<span class="citation">` | HTML before each citation (when `annotate=true`). |
+| `after_tag` | string | no | `</span>` | HTML after each citation (when `annotate=true`). |
+| `output_format` | enum | no | `full` | What to include in the response: `full`, `citations_only`, `resolved_only`, `annotated_only`. |
+
+### Output format options
+
+| Value | Fields returned |
+|---|---|
+| `full` | `cleaned_text`, `citations`, `count`, `resolutions`, `unique_resources`, and `annotated_text` (if `annotate=true`) |
+| `citations_only` | `citations`, `count` |
+| `resolved_only` | `resolutions`, `unique_resources` |
+| `annotated_only` | `annotated_text` |
+
+### Example
+
+```json
+{
+  "task_type": "blockdata.eyecite.pipeline",
+  "params": {
+    "text": "<p>In <em>Roe v. Wade</em>, 410 U.S. 113 (1973), the Court held X. Id. at 120.</p>",
+    "annotate": true,
+    "output_format": "full"
+  }
+}
+```
+
+### Response
+
+```json
+{
+  "output": {
+    "data": {
+      "cleaned_text": "In Roe v. Wade, 410 U.S. 113 (1973), the Court held X. Id. at 120.",
+      "citations": [...],
+      "count": 2,
+      "resolutions": [...],
+      "unique_resources": 1,
+      "annotated_text": "In Roe v. Wade, <span class=\"citation\">410 U.S. 113</span> (1973), the Court held X. <span class=\"citation\">Id. at 120</span>."
+    },
+    "state": "SUCCESS",
+    "logs": [
+      "Cleaned: 81 → 67 chars",
+      "Extracted: 2 citations",
+      "Resolved: 1 unique resources",
+      "Annotated: 2 spans"
+    ]
+  }
+}
+```

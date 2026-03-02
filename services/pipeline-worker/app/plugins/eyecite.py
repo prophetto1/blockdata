@@ -312,3 +312,311 @@ class PipelinePlugin(BasePlugin):
             {"name": "after_tag", "type": "string", "required": False, "default": "</span>", "description": "HTML after each citation (when annotate=true)."},
             {"name": "output_format", "type": "enum", "required": False, "default": "full", "values": ["full", "citations_only", "resolved_only", "annotated_only"], "description": "What to include in the response."},
         ]
+
+
+# ---------------------------------------------------------------------------
+# Reference data plugins — reporters-db, courts-db
+# ---------------------------------------------------------------------------
+
+def _serialize_reporter_entry(key: str, entry: dict) -> dict:
+    """Convert a reporters-db entry to a JSON-safe dict."""
+    editions = {}
+    for ed_key, ed_val in entry.get("editions", {}).items():
+        editions[ed_key] = {
+            "start": ed_val["start"].isoformat() if ed_val.get("start") else None,
+            "end": ed_val["end"].isoformat() if ed_val.get("end") else None,
+        }
+    return {
+        "abbreviation": key,
+        "name": entry.get("name", ""),
+        "cite_type": entry.get("cite_type", ""),
+        "publisher": entry.get("publisher"),
+        "editions": editions,
+        "variations": entry.get("variations", {}),
+        "examples": entry.get("examples", []),
+        "mlz_jurisdiction": entry.get("mlz_jurisdiction", []),
+    }
+
+
+def _serialize_court(court: dict) -> dict:
+    """Convert a courts-db court record to a JSON-safe dict."""
+    return {
+        "id": court.get("id", ""),
+        "name": court.get("name", ""),
+        "name_abbreviation": court.get("name_abbreviation"),
+        "citation_string": court.get("citation_string", ""),
+        "court_url": court.get("court_url"),
+        "location": court.get("location", ""),
+        "jurisdiction": court.get("jurisdiction", ""),
+        "system": court.get("system", ""),
+        "level": court.get("level", ""),
+        "type": court.get("type", ""),
+        "dates": court.get("dates", []),
+        "parent": court.get("parent"),
+        "appeal_to": court.get("appeal_to"),
+        "federal_circuit": court.get("federal_circuit"),
+        "examples": court.get("examples", []),
+    }
+
+
+class ReporterLookupPlugin(BasePlugin):
+    """Query the reporters-db database — 1,167 reporters, 2,102 variations."""
+
+    task_types = ["blockdata.eyecite.reporters"]
+
+    async def run(self, params: dict[str, Any], context) -> PluginOutput:
+        from reporters_db import (
+            REPORTERS, LAWS, JOURNALS,
+            VARIATIONS_ONLY, EDITIONS, NAMES_TO_EDITIONS,
+        )
+
+        query = params.get("query", "").strip()
+        cite_type = params.get("cite_type", "")
+        category = params.get("category", "all")
+        include_variations = params.get("include_variations", False)
+        limit = params.get("limit", 50)
+
+        # Select source databases
+        sources: dict[str, dict] = {}
+        if category in ("all", "reporters"):
+            sources["reporters"] = REPORTERS
+        if category in ("all", "laws"):
+            sources["laws"] = LAWS
+        if category in ("all", "journals"):
+            sources["journals"] = JOURNALS
+
+        results: list[dict] = []
+
+        for cat_name, db in sources.items():
+            for key, entries in db.items():
+                for entry in entries:
+                    # Filter by cite_type
+                    if cite_type and entry.get("cite_type", "") != cite_type:
+                        continue
+
+                    # Filter by query (match abbreviation, name, or variation)
+                    if query:
+                        q = query.lower()
+                        match = (
+                            q in key.lower()
+                            or q in entry.get("name", "").lower()
+                            or any(q in v.lower() for v in entry.get("variations", {}))
+                        )
+                        if not match:
+                            continue
+
+                    record = _serialize_reporter_entry(key, entry)
+                    record["category"] = cat_name
+                    if not include_variations:
+                        record.pop("variations", None)
+                    results.append(record)
+
+                    if len(results) >= limit:
+                        break
+                if len(results) >= limit:
+                    break
+            if len(results) >= limit:
+                break
+
+        # If query looks like a variation, also check VARIATIONS_ONLY
+        variation_match = None
+        if query and query in VARIATIONS_ONLY:
+            variation_match = {
+                "variation": query,
+                "canonical_reporters": VARIATIONS_ONLY[query],
+            }
+
+        # If query looks like an edition, check EDITIONS
+        edition_match = None
+        if query and query in EDITIONS:
+            edition_match = {
+                "edition": query,
+                "root_reporter": EDITIONS[query],
+            }
+
+        data: dict[str, Any] = {
+            "results": results,
+            "count": len(results),
+            "truncated": len(results) >= limit,
+        }
+        if variation_match:
+            data["variation_match"] = variation_match
+        if edition_match:
+            data["edition_match"] = edition_match
+
+        return out.success(
+            data=data,
+            logs=[f"Found {len(results)} reporters matching query={query!r} cite_type={cite_type!r} category={category}"],
+        )
+
+    @classmethod
+    def parameter_schema(cls) -> list[dict]:
+        return [
+            {"name": "query", "type": "string", "required": False, "description": "Search term — matches against abbreviation, full name, and variations. Empty returns all."},
+            {"name": "cite_type", "type": "enum", "required": False, "values": ["federal", "state", "neutral", "specialty", "specialty_west", "specialty_lexis", "state_regional", "scotus_early"], "description": "Filter by citation type."},
+            {"name": "category", "type": "enum", "required": False, "default": "all", "values": ["all", "reporters", "laws", "journals"], "description": "Which database to search: case reporters, statutory sources, journals, or all."},
+            {"name": "include_variations", "type": "boolean", "required": False, "default": False, "description": "Include the full variation-to-edition mapping in results."},
+            {"name": "limit", "type": "integer", "required": False, "default": 50, "description": "Max results to return."},
+        ]
+
+
+class CourtLookupPlugin(BasePlugin):
+    """Query the courts-db database — ~400 US courts with hierarchy and date ranges."""
+
+    task_types = ["blockdata.eyecite.courts"]
+
+    async def run(self, params: dict[str, Any], context) -> PluginOutput:
+        from courts_db import courts as all_courts, court_dict, find_court
+
+        query = params.get("query", "").strip()
+        court_id = params.get("court_id", "").strip()
+        system = params.get("system", "")
+        level = params.get("level", "")
+        court_type = params.get("type", "")
+        location = params.get("location", "")
+        parent = params.get("parent", "")
+        limit = params.get("limit", 50)
+
+        # Direct ID lookup — return single court with children and appeals path
+        if court_id:
+            court = court_dict.get(court_id)
+            if not court:
+                return out.failed(f"No court with id: {court_id}")
+            record = _serialize_court(court)
+            # Find children
+            children = [
+                {"id": c["id"], "name": c["name"]}
+                for c in all_courts
+                if c.get("parent") == court_id
+            ]
+            if children:
+                record["children"] = children
+            # Build appeals chain
+            appeals_chain = []
+            current = court
+            while current.get("appeal_to"):
+                next_id = current["appeal_to"]
+                next_court = court_dict.get(next_id)
+                if not next_court or next_id in [a["id"] for a in appeals_chain]:
+                    break
+                appeals_chain.append({"id": next_id, "name": next_court["name"]})
+                current = next_court
+            if appeals_chain:
+                record["appeals_chain"] = appeals_chain
+            return out.success(data=record, logs=[f"Court lookup: {court_id}"])
+
+        # String-based court resolution via find_court()
+        if query:
+            matched_ids = find_court(query, location=location or None)
+            results = []
+            for cid in matched_ids[:limit]:
+                court = court_dict.get(cid)
+                if court:
+                    results.append(_serialize_court(court))
+            return out.success(
+                data={"results": results, "count": len(results), "query": query},
+                logs=[f"find_court({query!r}) → {len(results)} matches"],
+            )
+
+        # Filter-based browsing
+        results = []
+        for court in all_courts:
+            if system and court.get("system", "") != system:
+                continue
+            if level and court.get("level", "") != level:
+                continue
+            if court_type and court.get("type", "") != court_type:
+                continue
+            if location and location.lower() not in court.get("location", "").lower():
+                continue
+            if parent and court.get("parent", "") != parent:
+                continue
+            results.append(_serialize_court(court))
+            if len(results) >= limit:
+                break
+
+        return out.success(
+            data={"results": results, "count": len(results), "truncated": len(results) >= limit},
+            logs=[f"Found {len(results)} courts (system={system!r} level={level!r} type={court_type!r} location={location!r})"],
+        )
+
+    @classmethod
+    def parameter_schema(cls) -> list[dict]:
+        return [
+            {"name": "query", "type": "string", "required": False, "description": "Court name or string to resolve (e.g. 'Second Circuit', 'S.D.N.Y.'). Uses find_court() regex matching."},
+            {"name": "court_id", "type": "string", "required": False, "description": "Direct court ID lookup (e.g. 'scotus', 'ca2', 'cacd'). Returns full record with children and appeals chain."},
+            {"name": "system", "type": "enum", "required": False, "values": ["federal", "state", "tribal"], "description": "Filter by court system."},
+            {"name": "level", "type": "enum", "required": False, "values": ["colr", "iac", "gjc", "ljc"], "description": "Filter by court level: colr (last resort/supreme), iac (intermediate appellate), gjc (general jurisdiction/trial), ljc (limited jurisdiction)."},
+            {"name": "type", "type": "enum", "required": False, "values": ["trial", "appellate", "bankruptcy", "ag"], "description": "Filter by court type."},
+            {"name": "location", "type": "string", "required": False, "description": "Filter by location (e.g. 'California', 'New York'). Case-insensitive partial match."},
+            {"name": "parent", "type": "string", "required": False, "description": "Filter by parent court ID (e.g. 'ca9' to find all courts under the 9th Circuit)."},
+            {"name": "limit", "type": "integer", "required": False, "default": 50, "description": "Max results to return."},
+        ]
+
+
+class DatabaseStatsPlugin(BasePlugin):
+    """Summary statistics across all eyecite reference databases."""
+
+    task_types = ["blockdata.eyecite.stats"]
+
+    async def run(self, params: dict[str, Any], context) -> PluginOutput:
+        from reporters_db import REPORTERS, LAWS, JOURNALS, VARIATIONS_ONLY, EDITIONS
+        from courts_db import courts as all_courts
+
+        # Reporter stats
+        reporter_count = sum(len(entries) for entries in REPORTERS.values())
+        law_count = sum(len(entries) for entries in LAWS.values())
+        journal_count = sum(len(entries) for entries in JOURNALS.values())
+
+        # Cite type distribution
+        cite_types: dict[str, int] = {}
+        for entries in REPORTERS.values():
+            for entry in entries:
+                ct = entry.get("cite_type", "unknown")
+                cite_types[ct] = cite_types.get(ct, 0) + 1
+
+        # Court stats
+        court_systems: dict[str, int] = {}
+        court_levels: dict[str, int] = {}
+        court_types: dict[str, int] = {}
+        court_locations: dict[str, int] = {}
+        for court in all_courts:
+            s = court.get("system", "unknown")
+            court_systems[s] = court_systems.get(s, 0) + 1
+            lv = court.get("level", "unknown")
+            court_levels[lv] = court_levels.get(lv, 0) + 1
+            t = court.get("type", "unknown")
+            court_types[t] = court_types.get(t, 0) + 1
+            loc = court.get("location", "unknown")
+            court_locations[loc] = court_locations.get(loc, 0) + 1
+
+        data = {
+            "reporters": {
+                "abbreviations": len(REPORTERS),
+                "entries": reporter_count,
+                "variations": len(VARIATIONS_ONLY),
+                "editions": len(EDITIONS),
+                "by_cite_type": cite_types,
+            },
+            "laws": {
+                "abbreviations": len(LAWS),
+                "entries": law_count,
+            },
+            "journals": {
+                "abbreviations": len(JOURNALS),
+                "entries": journal_count,
+            },
+            "courts": {
+                "total": len(all_courts),
+                "by_system": court_systems,
+                "by_level": court_levels,
+                "by_type": court_types,
+                "by_location": court_locations,
+            },
+        }
+
+        return out.success(data=data, logs=["Database stats compiled"])
+
+    @classmethod
+    def parameter_schema(cls) -> list[dict]:
+        return []

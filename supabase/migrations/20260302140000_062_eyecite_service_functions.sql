@@ -18,7 +18,7 @@ ON CONFLICT (service_type, service_name) DO UPDATE SET
   updated_at = now();
 
 -- 2. Register service functions (5 endpoints)
--- All use POST /execute with task_type dispatch — entrypoint is the task_type string.
+-- Each function has its own URL: POST /{function_name}
 
 -- 2a. Clean text
 INSERT INTO public.service_functions (
@@ -30,7 +30,7 @@ INSERT INTO public.service_functions (
   'utility',
   'Clean Text',
   'Pre-process raw text before citation extraction. Strips HTML, normalizes whitespace, removes PDF artifacts.',
-  '/execute',
+  '/eyecite_clean',
   'POST',
   '[
     {"name":"text","type":"string","required":true,"description":"Raw input text (may contain HTML)."},
@@ -53,7 +53,7 @@ INSERT INTO public.service_functions (
   'utility',
   'Extract Citations',
   'Extract all legal citations from text. Finds case, law, journal, short-form, supra, id, and reference citations.',
-  '/execute',
+  '/eyecite_extract',
   'POST',
   '[
     {"name":"text","type":"string","required":true,"description":"Plain text to extract citations from."},
@@ -79,7 +79,7 @@ INSERT INTO public.service_functions (
   'utility',
   'Resolve Citations',
   'Link short-form, supra, id, and reference citations back to their full citation. Groups all references to the same case.',
-  '/execute',
+  '/eyecite_resolve',
   'POST',
   '[
     {"name":"text","type":"string","required":true,"description":"Text containing citations to resolve."},

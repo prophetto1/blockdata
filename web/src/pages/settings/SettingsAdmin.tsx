@@ -1,15 +1,8 @@
 import { Field } from '@ark-ui/react/field';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Navigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ErrorAlert } from '@/components/common/ErrorAlert';
-import {
-  ScrollAreaContent,
-  ScrollAreaRoot,
-  ScrollAreaScrollbar,
-  ScrollAreaThumb,
-  ScrollAreaViewport,
-} from '@/components/ui/scroll-area';
 import { styleTokens } from '@/lib/styleTokens';
 import { cn } from '@/lib/utils';
 import { edgeFetch } from '@/lib/edge';
@@ -212,7 +205,7 @@ export default function SettingsAdmin() {
     return CATEGORIES.find((c) => c.id === selectedCategory) ?? null;
   }, [selectedCategory]);
 
-  const categoryAction = null;
+  const [categoryAction, setCategoryAction] = useState<ReactNode>(null);
 
   if (!selectedCategory) {
     return <Navigate to="/app/settings/admin/services" replace />;
@@ -239,7 +232,14 @@ export default function SettingsAdmin() {
             </div>
             {categoryAction}
           </header>
-          {selectedCategory === 'integration-catalog' ? (
+          {selectedCategory === 'services' ? (
+            <div
+              className="min-h-0 flex-1 overflow-hidden p-3 md:p-4"
+              style={{ backgroundColor: styleTokens.adminConfig.contentBackground }}
+            >
+              <ServicesPanel onSetHeaderAction={setCategoryAction} />
+            </div>
+          ) : selectedCategory === 'integration-catalog' ? (
             <div
               className="min-h-0 flex-1 overflow-hidden p-3 md:p-4"
               style={{ backgroundColor: styleTokens.adminConfig.contentBackground }}
@@ -253,20 +253,6 @@ export default function SettingsAdmin() {
             >
               <GridTestPanel />
             </div>
-          ) : selectedCategory === 'services' ? (
-            <ScrollAreaRoot className="min-h-0 flex-1">
-              <ScrollAreaViewport
-                className="h-full p-3 md:p-4"
-                style={{ backgroundColor: styleTokens.adminConfig.contentBackground }}
-              >
-                <ScrollAreaContent>
-                  <ServicesPanel />
-                </ScrollAreaContent>
-              </ScrollAreaViewport>
-              <ScrollAreaScrollbar orientation="vertical">
-                <ScrollAreaThumb />
-              </ScrollAreaScrollbar>
-            </ScrollAreaRoot>
           ) : (
             <div className="min-h-0 flex-1 overflow-y-auto p-3 md:p-4" style={{ backgroundColor: styleTokens.adminConfig.contentBackground }}>
             {selectedCategory === 'platform-config' && (

@@ -93,19 +93,21 @@ export function ServiceDetailPanel({
         </div>
         <div className="flex shrink-0 items-center gap-3">
           {isAdmin && (
-            <Switch.Root
-              checked={service.enabled}
-              onCheckedChange={() => onToggleServiceEnabled(service)}
-              className="inline-flex items-center gap-2"
-            >
-              <Switch.HiddenInput />
-              <Switch.Control className="relative h-5 w-9 rounded-full border border-input bg-muted transition-colors data-[state=checked]:border-primary data-[state=checked]:bg-primary">
-                <Switch.Thumb className="block h-4 w-4 translate-x-0 rounded-full bg-background shadow transition-transform data-[state=checked]:translate-x-4" />
-              </Switch.Control>
-              <Switch.Label className="text-xs text-muted-foreground">
+            <div className="group relative inline-flex items-center">
+              <Switch.Root
+                checked={service.enabled}
+                onCheckedChange={() => onToggleServiceEnabled(service)}
+                className="inline-flex items-center"
+              >
+                <Switch.HiddenInput />
+                <Switch.Control className="relative h-4 w-8 rounded-full border border-input bg-muted transition-colors data-[state=checked]:border-primary data-[state=checked]:bg-primary">
+                  <Switch.Thumb className="block h-3 w-3 translate-x-0 rounded-full bg-background shadow transition-transform data-[state=checked]:translate-x-4" />
+                </Switch.Control>
+              </Switch.Root>
+              <span className="pointer-events-none absolute left-full ml-2 whitespace-nowrap text-[10px] text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100">
                 {service.enabled ? 'Enabled' : 'Disabled'}
-              </Switch.Label>
-            </Switch.Root>
+              </span>
+            </div>
           )}
           <button
             type="button"
@@ -189,8 +191,8 @@ export function ServiceDetailPanel({
                               className="inline-flex items-center"
                             >
                               <Switch.HiddenInput />
-                              <Switch.Control className="relative h-5 w-9 rounded-full border border-input bg-muted transition-colors data-[state=checked]:border-primary data-[state=checked]:bg-primary">
-                                <Switch.Thumb className="block h-4 w-4 translate-x-0 rounded-full bg-background shadow transition-transform data-[state=checked]:translate-x-4" />
+                              <Switch.Control className="relative h-4 w-8 rounded-full border border-input bg-muted transition-colors data-[state=checked]:border-primary data-[state=checked]:bg-primary">
+                                <Switch.Thumb className="block h-3 w-3 translate-x-0 rounded-full bg-background shadow transition-transform data-[state=checked]:translate-x-4" />
                               </Switch.Control>
                             </Switch.Root>
                           </td>

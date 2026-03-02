@@ -1,0 +1,305 @@
+---
+title: "Core provider"
+description: "Flow control plugins — logging, sleep, pause, conditional branching, iteration, and parallel execution."
+---
+
+The core provider handles orchestration primitives. These plugins don't do external work — they control flow, emit logs, and signal the orchestrator.
+
+8 plugins, 16 task types.
+
+---
+
+## Log
+
+Logs a message at a configurable level. Supports template expressions.
+
+**Task types:**
+- `io.kestra.plugin.core.log.Log`
+- `io.kestra.core.tasks.log.Log`
+
+### Parameters
+
+| Name | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `message` | string | yes | — | Message to log. Supports `{{ expressions }}`. |
+| `level` | string | no | `INFO` | Log level: `TRACE`, `DEBUG`, `INFO`, `WARN`, `ERROR`. |
+
+### Example
+
+```json
+{
+  "task_type": "io.kestra.plugin.core.log.Log",
+  "params": {
+    "message": "Processing batch {{ outputs.ingest.batch_id }}",
+    "level": "INFO"
+  }
+}
+```
+
+### Response
+
+```json
+{
+  "output": {
+    "data": {},
+    "state": "SUCCESS",
+    "logs": ["Processing batch abc-123"]
+  }
+}
+```
+
+---
+
+## Sleep
+
+Pauses execution for a duration.
+
+**Task types:**
+- `io.kestra.plugin.core.flow.Sleep`
+- `io.kestra.core.tasks.flows.Sleep`
+
+### Parameters
+
+| Name | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `duration` | string | no | `PT1S` | ISO 8601 duration. Supports hours, minutes, seconds (e.g. `PT5S`, `PT1M`, `PT2H30M`). |
+
+### Example
+
+```json
+{
+  "task_type": "io.kestra.plugin.core.flow.Sleep",
+  "params": {
+    "duration": "PT10S"
+  }
+}
+```
+
+### Response
+
+```json
+{
+  "output": {
+    "data": { "duration_seconds": 10.0 },
+    "state": "SUCCESS",
+    "logs": ["Slept 10.0s"]
+  }
+}
+```
+
+---
+
+## Pause
+
+Signals the orchestrator to pause the current execution. Returns `PAUSED` state instead of `SUCCESS`.
+
+**Task types:**
+- `io.kestra.plugin.core.flow.Pause`
+- `io.kestra.core.tasks.flows.Pause`
+
+### Parameters
+
+| Name | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `delay` | string | no | — | ISO 8601 duration before auto-resume. |
+
+### Response
+
+```json
+{
+  "output": {
+    "data": { "reason": "Manual pause requested" },
+    "state": "PAUSED",
+    "logs": ["Execution paused"]
+  }
+}
+```
+
+---
+
+## If
+
+Evaluates a condition and returns the branch to take (`then` or `else`).
+
+**Task types:**
+- `io.kestra.plugin.core.flow.If`
+- `io.kestra.core.tasks.flows.If`
+
+### Parameters
+
+| Name | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `condition` | string | yes | — | Expression to evaluate. Supports `{{ expressions }}`. |
+
+Falsy values: `false`, `0`, empty string, `null`, `none`, `no`. Everything else is truthy.
+
+### Example
+
+```json
+{
+  "task_type": "io.kestra.plugin.core.flow.If",
+  "params": {
+    "condition": "{{ outputs.validate.is_valid }}"
+  },
+  "variables": {
+    "outputs": { "validate": { "is_valid": "true" } }
+  }
+}
+```
+
+### Response
+
+```json
+{
+  "output": {
+    "data": { "branch": "then", "evaluation_result": true },
+    "state": "SUCCESS",
+    "logs": []
+  }
+}
+```
+
+---
+
+## Switch
+
+Matches a value to a set of cases and returns the matching branch key. Falls back to `defaults` if no case matches.
+
+**Task types:**
+- `io.kestra.plugin.core.flow.Switch`
+- `io.kestra.core.tasks.flows.Switch`
+
+### Parameters
+
+| Name | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `value` | string | yes | — | Value to match against cases. Supports `{{ expressions }}`. |
+| `cases` | object | yes | — | Map of case keys to task lists. |
+
+### Example
+
+```json
+{
+  "task_type": "io.kestra.plugin.core.flow.Switch",
+  "params": {
+    "value": "{{ outputs.classify.category }}",
+    "cases": {
+      "legal": [...],
+      "financial": [...],
+      "defaults": [...]
+    }
+  }
+}
+```
+
+### Response
+
+```json
+{
+  "output": {
+    "data": { "branch": "legal", "value": "legal" },
+    "state": "SUCCESS",
+    "logs": []
+  }
+}
+```
+
+---
+
+## ForEach
+
+Returns an iteration plan for the orchestrator to fan out over a list of values.
+
+**Task types:**
+- `io.kestra.plugin.core.flow.ForEach`
+- `io.kestra.core.tasks.flows.EachSequential`
+- `io.kestra.core.tasks.flows.EachParallel`
+
+### Parameters
+
+| Name | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `values` | array | yes | — | List to iterate over. Also accepts a `{{ expression }}` that resolves to an array, or a comma-separated string. |
+| `concurrencyLimit` | integer | no | `0` | Max concurrent executions. `0` = unlimited. |
+
+### Example
+
+```json
+{
+  "task_type": "io.kestra.plugin.core.flow.ForEach",
+  "params": {
+    "values": ["doc_a.pdf", "doc_b.pdf", "doc_c.pdf"],
+    "concurrencyLimit": 2
+  }
+}
+```
+
+### Response
+
+```json
+{
+  "output": {
+    "data": {
+      "items": ["doc_a.pdf", "doc_b.pdf", "doc_c.pdf"],
+      "count": 3,
+      "concurrency": 2
+    },
+    "state": "SUCCESS",
+    "logs": []
+  }
+}
+```
+
+---
+
+## Parallel
+
+Signals the orchestrator to run child tasks in parallel.
+
+**Task types:**
+- `io.kestra.plugin.core.flow.Parallel`
+- `io.kestra.core.tasks.flows.Parallel`
+
+### Parameters
+
+| Name | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `concurrent` | integer | no | `0` | Max concurrent child tasks. `0` = unlimited. |
+
+### Response
+
+```json
+{
+  "output": {
+    "data": { "concurrent": 0, "mode": "parallel" },
+    "state": "SUCCESS",
+    "logs": []
+  }
+}
+```
+
+---
+
+## Sequential
+
+Signals the orchestrator to run child tasks in sequence.
+
+**Task types:**
+- `io.kestra.plugin.core.flow.Sequential`
+- `io.kestra.core.tasks.flows.Sequential`
+
+### Parameters
+
+None.
+
+### Response
+
+```json
+{
+  "output": {
+    "data": { "mode": "sequential" },
+    "state": "SUCCESS",
+    "logs": []
+  }
+}
+```
