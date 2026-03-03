@@ -1,11 +1,26 @@
 {
+  "name": "blockdata-docs",
   "private": true,
+  "type": "module",
   "scripts": {
-    "dev": "mint dev",
-    "build": "mint build",
-    "check": "mint broken-links && mint validate"
+    "dev": "astro dev --host 0.0.0.0",
+    "build": "astro build",
+    "preview": "astro preview --host 0.0.0.0",
+    "ingest": "node scripts/ingest-to-arango.mjs",
+    "build:full": "astro build && node scripts/ingest-to-arango.mjs"
+  },
+  "dependencies": {
+    "astro": "^5.5.0",
+    "@astrojs/starlight": "^0.33.0",
+    "@astrojs/vercel": "^8.1.0",
+    "sharp": "^0.33.0"
   },
   "devDependencies": {
-    "mintlify": "^4.2.391"
+    "gray-matter": "^4.0.3",
+    "arangojs": "^9.2.0",
+    "unified": "^11.0.0",
+    "remark-parse": "^11.0.0",
+    "remark-mdx": "^3.1.0",
+    "remark-frontmatter": "^5.0.0"
   }
 }
