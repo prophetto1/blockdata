@@ -1,0 +1,239 @@
+---
+title: "Repo Map"
+icon: "map-pin"
+description: "Where everything lives and where to put new things."
+---
+
+## Monorepo Layout
+
+```markdown
+blockdata/
+├── web/                 Frontend (React + Vite + TypeScript)
+├── web-docs/            This docs site (Mintlify)
+├── supabase/            Edge functions, migrations, config
+├── services/            Python microservices (FastAPI)
+├── docs/                Internal design docs and plans
+├── scripts/             Build and utility scripts
+├── tests/               Test suite
+├── ref-repos/           Third-party reference repos (read-only)
+└── upup/                Uppy document upload handler
+```
+
+---
+
+## Frontend — `web/`
+
+The main React app. Vite build, Tailwind styling, Ark UI + shadcn components.
+
+### Where to add things
+
+| You want to...                    | Put it in                            |
+| --------------------------------- | ------------------------------------ |
+| New page / route                  | `web/src/pages/`                     |
+| New settings panel                | `web/src/pages/settings/`            |
+| Reusable UI component             | `web/src/components/ui/`             |
+| Feature-scoped component          | `web/src/components/<feature>/`      |
+| App shell (header, sidebar, nav)  | `web/src/components/shell/`          |
+| Shared hooks                      | `web/src/hooks/`                     |
+| Utility functions                 | `web/src/lib/`                       |
+| Design tokens (color, font, icon) | `web/src/lib/*-contract.ts`          |
+| Supabase client / edge helpers    | `web/src/lib/edge.ts`, `supabase.ts` |
+
+### Key conventions
+
+- **Ark UI first** for interactive primitives (Switch, Select, Field, TagsInput, TreeView, etc.)
+- **shadcn/ui** for standard UI (Button, Dialog, Tabs, Input, Toast, etc.)
+- **No Mantine.** Zero new Mantine imports. Being fully removed.
+- **Tailwind only.** No CSS modules, no styled-components.
+- Design tokens live in `lib/styleTokens.ts`, `lib/color-contract.ts`, `lib/font-contract.ts`, `lib/icon-contract.ts`.
+
+### Component directories
+
+```
+web/src/components/
+├── agents/          Agent onboarding & config
+├── blocks/          Block editor/viewer
+├── common/          Shared utilities (ErrorAlert, etc.)
+├── documents/       Document upload & browser
+├── elt/             ELT pipeline UI (ParseEasyPanel, etc.)
+├── flows/           Flow canvas & DAG viz
+├── icons/           Icon library
+├── kv/              Key-value storage UI
+├── layout/          Layout wrappers
+├── logs/            Log viewer
+├── mcp/             MCP server integration
+├── project-detail/  Project detail panels
+├── schemas/         Schema builder/editor
+├── shell/           App shell (LeftRailShadcn, nav-config)
+└── ui/              Wrapped primitives (shadcn + Ark)
+```
+
+---
+
+## Backend — `supabase/`
+
+Edge functions (Deno/TypeScript) and Postgres migrations.
+
+### Edge functions
+
+```
+supabase/functions/
+├── _shared/                 Shared modules (Vertex auth, Claude transport, RPC)
+├── admin-config             Runtime policy CRUD (superuser-gated)
+├── admin-database-browser   Raw SQL browser (superuser-gated)
+├── admin-integration-catalog Integration catalog admin
+├── admin-services           Service registry admin
+├── agent-config             Agent configuration
+├── assistant-chat           Chat message handling
+├── conversion-complete      Conversion webhook
+├── export-jsonl             JSONL export
+├── flows                    Flow/DAG operations
+├── generate-citations       Citation generation
+├── ingest                   Document ingestion
+├── provider-connections     External provider auth
+├── runs                     Run tracking & execution
+├── schemas                  Schema CRUD
+├── test-api-key             API key validation
+├── trigger-parse            Parse job trigger
+├── upload-policy            Upload authorization
+├── user-api-keys            User API key management
+└── worker                   Main extraction worker (Track A/B)
+```
+
+**Adding a new edge function:**
+
+1. Create `supabase/functions/<name>/index.ts`
+2. Import shared modules from `../_shared/`
+3. Auth: use `verify_jwt: true` unless you have a documented reason not to
+4. Deploy via Supabase MCP or `supabase functions deploy <name>`
+
+### Migrations
+
+60 migrations in `supabase/migrations/`. Naming convention:
+
+```
+YYYYMMDDHHMMSS_NNN_description.sql
+```
+
+Example: `20260301001000_060_admin_database_browser_rpc.sql`
+
+**Key catalog tables** (FK-enforced lookups, replace string CHECKs):
+
+- `block_type_catalog`, `run_status_catalog`, `overlay_status_catalog`
+- `source_type_catalog`, `document_status_catalog`, `parsing_tool_catalog`
+- `representation_type_catalog`, `conv_status_catalog`
+- `service_type_catalog` (for service registry)
+
+**Service registry tables:**
+
+- `service_registry` — registered services
+- `service_functions` — callable functions per service
+- `service_runs`, `service_run_events`, `service_run_artifacts` — execution tracking
+
+**Adding a new migration:**
+
+1. Use `apply_migration` via Supabase MCP (preferred) or create the file manually
+2. Follow the `NNN` sequence number (next is 061)
+3. DDL only in migrations — use `execute_sql` for one-off data queries
+
+---
+
+## Python Services — `services/`
+
+FastAPI microservices running on the Ubuntu pipeline box.
+
+```
+services/
+├── conversion-service/   Docling + Pandoc document parsing
+├── pipeline-worker/      Extraction & enrichment executor
+└── uppy-companion/       Uppy file upload companion
+```
+
+**Adding a new service:**
+
+1. Create `services/<name>/` with its own `requirements.txt` and `main.py`
+2. FastAPI is the standard framework
+3. Runs alongside dlt and dbt executors on the same Ubuntu box
+
+---
+
+## Internal Docs — `docs/`
+
+Design documents, plans, and analysis. Not published — these are working files.
+
+```
+docs/
+├── plans/                     Design specs and integration plans
+│   ├── registry+serviceruns-config/
+│   ├── docling/
+│   └── 2026-*-*.md            Dated design docs
+├── frontend/                  Frontend-specific docs
+├── kestra-integration/        Kestra backend integration
+├── schema/                    Schema system docs
+├── analysis/                  Codebase analysis (mage-ai, track-b, etc.)
+├── ongoing-tasks/             Priority queue tracking
+├── product-defining-v2.0/     Canonical product spec (immutable fields, PRD v3.0)
+├── design-system.md           Design system reference
+└── blockdata.md               Product overview
+```
+
+**When to add here vs. web-docs:**
+
+- `docs/` — working design docs, plans, analysis, specs in progress
+- `web-docs/` — polished internal dev reference (this site)
+
+---
+
+## This Docs Site — `web-docs/`
+
+Mintlify-powered. Config in `docs.json`. Deployed to `blockdata.run/docs`.
+
+```
+web-docs/
+├── docs.json            Navigation and site config
+├── index.mdx            Landing page
+├── guides/              How-to guides
+│   ├── quickstart.mdx
+│   ├── repo-map.mdx     (this page)
+│   ├── pipeline/        Pipeline guides (empty)
+│   └── schemas/         Schema guides (empty)
+├── admin/               Admin reference (empty)
+├── api/                 API reference (empty)
+├── images/              Logos and favicon
+└── snippets/            Reusable MDX snippets (empty)
+```
+
+**Adding a new page:**
+
+1. Create an `.mdx` file in the appropriate directory
+2. Add it to the `navigation` array in `docs.json`
+3. Frontmatter requires `title` and `description`
+
+---
+
+## Config Files at Root
+
+| File                  | Purpose                                       |
+| --------------------- | --------------------------------------------- |
+| `CLAUDE.md`           | Claude Code instructions (overrides defaults) |
+| `AGENTS.md`           | Agent configuration reference                 |
+| `vercel.json`         | Vercel deployment routing                     |
+| `package.json`        | Root npm config                               |
+| `deno.lock`           | Deno lock (for edge functions)                |
+| `.env` / `.env.local` | Secrets (gitignored)                          |
+| `.mcp.json`           | MCP server config (gitignored)                |
+
+---
+
+## Infrastructure Quick Reference
+
+| Resource             | Value                                    |
+| -------------------- | ---------------------------------------- |
+| Supabase project     | `dbdzzhshmigewyprahej`                   |
+| GCP project          | `agchain`                                |
+| LLM provider         | Vertex AI Claude (not direct Anthropic)  |
+| Embedding model      | Vertex AI `text-embedding-004` (768-dim) |
+| Default Claude model | `claude-sonnet-4-5-20250929`             |
+| Vertex region        | `global`                                 |
+| Frontend deploy      | Vercel                                   |
+| Pipeline box         | Ubuntu (FastAPI + dlt + dbt + ArangoDB)  |

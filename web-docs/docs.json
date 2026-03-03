@@ -46,50 +46,59 @@
                                     {
                                         "tab":  "API",
                                         "icon":  "square-terminal",
-                                        "pages":  [
-                                                      "api/overview",
-                                                      "api/core",
-                                                      "api/http",
-                                                      "api/scripts",
-                                                      "api/eyecite"
-                                                  ]
+                                        "groups":  [
+                                                       {
+                                                           "group":  "Overview",
+                                                           "pages":  ["getting-started", "api-reference/overview"]
+                                                       },
+                                                       {
+                                                           "group":  "Providers",
+                                                           "pages":  [
+                                                                         "api-reference/core",
+                                                                         "api-reference/http",
+                                                                         "api-reference/scripts",
+                                                                         "api-reference/eyecite"
+                                                                     ]
+                                                       }
+                                                   ]
                                     },
                                     {
                                         "tab":  "Infrastructure",
                                         "icon":  "server",
                                         "pages":  [
-                                                      "s",
-                                                      "edge-functions",
+                                                      "infrastructure/repo-map",
+                                                      "infrastructure/edge-functions",
                                                       "infrastructure/service-registry-schema",
                                                       "infrastructure/plugin-registry",
                                                       "infrastructure/eyecite-reference"
                                                   ]
                                     },
                                     {
-                                        "tab":  "Frontend",
-                                        "icon":  "layout-panel-left",
-                                        "pages":  [
-                                                      "frontend/app-shell",
-                                                      "frontend/design-system"
-                                                  ]
-                                    },
-                                    {
-                                        "tab":  "Plans",
-                                        "icon":  "map",
-                                        "pages":  [
-                                                      "plans/services-scalability-plan",
-                                                      "plans/edge-to-fastapi-migration",
-                                                      "plans/execution-system"
-                                                  ]
-                                    },
-                                    {
-                                        "tab":  "Lab",
-                                        "icon":  "flask-conical",
-                                        "pages":  [
-                                                      "guides/markdown-syntax-lab",
-                                                      "assessments/work-tracker",
-                                                      "assessments/2026-03-03-superuser-services-page-assessment"
-                                                  ]
+                                        "tab":  "Internal",
+                                        "icon":  "lock",
+                                        "groups":  [
+                                                       {
+                                                           "group":  "Frontend",
+                                                           "pages":  [
+                                                                         "frontend/app-shell",
+                                                                         "frontend/design-system"
+                                                                     ]
+                                                       },
+                                                       {
+                                                           "group":  "Plans",
+                                                           "pages":  [
+                                                                         "plans/services-scalability-plan",
+                                                                         "plans/edge-to-fastapi-migration",
+                                                                         "plans/execution-system"
+                                                                     ]
+                                                       },
+                                                       {
+                                                           "group":  "Lab",
+                                                           "pages":  [
+                                                                         "guides/markdown-syntax-lab"
+                                                                     ]
+                                                       }
+                                                   ]
                                     }
                                 ]
                    },
@@ -97,7 +106,7 @@
                    "links":  [
                                  {
                                      "label":  "App",
-                                     "href":  "https://blockdata.run"
+                                     "href":  "http://localhost:5173"
                                  }
                              ]
                }

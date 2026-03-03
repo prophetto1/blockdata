@@ -129,7 +129,7 @@ Double tilde (GFM, confirmed supported): ~~deprecated field~~ ~~removed endpoint
 - Standard: [Markdown Guide](https://www.markdownguide.org/)
 - Autolink: https://www.markdownguide.org/extended-syntax/
 - Email: [contact@example.com](mailto:contact@example.com)
-- Internal page: [API Overview](/api/overview)
+- Internal page: [API Overview](/api-reference/overview)
 - Anchor: [Jump to Code Blocks](#7-code-blocks)
 
 ---
@@ -432,7 +432,7 @@ Press <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd> to open the command pale
   <Card title="Service Registry" icon="server">
     Manage service registrations, base URLs, and auth configuration.
   </Card>
-  <Card title="Function Catalog" icon="list" href="/api/core">
+  <Card title="Function Catalog" icon="list" href="/api-reference/core">
     Browse all registered functions by service, type, and status.
   </Card>
   <Card title="Pipeline Runs" icon="play">
@@ -624,43 +624,43 @@ sequenceDiagram
 
 ## Rendering Results
 
-Fill in after reviewing the live site.
+Observed on `2026-03-03` at `/guides/markdown-syntax-lab`.
 
-| Feature | Section | Expected | Renders? |
-| ------- | ------- | -------- | -------- |
-| Bold / italic / inline code | 1 | ✅ | |
-| Strikethrough `~~` | 3 | ✅ | |
-| Tables with alignment | 4 | ✅ | |
-| Task list `[ ]` / `[x]` | 5 | ❓ | |
-| Footnotes `[^1]` | 9 | ❌ | |
-| Definition list (MD) | 10 | ❌ | |
-| Custom heading ID `{#id}` | 11 | ❌ | |
-| Emoji shortcodes `:rocket:` | 12 | ❌ | |
-| Highlight `==text==` | 2 | ❌ | |
-| Superscript `^2^` | 2 | ❌ | |
-| Subscript `~2~` | 2 | ❌ | |
-| `<sup>` / `<sub>` HTML | 2 | ✅ | |
-| `<mark>` HTML | 13 | ⚠️ unstyled | |
-| `<details>` / `<summary>` | 13 | ⚠️ check | |
-| `<kbd>` | 13 | ⚠️ check | |
-| `<dl>` HTML | 13 | ⚠️ check | |
-| Inline math `$...$` | 8 | ✅ | |
-| Block math `$$...$$` | 8 | ✅ | |
-| Code — syntax highlight | 7 | ✅ | |
-| Code — title label | 7 | ✅ | |
-| Code — line highlight `{n}` | 7 | ✅ | |
-| Code — line numbers | 7 | ✅ | |
-| Code — diff `[!code ++/--]` | 7 | ✅ | |
-| Note / Tip / Warning | 14 | ✅ | |
-| Info / Check / Caution | 14 | ✅ | |
-| Tabs | 15 | ✅ | |
-| AccordionGroup / Accordion | 16 | ✅ | |
-| CardGroup / Card | 17 | ✅ | |
-| Steps / Step | 18 | ✅ | |
-| Columns | 19 | ✅ | |
-| ParamField | 20 | ✅ | |
-| CodeGroup | 21 | ✅ | |
-| Badge | 22 | ✅ | |
-| Mermaid | 23 | ✅ | |
-| Frame | 24 | ✅ | |
-| Expandable | 25 | ✅ | |
+| Feature | Section | Observed | Notes |
+| ------- | ------- | -------- | ----- |
+| Bold / italic / inline code | 1 | ✅ | Works as expected |
+| Strikethrough `~~` | 3 | ✅ | Works as expected |
+| Tables with alignment | 4 | ✅ | Works as expected |
+| Task list `[ ]` / `[x]` | 5 | ✅ | Renders disabled checkboxes |
+| Footnotes `[^1]` | 9 | ✅ | References + generated `Footnotes` section |
+| Definition list (Markdown) | 10 | ❌ | Renders as plain text with colons |
+| Custom heading ID `{#id}` | 11 | ❌ | Inline syntax can break MDX parse |
+| Emoji shortcodes `:rocket:` | 12 | ❌ | Stays literal, not converted |
+| Highlight `==text==` | 2 | ❌ | Stays literal |
+| Superscript `^2^` | 2 | ❌ | Stays literal |
+| Subscript `~2~` | 2 | ❌ | Interpreted as strikethrough behavior |
+| `<sup>` / `<sub>` HTML | 2 | ✅ | Reliable fallback |
+| `<mark>` HTML | 2 / 13 | ⚠️ Partial | Works inline; block sample may be stripped |
+| `<details>` / `<summary>` | 13 | ❌ | Raw HTML sample did not render as written |
+| `<kbd>` | 13 | ✅ | Renders key labels |
+| `<dl>` HTML | 13 | ❌ | `dl/dt/dd` tags not rendered |
+| Inline math `$...$` | 8 | ✅ | KaTeX renders (font warnings in console) |
+| Block math `$$...$$` | 8 | ✅ | KaTeX renders (font warnings in console) |
+| Code — syntax highlight | 7 | ✅ | Works as expected |
+| Code — title label | 7 | ✅ | Works as expected |
+| Code — line highlight `{n}` | 7 | ✅ | Works as expected |
+| Code — line numbers | 7 | ✅ | Works as expected |
+| Code — diff `[!code ++/--]` | 7 | ✅ | Works as expected |
+| Note / Tip / Warning | 14 | ✅ | Works as expected |
+| Info / Check / Caution | 14 | ✅ | Works as expected |
+| Tabs | 15 | ✅ | Works as expected |
+| AccordionGroup / Accordion | 16 | ✅ | Works as expected |
+| CardGroup / Card | 17 | ✅ | Works as expected |
+| Steps / Step | 18 | ✅ | Works as expected |
+| Columns | 19 | ✅ | Works as expected |
+| ParamField | 20 | ✅ | Works as expected |
+| CodeGroup | 21 | ✅ | Works as expected |
+| Badge | 22 | ✅ | Works as expected |
+| Mermaid | 23 | ✅ | Renders diagrams |
+| Frame | 24 | ✅ | Works as expected |
+| Expandable | 25 | ✅ | Works as expected |

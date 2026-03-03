@@ -22,7 +22,7 @@ HEALTH_STATUSES = {"online", "offline", "degraded", "unknown"}
 HTTP_METHODS = {"GET", "POST", "PUT", "DELETE"}
 FUNCTION_TYPES = {
     "source", "destination", "transform", "parse", "convert",
-    "export", "test", "utility", "macro", "custom", "ingest", "callback",
+    "export", "test", "utility", "macro", "custom", "ingest", "callback", "flow",
 }
 
 

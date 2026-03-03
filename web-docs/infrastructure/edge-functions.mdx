@@ -1,0 +1,222 @@
+---
+title: "Edge Functions"
+icon: "zap"
+description: "All 19 Supabase edge functions — inventory, deployment pipeline, auth model, shared modules, and self-hosted Deno plan."
+---
+
+## Current State
+
+**19 Deno edge functions** on Supabase (project `dbdzzhshmigewyprahej`). Deno 2 runtime, all with `verify_jwt = false`. Auth enforced internally per function.
+
+**Deployment:** GitHub Actions on push to `master` when `supabase/functions/**` changes. Workflow run #1 completed successfully on 2026-03-01.
+
+**Planned:** Self-hosted Deno server on Ubuntu box, running all 19 functions in parallel with Supabase-hosted versions.
+
+---
+
+## Function Inventory
+
+### Pipeline
+
+| Function | Purpose |
+|---|---|
+| `ingest` | File upload + conversion. Optional `ingest_mode=upload_only` stores source only. Multi-file: 7 sub-modules (`mode.ts`, `routing.ts`, `storage.ts`, `types.ts`, `validate.ts`, `process-*.ts`). |
+| `conversion-complete` | Callback from Python conversion service after Markdown upload to Storage. |
+| `trigger-parse` | Starts parsing for previously uploaded (upload-only) documents. |
+| `worker` | Claims pending `block_overlays`, calls LLM via Vertex AI, writes structured output. Largest function (~700+ lines). |
+| `runs` | Creates `runs` row + populates `block_overlays` (one per block) for a `conv_uid` + `schema_id`. |
+
+### Schema & Export
+
+| Function | Purpose |
+|---|---|
+| `schemas` | CRUD for user-defined extraction schemas in `public.schemas`. |
+| `export-jsonl` | JSONL for a `run_id` — joins `blocks` + `block_overlays` into canonical two-key export. |
+| `generate-citations` | Citation artifacts from extraction results. |
+
+### Admin (superuser-only)
+
+| Function | Purpose |
+|---|---|
+| `admin-config` | Runtime policy management. Reads/writes `admin_runtime_policy` (19 policy keys). |
+| `admin-database-browser` | Read-only database browser — table/schema discovery and row inspection. |
+| `admin-integration-catalog` | Integration catalog sync and mapping (Kestra-compatible). |
+| `admin-services` | Service registry CRUD — registered services and functions. |
+
+### User Configuration
+
+| Function | Purpose |
+|---|---|
+| `user-api-keys` | Encrypted per-user provider API key storage. |
+| `agent-config` | Agent catalog + per-user config; computes readiness from saved keys/connections. |
+| `provider-connections` | Non-key provider connections (e.g. Vertex AI service account), encrypted server-side. |
+
+### Other
+
+| Function | Purpose |
+|---|---|
+| `assistant-chat` | SSE-streaming chat endpoint. |
+| `flows` | Flow CRUD — create, validate, manage flow definitions. Sub-path routing (`/flows/validate`, `/flows/{namespace}/{id}`). |
+| `upload-policy` | Returns signed upload URLs, enforces upload constraints. |
+| `test-api-key` | Validates user-provided API key against provider. |
+
+---
+
+## Auth Model
+
+All functions disable the Supabase gateway JWT check (`verify_jwt = false` in `config.toml`) due to ES256 JWT incompatibility. Auth is enforced internally:
+
+| Method | Used by |
+|---|---|
+| `requireUserId(req)` | User-facing functions: `schemas`, `runs`, `ingest`, `flows`, `export-jsonl`, `upload-policy`, `user-api-keys`, `agent-config`, `provider-connections`, `assistant-chat`, `generate-citations` |
+| `requireSuperuser(req)` | `admin-config`, `admin-database-browser`, `admin-integration-catalog`, `admin-services` |
+| `X-Conversion-Service-Key` header | `conversion-complete` (shared secret with Python conversion service) |
+| Provider-specific validation | `test-api-key` |
+
+Superuser gated by `SUPERUSER_EMAIL_ALLOWLIST` secret (`jondev717@gmail.com`).
+
+---
+
+## Shared Modules (`_shared/`)
+
+Imported via relative paths (`../_shared/cors.ts`). No npm dependencies — only `@supabase/supabase-js@2` via `esm.sh`.
+
+| Module | Purpose |
+|---|---|
+| `supabase.ts` | `createAdminClient()`, `createUserClient()`, `requireUserId()` |
+| `superuser.ts` | `requireSuperuser()` check |
+| `cors.ts` | `corsPreflight()`, `withCorsHeaders()` |
+| `env.ts` | `getEnv()` — typed env var access |
+| `vertex_auth.ts` | GCP service account JWT → access token (with in-memory caching) |
+| `vertex_claude.ts` | `callVertexClaude()` — Vertex AI Claude transport |
+| `vertex_claude_stream.ts` | Streaming variant for SSE responses |
+| `admin_policy.ts` | Reads `admin_runtime_policy`, builds policy snapshot |
+| `api_key_crypto.ts` | AES encryption/decryption for stored API keys |
+| `hash.ts` | `sha256HexOfString()` |
+| `user_schema.ts` | `validateFlatUserSchema()` |
+| `citations.ts` | Citation generation logic |
+| `representation.ts` | Conversion representation utilities |
+| `docling.ts` | Docling document parsing |
+| `markdown.ts` | Markdown processing |
+| `pandoc.ts` | Pandoc AST utilities |
+| `sanitize.ts` | Input sanitization |
+| `conversion-ack-timeout.ts` | Timeout handling for conversion acks |
+
+### Test files
+
+8 shared module tests + 7 function-level tests:
+
+**Shared:** `admin_policy.test.ts`, `citations.test.ts`, `conversion-ack-timeout.test.ts`, `docling.test.ts`, `markdown.test.ts`, `pandoc.test.ts`, `user_schema.test.ts`
+
+**Functions:** `ingest/routing.test.ts`, `ingest/mode.test.ts`, `ingest/validate.test.ts`, `flows/index.test.ts`, `admin-services/index.test.ts`, `admin-integration-catalog/index.test.ts`, `agent-config/index.test.ts`, `provider-connections/index.test.ts`
+
+---
+
+## Environment Variables
+
+Required Supabase secrets:
+
+```
+SUPABASE_URL                    https://dbdzzhshmigewyprahej.supabase.co
+SUPABASE_ANON_KEY               (project anon key)
+SUPABASE_SERVICE_ROLE_KEY       (project service role key)
+DOCUMENTS_BUCKET                documents
+CONVERSION_SERVICE_URL          (Python conversion service URL)
+CONVERSION_SERVICE_KEY          (shared secret)
+DBT_SERVICE_URL                 (dbt-runner URL)
+DBT_SERVICE_KEY                 (shared secret)
+GCP_VERTEX_SA_KEY               (service account JSON)
+GCP_VERTEX_PROJECT_ID           agchain
+GCP_VERTEX_LOCATION             global
+SUPERUSER_EMAIL_ALLOWLIST       jondev717@gmail.com
+API_KEY_ENCRYPTION_SECRET       (AES key)
+```
+
+---
+
+## Deployment Pipeline
+
+### GitHub Actions (current)
+
+**Workflow:** `.github/workflows/deploy-edge-functions.yml`
+
+```yaml
+on:
+  push:
+    branches: [master]
+    paths: ['supabase/functions/**']
+  workflow_dispatch:
+```
+
+Deploys all functions atomically via `supabase functions deploy --use-api`.
+
+**Required GitHub secrets:** `SUPABASE_PROJECT_ID` (`dbdzzhshmigewyprahej`), `SUPABASE_ACCESS_TOKEN`.
+
+### Local development
+
+```bash
+./scripts/serve-edge.sh <function-name>          # port 8099
+./scripts/serve-edge.sh <function-name> 9000     # custom port
+```
+
+Loads `.env` from repo root, runs with `deno run --allow-net --allow-env --allow-read`.
+
+---
+
+## Code Patterns
+
+### Pattern A — Bare `Deno.serve()` (13 functions)
+
+```typescript
+Deno.serve(async (req) => {
+  const preflight = corsPreflight(req);
+  if (preflight) return preflight;
+  // handler body
+});
+```
+
+`admin-config`, `assistant-chat`, `conversion-complete`, `export-jsonl`, `generate-citations`, `ingest`, `runs`, `schemas`, `test-api-key`, `trigger-parse`, `upload-policy`, `user-api-keys`, `worker`.
+
+### Pattern B — Exported handler + `import.meta.main` (6 functions)
+
+```typescript
+export async function handleFlowsRequest(req: Request): Promise<Response> {
+  // handler body
+}
+
+if (import.meta.main) {
+  Deno.serve((req) => handleFlowsRequest(req));
+}
+```
+
+`admin-database-browser`, `admin-integration-catalog`, `admin-services`, `agent-config`, `flows`, `provider-connections`.
+
+Pattern B allows the handler to be imported by a router without triggering `Deno.serve()`. Both work identically on Supabase (runs file as entrypoint → `import.meta.main` is `true`).
+
+---
+
+## Planned: Self-Hosted Deno Server
+
+Run all 19 functions on the Ubuntu box as a single Deno process, alongside existing Python services. Supabase-hosted functions stay active.
+
+### Steps
+
+1. **Refactor Pattern A → B.** Extract 13 bare `Deno.serve()` handlers into named exports with `import.meta.main` guards. Backward-compatible with Supabase.
+
+2. **Router entrypoint.** `supabase/functions/self-hosted/main.ts` — single `Deno.serve()` importing all 19 handlers, dispatching by URL path (`/functions/v1/{name}` or `/{name}`). Health check at `/health`.
+
+3. **Docker.** `denoland/deno:2.1.4`, copies `supabase/functions/`, pre-caches `esm.sh` deps. Port 9000.
+
+4. **Docker Compose.** Add `edge-functions` service on Ubuntu box. Health check via `/health`, `restart: unless-stopped`.
+
+5. **GitHub Actions deploy.** New workflow: SSH into Ubuntu → `git pull` → rebuild Docker → restart → verify health. Same trigger path as Supabase workflow.
+
+6. **Nginx reverse proxy.** Upstream at `localhost:9000`. `proxy_buffering off` (SSE streaming for `assistant-chat`), `proxy_read_timeout 300s` (long worker runs).
+
+### Considerations
+
+- **Vertex AI token caching** benefits from shared process — one cached GCP token across all functions.
+- **`ingest` sub-modules** use relative imports (`./types.ts`) — resolve correctly since router imports from `ingest/index.ts`.
+- **`flows` sub-path routing** uses `indexOf("flows")` — prefix-agnostic, works unchanged.
+- **No external npm deps** besides `@supabase/supabase-js@2` via `esm.sh`.
+- **New GitHub secrets needed:** `UBUNTU_SSH_PRIVATE_KEY`, `UBUNTU_USER`, `UBUNTU_HOST`.

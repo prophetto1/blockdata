@@ -103,7 +103,7 @@ export type InlineStatus = {
 
 export const FUNCTION_TYPE_OPTIONS = [
   'source', 'destination', 'transform', 'parse', 'convert',
-  'export', 'test', 'utility', 'macro', 'custom', 'ingest', 'callback',
+  'export', 'test', 'utility', 'macro', 'custom', 'ingest', 'callback', 'flow',
 ] as const;
 
 export const HTTP_METHOD_OPTIONS = ['GET', 'POST', 'PUT', 'DELETE'] as const;
