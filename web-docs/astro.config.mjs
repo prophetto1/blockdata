@@ -2,9 +2,16 @@ import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
 import sitemap from '@astrojs/sitemap';
 import tailwindcss from '@tailwindcss/vite';
+import remarkMath from 'remark-math';
+import remarkEmoji from 'remark-emoji';
+import rehypeKatex from 'rehype-katex';
 
 export default defineConfig({
   site: 'https://docs.blockdata.dev',
+  markdown: {
+    remarkPlugins: [remarkMath, remarkEmoji],
+    rehypePlugins: [rehypeKatex],
+  },
   integrations: [
     starlight({
       title: 'BlockData Docs',
@@ -17,9 +24,25 @@ export default defineConfig({
       editLink: {
         baseUrl: 'https://github.com/blockdata/writing-system/edit/master/web-docs/',
       },
-      customCss: ['./src/styles/global.css'],
+      customCss: [
+        'katex/dist/katex.min.css',
+        './src/styles/global.css',
+      ],
       sidebar: [
         { slug: 'getting-started' },
+        {
+          label: 'Reference',
+          items: [
+            { slug: 'reference/starlight-components' },
+            { slug: 'reference/markdown-syntax' },
+          ],
+        },
+        {
+          label: 'Internal',
+          items: [
+            { slug: 'internal/local-urls' },
+          ],
+        },
       ],
     }),
     sitemap(),

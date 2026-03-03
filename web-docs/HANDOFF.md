@@ -105,9 +105,10 @@ sidebar: [
 
 Override Starlight CSS properties in `src/styles/global.css` (below the Tailwind layer imports). Current values:
 
-- Accent: `#4f46e5` (indigo)
-- Font: system-ui stack
-- Mono: JetBrains Mono stack
-- Dark bg: `#0f0f14`
+- Accent: `#EB5E41` (matches main site `--primary`)
+- Font: Inter (matches main site `--app-font-sans`)
+- Mono: JetBrains Mono + IBM Plex Mono (matches main site `--app-font-mono`)
+- Dark bg: `#0e0e0e` (matches main site `--background`)
+- Light bg: `#faf9f7` (matches main site warm stone scale)
 
 Full list of properties: https://starlight.astro.build/reference/css-variables/

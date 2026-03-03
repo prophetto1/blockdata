@@ -16,6 +16,9 @@
     "@astrojs/starlight-tailwind": "^4.0.2",
     "@tailwindcss/vite": "^4.2.1",
     "astro": "^5.18.0",
+    "rehype-katex": "^7.0.1",
+    "remark-emoji": "^5.0.2",
+    "remark-math": "^6.0.0",
     "tailwindcss": "^4.2.1",
     "typescript": "^5.9.3"
   }
