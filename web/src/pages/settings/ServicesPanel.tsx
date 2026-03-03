@@ -89,13 +89,15 @@ export function ServicesPanel({ mode = 'admin' }: ServicesPanelProps) {
     return () => sub.unsubscribe();
   }, [loadData]);
 
-  /* ---- Handle selected service disappearing ---- */
+  /* ---- Auto-select first service, handle selected disappearing ---- */
   useEffect(() => {
     if (
       selectedServiceId &&
       !services.some((s) => s.service_id === selectedServiceId)
     ) {
-      setSelectedServiceId(null);
+      setSelectedServiceId(services[0]?.service_id ?? null);
+    } else if (!selectedServiceId && services.length > 0) {
+      setSelectedServiceId(services[0].service_id);
     }
   }, [services, selectedServiceId]);
 
@@ -169,14 +171,12 @@ export function ServicesPanel({ mode = 'admin' }: ServicesPanelProps) {
         </div>
       )}
 
-      <div className="mb-2 flex items-center px-1">
-        <span className="ml-auto text-[10px] text-muted-foreground">
-          {services.length} services, {functions.length} functions
-        </span>
-      </div>
 
-      {/* Main: sidebar + detail */}
-      <div className="flex min-h-0 flex-1 gap-0 overflow-hidden">
+      {/* Main layout: sidebar + detail */}
+      <div
+        className="flex min-h-0 flex-1 overflow-hidden rounded-md border border-border"
+        style={{ backgroundColor: styleTokens.adminConfig.contentBackground }}
+      >
         <ServicesSidebar
           services={services}
           functions={functions}
@@ -191,7 +191,6 @@ export function ServicesPanel({ mode = 'admin' }: ServicesPanelProps) {
             service={selectedService}
             functions={functionsForSelected}
             savingKey={savingKey}
-            notice={null}
             onToggleFunctionEnabled={handleToggleFunctionEnabled}
             onSaveFunctionJson={handleSaveFunctionJson}
             isAdmin={isAdmin}

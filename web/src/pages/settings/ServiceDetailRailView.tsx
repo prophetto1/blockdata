@@ -1,14 +1,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import MonacoEditor from '@monaco-editor/react';
+import { Clipboard } from '@ark-ui/react/clipboard';
 import { Switch } from '@ark-ui/react/switch';
+import { Tabs } from '@ark-ui/react/tabs';
 import {
-  IconClipboard,
+  IconCheck,
   IconCode,
+  IconCopy,
   IconDeviceFloppy,
-  IconX,
 } from '@tabler/icons-react';
 import { cn } from '@/lib/utils';
 import { useMonacoTheme } from '@/hooks/useMonacoTheme';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import type { ServiceFunctionRow, ServiceRow } from './services-panel.types';
 import { FunctionReferenceCard } from './FunctionReferenceCard';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -21,15 +24,13 @@ type ServiceDetailRailViewProps = {
   service: ServiceRow;
   functions: ServiceFunctionRow[];
   savingKey: string | null;
-  notice?: { kind: 'success' | 'error'; message: string } | null;
-  onDismissNotice?: () => void;
   onToggleFunctionEnabled: (fn: ServiceFunctionRow) => void;
   onSaveFunctionJson: (fn: ServiceFunctionRow, json: Record<string, unknown>) => void;
   isAdmin?: boolean;
 };
 
 /* ------------------------------------------------------------------ */
-/*  Health badge                                                       */
+/*  Health dot                                                         */
 /* ------------------------------------------------------------------ */
 
 function healthDotClass(status: string): string {
@@ -71,13 +72,10 @@ export function ServiceDetailRailView({
   service,
   functions,
   savingKey,
-  notice = null,
-  onDismissNotice,
   onToggleFunctionEnabled,
   onSaveFunctionJson,
   isAdmin = true,
 }: ServiceDetailRailViewProps) {
-  const canonicalBaseUrl = '{{BLOCKDATA_API_BASE_URL}}';
   const monacoTheme = useMonacoTheme();
   const [selectedFnId, setSelectedFnId] = useState<string | null>(
     () => functions[0]?.function_id ?? null,
@@ -99,31 +97,9 @@ export function ServiceDetailRailView({
   const [sourceOpen, setSourceOpen] = useState(false);
   const [editing, setEditing] = useState(false);
   const [jsonError, setJsonError] = useState<string | null>(null);
-  const [copiedBaseUrl, setCopiedBaseUrl] = useState(false);
-  const [copiedEndpoint, setCopiedEndpoint] = useState(false);
   const editorValueRef = useRef<string>('');
 
-  /* ---- Derived service-level auth ---- */
-  const authType = service.config
-    ? (service.config.auth_type as string) ?? (service.config.auth as string) ?? null
-    : null;
-  const configKeys = service.config ? Object.keys(service.config) : [];
-
   /* ---- Handlers ---- */
-  const handleCopyBaseUrl = useCallback(() => {
-    void navigator.clipboard.writeText(canonicalBaseUrl).then(() => {
-      setCopiedBaseUrl(true);
-      setTimeout(() => setCopiedBaseUrl(false), 1500);
-    });
-  }, [canonicalBaseUrl]);
-
-  const handleCopyEndpoint = useCallback((url: string) => {
-    void navigator.clipboard.writeText(url).then(() => {
-      setCopiedEndpoint(true);
-      setTimeout(() => setCopiedEndpoint(false), 1500);
-    });
-  }, []);
-
   const handleSave = useCallback(() => {
     if (!selectedFn) return;
     try {
@@ -151,128 +127,127 @@ export function ServiceDetailRailView({
   }
 
   return (
-    <div className="flex min-w-0 flex-1 flex-col overflow-hidden pl-5">
+    <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+      <ScrollArea className="min-h-0 flex-1" viewportClass="px-5 pt-3 pb-6">
       {/* ================================================================ */}
       {/*  SERVICE HEADER                                                   */}
       {/* ================================================================ */}
-      <div className="shrink-0 pb-4 pt-1">
-        {/* Service name + toggle + close */}
-        <div className="flex items-center gap-3">
-          <h2 className="text-lg font-semibold text-foreground">
+      <div className="mb-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <h2 className="text-base font-semibold text-foreground">
             {service.service_name}
           </h2>
-          <span
-            className={cn(
-              'inline-block h-2 w-2 rounded-full',
-              healthDotClass(service.health_status),
-            )}
-            title={service.health_status}
-          />
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span
+                className={cn(
+                  'inline-block h-2 w-2 rounded-full',
+                  healthDotClass(service.health_status),
+                )}
+              />
+            </TooltipTrigger>
+            <TooltipContent className="px-2 py-1 text-xs">
+              {service.health_status}
+            </TooltipContent>
+          </Tooltip>
           <span className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs text-muted-foreground">
             {service.service_type}
           </span>
-
-          {notice && (
-            <div
-              className={cn(
-                'inline-flex min-w-0 max-w-[min(58vw,42rem)] items-center gap-1 rounded-md border px-2 py-1 text-xs',
-                notice.kind === 'error'
-                  ? 'border-destructive/40 bg-destructive/10 text-destructive'
-                  : 'border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
-              )}
-              role="status"
-              aria-live="polite"
-            >
-              <span className="truncate">{notice.message}</span>
-              <button
-                type="button"
-                onClick={onDismissNotice}
-                className="rounded p-0.5 opacity-80 transition hover:opacity-100"
-                aria-label="Dismiss notice"
-              >
-                <IconX size={12} />
-              </button>
-            </div>
-          )}
-
+          <span className={cn(
+            'rounded px-1.5 py-0.5 text-[10px] font-medium',
+            service.enabled
+              ? 'bg-emerald-500/10 text-emerald-500'
+              : 'bg-muted text-muted-foreground/50',
+          )}>
+            {service.enabled ? 'Enabled' : 'Disabled'}
+          </span>
         </div>
 
-        {/* Base URL */}
-        <div className="mt-3 flex items-center gap-2 text-xs">
-          <span className="text-muted-foreground/60">Base URL</span>
-          <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-foreground">
-            {canonicalBaseUrl}
-          </code>
-          <button
-            type="button"
-            onClick={handleCopyBaseUrl}
-            className="rounded p-0.5 text-muted-foreground transition-colors hover:text-foreground"
-          >
-            <IconClipboard size={12} />
-          </button>
-          {copiedBaseUrl && <span className="text-[10px] text-primary">Copied!</span>}
+        {/* Base URL + Auth row */}
+        <div className="mt-2 flex flex-wrap items-center gap-3 text-xs">
+          <div className="flex items-center gap-1.5">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+              Base URL
+            </span>
+            <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-foreground">
+              {'{{BLOCKDATA_API_BASE_URL}}'}
+            </code>
+            <Clipboard.Root value="{{BLOCKDATA_API_BASE_URL}}">
+              <Clipboard.Trigger className="rounded p-0.5 text-muted-foreground transition-colors hover:text-foreground">
+                <Clipboard.Indicator copied={<IconCheck size={12} className="text-primary" />}>
+                  <IconCopy size={12} />
+                </Clipboard.Indicator>
+              </Clipboard.Trigger>
+            </Clipboard.Root>
+          </div>
+          {(() => {
+            const authType = service.config
+              ? (service.config.auth_type as string) ?? (service.config.auth as string) ?? null
+              : null;
+            return authType ? (
+              <div className="flex items-center gap-1.5">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+                  Auth
+                </span>
+                <span className="rounded bg-muted px-1.5 py-0.5 font-mono">{authType}</span>
+              </div>
+            ) : null;
+          })()}
         </div>
 
-        {/* Authentication */}
-        <div className="mt-2 flex items-center gap-2 text-xs">
-          <span className="text-muted-foreground/60">Authentication</span>
-          {authType ? (
-            <span className="rounded bg-muted px-1.5 py-0.5 font-mono">{authType}</span>
-          ) : (
-            <span className="italic text-muted-foreground/40">Not configured</span>
-          )}
-        </div>
-
-        {/* Service Config */}
-        {configKeys.length > 0 && (
-          <details className="mt-2">
-            <summary className="cursor-pointer text-xs text-muted-foreground transition-colors hover:text-foreground">
-              Service Config ({configKeys.length} keys)
-            </summary>
-            <pre className="mt-1 max-h-40 overflow-auto rounded bg-muted p-2 text-xs leading-relaxed">
+        {/* Service config */}
+        {service.config && Object.keys(service.config).length > 0 && (
+          <div className="mt-2">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+              Config ({Object.keys(service.config).length} keys)
+            </span>
+            <pre className="mt-0.5 max-h-40 overflow-auto rounded bg-muted p-2 text-xs leading-relaxed">
               {JSON.stringify(service.config, null, 2)}
             </pre>
-          </details>
+          </div>
         )}
       </div>
 
-      {/* ================================================================ */}
-      {/*  FUNCTION LIST                                                    */}
-      {/* ================================================================ */}
+      {functions.length === 0 && (
+        <div className="flex h-32 items-center justify-center text-xs text-muted-foreground">
+          No functions registered.
+        </div>
+      )}
+
       {functions.length > 0 && (
-        <div className="shrink-0 border-t border-border/50 py-2">
-          <div className="flex flex-wrap gap-1">
+        <Tabs.Root
+          value={selectedFnId ?? undefined}
+          onValueChange={(e) => setSelectedFnId(e.value)}
+        >
+          {/* ================================================================ */}
+          {/*  FUNCTION TABS                                                    */}
+          {/* ================================================================ */}
+          <Tabs.List className="flex flex-wrap gap-1 border-t border-border/50 py-2">
             {functions.map((fn) => (
-              <button
+              <Tabs.Trigger
                 key={fn.function_id}
-                type="button"
-                onClick={() => setSelectedFnId(
-                  selectedFnId === fn.function_id ? null : fn.function_id,
-                )}
+                value={fn.function_id}
                 className={cn(
                   'rounded px-2 py-1 text-xs transition-colors',
-                  fn.function_id === selectedFnId
-                    ? 'bg-primary/10 text-primary font-medium'
-                    : 'bg-muted text-muted-foreground hover:text-foreground',
+                  'data-selected:bg-primary/10 data-selected:text-primary data-selected:font-medium',
+                  'bg-muted text-muted-foreground hover:text-foreground',
                   !fn.enabled && 'opacity-50',
                 )}
               >
                 {fn.function_name}
-              </button>
+              </Tabs.Trigger>
             ))}
-          </div>
-        </div>
-      )}
+            <Tabs.Indicator />
+          </Tabs.List>
 
-      {/* ================================================================ */}
-      {/*  FUNCTION CONTENT (full width)                                   */}
-      {/* ================================================================ */}
-      <ScrollArea className="min-h-0 flex-1 border-t border-border/50" viewportClass="pt-4">
-        {!selectedFn && (
-          <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
-            {functions.length === 0 ? 'No functions registered.' : 'Select a function above.'}
-          </div>
-        )}
+          {/* ================================================================ */}
+          {/*  FUNCTION CONTENT                                                */}
+          {/* ================================================================ */}
+          {!selectedFn && (
+            <div className="flex h-32 items-center justify-center text-xs text-muted-foreground">
+              Select a function above.
+            </div>
+          )}
 
         {selectedFn && (
           <div>
@@ -309,15 +284,16 @@ export function ServiceDetailRailView({
                 <code className="max-w-[44rem] truncate font-mono text-xs text-foreground/90">
                   {selectedFn.entrypoint}
                 </code>
-                <button
-                  type="button"
-                  onClick={() => handleCopyEndpoint(endpointTemplate)}
-                  className="rounded p-0.5 text-muted-foreground transition-colors hover:text-foreground"
-                  title="Copy endpoint URL"
-                >
-                  <IconClipboard size={12} />
-                </button>
-                {copiedEndpoint && <span className="text-[10px] text-primary">Copied!</span>}
+                <Clipboard.Root value={endpointTemplate}>
+                  <Clipboard.Trigger
+                    className="rounded p-0.5 text-muted-foreground transition-colors hover:text-foreground"
+                    title="Copy endpoint URL"
+                  >
+                    <Clipboard.Indicator copied={<IconCheck size={12} className="text-primary" />}>
+                      <IconCopy size={12} />
+                    </Clipboard.Indicator>
+                  </Clipboard.Trigger>
+                </Clipboard.Root>
               </div>
 
               {/* Description */}
@@ -397,13 +373,13 @@ export function ServiceDetailRailView({
                 </button>
               )}
 
-              <button
-                type="button"
-                className="inline-flex items-center gap-1 rounded bg-muted px-2 py-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
-                onClick={() => void navigator.clipboard.writeText(jsonStr)}
-              >
-                <IconClipboard size={13} /> Copy JSON
-              </button>
+              <Clipboard.Root value={jsonStr}>
+                <Clipboard.Trigger className="inline-flex items-center gap-1 rounded bg-muted px-2 py-1 text-xs text-muted-foreground transition-colors hover:text-foreground">
+                  <Clipboard.Indicator copied={<><IconCheck size={13} /> Copied</>}>
+                    <><IconCopy size={13} /> Copy JSON</>
+                  </Clipboard.Indicator>
+                </Clipboard.Trigger>
+              </Clipboard.Root>
             </div>
 
             {/* ---- Monaco (only when source open) ---- */}
@@ -455,6 +431,8 @@ export function ServiceDetailRailView({
             )}
           </div>
         )}
+      </Tabs.Root>
+      )}
       </ScrollArea>
     </div>
   );

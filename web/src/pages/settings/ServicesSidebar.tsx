@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { cn } from '@/lib/utils';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import type { ServiceFunctionRow, ServiceRow, ServiceTypeRow } from './services-panel.types';
 
 /* ------------------------------------------------------------------ */
@@ -57,11 +58,10 @@ export function ServicesSidebar({
 
   /* Filtered list */
   const filteredServices = useMemo(() => {
-    const rows = services;
-    if (!searchQuery.trim()) return rows;
+    if (!searchQuery.trim()) return services;
     const q = searchQuery.trim().toLowerCase();
     const matchingIds = new Set<string>();
-    for (const s of rows) {
+    for (const s of services) {
       if (
         s.service_name.toLowerCase().includes(q) ||
         s.service_type.toLowerCase().includes(q) ||
@@ -81,7 +81,7 @@ export function ServicesSidebar({
         matchingIds.add(fn.service_id);
       }
     }
-    return rows.filter((s) => matchingIds.has(s.service_id));
+    return services.filter((s) => matchingIds.has(s.service_id));
   }, [services, functions, searchQuery]);
 
   return (
@@ -122,13 +122,19 @@ export function ServicesSidebar({
                   <span className="rounded bg-muted px-1 py-px font-mono">
                     {service.service_type}
                   </span>
-                  <span
-                    className={cn(
-                      'inline-block h-1.5 w-1.5 rounded-full',
-                      healthDotClass(service.health_status),
-                    )}
-                    title={service.health_status}
-                  />
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span
+                        className={cn(
+                          'inline-block h-1.5 w-1.5 rounded-full',
+                          healthDotClass(service.health_status),
+                        )}
+                      />
+                    </TooltipTrigger>
+                    <TooltipContent className="px-2 py-1 text-xs">
+                      {service.health_status}
+                    </TooltipContent>
+                  </Tooltip>
                   {fnCount > 0 && (
                     <span className="text-muted-foreground/70">
                       {fnCount} fn{fnCount !== 1 ? 's' : ''}
