@@ -205,7 +205,7 @@ export default function SettingsAdmin() {
     return CATEGORIES.find((c) => c.id === selectedCategory) ?? null;
   }, [selectedCategory]);
 
-  const [categoryAction, setCategoryAction] = useState<ReactNode>(null);
+  const [categoryAction] = useState<ReactNode>(null);
 
   if (!selectedCategory) {
     return <Navigate to="/app/settings/admin/services" replace />;
@@ -237,7 +237,7 @@ export default function SettingsAdmin() {
               className="min-h-0 flex-1 overflow-hidden p-3 md:p-4"
               style={{ backgroundColor: styleTokens.adminConfig.contentBackground }}
             >
-              <ServicesPanel onSetHeaderAction={setCategoryAction} />
+              <ServicesPanel />
             </div>
           ) : selectedCategory === 'integration-catalog' ? (
             <div
