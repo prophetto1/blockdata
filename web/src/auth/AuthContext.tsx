@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 import { TABLES } from '@/lib/tables';
@@ -17,10 +17,19 @@ type AuthState = {
 
 const AuthContext = createContext<AuthState | null>(null);
 
+const DEV_AUTO_LOGIN_ENABLED = import.meta.env.VITE_DEV_AUTO_LOGIN_ENABLED !== 'false';
+const DEV_AUTO_LOGIN_EMAIL = (
+  import.meta.env.VITE_DEV_AUTO_LOGIN_EMAIL as string | undefined
+)?.trim() || 'jondev717@gmail.com';
+const DEV_AUTO_LOGIN_PASSWORD = (
+  import.meta.env.VITE_DEV_AUTO_LOGIN_PASSWORD as string | undefined
+) || 'TestPass123!';
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<ProfileRow | null>(null);
+  const autoLoginAttemptedRef = useRef(false);
 
   useEffect(() => {
     const loadProfile = async (userId: string) => {
@@ -54,6 +63,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if (loading) return;
+    if (session) return;
+    if (!DEV_AUTO_LOGIN_ENABLED) return;
+    if (!DEV_AUTO_LOGIN_EMAIL || !DEV_AUTO_LOGIN_PASSWORD) return;
+    if (autoLoginAttemptedRef.current) return;
+    autoLoginAttemptedRef.current = true;
+
+    void supabase.auth.signInWithPassword({
+      email: DEV_AUTO_LOGIN_EMAIL,
+      password: DEV_AUTO_LOGIN_PASSWORD,
+    });
+  }, [loading, session]);
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });

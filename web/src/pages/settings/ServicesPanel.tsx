@@ -10,13 +10,12 @@ import type {
 import {
   loadAllServices,
   loadPublicServices,
-  saveFunction,
+  saveFunctionRaw,
   subscribeToServiceChanges,
   toggleFunctionEnabled,
 } from './services-panel.api';
 import { ServicesSidebar } from './ServicesSidebar';
 import { ServiceDetailRailView } from './ServiceDetailRailView';
-import { functionToDraft } from './services-panel.types';
 
 /* ------------------------------------------------------------------ */
 /*  Props                                                              */
@@ -128,10 +127,9 @@ export function ServicesPanel({ mode = 'admin' }: ServicesPanelProps) {
   };
 
   const handleSaveFunctionJson = (fn: ServiceFunctionRow, json: Record<string, unknown>) => {
-    const draft = functionToDraft({ ...fn, ...json } as ServiceFunctionRow);
     void withMutation(
       `function:${fn.function_id}`,
-      () => saveFunction(fn.function_id, draft),
+      () => saveFunctionRaw(fn.function_id, json),
       `${fn.function_name} saved.`,
     );
   };

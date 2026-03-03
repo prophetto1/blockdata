@@ -107,12 +107,12 @@ export async function loadAllServices(): Promise<
         .order('service_type'),
       supabase
         .from('service_registry')
-        .select('service_id,service_type,service_name,base_url,health_status,last_heartbeat,enabled,config,created_at,updated_at')
+        .select('*')
         .order('service_type')
         .order('service_name'),
       supabase
         .from('service_functions')
-        .select('function_id,service_id,function_name,function_type,label,description,entrypoint,http_method,parameter_schema,result_schema,enabled,tags,created_at,updated_at')
+        .select('*')
         .order('service_id')
         .order('function_name'),
     ]);
@@ -151,13 +151,13 @@ export async function loadPublicServices(): Promise<
         .order('service_type'),
       supabase
         .from('service_registry')
-        .select('service_id,service_type,service_name,base_url,health_status,last_heartbeat,enabled,config,created_at,updated_at')
+        .select('*')
         .eq('enabled', true)
         .order('service_type')
         .order('service_name'),
       supabase
         .from('service_functions')
-        .select('function_id,service_id,function_name,function_type,label,description,entrypoint,http_method,parameter_schema,result_schema,enabled,tags,created_at,updated_at')
+        .select('*')
         .eq('enabled', true)
         .order('service_id')
         .order('function_name'),
@@ -350,6 +350,18 @@ export async function createFunction(
 /* ------------------------------------------------------------------ */
 /*  Import                                                             */
 /* ------------------------------------------------------------------ */
+
+/**
+ * Save a function using raw JSON from the Monaco editor.
+ * Sends all provided fields to the PATCH endpoint, stripping read-only keys.
+ */
+export async function saveFunctionRaw(
+  functionId: string,
+  json: Record<string, unknown>,
+): Promise<MutationResult> {
+  const { function_id, service_id, created_at, updated_at, ...payload } = json;
+  return pipelineMutation('PATCH', `/admin/services/function/${functionId}`, payload);
+}
 
 export async function importRegistryJson(
   rawText: string,

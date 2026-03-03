@@ -17,7 +17,6 @@ import Schemas from '@/pages/Schemas';
 import SchemaLayout from '@/pages/SchemaLayout';
 import RunDetail from '@/pages/RunDetail';
 import { SettingsLayout, SettingsAccount, SettingsAiOverview, SettingsProviderForm, SettingsModelRoles, SettingsAdmin, SettingsGridSample } from '@/pages/settings';
-import LoginSplit from '@/pages/LoginSplit';
 import PlatformLanding from '@/pages/experiments/PlatformLanding';
 import Landing from '@/pages/Landing';
 import Agents from '@/pages/Agents';
@@ -79,7 +78,7 @@ export const router = createBrowserRouter([
   {
     element: <PublicFullBleedLayout />,
     children: [
-      { path: '/login', element: <LoginSplit /> },
+      { path: '/login', element: <Navigate to="/app" replace /> },
       { path: '/register', element: <Navigate to="/early-access" replace /> },
       { path: '/early-access', element: <EarlyAccess /> },
     ],

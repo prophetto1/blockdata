@@ -1,0 +1,36 @@
+---
+title: "Work Tracker"
+description: "Live implementation tracker for ongoing technical work."
+---
+
+## Purpose
+
+Use this page to track implementation status, blockers, and verification evidence across active workstreams.
+
+## Status Legend
+
+- `Not Started` — not begun
+- `In Progress` — active work
+- `Blocked` — waiting on dependency/decision
+- `Review` — ready for review/verification
+- `Done` — merged/complete
+
+## Active Work Table
+
+| Workstream | Scope | Owner | Status | Last Updated | Next Milestone | Evidence / Links | Notes / Blockers |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Services Registry Expansion | Add 28 pipeline-worker functions, idempotent upsert migration | `@owner` | In Progress | 2026-03-03 | Migration validated in DB | `supabase/migrations/...` | Confirm function count is exactly 28 |
+| Services Frontend Contracts | Extend `ServiceRow` + `ServiceFunctionRow`, update API selects | `@owner` | In Progress | 2026-03-03 | Type updates compiled | `web/src/pages/settings/services-panel.types.ts` | Add `flow` in `FUNCTION_TYPE_OPTIONS` |
+| Admin Services QA | Cross-page behavior checks in Settings shell | `@owner` | Review | 2026-03-03 | Superuser + non-superuser UX pass | `/app/settings/admin/services` | Data calls currently require valid auth session |
+
+## Checkpoint Log
+
+| Date | Checkpoint | Result | Follow-up |
+| --- | --- | --- | --- |
+| 2026-03-03 | Initial tracker created | Done | Keep table updated per implementation step |
+
+## Usage Notes
+
+- Update `Last Updated` whenever status or scope changes.
+- Keep evidence links specific (file path, PR, commit, test output).
+- If blocked, include the concrete dependency/decision needed to unblock.

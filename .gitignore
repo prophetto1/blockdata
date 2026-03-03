@@ -63,3 +63,4 @@ supabase/.temp/
 # Infra scratch files
 infra/
 scripts/kestra-plugin-details.json
+web-docs/*.log

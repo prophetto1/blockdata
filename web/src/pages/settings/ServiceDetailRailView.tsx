@@ -51,9 +51,11 @@ function healthDotClass(status: string): string {
 /* ------------------------------------------------------------------ */
 
 const JSON_FIELD_ORDER = [
-  'function_name', 'function_type', 'label', 'description',
-  'http_method', 'entrypoint', 'enabled', 'tags',
-  'parameter_schema', 'result_schema',
+  'function_name', 'function_type', 'label', 'description', 'long_description',
+  'http_method', 'entrypoint', 'content_type', 'enabled', 'deprecated', 'beta',
+  'tags', 'source_task_class', 'plugin_group', 'when_to_use', 'provider_docs_url',
+  'parameter_schema', 'result_schema', 'request_example', 'response_example',
+  'examples', 'metrics', 'auth_type', 'auth_config',
 ] as const;
 
 function buildFunctionJson(fn: ServiceFunctionRow): Record<string, unknown> {
@@ -180,20 +182,22 @@ export function ServiceDetailRailView({
               </Clipboard.Trigger>
             </Clipboard.Root>
           </div>
-          {(() => {
-            const authType = service.config
-              ? (service.config.auth_type as string) ?? (service.config.auth as string) ?? null
-              : null;
-            return authType ? (
-              <div className="flex items-center gap-1.5">
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
-                  Auth
-                </span>
-                <span className="rounded bg-muted px-1.5 py-0.5 font-mono">{authType}</span>
-              </div>
-            ) : null;
-          })()}
+          {service.auth_type && service.auth_type !== 'none' && (
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+                Auth
+              </span>
+              <span className="rounded bg-muted px-1.5 py-0.5 font-mono">{service.auth_type}</span>
+            </div>
+          )}
         </div>
+
+        {/* Service description */}
+        {service.description && (
+          <p className="mt-1.5 max-w-[70ch] text-xs leading-snug text-foreground/70">
+            {service.description}
+          </p>
+        )}
 
         {/* Service config */}
         {service.config && Object.keys(service.config).length > 0 && (
@@ -275,6 +279,16 @@ export function ServiceDetailRailView({
                 <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
                   {selectedFn.function_type}
                 </span>
+                {selectedFn.deprecated && (
+                  <span className="rounded bg-red-500/10 px-1.5 py-0.5 text-[10px] font-medium text-red-400">
+                    Deprecated
+                  </span>
+                )}
+                {selectedFn.beta && (
+                  <span className="rounded bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-medium text-amber-400">
+                    Beta
+                  </span>
+                )}
               </div>
 
               <div className="inline-flex max-w-full items-center gap-1.5 rounded-md border border-border/50 bg-muted/20 px-2 py-1 text-xs leading-tight">
@@ -301,6 +315,47 @@ export function ServiceDetailRailView({
                 <p className="max-w-[70ch] text-xs leading-snug text-foreground/70">
                   {selectedFn.description}
                 </p>
+              )}
+
+              {/* Source task class / plugin group */}
+              {selectedFn.source_task_class && (
+                <div className="flex flex-wrap items-center gap-2 text-[10px]">
+                  <span className="font-semibold uppercase tracking-wider text-muted-foreground/60">
+                    Task Class
+                  </span>
+                  <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-foreground/80">
+                    {selectedFn.source_task_class}
+                  </code>
+                  {selectedFn.plugin_group && (
+                    <>
+                      <span className="font-semibold uppercase tracking-wider text-muted-foreground/60">
+                        Group
+                      </span>
+                      <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-foreground/80">
+                        {selectedFn.plugin_group}
+                      </code>
+                    </>
+                  )}
+                </div>
+              )}
+
+              {/* When to use */}
+              {selectedFn.when_to_use && (
+                <p className="max-w-[70ch] text-xs leading-snug text-foreground/60 italic">
+                  {selectedFn.when_to_use}
+                </p>
+              )}
+
+              {/* Provider docs link */}
+              {selectedFn.provider_docs_url && (
+                <a
+                  href={selectedFn.provider_docs_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-primary hover:underline"
+                >
+                  Provider docs
+                </a>
               )}
             </div>
 

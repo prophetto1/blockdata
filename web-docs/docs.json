@@ -19,10 +19,10 @@
                    },
     "fonts":  {
                   "body":  {
-                               "family":  "IBM Plex Sans"
+                               "family":  "Inter"
                            },
                   "heading":  {
-                                  "family":  "IBM Plex Sans"
+                                  "family":  "Inter"
                               }
               },
     "styling":  {
@@ -42,43 +42,56 @@
                      "timestamp":  true
                  },
     "navigation":  {
-                       "groups":  [
-                                      {
-                                          "group":  "API",
-                                          "pages":  [
-                                                        "api/overview",
-                                                        "api/core",
-                                                        "api/http",
-                                                        "api/scripts",
-                                                        "api/eyecite"
-                                                    ]
-                                      },
-                                      {
-                                          "group":  "Infrastructure",
-                                          "pages":  [
-                                                        "s",
-                                                        "edge-functions",
-                                                        "infrastructure/service-registry-schema",
-                                                        "infrastructure/plugin-registry",
-                                                        "infrastructure/eyecite-reference"
-                                                    ]
-                                      },
-                                      {
-                                          "group":  "Frontend",
-                                          "pages":  [
-                                                        "frontend/app-shell",
-                                                        "frontend/design-system"
-                                                    ]
-                                      },
-                                      {
-                                          "group":  "Plans",
-                                          "pages":  [
-                                                        "plans/services-scalability-plan",
-                                                        "plans/edge-to-fastapi-migration",
-                                                        "plans/execution-system"
-                                                    ]
-                                      }
-                                  ]
+                       "tabs":  [
+                                    {
+                                        "tab":  "API",
+                                        "icon":  "square-terminal",
+                                        "pages":  [
+                                                      "api/overview",
+                                                      "api/core",
+                                                      "api/http",
+                                                      "api/scripts",
+                                                      "api/eyecite"
+                                                  ]
+                                    },
+                                    {
+                                        "tab":  "Infrastructure",
+                                        "icon":  "server",
+                                        "pages":  [
+                                                      "s",
+                                                      "edge-functions",
+                                                      "infrastructure/service-registry-schema",
+                                                      "infrastructure/plugin-registry",
+                                                      "infrastructure/eyecite-reference"
+                                                  ]
+                                    },
+                                    {
+                                        "tab":  "Frontend",
+                                        "icon":  "layout-panel-left",
+                                        "pages":  [
+                                                      "frontend/app-shell",
+                                                      "frontend/design-system"
+                                                  ]
+                                    },
+                                    {
+                                        "tab":  "Plans",
+                                        "icon":  "map",
+                                        "pages":  [
+                                                      "plans/services-scalability-plan",
+                                                      "plans/edge-to-fastapi-migration",
+                                                      "plans/execution-system"
+                                                  ]
+                                    },
+                                    {
+                                        "tab":  "Lab",
+                                        "icon":  "flask-conical",
+                                        "pages":  [
+                                                      "guides/markdown-syntax-lab",
+                                                      "assessments/work-tracker",
+                                                      "assessments/2026-03-03-superuser-services-page-assessment"
+                                                  ]
+                                    }
+                                ]
                    },
     "navbar":  {
                    "links":  [

@@ -38,15 +38,8 @@ def _now_iso() -> str:
 async def list_services(su: SuperuserContext = Depends(require_superuser)):
     sb = get_supabase_admin()
 
-    services_q = sb.table("service_registry").select(
-        "service_id,service_type,service_name,base_url,health_status,"
-        "last_heartbeat,enabled,config,created_at,updated_at"
-    ).execute()
-    functions_q = sb.table("service_functions").select(
-        "function_id,service_id,function_name,function_type,label,description,"
-        "entrypoint,http_method,parameter_schema,result_schema,enabled,tags,"
-        "created_at,updated_at"
-    ).execute()
+    services_q = sb.table("service_registry").select("*").execute()
+    functions_q = sb.table("service_functions").select("*").execute()
     types_q = sb.table("service_type_catalog").select(
         "service_type,label,description"
     ).execute()
@@ -74,6 +67,10 @@ class CreateServiceBody(BaseModel):
     health_status: str = "unknown"
     enabled: bool = True
     config: dict[str, Any] = Field(default_factory=dict)
+    description: str | None = None
+    auth_type: str = "none"
+    auth_config: dict[str, Any] = Field(default_factory=dict)
+    docs_url: str | None = None
 
 
 @router.post("/service")
@@ -92,6 +89,10 @@ async def create_service(
         "health_status": body.health_status,
         "enabled": body.enabled,
         "config": body.config,
+        "description": body.description,
+        "auth_type": body.auth_type,
+        "auth_config": body.auth_config,
+        "docs_url": body.docs_url,
     }).execute()
 
     row = (result.data or [{}])[0]
@@ -109,6 +110,10 @@ class UpdateServiceBody(BaseModel):
     health_status: str | None = None
     enabled: bool | None = None
     config: dict[str, Any] | None = None
+    description: str | None = None
+    auth_type: str | None = None
+    auth_config: dict[str, Any] | None = None
+    docs_url: str | None = None
 
 
 @router.patch("/service/{service_id}")
@@ -132,6 +137,14 @@ async def update_service(
         update["enabled"] = body.enabled
     if body.config is not None:
         update["config"] = body.config
+    if body.description is not None:
+        update["description"] = body.description
+    if body.auth_type is not None:
+        update["auth_type"] = body.auth_type.strip()
+    if body.auth_config is not None:
+        update["auth_config"] = body.auth_config
+    if body.docs_url is not None:
+        update["docs_url"] = body.docs_url.strip()
 
     if not update:
         raise HTTPException(400, "No updatable fields provided")
@@ -167,12 +180,26 @@ class CreateFunctionBody(BaseModel):
     function_type: str
     label: str
     description: str | None = None
+    long_description: str | None = None
     entrypoint: str
     http_method: str = "POST"
+    content_type: str = "application/json"
     parameter_schema: list[dict[str, Any]] = Field(default_factory=list)
     result_schema: dict[str, Any] | None = None
+    request_example: dict[str, Any] | None = None
+    response_example: dict[str, Any] | None = None
+    examples: list[Any] = Field(default_factory=list)
+    metrics: list[Any] = Field(default_factory=list)
     enabled: bool = True
+    deprecated: bool = False
+    beta: bool = False
     tags: list[str] = Field(default_factory=list)
+    auth_type: str | None = None
+    auth_config: dict[str, Any] | None = None
+    when_to_use: str | None = None
+    provider_docs_url: str | None = None
+    source_task_class: str | None = None
+    plugin_group: str | None = None
 
 
 @router.post("/function")
@@ -192,12 +219,26 @@ async def create_function(
         "function_type": body.function_type,
         "label": body.label.strip(),
         "description": body.description,
+        "long_description": body.long_description,
         "entrypoint": body.entrypoint.strip(),
         "http_method": body.http_method.upper(),
+        "content_type": body.content_type,
         "parameter_schema": body.parameter_schema,
         "result_schema": body.result_schema,
+        "request_example": body.request_example,
+        "response_example": body.response_example,
+        "examples": body.examples,
+        "metrics": body.metrics,
         "enabled": body.enabled,
+        "deprecated": body.deprecated,
+        "beta": body.beta,
         "tags": body.tags,
+        "auth_type": body.auth_type,
+        "auth_config": body.auth_config,
+        "when_to_use": body.when_to_use,
+        "provider_docs_url": body.provider_docs_url,
+        "source_task_class": body.source_task_class,
+        "plugin_group": body.plugin_group,
     }).execute()
 
     row = (result.data or [{}])[0]
@@ -213,12 +254,26 @@ class UpdateFunctionBody(BaseModel):
     function_type: str | None = None
     label: str | None = None
     description: str | None = None
+    long_description: str | None = None
     entrypoint: str | None = None
     http_method: str | None = None
+    content_type: str | None = None
     parameter_schema: list[dict[str, Any]] | None = None
     result_schema: dict[str, Any] | None = None
+    request_example: dict[str, Any] | None = None
+    response_example: dict[str, Any] | None = None
+    examples: list[Any] | None = None
+    metrics: list[Any] | None = None
     enabled: bool | None = None
+    deprecated: bool | None = None
+    beta: bool | None = None
     tags: list[str] | None = None
+    auth_type: str | None = None
+    auth_config: dict[str, Any] | None = None
+    when_to_use: str | None = None
+    provider_docs_url: str | None = None
+    source_task_class: str | None = None
+    plugin_group: str | None = None
 
 
 @router.patch("/function/{function_id}")
@@ -227,31 +282,33 @@ async def update_function(
     body: UpdateFunctionBody,
     su: SuperuserContext = Depends(require_superuser),
 ):
+    # Validate constrained fields
+    if body.function_type is not None and body.function_type not in FUNCTION_TYPES:
+        raise HTTPException(400, f"function_type must be one of: {', '.join(sorted(FUNCTION_TYPES))}")
+    if body.http_method is not None and body.http_method.upper() not in HTTP_METHODS:
+        raise HTTPException(400, f"http_method must be one of: {', '.join(sorted(HTTP_METHODS))}")
+
+    # Fields that need .strip()
+    STRIP_FIELDS = {"function_name", "label", "entrypoint", "source_task_class", "plugin_group",
+                    "when_to_use", "provider_docs_url", "content_type", "auth_type"}
+    # Fields passed through as-is
+    PASS_FIELDS = {"description", "long_description", "parameter_schema", "result_schema",
+                   "request_example", "response_example", "examples", "metrics",
+                   "enabled", "deprecated", "beta", "tags", "auth_config"}
+
     update: dict[str, Any] = {}
-    if body.function_name is not None:
-        update["function_name"] = body.function_name.strip()
+    for field in STRIP_FIELDS:
+        val = getattr(body, field, None)
+        if val is not None:
+            update[field] = val.strip() if isinstance(val, str) else val
+    for field in PASS_FIELDS:
+        val = getattr(body, field, None)
+        if val is not None:
+            update[field] = val
     if body.function_type is not None:
-        if body.function_type not in FUNCTION_TYPES:
-            raise HTTPException(400, f"function_type must be one of: {', '.join(sorted(FUNCTION_TYPES))}")
         update["function_type"] = body.function_type
-    if body.label is not None:
-        update["label"] = body.label.strip()
-    if body.description is not None:
-        update["description"] = body.description
-    if body.entrypoint is not None:
-        update["entrypoint"] = body.entrypoint.strip()
     if body.http_method is not None:
-        if body.http_method.upper() not in HTTP_METHODS:
-            raise HTTPException(400, f"http_method must be one of: {', '.join(sorted(HTTP_METHODS))}")
         update["http_method"] = body.http_method.upper()
-    if body.parameter_schema is not None:
-        update["parameter_schema"] = body.parameter_schema
-    if body.result_schema is not None:
-        update["result_schema"] = body.result_schema
-    if body.enabled is not None:
-        update["enabled"] = body.enabled
-    if body.tags is not None:
-        update["tags"] = body.tags
 
     if not update:
         raise HTTPException(400, "No updatable fields provided")

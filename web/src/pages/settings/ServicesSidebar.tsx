@@ -76,7 +76,9 @@ export function ServicesSidebar({
         fn.label.toLowerCase().includes(q) ||
         (fn.description ?? '').toLowerCase().includes(q) ||
         fn.function_type.toLowerCase().includes(q) ||
-        (fn.tags ?? []).some((t) => t.toLowerCase().includes(q))
+        (fn.tags ?? []).some((t) => t.toLowerCase().includes(q)) ||
+        (fn.source_task_class ?? '').toLowerCase().includes(q) ||
+        (fn.plugin_group ?? '').toLowerCase().includes(q)
       ) {
         matchingIds.add(fn.service_id);
       }

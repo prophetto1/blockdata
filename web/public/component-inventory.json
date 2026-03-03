@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-03-02T21:10:55.969Z",
+  "generatedAt": "2026-03-03T08:31:05.517Z",
   "scope": "auth",
   "pages": [
     {
@@ -1431,24 +1431,6 @@
       ]
     },
     {
-      "page": "src/pages/SandboxServicesReplica.tsx",
-      "componentCount": 1,
-      "categoryCounts": {
-        "relative-local": 1
-      },
-      "components": [
-        {
-          "component": "ServicesPageReplica",
-          "usedAs": "ServicesPageReplica",
-          "source": "../../../sandbox/ServicesPageReplica",
-          "importKind": "default",
-          "importedAs": "default",
-          "category": "relative-local",
-          "definition": "ServicesPageReplica comes from ../../../sandbox/ServicesPageReplica (default import of default)"
-        }
-      ]
-    },
-    {
       "page": "src/pages/SchemaLayout.tsx",
       "componentCount": 25,
       "categoryCounts": {
@@ -2551,15 +2533,42 @@
     },
     {
       "page": "src/pages/settings/ServiceDetailRailView.tsx",
-      "componentCount": 11,
+      "componentCount": 21,
       "categoryCounts": {
+        "ark-ui": 11,
         "relative-local": 1,
         "tabler-icons": 4,
         "external-package": 1,
-        "local-components": 1,
-        "ark-ui": 4
+        "local-components": 4
       },
       "components": [
+        {
+          "component": "Clipboard",
+          "usedAs": "Clipboard.Indicator",
+          "source": "@ark-ui/react/clipboard",
+          "importKind": "named",
+          "importedAs": "Clipboard",
+          "category": "ark-ui",
+          "definition": "Clipboard.Indicator comes from @ark-ui/react/clipboard (named import of Clipboard)"
+        },
+        {
+          "component": "Clipboard",
+          "usedAs": "Clipboard.Root",
+          "source": "@ark-ui/react/clipboard",
+          "importKind": "named",
+          "importedAs": "Clipboard",
+          "category": "ark-ui",
+          "definition": "Clipboard.Root comes from @ark-ui/react/clipboard (named import of Clipboard)"
+        },
+        {
+          "component": "Clipboard",
+          "usedAs": "Clipboard.Trigger",
+          "source": "@ark-ui/react/clipboard",
+          "importKind": "named",
+          "importedAs": "Clipboard",
+          "category": "ark-ui",
+          "definition": "Clipboard.Trigger comes from @ark-ui/react/clipboard (named import of Clipboard)"
+        },
         {
           "component": "FunctionReferenceCard",
           "usedAs": "FunctionReferenceCard",
@@ -2570,13 +2579,13 @@
           "definition": "FunctionReferenceCard comes from ./FunctionReferenceCard (named import of FunctionReferenceCard)"
         },
         {
-          "component": "IconClipboard",
-          "usedAs": "IconClipboard",
+          "component": "IconCheck",
+          "usedAs": "IconCheck",
           "source": "@tabler/icons-react",
           "importKind": "named",
-          "importedAs": "IconClipboard",
+          "importedAs": "IconCheck",
           "category": "tabler-icons",
-          "definition": "IconClipboard comes from @tabler/icons-react (named import of IconClipboard)"
+          "definition": "IconCheck comes from @tabler/icons-react (named import of IconCheck)"
         },
         {
           "component": "IconCode",
@@ -2588,6 +2597,15 @@
           "definition": "IconCode comes from @tabler/icons-react (named import of IconCode)"
         },
         {
+          "component": "IconCopy",
+          "usedAs": "IconCopy",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconCopy",
+          "category": "tabler-icons",
+          "definition": "IconCopy comes from @tabler/icons-react (named import of IconCopy)"
+        },
+        {
           "component": "IconDeviceFloppy",
           "usedAs": "IconDeviceFloppy",
           "source": "@tabler/icons-react",
@@ -2595,15 +2613,6 @@
           "importedAs": "IconDeviceFloppy",
           "category": "tabler-icons",
           "definition": "IconDeviceFloppy comes from @tabler/icons-react (named import of IconDeviceFloppy)"
-        },
-        {
-          "component": "IconX",
-          "usedAs": "IconX",
-          "source": "@tabler/icons-react",
-          "importKind": "named",
-          "importedAs": "IconX",
-          "category": "tabler-icons",
-          "definition": "IconX comes from @tabler/icons-react (named import of IconX)"
         },
         {
           "component": "MonacoEditor",
@@ -2658,6 +2667,69 @@
           "importedAs": "Switch",
           "category": "ark-ui",
           "definition": "Switch.Thumb comes from @ark-ui/react/switch (named import of Switch)"
+        },
+        {
+          "component": "Tabs",
+          "usedAs": "Tabs.Indicator",
+          "source": "@ark-ui/react/tabs",
+          "importKind": "named",
+          "importedAs": "Tabs",
+          "category": "ark-ui",
+          "definition": "Tabs.Indicator comes from @ark-ui/react/tabs (named import of Tabs)"
+        },
+        {
+          "component": "Tabs",
+          "usedAs": "Tabs.List",
+          "source": "@ark-ui/react/tabs",
+          "importKind": "named",
+          "importedAs": "Tabs",
+          "category": "ark-ui",
+          "definition": "Tabs.List comes from @ark-ui/react/tabs (named import of Tabs)"
+        },
+        {
+          "component": "Tabs",
+          "usedAs": "Tabs.Root",
+          "source": "@ark-ui/react/tabs",
+          "importKind": "named",
+          "importedAs": "Tabs",
+          "category": "ark-ui",
+          "definition": "Tabs.Root comes from @ark-ui/react/tabs (named import of Tabs)"
+        },
+        {
+          "component": "Tabs",
+          "usedAs": "Tabs.Trigger",
+          "source": "@ark-ui/react/tabs",
+          "importKind": "named",
+          "importedAs": "Tabs",
+          "category": "ark-ui",
+          "definition": "Tabs.Trigger comes from @ark-ui/react/tabs (named import of Tabs)"
+        },
+        {
+          "component": "Tooltip",
+          "usedAs": "Tooltip",
+          "source": "@/components/ui/tooltip",
+          "importKind": "named",
+          "importedAs": "Tooltip",
+          "category": "local-components",
+          "definition": "Tooltip comes from @/components/ui/tooltip (named import of Tooltip)"
+        },
+        {
+          "component": "TooltipContent",
+          "usedAs": "TooltipContent",
+          "source": "@/components/ui/tooltip",
+          "importKind": "named",
+          "importedAs": "TooltipContent",
+          "category": "local-components",
+          "definition": "TooltipContent comes from @/components/ui/tooltip (named import of TooltipContent)"
+        },
+        {
+          "component": "TooltipTrigger",
+          "usedAs": "TooltipTrigger",
+          "source": "@/components/ui/tooltip",
+          "importKind": "named",
+          "importedAs": "TooltipTrigger",
+          "category": "local-components",
+          "definition": "TooltipTrigger comes from @/components/ui/tooltip (named import of TooltipTrigger)"
         }
       ]
     },
@@ -2727,9 +2799,39 @@
     },
     {
       "page": "src/pages/settings/ServicesSidebar.tsx",
-      "componentCount": 0,
-      "categoryCounts": {},
-      "components": []
+      "componentCount": 3,
+      "categoryCounts": {
+        "local-components": 3
+      },
+      "components": [
+        {
+          "component": "Tooltip",
+          "usedAs": "Tooltip",
+          "source": "@/components/ui/tooltip",
+          "importKind": "named",
+          "importedAs": "Tooltip",
+          "category": "local-components",
+          "definition": "Tooltip comes from @/components/ui/tooltip (named import of Tooltip)"
+        },
+        {
+          "component": "TooltipContent",
+          "usedAs": "TooltipContent",
+          "source": "@/components/ui/tooltip",
+          "importKind": "named",
+          "importedAs": "TooltipContent",
+          "category": "local-components",
+          "definition": "TooltipContent comes from @/components/ui/tooltip (named import of TooltipContent)"
+        },
+        {
+          "component": "TooltipTrigger",
+          "usedAs": "TooltipTrigger",
+          "source": "@/components/ui/tooltip",
+          "importKind": "named",
+          "importedAs": "TooltipTrigger",
+          "category": "local-components",
+          "definition": "TooltipTrigger comes from @/components/ui/tooltip (named import of TooltipTrigger)"
+        }
+      ]
     },
     {
       "page": "src/pages/settings/setting-card-shared.tsx",
@@ -4180,15 +4282,15 @@
       ]
     }
   ],
-  "totalComponentUsages": 415,
+  "totalComponentUsages": 427,
   "categoryTotals": {
     "external-package": 17,
-    "local-components": 113,
+    "local-components": 119,
     "tabler-icons": 83,
-    "ark-ui": 165,
+    "ark-ui": 172,
     "in-file component": 11,
     "unknown": 1,
-    "relative-local": 24,
+    "relative-local": 23,
     "local-pages": 1
   }
 }
