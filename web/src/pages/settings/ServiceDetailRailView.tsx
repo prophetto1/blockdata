@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import MonacoEditor from '@monaco-editor/react';
 import { Clipboard } from '@ark-ui/react/clipboard';
-import { Switch } from '@ark-ui/react/switch';
+import { JsonTreeView } from '@ark-ui/react/json-tree-view';
 import { Tabs } from '@ark-ui/react/tabs';
 import {
   IconCheck,
+  IconChevronRight,
   IconCode,
   IconCopy,
   IconDeviceFloppy,
@@ -24,7 +25,6 @@ type ServiceDetailRailViewProps = {
   service: ServiceRow;
   functions: ServiceFunctionRow[];
   savingKey: string | null;
-  onToggleFunctionEnabled: (fn: ServiceFunctionRow) => void;
   onSaveFunctionJson: (fn: ServiceFunctionRow, json: Record<string, unknown>) => void;
   isAdmin?: boolean;
 };
@@ -67,6 +67,32 @@ function buildFunctionJson(fn: ServiceFunctionRow): Record<string, unknown> {
 }
 
 /* ------------------------------------------------------------------ */
+/*  Compact JSON tree for service config                               */
+/* ------------------------------------------------------------------ */
+
+const configTreeRoot = [
+  'w-full font-mono text-foreground',
+  '[&_[data-part=branch-content]]:relative',
+  '[&_[data-part=branch-indent-guide]]:absolute [&_[data-part=branch-indent-guide]]:h-full [&_[data-part=branch-indent-guide]]:w-px [&_[data-part=branch-indent-guide]]:bg-border/40',
+  '[&_[data-part=branch-control]]:flex [&_[data-part=branch-control]]:select-none [&_[data-part=branch-control]]:rounded [&_[data-part=branch-control]]:hover:bg-white/5',
+  '[&_[data-part=branch-indicator]]:inline-flex [&_[data-part=branch-indicator]]:items-center [&_[data-part=branch-indicator]]:mr-1 [&_[data-part=branch-indicator]]:origin-center',
+  '[&_[data-part=branch-indicator][data-state=open]]:rotate-90',
+  '[&_[data-part=item]]:flex [&_[data-part=item]]:relative [&_[data-part=item]]:rounded [&_[data-part=item]]:hover:bg-white/5',
+  '[&_[data-part=item-text]]:flex [&_[data-part=item-text]]:items-baseline',
+  '[&_[data-part=branch-text]]:flex [&_[data-part=branch-text]]:items-baseline',
+].join(' ');
+
+const configTree = [
+  'flex flex-col text-[11px] leading-[1.7] font-mono',
+  '[&_svg]:w-3 [&_svg]:h-3',
+  '[&_[data-type=string]]:text-[var(--json-string)]',
+  '[&_[data-type=number]]:text-[var(--json-number)]',
+  '[&_[data-type=boolean]]:text-[var(--json-boolean)]',
+  '[&_[data-kind=key]]:text-[var(--json-key)]',
+  '[&_[data-kind=colon]]:text-muted-foreground/60 [&_[data-kind=colon]]:mx-0.5',
+].join(' ');
+
+/* ------------------------------------------------------------------ */
 /*  Component                                                          */
 /* ------------------------------------------------------------------ */
 
@@ -74,7 +100,6 @@ export function ServiceDetailRailView({
   service,
   functions,
   savingKey,
-  onToggleFunctionEnabled,
   onSaveFunctionJson,
   isAdmin = true,
 }: ServiceDetailRailViewProps) {
@@ -201,13 +226,15 @@ export function ServiceDetailRailView({
 
         {/* Service config */}
         {service.config && Object.keys(service.config).length > 0 && (
-          <div className="mt-2">
+          <div className="mt-2 max-w-md">
             <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
               Config ({Object.keys(service.config).length} keys)
             </span>
-            <pre className="mt-0.5 max-h-40 overflow-auto rounded bg-muted p-2 text-xs leading-relaxed">
-              {JSON.stringify(service.config, null, 2)}
-            </pre>
+            <div className="mt-0.5 rounded bg-muted p-2">
+              <JsonTreeView.Root defaultExpandedDepth={1} className={configTreeRoot} data={service.config}>
+                <JsonTreeView.Tree className={configTree} arrow={<IconChevronRight size={10} />} />
+              </JsonTreeView.Root>
+            </div>
           </div>
         )}
       </div>
@@ -255,27 +282,12 @@ export function ServiceDetailRailView({
 
         {selectedFn && (
           <div>
-            {/* Function header */}
+            {/* Function header — compact */}
             <div className="mb-2.5 space-y-1.5">
               <div className="flex flex-wrap items-center gap-2">
                 <h4 className="font-mono text-sm font-semibold text-foreground">
                   {selectedFn.function_name}
                 </h4>
-                {isAdmin && (
-                  <div className="inline-flex items-center">
-                    <Switch.Root
-                      checked={selectedFn.enabled}
-                      onCheckedChange={() => onToggleFunctionEnabled(selectedFn)}
-                      disabled={savingKey === `function:${selectedFn.function_id}`}
-                      className="inline-flex items-center"
-                    >
-                      <Switch.HiddenInput />
-                      <Switch.Control className="relative h-4 w-8 rounded-full border border-input bg-muted transition-colors data-[state=checked]:border-primary data-[state=checked]:bg-primary">
-                        <Switch.Thumb className="block h-3 w-3 translate-x-0 rounded-full bg-background shadow transition-transform data-[state=checked]:translate-x-4" />
-                      </Switch.Control>
-                    </Switch.Root>
-                  </div>
-                )}
                 <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
                   {selectedFn.function_type}
                 </span>
@@ -288,6 +300,16 @@ export function ServiceDetailRailView({
                   <span className="rounded bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-medium text-amber-400">
                     Beta
                   </span>
+                )}
+                {selectedFn.provider_docs_url && (
+                  <a
+                    href={selectedFn.provider_docs_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[10px] text-primary hover:underline"
+                  >
+                    Provider docs
+                  </a>
                 )}
               </div>
 
@@ -317,45 +339,33 @@ export function ServiceDetailRailView({
                 </p>
               )}
 
-              {/* Source task class / plugin group */}
-              {selectedFn.source_task_class && (
-                <div className="flex flex-wrap items-center gap-2 text-[10px]">
-                  <span className="font-semibold uppercase tracking-wider text-muted-foreground/60">
-                    Task Class
-                  </span>
-                  <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-foreground/80">
-                    {selectedFn.source_task_class}
-                  </code>
+              {/* Compact metadata line: task class, group, when_to_use */}
+              {(selectedFn.source_task_class || selectedFn.when_to_use) && (
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[10px]">
+                  {selectedFn.source_task_class && (
+                    <span className="inline-flex items-center gap-1">
+                      <span className="font-semibold uppercase tracking-wider text-muted-foreground/60">Task Class</span>
+                      <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-foreground/80">
+                        {selectedFn.source_task_class}
+                      </code>
+                    </span>
+                  )}
                   {selectedFn.plugin_group && (
-                    <>
-                      <span className="font-semibold uppercase tracking-wider text-muted-foreground/60">
-                        Group
-                      </span>
+                    <span className="inline-flex items-center gap-1">
+                      <span className="font-semibold uppercase tracking-wider text-muted-foreground/60">Group</span>
                       <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-foreground/80">
                         {selectedFn.plugin_group}
                       </code>
-                    </>
+                    </span>
                   )}
                 </div>
               )}
 
-              {/* When to use */}
+              {/* When to use — inline hint */}
               {selectedFn.when_to_use && (
-                <p className="max-w-[70ch] text-xs leading-snug text-foreground/60 italic">
+                <p className="max-w-[70ch] text-[11px] leading-snug text-foreground/50 italic">
                   {selectedFn.when_to_use}
                 </p>
-              )}
-
-              {/* Provider docs link */}
-              {selectedFn.provider_docs_url && (
-                <a
-                  href={selectedFn.provider_docs_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs text-primary hover:underline"
-                >
-                  Provider docs
-                </a>
               )}
             </div>
 
@@ -439,7 +449,7 @@ export function ServiceDetailRailView({
 
             {/* ---- Monaco (only when source open) ---- */}
             {sourceOpen && (
-              <div className="mt-2">
+              <div className="mt-2 max-w-3xl">
                 {jsonError && (
                   <div className="mb-2 rounded border border-red-500/30 bg-red-500/10 px-2 py-1 text-xs text-red-400">
                     {jsonError}

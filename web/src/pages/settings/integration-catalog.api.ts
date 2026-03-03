@@ -17,9 +17,9 @@ export type IntegrationCatalogItem = {
   task_schema?: Record<string, unknown> | null;
   task_markdown?: string | null;
   enabled: boolean;
-  mapped_service_id: string | null;
-  mapped_function_id: string | null;
-  mapping_notes: string | null;
+  mapped_service_id?: string | null;
+  mapped_function_id?: string | null;
+  mapping_notes?: string | null;
   source_updated_at: string | null;
   created_at: string | null;
 };

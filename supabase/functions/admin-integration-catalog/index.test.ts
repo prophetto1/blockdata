@@ -110,15 +110,16 @@ Deno.test("admin-integration-catalog GET returns items + mapping options", async
   assertEquals(body.functions.length, 1);
   assertEquals(body.items[0].task_class, "io.kestra.plugin.dbt.cli.DbtCLI");
   assertEquals(selectedColumns.includes("suggested_service_type"), false);
+  assertEquals(selectedColumns.includes("mapped_service_id"), false);
 });
 
-Deno.test("admin-integration-catalog PATCH updates mapping fields", async () => {
+Deno.test("admin-integration-catalog PATCH updates mapping fields for temp source", async () => {
   let updated: Record<string, unknown> | null = null;
   let whereId = "";
 
   const fakeAdminClient = {
     from: (table: string) => {
-      if (table !== "kestra_plugin_items") throw new Error(`Unexpected table: ${table}`);
+      if (table !== "integration_catalog_items_temp") throw new Error(`Unexpected table: ${table}`);
       return {
         update: (payload: Record<string, unknown>) => {
           updated = payload;
@@ -134,7 +135,7 @@ Deno.test("admin-integration-catalog PATCH updates mapping fields", async () => 
     },
   };
 
-  const req = new Request("https://example.com/functions/v1/admin-integration-catalog", {
+  const req = new Request("https://example.com/functions/v1/admin-integration-catalog?catalog_source=temp", {
     method: "PATCH",
     headers: {
       Authorization: "Bearer test",
@@ -167,7 +168,40 @@ Deno.test("admin-integration-catalog PATCH updates mapping fields", async () => 
   assertEquals(updated?.["mapped_function_id"], "fn-1");
   assertEquals(updated?.["enabled"], false);
   assertEquals(updated?.["mapping_notes"], "Approved by superuser");
-  assertEquals(typeof updated?.["updated_at"], "string");
+});
+
+Deno.test("admin-integration-catalog PATCH rejects mapping fields for primary source", async () => {
+  const fakeAdminClient = {
+    from: (_table: string) => ({
+      update: (_payload: Record<string, unknown>) => ({
+        eq: (_column: string, _value: string) => Promise.resolve({ error: null }),
+      }),
+    }),
+  };
+
+  const req = new Request("https://example.com/functions/v1/admin-integration-catalog", {
+    method: "PATCH",
+    headers: {
+      Authorization: "Bearer test",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      target: "item",
+      item_id: "i-1",
+      mapped_service_id: "svc-1",
+    }),
+  });
+
+  const resp = await handleAdminIntegrationCatalogRequest(req, {
+    requireSuperuser: () => Promise.resolve({ userId: "u1", email: "admin@example.com" }),
+    createAdminClient: (() => fakeAdminClient) as never,
+    fetch: (() => Promise.reject(new Error("not used"))) as never,
+    nowIso: () => "2026-02-28T00:00:00Z",
+  });
+  const body = await resp.json();
+
+  assertEquals(resp.status, 400);
+  assertEquals(body.error, "Mapping fields are only supported for catalog_source=temp");
 });
 
 Deno.test("admin-integration-catalog sync_kestra dry-run summarizes internal catalog rows", async () => {

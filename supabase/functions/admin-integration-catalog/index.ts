@@ -170,8 +170,11 @@ export async function handleAdminIntegrationCatalogRequest(
 
     if (req.method === "GET") {
       const includeSchema = url.searchParams.get("include") === "schema";
-      const lightSelect =
-        "item_id,source,external_id,plugin_name,plugin_title,plugin_group,plugin_version,categories,task_class,task_title,task_description,enabled,mapped_service_id,mapped_function_id,mapping_notes,source_updated_at,created_at";
+      const lightSelectBase =
+        "item_id,source,external_id,plugin_name,plugin_title,plugin_group,plugin_version,categories,task_class,task_title,task_description,enabled,source_updated_at,created_at";
+      const lightSelect = source === "temp"
+        ? `${lightSelectBase},mapped_service_id,mapped_function_id,mapping_notes`
+        : lightSelectBase;
       const fullSelect = lightSelect + ",task_schema,task_markdown";
 
       const [{ data: items, error: itemsErr }, { data: services, error: servicesErr }, {
@@ -348,35 +351,46 @@ export async function handleAdminIntegrationCatalogRequest(
       if (!itemId) return json(400, { error: "Missing item_id" });
 
       const update: Record<string, unknown> = {};
+      const touchesMappingFields = (
+        body.mapping_notes !== undefined
+        || body.mapped_service_id !== undefined
+        || body.mapped_function_id !== undefined
+      );
 
       if (body.enabled !== undefined) {
         if (typeof body.enabled !== "boolean") return json(400, { error: "enabled must be boolean" });
         update.enabled = body.enabled;
       }
 
-      if (body.mapping_notes !== undefined) {
-        if (!(typeof body.mapping_notes === "string" || body.mapping_notes === null)) {
-          return json(400, { error: "mapping_notes must be a string or null" });
+      if (source === "temp") {
+        if (body.mapping_notes !== undefined) {
+          if (!(typeof body.mapping_notes === "string" || body.mapping_notes === null)) {
+            return json(400, { error: "mapping_notes must be a string or null" });
+          }
+          update.mapping_notes = typeof body.mapping_notes === "string" ? body.mapping_notes : null;
         }
-        update.mapping_notes = typeof body.mapping_notes === "string" ? body.mapping_notes : null;
-      }
 
-      if (body.mapped_service_id !== undefined) {
-        if (!(typeof body.mapped_service_id === "string" || body.mapped_service_id === null)) {
-          return json(400, { error: "mapped_service_id must be a string or null" });
+        if (body.mapped_service_id !== undefined) {
+          if (!(typeof body.mapped_service_id === "string" || body.mapped_service_id === null)) {
+            return json(400, { error: "mapped_service_id must be a string or null" });
+          }
+          update.mapped_service_id = typeof body.mapped_service_id === "string"
+            ? (body.mapped_service_id.trim() || null)
+            : null;
         }
-        update.mapped_service_id = typeof body.mapped_service_id === "string"
-          ? (body.mapped_service_id.trim() || null)
-          : null;
-      }
 
-      if (body.mapped_function_id !== undefined) {
-        if (!(typeof body.mapped_function_id === "string" || body.mapped_function_id === null)) {
-          return json(400, { error: "mapped_function_id must be a string or null" });
+        if (body.mapped_function_id !== undefined) {
+          if (!(typeof body.mapped_function_id === "string" || body.mapped_function_id === null)) {
+            return json(400, { error: "mapped_function_id must be a string or null" });
+          }
+          update.mapped_function_id = typeof body.mapped_function_id === "string"
+            ? (body.mapped_function_id.trim() || null)
+            : null;
         }
-        update.mapped_function_id = typeof body.mapped_function_id === "string"
-          ? (body.mapped_function_id.trim() || null)
-          : null;
+      } else if (touchesMappingFields) {
+        return json(400, {
+          error: "Mapping fields are only supported for catalog_source=temp",
+        });
       }
 
       if (Object.keys(update).length === 0) {

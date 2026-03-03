@@ -1,11 +1,12 @@
 import { Clipboard } from '@ark-ui/react/clipboard';
-import { IconCheck, IconCopy } from '@tabler/icons-react';
+import { JsonTreeView } from '@ark-ui/react/json-tree-view';
+import { IconCheck, IconChevronRight, IconCopy } from '@tabler/icons-react';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import type { ParamDef, ServiceFunctionRow } from './services-panel.types';
 
 /* ------------------------------------------------------------------ */
-/*  ApiSheetSection — reusable section wrapper                         */
+/*  ApiSheetSection - reusable section wrapper                         */
 /* ------------------------------------------------------------------ */
 
 function ApiSheetSection({
@@ -64,17 +65,17 @@ function ParametersTable({ params }: { params: ParamDef[] }) {
                 {p.required ? (
                   <Badge variant="default" size="xs">yes</Badge>
                 ) : (
-                  <span className="text-muted-foreground/40">—</span>
+                  <span className="text-muted-foreground/40">-</span>
                 )}
               </td>
               <td className="px-2 py-1 font-mono text-muted-foreground/70">
-                {p.default !== undefined ? String(p.default) : '—'}
+                {p.default !== undefined ? String(p.default) : '-'}
               </td>
               <td className="max-w-[200px] truncate px-2 py-1 text-muted-foreground/70">
-                {p.values ? p.values.join(' | ') : '—'}
+                {p.values ? p.values.join(' | ') : '-'}
               </td>
               <td className="px-2 py-1 text-muted-foreground">
-                {p.description ?? '—'}
+                {p.description ?? '-'}
               </td>
             </tr>
           ))}
@@ -85,17 +86,48 @@ function ParametersTable({ params }: { params: ParamDef[] }) {
 }
 
 /* ------------------------------------------------------------------ */
-/*  JsonBlock — pre-formatted JSON with copy button                    */
+/*  JSON tree styles (mirrors Landing.tsx tokens)                      */
 /* ------------------------------------------------------------------ */
 
-function JsonBlock({ value }: { value: unknown }) {
+const jsonTreeRoot = [
+  'w-full font-mono text-foreground',
+  '[&_[data-part=branch-content]]:relative',
+  '[&_[data-part=branch-indent-guide]]:absolute [&_[data-part=branch-indent-guide]]:h-full [&_[data-part=branch-indent-guide]]:w-px [&_[data-part=branch-indent-guide]]:bg-border/40',
+  '[&_[data-part=branch-control]]:flex [&_[data-part=branch-control]]:select-none [&_[data-part=branch-control]]:rounded [&_[data-part=branch-control]]:hover:bg-white/5',
+  '[&_[data-part=branch-indicator]]:inline-flex [&_[data-part=branch-indicator]]:items-center [&_[data-part=branch-indicator]]:mr-1 [&_[data-part=branch-indicator]]:origin-center',
+  '[&_[data-part=branch-indicator][data-state=open]]:rotate-90',
+  '[&_[data-part=item]]:flex [&_[data-part=item]]:relative [&_[data-part=item]]:rounded [&_[data-part=item]]:hover:bg-white/5',
+  '[&_[data-part=item-text]]:flex [&_[data-part=item-text]]:items-baseline',
+  '[&_[data-part=branch-text]]:flex [&_[data-part=branch-text]]:items-baseline',
+].join(' ');
+
+const jsonTree = [
+  'flex flex-col text-[12px] leading-[1.8] font-mono',
+  '[&_svg]:w-3 [&_svg]:h-3',
+  '[&_[data-type=string]]:text-[var(--json-string)]',
+  '[&_[data-type=number]]:text-[var(--json-number)]',
+  '[&_[data-type=boolean]]:text-[var(--json-boolean)] [&_[data-type=boolean]]:font-semibold',
+  '[&_[data-type=null]]:text-[var(--json-null)] [&_[data-type=null]]:italic',
+  '[&_[data-kind=brace]]:text-foreground/60 [&_[data-kind=brace]]:font-bold',
+  '[&_[data-kind=key]]:text-[var(--json-key)] [&_[data-kind=key]]:font-medium',
+  '[&_[data-kind=colon]]:text-muted-foreground/60 [&_[data-kind=colon]]:mx-0.5',
+  '[&_[data-kind=preview-text]]:text-muted-foreground/50 [&_[data-kind=preview-text]]:italic',
+].join(' ');
+
+/* ------------------------------------------------------------------ */
+/*  JsonTreeBlock - interactive JSON tree with copy button             */
+/* ------------------------------------------------------------------ */
+
+function JsonTreeBlock({ value }: { value: unknown }) {
   const text = JSON.stringify(value, null, 2);
   return (
     <div className="relative">
       <ScrollArea className="max-h-50">
-        <pre className="rounded bg-muted p-2 pr-8 text-xs leading-relaxed">
-          {text}
-        </pre>
+        <div className="rounded bg-muted p-2 pr-8">
+          <JsonTreeView.Root defaultExpandedDepth={2} className={jsonTreeRoot} data={value}>
+            <JsonTreeView.Tree className={jsonTree} arrow={<IconChevronRight size={12} />} />
+          </JsonTreeView.Root>
+        </div>
       </ScrollArea>
       <Clipboard.Root value={text}>
         <Clipboard.Trigger
@@ -111,18 +143,10 @@ function JsonBlock({ value }: { value: unknown }) {
   );
 }
 
-/* ------------------------------------------------------------------ */
-/*  Props                                                              */
-/* ------------------------------------------------------------------ */
-
 type FunctionReferenceCardProps = {
   fn: ServiceFunctionRow;
   hideEndpoint?: boolean;
 };
-
-/* ------------------------------------------------------------------ */
-/*  Helpers                                                            */
-/* ------------------------------------------------------------------ */
 
 function isNonEmptyObject(v: unknown): v is Record<string, unknown> {
   return typeof v === 'object' && v !== null && !Array.isArray(v) && Object.keys(v).length > 0;
@@ -132,10 +156,6 @@ function isNonEmptyArray(v: unknown): v is unknown[] {
   return Array.isArray(v) && v.length > 0;
 }
 
-/* ------------------------------------------------------------------ */
-/*  FunctionReferenceCard                                              */
-/* ------------------------------------------------------------------ */
-
 export function FunctionReferenceCard({
   fn,
   hideEndpoint = false,
@@ -144,8 +164,8 @@ export function FunctionReferenceCard({
   const tags = fn.tags ?? [];
 
   return (
-    <dl className="divide-y divide-border/30">
-      {/* ---- Endpoint ---- */}
+    <div className="space-y-3">
+      {/* ---- Endpoint (optional) ---- */}
       {!hideEndpoint && (
         <ApiSheetSection label="Endpoint">
           <div className="flex items-center gap-2">
@@ -169,7 +189,7 @@ export function FunctionReferenceCard({
         </ApiSheetSection>
       )}
 
-      {/* ---- Content Type ---- */}
+      {/* ---- Content Type (rare, non-JSON only) ---- */}
       {fn.content_type && fn.content_type !== 'application/json' && (
         <ApiSheetSection label="Content Type">
           <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs text-foreground">
@@ -178,7 +198,7 @@ export function FunctionReferenceCard({
         </ApiSheetSection>
       )}
 
-      {/* ---- Long Description ---- */}
+      {/* ---- Details ---- */}
       {fn.long_description && (
         <ApiSheetSection label="Details">
           <p className="max-w-[70ch] text-xs leading-relaxed text-foreground/70 whitespace-pre-line">
@@ -187,88 +207,81 @@ export function FunctionReferenceCard({
         </ApiSheetSection>
       )}
 
-      {/* ---- Parameters ---- */}
-      <ApiSheetSection
-        label={`Parameters${params.length > 0 ? ` (${params.length})` : ''}`}
-        empty={params.length === 0}
-      >
-        <ParametersTable params={params} />
-      </ApiSheetSection>
-
-      {/* ---- Result Schema ---- */}
-      <ApiSheetSection
-        label="Result Schema"
-        empty={!isNonEmptyObject(fn.result_schema)}
-      >
-        <JsonBlock value={fn.result_schema} />
-      </ApiSheetSection>
-
-      {/* ---- Request Example ---- */}
-      <ApiSheetSection
-        label="Request Example"
-        empty={!isNonEmptyObject(fn.request_example)}
-      >
-        <JsonBlock value={fn.request_example} />
-      </ApiSheetSection>
-
-      {/* ---- Response Example ---- */}
-      <ApiSheetSection
-        label="Response Example"
-        empty={!isNonEmptyObject(fn.response_example)}
-      >
-        <JsonBlock value={fn.response_example} />
-      </ApiSheetSection>
-
-      {/* ---- Examples array ---- */}
-      {isNonEmptyArray(fn.examples) && (
-        <ApiSheetSection label={`Examples (${fn.examples.length})`}>
-          <JsonBlock value={fn.examples} />
-        </ApiSheetSection>
-      )}
-
-      {/* ---- Authentication ---- */}
-      <ApiSheetSection label="Authentication">
-        {fn.auth_type && fn.auth_type !== 'none' ? (
-          <div className="space-y-1">
-            <span className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs text-foreground">
+      {/* ---- Compact metadata bar: Auth + Tags ---- */}
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-1.5 border-t border-border/30 pt-2 text-xs">
+        <div className="flex items-center gap-1.5">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+            Auth
+          </span>
+          {fn.auth_type && fn.auth_type !== 'none' ? (
+            <span className="rounded bg-muted px-1.5 py-0.5 font-mono text-foreground">
               {fn.auth_type}
             </span>
-            {isNonEmptyObject(fn.auth_config) && (
-              <JsonBlock value={fn.auth_config} />
-            )}
-          </div>
-        ) : (
-          <span className="text-xs text-muted-foreground/60">
-            Inherits from service
-          </span>
-        )}
-      </ApiSheetSection>
-
-      {/* ---- Metadata row ---- */}
-      <ApiSheetSection label="Metadata">
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-          {tags.length > 0 && (
-            <span className="inline-flex items-center gap-1">
-              <span className="text-muted-foreground/50">tags:</span>
-              {tags.map((t) => (
-                <Badge key={t} variant="gray" size="xs">
-                  {t}
-                </Badge>
-              ))}
-            </span>
-          )}
-          {tags.length === 0 && (
-            <span className="text-muted-foreground/40">No tags</span>
+          ) : (
+            <span className="text-muted-foreground/50">Inherits</span>
           )}
         </div>
-      </ApiSheetSection>
+        <div className="flex items-center gap-1.5">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+            Tags
+          </span>
+          {tags.length > 0 ? (
+            tags.map((t) => (
+              <Badge key={t} variant="gray" size="xs">
+                {t}
+              </Badge>
+            ))
+          ) : (
+            <span className="text-muted-foreground/40">-</span>
+          )}
+        </div>
+      </div>
 
-      {/* ---- Metrics ---- */}
-      {isNonEmptyArray(fn.metrics) && (
-        <ApiSheetSection label={`Metrics (${fn.metrics.length})`}>
-          <JsonBlock value={fn.metrics} />
+      {/* ---- Parameters ---- */}
+      {params.length > 0 && (
+        <ApiSheetSection label={`Parameters (${params.length})`}>
+          <ParametersTable params={params} />
         </ApiSheetSection>
       )}
-    </dl>
+
+      {/* ---- JSON trees in balanced auto-fill grid ---- */}
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+        {isNonEmptyObject(fn.result_schema) && (
+          <ApiSheetSection label="Result Schema">
+            <JsonTreeBlock value={fn.result_schema} />
+          </ApiSheetSection>
+        )}
+
+        {isNonEmptyObject(fn.request_example) && (
+          <ApiSheetSection label="Request Example">
+            <JsonTreeBlock value={fn.request_example} />
+          </ApiSheetSection>
+        )}
+
+        {isNonEmptyObject(fn.response_example) && (
+          <ApiSheetSection label="Response Example">
+            <JsonTreeBlock value={fn.response_example} />
+          </ApiSheetSection>
+        )}
+
+        {isNonEmptyObject(fn.auth_config) && (
+          <ApiSheetSection label="Auth Config">
+            <JsonTreeBlock value={fn.auth_config} />
+          </ApiSheetSection>
+        )}
+
+        {isNonEmptyArray(fn.examples) && (
+          <ApiSheetSection label={`Examples (${fn.examples.length})`}>
+            <JsonTreeBlock value={fn.examples} />
+          </ApiSheetSection>
+        )}
+
+        {isNonEmptyArray(fn.metrics) && (
+          <ApiSheetSection label={`Metrics (${fn.metrics.length})`}>
+            <JsonTreeBlock value={fn.metrics} />
+          </ApiSheetSection>
+        )}
+      </div>
+    </div>
   );
 }

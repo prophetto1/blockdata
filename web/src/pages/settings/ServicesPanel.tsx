@@ -12,7 +12,6 @@ import {
   loadPublicServices,
   saveFunctionRaw,
   subscribeToServiceChanges,
-  toggleFunctionEnabled,
 } from './services-panel.api';
 import { ServicesSidebar } from './ServicesSidebar';
 import { ServiceDetailRailView } from './ServiceDetailRailView';
@@ -118,14 +117,6 @@ export function ServicesPanel({ mode = 'admin' }: ServicesPanelProps) {
     setSavingKey(null);
   };
 
-  const handleToggleFunctionEnabled = (fn: ServiceFunctionRow) => {
-    void withMutation(
-      `function:${fn.function_id}`,
-      () => toggleFunctionEnabled(fn.function_id, !fn.enabled),
-      `${fn.function_name} ${fn.enabled ? 'disabled' : 'enabled'}.`,
-    );
-  };
-
   const handleSaveFunctionJson = (fn: ServiceFunctionRow, json: Record<string, unknown>) => {
     void withMutation(
       `function:${fn.function_id}`,
@@ -189,7 +180,6 @@ export function ServicesPanel({ mode = 'admin' }: ServicesPanelProps) {
             service={selectedService}
             functions={functionsForSelected}
             savingKey={savingKey}
-            onToggleFunctionEnabled={handleToggleFunctionEnabled}
             onSaveFunctionJson={handleSaveFunctionJson}
             isAdmin={isAdmin}
           />

@@ -346,7 +346,7 @@ export default function FlowDetail() {
         {FLOW_TABS.map((item) => (
           <TabsContent key={item.value} value={item.value} className="flow-detail-tab-panel p-4">
             {item.value === 'topology' ? (
-              <div className="flow-detail-panel-placeholder rounded-md border border-border bg-card p-0">
+              <div className="flow-detail-panel-placeholder flex min-h-0 flex-1 rounded-md border border-border bg-card">
                 <FlowCanvas key={`topology-canvas:${flowId}:${topologyResetNonce}`} />
               </div>
             ) : item.value === 'edit' ? (
