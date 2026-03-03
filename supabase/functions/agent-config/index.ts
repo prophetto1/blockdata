@@ -103,7 +103,7 @@ export async function handleAgentConfigRequest(
     if (req.method === "GET") {
       const [{ data: catalog, error: catalogErr }, { data: configs, error: cfgErr }, { data: keys, error: keysErr },
         { data: connections, error: connErr }] = await Promise.all([
-        supabase.from("agent_catalog").select("*").eq("enabled", true).order("agent_slug"),
+        supabase.from("registry_agents").select("*").eq("enabled", true).order("agent_slug"),
         supabase.from("user_agent_configs").select("*").order("created_at"),
         supabase
           .from("user_api_keys")
@@ -161,7 +161,7 @@ export async function handleAgentConfigRequest(
 
       // Validate slug exists in catalog.
       const { data: catRow, error: catErr } = await supabase
-        .from("agent_catalog")
+        .from("registry_agents")
         .select("agent_slug, provider_family")
         .eq("agent_slug", agentSlug)
         .maybeSingle();

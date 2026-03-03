@@ -60,7 +60,7 @@ async def execute(function_name: str, request: PluginRequest) -> PluginResponse:
     URL convention: POST {base_url}/{function_name}
     e.g. POST http://localhost:8000/eyecite_clean
 
-    The function_name matches service_functions.function_name in the database.
+    The function_name matches registry_service_functions.function_name in the database.
     The entrypoint column stores "/{function_name}".
     """
     task_type = registry.resolve_by_function_name(function_name)

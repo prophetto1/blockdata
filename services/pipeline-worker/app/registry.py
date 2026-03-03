@@ -14,7 +14,7 @@ FUNCTION_NAME_MAP: dict[str, str] = {}  # function_name → primary task_type
 def _task_type_to_function_name(task_type: str) -> str:
     """Derive a function_name from a task_type.
 
-    Rules (matches service_functions.function_name convention):
+    Rules (matches registry_service_functions.function_name convention):
       blockdata.eyecite.clean → eyecite_clean
       blockdata.eyecite.reporters → eyecite_reporters
       io.kestra.plugin.core.log.Log → core_log

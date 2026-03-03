@@ -30,8 +30,8 @@ function parseCatalogSource(url: URL): CatalogSource {
   return raw === "temp" ? "temp" : "primary";
 }
 
-function catalogTableName(source: CatalogSource): "integration_catalog_items" | "integration_catalog_items_temp" {
-  return source === "temp" ? "integration_catalog_items_temp" : "integration_catalog_items";
+function catalogTableName(source: CatalogSource): "kestra_plugin_items" | "integration_catalog_items_temp" {
+  return source === "temp" ? "integration_catalog_items_temp" : "kestra_plugin_items";
 }
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
@@ -182,10 +182,10 @@ export async function handleAdminIntegrationCatalogRequest(
           .from(catalogTable)
           .select(includeSchema ? fullSelect : lightSelect),
         supabaseAdmin
-          .from("service_registry")
+          .from("registry_services")
           .select("service_id,service_type,service_name,base_url,enabled"),
         supabaseAdmin
-          .from("service_functions")
+          .from("registry_service_functions")
           .select("function_id,service_id,function_name,function_type,label,entrypoint,enabled"),
       ]);
 

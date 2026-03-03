@@ -18,7 +18,7 @@ Deno.test("admin-integration-catalog GET returns items + mapping options", async
   let selectedColumns = "";
   const fakeAdminClient = {
     from: (table: string) => {
-      if (table === "integration_catalog_items") {
+      if (table === "kestra_plugin_items") {
         return {
           select: (columns: string) => {
             selectedColumns = columns;
@@ -51,7 +51,7 @@ Deno.test("admin-integration-catalog GET returns items + mapping options", async
           },
         };
       }
-      if (table === "service_registry") {
+      if (table === "registry_services") {
         return {
           select: () =>
             Promise.resolve({
@@ -68,7 +68,7 @@ Deno.test("admin-integration-catalog GET returns items + mapping options", async
             }),
         };
       }
-      if (table === "service_functions") {
+      if (table === "registry_service_functions") {
         return {
           select: () =>
             Promise.resolve({
@@ -118,7 +118,7 @@ Deno.test("admin-integration-catalog PATCH updates mapping fields", async () => 
 
   const fakeAdminClient = {
     from: (table: string) => {
-      if (table !== "integration_catalog_items") throw new Error(`Unexpected table: ${table}`);
+      if (table !== "kestra_plugin_items") throw new Error(`Unexpected table: ${table}`);
       return {
         update: (payload: Record<string, unknown>) => {
           updated = payload;
@@ -174,7 +174,7 @@ Deno.test("admin-integration-catalog sync_kestra dry-run summarizes internal cat
   let fetchCalled = false;
   const fakeAdminClient = {
     from: (table: string) => {
-      if (table !== "integration_catalog_items") throw new Error(`Unexpected table: ${table}`);
+      if (table !== "kestra_plugin_items") throw new Error(`Unexpected table: ${table}`);
       return {
         select: () =>
           Promise.resolve({
@@ -230,7 +230,7 @@ Deno.test("admin-integration-catalog sync_kestra does not call external fetch ev
   let fetchCalled = false;
   const fakeAdminClient = {
     from: (table: string) => {
-      if (table !== "integration_catalog_items") throw new Error(`Unexpected table: ${table}`);
+      if (table !== "kestra_plugin_items") throw new Error(`Unexpected table: ${table}`);
       return {
         select: () =>
           Promise.resolve({
@@ -310,10 +310,10 @@ Deno.test("admin-integration-catalog GET with catalog_source=temp reads from tem
             }),
         };
       }
-      if (table === "service_registry") {
+      if (table === "registry_services") {
         return { select: () => Promise.resolve({ data: [], error: null }) };
       }
-      if (table === "service_functions") {
+      if (table === "registry_service_functions") {
         return { select: () => Promise.resolve({ data: [], error: null }) };
       }
       throw new Error(`Unexpected table: ${table}`);

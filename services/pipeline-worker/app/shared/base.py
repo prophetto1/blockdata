@@ -44,5 +44,5 @@ class BasePlugin(ABC):
 
     @classmethod
     def parameter_schema(cls) -> list[dict]:
-        """Return parameter definitions matching service_functions.parameter_schema format."""
+        """Return parameter definitions matching registry_service_functions.parameter_schema format."""
         return []

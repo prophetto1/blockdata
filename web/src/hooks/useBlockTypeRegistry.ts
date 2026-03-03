@@ -45,11 +45,11 @@ let fetchPromise: Promise<BlockTypeRegistry> | null = null;
 async function fetchRegistry(): Promise<BlockTypeRegistry> {
   const [btRes, dlRes] = await Promise.all([
     supabase
-      .from('block_type_catalog')
+      .from('registry_block_types')
       .select('block_type, badge_color, description, sort_order')
       .order('sort_order'),
     supabase
-      .from('docling_label_catalog')
+      .from('registry_docling_labels')
       .select('label, platform_block_type, badge_color, overlay_border_color, overlay_bg_color, description, sort_order')
       .order('sort_order'),
   ]);

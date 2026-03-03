@@ -15,7 +15,7 @@ Deno.test("handleAdminServicesRequest rejects requests without auth header", asy
 Deno.test("GET returns service registry inventory payload", async () => {
   const fakeAdminClient = {
     from: (table: string) => {
-      if (table === "service_registry") {
+      if (table === "registry_services") {
         return {
           select: () => Promise.resolve({
             data: [{
@@ -33,7 +33,7 @@ Deno.test("GET returns service registry inventory payload", async () => {
           }),
         };
       }
-      if (table === "service_functions") {
+      if (table === "registry_service_functions") {
         return {
           select: () => Promise.resolve({
             data: [{
@@ -53,7 +53,7 @@ Deno.test("GET returns service registry inventory payload", async () => {
           }),
         };
       }
-      if (table === "service_type_catalog") {
+      if (table === "registry_service_types") {
         return {
           select: () => Promise.resolve({
             data: [{
@@ -95,7 +95,7 @@ Deno.test("PATCH updates service enabled/base_url", async () => {
 
   const fakeAdminClient = {
     from: (table: string) => {
-      if (table !== "service_registry") throw new Error(`Unexpected table: ${table}`);
+      if (table !== "registry_services") throw new Error(`Unexpected table: ${table}`);
       return {
         update: (payload: Record<string, unknown>) => {
           updatePayload = payload;

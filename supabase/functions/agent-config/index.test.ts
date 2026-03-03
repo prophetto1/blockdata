@@ -73,7 +73,7 @@ Deno.test("PATCH write path pins user scope and normalizes keyword", async () =>
 
   const fakeUserClient = {
     from: (table: string) => {
-      if (table === "agent_catalog") {
+      if (table === "registry_agents") {
         return {
           select: () => ({
             eq: () => ({

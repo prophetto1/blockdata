@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-03-03T08:31:05.517Z",
+  "generatedAt": "2026-03-03T15:08:50.044Z",
   "scope": "auth",
   "pages": [
     {
@@ -796,11 +796,94 @@
     },
     {
       "page": "src/pages/Integrations.tsx",
-      "componentCount": 1,
+      "componentCount": 17,
       "categoryCounts": {
-        "local-components": 1
+        "local-components": 8,
+        "tabler-icons": 7,
+        "in-file component": 2
       },
       "components": [
+        {
+          "component": "Badge",
+          "usedAs": "Badge",
+          "source": "@/components/ui/badge",
+          "importKind": "named",
+          "importedAs": "Badge",
+          "category": "local-components",
+          "definition": "Badge comes from @/components/ui/badge (named import of Badge)"
+        },
+        {
+          "component": "ErrorAlert",
+          "usedAs": "ErrorAlert",
+          "source": "@/components/common/ErrorAlert",
+          "importKind": "named",
+          "importedAs": "ErrorAlert",
+          "category": "local-components",
+          "definition": "ErrorAlert comes from @/components/common/ErrorAlert (named import of ErrorAlert)"
+        },
+        {
+          "component": "IconArrowRight",
+          "usedAs": "IconArrowRight",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconArrowRight",
+          "category": "tabler-icons",
+          "definition": "IconArrowRight comes from @tabler/icons-react (named import of IconArrowRight)"
+        },
+        {
+          "component": "IconExternalLink",
+          "usedAs": "IconExternalLink",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconExternalLink",
+          "category": "tabler-icons",
+          "definition": "IconExternalLink comes from @tabler/icons-react (named import of IconExternalLink)"
+        },
+        {
+          "component": "IconKey",
+          "usedAs": "IconKey",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconKey",
+          "category": "tabler-icons",
+          "definition": "IconKey comes from @tabler/icons-react (named import of IconKey)"
+        },
+        {
+          "component": "IconLoader2",
+          "usedAs": "IconLoader2",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconLoader2",
+          "category": "tabler-icons",
+          "definition": "IconLoader2 comes from @tabler/icons-react (named import of IconLoader2)"
+        },
+        {
+          "component": "IconLock",
+          "usedAs": "IconLock",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconLock",
+          "category": "tabler-icons",
+          "definition": "IconLock comes from @tabler/icons-react (named import of IconLock)"
+        },
+        {
+          "component": "IconPlugConnected",
+          "usedAs": "IconPlugConnected",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconPlugConnected",
+          "category": "tabler-icons",
+          "definition": "IconPlugConnected comes from @tabler/icons-react (named import of IconPlugConnected)"
+        },
+        {
+          "component": "IconSearch",
+          "usedAs": "IconSearch",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconSearch",
+          "category": "tabler-icons",
+          "definition": "IconSearch comes from @tabler/icons-react (named import of IconSearch)"
+        },
         {
           "component": "PageHeader",
           "usedAs": "PageHeader",
@@ -809,6 +892,69 @@
           "importedAs": "PageHeader",
           "category": "local-components",
           "definition": "PageHeader comes from @/components/common/PageHeader (named import of PageHeader)"
+        },
+        {
+          "component": "ProviderCard",
+          "usedAs": "ProviderCard",
+          "source": "(in-file or unresolved)",
+          "importKind": null,
+          "importedAs": null,
+          "category": "in-file component",
+          "definition": "ProviderCard is defined in the same page file"
+        },
+        {
+          "component": "ProviderDetailSheet",
+          "usedAs": "ProviderDetailSheet",
+          "source": "(in-file or unresolved)",
+          "importKind": null,
+          "importedAs": null,
+          "category": "in-file component",
+          "definition": "ProviderDetailSheet is defined in the same page file"
+        },
+        {
+          "component": "Sheet",
+          "usedAs": "Sheet",
+          "source": "@/components/ui/sheet",
+          "importKind": "named",
+          "importedAs": "Sheet",
+          "category": "local-components",
+          "definition": "Sheet comes from @/components/ui/sheet (named import of Sheet)"
+        },
+        {
+          "component": "SheetContent",
+          "usedAs": "SheetContent",
+          "source": "@/components/ui/sheet",
+          "importKind": "named",
+          "importedAs": "SheetContent",
+          "category": "local-components",
+          "definition": "SheetContent comes from @/components/ui/sheet (named import of SheetContent)"
+        },
+        {
+          "component": "SheetDescription",
+          "usedAs": "SheetDescription",
+          "source": "@/components/ui/sheet",
+          "importKind": "named",
+          "importedAs": "SheetDescription",
+          "category": "local-components",
+          "definition": "SheetDescription comes from @/components/ui/sheet (named import of SheetDescription)"
+        },
+        {
+          "component": "SheetHeader",
+          "usedAs": "SheetHeader",
+          "source": "@/components/ui/sheet",
+          "importKind": "named",
+          "importedAs": "SheetHeader",
+          "category": "local-components",
+          "definition": "SheetHeader comes from @/components/ui/sheet (named import of SheetHeader)"
+        },
+        {
+          "component": "SheetTitle",
+          "usedAs": "SheetTitle",
+          "source": "@/components/ui/sheet",
+          "importKind": "named",
+          "importedAs": "SheetTitle",
+          "category": "local-components",
+          "definition": "SheetTitle comes from @/components/ui/sheet (named import of SheetTitle)"
         }
       ]
     },
@@ -2088,9 +2234,9 @@
     },
     {
       "page": "src/pages/settings/FunctionReferenceCard.tsx",
-      "componentCount": 9,
+      "componentCount": 10,
       "categoryCounts": {
-        "in-file component": 2,
+        "in-file component": 3,
         "local-components": 2,
         "ark-ui": 3,
         "tabler-icons": 2
@@ -2158,6 +2304,15 @@
           "importedAs": "IconCopy",
           "category": "tabler-icons",
           "definition": "IconCopy comes from @tabler/icons-react (named import of IconCopy)"
+        },
+        {
+          "component": "JsonBlock",
+          "usedAs": "JsonBlock",
+          "source": "(in-file or unresolved)",
+          "importKind": null,
+          "importedAs": null,
+          "category": "in-file component",
+          "definition": "JsonBlock is defined in the same page file"
         },
         {
           "component": "ParametersTable",
@@ -2750,33 +2905,6 @@
           "category": "local-components",
           "definition": "ErrorAlert comes from @/components/common/ErrorAlert (named import of ErrorAlert)"
         },
-        {
-          "component": "ServiceDetailRailView",
-          "usedAs": "ServiceDetailRailView",
-          "source": "./ServiceDetailRailView",
-          "importKind": "named",
-          "importedAs": "ServiceDetailRailView",
-          "category": "relative-local",
-          "definition": "ServiceDetailRailView comes from ./ServiceDetailRailView (named import of ServiceDetailRailView)"
-        },
-        {
-          "component": "ServicesSidebar",
-          "usedAs": "ServicesSidebar",
-          "source": "./ServicesSidebar",
-          "importKind": "named",
-          "importedAs": "ServicesSidebar",
-          "category": "relative-local",
-          "definition": "ServicesSidebar comes from ./ServicesSidebar (named import of ServicesSidebar)"
-        }
-      ]
-    },
-    {
-      "page": "src/pages/settings/ServicesPanelStatic.tsx",
-      "componentCount": 2,
-      "categoryCounts": {
-        "relative-local": 2
-      },
-      "components": [
         {
           "component": "ServiceDetailRailView",
           "usedAs": "ServiceDetailRailView",
@@ -4282,15 +4410,15 @@
       ]
     }
   ],
-  "totalComponentUsages": 427,
+  "totalComponentUsages": 442,
   "categoryTotals": {
     "external-package": 17,
-    "local-components": 119,
-    "tabler-icons": 83,
+    "local-components": 126,
+    "tabler-icons": 90,
     "ark-ui": 172,
-    "in-file component": 11,
+    "in-file component": 14,
     "unknown": 1,
-    "relative-local": 23,
+    "relative-local": 21,
     "local-pages": 1
   }
 }

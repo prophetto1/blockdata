@@ -105,8 +105,8 @@ export const router = createBrowserRouter([
           { path: '/app/elt/:projectId/upload-uppy-demo', element: <UppyLibraryDemo /> },
           { path: '/app/elt/:projectId/runs/:runId', element: <RunDetail /> },
           { path: '/app/projects/list', element: <Projects /> },
-          { path: '/app/database', element: <DatabasePlaceholder /> },
           { path: '/app/integrations', element: <Integrations /> },
+          { path: '/app/database', element: <DatabasePlaceholder /> },
           { path: '/app/services', element: <ServicesPage /> },
           {
             path: '/app/flows',

@@ -62,7 +62,7 @@ export function DltLoadPanel({ projectId }: Props) {
       <div className="min-h-0 flex-1 rounded-md border border-border bg-card p-3">
         <div className="text-xs font-semibold">Run events</div>
         <div className="mt-2 text-xs text-muted-foreground">
-          No runs yet (this will stream from `service_runs` + `service_run_events`).
+          No runs yet (this will stream from `user_service_runs` + `service_run_events`).
         </div>
       </div>
     </div>

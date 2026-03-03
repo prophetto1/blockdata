@@ -279,7 +279,7 @@ export function IntegrationCatalogPanel() {
   useEffect(() => {
     const channel = supabase
       .channel('admin-integration-catalog-items')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'integration_catalog_items' }, () => { void loadCatalog(); })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'kestra_plugin_items' }, () => { void loadCatalog(); })
       .subscribe();
     return () => { void supabase.removeChannel(channel); };
   }, [loadCatalog]);
