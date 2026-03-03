@@ -10,6 +10,7 @@ import { InstanceConfigPanel } from './InstanceConfigPanel';
 import { IntegrationCatalogPanel } from './IntegrationCatalogPanel';
 import { GridTestPanel } from './GridTestPanel';
 import { PlatformConfigPanel } from './PlatformConfigPanel';
+import { ApiPlayground } from './ApiPlayground';
 import { ServicesPanel } from './ServicesPanel';
 import { CATEGORY_IDS, type CategoryId } from './settings-tabs';
 
@@ -41,6 +42,7 @@ const CATEGORIES: Category[] = [
   { id: 'grid-test', label: 'Grid Test' },
   { id: 'audit', label: 'Audit History' },
   { id: 'instance-config', label: 'Instance Config' },
+  { id: 'api-playground', label: 'API Playground' },
 ];
 
 function toCategoryId(value: string | undefined): CategoryId | null {
@@ -252,6 +254,13 @@ export default function SettingsAdmin() {
               style={{ backgroundColor: styleTokens.adminConfig.contentBackground }}
             >
               <GridTestPanel />
+            </div>
+          ) : selectedCategory === 'api-playground' ? (
+            <div
+              className="min-h-0 flex-1 overflow-hidden p-3 md:p-4"
+              style={{ backgroundColor: styleTokens.adminConfig.contentBackground }}
+            >
+              <ApiPlayground />
             </div>
           ) : (
             <div className="min-h-0 flex-1 overflow-y-auto p-3 md:p-4" style={{ backgroundColor: styleTokens.adminConfig.contentBackground }}>

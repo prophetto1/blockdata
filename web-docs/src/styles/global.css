@@ -1,0 +1,22 @@
+@layer base, starlight, theme, components, utilities;
+@import '@astrojs/starlight-tailwind';
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/utilities.css' layer(utilities);
+
+/* ------------------------------------------------------------------ */
+/*  Starlight custom properties                                       */
+/* ------------------------------------------------------------------ */
+
+:root {
+  --sl-color-accent-low: #1a1a2e;
+  --sl-color-accent: #4f46e5;
+  --sl-color-accent-high: #c7d2fe;
+  --sl-font: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --sl-font-mono: 'JetBrains Mono', ui-monospace, 'Cascadia Code', monospace;
+}
+
+:root[data-theme='dark'] {
+  --sl-color-bg: #0f0f14;
+  --sl-color-bg-nav: #16161d;
+  --sl-color-bg-sidebar: #13131a;
+}

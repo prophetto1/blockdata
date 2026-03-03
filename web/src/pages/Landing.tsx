@@ -240,7 +240,7 @@ export default function Landing() {
 
       {/* ━━ HERO ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       <section id="hero" className="relative pt-28 pb-20 md:pt-40 md:pb-28">
-        <div className="mx-auto max-w-5xl px-4 text-center sm:px-6 md:px-8">
+        <div className="mx-auto max-w-6xl px-4 text-center sm:px-6 md:px-8">
           {/* Tech pills */}
           <div className="mb-8 flex flex-wrap items-center justify-center gap-2">
             {TECH_PILLS.map((t) => (
@@ -341,7 +341,7 @@ export default function Landing() {
 
       {/* ━━ CONNECT ANY SOURCE ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       <section id="sources" className="py-20 md:py-28" style={{ background: 'var(--muted)' }}>
-        <div className="mx-auto max-w-5xl px-4 sm:px-6 md:px-8">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 md:px-8">
           <p className="mb-3 text-center text-sm font-semibold uppercase tracking-widest text-primary">
             The &ldquo;dump&rdquo; experience
           </p>
@@ -371,7 +371,7 @@ export default function Landing() {
 
       {/* ━━ 6-STAGE PIPELINE ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       <section id="pipeline" className="py-20 md:py-28">
-        <div className="mx-auto max-w-5xl px-4 sm:px-6 md:px-8">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 md:px-8">
           <div className="mb-12 flex flex-col items-center gap-4 md:flex-row md:justify-between">
             <div>
               <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-primary">How it works</p>
@@ -404,7 +404,7 @@ export default function Landing() {
 
       {/* ━━ REVIEW GRID ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       <section id="review" className="py-20 md:py-28" style={{ background: 'var(--muted)' }}>
-        <div className="mx-auto max-w-5xl px-4 sm:px-6 md:px-8">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 md:px-8">
           <p className="mb-3 text-center text-sm font-semibold uppercase tracking-widest text-primary">Human-in-the-loop</p>
           <h2 className="mx-auto mb-4 max-w-lg text-center text-3xl font-bold tracking-tight md:text-4xl">
             Review before anything ships
@@ -452,7 +452,7 @@ export default function Landing() {
 
       {/* ━━ ARANGODB CONVERGENCE ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       <section id="convergence" className="py-20 md:py-28">
-        <div className="mx-auto max-w-5xl px-4 sm:px-6 md:px-8">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 md:px-8">
           <p className="mb-3 text-center text-sm font-semibold uppercase tracking-widest text-primary">One database, three capabilities</p>
           <h2 className="mx-auto mb-4 max-w-lg text-center text-3xl font-bold tracking-tight md:text-4xl">
             ArangoDB Convergence
@@ -499,7 +499,7 @@ export default function Landing() {
 
       {/* ━━ WHAT YOU GET — OUTPUTS ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       <section id="outputs" className="py-20 md:py-28" style={{ background: 'var(--muted)' }}>
-        <div className="mx-auto max-w-5xl px-4 sm:px-6 md:px-8">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 md:px-8">
           <p className="mb-3 text-center text-sm font-semibold uppercase tracking-widest text-primary">Export anywhere</p>
           <h2 className="mx-auto mb-4 max-w-md text-center text-3xl font-bold tracking-tight md:text-4xl">
             What you get
@@ -533,7 +533,7 @@ export default function Landing() {
 
       {/* ━━ SCHEMA FLEXIBILITY ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       <section id="schemas" className="py-20 md:py-28">
-        <div className="mx-auto max-w-5xl px-4 sm:px-6 md:px-8">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 md:px-8">
           <p className="mb-3 text-center text-sm font-semibold uppercase tracking-widest text-primary">Schema flexibility</p>
           <h2 className="mx-auto mb-4 max-w-lg text-center text-3xl font-bold tracking-tight md:text-4xl">
             Four paths to define your schema
@@ -557,7 +557,7 @@ export default function Landing() {
 
       {/* ━━ USE CASES ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       <section id="use-cases" className="py-20 md:py-28" style={{ background: 'var(--muted)' }}>
-        <div className="mx-auto max-w-5xl px-4 sm:px-6 md:px-8">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 md:px-8">
           <p className="mb-3 text-center text-sm font-semibold uppercase tracking-widest text-primary">Use cases</p>
           <h2 className="mx-auto mb-12 max-w-md text-center text-3xl font-bold tracking-tight md:text-4xl">
             What teams build
@@ -623,7 +623,7 @@ export default function Landing() {
 
       {/* ━━ MCP SERVING LAYER ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       <section id="mcp" className="py-20 md:py-28">
-        <div className="mx-auto max-w-5xl px-4 sm:px-6 md:px-8">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 md:px-8">
           <p className="mb-3 text-center text-sm font-semibold uppercase tracking-widest text-primary">One protocol to serve them all</p>
           <h2 className="mx-auto mb-4 max-w-lg text-center text-3xl font-bold tracking-tight md:text-4xl">
             MCP Serving Layer
@@ -681,7 +681,7 @@ export default function Landing() {
 
       {/* ━━ WHY BLOCKS ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       <section id="why-blocks" className="py-20 md:py-28" style={{ background: 'var(--muted)' }}>
-        <div className="mx-auto max-w-5xl px-4 sm:px-6 md:px-8">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 md:px-8">
           <p className="mb-3 text-center text-sm font-semibold uppercase tracking-widest text-primary">Why blocks</p>
           <h2 className="mx-auto mb-4 max-w-lg text-center text-3xl font-bold tracking-tight md:text-4xl">
             Document-level vs block-level AI
@@ -746,7 +746,7 @@ export default function Landing() {
 
       {/* ━━ BOTTOM CTA ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       <section className="px-4 pb-24 pt-8 sm:px-6 md:px-8 md:pb-32">
-        <div className="mx-auto max-w-5xl overflow-hidden rounded-2xl border border-primary/30 bg-primary/[0.03]">
+        <div className="mx-auto max-w-6xl overflow-hidden rounded-2xl border border-primary/30 bg-primary/[0.03]">
           <div className="flex flex-col items-center gap-8 px-8 py-14 text-center md:py-16">
             <h2 className="text-2xl font-bold tracking-tight md:text-3xl">
               Ready to activate your dark data?

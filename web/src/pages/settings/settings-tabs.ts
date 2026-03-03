@@ -5,6 +5,7 @@ export const CATEGORY_IDS = [
   'grid-test',
   'audit',
   'instance-config',
+  'api-playground',
 ] as const;
 
 export type CategoryId = (typeof CATEGORY_IDS)[number];
@@ -25,6 +26,7 @@ export const ADMIN_SUBTAB_GROUPS: AdminSubTabGroup[] = [
       { id: 'integration-catalog', label: 'Integration Catalog' },
       { id: 'grid-test', label: 'Grid Test' },
       { id: 'audit', label: 'Audit History' },
+      { id: 'api-playground', label: 'API Playground' },
     ],
   },
   {
