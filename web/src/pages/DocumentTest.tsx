@@ -26,6 +26,7 @@ import {
   IconFileText,
   IconFolder,
   IconFolderPlus,
+  IconLock,
   IconLayoutColumns,
   IconPlus,
   IconTransform,
@@ -88,15 +89,24 @@ const NEW_PANE_TAB_PRIORITY: TabId[] = [
   'preview',
   'canvas',
 ];
-const ELT_RESERVED_TOP_TAB_SHAPES = [
-  'Overview',
-  'Topology',
-  'Executions',
-  'Edit',
-  'Revisions',
-  'Triggers',
-  'Logs',
-  'Metrics',
+type EltReservedTopTab = {
+  value: string;
+  label: string;
+  locked?: boolean;
+};
+
+const ELT_RESERVED_TOP_TAB_SHAPES: readonly EltReservedTopTab[] = [
+  { value: 'overview', label: 'Overview' },
+  { value: 'topology', label: 'Topology' },
+  { value: 'executions', label: 'Executions' },
+  { value: 'edit', label: 'Edit' },
+  { value: 'revisions', label: 'Revisions' },
+  { value: 'triggers', label: 'Triggers' },
+  { value: 'logs', label: 'Logs' },
+  { value: 'metrics', label: 'Metrics' },
+  { value: 'dependencies', label: 'Dependencies' },
+  { value: 'concurrency', label: 'Concurrency' },
+  { value: 'auditlogs', label: 'Audit Logs', locked: true },
 ] as const;
 
 // ---------------------------------------------------------------------------
@@ -1879,25 +1889,41 @@ export default function DocumentTest() {
   };
 
   return (
-    <div className="flex h-[calc(100vh-var(--app-shell-header-height))] flex-col gap-3 p-3">
+    <div className="flex h-[calc(100vh-var(--app-shell-header-height))] flex-col overflow-hidden">
       {/* Reserved strip for future ELT top submenu tabs (structurally identical to Flows). */}
-      <Tabs value="elt-reserved-shape-0" onValueChange={() => {}} className="w-full">
+      <Tabs value="overview" onValueChange={() => {}} className="w-full">
         <TabsList
-          aria-label="ELT reserved sections"
-          className="flex h-11 min-h-11 w-full items-stretch overflow-x-auto bg-card shadow-[inset_0_-1px_0_var(--border)]"
+          aria-label="Flow sections"
+          className="flow-detail-tabs-row flex h-11 min-h-11 w-full items-stretch overflow-x-auto bg-card shadow-[inset_0_-1px_0_var(--border)]"
         >
-          {ELT_RESERVED_TOP_TAB_SHAPES.map((label, index) => (
-            <TabsTrigger
-              key={`elt-reserved-shape-${index}`}
-              value={`elt-reserved-shape-${index}`}
-              className="inline-flex h-full shrink-0 items-center gap-1 border-r border-border px-3.5 text-[13px] font-semibold leading-none whitespace-nowrap text-muted-foreground transition-colors first:border-l first:border-l-border hover:bg-accent hover:text-foreground data-selected:bg-background data-selected:text-foreground"
-            >
-              <span className="select-none text-transparent">{label}</span>
-            </TabsTrigger>
-          ))}
+          {ELT_RESERVED_TOP_TAB_SHAPES.map((item) => {
+            const isLocked = Boolean(item.locked);
+            return (
+              <TabsTrigger
+                key={item.value}
+                value={item.value}
+                disabled={isLocked}
+                aria-disabled={isLocked}
+                className="inline-flex h-full shrink-0 items-center gap-1 border-r border-border px-3.5 text-[13px] font-semibold leading-none whitespace-nowrap text-muted-foreground transition-colors first:border-l first:border-l-border hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-muted-foreground data-selected:bg-background data-selected:text-foreground"
+              >
+                <span>{item.label}</span>
+                {isLocked ? <IconLock size={11} aria-hidden /> : null}
+              </TabsTrigger>
+            );
+          })}
+          <button
+            type="button"
+            aria-label="Add preview tab"
+            className="inline-flex h-full shrink-0 items-center px-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            onClick={() => {}}
+          >
+            <IconPlus size={14} aria-hidden />
+          </button>
         </TabsList>
       </Tabs>
-      <div className="flex items-center gap-2 rounded-md border border-border bg-card p-2">
+
+      <div className="flex min-h-0 flex-1 flex-col gap-3 p-3">
+        <div className="flex items-center gap-2 rounded-md border border-border bg-card p-2">
         <ToolbarBtn
           active={panes.some((p) => p.tabs.includes('assets'))}
           icon={<IconFiles size={15} />}
@@ -2017,12 +2043,12 @@ export default function DocumentTest() {
         >
           Load
         </ToolbarBtn>
-        <ToolbarBtn active={false} icon={<IconTransform size={15} />}>
-          Transform
-        </ToolbarBtn>
-      </div>
+          <ToolbarBtn active={false} icon={<IconTransform size={15} />}>
+            Transform
+          </ToolbarBtn>
+        </div>
 
-      <Splitter.Root
+        <Splitter.Root
         className="flex min-h-0 flex-1 overflow-hidden rounded-md border border-border bg-background"
         orientation="horizontal"
         panels={splitterPanels}
@@ -2231,7 +2257,8 @@ export default function DocumentTest() {
             )}
           </div>
         ))}
-      </Splitter.Root>
+        </Splitter.Root>
+      </div>
     </div>
   );
 }

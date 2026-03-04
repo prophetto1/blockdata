@@ -23,6 +23,7 @@ import { useShellHeaderTitle } from '@/components/common/useShellHeaderTitle';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
+import { styleTokens } from '@/lib/styleTokens';
 
 type SchemaFieldType = 'string' | 'number' | 'integer' | 'boolean' | 'object' | 'enum';
 
@@ -538,9 +539,9 @@ export default function Schemas() {
 
   return (
     <div className="flex h-[calc(100vh-var(--app-shell-header-height))] overflow-hidden">
-      <aside className="w-[250px] shrink-0 overflow-y-auto border-r border-border bg-card">
+      <aside className="w-[250px] shrink-0 overflow-y-auto border-r font-sans text-sidebar-foreground" style={{ borderColor: styleTokens.adminConfig.railBorder, backgroundColor: styleTokens.adminConfig.railBackground }}>
         <div className="px-4 pb-2 pt-4">
-          <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          <h2 className="text-xs font-semibold uppercase tracking-wide text-sidebar-foreground/50">
             Schema
           </h2>
         </div>
@@ -579,12 +580,12 @@ export default function Schemas() {
                                 <TreeView.BranchControl
                                   className={cn(
                                     'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors',
-                                    'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
-                                    isSelected && 'bg-accent text-accent-foreground',
+                                    'text-sidebar-foreground/90 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+                                    isSelected && 'bg-sidebar-accent text-sidebar-accent-foreground',
                                   )}
                                   style={{ paddingLeft }}
                                 >
-                                  <TreeView.BranchIndicator className="text-muted-foreground">
+                                  <TreeView.BranchIndicator className="text-sidebar-foreground/50">
                                     <IconChevronRight size={14} className="transition-transform duration-150 data-[state=open]:rotate-90" />
                                   </TreeView.BranchIndicator>
                                   {Icon && <Icon size={16} />}
@@ -602,8 +603,8 @@ export default function Schemas() {
                               className={cn(
                                 'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors',
                                 isSelected
-                                  ? 'bg-primary/10 text-foreground font-medium'
-                                  : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
+                                  ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium'
+                                  : 'text-sidebar-foreground/90 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
                               )}
                               style={{ paddingLeft }}
                             >
