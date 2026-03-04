@@ -3,12 +3,10 @@ import MonacoEditor, { type OnMount } from '@monaco-editor/react';
 
 import { Select, createListCollection } from '@ark-ui/react/select';
 import { Splitter } from '@ark-ui/react/splitter';
-import { TreeView, createTreeCollection, type TreeNode } from '@ark-ui/react/tree-view';
 import {
   IconAsterisk,
   IconBrackets,
   IconCheck,
-  IconChevronRight,
   IconChevronDown,
   IconCode,
   IconDeviceFloppy,
@@ -17,13 +15,10 @@ import {
   IconRefresh,
   IconTrash,
 } from '@tabler/icons-react';
-import type { Icon } from '@tabler/icons-react';
-import { useLocation, useNavigate } from 'react-router-dom';
 import { useShellHeaderTitle } from '@/components/common/useShellHeaderTitle';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import { styleTokens } from '@/lib/styleTokens';
 
 type SchemaFieldType = 'string' | 'number' | 'integer' | 'boolean' | 'object' | 'enum';
 
@@ -39,13 +34,6 @@ type SchemaField = {
 
 type SchemaTypeOption = { value: SchemaFieldType; label: string };
 type SchemaEditorView = 'visual' | 'split' | 'code';
-type SchemaRailTreeNode = TreeNode & {
-  id: string;
-  label: string;
-  icon?: Icon;
-  path?: string;
-  children?: SchemaRailTreeNode[];
-};
 
 type MonacoEditorInstance = Parameters<OnMount>[0];
 
@@ -56,10 +44,6 @@ const SCHEMA_TYPE_OPTIONS: SchemaTypeOption[] = [
   { value: 'boolean', label: 'boolean' },
   { value: 'object', label: 'object' },
   { value: 'enum', label: 'enum' },
-];
-
-const SCHEMA_RAIL_ITEMS: SchemaRailTreeNode[] = [
-  { id: 'schemas-editor', label: 'Editor', icon: IconCode, path: '/app/schemas' },
 ];
 
 function subscribeTheme(onStoreChange: () => void): () => void {
@@ -169,8 +153,6 @@ export default function Schemas() {
     title: 'Schema',
     subtitle: 'OpenAPI schema editor',
   });
-  const location = useLocation();
-  const navigate = useNavigate();
   const monacoTheme = useMonacoTheme();
   const [extractSchemaReady, setExtractSchemaReady] = useState(true);
   const [extractSchemaFields, setExtractSchemaFields] = useState<SchemaField[]>(() => [{
@@ -195,25 +177,6 @@ export default function Schemas() {
     () => [{ id: 'schema-visual', minSize: 20 }, { id: 'schema-code', minSize: 20 }],
     [],
   );
-  const schemaRailCollection = useMemo(
-    () =>
-      createTreeCollection<SchemaRailTreeNode>({
-        rootNode: {
-          id: 'root',
-          label: 'Root',
-          children: SCHEMA_RAIL_ITEMS,
-        },
-        nodeToValue: (node) => node.id,
-        nodeToString: (node) => node.label,
-        nodeToChildren: (node) => node.children ?? [],
-      }),
-    [],
-  );
-  const activeSchemaRailId = useMemo(
-    () => SCHEMA_RAIL_ITEMS.find((node) => node.path && location.pathname.startsWith(node.path))?.id ?? null,
-    [location.pathname],
-  );
-
   const createSchemaField = useCallback((seed?: Partial<SchemaField>): SchemaField => (
     {
       id: `field-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -539,92 +502,6 @@ export default function Schemas() {
 
   return (
     <div className="flex h-[calc(100vh-var(--app-shell-header-height))] overflow-hidden">
-      <aside className="w-[250px] shrink-0 overflow-y-auto border-r font-sans text-sidebar-foreground" style={{ borderColor: styleTokens.adminConfig.railBorder, backgroundColor: styleTokens.adminConfig.railBackground }}>
-        <div className="px-4 pb-2 pt-4">
-          <h2 className="text-xs font-semibold uppercase tracking-wide text-sidebar-foreground/50">
-            Schema
-          </h2>
-        </div>
-
-        <TreeView.Root
-          collection={schemaRailCollection}
-          selectionMode="single"
-          selectedValue={activeSchemaRailId ? [activeSchemaRailId] : []}
-          onSelectionChange={(details) => {
-            const nextId = details.selectedValue[0];
-            if (!nextId) return;
-            const node = schemaRailCollection.findNode(nextId);
-            if (node?.path) navigate(node.path);
-          }}
-        >
-          <TreeView.Tree className="px-2 pb-4">
-            <TreeView.Context>
-              {(tree) =>
-                tree.getVisibleNodes().map((entry) => {
-                  const node = entry.node as SchemaRailTreeNode;
-                  const indexPath = entry.indexPath;
-                  if (node.id === 'root') return null;
-
-                  return (
-                    <TreeView.NodeProvider key={node.id} node={node} indexPath={indexPath}>
-                      <TreeView.NodeContext>
-                        {(state) => {
-                          const depth = Math.max(0, indexPath.length - 1);
-                          const paddingLeft = `${8 + depth * 16}px`;
-                          const Icon = node.icon;
-                          const isSelected = Boolean(state.selected);
-
-                          if (state.isBranch) {
-                            return (
-                              <TreeView.Branch>
-                                <TreeView.BranchControl
-                                  className={cn(
-                                    'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors',
-                                    'text-sidebar-foreground/90 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
-                                    isSelected && 'bg-sidebar-accent text-sidebar-accent-foreground',
-                                  )}
-                                  style={{ paddingLeft }}
-                                >
-                                  <TreeView.BranchIndicator className="text-sidebar-foreground/50">
-                                    <IconChevronRight size={14} className="transition-transform duration-150 data-[state=open]:rotate-90" />
-                                  </TreeView.BranchIndicator>
-                                  {Icon && <Icon size={16} />}
-                                  <TreeView.BranchText className="truncate font-medium">
-                                    {node.label}
-                                  </TreeView.BranchText>
-                                </TreeView.BranchControl>
-                                <TreeView.BranchContent />
-                              </TreeView.Branch>
-                            );
-                          }
-
-                          return (
-                            <TreeView.Item
-                              className={cn(
-                                'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors',
-                                isSelected
-                                  ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium'
-                                  : 'text-sidebar-foreground/90 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
-                              )}
-                              style={{ paddingLeft }}
-                            >
-                              {Icon && <Icon size={16} />}
-                              <TreeView.ItemText className="truncate">
-                                {node.label}
-                              </TreeView.ItemText>
-                            </TreeView.Item>
-                          );
-                        }}
-                      </TreeView.NodeContext>
-                    </TreeView.NodeProvider>
-                  );
-                })
-              }
-            </TreeView.Context>
-          </TreeView.Tree>
-        </TreeView.Root>
-      </aside>
-
       <section className="min-w-0 flex-1 overflow-hidden p-3">
         <div className="flex h-full min-h-0 flex-col gap-3">
           <div className="flex flex-wrap items-center gap-2 rounded-md border border-border bg-card p-2">
