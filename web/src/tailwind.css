@@ -2,6 +2,7 @@
 @plugin "tailwindcss-animate";
 
 :root {
+  color-scheme: dark;
   --radius: 0.625rem;
   --app-font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --app-font-mono: "JetBrains Mono", "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
@@ -138,6 +139,7 @@
 }
 
 :root[data-theme='light'] {
+  color-scheme: light;
   /* ── Core surfaces & text (warm stone scale) ── */
   --background: #faf9f7;
   --foreground: #1c1917;

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 120" role="img" aria-labelledby="title desc">
+  <title id="title">BlockData Logo Light</title>
+  <desc id="desc">Wordmark used for light backgrounds.</desc>
+  <rect width="480" height="120" fill="#ffffff" />
+  <g font-family="Inter, Segoe UI, Arial, sans-serif" font-size="56" font-weight="700">
+    <text x="24" y="78" fill="#0f172a">Block</text>
+    <text x="190" y="78" fill="#0ea5e9">Data</text>
+  </g>
+</svg>

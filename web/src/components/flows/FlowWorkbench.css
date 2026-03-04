@@ -28,6 +28,11 @@
   flex-wrap: wrap;
 }
 
+/* Flows toolbar button typography spec:
+   - Font family: var(--app-font-sans) (inherited from body)
+   - Panel buttons: 12px, 600
+   - Action buttons + Playground label: 13px, 600
+*/
 .flow-workbench-panel-button {
   display: inline-flex;
   align-items: center;

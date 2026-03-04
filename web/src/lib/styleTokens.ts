@@ -11,18 +11,18 @@ export const styleTokens = {
   },
   grid: {
     light: {
-      background: '#fafaf9',
-      chromeBackground: '#ffffff',
+      background: '#ffffff',
+      chromeBackground: '#faf9f7',
       foreground: '#1c1917',
-      border: '#e7e5e4',
+      border: '#d6d3d1',
       subtleText: '#78716c',
     },
     dark: {
-      background: '#0e0e0e',
-      chromeBackground: '#0e0e0e',
-      foreground: '#eeeeee',
-      border: '#2a2a2a',
-      subtleText: '#a0a0a0',
+      background: '#09090b',
+      chromeBackground: '#09090b',
+      foreground: '#fafafa',
+      border: '#27272a',
+      subtleText: '#a1a1aa',
     },
   },
   accents: {

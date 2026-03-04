@@ -1,4 +1,5 @@
-   Keep this small and focused: layout consistency + dark-mode surfaces. */
+/* Theme extensions only.
+   Keep this small and focused: layout consistency + day/night surfaces. */
 
 :root {
   --shell-pane-header-height: 40px;

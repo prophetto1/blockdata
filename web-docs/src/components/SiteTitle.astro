@@ -1,0 +1,27 @@
+---
+const { siteTitle, siteTitleHref } = Astro.locals.starlightRoute;
+---
+
+<a href={siteTitleHref} class="site-title sl-flex">
+  <span
+    aria-hidden="true"
+    class="inline-flex items-baseline text-sm font-semibold uppercase tracking-[0.2em]"
+  >
+    <span class="text-foreground">Block</span>
+    <span class="text-primary">Data</span>
+  </span>
+  <span class="sr-only" translate="no">{siteTitle}</span>
+</a>
+
+<style>
+  @layer starlight.core {
+    .site-title {
+      align-items: center;
+      gap: var(--sl-nav-gap);
+      text-decoration: none;
+      white-space: nowrap;
+      min-width: 0;
+    }
+  }
+</style>
+

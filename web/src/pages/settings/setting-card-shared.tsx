@@ -4,12 +4,8 @@ import { NumberInput } from '@ark-ui/react/number-input';
 import { PasswordInput } from '@ark-ui/react/password-input';
 import { Select, createListCollection } from '@ark-ui/react/select';
 import { Switch } from '@ark-ui/react/switch';
-import {
-  IconCheck,
-  IconChevronDown,
-  IconEye,
-  IconEyeOff,
-} from '@tabler/icons-react';
+import { Tick01Icon, ArrowDown01Icon, ViewIcon, ViewOffIcon } from '@hugeicons/core-free-icons';
+import { HugeiconsIcon } from '@hugeicons/react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -131,8 +127,8 @@ export function SettingCard({
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => onChange(setting.key, e.currentTarget.value)}
               />
               <PasswordInput.VisibilityTrigger className="absolute right-2 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded text-muted-foreground transition-colors hover:text-foreground">
-                <PasswordInput.Indicator fallback={<IconEyeOff size={16} />}>
-                  <IconEye size={16} />
+                <PasswordInput.Indicator fallback={<HugeiconsIcon icon={ViewOffIcon} size={16} strokeWidth={1.8} />}>
+                  <HugeiconsIcon icon={ViewIcon} size={16} strokeWidth={1.8} />
                 </PasswordInput.Indicator>
               </PasswordInput.VisibilityTrigger>
             </PasswordInput.Control>
@@ -177,7 +173,7 @@ export function SettingCard({
               <Select.Trigger className={cn(inputClass, 'flex items-center justify-between')}>
                 <Select.ValueText className="truncate text-left" placeholder="Select..." />
                 <Select.Indicator className="ml-2 shrink-0 text-muted-foreground">
-                  <IconChevronDown size={16} />
+                  <HugeiconsIcon icon={ArrowDown01Icon} size={16} strokeWidth={1.8} />
                 </Select.Indicator>
               </Select.Trigger>
             </Select.Control>
@@ -195,7 +191,7 @@ export function SettingCard({
                   >
                     <Select.ItemText>{item.label}</Select.ItemText>
                     <Select.ItemIndicator>
-                      <IconCheck size={14} />
+                      <HugeiconsIcon icon={Tick01Icon} size={14} strokeWidth={1.8} />
                     </Select.ItemIndicator>
                   </Select.Item>
                 ))}

@@ -15,6 +15,7 @@ src-content/
 .playwright-mcp/
 dev-todos/
 docs/
+!web-docs/src/content/docs/
 docs-site/
 
 # Third-party tracked forks: ignore generated artifacts

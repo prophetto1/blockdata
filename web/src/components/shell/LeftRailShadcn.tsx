@@ -2,13 +2,8 @@ import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { Avatar } from '@ark-ui/react/avatar';
 import { Select, createListCollection } from '@ark-ui/react/select';
 import { TreeView, createTreeCollection, type TreeNode } from '@ark-ui/react/tree-view';
-import {
-  IconBook2,
-  IconCheck,
-  IconChevronDown,
-  IconLayoutColumns,
-  IconPlus,
-} from '@tabler/icons-react';
+import { Tick01Icon, ArrowDown01Icon, Layout03Icon, Add01Icon } from '@hugeicons/core-free-icons';
+import { HugeiconsIcon } from '@hugeicons/react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 import { GLOBAL_MENUS } from '@/components/shell/nav-config';
@@ -424,7 +419,7 @@ export function LeftRailShadcn({
                 aria-label="Collapse side navigation"
                 title="Collapse side navigation"
               >
-                <IconLayoutColumns size={16} stroke={2.1} />
+                <HugeiconsIcon icon={Layout03Icon} size={16} strokeWidth={2.1} />
               </button>
             )}
           </div>
@@ -461,7 +456,7 @@ export function LeftRailShadcn({
                         />
                       </span>
                       <Select.Indicator className="shrink-0 text-muted-foreground">
-                        <IconChevronDown size={16} stroke={2} />
+                        <HugeiconsIcon icon={ArrowDown01Icon} size={16} strokeWidth={2} />
                       </Select.Indicator>
                     </Select.Trigger>
                   </Select.Control>
@@ -495,7 +490,7 @@ export function LeftRailShadcn({
                                     </span>
                                   </span>
                                   <Select.ItemIndicator className="shrink-0">
-                                    <IconCheck size={15} stroke={2.2} />
+                                    <HugeiconsIcon icon={Tick01Icon} size={15} strokeWidth={2.2} />
                                   </Select.ItemIndicator>
                                 </Select.Item>
                               ))
@@ -520,7 +515,7 @@ export function LeftRailShadcn({
                   aria-label="Create new project"
                   title="Create new project"
                 >
-                  <IconPlus size={14} stroke={2.1} />
+                  <HugeiconsIcon icon={Add01Icon} size={14} strokeWidth={2.1} />
                 </button>
                 </div>
               </div>
@@ -598,7 +593,7 @@ export function LeftRailShadcn({
                   </div>
                 )}
                 {!desktopCompact && (
-                  <IconChevronDown size={14} stroke={2} className="shrink-0 text-sidebar-foreground/40" />
+                  <HugeiconsIcon icon={ArrowDown01Icon} size={14} strokeWidth={2} className="shrink-0 text-sidebar-foreground/40" />
                 )}
               </MenuTrigger>
               <MenuPositioner>
@@ -616,7 +611,6 @@ export function LeftRailShadcn({
                         window.open('https://blockdata.run/docs', '_blank', 'noopener');
                       }}
                     >
-                      <IconBook2 size={16} stroke={1.8} />
                       Docs
                     </MenuItem>
                     <MenuItem

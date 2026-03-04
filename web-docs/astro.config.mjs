@@ -16,6 +16,9 @@ export default defineConfig({
     starlight({
       title: 'BlockData Docs',
       description: 'Documentation for the BlockData platform.',
+      components: {
+        SiteTitle: './src/components/SiteTitle.astro',
+      },
       favicon: '/favicon.svg',
       lastUpdated: true,
       pagination: true,
@@ -41,6 +44,9 @@ export default defineConfig({
           label: 'Internal',
           items: [
             { slug: 'internal/local-urls' },
+            { slug: 'internal/icon-unification' },
+            { slug: 'internal/toolbar-button-spec' },
+            { slug: 'internal/font-standardization' },
           ],
         },
       ],

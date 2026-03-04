@@ -3,6 +3,7 @@ import { FileUpload as ArkFileUpload } from '@ark-ui/react/file-upload';
 import Dashboard from '@uppy/react/dashboard';
 import { FileIcon, UploadIcon, XIcon, AlertCircleIcon, CheckIcon, Loader2Icon, CloudIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useIsDark } from '@/lib/useIsDark';
 import { useUppyTransport, type UploadBatchResult, type FileState } from './useUppyTransport';
 
 import '@uppy/core/css/style.min.css';
@@ -48,6 +49,7 @@ export function ProjectParseUppyUploader({
   hideHeader = false,
   height,
 }: ProjectParseUppyUploaderProps) {
+  const isDark = useIsDark();
   const {
     uppy,
     fileStates,
@@ -166,7 +168,7 @@ export function ProjectParseUppyUploader({
             plugins={['GoogleDrive']}
             proudlyDisplayPoweredByUppy={false}
             hideProgressDetails={false}
-            theme="dark"
+            theme={isDark ? 'dark' : 'light'}
           />
         </div>
       )}

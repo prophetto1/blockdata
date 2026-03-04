@@ -1,11 +1,10 @@
 import { useMemo, useState } from 'react';
 import { Combobox, createListCollection } from '@ark-ui/react/combobox';
-import { IconMenu2, IconSparkles, IconList } from '@tabler/icons-react';
-import { Moon02Icon, Sun03Icon } from '@hugeicons/core-free-icons';
+import { Menu02Icon, SparklesIcon, LeftToRightListBulletIcon, Moon02Icon, Sun03Icon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { useNavigate } from 'react-router-dom';
 import { useHeaderCenter } from '@/components/shell/HeaderCenterContext';
-import { AppIcon } from '@/components/ui/app-icon';
+
 import {
   ICON_CONTEXT_SIZE,
   ICON_SIZES,
@@ -151,7 +150,7 @@ export function TopCommandBar({
           onClick={onToggleNav}
           className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:hidden"
         >
-          <AppIcon icon={IconMenu2} size="lg" />
+          <HugeiconsIcon icon={Menu02Icon} size={24} strokeWidth={1.8} />
         </button>
         {shellGuides ? leftNode : null}
       </div>
@@ -177,7 +176,7 @@ export function TopCommandBar({
             title="Project List"
             onClick={() => navigate('/app/projects/list')}
           >
-            <AppIcon icon={IconList} size="md" />
+            <HugeiconsIcon icon={LeftToRightListBulletIcon} size={20} strokeWidth={1.8} />
             <span className="hidden sm:inline">Project List</span>
           </button>
           {showAssistantToggle && onToggleAssistant ? (
@@ -188,7 +187,7 @@ export function TopCommandBar({
               title={assistantOpened ? 'Hide Assistant' : 'Show Assistant'}
               onClick={onToggleAssistant}
             >
-              <AppIcon icon={IconSparkles} size="md" />
+              <HugeiconsIcon icon={SparklesIcon} size={20} strokeWidth={1.8} />
             </button>
           ) : null}
           <button

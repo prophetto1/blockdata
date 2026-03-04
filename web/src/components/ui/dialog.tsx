@@ -1,6 +1,7 @@
 import { Dialog as ArkDialog } from '@ark-ui/react/dialog';
 import { Portal } from '@ark-ui/react/portal';
-import { XIcon } from 'lucide-react';
+import { Cancel01Icon } from '@hugeicons/core-free-icons';
+import { HugeiconsIcon } from '@hugeicons/react';
 import { cn } from '@/lib/utils';
 
 const DialogRoot = ArkDialog.Root;
@@ -109,7 +110,7 @@ function DialogCloseTrigger({
       )}
       {...props}
     >
-      <XIcon className="h-4 w-4" />
+      <HugeiconsIcon icon={Cancel01Icon} size={16} strokeWidth={1.8} />
     </ArkDialog.CloseTrigger>
   );
 }
