@@ -1,9 +1,10 @@
 ---
 title: Requirements
-description: Raw requirements notes for UI standardization work.
+description:  requirements notes for UI standardization work.
 ---
 
-API Playground. The API Playground currently. Has the incorrect. Design. It has a frame that is inconsistent with.
-If you look at the side, there's like a help button. We should delete this right? Right above it there is like a theme settings. Page. What we wanna do with this component is take it out from this playground. Frame and then create a new menu in general. Below account called themes. And just. Right, triple A that component and put it into general. Within settings. So this is going to become a user setting. Configuration. So I'm gonna we're gonna talk about. How it's gonna work in relation to the day night toggle because we have to set up. We have to define a very rigid rule. For the interoperability of these two functionalities, but we'll talk about that later. Just strip it away for now.
+Async API. We have to look into it and most likely. Umm, worker work and into our system. A lot, basically. Secondly, umm. Fast API back end we have to. I have to define the specification and make sure that it's being done properly. Also the database. Refactoring. We've been working on that. We started working on that today. And we have to finish it, and there's a lot more to do. I think we got some of the tables down but. That's about it, you know. 
 
-And then next if you go to the. The environment menu. You gonna see that? There's a button at the bottom. There's a side rail and then there's. What is likely a coding? Like a editor area. In order to align this with our design specifications, we're going to need to. Replace a lot of these little components with the arc UI components that we've been using. On this page particularly, we we want to start with. The AD environment it should be a button. That we use.
+Very important thing to do is. Well, I mean, not yet, but just remember that we have to. Just start organizing that page. Probably wanna organize it. Based off of. On the API. My frameworks be doing it, you know. That's probably the best way.
+
+I think this is starting to. Be OK. I have a couple of suggestions. Actually, I think the first thing we should do is. Take out the the Bunny. I don't know the graphics. There's two graphics on this particular page. I think should be taken out. Oh, I think the import functionality we can keep it as is. Now, is this different from before where we have more granular control over? You know, over the over the surface.

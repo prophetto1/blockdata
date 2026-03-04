@@ -143,11 +143,13 @@ export function ScalarApiPlaygroundPage() {
   }, [syncThemeToIframe]);
 
   return (
-    <ScalarApiPlayground
-      specUrl={scalarQueryConfig.specUrl}
-      proxyUrl={scalarQueryConfig.proxyUrl}
-      iframeRef={iframeRef}
-      onIframeLoad={syncThemeToIframe}
-    />
+    <div className="h-[calc(100vh-var(--app-shell-header-height))] min-h-0 overflow-hidden">
+      <ScalarApiPlayground
+        specUrl={scalarQueryConfig.specUrl}
+        proxyUrl={scalarQueryConfig.proxyUrl}
+        iframeRef={iframeRef}
+        onIframeLoad={syncThemeToIframe}
+      />
+    </div>
   );
 }

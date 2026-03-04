@@ -26,6 +26,7 @@ import AgentOnboardingAuth from '@/pages/AgentOnboardingAuth';
 import AgentOnboardingConnect from '@/pages/AgentOnboardingConnect';
 import AgentOnboardingSelect from '@/pages/AgentOnboardingSelect';
 import McpServers from '@/pages/settings/McpServers';
+import { ScalarApiPlaygroundPage } from '@/pages/settings/ScalarApiPlaygroundPage';
 import Commands from '@/pages/Commands';
 import DocumentTest from '@/pages/DocumentTest';
 import DatabasePlaceholder from '@/pages/DatabasePlaceholder';
@@ -142,6 +143,8 @@ export const router = createBrowserRouter([
           { path: '/app/schemas/apply', element: <Navigate to="/app/schemas" replace /> },
           { path: '/app/schemas/advanced', element: <Navigate to="/app/schemas" replace /> },
           { path: '/app/schemas/advanced/:schemaId', element: <Navigate to="/app/schemas" replace /> },
+          // API Editor (Scalar playground)
+          { path: '/app/api-editor', element: <ScalarApiPlaygroundPage /> },
 
           // Settings (API keys, model defaults, MCP, admin)
           {

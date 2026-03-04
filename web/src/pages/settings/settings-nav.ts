@@ -1,13 +1,15 @@
 import {
   IconAdjustments,
-  IconBrain,
+  IconKey,
   IconNetwork,
   IconPalette,
+  IconPlugConnected,
   IconUserCircle,
   IconServer,
   IconPlug,
   IconTable,
   IconTerminal2,
+  IconWand,
 } from '@tabler/icons-react';
 import type { Icon } from '@tabler/icons-react';
 
@@ -37,7 +39,9 @@ export const SETTINGS_NAV: SettingsNavGroup[] = [
     id: 'admin',
     label: 'Operations',
     items: [
-      { id: 'ai-api', label: 'AI Stack', icon: IconBrain, path: '/app/settings/ai' },
+      { id: 'ai-providers', label: 'AI Providers', icon: IconKey, path: '/app/settings/ai' },
+      { id: 'model-roles', label: 'Model Roles', icon: IconWand, path: '/app/settings/model-roles' },
+      { id: 'mcp-servers', label: 'MCP Servers', icon: IconPlugConnected, path: '/app/settings/mcp' },
       { id: 'admin-services', label: 'Services', icon: IconServer, path: '/app/settings/admin/services' },
       { id: 'admin-platform', label: 'Platform', icon: IconNetwork, path: '/app/settings/admin/platform-config' },
       { id: 'admin-integrations', label: 'Integration Catalog', icon: IconPlug, path: '/app/settings/admin/integration-catalog' },
@@ -59,8 +63,6 @@ export const ALL_NAV_ITEMS: SettingsNavItem[] = SETTINGS_NAV.flatMap((g) => g.it
 const NAV_ITEM_BY_ID = new Map(ALL_NAV_ITEMS.map((item) => [item.id, item] as const));
 
 const ADMIN_PATH_ALIASES: Array<{ prefix: string; targetId: string }> = [
-  { prefix: '/app/settings/model-roles', targetId: 'ai-api' },
-  { prefix: '/app/settings/mcp', targetId: 'ai-api' },
   { prefix: '/app/settings/admin/platform-config', targetId: 'admin-platform' },
   { prefix: '/app/settings/admin/audit', targetId: 'admin-services' },
   { prefix: '/app/settings/admin/integration-catalog', targetId: 'admin-integrations' },

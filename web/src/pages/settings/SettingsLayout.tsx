@@ -4,11 +4,6 @@ import { AppIcon } from '@/components/ui/app-icon';
 import { styleTokens } from '@/lib/styleTokens';
 import { cn } from '@/lib/utils';
 import { SETTINGS_NAV, findNavItemByPath, type SettingsNavGroup } from './settings-nav';
-const AI_STACK_TABS = [
-  { id: 'ai-providers', label: 'AI Providers', path: '/app/settings/ai' },
-  { id: 'model-roles', label: 'Model Roles', path: '/app/settings/model-roles' },
-  { id: 'mcp', label: 'MCP Servers', path: '/app/settings/mcp' },
-] as const;
 
 function NavGroup({
   group,
@@ -68,7 +63,6 @@ export default function SettingsLayout() {
   );
 
   const activeId = activeItem?.id ?? null;
-  const isAiStackRoute = AI_STACK_TABS.some((tab) => location.pathname.startsWith(tab.path));
 
   return (
     <div className="flex h-[calc(100vh-var(--app-shell-header-height))] overflow-hidden">
@@ -98,30 +92,6 @@ export default function SettingsLayout() {
       {/* Content area */}
       <section className="min-w-0 flex-1 overflow-hidden p-6" style={{ backgroundColor: styleTokens.adminConfig.contentBackground }}>
         <div className="h-full min-h-0 overflow-hidden">
-          {isAiStackRoute && (
-            <div className="mb-3 rounded-md border border-border bg-background p-2">
-              <div className="flex flex-wrap items-center gap-2">
-                {AI_STACK_TABS.map((tab) => {
-                  const isActive = location.pathname.startsWith(tab.path);
-                  return (
-                    <button
-                      key={tab.id}
-                      type="button"
-                      onClick={() => navigate(tab.path)}
-                      className={cn(
-                        'inline-flex h-9 items-center rounded-md border px-2.5 text-[13px] font-semibold transition-colors',
-                        isActive
-                          ? 'border-border bg-background text-foreground'
-                          : 'border-transparent text-muted-foreground hover:bg-background hover:text-foreground',
-                      )}
-                    >
-                      {tab.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
           <Outlet />
         </div>
       </section>

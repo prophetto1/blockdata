@@ -111,15 +111,17 @@ export function AppLayout() {
   const navbarWidth = isMobile ? styleTokens.shell.navbarWidth : desktopNavbarWidth;
 
   const isEltRoute = /^\/app\/elt(?:\/|$)/.test(location.pathname);
-  const isSchemaLayoutRoute = location.pathname === '/app/schemas/layout';
-  const isSchemasRoute = /^\/app\/schemas(?:\/|$)/.test(location.pathname);
+  const isEditorLayoutRoute = location.pathname === '/app/editor/layout';
+  const isEditorRoute = /^\/app\/editor(?:\/|$)/.test(location.pathname);
   const isSettingsRoute = /^\/app\/settings(?:\/|$)/.test(location.pathname);
   const isFlowsRoute = /^\/app\/flows(?:\/|$)/.test(location.pathname);
+  const isApiEditorRoute = /^\/app\/api-editor(?:\/|$)/.test(location.pathname);
   const lockMainScroll = (
     isEltRoute
-    || isSchemaLayoutRoute
-    || isSchemasRoute
+    || isEditorLayoutRoute
+    || isEditorRoute
     || isSettingsRoute
+    || isApiEditorRoute
   );
 
   useEffect(() => {
@@ -181,7 +183,7 @@ export function AppLayout() {
         >
           <TopCommandBar
             onToggleNav={toggleNav}
-            shellGuides={isSchemaLayoutRoute}
+            shellGuides={isEditorLayoutRoute}
             showAssistantToggle={assistantDockEnabled}
             assistantOpened={assistantOpened}
             onToggleAssistant={toggleAssistant}

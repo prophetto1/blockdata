@@ -23,6 +23,21 @@ export default defineConfig({
       lastUpdated: true,
       pagination: true,
       credits: true,
+      head: [
+        {
+          tag: 'script',
+          content: `
+            try {
+              const key = 'starlight-theme';
+              if (localStorage.getItem(key) === null) {
+                localStorage.setItem(key, 'dark');
+              }
+              const theme = localStorage.getItem(key);
+              document.documentElement.dataset.theme = theme === 'light' ? 'light' : 'dark';
+            } catch {}
+          `,
+        },
+      ],
       tableOfContents: { minHeadingLevel: 2, maxHeadingLevel: 3 },
       editLink: {
         baseUrl: 'https://github.com/blockdata/writing-system/edit/master/web-docs/',

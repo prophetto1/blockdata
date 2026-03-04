@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-03-04T06:55:34.048Z",
+  "generatedAt": "2026-03-04T09:39:39.789Z",
   "scope": "auth",
   "pages": [
     {
@@ -221,11 +221,11 @@
     },
     {
       "page": "src/pages/DocumentTest.tsx",
-      "componentCount": 49,
+      "componentCount": 53,
       "categoryCounts": {
-        "local-components": 14,
+        "local-components": 17,
         "ark-ui": 16,
-        "tabler-icons": 16,
+        "tabler-icons": 17,
         "in-file component": 1,
         "external-package": 1,
         "unknown": 1
@@ -392,6 +392,15 @@
           "importedAs": "IconLayoutColumns",
           "category": "tabler-icons",
           "definition": "IconLayoutColumns comes from @tabler/icons-react (named import of IconLayoutColumns)"
+        },
+        {
+          "component": "IconLock",
+          "usedAs": "IconLock",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconLock",
+          "category": "tabler-icons",
+          "definition": "IconLock comes from @tabler/icons-react (named import of IconLock)"
         },
         {
           "component": "IconPlus",
@@ -572,6 +581,33 @@
           "importedAs": "Splitter",
           "category": "ark-ui",
           "definition": "Splitter.Root comes from @ark-ui/react/splitter (named import of Splitter)"
+        },
+        {
+          "component": "Tabs",
+          "usedAs": "Tabs",
+          "source": "@/components/ui/tabs",
+          "importKind": "named",
+          "importedAs": "Tabs",
+          "category": "local-components",
+          "definition": "Tabs comes from @/components/ui/tabs (named import of Tabs)"
+        },
+        {
+          "component": "TabsList",
+          "usedAs": "TabsList",
+          "source": "@/components/ui/tabs",
+          "importKind": "named",
+          "importedAs": "TabsList",
+          "category": "local-components",
+          "definition": "TabsList comes from @/components/ui/tabs (named import of TabsList)"
+        },
+        {
+          "component": "TabsTrigger",
+          "usedAs": "TabsTrigger",
+          "source": "@/components/ui/tabs",
+          "importKind": "named",
+          "importedAs": "TabsTrigger",
+          "category": "local-components",
+          "definition": "TabsTrigger comes from @/components/ui/tabs (named import of TabsTrigger)"
         },
         {
           "component": "ToolbarBtn",
@@ -2940,6 +2976,24 @@
       "components": []
     },
     {
+      "page": "src/pages/settings/ScalarApiPlaygroundPage.tsx",
+      "componentCount": 1,
+      "categoryCounts": {
+        "relative-local": 1
+      },
+      "components": [
+        {
+          "component": "ScalarApiPlayground",
+          "usedAs": "ScalarApiPlayground",
+          "source": "./ScalarApiPlayground",
+          "importKind": "named",
+          "importedAs": "ScalarApiPlayground",
+          "category": "relative-local",
+          "definition": "ScalarApiPlayground comes from ./ScalarApiPlayground (named import of ScalarApiPlayground)"
+        }
+      ]
+    },
+    {
       "page": "src/pages/settings/ServiceDetailPanel.tsx",
       "componentCount": 6,
       "categoryCounts": {
@@ -3790,13 +3844,13 @@
           "definition": "PlatformConfigPanel comes from ./PlatformConfigPanel (named import of PlatformConfigPanel)"
         },
         {
-          "component": "ScalarApiPlayground",
-          "usedAs": "ScalarApiPlayground",
-          "source": "./ScalarApiPlayground",
+          "component": "ScalarApiPlaygroundPage",
+          "usedAs": "ScalarApiPlaygroundPage",
+          "source": "./ScalarApiPlaygroundPage",
           "importKind": "named",
-          "importedAs": "ScalarApiPlayground",
+          "importedAs": "ScalarApiPlaygroundPage",
           "category": "relative-local",
-          "definition": "ScalarApiPlayground comes from ./ScalarApiPlayground (named import of ScalarApiPlayground)"
+          "definition": "ScalarApiPlaygroundPage comes from ./ScalarApiPlaygroundPage (named import of ScalarApiPlaygroundPage)"
         },
         {
           "component": "ServicesPanel",
@@ -4728,15 +4782,15 @@
       ]
     }
   ],
-  "totalComponentUsages": 471,
+  "totalComponentUsages": 476,
   "categoryTotals": {
     "external-package": 19,
-    "local-components": 129,
-    "tabler-icons": 93,
+    "local-components": 132,
+    "tabler-icons": 94,
     "ark-ui": 186,
     "in-file component": 15,
     "unknown": 1,
-    "relative-local": 27,
+    "relative-local": 28,
     "local-pages": 1
   }
 }

@@ -6,7 +6,7 @@ import { Tick01Icon, ArrowDown01Icon, Layout03Icon, Add01Icon } from '@hugeicons
 import { HugeiconsIcon } from '@hugeicons/react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
-import { GLOBAL_MENUS } from '@/components/shell/nav-config';
+import { GLOBAL_MENUS, NAV_GROUPS } from '@/components/shell/nav-config';
 import {
   Sidebar,
   SidebarContent,
@@ -67,6 +67,7 @@ const GLOBAL_MENU_ORDER: Record<string, number> = {
   '/app/integrations': 2,
   '/app/database': 3,
   '/app/schemas': 4,
+  '/app/api-editor': 5,
 };
 
 function toCount(value: unknown): number {
@@ -221,6 +222,7 @@ export function LeftRailShadcn({
     if (location.pathname.startsWith('/app/integrations')) return '/app/integrations';
     if (location.pathname.startsWith('/app/database')) return '/app/database';
     if (location.pathname.startsWith('/app/schemas')) return '/app/schemas';
+    if (location.pathname.startsWith('/app/api-editor')) return '/app/api-editor';
     return null;
   }, [location.pathname]);
 
@@ -553,9 +555,63 @@ export function LeftRailShadcn({
                       </button>
                     );
                   })}
+                  {NAV_GROUPS.map((group) => (
+                    <div key={group.label} className="flex flex-col items-center gap-1">
+                      <div className="my-1 h-px w-6 bg-sidebar-border" />
+                      {group.items.map((item) => {
+                        const ItemIcon = item.icon;
+                        const isActive = activeMenuPath === item.path;
+                        return (
+                          <button
+                            key={item.path}
+                            type="button"
+                            onClick={() => navigateTo(item.path)}
+                            className={cn(
+                              'flex h-10 w-10 items-center justify-center rounded-md transition-colors',
+                              isActive
+                                ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                                : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+                            )}
+                            title={item.label}
+                            aria-label={item.label}
+                          >
+                            <ItemIcon size={22} stroke={1.8} />
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ))}
                 </div>
               ) : (
-                renderMenuTree()
+                <>
+                  {renderMenuTree()}
+                  {NAV_GROUPS.map((group) => (
+                    <div key={group.label} className="mt-4">
+                      <div className="mb-1 px-2 text-[11px] font-semibold uppercase tracking-wide text-sidebar-foreground/50">
+                        {group.label}
+                      </div>
+                      <div className="space-y-1">
+                        {group.items.map((item) => {
+                          const isActive = activeMenuPath === item.path;
+                          return (
+                            <button
+                              key={item.path}
+                              type="button"
+                              onClick={() => navigateTo(item.path)}
+                              className={cn(
+                                'flex w-full items-center gap-2 rounded-md text-sidebar-foreground/90 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+                                'h-10 px-2 text-[15px] font-semibold leading-snug',
+                                isActive && 'bg-sidebar-accent text-sidebar-accent-foreground',
+                              )}
+                            >
+                              <span className="truncate">{item.label}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </>
               )}
             </SidebarGroupContent>
           </SidebarGroup>
