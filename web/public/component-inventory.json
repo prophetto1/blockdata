@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-03-04T03:58:22.541Z",
+  "generatedAt": "2026-03-04T06:55:34.048Z",
   "scope": "auth",
   "pages": [
     {
@@ -221,11 +221,11 @@
     },
     {
       "page": "src/pages/DocumentTest.tsx",
-      "componentCount": 45,
+      "componentCount": 49,
       "categoryCounts": {
         "local-components": 14,
         "ark-ui": 16,
-        "tabler-icons": 12,
+        "tabler-icons": 16,
         "in-file component": 1,
         "external-package": 1,
         "unknown": 1
@@ -286,6 +286,24 @@
           "definition": "FlowCanvas comes from @/components/flows/FlowCanvas (default import of default)"
         },
         {
+          "component": "IconArrowsTransferDown",
+          "usedAs": "IconArrowsTransferDown",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconArrowsTransferDown",
+          "category": "tabler-icons",
+          "definition": "IconArrowsTransferDown comes from @tabler/icons-react (named import of IconArrowsTransferDown)"
+        },
+        {
+          "component": "IconChevronDown",
+          "usedAs": "IconChevronDown",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconChevronDown",
+          "category": "tabler-icons",
+          "definition": "IconChevronDown comes from @tabler/icons-react (named import of IconChevronDown)"
+        },
+        {
           "component": "IconDotsVertical",
           "usedAs": "IconDotsVertical",
           "source": "@tabler/icons-react",
@@ -311,6 +329,15 @@
           "importedAs": "IconEye",
           "category": "tabler-icons",
           "definition": "IconEye comes from @tabler/icons-react (named import of IconEye)"
+        },
+        {
+          "component": "IconFileCode",
+          "usedAs": "IconFileCode",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconFileCode",
+          "category": "tabler-icons",
+          "definition": "IconFileCode comes from @tabler/icons-react (named import of IconFileCode)"
         },
         {
           "component": "IconFilePlus",
@@ -374,6 +401,15 @@
           "importedAs": "IconPlus",
           "category": "tabler-icons",
           "definition": "IconPlus comes from @tabler/icons-react (named import of IconPlus)"
+        },
+        {
+          "component": "IconTransform",
+          "usedAs": "IconTransform",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconTransform",
+          "category": "tabler-icons",
+          "definition": "IconTransform comes from @tabler/icons-react (named import of IconTransform)"
         },
         {
           "component": "IconTrash",
@@ -3236,11 +3272,11 @@
     },
     {
       "page": "src/pages/settings/setting-card-shared.tsx",
-      "componentCount": 34,
+      "componentCount": 31,
       "categoryCounts": {
         "local-components": 1,
         "ark-ui": 29,
-        "tabler-icons": 4
+        "external-package": 1
       },
       "components": [
         {
@@ -3280,40 +3316,13 @@
           "definition": "Field.Textarea comes from @ark-ui/react/field (named import of Field)"
         },
         {
-          "component": "IconCheck",
-          "usedAs": "IconCheck",
-          "source": "@tabler/icons-react",
+          "component": "HugeiconsIcon",
+          "usedAs": "HugeiconsIcon",
+          "source": "@hugeicons/react",
           "importKind": "named",
-          "importedAs": "IconCheck",
-          "category": "tabler-icons",
-          "definition": "IconCheck comes from @tabler/icons-react (named import of IconCheck)"
-        },
-        {
-          "component": "IconChevronDown",
-          "usedAs": "IconChevronDown",
-          "source": "@tabler/icons-react",
-          "importKind": "named",
-          "importedAs": "IconChevronDown",
-          "category": "tabler-icons",
-          "definition": "IconChevronDown comes from @tabler/icons-react (named import of IconChevronDown)"
-        },
-        {
-          "component": "IconEye",
-          "usedAs": "IconEye",
-          "source": "@tabler/icons-react",
-          "importKind": "named",
-          "importedAs": "IconEye",
-          "category": "tabler-icons",
-          "definition": "IconEye comes from @tabler/icons-react (named import of IconEye)"
-        },
-        {
-          "component": "IconEyeOff",
-          "usedAs": "IconEyeOff",
-          "source": "@tabler/icons-react",
-          "importKind": "named",
-          "importedAs": "IconEyeOff",
-          "category": "tabler-icons",
-          "definition": "IconEyeOff comes from @tabler/icons-react (named import of IconEyeOff)"
+          "importedAs": "HugeiconsIcon",
+          "category": "external-package",
+          "definition": "HugeiconsIcon comes from @hugeicons/react (named import of HugeiconsIcon)"
         },
         {
           "component": "NumberInput",
@@ -4509,6 +4518,33 @@
       ]
     },
     {
+      "page": "src/pages/settings/SettingsThemes.tsx",
+      "componentCount": 2,
+      "categoryCounts": {
+        "relative-local": 2
+      },
+      "components": [
+        {
+          "component": "SettingsPageFrame",
+          "usedAs": "SettingsPageFrame",
+          "source": "./SettingsPageHeader",
+          "importKind": "named",
+          "importedAs": "SettingsPageFrame",
+          "category": "relative-local",
+          "definition": "SettingsPageFrame comes from ./SettingsPageHeader (named import of SettingsPageFrame)"
+        },
+        {
+          "component": "SettingsSection",
+          "usedAs": "SettingsSection",
+          "source": "./SettingsPageHeader",
+          "importKind": "named",
+          "importedAs": "SettingsSection",
+          "category": "relative-local",
+          "definition": "SettingsSection comes from ./SettingsPageHeader (named import of SettingsSection)"
+        }
+      ]
+    },
+    {
       "page": "src/pages/settings/WorkerConfigPanel.tsx",
       "componentCount": 2,
       "categoryCounts": {
@@ -4692,15 +4728,15 @@
       ]
     }
   ],
-  "totalComponentUsages": 468,
+  "totalComponentUsages": 471,
   "categoryTotals": {
-    "external-package": 18,
+    "external-package": 19,
     "local-components": 129,
     "tabler-icons": 93,
     "ark-ui": 186,
     "in-file component": 15,
     "unknown": 1,
-    "relative-local": 25,
+    "relative-local": 27,
     "local-pages": 1
   }
 }

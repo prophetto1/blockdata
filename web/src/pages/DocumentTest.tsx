@@ -13,6 +13,7 @@ import {
   MenuTrigger,
 } from '@/components/ui/menu';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   IconArrowsTransferDown,
   IconChevronDown,
@@ -87,6 +88,16 @@ const NEW_PANE_TAB_PRIORITY: TabId[] = [
   'preview',
   'canvas',
 ];
+const ELT_RESERVED_TOP_TAB_SHAPES = [
+  'Overview',
+  'Topology',
+  'Executions',
+  'Edit',
+  'Revisions',
+  'Triggers',
+  'Logs',
+  'Metrics',
+] as const;
 
 // ---------------------------------------------------------------------------
 // Register tabs — view tabs are fixed; action tabs are dynamic.
@@ -1869,6 +1880,23 @@ export default function DocumentTest() {
 
   return (
     <div className="flex h-[calc(100vh-var(--app-shell-header-height))] flex-col gap-3 p-3">
+      {/* Reserved strip for future ELT top submenu tabs (structurally identical to Flows). */}
+      <Tabs value="elt-reserved-shape-0" onValueChange={() => {}} className="w-full">
+        <TabsList
+          aria-label="ELT reserved sections"
+          className="flex h-11 min-h-11 w-full items-stretch overflow-x-auto bg-card shadow-[inset_0_-1px_0_var(--border)]"
+        >
+          {ELT_RESERVED_TOP_TAB_SHAPES.map((label, index) => (
+            <TabsTrigger
+              key={`elt-reserved-shape-${index}`}
+              value={`elt-reserved-shape-${index}`}
+              className="inline-flex h-full shrink-0 items-center gap-1 border-r border-border px-3.5 text-[13px] font-semibold leading-none whitespace-nowrap text-muted-foreground transition-colors first:border-l first:border-l-border hover:bg-accent hover:text-foreground data-selected:bg-background data-selected:text-foreground"
+            >
+              <span className="select-none text-transparent">{label}</span>
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </Tabs>
       <div className="flex items-center gap-2 rounded-md border border-border bg-card p-2">
         <ToolbarBtn
           active={panes.some((p) => p.tabs.includes('assets'))}
