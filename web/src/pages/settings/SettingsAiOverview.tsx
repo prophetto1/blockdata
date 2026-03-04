@@ -56,7 +56,7 @@ export default function SettingsAiOverview() {
               key={provider.id}
               type="button"
               className={cn(
-                'group relative flex items-start gap-3 rounded-lg border bg-card p-4 text-left shadow-sm transition-all',
+                'group relative flex min-h-[88px] items-start gap-3 rounded-lg border bg-card p-4 text-left shadow-sm transition-all',
                 connected
                   ? 'border-green-300/60 dark:border-green-700/40'
                   : invalid

@@ -109,10 +109,10 @@ export default function SettingsLayout() {
                       type="button"
                       onClick={() => navigate(tab.path)}
                       className={cn(
-                        'inline-flex h-8 items-center rounded-md border px-3 text-xs font-medium transition-colors',
+                        'inline-flex h-9 items-center rounded-md border px-2.5 text-[13px] font-semibold transition-colors',
                         isActive
-                          ? 'border-primary/40 bg-primary/15 text-foreground'
-                          : 'border-border bg-background text-muted-foreground hover:bg-accent hover:text-foreground',
+                          ? 'border-border bg-background text-foreground'
+                          : 'border-transparent text-muted-foreground hover:bg-background hover:text-foreground',
                       )}
                     >
                       {tab.label}
