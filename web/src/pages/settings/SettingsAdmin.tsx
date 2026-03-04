@@ -1,6 +1,6 @@
 import { Field } from '@ark-ui/react/field';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import { Navigate, useLocation, useParams } from 'react-router-dom';
+import { Navigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ErrorAlert } from '@/components/common/ErrorAlert';
 import { styleTokens } from '@/lib/styleTokens';
@@ -11,7 +11,7 @@ import { IntegrationCatalogPanel } from './IntegrationCatalogPanel';
 import { GridTestPanel } from './GridTestPanel';
 import { PlatformConfigPanel } from './PlatformConfigPanel';
 import { ServicesPanel } from './ServicesPanel';
-import { ScalarApiPlayground } from './ScalarApiPlayground';
+import { ScalarApiPlaygroundPage } from './ScalarApiPlaygroundPage';
 import { CATEGORY_IDS, type CategoryId } from './settings-tabs';
 
 type AuditRow = {
@@ -122,7 +122,6 @@ function isAuditRowInRange(changedAt: string, range: AuditTimeRange): boolean {
 
 export default function SettingsAdmin() {
   const { category } = useParams<{ category?: string }>();
-  const location = useLocation();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [auditRows, setAuditRows] = useState<AuditRow[]>([]);
@@ -207,14 +206,6 @@ export default function SettingsAdmin() {
     return CATEGORIES.find((c) => c.id === selectedCategory) ?? null;
   }, [selectedCategory]);
 
-  const scalarQueryConfig = useMemo(() => {
-    const params = new URLSearchParams(location.search);
-    return {
-      specUrl: params.get('scalarUrl') ?? undefined,
-      proxyUrl: params.get('scalarProxyUrl') ?? undefined,
-    };
-  }, [location.search]);
-
   const [categoryAction] = useState<ReactNode>(null);
 
   if (!selectedCategory) {
@@ -265,13 +256,10 @@ export default function SettingsAdmin() {
             </div>
           ) : selectedCategory === 'api-playground' ? (
             <div
-              className="min-h-0 flex-1 overflow-hidden p-3 md:p-4"
+              className="min-h-0 flex-1 overflow-hidden"
               style={{ backgroundColor: styleTokens.adminConfig.contentBackground }}
             >
-              <ScalarApiPlayground
-                proxyUrl={scalarQueryConfig.proxyUrl}
-                specUrl={scalarQueryConfig.specUrl}
-              />
+              <ScalarApiPlaygroundPage />
             </div>
           ) : (
             <div className="min-h-0 flex-1 overflow-y-auto p-3 md:p-4" style={{ backgroundColor: styleTokens.adminConfig.contentBackground }}>
