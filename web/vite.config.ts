@@ -4,6 +4,7 @@ import tailwindcss from '@tailwindcss/vite'
 import path from 'path'
 import { execFile } from 'node:child_process'
 import type { IncomingMessage, ServerResponse } from 'node:http'
+import { fileURLToPath } from 'node:url'
 
 function superuserToolsPlugin() {
   return {
@@ -80,6 +81,14 @@ export default defineConfig({
       '/_image': {
         target: 'http://localhost:4321',
         changeOrigin: true,
+      },
+    },
+  },
+  build: {
+    rollupOptions: {
+      input: {
+        main: fileURLToPath(new URL('./index.html', import.meta.url)),
+        scalarClientHost: fileURLToPath(new URL('./scalar-client-host.html', import.meta.url)),
       },
     },
   },

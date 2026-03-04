@@ -1,6 +1,6 @@
 import { Field } from '@ark-ui/react/field';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import { Navigate, useParams } from 'react-router-dom';
+import { Navigate, useLocation, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ErrorAlert } from '@/components/common/ErrorAlert';
 import { styleTokens } from '@/lib/styleTokens';
@@ -10,8 +10,8 @@ import { InstanceConfigPanel } from './InstanceConfigPanel';
 import { IntegrationCatalogPanel } from './IntegrationCatalogPanel';
 import { GridTestPanel } from './GridTestPanel';
 import { PlatformConfigPanel } from './PlatformConfigPanel';
-import { ApiPlayground } from './ApiPlayground';
 import { ServicesPanel } from './ServicesPanel';
+import { ScalarApiPlayground } from './ScalarApiPlayground';
 import { CATEGORY_IDS, type CategoryId } from './settings-tabs';
 
 type AuditRow = {
@@ -103,8 +103,7 @@ function summarizeAuditChange(row: AuditRow): string {
 const inputClass =
   'h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring';
 
-const AUDIT_TIME_RANGE_OPTIONS = ['24h', '7d', '30d', 'all'] as const;
-type AuditTimeRange = (typeof AUDIT_TIME_RANGE_OPTIONS)[number];
+type AuditTimeRange = '24h' | '7d' | '30d' | 'all';
 
 function isAuditRowInRange(changedAt: string, range: AuditTimeRange): boolean {
   if (range === 'all') return true;
@@ -123,6 +122,7 @@ function isAuditRowInRange(changedAt: string, range: AuditTimeRange): boolean {
 
 export default function SettingsAdmin() {
   const { category } = useParams<{ category?: string }>();
+  const location = useLocation();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [auditRows, setAuditRows] = useState<AuditRow[]>([]);
@@ -188,7 +188,7 @@ export default function SettingsAdmin() {
 
       const data = payload as AdminConfigResponse;
       setAuditRows(data.audit);
-    } catch (_e) {
+    } catch {
       // Failed to load admin config — panels still render, audit tab is empty
       setAuditRows([]);
     } finally {
@@ -206,6 +206,14 @@ export default function SettingsAdmin() {
     if (!selectedCategory) return null;
     return CATEGORIES.find((c) => c.id === selectedCategory) ?? null;
   }, [selectedCategory]);
+
+  const scalarQueryConfig = useMemo(() => {
+    const params = new URLSearchParams(location.search);
+    return {
+      specUrl: params.get('scalarUrl') ?? undefined,
+      proxyUrl: params.get('scalarProxyUrl') ?? undefined,
+    };
+  }, [location.search]);
 
   const [categoryAction] = useState<ReactNode>(null);
 
@@ -260,7 +268,10 @@ export default function SettingsAdmin() {
               className="min-h-0 flex-1 overflow-hidden p-3 md:p-4"
               style={{ backgroundColor: styleTokens.adminConfig.contentBackground }}
             >
-              <ApiPlayground />
+              <ScalarApiPlayground
+                proxyUrl={scalarQueryConfig.proxyUrl}
+                specUrl={scalarQueryConfig.specUrl}
+              />
             </div>
           ) : (
             <div className="min-h-0 flex-1 overflow-y-auto p-3 md:p-4" style={{ backgroundColor: styleTokens.adminConfig.contentBackground }}>
