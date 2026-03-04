@@ -1,8 +1,10 @@
-import { useMemo } from 'react';
+import { useMemo, type RefObject } from 'react';
 
 type ScalarApiPlaygroundProps = {
   specUrl?: string;
   proxyUrl?: string;
+  iframeRef?: RefObject<HTMLIFrameElement | null>;
+  onIframeLoad?: () => void;
 };
 
 function buildHostSrc({ specUrl, proxyUrl: proxyUrlProp }: ScalarApiPlaygroundProps) {
@@ -32,16 +34,21 @@ function buildHostSrc({ specUrl, proxyUrl: proxyUrlProp }: ScalarApiPlaygroundPr
  * Isolated host for Scalar API Client (legacy app layout).
  * Runs in an iframe to avoid routing and CSS conflicts with the React shell.
  */
-export function ScalarApiPlayground({ specUrl, proxyUrl }: ScalarApiPlaygroundProps) {
+export function ScalarApiPlayground({
+  specUrl,
+  proxyUrl,
+  iframeRef,
+  onIframeLoad,
+}: ScalarApiPlaygroundProps) {
   const src = useMemo(() => buildHostSrc({ specUrl, proxyUrl }), [proxyUrl, specUrl]);
 
   return (
-    <div className="h-full min-h-0 overflow-hidden rounded-md border border-border bg-background">
-      <iframe
-        title="Scalar API Client"
-        src={src}
-        className="h-full min-h-0 w-full border-0"
-      />
-    </div>
+    <iframe
+      ref={iframeRef}
+      title="Scalar API Client"
+      src={src}
+      className="h-full min-h-0 w-full border-0"
+      onLoad={onIframeLoad}
+    />
   );
 }

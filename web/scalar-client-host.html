@@ -15,6 +15,26 @@
 
       body {
         overflow: hidden;
+        background: transparent;
+      }
+
+      #scalar-client {
+        background: var(--scalar-background-1, transparent);
+      }
+
+      #scalar-client-app {
+        height: 100%;
+      }
+
+      /* Remove decorative ASCII art in empty states (bunny + response keycap/computer).
+         Keep functional controls and import flow intact. */
+      #scalar-client .rabbit-ascii,
+      #scalar-client .rabbitjump,
+      #scalar-client .rabbitsit,
+      #scalar-client .keycap-hotkey,
+      #scalar-client .keycap-n,
+      #scalar-client .flex-center > div > .ascii-art {
+        display: none !important;
       }
     </style>
   </head>
@@ -23,4 +43,3 @@
     <script type="module" src="/src/scalar-host/main.ts"></script>
   </body>
 </html>
-
