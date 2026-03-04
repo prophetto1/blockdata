@@ -295,7 +295,7 @@ export default function Schemas() {
     }
   }, [extractSchemaPreviewJson]);
 
-  const iconBtnClass = 'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full';
+  const iconBtnClass = 'inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md';
   const iconActiveClass = 'bg-accent text-foreground';
   const iconInactiveClass = 'text-muted-foreground hover:text-foreground';
 
@@ -632,30 +632,27 @@ export default function Schemas() {
                 type="button"
                 aria-pressed={editorView === 'visual'}
                 onClick={() => setEditorView('visual')}
-                style={{ fontSize: '12px', fontWeight: 500, lineHeight: '16px' }}
-                className={`inline-flex h-10 items-center gap-1.5 rounded border px-2 ${viewButtonClass(editorView === 'visual')}`}
+                className={`inline-flex h-9 items-center gap-1.5 rounded-md border px-2.5 text-[13px] font-semibold ${viewButtonClass(editorView === 'visual')}`}
               >
-                <IconEye size={14} />
+                <IconEye size={15} />
                 Visual
               </button>
               <button
                 type="button"
                 aria-pressed={editorView === 'split'}
                 onClick={() => setEditorView('split')}
-                style={{ fontSize: '12px', fontWeight: 500, lineHeight: '16px' }}
-                className={`inline-flex h-10 items-center gap-1.5 rounded border px-2 ${viewButtonClass(editorView === 'split')}`}
+                className={`inline-flex h-9 items-center gap-1.5 rounded-md border px-2.5 text-[13px] font-semibold ${viewButtonClass(editorView === 'split')}`}
               >
-                <IconLayoutColumns size={14} />
+                <IconLayoutColumns size={15} />
                 Split
               </button>
               <button
                 type="button"
                 aria-pressed={editorView === 'code'}
                 onClick={() => setEditorView('code')}
-                style={{ fontSize: '12px', fontWeight: 500, lineHeight: '16px' }}
-                className={`inline-flex h-10 items-center gap-1.5 rounded border px-2 ${viewButtonClass(editorView === 'code')}`}
+                className={`inline-flex h-9 items-center gap-1.5 rounded-md border px-2.5 text-[13px] font-semibold ${viewButtonClass(editorView === 'code')}`}
               >
-                <IconCode size={14} />
+                <IconCode size={15} />
                 Code
               </button>
             </div>
@@ -666,25 +663,25 @@ export default function Schemas() {
                   type="button"
                   variant="ghost"
                   size="sm"
-                  className="h-10 gap-1.5 px-2 text-xs text-muted-foreground"
+                  className="h-9 gap-1.5 px-2.5 text-[13px] font-semibold text-muted-foreground"
                   onClick={() => {
                     setExtractSchemaReady(false);
                     setExtractSchemaFields([]);
                   }}
                 >
-                  <IconRefresh size={14} />
+                  <IconRefresh size={15} />
                   Reset
                 </Button>
                 <Button
                   type="button"
                   size="sm"
-                  className="h-10 gap-1.5 px-2 text-xs"
+                  className="h-9 gap-1.5 px-2.5 text-[13px] font-semibold"
                   onClick={() => {
                     // TODO: persist schema to backend
                     console.log('Save schema:', extractSchemaPreviewJson);
                   }}
                 >
-                  <IconDeviceFloppy size={14} />
+                  <IconDeviceFloppy size={15} />
                   Save
                 </Button>
               </div>

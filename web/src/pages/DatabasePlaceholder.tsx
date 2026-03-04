@@ -221,7 +221,7 @@ export default function DatabasePlaceholder() {
               value={tableFilter}
               onChange={(event) => setTableFilter(event.currentTarget.value)}
             />
-            <Button size="sm" className="h-8 w-full text-xs" disabled={loadingCatalog} onClick={() => void loadCatalog()}>
+            <Button size="sm" className="h-9 w-full text-[13px] font-semibold" disabled={loadingCatalog} onClick={() => void loadCatalog()}>
               {loadingCatalog ? 'Refreshing...' : 'Refresh Catalog'}
             </Button>
           </div>
@@ -308,7 +308,7 @@ export default function DatabasePlaceholder() {
                       ))}
                     </select>
                   </label>
-                  <Button size="sm" className="h-8 px-3 text-xs" disabled={loadingRows} onClick={() => void loadSelectedTableRows()}>
+                  <Button size="sm" className="h-9 px-2.5 text-[13px] font-semibold" disabled={loadingRows} onClick={() => void loadSelectedTableRows()}>
                     {loadingRows ? 'Loading...' : 'Refresh'}
                   </Button>
                 </div>
@@ -317,7 +317,7 @@ export default function DatabasePlaceholder() {
               <div className="flex flex-wrap items-center gap-2">
                 <Button
                   size="sm"
-                  className="h-8 px-2 text-xs"
+                  className="h-9 px-2.5 text-[13px] font-semibold"
                   disabled={page <= 1 || loadingRows}
                   onClick={() => setPage((prev) => Math.max(1, prev - 1))}
                 >
@@ -328,7 +328,7 @@ export default function DatabasePlaceholder() {
                 </p>
                 <Button
                   size="sm"
-                  className="h-8 px-2 text-xs"
+                  className="h-9 px-2.5 text-[13px] font-semibold"
                   disabled={page >= totalPages || loadingRows}
                   onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
                 >

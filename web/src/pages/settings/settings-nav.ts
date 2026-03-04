@@ -2,6 +2,7 @@ import {
   IconAdjustments,
   IconBrain,
   IconNetwork,
+  IconPalette,
   IconUserCircle,
   IconServer,
   IconPlug,
@@ -29,6 +30,7 @@ export const SETTINGS_NAV: SettingsNavGroup[] = [
     label: 'General',
     items: [
       { id: 'profile', label: 'Account', icon: IconUserCircle, path: '/app/settings/profile' },
+      { id: 'themes', label: 'Themes', icon: IconPalette, path: '/app/settings/themes' },
     ],
   },
   {

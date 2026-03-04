@@ -277,7 +277,7 @@ export default function FlowDetail() {
       >
         <TabsList
           aria-label="Flow sections"
-          className="flow-detail-tabs-row flex h-10 min-h-10 w-full items-stretch overflow-x-auto bg-card shadow-[inset_0_-1px_0_var(--border)]"
+          className="flow-detail-tabs-row flex h-11 min-h-11 w-full items-stretch overflow-x-auto bg-card shadow-[inset_0_-1px_0_var(--border)]"
         >
           {FLOW_TABS.map((item) => {
             const isLocked = Boolean(item.locked);
@@ -287,7 +287,7 @@ export default function FlowDetail() {
                 value={item.value}
                 disabled={isLocked}
                 aria-disabled={isLocked}
-                className="inline-flex h-full shrink-0 items-center gap-1 border-r border-border px-3 text-xs font-medium leading-none whitespace-nowrap text-muted-foreground transition-colors first:border-l first:border-l-border hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-muted-foreground data-selected:bg-background data-selected:text-foreground"
+                className="inline-flex h-full shrink-0 items-center gap-1 border-r border-border px-3.5 text-[13px] font-semibold leading-none whitespace-nowrap text-muted-foreground transition-colors first:border-l first:border-l-border hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-muted-foreground data-selected:bg-background data-selected:text-foreground"
               >
                 <span>{item.label}</span>
                 {isLocked ? <IconLock size={11} aria-hidden /> : null}
@@ -298,7 +298,7 @@ export default function FlowDetail() {
             <TabsTrigger
               key={item.value}
               value={item.value}
-              className="group inline-flex h-full shrink-0 items-center gap-1 border-r border-border px-3 text-xs font-medium leading-none whitespace-nowrap text-muted-foreground transition-colors hover:bg-accent hover:text-foreground data-selected:bg-background data-selected:text-foreground"
+              className="group inline-flex h-full shrink-0 items-center gap-1 border-r border-border px-3.5 text-[13px] font-semibold leading-none whitespace-nowrap text-muted-foreground transition-colors hover:bg-accent hover:text-foreground data-selected:bg-background data-selected:text-foreground"
             >
               <span>{item.label}</span>
               <button

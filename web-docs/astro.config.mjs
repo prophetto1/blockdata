@@ -47,6 +47,7 @@ export default defineConfig({
             { slug: 'internal/icon-unification' },
             { slug: 'internal/toolbar-button-spec' },
             { slug: 'internal/font-standardization' },
+            { slug: 'internal/requirements' },
           ],
         },
       ],

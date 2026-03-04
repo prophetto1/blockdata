@@ -3,6 +3,8 @@ import Editor from '@monaco-editor/react';
 import {
   IconCheck,
   IconCode,
+  IconChevronDown,
+  IconDeviceFloppy,
   IconDotsVertical,
   IconEye,
   IconFilePlus,
@@ -1873,7 +1875,7 @@ export default function FlowWorkbench({ flowId, flowName, namespace }: FlowWorkb
                 className={`flow-workbench-panel-button${isOpen ? ' is-open' : ''}${isActiveInFocusedPane ? ' is-focused' : ''}`}
                 onClick={() => openPanelFromToolbar(panel.tabId)}
               >
-                <panel.Icon size={13} />
+                <panel.Icon size={14} />
                 <span>{panel.label}</span>
               </button>
             );
@@ -1897,12 +1899,12 @@ export default function FlowWorkbench({ flowId, flowName, namespace }: FlowWorkb
             <Tooltip.Trigger asChild>
               <button
                 type="button"
-                aria-label="Validate flow"
                 className="flow-workbench-validate-button"
                 onClick={() => { void handleValidateFlow(); }}
                 disabled={isValidating}
               >
-                <IconCheck size={14} />
+                <IconCheck size={15} />
+                <span>Validate</span>
               </button>
             </Tooltip.Trigger>
             <Portal>
@@ -1916,7 +1918,8 @@ export default function FlowWorkbench({ flowId, flowName, namespace }: FlowWorkb
 
           <MenuRoot positioning={{ placement: 'bottom-end', offset: { mainAxis: 6 } }}>
             <MenuTrigger className="flow-workbench-actions-trigger">
-              Actions
+              <span>Actions</span>
+              <IconChevronDown size={15} />
             </MenuTrigger>
             <MenuPortal>
               <MenuPositioner>
@@ -1949,7 +1952,8 @@ export default function FlowWorkbench({ flowId, flowName, namespace }: FlowWorkb
             disabled={isSaving || codeDraft.trim().length === 0 || !isDirty}
             className="flow-workbench-save-button"
           >
-            {isSaving ? 'Saving...' : 'Save'}
+            <IconDeviceFloppy size={15} />
+            <span>{isSaving ? 'Saving...' : 'Save'}</span>
           </button>
         </div>
       </div>

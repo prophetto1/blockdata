@@ -33,11 +33,11 @@ export function DltPullPanel({ projectId, scriptLabel }: Props) {
           <button
             type="button"
             disabled
-            className="inline-flex h-8 items-center gap-2 rounded-md border border-border bg-background px-3 text-xs font-medium text-muted-foreground opacity-70"
+            className="inline-flex h-9 items-center gap-1.5 rounded-md border border-border bg-background px-2.5 text-[13px] font-semibold text-muted-foreground opacity-40"
             title="Wiring not implemented yet"
             aria-label="Run pull (disabled)"
           >
-            <IconPlayerPlay size={14} />
+            <IconPlayerPlay size={15} />
             Run pull
           </button>
         </div>

@@ -222,11 +222,11 @@ export function ParseEasyPanel({ projectId: _projectId, selectedDocument = null,
               type="button"
               disabled={!canRun || runBusy}
               onClick={() => { void handleRun(); }}
-              className="inline-flex h-8 w-[78px] items-center justify-center gap-1.5 rounded-md border border-border bg-background px-2 text-xs font-medium text-foreground"
+              className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-border bg-background px-2.5 text-[13px] font-semibold text-foreground"
               title={runDisabledReason ?? 'Run parse on selected document'}
               aria-label="Run parse"
             >
-              <IconPlayerPlay size={14} className="text-orange-500" />
+              <IconPlayerPlay size={15} className="text-orange-500" />
               {runBusy ? 'Wait' : 'Run'}
             </button>
           </div>
@@ -242,7 +242,7 @@ export function ParseEasyPanel({ projectId: _projectId, selectedDocument = null,
                   type="button"
                   onClick={() => setMode('standard')}
                   aria-pressed={mode === 'standard'}
-                  className={`h-8 w-24 rounded-md border text-xs font-medium ${
+                  className={`h-9 w-24 rounded-md border text-[13px] font-semibold ${
                     mode === 'standard'
                       ? 'border-border bg-background text-foreground'
                       : 'border-transparent bg-transparent text-muted-foreground hover:text-foreground'
@@ -254,7 +254,7 @@ export function ParseEasyPanel({ projectId: _projectId, selectedDocument = null,
                   type="button"
                   onClick={() => setMode('advanced')}
                   aria-pressed={mode === 'advanced'}
-                  className={`h-8 w-24 rounded-md border text-xs font-medium ${
+                  className={`h-9 w-24 rounded-md border text-[13px] font-semibold ${
                     mode === 'advanced'
                       ? 'border-border bg-background text-foreground'
                       : 'border-transparent bg-transparent text-muted-foreground hover:text-foreground'

@@ -49,12 +49,13 @@ function TabLabel({
   className?: string;
 }) {
   return (
-    <span
-      className={`text-sm cursor-pointer select-none parse-middle-tab${active ? ' is-active' : ''} ${active ? 'font-bold text-foreground' : 'font-semibold text-muted-foreground'} ${className ?? ''}`}
+    <button
+      type="button"
+      className={`text-xs font-semibold select-none parse-middle-tab${active ? ' is-active' : ''} ${active ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'} ${className ?? ''}`}
       onClick={onClick}
     >
       {children}
-    </span>
+    </button>
   );
 }
 
@@ -114,7 +115,7 @@ export default function SchemaLayout() {
           ) : null}
           <button
             type="button"
-            className="top-command-bar-shell-toggle inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground"
+            className="top-command-bar-shell-toggle inline-flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground"
             aria-label={isLeftCollapsed ? 'Expand left column' : 'Collapse left column'}
             title={isLeftCollapsed ? 'Expand left column' : 'Collapse left column'}
             onClick={() => setLeftColumnState((current) => (current === 'collapsed' ? 'full' : 'collapsed'))}
@@ -136,7 +137,7 @@ export default function SchemaLayout() {
           ) : null}
           <button
             type="button"
-            className="top-command-bar-shell-toggle inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground"
+            className="top-command-bar-shell-toggle inline-flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground"
             aria-label={isRightCollapsed ? 'Expand configuration column' : 'Collapse configuration column'}
             title={isRightCollapsed ? 'Expand configuration column' : 'Collapse configuration column'}
             onClick={() => setRightColumnState((current) => (current === 'collapsed' ? 'full' : 'collapsed'))}
@@ -243,7 +244,7 @@ export default function SchemaLayout() {
                     onPageChange={(details) => setDocPage(details.page)}
                     className="parse-docs-pagination flex items-center gap-1"
                   >
-                    <Pagination.PrevTrigger className="inline-flex h-6 w-6 items-center justify-center rounded text-xs text-muted-foreground hover:text-foreground disabled:opacity-40">
+                    <Pagination.PrevTrigger className="inline-flex h-6 w-6 items-center justify-center rounded-md text-xs text-muted-foreground hover:text-foreground disabled:opacity-40">
                       <IconChevronLeft size={14} />
                     </Pagination.PrevTrigger>
                     <Pagination.Context>
@@ -253,7 +254,7 @@ export default function SchemaLayout() {
                             <Pagination.Item
                               key={index}
                               {...page}
-                              className="inline-flex h-6 min-w-6 items-center justify-center rounded text-xs font-medium text-muted-foreground hover:text-foreground data-selected:bg-accent data-selected:text-foreground"
+                              className="inline-flex h-6 min-w-6 items-center justify-center rounded-md text-xs font-medium text-muted-foreground hover:text-foreground data-selected:bg-accent data-selected:text-foreground"
                             >
                               {page.value}
                             </Pagination.Item>
@@ -265,7 +266,7 @@ export default function SchemaLayout() {
                         )
                       }
                     </Pagination.Context>
-                    <Pagination.NextTrigger className="inline-flex h-6 w-6 items-center justify-center rounded text-xs text-muted-foreground hover:text-foreground disabled:opacity-40">
+                    <Pagination.NextTrigger className="inline-flex h-6 w-6 items-center justify-center rounded-md text-xs text-muted-foreground hover:text-foreground disabled:opacity-40">
                       <IconChevronRight size={14} />
                     </Pagination.NextTrigger>
                   </Pagination.Root>

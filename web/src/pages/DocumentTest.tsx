@@ -14,16 +14,20 @@ import {
 } from '@/components/ui/menu';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
+  IconArrowsTransferDown,
+  IconChevronDown,
   IconDotsVertical,
   IconDownload,
   IconEye,
   IconFilePlus,
+  IconFileCode,
   IconFiles,
   IconFileText,
   IconFolder,
   IconFolderPlus,
   IconLayoutColumns,
   IconPlus,
+  IconTransform,
   IconTrash,
   IconX,
 } from '@tabler/icons-react';
@@ -997,7 +1001,7 @@ function PreviewTabPanel({ doc }: { doc: ProjectDocumentRow | null }) {
 /*  ToolbarBtn — standardized toolbar button                           */
 /* ------------------------------------------------------------------ */
 
-const TOOLBAR_BTN_BASE = 'inline-flex h-8 items-center gap-1.5 rounded border px-3 text-xs font-medium leading-4 transition-colors';
+const TOOLBAR_BTN_BASE = 'inline-flex h-9 items-center gap-1.5 rounded-md border px-2.5 text-[13px] font-semibold transition-colors';
 const TOOLBAR_BTN_ACTIVE = 'border-border bg-background text-foreground';
 const TOOLBAR_BTN_INACTIVE = 'border-transparent text-muted-foreground hover:bg-background hover:text-foreground';
 
@@ -1868,7 +1872,7 @@ export default function DocumentTest() {
       <div className="flex items-center gap-2 rounded-md border border-border bg-card p-2">
         <ToolbarBtn
           active={panes.some((p) => p.tabs.includes('assets'))}
-          icon={<IconFiles size={14} />}
+          icon={<IconFiles size={15} />}
           onClick={() => {
             const currentIndex = panes.findIndex((p) => p.tabs.includes('assets'));
             if (currentIndex === -1) {
@@ -1882,7 +1886,7 @@ export default function DocumentTest() {
         </ToolbarBtn>
         <ToolbarBtn
           active={panes.some((p) => p.tabs.some((tabId) => tabId === 'preview' || isPreviewInstanceTab(tabId)))}
-          icon={<IconEye size={14} />}
+          icon={<IconEye size={15} />}
           onClick={() => {
             const currentIndex = panes.findIndex((p) => p.tabs.includes('preview'));
             if (currentIndex === -1) {
@@ -1899,7 +1903,7 @@ export default function DocumentTest() {
         </ToolbarBtn>
         <ToolbarBtn
           active={panes.some((p) => p.tabs.includes('canvas'))}
-          icon={<IconLayoutColumns size={14} />}
+          icon={<IconLayoutColumns size={15} />}
           onClick={() => {
             const currentIndex = panes.findIndex((p) => p.tabs.includes('canvas'));
             if (currentIndex === -1) {
@@ -1916,6 +1920,7 @@ export default function DocumentTest() {
 
         <ToolbarBtn
           active={panes.some((p) => p.tabs.includes('parse') || p.tabs.some((t) => t.startsWith('parse:')))}
+          icon={<IconFileCode size={15} />}
           onClick={() => {
             const currentIndex = panes.findIndex((p) => p.tabs.includes('parse'));
             if (currentIndex === -1) {
@@ -1938,12 +1943,14 @@ export default function DocumentTest() {
           <MenuTrigger asChild>
             <ToolbarBtn
               active={panes.some((p) => p.tabs.some((t) => t.startsWith('pull:')))}
+              icon={<IconArrowsTransferDown size={15} />}
               onPointerEnter={openPullMenu}
               onPointerLeave={schedulePullMenuClose}
               aria-label="Open Pull (DLT)"
               title="Open Pull (DLT)"
             >
               Pull
+              <IconChevronDown size={14} />
             </ToolbarBtn>
           </MenuTrigger>
           <MenuPortal>
@@ -1970,7 +1977,7 @@ export default function DocumentTest() {
         </MenuRoot>
         <ToolbarBtn
           active={panes.some((p) => p.tabs.includes('load'))}
-          icon={<IconDownload size={14} />}
+          icon={<IconDownload size={15} />}
           onClick={() => {
             setPanes((current) => {
               const targetPaneId = focusedPaneId ?? current[current.length - 1]?.id ?? 'pane-1';
@@ -1982,7 +1989,7 @@ export default function DocumentTest() {
         >
           Load
         </ToolbarBtn>
-        <ToolbarBtn active={false}>
+        <ToolbarBtn active={false} icon={<IconTransform size={15} />}>
           Transform
         </ToolbarBtn>
       </div>
@@ -2017,7 +2024,7 @@ export default function DocumentTest() {
               onDrop={(event) => handlePaneDrop(event, index, pane.id)}
             >
               <div
-                className="grid min-h-10 grid-cols-[auto_1fr_auto] border-b border-border bg-card"
+                className="grid min-h-9 grid-cols-[auto_1fr_auto] border-b border-border bg-card"
               >
                 <button
                   type="button"
@@ -2034,7 +2041,7 @@ export default function DocumentTest() {
                     paneDragRef.current = null;
                     setDragOverPaneIndex(null);
                   }}
-                  className="inline-flex min-h-10 w-8 items-center justify-center border-r border-border text-xs text-muted-foreground"
+                  className="inline-flex min-h-9 w-8 items-center justify-center border-r border-border text-xs text-muted-foreground"
                   aria-label="Drag pane"
                   title="Drag pane"
                 >
@@ -2092,8 +2099,8 @@ export default function DocumentTest() {
                         setTabDropTarget({ paneId: pane.id, insertIndex: insertAt });
                       }}
                       className={[
-                        'relative inline-flex items-center gap-1 border-r border-border px-2 text-xs',
-                        pane.activeTab === tab ? 'bg-background text-foreground shadow-[inset_0_-1px_0_var(--primary)]' : 'text-muted-foreground',
+                        'relative inline-flex h-9 items-center gap-1 border-r border-border px-2.5 text-xs font-semibold',
+                        pane.activeTab === tab ? 'bg-background text-foreground shadow-[inset_0_-2px_0_var(--primary)]' : 'text-muted-foreground',
                         tabDropTarget?.paneId === pane.id && tabDropTarget.insertIndex === tabIndex ? 'before:absolute before:left-0 before:top-1 before:bottom-1 before:w-0.5 before:bg-primary' : '',
                         tabDropTarget?.paneId === pane.id && tabDropTarget.insertIndex === tabIndex + 1 && tabIndex === pane.tabs.length - 1 ? 'after:absolute after:right-0 after:top-1 after:bottom-1 after:w-0.5 after:bg-primary' : '',
                       ].join(' ')}
@@ -2118,7 +2125,7 @@ export default function DocumentTest() {
                       type="button"
                       onClick={() => handleSplitPane(index)}
                       disabled={paneLayout.length >= MAX_COLUMNS}
-                      className="inline-flex h-6 w-6 items-center justify-center rounded border border-border text-xs disabled:opacity-40"
+                      className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-border text-xs disabled:opacity-40"
                       aria-label="Split pane"
                       title="Split pane"
                     >
@@ -2130,7 +2137,7 @@ export default function DocumentTest() {
                       <button
                         type="button"
                         aria-label="Pane actions"
-                        className="inline-flex h-6 w-6 items-center justify-center rounded border border-border text-xs text-muted-foreground hover:bg-accent hover:text-foreground"
+                        className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-border text-xs text-muted-foreground hover:bg-accent hover:text-foreground"
                       >
                         <IconDotsVertical size={14} />
                       </button>

@@ -18,6 +18,8 @@
   border-radius: 8px;
   padding: 8px;
   background: var(--card);
+  position: relative;
+  top: -5px;
 }
 
 .flow-workbench-toolbar-panels {
@@ -37,14 +39,14 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  height: 28px;
+  height: 36px;
   border: 1px solid transparent;
   border-radius: 6px;
   background: transparent;
   color: var(--muted-foreground);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
-  padding: 0 8px;
+  padding: 0 10px;
   cursor: pointer;
   transition: background-color 120ms ease, color 120ms ease, border-color 120ms ease;
 }
@@ -61,7 +63,8 @@
 }
 
 .flow-workbench-panel-button.is-focused {
-  box-shadow: inset 0 -1px 0 var(--primary);
+  border-color: var(--border);
+  color: var(--foreground);
 }
 
 .flow-workbench-toolbar-actions {
@@ -117,7 +120,7 @@
 .flow-workbench-validate-button,
 .flow-workbench-actions-trigger,
 .flow-workbench-save-button {
-  height: 32px;
+  height: 36px;
   border-radius: 6px;
   border: 1px solid var(--border);
   background: var(--background);
@@ -125,18 +128,14 @@
   padding: 0 10px;
   font-size: 13px;
   font-weight: 600;
-}
-
-.flow-workbench-validate-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  padding: 0;
+  gap: 6px;
 }
 
 .flow-workbench-copy-button {
-  height: 32px;
+  height: 36px;
   border-radius: 6px;
   border: 1px solid var(--border);
   background: var(--background);
@@ -146,7 +145,7 @@
   font-weight: 600;
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
   cursor: pointer;
 }
 
@@ -180,7 +179,7 @@
 
 .flow-workbench-save-button:disabled {
   color: var(--muted-foreground);
-  opacity: 0.7;
+  opacity: 0.4;
 }
 
 .flow-workbench-action-notice {
