@@ -1,0 +1,25 @@
+---
+title: BlockData Docs
+description: Documentation for the BlockData platform.
+template: splash
+hero:
+  title: BlockData Docs
+  tagline: Platform documentation — services, pipelines, and integrations.
+  actions:
+    - text: Get Started
+      link: /getting-started/
+      icon: right-arrow
+    - text: Component Reference
+      link: /reference/starlight-components/
+      variant: minimal
+      icon: open-book
+---
+
+import { CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+## Explore
+
+<CardGrid>
+  <LinkCard title="Getting Started" description="Set up and run the docs site locally." href="/getting-started/" />
+  <LinkCard title="Component Reference" description="All built-in Starlight components with examples." href="/reference/starlight-components/" />
+</CardGrid>
