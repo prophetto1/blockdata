@@ -243,21 +243,38 @@ export function ExampleBlocks({
             value={`example-${index}`}
             className="overflow-hidden rounded-md border border-border"
           >
-            <Accordion.ItemTrigger className="flex w-full items-center gap-2 bg-muted/30 px-2 py-1.5 text-left">
-              <Accordion.ItemIndicator className="inline-flex shrink-0 text-muted-foreground transition-transform duration-200 data-[state=open]:rotate-90">
-                <IconChevronRight size={12} />
-              </Accordion.ItemIndicator>
-              <div className="min-w-0 flex-1">
-                <span className="text-xs font-medium uppercase text-foreground">
-                  {`EXAMPLE ${index + 1}`}
-                </span>
-                {doc.lang && (
-                  <span className="ml-2 rounded bg-muted px-1 py-px font-mono text-[10px] uppercase text-muted-foreground">
-                    {doc.lang}
-                  </span>
-                )}
-              </div>
-            </Accordion.ItemTrigger>
+            <div className="flex items-start gap-2 bg-muted/30 px-2 py-1.5">
+              <Accordion.ItemTrigger className="flex min-w-0 flex-1 items-center gap-2 text-left">
+                <Accordion.ItemIndicator className="inline-flex shrink-0 text-muted-foreground transition-transform duration-200 data-[state=open]:rotate-90">
+                  <IconChevronRight size={12} />
+                </Accordion.ItemIndicator>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className="text-xs font-medium uppercase text-foreground">
+                      {`EXAMPLE ${index + 1}`}
+                    </span>
+                    {doc.lang && (
+                      <span className="rounded bg-muted px-1 py-px font-mono text-[10px] uppercase text-muted-foreground">
+                        {doc.lang}
+                      </span>
+                    )}
+                  </div>
+                  {doc.title && (
+                    <p className="mt-0.5 text-xs text-muted-foreground">{doc.title}</p>
+                  )}
+                </div>
+              </Accordion.ItemTrigger>
+              <Clipboard.Root value={doc.code}>
+                <Clipboard.Trigger
+                  title="Copy example code"
+                  className="inline-flex shrink-0 items-center gap-1 rounded p-1 text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  <Clipboard.Indicator copied={<IconCheck size={12} className="text-primary" />}>
+                    <IconCopy size={12} />
+                  </Clipboard.Indicator>
+                </Clipboard.Trigger>
+              </Clipboard.Root>
+            </div>
             <Accordion.ItemContent className="overflow-hidden border-t border-border/40 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=closed]:animate-out data-[state=closed]:fade-out-0">
               <ScrollArea className="max-h-64 bg-background" viewportClass="px-2 py-2">
                 <pre className="text-xs leading-relaxed text-foreground">

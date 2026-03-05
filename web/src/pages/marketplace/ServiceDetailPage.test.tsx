@@ -1,18 +1,19 @@
-import { cleanup, render, screen } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import ServiceDetailPage from './ServiceDetailPage';
 import type { ServiceFunctionRow, ServiceRow } from '@/pages/settings/services-panel.types';
 
 const navigateMock = vi.fn();
 const fromMock = vi.fn();
+let currentServiceId = 'service-1';
 
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
   return {
     ...actual,
     useNavigate: () => navigateMock,
-    useParams: () => ({ serviceId: 'service-1' }),
+    useParams: () => ({ serviceId: currentServiceId }),
   };
 });
 
@@ -95,13 +96,54 @@ const functionRow: ServiceFunctionRow = {
   updated_at: '2026-03-05T00:00:00.000Z',
 };
 
-function buildServiceQueryResult() {
+const helperFunctionRow: ServiceFunctionRow = {
+  ...functionRow,
+  function_id: 'fn-2',
+  function_name: 'slack_message',
+  function_type: 'source',
+  label: 'Send Message',
+  examples: [],
+  metrics: [],
+};
+
+const uploadFunctionRow: ServiceFunctionRow = {
+  ...functionRow,
+  function_id: 'fn-3',
+  function_name: 'slack_upload',
+  function_type: 'destination',
+  label: 'Upload File',
+  examples: [],
+  metrics: [],
+};
+
+const secondServiceRow: ServiceRow = {
+  ...serviceRow,
+  service_id: 'service-2',
+  service_type: 'docling',
+  service_name: 'docling',
+  base_url: 'https://docling.blockdata.run',
+  description: 'Document parsing service',
+};
+
+const secondServiceFunctionRow: ServiceFunctionRow = {
+  ...functionRow,
+  function_id: 'fn-20',
+  service_id: 'service-2',
+  function_name: 'docling_parse',
+  function_type: 'parse',
+  label: 'Parse Document',
+  description: 'Parse an uploaded document.',
+  examples: [],
+  metrics: [],
+};
+
+function buildServiceQueryResult(row: ServiceRow) {
   const builder = {
     select: vi.fn().mockReturnThis(),
     eq: vi.fn().mockReturnThis(),
     single: vi.fn().mockResolvedValue({
       data: {
-        ...serviceRow,
+        ...row,
       },
       error: null,
     }),
@@ -110,12 +152,12 @@ function buildServiceQueryResult() {
   return builder;
 }
 
-function buildFunctionQueryResult() {
+function buildFunctionQueryResult(rows: ServiceFunctionRow[]) {
   const builder = {
     select: vi.fn().mockReturnThis(),
     eq: vi.fn().mockReturnThis(),
     order: vi.fn().mockResolvedValue({
-      data: [functionRow],
+      data: rows,
       error: null,
     }),
   };
@@ -124,21 +166,47 @@ function buildFunctionQueryResult() {
 }
 
 describe('ServiceDetailPage function docs rendering', () => {
+  beforeAll(() => {
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        observe() {}
+        unobserve() {}
+        disconnect() {}
+      },
+    );
+    vi.stubGlobal(
+      'IntersectionObserver',
+      class {
+        observe() {}
+        unobserve() {}
+        disconnect() {}
+        takeRecords() {
+          return [];
+        }
+      },
+    );
+  });
+
   afterEach(() => {
     cleanup();
   });
 
   beforeEach(() => {
+    currentServiceId = 'service-1';
     navigateMock.mockReset();
     fromMock.mockReset();
 
     fromMock.mockImplementation((table: string) => {
       if (table === 'registry_services') {
-        return buildServiceQueryResult();
+        return buildServiceQueryResult(currentServiceId === 'service-2' ? secondServiceRow : serviceRow);
       }
 
       if (table === 'registry_service_functions') {
-        return buildFunctionQueryResult();
+        if (currentServiceId === 'service-2') {
+          return buildFunctionQueryResult([secondServiceFunctionRow]);
+        }
+        return buildFunctionQueryResult([functionRow, helperFunctionRow, uploadFunctionRow]);
       }
 
       throw new Error(`Unexpected table: ${table}`);
@@ -170,6 +238,44 @@ describe('ServiceDetailPage function docs rendering', () => {
 
     expect(await screen.findByLabelText('Search Functions')).toBeInTheDocument();
     expect(screen.getByRole('combobox')).toBeInTheDocument();
-    expect(screen.getByRole('option', { name: 'All types (1)' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'All types (3)' })).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText('Search Functions'), {
+      target: { value: 'upload' },
+    });
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { level: 4, name: 'slack_upload' })).toBeInTheDocument();
+    });
+    expect(screen.queryByRole('heading', { level: 4, name: 'slack_execution' })).not.toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText('Search Functions'), {
+      target: { value: '' },
+    });
+
+    fireEvent.change(screen.getByRole('combobox'), {
+      target: { value: 'source' },
+    });
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { level: 4, name: 'slack_message' })).toBeInTheDocument();
+    });
+    expect(screen.queryByRole('heading', { level: 4, name: 'slack_upload' })).not.toBeInTheDocument();
+  });
+
+  it('resets the selected function when navigating to a different service', async () => {
+    const { rerender } = render(<ServiceDetailPage />);
+
+    await screen.findByText('slack_execution');
+    fireEvent.click(screen.getByText('slack_upload'));
+    await screen.findByRole('heading', { level: 4, name: 'slack_upload' });
+
+    currentServiceId = 'service-2';
+    rerender(<ServiceDetailPage />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { level: 4, name: 'docling_parse' })).toBeInTheDocument();
+    });
+    expect(screen.getByTestId('page-header')).toHaveTextContent('docling');
   });
 });

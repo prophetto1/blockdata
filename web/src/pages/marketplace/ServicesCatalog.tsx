@@ -42,11 +42,12 @@ const HEALTH_COLORS: Record<string, string> = {
 function ServiceCard({ service }: { service: MarketplaceService }) {
   const fnTypes = [...new Set(service.functions.map((f) => f.function_type))];
   const healthColor = HEALTH_COLORS[service.health_status] ?? HEALTH_COLORS.unknown;
+  const normalizedHealth = service.health_status.trim().toLowerCase();
 
   return (
     <Link
       to={`/app/marketplace/services/${service.service_id}`}
-      className="flex flex-col gap-2 p-4 bg-card border border-border rounded-xl no-underline text-inherit transition-all hover:border-primary hover:ring-1 hover:ring-primary"
+      className="flex flex-col gap-3 p-4 bg-card border border-border rounded-xl no-underline text-inherit transition-all hover:border-primary hover:ring-1 hover:ring-primary"
     >
       <div className="flex items-center gap-3">
         <span
@@ -70,6 +71,20 @@ function ServiceCard({ service }: { service: MarketplaceService }) {
         </div>
       </div>
 
+      <div className="flex flex-wrap gap-1.5 text-[0.6875rem] font-medium">
+        <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-muted-foreground">
+          <span
+            className="inline-block h-2 w-2 rounded-full"
+            style={{ backgroundColor: healthColor }}
+            aria-hidden
+          />
+          {`Health: ${normalizedHealth}`}
+        </span>
+        <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-primary">
+          {service.service_type_label}
+        </span>
+      </div>
+
       <p className="text-[0.8125rem] text-muted-foreground leading-relaxed m-0 line-clamp-2">
         {service.description
           ? service.description.length > 100
@@ -78,10 +93,8 @@ function ServiceCard({ service }: { service: MarketplaceService }) {
           : `${service.service_type_label} service`}
       </p>
 
-      <div className="flex flex-wrap gap-1 mt-auto">
-        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[0.6875rem] font-medium bg-primary/10 text-primary">
-          {service.service_type_label}
-        </span>
+      <div className="mt-auto flex items-end justify-between gap-3">
+        <div className="flex flex-wrap gap-1">
         {fnTypes.slice(0, 2).map((ft) => (
           <span
             key={ft}
@@ -90,6 +103,10 @@ function ServiceCard({ service }: { service: MarketplaceService }) {
             {ft}
           </span>
         ))}
+        </div>
+        <span className="text-xs font-medium text-primary">
+          View details
+        </span>
       </div>
     </Link>
   );

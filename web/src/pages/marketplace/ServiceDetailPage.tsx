@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { IconChevronRight } from '@tabler/icons-react';
 import { ArrowLeft02Icon } from '@hugeicons/core-free-icons';
@@ -36,6 +36,8 @@ export default function ServiceDetailPage() {
   const [selectedFunctionId, setSelectedFunctionId] = useState<string | null>(null);
   const [serviceConfigOpen, setServiceConfigOpen] = useState(false);
   const [serviceAuthConfigOpen, setServiceAuthConfigOpen] = useState(false);
+  const [functionQuery, setFunctionQuery] = useState('');
+  const [selectedFunctionType, setSelectedFunctionType] = useState('all');
 
   useEffect(() => {
     if (!serviceId) return;
@@ -43,6 +45,7 @@ export default function ServiceDetailPage() {
     async function load() {
       setLoading(true);
       setError(null);
+      setSelectedFunctionId(null);
 
       const [svcRes, fnRes] = await Promise.all([
         supabase
@@ -79,18 +82,51 @@ export default function ServiceDetailPage() {
   }, [serviceId]);
 
   const baseUrl = service?.base_url ?? '';
-  const selectedFn = functions.find((fn) => fn.function_id === selectedFunctionId) ?? null;
 
-  // Auto-select first function
-  useEffect(() => {
-    if (functions.length > 0 && !selectedFunctionId) {
-      setSelectedFunctionId(functions[0]!.function_id);
+  const functionTypeOptions = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const fn of functions) {
+      counts.set(fn.function_type, (counts.get(fn.function_type) ?? 0) + 1);
     }
-  }, [functions, selectedFunctionId]);
+    return Array.from(counts.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+  }, [functions]);
+
+  const filteredFunctions = useMemo(() => {
+    const normalizedQuery = functionQuery.trim().toLowerCase();
+    return functions.filter((fn) => {
+      if (selectedFunctionType !== 'all' && fn.function_type !== selectedFunctionType) return false;
+      if (!normalizedQuery) return true;
+
+      const haystack = [
+        fn.function_name,
+        fn.label,
+        fn.description ?? '',
+        fn.function_type,
+        ...(fn.tags ?? []),
+      ].join(' ').toLowerCase();
+      return haystack.includes(normalizedQuery);
+    });
+  }, [functionQuery, functions, selectedFunctionType]);
+
+  const selectedFn = filteredFunctions.find((fn) => fn.function_id === selectedFunctionId) ?? null;
+
+  useEffect(() => {
+    if (filteredFunctions.length === 0) {
+      if (selectedFunctionId !== null) {
+        setSelectedFunctionId(null);
+      }
+      return;
+    }
+    if (!selectedFunctionId || !filteredFunctions.some((fn) => fn.function_id === selectedFunctionId)) {
+      setSelectedFunctionId(filteredFunctions[0]!.function_id);
+    }
+  }, [filteredFunctions, selectedFunctionId]);
 
   useEffect(() => {
     setServiceConfigOpen(false);
     setServiceAuthConfigOpen(false);
+    setFunctionQuery('');
+    setSelectedFunctionType('all');
   }, [serviceId]);
 
   return (
@@ -219,34 +255,71 @@ export default function ServiceDetailPage() {
                   No functions registered.
                 </p>
               ) : (
-                <ScrollArea className="min-h-0 flex-1" viewportClass="pr-1 space-y-1">
-                  {functions.map((fn) => {
-                    const active = fn.function_id === selectedFunctionId;
-                    return (
-                      <Button
-                        key={fn.function_id}
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setSelectedFunctionId(fn.function_id)}
-                        className={`h-auto w-full flex-col items-start justify-start gap-0.5 whitespace-normal rounded-md border px-2.5 py-2 text-left font-normal transition-colors ${
-                          active
-                            ? 'border-primary/40 bg-primary/10'
-                            : 'border-border/40 hover:bg-accent/50'
-                        }`}
+                <>
+                  <div className="mb-3 grid gap-2">
+                    <label className="grid gap-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+                      <span>Search Functions</span>
+                      <input
+                        type="search"
+                        aria-label="Search Functions"
+                        value={functionQuery}
+                        onChange={(event) => setFunctionQuery(event.currentTarget.value)}
+                        placeholder="Search functions"
+                        className="h-8 rounded-md border border-border bg-background px-2 text-sm font-normal text-foreground outline-none transition-colors focus:border-primary"
+                      />
+                    </label>
+                    <label className="grid gap-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+                      <span>Type</span>
+                      <select
+                        aria-label="Filter Functions by Type"
+                        value={selectedFunctionType}
+                        onChange={(event) => setSelectedFunctionType(event.currentTarget.value)}
+                        className="h-8 rounded-md border border-border bg-background px-2 text-sm font-normal text-foreground outline-none transition-colors focus:border-primary"
                       >
-                        <p className="w-full font-mono text-xs font-semibold leading-snug text-foreground break-words [overflow-wrap:anywhere]">
-                          {fn.function_name}
-                        </p>
-                        {fn.label && fn.label !== fn.function_name && (
-                          <p className="w-full text-[10px] leading-snug text-muted-foreground break-words [overflow-wrap:anywhere]">
-                            {fn.label}
-                          </p>
-                        )}
-                      </Button>
-                    );
-                  })}
-                </ScrollArea>
+                        <option value="all">{`All types (${functions.length})`}</option>
+                        {functionTypeOptions.map(([type, count]) => (
+                          <option key={type} value={type}>
+                            {`${type} (${count})`}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+                  {filteredFunctions.length === 0 ? (
+                    <p className="rounded-md border border-dashed border-border/60 px-2 py-3 text-xs text-muted-foreground">
+                      No functions match the current filters.
+                    </p>
+                  ) : (
+                    <ScrollArea className="min-h-0 flex-1" viewportClass="pr-1 space-y-1">
+                      {filteredFunctions.map((fn) => {
+                        const active = fn.function_id === selectedFunctionId;
+                        return (
+                          <Button
+                            key={fn.function_id}
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setSelectedFunctionId(fn.function_id)}
+                            className={`h-auto w-full flex-col items-start justify-start gap-0.5 whitespace-normal rounded-md border px-2.5 py-2 text-left font-normal transition-colors ${
+                              active
+                                ? 'border-primary/40 bg-primary/10'
+                                : 'border-border/40 hover:bg-accent/50'
+                            }`}
+                          >
+                            <p className="w-full font-mono text-xs font-semibold leading-snug text-foreground break-words [overflow-wrap:anywhere]">
+                              {fn.function_name}
+                            </p>
+                            {fn.label && fn.label !== fn.function_name && (
+                              <p className="w-full text-[10px] leading-snug text-muted-foreground break-words [overflow-wrap:anywhere]">
+                                {fn.label}
+                              </p>
+                            )}
+                          </Button>
+                        );
+                      })}
+                    </ScrollArea>
+                  )}
+                </>
               )}
             </div>
           </aside>
@@ -262,6 +335,10 @@ export default function ServiceDetailPage() {
                   <FunctionReferenceBody fn={selectedFn} />
                 </ScrollArea>
               </>
+            ) : functions.length > 0 ? (
+              <div className="flex min-h-0 flex-1 items-center px-4 py-6 text-sm text-muted-foreground">
+                No functions match the current filters.
+              </div>
             ) : (
               <div className="flex min-h-0 flex-1 items-center px-4 py-6 text-sm text-muted-foreground">
                 Select a function from the left menu.
