@@ -166,7 +166,7 @@ async function loadProjectRow(
   flowId: string,
 ): Promise<{ data: FlowRow | null; error: { message?: string } | null }> {
   const { data, error } = await supabase
-    .from("projects")
+    .from("user_projects")
     .select("project_id, project_name, description, workspace_id, updated_at")
     .eq("project_id", flowId)
     .maybeSingle();

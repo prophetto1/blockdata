@@ -32,7 +32,7 @@ import {
 
 } from '@/components/ui/menu';
 import { cn } from '@/lib/utils';
-import { PROJECT_FOCUS_STORAGE_KEY } from '@/lib/projectFocus';
+import { PROJECT_FOCUS_STORAGE_KEY, PROJECT_LIST_CHANGED_EVENT } from '@/lib/projectFocus';
 import { supabase } from '@/lib/supabase';
 import { TABLES } from '@/lib/tables';
 import { DOCS_URL } from '@/lib/urls';
@@ -120,70 +120,71 @@ export function LeftRailShadcn({
     window.localStorage.removeItem(PROJECT_FOCUS_STORAGE_KEY);
   }, [activeProjectId, focusedProjectId]);
 
+  const loadProjectOptions = async () => {
+    setProjectOptionsLoading(true);
+
+    const rpcParams = {
+      p_search: null,
+      p_status: 'all',
+      p_limit: 200,
+      p_offset: 0,
+    };
+
+    let rows: Array<Record<string, unknown>> = [];
+    let { data, error } = await supabase.rpc(PROJECTS_RPC_NEW, rpcParams);
+
+    if (error && isMissingRpcError(error)) {
+      const fallback = await supabase.rpc(PROJECTS_RPC_LEGACY, rpcParams);
+      data = fallback.data;
+      error = fallback.error;
+    }
+
+    if (error) {
+      const fallbackProjects = await supabase
+        .from(TABLES.projects)
+        .select('project_id, project_name')
+        .order('project_name', { ascending: true });
+
+      if (fallbackProjects.error) {
+        setProjectOptions([]);
+        setProjectOptionsLoading(false);
+        return;
+      }
+
+      rows = ((fallbackProjects.data ?? []) as Array<Record<string, unknown>>).map((row) => ({
+        ...row,
+        doc_count: 0,
+      }));
+    } else {
+      rows = (data ?? []) as Array<Record<string, unknown>>;
+    }
+
+    const nextOptions = rows
+      .map((row) => ({
+        value: String(row.project_id ?? ''),
+        label: String(row.project_name ?? 'Untitled project'),
+        docCount: toCount(row.doc_count),
+        workspaceId: row.workspace_id ? String(row.workspace_id) : null,
+      }))
+      .filter((row) => row.value.length > 0)
+      .sort((a, b) => a.label.localeCompare(b.label));
+
+    setProjectOptions(nextOptions);
+    setProjectOptionsLoading(false);
+  };
+
   useEffect(() => {
-    let cancelled = false;
-
-    const loadProjectOptions = async () => {
-      setProjectOptionsLoading(true);
-
-      const rpcParams = {
-        p_search: null,
-        p_status: 'all',
-        p_limit: 200,
-        p_offset: 0,
-      };
-
-      let rows: Array<Record<string, unknown>> = [];
-      let { data, error } = await supabase.rpc(PROJECTS_RPC_NEW, rpcParams);
-
-      if (error && isMissingRpcError(error)) {
-        const fallback = await supabase.rpc(PROJECTS_RPC_LEGACY, rpcParams);
-        data = fallback.data;
-        error = fallback.error;
-      }
-
-      if (error) {
-        const fallbackProjects = await supabase
-          .from(TABLES.projects)
-          .select('project_id, project_name')
-          .order('project_name', { ascending: true });
-
-        if (fallbackProjects.error) {
-          if (!cancelled) {
-            setProjectOptions([]);
-            setProjectOptionsLoading(false);
-          }
-          return;
-        }
-
-        rows = ((fallbackProjects.data ?? []) as Array<Record<string, unknown>>).map((row) => ({
-          ...row,
-          doc_count: 0,
-        }));
-      } else {
-        rows = (data ?? []) as Array<Record<string, unknown>>;
-      }
-
-      if (cancelled) return;
-
-      const nextOptions = rows
-        .map((row) => ({
-          value: String(row.project_id ?? ''),
-          label: String(row.project_name ?? 'Untitled project'),
-          docCount: toCount(row.doc_count),
-          workspaceId: row.workspace_id ? String(row.workspace_id) : null,
-        }))
-        .filter((row) => row.value.length > 0)
-        .sort((a, b) => a.label.localeCompare(b.label));
-
-      setProjectOptions(nextOptions);
-      setProjectOptionsLoading(false);
-    };
-
     void loadProjectOptions();
-    return () => {
-      cancelled = true;
+  }, []);
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const focusId = (e as CustomEvent).detail?.focusProjectId;
+      if (focusId) setFocusedProjectId(focusId);
+      void loadProjectOptions();
     };
+    window.addEventListener(PROJECT_LIST_CHANGED_EVENT, handler);
+    return () => window.removeEventListener(PROJECT_LIST_CHANGED_EVENT, handler);
   }, []);
 
   const projectSelectValue = useMemo(() => {

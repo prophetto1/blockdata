@@ -12,7 +12,7 @@ export async function validateProjectOwnership(
   ownerId: string,
 ): Promise<void> {
   const { data, error } = await supabaseAdmin
-    .from("projects")
+    .from("user_projects")
     .select("project_id")
     .eq("project_id", projectId)
     .eq("owner_id", ownerId)

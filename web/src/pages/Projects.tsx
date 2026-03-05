@@ -41,6 +41,7 @@ import type { ProjectOverviewRow, ProjectRow } from '@/lib/types';
 import { createAppGridTheme } from '@/lib/agGridTheme';
 import { PageHeader } from '@/components/common/PageHeader';
 import { ErrorAlert } from '@/components/common/ErrorAlert';
+import { notifyProjectListChanged } from '@/lib/projectFocus';
 
 type StatusFilter = 'all' | 'active' | 'processing' | 'empty';
 
@@ -330,12 +331,14 @@ export default function Projects() {
       setCreating(false);
       return;
     }
+    const newId = (data as ProjectRow).project_id;
     toast.success(`Project created: ${name.trim()}`);
     setName('');
     setDesc('');
     closeCreateModal();
     setCreating(false);
-    navigate(`/app/elt/${(data as ProjectRow).project_id}`);
+    notifyProjectListChanged(newId);
+    navigate(`/app/elt/${newId}`);
   };
 
   if (loading && projects.length === 0) return <div className="flex justify-center pt-10"><div className="h-8 w-8 animate-spin rounded-full border-4 border-muted border-t-primary" /></div>;
