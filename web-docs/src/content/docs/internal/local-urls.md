@@ -5,7 +5,7 @@ description: Every local service URL, port, and environment variable for interna
 
 Quick reference for all services running locally during development.
 
-## Services
+## Dev Servers
 
 | Service | URL | Port | Start command |
 |---------|-----|------|---------------|
@@ -14,8 +14,33 @@ Quick reference for all services running locally during development.
 | Docs (Astro) | `http://localhost:4321` | 4321 | `cd web-docs && npm run dev` |
 | Pipeline Worker (FastAPI) | `http://localhost:8000` | 8000 | Python/uvicorn |
 | Uppy Companion | `http://localhost:3020` | 3020 | `cd services/uppy-companion && npm start` |
-| Kestra | `http://localhost:8080` | 8080 | Docker / standalone |
 | Ollama (LLM) | `http://localhost:11434` | 11434 | `ollama serve` |
+
+## Docker Services
+
+| Service | URL | Port | Credentials |
+|---------|-----|------|-------------|
+| ArangoDB | `http://localhost:8529` | 8529 | `root` / `blockdata_dev` |
+| Apache NiFi | `https://localhost:8443` | 8443 | `admin` / `blockdataAdmin123!` |
+| Nango | `http://localhost:3003/signin` | 3003 | `admin@blockdata.dev` / `Blockdata_dev1` |
+| Nango Postgres | `localhost:5433` | 5433 | `nango` / `nango` |
+| Nango Redis | `localhost:6380` | 6380 | — |
+| Bytebase | `http://localhost:8080` | 8080 | Set on first visit |
+| Kestra | `http://localhost:8080` | 8080 | Docker / standalone |
+
+## Supabase (local)
+
+Requires `supabase start` to launch.
+
+| Service | URL | Port |
+|---------|-----|------|
+| API | `http://127.0.0.1:54321` | 54321 |
+| DB (Postgres) | `localhost:54322` | 54322 |
+| Studio | `http://127.0.0.1:54323` | 54323 |
+| Inbucket (email) | `http://127.0.0.1:54324` | 54324 |
+| Analytics | `localhost:54327` | 54327 |
+
+Default DB credentials: `postgres` / `postgres`. Keys printed by `supabase start`.
 
 ## Remote services (always-on)
 
@@ -74,7 +99,8 @@ This means running both `web` and `web-docs` dev servers lets you access docs at
 
 ## Port conflicts
 
-Pipeline Worker and Unstructured Track Service both default to port `8000`. Run only one at a time, or override one with a different port.
+- **Port 8000**: Pipeline Worker and Unstructured Track Service both default here. Run only one at a time, or override one with a different port.
+- **Port 8080**: Bytebase and Kestra both use 8080. Run only one at a time.
 
 ## Env file locations
 

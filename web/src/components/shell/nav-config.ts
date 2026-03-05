@@ -6,6 +6,8 @@ import {
   IconFolderPlus,
   IconSchema,
   IconTerminal2,
+  IconApps,
+  IconServer,
 } from '@tabler/icons-react';
 
 export type NavItem = {
@@ -33,6 +35,13 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { label: 'Schema', icon: IconSchema, path: '/app/schemas' },
       { label: 'API', icon: IconTerminal2, path: '/app/api-editor' },
+    ],
+  },
+  {
+    label: 'Marketplace',
+    items: [
+      { label: 'Integrations', icon: IconApps, path: '/app/marketplace/integrations' },
+      { label: 'Services', icon: IconServer, path: '/app/marketplace/services' },
     ],
   },
 ];

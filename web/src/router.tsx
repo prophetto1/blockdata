@@ -32,6 +32,9 @@ import DocumentTest from '@/pages/DocumentTest';
 import DatabasePlaceholder from '@/pages/DatabasePlaceholder';
 import ServicesPage from '@/pages/ServicesPage';
 import EarlyAccess from '@/pages/EarlyAccess';
+import IntegrationsCatalog from '@/pages/marketplace/IntegrationsCatalog';
+import ServicesCatalog from '@/pages/marketplace/ServicesCatalog';
+import ServiceDetailPage from '@/pages/marketplace/ServiceDetailPage';
 import { FlowsRouteShell } from '@/components/layout/FlowsRouteShell';
 import { featureFlags } from '@/lib/featureFlags';
 import NotFound from '@/pages/NotFound';
@@ -109,6 +112,9 @@ export const router = createBrowserRouter([
           { path: '/app/integrations', element: <Integrations /> },
           { path: '/app/database', element: <DatabasePlaceholder /> },
           { path: '/app/services', element: <ServicesPage /> },
+          { path: '/app/marketplace/integrations', element: <IntegrationsCatalog /> },
+          { path: '/app/marketplace/services', element: <ServicesCatalog /> },
+          { path: '/app/marketplace/services/:serviceId', element: <ServiceDetailPage /> },
           {
             path: '/app/flows',
             element: <FlowsRouteShell />,

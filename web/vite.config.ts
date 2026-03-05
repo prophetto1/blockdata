@@ -67,8 +67,8 @@ export default defineConfig({
     },
   },
   server: {
-    host: '127.0.0.1',
-    port: 5174,
+    host: '0.0.0.0',
+    port: 5274,
     strictPort: false,
     fs: {
       allow: [path.resolve(__dirname, '..')],

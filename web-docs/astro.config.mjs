@@ -1,10 +1,13 @@
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
+import keystatic from '@keystatic/astro';
 import sitemap from '@astrojs/sitemap';
 import tailwindcss from '@tailwindcss/vite';
 import remarkMath from 'remark-math';
 import remarkEmoji from 'remark-emoji';
 import rehypeKatex from 'rehype-katex';
+
+const isDev = process.env.NODE_ENV === 'development';
 
 export default defineConfig({
   site: 'https://docs.blockdata.dev',
@@ -13,6 +16,7 @@ export default defineConfig({
     rehypePlugins: [rehypeKatex],
   },
   integrations: [
+    ...(isDev ? [keystatic()] : []),
     starlight({
       title: 'BlockData Docs',
       description: 'Documentation for the BlockData platform.',
