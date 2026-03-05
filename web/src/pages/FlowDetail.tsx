@@ -5,6 +5,14 @@ import { useShellHeaderTitle } from '@/components/common/useShellHeaderTitle';
 import { PreviewTabPanel } from '@/components/documents/PreviewTabPanel';
 import FlowCanvas from '@/components/flows/FlowCanvas';
 import FlowWorkbench from '@/components/flows/FlowWorkbench';
+import { AuditLogsTab } from '@/components/flows/tabs/AuditLogsTab';
+import { ConcurrencyTab } from '@/components/flows/tabs/ConcurrencyTab';
+import { DependenciesTab } from '@/components/flows/tabs/DependenciesTab';
+import { ExecutionsTab } from '@/components/flows/tabs/ExecutionsTab';
+import { LogsTab } from '@/components/flows/tabs/LogsTab';
+import { MetricsTab } from '@/components/flows/tabs/MetricsTab';
+import { RevisionsTab } from '@/components/flows/tabs/RevisionsTab';
+import { TriggersTab } from '@/components/flows/tabs/TriggersTab';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { edgeJson } from '@/lib/edge';
@@ -383,75 +391,31 @@ export default function FlowDetail() {
                   <p className="text-sm text-muted-foreground">No executions yet.</p>
                 </div>
               </div>
+            ) : item.value === 'executions' ? (
+              <ExecutionsTab flowId={flowId} />
+            ) : item.value === 'revisions' ? (
+              <RevisionsTab flowId={flowId} />
             ) : item.value === 'triggers' ? (
-              <div className="flow-detail-panel-placeholder rounded-md border border-border bg-card p-4">
-                <div className="flex items-center justify-between gap-3">
-                  <h3 className="text-sm font-semibold text-foreground">Triggers</h3>
-                  <button
-                    type="button"
-                    className="rounded-md border border-border bg-background px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-accent hover:text-accent-foreground"
-                    onClick={() => navigate(`/app/flows/${flowId}/edit`)}
-                  >
-                    Add trigger
-                  </button>
-                </div>
-                {flowTriggers.length === 0 ? (
-                  <p className="mt-3 text-sm text-muted-foreground">
-                    No triggers configured for this flow.
-                  </p>
-                ) : (
-                  <div className="mt-3 space-y-2">
-                    <input
-                      aria-label="Filter triggers"
-                      value={triggerQuery}
-                      onChange={(event) => setTriggerQuery(event.currentTarget.value)}
-                      placeholder="Filter triggers"
-                      className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    />
-                    {filteredTriggers.map((trigger) => (
-                      <div key={trigger.id} className="rounded-md border border-border bg-background px-3 py-2 text-xs">
-                        <div className="flex items-center justify-between gap-2">
-                          <code className="font-medium">{trigger.id}</code>
-                          <span className={trigger.disabled ? 'text-amber-600 dark:text-amber-300' : 'text-emerald-600 dark:text-emerald-300'}>
-                            {trigger.disabled ? 'Disabled' : 'Enabled'}
-                          </span>
-                        </div>
-                        <div className="mt-1 text-muted-foreground">
-                          Type: {toTriggerTypeLabel(trigger.type)}
-                        </div>
-                        {trigger.workerId ? (
-                          <div className="mt-1 text-muted-foreground">Worker: {trigger.workerId}</div>
-                        ) : null}
-                        {trigger.nextExecutionDate ? (
-                          <div className="mt-1 text-muted-foreground">
-                            Next execution: {new Date(trigger.nextExecutionDate).toLocaleString()}
-                          </div>
-                        ) : null}
-                      </div>
-                    ))}
-                    {filteredTriggers.length === 0 ? (
-                      <p className="text-sm text-muted-foreground">No triggers match this filter.</p>
-                    ) : null}
-                  </div>
-                )}
-              </div>
+              <TriggersTab
+                triggers={flowTriggers.map((t) => ({
+                  id: t.id,
+                  type: t.type,
+                  nextExecutionDate: t.nextExecutionDate,
+                  disabled: t.disabled,
+                }))}
+                onEditFlow={() => navigate(`/app/flows/${flowId}/edit`)}
+              />
+            ) : item.value === 'logs' ? (
+              <LogsTab flowId={flowId} />
+            ) : item.value === 'metrics' ? (
+              <MetricsTab flowId={flowId} />
+            ) : item.value === 'dependencies' ? (
+              <DependenciesTab />
+            ) : item.value === 'concurrency' ? (
+              <ConcurrencyTab />
             ) : item.value === 'auditlogs' ? (
-              <div className="flow-detail-panel-placeholder rounded-md border border-border bg-card p-4">
-                <h3 className="text-sm font-semibold text-foreground">Audit log</h3>
-                <p className="mt-3 text-sm text-muted-foreground">
-                  Audit logs are unavailable in this edition.
-                </p>
-              </div>
-            ) : (
-              <div className="flow-detail-panel-placeholder rounded-md border border-border bg-card p-4">
-                <div className="space-y-1.5">
-                  <h3 className="text-sm font-semibold text-foreground">{item.label}</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Shared flow tab structure placeholder.
-                  </p>
-                </div>
-              </div>
-            )}
+              <AuditLogsTab />
+            ) : null}
           </TabsContent>
         ))}
         {previewTabConfigs.map((item) => (
