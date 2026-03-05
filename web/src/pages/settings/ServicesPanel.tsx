@@ -40,6 +40,7 @@ export function ServicesPanel({ mode = 'admin' }: ServicesPanelProps) {
   const [functions, setFunctions] = useState<ServiceFunctionRow[]>([]);
   const [savingKey, setSavingKey] = useState<string | null>(null);
   const [selectedServiceId, setSelectedServiceId] = useState<string | null>(null);
+  const [selectedFnId, setSelectedFnId] = useState<string | null>(null);
 
   /* ---- Derived ---- */
   const selectedService = useMemo(
@@ -54,6 +55,17 @@ export function ServicesPanel({ mode = 'admin' }: ServicesPanelProps) {
         : [],
     [functions, selectedServiceId],
   );
+
+  /* Auto-select first function when service changes */
+  useEffect(() => {
+    if (functionsForSelected.length > 0) {
+      if (!functionsForSelected.some((f) => f.function_id === selectedFnId)) {
+        setSelectedFnId(functionsForSelected[0].function_id);
+      }
+    } else {
+      setSelectedFnId(null);
+    }
+  }, [functionsForSelected, selectedFnId]);
 
   /* ---- Data loading ---- */
   const loadData = useCallback(async () => {
@@ -172,6 +184,8 @@ export function ServicesPanel({ mode = 'admin' }: ServicesPanelProps) {
           serviceTypes={serviceTypes}
           selectedServiceId={selectedServiceId}
           onSelectService={setSelectedServiceId}
+          selectedFunctionId={selectedFnId}
+          onSelectFunction={setSelectedFnId}
           loading={loading}
         />
 
@@ -179,6 +193,8 @@ export function ServicesPanel({ mode = 'admin' }: ServicesPanelProps) {
           <ServiceDetailRailView
             service={selectedService}
             functions={functionsForSelected}
+            selectedFunctionId={selectedFnId}
+            onSelectFunction={setSelectedFnId}
             savingKey={savingKey}
             onSaveFunctionJson={handleSaveFunctionJson}
             isAdmin={isAdmin}

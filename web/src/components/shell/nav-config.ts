@@ -2,7 +2,6 @@ import type { Icon } from '@tabler/icons-react';
 import {
   IconCode,
   IconDatabase,
-  IconPlug,
   IconFolderPlus,
   IconSchema,
   IconTerminal2,
@@ -25,7 +24,6 @@ export type NavGroup = {
 export const GLOBAL_MENUS: NavItem[] = [
   { label: 'Flows', icon: IconFolderPlus, path: '/app/flows' },
   { label: 'ELT', icon: IconCode, path: '/app/elt' },
-  { label: 'Integrations', icon: IconPlug, path: '/app/integrations' },
   { label: 'Database', icon: IconDatabase, path: '/app/database' },
 ];
 
@@ -38,7 +36,7 @@ export const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    label: 'Marketplace',
+    label: 'Catalog',
     items: [
       { label: 'Integrations', icon: IconApps, path: '/app/marketplace/integrations' },
       { label: 'Services', icon: IconServer, path: '/app/marketplace/services' },

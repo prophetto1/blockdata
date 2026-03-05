@@ -23,15 +23,36 @@ type ScalarRouter = {
   ) => void;
 };
 
-const DISABLED_ROUTE_NAMES = [
-  'environment.default',
-  'environment',
-  'environment.collection',
-  'cookies.default',
-  'cookies',
-  'collection.environment',
-  'collection.cookies',
-] as const;
+/** Block Scalar's internal Settings route — our shell handles theming. */
+function disableSettingsRoute(router: ScalarRouter) {
+  router.beforeEach((to) => {
+    const name = typeof to.name === 'string' ? to.name : '';
+    if (name === 'settings' || name === 'settings.default') {
+      const match = to.path.match(/\/workspace\/([^/]+)/);
+      const workspace = match?.[1] ? decodeURIComponent(match[1]) : 'default';
+      return { name: 'request.root', params: { workspace } };
+    }
+    return true;
+  });
+}
+
+/** Remove the Settings link from the SideNav icon rail. */
+function pruneSettingsNavLink() {
+  const nav = document.querySelector<HTMLElement>('#scalar-client-app nav[aria-label="App Navigation"]');
+  if (!nav) return;
+  nav.querySelectorAll<HTMLAnchorElement>('a[href]').forEach((anchor) => {
+    if (anchor.getAttribute('href')?.includes('/settings')) {
+      anchor.closest('li')?.remove();
+    }
+  });
+}
+
+function installSettingsNavPruner() {
+  pruneSettingsNavLink();
+  const observer = new MutationObserver(() => pruneSettingsNavLink());
+  observer.observe(document.body, { childList: true, subtree: true });
+}
+
 
 function parseHostConfig(): HostConfig {
   const params = new URLSearchParams(window.location.search);
@@ -42,64 +63,6 @@ function parseHostConfig(): HostConfig {
   return { url, proxyUrl };
 }
 
-function shouldDisableRoute(to: { name?: unknown; path: string }) {
-  const routeName = typeof to.name === 'string' ? to.name : '';
-  return DISABLED_ROUTE_NAMES.includes(routeName as (typeof DISABLED_ROUTE_NAMES)[number]);
-}
-
-function resolveWorkspaceFromPath(path: string, fallbackParams: Record<string, unknown>) {
-  const paramWorkspace = fallbackParams.workspace;
-  if (typeof paramWorkspace === 'string' && paramWorkspace.length > 0) {
-    return paramWorkspace;
-  }
-
-  const match = path.match(/\/workspace\/([^/]+)/);
-  if (match && match[1]) {
-    return decodeURIComponent(match[1]);
-  }
-
-  return 'default';
-}
-
-function disableEnvironmentAndCookiesRoutes(router: ScalarRouter) {
-  router.beforeEach((to) => {
-    if (!shouldDisableRoute(to)) {
-      return true;
-    }
-
-    const workspace = resolveWorkspaceFromPath(to.path, to.params);
-    return {
-      name: 'request.root',
-      params: { workspace },
-    };
-  });
-}
-
-function pruneAppNavigationFeatureLinks() {
-  const nav = document.querySelector<HTMLElement>('#scalar-client-app nav[aria-label="App Navigation"]');
-  if (!nav) {
-    return;
-  }
-
-  nav.querySelectorAll<HTMLAnchorElement>('a[href]').forEach((anchor) => {
-    const href = anchor.getAttribute('href') ?? '';
-    const isFeaturePage = href.includes('/workspace/') && (href.includes('/environment') || href.includes('/cookies'));
-    if (!isFeaturePage) {
-      return;
-    }
-
-    anchor.closest('li')?.remove();
-  });
-}
-
-function installFeatureNavPruner() {
-  const run = () => pruneAppNavigationFeatureLinks();
-
-  run();
-
-  const observer = new MutationObserver(() => run());
-  observer.observe(document.body, { childList: true, subtree: true });
-}
 
 function isScalarThemeSyncMessage(value: unknown): value is ScalarThemeSyncMessage {
   if (!value || typeof value !== 'object') {
@@ -210,9 +173,24 @@ async function bootstrap() {
   installThemeSyncBridge();
 
   const config = parseHostConfig();
-  const { router } = await createApiClientApp(target, config, true);
-  disableEnvironmentAndCookiesRoutes(router as ScalarRouter);
-  installFeatureNavPruner();
+  const { client, router } = await createApiClientApp(
+    target,
+    { ...config, showSidebar: true },
+    true,
+  );
+
+  disableSettingsRoute(router as ScalarRouter);
+  installSettingsNavPruner();
+
+  // Navigate to the first request so the editor is immediately usable.
+  const requests = client.store.requests;
+  const firstRequestUid = Object.keys(requests)[0];
+  if (firstRequestUid) {
+    router.push({
+      name: 'request',
+      params: { workspace: 'default', request: firstRequestUid },
+    });
+  }
 }
 
 void bootstrap();

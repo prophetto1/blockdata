@@ -1,14 +1,9 @@
 import {
-  IconAdjustments,
   IconKey,
-  IconNetwork,
   IconPalette,
   IconPlugConnected,
   IconUserCircle,
   IconServer,
-  IconPlug,
-  IconTable,
-  IconTerminal2,
   IconWand,
 } from '@tabler/icons-react';
 import type { Icon } from '@tabler/icons-react';
@@ -43,17 +38,6 @@ export const SETTINGS_NAV: SettingsNavGroup[] = [
       { id: 'model-roles', label: 'Model Roles', icon: IconWand, path: '/app/settings/model-roles' },
       { id: 'mcp-servers', label: 'MCP Servers', icon: IconPlugConnected, path: '/app/settings/mcp' },
       { id: 'admin-services', label: 'Services', icon: IconServer, path: '/app/settings/admin/services' },
-      { id: 'admin-platform', label: 'Platform', icon: IconNetwork, path: '/app/settings/admin/platform-config' },
-      { id: 'admin-integrations', label: 'Integration Catalog', icon: IconPlug, path: '/app/settings/admin/integration-catalog' },
-      { id: 'admin-grid-test', label: 'Grid Test', icon: IconTable, path: '/app/settings/admin/grid-test' },
-      { id: 'admin-api-playground', label: 'API Playground', icon: IconTerminal2, path: '/app/settings/admin/api-playground' },
-    ],
-  },
-  {
-    id: 'designs',
-    label: 'Designs',
-    items: [
-      { id: 'designs-instance', label: 'Instance Config', icon: IconAdjustments, path: '/app/settings/admin/instance-config' },
     ],
   },
 ];
@@ -63,12 +47,7 @@ export const ALL_NAV_ITEMS: SettingsNavItem[] = SETTINGS_NAV.flatMap((g) => g.it
 const NAV_ITEM_BY_ID = new Map(ALL_NAV_ITEMS.map((item) => [item.id, item] as const));
 
 const ADMIN_PATH_ALIASES: Array<{ prefix: string; targetId: string }> = [
-  { prefix: '/app/settings/admin/platform-config', targetId: 'admin-platform' },
   { prefix: '/app/settings/admin/audit', targetId: 'admin-services' },
-  { prefix: '/app/settings/admin/integration-catalog', targetId: 'admin-integrations' },
-  { prefix: '/app/settings/admin/grid-test', targetId: 'admin-grid-test' },
-  { prefix: '/app/settings/admin/instance-config', targetId: 'designs-instance' },
-  { prefix: '/app/settings/admin/api-playground', targetId: 'admin-api-playground' },
 ];
 
 /** Find the nav item whose path matches a pathname */

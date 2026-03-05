@@ -116,12 +116,14 @@ export function AppLayout() {
   const isSettingsRoute = /^\/app\/settings(?:\/|$)/.test(location.pathname);
   const isFlowsRoute = /^\/app\/flows(?:\/|$)/.test(location.pathname);
   const isApiEditorRoute = /^\/app\/api-editor(?:\/|$)/.test(location.pathname);
+  const isMarketplaceServiceDetailRoute = /^\/app\/marketplace\/services\/[^/]+(?:\/|$)/.test(location.pathname);
   const lockMainScroll = (
     isEltRoute
     || isEditorLayoutRoute
     || isEditorRoute
     || isSettingsRoute
     || isApiEditorRoute
+    || isMarketplaceServiceDetailRoute
   );
 
   useEffect(() => {
@@ -265,7 +267,7 @@ export function AppLayout() {
         )}
 
         <main style={shellMainStyle}>
-          {isFlowsRoute ? (
+          {(isFlowsRoute || isMarketplaceServiceDetailRoute) ? (
             <Outlet />
           ) : (
             <AppPageShell mode="fluid">

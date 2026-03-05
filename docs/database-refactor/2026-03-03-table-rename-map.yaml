@@ -1,0 +1,170 @@
+meta:
+  name: table_rename_map
+  version: 2
+  date: 2026-03-03
+  owner: jon
+  completed_at: 2026-03-03T16:00:00Z
+  execution_policy:
+    mode: one_table_at_a_time
+    require_compatibility_view: false  # done without compat views — clean rename
+    require_import_updates_before_next_table: true
+    require_verification_gate: true
+
+table_renames:
+  # Platform / Registry
+  - old: service_registry
+    new: registry_services
+    category: platform_registry
+    status: completed
+  - old: service_functions
+    new: registry_service_functions
+    category: platform_registry
+    status: completed
+  - old: service_type_catalog
+    new: registry_service_types
+    category: platform_registry
+    status: completed
+  - old: agent_catalog
+    new: registry_agents
+    category: platform_registry
+    status: completed
+  - old: block_type_catalog
+    new: registry_block_types
+    category: platform_registry
+    status: completed
+  - old: parsing_tool_catalog
+    new: registry_parsing_tools
+    category: platform_registry
+    status: completed
+  - old: representation_type_catalog
+    new: registry_representation_types
+    category: platform_registry
+    status: completed
+  - old: source_type_catalog
+    new: registry_source_types
+    category: platform_registry
+    status: completed
+  - old: docling_label_catalog
+    new: registry_docling_labels
+    category: platform_registry
+    status: completed
+  - old: docling_group_label_catalog
+    new: registry_docling_group_labels
+    category: platform_registry
+    status: completed
+  - old: kestra_provider_enrichment
+    new: registry_external_providers_kestra
+    category: platform_registry
+    status: completed
+  - old: integration_catalog_items
+    new: kestra_plugin_items
+    category: platform_registry
+    status: completed
+    notes:
+      - "Mapping columns stripped (mapped_service_id, mapped_function_id, mapping_notes)."
+      - "Read surface is view_integrations_map."
+      - "Joins to registry tables via source_task_class / plugin_group."
+
+  # Status enums
+  - old: document_status_catalog
+    new: status_document_uploads
+    category: status_registry
+    status: completed
+  - old: conv_status_catalog
+    new: status_conversions
+    category: status_registry
+    status: completed
+  - old: run_status_catalog
+    new: status_runs
+    category: status_registry
+    status: completed
+  - old: overlay_status_catalog
+    new: status_overlays
+    category: status_registry
+    status: completed
+
+  # User-scoped runtime/config
+  - old: service_runs
+    new: user_service_runs
+    category: user_runtime
+    status: completed
+  - old: project_service_config
+    new: user_project_service_config
+    category: user_runtime
+    status: completed
+
+view_renames:
+  - old: documents_view
+    new: view_documents
+    status: completed
+  - old: service_functions_view
+    new: view_service_functions
+    status: completed
+    notes:
+      - "Recreated with new table names (registry_services, registry_service_functions, registry_service_types)."
+  - old: kestra_wiring_view
+    new: view_integrations_map
+    status: completed
+    notes:
+      - "Recreated joining kestra_plugin_items + registry tables + satellites."
+      - "Read-only. Join uses source_task_class instead of mapped_function_id."
+
+dropped:
+  views:
+    - documents_v2
+    - blocks_v2
+    - block_overlays_v2
+    - runs_v2
+    - conversion_representations_v2
+  tables: []  # zz/temp tables were already gone
+
+kept_as_is:
+  - admin_runtime_policy
+  - admin_runtime_policy_audit
+  - profiles          # future: fold into unified users table
+  - projects
+  - schemas
+  - flow_sources
+  - user_api_keys
+  - user_provider_connections
+  - user_agent_configs
+  - source_documents  # ArangoDB-bound
+  - conversion_parsing
+  - conversion_representations
+  - blocks
+  - block_overlays
+  - runs
+  - kestra_plugin_inputs
+  - kestra_plugin_outputs
+  - kestra_plugin_examples
+  - kestra_plugin_definitions
+
+code_files_updated:
+  - web/src/hooks/useBlockTypeRegistry.ts
+  - web/src/lib/tables.ts
+  - web/src/pages/settings/IntegrationCatalogPanel.tsx
+  - web/src/pages/settings/services-panel.api.ts
+  - web/src/components/elt/DltPullPanel.tsx
+  - web/src/components/elt/DltLoadPanel.tsx
+  - supabase/functions/agent-config/index.ts
+  - supabase/functions/agent-config/index.test.ts
+  - supabase/functions/admin-services/index.ts
+  - supabase/functions/admin-services/index.test.ts
+  - supabase/functions/admin-integration-catalog/index.ts
+  - supabase/functions/admin-integration-catalog/index.test.ts
+  - services/pipeline-worker/app/routes/admin_services.py
+  - services/pipeline-worker/app/main.py
+  - services/pipeline-worker/app/registry.py
+  - services/pipeline-worker/app/shared/base.py
+
+migrations_applied:
+  - batch1_rename_status_enum_tables
+  - batch2_rename_catalog_tables
+  - batch3_rename_block_type_and_docling_label
+  - batch4_rename_agent_catalog
+  - batch5_rename_kestra_provider_enrichment
+  - batch6_rename_integration_catalog_items
+  - batch7_rename_service_tables
+  - batch8_rename_user_scoped_tables
+  - batch9_rename_and_recreate_views
+  - batch10_drop_v2_views

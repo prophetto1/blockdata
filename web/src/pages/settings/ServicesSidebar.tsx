@@ -13,6 +13,8 @@ type ServicesSidebarProps = {
   serviceTypes: ServiceTypeRow[];
   selectedServiceId: string | null;
   onSelectService: (id: string | null) => void;
+  selectedFunctionId: string | null;
+  onSelectFunction: (id: string | null) => void;
   loading: boolean;
 };
 
@@ -43,15 +45,19 @@ export function ServicesSidebar({
   serviceTypes: _serviceTypes,
   selectedServiceId,
   onSelectService,
+  selectedFunctionId,
+  onSelectFunction,
   loading,
 }: ServicesSidebarProps) {
   const [searchQuery, setSearchQuery] = useState('');
 
-  /* Function count by service */
-  const fnCountByService = useMemo(() => {
-    const map = new Map<string, number>();
+  /* Functions grouped by service */
+  const fnsByService = useMemo(() => {
+    const map = new Map<string, ServiceFunctionRow[]>();
     for (const fn of functions) {
-      map.set(fn.service_id, (map.get(fn.service_id) ?? 0) + 1);
+      const list = map.get(fn.service_id) ?? [];
+      list.push(fn);
+      map.set(fn.service_id, list);
     }
     return map;
   }, [functions]);
@@ -101,7 +107,7 @@ export function ServicesSidebar({
       {/* Service list */}
       <ul className="min-h-0 flex-1 space-y-0.5 overflow-y-auto py-1">
         {filteredServices.map((service) => {
-          const fnCount = fnCountByService.get(service.service_id) ?? 0;
+          const serviceFns = fnsByService.get(service.service_id) ?? [];
           const isActive = service.service_id === selectedServiceId;
           return (
             <li key={service.service_id}>
@@ -137,9 +143,9 @@ export function ServicesSidebar({
                       {service.health_status}
                     </TooltipContent>
                   </Tooltip>
-                  {fnCount > 0 && (
+                  {serviceFns.length > 0 && (
                     <span className="text-muted-foreground/70">
-                      {fnCount} fn{fnCount !== 1 ? 's' : ''}
+                      {serviceFns.length} fn{serviceFns.length !== 1 ? 's' : ''}
                     </span>
                   )}
                   {!service.enabled && (
@@ -147,6 +153,42 @@ export function ServicesSidebar({
                   )}
                 </span>
               </button>
+
+              {/* Function cards — nested under selected service */}
+              {isActive && serviceFns.length > 0 && (
+                <ul className="ml-2 mt-0.5 space-y-px border-l border-border/50 pl-2">
+                  {serviceFns.map((fn) => {
+                    const isFnActive = fn.function_id === selectedFunctionId;
+                    return (
+                      <li key={fn.function_id}>
+                        <button
+                          type="button"
+                          onClick={() => onSelectFunction(fn.function_id)}
+                          className={cn(
+                            'flex w-full flex-col gap-0.5 rounded-md px-2 py-1 text-left transition-colors',
+                            isFnActive
+                              ? 'bg-primary/10 text-primary'
+                              : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground',
+                            !fn.enabled && 'opacity-50',
+                          )}
+                        >
+                          <span className="truncate text-xs font-medium font-mono">
+                            {fn.function_name}
+                          </span>
+                          <span className="flex items-center gap-1.5 text-[10px]">
+                            <span className="rounded bg-muted px-1 py-px font-mono uppercase">
+                              {fn.http_method}
+                            </span>
+                            <span className="text-muted-foreground/60">
+                              {fn.function_type}
+                            </span>
+                          </span>
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
             </li>
           );
         })}

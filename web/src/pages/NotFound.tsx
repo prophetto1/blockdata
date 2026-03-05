@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { DOCS_URL } from '@/lib/urls';
 
 export default function NotFound() {
   return (
@@ -12,7 +13,7 @@ export default function NotFound() {
         <Link to="/app" className="text-sm font-medium text-primary underline underline-offset-4 hover:text-primary/80">
           App
         </Link>
-        <a href="https://blockdata.mintlify.app" className="text-sm font-medium text-primary underline underline-offset-4 hover:text-primary/80">
+        <a href={DOCS_URL} className="text-sm font-medium text-primary underline underline-offset-4 hover:text-primary/80">
           Docs
         </a>
       </div>

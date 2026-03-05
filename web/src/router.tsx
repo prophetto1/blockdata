@@ -11,7 +11,6 @@ import AuthCallback from '@/pages/AuthCallback';
 import Projects from '@/pages/Projects';
 import FlowDetail from '@/pages/FlowDetail';
 import FlowsList from '@/pages/FlowsList';
-import Integrations from '@/pages/Integrations';
 import UppyLibraryDemo from '@/pages/UppyLibraryDemo';
 import Schemas from '@/pages/Schemas';
 import SchemaLayout from '@/pages/SchemaLayout';
@@ -30,7 +29,6 @@ import { ScalarApiPlaygroundPage } from '@/pages/settings/ScalarApiPlaygroundPag
 import Commands from '@/pages/Commands';
 import DocumentTest from '@/pages/DocumentTest';
 import DatabasePlaceholder from '@/pages/DatabasePlaceholder';
-import ServicesPage from '@/pages/ServicesPage';
 import EarlyAccess from '@/pages/EarlyAccess';
 import IntegrationsCatalog from '@/pages/marketplace/IntegrationsCatalog';
 import ServicesCatalog from '@/pages/marketplace/ServicesCatalog';
@@ -109,9 +107,7 @@ export const router = createBrowserRouter([
           { path: '/app/elt/:projectId/upload-uppy-demo', element: <UppyLibraryDemo /> },
           { path: '/app/elt/:projectId/runs/:runId', element: <RunDetail /> },
           { path: '/app/projects/list', element: <Projects /> },
-          { path: '/app/integrations', element: <Integrations /> },
           { path: '/app/database', element: <DatabasePlaceholder /> },
-          { path: '/app/services', element: <ServicesPage /> },
           { path: '/app/marketplace/integrations', element: <IntegrationsCatalog /> },
           { path: '/app/marketplace/services', element: <ServicesCatalog /> },
           { path: '/app/marketplace/services/:serviceId', element: <ServiceDetailPage /> },

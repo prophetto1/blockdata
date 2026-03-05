@@ -1,8 +1,7 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import MonacoEditor from '@monaco-editor/react';
 import { Clipboard } from '@ark-ui/react/clipboard';
 import { JsonTreeView } from '@ark-ui/react/json-tree-view';
-import { Tabs } from '@ark-ui/react/tabs';
 import {
   IconCheck,
   IconChevronRight,
@@ -24,6 +23,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 type ServiceDetailRailViewProps = {
   service: ServiceRow;
   functions: ServiceFunctionRow[];
+  selectedFunctionId: string | null;
+  onSelectFunction: (id: string | null) => void;
   savingKey: string | null;
   onSaveFunctionJson: (fn: ServiceFunctionRow, json: Record<string, unknown>) => void;
   isAdmin?: boolean;
@@ -99,27 +100,17 @@ const configTree = [
 export function ServiceDetailRailView({
   service,
   functions,
+  selectedFunctionId,
+  onSelectFunction: _onSelectFunction,
   savingKey,
   onSaveFunctionJson,
   isAdmin = true,
 }: ServiceDetailRailViewProps) {
   const monacoTheme = useMonacoTheme();
-  const [selectedFnId, setSelectedFnId] = useState<string | null>(
-    () => functions[0]?.function_id ?? null,
-  );
   const selectedFn = useMemo(
-    () => functions.find((f) => f.function_id === selectedFnId) ?? null,
-    [functions, selectedFnId],
+    () => functions.find((f) => f.function_id === selectedFunctionId) ?? null,
+    [functions, selectedFunctionId],
   );
-
-  /* Keep selection valid when functions change (e.g. service switch) */
-  useEffect(() => {
-    if (functions.length === 0) {
-      setSelectedFnId(null);
-    } else if (!functions.some((f) => f.function_id === selectedFnId)) {
-      setSelectedFnId(functions[0].function_id);
-    }
-  }, [functions, selectedFnId]);
 
   const [sourceOpen, setSourceOpen] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -239,264 +230,237 @@ export function ServiceDetailRailView({
         )}
       </div>
 
+      {/* ================================================================ */}
+      {/*  FUNCTION CONTENT (driven by sidebar selection)                   */}
+      {/* ================================================================ */}
+
       {functions.length === 0 && (
         <div className="flex h-32 items-center justify-center text-xs text-muted-foreground">
           No functions registered.
         </div>
       )}
 
-      {functions.length > 0 && (
-        <Tabs.Root
-          value={selectedFnId ?? undefined}
-          onValueChange={(e) => setSelectedFnId(e.value)}
-        >
-          {/* ================================================================ */}
-          {/*  FUNCTION TABS                                                    */}
-          {/* ================================================================ */}
-          <Tabs.List className="flex flex-wrap gap-1 border-t border-border/50 py-2">
-            {functions.map((fn) => (
-              <Tabs.Trigger
-                key={fn.function_id}
-                value={fn.function_id}
-                className={cn(
-                  'rounded px-2 py-1 text-xs transition-colors',
-                  'data-selected:bg-primary/10 data-selected:text-primary data-selected:font-medium',
-                  'bg-muted text-muted-foreground hover:text-foreground',
-                  !fn.enabled && 'opacity-50',
-                )}
-              >
-                {fn.function_name}
-              </Tabs.Trigger>
-            ))}
-            <Tabs.Indicator />
-          </Tabs.List>
+      {functions.length > 0 && !selectedFn && (
+        <div className="flex h-32 items-center justify-center text-xs text-muted-foreground">
+          Select a function from the sidebar.
+        </div>
+      )}
 
-          {/* ================================================================ */}
-          {/*  FUNCTION CONTENT                                                */}
-          {/* ================================================================ */}
-          {!selectedFn && (
-            <div className="flex h-32 items-center justify-center text-xs text-muted-foreground">
-              Select a function above.
-            </div>
-          )}
-
-        {selectedFn && (
-          <div>
-            {/* Function header — compact */}
-            <div className="mb-2.5 space-y-1.5">
-              <div className="flex flex-wrap items-center gap-2">
-                <h4 className="font-mono text-sm font-semibold text-foreground">
-                  {selectedFn.function_name}
-                </h4>
-                <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
-                  {selectedFn.function_type}
+      {selectedFn && (
+        <div className="border-t border-border/50 pt-3">
+          {/* Function header — compact */}
+          <div className="mb-2.5 space-y-1.5">
+            <div className="flex flex-wrap items-center gap-2">
+              <h4 className="font-mono text-sm font-semibold text-foreground">
+                {selectedFn.function_name}
+              </h4>
+              <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                {selectedFn.function_type}
+              </span>
+              {selectedFn.deprecated && (
+                <span className="rounded bg-red-500/10 px-1.5 py-0.5 text-[10px] font-medium text-red-400">
+                  Deprecated
                 </span>
-                {selectedFn.deprecated && (
-                  <span className="rounded bg-red-500/10 px-1.5 py-0.5 text-[10px] font-medium text-red-400">
-                    Deprecated
-                  </span>
-                )}
-                {selectedFn.beta && (
-                  <span className="rounded bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-medium text-amber-400">
-                    Beta
-                  </span>
-                )}
-                {selectedFn.provider_docs_url && (
-                  <a
-                    href={selectedFn.provider_docs_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-[10px] text-primary hover:underline"
-                  >
-                    Provider docs
-                  </a>
-                )}
-              </div>
-
-              <div className="inline-flex max-w-full items-center gap-1.5 rounded-md border border-border/50 bg-muted/20 px-2 py-1 text-xs leading-tight">
-                <span className="rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground uppercase">
-                  {selectedFn.http_method}
+              )}
+              {selectedFn.beta && (
+                <span className="rounded bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-medium text-amber-400">
+                  Beta
                 </span>
-                <code className="max-w-[44rem] truncate font-mono text-xs text-foreground/90">
-                  {selectedFn.entrypoint}
-                </code>
-                <Clipboard.Root value={endpointTemplate}>
-                  <Clipboard.Trigger
-                    className="rounded p-0.5 text-muted-foreground transition-colors hover:text-foreground"
-                    title="Copy endpoint URL"
-                  >
-                    <Clipboard.Indicator copied={<IconCheck size={12} className="text-primary" />}>
-                      <IconCopy size={12} />
-                    </Clipboard.Indicator>
-                  </Clipboard.Trigger>
-                </Clipboard.Root>
-              </div>
-
-              {/* Description */}
-              {selectedFn.description && (
-                <p className="max-w-[70ch] text-xs leading-snug text-foreground/70">
-                  {selectedFn.description}
-                </p>
               )}
-
-              {/* Compact metadata line: task class, group, when_to_use */}
-              {(selectedFn.source_task_class || selectedFn.when_to_use) && (
-                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[10px]">
-                  {selectedFn.source_task_class && (
-                    <span className="inline-flex items-center gap-1">
-                      <span className="font-semibold uppercase tracking-wider text-muted-foreground/60">Task Class</span>
-                      <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-foreground/80">
-                        {selectedFn.source_task_class}
-                      </code>
-                    </span>
-                  )}
-                  {selectedFn.plugin_group && (
-                    <span className="inline-flex items-center gap-1">
-                      <span className="font-semibold uppercase tracking-wider text-muted-foreground/60">Group</span>
-                      <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-foreground/80">
-                        {selectedFn.plugin_group}
-                      </code>
-                    </span>
-                  )}
-                </div>
-              )}
-
-              {/* When to use — inline hint */}
-              {selectedFn.when_to_use && (
-                <p className="max-w-[70ch] text-[11px] leading-snug text-foreground/50 italic">
-                  {selectedFn.when_to_use}
-                </p>
+              {selectedFn.provider_docs_url && (
+                <a
+                  href={selectedFn.provider_docs_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[10px] text-primary hover:underline"
+                >
+                  Provider docs
+                </a>
               )}
             </div>
 
-            {/* Structured reference card */}
-            <FunctionReferenceCard
-              fn={selectedFn}
-              hideEndpoint
-            />
-
-            {/* ---- Toolbar ---- */}
-            <div className="mt-3 flex items-center gap-2 border-t border-border/50 pt-3">
-              <button
-                type="button"
-                className={cn(
-                  'inline-flex items-center gap-1 rounded px-2 py-1 text-xs transition-colors',
-                  sourceOpen
-                    ? 'bg-primary/10 text-primary'
-                    : 'bg-muted text-muted-foreground hover:text-foreground',
-                )}
-                onClick={() => {
-                  if (sourceOpen) {
-                    setSourceOpen(false);
-                    setEditing(false);
-                    setJsonError(null);
-                  } else {
-                    editorValueRef.current = jsonStr;
-                    setSourceOpen(true);
-                    setEditing(false);
-                    setJsonError(null);
-                  }
-                }}
-              >
-                <IconCode size={13} />
-                {sourceOpen ? 'Hide Source' : 'View Source'}
-              </button>
-
-              {sourceOpen && isAdmin && (
-                <button
-                  type="button"
-                  className={cn(
-                    'inline-flex items-center gap-1 rounded px-2 py-1 text-xs transition-colors',
-                    editing
-                      ? 'bg-amber-500/10 text-amber-400'
-                      : 'bg-muted text-muted-foreground hover:text-foreground',
-                  )}
-                  onClick={() => {
-                    if (editing) {
-                      setEditing(false);
-                      setJsonError(null);
-                    } else {
-                      editorValueRef.current = jsonStr;
-                      setEditing(true);
-                      setJsonError(null);
-                    }
-                  }}
+            <div className="inline-flex max-w-full items-center gap-1.5 rounded-md border border-border/50 bg-muted/20 px-2 py-1 text-xs leading-tight">
+              <span className="rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground uppercase">
+                {selectedFn.http_method}
+              </span>
+              <code className="max-w-[44rem] truncate font-mono text-xs text-foreground/90">
+                {selectedFn.entrypoint}
+              </code>
+              <Clipboard.Root value={endpointTemplate}>
+                <Clipboard.Trigger
+                  className="rounded p-0.5 text-muted-foreground transition-colors hover:text-foreground"
+                  title="Copy endpoint URL"
                 >
-                  {editing ? 'Cancel Edit' : 'Edit'}
-                </button>
-              )}
-
-              {editing && (
-                <button
-                  type="button"
-                  className="inline-flex items-center gap-1 rounded bg-primary px-2 py-1 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-                  onClick={handleSave}
-                  disabled={savingKey === `function:${selectedFn.function_id}`}
-                >
-                  <IconDeviceFloppy size={13} />
-                  {savingKey === `function:${selectedFn.function_id}` ? 'Saving...' : 'Save'}
-                </button>
-              )}
-
-              <Clipboard.Root value={jsonStr}>
-                <Clipboard.Trigger className="inline-flex items-center gap-1 rounded bg-muted px-2 py-1 text-xs text-muted-foreground transition-colors hover:text-foreground">
-                  <Clipboard.Indicator copied={<><IconCheck size={13} /> Copied</>}>
-                    <><IconCopy size={13} /> Copy JSON</>
+                  <Clipboard.Indicator copied={<IconCheck size={12} className="text-primary" />}>
+                    <IconCopy size={12} />
                   </Clipboard.Indicator>
                 </Clipboard.Trigger>
               </Clipboard.Root>
             </div>
 
-            {/* ---- Monaco (only when source open) ---- */}
-            {sourceOpen && (
-              <div className="mt-2 max-w-3xl">
-                {jsonError && (
-                  <div className="mb-2 rounded border border-red-500/30 bg-red-500/10 px-2 py-1 text-xs text-red-400">
-                    {jsonError}
-                  </div>
+            {/* Description */}
+            {selectedFn.description && (
+              <p className="max-w-[70ch] text-xs leading-snug text-foreground/70">
+                {selectedFn.description}
+              </p>
+            )}
+
+            {/* Compact metadata line: task class, group, when_to_use */}
+            {(selectedFn.source_task_class || selectedFn.when_to_use) && (
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[10px]">
+                {selectedFn.source_task_class && (
+                  <span className="inline-flex items-center gap-1">
+                    <span className="font-semibold uppercase tracking-wider text-muted-foreground/60">Task Class</span>
+                    <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-foreground/80">
+                      {selectedFn.source_task_class}
+                    </code>
+                  </span>
                 )}
-                <div
-                  className={cn(
-                    'overflow-hidden rounded-md border bg-background',
-                    editing ? 'border-amber-500/40' : 'border-border/70',
-                  )}
-                >
-                  <MonacoEditor
-                    key={`${selectedFn.function_id}-${editing ? 'edit' : 'view'}`}
-                    language="json"
-                    theme={monacoTheme}
-                    defaultValue={editing ? editorValueRef.current : jsonStr}
-                    onChange={(value) => {
-                      if (value !== undefined) editorValueRef.current = value;
-                    }}
-                    options={{
-                      readOnly: !editing,
-                      minimap: { enabled: false },
-                      fontSize: 12,
-                      lineHeight: 1.5,
-                      scrollBeyondLastLine: false,
-                      wordWrap: 'on',
-                      automaticLayout: true,
-                      lineNumbers: editing ? 'on' : 'off',
-                      folding: true,
-                      renderLineHighlight: editing ? 'line' : 'none',
-                      scrollbar: {
-                        verticalScrollbarSize: 6,
-                        horizontalScrollbarSize: 6,
-                        useShadows: false,
-                      },
-                    }}
-                    height={Math.min(
-                      Math.max(jsonStr.split('\n').length * 19 + 16, 120),
-                      500,
-                    )}
-                  />
-                </div>
+                {selectedFn.plugin_group && (
+                  <span className="inline-flex items-center gap-1">
+                    <span className="font-semibold uppercase tracking-wider text-muted-foreground/60">Group</span>
+                    <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-foreground/80">
+                      {selectedFn.plugin_group}
+                    </code>
+                  </span>
+                )}
               </div>
             )}
+
+            {/* When to use — inline hint */}
+            {selectedFn.when_to_use && (
+              <p className="max-w-[70ch] text-[11px] leading-snug text-foreground/50 italic">
+                {selectedFn.when_to_use}
+              </p>
+            )}
           </div>
-        )}
-      </Tabs.Root>
+
+          {/* Structured reference card */}
+          <FunctionReferenceCard
+            fn={selectedFn}
+            hideEndpoint
+          />
+
+          {/* ---- Toolbar ---- */}
+          <div className="mt-3 flex items-center gap-2 border-t border-border/50 pt-3">
+            <button
+              type="button"
+              className={cn(
+                'inline-flex items-center gap-1 rounded px-2 py-1 text-xs transition-colors',
+                sourceOpen
+                  ? 'bg-primary/10 text-primary'
+                  : 'bg-muted text-muted-foreground hover:text-foreground',
+              )}
+              onClick={() => {
+                if (sourceOpen) {
+                  setSourceOpen(false);
+                  setEditing(false);
+                  setJsonError(null);
+                } else {
+                  editorValueRef.current = jsonStr;
+                  setSourceOpen(true);
+                  setEditing(false);
+                  setJsonError(null);
+                }
+              }}
+            >
+              <IconCode size={13} />
+              {sourceOpen ? 'Hide Source' : 'View Source'}
+            </button>
+
+            {sourceOpen && isAdmin && (
+              <button
+                type="button"
+                className={cn(
+                  'inline-flex items-center gap-1 rounded px-2 py-1 text-xs transition-colors',
+                  editing
+                    ? 'bg-amber-500/10 text-amber-400'
+                    : 'bg-muted text-muted-foreground hover:text-foreground',
+                )}
+                onClick={() => {
+                  if (editing) {
+                    setEditing(false);
+                    setJsonError(null);
+                  } else {
+                    editorValueRef.current = jsonStr;
+                    setEditing(true);
+                    setJsonError(null);
+                  }
+                }}
+              >
+                {editing ? 'Cancel Edit' : 'Edit'}
+              </button>
+            )}
+
+            {editing && (
+              <button
+                type="button"
+                className="inline-flex items-center gap-1 rounded bg-primary px-2 py-1 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+                onClick={handleSave}
+                disabled={savingKey === `function:${selectedFn.function_id}`}
+              >
+                <IconDeviceFloppy size={13} />
+                {savingKey === `function:${selectedFn.function_id}` ? 'Saving...' : 'Save'}
+              </button>
+            )}
+
+            <Clipboard.Root value={jsonStr}>
+              <Clipboard.Trigger className="inline-flex items-center gap-1 rounded bg-muted px-2 py-1 text-xs text-muted-foreground transition-colors hover:text-foreground">
+                <Clipboard.Indicator copied={<><IconCheck size={13} /> Copied</>}>
+                  <><IconCopy size={13} /> Copy JSON</>
+                </Clipboard.Indicator>
+              </Clipboard.Trigger>
+            </Clipboard.Root>
+          </div>
+
+          {/* ---- Monaco (only when source open) ---- */}
+          {sourceOpen && (
+            <div className="mt-2 max-w-3xl">
+              {jsonError && (
+                <div className="mb-2 rounded border border-red-500/30 bg-red-500/10 px-2 py-1 text-xs text-red-400">
+                  {jsonError}
+                </div>
+              )}
+              <div
+                className={cn(
+                  'overflow-hidden rounded-md border bg-background',
+                  editing ? 'border-amber-500/40' : 'border-border/70',
+                )}
+              >
+                <MonacoEditor
+                  key={`${selectedFn.function_id}-${editing ? 'edit' : 'view'}`}
+                  language="json"
+                  theme={monacoTheme}
+                  defaultValue={editing ? editorValueRef.current : jsonStr}
+                  onChange={(value) => {
+                    if (value !== undefined) editorValueRef.current = value;
+                  }}
+                  options={{
+                    readOnly: !editing,
+                    minimap: { enabled: false },
+                    fontSize: 12,
+                    lineHeight: 1.5,
+                    scrollBeyondLastLine: false,
+                    wordWrap: 'on',
+                    automaticLayout: true,
+                    lineNumbers: editing ? 'on' : 'off',
+                    folding: true,
+                    renderLineHighlight: editing ? 'line' : 'none',
+                    scrollbar: {
+                      verticalScrollbarSize: 6,
+                      horizontalScrollbarSize: 6,
+                      useShadows: false,
+                    },
+                  }}
+                  height={Math.min(
+                    Math.max(jsonStr.split('\n').length * 19 + 16, 120),
+                    500,
+                  )}
+                />
+              </div>
+            </div>
+          )}
+        </div>
       )}
       </ScrollArea>
     </div>

@@ -32,7 +32,7 @@ Built into Astro via `remark-gfm`. Always enabled.
 
 ### Autolinks
 
-Visit https://docs.blockdata.dev for the full docs.
+Visit https://www.blockdata.run/docs for the full docs.
 
 ### Footnotes
 

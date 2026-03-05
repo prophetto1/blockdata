@@ -1,6 +1,7 @@
 ---
 title: Getting Started
 description: Set up and run the BlockData docs site locally.
+slug: getting-started
 ---
 
 ## Prerequisites

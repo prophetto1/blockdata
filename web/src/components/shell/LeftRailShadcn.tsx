@@ -35,6 +35,7 @@ import { cn } from '@/lib/utils';
 import { PROJECT_FOCUS_STORAGE_KEY } from '@/lib/projectFocus';
 import { supabase } from '@/lib/supabase';
 import { TABLES } from '@/lib/tables';
+import { DOCS_URL } from '@/lib/urls';
 
 type LeftRailShadcnProps = {
   onNavigate?: () => void;
@@ -64,10 +65,9 @@ const PROJECTS_RPC_LEGACY = 'list_projects_overview_v2';
 const GLOBAL_MENU_ORDER: Record<string, number> = {
   '/app/flows': 0,
   '/app/elt': 1,
-  '/app/integrations': 2,
-  '/app/database': 3,
-  '/app/schemas': 4,
-  '/app/api-editor': 5,
+  '/app/database': 2,
+  '/app/schemas': 3,
+  '/app/api-editor': 4,
 };
 
 function toCount(value: unknown): number {
@@ -102,6 +102,7 @@ export function LeftRailShadcn({
 }: LeftRailShadcnProps) {
   const navigate = useNavigate();
   const location = useLocation();
+  const docsSiteUrl = DOCS_URL;
   const activeProjectMatch = location.pathname.match(/^\/app\/elt\/([^/]+)/);
   const activeProjectId = activeProjectMatch ? activeProjectMatch[1] : null;
 
@@ -219,7 +220,6 @@ export function LeftRailShadcn({
   const activeMenuPath = useMemo(() => {
     if (location.pathname.startsWith('/app/flows')) return '/app/flows';
     if (location.pathname.startsWith('/app/elt')) return '/app/elt';
-    if (location.pathname.startsWith('/app/integrations')) return '/app/integrations';
     if (location.pathname.startsWith('/app/database')) return '/app/database';
     if (location.pathname.startsWith('/app/schemas')) return '/app/schemas';
     if (location.pathname.startsWith('/app/api-editor')) return '/app/api-editor';
@@ -340,8 +340,6 @@ export function LeftRailShadcn({
 
     if (location.pathname.startsWith('/app/flows')) {
       navigate('/app/flows');
-    } else if (location.pathname.startsWith('/app/integrations')) {
-      navigate('/app/integrations');
     } else if (location.pathname.startsWith('/app/database')) {
       navigate('/app/database');
     } else if (location.pathname.startsWith('/app/schemas')) {
@@ -664,7 +662,7 @@ export function LeftRailShadcn({
                       value="docs"
                       className="gap-2"
                       onClick={() => {
-                        window.open('https://blockdata.run/docs', '_blank', 'noopener');
+                        window.open(docsSiteUrl, '_blank', 'noopener');
                       }}
                     >
                       Docs

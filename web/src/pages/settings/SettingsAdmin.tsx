@@ -6,12 +6,7 @@ import { ErrorAlert } from '@/components/common/ErrorAlert';
 import { styleTokens } from '@/lib/styleTokens';
 import { cn } from '@/lib/utils';
 import { edgeFetch } from '@/lib/edge';
-import { InstanceConfigPanel } from './InstanceConfigPanel';
-import { IntegrationCatalogPanel } from './IntegrationCatalogPanel';
-import { GridTestPanel } from './GridTestPanel';
-import { PlatformConfigPanel } from './PlatformConfigPanel';
 import { ServicesPanel } from './ServicesPanel';
-import { ScalarApiPlaygroundPage } from './ScalarApiPlaygroundPage';
 import { CATEGORY_IDS, type CategoryId } from './settings-tabs';
 
 type AuditRow = {
@@ -37,12 +32,7 @@ type Category = {
 
 const CATEGORIES: Category[] = [
   { id: 'services', label: 'Services' },
-  { id: 'platform-config', label: 'Platform' },
-  { id: 'integration-catalog', label: 'Integration Catalog' },
-  { id: 'grid-test', label: 'Grid Test' },
   { id: 'audit', label: 'Audit History' },
-  { id: 'instance-config', label: 'Instance Config' },
-  { id: 'api-playground', label: 'API Playground' },
 ];
 
 function toCategoryId(value: string | undefined): CategoryId | null {
@@ -240,35 +230,8 @@ export default function SettingsAdmin() {
             >
               <ServicesPanel />
             </div>
-          ) : selectedCategory === 'integration-catalog' ? (
-            <div
-              className="min-h-0 flex-1 overflow-hidden p-3 md:p-4"
-              style={{ backgroundColor: styleTokens.adminConfig.contentBackground }}
-            >
-              <IntegrationCatalogPanel />
-            </div>
-          ) : selectedCategory === 'grid-test' ? (
-            <div
-              className="min-h-0 flex-1 p-3 md:p-4"
-              style={{ backgroundColor: styleTokens.adminConfig.contentBackground }}
-            >
-              <GridTestPanel />
-            </div>
-          ) : selectedCategory === 'api-playground' ? (
-            <div
-              className="min-h-0 flex-1 overflow-hidden"
-              style={{ backgroundColor: styleTokens.adminConfig.contentBackground }}
-            >
-              <ScalarApiPlaygroundPage />
-            </div>
           ) : (
             <div className="min-h-0 flex-1 overflow-y-auto p-3 md:p-4" style={{ backgroundColor: styleTokens.adminConfig.contentBackground }}>
-            {selectedCategory === 'platform-config' && (
-              <PlatformConfigPanel />
-            )}
-            {selectedCategory === 'instance-config' && (
-              <InstanceConfigPanel />
-            )}
             {selectedCategory === 'audit' && (
               <div className="space-y-4">
                 <div className="grid gap-2 md:grid-cols-[minmax(220px,1fr)_220px_130px_auto]">

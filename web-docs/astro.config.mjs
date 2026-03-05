@@ -10,7 +10,7 @@ import rehypeKatex from 'rehype-katex';
 const isDev = process.env.NODE_ENV === 'development';
 
 export default defineConfig({
-  site: 'https://docs.blockdata.dev',
+  site: 'https://www.blockdata.run',
   markdown: {
     remarkPlugins: [remarkMath, remarkEmoji],
     rehypePlugins: [rehypeKatex],
@@ -52,6 +52,12 @@ export default defineConfig({
       ],
       sidebar: [
         { slug: 'getting-started' },
+        {
+          label: 'Proposed',
+          items: [
+            { slug: 'proposed/kestra-python-handlers' },
+          ],
+        },
         {
           label: 'Reference',
           items: [

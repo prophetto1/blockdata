@@ -4,6 +4,7 @@ import { Menu02Icon, SparklesIcon, LeftToRightListBulletIcon, Moon02Icon, Sun03I
 import { HugeiconsIcon } from '@hugeicons/react';
 import { useNavigate } from 'react-router-dom';
 import { useHeaderCenter } from '@/components/shell/HeaderCenterContext';
+import { useTheme } from '@/hooks/useTheme';
 
 import {
   ICON_CONTEXT_SIZE,
@@ -21,8 +22,6 @@ type TopCommandBarProps = {
   onToggleAssistant?: () => void;
 };
 
-const UI_THEME_KEY = 'ui-theme';
-
 type TopSearchOption = {
   value: string;
   label: string;
@@ -36,23 +35,6 @@ const TOP_SEARCH_OPTIONS: TopSearchOption[] = [
   { value: 'settings', label: 'Settings' },
 ];
 
-function resolveIsDark(): boolean {
-  if (typeof document === 'undefined') return true;
-  const attr = document.documentElement.getAttribute('data-theme');
-  if (attr === 'dark') return true;
-  if (attr === 'light') return false;
-
-  if (typeof window !== 'undefined') {
-    const stored = window.localStorage.getItem(UI_THEME_KEY);
-    if (stored === 'dark' || stored === 'light') {
-      document.documentElement.setAttribute('data-theme', stored);
-      return stored === 'dark';
-    }
-  }
-
-  return true;
-}
-
 export function TopCommandBar({
   onToggleNav,
   shellGuides = false,
@@ -62,7 +44,7 @@ export function TopCommandBar({
 }: TopCommandBarProps) {
   const navigate = useNavigate();
   const { center, shellTopSlots } = useHeaderCenter();
-  const [isDark, setIsDark] = useState(resolveIsDark);
+  const { isDark, toggle: toggleColorScheme } = useTheme();
   const [searchValue, setSearchValue] = useState('');
   const searchCollection = useMemo(
     () => createListCollection({ items: TOP_SEARCH_OPTIONS }),
@@ -75,14 +57,6 @@ export function TopCommandBar({
   }, [searchCollection, searchValue]);
   const utilityIconSize = ICON_SIZES[ICON_CONTEXT_SIZE[ICON_STANDARD.utilityTopRight.context]];
   const utilityIconStroke = ICON_STROKES[ICON_STANDARD.utilityTopRight.stroke];
-
-  const toggleColorScheme = () => {
-    if (typeof document === 'undefined' || typeof window === 'undefined') return;
-    const next = isDark ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', next);
-    window.localStorage.setItem(UI_THEME_KEY, next);
-    setIsDark((current) => !current);
-  };
 
   const searchNode = !shellGuides ? (
     <Combobox.Root
