@@ -155,7 +155,7 @@ async function resolveSignedUrlForLocators(locators: Array<string | null | undef
   };
 }
 
-/* ── Inline Pagination (Tailwind, zero Mantine) ── */
+/* ── Inline Pagination ── */
 
 const PAGE_BTN = 'flex h-6 min-w-6 items-center justify-center rounded text-xs select-none';
 
