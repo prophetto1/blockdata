@@ -18,7 +18,7 @@ import {
   type RenderGroupCellProps,
 } from 'react-data-grid';
 import type { Key } from 'react';
-import catalogData from '@/data/kestra-catalog-full.json';
+import catalogData from '@/data/integrations.json';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { paginateRows, PAGE_SIZE_OPTIONS, DEFAULT_PAGE_SIZE } from './pagination';
 
