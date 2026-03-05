@@ -82,7 +82,7 @@ export default function FlowsList() {
       setError(null);
 
       const projectsQuery = await supabase
-        .from('projects')
+        .from('user_projects')
         .select('project_id, project_name, updated_at')
         .order('updated_at', { ascending: false })
         .limit(FLOW_LIST_LIMIT);

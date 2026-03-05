@@ -4,6 +4,7 @@ import { PageHeader } from '@/components/common/PageHeader';
 import MarketplaceGrid from '@/components/marketplace/MarketplaceGrid';
 import type { CategoryOption, MarketplaceService, ServiceFunction } from '@/components/marketplace/types';
 import { supabase } from '@/lib/supabase';
+import { getServiceTypeLabel } from '@/pages/settings/services-panel.types';
 
 function buildCategories(items: MarketplaceService[]): CategoryOption[] {
   const counts = new Map<string, { label: string; count: number }>();
@@ -98,7 +99,7 @@ async function fetchServices(): Promise<MarketplaceService[]> {
   // Fetch services with their type labels
   const { data: servicesData, error: svcErr } = await supabase
     .from('registry_services')
-    .select('service_id, service_type, service_name, description, docs_url, health_status, registry_service_types(label)')
+    .select('service_id, service_type, service_name, description, docs_url, health_status')
     .eq('enabled', true)
     .order('service_name');
 
@@ -135,7 +136,7 @@ async function fetchServices(): Promise<MarketplaceService[]> {
   return servicesData.map((s) => ({
     service_id: s.service_id,
     service_type: s.service_type,
-    service_type_label: (Array.isArray(s.registry_service_types) ? s.registry_service_types[0]?.label : (s.registry_service_types as { label: string } | null)?.label) ?? s.service_type,
+    service_type_label: getServiceTypeLabel(s.service_type),
     service_name: s.service_name,
     description: s.description,
     docs_url: s.docs_url,

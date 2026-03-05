@@ -102,7 +102,6 @@ function buildServiceQueryResult() {
     single: vi.fn().mockResolvedValue({
       data: {
         ...serviceRow,
-        registry_service_types: { label: 'Slack' },
       },
       error: null,
     }),

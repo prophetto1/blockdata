@@ -101,6 +101,22 @@ export type InlineStatus = {
 /*  Constants                                                          */
 /* ------------------------------------------------------------------ */
 
+export const SERVICE_TYPE_LABELS: Record<string, string> = {
+  conversion: 'Conversion',
+  custom: 'Custom',
+  dbt: 'dbt (Transform)',
+  dlt: 'dlt (Load)',
+  docling: 'Docling (Parse)',
+  edge: 'Edge Functions',
+  integration: 'Integration',
+  notification: 'Notifications',
+  'pipeline-worker': 'Pipeline Worker',
+} as const;
+
+export function getServiceTypeLabel(type: string): string {
+  return SERVICE_TYPE_LABELS[type] ?? type;
+}
+
 export const FUNCTION_TYPE_OPTIONS = [
   'source', 'destination', 'transform', 'parse', 'convert',
   'export', 'test', 'utility', 'macro', 'custom', 'ingest', 'callback', 'flow',

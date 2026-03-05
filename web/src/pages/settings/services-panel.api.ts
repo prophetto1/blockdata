@@ -12,7 +12,7 @@ import type {
   ServiceRow,
   ServiceTypeRow,
 } from './services-panel.types';
-import { isPlainRecord, parseJsonTextarea, parseTagsText } from './services-panel.types';
+import { isPlainRecord, parseJsonTextarea, parseTagsText, SERVICE_TYPE_LABELS } from './services-panel.types';
 
 /* ------------------------------------------------------------------ */
 /*  Base URL + auth helper                                             */
@@ -100,11 +100,7 @@ export async function loadAllServices(): Promise<
   | { ok: false; error: string }
 > {
   try {
-    const [typesRes, servicesRes, functionsRes] = await Promise.all([
-      supabase
-        .from('registry_service_types')
-        .select('service_type,label,description')
-        .order('service_type'),
+    const [servicesRes, functionsRes] = await Promise.all([
       supabase
         .from('registry_services')
         .select('*')
@@ -117,15 +113,18 @@ export async function loadAllServices(): Promise<
         .order('function_name'),
     ]);
 
-    if (typesRes.error) throw new Error(typesRes.error.message);
     if (servicesRes.error) throw new Error(servicesRes.error.message);
     if (functionsRes.error) throw new Error(functionsRes.error.message);
+
+    const serviceTypes: ServiceTypeRow[] = Object.entries(SERVICE_TYPE_LABELS).map(
+      ([service_type, label]) => ({ service_type, label, description: null }),
+    );
 
     return {
       ok: true,
       data: {
         superuser: { user_id: '', email: '' },
-        service_types: (typesRes.data ?? []) as ServiceTypeRow[],
+        service_types: serviceTypes,
         services: (servicesRes.data ?? []) as ServiceRow[],
         functions: (functionsRes.data ?? []) as ServiceFunctionRow[],
       },
@@ -144,11 +143,7 @@ export async function loadPublicServices(): Promise<
   | { ok: false; error: string }
 > {
   try {
-    const [typesRes, servicesRes, functionsRes] = await Promise.all([
-      supabase
-        .from('registry_service_types')
-        .select('service_type,label,description')
-        .order('service_type'),
+    const [servicesRes, functionsRes] = await Promise.all([
       supabase
         .from('registry_services')
         .select('*')
@@ -163,14 +158,17 @@ export async function loadPublicServices(): Promise<
         .order('function_name'),
     ]);
 
-    if (typesRes.error) throw new Error(typesRes.error.message);
     if (servicesRes.error) throw new Error(servicesRes.error.message);
     if (functionsRes.error) throw new Error(functionsRes.error.message);
+
+    const serviceTypes: ServiceTypeRow[] = Object.entries(SERVICE_TYPE_LABELS).map(
+      ([service_type, label]) => ({ service_type, label, description: null }),
+    );
 
     return {
       ok: true,
       data: {
-        service_types: (typesRes.data ?? []) as ServiceTypeRow[],
+        service_types: serviceTypes,
         services: (servicesRes.data ?? []) as ServiceRow[],
         functions: (functionsRes.data ?? []) as ServiceFunctionRow[],
       },

@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/lib/supabase';
 import type { ServiceFunctionRow, ServiceRow } from '@/pages/settings/services-panel.types';
+import { getServiceTypeLabel } from '@/pages/settings/services-panel.types';
 import {
   CopyButton,
   FunctionReferenceBody,
@@ -46,7 +47,7 @@ export default function ServiceDetailPage() {
       const [svcRes, fnRes] = await Promise.all([
         supabase
           .from('registry_services')
-          .select('*, registry_service_types(label)')
+          .select('*')
           .eq('service_id', serviceId)
           .single(),
         supabase
@@ -69,13 +70,7 @@ export default function ServiceDetailPage() {
       }
 
       const raw = svcRes.data;
-      const typeLabel = (
-        Array.isArray(raw.registry_service_types)
-          ? raw.registry_service_types[0]?.label
-          : (raw.registry_service_types as { label: string } | null)?.label
-      ) ?? raw.service_type;
-
-      setService({ ...(raw as unknown as ServiceRow), service_type_label: typeLabel });
+      setService({ ...(raw as unknown as ServiceRow), service_type_label: getServiceTypeLabel(raw.service_type) });
       setFunctions((fnRes.data ?? []) as ServiceFunctionRow[]);
       setLoading(false);
     }
