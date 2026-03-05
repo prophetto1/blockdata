@@ -12,9 +12,13 @@ import {
 import { cn } from '@/lib/utils';
 import { useMonacoTheme } from '@/hooks/useMonacoTheme';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import type { ServiceFunctionRow, ServiceRow } from './services-panel.types';
-import { FunctionReferenceCard } from './FunctionReferenceCard';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import type { ServiceFunctionRow, ServiceRow } from './services-panel.types';
+import {
+  FunctionReferenceHeader,
+  FunctionReferenceBody,
+  jsonTreeRoot,
+} from '@/components/services/function-reference';
 
 /* ------------------------------------------------------------------ */
 /*  Props                                                              */
@@ -71,18 +75,6 @@ function buildFunctionJson(fn: ServiceFunctionRow): Record<string, unknown> {
 /*  Compact JSON tree for service config                               */
 /* ------------------------------------------------------------------ */
 
-const configTreeRoot = [
-  'w-full font-mono text-foreground',
-  '[&_[data-part=branch-content]]:relative',
-  '[&_[data-part=branch-indent-guide]]:absolute [&_[data-part=branch-indent-guide]]:h-full [&_[data-part=branch-indent-guide]]:w-px [&_[data-part=branch-indent-guide]]:bg-border/40',
-  '[&_[data-part=branch-control]]:flex [&_[data-part=branch-control]]:select-none [&_[data-part=branch-control]]:rounded [&_[data-part=branch-control]]:hover:bg-white/5',
-  '[&_[data-part=branch-indicator]]:inline-flex [&_[data-part=branch-indicator]]:items-center [&_[data-part=branch-indicator]]:mr-1 [&_[data-part=branch-indicator]]:origin-center',
-  '[&_[data-part=branch-indicator][data-state=open]]:rotate-90',
-  '[&_[data-part=item]]:flex [&_[data-part=item]]:relative [&_[data-part=item]]:rounded [&_[data-part=item]]:hover:bg-white/5',
-  '[&_[data-part=item-text]]:flex [&_[data-part=item-text]]:items-baseline',
-  '[&_[data-part=branch-text]]:flex [&_[data-part=branch-text]]:items-baseline',
-].join(' ');
-
 const configTree = [
   'flex flex-col text-[11px] leading-[1.7] font-mono',
   '[&_svg]:w-3 [&_svg]:h-3',
@@ -136,9 +128,7 @@ export function ServiceDetailRailView({
 
   const fnJson = selectedFn ? buildFunctionJson(selectedFn) : null;
   const jsonStr = fnJson ? JSON.stringify(fnJson, null, 2) : '';
-  const endpointTemplate = selectedFn
-    ? `{{BLOCKDATA_API_BASE_URL}}${selectedFn.entrypoint}`
-    : '{{BLOCKDATA_API_BASE_URL}}{entrypoint}';
+  const baseUrl = service.base_url ?? '{{BLOCKDATA_API_BASE_URL}}';
 
   if (sourceOpen && !editing && jsonStr) {
     editorValueRef.current = jsonStr;
@@ -222,7 +212,7 @@ export function ServiceDetailRailView({
               Config ({Object.keys(service.config).length} keys)
             </span>
             <div className="mt-0.5 rounded bg-muted p-2">
-              <JsonTreeView.Root defaultExpandedDepth={1} className={configTreeRoot} data={service.config}>
+              <JsonTreeView.Root defaultExpandedDepth={1} className={jsonTreeRoot} data={service.config}>
                 <JsonTreeView.Tree className={configTree} arrow={<IconChevronRight size={10} />} />
               </JsonTreeView.Root>
             </div>
@@ -248,98 +238,9 @@ export function ServiceDetailRailView({
 
       {selectedFn && (
         <div className="border-t border-border/50 pt-3">
-          {/* Function header — compact */}
-          <div className="mb-2.5 space-y-1.5">
-            <div className="flex flex-wrap items-center gap-2">
-              <h4 className="font-mono text-sm font-semibold text-foreground">
-                {selectedFn.function_name}
-              </h4>
-              <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
-                {selectedFn.function_type}
-              </span>
-              {selectedFn.deprecated && (
-                <span className="rounded bg-red-500/10 px-1.5 py-0.5 text-[10px] font-medium text-red-400">
-                  Deprecated
-                </span>
-              )}
-              {selectedFn.beta && (
-                <span className="rounded bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-medium text-amber-400">
-                  Beta
-                </span>
-              )}
-              {selectedFn.provider_docs_url && (
-                <a
-                  href={selectedFn.provider_docs_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-[10px] text-primary hover:underline"
-                >
-                  Provider docs
-                </a>
-              )}
-            </div>
-
-            <div className="inline-flex max-w-full items-center gap-1.5 rounded-md border border-border/50 bg-muted/20 px-2 py-1 text-xs leading-tight">
-              <span className="rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground uppercase">
-                {selectedFn.http_method}
-              </span>
-              <code className="max-w-[44rem] truncate font-mono text-xs text-foreground/90">
-                {selectedFn.entrypoint}
-              </code>
-              <Clipboard.Root value={endpointTemplate}>
-                <Clipboard.Trigger
-                  className="rounded p-0.5 text-muted-foreground transition-colors hover:text-foreground"
-                  title="Copy endpoint URL"
-                >
-                  <Clipboard.Indicator copied={<IconCheck size={12} className="text-primary" />}>
-                    <IconCopy size={12} />
-                  </Clipboard.Indicator>
-                </Clipboard.Trigger>
-              </Clipboard.Root>
-            </div>
-
-            {/* Description */}
-            {selectedFn.description && (
-              <p className="max-w-[70ch] text-xs leading-snug text-foreground/70">
-                {selectedFn.description}
-              </p>
-            )}
-
-            {/* Compact metadata line: task class, group, when_to_use */}
-            {(selectedFn.source_task_class || selectedFn.when_to_use) && (
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[10px]">
-                {selectedFn.source_task_class && (
-                  <span className="inline-flex items-center gap-1">
-                    <span className="font-semibold uppercase tracking-wider text-muted-foreground/60">Task Class</span>
-                    <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-foreground/80">
-                      {selectedFn.source_task_class}
-                    </code>
-                  </span>
-                )}
-                {selectedFn.plugin_group && (
-                  <span className="inline-flex items-center gap-1">
-                    <span className="font-semibold uppercase tracking-wider text-muted-foreground/60">Group</span>
-                    <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-foreground/80">
-                      {selectedFn.plugin_group}
-                    </code>
-                  </span>
-                )}
-              </div>
-            )}
-
-            {/* When to use — inline hint */}
-            {selectedFn.when_to_use && (
-              <p className="max-w-[70ch] text-[11px] leading-snug text-foreground/50 italic">
-                {selectedFn.when_to_use}
-              </p>
-            )}
-          </div>
-
-          {/* Structured reference card */}
-          <FunctionReferenceCard
-            fn={selectedFn}
-            hideEndpoint
-          />
+          {/* Shared function header + body */}
+          <FunctionReferenceHeader fn={selectedFn} baseUrl={baseUrl} />
+          <FunctionReferenceBody fn={selectedFn} />
 
           {/* ---- Toolbar ---- */}
           <div className="mt-3 flex items-center gap-2 border-t border-border/50 pt-3">
