@@ -15,7 +15,7 @@ import UppyLibraryDemo from '@/pages/UppyLibraryDemo';
 import Schemas from '@/pages/Schemas';
 import SchemaLayout from '@/pages/SchemaLayout';
 import RunDetail from '@/pages/RunDetail';
-import { SettingsLayout, SettingsAccount, SettingsAiOverview, SettingsProviderForm, SettingsModelRoles, SettingsAdmin, SettingsGridSample, SettingsThemes } from '@/pages/settings';
+import { SettingsLayout, SettingsAccount, SettingsAiOverview, SettingsProviderForm, SettingsModelRoles, SettingsGridSample, SettingsThemes } from '@/pages/settings';
 import PlatformLanding from '@/pages/experiments/PlatformLanding';
 import Landing from '@/pages/Landing';
 import Agents from '@/pages/Agents';
@@ -148,7 +148,7 @@ export const router = createBrowserRouter([
           // API Editor (Scalar playground)
           { path: '/app/api-editor', element: <ScalarApiPlaygroundPage /> },
 
-          // Settings (API keys, model defaults, MCP, admin)
+          // Settings (API keys, model defaults, MCP)
           {
             path: '/app/settings',
             element: <SettingsLayout />,
@@ -161,8 +161,6 @@ export const router = createBrowserRouter([
               { path: 'model-roles', element: <SettingsModelRoles /> },
               { path: 'mcp', element: <McpServers /> },
               { path: 'grid-sample', element: <SettingsGridSample /> },
-              { path: 'admin', element: <Navigate to="/app/settings/admin/services" replace /> },
-              { path: 'admin/:category', element: <SettingsAdmin /> },
             ],
           },
 
