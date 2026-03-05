@@ -98,13 +98,6 @@ function isSuppressedFlowMetadataError(message: string): boolean {
   return /^Network request failed \(flows\/default\/[^)]+\)\.$/.test(message);
 }
 
-function toTriggerTypeLabel(type: string): string {
-  const trimmed = type.trim();
-  if (trimmed.length === 0) return 'Unknown';
-  const parts = trimmed.split('.');
-  return parts[parts.length - 1] ?? trimmed;
-}
-
 function toFlowTriggers(input: FlowMetadataResponse['triggers']): FlowTriggerSummary[] {
   if (!Array.isArray(input)) return [];
   return input.map((entry, index) => {
@@ -133,7 +126,6 @@ export default function FlowDetail() {
   const [flowDescription, setFlowDescription] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [flowTriggers, setFlowTriggers] = useState<FlowTriggerSummary[]>([]);
-  const [triggerQuery, setTriggerQuery] = useState('');
   const [topologyResetNonce, setTopologyResetNonce] = useState(0);
   const [previewTabs, setPreviewTabs] = useState<string[]>([]);
   const previewSeqRef = useRef(1);
@@ -225,16 +217,6 @@ export default function FlowDetail() {
       cancelled = true;
     };
   }, [flowId]);
-
-  const filteredTriggers = useMemo(() => {
-    const needle = triggerQuery.trim().toLowerCase();
-    if (needle.length === 0) return flowTriggers;
-    return flowTriggers.filter((trigger) =>
-      trigger.id.toLowerCase().includes(needle) ||
-      trigger.type.toLowerCase().includes(needle) ||
-      (trigger.workerId ?? '').toLowerCase().includes(needle),
-    );
-  }, [flowTriggers, triggerQuery]);
 
   const addPreviewTab = useCallback(() => {
     if (previewTabs.length >= MAX_PREVIEW_TABS) return;
