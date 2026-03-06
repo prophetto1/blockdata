@@ -73,16 +73,6 @@ export default defineConfig({
     fs: {
       allow: [path.resolve(__dirname, '..')],
     },
-    proxy: {
-      '/docs': {
-        target: 'http://localhost:4321',
-        changeOrigin: true,
-      },
-      '/_image': {
-        target: 'http://localhost:4321',
-        changeOrigin: true,
-      },
-    },
   },
   build: {
     rollupOptions: {

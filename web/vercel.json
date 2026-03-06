@@ -1,7 +1,6 @@
 {
   "outputDirectory": "dist",
   "routes": [
-    { "src": "/docs(.*)", "headers": { "Location": "https://www.blockdata.run/docs$1" }, "status": 308 },
     { "handle": "filesystem" },
     { "src": "/(.*)", "dest": "/index.html" }
   ]

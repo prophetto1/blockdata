@@ -11,10 +11,10 @@ Default to reviewing plan quality and writing assessment reports.
 
 For each request in this workflow:
 
-1. Read the implementation plan from the Mintlify docs site content (`web-docs/**`).
+1. Read the implementation plan from the docs site content in `F:\blockdata-ct`.
 2. Analyze plan quality against requirements, architecture direction, and execution readiness.
-3. Write an assessment report into a separate Mintlify directory: `web-docs/assessments/`.
-4. Ensure the assessment page is available in Mintlify navigation (`web-docs/docs.json`) under an `Assessments` section.
+3. Write an assessment report into the docs site content in `F:\blockdata-ct`.
+4. Ensure the assessment page is available in the docs navigation there under an `Assessments` section.
 
 ## Assessment Requirements
 
@@ -44,22 +44,22 @@ Check the plan for:
 ## File Access Rules
 
 ### NEVER modify these directories (backend / infrastructure):
-- `services/` — Python FastAPI microservices
-- `supabase/functions/` — Deno edge functions
-- `supabase/migrations/` — Database migrations
-- `scripts/` — Operations scripts
-- `.env`, `.env.*`, `.mcp.json` — Secrets and config
+- `services/` â€” Python FastAPI microservices
+- `supabase/functions/` â€” Deno edge functions
+- `supabase/migrations/` â€” Database migrations
+- `scripts/` â€” Operations scripts
+- `.env`, `.env.*`, `.mcp.json` â€” Secrets and config
 
 ### Safe to modify:
-- `web/src/` — React frontend
-- `web-docs/` — Documentation site (plans, assessments, API docs)
-- `AGENTS.md` — Only to update these rules with owner approval
+- `web/src/` â€” React frontend
+- `F:\blockdata-ct` â€” Documentation site (plans, assessments, API docs)
+- `AGENTS.md` â€” Only to update these rules with owner approval
 
 If a task requires backend changes, stop and report that the task is out of scope. Do not attempt workarounds.
 
 ## File/Path Conventions
 
-- Plan source: typically `web-docs/plans/*.mdx` (or user-specified Mintlify path)
-- Assessment output: `web-docs/assessments/YYYY-MM-DD-<plan-name>-assessment.mdx`
+- Plan source: typically `F:\blockdata-ct\src\content\docs\**` (or user-specified docs path)
+- Assessment output: `F:\blockdata-ct\src\content\docs\assessments\YYYY-MM-DD-<plan-name>-assessment.mdx`
 
 If the plan file is missing or unclear, report that first and stop.

@@ -1,21 +1,21 @@
 # Component Inventory
 
-Generated: 2026-03-05T12:20:46.675Z
+Generated: 2026-03-06T13:21:22.644Z
 Scope: auth
 
-Pages scanned: 46
-Unique component usages: 444
+Pages scanned: 40
+Unique component usages: 404
 
 ## Category Totals
 
 | Category | Count |
 | --- | ---: |
-| ark-ui | 161 |
-| external-package | 19 |
-| in-file component | 23 |
-| local-components | 126 |
-| relative-local | 24 |
-| tabler-icons | 90 |
+| ark-ui | 147 |
+| external-package | 16 |
+| in-file component | 7 |
+| local-components | 135 |
+| relative-local | 18 |
+| tabler-icons | 80 |
 | unknown | 1 |
 
 ## src/pages/AgentOnboarding.tsx
@@ -146,20 +146,28 @@ Component usages: 53
 
 ## src/pages/FlowDetail.tsx
 
-Component usages: 10
+Component usages: 18
 
 | Used As | Source | Category | Definition |
 | --- | --- | --- | --- |
+| `AuditLogsTab` | `@/components/flows/tabs/AuditLogsTab` | local-components | AuditLogsTab comes from @/components/flows/tabs/AuditLogsTab (named import of AuditLogsTab) |
+| `ConcurrencyTab` | `@/components/flows/tabs/ConcurrencyTab` | local-components | ConcurrencyTab comes from @/components/flows/tabs/ConcurrencyTab (named import of ConcurrencyTab) |
+| `DependenciesTab` | `@/components/flows/tabs/DependenciesTab` | local-components | DependenciesTab comes from @/components/flows/tabs/DependenciesTab (named import of DependenciesTab) |
+| `ExecutionsTab` | `@/components/flows/tabs/ExecutionsTab` | local-components | ExecutionsTab comes from @/components/flows/tabs/ExecutionsTab (named import of ExecutionsTab) |
 | `FlowCanvas` | `@/components/flows/FlowCanvas` | local-components | FlowCanvas comes from @/components/flows/FlowCanvas (default import of default) |
 | `FlowWorkbench` | `@/components/flows/FlowWorkbench` | local-components | FlowWorkbench comes from @/components/flows/FlowWorkbench (default import of default) |
 | `IconLock` | `@tabler/icons-react` | tabler-icons | IconLock comes from @tabler/icons-react (named import of IconLock) |
 | `IconPlus` | `@tabler/icons-react` | tabler-icons | IconPlus comes from @tabler/icons-react (named import of IconPlus) |
 | `IconX` | `@tabler/icons-react` | tabler-icons | IconX comes from @tabler/icons-react (named import of IconX) |
+| `LogsTab` | `@/components/flows/tabs/LogsTab` | local-components | LogsTab comes from @/components/flows/tabs/LogsTab (named import of LogsTab) |
+| `MetricsTab` | `@/components/flows/tabs/MetricsTab` | local-components | MetricsTab comes from @/components/flows/tabs/MetricsTab (named import of MetricsTab) |
 | `PreviewTabPanel` | `@/components/documents/PreviewTabPanel` | local-components | PreviewTabPanel comes from @/components/documents/PreviewTabPanel (named import of PreviewTabPanel) |
+| `RevisionsTab` | `@/components/flows/tabs/RevisionsTab` | local-components | RevisionsTab comes from @/components/flows/tabs/RevisionsTab (named import of RevisionsTab) |
 | `Tabs` | `@/components/ui/tabs` | local-components | Tabs comes from @/components/ui/tabs (named import of Tabs) |
 | `TabsContent` | `@/components/ui/tabs` | local-components | TabsContent comes from @/components/ui/tabs (named import of TabsContent) |
 | `TabsList` | `@/components/ui/tabs` | local-components | TabsList comes from @/components/ui/tabs (named import of TabsList) |
 | `TabsTrigger` | `@/components/ui/tabs` | local-components | TabsTrigger comes from @/components/ui/tabs (named import of TabsTrigger) |
+| `TriggersTab` | `@/components/flows/tabs/TriggersTab` | local-components | TriggersTab comes from @/components/flows/tabs/TriggersTab (named import of TriggersTab) |
 
 ## src/pages/FlowsList.tsx
 
@@ -171,14 +179,6 @@ Component usages: 5
 | `HugeiconsIcon` | `@hugeicons/react` | external-package | HugeiconsIcon comes from @hugeicons/react (named import of HugeiconsIcon) |
 | `IconClock` | `@tabler/icons-react` | tabler-icons | IconClock comes from @tabler/icons-react (named import of IconClock) |
 | `IconExternalLink` | `@tabler/icons-react` | tabler-icons | IconExternalLink comes from @tabler/icons-react (named import of IconExternalLink) |
-| `PageHeader` | `@/components/common/PageHeader` | local-components | PageHeader comes from @/components/common/PageHeader (named import of PageHeader) |
-
-## src/pages/Integrations.tsx
-
-Component usages: 1
-
-| Used As | Source | Category | Definition |
-| --- | --- | --- | --- |
 | `PageHeader` | `@/components/common/PageHeader` | local-components | PageHeader comes from @/components/common/PageHeader (named import of PageHeader) |
 
 ## src/pages/marketplace/IntegrationsCatalog.tsx
@@ -193,31 +193,21 @@ Component usages: 3
 
 ## src/pages/marketplace/ServiceDetailPage.tsx
 
-Component usages: 21
+Component usages: 11
 
 | Used As | Source | Category | Definition |
 | --- | --- | --- | --- |
-| `Clipboard.Indicator` | `@ark-ui/react/clipboard` | ark-ui | Clipboard.Indicator comes from @ark-ui/react/clipboard (named import of Clipboard) |
-| `Clipboard.Root` | `@ark-ui/react/clipboard` | ark-ui | Clipboard.Root comes from @ark-ui/react/clipboard (named import of Clipboard) |
-| `Clipboard.Trigger` | `@ark-ui/react/clipboard` | ark-ui | Clipboard.Trigger comes from @ark-ui/react/clipboard (named import of Clipboard) |
-| `CopyButton` | `(in-file or unresolved)` | in-file component | CopyButton is defined in the same page file |
-| `ExampleBlocks` | `(in-file or unresolved)` | in-file component | ExampleBlocks is defined in the same page file |
-| `FunctionReference` | `(in-file or unresolved)` | in-file component | FunctionReference is defined in the same page file |
-| `IconArrowLeft` | `@tabler/icons-react` | tabler-icons | IconArrowLeft comes from @tabler/icons-react (named import of IconArrowLeft) |
-| `IconCheck` | `@tabler/icons-react` | tabler-icons | IconCheck comes from @tabler/icons-react (named import of IconCheck) |
+| `Button` | `@/components/ui/button` | local-components | Button comes from @/components/ui/button (named import of Button) |
+| `CopyButton` | `@/components/services/function-reference` | local-components | CopyButton comes from @/components/services/function-reference (named import of CopyButton) |
+| `FunctionReferenceBody` | `@/components/services/function-reference` | local-components | FunctionReferenceBody comes from @/components/services/function-reference (named import of FunctionReferenceBody) |
+| `FunctionReferenceHeader` | `@/components/services/function-reference` | local-components | FunctionReferenceHeader comes from @/components/services/function-reference (named import of FunctionReferenceHeader) |
+| `HugeiconsIcon` | `@hugeicons/react` | external-package | HugeiconsIcon comes from @hugeicons/react (named import of HugeiconsIcon) |
 | `IconChevronRight` | `@tabler/icons-react` | tabler-icons | IconChevronRight comes from @tabler/icons-react (named import of IconChevronRight) |
-| `IconCopy` | `@tabler/icons-react` | tabler-icons | IconCopy comes from @tabler/icons-react (named import of IconCopy) |
-| `IconExternalLink` | `@tabler/icons-react` | tabler-icons | IconExternalLink comes from @tabler/icons-react (named import of IconExternalLink) |
-| `IconSearch` | `@tabler/icons-react` | tabler-icons | IconSearch comes from @tabler/icons-react (named import of IconSearch) |
-| `JsonBlock` | `(in-file or unresolved)` | in-file component | JsonBlock is defined in the same page file |
-| `JsonTreeView.Root` | `@ark-ui/react/json-tree-view` | ark-ui | JsonTreeView.Root comes from @ark-ui/react/json-tree-view (named import of JsonTreeView) |
-| `JsonTreeView.Tree` | `@ark-ui/react/json-tree-view` | ark-ui | JsonTreeView.Tree comes from @ark-ui/react/json-tree-view (named import of JsonTreeView) |
-| `MetricsTable` | `(in-file or unresolved)` | in-file component | MetricsTable is defined in the same page file |
+| `JsonBlock` | `@/components/services/function-reference` | local-components | JsonBlock comes from @/components/services/function-reference (named import of JsonBlock) |
 | `PageHeader` | `@/components/common/PageHeader` | local-components | PageHeader comes from @/components/common/PageHeader (named import of PageHeader) |
-| `ParametersTable` | `(in-file or unresolved)` | in-file component | ParametersTable is defined in the same page file |
-| `Pill` | `(in-file or unresolved)` | in-file component | Pill is defined in the same page file |
-| `SectionLabel` | `(in-file or unresolved)` | in-file component | SectionLabel is defined in the same page file |
-| `ServiceHero` | `(in-file or unresolved)` | in-file component | ServiceHero is defined in the same page file |
+| `Pill` | `@/components/services/function-reference` | local-components | Pill comes from @/components/services/function-reference (named import of Pill) |
+| `ScrollArea` | `@/components/ui/scroll-area` | local-components | ScrollArea comes from @/components/ui/scroll-area (named import of ScrollArea) |
+| `SectionLabel` | `@/components/services/function-reference` | local-components | SectionLabel comes from @/components/services/function-reference (named import of SectionLabel) |
 
 ## src/pages/marketplace/ServicesCatalog.tsx
 
@@ -264,11 +254,10 @@ Component usages: 1
 
 ## src/pages/Projects.tsx
 
-Component usages: 34
+Component usages: 29
 
 | Used As | Source | Category | Definition |
 | --- | --- | --- | --- |
-| `AgGridReact` | `ag-grid-react` | external-package | AgGridReact comes from ag-grid-react (named import of AgGridReact) |
 | `Badge` | `@/components/ui/badge` | local-components | Badge comes from @/components/ui/badge (named import of Badge) |
 | `Button` | `@/components/ui/button` | local-components | Button comes from @/components/ui/button (named import of Button) |
 | `DialogBody` | `@/components/ui/dialog` | local-components | DialogBody comes from @/components/ui/dialog (named import of DialogBody) |
@@ -278,6 +267,7 @@ Component usages: 34
 | `DialogRoot` | `@/components/ui/dialog` | local-components | DialogRoot comes from @/components/ui/dialog (named import of DialogRoot) |
 | `DialogTitle` | `@/components/ui/dialog` | local-components | DialogTitle comes from @/components/ui/dialog (named import of DialogTitle) |
 | `ErrorAlert` | `@/components/common/ErrorAlert` | local-components | ErrorAlert comes from @/components/common/ErrorAlert (named import of ErrorAlert) |
+| `HugeiconsIcon` | `@hugeicons/react` | external-package | HugeiconsIcon comes from @hugeicons/react (named import of HugeiconsIcon) |
 | `IconChevronLeft` | `@tabler/icons-react` | tabler-icons | IconChevronLeft comes from @tabler/icons-react (named import of IconChevronLeft) |
 | `IconChevronRight` | `@tabler/icons-react` | tabler-icons | IconChevronRight comes from @tabler/icons-react (named import of IconChevronRight) |
 | `IconClock` | `@tabler/icons-react` | tabler-icons | IconClock comes from @tabler/icons-react (named import of IconClock) |
@@ -285,8 +275,6 @@ Component usages: 34
 | `IconFileText` | `@tabler/icons-react` | tabler-icons | IconFileText comes from @tabler/icons-react (named import of IconFileText) |
 | `IconFolder` | `@tabler/icons-react` | tabler-icons | IconFolder comes from @tabler/icons-react (named import of IconFolder) |
 | `IconFolderPlus` | `@tabler/icons-react` | tabler-icons | IconFolderPlus comes from @tabler/icons-react (named import of IconFolderPlus) |
-| `IconSearch` | `@tabler/icons-react` | tabler-icons | IconSearch comes from @tabler/icons-react (named import of IconSearch) |
-| `IconUpload` | `@tabler/icons-react` | tabler-icons | IconUpload comes from @tabler/icons-react (named import of IconUpload) |
 | `PageHeader` | `@/components/common/PageHeader` | local-components | PageHeader comes from @/components/common/PageHeader (named import of PageHeader) |
 | `Pagination.Context` | `@ark-ui/react/pagination` | ark-ui | Pagination.Context comes from @ark-ui/react/pagination (named import of Pagination) |
 | `Pagination.Ellipsis` | `@ark-ui/react/pagination` | ark-ui | Pagination.Ellipsis comes from @ark-ui/react/pagination (named import of Pagination) |
@@ -299,9 +287,6 @@ Component usages: 34
 | `SegmentGroupItemHiddenInput` | `@/components/ui/segment-group` | local-components | SegmentGroupItemHiddenInput comes from @/components/ui/segment-group (named import of SegmentGroupItemHiddenInput) |
 | `SegmentGroupItemText` | `@/components/ui/segment-group` | local-components | SegmentGroupItemText comes from @/components/ui/segment-group (named import of SegmentGroupItemText) |
 | `SegmentGroupRoot` | `@/components/ui/segment-group` | local-components | SegmentGroupRoot comes from @/components/ui/segment-group (named import of SegmentGroupRoot) |
-| `Tooltip` | `@/components/ui/tooltip` | local-components | Tooltip comes from @/components/ui/tooltip (named import of Tooltip) |
-| `TooltipContent` | `@/components/ui/tooltip` | local-components | TooltipContent comes from @/components/ui/tooltip (named import of TooltipContent) |
-| `TooltipTrigger` | `@/components/ui/tooltip` | local-components | TooltipTrigger comes from @/components/ui/tooltip (named import of TooltipTrigger) |
 
 ## src/pages/RunDetail.tsx
 
@@ -389,39 +374,6 @@ Component usages: 28
 | `Splitter.ResizeTriggerIndicator` | `@ark-ui/react/splitter` | ark-ui | Splitter.ResizeTriggerIndicator comes from @ark-ui/react/splitter (named import of Splitter) |
 | `Splitter.Root` | `@ark-ui/react/splitter` | ark-ui | Splitter.Root comes from @ark-ui/react/splitter (named import of Splitter) |
 
-## src/pages/settings/FunctionReferenceCard.tsx
-
-Component usages: 13
-
-| Used As | Source | Category | Definition |
-| --- | --- | --- | --- |
-| `ApiSheetSection` | `(in-file or unresolved)` | in-file component | ApiSheetSection is defined in the same page file |
-| `Badge` | `@/components/ui/badge` | local-components | Badge comes from @/components/ui/badge (named import of Badge) |
-| `Clipboard.Indicator` | `@ark-ui/react/clipboard` | ark-ui | Clipboard.Indicator comes from @ark-ui/react/clipboard (named import of Clipboard) |
-| `Clipboard.Root` | `@ark-ui/react/clipboard` | ark-ui | Clipboard.Root comes from @ark-ui/react/clipboard (named import of Clipboard) |
-| `Clipboard.Trigger` | `@ark-ui/react/clipboard` | ark-ui | Clipboard.Trigger comes from @ark-ui/react/clipboard (named import of Clipboard) |
-| `IconCheck` | `@tabler/icons-react` | tabler-icons | IconCheck comes from @tabler/icons-react (named import of IconCheck) |
-| `IconChevronRight` | `@tabler/icons-react` | tabler-icons | IconChevronRight comes from @tabler/icons-react (named import of IconChevronRight) |
-| `IconCopy` | `@tabler/icons-react` | tabler-icons | IconCopy comes from @tabler/icons-react (named import of IconCopy) |
-| `JsonTreeBlock` | `(in-file or unresolved)` | in-file component | JsonTreeBlock is defined in the same page file |
-| `JsonTreeView.Root` | `@ark-ui/react/json-tree-view` | ark-ui | JsonTreeView.Root comes from @ark-ui/react/json-tree-view (named import of JsonTreeView) |
-| `JsonTreeView.Tree` | `@ark-ui/react/json-tree-view` | ark-ui | JsonTreeView.Tree comes from @ark-ui/react/json-tree-view (named import of JsonTreeView) |
-| `ParametersTable` | `(in-file or unresolved)` | in-file component | ParametersTable is defined in the same page file |
-| `ScrollArea` | `@/components/ui/scroll-area` | local-components | ScrollArea comes from @/components/ui/scroll-area (named import of ScrollArea) |
-
-## src/pages/settings/GridTestPanel.tsx
-
-Component usages: 6
-
-| Used As | Source | Category | Definition |
-| --- | --- | --- | --- |
-| `CatalogContextMenu` | `(in-file or unresolved)` | in-file component | CatalogContextMenu is defined in the same page file |
-| `DataGrid` | `react-data-grid` | external-package | DataGrid comes from react-data-grid (named import of DataGrid) |
-| `DetailPanel` | `(in-file or unresolved)` | in-file component | DetailPanel is defined in the same page file |
-| `KestraHeader` | `(in-file or unresolved)` | in-file component | KestraHeader is defined in the same page file |
-| `ScrollArea` | `@/components/ui/scroll-area` | local-components | ScrollArea comes from @/components/ui/scroll-area (named import of ScrollArea) |
-| `TreeDataGrid` | `react-data-grid` | external-package | TreeDataGrid comes from react-data-grid (named import of TreeDataGrid) |
-
 ## src/pages/settings/InstanceConfigPanel.tsx
 
 Component usages: 2
@@ -430,37 +382,6 @@ Component usages: 2
 | --- | --- | --- | --- |
 | `Button` | `@/components/ui/button` | local-components | Button comes from @/components/ui/button (named import of Button) |
 | `SettingCard` | `./setting-card-shared` | relative-local | SettingCard comes from ./setting-card-shared (named import of SettingCard) |
-
-## src/pages/settings/IntegrationCatalogPanel.tsx
-
-Component usages: 3
-
-| Used As | Source | Category | Definition |
-| --- | --- | --- | --- |
-| `Button` | `@/components/ui/button` | local-components | Button comes from @/components/ui/button (named import of Button) |
-| `ErrorAlert` | `@/components/common/ErrorAlert` | local-components | ErrorAlert comes from @/components/common/ErrorAlert (named import of ErrorAlert) |
-| `SchemaDetail` | `(in-file or unresolved)` | in-file component | SchemaDetail is defined in the same page file |
-
-## src/pages/settings/IntegrationCatalogPanelTemp.test.tsx
-
-Component usages: 1
-
-| Used As | Source | Category | Definition |
-| --- | --- | --- | --- |
-| `IntegrationCatalogPanelTemp` | `./IntegrationCatalogPanelTemp` | relative-local | IntegrationCatalogPanelTemp comes from ./IntegrationCatalogPanelTemp (named import of IntegrationCatalogPanelTemp) |
-
-## src/pages/settings/IntegrationCatalogPanelTemp.tsx
-
-Component usages: 6
-
-| Used As | Source | Category | Definition |
-| --- | --- | --- | --- |
-| `Checkbox.Control` | `@ark-ui/react/checkbox` | ark-ui | Checkbox.Control comes from @ark-ui/react/checkbox (named import of Checkbox) |
-| `Checkbox.HiddenInput` | `@ark-ui/react/checkbox` | ark-ui | Checkbox.HiddenInput comes from @ark-ui/react/checkbox (named import of Checkbox) |
-| `Checkbox.Indicator` | `@ark-ui/react/checkbox` | ark-ui | Checkbox.Indicator comes from @ark-ui/react/checkbox (named import of Checkbox) |
-| `Checkbox.Root` | `@ark-ui/react/checkbox` | ark-ui | Checkbox.Root comes from @ark-ui/react/checkbox (named import of Checkbox) |
-| `DataGrid` | `react-data-grid` | external-package | DataGrid comes from react-data-grid (named import of DataGrid) |
-| `TreeDataGrid` | `react-data-grid` | external-package | TreeDataGrid comes from react-data-grid (named import of TreeDataGrid) |
 
 ## src/pages/settings/McpServers.tsx
 
@@ -512,14 +433,15 @@ Component usages: 6
 
 ## src/pages/settings/ServiceDetailRailView.tsx
 
-Component usages: 16
+Component usages: 17
 
 | Used As | Source | Category | Definition |
 | --- | --- | --- | --- |
 | `Clipboard.Indicator` | `@ark-ui/react/clipboard` | ark-ui | Clipboard.Indicator comes from @ark-ui/react/clipboard (named import of Clipboard) |
 | `Clipboard.Root` | `@ark-ui/react/clipboard` | ark-ui | Clipboard.Root comes from @ark-ui/react/clipboard (named import of Clipboard) |
 | `Clipboard.Trigger` | `@ark-ui/react/clipboard` | ark-ui | Clipboard.Trigger comes from @ark-ui/react/clipboard (named import of Clipboard) |
-| `FunctionReferenceCard` | `./FunctionReferenceCard` | relative-local | FunctionReferenceCard comes from ./FunctionReferenceCard (named import of FunctionReferenceCard) |
+| `FunctionReferenceBody` | `@/components/services/function-reference` | local-components | FunctionReferenceBody comes from @/components/services/function-reference (named import of FunctionReferenceBody) |
+| `FunctionReferenceHeader` | `@/components/services/function-reference` | local-components | FunctionReferenceHeader comes from @/components/services/function-reference (named import of FunctionReferenceHeader) |
 | `IconCheck` | `@tabler/icons-react` | tabler-icons | IconCheck comes from @tabler/icons-react (named import of IconCheck) |
 | `IconChevronRight` | `@tabler/icons-react` | tabler-icons | IconChevronRight comes from @tabler/icons-react (named import of IconChevronRight) |
 | `IconCode` | `@tabler/icons-react` | tabler-icons | IconCode comes from @tabler/icons-react (named import of IconCode) |
@@ -614,7 +536,7 @@ Component usages: 14
 
 ## src/pages/settings/SettingsAdmin.tsx
 
-Component usages: 10
+Component usages: 6
 
 | Used As | Source | Category | Definition |
 | --- | --- | --- | --- |
@@ -622,11 +544,7 @@ Component usages: 10
 | `ErrorAlert` | `@/components/common/ErrorAlert` | local-components | ErrorAlert comes from @/components/common/ErrorAlert (named import of ErrorAlert) |
 | `Field.Input` | `@ark-ui/react/field` | ark-ui | Field.Input comes from @ark-ui/react/field (named import of Field) |
 | `Field.Root` | `@ark-ui/react/field` | ark-ui | Field.Root comes from @ark-ui/react/field (named import of Field) |
-| `GridTestPanel` | `./GridTestPanel` | relative-local | GridTestPanel comes from ./GridTestPanel (named import of GridTestPanel) |
-| `InstanceConfigPanel` | `./InstanceConfigPanel` | relative-local | InstanceConfigPanel comes from ./InstanceConfigPanel (named import of InstanceConfigPanel) |
-| `IntegrationCatalogPanel` | `./IntegrationCatalogPanel` | relative-local | IntegrationCatalogPanel comes from ./IntegrationCatalogPanel (named import of IntegrationCatalogPanel) |
 | `Navigate` | `react-router-dom` | external-package | Navigate comes from react-router-dom (named import of Navigate) |
-| `PlatformConfigPanel` | `./PlatformConfigPanel` | relative-local | PlatformConfigPanel comes from ./PlatformConfigPanel (named import of PlatformConfigPanel) |
 | `ServicesPanel` | `./ServicesPanel` | relative-local | ServicesPanel comes from ./ServicesPanel (named import of ServicesPanel) |
 
 ## src/pages/settings/SettingsAiOverview.tsx

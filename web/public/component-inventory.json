@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-03-05T12:20:46.671Z",
+  "generatedAt": "2026-03-06T13:21:22.635Z",
   "scope": "auth",
   "pages": [
     {
@@ -712,12 +712,48 @@
     },
     {
       "page": "src/pages/FlowDetail.tsx",
-      "componentCount": 10,
+      "componentCount": 18,
       "categoryCounts": {
-        "local-components": 7,
+        "local-components": 15,
         "tabler-icons": 3
       },
       "components": [
+        {
+          "component": "AuditLogsTab",
+          "usedAs": "AuditLogsTab",
+          "source": "@/components/flows/tabs/AuditLogsTab",
+          "importKind": "named",
+          "importedAs": "AuditLogsTab",
+          "category": "local-components",
+          "definition": "AuditLogsTab comes from @/components/flows/tabs/AuditLogsTab (named import of AuditLogsTab)"
+        },
+        {
+          "component": "ConcurrencyTab",
+          "usedAs": "ConcurrencyTab",
+          "source": "@/components/flows/tabs/ConcurrencyTab",
+          "importKind": "named",
+          "importedAs": "ConcurrencyTab",
+          "category": "local-components",
+          "definition": "ConcurrencyTab comes from @/components/flows/tabs/ConcurrencyTab (named import of ConcurrencyTab)"
+        },
+        {
+          "component": "DependenciesTab",
+          "usedAs": "DependenciesTab",
+          "source": "@/components/flows/tabs/DependenciesTab",
+          "importKind": "named",
+          "importedAs": "DependenciesTab",
+          "category": "local-components",
+          "definition": "DependenciesTab comes from @/components/flows/tabs/DependenciesTab (named import of DependenciesTab)"
+        },
+        {
+          "component": "ExecutionsTab",
+          "usedAs": "ExecutionsTab",
+          "source": "@/components/flows/tabs/ExecutionsTab",
+          "importKind": "named",
+          "importedAs": "ExecutionsTab",
+          "category": "local-components",
+          "definition": "ExecutionsTab comes from @/components/flows/tabs/ExecutionsTab (named import of ExecutionsTab)"
+        },
         {
           "component": "FlowCanvas",
           "usedAs": "FlowCanvas",
@@ -764,6 +800,24 @@
           "definition": "IconX comes from @tabler/icons-react (named import of IconX)"
         },
         {
+          "component": "LogsTab",
+          "usedAs": "LogsTab",
+          "source": "@/components/flows/tabs/LogsTab",
+          "importKind": "named",
+          "importedAs": "LogsTab",
+          "category": "local-components",
+          "definition": "LogsTab comes from @/components/flows/tabs/LogsTab (named import of LogsTab)"
+        },
+        {
+          "component": "MetricsTab",
+          "usedAs": "MetricsTab",
+          "source": "@/components/flows/tabs/MetricsTab",
+          "importKind": "named",
+          "importedAs": "MetricsTab",
+          "category": "local-components",
+          "definition": "MetricsTab comes from @/components/flows/tabs/MetricsTab (named import of MetricsTab)"
+        },
+        {
           "component": "PreviewTabPanel",
           "usedAs": "PreviewTabPanel",
           "source": "@/components/documents/PreviewTabPanel",
@@ -771,6 +825,15 @@
           "importedAs": "PreviewTabPanel",
           "category": "local-components",
           "definition": "PreviewTabPanel comes from @/components/documents/PreviewTabPanel (named import of PreviewTabPanel)"
+        },
+        {
+          "component": "RevisionsTab",
+          "usedAs": "RevisionsTab",
+          "source": "@/components/flows/tabs/RevisionsTab",
+          "importKind": "named",
+          "importedAs": "RevisionsTab",
+          "category": "local-components",
+          "definition": "RevisionsTab comes from @/components/flows/tabs/RevisionsTab (named import of RevisionsTab)"
         },
         {
           "component": "Tabs",
@@ -807,6 +870,15 @@
           "importedAs": "TabsTrigger",
           "category": "local-components",
           "definition": "TabsTrigger comes from @/components/ui/tabs (named import of TabsTrigger)"
+        },
+        {
+          "component": "TriggersTab",
+          "usedAs": "TriggersTab",
+          "source": "@/components/flows/tabs/TriggersTab",
+          "importKind": "named",
+          "importedAs": "TriggersTab",
+          "category": "local-components",
+          "definition": "TriggersTab comes from @/components/flows/tabs/TriggersTab (named import of TriggersTab)"
         }
       ]
     },
@@ -867,24 +939,6 @@
       ]
     },
     {
-      "page": "src/pages/Integrations.tsx",
-      "componentCount": 1,
-      "categoryCounts": {
-        "local-components": 1
-      },
-      "components": [
-        {
-          "component": "PageHeader",
-          "usedAs": "PageHeader",
-          "source": "@/components/common/PageHeader",
-          "importKind": "named",
-          "importedAs": "PageHeader",
-          "category": "local-components",
-          "definition": "PageHeader comes from @/components/common/PageHeader (named import of PageHeader)"
-        }
-      ]
-    },
-    {
       "page": "src/pages/marketplace/IntegrationsCatalog.tsx",
       "componentCount": 3,
       "categoryCounts": {
@@ -923,85 +977,57 @@
     },
     {
       "page": "src/pages/marketplace/ServiceDetailPage.tsx",
-      "componentCount": 21,
+      "componentCount": 11,
       "categoryCounts": {
-        "ark-ui": 5,
-        "in-file component": 9,
-        "tabler-icons": 6,
-        "local-components": 1
+        "local-components": 9,
+        "external-package": 1,
+        "tabler-icons": 1
       },
       "components": [
         {
-          "component": "Clipboard",
-          "usedAs": "Clipboard.Indicator",
-          "source": "@ark-ui/react/clipboard",
+          "component": "Button",
+          "usedAs": "Button",
+          "source": "@/components/ui/button",
           "importKind": "named",
-          "importedAs": "Clipboard",
-          "category": "ark-ui",
-          "definition": "Clipboard.Indicator comes from @ark-ui/react/clipboard (named import of Clipboard)"
-        },
-        {
-          "component": "Clipboard",
-          "usedAs": "Clipboard.Root",
-          "source": "@ark-ui/react/clipboard",
-          "importKind": "named",
-          "importedAs": "Clipboard",
-          "category": "ark-ui",
-          "definition": "Clipboard.Root comes from @ark-ui/react/clipboard (named import of Clipboard)"
-        },
-        {
-          "component": "Clipboard",
-          "usedAs": "Clipboard.Trigger",
-          "source": "@ark-ui/react/clipboard",
-          "importKind": "named",
-          "importedAs": "Clipboard",
-          "category": "ark-ui",
-          "definition": "Clipboard.Trigger comes from @ark-ui/react/clipboard (named import of Clipboard)"
+          "importedAs": "Button",
+          "category": "local-components",
+          "definition": "Button comes from @/components/ui/button (named import of Button)"
         },
         {
           "component": "CopyButton",
           "usedAs": "CopyButton",
-          "source": "(in-file or unresolved)",
-          "importKind": null,
-          "importedAs": null,
-          "category": "in-file component",
-          "definition": "CopyButton is defined in the same page file"
-        },
-        {
-          "component": "ExampleBlocks",
-          "usedAs": "ExampleBlocks",
-          "source": "(in-file or unresolved)",
-          "importKind": null,
-          "importedAs": null,
-          "category": "in-file component",
-          "definition": "ExampleBlocks is defined in the same page file"
-        },
-        {
-          "component": "FunctionReference",
-          "usedAs": "FunctionReference",
-          "source": "(in-file or unresolved)",
-          "importKind": null,
-          "importedAs": null,
-          "category": "in-file component",
-          "definition": "FunctionReference is defined in the same page file"
-        },
-        {
-          "component": "IconArrowLeft",
-          "usedAs": "IconArrowLeft",
-          "source": "@tabler/icons-react",
+          "source": "@/components/services/function-reference",
           "importKind": "named",
-          "importedAs": "IconArrowLeft",
-          "category": "tabler-icons",
-          "definition": "IconArrowLeft comes from @tabler/icons-react (named import of IconArrowLeft)"
+          "importedAs": "CopyButton",
+          "category": "local-components",
+          "definition": "CopyButton comes from @/components/services/function-reference (named import of CopyButton)"
         },
         {
-          "component": "IconCheck",
-          "usedAs": "IconCheck",
-          "source": "@tabler/icons-react",
+          "component": "FunctionReferenceBody",
+          "usedAs": "FunctionReferenceBody",
+          "source": "@/components/services/function-reference",
           "importKind": "named",
-          "importedAs": "IconCheck",
-          "category": "tabler-icons",
-          "definition": "IconCheck comes from @tabler/icons-react (named import of IconCheck)"
+          "importedAs": "FunctionReferenceBody",
+          "category": "local-components",
+          "definition": "FunctionReferenceBody comes from @/components/services/function-reference (named import of FunctionReferenceBody)"
+        },
+        {
+          "component": "FunctionReferenceHeader",
+          "usedAs": "FunctionReferenceHeader",
+          "source": "@/components/services/function-reference",
+          "importKind": "named",
+          "importedAs": "FunctionReferenceHeader",
+          "category": "local-components",
+          "definition": "FunctionReferenceHeader comes from @/components/services/function-reference (named import of FunctionReferenceHeader)"
+        },
+        {
+          "component": "HugeiconsIcon",
+          "usedAs": "HugeiconsIcon",
+          "source": "@hugeicons/react",
+          "importKind": "named",
+          "importedAs": "HugeiconsIcon",
+          "category": "external-package",
+          "definition": "HugeiconsIcon comes from @hugeicons/react (named import of HugeiconsIcon)"
         },
         {
           "component": "IconChevronRight",
@@ -1013,67 +1039,13 @@
           "definition": "IconChevronRight comes from @tabler/icons-react (named import of IconChevronRight)"
         },
         {
-          "component": "IconCopy",
-          "usedAs": "IconCopy",
-          "source": "@tabler/icons-react",
-          "importKind": "named",
-          "importedAs": "IconCopy",
-          "category": "tabler-icons",
-          "definition": "IconCopy comes from @tabler/icons-react (named import of IconCopy)"
-        },
-        {
-          "component": "IconExternalLink",
-          "usedAs": "IconExternalLink",
-          "source": "@tabler/icons-react",
-          "importKind": "named",
-          "importedAs": "IconExternalLink",
-          "category": "tabler-icons",
-          "definition": "IconExternalLink comes from @tabler/icons-react (named import of IconExternalLink)"
-        },
-        {
-          "component": "IconSearch",
-          "usedAs": "IconSearch",
-          "source": "@tabler/icons-react",
-          "importKind": "named",
-          "importedAs": "IconSearch",
-          "category": "tabler-icons",
-          "definition": "IconSearch comes from @tabler/icons-react (named import of IconSearch)"
-        },
-        {
           "component": "JsonBlock",
           "usedAs": "JsonBlock",
-          "source": "(in-file or unresolved)",
-          "importKind": null,
-          "importedAs": null,
-          "category": "in-file component",
-          "definition": "JsonBlock is defined in the same page file"
-        },
-        {
-          "component": "JsonTreeView",
-          "usedAs": "JsonTreeView.Root",
-          "source": "@ark-ui/react/json-tree-view",
+          "source": "@/components/services/function-reference",
           "importKind": "named",
-          "importedAs": "JsonTreeView",
-          "category": "ark-ui",
-          "definition": "JsonTreeView.Root comes from @ark-ui/react/json-tree-view (named import of JsonTreeView)"
-        },
-        {
-          "component": "JsonTreeView",
-          "usedAs": "JsonTreeView.Tree",
-          "source": "@ark-ui/react/json-tree-view",
-          "importKind": "named",
-          "importedAs": "JsonTreeView",
-          "category": "ark-ui",
-          "definition": "JsonTreeView.Tree comes from @ark-ui/react/json-tree-view (named import of JsonTreeView)"
-        },
-        {
-          "component": "MetricsTable",
-          "usedAs": "MetricsTable",
-          "source": "(in-file or unresolved)",
-          "importKind": null,
-          "importedAs": null,
-          "category": "in-file component",
-          "definition": "MetricsTable is defined in the same page file"
+          "importedAs": "JsonBlock",
+          "category": "local-components",
+          "definition": "JsonBlock comes from @/components/services/function-reference (named import of JsonBlock)"
         },
         {
           "component": "PageHeader",
@@ -1085,40 +1057,31 @@
           "definition": "PageHeader comes from @/components/common/PageHeader (named import of PageHeader)"
         },
         {
-          "component": "ParametersTable",
-          "usedAs": "ParametersTable",
-          "source": "(in-file or unresolved)",
-          "importKind": null,
-          "importedAs": null,
-          "category": "in-file component",
-          "definition": "ParametersTable is defined in the same page file"
-        },
-        {
           "component": "Pill",
           "usedAs": "Pill",
-          "source": "(in-file or unresolved)",
-          "importKind": null,
-          "importedAs": null,
-          "category": "in-file component",
-          "definition": "Pill is defined in the same page file"
+          "source": "@/components/services/function-reference",
+          "importKind": "named",
+          "importedAs": "Pill",
+          "category": "local-components",
+          "definition": "Pill comes from @/components/services/function-reference (named import of Pill)"
+        },
+        {
+          "component": "ScrollArea",
+          "usedAs": "ScrollArea",
+          "source": "@/components/ui/scroll-area",
+          "importKind": "named",
+          "importedAs": "ScrollArea",
+          "category": "local-components",
+          "definition": "ScrollArea comes from @/components/ui/scroll-area (named import of ScrollArea)"
         },
         {
           "component": "SectionLabel",
           "usedAs": "SectionLabel",
-          "source": "(in-file or unresolved)",
-          "importKind": null,
-          "importedAs": null,
-          "category": "in-file component",
-          "definition": "SectionLabel is defined in the same page file"
-        },
-        {
-          "component": "ServiceHero",
-          "usedAs": "ServiceHero",
-          "source": "(in-file or unresolved)",
-          "importKind": null,
-          "importedAs": null,
-          "category": "in-file component",
-          "definition": "ServiceHero is defined in the same page file"
+          "source": "@/components/services/function-reference",
+          "importKind": "named",
+          "importedAs": "SectionLabel",
+          "category": "local-components",
+          "definition": "SectionLabel comes from @/components/services/function-reference (named import of SectionLabel)"
         }
       ]
     },
@@ -1353,23 +1316,14 @@
     },
     {
       "page": "src/pages/Projects.tsx",
-      "componentCount": 34,
+      "componentCount": 29,
       "categoryCounts": {
+        "local-components": 15,
         "external-package": 1,
-        "local-components": 18,
-        "tabler-icons": 9,
+        "tabler-icons": 7,
         "ark-ui": 6
       },
       "components": [
-        {
-          "component": "AgGridReact",
-          "usedAs": "AgGridReact",
-          "source": "ag-grid-react",
-          "importKind": "named",
-          "importedAs": "AgGridReact",
-          "category": "external-package",
-          "definition": "AgGridReact comes from ag-grid-react (named import of AgGridReact)"
-        },
         {
           "component": "Badge",
           "usedAs": "Badge",
@@ -1452,6 +1406,15 @@
           "definition": "ErrorAlert comes from @/components/common/ErrorAlert (named import of ErrorAlert)"
         },
         {
+          "component": "HugeiconsIcon",
+          "usedAs": "HugeiconsIcon",
+          "source": "@hugeicons/react",
+          "importKind": "named",
+          "importedAs": "HugeiconsIcon",
+          "category": "external-package",
+          "definition": "HugeiconsIcon comes from @hugeicons/react (named import of HugeiconsIcon)"
+        },
+        {
           "component": "IconChevronLeft",
           "usedAs": "IconChevronLeft",
           "source": "@tabler/icons-react",
@@ -1513,24 +1476,6 @@
           "importedAs": "IconFolderPlus",
           "category": "tabler-icons",
           "definition": "IconFolderPlus comes from @tabler/icons-react (named import of IconFolderPlus)"
-        },
-        {
-          "component": "IconSearch",
-          "usedAs": "IconSearch",
-          "source": "@tabler/icons-react",
-          "importKind": "named",
-          "importedAs": "IconSearch",
-          "category": "tabler-icons",
-          "definition": "IconSearch comes from @tabler/icons-react (named import of IconSearch)"
-        },
-        {
-          "component": "IconUpload",
-          "usedAs": "IconUpload",
-          "source": "@tabler/icons-react",
-          "importKind": "named",
-          "importedAs": "IconUpload",
-          "category": "tabler-icons",
-          "definition": "IconUpload comes from @tabler/icons-react (named import of IconUpload)"
         },
         {
           "component": "PageHeader",
@@ -1639,33 +1584,6 @@
           "importedAs": "SegmentGroupRoot",
           "category": "local-components",
           "definition": "SegmentGroupRoot comes from @/components/ui/segment-group (named import of SegmentGroupRoot)"
-        },
-        {
-          "component": "Tooltip",
-          "usedAs": "Tooltip",
-          "source": "@/components/ui/tooltip",
-          "importKind": "named",
-          "importedAs": "Tooltip",
-          "category": "local-components",
-          "definition": "Tooltip comes from @/components/ui/tooltip (named import of Tooltip)"
-        },
-        {
-          "component": "TooltipContent",
-          "usedAs": "TooltipContent",
-          "source": "@/components/ui/tooltip",
-          "importKind": "named",
-          "importedAs": "TooltipContent",
-          "category": "local-components",
-          "definition": "TooltipContent comes from @/components/ui/tooltip (named import of TooltipContent)"
-        },
-        {
-          "component": "TooltipTrigger",
-          "usedAs": "TooltipTrigger",
-          "source": "@/components/ui/tooltip",
-          "importKind": "named",
-          "importedAs": "TooltipTrigger",
-          "category": "local-components",
-          "definition": "TooltipTrigger comes from @/components/ui/tooltip (named import of TooltipTrigger)"
         }
       ]
     },
@@ -2290,200 +2208,6 @@
       ]
     },
     {
-      "page": "src/pages/settings/FunctionReferenceCard.tsx",
-      "componentCount": 13,
-      "categoryCounts": {
-        "in-file component": 3,
-        "local-components": 2,
-        "ark-ui": 5,
-        "tabler-icons": 3
-      },
-      "components": [
-        {
-          "component": "ApiSheetSection",
-          "usedAs": "ApiSheetSection",
-          "source": "(in-file or unresolved)",
-          "importKind": null,
-          "importedAs": null,
-          "category": "in-file component",
-          "definition": "ApiSheetSection is defined in the same page file"
-        },
-        {
-          "component": "Badge",
-          "usedAs": "Badge",
-          "source": "@/components/ui/badge",
-          "importKind": "named",
-          "importedAs": "Badge",
-          "category": "local-components",
-          "definition": "Badge comes from @/components/ui/badge (named import of Badge)"
-        },
-        {
-          "component": "Clipboard",
-          "usedAs": "Clipboard.Indicator",
-          "source": "@ark-ui/react/clipboard",
-          "importKind": "named",
-          "importedAs": "Clipboard",
-          "category": "ark-ui",
-          "definition": "Clipboard.Indicator comes from @ark-ui/react/clipboard (named import of Clipboard)"
-        },
-        {
-          "component": "Clipboard",
-          "usedAs": "Clipboard.Root",
-          "source": "@ark-ui/react/clipboard",
-          "importKind": "named",
-          "importedAs": "Clipboard",
-          "category": "ark-ui",
-          "definition": "Clipboard.Root comes from @ark-ui/react/clipboard (named import of Clipboard)"
-        },
-        {
-          "component": "Clipboard",
-          "usedAs": "Clipboard.Trigger",
-          "source": "@ark-ui/react/clipboard",
-          "importKind": "named",
-          "importedAs": "Clipboard",
-          "category": "ark-ui",
-          "definition": "Clipboard.Trigger comes from @ark-ui/react/clipboard (named import of Clipboard)"
-        },
-        {
-          "component": "IconCheck",
-          "usedAs": "IconCheck",
-          "source": "@tabler/icons-react",
-          "importKind": "named",
-          "importedAs": "IconCheck",
-          "category": "tabler-icons",
-          "definition": "IconCheck comes from @tabler/icons-react (named import of IconCheck)"
-        },
-        {
-          "component": "IconChevronRight",
-          "usedAs": "IconChevronRight",
-          "source": "@tabler/icons-react",
-          "importKind": "named",
-          "importedAs": "IconChevronRight",
-          "category": "tabler-icons",
-          "definition": "IconChevronRight comes from @tabler/icons-react (named import of IconChevronRight)"
-        },
-        {
-          "component": "IconCopy",
-          "usedAs": "IconCopy",
-          "source": "@tabler/icons-react",
-          "importKind": "named",
-          "importedAs": "IconCopy",
-          "category": "tabler-icons",
-          "definition": "IconCopy comes from @tabler/icons-react (named import of IconCopy)"
-        },
-        {
-          "component": "JsonTreeBlock",
-          "usedAs": "JsonTreeBlock",
-          "source": "(in-file or unresolved)",
-          "importKind": null,
-          "importedAs": null,
-          "category": "in-file component",
-          "definition": "JsonTreeBlock is defined in the same page file"
-        },
-        {
-          "component": "JsonTreeView",
-          "usedAs": "JsonTreeView.Root",
-          "source": "@ark-ui/react/json-tree-view",
-          "importKind": "named",
-          "importedAs": "JsonTreeView",
-          "category": "ark-ui",
-          "definition": "JsonTreeView.Root comes from @ark-ui/react/json-tree-view (named import of JsonTreeView)"
-        },
-        {
-          "component": "JsonTreeView",
-          "usedAs": "JsonTreeView.Tree",
-          "source": "@ark-ui/react/json-tree-view",
-          "importKind": "named",
-          "importedAs": "JsonTreeView",
-          "category": "ark-ui",
-          "definition": "JsonTreeView.Tree comes from @ark-ui/react/json-tree-view (named import of JsonTreeView)"
-        },
-        {
-          "component": "ParametersTable",
-          "usedAs": "ParametersTable",
-          "source": "(in-file or unresolved)",
-          "importKind": null,
-          "importedAs": null,
-          "category": "in-file component",
-          "definition": "ParametersTable is defined in the same page file"
-        },
-        {
-          "component": "ScrollArea",
-          "usedAs": "ScrollArea",
-          "source": "@/components/ui/scroll-area",
-          "importKind": "named",
-          "importedAs": "ScrollArea",
-          "category": "local-components",
-          "definition": "ScrollArea comes from @/components/ui/scroll-area (named import of ScrollArea)"
-        }
-      ]
-    },
-    {
-      "page": "src/pages/settings/GridTestPanel.tsx",
-      "componentCount": 6,
-      "categoryCounts": {
-        "in-file component": 3,
-        "external-package": 2,
-        "local-components": 1
-      },
-      "components": [
-        {
-          "component": "CatalogContextMenu",
-          "usedAs": "CatalogContextMenu",
-          "source": "(in-file or unresolved)",
-          "importKind": null,
-          "importedAs": null,
-          "category": "in-file component",
-          "definition": "CatalogContextMenu is defined in the same page file"
-        },
-        {
-          "component": "DataGrid",
-          "usedAs": "DataGrid",
-          "source": "react-data-grid",
-          "importKind": "named",
-          "importedAs": "DataGrid",
-          "category": "external-package",
-          "definition": "DataGrid comes from react-data-grid (named import of DataGrid)"
-        },
-        {
-          "component": "DetailPanel",
-          "usedAs": "DetailPanel",
-          "source": "(in-file or unresolved)",
-          "importKind": null,
-          "importedAs": null,
-          "category": "in-file component",
-          "definition": "DetailPanel is defined in the same page file"
-        },
-        {
-          "component": "KestraHeader",
-          "usedAs": "KestraHeader",
-          "source": "(in-file or unresolved)",
-          "importKind": null,
-          "importedAs": null,
-          "category": "in-file component",
-          "definition": "KestraHeader is defined in the same page file"
-        },
-        {
-          "component": "ScrollArea",
-          "usedAs": "ScrollArea",
-          "source": "@/components/ui/scroll-area",
-          "importKind": "named",
-          "importedAs": "ScrollArea",
-          "category": "local-components",
-          "definition": "ScrollArea comes from @/components/ui/scroll-area (named import of ScrollArea)"
-        },
-        {
-          "component": "TreeDataGrid",
-          "usedAs": "TreeDataGrid",
-          "source": "react-data-grid",
-          "importKind": "named",
-          "importedAs": "TreeDataGrid",
-          "category": "external-package",
-          "definition": "TreeDataGrid comes from react-data-grid (named import of TreeDataGrid)"
-        }
-      ]
-    },
-    {
       "page": "src/pages/settings/InstanceConfigPanel.tsx",
       "componentCount": 2,
       "categoryCounts": {
@@ -2508,125 +2232,6 @@
           "importedAs": "SettingCard",
           "category": "relative-local",
           "definition": "SettingCard comes from ./setting-card-shared (named import of SettingCard)"
-        }
-      ]
-    },
-    {
-      "page": "src/pages/settings/IntegrationCatalogPanel.tsx",
-      "componentCount": 3,
-      "categoryCounts": {
-        "local-components": 2,
-        "in-file component": 1
-      },
-      "components": [
-        {
-          "component": "Button",
-          "usedAs": "Button",
-          "source": "@/components/ui/button",
-          "importKind": "named",
-          "importedAs": "Button",
-          "category": "local-components",
-          "definition": "Button comes from @/components/ui/button (named import of Button)"
-        },
-        {
-          "component": "ErrorAlert",
-          "usedAs": "ErrorAlert",
-          "source": "@/components/common/ErrorAlert",
-          "importKind": "named",
-          "importedAs": "ErrorAlert",
-          "category": "local-components",
-          "definition": "ErrorAlert comes from @/components/common/ErrorAlert (named import of ErrorAlert)"
-        },
-        {
-          "component": "SchemaDetail",
-          "usedAs": "SchemaDetail",
-          "source": "(in-file or unresolved)",
-          "importKind": null,
-          "importedAs": null,
-          "category": "in-file component",
-          "definition": "SchemaDetail is defined in the same page file"
-        }
-      ]
-    },
-    {
-      "page": "src/pages/settings/IntegrationCatalogPanelTemp.test.tsx",
-      "componentCount": 1,
-      "categoryCounts": {
-        "relative-local": 1
-      },
-      "components": [
-        {
-          "component": "IntegrationCatalogPanelTemp",
-          "usedAs": "IntegrationCatalogPanelTemp",
-          "source": "./IntegrationCatalogPanelTemp",
-          "importKind": "named",
-          "importedAs": "IntegrationCatalogPanelTemp",
-          "category": "relative-local",
-          "definition": "IntegrationCatalogPanelTemp comes from ./IntegrationCatalogPanelTemp (named import of IntegrationCatalogPanelTemp)"
-        }
-      ]
-    },
-    {
-      "page": "src/pages/settings/IntegrationCatalogPanelTemp.tsx",
-      "componentCount": 6,
-      "categoryCounts": {
-        "ark-ui": 4,
-        "external-package": 2
-      },
-      "components": [
-        {
-          "component": "Checkbox",
-          "usedAs": "Checkbox.Control",
-          "source": "@ark-ui/react/checkbox",
-          "importKind": "named",
-          "importedAs": "Checkbox",
-          "category": "ark-ui",
-          "definition": "Checkbox.Control comes from @ark-ui/react/checkbox (named import of Checkbox)"
-        },
-        {
-          "component": "Checkbox",
-          "usedAs": "Checkbox.HiddenInput",
-          "source": "@ark-ui/react/checkbox",
-          "importKind": "named",
-          "importedAs": "Checkbox",
-          "category": "ark-ui",
-          "definition": "Checkbox.HiddenInput comes from @ark-ui/react/checkbox (named import of Checkbox)"
-        },
-        {
-          "component": "Checkbox",
-          "usedAs": "Checkbox.Indicator",
-          "source": "@ark-ui/react/checkbox",
-          "importKind": "named",
-          "importedAs": "Checkbox",
-          "category": "ark-ui",
-          "definition": "Checkbox.Indicator comes from @ark-ui/react/checkbox (named import of Checkbox)"
-        },
-        {
-          "component": "Checkbox",
-          "usedAs": "Checkbox.Root",
-          "source": "@ark-ui/react/checkbox",
-          "importKind": "named",
-          "importedAs": "Checkbox",
-          "category": "ark-ui",
-          "definition": "Checkbox.Root comes from @ark-ui/react/checkbox (named import of Checkbox)"
-        },
-        {
-          "component": "DataGrid",
-          "usedAs": "DataGrid",
-          "source": "react-data-grid",
-          "importKind": "named",
-          "importedAs": "DataGrid",
-          "category": "external-package",
-          "definition": "DataGrid comes from react-data-grid (named import of DataGrid)"
-        },
-        {
-          "component": "TreeDataGrid",
-          "usedAs": "TreeDataGrid",
-          "source": "react-data-grid",
-          "importKind": "named",
-          "importedAs": "TreeDataGrid",
-          "category": "external-package",
-          "definition": "TreeDataGrid comes from react-data-grid (named import of TreeDataGrid)"
         }
       ]
     },
@@ -2796,13 +2401,12 @@
     },
     {
       "page": "src/pages/settings/ServiceDetailRailView.tsx",
-      "componentCount": 16,
+      "componentCount": 17,
       "categoryCounts": {
         "ark-ui": 5,
-        "relative-local": 1,
+        "local-components": 6,
         "tabler-icons": 5,
-        "external-package": 1,
-        "local-components": 4
+        "external-package": 1
       },
       "components": [
         {
@@ -2833,13 +2437,22 @@
           "definition": "Clipboard.Trigger comes from @ark-ui/react/clipboard (named import of Clipboard)"
         },
         {
-          "component": "FunctionReferenceCard",
-          "usedAs": "FunctionReferenceCard",
-          "source": "./FunctionReferenceCard",
+          "component": "FunctionReferenceBody",
+          "usedAs": "FunctionReferenceBody",
+          "source": "@/components/services/function-reference",
           "importKind": "named",
-          "importedAs": "FunctionReferenceCard",
-          "category": "relative-local",
-          "definition": "FunctionReferenceCard comes from ./FunctionReferenceCard (named import of FunctionReferenceCard)"
+          "importedAs": "FunctionReferenceBody",
+          "category": "local-components",
+          "definition": "FunctionReferenceBody comes from @/components/services/function-reference (named import of FunctionReferenceBody)"
+        },
+        {
+          "component": "FunctionReferenceHeader",
+          "usedAs": "FunctionReferenceHeader",
+          "source": "@/components/services/function-reference",
+          "importKind": "named",
+          "importedAs": "FunctionReferenceHeader",
+          "category": "local-components",
+          "definition": "FunctionReferenceHeader comes from @/components/services/function-reference (named import of FunctionReferenceHeader)"
         },
         {
           "component": "IconCheck",
@@ -3454,12 +3067,12 @@
     },
     {
       "page": "src/pages/settings/SettingsAdmin.tsx",
-      "componentCount": 10,
+      "componentCount": 6,
       "categoryCounts": {
         "local-components": 2,
         "ark-ui": 2,
-        "relative-local": 5,
-        "external-package": 1
+        "external-package": 1,
+        "relative-local": 1
       },
       "components": [
         {
@@ -3499,33 +3112,6 @@
           "definition": "Field.Root comes from @ark-ui/react/field (named import of Field)"
         },
         {
-          "component": "GridTestPanel",
-          "usedAs": "GridTestPanel",
-          "source": "./GridTestPanel",
-          "importKind": "named",
-          "importedAs": "GridTestPanel",
-          "category": "relative-local",
-          "definition": "GridTestPanel comes from ./GridTestPanel (named import of GridTestPanel)"
-        },
-        {
-          "component": "InstanceConfigPanel",
-          "usedAs": "InstanceConfigPanel",
-          "source": "./InstanceConfigPanel",
-          "importKind": "named",
-          "importedAs": "InstanceConfigPanel",
-          "category": "relative-local",
-          "definition": "InstanceConfigPanel comes from ./InstanceConfigPanel (named import of InstanceConfigPanel)"
-        },
-        {
-          "component": "IntegrationCatalogPanel",
-          "usedAs": "IntegrationCatalogPanel",
-          "source": "./IntegrationCatalogPanel",
-          "importKind": "named",
-          "importedAs": "IntegrationCatalogPanel",
-          "category": "relative-local",
-          "definition": "IntegrationCatalogPanel comes from ./IntegrationCatalogPanel (named import of IntegrationCatalogPanel)"
-        },
-        {
           "component": "Navigate",
           "usedAs": "Navigate",
           "source": "react-router-dom",
@@ -3533,15 +3119,6 @@
           "importedAs": "Navigate",
           "category": "external-package",
           "definition": "Navigate comes from react-router-dom (named import of Navigate)"
-        },
-        {
-          "component": "PlatformConfigPanel",
-          "usedAs": "PlatformConfigPanel",
-          "source": "./PlatformConfigPanel",
-          "importKind": "named",
-          "importedAs": "PlatformConfigPanel",
-          "category": "relative-local",
-          "definition": "PlatformConfigPanel comes from ./PlatformConfigPanel (named import of PlatformConfigPanel)"
         },
         {
           "component": "ServicesPanel",
@@ -4473,14 +4050,14 @@
       ]
     }
   ],
-  "totalComponentUsages": 444,
+  "totalComponentUsages": 404,
   "categoryTotals": {
-    "external-package": 19,
-    "local-components": 126,
-    "tabler-icons": 90,
-    "ark-ui": 161,
-    "in-file component": 23,
+    "external-package": 16,
+    "local-components": 135,
+    "tabler-icons": 80,
+    "ark-ui": 147,
+    "in-file component": 7,
     "unknown": 1,
-    "relative-local": 24
+    "relative-local": 18
   }
 }

@@ -28,6 +28,7 @@ import {
   IconPencil,
   IconArrowDown,
   IconPlayerPlay,
+  IconArrowUp,
 } from '@tabler/icons-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -231,12 +232,38 @@ function SectionNav() {
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
+// ─── Scroll to top ──────────────────────────────────────────────────────────
+
+function ScrollToTop() {
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setVisible(window.scrollY > 600);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  return (
+    <button
+      type="button"
+      aria-label="Back to top"
+      onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+      className={`fixed bottom-8 right-8 z-50 flex h-10 w-10 items-center justify-center rounded-full border border-border/60 bg-card/90 text-muted-foreground shadow-lg backdrop-blur transition-all hover:bg-primary hover:text-primary-foreground ${
+        visible ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0 pointer-events-none'
+      }`}
+    >
+      <IconArrowUp size={18} />
+    </button>
+  );
+}
+
 export default function Landing() {
   const navigate = useNavigate();
 
   return (
     <div className="overflow-hidden">
       <SectionNav />
+      <ScrollToTop />
 
       {/* ━━ HERO ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       <section id="hero" className="relative pt-28 pb-20 md:pt-40 md:pb-28">
@@ -257,11 +284,11 @@ export default function Landing() {
           <h1 className="mx-auto max-w-3xl text-4xl font-extrabold tracking-tight sm:text-5xl md:text-6xl">
             From Raw Data to{' '}
             <span className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-              AI-Ready Knowledge
+              Structured Knowledge
             </span>
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-muted-foreground md:text-xl">
-            The first end-to-end platform to ingest, structure, and transform your documents and databases into Knowledge Graphs and Vectors — served instantly via MCP.
+            The end-to-end platform to ingest, structure, and serve your documents and databases — as Knowledge Graphs, Vectors, and live APIs.
           </p>
 
           <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
@@ -463,7 +490,7 @@ export default function Landing() {
           <div className="flex flex-col items-center gap-6 md:flex-row md:justify-center md:gap-0">
             <div className="flex flex-col gap-3">
               {CONVERGENCE_TARGETS.map((t) => (
-                <div key={t.label} className="flex w-64 items-center gap-3 rounded-xl border border-border/60 bg-card/80 px-5 py-4">
+                <div key={t.label} className="flex w-80 items-center gap-3 rounded-xl border border-border/60 bg-card/80 px-5 py-5">
                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
                     <t.icon size={18} />
                   </div>
@@ -485,7 +512,7 @@ export default function Landing() {
             <div className="md:hidden">
               <IconArrowDown size={20} className="text-primary/50" />
             </div>
-            <div className="flex w-64 flex-col items-center rounded-2xl border-2 border-primary/40 bg-primary/5 px-8 py-8">
+            <div className="flex w-80 flex-col items-center rounded-2xl border-2 border-primary/40 bg-primary/5 px-8 py-8">
               <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-xl bg-primary/15 text-primary">
                 <IconDatabase size={28} />
               </div>
@@ -632,7 +659,7 @@ export default function Landing() {
             BlockData exposes your structured data via the Model Context Protocol. Connect your knowledge directly to Claude, ChatGPT, or custom LLM agents — no API wrappers needed.
           </p>
           <div className="flex flex-col items-center gap-6 md:flex-row md:justify-center md:gap-0">
-            <div className="w-72 rounded-2xl border-2 border-primary/40 bg-primary/5 p-6">
+            <div className="w-80 rounded-2xl border-2 border-primary/40 bg-primary/5 p-6">
               <div className="mb-4 flex items-center gap-2">
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/15 text-primary">
                   <IconServer size={16} />
@@ -664,7 +691,7 @@ export default function Landing() {
                 { icon: IconCode, label: 'Custom Applications', desc: 'Query via MCP client SDK' },
                 { icon: IconApi, label: 'External Services', desc: 'Webhook triggers on updates' },
               ].map((c) => (
-                <div key={c.label} className="flex w-64 items-center gap-3 rounded-xl border border-border/60 bg-card/80 px-5 py-4">
+                <div key={c.label} className="flex w-80 items-center gap-3 rounded-xl border border-border/60 bg-card/80 px-5 py-5">
                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
                     <c.icon size={18} />
                   </div>
@@ -714,7 +741,7 @@ export default function Landing() {
 
       {/* ━━ FAQ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       <section id="faq" className="py-20 md:py-28">
-        <div className="mx-auto max-w-3xl px-4 sm:px-6 md:px-8">
+        <div className="mx-auto max-w-4xl px-4 sm:px-6 md:px-8">
           <h2 className="mb-10 text-center text-3xl font-bold tracking-tight md:text-4xl">FAQ</h2>
           <Accordion.Root defaultValue={['what-is-block']} className="flex flex-col gap-2">
             {FAQ_ITEMS.map((item) => (
@@ -723,13 +750,13 @@ export default function Landing() {
                 value={item.value}
                 className="overflow-hidden rounded-xl border border-border/60 bg-card/50 transition-colors data-[state=open]:bg-card/80"
               >
-                <Accordion.ItemTrigger className="flex w-full cursor-pointer items-center justify-between px-5 py-4 text-left text-sm font-semibold transition-colors hover:text-primary">
+                <Accordion.ItemTrigger className="flex w-full cursor-pointer items-center justify-between px-6 py-5 text-left text-sm font-semibold transition-colors hover:text-primary">
                   {item.question}
                   <Accordion.ItemIndicator>
                     <IconChevronDown size={16} className="transition-transform duration-200 data-[state=open]:rotate-180" />
                   </Accordion.ItemIndicator>
                 </Accordion.ItemTrigger>
-                <Accordion.ItemContent className="px-5 pb-4">
+                <Accordion.ItemContent className="px-6 pb-5">
                   <p className="text-sm leading-relaxed text-muted-foreground">
                     <Highlight
                       className="rounded bg-primary/10 px-0.5 font-medium text-primary"
