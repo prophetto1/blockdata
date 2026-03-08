@@ -130,6 +130,45 @@ function EditorLoadError({
   );
 }
 
+class EditorErrorBoundary extends Component<
+  { children: React.ReactNode; onReset: () => void },
+  { hasError: boolean; errorMessage: string }
+> {
+  constructor(props: { children: React.ReactNode; onReset: () => void }) {
+    super(props);
+    this.state = { hasError: false, errorMessage: '' };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, errorMessage: error?.message || 'Editor crashed' };
+  }
+
+  componentDidCatch(error: Error) {
+    console.error('[EditorErrorBoundary]', error);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="split-editor__loading split-editor__loading--error">
+          {this.state.errorMessage}
+          <button
+            type="button"
+            className="split-editor__retry"
+            onClick={() => {
+              this.setState({ hasError: false, errorMessage: '' });
+              this.props.onReset();
+            }}
+          >
+            Retry
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 function MonacoPane({
   content,
   extension,
@@ -708,20 +747,22 @@ export default function SplitEditorView() {
   return (
     <div className="split-editor">
       <div className="split-editor__body">
-        {mode === 'source' ? (
-          <MonacoPane
-            content={content}
-            extension={file.extension}
-            onContentChange={setContent}
-            onSave={save}
-          />
-        ) : (
-          <RichEditorPane
-            content={content}
-            onContentChange={setContent}
-            onSave={save}
-          />
-        )}
+        <EditorErrorBoundary onReset={reloadCurrentFile}>
+          {mode === 'source' ? (
+            <MonacoPane
+              content={content}
+              extension={file.extension}
+              onContentChange={setContent}
+              onSave={save}
+            />
+          ) : (
+            <RichEditorPane
+              content={content}
+              onContentChange={setContent}
+              onSave={save}
+            />
+          )}
+        </EditorErrorBoundary>
       </div>
       <SaveIndicator status={status} errorDetail={saveError} />
     </div>

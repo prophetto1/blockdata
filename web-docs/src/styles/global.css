@@ -22,6 +22,11 @@
   --sl-nav-height: 50px;
   --sl-content-gap-y: 0.88rem;
 
+  /* Filetree-mode panel inset — single token for all 4 sides
+     in every view: Monaco, Rich editor, Preview, local preview.
+     Change this one value to adjust spacing everywhere. */
+  --shell-panel-inset: 1rem;
+
   /* Semantic color tokens (dark default) — aligned with web/src/tailwind.css */
   --background: #0e0e0e;
   --foreground: #eeeeee;
@@ -359,6 +364,13 @@ h1#_top {
 
 /* Hide the Starlight page-title content panel in filetree mode */
 [data-shell-mode='filetree'] main > .content-panel:first-child {
+  display: none;
+}
+
+/* Strip Starlight footer/nav/pagination from filetree preview panels */
+.wa-splitter__preview-content .pagination-links,
+.wa-splitter__preview-content footer,
+.wa-splitter__preview-content .sl-flex.pad-footer {
   display: none;
 }
 

@@ -110,3 +110,9 @@
 .wa-splitter__trigger:focus-visible::before {
   background: var(--sl-color-text-accent);
 }
+
+/* ---- preview content inset ---- */
+
+.wa-splitter__preview-content {
+  padding: var(--shell-panel-inset);
+}

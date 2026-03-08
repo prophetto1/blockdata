@@ -146,6 +146,15 @@ const currentDocsHref = currentRelativePath ? getDocsHrefFromRelativePath(curren
         firstChild.remove();
       }
 
+      // Strip Starlight footer/nav elements that don't belong in filetree preview
+      scratch.querySelectorAll([
+        '.sl-markdown-content + footer',  // "Edit page" + prev/next links
+        'footer.astro-klhlzfpf',          // Starlight footer wrapper
+        '.pagination-links',              // Previous/Next page navigation
+        '.sl-flex.pad-footer',            // "Built with Starlight" footer
+        '[class*="EditLink"]',            // Edit page link
+      ].join(', ')).forEach((el) => el.remove());
+
       return scratch.innerHTML;
     }
 
