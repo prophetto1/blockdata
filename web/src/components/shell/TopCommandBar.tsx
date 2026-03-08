@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react';
 import { Combobox, createListCollection } from '@ark-ui/react/combobox';
-import { Add01Icon, Menu02Icon, SparklesIcon, LeftToRightListBulletIcon, Moon02Icon, Sun03Icon } from '@hugeicons/core-free-icons';
+import { Menu02Icon, SparklesIcon, Moon02Icon, Sun03Icon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { useNavigate } from 'react-router-dom';
 import { useHeaderCenter } from '@/components/shell/HeaderCenterContext';
+import { ProjectSwitcher } from '@/components/shell/ProjectSwitcher';
 import { useTheme } from '@/hooks/useTheme';
 
 import {
@@ -42,7 +42,6 @@ export function TopCommandBar({
   assistantOpened = false,
   onToggleAssistant,
 }: TopCommandBarProps) {
-  const navigate = useNavigate();
   const { center, shellTopSlots } = useHeaderCenter();
   const { isDark, toggle: toggleColorScheme } = useTheme();
   const [searchValue, setSearchValue] = useState('');
@@ -127,6 +126,7 @@ export function TopCommandBar({
           <HugeiconsIcon icon={Menu02Icon} size={24} strokeWidth={1.8} />
         </button>
         {shellGuides ? leftNode : null}
+        <ProjectSwitcher />
       </div>
       <div className="top-command-bar-center">
         {resolvedMiddleNode}
@@ -143,26 +143,6 @@ export function TopCommandBar({
               {rightNode}
             </div>
           ) : null}
-          <button
-            type="button"
-            className="inline-flex h-8 items-center gap-1.5 rounded-md px-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            aria-label="New Project"
-            title="New Project"
-            onClick={() => navigate('/app/projects/list?new=1')}
-          >
-            <HugeiconsIcon icon={Add01Icon} size={20} strokeWidth={1.8} />
-            <span className="hidden sm:inline">New Project</span>
-          </button>
-          <button
-            type="button"
-            className="inline-flex h-8 items-center gap-1.5 rounded-md px-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            aria-label="Project List"
-            title="Project List"
-            onClick={() => navigate('/app/projects/list')}
-          >
-            <HugeiconsIcon icon={LeftToRightListBulletIcon} size={20} strokeWidth={1.8} />
-            <span className="hidden sm:inline">Project List</span>
-          </button>
           {showAssistantToggle && onToggleAssistant ? (
             <button
               type="button"

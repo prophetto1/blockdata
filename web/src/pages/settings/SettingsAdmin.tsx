@@ -1,7 +1,9 @@
 import { Field } from '@ark-ui/react/field';
 import { useEffect, useMemo, useState } from 'react';
 import { Navigate, useParams, useNavigate } from 'react-router-dom';
+import { useShellHeaderTitle } from '@/components/common/useShellHeaderTitle';
 import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { ErrorAlert } from '@/components/common/ErrorAlert';
 import { cn } from '@/lib/utils';
 import { edgeFetch } from '@/lib/edge';
@@ -111,6 +113,7 @@ function isAuditRowInRange(changedAt: string, range: AuditTimeRange): boolean {
 }
 
 export default function SettingsAdmin() {
+  useShellHeaderTitle({ title: 'Admin', breadcrumbs: ['Settings', 'Admin'] });
   const { category } = useParams<{ category?: string }>();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -204,25 +207,27 @@ export default function SettingsAdmin() {
   return (
     <div className="flex h-full min-h-0 gap-0 overflow-hidden">
       {/* Category side rail */}
-      <nav className="w-44 shrink-0 overflow-y-auto border-r border-border pr-2">
-        <ul className="space-y-0.5 py-1">
-          {CATEGORIES.map((cat) => (
-            <li key={cat.id}>
-              <button
-                type="button"
-                onClick={() => navigate(`/app/settings/admin/${cat.id}`)}
-                className={cn(
-                  'flex w-full items-center rounded-md px-2.5 py-1.5 text-sm font-medium transition-colors',
-                  cat.id === selectedCategory
-                    ? 'bg-accent text-accent-foreground'
-                    : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground',
-                )}
-              >
-                {cat.label}
-              </button>
-            </li>
-          ))}
-        </ul>
+      <nav className="w-44 shrink-0 border-r border-border pr-2">
+        <ScrollArea>
+          <ul className="space-y-0.5 py-1">
+            {CATEGORIES.map((cat) => (
+              <li key={cat.id}>
+                <button
+                  type="button"
+                  onClick={() => navigate(`/app/settings/admin/${cat.id}`)}
+                  className={cn(
+                    'flex w-full items-center rounded-md px-2.5 py-1.5 text-sm font-medium transition-colors',
+                    cat.id === selectedCategory
+                      ? 'bg-accent text-accent-foreground'
+                      : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground',
+                  )}
+                >
+                  {cat.label}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </ScrollArea>
       </nav>
 
       {/* Content area */}
@@ -247,7 +252,7 @@ export default function SettingsAdmin() {
                 <PlatformConfigPanel />
               </div>
             ) : selectedCategory === 'audit' ? (
-              <div className="h-full overflow-y-auto p-3 md:p-4">
+              <ScrollArea className="h-full" contentClass="p-3 md:p-4">
                 <div className="space-y-4">
                   <div className="grid gap-2 md:grid-cols-[minmax(220px,1fr)_220px_130px_auto]">
                     <Field.Root>
@@ -292,7 +297,7 @@ export default function SettingsAdmin() {
                     </Button>
                   </div>
 
-                  <div className="overflow-auto rounded-md border border-border">
+                  <ScrollArea className="rounded-md border border-border">
                     <table className="min-w-full border-collapse text-left text-xs">
                       <thead className="bg-muted/50 text-muted-foreground">
                         <tr>
@@ -331,7 +336,7 @@ export default function SettingsAdmin() {
                         })}
                       </tbody>
                     </table>
-                  </div>
+                  </ScrollArea>
 
                   {filteredAuditRows.length === 0 && (
                     <p className="text-sm text-muted-foreground">No audit entries match current filters.</p>
@@ -382,7 +387,7 @@ export default function SettingsAdmin() {
                     </article>
                   )}
                 </div>
-              </div>
+              </ScrollArea>
             ) : null}
           </>
         )}

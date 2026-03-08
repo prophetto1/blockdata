@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useShellHeaderTitle } from '@/components/common/useShellHeaderTitle';
 import { DataGrid, type Column } from 'react-data-grid';
 import { SettingsPageFrame } from './SettingsPageHeader';
 
@@ -49,6 +50,7 @@ function buildRows(): GridRow[] {
 }
 
 export default function SettingsGridSample() {
+  useShellHeaderTitle({ title: 'Grid Sample', breadcrumbs: ['Settings', 'Grid Sample'] });
   const rows = useMemo(() => buildRows(), []);
 
   return (

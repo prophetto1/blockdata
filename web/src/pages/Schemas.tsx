@@ -151,7 +151,6 @@ function parseObjectSchemaToFields(schema: Record<string, unknown>): SchemaField
 export default function Schemas() {
   useShellHeaderTitle({
     title: 'Schema',
-    subtitle: 'OpenAPI schema editor',
   });
   const monacoTheme = useMonacoTheme();
   const [extractSchemaReady, setExtractSchemaReady] = useState(true);

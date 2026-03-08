@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useShellHeaderTitle } from '@/components/common/useShellHeaderTitle';
 import {
   IconCheck,
   IconKey,
@@ -16,6 +17,7 @@ const USER_KEY_COLUMNS =
   'id, user_id, provider, key_suffix, is_valid, default_model, default_temperature, default_max_tokens, base_url, created_at, updated_at';
 
 export default function SettingsAiOverview() {
+  useShellHeaderTitle({ title: 'AI', breadcrumbs: ['Settings', 'AI'] });
   const navigate = useNavigate();
   const [keyMap, setKeyMap] = useState<Record<string, UserApiKeyRow | null>>({});
   const [loading, setLoading] = useState(true);

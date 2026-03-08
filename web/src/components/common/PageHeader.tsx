@@ -8,7 +8,8 @@ type Props = {
 };
 
 export function PageHeader({ title, subtitle, children }: Props) {
-  useShellHeaderTitle({ title, subtitle });
+  void subtitle;
+  useShellHeaderTitle({ title });
 
   if (!children) return null;
 

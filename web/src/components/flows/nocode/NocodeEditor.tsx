@@ -10,6 +10,7 @@ import { RetrySection } from './sections/RetrySection';
 import { VariablesSection } from './sections/VariablesSection';
 import { WorkerGroupSection } from './sections/WorkerGroupSection';
 import { IconAlertTriangle } from '@tabler/icons-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 type Props = FlowDocumentHandle;
 
@@ -34,7 +35,7 @@ export function NocodeEditor({ doc, parseError, updateField, updateTask, addTask
   }
 
   return (
-    <div className="nocode-editor overflow-auto p-4 space-y-5">
+    <ScrollArea className="nocode-editor" contentClass="p-4 space-y-5">
       <FlowPropertiesSection doc={doc} updateField={updateField} />
       <hr className="border-border" />
       <InputsSection doc={doc} updateField={updateField} />
@@ -121,6 +122,6 @@ export function NocodeEditor({ doc, parseError, updateField, updateTask, addTask
         items={doc.afterExecution}
         onChange={(v) => updateField('afterExecution', v)}
       />
-    </div>
+    </ScrollArea>
   );
 }

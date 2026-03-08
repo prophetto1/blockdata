@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useShellHeaderTitle } from '@/components/common/useShellHeaderTitle';
 import { Field } from '@ark-ui/react/field';
 import { NumberInput } from '@ark-ui/react/number-input';
 import { PasswordInput } from '@ark-ui/react/password-input';
@@ -184,6 +185,7 @@ function getProviderAccentClasses(enabled: boolean) {
 }
 
 export default function SettingsProviderForm() {
+  useShellHeaderTitle({ title: 'AI Provider', breadcrumbs: ['Settings', 'AI', 'Provider'] });
   const navigate = useNavigate();
   const { providerId } = useParams<{ providerId: string }>();
   const provider = PROVIDERS.find((p) => p.id === providerId) ?? PROVIDERS[0];

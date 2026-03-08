@@ -6,9 +6,12 @@ import {
   IconGripVertical,
   IconX,
 } from '@tabler/icons-react';
+import { Switch } from '@ark-ui/react/switch';
+import { Collapsible } from '@ark-ui/react/collapsible';
 import { supabase } from '@/lib/supabase';
 import { AppIcon } from '@/components/ui/app-icon';
 import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { FlowFilterBar } from './FlowFilterBar';
 
@@ -222,42 +225,40 @@ export function ExecutionsTab({ flowId }: { flowId: string }) {
         <div className="flex flex-wrap items-center justify-between gap-3 px-2 text-sm">
           <label className="inline-flex items-center gap-2 text-foreground">
             <span>Show Chart</span>
-            <button
-              type="button"
-              aria-pressed={showChart}
-              onClick={() => setShowChart((value) => !value)}
-              className={cn(
+            <Switch.Root
+              checked={showChart}
+              onCheckedChange={(details) => setShowChart(details.checked)}
+            >
+              <Switch.Control className={cn(
                 'relative inline-flex h-6 w-10 items-center rounded-full border transition-colors',
                 showChart ? 'border-primary bg-primary/20' : 'border-border bg-muted/40',
-              )}
-            >
-              <span
-                className={cn(
+              )}>
+                <Switch.Thumb className={cn(
                   'inline-block h-4 w-4 rounded-full bg-background shadow transition-transform',
                   showChart ? 'translate-x-5' : 'translate-x-1',
-                )}
-              />
-            </button>
+                )} />
+              </Switch.Control>
+              <Switch.HiddenInput />
+            </Switch.Root>
           </label>
 
           <div className="ml-auto flex flex-wrap items-center gap-5 text-foreground">
             <label className="inline-flex items-center gap-2">
-              <button
-                type="button"
-                aria-pressed={periodicRefresh}
-                onClick={() => setPeriodicRefresh((value) => !value)}
-                className={cn(
+              <Switch.Root
+                checked={periodicRefresh}
+                onCheckedChange={(details) => setPeriodicRefresh(details.checked)}
+              >
+                <Switch.Control className={cn(
                   'relative inline-flex h-6 w-10 items-center rounded-full border transition-colors',
                   periodicRefresh ? 'border-primary bg-primary/20' : 'border-border bg-muted/40',
-                )}
-              >
-                <span
-                  className={cn(
+                )}>
+                  <Switch.Thumb className={cn(
                     'inline-block h-4 w-4 rounded-full bg-background shadow transition-transform',
                     periodicRefresh ? 'translate-x-5' : 'translate-x-1',
-                  )}
-                />
-              </button>
+                  )} />
+                </Switch.Control>
+                <Switch.HiddenInput />
+              </Switch.Root>
               <span>Periodic refresh</span>
             </label>
 
@@ -273,8 +274,8 @@ export function ExecutionsTab({ flowId }: { flowId: string }) {
           </div>
         </div>
 
-        {showColumnsPanel ? (
-          <aside className="absolute right-0 top-full z-10 mt-3 w-full max-w-[332px] rounded-md border border-border bg-card shadow-xl xl:right-2">
+        <Collapsible.Root open={showColumnsPanel} onOpenChange={(details) => setShowColumnsPanel(details.open)}>
+          <Collapsible.Content className="absolute right-0 top-full z-10 mt-3 w-full max-w-[332px] rounded-md border border-border bg-card shadow-xl xl:right-2">
             <div className="flex items-start justify-between gap-3 border-b border-border px-4 py-3">
               <div>
                 <h3 className="text-sm font-semibold text-foreground">Customize table columns</h3>
@@ -290,7 +291,7 @@ export function ExecutionsTab({ flowId }: { flowId: string }) {
               </button>
             </div>
 
-            <div className="max-h-[320px] overflow-auto">
+            <ScrollArea className="max-h-[320px]">
               {columnOptions.map((column) => (
                 <div key={column.key} className="flex items-start gap-3 border-b border-border px-4 py-4 last:border-b-0">
                   <span className="pt-0.5 text-muted-foreground">
@@ -316,16 +317,16 @@ export function ExecutionsTab({ flowId }: { flowId: string }) {
                   </button>
                 </div>
               ))}
-            </div>
+            </ScrollArea>
 
             <div className="border-t border-border px-4 py-3 text-center text-sm text-muted-foreground">
               {visibleColumns.length} of {columnOptions.length} columns visible
             </div>
-          </aside>
-        ) : null}
+          </Collapsible.Content>
+        </Collapsible.Root>
       </div>
 
-      <div className="overflow-auto rounded-md border border-border bg-card">
+      <ScrollArea className="rounded-md border border-border bg-card">
         <table className="min-w-full text-xs">
           <thead className="border-b border-border bg-muted/30">
             <tr className="text-xs font-semibold text-muted-foreground">
@@ -388,7 +389,7 @@ export function ExecutionsTab({ flowId }: { flowId: string }) {
             )}
           </tbody>
         </table>
-      </div>
+      </ScrollArea>
     </div>
   );
 }

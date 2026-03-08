@@ -1,15 +1,20 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { Layout03Icon, SparklesIcon } from '@hugeicons/core-free-icons';
+import { HugeiconsIcon } from '@hugeicons/react';
+import { IconLayoutSidebarRightExpand, IconLayoutSidebarRightCollapse } from '@tabler/icons-react';
 import { useAuth } from '@/auth/AuthContext';
 import { TopCommandBar } from '@/components/shell/TopCommandBar';
 import { LeftRailShadcn } from '@/components/shell/LeftRailShadcn';
+import { RightRailShell } from '@/components/shell/RightRailShell';
 import { HeaderCenterProvider } from '@/components/shell/HeaderCenterContext';
+import { RightRailProvider, useRightRailContext } from '@/components/shell/RightRailContext';
 import { AssistantDockHost } from '@/components/shell/AssistantDockHost';
 import { AppPageShell } from '@/components/layout/AppPageShell';
 import { featureFlags } from '@/lib/featureFlags';
 import { styleTokens } from '@/lib/styleTokens';
-import { cn } from '@/lib/utils';
+import { Drawer } from '@ark-ui/react/drawer';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 const DESKTOP_NAV_OPEN_KEY = 'blockdata.shell.nav_open_desktop';
@@ -63,7 +68,25 @@ function useStoredSide(key: string, defaultValue: 'left' | 'right') {
   return [value, setValue] as const;
 }
 
+/* ------------------------------------------------------------------ */
+/*  Outer export — wraps providers so children can read contexts       */
+/* ------------------------------------------------------------------ */
+
 export function AppLayout() {
+  return (
+    <HeaderCenterProvider>
+      <RightRailProvider>
+        <AppShellInner />
+      </RightRailProvider>
+    </HeaderCenterProvider>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Inner shell — has access to all contexts                           */
+/* ------------------------------------------------------------------ */
+
+function AppShellInner() {
   const shellV2Enabled = featureFlags.shellV2;
   const assistantDockEnabled = shellV2Enabled && featureFlags.assistantDock;
   const [navOpened, setNavOpened] = useState(false);
@@ -74,6 +97,7 @@ export function AppLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, profile, signOut } = useAuth();
+  const rightRail = useRightRailContext();
 
   const handleSignOut = async () => {
     await signOut();
@@ -159,8 +183,13 @@ export function AppLayout() {
     ? sidebarWidth
     : styleTokens.shell.navbarCompactWidth;
   const isMobile = useIsMobile();
+
+  const showRightRail = !isMobile && rightRail.content !== null && rightRail.isOpen;
+  const showRightRailTab = !isMobile && rightRail.content !== null;
+
   const mobileNavbarWidth = styleTokens.shell.navbarMobileWidth;
   const mainInsetStart = isMobile ? 0 : desktopNavbarWidth;
+  const mainInsetEnd = showRightRail ? styleTokens.shell.rightRailWidth : 0;
   const navbarWidth = isMobile ? mobileNavbarWidth : desktopNavbarWidth;
 
   const isEltRoute = /^\/app\/elt(?:\/|$)/.test(location.pathname);
@@ -207,6 +236,7 @@ export function AppLayout() {
     inset: 0,
     paddingTop: `${styleTokens.shell.headerHeight}px`,
     paddingInlineStart: `${mainInsetStart}px`,
+    paddingInlineEnd: `${mainInsetEnd}px`,
     overflow: lockMainScroll ? 'hidden' : 'auto',
     overscrollBehavior: lockMainScroll ? 'none' : 'auto',
     backgroundColor: 'var(--background)',
@@ -219,7 +249,7 @@ export function AppLayout() {
   }, [desktopNavOpened]);
 
   return (
-    <HeaderCenterProvider>
+    <>
       <div
         style={shellVars}
         className="relative h-dvh overflow-hidden"
@@ -243,6 +273,23 @@ export function AppLayout() {
             assistantOpened={assistantOpened}
             onToggleAssistant={toggleAssistant}
           />
+          {!isMobile && (
+            <button
+              type="button"
+              onClick={toggleDesktopNav}
+              aria-label={desktopNavOpened ? 'Collapse side navigation' : 'Expand side navigation'}
+              title={desktopNavOpened ? 'Collapse side navigation' : 'Expand side navigation'}
+              className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-transparent text-muted-foreground transition-colors hover:bg-accent/60 hover:text-accent-foreground"
+              style={{
+                position: 'absolute',
+                top: '16px',
+                left: '10px',
+                zIndex: 111,
+              }}
+            >
+              <HugeiconsIcon icon={Layout03Icon} size={16} strokeWidth={2.1} />
+            </button>
+          )}
           <div
             data-testid="app-shell-top-divider"
             aria-hidden
@@ -303,40 +350,39 @@ export function AppLayout() {
         )}
 
         {isMobile && (
-          <>
-            <aside
+          <Drawer.Root
+            open={navOpened}
+            onOpenChange={(details) => { if (!details.open) closeNav(); }}
+          >
+            <Drawer.Backdrop className="fixed inset-0 z-[120] bg-black/45 transition-opacity duration-150" />
+            <Drawer.Positioner
               style={{
                 position: 'fixed',
+                insetBlockStart: 0,
+                insetBlockEnd: 0,
                 insetInlineStart: 0,
-                top: 0,
-                bottom: 0,
                 width: `${navbarWidth}px`,
-                borderInlineEnd: '1px solid var(--border)',
-                backgroundColor: 'var(--chrome, var(--background))',
                 zIndex: 130,
-                transform: navOpened ? 'translateX(0)' : 'translateX(-100%)',
               }}
-              className="transition-transform duration-200 ease-out"
             >
-              <LeftRailShadcn
-                onNavigate={() => {
-                  closeNav();
+              <Drawer.Content
+                style={{
+                  height: '100%',
+                  borderInlineEnd: '1px solid var(--border)',
+                  backgroundColor: 'var(--chrome, var(--background))',
                 }}
-                userLabel={profile?.display_name || profile?.email || user?.email}
-                onSignOut={handleSignOut}
-                desktopCompact={false}
-              />
-            </aside>
-            <button
-              type="button"
-              aria-label="Close navigation overlay"
-              onClick={closeNav}
-              className={cn(
-                'fixed inset-0 z-[120] bg-black/45 transition-opacity duration-150',
-                navOpened ? 'opacity-100' : 'pointer-events-none opacity-0',
-              )}
-            />
-          </>
+              >
+                <LeftRailShadcn
+                  onNavigate={() => {
+                    closeNav();
+                  }}
+                  userLabel={profile?.display_name || profile?.email || user?.email}
+                  onSignOut={handleSignOut}
+                  desktopCompact={false}
+                />
+              </Drawer.Content>
+            </Drawer.Positioner>
+          </Drawer.Root>
         )}
 
         <main style={shellMainStyle}>
@@ -348,6 +394,61 @@ export function AppLayout() {
             </AppPageShell>
           )}
         </main>
+
+        {/* Right rail edge tabs */}
+        {showRightRailTab && (
+          <div
+            className="fixed z-[108] flex flex-col gap-0"
+            style={{
+              top: `${styleTokens.shell.headerHeight + 1}px`,
+              insetInlineEnd: showRightRail ? `${styleTokens.shell.rightRailWidth}px` : 0,
+            }}
+          >
+            <button
+              type="button"
+              aria-label={rightRail.isOpen ? 'Close help panel' : 'Open help panel'}
+              title={rightRail.isOpen ? 'Close help panel' : 'Open help panel'}
+              onClick={rightRail.toggle}
+              className="inline-flex h-10 w-8 items-center justify-center rounded-bl-md border border-r-0 border-t-0 border-border bg-[var(--chrome,var(--background))] text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+            >
+              {rightRail.isOpen
+                ? <IconLayoutSidebarRightCollapse size={16} stroke={1.75} />
+                : <IconLayoutSidebarRightExpand size={16} stroke={1.75} />}
+            </button>
+            {assistantDockEnabled && (
+              <button
+                type="button"
+                aria-label={assistantOpened ? 'Hide Assistant' : 'Show Assistant'}
+                title={assistantOpened ? 'Hide Assistant' : 'Show Assistant'}
+                onClick={toggleAssistant}
+                className={`inline-flex h-10 w-8 items-center justify-center rounded-bl-md border border-r-0 border-t-0 border-border bg-[var(--chrome,var(--background))] text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground${assistantOpened ? ' text-primary' : ''}`}
+              >
+                <HugeiconsIcon icon={SparklesIcon} size={16} strokeWidth={1.8} />
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Right rail panel */}
+        {showRightRail && rightRail.content && (
+          <aside
+            style={{
+              position: 'fixed',
+              insetInlineEnd: 0,
+              top: `${styleTokens.shell.headerHeight}px`,
+              bottom: 0,
+              width: `${styleTokens.shell.rightRailWidth}px`,
+              zIndex: 104,
+            }}
+          >
+            <RightRailShell
+              title={rightRail.content.title}
+              description={rightRail.content.description}
+              sections={rightRail.content.sections}
+              footer={rightRail.content.footer}
+            />
+          </aside>
+        )}
       </div>
 
       {assistantDockEnabled && assistantOpened && !assistantDetached && canPortal
@@ -401,7 +502,6 @@ export function AppLayout() {
             document.body,
           )
         : null}
-
-    </HeaderCenterProvider>
+    </>
   );
 }

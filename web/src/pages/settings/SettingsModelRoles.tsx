@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useShellHeaderTitle } from '@/components/common/useShellHeaderTitle';
 import { IconCheck, IconGripVertical, IconTrash } from '@tabler/icons-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -23,6 +24,7 @@ type RoleAssignmentRow = {
 };
 
 export default function SettingsModelRoles() {
+  useShellHeaderTitle({ title: 'Model Roles', breadcrumbs: ['Settings', 'Model Roles'] });
   const [roles, setRoles] = useState<RoleCatalogRow[]>([]);
   const [assignments, setAssignments] = useState<RoleAssignmentRow[]>([]);
   const [loading, setLoading] = useState(true);

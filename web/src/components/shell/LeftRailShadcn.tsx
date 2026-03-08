@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { Avatar } from '@ark-ui/react/avatar';
+import { ToggleGroup } from '@ark-ui/react/toggle-group';
 import { Layout03Icon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import {
@@ -44,10 +45,8 @@ import {
   MenuItem,
 } from '@/components/ui/menu';
 import { cn } from '@/lib/utils';
-import { PROJECT_FOCUS_STORAGE_KEY, PROJECT_LIST_CHANGED_EVENT } from '@/lib/projectFocus';
-import { supabase } from '@/lib/supabase';
-import { TABLES } from '@/lib/tables';
 import { DOCS_URL } from '@/lib/urls';
+import { useProjectFocus } from '@/hooks/useProjectFocus';
 import { useTheme, type ThemeChoice } from '@/hooks/useTheme';
 
 type LeftRailShadcnProps = {
@@ -57,35 +56,6 @@ type LeftRailShadcnProps = {
   desktopCompact?: boolean;
   onToggleDesktopCompact?: () => void;
 };
-
-type ProjectFocusOption = {
-  value: string;
-  label: string;
-  docCount: number;
-  workspaceId: string | null;
-};
-
-const PROJECTS_RPC_NEW = 'list_projects_overview';
-const PROJECTS_RPC_LEGACY = 'list_projects_overview_v2';
-
-function toCount(value: unknown): number {
-  const n = typeof value === 'number' ? value : Number(value);
-  return Number.isFinite(n) ? n : 0;
-}
-
-function isMissingRpcError(error: { code?: string; message?: string } | null | undefined) {
-  if (!error) return false;
-  return (
-    error.code === 'PGRST202' ||
-    /could not find the function/i.test(error.message ?? '') ||
-    /function .* does not exist/i.test(error.message ?? '')
-  );
-}
-
-function readStoredProjectId(): string | null {
-  if (typeof window === 'undefined') return null;
-  return window.localStorage.getItem(PROJECT_FOCUS_STORAGE_KEY);
-}
 
 /* ------------------------------------------------------------------ */
 /*  Helpers for determining active path                                */
@@ -119,18 +89,24 @@ function ThemeToggleRow() {
   return (
     <div className="flex items-center justify-between px-3 py-2">
       <span className="text-sm">Theme</span>
-      <div className="flex items-center gap-0.5 rounded-md border border-border bg-muted/50 p-0.5">
+      <ToggleGroup.Root
+        value={[choice]}
+        onValueChange={(details) => {
+          const next = details.value[0] as ThemeChoice | undefined;
+          if (next) setTheme(next);
+        }}
+        className="flex items-center gap-0.5 rounded-md border border-border bg-muted/50 p-0.5"
+      >
         {THEME_OPTIONS.map((opt) => {
           const Icon = opt.icon;
-          const isActive = choice === opt.value;
           return (
-            <button
+            <ToggleGroup.Item
               key={opt.value}
-              type="button"
-              onClick={(e) => { e.stopPropagation(); setTheme(opt.value); }}
+              value={opt.value}
+              onClick={(e) => e.stopPropagation()}
               className={cn(
                 'inline-flex h-6 w-6 items-center justify-center rounded transition-colors',
-                isActive
+                choice === opt.value
                   ? 'bg-background text-foreground shadow-sm'
                   : 'text-muted-foreground hover:text-foreground',
               )}
@@ -138,10 +114,10 @@ function ThemeToggleRow() {
               aria-label={`Theme: ${opt.label}`}
             >
               <Icon size={14} stroke={1.75} />
-            </button>
+            </ToggleGroup.Item>
           );
         })}
-      </div>
+      </ToggleGroup.Root>
     </div>
   );
 }
@@ -162,7 +138,7 @@ function AccountMenuContent({
   onSignOut?: () => void | Promise<void>;
 }) {
   return (
-    <MenuContent className="min-w-56 p-0">
+    <MenuContent className="min-w-64 p-0">
       {/* Account header — username + email, gear icon right */}
       <div className="flex items-start justify-between px-3 pb-2 pt-3">
         <div className="min-w-0 flex-1">
@@ -243,100 +219,10 @@ export function LeftRailShadcn({
   const navigate = useNavigate();
   const location = useLocation();
   const docsSiteUrl = DOCS_URL;
-  const activeProjectMatch = location.pathname.match(/^\/app\/elt\/([^/]+)/);
-  const activeProjectId = activeProjectMatch ? activeProjectMatch[1] : null;
 
-  /* ------ Project focus state (unchanged) ------ */
-  const [focusedProjectId, setFocusedProjectId] = useState<string | null>(() => readStoredProjectId());
-  const [projectOptions, setProjectOptions] = useState<ProjectFocusOption[]>([]);
-  const [, setProjectOptionsLoading] = useState(false);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const persistedProjectId = activeProjectId ?? focusedProjectId;
-    if (persistedProjectId) {
-      window.localStorage.setItem(PROJECT_FOCUS_STORAGE_KEY, persistedProjectId);
-      return;
-    }
-    window.localStorage.removeItem(PROJECT_FOCUS_STORAGE_KEY);
-  }, [activeProjectId, focusedProjectId]);
-
-  const loadProjectOptions = async () => {
-    setProjectOptionsLoading(true);
-
-    const rpcParams = {
-      p_search: null,
-      p_status: 'all',
-      p_limit: 200,
-      p_offset: 0,
-    };
-
-    let rows: Array<Record<string, unknown>> = [];
-    let { data, error } = await supabase.rpc(PROJECTS_RPC_NEW, rpcParams);
-
-    if (error && isMissingRpcError(error)) {
-      const fallback = await supabase.rpc(PROJECTS_RPC_LEGACY, rpcParams);
-      data = fallback.data;
-      error = fallback.error;
-    }
-
-    if (error) {
-      const fallbackProjects = await supabase
-        .from(TABLES.projects)
-        .select('project_id, project_name')
-        .order('project_name', { ascending: true });
-
-      if (fallbackProjects.error) {
-        setProjectOptions([]);
-        setProjectOptionsLoading(false);
-        return;
-      }
-
-      rows = ((fallbackProjects.data ?? []) as Array<Record<string, unknown>>).map((row) => ({
-        ...row,
-        doc_count: 0,
-      }));
-    } else {
-      rows = (data ?? []) as Array<Record<string, unknown>>;
-    }
-
-    const nextOptions = rows
-      .map((row) => ({
-        value: String(row.project_id ?? ''),
-        label: String(row.project_name ?? 'Untitled project'),
-        docCount: toCount(row.doc_count),
-        workspaceId: row.workspace_id ? String(row.workspace_id) : null,
-      }))
-      .filter((row) => row.value.length > 0)
-      .sort((a, b) => a.label.localeCompare(b.label));
-
-    setProjectOptions(nextOptions);
-    setProjectOptionsLoading(false);
-  };
-
-  useEffect(() => {
-    void loadProjectOptions();
-  }, []);
-
-  useEffect(() => {
-    const handler = (e: Event) => {
-      const focusId = (e as CustomEvent).detail?.focusProjectId;
-      if (focusId) setFocusedProjectId(focusId);
-      void loadProjectOptions();
-    };
-    window.addEventListener(PROJECT_LIST_CHANGED_EVENT, handler);
-    return () => window.removeEventListener(PROJECT_LIST_CHANGED_EVENT, handler);
-  }, []);
-
-  const projectSelectValue = useMemo(() => {
-    const candidate = activeProjectId ?? focusedProjectId;
-    if (!candidate) return '';
-    return projectOptions.some((project) => project.value === candidate)
-      ? candidate
-      : '';
-  }, [activeProjectId, focusedProjectId, projectOptions]);
-
-  const eltPath = projectSelectValue ? `/app/elt/${projectSelectValue}` : '/app/elt';
+  /* ------ Project focus (shared hook) ------ */
+  const { resolvedProjectId } = useProjectFocus();
+  const eltPath = resolvedProjectId ? `/app/elt/${resolvedProjectId}` : '/app/elt';
 
   const globalPathOverrides: Record<string, string> = {
     '/app/elt': eltPath,
@@ -583,14 +469,10 @@ export function LeftRailShadcn({
                   : 'px-1.5 py-1',
               )}
               onClick={() => {
-                if (desktopCompact && onToggleDesktopCompact) {
-                  onToggleDesktopCompact();
-                  return;
-                }
-                navigate('/app/elt');
+                navigate('/app');
                 onNavigate?.();
               }}
-              aria-label={desktopCompact ? 'Expand side navigation' : 'Go to home'}
+              aria-label="Go to home"
             >
               {desktopCompact ? (
                 <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary text-xs font-bold text-primary-foreground">
@@ -603,17 +485,6 @@ export function LeftRailShadcn({
                 </span>
               )}
             </button>
-            {!desktopCompact && onToggleDesktopCompact && (
-              <button
-                type="button"
-                className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                onClick={onToggleDesktopCompact}
-                aria-label="Collapse side navigation"
-                title="Collapse side navigation"
-              >
-                <HugeiconsIcon icon={Layout03Icon} size={16} strokeWidth={2.1} />
-              </button>
-            )}
           </div>
           {!desktopCompact && <div className="h-px w-full bg-sidebar-border" />}
         </SidebarHeader>

@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useShellHeaderTitle } from '@/components/common/useShellHeaderTitle';
 import { Search01Icon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { Input } from '@/components/ui/input';
@@ -19,6 +20,7 @@ function getServerStatus(serverId: string): 'connected' | 'disconnected' {
 }
 
 export default function McpServers() {
+  useShellHeaderTitle({ title: 'MCP', breadcrumbs: ['Settings', 'MCP'] });
   const [query, setQuery] = useState('');
   const utilityIconSize = ICON_SIZES[ICON_CONTEXT_SIZE[ICON_STANDARD.utilityTopRight.context]];
   const utilityIconStroke = ICON_STROKES[ICON_STANDARD.utilityTopRight.stroke];

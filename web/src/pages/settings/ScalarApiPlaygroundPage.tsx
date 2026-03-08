@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
+import { useShellHeaderTitle } from '@/components/common/useShellHeaderTitle';
 import { ScalarApiPlayground } from './ScalarApiPlayground';
 import {
   SCALAR_THEME_SYNC_EVENT,

@@ -1034,7 +1034,6 @@ const ToolbarBtn = forwardRef<HTMLButtonElement, ToolbarBtnProps>(
 export default function DocumentTest() {
   useShellHeaderTitle({
     title: 'Document Workbench',
-    subtitle: 'Ark Splitter + column tabs',
   });
   const location = useLocation();
   const routeProjectId = useMemo(

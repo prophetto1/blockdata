@@ -29,6 +29,7 @@ import { ScalarApiPlaygroundPage } from '@/pages/settings/ScalarApiPlaygroundPag
 import Commands from '@/pages/Commands';
 import DocumentTest from '@/pages/DocumentTest';
 import DatabasePlaceholder from '@/pages/DatabasePlaceholder';
+import AppHome from '@/pages/AppHome';
 import EarlyAccess from '@/pages/EarlyAccess';
 import ProjectsHome from '@/pages/ProjectsHome';
 import IntegrationsCatalog from '@/pages/marketplace/IntegrationsCatalog';
@@ -102,7 +103,7 @@ export const router = createBrowserRouter([
         element: <AppLayout />,
         children: [
           // App landing + projects
-          { path: '/app', element: <Navigate to="/app/elt" replace /> },
+          { path: '/app', element: <AppHome /> },
 
           { path: '/app/elt', element: <ProjectsHome /> },
           { path: '/app/elt/:projectId', element: <DocumentTest /> },

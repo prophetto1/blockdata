@@ -1,3 +1,4 @@
+import { useShellHeaderTitle } from '@/components/common/useShellHeaderTitle';
 import { SettingsPageFrame, SettingsSection } from './SettingsPageHeader';
 import { useTheme, type ThemeChoice } from '@/hooks/useTheme';
 import { cn } from '@/lib/utils';
@@ -9,6 +10,7 @@ const CHOICES: { value: ThemeChoice; label: string; description: string }[] = [
 ];
 
 export default function SettingsThemes() {
+  useShellHeaderTitle({ title: 'Themes', breadcrumbs: ['Settings', 'Themes'] });
   const { choice, setTheme } = useTheme();
 
   return (

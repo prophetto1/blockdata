@@ -1,50 +1,37 @@
-.shell-header-title {
+.shell-header-breadcrumb {
   min-width: 0;
   width: 100%;
-  max-width: none;
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: center;
-  gap: 2px;
-  padding-block: 6px 4px;
+  align-items: center;
+  gap: 6px;
+  padding-block: 0;
   padding-inline-end: 0.75rem;
-}
-
-.shell-header-title-main {
-  display: block;
-  width: 100%;
-  font-size: 21px;
-  line-height: 1.12;
-  font-weight: 700;
-  letter-spacing: -0.015em;
-  text-align: left;
   white-space: nowrap;
   overflow: hidden;
-  text-overflow: ellipsis;
 }
 
-.shell-header-title-subtitle {
-  display: block;
-  width: 100%;
-  font-size: 11px;
-  line-height: 1.2;
+.shell-header-breadcrumb-segment {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: 0.005em;
+  color: var(--muted-foreground);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 1;
+  min-width: 0;
+}
+
+.shell-header-breadcrumb-segment:last-child {
+  color: var(--foreground);
   font-weight: 600;
-  letter-spacing: 0.01em;
-  color: light-dark(var(--app-gray-6), var(--app-gray-4));
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  flex-shrink: 0;
 }
 
-@media (max-width: 62em) {
-  .shell-header-title-main {
-    font-size: 19px;
-  }
-}
-
-@media (max-width: 48em) {
-  .shell-header-title-main {
-    font-size: 17px;
-  }
+.shell-header-breadcrumb-sep {
+  font-size: 14px;
+  line-height: 1;
+  color: var(--muted-foreground);
+  opacity: 0.5;
+  flex-shrink: 0;
 }

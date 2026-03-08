@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useShellHeaderTitle } from '@/components/common/useShellHeaderTitle';
 import { ErrorAlert } from '@/components/common/ErrorAlert';
 import { PROJECT_FOCUS_STORAGE_KEY } from '@/lib/projectFocus';
 import { supabase } from '@/lib/supabase';
@@ -40,6 +41,7 @@ async function loadProjects(): Promise<ProjectBootstrapRow[]> {
 }
 
 export default function ProjectsHome() {
+  useShellHeaderTitle({ title: 'ELT' });
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

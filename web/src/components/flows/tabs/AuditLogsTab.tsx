@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { FlowEmptyState } from './FlowEmptyState';
 import { FlowFilterBar } from './FlowFilterBar';
@@ -122,7 +123,7 @@ export function AuditLogsTab({ flowId }: { flowId: string }) {
         />
       ) : (
         <div className="grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)]">
-          <div className="overflow-auto rounded-md border border-border bg-card">
+          <ScrollArea className="rounded-md border border-border bg-card">
             <table className="min-w-full text-xs">
               <thead className="border-b border-border bg-muted/30">
                 <tr className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -161,7 +162,7 @@ export function AuditLogsTab({ flowId }: { flowId: string }) {
                 })}
               </tbody>
             </table>
-          </div>
+          </ScrollArea>
 
           {selectedRow ? (
             <article className="rounded-md border border-border bg-card p-4">

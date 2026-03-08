@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { FlowFilterBar } from './FlowFilterBar';
 import { FlowEmptyState } from './FlowEmptyState';
 
@@ -72,7 +73,7 @@ export function LogsTab({ flowId }: { flowId: string }) {
           subtitle="Please try adjusting your filters, changing the time range, or check if the flow has executed recently."
         />
       ) : (
-        <div className="rounded-md border border-border bg-card overflow-auto max-h-[600px]">
+        <ScrollArea className="rounded-md border border-border bg-card max-h-[600px]">
           <table className="min-w-full text-xs font-mono">
             <tbody>
               {logs.map((log) => (
@@ -87,7 +88,7 @@ export function LogsTab({ flowId }: { flowId: string }) {
               ))}
             </tbody>
           </table>
-        </div>
+        </ScrollArea>
       )}
     </div>
   );

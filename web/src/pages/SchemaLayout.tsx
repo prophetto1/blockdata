@@ -3,6 +3,7 @@ import { Pagination } from '@ark-ui/react/pagination';
 import { RadioGroup } from '@ark-ui/react/radio-group';
 import { Switch } from '@ark-ui/react/switch';
 import { useEffect, useLayoutEffect, useMemo, useState, type CSSProperties } from 'react';
+import { useShellHeaderTitle } from '@/components/common/useShellHeaderTitle';
 import { useHeaderCenter } from '@/components/shell/HeaderCenterContext';
 import { DoubleArrowIcon } from '@/components/icons/DoubleArrowIcon';
 import { Input } from '@/components/ui/input';
@@ -81,6 +82,7 @@ function ConfigSwitch({ label }: { label: string }) {
 }
 
 export default function SchemaLayout() {
+  useShellHeaderTitle({ title: 'Schema' });
   const { setShellTopSlots } = useHeaderCenter();
   const [leftColumnState, setLeftColumnState] = useState<LeftColumnState>('full');
   const [rightColumnState, setRightColumnState] = useState<RightColumnState>('full');

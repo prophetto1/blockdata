@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useShellHeaderTitle } from '@/components/common/useShellHeaderTitle';
 import { Field } from '@ark-ui/react/field';
 import { PasswordInput } from '@ark-ui/react/password-input';
 import { IconEye, IconEyeOff } from '@tabler/icons-react';
@@ -27,6 +28,7 @@ function getInitialDisplayName(
 }
 
 export default function SettingsAccount() {
+  useShellHeaderTitle({ title: 'Profile', breadcrumbs: ['Settings', 'Profile'] });
   const { user, profile } = useAuth();
 
   const [displayName, setDisplayName] = useState('');

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useShellHeaderTitle } from '@/components/common/useShellHeaderTitle';
 import {
   IconAdjustments,
   IconArrowDown,
@@ -18,9 +19,14 @@ import {
 import { Search01Icon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { useNavigate } from 'react-router-dom';
+import { Checkbox } from '@ark-ui/react/checkbox';
+import { Select, createListCollection } from '@ark-ui/react/select';
+import { Pagination } from '@ark-ui/react/pagination';
+import { Portal } from '@ark-ui/react/portal';
 import { ErrorAlert } from '@/components/common/ErrorAlert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import {
   ICON_CONTEXT_SIZE,
@@ -32,6 +38,10 @@ import { loadFlowsList, formatLabelBadge } from './flows/flows.api';
 import type { FlowListItem, FlowSortField, FlowSortDir, FlowLabel } from './flows/flows.types';
 
 const PAGE_SIZES = [10, 25, 50, 100] as const;
+
+const pageSizeCollection = createListCollection({
+  items: PAGE_SIZES.map((s) => ({ label: `${s} per page`, value: String(s) })),
+});
 
 function formatDate(value: string | null | undefined): string {
   if (!value) return '';
@@ -72,6 +82,7 @@ function SortIcon({ field, activeField, dir }: { field: FlowSortField; activeFie
 }
 
 export default function FlowsList() {
+  useShellHeaderTitle({ title: 'Flows' });
   const navigate = useNavigate();
   const [rows, setRows] = useState<FlowListItem[]>([]);
   const [total, setTotal] = useState(0);
@@ -171,9 +182,8 @@ export default function FlowsList() {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      {/* Top action bar — matches Kestra: title left, action buttons right */}
+      {/* Top action bar */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-        <h1 className="text-lg font-semibold text-foreground">Flows</h1>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm">
             <IconFileExport size={14} />
@@ -240,17 +250,24 @@ export default function FlowsList() {
         </div>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-auto">
+      <ScrollArea className="min-h-0 flex-1">
         <table className="w-full text-left">
           <thead className="sticky top-0 z-10 bg-card text-xs text-muted-foreground">
             <tr className="border-b border-border">
               <th className="w-10 px-3 py-2">
-                <input
-                  type="checkbox"
+                <Checkbox.Root
                   checked={selected.size === rows.length && rows.length > 0}
-                  onChange={toggleAll}
-                  className="rounded border-input"
-                />
+                  onCheckedChange={(details) => {
+                    if (details.checked) {
+                      setSelected(new Set(rows.map((r) => r.routeId)));
+                    } else {
+                      setSelected(new Set());
+                    }
+                  }}
+                >
+                  <Checkbox.Control className="h-4 w-4 rounded border-input" />
+                  <Checkbox.HiddenInput />
+                </Checkbox.Root>
               </th>
               <th className="px-3 py-2 font-medium">
                 <button type="button" onClick={() => toggleSort('id')} className="inline-flex items-center gap-1 hover:text-foreground">
@@ -295,12 +312,13 @@ export default function FlowsList() {
                   onClick={() => openFlow(row)}
                 >
                   <td className="w-10 px-3 py-3" onClick={(e) => e.stopPropagation()}>
-                    <input
-                      type="checkbox"
+                    <Checkbox.Root
                       checked={selected.has(row.routeId)}
-                      onChange={() => toggleRow(row.routeId)}
-                      className="rounded border-input"
-                    />
+                      onCheckedChange={() => toggleRow(row.routeId)}
+                    >
+                      <Checkbox.Control className="h-4 w-4 rounded border-input" />
+                      <Checkbox.HiddenInput />
+                    </Checkbox.Root>
                   </td>
                   <td className="px-3 py-3">
                     <div className="flex items-center gap-1.5">
@@ -359,40 +377,50 @@ export default function FlowsList() {
             )}
           </tbody>
         </table>
-      </div>
+      </ScrollArea>
 
       {/* Footer — matches Kestra: page size dropdown left, total count right */}
       <div className="flex items-center justify-between border-t border-border px-4 py-2 text-xs text-muted-foreground">
         <div className="flex items-center gap-2">
-          <select
-            value={pageSize}
-            onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }}
-            className="rounded-md border border-border bg-background px-2 py-1 text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          <Select.Root
+            collection={pageSizeCollection}
+            value={[String(pageSize)]}
+            onValueChange={(details) => { setPageSize(Number(details.value[0])); setPage(1); }}
+            positioning={{ placement: 'top-start', sameWidth: true }}
           >
-            {PAGE_SIZES.map((s) => (
-              <option key={s} value={s}>{s} per page</option>
-            ))}
-          </select>
+            <Select.Control>
+              <Select.Trigger className="rounded-md border border-border bg-background px-2 py-1 text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
+                <Select.ValueText placeholder="Per page" />
+              </Select.Trigger>
+            </Select.Control>
+            <Portal>
+              <Select.Positioner>
+                <Select.Content className="rounded-md border border-border bg-popover p-1 text-xs shadow-md">
+                  {PAGE_SIZES.map((s) => (
+                    <Select.Item key={s} item={String(s)} className="cursor-pointer rounded px-2 py-1 hover:bg-accent">
+                      <Select.ItemText>{s} per page</Select.ItemText>
+                    </Select.Item>
+                  ))}
+                </Select.Content>
+              </Select.Positioner>
+            </Portal>
+          </Select.Root>
           {totalPages > 1 && (
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                disabled={page <= 1}
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                className="rounded px-1.5 py-0.5 hover:bg-accent disabled:opacity-40"
-              >
+            <Pagination.Root
+              count={total}
+              pageSize={pageSize}
+              page={page}
+              onPageChange={(details) => setPage(details.page)}
+              className="flex items-center gap-1"
+            >
+              <Pagination.PrevTrigger className="rounded px-1.5 py-0.5 hover:bg-accent disabled:opacity-40">
                 Prev
-              </button>
+              </Pagination.PrevTrigger>
               <span>Page {page} of {totalPages}</span>
-              <button
-                type="button"
-                disabled={page >= totalPages}
-                onClick={() => setPage((p) => p + 1)}
-                className="rounded px-1.5 py-0.5 hover:bg-accent disabled:opacity-40"
-              >
+              <Pagination.NextTrigger className="rounded px-1.5 py-0.5 hover:bg-accent disabled:opacity-40">
                 Next
-              </button>
-            </div>
+              </Pagination.NextTrigger>
+            </Pagination.Root>
           )}
         </div>
         <span className="font-medium">Total: {total}</span>

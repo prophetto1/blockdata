@@ -292,7 +292,7 @@ export default function FlowDetail() {
 
   useShellHeaderTitle({
     title: flowName,
-    subtitle: `Flows/${flowName}/${activeTabLabel}`,
+    breadcrumbs: ['Flows', flowName, activeTabLabel],
   });
 
   if (!flowId) return null;

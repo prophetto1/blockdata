@@ -1,6 +1,7 @@
 :root {
   --shell-guide-left-width: 392px;
   --shell-guide-middle-width: 300px;
+  --top-command-bar-leading-offset: 100px;
 }
 
 .top-command-bar {
@@ -26,6 +27,22 @@
 
 .top-command-bar--minimal .top-command-bar-center {
   padding-inline-start: 0.625rem;
+}
+
+.top-command-bar--minimal .top-command-bar-left,
+.top-command-bar--minimal .top-command-bar-center {
+  transform: translateX(var(--top-command-bar-leading-offset));
+}
+
+.top-command-bar--minimal .project-switcher-trigger {
+  width: 196px;
+  flex: 0 0 196px;
+  justify-content: space-between;
+  margin-inline-start: -28px;
+}
+
+.top-command-bar--minimal .top-command-bar-left {
+  overflow: visible;
 }
 
 .top-command-bar--shell-guides::before,
@@ -140,6 +157,8 @@
   min-width: 0;
   display: flex;
   align-items: center;
+  gap: 0.5rem;
+  overflow: hidden;
 }
 
 .top-command-bar-center {

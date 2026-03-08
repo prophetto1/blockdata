@@ -397,7 +397,6 @@ export default function Upload() {
 
   useShellHeaderTitle({
     title: 'Upload',
-    subtitle: projectName ? `Project: ${projectName}` : 'Upload documents and preview only',
   });
 
   if (!projectId) return null;

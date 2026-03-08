@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { IconPlus, IconX, IconChevronDown, IconChevronRight, IconGripVertical } from '@tabler/icons-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import type { FlowTask } from '../flow-document';
 
 type Props = {
@@ -21,9 +22,11 @@ function TaskExtraPreview({ task }: { task: FlowTask }) {
   );
   if (extra.length === 0) return <p className="text-xs text-muted-foreground italic">No additional properties.</p>;
   return (
-    <pre className="text-xs text-muted-foreground font-mono whitespace-pre-wrap bg-muted/50 rounded p-2 max-h-[200px] overflow-auto">
-      {extra.map(([k, v]) => `${k}: ${typeof v === 'string' ? v : JSON.stringify(v)}`).join('\n')}
-    </pre>
+    <ScrollArea className="max-h-[200px] rounded bg-muted/50">
+      <pre className="text-xs text-muted-foreground font-mono whitespace-pre-wrap p-2">
+        {extra.map(([k, v]) => `${k}: ${typeof v === 'string' ? v : JSON.stringify(v)}`).join('\n')}
+      </pre>
+    </ScrollArea>
   );
 }
 

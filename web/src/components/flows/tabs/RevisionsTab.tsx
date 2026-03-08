@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { IconInfoCircle } from '@tabler/icons-react';
 import { AppIcon } from '@/components/ui/app-icon';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/lib/supabase';
 
 type FlowRevision = {
@@ -88,18 +89,18 @@ export function RevisionsTab({ flowId }: { flowId: string }) {
       </div>
 
       <div className="grid grid-cols-2 gap-2">
-        <div className="rounded-md border border-border bg-card overflow-auto max-h-[600px]">
+        <ScrollArea className="rounded-md border border-border bg-card max-h-[600px]">
           <div className="sticky top-0 border-b border-border bg-muted/50 px-3 py-1.5 text-xs font-semibold text-muted-foreground">
             Revision {selectedA}
           </div>
           <pre className="p-3 text-xs font-mono text-foreground whitespace-pre-wrap">{sourceA}</pre>
-        </div>
-        <div className="rounded-md border border-border bg-card overflow-auto max-h-[600px]">
+        </ScrollArea>
+        <ScrollArea className="rounded-md border border-border bg-card max-h-[600px]">
           <div className="sticky top-0 border-b border-border bg-muted/50 px-3 py-1.5 text-xs font-semibold text-muted-foreground">
             Revision {selectedB}
           </div>
           <pre className="p-3 text-xs font-mono text-foreground whitespace-pre-wrap">{sourceB}</pre>
-        </div>
+        </ScrollArea>
       </div>
     </div>
   );
