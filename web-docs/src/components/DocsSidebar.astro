@@ -4,6 +4,7 @@ import SidebarPersister from '@astrojs/starlight/components/SidebarPersister.ast
 import SidebarSublist from '@astrojs/starlight/components/SidebarSublist.astro';
 import { FolderTree, PanelLeft } from 'lucide-react';
 import DocsSidebarFileTree from './DocsSidebarFileTree.tsx';
+import ScrollWrapper from './ScrollWrapper.tsx';
 import { getCurrentDocsRelativePath, getDocsContentTreeState } from '../lib/docs/content-tree.mjs';
 
 const { entry, sidebar } = Astro.locals.starlightRoute;
@@ -96,9 +97,11 @@ const currentRelativePath = getCurrentDocsRelativePath(entry.filePath);
   </script>
 
   <div data-sidebar-panel="nav">
-    <SidebarPersister>
-      <SidebarSublist sublist={sidebar} />
-    </SidebarPersister>
+    <ScrollWrapper client:load className="docs-sidebar-scroll">
+      <SidebarPersister>
+        <SidebarSublist sublist={sidebar} />
+      </SidebarPersister>
+    </ScrollWrapper>
   </div>
 
   <div data-sidebar-panel="files">
@@ -324,9 +327,12 @@ const currentRelativePath = getCurrentDocsRelativePath(entry.filePath);
       flex: 1;
       min-height: 0;
       width: 100%;
-      overflow-y: auto;
-      overflow-x: hidden;
       padding: 0.4rem 0;
+    }
+
+    :global(.docs-sidebar-scroll) {
+      flex: 1;
+      min-height: 0;
     }
 
     :global(.docs-tree) {

@@ -133,6 +133,24 @@ run('docs file tree treats empty directories as folders, not files', () => {
   assert.doesNotMatch(docsSidebarTree, /node\.children\?\.length \?/);
 });
 
+run('docs filetree repo preview stays inside the shell instead of full-page navigation', () => {
+  const contentShell = readFileSync(
+    new URL('../src/components/DocsTwoColumnContent.astro', import.meta.url),
+    'utf8'
+  );
+  const splitter = readFileSync(
+    new URL('../src/components/WorkbenchSplitter.tsx', import.meta.url),
+    'utf8'
+  );
+
+  assert.match(contentShell, /function loadRepoPreviewIntoShell\(url\)/);
+  assert.match(contentShell, /history\.replaceState\(/);
+  assert.match(contentShell, /fetch\(url\.toString\(\),/);
+  assert.match(contentShell, /DOMParser/);
+  assert.match(contentShell, /loadRepoPreviewIntoShell\(next\)/);
+  assert.match(splitter, /data-shell="splitter-preview"/);
+});
+
 await run('docs sidebar and Keystatic home share the same docs content tree source', async () => {
   const contentTreePath = new URL('../src/lib/docs/content-tree.mjs', import.meta.url);
   assert.equal(existsSync(contentTreePath), true);

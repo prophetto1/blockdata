@@ -322,6 +322,11 @@ h1#_top {
   margin-top: 0.5rem;
 }
 
+/* Hide the Starlight page-title content panel in filetree mode */
+[data-shell-mode='filetree'] main > .content-panel:first-child {
+  display: none;
+}
+
 @media (min-width: 72rem) {
   :root {
     --sl-content-width: 65rem;

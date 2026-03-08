@@ -11,12 +11,15 @@
     "openvscode:down": "docker compose -f docker-compose.openvscode.yml down",
     "openvscode:logs": "docker compose -f docker-compose.openvscode.yml logs -f openvscode",
     "test:encoding": "node --test scripts/fix-text-encoding.test.mjs",
+    "test:docs-frontmatter": "node scripts/docs-frontmatter-watcher.test.mjs",
     "test:proposals": "node scripts/proposals-workflow.test.mjs",
     "fix:text-encoding": "node scripts/fix-text-encoding.mjs",
     "check:text-encoding": "node scripts/fix-text-encoding.mjs --check",
+    "normalize:docs-frontmatter": "node scripts/docs-frontmatter-watcher.mjs --once",
     "normalize:proposals": "node scripts/normalize-proposals.mjs",
     "setup:hooks": "node scripts/setup-git-hooks.mjs",
-    "sync:global-css-doc": "node scripts/sync-global-css-doc.mjs"
+    "sync:global-css-doc": "node scripts/sync-global-css-doc.mjs",
+    "watch:docs-frontmatter": "node scripts/docs-frontmatter-watcher.mjs"
   },
   "type": "module",
   "dependencies": {
@@ -48,7 +51,8 @@
     "remark-emoji": "^5.0.2",
     "remark-math": "^6.0.0",
     "tailwindcss": "^4.2.1",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "yaml": "^2.8.2"
   },
   "devDependencies": {
     "@supabase/supabase-js": "^2.98.0",

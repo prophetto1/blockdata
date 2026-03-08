@@ -1,3 +1,4 @@
+import { ScrollArea } from '@ark-ui/react/scroll-area';
 import { TreeView, createTreeCollection } from '@ark-ui/react/tree-view';
 import {
   AlertCircle,
@@ -25,6 +26,7 @@ import {
   saveDirectoryHandle,
   saveLocalFileHandle,
 } from '../lib/docs/local-file-handles';
+import '../styles/scroll-area.css';
 
 declare global {
   interface Window {
@@ -335,21 +337,30 @@ export default function DocsSidebarFileTree({
         folderName={hasLocalFolder && folderName ? folderName : 'docs'}
         onClear={hasLocalFolder ? clearFolder : undefined}
       />
-      <TreeView.Root
-        aria-label="File tree"
-        className="docs-tree"
-        collection={collection}
-        defaultExpandedValue={defaultExpandedValue}
-        defaultSelectedValue={defaultSelectedValue ? [defaultSelectedValue] : []}
-        selectionMode="single"
-        expandOnClick={false}
-      >
-        <TreeView.Tree className="docs-tree__list">
-          {collection.rootNode.children?.map((node, index) => (
-            <TreeNodeView key={node.id} node={node} indexPath={[index]} />
-          ))}
-        </TreeView.Tree>
-      </TreeView.Root>
+      <ScrollArea.Root className="scroll-area-root" style={{ flex: 1, minHeight: 0 }}>
+        <ScrollArea.Viewport className="scroll-area-viewport">
+          <ScrollArea.Content>
+            <TreeView.Root
+              aria-label="File tree"
+              className="docs-tree"
+              collection={collection}
+              defaultExpandedValue={defaultExpandedValue}
+              defaultSelectedValue={defaultSelectedValue ? [defaultSelectedValue] : []}
+              selectionMode="single"
+              expandOnClick
+            >
+              <TreeView.Tree className="docs-tree__list">
+                {collection.rootNode.children?.map((node, index) => (
+                  <TreeNodeView key={node.id} node={node} indexPath={[index]} />
+                ))}
+              </TreeView.Tree>
+            </TreeView.Root>
+          </ScrollArea.Content>
+        </ScrollArea.Viewport>
+        <ScrollArea.Scrollbar orientation="vertical" className="scroll-area-scrollbar">
+          <ScrollArea.Thumb className="scroll-area-thumb" />
+        </ScrollArea.Scrollbar>
+      </ScrollArea.Root>
     </div>
   );
 }

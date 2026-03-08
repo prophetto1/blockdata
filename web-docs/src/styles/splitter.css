@@ -1,0 +1,74 @@
+/* ------------------------------------------------------------------ */
+/*  Ark UI Splitter — workbench editor/preview split                   */
+/* ------------------------------------------------------------------ */
+
+.wa-splitter {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.wa-splitter__panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+  background: var(--editor-bg, var(--sl-color-bg));
+}
+
+/* ---- panel header (tab strip row) ---- */
+
+.wa-splitter__panel-header {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  height: 2.25rem;
+  border-bottom: 1px solid var(--separator, var(--sl-color-hairline));
+  padding: 0 0.75rem;
+}
+
+/* ---- panel body (fills remaining height) ---- */
+
+.wa-splitter__panel-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ---- resize trigger (divider) ---- */
+
+.wa-splitter__trigger {
+  outline: 0;
+  display: grid;
+  place-items: center;
+  position: relative;
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: col-resize;
+  min-width: 6px;
+}
+
+.wa-splitter__trigger::before {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 1px;
+  background: var(--border, var(--sl-color-hairline));
+  transition: background-color 120ms ease;
+}
+
+.wa-splitter__trigger:hover::before,
+.wa-splitter__trigger[data-dragging]::before {
+  background: var(--sl-color-text-accent);
+}
+
+.wa-splitter__trigger:focus-visible::before {
+  background: var(--sl-color-text-accent);
+}

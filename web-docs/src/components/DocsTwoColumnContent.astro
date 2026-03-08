@@ -1,6 +1,6 @@
 ---
-import EditorTabStrip from './EditorTabStrip.tsx';
-import SplitEditorView from './SplitEditorView.tsx';
+import ScrollWrapper from './ScrollWrapper.tsx';
+import WorkbenchSplitter from './WorkbenchSplitter.tsx';
 
 const { toc } = Astro.locals.starlightRoute;
 ---
@@ -11,28 +11,23 @@ const { toc } = Astro.locals.starlightRoute;
     Sole owner of the content-area layout contract.
 
     Sections mode: standard Starlight article (TOC + main-pane).
-    Filetree mode: five contracted sub-shells:
+    Filetree mode: Ark UI Splitter with two panels:
 
-      ┌─────────────────────────────────────────────────────┐
-      │ WorkAreaStripShell (row 1, col 1/-1)                │
-      │  ┌─ EditorTabShell ─┐   ┌─ PreviewHeaderShell ──┐  │
-      │  │ Source | Rich    │ │ │ Preview                │  │
-      │  └──────────────────┘   └────────────────────────┘  │
-      ├─────────────────────┬─┬─────────────────────────────┤
-      │ EditorColumnShell   │D│ PreviewColumnShell          │
-      │ (row 2, col 1)      │i│ (row 2, col 3)             │
-      │                     │v│                             │
-      │  ┌SourceSurface ──┐ │i│  ┌ Astro <slot/> ────────┐ │
-      │  │ Monaco editor  │ │d│  │ Same rendering path.   │ │
-      │  └────────────────┘ │e│  │ No second renderer.    │ │
-      │  ┌RichSurface ────┐ │r│  └───────────────────────-┘ │
-      │  │ MDXEditor      │ │ │                             │
-      │  └────────────────┘ │ │                             │
-      └─────────────────────┴─┴─────────────────────────────┘
+      ┌──────────────────────┬──┬───────────────────────────┐
+      │ Source | Rich        │  │ Preview                   │
+      ├──────────────────────┤  ├───────────────────────────┤
+      │ EditorPanel          │  │ PreviewPanel              │
+      │                      │Re│                           │
+      │  ┌SourceSurface ──┐  │si│  ┌ Adopted <slot/> ────┐  │
+      │  │ Monaco editor  │  │ze│  │ ScrollArea viewport  │  │
+      │  └────────────────┘  │  │  └─────────────────────-┘  │
+      │  ┌RichSurface ────┐  │  │                           │
+      │  │ MDXEditor      │  │  │                           │
+      │  └────────────────┘  │  │                           │
+      └──────────────────────┴──┴───────────────────────────┘
 
-    Grid authority: .content-work-area owns --split-editor-pct.
-    All sub-shells derive column sizing from the parent grid.
-    The divider is the sole resize authority.
+    Sizing: Ark UI Splitter (flexbox). Resize via ResizeTrigger.
+    Preview content adopted from .wa-preview on hydration.
     ═══════════════════════════════════════════════════════════ */}
 
 <div class="content-work-area lg:sl-flex">
@@ -41,37 +36,23 @@ const { toc } = Astro.locals.starlightRoute;
   {toc && (
     <aside class="right-sidebar-container print:hidden">
       <div class="right-sidebar">
-        <slot name="right-sidebar" />
+        <ScrollWrapper client:load className="right-sidebar-scroll">
+          <slot name="right-sidebar" />
+        </ScrollWrapper>
       </div>
     </aside>
   )}
 
-  {/* ── WorkAreaStripShell ──
-       Row 1, spans all columns.
-       Contains EditorTabShell (col 1) and PreviewHeaderShell (col 3). */}
-  <div class="wa-strip" data-shell="work-area-strip">
-    <EditorTabStrip client:load />
-    <div class="wa-strip__preview-header" data-shell="preview-header">
-      <span class="wa-strip__label">Preview</span>
-    </div>
-  </div>
+  {/* ── WorkbenchSplitter ──
+       Filetree mode only. Ark UI Splitter owns editor + preview panels,
+       each with its own header strip (Source|Rich tabs / Preview label).
+       On mount, adopts the content from .wa-preview into its preview panel.
+       Hidden in sections mode. */}
+  <WorkbenchSplitter client:load />
 
-  {/* ── EditorColumnShell ──
-       Row 2, col 1. Contains the active editor surface.
-       SplitEditorView switches between Source and Rich (MDXEditor). */}
-  <div class="wa-editor" data-shell="editor-column">
-    <SplitEditorView client:load />
-  </div>
-
-  {/* ── Divider ──
-       Row 2, col 2. Sole resize authority.
-       Updates --split-editor-pct on the parent grid. */}
-  <div class="wa-divider" data-shell="divider" data-resize-divider></div>
-
-  {/* ── PreviewColumnShell ──
-       Row 2, col 3. Contains the Astro-rendered article.
-       Same <slot/>, same rendering path. No second renderer.
-       In Sections mode this is the normal main-pane. */}
+  {/* ── PreviewColumnShell / Sections-mode main-pane ──
+       In sections mode: normal article layout.
+       In filetree mode: content is adopted by WorkbenchSplitter on hydration. */}
   <div class="wa-preview" data-shell="preview-column">
     <slot />
   </div>
@@ -85,8 +66,35 @@ const { toc } = Astro.locals.starlightRoute;
     const PREVIEW_REFRESH_EVENT = 'shell-preview-refresh'; // SHELL_PREVIEW_REFRESH_EVENT
     const FILE_SELECT_EVENT = 'shell-file-select';        // SHELL_FILE_EVENT
     const FILE_RESET_EVENT = 'shell-file-reset';          // SHELL_FILE_RESET_EVENT
-    const SPLIT_RATIO_KEY = 'shell-split-ratio';          // SPLIT_RATIO_STORAGE_KEY
     const PREVIEW_REFRESH_QUERY = '_shell_preview';
+    const SHELL_ATTR = 'data-shell-mode';
+
+    function isFiletreeMode() {
+      return document.documentElement.getAttribute(SHELL_ATTR) === 'filetree';
+    }
+
+    function getPreviewEl() {
+      if (isFiletreeMode()) {
+        return document.querySelector('[data-shell="splitter-preview"]');
+      }
+      return document.querySelector('.wa-preview[data-shell="preview-column"]');
+    }
+
+    function extractRepoPreviewMarkup(source) {
+      const scratch = document.createElement('div');
+      scratch.innerHTML = source?.innerHTML ?? '';
+
+      const firstChild = scratch.firstElementChild;
+      const secondChild = firstChild?.nextElementSibling;
+      if (
+        firstChild?.classList?.contains('content-panel')
+        && secondChild?.classList?.contains('content-panel')
+      ) {
+        firstChild.remove();
+      }
+
+      return scratch.innerHTML;
+    }
 
     function escapeHtml(raw) {
       return String(raw)
@@ -180,58 +188,64 @@ const { toc } = Astro.locals.starlightRoute;
       return `<article class="split-editor__local-preview ${variant}">${blocks.join('')}</article>`;
     }
 
+    function syncCurrentPreviewIntoShell(attempt = 0) {
+      if (!isFiletreeMode()) return;
+
+      const target = getPreviewEl();
+      const source = document.querySelector('.wa-preview[data-shell="preview-column"]');
+      if (!target || !source) {
+        if (attempt < 30) {
+          window.requestAnimationFrame(() => syncCurrentPreviewIntoShell(attempt + 1));
+        }
+        return;
+      }
+
+      if (target.innerHTML.trim()) return;
+      target.innerHTML = extractRepoPreviewMarkup(source);
+    }
+
+    async function loadRepoPreviewIntoShell(url) {
+      const preview = getPreviewEl();
+      if (!preview) return;
+
+      preview.innerHTML = '<div class="split-editor__loading">Loading preview...</div>';
+
+      try {
+        const res = await fetch(url.toString(), { cache: 'no-store' });
+        if (!res.ok) {
+          throw new Error('Failed to load preview');
+        }
+
+        const html = await res.text();
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+        const source = doc.querySelector('.wa-preview[data-shell="preview-column"]')
+          || doc.querySelector('.wa-preview');
+        if (!source) {
+          throw new Error('Preview content not found');
+        }
+
+        preview.innerHTML = extractRepoPreviewMarkup(source);
+        history.replaceState(history.state ?? {}, '', url.toString());
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Failed to load preview';
+        preview.innerHTML = `<div class="split-editor__loading split-editor__loading--error">${escapeHtml(message)}</div>`;
+      }
+    }
+
     function refreshRepoPreview() {
+      if (isFiletreeMode()) {
+        loadRepoPreviewIntoShell(new URL(window.location.href));
+        return;
+      }
       const current = new URL(window.location.href);
       current.searchParams.set(PREVIEW_REFRESH_QUERY, String(Date.now()));
       window.location.replace(current.toString());
     }
 
     function updateLocalPreview(detail) {
-      const preview = document.querySelector('[data-shell=\"preview-column\"]');
+      const preview = getPreviewEl();
       if (!preview) return;
       preview.innerHTML = renderLocalMarkdown(detail?.content ?? '', detail?.extension ?? '');
-    }
-
-    // ── Divider: sole resize authority ──
-    const divider = document.querySelector('[data-resize-divider]');
-    if (divider) {
-      const workArea = divider.closest('.content-work-area');
-      let dragging = false;
-
-      divider.addEventListener('pointerdown', (e) => {
-        e.preventDefault();
-        dragging = true;
-        divider.setPointerCapture(e.pointerId);
-        document.documentElement.style.cursor = 'col-resize';
-        document.documentElement.style.userSelect = 'none';
-      });
-
-      window.addEventListener('pointermove', (e) => {
-        if (!dragging || !workArea) return;
-        const rect = workArea.getBoundingClientRect();
-        const pct = ((e.clientX - rect.left) / rect.width) * 100;
-        const clamped = Math.max(20, Math.min(80, pct));
-        workArea.style.setProperty('--split-editor-pct', clamped + '%');
-        try { localStorage.setItem(SPLIT_RATIO_KEY, String(clamped)); } catch {}
-      });
-
-      window.addEventListener('pointerup', () => {
-        if (!dragging) return;
-        dragging = false;
-        document.documentElement.style.cursor = '';
-        document.documentElement.style.userSelect = '';
-      });
-
-      // Restore saved ratio
-      try {
-        const saved = localStorage.getItem(SPLIT_RATIO_KEY);
-        if (saved && workArea) {
-          const pct = parseFloat(saved);
-          if (pct >= 20 && pct <= 80) {
-            workArea.style.setProperty('--split-editor-pct', pct + '%');
-          }
-        }
-      } catch {}
     }
 
     // ── File selection: persist and navigate ──
@@ -240,7 +254,7 @@ const { toc } = Astro.locals.starlightRoute;
       if (!detail?.filePath) return;
       try { sessionStorage.setItem(FILE_STORAGE_KEY, JSON.stringify(detail)); } catch {}
       if (detail.sourceKind === 'local') {
-        const preview = document.querySelector('[data-shell=\"preview-column\"]');
+        const preview = getPreviewEl();
         if (preview) {
           preview.innerHTML = '<div class="split-editor__loading">Loading local preview...</div>';
         }
@@ -249,6 +263,10 @@ const { toc } = Astro.locals.starlightRoute;
 
       if (detail.docsHref) {
         const next = new URL(detail.docsHref, window.location.origin);
+        if (isFiletreeMode()) {
+          loadRepoPreviewIntoShell(next);
+          return;
+        }
         next.searchParams.set(PREVIEW_REFRESH_QUERY, String(Date.now()));
         window.location.replace(next.toString());
       }
@@ -267,11 +285,13 @@ const { toc } = Astro.locals.starlightRoute;
       const reason = event.detail?.reason;
       if (reason !== 'folder-cleared' && reason !== 'file-missing') return;
 
-      const preview = document.querySelector('[data-shell=\"preview-column\"]');
+      const preview = getPreviewEl();
       if (!preview) return;
 
       preview.innerHTML = '<div class="split-editor__loading">Select a file from the tree</div>';
     });
+
+    syncCurrentPreviewIntoShell();
   })();
 </script>
 
@@ -282,21 +302,15 @@ const { toc } = Astro.locals.starlightRoute;
        ContentWorkAreaShell — grid authority
        ═══════════════════════════════════════════════════════ */
 
-    .content-work-area {
-      --split-editor-pct: 50%;
-    }
-
     /* ── Sections mode (default) ──
-       Hide all filetree sub-shells.
-       wa-preview acts as the normal main-pane. */
+       wa-preview acts as the normal main-pane.
+       Splitter is hidden. */
 
     .wa-preview {
       isolation: isolate;
     }
 
-    .wa-strip,
-    .wa-editor,
-    .wa-divider {
+    :global(.wa-splitter) {
       display: none;
     }
 
@@ -316,8 +330,10 @@ const { toc } = Astro.locals.starlightRoute;
         padding-top: var(--sl-nav-height);
         width: 100%;
         height: 100vh;
-        overflow-y: auto;
-        scrollbar-width: none;
+      }
+
+      :global(.right-sidebar-scroll) {
+        height: 100%;
       }
 
       /* Sections-mode only — scoped so they don't fight filetree grid */
@@ -342,87 +358,37 @@ const { toc } = Astro.locals.starlightRoute;
       display: none;
     }
 
-    /* Parent grid: single sizing authority.
-       Columns: editor | divider | preview
-       Rows: strip | content */
+    /* Filetree layout: splitter fills the work area.
+       The Ark UI Splitter handles column sizing internally.
+       Each panel has its own header strip. */
     :global([data-shell-mode='filetree']) .content-work-area {
-      display: grid !important; /* override lg:sl-flex */
-      grid-template-columns: var(--split-editor-pct) 4px 1fr;
-      grid-template-rows: auto 1fr;
+      display: flex !important; /* override lg:sl-flex */
+      flex-direction: column;
       height: calc(100vh - var(--sl-nav-height, 3.5rem));
       overflow: hidden;
     }
 
-    /* ── WorkAreaStripShell ──
-       Row 1, spans all 3 columns.
-       Internal grid mirrors parent columns so tab areas align. */
-    :global([data-shell-mode='filetree']) .wa-strip {
-      display: grid;
-      grid-column: 1 / -1;
-      grid-row: 1;
-      grid-template-columns: subgrid;
-      border-bottom: 1px solid var(--separator, var(--sl-color-hairline));
-      height: 2.25rem;
-    }
-
-    /* ── EditorTabShell ── (strip col 1) */
-    .wa-strip__editor-tabs {
-      grid-column: 1;
+    :global([data-shell-mode='filetree']) :global(.wa-splitter) {
       display: flex;
-      align-items: center;
-      padding: 0 0.75rem;
-    }
-
-    /* ── PreviewHeaderShell ── (strip col 3) */
-    .wa-strip__preview-header {
-      grid-column: 3;
-      display: flex;
-      align-items: center;
-      padding: 0 0.75rem;
-      border-inline-start: 1px solid var(--separator, var(--sl-color-hairline));
-    }
-
-    /* ── EditorColumnShell ── (row 2, col 1) */
-    :global([data-shell-mode='filetree']) .wa-editor {
-      display: flex;
-      flex-direction: column;
-      grid-row: 2;
-      grid-column: 1;
+      flex: 1;
       min-height: 0;
-      overflow: hidden;
-      background: var(--sl-color-bg);
     }
 
-    /* ── Divider ── (row 2, col 2) */
-    :global([data-shell-mode='filetree']) .wa-divider {
-      display: block;
-      grid-row: 2;
-      grid-column: 2;
-      background: var(--separator, var(--sl-color-hairline));
-      cursor: col-resize;
-      transition: background-color 120ms ease;
-    }
-
-    :global([data-shell-mode='filetree']) .wa-divider:hover {
-      background: var(--sl-color-text-accent);
-    }
-
-    /* ── PreviewColumnShell ── (row 2, col 3)
-       Same Astro-rendered content. No second renderer. */
     :global([data-shell-mode='filetree']) .wa-preview {
-      grid-row: 2;
-      grid-column: 3;
-      order: unset;
-      min-height: 0;
-      overflow-y: auto;
-      width: 100% !important; /* override Sections-mode calc */
+      display: none;
     }
 
     /* ═══════════════════════════════════════════════════════
-       Tab styling — shared across EditorTabShell
+       Tab styling — rendered inside React islands (global)
        ═══════════════════════════════════════════════════════ */
 
-    .wa-strip__tab {
+    :global(.wa-strip__editor-tabs) {
+      display: flex;
+      align-items: center;
+      gap: 0;
+    }
+
+    :global(.wa-strip__tab) {
       position: relative;
       display: flex;
       align-items: center;
@@ -438,15 +404,15 @@ const { toc } = Astro.locals.starlightRoute;
       transition: color 100ms ease;
     }
 
-    .wa-strip__tab:hover {
+    :global(.wa-strip__tab:hover) {
       color: var(--sl-color-text);
     }
 
-    .wa-strip__tab[aria-pressed='true'] {
+    :global(.wa-strip__tab[aria-pressed='true']) {
       color: var(--sl-color-text);
     }
 
-    .wa-strip__tab[aria-pressed='true']::after {
+    :global(.wa-strip__tab[aria-pressed='true']::after) {
       content: '';
       position: absolute;
       bottom: -1px;
@@ -456,7 +422,7 @@ const { toc } = Astro.locals.starlightRoute;
       background: var(--sl-color-text);
     }
 
-    .wa-strip__label {
+    :global(.wa-strip__label) {
       color: var(--muted-foreground);
       font-family: var(--app-font-sans);
       font-size: 0.75rem;

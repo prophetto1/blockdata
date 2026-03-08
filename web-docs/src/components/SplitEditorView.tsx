@@ -149,7 +149,10 @@ function MonacoPane({
         setEditor(() => mod.default);
         setModuleState('ready');
       })
-      .catch(() => setModuleState('failed'));
+      .catch((err) => {
+        console.error('[MonacoPane] Failed to load @monaco-editor/react:', err);
+        setModuleState('failed');
+      });
   }, []);
 
   useEffect(() => {
@@ -214,7 +217,10 @@ function RichEditorPane({
         setMDXEditorMod(mod as unknown as MDXEditorModule);
         setModuleState('ready');
       })
-      .catch(() => setModuleState('failed'));
+      .catch((err) => {
+        console.error('[RichEditorPane] Failed to load @mdxeditor/editor:', err);
+        setModuleState('failed');
+      });
   }, []);
 
   useEffect(() => {
@@ -427,7 +433,7 @@ async function saveFile(file: LoadableFileInfo, content: string): Promise<SaveRe
 
 export default function SplitEditorView() {
   const [file, setFile] = useState<LoadableFileInfo | null>(readSessionFile);
-  const [mode, setMode] = useState<EditorMode>('source');
+  const [mode, setMode] = useState<EditorMode>('rich');
   const [content, setContent] = useState<string | null>(null);
   const [loadStatus, setLoadStatus] = useState<LoadStatus>('idle');
   const [loadErrorMessage, setLoadErrorMessage] = useState('');

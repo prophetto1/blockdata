@@ -180,6 +180,7 @@
 .split-editor__mdx :where([class*='_editorWrapper']) {
   flex: 1;
   min-height: 0;
+  overflow-y: auto;
   background: var(--editor-bg);
   color: var(--editor-fg);
   font-family: var(--app-font-sans);
@@ -190,7 +191,7 @@
 .split-editor__mdx :where([class*='_contentEditable']) {
   min-height: 100%;
   padding: 0.875rem 0.875rem 3rem;
-  background: var(--editor-bg);
+  background: var(--card);
   color: var(--editor-fg);
   caret-color: var(--editor-accent);
 }
