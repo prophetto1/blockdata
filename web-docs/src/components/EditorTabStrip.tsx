@@ -12,7 +12,7 @@ import { SHELL_EDITOR_MODE_EVENT } from '../lib/docs/shell-state';
 export type EditorMode = 'source' | 'rich';
 
 export default function EditorTabStrip() {
-  const [mode, setMode] = useState<EditorMode>('rich');
+  const [mode, setMode] = useState<EditorMode>('source');
 
   function switchMode(next: EditorMode) {
     setMode(next);
