@@ -22,7 +22,7 @@ export function RevisionsTab({ flowId }: { flowId: string }) {
     supabase
       .from('flow_sources')
       .select('revision, source, created_at')
-      .eq('project_id', flowId)
+      .eq('flow_id', flowId)
       .order('revision', { ascending: false })
       .then(({ data, error }) => {
         if (cancelled) return;
@@ -32,8 +32,8 @@ export function RevisionsTab({ flowId }: { flowId: string }) {
           const rows = (data ?? []) as FlowRevision[];
           setRevisions(rows);
           if (rows.length >= 2) {
-            setSelectedA(rows[1]!.revision);
-            setSelectedB(rows[0]!.revision);
+            setSelectedA(rows[1].revision);
+            setSelectedB(rows[0].revision);
           }
         }
         setLoading(false);
@@ -48,9 +48,9 @@ export function RevisionsTab({ flowId }: { flowId: string }) {
 
   if (revisions.length <= 1) {
     return (
-      <div className="flex items-center gap-2 rounded-md bg-blue-100 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 px-4 py-3">
-        <AppIcon icon={IconInfoCircle} context="inline" tone="current" className="text-blue-600 dark:text-blue-400 shrink-0" />
-        <span className="text-sm font-medium text-blue-800 dark:text-blue-300">Only one revision exists for this flow</span>
+      <div className="flex items-center gap-2 rounded-md border border-border bg-accent/50 px-4 py-3">
+        <AppIcon icon={IconInfoCircle} context="inline" tone="accent" className="shrink-0" />
+        <span className="text-sm font-medium text-accent-foreground">Only one revision exists for this flow</span>
       </div>
     );
   }

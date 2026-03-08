@@ -41,7 +41,7 @@ import { PdfPreview } from '@/components/documents/PdfPreview';
 import { PptxPreview } from '@/components/documents/PptxPreview';
 import { edgeFetch } from '@/lib/edge';
 import { fetchAllProjectDocuments } from '@/lib/projectDocuments';
-import { PROJECT_FOCUS_STORAGE_KEY } from '@/lib/projectFocus';
+import { readFocusedProjectId } from '@/lib/projectFocus';
 import {
   type ProjectDocumentRow,
   formatBytes,
@@ -525,22 +525,6 @@ function resolveRouteProjectId(pathname: string): string | null {
   const match = pathname.match(/^\/app\/elt\/([^/]+)(?:\/|$)/);
   if (!match) return null;
   return match[1] ?? null;
-}
-
-function readFocusedProjectId(): string | null {
-  if (typeof window === 'undefined') return null;
-  const raw = window.localStorage.getItem(PROJECT_FOCUS_STORAGE_KEY);
-  const trimmed = raw?.trim() ?? '';
-  if (!trimmed) return null;
-  try {
-    const parsed = JSON.parse(trimmed) as unknown;
-    if (typeof parsed === 'string' && parsed.trim().length > 0) {
-      return parsed.trim();
-    }
-  } catch {
-    // Fall through to plain value.
-  }
-  return trimmed.replace(/^"+|"+$/g, '') || null;
 }
 
 function normalizePaneWidths(input: Pane[]): Pane[] {

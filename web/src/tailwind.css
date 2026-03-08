@@ -66,8 +66,10 @@
   --app-red-6: #fa5252;
 
   /* Shell layout */
-  --app-shell-header-height: 72px;
-  --app-shell-navbar-width: 296px;
+  --app-shell-header-height: 60px;
+  --app-shell-navbar-width: 220px;
+  --app-shell-navbar-compact-width: 60px;
+  --app-shell-navbar-mobile-width: 200px;
   --app-shell-content-max-width: 1460px;
   --app-shell-page-gap: 1rem;
   --app-shell-page-bottom-padding: 1.5rem;

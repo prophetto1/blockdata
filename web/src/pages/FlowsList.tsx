@@ -1,262 +1,402 @@
-import { useEffect, useMemo, useState } from 'react';
-import { IconClock, IconExternalLink } from '@tabler/icons-react';
+import { useCallback, useEffect, useState } from 'react';
+import {
+  IconAdjustments,
+  IconArrowDown,
+  IconArrowUp,
+  IconArrowsSort,
+  IconBookmark,
+  IconBolt,
+  IconFileExport,
+  IconFileImport,
+  IconFileSearch,
+  IconFilter,
+  IconInfoCircle,
+  IconPlayerPlay,
+  IconPlus,
+  IconRefresh,
+} from '@tabler/icons-react';
 import { Search01Icon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { useNavigate } from 'react-router-dom';
 import { ErrorAlert } from '@/components/common/ErrorAlert';
-import { PageHeader } from '@/components/common/PageHeader';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import {
   ICON_CONTEXT_SIZE,
   ICON_SIZES,
   ICON_STANDARD,
   ICON_STROKES,
 } from '@/lib/icon-contract';
-import { PROJECT_FOCUS_STORAGE_KEY } from '@/lib/projectFocus';
-import { supabase } from '@/lib/supabase';
-import { cn } from '@/lib/utils';
+import { loadFlowsList, formatLabelBadge } from './flows/flows.api';
+import type { FlowListItem, FlowSortField, FlowSortDir, FlowLabel } from './flows/flows.types';
 
-const FLOW_LIST_LIMIT = 500;
-
-type FlowListRow = {
-  project_id: string;
-  flow_id: string;
-  namespace: string;
-  revision: number;
-  updated_at: string | null;
-  project_name: string | null;
-  synthetic: boolean;
-};
-
-type ProjectRow = {
-  project_id: string;
-  project_name: string | null;
-  updated_at: string | null;
-};
-
-function readFocusedProjectId(): string | null {
-  if (typeof window === 'undefined') return null;
-  const raw = window.localStorage.getItem(PROJECT_FOCUS_STORAGE_KEY);
-  const value = raw?.trim() ?? '';
-  if (!value) return null;
-  try {
-    const parsed = JSON.parse(value) as unknown;
-    if (typeof parsed === 'string' && parsed.trim().length > 0) return parsed.trim();
-  } catch {
-    // Keep non-JSON storage format for backward compatibility.
-  }
-  return value;
-}
+const PAGE_SIZES = [10, 25, 50, 100] as const;
 
 function formatDate(value: string | null | undefined): string {
-  if (!value) return '--';
+  if (!value) return '';
   const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) return '--';
+  if (Number.isNaN(parsed.getTime())) return '';
   return parsed.toLocaleString();
 }
 
-function syntheticFlowId(projectName: string | null, projectId: string): string {
-  const trimmed = (projectName ?? '').trim().toLowerCase();
-  if (trimmed.length === 0) return `flow-${projectId.slice(0, 8)}`;
-  const slug = trimmed
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 48);
-  return slug.length > 0 ? slug : `flow-${projectId.slice(0, 8)}`;
+function LabelBadge({ label }: { label: FlowLabel }) {
+  return (
+    <span className="inline-flex items-center rounded-md border border-border bg-background px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground whitespace-nowrap">
+      {formatLabelBadge(label)}
+    </span>
+  );
 }
 
+function StatusCell({ status }: { status: string | null }) {
+  if (!status) return <span className="text-muted-foreground">--</span>;
+
+  const variant = status === 'SUCCESS'
+    ? 'green'
+    : status === 'FAILED'
+      ? 'red'
+      : status === 'RUNNING'
+        ? 'blue'
+        : status === 'WARNING'
+          ? 'yellow'
+          : 'gray';
+
+  return <Badge variant={variant} size="sm">{status}</Badge>;
+}
+
+function SortIcon({ field, activeField, dir }: { field: FlowSortField; activeField: FlowSortField | null; dir: FlowSortDir }) {
+  if (field !== activeField) return <IconArrowsSort size={12} className="text-muted-foreground/50" />;
+  return dir === 'asc'
+    ? <IconArrowUp size={12} className="text-primary" />
+    : <IconArrowDown size={12} className="text-primary" />;
+}
 
 export default function FlowsList() {
   const navigate = useNavigate();
-  const [rows, setRows] = useState<FlowListRow[]>([]);
+  const [rows, setRows] = useState<FlowListItem[]>([]);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState<number>(25);
+  const [sortField, setSortField] = useState<FlowSortField | null>(null);
+  const [sortDir, setSortDir] = useState<FlowSortDir>('asc');
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [fetchKey, setFetchKey] = useState(0);
+
   const utilityIconSize = ICON_SIZES[ICON_CONTEXT_SIZE[ICON_STANDARD.utilityTopRight.context]];
   const utilityIconStroke = ICON_STROKES[ICON_STANDARD.utilityTopRight.stroke];
 
+  // Debounce search query
+  useEffect(() => {
+    const timer = setTimeout(() => { setDebouncedQuery(query); setPage(1); }, 300);
+    return () => clearTimeout(timer);
+  }, [query]);
+
+  // Fetch flows
   useEffect(() => {
     let cancelled = false;
-
-    const loadRows = async () => {
+    const fetchFlows = async () => {
       setLoading(true);
       setError(null);
-
-      const projectsQuery = await supabase
-        .from('user_projects')
-        .select('project_id, project_name, updated_at')
-        .order('updated_at', { ascending: false })
-        .limit(FLOW_LIST_LIMIT);
-
-      if (cancelled) return;
-
-      if (projectsQuery.error) {
+      try {
+        const result = await loadFlowsList({
+          query: debouncedQuery || undefined,
+          page,
+          size: pageSize,
+          sort: sortField ?? undefined,
+          sortDir: sortField ? sortDir : undefined,
+        });
+        if (cancelled) return;
+        setRows(result.results);
+        setTotal(result.total);
+      } catch (e) {
+        if (cancelled) return;
         setRows([]);
-        setError(projectsQuery.error.message);
-        setLoading(false);
-        return;
+        setTotal(0);
+        setError(e instanceof Error ? e.message : String(e));
+      } finally {
+        if (!cancelled) setLoading(false);
       }
-
-      const projectRows = (projectsQuery.data ?? []) as ProjectRow[];
-      const focusedProjectId = readFocusedProjectId();
-      const targetProject = (
-        projectRows.find((project) => project.project_id === focusedProjectId)
-        ?? projectRows.find((project) => project.project_name?.trim().toLowerCase() === 'default project')
-        ?? projectRows[0]
-        ?? null
-      );
-
-      if (!targetProject) {
-        setRows([]);
-        setLoading(false);
-        return;
-      }
-
-      if (typeof window !== 'undefined') {
-        window.localStorage.setItem(PROJECT_FOCUS_STORAGE_KEY, targetProject.project_id);
-      }
-
-      // flow_sources table doesn't exist yet — generate entries from projects.
-      const nextRows: FlowListRow[] = projectRows
-        .filter((p) => p.project_id === targetProject.project_id)
-        .map((p) => ({
-          project_id: p.project_id,
-          flow_id: syntheticFlowId(p.project_name ?? null, p.project_id),
-          namespace: 'default',
-          revision: 1,
-          updated_at: typeof p.updated_at === 'string' ? p.updated_at : null,
-          project_name: p.project_name ?? null,
-          synthetic: true,
-        }));
-
-      setRows(nextRows);
-      setLoading(false);
     };
+    void fetchFlows();
+    return () => { cancelled = true; };
+  }, [debouncedQuery, page, pageSize, sortField, sortDir, fetchKey]);
 
-    void loadRows();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const refresh = useCallback(() => setFetchKey((k) => k + 1), []);
 
-  const filteredRows = useMemo(() => {
-    const trimmed = query.trim().toLowerCase();
-    if (!trimmed) return rows;
-
-    return rows.filter((row) => (
-      row.flow_id.toLowerCase().includes(trimmed)
-      || row.namespace.toLowerCase().includes(trimmed)
-      || row.project_id.toLowerCase().includes(trimmed)
-      || (row.project_name ?? '').toLowerCase().includes(trimmed)
-    ));
-  }, [query, rows]);
-
-  const openFlow = (projectId: string) => {
-    if (typeof window !== 'undefined') {
-      window.localStorage.setItem(PROJECT_FOCUS_STORAGE_KEY, projectId);
+  const toggleSort = (field: FlowSortField) => {
+    if (sortField === field) {
+      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortField(field);
+      setSortDir('asc');
     }
-    navigate(`/app/flows/${projectId}/overview`);
+    setPage(1);
   };
 
+  const clearFilters = () => {
+    setQuery('');
+    setDebouncedQuery('');
+    setSortField(null);
+    setSortDir('asc');
+    setPage(1);
+  };
+
+  const toggleAll = () => {
+    if (selected.size === rows.length) {
+      setSelected(new Set());
+    } else {
+      setSelected(new Set(rows.map((r) => r.routeId)));
+    }
+  };
+
+  const toggleRow = (routeId: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(routeId)) next.delete(routeId);
+      else next.add(routeId);
+      return next;
+    });
+  };
+
+  const openFlow = (row: FlowListItem) => {
+    navigate(`/app/flows/${row.flowId}/overview`);
+  };
+
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const hasFilters = query.length > 0 || sortField !== null;
+
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-3">
-      <PageHeader title="Flows" subtitle="Browse and open saved flows." />
-
-      {error ? <ErrorAlert message={error} /> : null}
-
-      <section className="flex min-h-0 flex-1 flex-col rounded-lg border border-border bg-card">
-        <div className="flex items-center justify-between gap-3 border-b border-border px-3 py-2">
-          <label className="relative min-w-0 flex-1">
-            <span className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2">
-              <HugeiconsIcon icon={Search01Icon} size={utilityIconSize} strokeWidth={utilityIconStroke} className="text-muted-foreground" />
-            </span>
-            <input
-              type="text"
-              value={query}
-              onChange={(event) => setQuery(event.currentTarget.value)}
-              placeholder="Search flows"
-              className="h-8 w-full rounded-md border border-border bg-background pl-8 pr-2 text-sm text-foreground outline-none focus-visible:ring-1 focus-visible:ring-ring"
-            />
-          </label>
-          <span className="shrink-0 text-xs text-muted-foreground">
-            {filteredRows.length} of {rows.length}
-          </span>
+    <div className="flex min-h-0 flex-1 flex-col">
+      {/* Top action bar — matches Kestra: title left, action buttons right */}
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+        <h1 className="text-lg font-semibold text-foreground">Flows</h1>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm">
+            <IconFileExport size={14} />
+            Export as CSV
+          </Button>
+          <Button variant="outline" size="sm">
+            <IconFileImport size={14} />
+            Import
+          </Button>
+          <Button variant="outline" size="sm">
+            <IconFileSearch size={14} />
+            Source search
+          </Button>
+          <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90">
+            <IconPlus size={14} />
+            Create
+          </Button>
         </div>
+      </div>
 
-        <div className="min-h-0 flex-1 overflow-auto">
-          {loading ? (
-            <div className="flex h-full items-center justify-center">
-              <div className="h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
-            </div>
-          ) : filteredRows.length === 0 ? (
-            <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-              No flows found.
-            </div>
-          ) : (
-            <table className="w-full text-left">
-              <thead className="sticky top-0 z-10 bg-card text-xs text-muted-foreground">
-                <tr className="border-b border-border">
-                  <th className="px-3 py-2 font-medium">Flow ID</th>
-                  <th className="px-3 py-2 font-medium">Namespace</th>
-                  <th className="px-3 py-2 font-medium">Revision</th>
-                  <th className="px-3 py-2 font-medium">Project</th>
-                  <th className="px-3 py-2 font-medium">Updated</th>
-                  <th className="px-3 py-2 font-medium text-right">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredRows.map((row) => (
-                  <tr
-                    key={row.project_id}
-                    onDoubleClick={() => openFlow(row.project_id)}
-                    className={cn('border-b border-border/60 hover:bg-accent/50')}
-                  >
-                    <td className="px-3 py-2 align-middle">
-                      <div className="min-w-0">
-                        <div className="truncate text-sm font-medium text-foreground" title={row.flow_id}>
-                          {row.flow_id}
-                        </div>
-                        {row.synthetic ? (
-                          <div className="text-[10px] uppercase tracking-wide text-amber-600 dark:text-amber-400">
-                            mock
-                          </div>
-                        ) : null}
-                        <div className="truncate text-xs text-muted-foreground" title={row.project_id}>
-                          {row.project_id}
-                        </div>
+      {error ? <div className="px-4 pt-2"><ErrorAlert message={error} /></div> : null}
+
+      {/* Filter bar — matches Kestra: add filters, search, clear all, refresh, saved filters, settings */}
+      <div className="flex flex-wrap items-center gap-3 border-b border-border px-4 py-2">
+        <Button variant="outline" size="sm">
+          <IconFilter size={14} />
+          Add filters
+        </Button>
+
+        <label className="relative min-w-[180px] flex-1 max-w-[280px]">
+          <span className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2">
+            <HugeiconsIcon icon={Search01Icon} size={utilityIconSize} strokeWidth={utilityIconStroke} className="text-muted-foreground" />
+          </span>
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.currentTarget.value)}
+            placeholder="Search flows"
+            className="h-8 w-full rounded-md border border-border bg-background pl-8 pr-2 text-sm text-foreground outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          />
+        </label>
+
+        {hasFilters && (
+          <button type="button" onClick={clearFilters} className="text-xs text-muted-foreground hover:text-foreground">
+            Clear all
+          </button>
+        )}
+
+        <div className="ml-auto flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={refresh}>
+            <IconRefresh size={14} />
+            Refresh data
+          </Button>
+          <Button variant="outline" size="icon" aria-label="Save current filters">
+            <IconBookmark size={14} />
+          </Button>
+          <Button variant="outline" size="sm">
+            Saved filters
+            <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] leading-none text-muted-foreground">0</span>
+          </Button>
+          <Button variant="outline" size="icon" aria-label="Page display settings">
+            <IconAdjustments size={14} />
+          </Button>
+        </div>
+      </div>
+
+      <div className="min-h-0 flex-1 overflow-auto">
+        <table className="w-full text-left">
+          <thead className="sticky top-0 z-10 bg-card text-xs text-muted-foreground">
+            <tr className="border-b border-border">
+              <th className="w-10 px-3 py-2">
+                <input
+                  type="checkbox"
+                  checked={selected.size === rows.length && rows.length > 0}
+                  onChange={toggleAll}
+                  className="rounded border-input"
+                />
+              </th>
+              <th className="px-3 py-2 font-medium">
+                <button type="button" onClick={() => toggleSort('id')} className="inline-flex items-center gap-1 hover:text-foreground">
+                  Id <SortIcon field="id" activeField={sortField} dir={sortDir} />
+                </button>
+              </th>
+              <th className="px-3 py-2 font-medium">Labels</th>
+              <th className="px-3 py-2 font-medium">
+                <button type="button" onClick={() => toggleSort('namespace')} className="inline-flex items-center gap-1 hover:text-foreground">
+                  Namespace <SortIcon field="namespace" activeField={sortField} dir={sortDir} />
+                </button>
+              </th>
+              <th className="px-3 py-2 font-medium">Last execution date</th>
+              <th className="px-3 py-2 font-medium">Last execution status</th>
+              <th className="px-3 py-2 font-medium">Execution statistics</th>
+              <th className="px-3 py-2 font-medium">Triggers</th>
+              <th className="px-3 py-2 font-medium text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? (
+              <tr>
+                <td colSpan={9} className="px-3 py-10 text-center text-sm text-muted-foreground">
+                  Loading flows...
+                </td>
+              </tr>
+            ) : rows.length === 0 ? (
+              <tr>
+                <td colSpan={9} className="px-3 py-10 text-center text-sm text-muted-foreground">
+                  No flows found.
+                </td>
+              </tr>
+            ) : (
+              rows.map((row) => (
+                <tr
+                  key={row.routeId}
+                  className={cn(
+                    'border-b border-border/60 hover:bg-accent/30 cursor-pointer align-top',
+                    selected.has(row.routeId) && 'bg-accent/20',
+                    row.disabled && 'opacity-70',
+                  )}
+                  onClick={() => openFlow(row)}
+                >
+                  <td className="w-10 px-3 py-3" onClick={(e) => e.stopPropagation()}>
+                    <input
+                      type="checkbox"
+                      checked={selected.has(row.routeId)}
+                      onChange={() => toggleRow(row.routeId)}
+                      className="rounded border-input"
+                    />
+                  </td>
+                  <td className="px-3 py-3">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-sm font-medium text-foreground">{row.flowId}</span>
+                      {row.description ? (
+                        <span title={row.description}>
+                          <IconInfoCircle size={14} className="text-muted-foreground/60" />
+                        </span>
+                      ) : null}
+                    </div>
+                  </td>
+                  <td className="px-3 py-3">
+                    {row.labels.length > 0 ? (
+                      <div className="flex flex-wrap gap-1">
+                        {row.labels.map((label, i) => <LabelBadge key={i} label={label} />)}
                       </div>
-                    </td>
-                    <td className="px-3 py-2 align-middle text-xs text-muted-foreground">
-                      {row.namespace}
-                    </td>
-                    <td className="px-3 py-2 align-middle text-xs text-foreground">
-                      r{row.revision}
-                    </td>
-                    <td className="px-3 py-2 align-middle text-xs text-muted-foreground">
-                      {row.project_name ?? '--'}
-                    </td>
-                    <td className="px-3 py-2 align-middle">
-                      <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-                        <IconClock size={12} />
-                        {formatDate(row.updated_at)}
-                      </span>
-                    </td>
-                    <td className="px-3 py-2 align-middle text-right">
-                      <button
-                        type="button"
-                        onClick={() => openFlow(row.project_id)}
-                        className="inline-flex items-center gap-1 rounded border border-border bg-background px-2 py-1 text-xs text-foreground hover:bg-accent"
+                    ) : (
+                      <span className="text-sm text-muted-foreground">--</span>
+                    )}
+                  </td>
+                  <td className="px-3 py-3 text-sm text-muted-foreground">{row.namespace}</td>
+                  <td className="px-3 py-3 text-sm text-muted-foreground">{formatDate(row.lastExecutionDate) || '--'}</td>
+                  <td className="px-3 py-3"><StatusCell status={row.lastExecutionStatus} /></td>
+                  <td className="px-3 py-3 text-sm text-muted-foreground">{row.executionStatistics || '--'}</td>
+                  <td className="px-3 py-3" onClick={(e) => e.stopPropagation()}>
+                    <span className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-2 py-1 text-xs text-muted-foreground">
+                      <IconBolt size={12} className="text-primary" />
+                      {row.triggerCount}
+                    </span>
+                  </td>
+                  <td className="px-3 py-3" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex items-center justify-end gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        aria-label="Execute flow"
+                        title="Execute flow"
                       >
-                        <IconExternalLink size={12} />
-                        Open
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                        <IconPlayerPlay size={14} />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        aria-label="Flow details"
+                        title="Flow details"
+                        onClick={() => openFlow(row)}
+                      >
+                        <IconFileSearch size={14} />
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Footer — matches Kestra: page size dropdown left, total count right */}
+      <div className="flex items-center justify-between border-t border-border px-4 py-2 text-xs text-muted-foreground">
+        <div className="flex items-center gap-2">
+          <select
+            value={pageSize}
+            onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }}
+            className="rounded-md border border-border bg-background px-2 py-1 text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          >
+            {PAGE_SIZES.map((s) => (
+              <option key={s} value={s}>{s} per page</option>
+            ))}
+          </select>
+          {totalPages > 1 && (
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                disabled={page <= 1}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                className="rounded px-1.5 py-0.5 hover:bg-accent disabled:opacity-40"
+              >
+                Prev
+              </button>
+              <span>Page {page} of {totalPages}</span>
+              <button
+                type="button"
+                disabled={page >= totalPages}
+                onClick={() => setPage((p) => p + 1)}
+                className="rounded px-1.5 py-0.5 hover:bg-accent disabled:opacity-40"
+              >
+                Next
+              </button>
+            </div>
           )}
         </div>
-      </section>
+        <span className="font-medium">Total: {total}</span>
+      </div>
     </div>
   );
 }

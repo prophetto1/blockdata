@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Combobox, createListCollection } from '@ark-ui/react/combobox';
-import { Menu02Icon, SparklesIcon, LeftToRightListBulletIcon, Moon02Icon, Sun03Icon } from '@hugeicons/core-free-icons';
+import { Add01Icon, Menu02Icon, SparklesIcon, LeftToRightListBulletIcon, Moon02Icon, Sun03Icon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { useNavigate } from 'react-router-dom';
 import { useHeaderCenter } from '@/components/shell/HeaderCenterContext';
@@ -143,6 +143,16 @@ export function TopCommandBar({
               {rightNode}
             </div>
           ) : null}
+          <button
+            type="button"
+            className="inline-flex h-8 items-center gap-1.5 rounded-md px-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            aria-label="New Project"
+            title="New Project"
+            onClick={() => navigate('/app/projects/list?new=1')}
+          >
+            <HugeiconsIcon icon={Add01Icon} size={20} strokeWidth={1.8} />
+            <span className="hidden sm:inline">New Project</span>
+          </button>
           <button
             type="button"
             className="inline-flex h-8 items-center gap-1.5 rounded-md px-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"

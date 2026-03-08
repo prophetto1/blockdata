@@ -71,6 +71,8 @@ interface ScrollAreaProps extends ComponentProps<typeof ArkScrollArea.Root> {
   children: ReactNode;
   /** Extra class on the viewport (the scrollable element) */
   viewportClass?: string;
+  /** Extra class on the content wrapper inside the viewport */
+  contentClass?: string;
 }
 
 /**
@@ -79,11 +81,17 @@ interface ScrollAreaProps extends ComponentProps<typeof ArkScrollArea.Root> {
  *
  * For horizontal or bidirectional scrolling, compose the parts directly.
  */
-export function ScrollArea({ children, className, viewportClass, ...props }: ScrollAreaProps) {
+export function ScrollArea({
+  children,
+  className,
+  viewportClass,
+  contentClass,
+  ...props
+}: ScrollAreaProps) {
   return (
     <ScrollAreaRoot className={className} {...props}>
       <ScrollAreaViewport className={viewportClass}>
-        <ScrollAreaContent>{children}</ScrollAreaContent>
+        <ScrollAreaContent className={contentClass}>{children}</ScrollAreaContent>
       </ScrollAreaViewport>
       <ScrollAreaScrollbar orientation="vertical">
         <ScrollAreaThumb />

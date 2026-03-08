@@ -6,6 +6,10 @@
   flex-direction: column;
 }
 
+.flows-route-shell--detail {
+  height: 100%;
+}
+
 .flows-route-shell-inner {
   width: 100%;
   min-width: 0;
@@ -22,4 +26,6 @@
 .flows-route-shell--detail .flows-route-shell-inner {
   gap: 0;
   padding: 0;
+  height: 100%;
+  overflow: hidden;
 }

@@ -15,7 +15,7 @@ import UppyLibraryDemo from '@/pages/UppyLibraryDemo';
 import Schemas from '@/pages/Schemas';
 import SchemaLayout from '@/pages/SchemaLayout';
 import RunDetail from '@/pages/RunDetail';
-import { SettingsLayout, SettingsAccount, SettingsAiOverview, SettingsProviderForm, SettingsModelRoles, SettingsGridSample, SettingsThemes } from '@/pages/settings';
+import { SettingsLayout, SettingsAccount, SettingsAiOverview, SettingsProviderForm, SettingsModelRoles, SettingsAdmin, SettingsGridSample, SettingsThemes } from '@/pages/settings';
 import PlatformLanding from '@/pages/experiments/PlatformLanding';
 import Landing from '@/pages/Landing';
 import Agents from '@/pages/Agents';
@@ -30,9 +30,11 @@ import Commands from '@/pages/Commands';
 import DocumentTest from '@/pages/DocumentTest';
 import DatabasePlaceholder from '@/pages/DatabasePlaceholder';
 import EarlyAccess from '@/pages/EarlyAccess';
+import ProjectsHome from '@/pages/ProjectsHome';
 import IntegrationsCatalog from '@/pages/marketplace/IntegrationsCatalog';
 import ServicesCatalog from '@/pages/marketplace/ServicesCatalog';
 import ServiceDetailPage from '@/pages/marketplace/ServiceDetailPage';
+import TestsPage from '@/pages/kestra/TestsPage';
 import { FlowsRouteShell } from '@/components/layout/FlowsRouteShell';
 import { featureFlags } from '@/lib/featureFlags';
 import NotFound from '@/pages/NotFound';
@@ -102,12 +104,13 @@ export const router = createBrowserRouter([
           // App landing + projects
           { path: '/app', element: <Navigate to="/app/elt" replace /> },
 
-          { path: '/app/elt', element: <DocumentTest /> },
+          { path: '/app/elt', element: <ProjectsHome /> },
           { path: '/app/elt/:projectId', element: <DocumentTest /> },
           { path: '/app/elt/:projectId/upload-uppy-demo', element: <UppyLibraryDemo /> },
           { path: '/app/elt/:projectId/runs/:runId', element: <RunDetail /> },
           { path: '/app/projects/list', element: <Projects /> },
           { path: '/app/database', element: <DatabasePlaceholder /> },
+          { path: '/app/tests', element: <TestsPage /> },
           { path: '/app/marketplace/integrations', element: <IntegrationsCatalog /> },
           { path: '/app/marketplace/services', element: <ServicesCatalog /> },
           { path: '/app/marketplace/services/:serviceId', element: <ServiceDetailPage /> },
@@ -161,6 +164,8 @@ export const router = createBrowserRouter([
               { path: 'model-roles', element: <SettingsModelRoles /> },
               { path: 'mcp', element: <McpServers /> },
               { path: 'grid-sample', element: <SettingsGridSample /> },
+              { path: 'admin', element: <Navigate to="/app/settings/admin/instance-config" replace /> },
+              { path: 'admin/:category', element: <SettingsAdmin /> },
             ],
           },
 

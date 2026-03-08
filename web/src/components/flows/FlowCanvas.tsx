@@ -1,4 +1,4 @@
-import { memo, useCallback } from 'react';
+import { memo, useCallback, useMemo } from 'react';
 import {
   Background,
   BackgroundVariant,
@@ -16,6 +16,8 @@ import {
   useNodesState,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
+import { cn } from '@/lib/utils';
+import type { FlowTask } from './nocode/flow-document';
 import './flow-canvas.css';
 
 type FlowNodeData = {
@@ -26,12 +28,9 @@ type FlowNodeData = {
 };
 
 const FlowNode = memo(({ data, selected, dragging }: NodeProps<Node<FlowNodeData>>) => {
-  const classes = ['pm-flow-node'];
-  if (selected) classes.push('is-selected');
-  if (dragging) classes.push('is-dragging');
   return (
     <div
-      className={classes.join(' ')}
+      className={cn('pm-flow-node', selected && 'is-selected', dragging && 'is-dragging')}
       data-variant={data.variant ?? 'default'}
       data-status={data.status ?? 'default'}
     >
@@ -45,72 +44,74 @@ const FlowNode = memo(({ data, selected, dragging }: NodeProps<Node<FlowNodeData
 
 FlowNode.displayName = 'FlowNode';
 
-const initialNodes: Node<FlowNodeData>[] = [
+function shortType(type: string): string {
+  const parts = type.split('.');
+  return parts[parts.length - 1] ?? type;
+}
+
+function deriveNodesFromTasks(tasks: FlowTask[]): Node<FlowNodeData>[] {
+  return tasks.map((task, i) => ({
+    id: task.id,
+    type: 'pmNode',
+    position: { x: 140 + i * 280, y: 120 },
+    data: {
+      title: task.id,
+      body: shortType(task.type),
+      variant: i === 0 ? 'start' as const : 'default' as const,
+      status: 'default' as const,
+    },
+  }));
+}
+
+function deriveEdgesFromTasks(tasks: FlowTask[]): Edge[] {
+  const edges: Edge[] = [];
+  for (let i = 0; i < tasks.length - 1; i++) {
+    edges.push({
+      id: `e-${tasks[i].id}-${tasks[i + 1].id}`,
+      source: tasks[i].id,
+      target: tasks[i + 1].id,
+    });
+  }
+  return edges;
+}
+
+const fallbackNodes: Node<FlowNodeData>[] = [
   {
     id: 'start',
     type: 'pmNode',
     position: { x: 140, y: 120 },
     data: {
       title: 'Start',
-      body: 'Change trigger, then add connected blocks.',
+      body: 'Add tasks in the code editor to see them here.',
       variant: 'start',
       status: 'default',
     },
-    selected: true,
-  },
-  {
-    id: 'action-1',
-    type: 'pmNode',
-    position: { x: 420, y: 120 },
-    data: {
-      title: 'Evaluate',
-      body: 'Run model check and emit result.',
-      status: 'warning',
-    },
-  },
-  {
-    id: 'action-2',
-    type: 'pmNode',
-    position: { x: 700, y: 120 },
-    data: {
-      title: 'Publish',
-      body: 'Target API rejected payload shape.',
-      status: 'error',
-    },
-  },
-  {
-    id: 'hold',
-    type: 'pmNode',
-    position: { x: 420, y: 280 },
-    draggable: false,
-    data: {
-      title: 'Manual review',
-      body: 'Paused until reviewer confirms changes.',
-      status: 'disabled',
-    },
   },
 ];
 
-const initialEdges: Edge[] = [
-  {
-    id: 'e-start-action-1',
-    source: 'start',
-    target: 'action-1',
-    animated: false,
-  },
-  {
-    id: 'e-action-1-action-2',
-    source: 'action-1',
-    target: 'action-2',
-    selected: true,
-  },
-];
+const fallbackEdges: Edge[] = [];
+
+type FlowCanvasProps = {
+  tasks?: FlowTask[];
+};
 
 const nodeTypes = { pmNode: FlowNode };
 
-export default function FlowCanvas() {
-  const [nodes, , onNodesChange] = useNodesState(initialNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+export default function FlowCanvas({ tasks }: FlowCanvasProps) {
+  const hasTasks = tasks && tasks.length > 0;
+
+  const derivedNodes = useMemo(
+    () => (hasTasks ? deriveNodesFromTasks(tasks) : fallbackNodes),
+    [hasTasks, tasks],
+  );
+
+  const derivedEdges = useMemo(
+    () => (hasTasks ? deriveEdgesFromTasks(tasks) : fallbackEdges),
+    [hasTasks, tasks],
+  );
+
+  const [nodes, , onNodesChange] = useNodesState(derivedNodes);
+  const [edges, setEdges, onEdgesChange] = useEdgesState(derivedEdges);
 
   const onConnect = useCallback(
     (connection: Connection) => setEdges((eds) => addEdge(connection, eds)),

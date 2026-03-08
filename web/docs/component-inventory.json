@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-03-06T13:21:22.635Z",
+  "generatedAt": "2026-03-07T10:13:15.356Z",
   "scope": "auth",
   "pages": [
     {
@@ -714,7 +714,8 @@
       "page": "src/pages/FlowDetail.tsx",
       "componentCount": 18,
       "categoryCounts": {
-        "local-components": 15,
+        "local-components": 12,
+        "in-file component": 3,
         "tabler-icons": 3
       },
       "components": [
@@ -764,6 +765,24 @@
           "definition": "FlowCanvas comes from @/components/flows/FlowCanvas (default import of default)"
         },
         {
+          "component": "FlowRailButton",
+          "usedAs": "FlowRailButton",
+          "source": "(in-file or unresolved)",
+          "importKind": null,
+          "importedAs": null,
+          "category": "in-file component",
+          "definition": "FlowRailButton is defined in the same page file"
+        },
+        {
+          "component": "FlowRailGroup",
+          "usedAs": "FlowRailGroup",
+          "source": "(in-file or unresolved)",
+          "importKind": null,
+          "importedAs": null,
+          "category": "in-file component",
+          "definition": "FlowRailGroup is defined in the same page file"
+        },
+        {
           "component": "FlowWorkbench",
           "usedAs": "FlowWorkbench",
           "source": "@/components/flows/FlowWorkbench",
@@ -771,6 +790,15 @@
           "importedAs": "default",
           "category": "local-components",
           "definition": "FlowWorkbench comes from @/components/flows/FlowWorkbench (default import of default)"
+        },
+        {
+          "component": "FlowWorkspaceFrame",
+          "usedAs": "FlowWorkspaceFrame",
+          "source": "(in-file or unresolved)",
+          "importKind": null,
+          "importedAs": null,
+          "category": "in-file component",
+          "definition": "FlowWorkspaceFrame is defined in the same page file"
         },
         {
           "component": "IconLock",
@@ -818,6 +846,15 @@
           "definition": "MetricsTab comes from @/components/flows/tabs/MetricsTab (named import of MetricsTab)"
         },
         {
+          "component": "OverviewTab",
+          "usedAs": "OverviewTab",
+          "source": "@/components/flows/tabs/OverviewTab",
+          "importKind": "named",
+          "importedAs": "OverviewTab",
+          "category": "local-components",
+          "definition": "OverviewTab comes from @/components/flows/tabs/OverviewTab (named import of OverviewTab)"
+        },
+        {
           "component": "PreviewTabPanel",
           "usedAs": "PreviewTabPanel",
           "source": "@/components/documents/PreviewTabPanel",
@@ -836,42 +873,6 @@
           "definition": "RevisionsTab comes from @/components/flows/tabs/RevisionsTab (named import of RevisionsTab)"
         },
         {
-          "component": "Tabs",
-          "usedAs": "Tabs",
-          "source": "@/components/ui/tabs",
-          "importKind": "named",
-          "importedAs": "Tabs",
-          "category": "local-components",
-          "definition": "Tabs comes from @/components/ui/tabs (named import of Tabs)"
-        },
-        {
-          "component": "TabsContent",
-          "usedAs": "TabsContent",
-          "source": "@/components/ui/tabs",
-          "importKind": "named",
-          "importedAs": "TabsContent",
-          "category": "local-components",
-          "definition": "TabsContent comes from @/components/ui/tabs (named import of TabsContent)"
-        },
-        {
-          "component": "TabsList",
-          "usedAs": "TabsList",
-          "source": "@/components/ui/tabs",
-          "importKind": "named",
-          "importedAs": "TabsList",
-          "category": "local-components",
-          "definition": "TabsList comes from @/components/ui/tabs (named import of TabsList)"
-        },
-        {
-          "component": "TabsTrigger",
-          "usedAs": "TabsTrigger",
-          "source": "@/components/ui/tabs",
-          "importKind": "named",
-          "importedAs": "TabsTrigger",
-          "category": "local-components",
-          "definition": "TabsTrigger comes from @/components/ui/tabs (named import of TabsTrigger)"
-        },
-        {
           "component": "TriggersTab",
           "usedAs": "TriggersTab",
           "source": "@/components/flows/tabs/TriggersTab",
@@ -884,13 +885,32 @@
     },
     {
       "page": "src/pages/FlowsList.tsx",
-      "componentCount": 5,
+      "componentCount": 21,
       "categoryCounts": {
-        "local-components": 2,
+        "local-components": 3,
         "external-package": 1,
-        "tabler-icons": 2
+        "tabler-icons": 14,
+        "in-file component": 3
       },
       "components": [
+        {
+          "component": "Badge",
+          "usedAs": "Badge",
+          "source": "@/components/ui/badge",
+          "importKind": "named",
+          "importedAs": "Badge",
+          "category": "local-components",
+          "definition": "Badge comes from @/components/ui/badge (named import of Badge)"
+        },
+        {
+          "component": "Button",
+          "usedAs": "Button",
+          "source": "@/components/ui/button",
+          "importKind": "named",
+          "importedAs": "Button",
+          "category": "local-components",
+          "definition": "Button comes from @/components/ui/button (named import of Button)"
+        },
         {
           "component": "ErrorAlert",
           "usedAs": "ErrorAlert",
@@ -910,31 +930,175 @@
           "definition": "HugeiconsIcon comes from @hugeicons/react (named import of HugeiconsIcon)"
         },
         {
-          "component": "IconClock",
-          "usedAs": "IconClock",
+          "component": "IconAdjustments",
+          "usedAs": "IconAdjustments",
           "source": "@tabler/icons-react",
           "importKind": "named",
-          "importedAs": "IconClock",
+          "importedAs": "IconAdjustments",
           "category": "tabler-icons",
-          "definition": "IconClock comes from @tabler/icons-react (named import of IconClock)"
+          "definition": "IconAdjustments comes from @tabler/icons-react (named import of IconAdjustments)"
         },
         {
-          "component": "IconExternalLink",
-          "usedAs": "IconExternalLink",
+          "component": "IconArrowDown",
+          "usedAs": "IconArrowDown",
           "source": "@tabler/icons-react",
           "importKind": "named",
-          "importedAs": "IconExternalLink",
+          "importedAs": "IconArrowDown",
           "category": "tabler-icons",
-          "definition": "IconExternalLink comes from @tabler/icons-react (named import of IconExternalLink)"
+          "definition": "IconArrowDown comes from @tabler/icons-react (named import of IconArrowDown)"
         },
         {
-          "component": "PageHeader",
-          "usedAs": "PageHeader",
-          "source": "@/components/common/PageHeader",
+          "component": "IconArrowsSort",
+          "usedAs": "IconArrowsSort",
+          "source": "@tabler/icons-react",
           "importKind": "named",
-          "importedAs": "PageHeader",
-          "category": "local-components",
-          "definition": "PageHeader comes from @/components/common/PageHeader (named import of PageHeader)"
+          "importedAs": "IconArrowsSort",
+          "category": "tabler-icons",
+          "definition": "IconArrowsSort comes from @tabler/icons-react (named import of IconArrowsSort)"
+        },
+        {
+          "component": "IconArrowUp",
+          "usedAs": "IconArrowUp",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconArrowUp",
+          "category": "tabler-icons",
+          "definition": "IconArrowUp comes from @tabler/icons-react (named import of IconArrowUp)"
+        },
+        {
+          "component": "IconBolt",
+          "usedAs": "IconBolt",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconBolt",
+          "category": "tabler-icons",
+          "definition": "IconBolt comes from @tabler/icons-react (named import of IconBolt)"
+        },
+        {
+          "component": "IconBookmark",
+          "usedAs": "IconBookmark",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconBookmark",
+          "category": "tabler-icons",
+          "definition": "IconBookmark comes from @tabler/icons-react (named import of IconBookmark)"
+        },
+        {
+          "component": "IconFileExport",
+          "usedAs": "IconFileExport",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconFileExport",
+          "category": "tabler-icons",
+          "definition": "IconFileExport comes from @tabler/icons-react (named import of IconFileExport)"
+        },
+        {
+          "component": "IconFileImport",
+          "usedAs": "IconFileImport",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconFileImport",
+          "category": "tabler-icons",
+          "definition": "IconFileImport comes from @tabler/icons-react (named import of IconFileImport)"
+        },
+        {
+          "component": "IconFileSearch",
+          "usedAs": "IconFileSearch",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconFileSearch",
+          "category": "tabler-icons",
+          "definition": "IconFileSearch comes from @tabler/icons-react (named import of IconFileSearch)"
+        },
+        {
+          "component": "IconFilter",
+          "usedAs": "IconFilter",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconFilter",
+          "category": "tabler-icons",
+          "definition": "IconFilter comes from @tabler/icons-react (named import of IconFilter)"
+        },
+        {
+          "component": "IconInfoCircle",
+          "usedAs": "IconInfoCircle",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconInfoCircle",
+          "category": "tabler-icons",
+          "definition": "IconInfoCircle comes from @tabler/icons-react (named import of IconInfoCircle)"
+        },
+        {
+          "component": "IconPlayerPlay",
+          "usedAs": "IconPlayerPlay",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconPlayerPlay",
+          "category": "tabler-icons",
+          "definition": "IconPlayerPlay comes from @tabler/icons-react (named import of IconPlayerPlay)"
+        },
+        {
+          "component": "IconPlus",
+          "usedAs": "IconPlus",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconPlus",
+          "category": "tabler-icons",
+          "definition": "IconPlus comes from @tabler/icons-react (named import of IconPlus)"
+        },
+        {
+          "component": "IconRefresh",
+          "usedAs": "IconRefresh",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconRefresh",
+          "category": "tabler-icons",
+          "definition": "IconRefresh comes from @tabler/icons-react (named import of IconRefresh)"
+        },
+        {
+          "component": "LabelBadge",
+          "usedAs": "LabelBadge",
+          "source": "(in-file or unresolved)",
+          "importKind": null,
+          "importedAs": null,
+          "category": "in-file component",
+          "definition": "LabelBadge is defined in the same page file"
+        },
+        {
+          "component": "SortIcon",
+          "usedAs": "SortIcon",
+          "source": "(in-file or unresolved)",
+          "importKind": null,
+          "importedAs": null,
+          "category": "in-file component",
+          "definition": "SortIcon is defined in the same page file"
+        },
+        {
+          "component": "StatusCell",
+          "usedAs": "StatusCell",
+          "source": "(in-file or unresolved)",
+          "importKind": null,
+          "importedAs": null,
+          "category": "in-file component",
+          "definition": "StatusCell is defined in the same page file"
+        }
+      ]
+    },
+    {
+      "page": "src/pages/kestra/TestsPage.tsx",
+      "componentCount": 1,
+      "categoryCounts": {
+        "relative-local": 1
+      },
+      "components": [
+        {
+          "component": "KestraPageShell",
+          "usedAs": "KestraPageShell",
+          "source": "./KestraPageShell",
+          "importKind": "default",
+          "importedAs": "default",
+          "category": "relative-local",
+          "definition": "KestraPageShell comes from ./KestraPageShell (default import of default)"
         }
       ]
     },
@@ -2565,79 +2729,6 @@
       ]
     },
     {
-      "page": "src/pages/settings/ServicesPanel.tsx",
-      "componentCount": 3,
-      "categoryCounts": {
-        "local-components": 1,
-        "relative-local": 2
-      },
-      "components": [
-        {
-          "component": "ErrorAlert",
-          "usedAs": "ErrorAlert",
-          "source": "@/components/common/ErrorAlert",
-          "importKind": "named",
-          "importedAs": "ErrorAlert",
-          "category": "local-components",
-          "definition": "ErrorAlert comes from @/components/common/ErrorAlert (named import of ErrorAlert)"
-        },
-        {
-          "component": "ServiceDetailRailView",
-          "usedAs": "ServiceDetailRailView",
-          "source": "./ServiceDetailRailView",
-          "importKind": "named",
-          "importedAs": "ServiceDetailRailView",
-          "category": "relative-local",
-          "definition": "ServiceDetailRailView comes from ./ServiceDetailRailView (named import of ServiceDetailRailView)"
-        },
-        {
-          "component": "ServicesSidebar",
-          "usedAs": "ServicesSidebar",
-          "source": "./ServicesSidebar",
-          "importKind": "named",
-          "importedAs": "ServicesSidebar",
-          "category": "relative-local",
-          "definition": "ServicesSidebar comes from ./ServicesSidebar (named import of ServicesSidebar)"
-        }
-      ]
-    },
-    {
-      "page": "src/pages/settings/ServicesSidebar.tsx",
-      "componentCount": 3,
-      "categoryCounts": {
-        "local-components": 3
-      },
-      "components": [
-        {
-          "component": "Tooltip",
-          "usedAs": "Tooltip",
-          "source": "@/components/ui/tooltip",
-          "importKind": "named",
-          "importedAs": "Tooltip",
-          "category": "local-components",
-          "definition": "Tooltip comes from @/components/ui/tooltip (named import of Tooltip)"
-        },
-        {
-          "component": "TooltipContent",
-          "usedAs": "TooltipContent",
-          "source": "@/components/ui/tooltip",
-          "importKind": "named",
-          "importedAs": "TooltipContent",
-          "category": "local-components",
-          "definition": "TooltipContent comes from @/components/ui/tooltip (named import of TooltipContent)"
-        },
-        {
-          "component": "TooltipTrigger",
-          "usedAs": "TooltipTrigger",
-          "source": "@/components/ui/tooltip",
-          "importKind": "named",
-          "importedAs": "TooltipTrigger",
-          "category": "local-components",
-          "definition": "TooltipTrigger comes from @/components/ui/tooltip (named import of TooltipTrigger)"
-        }
-      ]
-    },
-    {
       "page": "src/pages/settings/setting-card-shared.tsx",
       "componentCount": 31,
       "categoryCounts": {
@@ -3067,12 +3158,12 @@
     },
     {
       "page": "src/pages/settings/SettingsAdmin.tsx",
-      "componentCount": 6,
+      "componentCount": 8,
       "categoryCounts": {
         "local-components": 2,
         "ark-ui": 2,
-        "external-package": 1,
-        "relative-local": 1
+        "relative-local": 3,
+        "external-package": 1
       },
       "components": [
         {
@@ -3112,6 +3203,15 @@
           "definition": "Field.Root comes from @ark-ui/react/field (named import of Field)"
         },
         {
+          "component": "InstanceConfigPanel",
+          "usedAs": "InstanceConfigPanel",
+          "source": "./InstanceConfigPanel",
+          "importKind": "named",
+          "importedAs": "InstanceConfigPanel",
+          "category": "relative-local",
+          "definition": "InstanceConfigPanel comes from ./InstanceConfigPanel (named import of InstanceConfigPanel)"
+        },
+        {
           "component": "Navigate",
           "usedAs": "Navigate",
           "source": "react-router-dom",
@@ -3121,13 +3221,22 @@
           "definition": "Navigate comes from react-router-dom (named import of Navigate)"
         },
         {
-          "component": "ServicesPanel",
-          "usedAs": "ServicesPanel",
-          "source": "./ServicesPanel",
+          "component": "PlatformConfigPanel",
+          "usedAs": "PlatformConfigPanel",
+          "source": "./PlatformConfigPanel",
           "importKind": "named",
-          "importedAs": "ServicesPanel",
+          "importedAs": "PlatformConfigPanel",
           "category": "relative-local",
-          "definition": "ServicesPanel comes from ./ServicesPanel (named import of ServicesPanel)"
+          "definition": "PlatformConfigPanel comes from ./PlatformConfigPanel (named import of PlatformConfigPanel)"
+        },
+        {
+          "component": "WorkerConfigPanel",
+          "usedAs": "WorkerConfigPanel",
+          "source": "./WorkerConfigPanel",
+          "importKind": "named",
+          "importedAs": "WorkerConfigPanel",
+          "category": "relative-local",
+          "definition": "WorkerConfigPanel comes from ./WorkerConfigPanel (named import of WorkerConfigPanel)"
         }
       ]
     },
@@ -4050,14 +4159,14 @@
       ]
     }
   ],
-  "totalComponentUsages": 404,
+  "totalComponentUsages": 417,
   "categoryTotals": {
     "external-package": 16,
-    "local-components": 135,
-    "tabler-icons": 80,
+    "local-components": 129,
+    "tabler-icons": 92,
     "ark-ui": 147,
-    "in-file component": 7,
+    "in-file component": 13,
     "unknown": 1,
-    "relative-local": 18
+    "relative-local": 19
   }
 }

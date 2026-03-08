@@ -1,96 +1,9 @@
-import { useMemo } from 'react';
-import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { AppIcon } from '@/components/ui/app-icon';
-import { styleTokens } from '@/lib/styleTokens';
-import { cn } from '@/lib/utils';
-import { SETTINGS_NAV, findNavItemByPath, type SettingsNavGroup } from './settings-nav';
-
-function NavGroup({
-  group,
-  activeId,
-  onNavigate,
-}: {
-  group: SettingsNavGroup;
-  activeId: string | null;
-  onNavigate: (path: string) => void;
-}) {
-  return (
-    <div>
-      <h3 className="mb-1 px-2 text-xs font-semibold uppercase tracking-wide text-sidebar-foreground/50">
-        {group.label}
-      </h3>
-      <ul className="space-y-0.5">
-        {group.items.map((item) => {
-          const isActive = item.id === activeId;
-          return (
-            <li key={item.id}>
-              <button
-                type="button"
-                onClick={() => onNavigate(item.path)}
-                style={{ fontSize: '13px', fontWeight: 500 }}
-                className={cn(
-                  'flex w-full items-center gap-2 rounded-md px-2 h-9 leading-snug transition-colors',
-                  isActive
-                    ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-                    : 'text-sidebar-foreground/90 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
-                )}
-              >
-                {item.icon && (
-                  <AppIcon
-                    icon={item.icon}
-                    context="inline"
-                    tone={isActive ? 'default' : 'muted'}
-                  />
-                )}
-                <span className="truncate">{item.label}</span>
-              </button>
-            </li>
-          );
-        })}
-      </ul>
-    </div>
-  );
-}
+import { Outlet } from 'react-router-dom';
 
 export default function SettingsLayout() {
-  const location = useLocation();
-  const navigate = useNavigate();
-  const primaryGroups = SETTINGS_NAV;
-
-  const activeItem = useMemo(
-    () => findNavItemByPath(location.pathname),
-    [location.pathname],
-  );
-
-  const activeId = activeItem?.id ?? null;
-
   return (
     <div className="flex h-[calc(100vh-var(--app-shell-header-height))] overflow-hidden">
-      {/* Second rail — matches Schemas rail styling */}
-      <aside
-        className="w-56 shrink-0 overflow-y-auto border-r font-sans text-sidebar-foreground"
-        style={{
-          borderColor: styleTokens.adminConfig.railBorder,
-          backgroundColor: styleTokens.adminConfig.railBackground,
-        }}
-      >
-        <nav className="px-2 py-4">
-          <div className="space-y-5">
-            {primaryGroups.map((group) => (
-              <NavGroup
-                key={group.id}
-                group={group}
-                activeId={activeId}
-                onNavigate={(path) => navigate(path)}
-              />
-            ))}
-          </div>
-
-        </nav>
-      </aside>
-
-      {/* Content area */}
-      <section className="min-w-0 flex-1 overflow-hidden p-6" style={{ backgroundColor: styleTokens.adminConfig.contentBackground }}>
+      <section className="min-w-0 flex-1 overflow-hidden p-6">
         <div className="h-full min-h-0 overflow-hidden">
           <Outlet />
         </div>

@@ -1,12 +1,13 @@
 import { Field } from '@ark-ui/react/field';
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import { Navigate, useParams } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
+import { Navigate, useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ErrorAlert } from '@/components/common/ErrorAlert';
-import { styleTokens } from '@/lib/styleTokens';
 import { cn } from '@/lib/utils';
 import { edgeFetch } from '@/lib/edge';
-import { ServicesPanel } from './ServicesPanel';
+import { InstanceConfigPanel } from './InstanceConfigPanel';
+import { WorkerConfigPanel } from './WorkerConfigPanel';
+import { PlatformConfigPanel } from './PlatformConfigPanel';
 import { CATEGORY_IDS, type CategoryId } from './settings-tabs';
 
 type AuditRow = {
@@ -24,14 +25,15 @@ type AdminConfigResponse = {
   audit: AuditRow[];
 };
 
-
 type Category = {
   id: CategoryId;
   label: string;
 };
 
 const CATEGORIES: Category[] = [
-  { id: 'services', label: 'Services' },
+  { id: 'instance-config', label: 'Instance Config' },
+  { id: 'worker-config', label: 'Worker Config' },
+  { id: 'platform-config', label: 'Platform Config' },
   { id: 'audit', label: 'Audit History' },
 ];
 
@@ -108,10 +110,9 @@ function isAuditRowInRange(changedAt: string, range: AuditTimeRange): boolean {
   return now - timestamp <= rangeMs;
 }
 
-
-
 export default function SettingsAdmin() {
   const { category } = useParams<{ category?: string }>();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [auditRows, setAuditRows] = useState<AuditRow[]>([]);
@@ -196,182 +197,196 @@ export default function SettingsAdmin() {
     return CATEGORIES.find((c) => c.id === selectedCategory) ?? null;
   }, [selectedCategory]);
 
-  const [categoryAction] = useState<ReactNode>(null);
-
   if (!selectedCategory) {
-    return <Navigate to="/app/settings/admin/services" replace />;
+    return <Navigate to="/app/settings/admin/instance-config" replace />;
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
-      {error && <ErrorAlert message={error} />}
-      {loading && !error && (
-        <p className="text-sm text-muted-foreground">Loading admin configuration...</p>
-      )}
-
-      {!loading && !error && selectedCategoryDef && (
-        <section
-          className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-md border border-border"
-          style={{ backgroundColor: styleTokens.adminConfig.frameBackground }}
-        >
-          <header
-            className="flex items-center justify-between gap-3 border-b border-border px-4 py-2"
-            style={{ backgroundColor: styleTokens.adminConfig.headerBackground }}
-          >
-            <div className="min-w-0">
-              <h2 className="truncate text-sm font-semibold text-foreground">{selectedCategoryDef.label}</h2>
-            </div>
-            {categoryAction}
-          </header>
-          {selectedCategory === 'services' ? (
-            <div
-              className="min-h-0 flex-1 overflow-hidden p-3 md:p-4"
-              style={{ backgroundColor: styleTokens.adminConfig.contentBackground }}
-            >
-              <ServicesPanel />
-            </div>
-          ) : (
-            <div className="min-h-0 flex-1 overflow-y-auto p-3 md:p-4" style={{ backgroundColor: styleTokens.adminConfig.contentBackground }}>
-            {selectedCategory === 'audit' && (
-              <div className="space-y-4">
-                <div className="grid gap-2 md:grid-cols-[minmax(220px,1fr)_220px_130px_auto]">
-                  <Field.Root>
-                    <Field.Input
-                      className={inputClass}
-                      value={auditSearch}
-                      onChange={(event) => setAuditSearch(event.currentTarget.value)}
-                      placeholder="Search policy, actor, reason, change"
-                    />
-                  </Field.Root>
-                  <select
-                    className={inputClass}
-                    value={auditActorFilter}
-                    onChange={(event) => setAuditActorFilter(event.currentTarget.value)}
-                  >
-                    {auditActorOptions.map((actor) => (
-                      <option key={actor} value={actor}>
-                        {actor === 'all' ? 'All actors' : actor}
-                      </option>
-                    ))}
-                  </select>
-                  <select
-                    className={inputClass}
-                    value={auditRangeFilter}
-                    onChange={(event) => setAuditRangeFilter(event.currentTarget.value as AuditTimeRange)}
-                  >
-                    <option value="24h">Last 24h</option>
-                    <option value="7d">Last 7d</option>
-                    <option value="30d">Last 30d</option>
-                    <option value="all">All time</option>
-                  </select>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
-                      setAuditSearch('');
-                      setAuditActorFilter('all');
-                      setAuditRangeFilter('7d');
-                    }}
-                  >
-                    Reset filters
-                  </Button>
-                </div>
-
-                <div className="overflow-auto rounded-md border border-border">
-                  <table className="min-w-full border-collapse text-left text-xs">
-                    <thead className="bg-muted/50 text-muted-foreground">
-                      <tr>
-                        <th className="px-3 py-2 font-medium">When</th>
-                        <th className="px-3 py-2 font-medium">Policy</th>
-                        <th className="px-3 py-2 font-medium">Actor</th>
-                        <th className="px-3 py-2 font-medium">Reason</th>
-                        <th className="px-3 py-2 font-medium">Change</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredAuditRows.map((row) => {
-                        const selected = selectedAuditRow?.audit_id === row.audit_id;
-                        return (
-                          <tr
-                            key={row.audit_id}
-                            className={cn(
-                              'cursor-pointer border-t border-border align-top hover:bg-accent/40',
-                              selected && 'bg-accent/55',
-                            )}
-                            onClick={() => setSelectedAuditId(row.audit_id)}
-                          >
-                            <td className="whitespace-nowrap px-3 py-2 text-muted-foreground">
-                              {formatTimestamp(row.changed_at)}
-                            </td>
-                            <td className="px-3 py-2 font-medium text-foreground">{row.policy_key}</td>
-                            <td className="px-3 py-2 text-muted-foreground">{row.changed_by ?? 'system'}</td>
-                            <td className="max-w-[320px] truncate px-3 py-2 text-muted-foreground" title={row.reason ?? ''}>
-                              {row.reason?.trim() || '-'}
-                            </td>
-                            <td className="max-w-[420px] truncate px-3 py-2 text-foreground" title={summarizeAuditChange(row)}>
-                              {summarizeAuditChange(row)}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-
-                {filteredAuditRows.length === 0 && (
-                  <p className="text-sm text-muted-foreground">No audit entries match current filters.</p>
+    <div className="flex h-full min-h-0 gap-0 overflow-hidden">
+      {/* Category side rail */}
+      <nav className="w-44 shrink-0 overflow-y-auto border-r border-border pr-2">
+        <ul className="space-y-0.5 py-1">
+          {CATEGORIES.map((cat) => (
+            <li key={cat.id}>
+              <button
+                type="button"
+                onClick={() => navigate(`/app/settings/admin/${cat.id}`)}
+                className={cn(
+                  'flex w-full items-center rounded-md px-2.5 py-1.5 text-sm font-medium transition-colors',
+                  cat.id === selectedCategory
+                    ? 'bg-accent text-accent-foreground'
+                    : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground',
                 )}
+              >
+                {cat.label}
+              </button>
+            </li>
+          ))}
+        </ul>
+      </nav>
 
-                {selectedAuditRow && (
-                  <article className="rounded-lg border border-border bg-background p-4">
-                    <div className="flex flex-wrap items-start justify-between gap-2">
-                      <div>
-                        <h3 className="text-sm font-semibold text-foreground">{selectedAuditRow.policy_key}</h3>
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          {formatTimestamp(selectedAuditRow.changed_at)}
-                          {' · '}
-                          {selectedAuditRow.changed_by ?? 'system'}
-                          {' · '}
-                          audit_id={selectedAuditRow.audit_id}
-                        </p>
-                      </div>
-                      <span className="rounded-md border border-border bg-muted px-2 py-1 text-xs text-foreground">
-                        {summarizeAuditChange(selectedAuditRow)}
-                      </span>
-                    </div>
+      {/* Content area */}
+      <div className="min-w-0 flex-1 overflow-hidden">
+        {error && <ErrorAlert message={error} />}
+        {loading && !error && (
+          <p className="p-4 text-sm text-muted-foreground">Loading admin configuration...</p>
+        )}
 
-                    {selectedAuditRow.reason?.trim() && (
-                      <p className="mt-3 text-sm text-foreground">{selectedAuditRow.reason}</p>
-                    )}
-
-                    <div className="mt-3 grid gap-3 md:grid-cols-2">
-                      <div>
-                        <p className="mb-1 text-xs font-medium text-muted-foreground">Old</p>
-                        <textarea
-                          readOnly
-                          rows={14}
-                          className="w-full rounded-md border border-input bg-background p-2 font-mono text-xs text-foreground"
-                          value={stringifyValue(selectedAuditRow.old_value)}
-                        />
-                      </div>
-                      <div>
-                        <p className="mb-1 text-xs font-medium text-muted-foreground">New</p>
-                        <textarea
-                          readOnly
-                          rows={14}
-                          className="w-full rounded-md border border-input bg-background p-2 font-mono text-xs text-foreground"
-                          value={stringifyValue(selectedAuditRow.new_value)}
-                        />
-                      </div>
-                    </div>
-                  </article>
-                )}
+        {!loading && !error && selectedCategoryDef && (
+          <>
+            {selectedCategory === 'instance-config' ? (
+              <div className="h-full overflow-hidden">
+                <InstanceConfigPanel />
               </div>
-            )}
-            </div>
-          )}
-        </section>
-      )}
+            ) : selectedCategory === 'worker-config' ? (
+              <div className="h-full overflow-hidden">
+                <WorkerConfigPanel />
+              </div>
+            ) : selectedCategory === 'platform-config' ? (
+              <div className="h-full overflow-hidden p-3 md:p-4">
+                <PlatformConfigPanel />
+              </div>
+            ) : selectedCategory === 'audit' ? (
+              <div className="h-full overflow-y-auto p-3 md:p-4">
+                <div className="space-y-4">
+                  <div className="grid gap-2 md:grid-cols-[minmax(220px,1fr)_220px_130px_auto]">
+                    <Field.Root>
+                      <Field.Input
+                        className={inputClass}
+                        value={auditSearch}
+                        onChange={(event) => setAuditSearch(event.currentTarget.value)}
+                        placeholder="Search policy, actor, reason, change"
+                      />
+                    </Field.Root>
+                    <select
+                      className={inputClass}
+                      value={auditActorFilter}
+                      onChange={(event) => setAuditActorFilter(event.currentTarget.value)}
+                    >
+                      {auditActorOptions.map((actor) => (
+                        <option key={actor} value={actor}>
+                          {actor === 'all' ? 'All actors' : actor}
+                        </option>
+                      ))}
+                    </select>
+                    <select
+                      className={inputClass}
+                      value={auditRangeFilter}
+                      onChange={(event) => setAuditRangeFilter(event.currentTarget.value as AuditTimeRange)}
+                    >
+                      <option value="24h">Last 24h</option>
+                      <option value="7d">Last 7d</option>
+                      <option value="30d">Last 30d</option>
+                      <option value="all">All time</option>
+                    </select>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        setAuditSearch('');
+                        setAuditActorFilter('all');
+                        setAuditRangeFilter('7d');
+                      }}
+                    >
+                      Reset filters
+                    </Button>
+                  </div>
+
+                  <div className="overflow-auto rounded-md border border-border">
+                    <table className="min-w-full border-collapse text-left text-xs">
+                      <thead className="bg-muted/50 text-muted-foreground">
+                        <tr>
+                          <th className="px-3 py-2 font-medium">When</th>
+                          <th className="px-3 py-2 font-medium">Policy</th>
+                          <th className="px-3 py-2 font-medium">Actor</th>
+                          <th className="px-3 py-2 font-medium">Reason</th>
+                          <th className="px-3 py-2 font-medium">Change</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredAuditRows.map((row) => {
+                          const selected = selectedAuditRow?.audit_id === row.audit_id;
+                          return (
+                            <tr
+                              key={row.audit_id}
+                              className={cn(
+                                'cursor-pointer border-t border-border align-top hover:bg-accent/40',
+                                selected && 'bg-accent/55',
+                              )}
+                              onClick={() => setSelectedAuditId(row.audit_id)}
+                            >
+                              <td className="whitespace-nowrap px-3 py-2 text-muted-foreground">
+                                {formatTimestamp(row.changed_at)}
+                              </td>
+                              <td className="px-3 py-2 font-medium text-foreground">{row.policy_key}</td>
+                              <td className="px-3 py-2 text-muted-foreground">{row.changed_by ?? 'system'}</td>
+                              <td className="max-w-[320px] truncate px-3 py-2 text-muted-foreground" title={row.reason ?? ''}>
+                                {row.reason?.trim() || '-'}
+                              </td>
+                              <td className="max-w-[420px] truncate px-3 py-2 text-foreground" title={summarizeAuditChange(row)}>
+                                {summarizeAuditChange(row)}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {filteredAuditRows.length === 0 && (
+                    <p className="text-sm text-muted-foreground">No audit entries match current filters.</p>
+                  )}
+
+                  {selectedAuditRow && (
+                    <article className="rounded-lg border border-border bg-background p-4">
+                      <div className="flex flex-wrap items-start justify-between gap-2">
+                        <div>
+                          <h3 className="text-sm font-semibold text-foreground">{selectedAuditRow.policy_key}</h3>
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            {formatTimestamp(selectedAuditRow.changed_at)}
+                            {' · '}
+                            {selectedAuditRow.changed_by ?? 'system'}
+                            {' · '}
+                            audit_id={selectedAuditRow.audit_id}
+                          </p>
+                        </div>
+                        <span className="rounded-md border border-border bg-muted px-2 py-1 text-xs text-foreground">
+                          {summarizeAuditChange(selectedAuditRow)}
+                        </span>
+                      </div>
+
+                      {selectedAuditRow.reason?.trim() && (
+                        <p className="mt-3 text-sm text-foreground">{selectedAuditRow.reason}</p>
+                      )}
+
+                      <div className="mt-3 grid gap-3 md:grid-cols-2">
+                        <div>
+                          <p className="mb-1 text-xs font-medium text-muted-foreground">Old</p>
+                          <textarea
+                            readOnly
+                            rows={14}
+                            className="w-full rounded-md border border-input bg-background p-2 font-mono text-xs text-foreground"
+                            value={stringifyValue(selectedAuditRow.old_value)}
+                          />
+                        </div>
+                        <div>
+                          <p className="mb-1 text-xs font-medium text-muted-foreground">New</p>
+                          <textarea
+                            readOnly
+                            rows={14}
+                            className="w-full rounded-md border border-input bg-background p-2 font-mono text-xs text-foreground"
+                            value={stringifyValue(selectedAuditRow.new_value)}
+                          />
+                        </div>
+                      </div>
+                    </article>
+                  )}
+                </div>
+              </div>
+            ) : null}
+          </>
+        )}
+      </div>
     </div>
   );
 }

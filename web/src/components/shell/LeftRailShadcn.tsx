@@ -1,12 +1,32 @@
-import { useEffect, useMemo, useState, type CSSProperties } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { Avatar } from '@ark-ui/react/avatar';
-import { Select, createListCollection } from '@ark-ui/react/select';
-import { TreeView, createTreeCollection, type TreeNode } from '@ark-ui/react/tree-view';
-import { Tick01Icon, ArrowDown01Icon, Layout03Icon, Add01Icon } from '@hugeicons/core-free-icons';
+import { Layout03Icon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
+import {
+  IconChevronLeft,
+  IconChevronRight,
+  IconBell,
+  IconDots,
+  IconDeviceDesktop,
+  IconSun,
+  IconMoon,
+  IconFileText,
+  IconHelp,
+  IconBook2,
+  IconLogout,
+  IconSettings,
+} from '@tabler/icons-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
-import { GLOBAL_MENUS, NAV_GROUPS } from '@/components/shell/nav-config';
+import {
+  TOP_LEVEL_NAV,
+  ALL_TOP_LEVEL_ITEMS,
+  findDrillByRoute,
+  getDrillConfig,
+  resolveFlowDrillPath,
+  type NavItem,
+  type NavDrillConfig,
+} from '@/components/shell/nav-config';
 import {
   Sidebar,
   SidebarContent,
@@ -17,25 +37,18 @@ import {
   SidebarProvider,
 } from '@/components/ui/sidebar';
 import {
-  ScrollAreaContent,
-  ScrollAreaRoot,
-  ScrollAreaScrollbar,
-  ScrollAreaThumb,
-  ScrollAreaViewport,
-} from '@/components/ui/scroll-area';
-import {
   MenuRoot,
   MenuTrigger,
   MenuPositioner,
   MenuContent,
   MenuItem,
-
 } from '@/components/ui/menu';
 import { cn } from '@/lib/utils';
 import { PROJECT_FOCUS_STORAGE_KEY, PROJECT_LIST_CHANGED_EVENT } from '@/lib/projectFocus';
 import { supabase } from '@/lib/supabase';
 import { TABLES } from '@/lib/tables';
 import { DOCS_URL } from '@/lib/urls';
+import { useTheme, type ThemeChoice } from '@/hooks/useTheme';
 
 type LeftRailShadcnProps = {
   onNavigate?: () => void;
@@ -52,23 +65,8 @@ type ProjectFocusOption = {
   workspaceId: string | null;
 };
 
-type RailTreeNode = TreeNode & {
-  id: string;
-  label: string;
-  path?: string;
-  children?: RailTreeNode[];
-};
-
 const PROJECTS_RPC_NEW = 'list_projects_overview';
 const PROJECTS_RPC_LEGACY = 'list_projects_overview_v2';
-
-const GLOBAL_MENU_ORDER: Record<string, number> = {
-  '/app/flows': 0,
-  '/app/elt': 1,
-  '/app/database': 2,
-  '/app/schemas': 3,
-  '/app/api-editor': 4,
-};
 
 function toCount(value: unknown): number {
   const n = typeof value === 'number' ? value : Number(value);
@@ -89,9 +87,151 @@ function readStoredProjectId(): string | null {
   return window.localStorage.getItem(PROJECT_FOCUS_STORAGE_KEY);
 }
 
-function menuPathToNodeId(path: string) {
-  return path.replace(/^\/app\//, '').replaceAll('/', '-');
+/* ------------------------------------------------------------------ */
+/*  Helpers for determining active path                                */
+/* ------------------------------------------------------------------ */
+
+function isItemActive(item: NavItem, pathname: string): boolean {
+  return pathname === item.path || pathname.startsWith(item.path + '/');
 }
+
+/**
+ * For flows drill, extract the flowId from the current pathname and
+ * build full paths for tab slugs. Returns null if not on a flow route.
+ */
+function extractFlowId(pathname: string): string | null {
+  const match = pathname.match(/^\/app\/flows\/([^/]+)/);
+  return match ? match[1]! : null;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Theme toggle (inline, Vercel-style 3-option row)                   */
+/* ------------------------------------------------------------------ */
+
+const THEME_OPTIONS: { value: ThemeChoice; icon: typeof IconSun; label: string }[] = [
+  { value: 'system', icon: IconDeviceDesktop, label: 'System' },
+  { value: 'light', icon: IconSun, label: 'Light' },
+  { value: 'dark', icon: IconMoon, label: 'Dark' },
+];
+
+function ThemeToggleRow() {
+  const { choice, setTheme } = useTheme();
+  return (
+    <div className="flex items-center justify-between px-3 py-2">
+      <span className="text-sm">Theme</span>
+      <div className="flex items-center gap-0.5 rounded-md border border-border bg-muted/50 p-0.5">
+        {THEME_OPTIONS.map((opt) => {
+          const Icon = opt.icon;
+          const isActive = choice === opt.value;
+          return (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={(e) => { e.stopPropagation(); setTheme(opt.value); }}
+              className={cn(
+                'inline-flex h-6 w-6 items-center justify-center rounded transition-colors',
+                isActive
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground',
+              )}
+              title={opt.label}
+              aria-label={`Theme: ${opt.label}`}
+            >
+              <Icon size={14} stroke={1.75} />
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Account popup menu content (Vercel-style)                          */
+/* ------------------------------------------------------------------ */
+
+function AccountMenuContent({
+  userLabel,
+  docsSiteUrl,
+  onNavigate,
+  onSignOut,
+}: {
+  userLabel?: string;
+  docsSiteUrl: string;
+  onNavigate: () => void;
+  onSignOut?: () => void | Promise<void>;
+}) {
+  return (
+    <MenuContent className="min-w-56 p-0">
+      {/* Account header — username + email, gear icon right */}
+      <div className="flex items-start justify-between px-3 pb-2 pt-3">
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-medium text-foreground">
+            {userLabel?.split('@')[0] ?? 'User'}
+          </p>
+          <p className="truncate text-xs text-muted-foreground">
+            {userLabel ?? 'No email'}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={onNavigate}
+          className="ml-2 mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+          title="Settings"
+          aria-label="Settings"
+        >
+          <IconSettings size={14} stroke={1.75} />
+        </button>
+      </div>
+
+      {/* Flat menu list — label left, icon right (Vercel style) */}
+      <div className="py-1.5">
+        {/* Theme row (custom, not a MenuItem) */}
+        <ThemeToggleRow />
+
+        <MenuItem
+          value="changelog"
+          className="flex items-center justify-between px-3 py-2"
+          onClick={() => { /* placeholder */ }}
+        >
+          <span>Changelog</span>
+          <IconFileText size={16} stroke={1.75} className="text-muted-foreground" />
+        </MenuItem>
+        <MenuItem
+          value="help"
+          className="flex items-center justify-between px-3 py-2"
+          onClick={() => { /* placeholder */ }}
+        >
+          <span>Help</span>
+          <IconHelp size={16} stroke={1.75} className="text-muted-foreground" />
+        </MenuItem>
+        <MenuItem
+          value="docs"
+          className="flex items-center justify-between px-3 py-2"
+          onClick={() => { window.open(docsSiteUrl, '_blank', 'noopener'); }}
+        >
+          <span>Docs</span>
+          <IconBook2 size={16} stroke={1.75} className="text-muted-foreground" />
+        </MenuItem>
+
+        {onSignOut && (
+          <MenuItem
+            value="sign-out"
+            className="flex items-center justify-between px-3 py-2"
+            onClick={() => { void onSignOut(); }}
+          >
+            <span>Log Out</span>
+            <IconLogout size={16} stroke={1.75} className="text-muted-foreground" />
+          </MenuItem>
+        )}
+      </div>
+    </MenuContent>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Component                                                          */
+/* ------------------------------------------------------------------ */
 
 export function LeftRailShadcn({
   onNavigate,
@@ -106,9 +246,10 @@ export function LeftRailShadcn({
   const activeProjectMatch = location.pathname.match(/^\/app\/elt\/([^/]+)/);
   const activeProjectId = activeProjectMatch ? activeProjectMatch[1] : null;
 
+  /* ------ Project focus state (unchanged) ------ */
   const [focusedProjectId, setFocusedProjectId] = useState<string | null>(() => readStoredProjectId());
   const [projectOptions, setProjectOptions] = useState<ProjectFocusOption[]>([]);
-  const [projectOptionsLoading, setProjectOptionsLoading] = useState(false);
+  const [, setProjectOptionsLoading] = useState(false);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -195,163 +336,212 @@ export function LeftRailShadcn({
       : '';
   }, [activeProjectId, focusedProjectId, projectOptions]);
 
-  const projectCollection = useMemo(
-    () => createListCollection({ items: projectOptions }),
-    [projectOptions],
-  );
-
-  const orderedGlobalMenus = useMemo(
-    () => [...GLOBAL_MENUS].sort((a, b) => (
-      (GLOBAL_MENU_ORDER[a.path] ?? Number.MAX_SAFE_INTEGER)
-      - (GLOBAL_MENU_ORDER[b.path] ?? Number.MAX_SAFE_INTEGER)
-    )),
-    [],
-  );
-
-  const [userExpandedNodeIds, setUserExpandedNodeIds] = useState<string[]>([]);
   const eltPath = projectSelectValue ? `/app/elt/${projectSelectValue}` : '/app/elt';
-  const flowsPath = '/app/flows';
 
   const globalPathOverrides: Record<string, string> = {
-    '/app/flows': flowsPath,
     '/app/elt': eltPath,
   };
-  const expandedNodeIds = userExpandedNodeIds;
-
-  const activeMenuPath = useMemo(() => {
-    if (location.pathname.startsWith('/app/flows')) return '/app/flows';
-    if (location.pathname.startsWith('/app/elt')) return '/app/elt';
-    if (location.pathname.startsWith('/app/database')) return '/app/database';
-    if (location.pathname.startsWith('/app/schemas')) return '/app/schemas';
-    if (location.pathname.startsWith('/app/api-editor')) return '/app/api-editor';
-    return null;
-  }, [location.pathname]);
-
-  const activeNodeId = activeMenuPath ? menuPathToNodeId(activeMenuPath) : null;
-
-  const navTreeCollection = useMemo(() => {
-    const branchNodes: RailTreeNode[] = orderedGlobalMenus.map((menu) => ({
-      id: menuPathToNodeId(menu.path),
-      label: menu.label,
-      path: menu.path,
-      children: menu.children?.map((child) => ({
-        id: menuPathToNodeId(child.path),
-        label: child.label,
-        path: child.path,
-      })),
-    }));
-
-    return createTreeCollection<RailTreeNode>({
-      rootNode: {
-        id: 'root',
-        label: 'Root',
-        children: branchNodes,
-      },
-      nodeToValue: (node) => node.id,
-      nodeToString: (node) => node.label,
-      nodeToChildren: (node) => node.children ?? [],
-    });
-  }, [orderedGlobalMenus]);
 
   const navigateTo = (path: string) => {
     navigate(globalPathOverrides[path] ?? path);
     onNavigate?.();
   };
 
-  const buildTreeRow = (node: RailTreeNode, indexPath: number[], state: {
-    selected?: boolean;
-    isBranch?: boolean;
-  }) => {
-    const rowPaddingLeft = desktopCompact
-      ? '0px'
-      : `${8 + Math.max(0, indexPath.length - 1) * 14}px`;
-    const isNodeSelected = Boolean(state.selected);
-    const rowClassName = cn(
-      'flex items-center gap-2 rounded-md text-sidebar-foreground/90 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
-      desktopCompact ? 'h-10 px-2 text-sm font-semibold leading-snug' : 'h-10 px-2 text-[15px] font-semibold leading-snug',
-      isNodeSelected ? 'bg-sidebar-accent text-sidebar-accent-foreground' : null,
-    );
+  /* ------ Drill-in / drill-out state ------ */
+  const [activeDrillId, setActiveDrillId] = useState<string | null>(null);
+  const skipAutoDrillRef = useRef(false);
 
-    if (state.isBranch) {
-      return (
-        <TreeView.Branch>
-          <TreeView.BranchControl
-            className={rowClassName}
-            style={{ paddingLeft: rowPaddingLeft }}
-          >
-            <TreeView.BranchText className="truncate">
-              {node.label}
-            </TreeView.BranchText>
-          </TreeView.BranchControl>
-        </TreeView.Branch>
-      );
+  // Auto-drill based on current route
+  useEffect(() => {
+    if (skipAutoDrillRef.current) {
+      skipAutoDrillRef.current = false;
+      return;
     }
-
-    return (
-      <TreeView.Item
-        className={rowClassName}
-        style={{ paddingLeft: rowPaddingLeft }}
-      >
-        <TreeView.ItemText className="truncate">
-          {node.label}
-        </TreeView.ItemText>
-      </TreeView.Item>
-    );
-  };
-
-  const renderMenuTree = () => (
-    <TreeView.Root
-      collection={navTreeCollection}
-      selectionMode="single"
-      selectedValue={activeNodeId ? [activeNodeId] : []}
-      expandedValue={expandedNodeIds}
-      onExpandedChange={(details) => setUserExpandedNodeIds(details.expandedValue)}
-      onSelectionChange={(details) => {
-        const nextNodeId = details.selectedValue[0];
-        if (!nextNodeId) return;
-        const nextNode = navTreeCollection.findNode(nextNodeId);
-        if (!nextNode?.path) return;
-        navigateTo(nextNode.path);
-      }}
-    >
-      <TreeView.Tree className="space-y-1">
-        <TreeView.Context>
-          {(tree) => tree.getVisibleNodes().map((entry) => {
-            const node = entry.node as RailTreeNode;
-            const indexPath = entry.indexPath;
-            return (
-              <TreeView.NodeProvider key={node.id} node={node} indexPath={indexPath}>
-                <TreeView.NodeContext>
-                  {(state) => {
-                    if (node.id === 'root') return null;
-                    return buildTreeRow(node, indexPath, state);
-                  }}
-                </TreeView.NodeContext>
-              </TreeView.NodeProvider>
-            );
-          })}
-        </TreeView.Context>
-      </TreeView.Tree>
-    </TreeView.Root>
-  );
-
-  const onProjectChanged = (nextProjectId: string) => {
-    if (!nextProjectId) return;
-    setFocusedProjectId(nextProjectId);
-
-    if (location.pathname.startsWith('/app/flows')) {
-      navigate('/app/flows');
-    } else if (location.pathname.startsWith('/app/database')) {
-      navigate('/app/database');
-    } else if (location.pathname.startsWith('/app/schemas')) {
-      navigate('/app/schemas');
+    const drillMatch = findDrillByRoute(location.pathname);
+    if (drillMatch) {
+      if (activeDrillId !== drillMatch.id) {
+        setActiveDrillId(drillMatch.id);
+      }
     } else {
-      navigate(`/app/elt/${nextProjectId}`);
+      if (activeDrillId !== null) {
+        setActiveDrillId(null);
+      }
     }
-    onNavigate?.();
+  }, [location.pathname]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  /**
+   * Back out of drill view. Only switches the sidebar to the top-level nav —
+   * does NOT navigate away from the current page. The user stays on whatever
+   * content they were viewing. The skipAutoDrillRef prevents the route-based
+   * auto-drill from immediately re-activating.
+   */
+  const drillBack = () => {
+    skipAutoDrillRef.current = true;
+    setActiveDrillId(null);
   };
+
+  const activeDrillConfig = activeDrillId ? getDrillConfig(activeDrillId) : undefined;
+
+  /* ------ Active item detection ------ */
+  const activeMenuPath = useMemo(() => {
+    const allItems = ALL_TOP_LEVEL_ITEMS;
+    // Sort by path length descending so more specific paths match first
+    const sorted = [...allItems].sort((a, b) => b.path.length - a.path.length);
+    for (const item of sorted) {
+      if (isItemActive(item, location.pathname)) return item.path;
+    }
+    return null;
+  }, [location.pathname]);
 
   const userInitial = userLabel?.match(/[A-Za-z0-9]/)?.[0]?.toUpperCase() ?? '?';
+
+  /* ------ Render helpers ------ */
+
+  const renderTopLevelNav = () => (
+    <div className="space-y-0.5">
+      {TOP_LEVEL_NAV.map((entry, index) => {
+        if (entry === 'divider') {
+          return <div key={`divider-${index}`} className="my-1.5 mx-2.5 h-px bg-sidebar-border" />;
+        }
+
+        const item = entry;
+        const ItemIcon = item.icon;
+        const isActive = activeMenuPath === item.path;
+        const hasDrill = Boolean(item.drillId);
+
+        return (
+          <button
+            key={item.path}
+            type="button"
+            onClick={() => {
+              if (hasDrill) {
+                setActiveDrillId(item.drillId!);
+              }
+              navigateTo(item.path);
+            }}
+            className={cn(
+              'flex w-full items-center gap-2.5 rounded-md px-2.5 h-9 text-sm leading-snug transition-colors',
+              isActive
+                ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium'
+                : 'text-sidebar-foreground/80 font-normal hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+            )}
+          >
+            <ItemIcon size={16} stroke={1.75} className="shrink-0" />
+            <span className="truncate">{item.label}</span>
+            {hasDrill && (
+              <IconChevronRight size={14} stroke={1.75} className="ml-auto shrink-0 text-sidebar-foreground/40" />
+            )}
+          </button>
+        );
+      })}
+    </div>
+  );
+
+  const renderDrillView = (config: NavDrillConfig) => {
+    const flowId = config.id === 'flows' ? extractFlowId(location.pathname) : null;
+
+    return (
+      <div className="space-y-0.5">
+        {/* Back button */}
+        <button
+          type="button"
+          onClick={() => drillBack()}
+          className="flex w-full items-center gap-2 rounded-md px-2.5 h-9 text-sm font-medium leading-snug text-sidebar-foreground/80 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+        >
+          <IconChevronLeft size={16} stroke={1.75} className="shrink-0" />
+          <span className="truncate">{config.parentLabel}</span>
+        </button>
+
+        <div className="mx-2.5 my-1 h-px bg-sidebar-border" />
+
+        {/* Sections */}
+        {config.sections.map((section, sectionIndex) => (
+          <div key={section.label ?? sectionIndex}>
+            {sectionIndex > 0 && <div className="mx-2.5 my-1.5 h-px bg-sidebar-border" />}
+            {section.label && (
+              <div className="mb-1 mt-2 px-2.5 text-[11px] font-semibold uppercase tracking-wide text-sidebar-foreground/50">
+                {section.label}
+              </div>
+            )}
+            <div className="space-y-0.5">
+              {section.items.map((item) => {
+                const ItemIcon = item.icon;
+                // For flows drill, paths are tab slugs — resolve to full path
+                const resolvedPath = flowId
+                  ? resolveFlowDrillPath(item.path, flowId)
+                  : item.path;
+                const isActive = flowId
+                  ? location.pathname === resolvedPath || location.pathname.startsWith(resolvedPath + '/')
+                  : isItemActive(item, location.pathname);
+
+                // For flows drill without a flowId, items are not navigable
+                const isDisabled = config.id === 'flows' && !flowId;
+
+                return (
+                  <button
+                    key={item.path}
+                    type="button"
+                    disabled={isDisabled}
+                    onClick={() => {
+                      navigate(resolvedPath);
+                      onNavigate?.();
+                    }}
+                    className={cn(
+                      'flex w-full items-center gap-2.5 rounded-md px-2.5 h-9 text-sm leading-snug transition-colors',
+                      isActive
+                        ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium'
+                        : 'text-sidebar-foreground/80 font-normal hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+                      isDisabled && 'cursor-not-allowed opacity-40',
+                    )}
+                  >
+                    <ItemIcon size={16} stroke={1.75} className="shrink-0" />
+                    <span className="truncate">{item.label}</span>
+                    {item.badge && (
+                      <span className="ml-auto shrink-0 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                        {item.badge}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  const renderCompactNav = () => (
+    <div className="flex flex-col items-center gap-0.5 pt-1">
+      {TOP_LEVEL_NAV.map((entry, index) => {
+        if (entry === 'divider') {
+          return <div key={`divider-${index}`} className="my-1 h-px w-6 bg-sidebar-border" />;
+        }
+
+        const item = entry;
+        const ItemIcon = item.icon;
+        const isActive = activeMenuPath === item.path;
+
+        return (
+          <button
+            key={item.path}
+            type="button"
+            onClick={() => navigateTo(item.path)}
+            className={cn(
+              'flex h-9 w-9 items-center justify-center rounded-md transition-colors',
+              isActive
+                ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+            )}
+            title={item.label}
+            aria-label={item.label}
+          >
+            <ItemIcon size={20} stroke={1.75} />
+          </button>
+        );
+      })}
+    </div>
+  );
 
   return (
     <SidebarProvider
@@ -368,10 +558,11 @@ export function LeftRailShadcn({
         collapsible="none"
         className="h-full min-h-0 bg-sidebar font-sans text-sidebar-foreground"
       >
+        {/* ---- Header: Brand logo + collapse toggle ---- */}
         <SidebarHeader
           className={cn(
             desktopCompact
-              ? 'h-[var(--app-shell-header-height)] gap-0 px-0 py-0'
+              ? 'h-[60px] gap-0 px-0 py-0'
               : 'gap-0 px-0 py-0',
           )}
         >
@@ -380,7 +571,7 @@ export function LeftRailShadcn({
               'flex items-center',
               desktopCompact
                 ? 'h-full justify-center'
-                : 'h-[var(--app-shell-header-height)] justify-between px-2',
+                : 'h-[60px] justify-between px-3',
             )}
           >
             <button
@@ -389,7 +580,7 @@ export function LeftRailShadcn({
                 'inline-flex items-center gap-2.5 rounded-md text-left transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
                 desktopCompact
                   ? 'size-10 justify-center p-0'
-                  : 'px-2 py-1',
+                  : 'px-1.5 py-1',
               )}
               onClick={() => {
                 if (desktopCompact && onToggleDesktopCompact) {
@@ -424,274 +615,71 @@ export function LeftRailShadcn({
               </button>
             )}
           </div>
-
-          <div
-            data-testid="left-rail-project-separator"
-            className="h-px w-full bg-sidebar-border"
-          />
-          {!desktopCompact && (
-            <>
-              <div className="px-2 py-1">
-                <div className="flex w-full items-center gap-1.5">
-                <Select.Root
-                  className="min-w-0 flex-1"
-                  collection={projectCollection}
-                  value={projectSelectValue ? [projectSelectValue] : []}
-                  onValueChange={(details) => {
-                    const nextProjectId = details.value[0];
-                    if (!nextProjectId || nextProjectId === projectSelectValue) return;
-                    onProjectChanged(nextProjectId);
-                  }}
-                  disabled={projectOptionsLoading && projectOptions.length === 0}
-                  positioning={{ placement: 'bottom-start', sameWidth: true, offset: { mainAxis: 6 }, strategy: 'fixed' }}
-                >
-                  <Select.Control className="relative flex-1">
-                    <Select.Trigger
-                      className="flex h-8 w-full items-center justify-between rounded-md border border-input/80 bg-background/95 px-2 text-left shadow-sm transition-colors hover:bg-sidebar-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
-                      aria-label="Select project"
-                    >
-                      <span className="min-w-0 pr-1.5">
-                        <Select.ValueText
-                          className="block truncate text-sm font-semibold leading-none text-foreground"
-                          placeholder={projectOptionsLoading && projectOptions.length === 0 ? 'Loading projects...' : 'Select project'}
-                        />
-                      </span>
-                      <Select.Indicator className="shrink-0 text-muted-foreground">
-                        <HugeiconsIcon icon={ArrowDown01Icon} size={16} strokeWidth={2} />
-                      </Select.Indicator>
-                    </Select.Trigger>
-                  </Select.Control>
-
-                  <Select.Positioner className="!z-[220]">
-                    <Select.Content className="rounded-md border border-sidebar-border bg-sidebar p-0 shadow-xl">
-                      <ScrollAreaRoot className="max-h-72">
-                        <ScrollAreaViewport className="max-h-72 overflow-y-auto p-1">
-                          <ScrollAreaContent>
-                            {projectCollection.items.length === 0 ? (
-                              <div className="px-2.5 py-2 text-xs text-sidebar-foreground/70">
-                                {projectOptionsLoading ? 'Loading projects...' : 'No projects found'}
-                              </div>
-                            ) : (
-                              projectCollection.items.map((project) => (
-                                <Select.Item
-                                  key={project.value}
-                                  item={project}
-                                  className={cn(
-                                    'flex w-full items-center justify-between rounded-md px-2.5 py-2 text-left text-sidebar-foreground/90 transition-colors',
-                                    'data-[state=checked]:bg-sidebar-accent data-[state=checked]:text-sidebar-accent-foreground',
-                                    'data-[highlighted]:bg-sidebar-accent/70 data-[highlighted]:text-sidebar-accent-foreground',
-                                  )}
-                                >
-                                  <span className="min-w-0 pr-2">
-                                    <Select.ItemText className="block truncate text-sm font-medium leading-5">
-                                      {project.label}
-                                    </Select.ItemText>
-                                    <span className="block text-xs leading-4 text-sidebar-foreground/65">
-                                      {project.docCount} docs
-                                    </span>
-                                  </span>
-                                  <Select.ItemIndicator className="shrink-0">
-                                    <HugeiconsIcon icon={Tick01Icon} size={15} strokeWidth={2.2} />
-                                  </Select.ItemIndicator>
-                                </Select.Item>
-                              ))
-                            )}
-                          </ScrollAreaContent>
-                        </ScrollAreaViewport>
-                        <ScrollAreaScrollbar orientation="vertical">
-                          <ScrollAreaThumb />
-                        </ScrollAreaScrollbar>
-                      </ScrollAreaRoot>
-                    </Select.Content>
-                  </Select.Positioner>
-                  <Select.HiddenSelect name="project-focus" />
-                </Select.Root>
-                <button
-                  type="button"
-                  className="inline-flex h-8 w-10 shrink-0 items-center justify-center rounded-md border border-input/80 bg-background/95 text-sidebar-foreground/80 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
-                  onClick={() => {
-                    navigate('/app/projects/list?new=1');
-                    onNavigate?.();
-                  }}
-                  aria-label="Create new project"
-                  title="Create new project"
-                >
-                  <HugeiconsIcon icon={Add01Icon} size={14} strokeWidth={2.1} />
-                </button>
-                </div>
-              </div>
-              <div
-                data-testid="left-rail-project-bottom-separator"
-                className="h-px w-full bg-sidebar-border"
-              />
-            </>
-          )}
+          {!desktopCompact && <div className="h-px w-full bg-sidebar-border" />}
         </SidebarHeader>
 
-        <SidebarContent className={desktopCompact ? 'px-0' : 'px-2'}>
+        {/* ---- Content: Nav items or drill view ---- */}
+        <SidebarContent className={desktopCompact ? 'px-0' : 'px-1'}>
           <SidebarGroup className={desktopCompact ? 'p-0' : 'p-1'}>
             <SidebarGroupContent>
-              {desktopCompact ? (
-                <div className="flex flex-col items-center gap-1 pt-1">
-                  {orderedGlobalMenus.map((menu) => {
-                    const MenuIcon = menu.icon;
-                    const isActive = activeMenuPath === menu.path;
-                    return (
-                      <button
-                        key={menu.path}
-                        type="button"
-                        onClick={() => navigateTo(menu.path)}
-                        className={cn(
-                          'flex h-10 w-10 items-center justify-center rounded-md transition-colors',
-                          isActive
-                            ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-                            : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
-                        )}
-                        title={menu.label}
-                        aria-label={menu.label}
-                      >
-                        <MenuIcon size={22} stroke={1.8} />
-                      </button>
-                    );
-                  })}
-                  {NAV_GROUPS.map((group) => (
-                    <div key={group.label} className="flex flex-col items-center gap-1">
-                      <div className="my-1 h-px w-6 bg-sidebar-border" />
-                      {group.items.map((item) => {
-                        const ItemIcon = item.icon;
-                        const isActive = activeMenuPath === item.path;
-                        return (
-                          <button
-                            key={item.path}
-                            type="button"
-                            onClick={() => navigateTo(item.path)}
-                            className={cn(
-                              'flex h-10 w-10 items-center justify-center rounded-md transition-colors',
-                              isActive
-                                ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-                                : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
-                            )}
-                            title={item.label}
-                            aria-label={item.label}
-                          >
-                            <ItemIcon size={22} stroke={1.8} />
-                          </button>
-                        );
-                      })}
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <>
-                  {renderMenuTree()}
-                  {NAV_GROUPS.map((group) => (
-                    <div key={group.label} className="mt-4">
-                      <div className="mb-1 px-2 text-[11px] font-semibold uppercase tracking-wide text-sidebar-foreground/50">
-                        {group.label}
-                      </div>
-                      <div className="space-y-1">
-                        {group.items.map((item) => {
-                          const isActive = activeMenuPath === item.path;
-                          return (
-                            <button
-                              key={item.path}
-                              type="button"
-                              onClick={() => navigateTo(item.path)}
-                              className={cn(
-                                'flex w-full items-center gap-2 rounded-md text-sidebar-foreground/90 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
-                                'h-10 px-2 text-[15px] font-semibold leading-snug',
-                                isActive && 'bg-sidebar-accent text-sidebar-accent-foreground',
-                              )}
-                            >
-                              <span className="truncate">{item.label}</span>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ))}
-                </>
-              )}
+              {desktopCompact
+                ? renderCompactNav()
+                : activeDrillConfig
+                  ? renderDrillView(activeDrillConfig)
+                  : renderTopLevelNav()}
             </SidebarGroupContent>
           </SidebarGroup>
         </SidebarContent>
 
-        <SidebarFooter className="border-t border-sidebar-border px-0 pt-0">
-          <div className={cn(desktopCompact ? 'px-0 py-2' : 'px-1.5 py-1.5')}>
-            <MenuRoot positioning={{ placement: 'top-start', offset: { mainAxis: 8, crossAxis: 0 } }}>
+        {/* ---- Footer: Account card (Vercel-style) ---- */}
+        <SidebarFooter className="border-0 px-0 pt-0">
+          <MenuRoot positioning={{ placement: 'top-start', offset: { mainAxis: 8, crossAxis: 0 } }}>
+            <div className={cn(desktopCompact ? 'flex justify-center px-0 py-2' : 'flex items-center gap-2 px-3 py-2')}>
+              {/* Avatar + username + dots — all trigger the menu */}
               <MenuTrigger
                 className={cn(
-                  'flex w-full items-center gap-2.5 rounded-md border-none bg-transparent px-1.5 py-1.5 text-left',
-                  'transition-colors hover:bg-sidebar-accent/50',
-                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring',
-                  desktopCompact && 'flex-col justify-center px-0',
+                  'flex items-center gap-2 rounded-md border-0 bg-transparent transition-colors hover:bg-sidebar-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring',
+                  desktopCompact ? 'h-9 w-9 justify-center' : 'min-w-0 flex-1 py-0.5',
                 )}
+                aria-label="Account menu"
               >
-                <Avatar.Root
-                  className={cn(
-                    'shrink-0',
-                    desktopCompact ? 'h-9 w-9' : 'h-8 w-8',
-                  )}
-                >
-                  <Avatar.Fallback className="flex h-full w-full items-center justify-center rounded-full bg-primary/15 text-xs font-bold text-primary">
+                <Avatar.Root className={cn(desktopCompact ? 'h-7 w-7' : 'h-6 w-6', 'shrink-0')}>
+                  <Avatar.Fallback className="flex h-full w-full items-center justify-center rounded-full bg-primary/15 text-[10px] font-bold text-primary">
                     {userInitial}
                   </Avatar.Fallback>
                 </Avatar.Root>
                 {!desktopCompact && (
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate text-sm font-semibold leading-5 text-sidebar-foreground">
+                  <>
+                    <span className="min-w-0 flex-1 truncate text-left text-sm text-sidebar-foreground">
                       {userLabel ?? userInitial}
-                    </div>
-                    <div className="truncate text-[11px] leading-4 text-sidebar-foreground/50">
-                      Personal account
-                    </div>
-                  </div>
-                )}
-                {!desktopCompact && (
-                  <HugeiconsIcon icon={ArrowDown01Icon} size={14} strokeWidth={2} className="shrink-0 text-sidebar-foreground/40" />
+                    </span>
+                    <IconDots size={16} stroke={1.75} className="shrink-0 text-sidebar-foreground/50" />
+                  </>
                 )}
               </MenuTrigger>
-              <MenuPositioner>
-                <MenuContent className="min-w-48 p-0">
-                  <div className="px-3 pb-1 pt-2.5">
-                    <p className="truncate text-xs text-muted-foreground">
-                      {userLabel ?? 'No email'}
-                    </p>
-                  </div>
-                  <div className="p-1">
-                    <MenuItem
-                      value="docs"
-                      className="gap-2"
-                      onClick={() => {
-                        window.open(docsSiteUrl, '_blank', 'noopener');
-                      }}
-                    >
-                      Docs
-                    </MenuItem>
-                    <MenuItem
-                      value="settings"
-                      className="gap-2"
-                      onClick={() => {
-                        navigate('/app/settings');
-                        onNavigate?.();
-                      }}
-                    >
-                      Settings
-                    </MenuItem>
-                    {onSignOut && (
-                      <MenuItem
-                        value="sign-out"
-                        className="gap-2 text-red-500 data-highlighted:text-red-500"
-                        onClick={() => { void onSignOut(); }}
-                      >
-                        Sign out
-                      </MenuItem>
-                    )}
-                  </div>
-                </MenuContent>
-              </MenuPositioner>
-            </MenuRoot>
-          </div>
+
+              {/* Bell with notification dot */}
+              {!desktopCompact && (
+                <button
+                  type="button"
+                  className="relative inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-sidebar-foreground/50 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                  aria-label="Notifications"
+                  title="Notifications"
+                >
+                  <IconBell size={16} stroke={1.75} />
+                  <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-blue-500" />
+                </button>
+              )}
+            </div>
+            <MenuPositioner>
+              <AccountMenuContent
+                userLabel={userLabel}
+                docsSiteUrl={docsSiteUrl}
+                onNavigate={() => { navigate('/app/settings'); onNavigate?.(); }}
+                onSignOut={onSignOut}
+              />
+            </MenuPositioner>
+          </MenuRoot>
         </SidebarFooter>
       </Sidebar>
     </SidebarProvider>

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { IconFilter, IconSearch, IconRefresh, IconX, IconBookmark, IconAdjustments } from '@tabler/icons-react';
+import { IconAdjustments, IconBookmark, IconFilter, IconRefresh, IconSearch, IconX } from '@tabler/icons-react';
 import { AppIcon } from '@/components/ui/app-icon';
 import {
   TOOLBAR_BUTTON_BASE,
@@ -90,19 +90,12 @@ export function FlowFilterBar({
           </button>
           <button
             type="button"
-            aria-label="Bookmark"
-            className={cn(TOOLBAR_BUTTON_BASE, TOOLBAR_BUTTON_STATES.inactive)}
-          >
-            <AppIcon icon={IconBookmark} context="inline" tone="current" />
-          </button>
-          <button
-            type="button"
             aria-label="Saved filters"
             className={cn(TOOLBAR_BUTTON_BASE, TOOLBAR_BUTTON_STATES.inactive)}
           >
             <AppIcon icon={IconBookmark} context="inline" tone="current" />
             <span>Saved filters</span>
-            <span className="rounded bg-muted px-1 text-2xs">0</span>
+            <span className="rounded bg-muted px-1 text-[10px]">0</span>
           </button>
           <button
             type="button"

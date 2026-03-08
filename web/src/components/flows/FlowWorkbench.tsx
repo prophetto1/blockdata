@@ -37,6 +37,7 @@ import { PdfPreview } from '@/components/documents/PdfPreview';
 import { PptxPreview } from '@/components/documents/PptxPreview';
 import { edgeFetch, edgeJson } from '@/lib/edge';
 import { fetchAllProjectDocuments } from '@/lib/projectDocuments';
+import { PROJECT_LIST_CHANGED_EVENT, readFocusedProjectId } from '@/lib/projectFocus';
 import {
   getDocumentFormat,
   isDocxDocument,
@@ -51,6 +52,8 @@ import {
 } from '@/lib/projectDetailHelpers';
 import { supabase } from '@/lib/supabase';
 import FlowCanvas from './FlowCanvas';
+import { useFlowDocument, type FlowDocumentHandle } from './nocode/useFlowDocument';
+import { NocodeEditor } from './nocode/NocodeEditor';
 import {
   activateTabInPane,
   closeTabInPane,
@@ -1270,9 +1273,10 @@ function renderTabContent(
   setCodeDraft: (next: string) => void,
   monacoTheme: string,
   filesStorageKey: string,
-  projectId: string,
+  projectId: string | null,
   selectedDoc: ProjectDocumentRow | null,
   onSelectedDocChange: (doc: ProjectDocumentRow | null) => void,
+  flowDoc: FlowDocumentHandle,
 ) {
   switch (tabId) {
     case 'flowCode':
@@ -1305,7 +1309,7 @@ function renderTabContent(
         </div>
       );
     case 'topology':
-      return <FlowCanvas />;
+      return <FlowCanvas tasks={flowDoc.doc?.tasks} />;
     case 'documentation':
       return (
         <div className="space-y-2 p-3">
@@ -1331,12 +1335,7 @@ function renderTabContent(
         </div>
       );
     case 'nocode':
-      return (
-        <div className="space-y-2 p-3">
-          <p className="text-sm font-semibold text-foreground">No-code</p>
-          <p className="text-sm text-muted-foreground">No-code form shell placeholder.</p>
-        </div>
-      );
+      return <NocodeEditor {...flowDoc} />;
     default:
       return null;
   }
@@ -1346,8 +1345,9 @@ export default function FlowWorkbench({ flowId, flowName, namespace }: FlowWorkb
   const dragStateRef = useRef<DragTabState | null>(null);
   const dragPaneStateRef = useRef<DragPaneState | null>(null);
   const pointerPaneStateRef = useRef<PointerPaneState | null>(null);
+  const [projectId, setProjectId] = useState<string | null>(() => readFocusedProjectId());
   const saveKey = `${SAVE_KEY_PREFIX}:${namespace}:${flowId}`;
-  const filesSaveKey = `${FILES_SAVE_KEY_PREFIX}:${namespace}:${flowId}`;
+  const filesSaveKey = `${FILES_SAVE_KEY_PREFIX}:${projectId ?? 'no-project'}`;
   const flowPath = useMemo(
     () => `flows/${encodeURIComponent(namespace)}/${encodeURIComponent(flowId)}`,
     [flowId, namespace],
@@ -1364,6 +1364,22 @@ export default function FlowWorkbench({ flowId, flowName, namespace }: FlowWorkb
   const [validationIssues, setValidationIssues] = useState<FlowValidationViolation[]>([]);
   const [dragOverPaneIndex, setDragOverPaneIndex] = useState<number | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const flowDoc = useFlowDocument(codeDraft, setCodeDraft);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+
+    const syncProjectContext = () => {
+      setProjectId(readFocusedProjectId());
+    };
+
+    window.addEventListener(PROJECT_LIST_CHANGED_EVENT, syncProjectContext);
+    window.addEventListener('storage', syncProjectContext);
+    return () => {
+      window.removeEventListener(PROJECT_LIST_CHANGED_EVENT, syncProjectContext);
+      window.removeEventListener('storage', syncProjectContext);
+    };
+  }, []);
   const [isValidating, setIsValidating] = useState(false);
   const isDirty = useMemo(() => codeDraft !== savedCode, [codeDraft, savedCode]);
 
@@ -2153,9 +2169,10 @@ export default function FlowWorkbench({ flowId, flowName, namespace }: FlowWorkb
                   setCodeDraft,
                   monacoTheme,
                   filesSaveKey,
-                  flowId,
+                  projectId,
                   selectedDoc,
                   handleSelectedDocChange,
+                  flowDoc,
                 )}
               </ScrollArea>
             </Splitter.Panel>

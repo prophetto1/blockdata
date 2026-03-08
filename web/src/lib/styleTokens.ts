@@ -1,8 +1,11 @@
 export const styleTokens = {
   shell: {
-    headerHeight: 72,
-    navbarWidth: 224,
+    headerHeight: 60,
+    navbarWidth: 220,
     navbarCompactWidth: 60,
+    navbarMobileWidth: 200,
+    navbarMinWidth: 220,
+    navbarMaxWidth: 350,
     assistantWidth: 360,
     mainPadding: 'md' as const,
     contentMaxWidth: 'var(--app-shell-content-max-width)',

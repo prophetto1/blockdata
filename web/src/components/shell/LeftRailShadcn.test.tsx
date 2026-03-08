@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -17,7 +17,7 @@ vi.mock('@/lib/supabase', () => ({
   },
 }));
 
-describe('LeftRailShadcn project selector', () => {
+describe('LeftRailShadcn', () => {
   beforeAll(() => {
     vi.stubGlobal(
       'ResizeObserver',
@@ -50,36 +50,48 @@ describe('LeftRailShadcn project selector', () => {
           doc_count: 11,
           workspace_id: null,
         },
-        {
-          project_id: 'alpha-project-id',
-          project_name: 'Alpha Project',
-          doc_count: 2,
-          workspace_id: null,
-        },
       ],
       error: null,
     });
   });
 
-  it('renders the project dropdown list inside Ark ScrollArea wrappers', async () => {
+  it('renders the brand logo and top-level nav items', async () => {
     render(
-      <MemoryRouter initialEntries={['/app/elt/default-project-id']}>
+      <MemoryRouter initialEntries={['/app/elt']}>
         <LeftRailShadcn />
       </MemoryRouter>,
     );
 
-    const trigger = await screen.findByRole('combobox', { name: 'Select project' });
-    fireEvent.click(trigger);
+    expect(await screen.findByRole('button', { name: 'Go to home' })).toBeInTheDocument();
+    expect(screen.getByText('Flows')).toBeInTheDocument();
+    expect(screen.getByText('ELT')).toBeInTheDocument();
+    expect(screen.getByText('Database')).toBeInTheDocument();
+    // "Settings" appears in nav items and also in account menu
+    expect(screen.getAllByText('Settings').length).toBeGreaterThanOrEqual(1);
+  });
 
-    await waitFor(() => {
-      expect(document.querySelector('[data-part="content"]')).toBeInTheDocument();
-    });
+  it('shows drill view when on a settings route', async () => {
+    render(
+      <MemoryRouter initialEntries={['/app/settings/profile']}>
+        <LeftRailShadcn />
+      </MemoryRouter>,
+    );
 
-    await waitFor(() => {
-      expect(document.querySelector('[data-slot="scroll-area"]')).toBeInTheDocument();
-      expect(document.querySelector('[data-slot="scroll-area-viewport"]')).toBeInTheDocument();
-      expect(document.querySelector('[data-slot="scroll-area-scrollbar"]')).toBeInTheDocument();
-      expect(document.querySelector('[data-slot="scroll-area-thumb"]')).toBeInTheDocument();
-    });
+    // Drill view shows settings sub-items
+    expect(await screen.findByText('Account')).toBeInTheDocument();
+    expect(screen.getByText('Themes')).toBeInTheDocument();
+    expect(screen.getByText('AI Providers')).toBeInTheDocument();
+  });
+
+  it('renders compact mode with icon-only buttons', () => {
+    const { container } = render(
+      <MemoryRouter initialEntries={['/app/elt']}>
+        <LeftRailShadcn desktopCompact />
+      </MemoryRouter>,
+    );
+
+    // In compact mode, nav items render as icon-only buttons with title/aria-label
+    const navButtons = container.querySelectorAll('button[title]');
+    expect(navButtons.length).toBeGreaterThanOrEqual(5);
   });
 });

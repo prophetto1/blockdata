@@ -1,0 +1,179 @@
+table_name	column_name	data_type
+concurrency_limit	key	character varying
+concurrency_limit	value	jsonb
+concurrency_limit	tenant_id	character varying
+concurrency_limit	namespace	character varying
+concurrency_limit	flow_id	character varying
+concurrency_limit	running	integer
+dashboards	key	character varying
+dashboards	value	jsonb
+dashboards	tenant_id	character varying
+dashboards	deleted	boolean
+dashboards	id	character varying
+dashboards	title	character varying
+dashboards	description	text
+dashboards	fulltext	tsvector
+dashboards	source_code	text
+dashboards	created	timestamp with time zone
+dashboards	updated	timestamp with time zone
+execution_queued	key	character varying
+execution_queued	value	jsonb
+execution_queued	tenant_id	character varying
+execution_queued	namespace	character varying
+execution_queued	flow_id	character varying
+execution_queued	date	timestamp with time zone
+executions	key	character varying
+executions	value	jsonb
+executions	deleted	boolean
+executions	namespace	character varying
+executions	flow_id	character varying
+executions	state_current	USER-DEFINED
+executions	state_duration	bigint
+executions	start_date	timestamp without time zone
+executions	end_date	timestamp without time zone
+executions	fulltext	tsvector
+executions	id	character varying
+executions	tenant_id	character varying
+executions	trigger_execution_id	character varying
+executions	kind	character varying
+executordelayed	key	character varying
+executordelayed	value	jsonb
+executordelayed	date	timestamp with time zone
+executorstate	key	character varying
+executorstate	value	jsonb
+flow_topologies	key	character varying
+flow_topologies	value	jsonb
+flow_topologies	source_namespace	character varying
+flow_topologies	source_id	character varying
+flow_topologies	relation	character varying
+flow_topologies	destination_namespace	character varying
+flow_topologies	destination_id	character varying
+flow_topologies	source_tenant_id	character varying
+flow_topologies	destination_tenant_id	character varying
+flows	key	character varying
+flows	value	jsonb
+flows	deleted	boolean
+flows	id	character varying
+flows	namespace	character varying
+flows	revision	integer
+flows	fulltext	tsvector
+flows	source_code	text
+flows	tenant_id	character varying
+flows	updated	character varying
+flyway_schema_history	installed_rank	integer
+flyway_schema_history	version	character varying
+flyway_schema_history	description	character varying
+flyway_schema_history	type	character varying
+flyway_schema_history	script	character varying
+flyway_schema_history	checksum	integer
+flyway_schema_history	installed_by	character varying
+flyway_schema_history	installed_on	timestamp without time zone
+flyway_schema_history	execution_time	integer
+flyway_schema_history	success	boolean
+kv_metadata	key	character varying
+kv_metadata	value	jsonb
+kv_metadata	tenant_id	character varying
+kv_metadata	namespace	character varying
+kv_metadata	name	character varying
+kv_metadata	description	text
+kv_metadata	version	integer
+kv_metadata	last	boolean
+kv_metadata	expiration_date	timestamp with time zone
+kv_metadata	updated	timestamp with time zone
+kv_metadata	deleted	boolean
+kv_metadata	fulltext	tsvector
+kv_metadata	created	timestamp with time zone
+logs	key	character varying
+logs	value	jsonb
+logs	namespace	character varying
+logs	flow_id	character varying
+logs	task_id	character varying
+logs	execution_id	character varying
+logs	taskrun_id	character varying
+logs	attempt_number	integer
+logs	trigger_id	character varying
+logs	level	USER-DEFINED
+logs	timestamp	timestamp with time zone
+logs	tenant_id	character varying
+logs	fulltext	tsvector
+logs	execution_kind	character varying
+metrics	key	character varying
+metrics	value	jsonb
+metrics	namespace	character varying
+metrics	flow_id	character varying
+metrics	task_id	character varying
+metrics	execution_id	character varying
+metrics	taskrun_id	character varying
+metrics	metric_name	character varying
+metrics	timestamp	timestamp with time zone
+metrics	metric_value	double precision
+metrics	tenant_id	character varying
+metrics	execution_kind	character varying
+multipleconditions	key	character varying
+multipleconditions	value	jsonb
+multipleconditions	namespace	character varying
+multipleconditions	flow_id	character varying
+multipleconditions	condition_id	character varying
+multipleconditions	start_date	timestamp with time zone
+multipleconditions	end_date	timestamp with time zone
+multipleconditions	tenant_id	character varying
+namespace_file_metadata	key	character varying
+namespace_file_metadata	value	jsonb
+namespace_file_metadata	tenant_id	character varying
+namespace_file_metadata	namespace	character varying
+namespace_file_metadata	path	character varying
+namespace_file_metadata	parent_path	character varying
+namespace_file_metadata	version	integer
+namespace_file_metadata	last	boolean
+namespace_file_metadata	size	bigint
+namespace_file_metadata	created	timestamp with time zone
+namespace_file_metadata	updated	timestamp with time zone
+namespace_file_metadata	deleted	boolean
+namespace_file_metadata	fulltext	tsvector
+queues	offset	bigint
+queues	type	USER-DEFINED
+queues	key	character varying
+queues	value	jsonb
+queues	updated	timestamp with time zone
+queues	consumer_indexer	boolean
+queues	consumer_executor	boolean
+queues	consumer_worker	boolean
+queues	consumer_scheduler	boolean
+queues	consumer_flow_topology	boolean
+queues	consumer_group	character varying
+service_instance	key	character varying
+service_instance	value	jsonb
+service_instance	service_id	character varying
+service_instance	service_type	character varying
+service_instance	state	character varying
+service_instance	created_at	timestamp with time zone
+service_instance	updated_at	timestamp with time zone
+settings	key	character varying
+settings	value	jsonb
+sla_monitor	key	character varying
+sla_monitor	value	jsonb
+sla_monitor	execution_id	character varying
+sla_monitor	sla_id	character varying
+sla_monitor	deadline	timestamp with time zone
+templates	key	character varying
+templates	value	jsonb
+templates	deleted	boolean
+templates	id	character varying
+templates	namespace	character varying
+templates	fulltext	tsvector
+templates	tenant_id	character varying
+triggers	key	character varying
+triggers	value	jsonb
+triggers	namespace	character varying
+triggers	flow_id	character varying
+triggers	trigger_id	character varying
+triggers	execution_id	character varying
+triggers	fulltext	tsvector
+triggers	tenant_id	character varying
+triggers	next_execution_date	timestamp with time zone
+triggers	worker_id	character varying
+triggers	disabled	boolean
+worker_job_running	key	character varying
+worker_job_running	value	jsonb
+worker_job_running	worker_uuid	character varying
+(177 rows)

@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { IconLock, IconPlus, IconX } from '@tabler/icons-react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useShellHeaderTitle } from '@/components/common/useShellHeaderTitle';
 import { PreviewTabPanel } from '@/components/documents/PreviewTabPanel';
@@ -11,11 +10,11 @@ import { DependenciesTab } from '@/components/flows/tabs/DependenciesTab';
 import { ExecutionsTab } from '@/components/flows/tabs/ExecutionsTab';
 import { LogsTab } from '@/components/flows/tabs/LogsTab';
 import { MetricsTab } from '@/components/flows/tabs/MetricsTab';
+import { OverviewTab } from '@/components/flows/tabs/OverviewTab';
 import { RevisionsTab } from '@/components/flows/tabs/RevisionsTab';
 import { TriggersTab } from '@/components/flows/tabs/TriggersTab';
-
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { edgeJson } from '@/lib/edge';
+import { cn } from '@/lib/utils';
 import {
   DEFAULT_FLOW_TIME_RANGE,
   getPreferredFlowTab,
@@ -40,7 +39,7 @@ const FLOW_TABS: readonly FlowTabConfig[] = [
   { value: 'metrics', label: 'Metrics' },
   { value: 'dependencies', label: 'Dependencies' },
   { value: 'concurrency', label: 'Concurrency' },
-  { value: 'auditlogs', label: 'Audit Logs', locked: true },
+  { value: 'auditlogs', label: 'Audit Logs' },
 ] as const;
 
 type FlowTab = (typeof FLOW_TABS)[number]['value'];
@@ -51,10 +50,6 @@ const OPEN_FLOW_TAB_VALUES = FLOW_TABS
   .filter((tab) => !tab.locked)
   .map((tab) => tab.value) as readonly FlowTab[];
 const FLOW_DEFAULT_TAB_STORAGE_KEY = 'flowDefaultTab';
-
-function isFlowTab(value: string | undefined): value is FlowTab {
-  return FLOW_TABS.some((tab) => tab.value === value);
-}
 
 function isLockedFlowTab(value: string | undefined): value is FlowTab {
   return Boolean(value) && LOCKED_FLOW_TAB_VALUES.some((tab) => tab === value);
@@ -94,6 +89,44 @@ type FlowTriggerSummary = {
   disabled: boolean;
 };
 
+type SeededFlowDetail = {
+  name: string;
+  namespace: string;
+  description: string;
+  triggers: FlowTriggerSummary[];
+};
+
+const SEEDED_FLOW_DETAILS: Record<string, SeededFlowDetail> = {
+  default: {
+    name: 'Default Flow',
+    namespace: 'default',
+    description: 'Seeded mock flow for reviewing the flow detail tabs before backend wiring is ready.',
+    triggers: [
+      {
+        id: 'schedule-daily',
+        type: 'Schedule',
+        workerId: null,
+        nextExecutionDate: '2026-03-08T12:00:00.000Z',
+        disabled: false,
+      },
+    ],
+  },
+  main: {
+    name: 'Main Flow',
+    namespace: 'default',
+    description: 'Seeded mock flow for reviewing the flow detail tabs before backend wiring is ready.',
+    triggers: [
+      {
+        id: 'schedule-daily',
+        type: 'Schedule',
+        workerId: null,
+        nextExecutionDate: '2026-03-08T12:00:00.000Z',
+        disabled: false,
+      },
+    ],
+  },
+};
+
 function isSuppressedFlowMetadataError(message: string): boolean {
   return /^Network request failed \(flows\/default\/[^)]+\)\.$/.test(message);
 }
@@ -117,13 +150,23 @@ function toFlowTriggers(input: FlowMetadataResponse['triggers']): FlowTriggerSum
   });
 }
 
+
+function FlowWorkspaceFrame({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="h-full w-full min-h-0 p-2">
+      <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-md border border-border bg-card">
+        {children}
+      </div>
+    </div>
+  );
+}
+
 export default function FlowDetail() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { flowId, tab } = useParams<{ flowId: string; tab?: string }>();
   const [flowName, setFlowName] = useState('Flow');
   const [namespace, setNamespace] = useState<string | null>(null);
-  const [flowDescription, setFlowDescription] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [flowTriggers, setFlowTriggers] = useState<FlowTriggerSummary[]>([]);
   const [topologyResetNonce, setTopologyResetNonce] = useState(0);
@@ -180,6 +223,14 @@ export default function FlowDetail() {
 
   useEffect(() => {
     if (!flowId) return;
+    const seededFlow = SEEDED_FLOW_DETAILS[flowId];
+    if (seededFlow) {
+      setError(null);
+      setFlowName(seededFlow.name);
+      setNamespace(seededFlow.namespace);
+      setFlowTriggers(seededFlow.triggers);
+      return;
+    }
     let cancelled = false;
 
     const load = async () => {
@@ -197,7 +248,6 @@ export default function FlowDetail() {
           : 'default';
         setFlowName(flowNameFromLabel ?? `Flow ${flowId.slice(0, 8)}`);
         setNamespace(resolvedNamespace);
-        setFlowDescription(metadata.description ?? null);
         setFlowTriggers(toFlowTriggers(metadata.triggers));
       } catch (e) {
         if (cancelled) return;
@@ -238,6 +288,7 @@ export default function FlowDetail() {
     () => allTabs.find((item) => item.value === activeTab)?.label ?? activeTab,
     [activeTab, allTabs],
   );
+  const useWorkspaceFrame = activeTab === 'edit' || activeTab === 'topology' || isPreviewTab(activeTab);
 
   useShellHeaderTitle({
     title: flowName,
@@ -246,166 +297,98 @@ export default function FlowDetail() {
 
   if (!flowId) return null;
 
+  const renderActivePanel = () => {
+    if (isPreviewTab(activeTab)) {
+      return (
+        <FlowWorkspaceFrame>
+          <PreviewTabPanel doc={null} />
+        </FlowWorkspaceFrame>
+      );
+    }
+
+    if (activeTab === 'topology') {
+      return (
+        <FlowWorkspaceFrame>
+          <div className="flow-detail-panel-placeholder min-h-0 flex-1 overflow-hidden">
+            <FlowCanvas key={`topology-canvas:${flowId}:${topologyResetNonce}`} />
+          </div>
+        </FlowWorkspaceFrame>
+      );
+    }
+
+    if (activeTab === 'edit') {
+      return (
+        <FlowWorkspaceFrame>
+          <FlowWorkbench
+            flowId={flowId}
+            flowName={flowName}
+            namespace={namespace ?? 'default'}
+          />
+        </FlowWorkspaceFrame>
+      );
+    }
+
+    if (activeTab === 'overview') {
+      return (
+        <OverviewTab onExecute={() => navigate(`/app/flows/${flowId}/executions${searchSuffix}`)} />
+      );
+    }
+
+    if (activeTab === 'executions') return <ExecutionsTab flowId={flowId} />;
+    if (activeTab === 'revisions') return <RevisionsTab flowId={flowId} />;
+    if (activeTab === 'triggers') {
+      return (
+        <TriggersTab
+          triggers={flowTriggers.map((t) => ({
+            id: t.id,
+            type: t.type,
+            nextExecutionDate: t.nextExecutionDate,
+            disabled: t.disabled,
+          }))}
+          onEditFlow={() => navigate(`/app/flows/${flowId}/edit`)}
+        />
+      );
+    }
+    if (activeTab === 'logs') return <LogsTab flowId={flowId} />;
+    if (activeTab === 'metrics') return <MetricsTab flowId={flowId} />;
+    if (activeTab === 'dependencies') return <DependenciesTab />;
+    if (activeTab === 'concurrency') return <ConcurrencyTab />;
+    if (activeTab === 'auditlogs') return <AuditLogsTab flowId={flowId} />;
+
+    return null;
+  };
+
   return (
-    <section className="flow-detail-shell">
-      <Tabs
-        value={activeTab}
-        onValueChange={(value) => {
-          if (!value) return;
-          if (isPreviewTab(value)) {
-            navigate(`/app/flows/${flowId}/${value}${searchSuffix}`);
-            return;
-          }
-          if (!isFlowTab(value)) return;
-          if (isLockedFlowTab(value)) return;
-          if (typeof window !== 'undefined') {
-            window.localStorage.setItem(FLOW_DEFAULT_TAB_STORAGE_KEY, value);
-          }
-          navigate(`/app/flows/${flowId}/${value}${searchSuffix}`);
-        }}
-        className="flow-detail-tabs flex min-h-0 flex-col"
-      >
-        <TabsList
-          aria-label="Flow sections"
-          className="flow-detail-tabs-row flex h-11 min-h-11 w-full items-stretch overflow-x-auto bg-card shadow-[inset_0_-1px_0_var(--border)]"
-        >
-          {FLOW_TABS.map((item) => {
-            const isLocked = Boolean(item.locked);
-            return (
-              <TabsTrigger
-                key={item.value}
-                value={item.value}
-                disabled={isLocked}
-                aria-disabled={isLocked}
-                className="inline-flex h-full shrink-0 items-center gap-1 border-r border-border px-3.5 text-[13px] font-semibold leading-none whitespace-nowrap text-muted-foreground transition-colors first:border-l first:border-l-border hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-muted-foreground data-selected:bg-background data-selected:text-foreground"
-              >
-                <span>{item.label}</span>
-                {isLocked ? <IconLock size={11} aria-hidden /> : null}
-              </TabsTrigger>
-            );
-          })}
-          {previewTabConfigs.map((item) => (
-            <TabsTrigger
-              key={item.value}
-              value={item.value}
-              className="group inline-flex h-full shrink-0 items-center gap-1 border-r border-border px-3.5 text-[13px] font-semibold leading-none whitespace-nowrap text-muted-foreground transition-colors hover:bg-accent hover:text-foreground data-selected:bg-background data-selected:text-foreground"
+    <section className="flow-detail-shell flex min-h-0 flex-1 flex-col">
+      <div className="flow-detail-layout flex min-h-0 flex-1 overflow-hidden">
+        <div className="flow-detail-content min-w-0 flex-1 overflow-hidden">
+          {error ? (
+            <div
+              role="alert"
+              className="mx-4 mt-4 flex items-start justify-between gap-3 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive dark:border-destructive/40"
             >
-              <span>{item.label}</span>
+              <span>{error}</span>
               <button
                 type="button"
-                aria-label={`Close ${item.label}`}
-                className="ml-0.5 rounded p-0.5 opacity-0 transition-opacity hover:bg-muted group-hover:opacity-100 data-selected:opacity-100"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  closePreviewTab(item.value);
-                }}
+                aria-label="Dismiss flow error"
+                className="shrink-0 rounded border border-destructive/30 px-1.5 py-0.5 text-xs text-destructive hover:bg-destructive/10 dark:border-destructive/40"
+                onClick={() => setError(null)}
               >
-                <IconX size={10} aria-hidden />
+                Dismiss
               </button>
-            </TabsTrigger>
-          ))}
-          {previewTabs.length < MAX_PREVIEW_TABS ? (
-            <button
-              type="button"
-              aria-label="Add preview tab"
-              className="inline-flex h-full shrink-0 items-center px-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-              onClick={addPreviewTab}
-            >
-              <IconPlus size={14} aria-hidden />
-            </button>
+            </div>
           ) : null}
-        </TabsList>
 
-        {error ? (
           <div
-            role="alert"
-            className="mx-4 mt-4 flex items-start justify-between gap-3 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive dark:border-destructive/40"
+            className={cn(
+              'flow-detail-tab-panel',
+              useWorkspaceFrame ? 'p-2' : 'p-6',
+            )}
           >
-            <span>{error}</span>
-            <button
-              type="button"
-              aria-label="Dismiss flow error"
-              className="shrink-0 rounded border border-destructive/30 px-1.5 py-0.5 text-xs text-destructive hover:bg-destructive/10 dark:border-destructive/40"
-              onClick={() => setError(null)}
-            >
-              Dismiss
-            </button>
+            {renderActivePanel()}
           </div>
-        ) : null}
-
-        {FLOW_TABS.map((item) => (
-          <TabsContent key={item.value} value={item.value} className="flow-detail-tab-panel p-4">
-            {item.value === 'topology' ? (
-              <div className="flow-detail-panel-placeholder flex min-h-0 flex-1 rounded-md border border-border bg-card">
-                <FlowCanvas key={`topology-canvas:${flowId}:${topologyResetNonce}`} />
-              </div>
-            ) : item.value === 'edit' ? (
-              <FlowWorkbench
-                flowId={flowId}
-                flowName={flowName}
-                namespace={namespace ?? 'default'}
-              />
-            ) : item.value === 'overview' ? (
-              <div className="flow-detail-panel-placeholder rounded-md border border-border bg-card p-4">
-                <div className="grid gap-3 md:grid-cols-4">
-                  <div className="rounded-md border border-border bg-background p-3">
-                    <p className="text-xs text-muted-foreground">Namespace</p>
-                    <p className="text-sm font-semibold">{namespace ?? 'default'}</p>
-                  </div>
-                  <div className="rounded-md border border-border bg-background p-3">
-                    <p className="text-xs text-muted-foreground">Total Executions</p>
-                    <p className="text-sm font-semibold">&mdash;</p>
-                  </div>
-                  <div className="rounded-md border border-border bg-background p-3">
-                    <p className="text-xs text-muted-foreground">Success Rate</p>
-                    <p className="text-sm font-semibold">&mdash;</p>
-                  </div>
-                  <div className="rounded-md border border-border bg-background p-3">
-                    <p className="text-xs text-muted-foreground">Documents</p>
-                    <p className="text-sm font-semibold">&mdash;</p>
-                  </div>
-                </div>
-                {flowDescription ? (
-                  <p className="mt-3 text-sm text-muted-foreground">{flowDescription}</p>
-                ) : null}
-                <div className="mt-4 space-y-2">
-                  <h3 className="text-sm font-semibold text-foreground">Recent executions</h3>
-                  <p className="text-sm text-muted-foreground">No executions yet.</p>
-                </div>
-              </div>
-            ) : item.value === 'executions' ? (
-              <ExecutionsTab flowId={flowId} />
-            ) : item.value === 'revisions' ? (
-              <RevisionsTab flowId={flowId} />
-            ) : item.value === 'triggers' ? (
-              <TriggersTab
-                triggers={flowTriggers.map((t) => ({
-                  id: t.id,
-                  type: t.type,
-                  nextExecutionDate: t.nextExecutionDate,
-                  disabled: t.disabled,
-                }))}
-                onEditFlow={() => navigate(`/app/flows/${flowId}/edit`)}
-              />
-            ) : item.value === 'logs' ? (
-              <LogsTab flowId={flowId} />
-            ) : item.value === 'metrics' ? (
-              <MetricsTab flowId={flowId} />
-            ) : item.value === 'dependencies' ? (
-              <DependenciesTab />
-            ) : item.value === 'concurrency' ? (
-              <ConcurrencyTab />
-            ) : item.value === 'auditlogs' ? (
-              <AuditLogsTab />
-            ) : null}
-          </TabsContent>
-        ))}
-        {previewTabConfigs.map((item) => (
-          <TabsContent key={item.value} value={item.value} className="flow-detail-tab-panel h-full min-h-0">
-            <PreviewTabPanel doc={null} />
-          </TabsContent>
-        ))}
-      </Tabs>
+        </div>
+      </div>
     </section>
   );
 }

@@ -1,10 +1,10 @@
 # Component Inventory
 
-Generated: 2026-03-06T13:21:22.644Z
+Generated: 2026-03-07T10:13:15.361Z
 Scope: auth
 
-Pages scanned: 40
-Unique component usages: 404
+Pages scanned: 39
+Unique component usages: 417
 
 ## Category Totals
 
@@ -12,10 +12,10 @@ Unique component usages: 404
 | --- | ---: |
 | ark-ui | 147 |
 | external-package | 16 |
-| in-file component | 7 |
-| local-components | 135 |
-| relative-local | 18 |
-| tabler-icons | 80 |
+| in-file component | 13 |
+| local-components | 129 |
+| relative-local | 19 |
+| tabler-icons | 92 |
 | unknown | 1 |
 
 ## src/pages/AgentOnboarding.tsx
@@ -155,31 +155,55 @@ Component usages: 18
 | `DependenciesTab` | `@/components/flows/tabs/DependenciesTab` | local-components | DependenciesTab comes from @/components/flows/tabs/DependenciesTab (named import of DependenciesTab) |
 | `ExecutionsTab` | `@/components/flows/tabs/ExecutionsTab` | local-components | ExecutionsTab comes from @/components/flows/tabs/ExecutionsTab (named import of ExecutionsTab) |
 | `FlowCanvas` | `@/components/flows/FlowCanvas` | local-components | FlowCanvas comes from @/components/flows/FlowCanvas (default import of default) |
+| `FlowRailButton` | `(in-file or unresolved)` | in-file component | FlowRailButton is defined in the same page file |
+| `FlowRailGroup` | `(in-file or unresolved)` | in-file component | FlowRailGroup is defined in the same page file |
 | `FlowWorkbench` | `@/components/flows/FlowWorkbench` | local-components | FlowWorkbench comes from @/components/flows/FlowWorkbench (default import of default) |
+| `FlowWorkspaceFrame` | `(in-file or unresolved)` | in-file component | FlowWorkspaceFrame is defined in the same page file |
 | `IconLock` | `@tabler/icons-react` | tabler-icons | IconLock comes from @tabler/icons-react (named import of IconLock) |
 | `IconPlus` | `@tabler/icons-react` | tabler-icons | IconPlus comes from @tabler/icons-react (named import of IconPlus) |
 | `IconX` | `@tabler/icons-react` | tabler-icons | IconX comes from @tabler/icons-react (named import of IconX) |
 | `LogsTab` | `@/components/flows/tabs/LogsTab` | local-components | LogsTab comes from @/components/flows/tabs/LogsTab (named import of LogsTab) |
 | `MetricsTab` | `@/components/flows/tabs/MetricsTab` | local-components | MetricsTab comes from @/components/flows/tabs/MetricsTab (named import of MetricsTab) |
+| `OverviewTab` | `@/components/flows/tabs/OverviewTab` | local-components | OverviewTab comes from @/components/flows/tabs/OverviewTab (named import of OverviewTab) |
 | `PreviewTabPanel` | `@/components/documents/PreviewTabPanel` | local-components | PreviewTabPanel comes from @/components/documents/PreviewTabPanel (named import of PreviewTabPanel) |
 | `RevisionsTab` | `@/components/flows/tabs/RevisionsTab` | local-components | RevisionsTab comes from @/components/flows/tabs/RevisionsTab (named import of RevisionsTab) |
-| `Tabs` | `@/components/ui/tabs` | local-components | Tabs comes from @/components/ui/tabs (named import of Tabs) |
-| `TabsContent` | `@/components/ui/tabs` | local-components | TabsContent comes from @/components/ui/tabs (named import of TabsContent) |
-| `TabsList` | `@/components/ui/tabs` | local-components | TabsList comes from @/components/ui/tabs (named import of TabsList) |
-| `TabsTrigger` | `@/components/ui/tabs` | local-components | TabsTrigger comes from @/components/ui/tabs (named import of TabsTrigger) |
 | `TriggersTab` | `@/components/flows/tabs/TriggersTab` | local-components | TriggersTab comes from @/components/flows/tabs/TriggersTab (named import of TriggersTab) |
 
 ## src/pages/FlowsList.tsx
 
-Component usages: 5
+Component usages: 21
 
 | Used As | Source | Category | Definition |
 | --- | --- | --- | --- |
+| `Badge` | `@/components/ui/badge` | local-components | Badge comes from @/components/ui/badge (named import of Badge) |
+| `Button` | `@/components/ui/button` | local-components | Button comes from @/components/ui/button (named import of Button) |
 | `ErrorAlert` | `@/components/common/ErrorAlert` | local-components | ErrorAlert comes from @/components/common/ErrorAlert (named import of ErrorAlert) |
 | `HugeiconsIcon` | `@hugeicons/react` | external-package | HugeiconsIcon comes from @hugeicons/react (named import of HugeiconsIcon) |
-| `IconClock` | `@tabler/icons-react` | tabler-icons | IconClock comes from @tabler/icons-react (named import of IconClock) |
-| `IconExternalLink` | `@tabler/icons-react` | tabler-icons | IconExternalLink comes from @tabler/icons-react (named import of IconExternalLink) |
-| `PageHeader` | `@/components/common/PageHeader` | local-components | PageHeader comes from @/components/common/PageHeader (named import of PageHeader) |
+| `IconAdjustments` | `@tabler/icons-react` | tabler-icons | IconAdjustments comes from @tabler/icons-react (named import of IconAdjustments) |
+| `IconArrowDown` | `@tabler/icons-react` | tabler-icons | IconArrowDown comes from @tabler/icons-react (named import of IconArrowDown) |
+| `IconArrowsSort` | `@tabler/icons-react` | tabler-icons | IconArrowsSort comes from @tabler/icons-react (named import of IconArrowsSort) |
+| `IconArrowUp` | `@tabler/icons-react` | tabler-icons | IconArrowUp comes from @tabler/icons-react (named import of IconArrowUp) |
+| `IconBolt` | `@tabler/icons-react` | tabler-icons | IconBolt comes from @tabler/icons-react (named import of IconBolt) |
+| `IconBookmark` | `@tabler/icons-react` | tabler-icons | IconBookmark comes from @tabler/icons-react (named import of IconBookmark) |
+| `IconFileExport` | `@tabler/icons-react` | tabler-icons | IconFileExport comes from @tabler/icons-react (named import of IconFileExport) |
+| `IconFileImport` | `@tabler/icons-react` | tabler-icons | IconFileImport comes from @tabler/icons-react (named import of IconFileImport) |
+| `IconFileSearch` | `@tabler/icons-react` | tabler-icons | IconFileSearch comes from @tabler/icons-react (named import of IconFileSearch) |
+| `IconFilter` | `@tabler/icons-react` | tabler-icons | IconFilter comes from @tabler/icons-react (named import of IconFilter) |
+| `IconInfoCircle` | `@tabler/icons-react` | tabler-icons | IconInfoCircle comes from @tabler/icons-react (named import of IconInfoCircle) |
+| `IconPlayerPlay` | `@tabler/icons-react` | tabler-icons | IconPlayerPlay comes from @tabler/icons-react (named import of IconPlayerPlay) |
+| `IconPlus` | `@tabler/icons-react` | tabler-icons | IconPlus comes from @tabler/icons-react (named import of IconPlus) |
+| `IconRefresh` | `@tabler/icons-react` | tabler-icons | IconRefresh comes from @tabler/icons-react (named import of IconRefresh) |
+| `LabelBadge` | `(in-file or unresolved)` | in-file component | LabelBadge is defined in the same page file |
+| `SortIcon` | `(in-file or unresolved)` | in-file component | SortIcon is defined in the same page file |
+| `StatusCell` | `(in-file or unresolved)` | in-file component | StatusCell is defined in the same page file |
+
+## src/pages/kestra/TestsPage.tsx
+
+Component usages: 1
+
+| Used As | Source | Category | Definition |
+| --- | --- | --- | --- |
+| `KestraPageShell` | `./KestraPageShell` | relative-local | KestraPageShell comes from ./KestraPageShell (default import of default) |
 
 ## src/pages/marketplace/IntegrationsCatalog.tsx
 
@@ -455,26 +479,6 @@ Component usages: 17
 | `TooltipContent` | `@/components/ui/tooltip` | local-components | TooltipContent comes from @/components/ui/tooltip (named import of TooltipContent) |
 | `TooltipTrigger` | `@/components/ui/tooltip` | local-components | TooltipTrigger comes from @/components/ui/tooltip (named import of TooltipTrigger) |
 
-## src/pages/settings/ServicesPanel.tsx
-
-Component usages: 3
-
-| Used As | Source | Category | Definition |
-| --- | --- | --- | --- |
-| `ErrorAlert` | `@/components/common/ErrorAlert` | local-components | ErrorAlert comes from @/components/common/ErrorAlert (named import of ErrorAlert) |
-| `ServiceDetailRailView` | `./ServiceDetailRailView` | relative-local | ServiceDetailRailView comes from ./ServiceDetailRailView (named import of ServiceDetailRailView) |
-| `ServicesSidebar` | `./ServicesSidebar` | relative-local | ServicesSidebar comes from ./ServicesSidebar (named import of ServicesSidebar) |
-
-## src/pages/settings/ServicesSidebar.tsx
-
-Component usages: 3
-
-| Used As | Source | Category | Definition |
-| --- | --- | --- | --- |
-| `Tooltip` | `@/components/ui/tooltip` | local-components | Tooltip comes from @/components/ui/tooltip (named import of Tooltip) |
-| `TooltipContent` | `@/components/ui/tooltip` | local-components | TooltipContent comes from @/components/ui/tooltip (named import of TooltipContent) |
-| `TooltipTrigger` | `@/components/ui/tooltip` | local-components | TooltipTrigger comes from @/components/ui/tooltip (named import of TooltipTrigger) |
-
 ## src/pages/settings/setting-card-shared.tsx
 
 Component usages: 31
@@ -536,7 +540,7 @@ Component usages: 14
 
 ## src/pages/settings/SettingsAdmin.tsx
 
-Component usages: 6
+Component usages: 8
 
 | Used As | Source | Category | Definition |
 | --- | --- | --- | --- |
@@ -544,8 +548,10 @@ Component usages: 6
 | `ErrorAlert` | `@/components/common/ErrorAlert` | local-components | ErrorAlert comes from @/components/common/ErrorAlert (named import of ErrorAlert) |
 | `Field.Input` | `@ark-ui/react/field` | ark-ui | Field.Input comes from @ark-ui/react/field (named import of Field) |
 | `Field.Root` | `@ark-ui/react/field` | ark-ui | Field.Root comes from @ark-ui/react/field (named import of Field) |
+| `InstanceConfigPanel` | `./InstanceConfigPanel` | relative-local | InstanceConfigPanel comes from ./InstanceConfigPanel (named import of InstanceConfigPanel) |
 | `Navigate` | `react-router-dom` | external-package | Navigate comes from react-router-dom (named import of Navigate) |
-| `ServicesPanel` | `./ServicesPanel` | relative-local | ServicesPanel comes from ./ServicesPanel (named import of ServicesPanel) |
+| `PlatformConfigPanel` | `./PlatformConfigPanel` | relative-local | PlatformConfigPanel comes from ./PlatformConfigPanel (named import of PlatformConfigPanel) |
+| `WorkerConfigPanel` | `./WorkerConfigPanel` | relative-local | WorkerConfigPanel comes from ./WorkerConfigPanel (named import of WorkerConfigPanel) |
 
 ## src/pages/settings/SettingsAiOverview.tsx
 

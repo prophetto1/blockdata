@@ -44,18 +44,9 @@ Check the plan for:
 ## File Access Rules
 
 ### NEVER modify these directories (backend / infrastructure):
-- `services/` â€” Python FastAPI microservices
-- `supabase/functions/` â€” Deno edge functions
-- `supabase/migrations/` â€” Database migrations
-- `scripts/` â€” Operations scripts
-- `.env`, `.env.*`, `.mcp.json` â€” Secrets and config
 
-### Safe to modify:
-- `web/src/` â€” React frontend
-- `F:\blockdata-ct` â€” Documentation site (plans, assessments, API docs)
-- `AGENTS.md` â€” Only to update these rules with owner approval
+- `.env`, `.env.*`, `.mcp.json` Secrets and config
 
-If a task requires backend changes, stop and report that the task is out of scope. Do not attempt workarounds.
 
 ## File/Path Conventions
 

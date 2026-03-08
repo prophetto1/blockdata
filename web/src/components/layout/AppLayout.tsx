@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties } from 'react';
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/auth/AuthContext';
@@ -14,6 +14,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 
 const DESKTOP_NAV_OPEN_KEY = 'blockdata.shell.nav_open_desktop';
 const DESKTOP_NAV_OPEN_MIGRATION_KEY = 'blockdata.shell.nav_open_desktop.reset_once_v1';
+const SIDEBAR_WIDTH_KEY = 'blockdata.shell.sidebar_width';
 
 function readStoredBoolean(key: string, defaultValue: boolean): boolean {
   if (typeof window === 'undefined') return defaultValue;
@@ -103,12 +104,64 @@ export function AppLayout() {
   const toggleNav = () => setNavOpened((current) => !current);
   const closeNav = () => setNavOpened(false);
   const toggleDesktopNav = () => setDesktopNavOpened(!desktopNavOpened);
+
+  // Resizable sidebar width
+  const [sidebarWidth, setSidebarWidth] = useState<number>(() => {
+    if (typeof window === 'undefined') return styleTokens.shell.navbarWidth;
+    const stored = window.localStorage.getItem(SIDEBAR_WIDTH_KEY);
+    if (stored) {
+      const parsed = Number(stored);
+      if (Number.isFinite(parsed)) {
+        return Math.max(styleTokens.shell.navbarMinWidth, Math.min(parsed, styleTokens.shell.navbarMaxWidth));
+      }
+    }
+    return styleTokens.shell.navbarWidth;
+  });
+
+  const isResizingRef = useRef(false);
+
+  const handleResizeStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    isResizingRef.current = true;
+    const startX = e.clientX;
+    const startWidth = sidebarWidth;
+
+    const onMouseMove = (moveEvent: MouseEvent) => {
+      if (!isResizingRef.current) return;
+      const delta = moveEvent.clientX - startX;
+      const newWidth = Math.max(
+        styleTokens.shell.navbarMinWidth,
+        Math.min(startWidth + delta, styleTokens.shell.navbarMaxWidth),
+      );
+      setSidebarWidth(newWidth);
+    };
+
+    const onMouseUp = () => {
+      isResizingRef.current = false;
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      // Persist
+      setSidebarWidth((w) => {
+        window.localStorage.setItem(SIDEBAR_WIDTH_KEY, String(w));
+        return w;
+      });
+    };
+
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+  }, [sidebarWidth]);
+
   const desktopNavbarWidth = desktopNavOpened
-    ? styleTokens.shell.navbarWidth
+    ? sidebarWidth
     : styleTokens.shell.navbarCompactWidth;
   const isMobile = useIsMobile();
+  const mobileNavbarWidth = styleTokens.shell.navbarMobileWidth;
   const mainInsetStart = isMobile ? 0 : desktopNavbarWidth;
-  const navbarWidth = isMobile ? styleTokens.shell.navbarWidth : desktopNavbarWidth;
+  const navbarWidth = isMobile ? mobileNavbarWidth : desktopNavbarWidth;
 
   const isEltRoute = /^\/app\/elt(?:\/|$)/.test(location.pathname);
   const isEditorLayoutRoute = location.pathname === '/app/editor/layout';
@@ -226,6 +279,26 @@ export function AppLayout() {
               desktopCompact={!desktopNavOpened}
               onToggleDesktopCompact={toggleDesktopNav}
             />
+            {/* Resize handle */}
+            {desktopNavOpened && (
+              <div
+                role="separator"
+                aria-orientation="vertical"
+                onMouseDown={handleResizeStart}
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  bottom: 0,
+                  insetInlineEnd: -2,
+                  width: 4,
+                  cursor: 'col-resize',
+                  zIndex: 106,
+                }}
+                className="group"
+              >
+                <div className="mx-auto h-full w-px bg-transparent transition-colors group-hover:bg-primary/30" />
+              </div>
+            )}
           </aside>
         )}
 

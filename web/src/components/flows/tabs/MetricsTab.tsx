@@ -3,7 +3,7 @@ import { IconInfoCircle } from '@tabler/icons-react';
 import { AppIcon } from '@/components/ui/app-icon';
 import { FlowFilterBar } from './FlowFilterBar';
 
-export function MetricsTab({ flowId: _flowId }: { flowId: string }) {
+export function MetricsTab(_props: { flowId: string }) {
   const [filters, setFilters] = useState<{ id: string; label: string; removable: boolean }[]>([]);
 
   return (
@@ -17,9 +17,9 @@ export function MetricsTab({ flowId: _flowId }: { flowId: string }) {
         onRefresh={() => {}}
       />
 
-      <div className="flex items-center gap-2 rounded-md bg-blue-100 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 px-4 py-3">
-        <AppIcon icon={IconInfoCircle} context="inline" tone="current" className="text-blue-600 dark:text-blue-400 shrink-0" />
-        <span className="text-sm font-medium text-blue-800 dark:text-blue-300">Please choose a metric and an aggregation</span>
+      <div className="flex items-center gap-2 rounded-md border border-border bg-accent/50 px-4 py-3">
+        <AppIcon icon={IconInfoCircle} context="inline" tone="accent" className="shrink-0" />
+        <span className="text-sm font-medium text-accent-foreground">Please choose a metric and an aggregation</span>
       </div>
     </div>
   );
