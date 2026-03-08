@@ -166,6 +166,40 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--app-font-sans);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.22) transparent;
+}
+
+:root[data-theme='light'],
+:root[data-theme='light'] body {
+  scrollbar-color: rgba(0, 0, 0, 0.22) transparent;
+}
+
+/* Webkit thin scrollbar (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.22);
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.38);
+}
+
+:root[data-theme='light'] ::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.22);
+}
+
+:root[data-theme='light'] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.38);
 }
 
 body {
@@ -187,6 +221,7 @@ body {
 .sidebar-pane {
   font-family: var(--app-font-sans);
   font-size: 0.85rem;
+  overflow: hidden;
 }
 
 .sidebar-content {
@@ -267,10 +302,10 @@ h1#_top {
 }
 
 .sl-markdown-content code:not(pre code) {
-  border: 1px solid var(--border);
-  border-radius: 0.4rem;
-  background: var(--sl-color-bg-inline-code);
-  padding: 0.1rem 0.35rem;
+  border: 0;
+  border-radius: 0.2rem;
+  background: color-mix(in oklab, var(--sl-color-bg-inline-code) 55%, transparent);
+  padding: 0.02rem 0.18rem;
 }
 
 .sl-markdown-content pre {

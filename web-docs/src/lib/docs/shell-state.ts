@@ -7,6 +7,7 @@
 
 export type ShellMode = 'sections' | 'filetree';
 export type ShellFileSourceKind = 'repo' | 'local';
+export type EditorMode = 'source' | 'rich';
 
 export type ShellFileInfo = {
   filePath: string;
@@ -28,6 +29,7 @@ export const SHELL_FILE_EVENT = 'shell-file-select';
 export const SHELL_FILE_RESET_EVENT = 'shell-file-reset';
 export const SHELL_EDITOR_MODE_EVENT = 'shell-editor-mode';
 export const SHELL_PREVIEW_REFRESH_EVENT = 'shell-preview-refresh';
+export const DEFAULT_EDITOR_MODE: EditorMode = 'rich';
 
 export function selectFile(file: ShellFileInfo): void {
   window.dispatchEvent(new CustomEvent(SHELL_FILE_EVENT, { detail: file }));

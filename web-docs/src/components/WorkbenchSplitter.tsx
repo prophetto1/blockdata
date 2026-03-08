@@ -1,6 +1,6 @@
 import { Splitter } from '@ark-ui/react/splitter';
 import { ScrollArea } from '@ark-ui/react/scroll-area';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import EditorTabStrip from './EditorTabStrip.tsx';
 import SplitEditorView from './SplitEditorView.tsx';
 import '../styles/splitter.css';
@@ -33,13 +33,7 @@ function getSavedSize(): number[] {
  * panel carry the attribute; CSS ensures only one is visible at a time.
  */
 export default function WorkbenchSplitter() {
-  const [size, setSize] = useState<number[] | null>(null);
-
-  useEffect(() => {
-    setSize(getSavedSize());
-  }, []);
-
-  const sizeProps = size ? { size } : { defaultSize: [...DEFAULT_SIZE] };
+  const [defaultSize] = useState(getSavedSize);
 
   return (
     <Splitter.Root
@@ -49,12 +43,10 @@ export default function WorkbenchSplitter() {
         { id: 'editor', minSize: MIN_PANEL_PCT },
         { id: 'preview', minSize: MIN_PANEL_PCT },
       ]}
-      {...sizeProps}
-      onResizeEnd={({ size: nextSize }) => {
-        const normalized = [nextSize[0], nextSize[1]];
-        setSize(normalized);
+      defaultSize={defaultSize}
+      onResizeEnd={({ size }) => {
         try {
-          localStorage.setItem(SPLIT_RATIO_KEY, String(normalized[0]));
+          localStorage.setItem(SPLIT_RATIO_KEY, String(size[0]));
         } catch {}
       }}
     >
@@ -78,8 +70,8 @@ export default function WorkbenchSplitter() {
           <span className="wa-strip__label">Preview</span>
         </div>
         <ScrollArea.Root className="scroll-area-root wa-splitter__panel-body">
-          <ScrollArea.Viewport className="scroll-area-viewport">
-            <ScrollArea.Content>
+          <ScrollArea.Viewport className="scroll-area-viewport wa-splitter__viewport">
+            <ScrollArea.Content className="wa-splitter__scroll-content">
               <div data-shell="splitter-preview" className="wa-splitter__preview-content" />
             </ScrollArea.Content>
           </ScrollArea.Viewport>

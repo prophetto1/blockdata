@@ -61,14 +61,23 @@
 
 .scroll-area-thumb {
   border-radius: 999px;
-  background: light-dark(rgba(0, 0, 0, 0.22), rgba(255, 255, 255, 0.22));
+  background: rgba(255, 255, 255, 0.22);
   transition: background 120ms ease;
   will-change: transform;
 }
 
+:root[data-theme='light'] .scroll-area-thumb {
+  background: rgba(0, 0, 0, 0.22);
+}
+
 .scroll-area-thumb:hover,
 .scroll-area-scrollbar[data-dragging] .scroll-area-thumb {
-  background: light-dark(rgba(0, 0, 0, 0.38), rgba(255, 255, 255, 0.38));
+  background: rgba(255, 255, 255, 0.38);
+}
+
+:root[data-theme='light'] .scroll-area-thumb:hover,
+:root[data-theme='light'] .scroll-area-scrollbar[data-dragging] .scroll-area-thumb {
+  background: rgba(0, 0, 0, 0.38);
 }
 
 .scroll-area-scrollbar[data-orientation='vertical'] .scroll-area-thumb {

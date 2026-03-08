@@ -36,9 +36,45 @@
 .wa-splitter__panel-body {
   flex: 1;
   min-height: 0;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+
+.wa-splitter__viewport,
+.wa-splitter__scroll-content {
+  width: 100%;
+  min-width: 0;
+}
+
+.wa-splitter__preview-content {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  --sl-content-width: 100%;
+  --sl-content-margin-inline: 0;
+}
+
+.wa-splitter__preview-content > * {
+  min-width: 0;
+}
+
+.wa-splitter__preview-content .content-panel,
+.wa-splitter__preview-content .sl-markdown-content {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.wa-splitter__preview-content .sl-markdown-content {
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+
+.wa-splitter__preview-content .sl-markdown-content a {
+  overflow-wrap: anywhere;
 }
 
 /* ---- resize trigger (divider) ---- */

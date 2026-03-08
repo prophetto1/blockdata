@@ -1,5 +1,9 @@
 import { useState } from 'react';
-import { SHELL_EDITOR_MODE_EVENT } from '../lib/docs/shell-state';
+import {
+  DEFAULT_EDITOR_MODE,
+  SHELL_EDITOR_MODE_EVENT,
+  type EditorMode,
+} from '../lib/docs/shell-state';
 
 /**
  * EditorTabShell — contracted component.
@@ -9,10 +13,8 @@ import { SHELL_EDITOR_MODE_EVENT } from '../lib/docs/shell-state';
  * Placed inside WorkAreaStripShell (grid col 1).
  */
 
-export type EditorMode = 'source' | 'rich';
-
 export default function EditorTabStrip() {
-  const [mode, setMode] = useState<EditorMode>('source');
+  const [mode, setMode] = useState<EditorMode>(DEFAULT_EDITOR_MODE);
 
   function switchMode(next: EditorMode) {
     setMode(next);

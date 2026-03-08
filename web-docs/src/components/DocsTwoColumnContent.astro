@@ -56,7 +56,8 @@ const currentDocsHref = currentRelativePath ? getDocsHrefFromRelativePath(curren
   <WorkbenchSplitter client:load />
 
   {/* ── PreviewColumnShell / Sections-mode main-pane ──
-       In sections mode: normal article layout.
+       In sections mode: normal article layout wrapped in Ark ScrollArea
+       so the thin custom scrollbar replaces the browser's native one.
        In filetree mode: content is adopted by WorkbenchSplitter on hydration. */}
   <div
     class="wa-preview"

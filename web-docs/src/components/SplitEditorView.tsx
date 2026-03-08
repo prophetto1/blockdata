@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { EditorMode } from './EditorTabStrip';
 import {
+  DEFAULT_EDITOR_MODE,
   FILE_STORAGE_KEY,
   SHELL_EDITOR_MODE_EVENT,
   SHELL_PREVIEW_REFRESH_EVENT,
   onFileReset,
   onFileSelect,
   resetSelectedFile,
+  type EditorMode,
   type ShellFileInfo,
 } from '../lib/docs/shell-state';
 import { getLocalFileHandle } from '../lib/docs/local-file-handles';
@@ -170,29 +171,33 @@ function MonacoPane({
   }
 
   return (
-    <Editor
-      height="100%"
-      language={extension === '.mdx' ? 'mdx' : 'markdown'}
-      value={content}
-      theme={resolvedTheme === 'light' ? 'vs' : 'vs-dark'}
-      onChange={(value: string | undefined) => onContentChange(value ?? '')}
-      onMount={(editor, monaco) => {
-        editor.addAction({
-          id: 'docs-save-keyboard',
-          label: 'Save File',
-          keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS],
-          run: onSave,
-        });
-      }}
-      options={{
-        minimap: { enabled: false },
-        fontSize: 13,
-        lineNumbers: 'on',
-        wordWrap: 'on',
-        scrollBeyondLastLine: false,
-        padding: { top: 12 },
-      }}
-    />
+    <div className="split-editor__monaco-surface">
+      <Editor
+        height="100%"
+        language={extension === '.mdx' ? 'mdx' : 'markdown'}
+        value={content}
+        theme={resolvedTheme === 'light' ? 'vs' : 'vs-dark'}
+        onChange={(value: string | undefined) => onContentChange(value ?? '')}
+        onMount={(editor, monaco) => {
+          editor.addAction({
+            id: 'docs-save-keyboard',
+            label: 'Save File',
+            keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS],
+            run: onSave,
+          });
+        }}
+        options={{
+          minimap: { enabled: false },
+          fontSize: 13,
+          lineNumbers: 'on',
+          wordWrap: 'on',
+          scrollBeyondLastLine: false,
+          scrollBeyondLastColumn: 2,
+          revealHorizontalRightPadding: 16,
+          padding: { top: 12, bottom: 12 },
+        }}
+      />
+    </div>
   );
 }
 
@@ -467,7 +472,7 @@ async function saveFile(file: LoadableFileInfo, content: string): Promise<SaveRe
 export default function SplitEditorView() {
   const [file, setFile] = useState<LoadableFileInfo | null>(null);
   const [hasRestoredSession, setHasRestoredSession] = useState(false);
-  const [mode, setMode] = useState<EditorMode>('rich');
+  const [mode, setMode] = useState<EditorMode>(DEFAULT_EDITOR_MODE);
   const [content, setContent] = useState<string | null>(null);
   const [loadStatus, setLoadStatus] = useState<LoadStatus>('idle');
   const [loadErrorMessage, setLoadErrorMessage] = useState('');

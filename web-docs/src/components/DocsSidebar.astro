@@ -360,6 +360,13 @@ const currentRelativePath = getCurrentDocsRelativePath(entry.filePath);
       padding: 0.4rem 0;
     }
 
+    [data-sidebar-panel='nav'] {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      min-height: 0;
+    }
+
     :global(.docs-sidebar-scroll) {
       flex: 1;
       min-height: 0;
