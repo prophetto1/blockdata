@@ -1,5 +1,5 @@
 ---
-title: Local Development URLs
+title: local-urls
 description: Every local service URL, port, and environment variable for internal development.
 ---
 
@@ -112,4 +112,3 @@ web/.env.example                      # web app template
 web/.env.local                        # web app local overrides (gitignored)
 services/uppy-companion/.env.example  # companion template
 ```
-

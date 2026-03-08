@@ -1,5 +1,5 @@
 ---
-title: Markdown Extended Syntax
+title: markdown-syntax
 description: All supported Markdown syntax — GFM, math, emoji, and more.
 ---
 

@@ -1,4 +1,8 @@
 ---
+title: analysis
+---
+
+---
 title: "Analysis"
 description: "Good — all three explorations are back. Let me synthesize what I found and write the plan."
 ---Good — all three explorations are back. Let me synthesize what I found and write the plan.

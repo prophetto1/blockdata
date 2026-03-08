@@ -1,7 +1,7 @@
 ---
-title: "Migration 064–068 Remediation Plan"
+title: 2026-03-03-migration-064-068-remediation
 description: "> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task."
----# Migration 064–068 Remediation Plan
+---
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 

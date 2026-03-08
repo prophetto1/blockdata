@@ -1,5 +1,5 @@
 ---
-title: Kestra Plugin Python Handlers
+title: python-handlers
 description: Strategy for generating Python handler functions from Kestra's Java plugin architecture.
 ---
 

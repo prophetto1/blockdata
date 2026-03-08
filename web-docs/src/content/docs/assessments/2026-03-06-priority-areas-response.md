@@ -1,5 +1,5 @@
 ---
-title: Priority Areas Response
+title: 2026-03-06-priority-areas-response
 description: Structured response to Jon's priority areas document, connecting each area to the task inventory and clarifying open questions.
 ---
 

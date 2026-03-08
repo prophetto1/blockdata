@@ -1,4 +1,4 @@
 ---
-title: AI Analysis
+title: overview
 description: AI-related analysis and research documents.
 ---

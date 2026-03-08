@@ -1,7 +1,7 @@
 ---
-title: "Unified Service Execution — Design Document"
+title: 2026-03-02-native-plugin-execution-design
 description: "Date: 2026-03-02"
----# Unified Service Execution — Design Document
+---
 
 Date: 2026-03-02
 

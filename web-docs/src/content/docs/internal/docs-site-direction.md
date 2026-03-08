@@ -1,5 +1,5 @@
 ---
-title: Docs Site Direction
+title: docs-site-direction
 description: Working direction for using the BlockData docs site as a shared human and machine knowledge layer.
 ---
 

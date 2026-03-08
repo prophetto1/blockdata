@@ -1,7 +1,7 @@
 ---
-title: "The Blockdata Pipeline"
+title: blockdata
 description: "Blockdata's pipeline vision has outgrown the docs that describe it. Existing docs cover pieces — the two-surface architecture, the priority queue, downstream integrations, docling integration — but no single document defines the complete pipeline as a development target. The direction has shifted: blockdata is no longer just a document-to-structured-data extraction tool. It's a data pipeline platform where parsed documents and loaded databases are inputs, transformable with dlt/dbt/MetricFlow/Python/user scripts, expressible in multiple views, and routable to multiple destinations."
----# The Blockdata Pipeline
+---
 
 Blockdata's pipeline vision has outgrown the docs that describe it. Existing docs cover pieces — the two-surface architecture, the priority queue, downstream integrations, docling integration — but no single document defines the complete pipeline as a development target. The direction has shifted: blockdata is no longer just a document-to-structured-data extraction tool. It's a data pipeline platform where parsed documents and loaded databases are inputs, transformable with dlt/dbt/MetricFlow/Python/user scripts, expressible in multiple views, and routable to multiple destinations.
 

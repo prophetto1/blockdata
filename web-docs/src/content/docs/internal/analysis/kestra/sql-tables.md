@@ -1,5 +1,5 @@
 ---
-title: Kestra SQL Tables
+title: sql-tables
 description: Analysis of SQL table definitions across Kestra database backends.
 ---
 

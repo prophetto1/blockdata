@@ -1,7 +1,7 @@
 ---
-title: "AI Chat Window — Complete UI Design Specification"
+title: 2026-03-04-ai-chat-window-design
 description: "**Goal:** Define every control, button, behavior, visual state, and backend consideration for the AI assistant chat window. This document is the single source of truth for what the chat window looks like and how users interact with it."
----# AI Chat Window — Complete UI Design Specification
+---
 
 **Goal:** Define every control, button, behavior, visual state, and backend consideration for the AI assistant chat window. This document is the single source of truth for what the chat window looks like and how users interact with it.
 

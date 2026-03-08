@@ -1,5 +1,5 @@
 ---
-title: Content
+title: content
 description: Global writing and formatting contract for all documentation pages.
 ---
 

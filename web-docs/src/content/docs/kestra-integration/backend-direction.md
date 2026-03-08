@@ -1,7 +1,7 @@
 ---
-title: "Kestra Schema: What we are borrowing"
+title: backend-direction
 description: "Kestra uses a single architectural trick everywhere: store the full object as JSONB in a `value` column, then project queryable fields as `GENERATED ALWAYS AS` stored columns. Every table follows this shape:"
----# Kestra Schema: What we are borrowing
+---
 
 ## The Core Design Pattern: JSONB + Generated Columns
 

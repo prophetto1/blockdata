@@ -1,7 +1,7 @@
 ---
-title: "Kestra Plugins → Services Migration Plan"
+title: 2026-03-04-kestra-plugins-to-services-migration
 description: "> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task."
----# Kestra Plugins → Services Migration Plan
+---
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 

@@ -1,5 +1,5 @@
 ---
-title: Nango Integration Reference
+title: nango-integration
 description: How Nango fits into the Blockdata platform as the OAuth and integration provider for marketplace connections.
 ---
 

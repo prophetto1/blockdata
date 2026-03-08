@@ -1,7 +1,8 @@
 ---
-title: "Design System Rules"
+title: design-system
 description: "That's the guide. 8 rules, no fluff, no inventory, no implementation steps. Regulations that prevent the recurring problems:"
----# Design System Rules
+---
+
 That's the guide. 8 rules, no fluff, no inventory, no implementation steps. Regulations that prevent the recurring problems:
 
 No Mantine

@@ -1,5 +1,5 @@
 ---
-title: Kestra Schema Analysis
+title: kestra-schema-analysis
 description: Complete analysis of Kestra's Postgres schema extracted from the live Docker instance, and how to adopt the JSONB + generated columns pattern for Blockdata.
 ---
 

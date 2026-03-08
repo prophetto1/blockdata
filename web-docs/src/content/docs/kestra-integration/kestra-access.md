@@ -1,7 +1,7 @@
 ---
-title: "Kestra Access"
-description: "This file documents the working local Kestra stack so other workers can connect to it without guessing."
----# Kestra Access
+title: kestra-access
+description: This file documents the working local Kestra stack so other workers can connect to it without guessing.
+---
 
 This file documents the working local Kestra stack so other workers can connect to it without guessing.
 

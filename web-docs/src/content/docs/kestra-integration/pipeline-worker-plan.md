@@ -1,7 +1,7 @@
 ---
-title: "Pipeline Worker — Kestra Plugin Porting Plan"
+title: pipeline-worker-plan
 description: "Date: 2026-02-28"
----# Pipeline Worker — Kestra Plugin Porting Plan
+---
 
 Date: 2026-02-28
 

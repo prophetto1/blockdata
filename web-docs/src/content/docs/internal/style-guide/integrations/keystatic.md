@@ -1,5 +1,5 @@
 ---
-title: Keystatic
+title: keystatic
 description: Complete inventory of Keystatic CMS functionalities.
 ---
 

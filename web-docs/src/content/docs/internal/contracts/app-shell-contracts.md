@@ -1,5 +1,5 @@
 ---
-title: App Shell Contracts
+title: app-shell-contracts
 description: Owner map and behavior contract for the docs app shell, including modes, events, storage, and file-editing boundaries.
 ---
 

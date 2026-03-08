@@ -1,5 +1,5 @@
 ---
-title: Design Token Contracts
+title: design-token-contracts
 description: Live font, spacing, color, and editor token contracts for the docs site, with notes on inheritance and current exceptions.
 ---
 

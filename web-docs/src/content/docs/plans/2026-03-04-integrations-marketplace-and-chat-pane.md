@@ -1,7 +1,7 @@
 ---
-title: "Integrations Marketplace + AI Chat Pane Implementation Plan"
+title: 2026-03-04-integrations-marketplace-and-chat-pane
 description: "> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task."
----# Integrations Marketplace + AI Chat Pane Implementation Plan
+---
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 

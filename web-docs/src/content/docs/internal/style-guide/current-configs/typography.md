@@ -1,5 +1,5 @@
 ---
-title: Typography
+title: typography
 description: Heading sizes, line heights, and text scale across breakpoints.
 ---
 

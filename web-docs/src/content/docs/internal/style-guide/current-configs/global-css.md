@@ -1,5 +1,5 @@
 ---
-title: Global CSS
+title: global-css
 description: Canonical, human-readable snapshot of the live docs stylesheet used by the site.
 ---
 
