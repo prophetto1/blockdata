@@ -1,5 +1,5 @@
 ---
-title: Shell Contract Specification
+title: shell-contract-spec
 description: Defines the four shell regions, two shell modes, and implementation contracts for the docs site's Sections and File Tree views.
 ---
 

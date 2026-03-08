@@ -1,5 +1,5 @@
 ---
-title: Layout
+title: layout
 description: Spacing, sizing, and structural layout settings.
 ---
 

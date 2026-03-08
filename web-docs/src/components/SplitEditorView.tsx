@@ -1,13 +1,12 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { Component, useCallback, useEffect, useRef, useState } from 'react';
+import type { EditorMode } from './EditorTabStrip';
 import {
-  DEFAULT_EDITOR_MODE,
   FILE_STORAGE_KEY,
   SHELL_EDITOR_MODE_EVENT,
   SHELL_PREVIEW_REFRESH_EVENT,
   onFileReset,
   onFileSelect,
   resetSelectedFile,
-  type EditorMode,
   type ShellFileInfo,
 } from '../lib/docs/shell-state';
 import { getLocalFileHandle } from '../lib/docs/local-file-handles';
@@ -169,6 +168,14 @@ class EditorErrorBoundary extends Component<
   }
 }
 
+function readPanelInsetPx(): number {
+  if (typeof document === 'undefined') return 16;
+  const raw = getComputedStyle(document.documentElement)
+    .getPropertyValue('--shell-panel-inset-px')
+    .trim();
+  return parseInt(raw, 10) || 16;
+}
+
 function MonacoPane({
   content,
   extension,
@@ -183,6 +190,7 @@ function MonacoPane({
   const [Editor, setEditor] = useState<MonacoEditorModule['default'] | null>(null);
   const [moduleState, setModuleState] = useState<ModuleLoadState>('idle');
   const resolvedTheme = useResolvedTheme();
+  const panelInsetPx = useRef(readPanelInsetPx());
 
   const loadEditor = useCallback(() => {
     setModuleState('loading');
@@ -210,33 +218,29 @@ function MonacoPane({
   }
 
   return (
-    <div className="split-editor__monaco-surface">
-      <Editor
-        height="100%"
-        language={extension === '.mdx' ? 'mdx' : 'markdown'}
-        value={content}
-        theme={resolvedTheme === 'light' ? 'vs' : 'vs-dark'}
-        onChange={(value: string | undefined) => onContentChange(value ?? '')}
-        onMount={(editor, monaco) => {
-          editor.addAction({
-            id: 'docs-save-keyboard',
-            label: 'Save File',
-            keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS],
-            run: onSave,
-          });
-        }}
-        options={{
-          minimap: { enabled: false },
-          fontSize: 13,
-          lineNumbers: 'on',
-          wordWrap: 'on',
-          scrollBeyondLastLine: false,
-          scrollBeyondLastColumn: 2,
-          revealHorizontalRightPadding: 16,
-          padding: { top: 12, bottom: 12 },
-        }}
-      />
-    </div>
+    <Editor
+      height="100%"
+      language={extension === '.mdx' ? 'mdx' : 'markdown'}
+      value={content}
+      theme={resolvedTheme === 'light' ? 'vs' : 'vs-dark'}
+      onChange={(value: string | undefined) => onContentChange(value ?? '')}
+      onMount={(editor, monaco) => {
+        editor.addAction({
+          id: 'docs-save-keyboard',
+          label: 'Save File',
+          keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS],
+          run: onSave,
+        });
+      }}
+      options={{
+        minimap: { enabled: false },
+        fontSize: 13,
+        lineNumbers: 'on',
+        wordWrap: 'on',
+        scrollBeyondLastLine: false,
+        padding: { top: panelInsetPx.current, bottom: panelInsetPx.current },
+      }}
+    />
   );
 }
 
@@ -511,7 +515,7 @@ async function saveFile(file: LoadableFileInfo, content: string): Promise<SaveRe
 export default function SplitEditorView() {
   const [file, setFile] = useState<LoadableFileInfo | null>(null);
   const [hasRestoredSession, setHasRestoredSession] = useState(false);
-  const [mode, setMode] = useState<EditorMode>(DEFAULT_EDITOR_MODE);
+  const [mode, setMode] = useState<EditorMode>('source');
   const [content, setContent] = useState<string | null>(null);
   const [loadStatus, setLoadStatus] = useState<LoadStatus>('idle');
   const [loadErrorMessage, setLoadErrorMessage] = useState('');
@@ -574,7 +578,7 @@ export default function SplitEditorView() {
       setLoadErrorMessage(message);
       setLoadStatus('error');
       setContent('');
-      if (file?.sourceKind === 'local') {
+      if (file) {
         emitPreviewRefresh({
           sourceKind: file.sourceKind,
           filePath: file.filePath,

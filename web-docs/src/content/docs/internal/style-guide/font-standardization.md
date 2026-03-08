@@ -1,9 +1,7 @@
 ---
-title: Font Standardization Brief
+title: font-standardization
 description: Design brief for standardizing typography contracts across the platform.
 ---
-
-
 
 ### Chosen font family
 ### Enforcement strategy

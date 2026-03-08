@@ -1,7 +1,7 @@
 ---
-title: "Service Function Reference Card Implementation Plan"
+title: 2026-03-02-service-function-reference-card
 description: "> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task."
----# Service Function Reference Card Implementation Plan
+---
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 

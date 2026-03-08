@@ -1,5 +1,5 @@
 ---
-title: Infrastructure Service Inventory
+title: service-inventory
 description: Live inventory of all containerized services, database access, and credentials for the Blockdata development environment.
 ---
 

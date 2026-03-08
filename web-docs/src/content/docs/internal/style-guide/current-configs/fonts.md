@@ -1,5 +1,5 @@
 ---
-title: Fonts
+title: fonts
 description: Typography settings and font stack configuration.
 ---
 

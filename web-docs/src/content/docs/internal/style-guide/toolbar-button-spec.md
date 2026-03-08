@@ -1,5 +1,5 @@
 ---
-title: Toolbar Button Spec
+title: toolbar-button-spec
 description: Standard toolbar button contract — one shape, three content modes, used across the platform.
 ---
 

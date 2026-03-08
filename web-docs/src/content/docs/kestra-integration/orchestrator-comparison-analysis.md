@@ -1,7 +1,7 @@
 ---
-title: "Orchestrator Comparison Analysis"
+title: orchestrator-comparison-analysis
 description: "Date: 2026-02-28"
----# Orchestrator Comparison Analysis
+---
 
 Date: 2026-02-28
 

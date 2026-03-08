@@ -1,4 +1,8 @@
 ---
+title: planv1
+---
+
+---
 title: "Maps \"io.kestra.plugin.core.log.Log\" → LogPlugin instance"
 description: "Plan: Pipeline Worker — Kestra Plugin Runtime in Python"
 ---Plan: Pipeline Worker — Kestra Plugin Runtime in Python

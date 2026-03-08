@@ -44,25 +44,8 @@
   display: flex;
   flex-direction: column;
   min-height: 0;
-  min-width: 0;
   overflow: hidden;
   background: var(--editor-bg);
-}
-
-.split-editor__monaco-surface {
-  flex: 1;
-  display: flex;
-  min-height: 0;
-  min-width: 0;
-  box-sizing: border-box;
-  padding: 0.875rem;
-  background: var(--editor-bg);
-}
-
-.split-editor__monaco-surface > div {
-  flex: 1;
-  min-height: 0;
-  min-width: 0;
 }
 
 .split-editor__loading {
@@ -207,8 +190,7 @@
 
 .split-editor__mdx :where([class*='_contentEditable']) {
   min-height: 100%;
-  box-sizing: border-box;
-  padding: 1rem 1rem 3rem;
+  padding: var(--shell-panel-inset);
   background: var(--card);
   color: var(--editor-fg);
   caret-color: var(--editor-accent);

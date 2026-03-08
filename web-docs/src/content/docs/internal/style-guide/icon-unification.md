@@ -1,5 +1,5 @@
 ---
-title: Icon Unification Plan
+title: icon-unification
 description: Consolidate Tabler, Lucide, and Hugeicons into a single Hugeicons-only icon system.
 ---
 

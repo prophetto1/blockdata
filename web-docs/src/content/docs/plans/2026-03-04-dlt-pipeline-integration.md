@@ -1,7 +1,7 @@
 ---
-title: "DLT Pipeline Integration Plan"
+title: 2026-03-04-dlt-pipeline-integration
 description: "> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task."
----# DLT Pipeline Integration Plan
+---
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
