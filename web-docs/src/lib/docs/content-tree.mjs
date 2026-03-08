@@ -29,7 +29,13 @@ function toDocsHref(relativePath) {
 }
 
 function buildTreeNodes(absoluteDir, relativeDir = '') {
-  return readdirSync(absoluteDir, { withFileTypes: true })
+  let entries;
+  try {
+    entries = readdirSync(absoluteDir, { withFileTypes: true });
+  } catch {
+    return [];
+  }
+  return entries
     .filter((entry) => !entry.name.startsWith('.'))
     .sort(compareEntries)
     .map((entry) => {

@@ -78,7 +78,12 @@ function toSlug(relativePath) {
 }
 
 function buildSidebarItems(absoluteDir, relativePath) {
-  const entries = readdirSync(absoluteDir, { withFileTypes: true });
+  let entries;
+  try {
+    entries = readdirSync(absoluteDir, { withFileTypes: true });
+  } catch {
+    return [];
+  }
   const sorted = sortEntries(entries, relativePath || '.');
 
   const items = [];

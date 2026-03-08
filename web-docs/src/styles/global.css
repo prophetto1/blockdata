@@ -24,8 +24,11 @@
 
   /* Filetree-mode panel inset — single token for all 4 sides
      in every view: Monaco, Rich editor, Preview, local preview.
-     Change this one value to adjust spacing everywhere. */
+     Change this one value to adjust spacing everywhere.
+     --shell-panel-inset-px is the integer pixel equivalent for JS
+     APIs (e.g. Monaco padding) that require numeric values. */
   --shell-panel-inset: 1rem;
+  --shell-panel-inset-px: 16;
 
   /* Semantic color tokens (dark default) — aligned with web/src/tailwind.css */
   --background: #0e0e0e;

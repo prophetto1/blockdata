@@ -168,6 +168,14 @@ class EditorErrorBoundary extends Component<
   }
 }
 
+function readPanelInsetPx(): number {
+  if (typeof document === 'undefined') return 16;
+  const raw = getComputedStyle(document.documentElement)
+    .getPropertyValue('--shell-panel-inset-px')
+    .trim();
+  return parseInt(raw, 10) || 16;
+}
+
 function MonacoPane({
   content,
   extension,
@@ -182,6 +190,7 @@ function MonacoPane({
   const [Editor, setEditor] = useState<MonacoEditorModule['default'] | null>(null);
   const [moduleState, setModuleState] = useState<ModuleLoadState>('idle');
   const resolvedTheme = useResolvedTheme();
+  const panelInsetPx = useRef(readPanelInsetPx());
 
   const loadEditor = useCallback(() => {
     setModuleState('loading');
@@ -229,7 +238,7 @@ function MonacoPane({
         lineNumbers: 'on',
         wordWrap: 'on',
         scrollBeyondLastLine: false,
-        padding: { top: 16, bottom: 16 },
+        padding: { top: panelInsetPx.current, bottom: panelInsetPx.current },
       }}
     />
   );
@@ -569,7 +578,7 @@ export default function SplitEditorView() {
       setLoadErrorMessage(message);
       setLoadStatus('error');
       setContent('');
-      if (file?.sourceKind === 'local') {
+      if (file) {
         emitPreviewRefresh({
           sourceKind: file.sourceKind,
           filePath: file.filePath,
