@@ -7,11 +7,11 @@ import tailwindcss from '@tailwindcss/vite';
 import remarkMath from 'remark-math';
 import remarkEmoji from 'remark-emoji';
 import rehypeKatex from 'rehype-katex';
+import orama from '@orama/plugin-astro';
 import { generateSidebar } from './src/lib/docs/generate-sidebar.mjs';
 
 export default defineConfig({
   site: 'https://www.blockdata.run',
-  base: '/docs',
   adapter: vercel(),
   markdown: {
     remarkPlugins: [remarkMath, remarkEmoji],
@@ -22,11 +22,13 @@ export default defineConfig({
     starlight({
       title: 'BlockData Docs',
       description: 'Documentation for the BlockData platform.',
+      pagefind: false,
       components: {
         Header: './src/components/DocsHeader.astro',
         Sidebar: './src/components/DocsSidebar.astro',
         SiteTitle: './src/components/SiteTitle.astro',
         TwoColumnContent: './src/components/DocsTwoColumnContent.astro',
+        Search: './src/components/OramaSearch.astro',
       },
       favicon: '/favicon.svg',
       lastUpdated: true,
@@ -58,6 +60,13 @@ export default defineConfig({
       sidebar: generateSidebar(),
     }),
     sitemap(),
+    orama({
+      docsearch: {
+        pathMatcher: /.+/,
+        contentSelectors: ['.sl-markdown-content'],
+        language: 'english',
+      },
+    }),
   ],
   vite: { plugins: [tailwindcss()] },
 });

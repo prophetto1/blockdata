@@ -9,13 +9,13 @@
  *             (defaults to title-cased directory name)
  *   - hidden: array of filenames/dirs to exclude from the sidebar
  *
- * Top-level files (getting-started, index) are handled separately.
+ * Top-level files (like index) are handled separately.
  */
 
 export default {
   // Root-level directories — order controls top-level sidebar groups
   '.': {
-    order: ['getting-started', 'internal'],
+    order: ['internal'],
     hidden: ['index', 'assessments', 'backend', 'proposed', 'reference', 'proposals', 'infrastructure'],
   },
 

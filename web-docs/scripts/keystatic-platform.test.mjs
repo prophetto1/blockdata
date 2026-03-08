@@ -144,15 +144,15 @@ await run('docs sidebar and Keystatic home share the same docs content tree sour
   const { treeRoot } = getDocsContentTreeState();
   assert.equal(treeRoot.name, 'docs');
 
-  const gettingStartedNode = treeRoot.children.find((node) => node.relativePath === 'getting-started.md');
+  const homeNode = treeRoot.children.find((node) => node.relativePath === 'index.mdx');
   assert.deepEqual(
     {
-      docsHref: gettingStartedNode?.docsHref,
-      editorHref: gettingStartedNode?.editorHref,
+      docsHref: homeNode?.docsHref,
+      editorHref: homeNode?.editorHref,
     },
     {
-      docsHref: '/getting-started/',
-      editorHref: '/keystatic/singleton/gettingStarted',
+      docsHref: '/',
+      editorHref: '/keystatic/singleton/siteHome',
     }
   );
 

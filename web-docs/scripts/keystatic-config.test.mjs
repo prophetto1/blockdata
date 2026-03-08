@@ -18,12 +18,12 @@ run('keystatic config removes the repo-wide Markdown and MDX buckets', () => {
   assert.doesNotMatch(configSource, /docsMdx:\s*collection\(/);
 });
 
-run('keystatic config defines site singletons for the docs home and getting started pages', () => {
+run('keystatic config defines a site singleton for the docs home page', () => {
   assert.match(configSource, /import\s+\{\s*collection,\s*config,\s*fields,\s*singleton\s*\}\s+from '@keystatic\/core';/);
   assert.match(configSource, /siteHome:\s*singleton\(/);
   assert.match(configSource, /path:\s*'src\/content\/docs\/index\.mdx'/);
-  assert.match(configSource, /gettingStarted:\s*singleton\(/);
-  assert.match(configSource, /path:\s*'src\/content\/docs\/getting-started\.md'/);
+  assert.doesNotMatch(configSource, /gettingStarted:\s*singleton\(/);
+  assert.doesNotMatch(configSource, /src\/content\/docs\/getting-started\.md/);
 });
 
 run('keystatic config defines concern-based collections', () => {

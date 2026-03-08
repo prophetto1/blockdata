@@ -12,6 +12,10 @@ import sidebarOrder from './sidebar-order.mjs';
 
 const docsRoot = resolve(process.cwd(), 'src/content/docs');
 
+function normalizeSlugSegment(name) {
+  return name.replace(/[+.]/g, '-');
+}
+
 function titleCase(name) {
   return name
     .replace(/[-_]/g, ' ')
@@ -20,6 +24,14 @@ function titleCase(name) {
 
 function stripExtension(name) {
   return name.replace(/\.[^.]+$/, '');
+}
+
+function isIndexLike(name) {
+  return stripExtension(name).toLowerCase() === 'index';
+}
+
+function isReadmeLike(name) {
+  return stripExtension(name).toLowerCase() === 'readme';
 }
 
 function getConfig(dirPath) {
@@ -49,7 +61,16 @@ function isHidden(name, dirPath) {
 }
 
 function toSlug(relativePath) {
-  const slug = stripExtension(relativePath).replace(/\\/g, '/');
+  const slug = stripExtension(relativePath)
+    .replace(/\\/g, '/')
+    .split('/')
+    .map((segment, index, all) => {
+      const normalized = isReadmeLike(segment) && index === all.length - 1
+        ? 'index'
+        : segment;
+      return normalizeSlugSegment(normalized);
+    })
+    .join('/');
   if (slug !== 'index' && slug.endsWith('/index')) {
     return slug.slice(0, -'/index'.length);
   }
@@ -61,9 +82,11 @@ function buildSidebarItems(absoluteDir, relativePath) {
   const sorted = sortEntries(entries, relativePath || '.');
 
   const items = [];
+  const hasIndexEntry = sorted.some((entry) => !entry.isDirectory() && isIndexLike(entry.name));
 
   for (const entry of sorted) {
     if (isHidden(entry.name, relativePath || '.')) continue;
+    if (!entry.isDirectory() && isReadmeLike(entry.name) && hasIndexEntry) continue;
 
     const childRelative = relativePath
       ? `${relativePath}/${entry.name}`

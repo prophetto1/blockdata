@@ -141,7 +141,7 @@ Arranges Card or LinkCard children side-by-side. Use `stagger` only on landing/o
 
 Clickable card for navigation. Add `description` only when the title alone is ambiguous.
 
-<LinkCard title="Getting Started" href="/getting-started/" description="Set up the docs site locally." />
+<LinkCard title="Docs Home" href="/" description="Open the docs entry page." />
 
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
@@ -231,7 +231,7 @@ Directory structure display. No props — wrap a Markdown unordered list. End na
   - content/
     - docs/
       - index.mdx
-      - **getting-started.md** entry point
+      - **index.mdx** entry point
       - internal/
         - style-guide/
           - starlight-components.mdx
@@ -348,10 +348,10 @@ Full list: [Starlight Icon Reference](https://starlight.astro.build/reference/ic
 
 Call-to-action button links. Use `primary` for the main action (one per section max), `secondary` for alternatives, `minimal` for low-emphasis actions. Add `icon` when it reinforces direction. Place at `start` for backward navigation, `end` (default) for forward.
 
-<LinkButton href="/getting-started/">Primary</LinkButton>
-<LinkButton href="/getting-started/" variant="secondary">Secondary</LinkButton>
-<LinkButton href="/getting-started/" variant="minimal">Minimal</LinkButton>
-<LinkButton href="/getting-started/" icon="right-arrow" iconPlacement="end">Next</LinkButton>
+<LinkButton href="/">Primary</LinkButton>
+<LinkButton href="/" variant="secondary">Secondary</LinkButton>
+<LinkButton href="/" variant="minimal">Minimal</LinkButton>
+<LinkButton href="/" icon="right-arrow" iconPlacement="end">Next</LinkButton>
 
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
