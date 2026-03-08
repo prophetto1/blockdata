@@ -28,6 +28,8 @@ export default defineConfig({
         Sidebar: './src/components/DocsSidebar.astro',
         SiteTitle: './src/components/SiteTitle.astro',
         TwoColumnContent: './src/components/DocsTwoColumnContent.astro',
+        ContentPanel: './src/components/DocsContentPanel.astro',
+        PageTitle: './src/components/DocsPageTitle.astro',
         Search: './src/components/OramaSearch.astro',
       },
       favicon: '/favicon.svg',

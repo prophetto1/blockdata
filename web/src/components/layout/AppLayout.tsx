@@ -155,6 +155,7 @@ function AppShellInner() {
   const isFlowsRoute = /^\/app\/flows(?:\/|$)/.test(location.pathname);
   const isApiEditorRoute = /^\/app\/api-editor(?:\/|$)/.test(location.pathname);
   const isMarketplaceServiceDetailRoute = /^\/app\/marketplace\/services\/[^/]+(?:\/|$)/.test(location.pathname);
+  const isSuperuserRoute = /^\/app\/superuser(?:\/|$)/.test(location.pathname);
   const lockMainScroll = (
     isEltRoute
     || isEditorLayoutRoute
@@ -162,6 +163,7 @@ function AppShellInner() {
     || isSettingsRoute
     || isApiEditorRoute
     || isMarketplaceServiceDetailRoute
+    || isSuperuserRoute
   );
 
   useEffect(() => {

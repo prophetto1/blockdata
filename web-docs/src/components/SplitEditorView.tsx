@@ -1,15 +1,17 @@
 import { Component, useCallback, useEffect, useRef, useState } from 'react';
-import type { EditorMode } from './EditorTabStrip';
+import { createPortal } from 'react-dom';
 import {
+  DEFAULT_EDITOR_MODE,
   FILE_STORAGE_KEY,
   SHELL_EDITOR_MODE_EVENT,
-  SHELL_PREVIEW_REFRESH_EVENT,
   onFileReset,
   onFileSelect,
   resetSelectedFile,
+  type EditorMode,
   type ShellFileInfo,
 } from '../lib/docs/shell-state';
 import { getLocalFileHandle } from '../lib/docs/local-file-handles';
+import EditorTabStrip from './EditorTabStrip.tsx';
 
 declare global {
   interface FileSystemWritableFileStream {
@@ -40,15 +42,6 @@ function getExtension(path: string) {
   if (dot < 0) return '';
   return base.slice(dot).toLowerCase();
 }
-
-type LoadPreviewEvent = {
-  sourceKind: 'repo' | 'local';
-  extension?: string;
-  content?: string;
-  filePath?: string;
-  docsHref?: string;
-  reason?: 'load' | 'save';
-};
 
 function readResolvedTheme(): ResolvedTheme {
   if (typeof document === 'undefined') return 'dark';
@@ -176,6 +169,24 @@ function readPanelInsetPx(): number {
   return parseInt(raw, 10) || 16;
 }
 
+function EditorSurface({
+  variant,
+  prose = false,
+  children,
+}: {
+  variant: 'monaco' | 'mdx';
+  prose?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className={`workbench-surface workbench-surface--${variant}`}>
+      <div className={`workbench-surface__canvas workbench-surface__canvas--${variant}${prose ? ' workbench-prose' : ''}`}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
 function MonacoPane({
   content,
   extension,
@@ -218,29 +229,33 @@ function MonacoPane({
   }
 
   return (
-    <Editor
-      height="100%"
-      language={extension === '.mdx' ? 'mdx' : 'markdown'}
-      value={content}
-      theme={resolvedTheme === 'light' ? 'vs' : 'vs-dark'}
-      onChange={(value: string | undefined) => onContentChange(value ?? '')}
-      onMount={(editor, monaco) => {
-        editor.addAction({
-          id: 'docs-save-keyboard',
-          label: 'Save File',
-          keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS],
-          run: onSave,
-        });
-      }}
-      options={{
-        minimap: { enabled: false },
-        fontSize: 13,
-        lineNumbers: 'on',
-        wordWrap: 'on',
-        scrollBeyondLastLine: false,
-        padding: { top: panelInsetPx.current, bottom: panelInsetPx.current },
-      }}
-    />
+    <EditorSurface variant="monaco">
+      <Editor
+        height="100%"
+        language={extension === '.mdx' ? 'mdx' : 'markdown'}
+        value={content}
+        theme={resolvedTheme === 'light' ? 'vs' : 'vs-dark'}
+        onChange={(value: string | undefined) => onContentChange(value ?? '')}
+        onMount={(editor, monaco) => {
+          editor.addAction({
+            id: 'docs-save-keyboard',
+            label: 'Save File',
+            keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS],
+            run: onSave,
+          });
+        }}
+        options={{
+          minimap: { enabled: false },
+          fontSize: 13,
+          lineNumbers: 'on',
+          wordWrap: 'on',
+          scrollBeyondLastLine: false,
+          scrollBeyondLastColumn: 2,
+          revealHorizontalRightPadding: 16,
+          padding: { top: panelInsetPx.current, bottom: panelInsetPx.current },
+        }}
+      />
+    </EditorSurface>
   );
 }
 
@@ -248,10 +263,12 @@ function RichEditorPane({
   content,
   onContentChange,
   onSave,
+  toolbarHost,
 }: {
   content: string | null;
   onContentChange: (next: string) => void;
   onSave: () => void;
+  toolbarHost: HTMLElement | null;
 }) {
   const [MDXEditorMod, setMDXEditorMod] = useState<MDXEditorModule | null>(null);
   const [moduleState, setModuleState] = useState<ModuleLoadState>('idle');
@@ -344,46 +361,54 @@ function RichEditorPane({
   };
 
   return (
-    <div
-      className={`split-editor__mdx ${resolvedTheme === 'light' ? 'light-theme' : 'dark-theme'}`}
-      onKeyDownCapture={handleSaveKeyDown}
-      tabIndex={0}
-      role="presentation"
-    >
-      <MDXEditor
-        markdown={content}
-        onChange={(value: string) => {
-          onContentChange(value);
-        }}
-        plugins={[
-          headingsPlugin(),
-          listsPlugin(),
-          quotePlugin(),
-          thematicBreakPlugin(),
-          linkPlugin(),
-          linkDialogPlugin(),
-          tablePlugin(),
-          codeBlockPlugin({ defaultCodeBlockLanguage: '' }),
-          codeMirrorPlugin({ codeBlockLanguages: { '': 'Plain', js: 'JavaScript', ts: 'TypeScript', css: 'CSS', yaml: 'YAML' } }),
-          frontmatterPlugin(),
-          markdownShortcutPlugin(),
-          toolbarPlugin({
-            toolbarContents: () => (
-              <>
-                <UndoRedo />
-                <BlockTypeSelect />
-                <BoldItalicUnderlineToggles />
-                <CreateLink />
-                <ListsToggle />
-                <InsertTable />
-                <InsertThematicBreak />
-                <InsertFrontmatter />
-              </>
-            ),
-          }),
-        ]}
-      />
-    </div>
+    <EditorSurface variant="mdx" prose>
+      <div
+        className={`split-editor__mdx ${resolvedTheme === 'light' ? 'light-theme' : 'dark-theme'}`}
+        onKeyDownCapture={handleSaveKeyDown}
+        tabIndex={0}
+        role="presentation"
+      >
+        <MDXEditor
+          markdown={content}
+          onChange={(value: string) => {
+            onContentChange(value);
+          }}
+          plugins={[
+            headingsPlugin(),
+            listsPlugin(),
+            quotePlugin(),
+            thematicBreakPlugin(),
+            linkPlugin(),
+            linkDialogPlugin(),
+            tablePlugin(),
+            codeBlockPlugin({ defaultCodeBlockLanguage: '' }),
+            codeMirrorPlugin({ codeBlockLanguages: { '': 'Plain', js: 'JavaScript', ts: 'TypeScript', css: 'CSS', yaml: 'YAML' } }),
+            frontmatterPlugin(),
+            markdownShortcutPlugin(),
+            toolbarPlugin({
+              toolbarClassName: 'split-editor__mdx-toolbar-root',
+              toolbarContents: () => (
+                toolbarHost
+                  ? createPortal(
+                      <>
+                        <UndoRedo />
+                        <BlockTypeSelect />
+                        <BoldItalicUnderlineToggles />
+                        <CreateLink />
+                        <ListsToggle />
+                        <InsertTable />
+                        <InsertThematicBreak />
+                        <InsertFrontmatter />
+                      </>,
+                      toolbarHost,
+                    )
+                  : null
+              ),
+            }),
+          ]}
+        />
+      </div>
+    </EditorSurface>
   );
 }
 
@@ -435,15 +460,6 @@ function resolveInitialFile(): LoadableFileInfo | null {
 
   if (saved?.sourceKind === 'local') return saved;
   return currentRepo ?? saved;
-}
-
-function emitPreviewRefresh(detail: LoadPreviewEvent) {
-  window.dispatchEvent(new CustomEvent(SHELL_PREVIEW_REFRESH_EVENT, { detail }));
-}
-
-function resolveDocsHref(file: LoadableFileInfo): string | undefined {
-  if (file.sourceKind !== 'repo') return undefined;
-  return file.docsHref || readCurrentRepoFileFromDocument()?.docsHref || window.location.pathname;
 }
 
 async function readRepoFile(filePath: string, signal: AbortSignal): Promise<string> {
@@ -515,7 +531,8 @@ async function saveFile(file: LoadableFileInfo, content: string): Promise<SaveRe
 export default function SplitEditorView() {
   const [file, setFile] = useState<LoadableFileInfo | null>(null);
   const [hasRestoredSession, setHasRestoredSession] = useState(false);
-  const [mode, setMode] = useState<EditorMode>('source');
+  const [mode, setMode] = useState<EditorMode>(DEFAULT_EDITOR_MODE);
+  const [toolbarHost, setToolbarHost] = useState<HTMLDivElement | null>(null);
   const [content, setContent] = useState<string | null>(null);
   const [loadStatus, setLoadStatus] = useState<LoadStatus>('idle');
   const [loadErrorMessage, setLoadErrorMessage] = useState('');
@@ -525,6 +542,11 @@ export default function SplitEditorView() {
   const abortRef = useRef<AbortController | null>(null);
   const saveSeq = useRef(0);
   const activeFileRef = useRef<LoadableFileInfo | null>(null);
+
+  const handleModeChange = useCallback((next: EditorMode) => {
+    setMode(next);
+    window.dispatchEvent(new CustomEvent(SHELL_EDITOR_MODE_EVENT, { detail: next }));
+  }, []);
 
   function isSameFile(a: LoadableFileInfo | null, b: LoadableFileInfo | null) {
     if (!a || !b) return false;
@@ -554,15 +576,6 @@ export default function SplitEditorView() {
       if (requestId !== loadSeq.current || controller.signal.aborted) return;
       setContent(text);
       setLoadStatus('loaded');
-
-      emitPreviewRefresh({
-        sourceKind: requestFile.sourceKind,
-        filePath: requestFile.filePath,
-        extension: requestFile.extension,
-        docsHref: resolveDocsHref(requestFile),
-        content: requestFile.sourceKind === 'local' ? text : undefined,
-        reason: 'load',
-      });
     } catch (error) {
       if (requestId !== loadSeq.current || controller.signal.aborted) return;
       const message = error instanceof Error ? error.message : 'Unable to load file';
@@ -578,15 +591,6 @@ export default function SplitEditorView() {
       setLoadErrorMessage(message);
       setLoadStatus('error');
       setContent('');
-      if (file) {
-        emitPreviewRefresh({
-          sourceKind: file.sourceKind,
-          filePath: file.filePath,
-          extension: file.extension,
-          content: '',
-          reason: 'load',
-        });
-      }
     }
   }, [file]);
 
@@ -614,14 +618,6 @@ export default function SplitEditorView() {
       if (seq !== saveSeq.current || !isSameFile(activeFileRef.current, requestFile)) return;
       if (result.ok) {
         flash('saved');
-        emitPreviewRefresh({
-          sourceKind: requestFile.sourceKind,
-          filePath: requestFile.filePath,
-          extension: requestFile.extension,
-          docsHref: resolveDocsHref(requestFile),
-          content,
-          reason: 'save',
-        });
       } else {
         setSaveError(result.error || 'Save failed');
         flash('error');
@@ -750,6 +746,14 @@ export default function SplitEditorView() {
 
   return (
     <div className="split-editor">
+      <div className="split-editor__mode-bar">
+        <EditorTabStrip mode={mode} onModeChange={handleModeChange} />
+        <div
+          ref={setToolbarHost}
+          className="split-editor__mode-actions"
+          data-mode={mode}
+        />
+      </div>
       <div className="split-editor__body">
         <EditorErrorBoundary onReset={reloadCurrentFile}>
           {mode === 'source' ? (
@@ -764,6 +768,7 @@ export default function SplitEditorView() {
               content={content}
               onContentChange={setContent}
               onSave={save}
+              toolbarHost={toolbarHost}
             />
           )}
         </EditorErrorBoundary>

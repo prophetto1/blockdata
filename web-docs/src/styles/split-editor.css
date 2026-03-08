@@ -7,7 +7,7 @@
   flex-direction: column;
   height: 100%;
   min-height: 0;
-  background: var(--editor-bg);
+  background: var(--workbench-surface-bg);
   color: var(--editor-fg);
 }
 
@@ -44,8 +44,125 @@
   display: flex;
   flex-direction: column;
   min-height: 0;
+  min-width: 0;
   overflow: hidden;
-  background: var(--editor-bg);
+  background: var(--workbench-surface-bg);
+}
+
+.split-editor__mode-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
+  min-height: 2.25rem;
+  padding: 0 0.75rem;
+  overflow: hidden;
+  border-bottom: 1px solid var(--editor-border);
+  background: var(--editor-chrome-bg);
+  color: var(--editor-fg);
+}
+
+.split-editor__mode-actions {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.25rem;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+}
+
+.wa-strip__editor-mode {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.wa-strip__mode-control {
+  display: flex;
+}
+
+.wa-strip__mode-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border: 1px solid transparent;
+  border-radius: 0.4rem;
+  background: transparent;
+  padding: 0.28rem 0.55rem;
+  color: var(--editor-fg);
+  font-family: var(--app-font-sans);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 120ms ease, border-color 120ms ease;
+}
+
+.wa-strip__mode-trigger:hover,
+.wa-strip__mode-trigger[data-state='open'] {
+  border-color: var(--editor-border);
+  background: color-mix(in oklab, var(--editor-accent) 10%, var(--editor-chrome-bg));
+}
+
+.wa-strip__mode-value {
+  min-width: 3.75rem;
+  text-align: left;
+}
+
+.wa-strip__mode-indicator,
+.wa-strip__mode-item-indicator {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wa-strip__mode-indicator svg,
+.wa-strip__mode-item-indicator svg {
+  width: 0.8rem;
+  height: 0.8rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.35;
+}
+
+.wa-strip__mode-positioner {
+  z-index: 12;
+}
+
+.wa-strip__mode-content {
+  min-width: 8rem;
+  margin-top: 0.25rem;
+  border: 1px solid var(--editor-border);
+  border-radius: 0.5rem;
+  background: var(--card);
+  padding: 0.25rem;
+  box-shadow: 0 12px 28px rgb(0 0 0 / 0.2);
+}
+
+.wa-strip__mode-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  border-radius: 0.35rem;
+  padding: 0.35rem 0.5rem;
+  color: var(--editor-fg);
+  font-family: var(--app-font-sans);
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.wa-strip__mode-item[data-highlighted] {
+  background: color-mix(in oklab, var(--editor-accent) 12%, var(--card));
+}
+
+.wa-strip__mode-item[data-state='checked'] {
+  font-weight: 600;
 }
 
 .split-editor__loading {
@@ -75,30 +192,6 @@
   cursor: pointer;
 }
 
-.split-editor__local-preview {
-  padding: var(--shell-panel-inset);
-  font-family: var(--app-font-sans);
-  color: var(--editor-fg);
-  line-height: 1.5;
-}
-
-.split-editor__local-preview pre {
-  overflow-x: auto;
-  background: color-mix(in oklab, var(--editor-chrome-bg) 85%, transparent);
-  border: 1px solid var(--editor-border);
-  padding: 0.75rem;
-}
-
-.split-editor__local-preview code {
-  background: color-mix(in oklab, var(--editor-chrome-bg) 80%, transparent);
-  border: 1px solid var(--editor-border);
-  padding: 0.05rem 0.25rem;
-}
-
-.split-editor__local-preview--mdx {
-  font-size: 1rem;
-}
-
 /* MDXEditor surface */
 
 .split-editor__mdx {
@@ -107,61 +200,50 @@
   flex: 1;
   height: 100%;
   min-height: 0;
-  background: var(--editor-bg);
+  background: transparent;
   color: var(--editor-fg);
 }
 
-.split-editor__mdx .mdxeditor-toolbar,
-.split-editor__mdx [class*='_toolbarRoot'] {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
+.split-editor__mdx-toolbar-root {
+  display: none !important;
+}
+
+.split-editor__mode-actions :where([data-toolbar-item], button, [role='button']) {
+  color: var(--editor-fg);
   flex-shrink: 0;
-  min-height: 2.25rem;
-  overflow-x: auto;
-  overflow-y: hidden;
-  padding: 0.375rem 0.625rem;
-  background: var(--editor-chrome-bg);
-  color: var(--editor-fg);
-  border-bottom: 1px solid var(--editor-border);
-  scrollbar-width: thin;
 }
 
-.split-editor__mdx :where([data-toolbar-item], button, [role='button']) {
-  color: var(--editor-fg);
-}
-
-.split-editor__mdx :where([data-toolbar-item], button, [role='button']):hover {
+.split-editor__mode-actions :where([data-toolbar-item], button, [role='button']):hover {
   background: color-mix(in oklab, var(--editor-accent) 12%, var(--editor-chrome-bg));
 }
 
-.split-editor__mdx :where([data-toolbar-item][data-state='on'], [aria-pressed='true']) {
+.split-editor__mode-actions :where([data-toolbar-item][data-state='on'], [aria-pressed='true']) {
   background: color-mix(in oklab, var(--editor-accent) 16%, var(--editor-chrome-bg));
   color: var(--editor-fg);
 }
 
-.split-editor__mdx :where(svg) {
+.split-editor__mode-actions :where(svg) {
   color: currentColor;
   fill: currentColor;
 }
 
-.split-editor__mdx :where([class*='_toolbarButton'], [class*='_toolbarToggleItem'], [class*='_selectTrigger'], [class*='_toolbarButtonSelectTrigger']) {
+.split-editor__mode-actions :where([class*='_toolbarButton'], [class*='_toolbarToggleItem'], [class*='_selectTrigger'], [class*='_toolbarButtonSelectTrigger']) {
   border: 1px solid transparent;
   background: transparent;
   color: var(--editor-fg);
 }
 
-.split-editor__mdx :where([class*='_toolbarButton']:hover, [class*='_toolbarToggleItem']:hover, [class*='_selectTrigger']:hover, [class*='_toolbarButtonSelectTrigger']:hover) {
+.split-editor__mode-actions :where([class*='_toolbarButton']:hover, [class*='_toolbarToggleItem']:hover, [class*='_selectTrigger']:hover, [class*='_toolbarButtonSelectTrigger']:hover) {
   border-color: var(--editor-border);
   background: color-mix(in oklab, var(--editor-accent) 10%, var(--editor-chrome-bg));
 }
 
-.split-editor__mdx :where([class*='_toolbarButton'][data-state='on'], [class*='_toolbarToggleItem'][data-state='on']) {
+.split-editor__mode-actions :where([class*='_toolbarButton'][data-state='on'], [class*='_toolbarToggleItem'][data-state='on']) {
   border-color: color-mix(in oklab, var(--editor-accent) 45%, var(--editor-border));
   background: color-mix(in oklab, var(--editor-accent) 16%, var(--editor-chrome-bg));
 }
 
-.split-editor__mdx :where([role='combobox'], [data-radix-select-trigger]) {
+.split-editor__mode-actions :where([role='combobox'], [data-radix-select-trigger]) {
   background: transparent;
   color: var(--editor-fg);
   border-color: transparent;
@@ -173,7 +255,7 @@
   flex: 1;
   min-height: 0;
   height: 100%;
-  background: var(--editor-bg);
+  background: transparent;
   color: var(--editor-fg);
 }
 
@@ -181,17 +263,24 @@
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  background: var(--editor-bg);
+  background: transparent;
   color: var(--editor-fg);
   font-family: var(--app-font-sans);
-  font-size: 0.9rem;
-  line-height: 1.6;
+  font-size: var(--workbench-prose-font-size);
+  line-height: var(--workbench-prose-line-height);
+}
+
+.split-editor__mdx :where(.mdxeditor-root-contenteditable) {
+  min-height: 100%;
+  box-sizing: border-box;
+  padding: var(--workbench-editor-document-padding);
 }
 
 .split-editor__mdx :where([class*='_contentEditable']) {
   min-height: 100%;
-  padding: var(--shell-panel-inset);
-  background: var(--card);
+  box-sizing: border-box;
+  padding: 0;
+  background: transparent;
   color: var(--editor-fg);
   caret-color: var(--editor-accent);
 }
@@ -221,4 +310,15 @@
 .split-editor__mdx :where(pre) {
   background: color-mix(in oklab, var(--editor-chrome-bg) 86%, var(--editor-bg));
   border: 1px solid var(--editor-border);
+}
+
+.workbench-surface--monaco,
+.workbench-surface--mdx {
+  background: var(--workbench-surface-bg);
+}
+
+.workbench-surface__canvas--monaco > div {
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
 }

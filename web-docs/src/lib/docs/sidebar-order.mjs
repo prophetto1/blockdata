@@ -13,52 +13,29 @@
  */
 
 export default {
-  // Root-level directories — order controls top-level sidebar groups
+  // Root-level files/directories shown in the docs sidebar.
   '.': {
-    order: ['internal'],
-    hidden: ['index', 'assessments', 'backend', 'proposed', 'reference', 'proposals', 'infrastructure'],
+    order: ['blockdata', 'internal', 'plans'],
+    hidden: ['index'],
   },
 
-  'internal': {
+  internal: {
     label: 'Internal',
-    order: ['docs-site-direction', 'local-urls', 'style-guide', 'analysis'],
+    order: ['docs-site-direction', 'shell-contract-spec', 'style-guide'],
   },
 
   'internal/style-guide': {
     label: 'Style Guide',
     order: [
       'starlight-components',
-      'markdown-syntax',
       'icon-unification',
       'toolbar-button-spec',
-      'font-standardization',
-      'integrations',
       'current-configs',
     ],
-  },
-
-  'internal/style-guide/integrations': {
-    label: 'Integrations',
-    order: ['keystatic'],
   },
 
   'internal/style-guide/current-configs': {
     label: 'Contracts',
     order: ['content', 'layout', 'fonts', 'colors', 'typography', 'global-css'],
-  },
-
-  'internal/analysis': {
-    label: 'Analysis',
-    order: ['kestra', 'ai'],
-  },
-
-  'internal/analysis/kestra': {
-    label: 'Kestra',
-    order: ['python-handlers', 'sql-tables'],
-  },
-
-  'internal/analysis/ai': {
-    label: 'AI',
-    order: ['overview', 'integrations-marketplace-chat-pane'],
   },
 };

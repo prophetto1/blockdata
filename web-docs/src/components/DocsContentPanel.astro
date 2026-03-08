@@ -1,0 +1,38 @@
+<div class="content-panel">
+  <div class="sl-container"><slot /></div>
+</div>
+
+<style>
+  @layer starlight.core {
+    .content-panel {
+      padding: 1.5rem var(--sl-content-pad-x);
+    }
+
+    .content-panel + .content-panel {
+      border-top: 1px solid var(--sl-color-hairline);
+    }
+
+    .sl-container {
+      max-width: var(--sl-content-width);
+    }
+
+    .sl-container > :global(* + *) {
+      margin-top: 1.5rem;
+    }
+
+    .content-panel:first-of-type:has(.sl-page-title-anchor:only-child) {
+      padding: 0;
+      border-top: 0;
+    }
+
+    .content-panel:first-of-type:has(.sl-page-title-anchor:only-child) .sl-container {
+      max-width: none;
+    }
+
+    @media (min-width: 72rem) {
+      .sl-container {
+        margin-inline: var(--sl-content-margin-inline, auto);
+      }
+    }
+  }
+</style>

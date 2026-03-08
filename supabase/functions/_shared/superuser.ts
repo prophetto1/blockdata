@@ -1,25 +1,31 @@
-import { getEnv } from "./env.ts";
-import { createUserClient } from "./supabase.ts";
+import { createAdminClient, createUserClient } from "./supabase.ts";
 
 export type SuperuserContext = {
   userId: string;
   email: string;
 };
 
-function parseAllowlist(raw: string): Set<string> {
-  return new Set(
-    raw
-      .split(",")
-      .map((s) => s.trim().toLowerCase())
-      .filter((s) => s.length > 0),
-  );
-}
+type UserClient = ReturnType<typeof createUserClient>;
+type AdminClient = ReturnType<typeof createAdminClient>;
 
-export async function requireSuperuser(req: Request): Promise<SuperuserContext> {
+type SuperuserDeps = {
+  createUserClient: (authHeader: string | null) => UserClient;
+  createAdminClient: () => AdminClient;
+};
+
+const defaultDeps: SuperuserDeps = {
+  createUserClient,
+  createAdminClient,
+};
+
+export async function requireSuperuser(
+  req: Request,
+  deps: SuperuserDeps = defaultDeps,
+): Promise<SuperuserContext> {
   const authHeader = req.headers.get("Authorization");
   if (!authHeader) throw new Error("Missing Authorization header");
 
-  const supabase = createUserClient(authHeader);
+  const supabase = deps.createUserClient(authHeader);
   const { data, error } = await supabase.auth.getUser();
   if (error) throw new Error(`Invalid auth: ${error.message}`);
 
@@ -28,11 +34,30 @@ export async function requireSuperuser(req: Request): Promise<SuperuserContext> 
   const email = (user.email ?? "").trim().toLowerCase();
   if (!email) throw new Error("Authenticated user has no email");
 
-  const allowlist = parseAllowlist(getEnv("SUPERUSER_EMAIL_ALLOWLIST", ""));
-  if (allowlist.size === 0) {
+  const admin = deps.createAdminClient();
+
+  const { data: anyActiveRows, error: anyActiveError } = await admin
+    .from("registry_superuser_profiles")
+    .select("superuser_profile_id")
+    .eq("is_active", true)
+    .limit(1);
+  if (anyActiveError) {
+    throw new Error(`Failed to load superuser registry: ${anyActiveError.message}`);
+  }
+  if (!anyActiveRows || anyActiveRows.length === 0) {
     throw new Error("Superuser access is not configured");
   }
-  if (!allowlist.has(email)) {
+
+  const { data: matchingRows, error: matchError } = await admin
+    .from("registry_superuser_profiles")
+    .select("superuser_profile_id")
+    .eq("email_normalized", email)
+    .eq("is_active", true)
+    .limit(1);
+  if (matchError) {
+    throw new Error(`Failed to evaluate superuser access: ${matchError.message}`);
+  }
+  if (!matchingRows || matchingRows.length === 0) {
     throw new Error("Forbidden: superuser access required");
   }
 

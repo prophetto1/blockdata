@@ -133,7 +133,7 @@ run('docs file tree treats empty directories as folders, not files', () => {
   assert.doesNotMatch(docsSidebarTree, /node\.children\?\.length \?/);
 });
 
-run('docs filetree repo preview stays inside the shell instead of full-page navigation', () => {
+run('docs filetree uses the normal docs page as preview instead of a dedicated shell preview pane', () => {
   const contentShell = readFileSync(
     new URL('../src/components/DocsTwoColumnContent.astro', import.meta.url),
     'utf8'
@@ -143,15 +143,12 @@ run('docs filetree repo preview stays inside the shell instead of full-page navi
     'utf8'
   );
 
-  assert.match(contentShell, /function loadRepoPreviewIntoShell\(url\)/);
-  assert.match(contentShell, /let currentRepoPreviewUrl = new URL\(window\.location\.href\)/);
-  assert.match(contentShell, /fetch\(url\.toString\(\),/);
-  assert.match(contentShell, /DOMParser/);
-  assert.match(contentShell, /loadRepoPreviewIntoShell\(currentRepoPreviewUrl\)/);
-  assert.match(contentShell, /currentRepoPreviewUrl = next/);
-  assert.doesNotMatch(contentShell, /history\.replaceState\(/);
-  assert.match(contentShell, /loadRepoPreviewIntoShell\(next\)/);
-  assert.match(splitter, /data-shell="splitter-preview"/);
+  assert.match(contentShell, /class="wa-preview"/);
+  assert.doesNotMatch(contentShell, /function loadRepoPreviewIntoShell\(url\)/);
+  assert.doesNotMatch(contentShell, /renderLocalMarkdown/);
+  assert.doesNotMatch(contentShell, /DOMParser/);
+  assert.doesNotMatch(contentShell, /shell-preview-refresh/);
+  assert.doesNotMatch(splitter, /data-shell="splitter-preview"/);
 });
 
 await run('docs sidebar and Keystatic home share the same docs content tree source', async () => {

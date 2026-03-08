@@ -1,0 +1,132 @@
+:root {
+  --workbench-surface-bg: var(--card);
+  --workbench-document-inset: var(--shell-panel-inset);
+  --workbench-editor-document-padding: var(--shell-panel-inset) var(--shell-panel-inset) calc(var(--shell-panel-inset) * 3);
+  --workbench-prose-font-size: 1rem;
+  --workbench-prose-line-height: 1.6;
+  --workbench-prose-block-gap: 0.8rem;
+  --workbench-prose-heading-letter-spacing: -0.02em;
+  --workbench-prose-h1-size: clamp(1.8rem, 2.6vw, 2.35rem);
+  --workbench-prose-h2-size: clamp(1.3rem, 2vw, 1.6rem);
+  --workbench-prose-h3-size: clamp(1.1rem, 1.6vw, 1.25rem);
+  --workbench-prose-h4-size: 1.05rem;
+  --workbench-prose-h2-top: 1.55rem;
+  --workbench-prose-h3-top: 1.2rem;
+  --workbench-prose-h4-top: 1rem;
+  --workbench-prose-heading-bottom: 0.5rem;
+  --workbench-prose-code-inline-padding: 0.02rem 0.18rem;
+}
+
+.workbench-surface {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+  min-width: 0;
+  box-sizing: border-box;
+  overflow: hidden;
+  background: var(--workbench-surface-bg);
+}
+
+.workbench-surface__canvas {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  box-sizing: border-box;
+  overflow: hidden;
+  background: var(--workbench-surface-bg);
+}
+
+.workbench-document {
+  box-sizing: border-box;
+  padding: var(--workbench-document-inset);
+}
+
+.workbench-prose {
+  color: var(--editor-fg, var(--sl-color-text));
+}
+
+.workbench-prose,
+.workbench-prose :is(.sl-markdown-content, [class*='_contentEditable']) {
+  font-family: var(--app-font-sans);
+  font-size: var(--workbench-prose-font-size);
+  line-height: var(--workbench-prose-line-height);
+}
+
+.workbench-prose :is(.sl-markdown-content, [class*='_contentEditable'])
+  > :first-child {
+  margin-top: 0;
+}
+
+.workbench-prose :is(.sl-markdown-content, [class*='_contentEditable'])
+  > :last-child {
+  margin-bottom: 0;
+}
+
+.workbench-prose :is(.sl-markdown-content, [class*='_contentEditable'])
+  :is(p, ul, ol, blockquote, pre, table) {
+  margin: var(--workbench-prose-block-gap) 0;
+}
+
+.workbench-prose :is(.sl-markdown-content, [class*='_contentEditable']) li + li {
+  margin-top: 0.25rem;
+}
+
+.workbench-prose :is(.sl-markdown-content, [class*='_contentEditable'])
+  :is(h1, h2, h3, h4) {
+  letter-spacing: var(--workbench-prose-heading-letter-spacing);
+  font-weight: 700;
+  line-height: 1.12;
+}
+
+.workbench-prose :is(.sl-markdown-content, [class*='_contentEditable']) h1,
+.workbench-prose :is(.sl-markdown-content, [class*='_contentEditable']) h1#_top {
+  font-size: var(--workbench-prose-h1-size);
+}
+
+.workbench-prose :is(.sl-markdown-content, [class*='_contentEditable']) h2 {
+  font-size: var(--workbench-prose-h2-size);
+  margin-top: var(--workbench-prose-h2-top);
+  margin-bottom: var(--workbench-prose-heading-bottom);
+}
+
+.workbench-prose :is(.sl-markdown-content, [class*='_contentEditable']) h3 {
+  font-size: var(--workbench-prose-h3-size);
+  margin-top: var(--workbench-prose-h3-top);
+  margin-bottom: 0.4rem;
+}
+
+.workbench-prose :is(.sl-markdown-content, [class*='_contentEditable']) h4 {
+  font-size: var(--workbench-prose-h4-size);
+  margin-top: var(--workbench-prose-h4-top);
+  margin-bottom: 0.35rem;
+}
+
+.workbench-prose :is(.sl-markdown-content, [class*='_contentEditable'])
+  code:not(pre code) {
+  border: 0;
+  border-radius: 0.2rem;
+  background: color-mix(in oklab, var(--sl-color-bg-inline-code) 88%, var(--background) 12%);
+  padding: var(--workbench-prose-code-inline-padding);
+}
+
+.workbench-prose :is(.sl-markdown-content, [class*='_contentEditable']) pre {
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius) + 0.2rem);
+  background: color-mix(in oklab, var(--card) 88%, var(--background) 12%);
+}
+
+.workbench-prose :is(.sl-markdown-content, [class*='_contentEditable']) a {
+  color: var(--primary);
+}
+
+.workbench-prose :is(.sl-markdown-content, [class*='_contentEditable']) blockquote {
+  border-inline-start: 3px solid var(--editor-border, var(--border));
+  color: var(--editor-muted-fg, var(--muted-foreground));
+}
+
+.workbench-prose :is(.sl-markdown-content, [class*='_contentEditable'])
+  :is(table, th, td) {
+  border-color: var(--editor-border, var(--border));
+}

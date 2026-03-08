@@ -1,0 +1,38 @@
+---
+const { entry, headings } = Astro.locals.starlightRoute;
+const firstHeading = headings[0];
+const suppressShellTitle = firstHeading?.depth === 1;
+---
+
+{
+  suppressShellTitle ? (
+    <div
+      id="_top"
+      aria-hidden="true"
+      class="sl-page-title-anchor"
+      data-page-title-suppressed
+    />
+  ) : (
+    <h1 id="_top">{entry.data.title}</h1>
+  )
+}
+
+<style>
+  @layer starlight.core {
+    h1 {
+      margin-top: 1rem;
+      font-size: var(--sl-text-h1);
+      line-height: var(--sl-line-height-headings);
+      font-weight: 600;
+      color: var(--sl-color-white);
+    }
+
+    .sl-page-title-anchor {
+      display: block;
+      block-size: 0;
+      inline-size: 100%;
+      margin: 0;
+      padding: 0;
+    }
+  }
+</style>

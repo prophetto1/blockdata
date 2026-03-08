@@ -14,8 +14,10 @@ import {
   IconBook2,
   IconLogout,
   IconSettings,
+  IconShieldCog,
 } from '@tabler/icons-react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useSuperuserProbe } from '@/hooks/useSuperuserProbe';
 
 import {
   TOP_LEVEL_NAV,
@@ -127,12 +129,16 @@ function ThemeToggleRow() {
 function AccountMenuContent({
   userLabel,
   docsSiteUrl,
+  isSuperuser,
   onNavigate,
+  onNavigateSuperuser,
   onSignOut,
 }: {
   userLabel?: string;
   docsSiteUrl: string;
+  isSuperuser: boolean;
   onNavigate: () => void;
+  onNavigateSuperuser: () => void;
   onSignOut?: () => void | Promise<void>;
 }) {
   return (
@@ -188,6 +194,17 @@ function AccountMenuContent({
           <IconBook2 size={16} stroke={1.75} className="text-muted-foreground" />
         </MenuItem>
 
+        {isSuperuser && (
+          <MenuItem
+            value="superuser"
+            className="flex items-center justify-between px-3 py-2"
+            onClick={onNavigateSuperuser}
+          >
+            <span>Superuser Tools</span>
+            <IconShieldCog size={16} stroke={1.75} className="text-muted-foreground" />
+          </MenuItem>
+        )}
+
         {onSignOut && (
           <MenuItem
             value="sign-out"
@@ -217,6 +234,9 @@ export function LeftRailShadcn({
   const navigate = useNavigate();
   const location = useLocation();
   const docsSiteUrl = DOCS_URL;
+  // TODO: remove fallback once auth bypass is disabled
+  const superuserProbe = useSuperuserProbe();
+  const isSuperuser = superuserProbe === true || superuserProbe === null;
 
   /* ------ Project focus (shared hook) ------ */
   const { resolvedProjectId } = useProjectFocus();
@@ -544,7 +564,9 @@ export function LeftRailShadcn({
               <AccountMenuContent
                 userLabel={userLabel}
                 docsSiteUrl={docsSiteUrl}
+                isSuperuser={isSuperuser}
                 onNavigate={() => { navigate('/app/settings'); onNavigate?.(); }}
+                onNavigateSuperuser={() => { navigate('/app/superuser'); onNavigate?.(); }}
                 onSignOut={onSignOut}
               />
             </MenuPositioner>

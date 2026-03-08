@@ -38,6 +38,7 @@ import ServiceDetailPage from '@/pages/marketplace/ServiceDetailPage';
 import TestsPage from '@/pages/kestra/TestsPage';
 import { FlowsRouteShell } from '@/components/layout/FlowsRouteShell';
 import { featureFlags } from '@/lib/featureFlags';
+import { SuperuserGuard } from '@/pages/superuser/SuperuserGuard';
 import NotFound from '@/pages/NotFound';
 
 function LegacyToElt() {
@@ -200,6 +201,15 @@ export const router = createBrowserRouter([
           {
             path: '/app/commands',
             element: featureFlags.commandsUI ? <Commands /> : <Navigate to="/app/settings" replace />,
+          },
+
+          // Superuser dashboard (gated by registry_superuser_profiles)
+          {
+            path: '/app/superuser',
+            element: <SuperuserGuard />,
+            children: [
+              { index: true, lazy: () => import('@/pages/superuser/SuperuserWorkspace') },
+            ],
           },
 
           // Legacy flat routes → redirect to project-scoped equivalents

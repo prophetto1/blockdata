@@ -3,6 +3,7 @@ import {
   IconApps,
   IconCode,
   IconDatabase,
+  IconFileCode,
   IconFolderPlus,
   IconGitBranch,
   IconKey,
@@ -13,11 +14,13 @@ import {
   IconSchema,
   IconServer,
   IconSettings,
+  IconSettingsCog,
   IconTerminal2,
   IconTestPipe,
   IconTopologyRing3,
   IconUserCircle,
   IconWand,
+  IconWorldCog,
   IconEdit,
   IconClock,
   IconFileText,
@@ -143,7 +146,29 @@ const SETTINGS_DRILL: NavDrillConfig = {
   ],
 };
 
-export const DRILL_CONFIGS: NavDrillConfig[] = [FLOWS_DRILL, SETTINGS_DRILL];
+const SUPERUSER_DRILL: NavDrillConfig = {
+  id: 'superuser',
+  parentLabel: 'Superuser',
+  parentPath: '/app/superuser',
+  routePrefix: '/app/superuser',
+  sections: [
+    {
+      label: 'Tools',
+      items: [
+        { label: 'Workspace', icon: IconFileCode, path: '/app/superuser' },
+      ],
+    },
+    {
+      label: 'Config',
+      items: [
+        { label: 'Site Config', icon: IconSettingsCog, path: '/app/superuser/site-config', badge: 'Soon' },
+        { label: 'Docs Config', icon: IconWorldCog, path: '/app/superuser/docs-config', badge: 'Soon' },
+      ],
+    },
+  ],
+};
+
+export const DRILL_CONFIGS: NavDrillConfig[] = [FLOWS_DRILL, SETTINGS_DRILL, SUPERUSER_DRILL];
 
 const DRILL_BY_ID = new Map(DRILL_CONFIGS.map((c) => [c.id, c]));
 

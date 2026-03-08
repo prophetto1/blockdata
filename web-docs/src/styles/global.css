@@ -8,6 +8,7 @@
 @import '@astrojs/starlight-tailwind';
 @import 'tailwindcss/theme.css' layer(theme);
 @import 'tailwindcss/utilities.css' layer(utilities);
+@import './workbench-shell.css';
 @import './split-editor.css';
 
 :root {
@@ -97,6 +98,8 @@
   --editor-accent: var(--sl-color-text-accent);
   --editor-success: #4ade80;
   --editor-danger: #f87171;
+  --app-scrollbar-thumb: color-mix(in oklab, var(--foreground) 28%, transparent);
+  --app-scrollbar-thumb-hover: color-mix(in oklab, var(--foreground) 40%, transparent);
 
   /* Shell icon tokens */
   --icon-folder: #d1ab6f;
@@ -180,6 +183,59 @@ body {
   letter-spacing: -0.01em;
 }
 
+:where(
+  .sidebar-pane,
+  .sidebar-content,
+  .wa-splitter__viewport,
+  .split-editor__mode-actions,
+  .split-editor__mdx :where([class*='_editorWrapper'])
+) {
+  scrollbar-width: thin;
+  scrollbar-color: var(--app-scrollbar-thumb) transparent;
+}
+
+:where(
+  .sidebar-pane,
+  .sidebar-content,
+  .wa-splitter__viewport,
+  .split-editor__mode-actions,
+  .split-editor__mdx :where([class*='_editorWrapper'])
+)::-webkit-scrollbar {
+  width: 0.55rem;
+  height: 0.55rem;
+}
+
+:where(
+  .sidebar-pane,
+  .sidebar-content,
+  .wa-splitter__viewport,
+  .split-editor__mode-actions,
+  .split-editor__mdx :where([class*='_editorWrapper'])
+)::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+:where(
+  .sidebar-pane,
+  .sidebar-content,
+  .wa-splitter__viewport,
+  .split-editor__mode-actions,
+  .split-editor__mdx :where([class*='_editorWrapper'])
+)::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: var(--app-scrollbar-thumb);
+}
+
+:where(
+  .sidebar-pane,
+  .sidebar-content,
+  .wa-splitter__viewport,
+  .split-editor__mode-actions,
+  .split-editor__mdx :where([class*='_editorWrapper'])
+)::-webkit-scrollbar-thumb:hover {
+  background: var(--app-scrollbar-thumb-hover);
+}
+
 :where(code, kbd, samp, pre) {
   font-family: var(--app-font-mono);
 }
@@ -195,6 +251,7 @@ body {
 .sidebar-pane {
   font-family: var(--app-font-sans);
   font-size: 0.85rem;
+  overflow: hidden;
 }
 
 .sidebar-content {
@@ -208,8 +265,13 @@ body {
   color: var(--primary);
 }
 
+.sl-markdown-content {
+  font-size: var(--workbench-prose-font-size);
+  line-height: var(--workbench-prose-line-height);
+}
+
 .sl-markdown-content :is(h1, h2, h3, h4) {
-  letter-spacing: -0.02em;
+  letter-spacing: var(--workbench-prose-heading-letter-spacing);
   font-weight: 700;
 }
 
@@ -243,7 +305,7 @@ body {
 .sl-markdown-content blockquote,
 .sl-markdown-content pre,
 .sl-markdown-content table {
-  margin: 0.8rem 0;
+  margin: var(--workbench-prose-block-gap) 0;
 }
 
 .sl-markdown-content li + li {
@@ -252,33 +314,33 @@ body {
 
 .sl-markdown-content h1,
 h1#_top {
-  font-size: clamp(1.8rem, 2.6vw, 2.35rem);
+  font-size: var(--workbench-prose-h1-size);
   line-height: 1.12;
 }
 
 .sl-markdown-content h2 {
-  font-size: clamp(1.3rem, 2vw, 1.6rem);
-  margin-top: 1.55rem;
-  margin-bottom: 0.5rem;
+  font-size: var(--workbench-prose-h2-size);
+  margin-top: var(--workbench-prose-h2-top);
+  margin-bottom: var(--workbench-prose-heading-bottom);
 }
 
 .sl-markdown-content h3 {
-  font-size: clamp(1.1rem, 1.6vw, 1.25rem);
-  margin-top: 1.2rem;
+  font-size: var(--workbench-prose-h3-size);
+  margin-top: var(--workbench-prose-h3-top);
   margin-bottom: 0.4rem;
 }
 
 .sl-markdown-content h4 {
-  font-size: 1.05rem;
-  margin-top: 1rem;
+  font-size: var(--workbench-prose-h4-size);
+  margin-top: var(--workbench-prose-h4-top);
   margin-bottom: 0.35rem;
 }
 
 .sl-markdown-content code:not(pre code) {
-  border: 1px solid var(--border);
-  border-radius: 0.4rem;
-  background: var(--sl-color-bg-inline-code);
-  padding: 0.1rem 0.35rem;
+  border: 0;
+  border-radius: 0.2rem;
+  background: color-mix(in oklab, var(--sl-color-bg-inline-code) 88%, var(--background) 12%);
+  padding: 0.02rem 0.18rem;
 }
 
 .sl-markdown-content pre {

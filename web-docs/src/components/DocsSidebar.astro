@@ -3,8 +3,6 @@ import MobileMenuFooter from '@astrojs/starlight/components/MobileMenuFooter.ast
 import SidebarPersister from '@astrojs/starlight/components/SidebarPersister.astro';
 import SidebarSublist from '@astrojs/starlight/components/SidebarSublist.astro';
 import { FolderTree, PanelLeft } from 'lucide-react';
-import DocsSidebarFileTree from './DocsSidebarFileTree.tsx';
-import ScrollWrapper from './ScrollWrapper.tsx';
 import { getCurrentDocsRelativePath, getDocsContentTreeState } from '../lib/docs/content-tree.mjs';
 
 const { entry, sidebar } = Astro.locals.starlightRoute;
@@ -127,21 +125,30 @@ const currentRelativePath = getCurrentDocsRelativePath(entry.filePath);
   </script>
 
   <div data-sidebar-panel="nav">
-    <ScrollWrapper client:load className="docs-sidebar-scroll">
+    <div class="docs-sidebar-scroll">
       <SidebarPersister>
         <SidebarSublist sublist={sidebar} />
       </SidebarPersister>
-    </ScrollWrapper>
+    </div>
   </div>
 
   <div data-sidebar-panel="files">
-    <DocsSidebarFileTree
-      nodes={treeRoot.children}
-      currentRelativePath={currentRelativePath}
-      client:load
-    />
+    <div
+      class="docs-sidebar-filetree-host"
+      data-docs-sidebar-filetree-root
+      data-current-relative-path={currentRelativePath}
+      data-tree-nodes={JSON.stringify(treeRoot.children)}
+    >
+      <div class="docs-sidebar-filetree-loading">Loading file tree...</div>
+    </div>
   </div>
 </div>
+
+<script>
+  import { mountDocsSidebarFileTreeWhenFiletreeMode } from '../lib/docs/lazy-shell-mount';
+
+  mountDocsSidebarFileTreeWhenFiletreeMode('[data-docs-sidebar-filetree-root]');
+</script>
 
 <div class="md:sl-hidden">
   <MobileMenuFooter />
@@ -370,6 +377,24 @@ const currentRelativePath = getCurrentDocsRelativePath(entry.filePath);
     :global(.docs-sidebar-scroll) {
       flex: 1;
       min-height: 0;
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+
+    :global(.docs-sidebar-filetree-host) {
+      display: flex;
+      flex: 1;
+      min-height: 0;
+    }
+
+    :global(.docs-sidebar-filetree-loading) {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      min-height: 2.5rem;
+      color: var(--muted-foreground);
+      font-family: var(--app-font-mono);
+      font-size: 0.68rem;
     }
 
     :global(.docs-tree) {

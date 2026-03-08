@@ -1,7 +1,5 @@
 ---
 import { extname } from 'node:path';
-import ScrollWrapper from './ScrollWrapper.tsx';
-import WorkbenchSplitter from './WorkbenchSplitter.tsx';
 import { getCurrentDocsRelativePath, getDocsHrefFromRelativePath } from '../lib/docs/content-tree.mjs';
 
 const { toc, entry } = Astro.locals.starlightRoute;
@@ -10,55 +8,29 @@ const currentFileExtension = currentRelativePath ? extname(currentRelativePath).
 const currentDocsHref = currentRelativePath ? getDocsHrefFromRelativePath(currentRelativePath) : '';
 ---
 
-{/* ═══════════════════════════════════════════════════════════
-    ContentWorkAreaShell
-    ═══════════════════════════════════════════════════════════
-    Sole owner of the content-area layout contract.
-
-    Sections mode: standard Starlight article (TOC + main-pane).
-    Filetree mode: Ark UI Splitter with two panels:
-
-      ┌──────────────────────┬──┬───────────────────────────┐
-      │ Source | Rich        │  │ Preview                   │
-      ├──────────────────────┤  ├───────────────────────────┤
-      │ EditorPanel          │  │ PreviewPanel              │
-      │                      │Re│                           │
-      │  ┌SourceSurface ──┐  │si│  ┌ Adopted <slot/> ────┐  │
-      │  │ Monaco editor  │  │ze│  │ ScrollArea viewport  │  │
-      │  └────────────────┘  │  │  └─────────────────────-┘  │
-      │  ┌RichSurface ────┐  │  │                           │
-      │  │ MDXEditor      │  │  │                           │
-      │  └────────────────┘  │  │                           │
-      └──────────────────────┴──┴───────────────────────────┘
-
-    Sizing: Ark UI Splitter (flexbox). Resize via ResizeTrigger.
-    Preview content adopted from .wa-preview on hydration.
-    ═══════════════════════════════════════════════════════════ */}
+{/* ContentWorkAreaShell
+    Sections mode: standard Starlight article (TOC + main pane).
+    Filetree mode: editor-only workbench.
+    The normal docs page remains the preview surface for the app. */}
 
 <div class="content-work-area lg:sl-flex">
-
-  {/* ── Sections mode: right sidebar (TOC) ── */}
   {toc && (
     <aside class="right-sidebar-container print:hidden">
       <div class="right-sidebar">
-        <ScrollWrapper client:load className="right-sidebar-scroll">
+        <div class="right-sidebar-scroll">
           <slot name="right-sidebar" />
-        </ScrollWrapper>
+        </div>
       </div>
     </aside>
   )}
 
-  {/* ── WorkbenchSplitter ──
-       Filetree mode only. Ark UI Splitter owns editor + preview panels,
-       each with its own header strip (Source|Rich tabs / Preview label).
-       On mount, adopts the content from .wa-preview into its preview panel.
-       Hidden in sections mode. */}
-  <WorkbenchSplitter client:load />
+  {/* Filetree mode only. Owns the editor workbench surface. */}
+  <div class="wa-workbench-host" data-workbench-root>
+    <div class="wa-workbench-loading">Loading workspace...</div>
+  </div>
 
-  {/* ── PreviewColumnShell / Sections-mode main-pane ──
-       In sections mode: normal article layout wrapped in Ark ScrollArea
-       so the thin custom scrollbar replaces the browser's native one.
-       In filetree mode: content is adopted by WorkbenchSplitter on hydration. */}
+  {/* Sections-mode main pane. In filetree mode this remains hidden rather than
+      being adopted into a dedicated preview shell. */}
   <div
     class="wa-preview"
     data-shell="preview-column"
@@ -70,381 +42,20 @@ const currentDocsHref = currentRelativePath ? getDocsHrefFromRelativePath(curren
   </div>
 </div>
 
-<script is:inline>
-  (() => {
-    // Canonical source: src/lib/docs/shell-state.ts
-    // Duplicated here because is:inline scripts cannot import ES modules.
-    const FILE_STORAGE_KEY = 'shell-selected-file';
-    const PREVIEW_REFRESH_EVENT = 'shell-preview-refresh';
-    const FILE_SELECT_EVENT = 'shell-file-select';
-    const FILE_RESET_EVENT = 'shell-file-reset';
-    const PREVIEW_REFRESH_QUERY = '_shell_preview';
-    const SHELL_ATTR = 'data-shell-mode';
-    const REPO_PREVIEW_DATA_ATTRS = [
-      'data-current-file-path',
-      'data-current-file-extension',
-      'data-current-docs-href',
-    ];
+<script>
+  import { mountWorkbenchWhenFiletreeMode } from '../lib/docs/lazy-shell-mount';
 
-    let previewAbortController = null;
-    let previewRequestSeq = 0;
-
-    function isFiletreeMode() {
-      return document.documentElement.getAttribute(SHELL_ATTR) === 'filetree';
-    }
-
-    function readSelectedFile() {
-      try {
-        const saved = sessionStorage.getItem(FILE_STORAGE_KEY);
-        if (!saved) return null;
-        return JSON.parse(saved);
-      } catch {
-        return null;
-      }
-    }
-
-    function getSourcePreviewEl() {
-      return document.querySelector('.wa-preview[data-shell="preview-column"]');
-    }
-
-    function getPreviewEl() {
-      if (isFiletreeMode()) {
-        return document.querySelector('[data-shell="splitter-preview"]');
-      }
-      return getSourcePreviewEl();
-    }
-
-    function copyRepoPreviewMetadata(source, target) {
-      if (!(source instanceof Element) || !(target instanceof Element)) return;
-      REPO_PREVIEW_DATA_ATTRS.forEach((attr) => {
-        const value = source.getAttribute(attr);
-        if (value) {
-          target.setAttribute(attr, value);
-        } else {
-          target.removeAttribute(attr);
-        }
-      });
-    }
-
-    function updateSourcePreview(markup, source) {
-      const target = getSourcePreviewEl();
-      if (!(target instanceof Element)) return;
-      target.innerHTML = markup;
-      copyRepoPreviewMetadata(source, target);
-    }
-
-    function extractRepoPreviewMarkup(source) {
-      const scratch = document.createElement('div');
-      scratch.innerHTML = source?.innerHTML ?? '';
-
-      const firstChild = scratch.firstElementChild;
-      const secondChild = firstChild?.nextElementSibling;
-      if (
-        firstChild?.classList?.contains('content-panel')
-        && secondChild?.classList?.contains('content-panel')
-      ) {
-        firstChild.remove();
-      }
-
-      // Strip Starlight footer/nav elements that don't belong in filetree preview
-      scratch.querySelectorAll([
-        '.sl-markdown-content + footer',  // "Edit page" + prev/next links
-        'footer.astro-klhlzfpf',          // Starlight footer wrapper
-        '.pagination-links',              // Previous/Next page navigation
-        '.sl-flex.pad-footer',            // "Built with Starlight" footer
-        '[class*="EditLink"]',            // Edit page link
-      ].join(', ')).forEach((el) => el.remove());
-
-      return scratch.innerHTML;
-    }
-
-    function escapeHtml(raw) {
-      return String(raw)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-    }
-
-    function renderInlineMarkdown(raw) {
-      return escapeHtml(raw).replace(/`([^`]+)`/g, '<code>$1</code>');
-    }
-
-    function renderLocalMarkdown(raw, extension) {
-      const lines = String(raw ?? '').replace(/\r\n?/g, '\n').split('\n');
-      const blocks = [];
-      let inCode = false;
-      let inList = false;
-      let paragraph = [];
-
-      function closeParagraph() {
-        if (!paragraph.length) return;
-        blocks.push(`<p>${paragraph.join(' ')}</p>`);
-        paragraph = [];
-      }
-
-      function closeList() {
-        if (!inList) return;
-        blocks.push('</ul>');
-        inList = false;
-      }
-
-      for (const line of lines) {
-        if (line.startsWith('```')) {
-          if (inCode) {
-            blocks.push('</code></pre>');
-            inCode = false;
-            continue;
-          }
-          closeParagraph();
-          closeList();
-          blocks.push('<pre><code>');
-          inCode = true;
-          continue;
-        }
-
-        if (inCode) {
-          blocks.push(escapeHtml(line));
-          continue;
-        }
-
-        if (/^#{1,6}\s+/.test(line)) {
-          closeParagraph();
-          closeList();
-          const level = line.match(/^(#{1,6})\s+/)?.[1]?.length ?? 1;
-          blocks.push(`<h${level}>${renderInlineMarkdown(line.replace(/^(#{1,6})\s+/, ''))}</h${level}>`);
-          continue;
-        }
-
-        if (/^>\s?/.test(line)) {
-          closeParagraph();
-          closeList();
-          blocks.push(`<blockquote>${renderInlineMarkdown(line.replace(/^>\s?/, ''))}</blockquote>`);
-          continue;
-        }
-
-        if (/^[-*]\s+/.test(line)) {
-          if (!inList) {
-            closeParagraph();
-            blocks.push('<ul>');
-            inList = true;
-          }
-          blocks.push(`<li>${renderInlineMarkdown(line.replace(/^[-*]\s+/, ''))}</li>`);
-          continue;
-        }
-
-        if (!line.trim()) {
-          closeParagraph();
-          closeList();
-          continue;
-        }
-
-        paragraph.push(renderInlineMarkdown(line.trim()));
-      }
-
-      closeParagraph();
-      closeList();
-      if (inCode) blocks.push('</code></pre>');
-
-      const variant = extension === '.mdx' ? 'split-editor__local-preview--mdx' : '';
-      return `<article class="split-editor__local-preview ${variant}">${blocks.join('')}</article>`;
-    }
-
-    function beginPreviewRequest() {
-      previewAbortController?.abort();
-      const controller = new AbortController();
-      previewAbortController = controller;
-      previewRequestSeq += 1;
-      return { controller, requestId: previewRequestSeq };
-    }
-
-    function cancelPreviewRequest() {
-      previewAbortController?.abort();
-      previewAbortController = null;
-      previewRequestSeq += 1;
-    }
-
-    function resolveRepoPreviewUrl(detail) {
-      const saved = readSelectedFile();
-      const candidate = detail?.docsHref || saved?.docsHref || window.location.href;
-      try {
-        return new URL(candidate, window.location.origin);
-      } catch {
-        return new URL(window.location.href);
-      }
-    }
-
-    function isSameDocsHref(left, right) {
-      try {
-        return new URL(left, window.location.origin).toString() === new URL(right, window.location.origin).toString();
-      } catch {
-        return String(left || '') === String(right || '');
-      }
-    }
-
-    function syncCurrentPreviewIntoShell(attempt = 0) {
-      if (!isFiletreeMode()) return;
-
-      const target = document.querySelector('[data-shell="splitter-preview"]');
-      const source = getSourcePreviewEl();
-      if (!target || !source) {
-        if (attempt < 30) {
-          window.requestAnimationFrame(() => syncCurrentPreviewIntoShell(attempt + 1));
-        }
-        return;
-      }
-
-      const selected = readSelectedFile();
-      if (selected?.sourceKind === 'local') {
-        if (!target.innerHTML.trim()) {
-          target.innerHTML = '<div class="split-editor__loading">Loading local preview...</div>';
-        }
-        return;
-      }
-
-      if (target.innerHTML.trim()) return;
-      target.innerHTML = extractRepoPreviewMarkup(source);
-    }
-
-    async function loadRepoPreviewIntoShell(url) {
-      const preview = getPreviewEl();
-      if (!preview) return;
-
-      const { controller, requestId } = beginPreviewRequest();
-      preview.innerHTML = '<div class="split-editor__loading">Loading preview...</div>';
-
-      try {
-        const res = await fetch(url.toString(), { cache: 'no-store', signal: controller.signal });
-        if (!res.ok) {
-          throw new Error('Failed to load preview');
-        }
-
-        const html = await res.text();
-        if (controller.signal.aborted || requestId !== previewRequestSeq) return;
-
-        const doc = new DOMParser().parseFromString(html, 'text/html');
-        const source = doc.querySelector('.wa-preview[data-shell="preview-column"]')
-          || doc.querySelector('.wa-preview');
-        if (!(source instanceof Element)) {
-          throw new Error('Preview content not found');
-        }
-
-        const markup = extractRepoPreviewMarkup(source);
-        preview.innerHTML = markup;
-        updateSourcePreview(markup, source);
-        history.replaceState(history.state ?? {}, '', url.toString());
-      } catch (error) {
-        if (controller.signal.aborted || requestId !== previewRequestSeq) return;
-        const message = error instanceof Error ? error.message : 'Failed to load preview';
-        preview.innerHTML = `<div class="split-editor__loading split-editor__loading--error">${escapeHtml(message)}</div>`;
-      }
-    }
-
-    function refreshRepoPreview(detail) {
-      const current = resolveRepoPreviewUrl(detail);
-      if (isFiletreeMode()) {
-        loadRepoPreviewIntoShell(current);
-        return;
-      }
-      current.searchParams.set(PREVIEW_REFRESH_QUERY, String(Date.now()));
-      window.location.replace(current.toString());
-    }
-
-    function updateLocalPreview(detail) {
-      cancelPreviewRequest();
-      const preview = getPreviewEl();
-      if (!preview) return;
-      preview.innerHTML = renderLocalMarkdown(detail?.content ?? '', detail?.extension ?? '');
-    }
-
-    // ── File selection: persist and stage loading UI ──
-    window.addEventListener(FILE_SELECT_EVENT, (e) => {
-      const detail = e.detail;
-      if (!detail?.filePath) return;
-      try { sessionStorage.setItem(FILE_STORAGE_KEY, JSON.stringify(detail)); } catch {}
-
-      const preview = getPreviewEl();
-
-      if (detail.sourceKind === 'local') {
-        cancelPreviewRequest();
-        if (preview) {
-          preview.innerHTML = '<div class="split-editor__loading">Loading local preview...</div>';
-        }
-        return;
-      }
-
-      if (detail.docsHref) {
-        const next = new URL(detail.docsHref, window.location.origin);
-        history.replaceState(history.state ?? {}, '', next.toString());
-      }
-
-      if (preview) {
-        preview.innerHTML = '<div class="split-editor__loading">Loading preview...</div>';
-      }
-    });
-
-    // ── Preview refresh after load/save ──
-    window.addEventListener(PREVIEW_REFRESH_EVENT, (event) => {
-      if (event.detail?.sourceKind === 'local') {
-        updateLocalPreview(event.detail);
-        return;
-      }
-
-      if (event.detail?.reason === 'load' && isFiletreeMode()) {
-        const source = getSourcePreviewEl();
-        const preview = document.querySelector('[data-shell="splitter-preview"]');
-        const currentDocsHref = source?.getAttribute('data-current-docs-href');
-        if (
-          currentDocsHref
-          && event.detail?.docsHref
-          && preview?.innerHTML?.trim()
-          && isSameDocsHref(currentDocsHref, event.detail.docsHref)
-        ) {
-          return;
-        }
-      }
-
-      refreshRepoPreview(event.detail);
-    });
-
-    window.addEventListener(FILE_RESET_EVENT, (event) => {
-      cancelPreviewRequest();
-      const reason = event.detail?.reason;
-      if (reason !== 'folder-cleared' && reason !== 'file-missing') return;
-
-      const preview = getPreviewEl();
-      if (!preview) return;
-
-      preview.innerHTML = '<div class="split-editor__loading">Select a file from the tree</div>';
-    });
-
-    const rootObserver = new MutationObserver(() => {
-      if (isFiletreeMode()) {
-        syncCurrentPreviewIntoShell();
-      }
-    });
-    rootObserver.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: [SHELL_ATTR],
-    });
-
-    syncCurrentPreviewIntoShell();
-  })();
+  mountWorkbenchWhenFiletreeMode('[data-workbench-root]');
 </script>
 
 <style>
   @layer starlight.core {
-
-    /* ═══════════════════════════════════════════════════════
-       ContentWorkAreaShell — grid authority
-       ═══════════════════════════════════════════════════════ */
-
-    /* ── Sections mode (default) ──
-       wa-preview acts as the normal main-pane.
-       Splitter is hidden. */
-
     .wa-preview {
       isolation: isolate;
+    }
+
+    .wa-workbench-host {
+      display: none;
     }
 
     :global(.wa-splitter) {
@@ -471,9 +82,10 @@ const currentDocsHref = currentRelativePath ? getDocsHrefFromRelativePath(curren
 
       :global(.right-sidebar-scroll) {
         height: 100%;
+        overflow-y: auto;
+        overflow-x: hidden;
       }
 
-      /* Sections-mode only — scoped so they don't fight filetree grid */
       :global(:not([data-shell-mode='filetree'])) .wa-preview {
         width: 100%;
       }
@@ -487,22 +99,21 @@ const currentDocsHref = currentRelativePath ? getDocsHrefFromRelativePath(curren
       }
     }
 
-    /* ═══════════════════════════════════════════════════════
-       Filetree mode — activate all sub-shells
-       ═══════════════════════════════════════════════════════ */
-
     :global([data-shell-mode='filetree']) .right-sidebar-container {
       display: none;
     }
 
-    /* Filetree layout: splitter fills the work area.
-       The Ark UI Splitter handles column sizing internally.
-       Each panel has its own header strip. */
     :global([data-shell-mode='filetree']) .content-work-area {
-      display: flex !important; /* override lg:sl-flex */
+      display: flex !important;
       flex-direction: column;
       height: calc(100vh - var(--sl-nav-height, 3.5rem));
       overflow: hidden;
+    }
+
+    :global([data-shell-mode='filetree']) .wa-workbench-host {
+      display: flex;
+      flex: 1;
+      min-height: 0;
     }
 
     :global([data-shell-mode='filetree']) :global(.wa-splitter) {
@@ -513,57 +124,6 @@ const currentDocsHref = currentRelativePath ? getDocsHrefFromRelativePath(curren
 
     :global([data-shell-mode='filetree']) .wa-preview {
       display: none;
-    }
-
-    /* ═══════════════════════════════════════════════════════
-       Tab styling — rendered inside React islands (global)
-       ═══════════════════════════════════════════════════════ */
-
-    :global(.wa-strip__editor-tabs) {
-      display: flex;
-      align-items: center;
-      gap: 0;
-    }
-
-    :global(.wa-strip__tab) {
-      position: relative;
-      display: flex;
-      align-items: center;
-      gap: 0.35rem;
-      border: 0;
-      background: transparent;
-      padding: 0.4rem 0.65rem;
-      color: var(--muted-foreground);
-      font-family: var(--app-font-sans);
-      font-size: 0.75rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: color 100ms ease;
-    }
-
-    :global(.wa-strip__tab:hover) {
-      color: var(--sl-color-text);
-    }
-
-    :global(.wa-strip__tab[aria-pressed='true']) {
-      color: var(--sl-color-text);
-    }
-
-    :global(.wa-strip__tab[aria-pressed='true']::after) {
-      content: '';
-      position: absolute;
-      bottom: -1px;
-      left: 0;
-      right: 0;
-      height: 1px;
-      background: var(--sl-color-text);
-    }
-
-    :global(.wa-strip__label) {
-      color: var(--muted-foreground);
-      font-family: var(--app-font-sans);
-      font-size: 0.75rem;
-      font-weight: 600;
     }
   }
 </style>
