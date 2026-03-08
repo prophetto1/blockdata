@@ -11,6 +11,7 @@ import { generateSidebar } from './src/lib/docs/generate-sidebar.mjs';
 
 export default defineConfig({
   site: 'https://www.blockdata.run',
+  base: '/docs',
   adapter: vercel(),
   markdown: {
     remarkPlugins: [remarkMath, remarkEmoji],

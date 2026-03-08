@@ -1,8 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { Avatar } from '@ark-ui/react/avatar';
 import { ToggleGroup } from '@ark-ui/react/toggle-group';
-import { Layout03Icon } from '@hugeicons/core-free-icons';
-import { HugeiconsIcon } from '@hugeicons/react';
 import {
   IconChevronLeft,
   IconChevronRight,
@@ -214,7 +212,7 @@ export function LeftRailShadcn({
   userLabel,
   onSignOut,
   desktopCompact = false,
-  onToggleDesktopCompact,
+  onToggleDesktopCompact: _onToggleDesktopCompact,
 }: LeftRailShadcnProps) {
   const navigate = useNavigate();
   const location = useLocation();

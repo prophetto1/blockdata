@@ -39,11 +39,12 @@ const currentRelativePath = getCurrentDocsRelativePath(entry.filePath);
 
   <script is:inline>
     (() => {
-      const SHELL_ATTR = 'data-shell-mode';
-      const SHELL_STORAGE = 'shell-mode';
-
-      const FILE_STORAGE = 'shell-selected-file';
-      const FILE_RESET_EVENT = 'shell-file-reset';
+      // Canonical source: src/lib/docs/shell-state.ts
+      // Duplicated here because is:inline scripts cannot import ES modules.
+      const SHELL_ATTR = 'data-shell-mode';           // SHELL_MODE_ATTR
+      const SHELL_STORAGE = 'shell-mode';              // SHELL_MODE_STORAGE_KEY
+      const FILE_STORAGE = 'shell-selected-file';      // FILE_STORAGE_KEY
+      const FILE_RESET_EVENT = 'shell-file-reset';     // SHELL_FILE_RESET_EVENT
 
       function applySidebarView(root, view) {
         root.dataset.sidebarView = view;
@@ -282,9 +283,37 @@ const currentRelativePath = getCurrentDocsRelativePath(entry.filePath);
       border-color: var(--sl-color-text);
     }
 
+    :global(.docs-tree-empty__button) {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
     :global(.docs-tree-empty__button:focus-visible) {
       outline: 1px solid var(--ring);
       outline-offset: 1px;
+    }
+
+    :global(.docs-tree-empty__button--muted) {
+      border-color: transparent;
+      color: var(--muted-foreground);
+      font-size: 0.62rem;
+    }
+
+    :global(.docs-tree-empty__button--muted:hover) {
+      border-color: transparent;
+      color: var(--sl-color-text);
+      background: transparent;
+    }
+
+    :global(.docs-tree-empty__detail) {
+      font-size: 0.6rem;
+      color: var(--muted-foreground);
+      opacity: 0.7;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     /* ── File Tree Panel ── */
@@ -394,7 +423,7 @@ const currentRelativePath = getCurrentDocsRelativePath(entry.filePath);
 
     :global(.docs-tree-icon--folder-closed),
     :global(.docs-tree-icon--folder-open) {
-      color: #d1ab6f;
+      color: var(--icon-folder);
       opacity: 0.98;
     }
 
@@ -416,7 +445,7 @@ const currentRelativePath = getCurrentDocsRelativePath(entry.filePath);
     }
 
     :global(.docs-tree-icon--markdown) {
-      color: #8aa9ff;
+      color: var(--icon-markdown);
       opacity: 0.96;
     }
 

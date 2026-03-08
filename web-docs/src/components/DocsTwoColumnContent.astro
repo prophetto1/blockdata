@@ -16,7 +16,7 @@ const { toc } = Astro.locals.starlightRoute;
       ┌─────────────────────────────────────────────────────┐
       │ WorkAreaStripShell (row 1, col 1/-1)                │
       │  ┌─ EditorTabShell ─┐   ┌─ PreviewHeaderShell ──┐  │
-      │  │ Editor|Keystatic │ │ │ Preview                │  │
+      │  │ Source | Rich    │ │ │ Preview                │  │
       │  └──────────────────┘   └────────────────────────┘  │
       ├─────────────────────┬─┬─────────────────────────────┤
       │ EditorColumnShell   │D│ PreviewColumnShell          │
@@ -25,8 +25,8 @@ const { toc } = Astro.locals.starlightRoute;
       │  ┌SourceSurface ──┐ │i│  ┌ Astro <slot/> ────────┐ │
       │  │ Monaco editor  │ │d│  │ Same rendering path.   │ │
       │  └────────────────┘ │e│  │ No second renderer.    │ │
-      │  ┌KeystaticSurface┐ │r│  └───────────────────────-┘ │
-      │  │ Keystatic embed│ │ │                             │
+      │  ┌RichSurface ────┐ │r│  └───────────────────────-┘ │
+      │  │ MDXEditor      │ │ │                             │
       │  └────────────────┘ │ │                             │
       └─────────────────────┴─┴─────────────────────────────┘
 
@@ -58,7 +58,7 @@ const { toc } = Astro.locals.starlightRoute;
 
   {/* ── EditorColumnShell ──
        Row 2, col 1. Contains the active editor surface.
-       SplitEditorView switches between SourceSurface and KeystaticSurface. */}
+       SplitEditorView switches between Source and Rich (MDXEditor). */}
   <div class="wa-editor" data-shell="editor-column">
     <SplitEditorView client:load />
   </div>
@@ -79,7 +79,13 @@ const { toc } = Astro.locals.starlightRoute;
 
 <script is:inline>
   (() => {
-    const FILE_STORAGE_KEY = 'shell-selected-file';
+    // Canonical source: src/lib/docs/shell-state.ts
+    // Duplicated here because is:inline scripts cannot import ES modules.
+    const FILE_STORAGE_KEY = 'shell-selected-file';      // FILE_STORAGE_KEY
+    const PREVIEW_REFRESH_EVENT = 'shell-preview-refresh'; // SHELL_PREVIEW_REFRESH_EVENT
+    const FILE_SELECT_EVENT = 'shell-file-select';        // SHELL_FILE_EVENT
+    const FILE_RESET_EVENT = 'shell-file-reset';          // SHELL_FILE_RESET_EVENT
+    const SPLIT_RATIO_KEY = 'shell-split-ratio';          // SPLIT_RATIO_STORAGE_KEY
     const PREVIEW_REFRESH_QUERY = '_shell_preview';
 
     function escapeHtml(raw) {
@@ -206,7 +212,7 @@ const { toc } = Astro.locals.starlightRoute;
         const pct = ((e.clientX - rect.left) / rect.width) * 100;
         const clamped = Math.max(20, Math.min(80, pct));
         workArea.style.setProperty('--split-editor-pct', clamped + '%');
-        try { localStorage.setItem('shell-split-ratio', String(clamped)); } catch {}
+        try { localStorage.setItem(SPLIT_RATIO_KEY, String(clamped)); } catch {}
       });
 
       window.addEventListener('pointerup', () => {
@@ -218,7 +224,7 @@ const { toc } = Astro.locals.starlightRoute;
 
       // Restore saved ratio
       try {
-        const saved = localStorage.getItem('shell-split-ratio');
+        const saved = localStorage.getItem(SPLIT_RATIO_KEY);
         if (saved && workArea) {
           const pct = parseFloat(saved);
           if (pct >= 20 && pct <= 80) {
@@ -229,7 +235,7 @@ const { toc } = Astro.locals.starlightRoute;
     }
 
     // ── File selection: persist and navigate ──
-    window.addEventListener('shell-file-select', (e) => {
+    window.addEventListener(FILE_SELECT_EVENT, (e) => {
       const detail = e.detail;
       if (!detail?.filePath) return;
       try { sessionStorage.setItem(FILE_STORAGE_KEY, JSON.stringify(detail)); } catch {}
@@ -249,7 +255,7 @@ const { toc } = Astro.locals.starlightRoute;
     });
 
     // ── Preview refresh after save ──
-    window.addEventListener('shell-preview-refresh', (event) => {
+    window.addEventListener(PREVIEW_REFRESH_EVENT, (event) => {
       if (event.detail?.sourceKind === 'local') {
         updateLocalPreview(event.detail);
         return;
@@ -257,7 +263,7 @@ const { toc } = Astro.locals.starlightRoute;
       refreshRepoPreview();
     });
 
-    window.addEventListener('shell-file-reset', (event) => {
+    window.addEventListener(FILE_RESET_EVENT, (event) => {
       const reason = event.detail?.reason;
       if (reason !== 'folder-cleared' && reason !== 'file-missing') return;
 

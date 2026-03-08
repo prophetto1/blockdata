@@ -1,11 +1,13 @@
 import { TreeView, createTreeCollection } from '@ark-ui/react/tree-view';
 import {
+  AlertCircle,
   ChevronRight,
   File,
   FileCode2,
   FileText,
   FolderClosed,
   FolderOpen,
+  RefreshCw,
   X,
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -136,6 +138,35 @@ function EmptyState({ onSelect }: { onSelect: () => void }) {
   );
 }
 
+function ReauthState({ folderName, onReconnect, onClear }: { folderName: string; onReconnect: () => void; onClear: () => void }) {
+  return (
+    <div className="docs-tree-empty">
+      <FolderOpen size={ICON_SIZE} strokeWidth={ICON_STROKE} aria-hidden="true" />
+      <span>Folder access expired</span>
+      <span className="docs-tree-empty__detail">{folderName}</span>
+      <button type="button" className="docs-tree-empty__button" onClick={onReconnect}>
+        <RefreshCw size={12} strokeWidth={ICON_STROKE} aria-hidden="true" />
+        Reconnect
+      </button>
+      <button type="button" className="docs-tree-empty__button docs-tree-empty__button--muted" onClick={onClear}>
+        Dismiss
+      </button>
+    </div>
+  );
+}
+
+function FolderErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {
+  return (
+    <div className="docs-tree-empty">
+      <AlertCircle size={ICON_SIZE} strokeWidth={ICON_STROKE} aria-hidden="true" />
+      <span>{message}</span>
+      <button type="button" className="docs-tree-empty__button" onClick={onRetry}>
+        Try Again
+      </button>
+    </div>
+  );
+}
+
 function TreeHeader({
   folderName,
   onClear,
@@ -171,6 +202,8 @@ export default function DocsSidebarFileTree({
 }: DocsSidebarFileTreeProps) {
   const [localNodes, setLocalNodes] = useState<DocsSidebarTreeNode[] | null>(null);
   const [folderName, setFolderName] = useState<string | null>(null);
+  const [needsReauth, setNeedsReauth] = useState(false);
+  const [folderError, setFolderError] = useState('');
 
   const hasLocalFolder = localNodes !== null;
   const activeNodes = useMemo(
@@ -178,36 +211,67 @@ export default function DocsSidebarFileTree({
     [hasLocalFolder, localNodes, serverNodes],
   );
 
+  const reconnectFolder = useCallback(async () => {
+    setFolderError('');
+    try {
+      const handle = await restoreDirectoryHandle();
+      if (!handle) {
+        setNeedsReauth(false);
+        clearSavedDirectoryHandle();
+        return;
+      }
+      // requestPermission triggers the browser prompt
+      const perm = await (handle as any).requestPermission({ mode: 'readwrite' });
+      if (perm !== 'granted') return;
+      const children = await readDirectoryHandle(handle);
+      setFolderName(handle.name);
+      setLocalNodes(children);
+      setNeedsReauth(false);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Could not reconnect folder';
+      setFolderError(message);
+    }
+  }, []);
+
   useEffect(() => {
     restoreDirectoryHandle().then(async (handle) => {
       if (!handle) return;
       try {
         const perm = await handle.queryPermission({ mode: 'readwrite' });
-        if (perm !== 'granted') return;
-        const children = await readDirectoryHandle(handle);
-        setFolderName(handle.name);
-        setLocalNodes(children);
+        if (perm === 'granted') {
+          const children = await readDirectoryHandle(handle);
+          setFolderName(handle.name);
+          setLocalNodes(children);
+        } else {
+          // Permission expired — show reconnect UI instead of silently dropping
+          setFolderName(handle.name);
+          setNeedsReauth(true);
+        }
       } catch {
-        // Permission lost or handle stale.
+        setFolderName(handle.name);
+        setNeedsReauth(true);
       }
     });
   }, []);
 
   const selectFolder = useCallback(async () => {
     if (!('showDirectoryPicker' in window)) {
-      alert('Your browser does not support the File System Access API.');
+      setFolderError('Your browser does not support the File System Access API.');
       return;
     }
+    setFolderError('');
     try {
       await clearLocalFileHandles();
       const handle = await window.showDirectoryPicker!({ mode: 'readwrite' });
       const children = await readDirectoryHandle(handle);
       setFolderName(handle.name);
       setLocalNodes(children);
+      setNeedsReauth(false);
       saveDirectoryHandle(handle);
     } catch (err: unknown) {
       if (err instanceof DOMException && err.name === 'AbortError') return;
-      throw err;
+      const message = err instanceof Error ? err.message : 'Could not open folder';
+      setFolderError(message);
     }
   }, []);
 
@@ -252,6 +316,14 @@ export default function DocsSidebarFileTree({
     () => (hasLocalFolder ? null : getSelectedNodeId(serverNodes, currentRelativePath)),
     [hasLocalFolder, serverNodes, currentRelativePath],
   );
+
+  if (folderError) {
+    return <FolderErrorState message={folderError} onRetry={selectFolder} />;
+  }
+
+  if (needsReauth && !hasLocalFolder) {
+    return <ReauthState folderName={folderName || 'Local folder'} onReconnect={reconnectFolder} onClear={clearFolder} />;
+  }
 
   if (!activeNodes.length && !hasLocalFolder) {
     return <EmptyState onSelect={selectFolder} />;

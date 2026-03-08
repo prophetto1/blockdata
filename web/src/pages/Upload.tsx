@@ -224,7 +224,7 @@ function SimplePagination({
 
 export default function Upload() {
   const { projectId } = useParams<{ projectId: string }>();
-  const [projectName, setProjectName] = useState<string>('');
+  const [_projectName, setProjectName] = useState<string>('');
   const [docs, setDocs] = useState<UploadDocumentRow[]>([]);
   const [docsLoading, setDocsLoading] = useState(false);
   const [docsError, setDocsError] = useState<string | null>(null);

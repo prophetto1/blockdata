@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useShellHeaderTitle } from '@/components/common/useShellHeaderTitle';
 import { PreviewTabPanel } from '@/components/documents/PreviewTabPanel';
@@ -55,7 +55,6 @@ function isLockedFlowTab(value: string | undefined): value is FlowTab {
   return Boolean(value) && LOCKED_FLOW_TAB_VALUES.some((tab) => tab === value);
 }
 
-const MAX_PREVIEW_TABS = 8;
 const PREVIEW_TAB_PREFIX = 'preview-';
 
 function isPreviewTab(value: string): boolean {
@@ -170,8 +169,7 @@ export default function FlowDetail() {
   const [error, setError] = useState<string | null>(null);
   const [flowTriggers, setFlowTriggers] = useState<FlowTriggerSummary[]>([]);
   const [topologyResetNonce, setTopologyResetNonce] = useState(0);
-  const [previewTabs, setPreviewTabs] = useState<string[]>([]);
-  const previewSeqRef = useRef(1);
+  const [previewTabs] = useState<string[]>([]);
 
   const previewTabConfigs = useMemo<FlowTabConfig[]>(
     () => previewTabs.map((value, index) => ({ value, label: buildPreviewLabel(index) })),
@@ -267,22 +265,6 @@ export default function FlowDetail() {
       cancelled = true;
     };
   }, [flowId]);
-
-  const addPreviewTab = useCallback(() => {
-    if (previewTabs.length >= MAX_PREVIEW_TABS) return;
-    const seq = previewSeqRef.current;
-    previewSeqRef.current += 1;
-    const value = `${PREVIEW_TAB_PREFIX}${seq}`;
-    setPreviewTabs((current) => [...current, value]);
-    navigate(`/app/flows/${flowId}/${value}${searchSuffix}`);
-  }, [flowId, navigate, previewTabs.length, searchSuffix]);
-
-  const closePreviewTab = useCallback((tabValue: string) => {
-    setPreviewTabs((current) => current.filter((v) => v !== tabValue));
-    if (activeTab === tabValue) {
-      navigate(`/app/flows/${flowId}/overview${searchSuffix}`);
-    }
-  }, [activeTab, flowId, navigate, searchSuffix]);
 
   const activeTabLabel = useMemo(
     () => allTabs.find((item) => item.value === activeTab)?.label ?? activeTab,

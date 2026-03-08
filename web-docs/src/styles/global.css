@@ -1,22 +1,10 @@
 @layer base, starlight, theme, components, utilities;
-@import '@fontsource/inter/400.css';
-@import '@fontsource/inter/500.css';
-@import '@fontsource/inter/600.css';
-@import '@fontsource/inter/700.css';
 @import '@fontsource/jetbrains-mono/400.css';
 @import '@fontsource/jetbrains-mono/500.css';
 @import '@fontsource/plus-jakarta-sans/400.css';
 @import '@fontsource/plus-jakarta-sans/500.css';
 @import '@fontsource/plus-jakarta-sans/600.css';
 @import '@fontsource/plus-jakarta-sans/700.css';
-@import '@fontsource/dm-sans/400.css';
-@import '@fontsource/dm-sans/500.css';
-@import '@fontsource/dm-sans/600.css';
-@import '@fontsource/dm-sans/700.css';
-@import '@fontsource/outfit/400.css';
-@import '@fontsource/outfit/500.css';
-@import '@fontsource/outfit/600.css';
-@import '@fontsource/outfit/700.css';
 @import '@astrojs/starlight-tailwind';
 @import 'tailwindcss/theme.css' layer(theme);
 @import 'tailwindcss/utilities.css' layer(utilities);
@@ -32,6 +20,7 @@
   --app-space-md: 1rem;
   --app-space-lg: 1.5rem;
   --sl-nav-height: 50px;
+  --sl-content-gap-y: 0.88rem;
 
   /* Semantic color tokens (dark default) — aligned with web/src/tailwind.css */
   --background: #0e0e0e;
@@ -100,6 +89,11 @@
   --editor-accent: var(--sl-color-text-accent);
   --editor-success: #4ade80;
   --editor-danger: #f87171;
+
+  /* Shell icon tokens */
+  --icon-folder: #d1ab6f;
+  --icon-markdown: #8aa9ff;
+  --brand-block: var(--sl-color-white);
 }
 
 :root[data-theme='light'] {
@@ -163,6 +157,7 @@
   --editor-border: var(--border);
   --editor-accent: var(--sl-color-text-accent);
   --editor-success: #15803d;
+  --brand-block: #1f1f1f;
   --editor-danger: #b91c1c;
 }
 
@@ -210,6 +205,43 @@ body {
   font-weight: 700;
 }
 
+.sl-markdown-content
+  :not(a, strong, em, del, span, input, code, br)
+  + :not(a, strong, em, del, span, input, code, br, :where(.not-content *)),
+.sl-markdown-content
+  :not(a, strong, em, del, span, input, code, br)
+  + :is(astro-island, astro-slot)
+  > :not(a, strong, em, del, span, input, code, br, :where(.not-content *)):first-child {
+  margin-top: var(--sl-content-gap-y);
+}
+
+.sl-markdown-content
+  :not(h1, h2, h3, h4, h5, h6, .sl-heading-wrapper)
+  + :is(h1, h2, h3, h4, h5, h6, .sl-heading-wrapper):not(:where(.not-content *)) {
+  margin-top: 1.15rem;
+}
+
+.sl-markdown-content > :first-child {
+  margin-top: 0;
+}
+
+.sl-markdown-content > :last-child {
+  margin-bottom: 0;
+}
+
+.sl-markdown-content p,
+.sl-markdown-content ul,
+.sl-markdown-content ol,
+.sl-markdown-content blockquote,
+.sl-markdown-content pre,
+.sl-markdown-content table {
+  margin: 0.8rem 0;
+}
+
+.sl-markdown-content li + li {
+  margin-top: 0.25rem;
+}
+
 .sl-markdown-content h1,
 h1#_top {
   font-size: clamp(1.8rem, 2.6vw, 2.35rem);
@@ -218,17 +250,20 @@ h1#_top {
 
 .sl-markdown-content h2 {
   font-size: clamp(1.3rem, 2vw, 1.6rem);
-  margin-top: 2rem;
+  margin-top: 1.55rem;
+  margin-bottom: 0.5rem;
 }
 
 .sl-markdown-content h3 {
   font-size: clamp(1.1rem, 1.6vw, 1.25rem);
-  margin-top: 1.5rem;
+  margin-top: 1.2rem;
+  margin-bottom: 0.4rem;
 }
 
 .sl-markdown-content h4 {
   font-size: 1.05rem;
-  margin-top: 1.25rem;
+  margin-top: 1rem;
+  margin-bottom: 0.35rem;
 }
 
 .sl-markdown-content code:not(pre code) {
@@ -277,6 +312,10 @@ h1#_top {
    Custom:             padding 1rem 0.75rem, h1 margin-top 0.5rem */
 main > .content-panel:first-child {
   padding-block: 1rem 0.75rem;
+}
+
+main > .content-panel:first-child + .content-panel {
+  border-top: 0;
 }
 
 h1#_top {

@@ -11,14 +11,6 @@ type Props = {
 export function RetrySection({ retry, onChange }: Props) {
   const selectedType = retry?.type ?? '';
 
-  const selectType = (type: string) => {
-    if (type === selectedType) {
-      onChange(undefined);
-    } else {
-      onChange({ ...retry, type: type as FlowRetry['type'] });
-    }
-  };
-
   return (
     <NocodeCard name="retry" typeBadge="Complex">
       <div className="flex items-center gap-4">

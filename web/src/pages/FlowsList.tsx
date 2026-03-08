@@ -156,14 +156,6 @@ export default function FlowsList() {
     setPage(1);
   };
 
-  const toggleAll = () => {
-    if (selected.size === rows.length) {
-      setSelected(new Set());
-    } else {
-      setSelected(new Set(rows.map((r) => r.routeId)));
-    }
-  };
-
   const toggleRow = (routeId: string) => {
     setSelected((prev) => {
       const next = new Set(prev);

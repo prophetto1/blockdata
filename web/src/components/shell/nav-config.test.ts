@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest';
 import {
   TOP_LEVEL_NAV,
   ALL_TOP_LEVEL_ITEMS,
-  DRILL_CONFIGS,
   getDrillConfig,
   findDrillByRoute,
   resolveFlowDrillPath,

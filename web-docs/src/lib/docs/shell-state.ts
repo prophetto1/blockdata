@@ -23,8 +23,11 @@ export type ShellFileResetEvent = {
 export const SHELL_MODE_ATTR = 'data-shell-mode';
 export const SHELL_MODE_STORAGE_KEY = 'shell-mode';
 export const FILE_STORAGE_KEY = 'shell-selected-file';
+export const SPLIT_RATIO_STORAGE_KEY = 'shell-split-ratio';
 export const SHELL_FILE_EVENT = 'shell-file-select';
 export const SHELL_FILE_RESET_EVENT = 'shell-file-reset';
+export const SHELL_EDITOR_MODE_EVENT = 'shell-editor-mode';
+export const SHELL_PREVIEW_REFRESH_EVENT = 'shell-preview-refresh';
 
 export function selectFile(file: ShellFileInfo): void {
   window.dispatchEvent(new CustomEvent(SHELL_FILE_EVENT, { detail: file }));

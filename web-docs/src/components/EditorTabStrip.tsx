@@ -1,10 +1,11 @@
 import { useState } from 'react';
+import { SHELL_EDITOR_MODE_EVENT } from '../lib/docs/shell-state';
 
 /**
  * EditorTabShell — contracted component.
  *
  * Owns the editor mode toggle (Source | Rich).
- * Broadcasts mode changes via CustomEvent('shell-editor-mode').
+ * Broadcasts mode changes via SHELL_EDITOR_MODE_EVENT.
  * Placed inside WorkAreaStripShell (grid col 1).
  */
 
@@ -15,7 +16,7 @@ export default function EditorTabStrip() {
 
   function switchMode(next: EditorMode) {
     setMode(next);
-    window.dispatchEvent(new CustomEvent('shell-editor-mode', { detail: next }));
+    window.dispatchEvent(new CustomEvent(SHELL_EDITOR_MODE_EVENT, { detail: next }));
   }
 
   return (

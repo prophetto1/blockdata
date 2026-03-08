@@ -42,23 +42,30 @@ function resolveSafePath(relativePath: string) {
 
 function isAuthorized(request: Request) {
   const token = process.env.DOCS_FILE_WRITE_TOKEN;
-  if (!token) return true;
 
-  const auth = request.headers.get('authorization');
-  if (!auth) return false;
+  // When a write token is configured, enforce it.
+  if (token) {
+    const auth = request.headers.get('authorization');
+    if (!auth) return false;
+    const supplied = auth.startsWith('Bearer ') ? auth.slice(7) : auth;
+    if (supplied !== token) return false;
+  } else {
+    // No token configured — only allow writes in dev mode.
+    if (!import.meta.env.DEV) return false;
+  }
 
-  const supplied = auth.startsWith('Bearer ') ? auth.slice(7) : auth;
-  if (supplied !== token) return false;
-
+  // Same-origin check when both headers are present.
   const host = request.headers.get('host');
   const origin = request.headers.get('origin');
-  if (!host || !origin) return true;
-
-  try {
-    return new URL(origin).host === host;
-  } catch {
-    return false;
+  if (host && origin) {
+    try {
+      if (new URL(origin).host !== host) return false;
+    } catch {
+      return false;
+    }
   }
+
+  return true;
 }
 
 export const GET: APIRoute = async ({ url }) => {

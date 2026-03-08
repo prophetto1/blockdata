@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { EditorMode } from './EditorTabStrip';
 import {
   FILE_STORAGE_KEY,
+  SHELL_EDITOR_MODE_EVENT,
+  SHELL_PREVIEW_REFRESH_EVENT,
   onFileReset,
   onFileSelect,
   resetSelectedFile,
@@ -19,6 +21,7 @@ declare global {
   }
 }
 
+type SaveResult = { ok: boolean; error?: string };
 type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 type LoadStatus = 'idle' | 'loading' | 'loaded' | 'error';
 type ResolvedTheme = 'light' | 'dark';
@@ -79,8 +82,9 @@ function useSaveStatus() {
   const flash = useCallback((next: SaveStatus) => {
     setStatus(next);
     if (timerRef.current) clearTimeout(timerRef.current);
+    const duration = next === 'error' ? 3000 : 1800;
     if (next === 'saved' || next === 'error') {
-      timerRef.current = setTimeout(() => setStatus('idle'), 1800);
+      timerRef.current = setTimeout(() => setStatus('idle'), duration);
     }
   }, []);
 
@@ -91,10 +95,10 @@ function useSaveStatus() {
   return { status, flash };
 }
 
-function SaveIndicator({ status }: { status: SaveStatus }) {
+function SaveIndicator({ status, errorDetail }: { status: SaveStatus; errorDetail: string }) {
   if (status === 'idle') return null;
   const label =
-    status === 'saving' ? 'Saving...' : status === 'saved' ? 'Saved' : 'Save failed';
+    status === 'saving' ? 'Saving...' : status === 'saved' ? 'Saved' : (errorDetail || 'Save failed');
   return (
     <span className="split-editor__save-status" data-status={status}>
       {label}
@@ -352,7 +356,7 @@ function readSessionFile(): LoadableFileInfo | null {
 }
 
 function emitPreviewRefresh(detail: LoadPreviewEvent) {
-  window.dispatchEvent(new CustomEvent('shell-preview-refresh', { detail }));
+  window.dispatchEvent(new CustomEvent(SHELL_PREVIEW_REFRESH_EVENT, { detail }));
 }
 
 async function readRepoFile(filePath: string, signal: AbortSignal): Promise<string> {
@@ -373,32 +377,35 @@ async function readLocalFile(localHandleId: string): Promise<string> {
   return file.text();
 }
 
-async function writeRepoFile(filePath: string, content: string): Promise<boolean> {
-  const env = (import.meta as any).env || {};
-  const token = env.PUBLIC_DOCS_FILE_WRITE_TOKEN || env.DOCS_FILE_WRITE_TOKEN;
-
-  const headers = { 'Content-Type': 'application/json' } as Record<string, string>;
-  if (token) headers.Authorization = `Bearer ${token}`;
-
+async function writeRepoFile(filePath: string, content: string): Promise<SaveResult> {
   const res = await fetch('/api/docs-file', {
     method: 'POST',
-    headers,
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ path: filePath, content }),
   });
-  return res.ok;
+  if (res.ok) return { ok: true };
+  let error = 'Save failed';
+  try {
+    const body = await res.json();
+    if (body?.error) error = body.error;
+  } catch {
+    /* non-JSON response */
+  }
+  return { ok: false, error };
 }
 
-async function writeLocalFile(localHandleId: string, content: string): Promise<boolean> {
+async function writeLocalFile(localHandleId: string, content: string): Promise<SaveResult> {
   const handle = await getLocalFileHandle(localHandleId);
-  if (!handle) return false;
+  if (!handle) return { ok: false, error: 'Missing local file handle' };
   const writable = await handle.createWritable();
   try {
     await writable.write(content);
     await writable.close();
-    return true;
-  } catch {
+    return { ok: true };
+  } catch (err) {
     await writable.close().catch(() => {});
-    return false;
+    const message = err instanceof Error ? err.message : 'Failed to write local file';
+    return { ok: false, error: message };
   }
 }
 
@@ -410,9 +417,9 @@ async function loadFile(file: LoadableFileInfo, signal: AbortSignal): Promise<st
   return readRepoFile(file.filePath, signal);
 }
 
-async function saveFile(file: LoadableFileInfo, content: string): Promise<boolean> {
+async function saveFile(file: LoadableFileInfo, content: string): Promise<SaveResult> {
   if (file.sourceKind === 'local') {
-    if (!file.localHandleId) return false;
+    if (!file.localHandleId) return { ok: false, error: 'Missing local file handle' };
     return writeLocalFile(file.localHandleId, content);
   }
   return writeRepoFile(file.filePath, content);
@@ -425,6 +432,7 @@ export default function SplitEditorView() {
   const [loadStatus, setLoadStatus] = useState<LoadStatus>('idle');
   const [loadErrorMessage, setLoadErrorMessage] = useState('');
   const { status, flash } = useSaveStatus();
+  const [saveError, setSaveError] = useState('');
   const loadSeq = useRef(0);
   const abortRef = useRef<AbortController | null>(null);
   const saveSeq = useRef(0);
@@ -511,10 +519,11 @@ export default function SplitEditorView() {
     const requestFile = file;
     const seq = ++saveSeq.current;
     flash('saving');
+    setSaveError('');
     try {
-      const ok = await saveFile(requestFile, content);
+      const result = await saveFile(requestFile, content);
       if (seq !== saveSeq.current || !isSameFile(activeFileRef.current, requestFile)) return;
-      if (ok) {
+      if (result.ok) {
         flash('saved');
         emitPreviewRefresh({
           sourceKind: requestFile.sourceKind,
@@ -523,10 +532,12 @@ export default function SplitEditorView() {
           content,
         });
       } else {
+        setSaveError(result.error || 'Save failed');
         flash('error');
       }
-    } catch {
+    } catch (err) {
       if (seq !== saveSeq.current || !isSameFile(activeFileRef.current, requestFile)) return;
+      setSaveError(err instanceof Error ? err.message : 'Save failed');
       flash('error');
     }
   }, [content, file, flash, loadStatus]);
@@ -556,12 +567,12 @@ export default function SplitEditorView() {
       const detail = (e as CustomEvent).detail as EditorMode | undefined;
       if (detail === 'source' || detail === 'rich') setMode(detail);
     };
-    window.addEventListener('shell-editor-mode', detachMode);
+    window.addEventListener(SHELL_EDITOR_MODE_EVENT, detachMode);
 
     return () => {
       detachFileSelect();
       detachFileReset();
-      window.removeEventListener('shell-editor-mode', detachMode);
+      window.removeEventListener(SHELL_EDITOR_MODE_EVENT, detachMode);
       abortRef.current?.abort();
     };
   }, [clearState]);
@@ -616,7 +627,7 @@ export default function SplitEditorView() {
           />
         )}
       </div>
-      <SaveIndicator status={status} />
+      <SaveIndicator status={status} errorDetail={saveError} />
     </div>
   );
 }
