@@ -29,7 +29,6 @@ type ModuleLoadState = 'idle' | 'loading' | 'ready' | 'failed';
 type LoadableFileInfo = ShellFileInfo & {
   sourceKind: 'repo' | 'local';
   docsHref: string | undefined;
-  editorHref: string | undefined;
 };
 
 function getExtension(path: string) {
@@ -345,7 +344,6 @@ function readSessionFile(): LoadableFileInfo | null {
       extension,
       sourceKind,
       docsHref: parsed.docsHref,
-      editorHref: parsed.editorHref,
       localHandleId: parsed.localHandleId,
     };
   } catch {
@@ -541,7 +539,6 @@ export default function SplitEditorView() {
         extension: detail.extension,
         sourceKind: detail.sourceKind === 'local' ? 'local' : 'repo',
         docsHref: detail.docsHref,
-        editorHref: detail.editorHref,
         localHandleId: detail.localHandleId,
       };
       setFile(next);

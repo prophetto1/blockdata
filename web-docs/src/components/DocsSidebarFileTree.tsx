@@ -42,7 +42,6 @@ type RepoTreeNode = {
   name: string;
   relativePath: string;
   docsHref?: string;
-  editorHref?: string;
   extension?: string;
   children?: RepoTreeNode[];
 };
@@ -53,7 +52,6 @@ export type DocsSidebarTreeNode = {
   relativePath: string;
   sourceKind: ShellFileSourceKind;
   docsHref?: string;
-  editorHref?: string;
   extension?: string;
   localHandleId?: string;
   children?: DocsSidebarTreeNode[];
@@ -336,7 +334,6 @@ function TreeNodeView(props: TreeView.NodeProviderProps<DocsSidebarTreeNode>) {
                     extension: node.extension || '',
                     sourceKind: node.sourceKind ?? 'repo',
                     docsHref: node.docsHref,
-                    editorHref: node.editorHref,
                     localHandleId: node.localHandleId,
                   });
                 }}

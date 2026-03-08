@@ -1,7 +1,7 @@
 import { existsSync, readdirSync } from 'node:fs';
 import { extname, relative, resolve } from 'node:path';
-import { collectionRoutes, singletonRoutes, DOCS_ROOT } from '../keystatic/routes.mjs';
 
+const DOCS_ROOT = 'src/content/docs';
 const repoRoot = process.cwd();
 const docsRootDir = DOCS_ROOT;
 
@@ -17,32 +17,6 @@ function normalizePath(value) {
 
 function stripExtension(relativePath) {
   return relativePath.replace(/\.[^.]+$/, '');
-}
-
-function toCollectionHref(collection, slug) {
-  return `/keystatic/collection/${collection}/item/${encodeURIComponent(slug)}`;
-}
-
-function toSingletonHref(singleton) {
-  return `/keystatic/singleton/${singleton}`;
-}
-
-function toEditorHref(relativePath) {
-  const normalizedPath = normalizePath(relativePath);
-  const slug = stripExtension(normalizedPath).split('/').at(-1);
-
-  // Check singletons (exact match)
-  const singletonName = singletonRoutes.get(normalizedPath);
-  if (singletonName) return toSingletonHref(singletonName);
-
-  // Check collections (longest prefix wins — already sorted)
-  for (const [prefix, collectionName] of collectionRoutes) {
-    if (normalizedPath.startsWith(prefix)) {
-      return toCollectionHref(collectionName, slug);
-    }
-  }
-
-  return '/keystatic';
 }
 
 function toDocsHref(relativePath) {
@@ -76,21 +50,9 @@ function buildTreeNodes(absoluteDir, relativeDir = '') {
         name: entry.name,
         relativePath: nextRelativePath,
         docsHref: toDocsHref(nextRelativePath),
-        editorHref: toEditorHref(nextRelativePath),
         extension: extname(entry.name).toLowerCase(),
       };
     });
-}
-
-function findFirstEditorHref(nodes) {
-  for (const node of nodes) {
-    if (node.editorHref) return node.editorHref;
-    if (node.children?.length) {
-      const nestedHref = findFirstEditorHref(node.children);
-      if (nestedHref) return nestedHref;
-    }
-  }
-  return '/keystatic';
 }
 
 export function getCurrentDocsRelativePath(filePath) {
@@ -109,7 +71,6 @@ export function getCurrentDocsRelativePath(filePath) {
 
 export function getDocsContentTreeState() {
   const absoluteRoot = resolve(repoRoot, docsRootDir);
-  const siteHomeHref = toSingletonHref('siteHome');
 
   if (!existsSync(absoluteRoot)) {
     return {
@@ -119,7 +80,6 @@ export function getDocsContentTreeState() {
         relativePath: '',
         children: [],
       },
-      defaultEditorHref: siteHomeHref,
     };
   }
 
@@ -132,8 +92,7 @@ export function getDocsContentTreeState() {
       relativePath: '',
       children,
     },
-    defaultEditorHref: children.some((node) => node.id === 'file:index.mdx')
-      ? siteHomeHref
-      : findFirstEditorHref(children),
   };
 }
+
+export { DOCS_ROOT };

@@ -13,7 +13,6 @@ export type ShellFileInfo = {
   extension: string;
   sourceKind: ShellFileSourceKind;
   docsHref?: string;
-  editorHref?: string;
   localHandleId?: string;
 };
 

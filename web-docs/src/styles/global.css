@@ -5,10 +5,18 @@
 @import '@fontsource/inter/700.css';
 @import '@fontsource/jetbrains-mono/400.css';
 @import '@fontsource/jetbrains-mono/500.css';
-@import '@fontsource/nunito/400.css';
-@import '@fontsource/nunito/500.css';
-@import '@fontsource/nunito/600.css';
-@import '@fontsource/nunito/700.css';
+@import '@fontsource/plus-jakarta-sans/400.css';
+@import '@fontsource/plus-jakarta-sans/500.css';
+@import '@fontsource/plus-jakarta-sans/600.css';
+@import '@fontsource/plus-jakarta-sans/700.css';
+@import '@fontsource/dm-sans/400.css';
+@import '@fontsource/dm-sans/500.css';
+@import '@fontsource/dm-sans/600.css';
+@import '@fontsource/dm-sans/700.css';
+@import '@fontsource/outfit/400.css';
+@import '@fontsource/outfit/500.css';
+@import '@fontsource/outfit/600.css';
+@import '@fontsource/outfit/700.css';
 @import '@astrojs/starlight-tailwind';
 @import 'tailwindcss/theme.css' layer(theme);
 @import 'tailwindcss/utilities.css' layer(utilities);
@@ -17,20 +25,22 @@
 :root {
   color-scheme: dark;
   --radius: 0.625rem;
-  --app-font-sans: "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --app-font-sans: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --app-font-mono: "JetBrains Mono", "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
   --app-space-xs: 0.5rem;
   --app-space-sm: 0.75rem;
   --app-space-md: 1rem;
   --app-space-lg: 1.5rem;
   --sl-nav-height: 50px;
+
+  /* Semantic color tokens (dark default) — aligned with web/src/tailwind.css */
   --background: #0e0e0e;
   --foreground: #eeeeee;
   --card: #141414;
   --card-foreground: #eeeeee;
   --popover: #141414;
   --popover-foreground: #eeeeee;
-  --primary: #eb5e41;
+  --primary: #EB5E41;
   --primary-foreground: #ffffff;
   --secondary: #1a1a1a;
   --secondary-foreground: #eeeeee;
@@ -38,14 +48,23 @@
   --muted-foreground: #a0a0a0;
   --accent: #1a1a1a;
   --accent-foreground: #eeeeee;
-  --separator: #2a2a2a;
-  --border: var(--separator);
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+  --border: #2a2a2a;
   --input: #2a2a2a;
-  --ring: #eb5e41;
+  --ring: #EB5E41;
+  --chrome: #0e0e0e;
   --sidebar: #0e0e0e;
   --sidebar-foreground: #eeeeee;
+  --sidebar-primary: #EB5E41;
+  --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: #1a1a1a;
-  --sidebar-border: var(--separator);
+  --sidebar-accent-foreground: #eeeeee;
+  --sidebar-border: #2a2a2a;
+  --sidebar-ring: #eeeeee;
+  --app-primary-contrast: #09090b;
+
+  /* Starlight bridge variables */
   --sl-font: var(--app-font-sans);
   --sl-font-mono: var(--app-font-mono);
   --sl-color-accent-low: #2a1510;
@@ -68,14 +87,16 @@
   --sl-color-bg-inline-code: color-mix(in oklab, var(--card) 80%, var(--foreground) 20%);
   --sl-color-text: var(--foreground);
   --sl-color-text-accent: var(--primary);
-  --sl-color-hairline: var(--separator);
-  --sl-color-hairline-shade: var(--separator);
+  --sl-color-hairline: var(--border);
+  --sl-color-hairline-shade: var(--border);
   --sl-color-backdrop-overlay: rgba(9, 9, 11, 0.72);
+
+  /* Editor surface variables */
   --editor-bg: var(--sl-color-bg);
   --editor-fg: var(--sl-color-text);
   --editor-muted-fg: var(--sl-color-gray-3);
   --editor-chrome-bg: var(--sl-color-bg-nav);
-  --editor-border: var(--sl-color-hairline);
+  --editor-border: var(--border);
   --editor-accent: var(--sl-color-text-accent);
   --editor-success: #4ade80;
   --editor-danger: #f87171;
@@ -83,28 +104,39 @@
 
 :root[data-theme='light'] {
   color-scheme: light;
+
+  /* Core surfaces & text (warm stone scale) — aligned with web/src/tailwind.css */
   --background: #faf9f7;
   --foreground: #1c1917;
   --card: #ffffff;
   --card-foreground: #1c1917;
   --popover: #ffffff;
   --popover-foreground: #1c1917;
-  --primary: #eb5e41;
+  --primary: #EB5E41;
   --primary-foreground: #ffffff;
   --secondary: #f0eeed;
   --secondary-foreground: #292524;
   --muted: #e8e6e3;
-  --muted-foreground: #57534e;
+  --muted-foreground: #44403c;
   --accent: #f5ebe6;
   --accent-foreground: #1c1917;
-  --separator: #d6d3d1;
-  --border: var(--separator);
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+  --border: #d6d3d1;
   --input: #d6d3d1;
-  --ring: #eb5e41;
+  --ring: #EB5E41;
+  --chrome: #ffffff;
   --sidebar: #ffffff;
   --sidebar-foreground: #1c1917;
+  --sidebar-primary: #EB5E41;
+  --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: #f5f3f1;
-  --sidebar-border: var(--separator);
+  --sidebar-accent-foreground: #1c1917;
+  --sidebar-border: #e8e5e3;
+  --sidebar-ring: #1c1917;
+  --app-primary-contrast: #fafafa;
+
+  /* Starlight bridge variables (light) */
   --sl-color-white: #1c1917;
   --sl-color-gray-1: #292524;
   --sl-color-gray-2: #44403c;
@@ -119,14 +151,16 @@
   --sl-color-bg-inline-code: color-mix(in oklab, var(--accent) 72%, var(--background) 28%);
   --sl-color-text: var(--foreground);
   --sl-color-text-accent: var(--primary);
-  --sl-color-hairline: var(--separator);
-  --sl-color-hairline-shade: var(--separator);
+  --sl-color-hairline: var(--border);
+  --sl-color-hairline-shade: var(--border);
   --sl-color-backdrop-overlay: rgba(28, 25, 23, 0.48);
+
+  /* Editor surface variables (light) */
   --editor-bg: var(--sl-color-bg);
   --editor-fg: var(--sl-color-text);
   --editor-muted-fg: var(--sl-color-gray-3);
   --editor-chrome-bg: var(--sl-color-bg-nav);
-  --editor-border: var(--sl-color-hairline);
+  --editor-border: var(--border);
   --editor-accent: var(--sl-color-text-accent);
   --editor-success: #15803d;
   --editor-danger: #b91c1c;
@@ -156,7 +190,7 @@ body {
 }
 
 .sidebar-pane {
-  font-family: "Nunito", var(--app-font-sans);
+  font-family: var(--app-font-sans);
   font-size: 0.85rem;
 }
 

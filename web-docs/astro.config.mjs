@@ -2,7 +2,6 @@ import { defineConfig } from 'astro/config';
 import vercel from '@astrojs/vercel';
 import starlight from '@astrojs/starlight';
 import react from '@astrojs/react';
-import keystatic from '@keystatic/astro';
 import sitemap from '@astrojs/sitemap';
 import tailwindcss from '@tailwindcss/vite';
 import remarkMath from 'remark-math';
@@ -19,7 +18,6 @@ export default defineConfig({
   },
   integrations: [
     react(),
-    keystatic(),
     starlight({
       title: 'BlockData Docs',
       description: 'Documentation for the BlockData platform.',
