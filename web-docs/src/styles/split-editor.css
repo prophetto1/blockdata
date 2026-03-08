@@ -76,7 +76,7 @@
 }
 
 .split-editor__local-preview {
-  padding: 1rem;
+  padding: var(--shell-panel-inset);
   font-family: var(--app-font-sans);
   color: var(--editor-fg);
   line-height: 1.5;
@@ -190,7 +190,7 @@
 
 .split-editor__mdx :where([class*='_contentEditable']) {
   min-height: 100%;
-  padding: 0.875rem 0.875rem 3rem;
+  padding: var(--shell-panel-inset);
   background: var(--card);
   color: var(--editor-fg);
   caret-color: var(--editor-accent);
