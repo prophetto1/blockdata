@@ -2,8 +2,10 @@
 /*  Ark UI Splitter — workbench editor/preview split                   */
 /* ------------------------------------------------------------------ */
 
+/* display is controlled by DocsTwoColumnContent.astro:
+   sections mode → display: none (@layer starlight.core)
+   filetree mode → display: flex (@layer starlight.core) */
 .wa-splitter {
-  display: flex;
   flex: 1;
   min-height: 0;
   overflow: hidden;

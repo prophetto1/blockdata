@@ -188,24 +188,25 @@ const { toc } = Astro.locals.starlightRoute;
       return `<article class="split-editor__local-preview ${variant}">${blocks.join('')}</article>`;
     }
 
-    function syncCurrentPreviewIntoShell(attempt = 0) {
-      if (!isFiletreeMode()) return;
-
-      const target = getPreviewEl();
-      const source = document.querySelector('.wa-preview[data-shell="preview-column"]');
-      if (!target || !source) {
-        if (attempt < 30) {
-          window.requestAnimationFrame(() => syncCurrentPreviewIntoShell(attempt + 1));
-        }
-        return;
-      }
-
-      if (target.innerHTML.trim()) return;
-      target.innerHTML = extractRepoPreviewMarkup(source);
+    function waitForPreviewEl(maxMs) {
+      maxMs = maxMs || 3000;
+      return new Promise(function(resolve) {
+        var el = getPreviewEl();
+        if (el) { resolve(el); return; }
+        var elapsed = 0;
+        var iv = setInterval(function() {
+          el = getPreviewEl();
+          elapsed += 50;
+          if (el || elapsed >= maxMs) {
+            clearInterval(iv);
+            resolve(el || null);
+          }
+        }, 50);
+      });
     }
 
     async function loadRepoPreviewIntoShell(url) {
-      const preview = getPreviewEl();
+      var preview = await waitForPreviewEl(3000);
       if (!preview) return;
 
       preview.innerHTML = '<div class="split-editor__loading">Loading preview...</div>';
@@ -291,7 +292,6 @@ const { toc } = Astro.locals.starlightRoute;
       preview.innerHTML = '<div class="split-editor__loading">Select a file from the tree</div>';
     });
 
-    syncCurrentPreviewIntoShell();
   })();
 </script>
 
@@ -311,7 +311,7 @@ const { toc } = Astro.locals.starlightRoute;
     }
 
     :global(.wa-splitter) {
-      display: none;
+      display: none !important;
     }
 
     @media (min-width: 72rem) {
@@ -369,7 +369,7 @@ const { toc } = Astro.locals.starlightRoute;
     }
 
     :global([data-shell-mode='filetree']) :global(.wa-splitter) {
-      display: flex;
+      display: flex !important;
       flex: 1;
       min-height: 0;
     }

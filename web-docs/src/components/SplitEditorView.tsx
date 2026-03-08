@@ -432,8 +432,10 @@ async function saveFile(file: LoadableFileInfo, content: string): Promise<SaveRe
 }
 
 export default function SplitEditorView() {
-  const [file, setFile] = useState<LoadableFileInfo | null>(readSessionFile);
-  const [mode, setMode] = useState<EditorMode>('rich');
+  // Initialize file as null (matches server render: "Select a file from the tree").
+  // Restored from sessionStorage in a post-mount effect to avoid hydration mismatch.
+  const [file, setFile] = useState<LoadableFileInfo | null>(null);
+  const [mode, setMode] = useState<EditorMode>('source');
   const [content, setContent] = useState<string | null>(null);
   const [loadStatus, setLoadStatus] = useState<LoadStatus>('idle');
   const [loadErrorMessage, setLoadErrorMessage] = useState('');
@@ -443,6 +445,20 @@ export default function SplitEditorView() {
   const abortRef = useRef<AbortController | null>(null);
   const saveSeq = useRef(0);
   const activeFileRef = useRef<LoadableFileInfo | null>(null);
+  const restoredRef = useRef(false);
+
+  // Restore file from sessionStorage after mount (not during useState)
+  // to avoid hydration mismatch — server always renders "Select a file"
+  // while client may have a file stored.
+  useEffect(() => {
+    if (restoredRef.current) return;
+    restoredRef.current = true;
+    const restored = readSessionFile();
+    if (restored) {
+      setFile(restored);
+      activeFileRef.current = restored;
+    }
+  }, []);
 
   function isSameFile(a: LoadableFileInfo | null, b: LoadableFileInfo | null) {
     if (!a || !b) return false;

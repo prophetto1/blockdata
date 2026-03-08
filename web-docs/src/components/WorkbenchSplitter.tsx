@@ -1,6 +1,6 @@
 import { Splitter } from '@ark-ui/react/splitter';
 import { ScrollArea } from '@ark-ui/react/scroll-area';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import EditorTabStrip from './EditorTabStrip.tsx';
 import SplitEditorView from './SplitEditorView.tsx';
 import '../styles/splitter.css';
@@ -31,8 +31,34 @@ function getSavedSize(): number[] {
  * via [data-shell="preview-column"]. Both .wa-preview and this
  * panel carry the attribute; CSS ensures only one is visible at a time.
  */
+function extractRepoPreviewMarkup(source: Element): string {
+  const scratch = document.createElement('div');
+  scratch.innerHTML = source.innerHTML;
+  const firstChild = scratch.firstElementChild;
+  const secondChild = firstChild?.nextElementSibling;
+  if (
+    firstChild?.classList?.contains('content-panel') &&
+    secondChild?.classList?.contains('content-panel')
+  ) {
+    firstChild.remove();
+  }
+  return scratch.innerHTML;
+}
+
 export default function WorkbenchSplitter() {
   const [defaultSize] = useState(getSavedSize);
+  const previewRef = useRef<HTMLDivElement>(null);
+
+  // After mount (hydration complete), adopt the page content from .wa-preview
+  // into the splitter preview panel. This must happen in React (not an inline
+  // script) to avoid injecting content before hydration and causing a mismatch.
+  useEffect(() => {
+    const target = previewRef.current;
+    if (!target || target.innerHTML.trim()) return;
+    const source = document.querySelector('.wa-preview[data-shell="preview-column"]');
+    if (!source) return;
+    target.innerHTML = extractRepoPreviewMarkup(source);
+  }, []);
 
   return (
     <Splitter.Root
@@ -71,7 +97,7 @@ export default function WorkbenchSplitter() {
         <ScrollArea.Root className="scroll-area-root wa-splitter__panel-body">
           <ScrollArea.Viewport className="scroll-area-viewport">
             <ScrollArea.Content>
-              <div data-shell="splitter-preview" className="wa-splitter__preview-content" />
+              <div ref={previewRef} data-shell="splitter-preview" className="wa-splitter__preview-content" />
             </ScrollArea.Content>
           </ScrollArea.Viewport>
           <ScrollArea.Scrollbar orientation="vertical" className="scroll-area-scrollbar">
