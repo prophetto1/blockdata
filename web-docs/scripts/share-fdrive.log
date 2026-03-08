@@ -1,0 +1,57 @@
+﻿**********************
+Windows PowerShell transcript start
+Start time: 20260306145300
+Username: Jon\jon
+RunAs User: Jon\jon
+Configuration Name: 
+Machine: JON (Microsoft Windows NT 10.0.26200.0)
+Host Application: C:\WINDOWS\System32\WindowsPowerShell\v1.0\powershell.exe -NoProfile -ExecutionPolicy Bypass -File F:\blockdata-ct\scripts\share-fdrive.ps1
+Process ID: 25028
+PSVersion: 5.1.26100.7920
+PSEdition: Desktop
+PSCompatibleVersions: 1.0, 2.0, 3.0, 4.0, 5.0, 5.1.26100.7920
+BuildVersion: 10.0.26100.7920
+CLRVersion: 4.0.30319.42000
+WSManStackVersion: 3.0
+PSRemotingProtocolVersion: 2.3
+SerializationVersion: 1.1.0.1
+**********************
+=== Host ===
+Jon
+=== Logged In User ===
+Jon\jon
+=== IPv4 ===
+
+InterfaceAlias             IPAddress     PrefixLength
+--------------             ---------     ------------
+vEthernet (Default Switch) 192.168.48.1            20
+Ethernet                   192.168.0.110           24
+jon-win-wifi               192.168.0.125           24
+
+
+=== Share ===
+
+Name   Path Description CurrentUsers
+----   ---- ----------- ------------
+FDrive F:\                         0
+
+
+=== Share Access ===
+
+Name   AccountName AccessControlType AccessRight
+----   ----------- ----------------- -----------
+FDrive Everyone                Allow      Change
+
+
+=== F ACL ===
+F:\ NT AUTHORITY\Authenticated Users:(OI)(CI)(M)
+    NT AUTHORITY\SYSTEM:(OI)(CI)(F)
+    BUILTIN\Administrators:(OI)(CI)(F)
+    Jon\smbuser:(OI)(CI)(F)
+    BUILTIN\Users:(OI)(CI)(F)
+
+Successfully processed 1 files; Failed processing 0 files
+**********************
+Windows PowerShell transcript end
+End time: 20260306145312
+**********************

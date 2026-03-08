@@ -1,0 +1,13 @@
+node_modules/
+dist/
+.astro/
+.vercel
+astro-dev.log
+astro-dev.err.log
+keystatic-dev.log
+keystatic-dev.err.log
+
+.vercel
+.env*.local
+.cache/
+.openvscode-server/

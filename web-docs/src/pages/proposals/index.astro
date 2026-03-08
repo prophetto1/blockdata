@@ -1,0 +1,551 @@
+---
+import { formatStatusLabel, getProposalSummary, PROPOSAL_STATUSES } from '../../lib/proposals/workflow.mjs';
+
+type ProposalModule = {
+  frontmatter?: Record<string, string>;
+  default: any;
+};
+
+const proposalModules = import.meta.glob<ProposalModule>('../../content/docs/proposals/*.{md,mdx}', { eager: true });
+
+const proposals = Object.entries(proposalModules)
+  .map(([modulePath, module]) => ({
+    ...getProposalSummary(modulePath, module.frontmatter ?? {}),
+    Content: module.default,
+  }))
+  .sort((left, right) => {
+    const rightDate = right.updatedAt || right.filename;
+    const leftDate = left.updatedAt || left.filename;
+    return rightDate.localeCompare(leftDate);
+  });
+
+const requestedStatus = Astro.url.searchParams.get('status') ?? '';
+const activeStatus = PROPOSAL_STATUSES.includes(requestedStatus) ? requestedStatus : 'all';
+const visibleProposals = activeStatus === 'all'
+  ? proposals
+  : proposals.filter((proposal) => proposal.status === activeStatus);
+const counts = Object.fromEntries(
+  PROPOSAL_STATUSES.map((status) => [
+    status,
+    proposals.filter((proposal) => proposal.status === status).length,
+  ]),
+);
+const canWrite = import.meta.env.DEV || import.meta.env.PROPOSALS_FS_WRITES === 'enabled';
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Proposals Workspace | BlockData CT</title>
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+
+      body {
+        margin: 0;
+        font-family: Inter, system-ui, sans-serif;
+        background:
+          radial-gradient(circle at top, rgba(48, 108, 255, 0.18), transparent 35%),
+          linear-gradient(180deg, #08111f 0%, #0d1727 100%);
+        color: #ebf2ff;
+      }
+
+      a {
+        color: inherit;
+      }
+
+      .shell {
+        max-width: 1440px;
+        margin: 0 auto;
+        padding: 2rem;
+      }
+
+      .topbar {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        align-items: flex-start;
+        margin-bottom: 1.5rem;
+      }
+
+      .title-block h1 {
+        margin: 0;
+        font-size: clamp(2rem, 4vw, 3.4rem);
+        line-height: 0.98;
+      }
+
+      .title-block p {
+        margin: 0.75rem 0 0;
+        max-width: 52rem;
+        color: #a8bdd9;
+      }
+
+      .top-actions {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+      }
+
+      .button-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.75rem 1rem;
+        border-radius: 999px;
+        border: 1px solid rgba(163, 188, 229, 0.28);
+        text-decoration: none;
+        font-weight: 700;
+        background: rgba(8, 17, 31, 0.55);
+      }
+
+      .button-link.primary {
+        background: #4f8cff;
+        border-color: #4f8cff;
+        color: #08111f;
+      }
+
+      .layout {
+        display: grid;
+        grid-template-columns: 17rem minmax(0, 1fr);
+        gap: 1.5rem;
+      }
+
+      .panel {
+        border: 1px solid rgba(163, 188, 229, 0.18);
+        border-radius: 1.25rem;
+        background: rgba(8, 17, 31, 0.75);
+        backdrop-filter: blur(16px);
+      }
+
+      .sidebar {
+        padding: 1rem;
+      }
+
+      .sidebar h2 {
+        margin: 0 0 1rem;
+        font-size: 0.95rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #9bb2cf;
+      }
+
+      .lane-list {
+        display: grid;
+        gap: 0.5rem;
+      }
+
+      .lane-link {
+        display: flex;
+        justify-content: space-between;
+        gap: 0.5rem;
+        padding: 0.8rem 0.95rem;
+        border-radius: 0.9rem;
+        text-decoration: none;
+        color: #dce8fb;
+      }
+
+      .lane-link.active,
+      .lane-link:hover {
+        background: rgba(79, 140, 255, 0.18);
+      }
+
+      .workspace {
+        padding: 1.25rem;
+      }
+
+      .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+      }
+
+      .summary-card {
+        padding: 0.95rem 1rem;
+        border-radius: 1rem;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(163, 188, 229, 0.12);
+      }
+
+      .summary-card span {
+        display: block;
+        color: #9bb2cf;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+
+      .summary-card strong {
+        display: block;
+        margin-top: 0.35rem;
+        font-size: 1.8rem;
+      }
+
+      .notice {
+        margin-bottom: 1rem;
+        padding: 0.9rem 1rem;
+        border-radius: 1rem;
+        border: 1px solid rgba(250, 204, 21, 0.25);
+        background: rgba(250, 204, 21, 0.08);
+        color: #fde68a;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      th,
+      td {
+        padding: 0.95rem 0.8rem;
+        text-align: left;
+        border-bottom: 1px solid rgba(163, 188, 229, 0.12);
+        vertical-align: top;
+      }
+
+      th {
+        color: #9bb2cf;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+
+      .status-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.35rem 0.65rem;
+        border-radius: 999px;
+        font-size: 0.78rem;
+        font-weight: 700;
+        background: rgba(79, 140, 255, 0.18);
+        border: 1px solid rgba(79, 140, 255, 0.32);
+      }
+
+      .assess-button,
+      .decision-button,
+      .close-button {
+        appearance: none;
+        border: 1px solid rgba(163, 188, 229, 0.22);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.02);
+        color: #ebf2ff;
+        padding: 0.55rem 0.85rem;
+        font: inherit;
+        cursor: pointer;
+      }
+
+      .decision-button.accept {
+        background: rgba(16, 185, 129, 0.16);
+        border-color: rgba(16, 185, 129, 0.36);
+      }
+
+      .decision-button.conditional {
+        background: rgba(245, 158, 11, 0.16);
+        border-color: rgba(245, 158, 11, 0.36);
+      }
+
+      .decision-button.reject {
+        background: rgba(239, 68, 68, 0.16);
+        border-color: rgba(239, 68, 68, 0.36);
+      }
+
+      dialog {
+        width: min(1100px, calc(100vw - 2rem));
+        max-height: calc(100vh - 2rem);
+        border: 1px solid rgba(163, 188, 229, 0.18);
+        border-radius: 1.3rem;
+        padding: 0;
+        background: #091321;
+        color: inherit;
+      }
+
+      dialog::backdrop {
+        background: rgba(6, 10, 16, 0.72);
+      }
+
+      .dialog-shell {
+        display: grid;
+        grid-template-rows: auto minmax(0, 1fr);
+      }
+
+      .dialog-toolbar {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        align-items: center;
+        padding: 1rem 1.2rem;
+        border-bottom: 1px solid rgba(163, 188, 229, 0.12);
+      }
+
+      .dialog-toolbar h2 {
+        margin: 0;
+        font-size: 1.15rem;
+      }
+
+      .dialog-body {
+        display: grid;
+        grid-template-columns: minmax(0, 1.3fr) minmax(18rem, 0.9fr);
+        gap: 0;
+        min-height: 0;
+      }
+
+      .proposal-pane,
+      .review-pane {
+        padding: 1.25rem;
+        overflow: auto;
+      }
+
+      .review-pane {
+        border-inline-start: 1px solid rgba(163, 188, 229, 0.12);
+        background: rgba(255, 255, 255, 0.02);
+      }
+
+      .review-pane form {
+        display: grid;
+        gap: 0.9rem;
+      }
+
+      .field {
+        display: grid;
+        gap: 0.45rem;
+      }
+
+      .field label {
+        color: #9bb2cf;
+        font-size: 0.85rem;
+      }
+
+      .field input,
+      .field textarea {
+        width: 100%;
+        box-sizing: border-box;
+        border-radius: 0.9rem;
+        border: 1px solid rgba(163, 188, 229, 0.18);
+        background: rgba(8, 17, 31, 0.66);
+        color: inherit;
+        padding: 0.8rem 0.9rem;
+        font: inherit;
+      }
+
+      .field textarea {
+        min-height: 12rem;
+        resize: vertical;
+      }
+
+      .decision-row {
+        display: flex;
+        gap: 0.6rem;
+        flex-wrap: wrap;
+      }
+
+      .review-help {
+        color: #9bb2cf;
+        font-size: 0.88rem;
+        line-height: 1.5;
+      }
+
+      .empty-state {
+        padding: 2rem 1rem;
+        text-align: center;
+        color: #9bb2cf;
+      }
+
+      @media (max-width: 960px) {
+        .layout,
+        .dialog-body {
+          grid-template-columns: 1fr;
+        }
+
+        .review-pane {
+          border-inline-start: 0;
+          border-top: 1px solid rgba(163, 188, 229, 0.12);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <div class="topbar">
+        <div class="title-block">
+          <h1>Proposals</h1>
+          <p>
+            A local-first editorial desk for BlockData CT. Proposals stay in one repo folder, and the
+            workspace moves them between lanes by metadata instead of file renames.
+          </p>
+        </div>
+      </div>
+
+      <div class="layout">
+        <aside class="panel sidebar">
+          <h2>Workflow Lanes</h2>
+          <nav class="lane-list">
+            <a class:list={['lane-link', { active: activeStatus === 'all' }]} href="/proposals">
+              <span>All Proposals</span>
+              <strong>{proposals.length}</strong>
+            </a>
+            {PROPOSAL_STATUSES.map((status) => (
+              <a
+                class:list={['lane-link', { active: activeStatus === status }]}
+                href={`/proposals?status=${status}`}
+              >
+                <span>{formatStatusLabel(status)}</span>
+                <strong>{counts[status]}</strong>
+              </a>
+            ))}
+          </nav>
+        </aside>
+
+        <main class="panel workspace">
+          <div class="summary-grid">
+            {PROPOSAL_STATUSES.map((status) => (
+              <div class="summary-card">
+                <span>{formatStatusLabel(status)}</span>
+                <strong>{counts[status]}</strong>
+              </div>
+            ))}
+          </div>
+
+          {!canWrite && (
+            <div class="notice">
+              Proposal decisions are read-only in this environment. File writes are enabled while running
+              locally in dev mode or when `PROPOSALS_FS_WRITES=enabled` is set.
+            </div>
+          )}
+
+          {visibleProposals.length === 0 ? (
+            <div class="empty-state">
+              No proposals are in the {activeStatus === 'all' ? 'current' : formatStatusLabel(activeStatus)}
+              {' '}lane yet.
+            </div>
+          ) : (
+            <table>
+              <thead>
+                <tr>
+                  <th>File</th>
+                  <th>Description</th>
+                  <th>Status</th>
+                  <th>Updated</th>
+                  <th>Assess</th>
+                </tr>
+              </thead>
+              <tbody>
+                {visibleProposals.map((proposal) => (
+                  <tr>
+                    <td>
+                      <strong>{proposal.title}</strong>
+                      <div>{proposal.filename}</div>
+                    </td>
+                    <td>{proposal.description}</td>
+                    <td>
+                      <span class="status-badge">{formatStatusLabel(proposal.status)}</span>
+                    </td>
+                    <td>{proposal.updatedAt || 'Untracked'}</td>
+                    <td>
+                      <button
+                        type="button"
+                        class="assess-button"
+                        data-open-dialog={proposal.slug}
+                      >
+                        Assess
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </main>
+      </div>
+
+      {proposals.map((proposal) => (
+        <dialog id={`proposal-${proposal.slug}`}>
+          <div class="dialog-shell">
+            <div class="dialog-toolbar">
+              <div>
+                <h2>{proposal.title}</h2>
+                <div>{proposal.filename}</div>
+              </div>
+              <button type="button" class="close-button" data-close-dialog={proposal.slug}>Close</button>
+            </div>
+
+            <div class="dialog-body">
+              <article class="proposal-pane">
+                <proposal.Content />
+              </article>
+
+              <aside class="review-pane">
+                <form method="post" action="/api/proposals/review">
+                  <input type="hidden" name="filename" value={proposal.filename} />
+
+                  <div class="field">
+                    <label for={`reviewer-${proposal.slug}`}>Reviewer</label>
+                    <input
+                      id={`reviewer-${proposal.slug}`}
+                      name="reviewer"
+                      required
+                      value={proposal.reviewedBy}
+                      placeholder="jon"
+                    />
+                  </div>
+
+                  <div class="field">
+                    <label for={`note-${proposal.slug}`}>Editorial Assessment</label>
+                    <textarea
+                      id={`note-${proposal.slug}`}
+                      name="note"
+                      placeholder="Write markdown notes that should be appended to the end of the proposal."
+                    />
+                  </div>
+
+                  <p class="review-help">
+                    `Save Comment` keeps the current status and only appends a review note. The decision
+                    buttons update the workflow lane independently: Submitted, Conditional Accept, Accepted,
+                    or Rejected.
+                  </p>
+
+                  <div class="decision-row">
+                    <button class="decision-button" name="status" value={proposal.status}>
+                      Save Comment
+                    </button>
+                    <button class="decision-button" name="status" value="submitted">
+                      Submit
+                    </button>
+                    <button class="decision-button conditional" name="status" value="conditional-accept">
+                      Conditional Accept
+                    </button>
+                    <button class="decision-button accept" name="status" value="accepted">
+                      Accept
+                    </button>
+                    <button class="decision-button reject" name="status" value="rejected">
+                      Reject
+                    </button>
+                  </div>
+                </form>
+              </aside>
+            </div>
+          </div>
+        </dialog>
+      ))}
+    </div>
+
+    <script>
+      for (const button of document.querySelectorAll('[data-open-dialog]')) {
+        button.addEventListener('click', () => {
+          const slug = button.getAttribute('data-open-dialog');
+          const dialog = document.getElementById(`proposal-${slug}`) as HTMLDialogElement | null;
+          dialog?.showModal();
+        });
+      }
+
+      for (const button of document.querySelectorAll('[data-close-dialog]')) {
+        button.addEventListener('click', () => {
+          const slug = button.getAttribute('data-close-dialog');
+          const dialog = document.getElementById(`proposal-${slug}`) as HTMLDialogElement | null;
+          dialog?.close();
+        });
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,50 @@
+---
+const { siteTitle, siteTitleHref } = Astro.locals.starlightRoute;
+---
+
+<a href={siteTitleHref} class="site-title sl-flex">
+  <span aria-hidden="true" class="brand-mark">
+    <span class="brand-word brand-block">BLOCK</span>
+    <span class="brand-word brand-data">DATA</span>
+  </span>
+  <span class="sr-only" translate="no">{siteTitle}</span>
+</a>
+
+<style>
+  @layer starlight.core {
+    .site-title {
+      align-items: center;
+      gap: var(--sl-nav-gap);
+      text-decoration: none;
+      white-space: nowrap;
+      min-width: 0;
+    }
+
+    .brand-mark {
+      display: inline-flex;
+      align-items: center;
+      font-size: 0.82rem;
+      font-weight: 600;
+      letter-spacing: 0.32em;
+      line-height: 1;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .brand-word:last-child {
+      margin-left: 0.18em;
+    }
+
+    .brand-block {
+      color: var(--sl-color-white);
+    }
+
+    .brand-data {
+      color: var(--sl-color-accent);
+    }
+
+    :root[data-theme='light'] .brand-block {
+      color: #1f1f1f;
+    }
+  }
+</style>

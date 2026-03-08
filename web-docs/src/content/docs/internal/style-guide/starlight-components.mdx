@@ -1,0 +1,454 @@
+---
+title: Starlight Components
+description: Complete inventory of every built-in Starlight component with props, options, and live examples.
+---
+
+import {
+  Aside,
+  Badge,
+  Card,
+  CardGrid,
+  Code,
+  FileTree,
+  Icon,
+  LinkButton,
+  LinkCard,
+  Steps,
+  Tabs,
+  TabItem,
+} from '@astrojs/starlight/components';
+
+All components import from `@astrojs/starlight/components`. Component tags require MDX files. Markdown shorthands (like `:::note`) work in plain `.md`.
+
+## Aside
+
+Callout boxes for secondary information. Pick the type based on intent: `note` for background context, `tip` for recommendations, `caution` for potential problems, `danger` for destructive consequences. Override `title` when the default label is too generic. Override `icon` only when the content has a stronger visual association.
+
+<Aside>Default **note** — no `type` needed.</Aside>
+
+<Aside type="tip" title="Did you know?" icon="rocket">
+  Custom title and icon.
+</Aside>
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| type | `'note'` \| `'tip'` \| `'caution'` \| `'danger'` | `'note'` | Visual style and default icon |
+| title | string | Matches type | Override the heading text |
+| icon | string | Matches type | Any built-in icon name |
+
+### Markdown shorthand
+
+No import needed. Use this in `.md` files or when you do not need icon/title overrides.
+
+```md
+:::note
+Default note.
+:::
+
+:::tip[Custom title]
+Tip with a custom title.
+:::
+
+:::caution
+Proceed with care.
+:::
+
+:::danger
+Breaking change ahead.
+:::
+```
+
+## Badge
+
+Inline labels for status or categories. Use `variant` to communicate semantic meaning, not decoration. Use `size="medium"` or `"large"` only alongside headings or hero text.
+
+<Badge text="Default" />
+<Badge text="Note" variant="note" />
+<Badge text="Tip" variant="tip" />
+<Badge text="Caution" variant="caution" />
+<Badge text="Danger" variant="danger" />
+<Badge text="Success" variant="success" />
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| text | string | required | Badge content |
+| variant | `'note'` \| `'tip'` \| `'caution'` \| `'danger'` \| `'success'` \| `'default'` | `'default'` | Color scheme — success for live/passing, danger for broken/removed, caution for deprecated |
+| size | `'small'` \| `'medium'` \| `'large'` | `'small'` | Text size — only upsize for headings |
+
+Also accepts any `<span>` HTML attribute.
+
+### Variant meanings
+
+| Variant | Use for |
+|---------|---------|
+| default | Neutral labels, no semantic weight |
+| note | Informational, contextual |
+| tip | Recommended, preferred |
+| success | Completed, passing, live |
+| caution | Deprecated, needs attention |
+| danger | Broken, blocked, removed |
+
+### Frontmatter badge
+
+Add a badge to a page title without importing:
+
+```yaml
+---
+title: My Page
+badge:
+  text: New
+  variant: tip
+---
+```
+
+## Card
+
+Themed content box. Use `icon` when cards sit in a grid and need visual differentiation — skip it for standalone informational cards.
+
+<Card title="Basic card">
+  No icon needed for simple content groupings.
+</Card>
+
+<Card title="With icon" icon="star">
+  Icon helps when scanning a grid.
+</Card>
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| title | string | required | Card heading |
+| icon | string | — | Any built-in icon name — use for grid differentiation |
+
+## CardGrid
+
+Arranges Card or LinkCard children side-by-side. Use `stagger` only on landing/overview pages for visual rhythm — never in technical reference docs.
+
+<CardGrid>
+  <Card title="First" icon="pencil">Side-by-side.</Card>
+  <Card title="Second" icon="setting">On wider screens.</Card>
+  <Card title="Third" icon="puzzle">Stacks on mobile.</Card>
+</CardGrid>
+
+<CardGrid stagger>
+  <Card title="Feature A" icon="star">Staggered.</Card>
+  <Card title="Feature B" icon="rocket">Offset down.</Card>
+</CardGrid>
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| stagger | boolean | false | Offset second column — landing pages only |
+
+## LinkCard
+
+Clickable card for navigation. Add `description` only when the title alone is ambiguous.
+
+<LinkCard title="Getting Started" href="/getting-started/" description="Set up the docs site locally." />
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| title | string | required | Card heading |
+| href | string | required | Link URL |
+| description | string | — | Text below the title — only when title is ambiguous |
+
+Also accepts any `<a>` HTML attribute.
+
+## Code
+
+Two approaches: **fenced code blocks** (Markdown, no import) and the **`<Code>` component** (MDX, for dynamic content).
+
+### Fenced code blocks
+
+Always set the language. Add other features only when they serve the reader.
+
+```js title="app.js" {2}
+const greeting = 'Hello';
+const name = 'BlockData';   // highlighted
+console.log(`${greeting}, ${name}!`);
+```
+
+```js ins={2} del={1}
+const old = true;
+const updated = true;
+```
+
+```js collapse={1-3}
+// Setup code
+import { readFile } from 'fs';
+const config = {};
+
+// The important part
+function main() {
+  console.log('focus here');
+}
+```
+
+| Feature | Syntax | When to use |
+|---------|--------|-------------|
+| Language | `` ```js `` | Always |
+| Title | `` ```js title="app.js" `` | Code represents a specific file |
+| Line highlight | `` ```js {2} `` | Draw attention to key lines |
+| Line range | `` ```js {2-4} `` | Draw attention to a block |
+| Insertions | `` ```js ins={3} `` | Showing what was added |
+| Deletions | `` ```js del={2} `` | Showing what was removed |
+| Diff | `` ```diff `` | Raw patch output |
+| Wrap | `` ```js wrap `` | Long lines that must not be cut off |
+| Collapse | `` ```js collapse={1-5} `` | Hide boilerplate, show the point |
+| Frame | `` ```js frame="none" `` | Remove frame for inline examples |
+| Terminal | `` ```bash title="Terminal" `` | Shell commands |
+
+### `<Code>` component
+
+Use when code comes from a variable, prop, or file import — not for static snippets.
+
+```mdx
+import { Code } from '@astrojs/starlight/components';
+
+<Code code={`const x = 1;`} lang="js" title="dynamic.js" />
+```
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| code | string | required | The code to display |
+| lang | string | — | Language for syntax highlighting |
+| title | string | — | Filename or title tab |
+| frame | `'auto'` \| `'code'` \| `'terminal'` \| `'none'` | `'auto'` | Frame style |
+| mark | string \| string[] | — | Text or line ranges to highlight |
+| ins | string \| string[] | — | Lines/text marked as inserted (green) |
+| del | string \| string[] | — | Lines/text marked as deleted (red) |
+| collapse | string \| string[] | — | Line ranges to collapse (expandable) |
+| wrap | boolean | false | Enable word wrapping |
+| preserveIndent | boolean | true | Maintain indentation on wrapped lines |
+| hangingIndent | number | 0 | Extra indent columns for wrapped continuations |
+| locale | string | — | Language/region for non-English code comments |
+| meta | string | — | Raw meta string (same as after lang in fences) |
+| class | string | — | CSS class for the container |
+
+## FileTree
+
+Directory structure display. No props — wrap a Markdown unordered list. End names with `/` for directories. Bold with `**name**` to highlight important entries. Add text after a name for annotations. Use `...` for placeholders.
+
+<FileTree>
+- src/
+  - content/
+    - docs/
+      - index.mdx
+      - **getting-started.md** entry point
+      - internal/
+        - style-guide/
+          - starlight-components.mdx
+  - styles/
+    - global.css
+- astro.config.mjs
+- package.json
+- ...
+</FileTree>
+
+| Feature | Syntax | Description |
+|---------|--------|-------------|
+| Directory | `name/` | Renders with folder icon |
+| Highlight | `**filename**` | Bold with accent color |
+| Comment | `filename comment text` | Gray annotation after name |
+| Placeholder | `...` or `…` | Indicates more content |
+| Special chars | `` `__init__.py` `` | Backtick-escaped filenames |
+
+## Icon
+
+Inline icon rendering. Always set `name`. Set `label` for icons that convey meaning without adjacent text (accessibility). Override `size` or `color` only when the default (`1em`, `currentColor`) does not fit.
+
+<Icon name="star" /> star
+<Icon name="rocket" /> rocket
+<Icon name="warning" /> warning
+<Icon name="approve-check" /> approve-check
+<Icon name="star" size="1.5em" color="gold" /> custom size/color
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| name | string | required | Icon identifier — see categories below |
+| label | string | — | Accessible label for screen readers — set when no adjacent text |
+| size | string | `'1em'` | CSS size — override for hero sections or standalone use |
+| color | string | `'currentColor'` | CSS color — override for decorative use only |
+
+### Icon categories
+
+#### Common
+
+<Icon name="star" /> star
+<Icon name="pencil" /> pencil
+<Icon name="setting" /> setting
+<Icon name="puzzle" /> puzzle
+<Icon name="rocket" /> rocket
+<Icon name="open-book" /> open-book
+<Icon name="information" /> information
+<Icon name="warning" /> warning
+<Icon name="error" /> error
+<Icon name="approve-check" /> approve-check
+<Icon name="external" /> external
+<Icon name="document" /> document
+<Icon name="add-document" /> add-document
+<Icon name="magnifier" /> magnifier
+<Icon name="translate" /> translate
+<Icon name="download" /> download
+
+#### Navigation
+
+<Icon name="right-arrow" /> right-arrow
+<Icon name="left-arrow" /> left-arrow
+<Icon name="up-arrow" /> up-arrow
+<Icon name="down-arrow" /> down-arrow
+<Icon name="right-caret" /> right-caret
+<Icon name="left-caret" /> left-caret
+<Icon name="up-caret" /> up-caret
+<Icon name="down-caret" /> down-caret
+
+#### UI
+
+<Icon name="bars" /> bars
+<Icon name="close" /> close
+<Icon name="forward-slash" /> forward-slash
+<Icon name="pen" /> pen
+<Icon name="cloud-download" /> cloud-download
+<Icon name="approve-check-circle" /> approve-check-circle
+
+#### Brands and platforms
+
+<Icon name="github" /> github
+<Icon name="discord" /> discord
+<Icon name="twitter" /> twitter
+<Icon name="linkedin" /> linkedin
+<Icon name="youtube" /> youtube
+<Icon name="slack" /> slack
+<Icon name="reddit" /> reddit
+<Icon name="astro" /> astro
+<Icon name="vercel" /> vercel
+<Icon name="cloudflare" /> cloudflare
+<Icon name="npm" /> npm
+<Icon name="pnpm" /> pnpm
+<Icon name="bun" /> bun
+<Icon name="deno" /> deno
+<Icon name="node" /> node
+<Icon name="vscode" /> vscode
+
+#### SETI file-type icons
+
+Prefix with `seti:` — covers 100+ file types:
+
+<Icon name="seti:json" /> seti:json
+<Icon name="seti:typescript" /> seti:typescript
+<Icon name="seti:javascript" /> seti:javascript
+<Icon name="seti:python" /> seti:python
+<Icon name="seti:rust" /> seti:rust
+<Icon name="seti:go" /> seti:go
+<Icon name="seti:html" /> seti:html
+<Icon name="seti:css" /> seti:css
+<Icon name="seti:markdown" /> seti:markdown
+<Icon name="seti:yaml" /> seti:yaml
+
+Full list: [Starlight Icon Reference](https://starlight.astro.build/reference/icons/#all-icons)
+
+## LinkButton
+
+Call-to-action button links. Use `primary` for the main action (one per section max), `secondary` for alternatives, `minimal` for low-emphasis actions. Add `icon` when it reinforces direction. Place at `start` for backward navigation, `end` (default) for forward.
+
+<LinkButton href="/getting-started/">Primary</LinkButton>
+<LinkButton href="/getting-started/" variant="secondary">Secondary</LinkButton>
+<LinkButton href="/getting-started/" variant="minimal">Minimal</LinkButton>
+<LinkButton href="/getting-started/" icon="right-arrow" iconPlacement="end">Next</LinkButton>
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| href | string | required | Link URL |
+| variant | `'primary'` \| `'secondary'` \| `'minimal'` | `'primary'` | Visual hierarchy — one primary per section max |
+| icon | string | — | Any built-in icon name — use for directional reinforcement |
+| iconPlacement | `'start'` \| `'end'` | `'end'` | Icon position — start for backward, end for forward |
+
+Also accepts any `<a>` HTML attribute.
+
+## Steps
+
+Styles an ordered list as a step-by-step guide with numbered connectors. Use only for genuinely sequential procedures — for unordered options, use plain lists or Cards. No props.
+
+<Steps>
+1. Install dependencies
+
+   ```bash
+   npm install
+   ```
+
+2. Start the dev server
+
+   ```bash
+   npm run dev
+   ```
+
+3. Open `http://localhost:4421` in your browser.
+</Steps>
+
+## Tabs
+
+Tabbed content for mutually exclusive alternatives (package managers, languages, platforms). Do not use for sequential content — use Steps. Set `syncKey` when the same choice appears in multiple tab groups on a page. Add `icon` to TabItem when file-type icons help the reader scan.
+
+<Tabs syncKey="pkg">
+  <TabItem label="npm">
+    ```bash
+    npm install
+    ```
+  </TabItem>
+  <TabItem label="pnpm">
+    ```bash
+    pnpm install
+    ```
+  </TabItem>
+</Tabs>
+
+<Tabs>
+  <TabItem label="TypeScript" icon="seti:typescript">TypeScript content.</TabItem>
+  <TabItem label="JSON" icon="seti:json">JSON config content.</TabItem>
+</Tabs>
+
+### Tabs
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| syncKey | string | — | Synchronize tab selection across groups with the same key |
+
+### TabItem
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| label | string | required | Tab trigger text |
+| icon | string | — | Any built-in icon name — use for file-type disambiguation |
+
+## Quick import reference
+
+```mdx
+import {
+  Aside,
+  Badge,
+  Card,
+  CardGrid,
+  Code,
+  FileTree,
+  Icon,
+  LinkButton,
+  LinkCard,
+  Steps,
+  Tabs,
+  TabItem,
+} from '@astrojs/starlight/components';
+```
+
+## Sources
+
+- [Starlight Component Guide](https://starlight.astro.build/guides/components/)
+- [Aside](https://starlight.astro.build/components/asides/)
+- [Badge](https://starlight.astro.build/components/badges/)
+- [Card](https://starlight.astro.build/components/cards/)
+- [CardGrid](https://starlight.astro.build/components/card-grids/)
+- [Code](https://starlight.astro.build/components/code/)
+- [FileTree](https://starlight.astro.build/components/file-tree/)
+- [Icon](https://starlight.astro.build/components/icons/)
+- [Icon Reference (all names)](https://starlight.astro.build/reference/icons/#all-icons)
+- [LinkButton](https://starlight.astro.build/components/link-buttons/)
+- [LinkCard](https://starlight.astro.build/components/link-cards/)
+- [Steps](https://starlight.astro.build/components/steps/)
+- [Tabs](https://starlight.astro.build/components/tabs/)
+- [Expressive Code](https://expressive-code.com/key-features/code-component/)

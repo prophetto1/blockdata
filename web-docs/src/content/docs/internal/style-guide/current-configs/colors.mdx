@@ -1,0 +1,121 @@
+---
+title: Colors
+description: Color token definitions for dark and light themes.
+---
+
+export const S = ({ c }) => (
+  <span style={{ display: 'inline-block', width: '14px', height: '14px', backgroundColor: c, borderRadius: '3px', border: '1px solid rgba(128,128,128,0.35)', verticalAlign: 'middle', marginRight: '6px' }} />
+);
+
+## Dark Theme (default)
+
+### Core Tokens
+
+| Token | Value | Usage |
+|-------|-------|-------|
+| --background | <S c="#0e0e0e" /> #0e0e0e | Page background |
+| --foreground | <S c="#eeeeee" /> #eeeeee | Primary text |
+| --primary | <S c="#eb5e41" /> #eb5e41 | Accent / links / interactive |
+| --primary-foreground | <S c="#ffffff" /> #ffffff | Text on primary |
+
+### Surface Tokens
+
+| Token | Value | Usage |
+|-------|-------|-------|
+| --card | <S c="#141414" /> #141414 | Card / panel backgrounds |
+| --card-foreground | <S c="#eeeeee" /> #eeeeee | Text on cards |
+| --secondary | <S c="#1a1a1a" /> #1a1a1a | Secondary surfaces |
+| --secondary-foreground | <S c="#eeeeee" /> #eeeeee | Text on secondary |
+| --muted | <S c="#1a1a1a" /> #1a1a1a | Muted backgrounds |
+| --muted-foreground | <S c="#a0a0a0" /> #a0a0a0 | De-emphasized text |
+| --accent | <S c="#1a1a1a" /> #1a1a1a | Accent backgrounds |
+| --accent-foreground | <S c="#eeeeee" /> #eeeeee | Text on accent |
+
+### Border & Input Tokens
+
+| Token | Value | Usage |
+|-------|-------|-------|
+| --border | <S c="#2a2a2a" /> #2a2a2a | Borders, dividers |
+| --input | <S c="#2a2a2a" /> #2a2a2a | Input field borders |
+| --ring | <S c="#eb5e41" /> #eb5e41 | Focus rings |
+
+### Sidebar Tokens
+
+| Token | Value |
+|-------|-------|
+| --sidebar | <S c="#0e0e0e" /> #0e0e0e |
+| --sidebar-foreground | <S c="#eeeeee" /> #eeeeee |
+| --sidebar-accent | <S c="#1a1a1a" /> #1a1a1a |
+| --sidebar-border | <S c="#2a2a2a" /> #2a2a2a |
+
+### Starlight Overrides
+
+| Token | Value |
+|-------|-------|
+| --sl-color-accent-low | <S c="#2a1510" /> #2a1510 |
+| --sl-color-accent | <S c="#eb5e41" /> var(--primary) |
+| --sl-color-accent-high | <S c="#fcd5cc" /> #fcd5cc |
+| --sl-color-white | <S c="#ffffff" /> #ffffff |
+| --sl-color-gray-1 | <S c="#f5f5f5" /> #f5f5f5 |
+| --sl-color-gray-2 | <S c="#d4d4d8" /> #d4d4d8 |
+| --sl-color-gray-3 | <S c="#a1a1aa" /> #a1a1aa |
+| --sl-color-gray-4 | <S c="#71717a" /> #71717a |
+| --sl-color-gray-5 | <S c="#52525b" /> #52525b |
+| --sl-color-gray-6 | <S c="#3f3f46" /> #3f3f46 |
+| --sl-color-black | <S c="#09090b" /> #09090b |
+
+---
+
+## Light Theme
+
+### Core Tokens
+
+| Token | Value | Usage |
+|-------|-------|-------|
+| --background | <S c="#faf9f7" /> #faf9f7 | Page background |
+| --foreground | <S c="#1c1917" /> #1c1917 | Primary text |
+| --primary | <S c="#eb5e41" /> #eb5e41 | Accent / links / interactive |
+| --primary-foreground | <S c="#ffffff" /> #ffffff | Text on primary |
+
+### Surface Tokens
+
+| Token | Value | Usage |
+|-------|-------|-------|
+| --card | <S c="#ffffff" /> #ffffff | Card / panel backgrounds |
+| --card-foreground | <S c="#1c1917" /> #1c1917 | Text on cards |
+| --secondary | <S c="#f0eeed" /> #f0eeed | Secondary surfaces |
+| --secondary-foreground | <S c="#292524" /> #292524 | Text on secondary |
+| --muted | <S c="#e8e6e3" /> #e8e6e3 | Muted backgrounds |
+| --muted-foreground | <S c="#57534e" /> #57534e | De-emphasized text |
+| --accent | <S c="#f5ebe6" /> #f5ebe6 | Accent backgrounds |
+| --accent-foreground | <S c="#1c1917" /> #1c1917 | Text on accent |
+
+### Border & Input Tokens
+
+| Token | Value | Usage |
+|-------|-------|-------|
+| --border | <S c="#d6d3d1" /> #d6d3d1 | Borders, dividers |
+| --input | <S c="#d6d3d1" /> #d6d3d1 | Input field borders |
+| --ring | <S c="#eb5e41" /> #eb5e41 | Focus rings |
+
+### Sidebar Tokens
+
+| Token | Value |
+|-------|-------|
+| --sidebar | <S c="#ffffff" /> #ffffff |
+| --sidebar-foreground | <S c="#1c1917" /> #1c1917 |
+| --sidebar-accent | <S c="#f5f3f1" /> #f5f3f1 |
+| --sidebar-border | <S c="#e8e5e3" /> #e8e5e3 |
+
+### Starlight Overrides
+
+| Token | Value |
+|-------|-------|
+| --sl-color-white | <S c="#1c1917" /> #1c1917 |
+| --sl-color-gray-1 | <S c="#292524" /> #292524 |
+| --sl-color-gray-2 | <S c="#44403c" /> #44403c |
+| --sl-color-gray-3 | <S c="#57534e" /> #57534e |
+| --sl-color-gray-4 | <S c="#78716c" /> #78716c |
+| --sl-color-gray-5 | <S c="#a8a29e" /> #a8a29e |
+| --sl-color-gray-6 | <S c="#d6d3d1" /> #d6d3d1 |
+| --sl-color-black | <S c="#ffffff" /> #ffffff |
