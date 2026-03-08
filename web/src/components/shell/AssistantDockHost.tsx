@@ -1,9 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import {
-  IconArrowsLeftRight,
   IconChevronDown,
   IconDotsVertical,
-  IconExternalLink,
+  IconLayoutSidebarRightExpand,
   IconPlayerStop,
   IconPlus,
   IconSend2,
@@ -17,9 +16,6 @@ import { useAssistantChat, type ChatMessage } from '@/hooks/useAssistantChat';
 type AssistantDockHostProps = {
   onClose: () => void;
   onDetach?: () => void;
-  detached?: boolean;
-  onToggleSide?: () => void;
-  side?: 'left' | 'right';
 };
 
 const iconBtn =
@@ -46,9 +42,6 @@ function MessageBubble({ message }: { message: ChatMessage }) {
 export function AssistantDockHost({
   onClose,
   onDetach,
-  detached = false,
-  onToggleSide,
-  side = 'right',
 }: AssistantDockHostProps) {
   const {
     messages,
@@ -88,24 +81,15 @@ export function AssistantDockHost({
       {/* Header */}
       <div className="flex min-h-[42px] items-center justify-between gap-2 border-b border-slate-400/25 bg-[rgba(46,52,61,0.92)] px-2.5 py-2 backdrop-blur-sm">
         <div className="flex items-center gap-1.5">
-          {onToggleSide && !detached && (
-            <button
-              type="button"
-              className={iconBtn}
-              aria-label={side === 'right' ? 'Move assistant to left' : 'Move assistant to right'}
-              onClick={onToggleSide}
-            >
-              <AppIcon icon={IconArrowsLeftRight} size="md" />
-            </button>
-          )}
           {onDetach && (
             <button
               type="button"
               className={iconBtn}
-              aria-label={detached ? 'Attach to sidebar' : 'Detach assistant panel'}
+              aria-label="Dock to right panel"
+              title="Dock to right panel"
               onClick={onDetach}
             >
-              <AppIcon icon={IconExternalLink} size="md" />
+              <AppIcon icon={IconLayoutSidebarRightExpand} size="md" />
             </button>
           )}
           <span className="min-w-0 truncate text-[0.94rem] font-semibold leading-tight tracking-tight text-slate-50">

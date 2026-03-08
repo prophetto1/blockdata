@@ -6,7 +6,7 @@ export const styleTokens = {
     navbarMobileWidth: 200,
     navbarMinWidth: 220,
     navbarMaxWidth: 350,
-    rightRailWidth: 300,
+    rightRailWidth: 350,
     assistantWidth: 360,
     mainPadding: 'md' as const,
     contentMaxWidth: 'var(--app-shell-content-max-width)',

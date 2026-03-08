@@ -9,18 +9,33 @@ type RightRailContent = {
   footer?: ReactNode;
 };
 
+export type RightRailTab = 'help' | 'ai';
+
 type RightRailState = {
   content: RightRailContent | null;
   setContent: (content: RightRailContent | null) => void;
   isOpen: boolean;
   toggle: () => void;
+  activeTab: RightRailTab;
+  setActiveTab: (tab: RightRailTab) => void;
+  chatDetached: boolean;
+  setChatDetached: (detached: boolean) => void;
 };
 
 const STORAGE_KEY = 'blockdata.shell.right_rail_open';
+const TAB_KEY = 'blockdata.shell.right_rail_tab';
+const DETACHED_KEY = 'blockdata.shell.chat_detached';
 
-function readStoredOpen(): boolean {
-  if (typeof window === 'undefined') return false;
-  return window.localStorage.getItem(STORAGE_KEY) === 'true';
+function readStored(key: string, defaultValue: string): string {
+  if (typeof window === 'undefined') return defaultValue;
+  return window.localStorage.getItem(key) ?? defaultValue;
+}
+
+function readStoredBool(key: string, defaultValue: boolean): boolean {
+  if (typeof window === 'undefined') return defaultValue;
+  const raw = window.localStorage.getItem(key);
+  if (raw === null) return defaultValue;
+  return raw === 'true';
 }
 
 const RightRailContext = createContext<RightRailState>({
@@ -28,21 +43,54 @@ const RightRailContext = createContext<RightRailState>({
   setContent: () => {},
   isOpen: false,
   toggle: () => {},
+  activeTab: 'ai',
+  setActiveTab: () => {},
+  chatDetached: false,
+  setChatDetached: () => {},
 });
 
 export function RightRailProvider({ children }: { children: ReactNode }) {
   const [content, setContent] = useState<RightRailContent | null>(null);
-  const [isOpen, setIsOpen] = useState(() => readStoredOpen());
+  const [isOpen, setIsOpen] = useState(() => readStoredBool(STORAGE_KEY, false));
+  const [activeTab, setActiveTabRaw] = useState<RightRailTab>(
+    () => (readStored(TAB_KEY, 'ai') as RightRailTab),
+  );
+  const [chatDetached, setChatDetachedRaw] = useState(
+    () => readStoredBool(DETACHED_KEY, false),
+  );
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
     window.localStorage.setItem(STORAGE_KEY, String(isOpen));
   }, [isOpen]);
 
+  useEffect(() => {
+    window.localStorage.setItem(TAB_KEY, activeTab);
+  }, [activeTab]);
+
+  useEffect(() => {
+    window.localStorage.setItem(DETACHED_KEY, String(chatDetached));
+  }, [chatDetached]);
+
   const toggle = () => setIsOpen((prev) => !prev);
 
+  const setActiveTab = (tab: RightRailTab) => {
+    setActiveTabRaw(tab);
+    if (!isOpen) setIsOpen(true);
+  };
+
+  const setChatDetached = (detached: boolean) => {
+    setChatDetachedRaw(detached);
+  };
+
   return (
-    <RightRailContext.Provider value={{ content, setContent, isOpen, toggle }}>
+    <RightRailContext.Provider
+      value={{
+        content, setContent,
+        isOpen, toggle,
+        activeTab, setActiveTab,
+        chatDetached, setChatDetached,
+      }}
+    >
       {children}
     </RightRailContext.Provider>
   );

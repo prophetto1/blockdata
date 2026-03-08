@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { Layout03Icon, SparklesIcon } from '@hugeicons/core-free-icons';
+import { Layout03Icon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { IconLayoutSidebarRightExpand, IconLayoutSidebarRightCollapse } from '@tabler/icons-react';
 import { useAuth } from '@/auth/AuthContext';
@@ -12,7 +12,6 @@ import { HeaderCenterProvider } from '@/components/shell/HeaderCenterContext';
 import { RightRailProvider, useRightRailContext } from '@/components/shell/RightRailContext';
 import { AssistantDockHost } from '@/components/shell/AssistantDockHost';
 import { AppPageShell } from '@/components/layout/AppPageShell';
-import { featureFlags } from '@/lib/featureFlags';
 import { styleTokens } from '@/lib/styleTokens';
 import { Drawer } from '@ark-ui/react/drawer';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -43,31 +42,6 @@ function readDesktopNavOpenedWithReset(defaultValue: boolean): boolean {
   return readStoredBoolean(DESKTOP_NAV_OPEN_KEY, defaultValue);
 }
 
-function useStoredBoolean(key: string, defaultValue: boolean) {
-  const [value, setValue] = useState<boolean>(() => readStoredBoolean(key, defaultValue));
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    window.localStorage.setItem(key, String(value));
-  }, [key, value]);
-  return [value, setValue] as const;
-}
-
-function readStoredSide(key: string, defaultValue: 'left' | 'right'): 'left' | 'right' {
-  if (typeof window === 'undefined') return defaultValue;
-  const raw = window.localStorage.getItem(key);
-  if (raw === 'left' || raw === 'right') return raw;
-  return defaultValue;
-}
-
-function useStoredSide(key: string, defaultValue: 'left' | 'right') {
-  const [value, setValue] = useState<'left' | 'right'>(() => readStoredSide(key, defaultValue));
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    window.localStorage.setItem(key, value);
-  }, [key, value]);
-  return [value, setValue] as const;
-}
-
 /* ------------------------------------------------------------------ */
 /*  Outer export — wraps providers so children can read contexts       */
 /* ------------------------------------------------------------------ */
@@ -87,13 +61,8 @@ export function AppLayout() {
 /* ------------------------------------------------------------------ */
 
 function AppShellInner() {
-  const shellV2Enabled = featureFlags.shellV2;
-  const assistantDockEnabled = shellV2Enabled && featureFlags.assistantDock;
   const [navOpened, setNavOpened] = useState(false);
   const [desktopNavOpened, setDesktopNavOpened] = useState<boolean>(() => readDesktopNavOpenedWithReset(true));
-  const [assistantOpened, setAssistantOpened] = useStoredBoolean('blockdata.shell.assistant_open', false);
-  const [assistantDetached, setAssistantDetached] = useStoredBoolean('blockdata.shell.assistant_detached', false);
-  const [assistantSide, setAssistantSide] = useStoredSide('blockdata.shell.assistant_side', 'right');
   const navigate = useNavigate();
   const location = useLocation();
   const { user, profile, signOut } = useAuth();
@@ -104,30 +73,16 @@ function AppShellInner() {
     navigate('/login');
   };
 
-  const toggleAssistant = () => {
-    if (assistantOpened) {
-      setAssistantOpened(false);
-      setAssistantDetached(false);
-      return;
-    }
-    setAssistantOpened(true);
-  };
-  const closeAssistant = () => {
-    setAssistantOpened(false);
-    setAssistantDetached(false);
-  };
-  const toggleAssistantDetached = () => {
-    if (!assistantOpened) {
-      setAssistantOpened(true);
-    }
-    setAssistantDetached(!assistantDetached);
-  };
-  const toggleAssistantSide = () => {
-    setAssistantSide((current) => (current === 'right' ? 'left' : 'right'));
-  };
   const toggleNav = () => setNavOpened((current) => !current);
   const closeNav = () => setNavOpened(false);
   const toggleDesktopNav = () => setDesktopNavOpened(!desktopNavOpened);
+
+  // Close floating chat
+  const closeChatDetached = () => {
+    rightRail.setChatDetached(false);
+    // Switch back to AI tab in the rail
+    rightRail.setActiveTab('ai');
+  };
 
   // Resizable sidebar width
   const [sidebarWidth, setSidebarWidth] = useState<number>(() => {
@@ -166,7 +121,6 @@ function AppShellInner() {
       document.removeEventListener('mouseup', onMouseUp);
       document.body.style.cursor = '';
       document.body.style.userSelect = '';
-      // Persist
       setSidebarWidth((w) => {
         window.localStorage.setItem(SIDEBAR_WIDTH_KEY, String(w));
         return w;
@@ -184,8 +138,10 @@ function AppShellInner() {
     : styleTokens.shell.navbarCompactWidth;
   const isMobile = useIsMobile();
 
-  const showRightRail = !isMobile && rightRail.content !== null && rightRail.isOpen;
-  const showRightRailTab = !isMobile && rightRail.content !== null;
+  // Right rail is shown when open AND (has help content OR AI tab is active)
+  const hasRailContent = rightRail.content !== null || rightRail.activeTab === 'ai';
+  const showRightRail = !isMobile && hasRailContent && rightRail.isOpen;
+  const showRightRailToggle = !isMobile;
 
   const mobileNavbarWidth = styleTokens.shell.navbarMobileWidth;
   const mainInsetStart = isMobile ? 0 : desktopNavbarWidth;
@@ -269,9 +225,6 @@ function AppShellInner() {
           <TopCommandBar
             onToggleNav={toggleNav}
             shellGuides={isEditorLayoutRoute}
-            showAssistantToggle={assistantDockEnabled}
-            assistantOpened={assistantOpened}
-            onToggleAssistant={toggleAssistant}
           />
           {!isMobile && (
             <button
@@ -326,7 +279,6 @@ function AppShellInner() {
               desktopCompact={!desktopNavOpened}
               onToggleDesktopCompact={toggleDesktopNav}
             />
-            {/* Resize handle */}
             {desktopNavOpened && (
               <div
                 role="separator"
@@ -395,8 +347,8 @@ function AppShellInner() {
           )}
         </main>
 
-        {/* Right rail edge tabs */}
-        {showRightRailTab && (
+        {/* Right rail toggle button */}
+        {showRightRailToggle && (
           <div
             className="fixed z-[108] flex flex-col gap-0"
             style={{
@@ -406,8 +358,8 @@ function AppShellInner() {
           >
             <button
               type="button"
-              aria-label={rightRail.isOpen ? 'Close help panel' : 'Open help panel'}
-              title={rightRail.isOpen ? 'Close help panel' : 'Open help panel'}
+              aria-label={rightRail.isOpen ? 'Close panel' : 'Open panel'}
+              title={rightRail.isOpen ? 'Close panel' : 'Open panel'}
               onClick={rightRail.toggle}
               className="inline-flex h-10 w-8 items-center justify-center rounded-bl-md border border-r-0 border-t-0 border-border bg-[var(--chrome,var(--background))] text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
             >
@@ -415,22 +367,11 @@ function AppShellInner() {
                 ? <IconLayoutSidebarRightCollapse size={16} stroke={1.75} />
                 : <IconLayoutSidebarRightExpand size={16} stroke={1.75} />}
             </button>
-            {assistantDockEnabled && (
-              <button
-                type="button"
-                aria-label={assistantOpened ? 'Hide Assistant' : 'Show Assistant'}
-                title={assistantOpened ? 'Hide Assistant' : 'Show Assistant'}
-                onClick={toggleAssistant}
-                className={`inline-flex h-10 w-8 items-center justify-center rounded-bl-md border border-r-0 border-t-0 border-border bg-[var(--chrome,var(--background))] text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground${assistantOpened ? ' text-primary' : ''}`}
-              >
-                <HugeiconsIcon icon={SparklesIcon} size={16} strokeWidth={1.8} />
-              </button>
-            )}
           </div>
         )}
 
         {/* Right rail panel */}
-        {showRightRail && rightRail.content && (
+        {showRightRail && (
           <aside
             style={{
               position: 'fixed',
@@ -442,62 +383,37 @@ function AppShellInner() {
             }}
           >
             <RightRailShell
-              title={rightRail.content.title}
-              description={rightRail.content.description}
-              sections={rightRail.content.sections}
-              footer={rightRail.content.footer}
+              title={rightRail.content?.title ?? 'AI'}
+              description={rightRail.content?.description}
+              sections={rightRail.content?.sections ?? []}
+              footer={rightRail.content?.footer}
             />
           </aside>
         )}
       </div>
 
-      {assistantDockEnabled && assistantOpened && !assistantDetached && canPortal
+      {/* Floating detached chat */}
+      {rightRail.chatDetached && canPortal
         ? createPortal(
             <div
               style={{
                 position: 'fixed',
                 zIndex: 340,
                 bottom: '12px',
-                left: assistantSide === 'left' ? '12px' : undefined,
-                right: assistantSide === 'right' ? '12px' : undefined,
+                right: '12px',
                 width: 'min(560px, calc(100vw - 24px))',
                 height: 'min(78vh, 860px)',
-                border: '1px solid rgba(148, 163, 184, 0.28)',
-                backgroundColor: '#29313c',
+                border: '1px solid var(--border)',
+                borderRadius: '12px',
+                backgroundColor: 'var(--chrome, var(--background))',
                 overflow: 'hidden',
-                boxShadow: '0 24px 64px rgba(0, 0, 0, 0.34)',
+                boxShadow: '0 24px 64px rgba(0, 0, 0, 0.24)',
               }}
             >
               <AssistantDockHost
-                onClose={closeAssistant}
-                onDetach={toggleAssistantDetached}
-                onToggleSide={toggleAssistantSide}
-                side={assistantSide}
+                onClose={closeChatDetached}
+                onDetach={() => rightRail.setChatDetached(false)}
               />
-            </div>,
-            document.body,
-          )
-        : null}
-
-      {assistantDockEnabled && assistantOpened && assistantDetached && canPortal
-        ? createPortal(
-            <div
-              className="fixed inset-0 z-[360] bg-black/35 backdrop-blur-[2px]"
-              role="presentation"
-              onClick={closeAssistant}
-            >
-              <div
-                role="dialog"
-                aria-modal="true"
-                className="absolute left-1/2 top-[2vh] h-[min(92vh,960px)] w-[min(1180px,96vw)] -translate-x-1/2 overflow-hidden border border-slate-400/30 bg-[#29313c]"
-                onClick={(event) => event.stopPropagation()}
-              >
-                <AssistantDockHost
-                  onClose={closeAssistant}
-                  onDetach={toggleAssistantDetached}
-                  detached
-                />
-              </div>
             </div>,
             document.body,
           )
