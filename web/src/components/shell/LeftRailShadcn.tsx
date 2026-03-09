@@ -389,7 +389,9 @@ export function LeftRailShadcn({
                   : item.path;
                 const isActive = flowId
                   ? location.pathname === resolvedPath || location.pathname.startsWith(resolvedPath + '/')
-                  : isItemActive(item, location.pathname);
+                  : item.path === config.parentPath
+                    ? location.pathname === item.path
+                    : isItemActive(item, location.pathname);
 
                 // For flows drill without a flowId, items are not navigable
                 const isDisabled = config.id === 'flows' && !flowId;

@@ -14,7 +14,6 @@ import {
   IconSchema,
   IconServer,
   IconSettings,
-  IconSettingsCog,
   IconTerminal2,
   IconTestPipe,
   IconTopologyRing3,
@@ -153,16 +152,11 @@ const SUPERUSER_DRILL: NavDrillConfig = {
   routePrefix: '/app/superuser',
   sections: [
     {
-      label: 'Tools',
+      label: 'Layouts',
       items: [
-        { label: 'Workspace', icon: IconFileCode, path: '/app/superuser' },
-      ],
-    },
-    {
-      label: 'Config',
-      items: [
-        { label: 'Site Config', icon: IconSettingsCog, path: '/app/superuser/site-config', badge: 'Soon' },
-        { label: 'Docs Config', icon: IconWorldCog, path: '/app/superuser/docs-config', badge: 'Soon' },
+        { label: 'Layout 1', icon: IconFileCode, path: '/app/superuser/layout-1' },
+        { label: 'Layout 2', icon: IconWorldCog, path: '/app/superuser/layout-2' },
+        { label: 'Layout 3', icon: IconFileCode, path: '/app/superuser' },
       ],
     },
   ],

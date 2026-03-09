@@ -20,6 +20,8 @@ type TopCommandBarProps = {
   showAssistantToggle?: boolean;
   assistantOpened?: boolean;
   onToggleAssistant?: () => void;
+  hideProjectSwitcher?: boolean;
+  hideSearch?: boolean;
 };
 
 type TopSearchOption = {
@@ -41,6 +43,8 @@ export function TopCommandBar({
   showAssistantToggle = false,
   assistantOpened = false,
   onToggleAssistant,
+  hideProjectSwitcher = false,
+  hideSearch = false,
 }: TopCommandBarProps) {
   const { center, shellTopSlots } = useHeaderCenter();
   const { isDark, toggle: toggleColorScheme } = useTheme();
@@ -57,7 +61,7 @@ export function TopCommandBar({
   const utilityIconSize = ICON_SIZES[ICON_CONTEXT_SIZE[ICON_STANDARD.utilityTopRight.context]];
   const utilityIconStroke = ICON_STROKES[ICON_STANDARD.utilityTopRight.stroke];
 
-  const searchNode = !shellGuides ? (
+  const searchNode = !shellGuides && !hideSearch ? (
     <Combobox.Root
       className="top-command-bar-search-wrap"
       collection={searchCollection}
@@ -126,7 +130,7 @@ export function TopCommandBar({
           <HugeiconsIcon icon={Menu02Icon} size={24} strokeWidth={1.8} />
         </button>
         {shellGuides ? leftNode : null}
-        <ProjectSwitcher />
+        {!hideProjectSwitcher && <ProjectSwitcher />}
       </div>
       <div className="top-command-bar-center">
         {resolvedMiddleNode}

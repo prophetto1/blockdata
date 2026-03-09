@@ -37,6 +37,7 @@ export type WorkbenchProps = {
   saveKey: string;
   renderContent: (tabId: string) => React.ReactNode;
   toolbarActions?: React.ReactNode;
+  hideToolbar?: boolean;
 };
 
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -144,7 +145,7 @@ function readPersistedPanes(saveKey: string, validTabIds: Set<string>, fallbackT
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
-export function Workbench({ tabs, defaultPanes, saveKey, renderContent, toolbarActions }: WorkbenchProps) {
+export function Workbench({ tabs, defaultPanes, saveKey, renderContent, toolbarActions, hideToolbar = false }: WorkbenchProps) {
   const fallbackTab = tabs[0]?.id ?? '';
 
   const validTabIds = useMemo(() => new Set(tabs.map((tab) => tab.id)), [tabs]);
@@ -495,31 +496,33 @@ export function Workbench({ tabs, defaultPanes, saveKey, renderContent, toolbarA
 
   return (
     <div className="workbench-shell flex flex-col gap-2">
-      <div className="workbench-toolbar">
-        <div className="workbench-toolbar-panels" role="toolbar" aria-label="Panels">
-          {tabs.map((tab) => {
-            const isOpen = openPanels.has(tab.id);
-            const isActiveInFocusedPane = focusedPane?.activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                className={`workbench-panel-button${isOpen ? ' is-open' : ''}${isActiveInFocusedPane ? ' is-focused' : ''}`}
-                onClick={() => openPanelFromToolbar(tab.id)}
-              >
-                <tab.icon size={14} />
-                <span>{tab.label}</span>
-              </button>
-            );
-          })}
-        </div>
-
-        {toolbarActions ? (
-          <div className="workbench-toolbar-actions">
-            {toolbarActions}
+      {!hideToolbar && (
+        <div className="workbench-toolbar">
+          <div className="workbench-toolbar-panels" role="toolbar" aria-label="Panels">
+            {tabs.map((tab) => {
+              const isOpen = openPanels.has(tab.id);
+              const isActiveInFocusedPane = focusedPane?.activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  className={`workbench-panel-button${isOpen ? ' is-open' : ''}${isActiveInFocusedPane ? ' is-focused' : ''}`}
+                  onClick={() => openPanelFromToolbar(tab.id)}
+                >
+                  <tab.icon size={14} />
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
           </div>
-        ) : null}
-      </div>
+
+          {toolbarActions ? (
+            <div className="workbench-toolbar-actions">
+              {toolbarActions}
+            </div>
+          ) : null}
+        </div>
+      )}
 
       <Splitter.Root
         className="workbench-multipane"

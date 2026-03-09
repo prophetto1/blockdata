@@ -29,7 +29,7 @@ export function Component() {
         <Workbench
           tabs={TABS}
           defaultPanes={DEFAULT_PANES}
-          saveKey="superuser-workbench-layout"
+          saveKey="superuser-layout-1"
           renderContent={renderContent}
           hideToolbar
         />

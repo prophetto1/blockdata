@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-03-07T10:13:15.356Z",
+  "generatedAt": "2026-03-09T18:08:42.271Z",
   "scope": "auth",
   "pages": [
     {
@@ -154,6 +154,12 @@
           "definition": "PageHeader comes from @/components/common/PageHeader (named import of PageHeader)"
         }
       ]
+    },
+    {
+      "page": "src/pages/AppHome.tsx",
+      "componentCount": 0,
+      "categoryCounts": {},
+      "components": []
     },
     {
       "page": "src/pages/Commands.tsx",
@@ -712,11 +718,10 @@
     },
     {
       "page": "src/pages/FlowDetail.tsx",
-      "componentCount": 18,
+      "componentCount": 13,
       "categoryCounts": {
         "local-components": 12,
-        "in-file component": 3,
-        "tabler-icons": 3
+        "in-file component": 1
       },
       "components": [
         {
@@ -765,24 +770,6 @@
           "definition": "FlowCanvas comes from @/components/flows/FlowCanvas (default import of default)"
         },
         {
-          "component": "FlowRailButton",
-          "usedAs": "FlowRailButton",
-          "source": "(in-file or unresolved)",
-          "importKind": null,
-          "importedAs": null,
-          "category": "in-file component",
-          "definition": "FlowRailButton is defined in the same page file"
-        },
-        {
-          "component": "FlowRailGroup",
-          "usedAs": "FlowRailGroup",
-          "source": "(in-file or unresolved)",
-          "importKind": null,
-          "importedAs": null,
-          "category": "in-file component",
-          "definition": "FlowRailGroup is defined in the same page file"
-        },
-        {
           "component": "FlowWorkbench",
           "usedAs": "FlowWorkbench",
           "source": "@/components/flows/FlowWorkbench",
@@ -799,33 +786,6 @@
           "importedAs": null,
           "category": "in-file component",
           "definition": "FlowWorkspaceFrame is defined in the same page file"
-        },
-        {
-          "component": "IconLock",
-          "usedAs": "IconLock",
-          "source": "@tabler/icons-react",
-          "importKind": "named",
-          "importedAs": "IconLock",
-          "category": "tabler-icons",
-          "definition": "IconLock comes from @tabler/icons-react (named import of IconLock)"
-        },
-        {
-          "component": "IconPlus",
-          "usedAs": "IconPlus",
-          "source": "@tabler/icons-react",
-          "importKind": "named",
-          "importedAs": "IconPlus",
-          "category": "tabler-icons",
-          "definition": "IconPlus comes from @tabler/icons-react (named import of IconPlus)"
-        },
-        {
-          "component": "IconX",
-          "usedAs": "IconX",
-          "source": "@tabler/icons-react",
-          "importKind": "named",
-          "importedAs": "IconX",
-          "category": "tabler-icons",
-          "definition": "IconX comes from @tabler/icons-react (named import of IconX)"
         },
         {
           "component": "LogsTab",
@@ -885,9 +845,10 @@
     },
     {
       "page": "src/pages/FlowsList.tsx",
-      "componentCount": 21,
+      "componentCount": 38,
       "categoryCounts": {
-        "local-components": 3,
+        "local-components": 5,
+        "ark-ui": 15,
         "external-package": 1,
         "tabler-icons": 14,
         "in-file component": 3
@@ -910,6 +871,33 @@
           "importedAs": "Button",
           "category": "local-components",
           "definition": "Button comes from @/components/ui/button (named import of Button)"
+        },
+        {
+          "component": "Checkbox",
+          "usedAs": "Checkbox.Control",
+          "source": "@ark-ui/react/checkbox",
+          "importKind": "named",
+          "importedAs": "Checkbox",
+          "category": "ark-ui",
+          "definition": "Checkbox.Control comes from @ark-ui/react/checkbox (named import of Checkbox)"
+        },
+        {
+          "component": "Checkbox",
+          "usedAs": "Checkbox.HiddenInput",
+          "source": "@ark-ui/react/checkbox",
+          "importKind": "named",
+          "importedAs": "Checkbox",
+          "category": "ark-ui",
+          "definition": "Checkbox.HiddenInput comes from @ark-ui/react/checkbox (named import of Checkbox)"
+        },
+        {
+          "component": "Checkbox",
+          "usedAs": "Checkbox.Root",
+          "source": "@ark-ui/react/checkbox",
+          "importKind": "named",
+          "importedAs": "Checkbox",
+          "category": "ark-ui",
+          "definition": "Checkbox.Root comes from @ark-ui/react/checkbox (named import of Checkbox)"
         },
         {
           "component": "ErrorAlert",
@@ -1063,6 +1051,132 @@
           "importedAs": null,
           "category": "in-file component",
           "definition": "LabelBadge is defined in the same page file"
+        },
+        {
+          "component": "PageHeader",
+          "usedAs": "PageHeader",
+          "source": "@/components/common/PageHeader",
+          "importKind": "named",
+          "importedAs": "PageHeader",
+          "category": "local-components",
+          "definition": "PageHeader comes from @/components/common/PageHeader (named import of PageHeader)"
+        },
+        {
+          "component": "Pagination",
+          "usedAs": "Pagination.NextTrigger",
+          "source": "@ark-ui/react/pagination",
+          "importKind": "named",
+          "importedAs": "Pagination",
+          "category": "ark-ui",
+          "definition": "Pagination.NextTrigger comes from @ark-ui/react/pagination (named import of Pagination)"
+        },
+        {
+          "component": "Pagination",
+          "usedAs": "Pagination.PrevTrigger",
+          "source": "@ark-ui/react/pagination",
+          "importKind": "named",
+          "importedAs": "Pagination",
+          "category": "ark-ui",
+          "definition": "Pagination.PrevTrigger comes from @ark-ui/react/pagination (named import of Pagination)"
+        },
+        {
+          "component": "Pagination",
+          "usedAs": "Pagination.Root",
+          "source": "@ark-ui/react/pagination",
+          "importKind": "named",
+          "importedAs": "Pagination",
+          "category": "ark-ui",
+          "definition": "Pagination.Root comes from @ark-ui/react/pagination (named import of Pagination)"
+        },
+        {
+          "component": "Portal",
+          "usedAs": "Portal",
+          "source": "@ark-ui/react/portal",
+          "importKind": "named",
+          "importedAs": "Portal",
+          "category": "ark-ui",
+          "definition": "Portal comes from @ark-ui/react/portal (named import of Portal)"
+        },
+        {
+          "component": "ScrollArea",
+          "usedAs": "ScrollArea",
+          "source": "@/components/ui/scroll-area",
+          "importKind": "named",
+          "importedAs": "ScrollArea",
+          "category": "local-components",
+          "definition": "ScrollArea comes from @/components/ui/scroll-area (named import of ScrollArea)"
+        },
+        {
+          "component": "Select",
+          "usedAs": "Select.Content",
+          "source": "@ark-ui/react/select",
+          "importKind": "named",
+          "importedAs": "Select",
+          "category": "ark-ui",
+          "definition": "Select.Content comes from @ark-ui/react/select (named import of Select)"
+        },
+        {
+          "component": "Select",
+          "usedAs": "Select.Control",
+          "source": "@ark-ui/react/select",
+          "importKind": "named",
+          "importedAs": "Select",
+          "category": "ark-ui",
+          "definition": "Select.Control comes from @ark-ui/react/select (named import of Select)"
+        },
+        {
+          "component": "Select",
+          "usedAs": "Select.Item",
+          "source": "@ark-ui/react/select",
+          "importKind": "named",
+          "importedAs": "Select",
+          "category": "ark-ui",
+          "definition": "Select.Item comes from @ark-ui/react/select (named import of Select)"
+        },
+        {
+          "component": "Select",
+          "usedAs": "Select.ItemText",
+          "source": "@ark-ui/react/select",
+          "importKind": "named",
+          "importedAs": "Select",
+          "category": "ark-ui",
+          "definition": "Select.ItemText comes from @ark-ui/react/select (named import of Select)"
+        },
+        {
+          "component": "Select",
+          "usedAs": "Select.Positioner",
+          "source": "@ark-ui/react/select",
+          "importKind": "named",
+          "importedAs": "Select",
+          "category": "ark-ui",
+          "definition": "Select.Positioner comes from @ark-ui/react/select (named import of Select)"
+        },
+        {
+          "component": "Select",
+          "usedAs": "Select.Root",
+          "source": "@ark-ui/react/select",
+          "importKind": "named",
+          "importedAs": "Select",
+          "category": "ark-ui",
+          "definition": "Select.Root comes from @ark-ui/react/select (named import of Select)"
+        },
+        {
+          "component": "Select",
+          "usedAs": "Select.Trigger",
+          "source": "@ark-ui/react/select",
+          "importKind": "named",
+          "importedAs": "Select",
+          "category": "ark-ui",
+          "definition": "Select.Trigger comes from @ark-ui/react/select (named import of Select)"
+        },
+        {
+          "component": "Select",
+          "usedAs": "Select.ValueText",
+          "source": "@ark-ui/react/select",
+          "importKind": "named",
+          "importedAs": "Select",
+          "category": "ark-ui",
+          "definition": "Select.ValueText comes from @ark-ui/react/select (named import of Select)"
         },
         {
           "component": "SortIcon",
@@ -1748,6 +1862,24 @@
           "importedAs": "SegmentGroupRoot",
           "category": "local-components",
           "definition": "SegmentGroupRoot comes from @/components/ui/segment-group (named import of SegmentGroupRoot)"
+        }
+      ]
+    },
+    {
+      "page": "src/pages/ProjectsHome.tsx",
+      "componentCount": 1,
+      "categoryCounts": {
+        "local-components": 1
+      },
+      "components": [
+        {
+          "component": "ErrorAlert",
+          "usedAs": "ErrorAlert",
+          "source": "@/components/common/ErrorAlert",
+          "importKind": "named",
+          "importedAs": "ErrorAlert",
+          "category": "local-components",
+          "definition": "ErrorAlert comes from @/components/common/ErrorAlert (named import of ErrorAlert)"
         }
       ]
     },
@@ -3158,9 +3290,9 @@
     },
     {
       "page": "src/pages/settings/SettingsAdmin.tsx",
-      "componentCount": 8,
+      "componentCount": 9,
       "categoryCounts": {
-        "local-components": 2,
+        "local-components": 3,
         "ark-ui": 2,
         "relative-local": 3,
         "external-package": 1
@@ -3228,6 +3360,15 @@
           "importedAs": "PlatformConfigPanel",
           "category": "relative-local",
           "definition": "PlatformConfigPanel comes from ./PlatformConfigPanel (named import of PlatformConfigPanel)"
+        },
+        {
+          "component": "ScrollArea",
+          "usedAs": "ScrollArea",
+          "source": "@/components/ui/scroll-area",
+          "importKind": "named",
+          "importedAs": "ScrollArea",
+          "category": "local-components",
+          "definition": "ScrollArea comes from @/components/ui/scroll-area (named import of ScrollArea)"
         },
         {
           "component": "WorkerConfigPanel",
@@ -3316,31 +3457,11 @@
     },
     {
       "page": "src/pages/settings/SettingsLayout.tsx",
-      "componentCount": 3,
+      "componentCount": 1,
       "categoryCounts": {
-        "local-components": 1,
-        "in-file component": 1,
         "external-package": 1
       },
       "components": [
-        {
-          "component": "AppIcon",
-          "usedAs": "AppIcon",
-          "source": "@/components/ui/app-icon",
-          "importKind": "named",
-          "importedAs": "AppIcon",
-          "category": "local-components",
-          "definition": "AppIcon comes from @/components/ui/app-icon (named import of AppIcon)"
-        },
-        {
-          "component": "NavGroup",
-          "usedAs": "NavGroup",
-          "source": "(in-file or unresolved)",
-          "importKind": null,
-          "importedAs": null,
-          "category": "in-file component",
-          "definition": "NavGroup is defined in the same page file"
-        },
         {
           "component": "Outlet",
           "usedAs": "Outlet",
@@ -4004,6 +4125,33 @@
       ]
     },
     {
+      "page": "src/pages/superuser/SuperuserGuard.tsx",
+      "componentCount": 2,
+      "categoryCounts": {
+        "external-package": 2
+      },
+      "components": [
+        {
+          "component": "Navigate",
+          "usedAs": "Navigate",
+          "source": "react-router-dom",
+          "importKind": "named",
+          "importedAs": "Navigate",
+          "category": "external-package",
+          "definition": "Navigate comes from react-router-dom (named import of Navigate)"
+        },
+        {
+          "component": "Outlet",
+          "usedAs": "Outlet",
+          "source": "react-router-dom",
+          "importKind": "named",
+          "importedAs": "Outlet",
+          "category": "external-package",
+          "definition": "Outlet comes from react-router-dom (named import of Outlet)"
+        }
+      ]
+    },
+    {
       "page": "src/pages/UppyLibraryDemo.tsx",
       "componentCount": 16,
       "categoryCounts": {
@@ -4159,13 +4307,13 @@
       ]
     }
   ],
-  "totalComponentUsages": 417,
+  "totalComponentUsages": 431,
   "categoryTotals": {
-    "external-package": 16,
-    "local-components": 129,
-    "tabler-icons": 92,
-    "ark-ui": 147,
-    "in-file component": 13,
+    "external-package": 18,
+    "local-components": 132,
+    "tabler-icons": 89,
+    "ark-ui": 162,
+    "in-file component": 10,
     "unknown": 1,
     "relative-local": 19
   }

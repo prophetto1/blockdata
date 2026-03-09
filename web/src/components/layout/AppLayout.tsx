@@ -227,6 +227,8 @@ function AppShellInner() {
           <TopCommandBar
             onToggleNav={toggleNav}
             shellGuides={isEditorLayoutRoute}
+            hideProjectSwitcher={isSuperuserRoute}
+            hideSearch={isSuperuserRoute}
           />
           {!isMobile && (
             <button
@@ -340,7 +342,7 @@ function AppShellInner() {
         )}
 
         <main style={shellMainStyle}>
-          {(isFlowsRoute || isMarketplaceServiceDetailRoute) ? (
+          {(isFlowsRoute || isMarketplaceServiceDetailRoute || isSuperuserRoute) ? (
             <Outlet />
           ) : (
             <AppPageShell mode="fluid">

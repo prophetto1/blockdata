@@ -1,0 +1,27 @@
+/* MDXEditor theme alignment with app design tokens */
+
+.mdxeditor {
+  --accentBase: var(--color-primary);
+  --accentBgSubtle: var(--color-accent);
+  --accentText: var(--color-primary);
+  --baseBase: var(--color-background);
+  --baseBgSubtle: var(--color-muted);
+  --baseText: var(--color-foreground);
+  --baseTextHighContrast: var(--color-foreground);
+  --borderDefault: var(--color-border);
+  font-family: var(--font-sans, inherit);
+}
+
+.mdxeditor [role='toolbar'] {
+  border-color: var(--color-border);
+  background: var(--color-card);
+}
+
+/* Dark mode overrides */
+.dark .mdxeditor,
+.dark-theme .mdxeditor {
+  --baseBase: var(--color-background);
+  --baseBgSubtle: var(--color-muted);
+  --baseText: var(--color-foreground);
+  --borderDefault: var(--color-border);
+}
