@@ -54,19 +54,28 @@ We are doing compatibility-first Kestra alignment, not redesign. `web-kt` is the
   - `kt-ct/generated/`
   - `kt-ct/references/`
 - a CT-staged generated database type file now exists at `kt-ct/generated/database.types.kt.ts`
+- a CT-staged generated backend Kestra API type directory now exists at `kt-ct/generated/kestra-api/`
+- staged backend SDK files include:
+  - `sdk/ks-Flows.gen.ts`
+  - `sdk/ks-Executions.gen.ts`
+  - `sdk/ks-Logs.gen.ts`
 
 ## Confirmed Missing
 
-- no CT-staged generated backend Kestra API type directory yet at `kt-ct/generated/kestra-api/`
-- no seeded first-page task artifacts yet for `flows_list`
+- no remaining preparatory artifacts are missing
 
 ## Important Observations
 
 - `web-kt` is ready enough to serve as the UI reference workspace.
 - the frontend contract source is ready enough to support both frontend and backend generation from the same `openapi.yml`.
 - the `kt` schema currently appears empty in the live project, so compatibility work can proceed structurally, but real page wiring will still require either seed data, imports, or mock-compatible fallback behavior.
-- worker-system guidance currently exists under `web-kt/docs/worker-system`, but the root control tower is not yet the source of truth.
+- worker-system guidance still exists under `web-kt/docs/worker-system`, but the root control tower is now the primary source of truth.
 - the staged DB types file now follows the CT-first rule, but it still needs review before any promotion into product paths.
+- the staged backend API contract output now follows the CT-first rule and reuses the same tag-splitting generator pattern as `web-kt`.
+- the staged backend SDK layer is not safe to use in backend code as generated because `kt-ct/generated/kestra-api/sdk/ks-shared.gen.ts` imports `vue-router`, and the other `sdk/*.gen.ts` files depend on it.
+- until that is resolved, backend mappers should import from `kt-ct/generated/kestra-api/types.gen.ts` only, not from `sdk/*.gen.ts`.
+- the root control tower now contains the primary worker instruction file, launch prompt, and page templates.
+- the first page task set for `flows_list` now exists in `kt-ct/tasks`.
 
 ## Readiness Summary
 
@@ -78,16 +87,19 @@ Current phase readiness:
 - root control-tower structure: ready
 - CT staging location: ready
 - shared DB types: ready for review
-- shared backend API types: not ready
-- root worker operating system: not ready
-- first page task seed: not ready
+- shared backend API types: ready for review
+- root worker operating system: ready
+- first page task seed: ready
+
+## Preparatory Baseline Verdict
+
+Preparatory baseline is complete.
+The repo is ready to begin the first page workflow at `flows_list` using the CT worker system.
 
 ## Recommendation
 
-Continue with the preparatory phase in this order:
+Next step:
 
-1. review the CT-staged DB types file
-2. generate shared backend Kestra API contract types from `openapi.yml` into `kt-ct`
-3. move worker instructions, prompts, and templates into `kt-ct`
-4. seed `flows_list` task artifacts
-5. promote staged outputs into product paths only after review
+1. start `kt-ct/tasks/flows_list.capture.md`
+2. expand `kt-ct/tasks/flows_list.plan.md` into the real page plan
+3. keep all implementation CT-first until reviewed

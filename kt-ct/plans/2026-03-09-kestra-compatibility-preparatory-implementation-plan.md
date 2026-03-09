@@ -157,6 +157,8 @@ Requirement:
 
 - use the same OpenAPI source used by `web-kt`
 - do not define hand-written DTOs if generated types already cover the shape
+- backend mappers must import DTO types from `kt-ct/generated/kestra-api/types.gen.ts`, not from `sdk/*.gen.ts`
+- the current generated SDK layer is not backend-safe because `sdk/ks-shared.gen.ts` imports `vue-router`
 
 ## Canonical Mapping Rule
 
@@ -377,6 +379,7 @@ Stop and ask for review if:
 
 - `kt` types do not generate cleanly
 - backend OpenAPI generation produces unusable output for the backend runtime
+- generated backend SDK files pull frontend-only runtime dependencies into backend code paths
 - `web-kt` and backend type generation diverge from the same `openapi.yml`
 - root control-tower structure starts duplicating multiple conflicting sources of truth
 - any worker writes generated preparatory artifacts directly into product paths before CT review
@@ -386,8 +389,8 @@ Stop and ask for review if:
 
 On resume, continue from the CT-first baseline in this order:
 
-- review the current reassessment against the live CT state
-- review the staged DB types in `kt-ct/generated/database.types.kt.ts`
-- generate backend API contract types into `kt-ct/generated/kestra-api/`
+- begin `flows_list` from `kt-ct/tasks/flows_list.capture.md`
+- expand `kt-ct/tasks/flows_list.plan.md` into the real implementation plan
+- keep backend typing on `kt-ct/generated/database.types.kt.ts` plus `kt-ct/generated/kestra-api/types.gen.ts`
 
 Nothing else should be promoted into product paths before those staged artifacts are reviewed.
