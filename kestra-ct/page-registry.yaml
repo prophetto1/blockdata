@@ -1,0 +1,416 @@
+source_route_file: /home/jon/blockdata/web-kt/src/routes/routes.js
+generated_from: web_kt_runtime_routes
+generated_at: 2026-03-09
+repo_roots:
+  windows: E:\writing-system\
+  ubuntu: /home/jon/blockdata
+notes:
+  - This registry is the CT-side sitemap and execution surface for Kestra compatibility work.
+  - Both Ubuntu and Windows should use this same registry.
+  - flows_list remains the seeded golden-path page.
+  - Demo routes are tracked separately and are not part of the main compatibility backlog.
+
+ct_status_model:
+  packet_pending: page is listed but no shared packet exists yet
+  packet_seeded: shared packet exists and page execution can start with capture
+  packet_in_revision: shared packet is being corrected or expanded
+  packet_ready: shared packet is stable and ready for both sides
+  packet_blocked: shared prerequisite or contract issue blocks packet progress
+  packet_complete: shared packet has been executed and closed for current scope
+
+side_status_model:
+  not_started: side has not begun the page
+  capturing: side is tracing the page
+  planning: side is writing the implementation plan
+  implementing: side is making runtime changes
+  verifying: side is running verification
+  blocked: side is stopped on a documented blocker
+  partial: side completed part of the slice only
+  done: side completed the slice with evidence
+
+registry_update_rule:
+  ct_status: shared packet lifecycle only
+  ubuntu_status: owned by Ubuntu execution
+  windows_status: owned by Windows execution
+  note: page workers should normally update only their side field and should not write environment execution results into ct_status
+
+shared_prerequisites:
+  - key: dev_compat_gateway
+    status: missing
+    owner: shared
+    note: No finished compatibility gateway currently serves Kestra-compatible /api/v1/main/... routes on localhost:8080.
+  - key: type_promotion
+    status: deferred
+    owner: shared
+    note: CT-staged generated types remain the active reference until a separate hardening task promotes them into runtime paths.
+
+pages:
+  - page_key: dashboards_home
+    title: Dashboards home
+    category: dashboards
+    source_route_name: home
+    source_route_path: /:tenant?/dashboards/:dashboard?
+    source_component: /home/jon/blockdata/web-kt/src/components/dashboard/Dashboard.vue
+    ct_status: packet_pending
+    ubuntu_status: not_started
+    windows_status: not_started
+    priority: 2
+
+  - page_key: dashboards_create
+    title: Dashboards create
+    category: dashboards
+    source_route_name: dashboards/create
+    source_route_path: /:tenant?/dashboards/new
+    source_component: /home/jon/blockdata/web-kt/src/components/dashboard/components/Create.vue
+    ct_status: packet_pending
+    ubuntu_status: not_started
+    windows_status: not_started
+    priority: 4
+
+  - page_key: dashboards_update
+    title: Dashboards update
+    category: dashboards
+    source_route_name: dashboards/update
+    source_route_path: /:tenant?/dashboards/:dashboard/edit
+    source_component: /home/jon/blockdata/web-kt/src/override/components/dashboard/Edit.vue
+    ct_status: packet_pending
+    ubuntu_status: not_started
+    windows_status: not_started
+    priority: 4
+
+  - page_key: flows_list
+    title: Flows list
+    category: flows
+    source_route_name: flows/list
+    source_route_path: /:tenant?/flows
+    source_component: /home/jon/blockdata/web-kt/src/components/flows/Flows.vue
+    ct_status: packet_seeded
+    ubuntu_status: not_started
+    windows_status: not_started
+    priority: 1
+    golden_path: true
+    upstream_method: GET
+    upstream_path: /api/v1/main/flows/search
+    packet: /home/jon/blockdata/kestra-ct/pages/flows-list/packet.md
+    capture: /home/jon/blockdata/kestra-ct/pages/flows-list/capture.md
+    implement: /home/jon/blockdata/kestra-ct/pages/flows-list/implement.md
+    verify: /home/jon/blockdata/kestra-ct/pages/flows-list/verify.md
+
+  - page_key: flows_search
+    title: Flows search
+    category: flows
+    source_route_name: flows/search
+    source_route_path: /:tenant?/flows/search
+    source_component: /home/jon/blockdata/web-kt/src/components/flows/FlowsSearch.vue
+    ct_status: packet_pending
+    ubuntu_status: not_started
+    windows_status: not_started
+    priority: 6
+
+  - page_key: flows_create
+    title: Flows create
+    category: flows
+    source_route_name: flows/create
+    source_route_path: /:tenant?/flows/new
+    source_component: /home/jon/blockdata/web-kt/src/components/flows/FlowCreate.vue
+    ct_status: packet_pending
+    ubuntu_status: not_started
+    windows_status: not_started
+    priority: 8
+
+  - page_key: flows_update
+    title: Flows update
+    category: flows
+    source_route_name: flows/update
+    source_route_path: /:tenant?/flows/edit/:namespace/:id/:tab?
+    source_component: /home/jon/blockdata/web-kt/src/components/flows/FlowRoot.vue
+    ct_status: packet_pending
+    ubuntu_status: not_started
+    windows_status: not_started
+    priority: 5
+
+  - page_key: executions_list
+    title: Executions list
+    category: executions
+    source_route_name: executions/list
+    source_route_path: /:tenant?/executions
+    source_component: /home/jon/blockdata/web-kt/src/components/executions/Executions.vue
+    ct_status: packet_pending
+    ubuntu_status: not_started
+    windows_status: not_started
+    priority: 3
+
+  - page_key: executions_update
+    title: Executions update
+    category: executions
+    source_route_name: executions/update
+    source_route_path: /:tenant?/executions/:namespace/:flowId/:id/:tab?
+    source_component: /home/jon/blockdata/web-kt/src/components/executions/ExecutionRoot.vue
+    ct_status: packet_pending
+    ubuntu_status: not_started
+    windows_status: not_started
+    priority: 6
+
+  - page_key: kv_list
+    title: KV list
+    category: kv
+    source_route_name: kv/list
+    source_route_path: /:tenant?/kv
+    source_component: /home/jon/blockdata/web-kt/src/components/kv/KVs.vue
+    ct_status: packet_pending
+    ubuntu_status: not_started
+    windows_status: not_started
+    priority: 7
+
+  - page_key: secrets_list
+    title: Secrets list
+    category: secrets
+    source_route_name: secrets/list
+    source_route_path: /:tenant?/secrets
+    source_component: /home/jon/blockdata/web-kt/src/components/secrets/Secrets.vue
+    ct_status: packet_pending
+    ubuntu_status: not_started
+    windows_status: not_started
+    priority: 7
+
+  - page_key: blueprints_list
+    title: Blueprints list
+    category: blueprints
+    source_route_name: blueprints
+    source_route_path: /:tenant?/blueprints/:kind/:tab
+    source_component: /home/jon/blockdata/web-kt/src/override/components/flows/blueprints/Blueprints.vue
+    ct_status: packet_pending
+    ubuntu_status: not_started
+    windows_status: not_started
+    priority: 9
+
+  - page_key: blueprints_view
+    title: Blueprints view
+    category: blueprints
+    source_route_name: blueprints/view
+    source_route_path: /:tenant?/blueprints/:kind/:tab/:blueprintId
+    source_component: /home/jon/blockdata/web-kt/src/override/components/flows/blueprints/BlueprintDetail.vue
+    ct_status: packet_pending
+    ubuntu_status: not_started
+    windows_status: not_started
+    priority: 9
+
+  - page_key: plugins_list
+    title: Plugins list
+    category: plugins
+    source_route_name: plugins/list
+    source_route_path: /:tenant?/plugins
+    source_component: /home/jon/blockdata/web-kt/src/components/plugins/Plugin.vue
+    ct_status: packet_pending
+    ubuntu_status: not_started
+    windows_status: not_started
+    priority: 9
+
+  - page_key: plugins_view
+    title: Plugins view
+    category: plugins
+    source_route_name: plugins/view
+    source_route_path: /:tenant?/plugins/:cls/:version?
+    source_component: /home/jon/blockdata/web-kt/src/components/plugins/Plugin.vue
+    ct_status: packet_pending
+    ubuntu_status: not_started
+    windows_status: not_started
+    priority: 9
+
+  - page_key: templates_list
+    title: Templates list
+    category: templates
+    source_route_name: templates/list
+    source_route_path: /:tenant?/templates
+    source_component: /home/jon/blockdata/web-kt/src/components/templates/Templates.vue
+    ct_status: packet_pending
+    ubuntu_status: not_started
+    windows_status: not_started
+    priority: 6
+
+  - page_key: templates_create
+    title: Templates create
+    category: templates
+    source_route_name: templates/create
+    source_route_path: /:tenant?/templates/new
+    source_component: /home/jon/blockdata/web-kt/src/components/templates/TemplateEdit.vue
+    ct_status: packet_pending
+    ubuntu_status: not_started
+    windows_status: not_started
+    priority: 8
+
+  - page_key: templates_update
+    title: Templates update
+    category: templates
+    source_route_name: templates/update
+    source_route_path: /:tenant?/templates/edit/:namespace/:id
+    source_component: /home/jon/blockdata/web-kt/src/components/templates/TemplateEdit.vue
+    ct_status: packet_pending
+    ubuntu_status: not_started
+    windows_status: not_started
+    priority: 7
+
+  - page_key: logs_list
+    title: Logs list
+    category: logs
+    source_route_name: logs/list
+    source_route_path: /:tenant?/logs
+    source_component: /home/jon/blockdata/web-kt/src/components/logs/LogsWrapper.vue
+    ct_status: packet_pending
+    ubuntu_status: not_started
+    windows_status: not_started
+    priority: 4
+
+  - page_key: namespaces_list
+    title: Namespaces list
+    category: namespaces
+    source_route_name: namespaces/list
+    source_route_path: /:tenant?/namespaces
+    source_component: /home/jon/blockdata/web-kt/src/override/components/namespaces/Namespaces.vue
+    ct_status: packet_pending
+    ubuntu_status: not_started
+    windows_status: not_started
+    priority: 7
+
+  - page_key: namespaces_update
+    title: Namespaces update
+    category: namespaces
+    source_route_name: namespaces/update
+    source_route_path: /:tenant?/namespaces/edit/:id/:tab?
+    source_component: /home/jon/blockdata/web-kt/src/components/namespaces/Namespace.vue
+    ct_status: packet_pending
+    ubuntu_status: not_started
+    windows_status: not_started
+    priority: 8
+
+  - page_key: docs_view
+    title: Docs view
+    category: docs
+    source_route_name: docs/view
+    source_route_path: /:tenant?/docs/:path(.*)?
+    source_component: /home/jon/blockdata/web-kt/src/components/docs/Docs.vue
+    ct_status: packet_pending
+    ubuntu_status: not_started
+    windows_status: not_started
+    priority: 10
+
+  - page_key: settings
+    title: Settings
+    category: settings
+    source_route_name: settings
+    source_route_path: /:tenant?/settings
+    source_component: /home/jon/blockdata/web-kt/src/override/components/settings/Settings.vue
+    ct_status: packet_pending
+    ubuntu_status: not_started
+    windows_status: not_started
+    priority: 8
+
+  - page_key: admin_triggers
+    title: Admin triggers
+    category: admin
+    source_route_name: admin/triggers
+    source_route_path: /:tenant?/admin/triggers
+    source_component: /home/jon/blockdata/web-kt/src/components/admin/Triggers.vue
+    ct_status: packet_pending
+    ubuntu_status: not_started
+    windows_status: not_started
+    priority: 10
+
+  - page_key: admin_stats
+    title: Admin stats
+    category: admin
+    source_route_name: admin/stats
+    source_route_path: /:tenant?/admin/stats/:type?
+    source_component: /home/jon/blockdata/web-kt/src/override/components/admin/stats/Stats.vue
+    ct_status: packet_pending
+    ubuntu_status: not_started
+    windows_status: not_started
+    priority: 10
+
+  - page_key: admin_concurrency_limits
+    title: Admin concurrency limits
+    category: admin
+    source_route_name: admin/concurrency-limits
+    source_route_path: /:tenant?/admin/concurrency-limits
+    source_component: /home/jon/blockdata/web-kt/src/components/admin/ConcurrencyLimits.vue
+    ct_status: packet_pending
+    ubuntu_status: not_started
+    windows_status: not_started
+    priority: 10
+
+supporting_routes:
+  - route_key: root
+    kind: redirect
+    source_route_name: root
+    source_route_path: /
+    note: Redirect only. Not a page packet target.
+
+  - route_key: welcome
+    kind: onboarding
+    source_route_name: welcome
+    source_route_path: /:tenant?/welcome
+    note: Real page, but not in the first compatibility backlog.
+
+  - route_key: setup
+    kind: auth_bootstrap
+    source_route_name: setup
+    source_route_path: /:tenant?/setup
+    note: System route. Track after core page surface.
+
+  - route_key: login
+    kind: auth_bootstrap
+    source_route_name: login
+    source_route_path: /:tenant?/login
+    note: System route. Track after core page surface.
+
+  - route_key: errors_404_wildcard
+    kind: error_boundary
+    source_route_name: errors/404-wildcard
+    source_route_path: /:tenant?/:pathMatch(.*)
+    note: Fallback route. Not a primary compatibility page.
+
+demo_routes:
+  - route_key: apps_list
+    source_route_name: apps/list
+    source_route_path: /:tenant?/apps
+
+  - route_key: tests_list
+    source_route_name: tests/list
+    source_route_path: /:tenant?/tests
+
+  - route_key: assets_list
+    source_route_name: assets/list
+    source_route_path: /:tenant?/assets
+
+  - route_key: admin_iam
+    source_route_name: admin/iam
+    source_route_path: /:tenant?/admin/iam
+
+  - route_key: admin_tenants_list
+    source_route_name: admin/tenants/list
+    source_route_path: /:tenant?/admin/tenants/list
+
+  - route_key: admin_auditlogs_list
+    source_route_name: admin/auditlogs/list
+    source_route_path: /:tenant?/admin/auditlogs
+
+  - route_key: admin_instance
+    source_route_name: admin/instance
+    source_route_path: /:tenant?/admin/instance
+
+bootstrap_dependencies:
+  - endpoint: /api/v1/configs
+    status: shared_blocker
+    note: Required by app bootstrap before many non-anonymous routes.
+
+  - endpoint: /api/v1/basicAuthValidationErrors
+    status: shared_blocker
+    note: Required by basic-auth bootstrap path.
+
+  - endpoint: /api/v1/plugins/...
+    status: shared_blocker
+    note: Required by plugin-driven UI surfaces and editors.
+
+  - endpoint: /oauth/access_token
+    status: shared_blocker
+    note: Required when auth refresh flows are exercised.
