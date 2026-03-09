@@ -71,7 +71,7 @@ function isItemActive(item: NavItem, pathname: string): boolean {
  */
 function extractFlowId(pathname: string): string | null {
   const match = pathname.match(/^\/app\/flows\/([^/]+)/);
-  return match ? match[1]! : null;
+  return match ? decodeURIComponent(match[1]!) : null;
 }
 
 /* ------------------------------------------------------------------ */
@@ -153,15 +153,28 @@ function AccountMenuContent({
             {userLabel ?? 'No email'}
           </p>
         </div>
-        <button
-          type="button"
-          onClick={onNavigate}
-          className="ml-2 mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
-          title="Settings"
-          aria-label="Settings"
-        >
-          <IconSettings size={14} stroke={1.75} />
-        </button>
+        <div className="ml-2 mt-0.5 flex shrink-0 items-center gap-1">
+          {isSuperuser && (
+            <button
+              type="button"
+              onClick={onNavigateSuperuser}
+              className="inline-flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+              title="Superuser Tools"
+              aria-label="Superuser Tools"
+            >
+              <IconShieldCog size={14} stroke={1.75} />
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={onNavigate}
+            className="inline-flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+            title="Settings"
+            aria-label="Settings"
+          >
+            <IconSettings size={14} stroke={1.75} />
+          </button>
+        </div>
       </div>
 
       {/* Flat menu list — label left, icon right (Vercel style) */}
@@ -353,7 +366,7 @@ export function LeftRailShadcn({
           className="flex w-full items-center gap-2 rounded-md px-2.5 h-9 text-sm font-medium leading-snug text-sidebar-foreground/80 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
         >
           <IconChevronLeft size={16} stroke={1.75} className="shrink-0" />
-          <span className="truncate">{config.parentLabel}</span>
+          <span className="truncate">{config.id === 'superuser' ? 'Main Menu' : config.parentLabel}</span>
         </button>
 
         <div className="mx-2.5 my-1 h-px bg-sidebar-border" />

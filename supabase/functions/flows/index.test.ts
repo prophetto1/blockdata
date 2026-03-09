@@ -9,12 +9,15 @@ type FakeState = {
     workspace_id: string | null;
     updated_at: string | null;
   } | null;
-  flowSource: {
+  flowSources: Array<{
+    flow_source_id?: string;
     project_id: string;
+    namespace: string;
+    flow_id: string;
     source: string;
     revision: number;
     updated_at: string | null;
-  } | null;
+  }>;
 };
 
 function createFakeUserClient(state: FakeState) {
@@ -35,23 +38,49 @@ function createFakeUserClient(state: FakeState) {
       }
 
       if (table === "flow_sources") {
+        const filters: Record<string, string> = {};
         return {
           select: () => ({
-            eq: (_col: string, value: string) => ({
-              maybeSingle: () =>
-                Promise.resolve({
-                  data: state.flowSource?.project_id === value ? state.flowSource : null,
-                  error: null,
-                }),
-            }),
+            eq: (col: string, value: string) => {
+              filters[col] = value;
+              return {
+                eq: (nextCol: string, nextValue: string) => {
+                  filters[nextCol] = nextValue;
+                  return {
+                    eq: (lastCol: string, lastValue: string) => {
+                      filters[lastCol] = lastValue;
+                      return {
+                        order: () => ({
+                          limit: () =>
+                            Promise.resolve({
+                              data: state.flowSources
+                                .filter((row) =>
+                                  row.project_id === filters.project_id &&
+                                  row.namespace === filters.namespace &&
+                                  row.flow_id === filters.flow_id
+                                )
+                                .sort((left, right) => right.revision - left.revision)
+                                .slice(0, 1),
+                              error: null,
+                            }),
+                        }),
+                      };
+                    },
+                  };
+                },
+              };
+            },
           }),
-          upsert: (row: Record<string, unknown>) => {
-            state.flowSource = {
+          insert: (row: Record<string, unknown>) => {
+            state.flowSources.push({
+              flow_source_id: `flow-source-${state.flowSources.length + 1}`,
               project_id: String(row.project_id),
+              namespace: String(row.namespace),
+              flow_id: String(row.flow_id),
               source: String(row.source),
               revision: Number(row.revision ?? 1),
               updated_at: "2026-02-27T00:00:00.000Z",
-            };
+            });
             return Promise.resolve({ error: null });
           },
         };
@@ -87,15 +116,17 @@ tasks:
       workspace_id: "default",
       updated_at: "2026-02-26T01:00:00.000Z",
     },
-    flowSource: {
+    flowSources: [{
       project_id: projectId,
+      namespace: "default",
+      flow_id: "flow-one",
       source,
       revision: 3,
       updated_at: "2026-02-26T02:00:00.000Z",
-    },
+    }],
   };
 
-  const req = new Request(`https://example.com/functions/v1/flows/default/${projectId}?source=true`, {
+  const req = new Request(`https://example.com/functions/v1/flows/default/flow-one?source=true&project_id=${projectId}`, {
     method: "GET",
     headers: { Authorization: "Bearer token" },
   });
@@ -106,7 +137,7 @@ tasks:
   const body = await resp.json();
 
   assertEquals(resp.status, 200);
-  assertEquals(body.id, projectId);
+  assertEquals(body.id, "flow-one");
   assertEquals(body.revision, 3);
   assertEquals(body.source, source);
 });
@@ -123,7 +154,7 @@ Deno.test("POST /flows/validate returns violations for missing required fields",
 
   const resp = await handleFlowsRequest(req, {
     requireUserId: () => Promise.resolve("user-1"),
-    createUserClient: (() => createFakeUserClient({ project: null, flowSource: null })) as never,
+    createUserClient: (() => createFakeUserClient({ project: null, flowSources: [] })) as never,
   });
   const body = await resp.json();
 
@@ -143,12 +174,14 @@ Deno.test("PUT /flows/{namespace}/{id} persists source and increments revision",
       workspace_id: "default",
       updated_at: "2026-02-26T01:00:00.000Z",
     },
-    flowSource: {
+    flowSources: [{
       project_id: projectId,
+      namespace: "default",
+      flow_id: "flow-two",
       source: "id: flow-two\nnamespace: default\ntasks: []",
       revision: 2,
       updated_at: "2026-02-26T01:00:00.000Z",
-    },
+    }],
   };
   const nextSource = `id: flow-two
 namespace: default
@@ -158,7 +191,7 @@ tasks:
     type: io.kestra.plugin.core.log.Log
     message: "updated"`;
 
-  const putReq = new Request(`https://example.com/functions/v1/flows/default/${projectId}`, {
+  const putReq = new Request(`https://example.com/functions/v1/flows/default/flow-two?project_id=${projectId}`, {
     method: "PUT",
     headers: {
       Authorization: "Bearer token",
@@ -176,7 +209,7 @@ tasks:
   assertEquals(putBody.revision, 3);
   assertEquals(putBody.source, nextSource);
 
-  const getReq = new Request(`https://example.com/functions/v1/flows/default/${projectId}?source=true`, {
+  const getReq = new Request(`https://example.com/functions/v1/flows/default/flow-two?source=true&project_id=${projectId}`, {
     method: "GET",
     headers: { Authorization: "Bearer token" },
   });

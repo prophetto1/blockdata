@@ -1,0 +1,14 @@
+[2026-03-09T03:57:31.648Z] Error: ENOENT: no such file or directory, mkdir 'E:\E:\writing-system\web-kt\src\generated\kestra-api\core'
+Stack:
+Error: ENOENT: no such file or directory, mkdir 'E:\E:\writing-system\web-kt\src\generated\kestra-api\core'
+    at Object.mkdirSync (node:fs:1349:26)
+    at ensureDirSync (file:///E:/writing-system/web-kt/node_modules/@hey-api/shared/dist/index.mjs:109:33)
+    at generateClientBundle (file:///E:/writing-system/web-kt/node_modules/@hey-api/openapi-ts/dist/init-BVQKw3ZX.mjs:5412:3)
+    at generateOutput (file:///E:/writing-system/web-kt/node_modules/@hey-api/openapi-ts/dist/src-BD5OAshH.mjs:22:115)
+    at createClient$1 (file:///E:/writing-system/web-kt/node_modules/@hey-api/openapi-ts/dist/src-BD5OAshH.mjs:126:9)
+    at async file:///E:/writing-system/web-kt/node_modules/@hey-api/openapi-ts/dist/src-BD5OAshH.mjs:186:12
+    at async Promise.all (index 0)
+    at async createClient (file:///E:/writing-system/web-kt/node_modules/@hey-api/openapi-ts/dist/src-BD5OAshH.mjs:184:21)
+    at async Command.<anonymous> (file:///E:/writing-system/web-kt/node_modules/@hey-api/openapi-ts/dist/run.mjs:38:8)
+    at async Command.parseAsync (E:\writing-system\web-kt\node_modules\@hey-api\openapi-ts\node_modules\commander\lib\command.js:1122:5)
+    at async runCli (file:///E:/writing-system/web-kt/node_modules/@hey-api/openapi-ts/dist/run.mjs:42:3)

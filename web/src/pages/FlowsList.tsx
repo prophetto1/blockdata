@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useShellHeaderTitle } from '@/components/common/useShellHeaderTitle';
 import {
   IconAdjustments,
   IconArrowDown,
@@ -24,6 +23,7 @@ import { Select, createListCollection } from '@ark-ui/react/select';
 import { Pagination } from '@ark-ui/react/pagination';
 import { Portal } from '@ark-ui/react/portal';
 import { ErrorAlert } from '@/components/common/ErrorAlert';
+import { PageHeader } from '@/components/common/PageHeader';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -82,7 +82,6 @@ function SortIcon({ field, activeField, dir }: { field: FlowSortField; activeFie
 }
 
 export default function FlowsList() {
-  useShellHeaderTitle({ title: 'Flows' });
   const navigate = useNavigate();
   const [rows, setRows] = useState<FlowListItem[]>([]);
   const [total, setTotal] = useState(0);
@@ -166,86 +165,85 @@ export default function FlowsList() {
   };
 
   const openFlow = (row: FlowListItem) => {
-    navigate(`/app/flows/${row.flowId}/overview`);
+    navigate(`/app/flows/${encodeURIComponent(row.namespace)}/${encodeURIComponent(row.flowId)}/overview`);
   };
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const hasFilters = query.length > 0 || sortField !== null;
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
-      {/* Top action bar */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm">
-            <IconFileExport size={14} />
-            Export as CSV
-          </Button>
-          <Button variant="outline" size="sm">
-            <IconFileImport size={14} />
-            Import
-          </Button>
-          <Button variant="outline" size="sm">
-            <IconFileSearch size={14} />
-            Source search
-          </Button>
-          <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90">
-            <IconPlus size={14} />
-            Create
-          </Button>
+    <div className="flex min-h-0 flex-1 flex-col gap-3 px-4 pt-3">
+      <PageHeader title="Flows" />
+
+      {error && <ErrorAlert message={error} />}
+
+      <section className="flex min-h-0 flex-1 flex-col rounded-lg border border-border bg-card">
+        <div className="flex flex-wrap items-center gap-2 border-b border-border px-3 py-2">
+          <label className="relative min-w-[220px] flex-1 max-w-sm">
+            <span className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2">
+              <HugeiconsIcon icon={Search01Icon} size={utilityIconSize} strokeWidth={utilityIconStroke} className="text-muted-foreground" />
+            </span>
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.currentTarget.value)}
+              placeholder="Search flows"
+              className="h-8 w-full rounded-md border border-border bg-background pl-8 pr-2 text-sm text-foreground outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            />
+          </label>
+
+          {hasFilters ? (
+            <button
+              type="button"
+              onClick={clearFilters}
+              className="text-xs text-muted-foreground transition-colors hover:text-foreground"
+            >
+              Clear all
+            </button>
+          ) : null}
+
+          <div className="ml-auto flex flex-wrap items-center gap-2">
+            <Button variant="outline" size="sm">
+              <IconFilter size={14} />
+              Add filters
+            </Button>
+            <Button variant="outline" size="sm" onClick={refresh}>
+              <IconRefresh size={14} />
+              Refresh data
+            </Button>
+            <Button variant="outline" size="icon" aria-label="Save current filters">
+              <IconBookmark size={14} />
+            </Button>
+            <Button variant="outline" size="sm">
+              Saved filters
+              <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] leading-none text-muted-foreground">0</span>
+            </Button>
+            <Button variant="outline" size="icon" aria-label="Page display settings">
+              <IconAdjustments size={14} />
+            </Button>
+            <Button variant="outline" size="sm">
+              <IconFileExport size={14} />
+              Export as CSV
+            </Button>
+            <Button variant="outline" size="sm">
+              <IconFileImport size={14} />
+              Import
+            </Button>
+            <Button variant="outline" size="sm">
+              <IconFileSearch size={14} />
+              Source search
+            </Button>
+            <Button size="sm">
+              <IconPlus size={14} />
+              Create
+            </Button>
+          </div>
         </div>
-      </div>
 
-      {error ? <div className="px-4 pt-2"><ErrorAlert message={error} /></div> : null}
-
-      {/* Filter bar — matches Kestra: add filters, search, clear all, refresh, saved filters, settings */}
-      <div className="flex flex-wrap items-center gap-3 border-b border-border px-4 py-2">
-        <Button variant="outline" size="sm">
-          <IconFilter size={14} />
-          Add filters
-        </Button>
-
-        <label className="relative min-w-[180px] flex-1 max-w-[280px]">
-          <span className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2">
-            <HugeiconsIcon icon={Search01Icon} size={utilityIconSize} strokeWidth={utilityIconStroke} className="text-muted-foreground" />
-          </span>
-          <input
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.currentTarget.value)}
-            placeholder="Search flows"
-            className="h-8 w-full rounded-md border border-border bg-background pl-8 pr-2 text-sm text-foreground outline-none focus-visible:ring-1 focus-visible:ring-ring"
-          />
-        </label>
-
-        {hasFilters && (
-          <button type="button" onClick={clearFilters} className="text-xs text-muted-foreground hover:text-foreground">
-            Clear all
-          </button>
-        )}
-
-        <div className="ml-auto flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={refresh}>
-            <IconRefresh size={14} />
-            Refresh data
-          </Button>
-          <Button variant="outline" size="icon" aria-label="Save current filters">
-            <IconBookmark size={14} />
-          </Button>
-          <Button variant="outline" size="sm">
-            Saved filters
-            <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] leading-none text-muted-foreground">0</span>
-          </Button>
-          <Button variant="outline" size="icon" aria-label="Page display settings">
-            <IconAdjustments size={14} />
-          </Button>
-        </div>
-      </div>
-
-      <ScrollArea className="min-h-0 flex-1">
-        <table className="w-full text-left">
-          <thead className="sticky top-0 z-10 bg-card text-xs text-muted-foreground">
-            <tr className="border-b border-border">
+        <ScrollArea className="min-h-0 flex-1">
+          <table className="w-full text-left">
+            <thead className="sticky top-0 z-10 bg-card text-xs text-muted-foreground">
+              <tr className="border-b border-border">
               <th className="w-10 px-3 py-2">
                 <Checkbox.Root
                   checked={selected.size === rows.length && rows.length > 0}
@@ -277,146 +275,146 @@ export default function FlowsList() {
               <th className="px-3 py-2 font-medium">Execution statistics</th>
               <th className="px-3 py-2 font-medium">Triggers</th>
               <th className="px-3 py-2 font-medium text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr>
-                <td colSpan={9} className="px-3 py-10 text-center text-sm text-muted-foreground">
-                  Loading flows...
-                </td>
               </tr>
-            ) : rows.length === 0 ? (
-              <tr>
-                <td colSpan={9} className="px-3 py-10 text-center text-sm text-muted-foreground">
-                  No flows found.
-                </td>
-              </tr>
-            ) : (
-              rows.map((row) => (
-                <tr
-                  key={row.routeId}
-                  className={cn(
-                    'border-b border-border/60 hover:bg-accent/30 cursor-pointer align-top',
-                    selected.has(row.routeId) && 'bg-accent/20',
-                    row.disabled && 'opacity-70',
-                  )}
-                  onClick={() => openFlow(row)}
-                >
-                  <td className="w-10 px-3 py-3" onClick={(e) => e.stopPropagation()}>
-                    <Checkbox.Root
-                      checked={selected.has(row.routeId)}
-                      onCheckedChange={() => toggleRow(row.routeId)}
-                    >
-                      <Checkbox.Control className="h-4 w-4 rounded border-input" />
-                      <Checkbox.HiddenInput />
-                    </Checkbox.Root>
-                  </td>
-                  <td className="px-3 py-3">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-sm font-medium text-foreground">{row.flowId}</span>
-                      {row.description ? (
-                        <span title={row.description}>
-                          <IconInfoCircle size={14} className="text-muted-foreground/60" />
-                        </span>
-                      ) : null}
-                    </div>
-                  </td>
-                  <td className="px-3 py-3">
-                    {row.labels.length > 0 ? (
-                      <div className="flex flex-wrap gap-1">
-                        {row.labels.map((label, i) => <LabelBadge key={i} label={label} />)}
-                      </div>
-                    ) : (
-                      <span className="text-sm text-muted-foreground">--</span>
-                    )}
-                  </td>
-                  <td className="px-3 py-3 text-sm text-muted-foreground">{row.namespace}</td>
-                  <td className="px-3 py-3 text-sm text-muted-foreground">{formatDate(row.lastExecutionDate) || '--'}</td>
-                  <td className="px-3 py-3"><StatusCell status={row.lastExecutionStatus} /></td>
-                  <td className="px-3 py-3 text-sm text-muted-foreground">{row.executionStatistics || '--'}</td>
-                  <td className="px-3 py-3" onClick={(e) => e.stopPropagation()}>
-                    <span className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-2 py-1 text-xs text-muted-foreground">
-                      <IconBolt size={12} className="text-primary" />
-                      {row.triggerCount}
-                    </span>
-                  </td>
-                  <td className="px-3 py-3" onClick={(e) => e.stopPropagation()}>
-                    <div className="flex items-center justify-end gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7"
-                        aria-label="Execute flow"
-                        title="Execute flow"
-                      >
-                        <IconPlayerPlay size={14} />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7"
-                        aria-label="Flow details"
-                        title="Flow details"
-                        onClick={() => openFlow(row)}
-                      >
-                        <IconFileSearch size={14} />
-                      </Button>
-                    </div>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan={9} className="px-3 py-10 text-center text-sm text-muted-foreground">
+                    Loading flows...
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </ScrollArea>
+              ) : rows.length === 0 ? (
+                <tr>
+                  <td colSpan={9} className="px-3 py-10 text-center text-sm text-muted-foreground">
+                    No flows found.
+                  </td>
+                </tr>
+              ) : (
+                rows.map((row) => (
+                  <tr
+                    key={row.routeId}
+                    className={cn(
+                      'cursor-pointer border-b border-border/60 align-top hover:bg-accent/30',
+                      selected.has(row.routeId) && 'bg-accent/20',
+                      row.disabled && 'opacity-70',
+                    )}
+                    onClick={() => openFlow(row)}
+                  >
+                    <td className="w-10 px-3 py-3" onClick={(e) => e.stopPropagation()}>
+                      <Checkbox.Root
+                        checked={selected.has(row.routeId)}
+                        onCheckedChange={() => toggleRow(row.routeId)}
+                      >
+                        <Checkbox.Control className="h-4 w-4 rounded border-input" />
+                        <Checkbox.HiddenInput />
+                      </Checkbox.Root>
+                    </td>
+                    <td className="px-3 py-3">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-sm font-medium text-foreground">{row.flowId}</span>
+                        {row.description ? (
+                          <span title={row.description}>
+                            <IconInfoCircle size={14} className="text-muted-foreground/60" />
+                          </span>
+                        ) : null}
+                      </div>
+                    </td>
+                    <td className="px-3 py-3">
+                      {row.labels.length > 0 ? (
+                        <div className="flex flex-wrap gap-1">
+                          {row.labels.map((label, i) => <LabelBadge key={i} label={label} />)}
+                        </div>
+                      ) : (
+                        <span className="text-sm text-muted-foreground">--</span>
+                      )}
+                    </td>
+                    <td className="px-3 py-3 text-sm text-muted-foreground">{row.namespace}</td>
+                    <td className="px-3 py-3 text-sm text-muted-foreground">{formatDate(row.lastExecutionDate) || '--'}</td>
+                    <td className="px-3 py-3"><StatusCell status={row.lastExecutionStatus} /></td>
+                    <td className="px-3 py-3 text-sm text-muted-foreground">{row.executionStatistics || '--'}</td>
+                    <td className="px-3 py-3" onClick={(e) => e.stopPropagation()}>
+                      <span className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-2 py-1 text-xs text-muted-foreground">
+                        <IconBolt size={12} className="text-primary" />
+                        {row.triggerCount}
+                      </span>
+                    </td>
+                    <td className="px-3 py-3" onClick={(e) => e.stopPropagation()}>
+                      <div className="flex items-center justify-end gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7"
+                          aria-label="Execute flow"
+                          title="Execute flow"
+                        >
+                          <IconPlayerPlay size={14} />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7"
+                          aria-label="Flow details"
+                          title="Flow details"
+                          onClick={() => openFlow(row)}
+                        >
+                          <IconFileSearch size={14} />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </ScrollArea>
 
-      {/* Footer — matches Kestra: page size dropdown left, total count right */}
-      <div className="flex items-center justify-between border-t border-border px-4 py-2 text-xs text-muted-foreground">
-        <div className="flex items-center gap-2">
-          <Select.Root
-            collection={pageSizeCollection}
-            value={[String(pageSize)]}
-            onValueChange={(details) => { setPageSize(Number(details.value[0])); setPage(1); }}
-            positioning={{ placement: 'top-start', sameWidth: true }}
-          >
-            <Select.Control>
-              <Select.Trigger className="rounded-md border border-border bg-background px-2 py-1 text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
-                <Select.ValueText placeholder="Per page" />
-              </Select.Trigger>
-            </Select.Control>
-            <Portal>
-              <Select.Positioner>
-                <Select.Content className="rounded-md border border-border bg-popover p-1 text-xs shadow-md">
-                  {PAGE_SIZES.map((s) => (
-                    <Select.Item key={s} item={String(s)} className="cursor-pointer rounded px-2 py-1 hover:bg-accent">
-                      <Select.ItemText>{s} per page</Select.ItemText>
-                    </Select.Item>
-                  ))}
-                </Select.Content>
-              </Select.Positioner>
-            </Portal>
-          </Select.Root>
-          {totalPages > 1 && (
-            <Pagination.Root
-              count={total}
-              pageSize={pageSize}
-              page={page}
-              onPageChange={(details) => setPage(details.page)}
-              className="flex items-center gap-1"
+        <div className="flex items-center justify-between border-t border-border px-3 py-2 text-xs text-muted-foreground">
+          <div className="flex items-center gap-2">
+            <Select.Root
+              collection={pageSizeCollection}
+              value={[String(pageSize)]}
+              onValueChange={(details) => { setPageSize(Number(details.value[0])); setPage(1); }}
+              positioning={{ placement: 'top-start', sameWidth: true }}
             >
-              <Pagination.PrevTrigger className="rounded px-1.5 py-0.5 hover:bg-accent disabled:opacity-40">
-                Prev
-              </Pagination.PrevTrigger>
-              <span>Page {page} of {totalPages}</span>
-              <Pagination.NextTrigger className="rounded px-1.5 py-0.5 hover:bg-accent disabled:opacity-40">
-                Next
-              </Pagination.NextTrigger>
-            </Pagination.Root>
-          )}
+              <Select.Control>
+                <Select.Trigger className="rounded-md border border-border bg-background px-2 py-1 text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
+                  <Select.ValueText placeholder="Per page" />
+                </Select.Trigger>
+              </Select.Control>
+              <Portal>
+                <Select.Positioner>
+                  <Select.Content className="rounded-md border border-border bg-popover p-1 text-xs shadow-md">
+                    {PAGE_SIZES.map((s) => (
+                      <Select.Item key={s} item={String(s)} className="cursor-pointer rounded px-2 py-1 hover:bg-accent">
+                        <Select.ItemText>{s} per page</Select.ItemText>
+                      </Select.Item>
+                    ))}
+                  </Select.Content>
+                </Select.Positioner>
+              </Portal>
+            </Select.Root>
+            {totalPages > 1 && (
+              <Pagination.Root
+                count={total}
+                pageSize={pageSize}
+                page={page}
+                onPageChange={(details) => setPage(details.page)}
+                className="flex items-center gap-1"
+              >
+                <Pagination.PrevTrigger className="rounded px-1.5 py-0.5 hover:bg-accent disabled:opacity-40">
+                  Prev
+                </Pagination.PrevTrigger>
+                <span>Page {page} of {totalPages}</span>
+                <Pagination.NextTrigger className="rounded px-1.5 py-0.5 hover:bg-accent disabled:opacity-40">
+                  Next
+                </Pagination.NextTrigger>
+              </Pagination.Root>
+            )}
+          </div>
+          <span className="font-medium">Total: {total}</span>
         </div>
-        <span className="font-medium">Total: {total}</span>
-      </div>
+      </section>
     </div>
   );
 }

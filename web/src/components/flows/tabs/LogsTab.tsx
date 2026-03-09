@@ -26,7 +26,9 @@ const DEFAULT_FILTERS = [
   { id: 'interval', label: 'Interval Last 24 hours', removable: true },
 ];
 
-export function LogsTab({ flowId }: { flowId: string }) {
+export function LogsTab(
+  { projectId, flowId }: { projectId: string | null; flowId: string },
+) {
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
@@ -35,9 +37,16 @@ export function LogsTab({ flowId }: { flowId: string }) {
     let cancelled = false;
     setLoading(true);
 
+    if (!projectId) {
+      setLogs([]);
+      setLoading(false);
+      return () => { cancelled = true; };
+    }
+
     supabase
       .from('flow_logs')
       .select('*')
+      .eq('project_id', projectId)
       .eq('flow_id', flowId)
       .order('timestamp', { ascending: false })
       .limit(200)
@@ -52,7 +61,7 @@ export function LogsTab({ flowId }: { flowId: string }) {
       });
 
     return () => { cancelled = true; };
-  }, [flowId]);
+  }, [flowId, projectId]);
 
   return (
     <div className="space-y-4">

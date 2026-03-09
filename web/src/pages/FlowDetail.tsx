@@ -14,6 +14,7 @@ import { OverviewTab } from '@/components/flows/tabs/OverviewTab';
 import { RevisionsTab } from '@/components/flows/tabs/RevisionsTab';
 import { TriggersTab } from '@/components/flows/tabs/TriggersTab';
 import { edgeJson } from '@/lib/edge';
+import { PROJECT_LIST_CHANGED_EVENT, readFocusedProjectId } from '@/lib/projectFocus';
 import { cn } from '@/lib/utils';
 import {
   DEFAULT_FLOW_TIME_RANGE,
@@ -127,7 +128,7 @@ const SEEDED_FLOW_DETAILS: Record<string, SeededFlowDetail> = {
 };
 
 function isSuppressedFlowMetadataError(message: string): boolean {
-  return /^Network request failed \(flows\/default\/[^)]+\)\.$/.test(message);
+  return /^Network request failed \(flows\/[^/]+\/[^)]+\)\.$/.test(message);
 }
 
 function toFlowTriggers(input: FlowMetadataResponse['triggers']): FlowTriggerSummary[] {
@@ -170,6 +171,7 @@ export default function FlowDetail() {
   const [flowTriggers, setFlowTriggers] = useState<FlowTriggerSummary[]>([]);
   const [topologyResetNonce, setTopologyResetNonce] = useState(0);
   const [previewTabs] = useState<string[]>([]);
+  const [projectId, setProjectId] = useState<string | null>(() => readFocusedProjectId());
 
   const previewTabConfigs = useMemo<FlowTabConfig[]>(
     () => previewTabs.map((value, index) => ({ value, label: buildPreviewLabel(index) })),
@@ -193,12 +195,19 @@ export default function FlowDetail() {
   }, [searchParams]);
 
   useEffect(() => {
+    const syncProjectContext = () => setProjectId(readFocusedProjectId());
+    window.addEventListener(PROJECT_LIST_CHANGED_EVENT, syncProjectContext);
+    return () => window.removeEventListener(PROJECT_LIST_CHANGED_EVENT, syncProjectContext);
+  }, []);
+
+  useEffect(() => {
     if (!flowId) {
       navigate('/app/flows', { replace: true });
       return;
     }
     if (tab !== activeTab) {
-      navigate(`/app/flows/${flowId}/${activeTab}${searchSuffix}`, { replace: true });
+      const resolvedFlowId = encodeURIComponent(flowId);
+      navigate(`/app/flows/${resolvedFlowId}/${activeTab}${searchSuffix}`, { replace: true });
       return;
     }
     if (typeof window !== 'undefined' && !isLockedFlowTab(activeTab)) {
@@ -234,7 +243,9 @@ export default function FlowDetail() {
     const load = async () => {
       setError(null);
       try {
-        const metadata = await edgeJson<FlowMetadataResponse>(`flows/default/${encodeURIComponent(flowId)}`);
+        const flowPath = `flows/default/${encodeURIComponent(flowId)}`;
+        const projectSuffix = projectId ? `?project_id=${encodeURIComponent(projectId)}` : '';
+        const metadata = await edgeJson<FlowMetadataResponse>(`${flowPath}${projectSuffix}`);
         if (cancelled) return;
 
         const flowNameFromLabel = (metadata.labels ?? []).find((label) =>
@@ -264,7 +275,7 @@ export default function FlowDetail() {
     return () => {
       cancelled = true;
     };
-  }, [flowId]);
+  }, [flowId, projectId]);
 
   const activeTabLabel = useMemo(
     () => allTabs.find((item) => item.value === activeTab)?.label ?? activeTab,
@@ -312,12 +323,20 @@ export default function FlowDetail() {
 
     if (activeTab === 'overview') {
       return (
-        <OverviewTab onExecute={() => navigate(`/app/flows/${flowId}/executions${searchSuffix}`)} />
+        <OverviewTab
+          onExecute={() => navigate(
+            `/app/flows/${encodeURIComponent(flowId)}/executions${searchSuffix}`,
+          )}
+        />
       );
     }
 
-    if (activeTab === 'executions') return <ExecutionsTab flowId={flowId} />;
-    if (activeTab === 'revisions') return <RevisionsTab flowId={flowId} />;
+    if (activeTab === 'executions') {
+      return <ExecutionsTab projectId={projectId} flowId={flowId} />;
+    }
+    if (activeTab === 'revisions') {
+      return <RevisionsTab projectId={projectId} flowId={flowId} />;
+    }
     if (activeTab === 'triggers') {
       return (
         <TriggersTab
@@ -327,15 +346,19 @@ export default function FlowDetail() {
             nextExecutionDate: t.nextExecutionDate,
             disabled: t.disabled,
           }))}
-          onEditFlow={() => navigate(`/app/flows/${flowId}/edit`)}
+          onEditFlow={() => navigate(`/app/flows/${encodeURIComponent(flowId)}/edit`)}
         />
       );
     }
-    if (activeTab === 'logs') return <LogsTab flowId={flowId} />;
+    if (activeTab === 'logs') {
+      return <LogsTab projectId={projectId} flowId={flowId} />;
+    }
     if (activeTab === 'metrics') return <MetricsTab flowId={flowId} />;
     if (activeTab === 'dependencies') return <DependenciesTab />;
     if (activeTab === 'concurrency') return <ConcurrencyTab />;
-    if (activeTab === 'auditlogs') return <AuditLogsTab flowId={flowId} />;
+    if (activeTab === 'auditlogs') {
+      return <AuditLogsTab projectId={projectId} flowId={flowId} />;
+    }
 
     return null;
   };

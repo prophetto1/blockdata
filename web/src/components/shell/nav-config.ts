@@ -206,7 +206,7 @@ export function findDrillByRoute(pathname: string): NavDrillConfig | null {
  * build the full path: `/app/flows/{flowId}/{tab}`.
  */
 export function resolveFlowDrillPath(tabSlug: string, flowId: string): string {
-  return `/app/flows/${flowId}/${tabSlug}`;
+  return `/app/flows/${encodeURIComponent(flowId)}/${tabSlug}`;
 }
 
 /* ------------------------------------------------------------------ */

@@ -151,7 +151,9 @@ function renderColumnContent(columnKey: ColumnKey, execution: Execution) {
   return '--';
 }
 
-export function ExecutionsTab({ flowId }: { flowId: string }) {
+export function ExecutionsTab(
+  { projectId, flowId }: { projectId: string | null; flowId: string },
+) {
   const [executions, setExecutions] = useState<Execution[]>([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
@@ -166,9 +168,18 @@ export function ExecutionsTab({ flowId }: { flowId: string }) {
     let cancelled = false;
     setLoading(true);
 
+    if (!projectId) {
+      setExecutions([]);
+      setLoading(false);
+      return () => {
+        cancelled = true;
+      };
+    }
+
     supabase
       .from('flow_executions')
       .select('*')
+      .eq('project_id', projectId)
       .eq('flow_id', flowId)
       .order('start_date', { ascending: false })
       .limit(100)
@@ -185,7 +196,7 @@ export function ExecutionsTab({ flowId }: { flowId: string }) {
     return () => {
       cancelled = true;
     };
-  }, [flowId, reloadTick]);
+  }, [flowId, projectId, reloadTick]);
 
   const filteredExecutions = useMemo(() => {
     const query = search.trim().toLowerCase();

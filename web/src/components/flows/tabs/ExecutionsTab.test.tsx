@@ -36,7 +36,7 @@ describe('ExecutionsTab', () => {
   });
 
   it('matches the baseline empty executions view and opens the column picker on demand', async () => {
-    render(<ExecutionsTab flowId="business-automation" />);
+    render(<ExecutionsTab projectId="project-1" flowId="business-automation" />);
 
     expect(screen.getByRole('button', { name: 'Add filters' })).toBeInTheDocument();
     expect(screen.getByPlaceholderText('Search executions')).toBeInTheDocument();
@@ -66,7 +66,7 @@ describe('ExecutionsTab', () => {
   });
 
   it('does not inject seeded execution rows for empty flows', async () => {
-    render(<ExecutionsTab flowId="default" />);
+    render(<ExecutionsTab projectId="project-1" flowId="default" />);
 
     expect(await screen.findByText('No Executions Found')).toBeInTheDocument();
     expect(screen.queryByText('exec_defa')).not.toBeInTheDocument();

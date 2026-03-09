@@ -20,7 +20,10 @@ type FlowRow = {
 };
 
 type FlowSourceRow = {
+  flow_source_id?: string;
   project_id?: string;
+  namespace?: string | null;
+  flow_id?: string | null;
   source?: string | null;
   revision?: number | null;
   updated_at?: string | null;
@@ -63,6 +66,12 @@ function parseFlowPath(req: Request): ParsedRoute {
 function includeSource(req: Request): boolean {
   const { searchParams } = new URL(req.url);
   return searchParams.get("source") === "true";
+}
+
+function readProjectId(req: Request): string | null {
+  const { searchParams } = new URL(req.url);
+  const raw = searchParams.get("project_id")?.trim() ?? "";
+  return raw.length > 0 ? raw : null;
 }
 
 function normalizeYamlScalar(value: string): string {
@@ -129,29 +138,29 @@ tasks:
 }
 
 function toFlowResponse(
-  row: FlowRow,
+  row: FlowRow | null,
   fallbackFlowId: string,
   fallbackNamespace: string,
   sourceRow: FlowSourceRow | null,
   includeFlowSource: boolean,
 ): Record<string, unknown> {
-  const namespace = typeof row.workspace_id === "string" && row.workspace_id.length > 0
-    ? row.workspace_id
+  const namespace = typeof sourceRow?.namespace === "string" && sourceRow.namespace.length > 0
+    ? sourceRow.namespace
     : fallbackNamespace;
-  const id = String(row.project_id ?? fallbackFlowId);
-  const flowName = typeof row.project_name === "string" && row.project_name.length > 0
-    ? row.project_name
-    : `Flow ${id.slice(0, 8)}`;
+  const id = typeof sourceRow?.flow_id === "string" && sourceRow.flow_id.length > 0
+    ? sourceRow.flow_id
+    : fallbackFlowId;
+  const flowName = id.length > 0 ? id : `Flow ${fallbackFlowId.slice(0, 8)}`;
 
   const payload: Record<string, unknown> = {
     id,
     namespace,
     revision: Number(sourceRow?.revision ?? 1),
-    description: row.description ?? null,
+    description: row?.description ?? null,
     deleted: false,
     disabled: false,
     labels: [{ key: "name", value: flowName }],
-    updated_at: sourceRow?.updated_at ?? row.updated_at ?? null,
+    updated_at: sourceRow?.updated_at ?? row?.updated_at ?? null,
   };
 
   if (includeFlowSource) {
@@ -163,12 +172,12 @@ function toFlowResponse(
 
 async function loadProjectRow(
   supabase: ReturnType<typeof createUserClient>,
-  flowId: string,
+  projectId: string,
 ): Promise<{ data: FlowRow | null; error: { message?: string } | null }> {
   const { data, error } = await supabase
-    .from("user_projects")
+    .from("projects")
     .select("project_id, project_name, description, workspace_id, updated_at")
-    .eq("project_id", flowId)
+    .eq("project_id", projectId)
     .maybeSingle();
 
   return {
@@ -179,33 +188,42 @@ async function loadProjectRow(
 
 async function loadFlowSourceRow(
   supabase: ReturnType<typeof createUserClient>,
+  projectId: string,
+  namespace: string,
   flowId: string,
 ): Promise<{ data: FlowSourceRow | null; error: { message?: string } | null }> {
   const { data, error } = await supabase
     .from("flow_sources")
-    .select("project_id, source, revision, updated_at")
-    .eq("project_id", flowId)
-    .maybeSingle();
+    .select("flow_source_id, project_id, namespace, flow_id, source, revision, updated_at")
+    .eq("project_id", projectId)
+    .eq("namespace", namespace)
+    .eq("flow_id", flowId)
+    .order("revision", { ascending: false })
+    .limit(1);
 
   return {
-    data: (data ?? null) as FlowSourceRow | null,
+    data: Array.isArray(data) && data.length > 0 ? data[0] as FlowSourceRow : null,
     error: error ? { message: error.message } : null,
   };
 }
 
 async function saveFlowSourceRow(
   supabase: ReturnType<typeof createUserClient>,
+  projectId: string,
+  namespace: string,
   flowId: string,
   source: string,
   currentRevision: number,
 ): Promise<{ error: { message?: string } | null }> {
   const { error } = await supabase
     .from("flow_sources")
-    .upsert({
-      project_id: flowId,
+    .insert({
+      project_id: projectId,
+      namespace,
+      flow_id: flowId,
       source,
       revision: currentRevision + 1,
-    }, { onConflict: "project_id" });
+    });
 
   return { error: error ? { message: error.message } : null };
 }
@@ -226,12 +244,21 @@ async function handleFlowRoute(
     return methodNotAllowed(["GET", "PUT"]);
   }
 
-  const projectResult = await loadProjectRow(supabase, route.flowId);
-  if (projectResult.error) return json(400, { error: projectResult.error.message });
-  if (!projectResult.data) return json(404, { error: "Flow not found" });
+  const projectId = readProjectId(req);
+  let row: FlowRow | null = null;
 
-  const row = projectResult.data;
-  const sourceResult = await loadFlowSourceRow(supabase, route.flowId);
+  if (projectId) {
+    const projectResult = await loadProjectRow(supabase, projectId);
+    if (projectResult.error) return json(400, { error: projectResult.error.message });
+    if (!projectResult.data) return json(404, { error: "Project not found" });
+    row = projectResult.data;
+  } else if (req.method === "PUT") {
+    return json(400, { error: "project_id query parameter is required" });
+  }
+
+  const sourceResult = projectId
+    ? await loadFlowSourceRow(supabase, projectId, route.namespace, route.flowId)
+    : { data: null, error: null };
   if (sourceResult.error) return json(400, { error: sourceResult.error.message });
 
   if (req.method === "PUT") {
@@ -242,10 +269,17 @@ async function handleFlowRoute(
     }
 
     const currentRevision = Number(sourceResult.data?.revision ?? 0);
-    const saveResult = await saveFlowSourceRow(supabase, route.flowId, source, currentRevision);
+    const saveResult = await saveFlowSourceRow(
+      supabase,
+      projectId!,
+      route.namespace,
+      route.flowId,
+      source,
+      currentRevision,
+    );
     if (saveResult.error) return json(400, { error: saveResult.error.message });
 
-    const updatedSourceResult = await loadFlowSourceRow(supabase, route.flowId);
+    const updatedSourceResult = await loadFlowSourceRow(supabase, projectId!, route.namespace, route.flowId);
     if (updatedSourceResult.error) return json(400, { error: updatedSourceResult.error.message });
 
     const payload = toFlowResponse(row, route.flowId, route.namespace, updatedSourceResult.data, true);

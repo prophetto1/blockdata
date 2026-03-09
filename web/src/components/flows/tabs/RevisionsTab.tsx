@@ -10,7 +10,9 @@ type FlowRevision = {
   created_at: string;
 };
 
-export function RevisionsTab({ flowId }: { flowId: string }) {
+export function RevisionsTab(
+  { projectId, flowId }: { projectId: string | null; flowId: string },
+) {
   const [revisions, setRevisions] = useState<FlowRevision[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedA, setSelectedA] = useState<number | null>(null);
@@ -20,9 +22,16 @@ export function RevisionsTab({ flowId }: { flowId: string }) {
     let cancelled = false;
     setLoading(true);
 
+    if (!projectId) {
+      setRevisions([]);
+      setLoading(false);
+      return () => { cancelled = true; };
+    }
+
     supabase
       .from('flow_sources')
       .select('revision, source, created_at')
+      .eq('project_id', projectId)
       .eq('flow_id', flowId)
       .order('revision', { ascending: false })
       .then(({ data, error }) => {
@@ -41,7 +50,7 @@ export function RevisionsTab({ flowId }: { flowId: string }) {
       });
 
     return () => { cancelled = true; };
-  }, [flowId]);
+  }, [flowId, projectId]);
 
   if (loading) {
     return <div className="flex items-center justify-center py-16 text-sm text-muted-foreground">Loading...</div>;

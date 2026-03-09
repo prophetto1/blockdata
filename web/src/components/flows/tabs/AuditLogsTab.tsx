@@ -41,7 +41,9 @@ function formatLabels(labels: Record<string, string> | null): string {
   return entries.map(([key, value]) => `${key}:${value}`).join(', ');
 }
 
-export function AuditLogsTab({ flowId }: { flowId: string }) {
+export function AuditLogsTab(
+  { projectId, flowId }: { projectId: string | null; flowId: string },
+) {
   const [rows, setRows] = useState<FlowAuditRevision[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -52,9 +54,19 @@ export function AuditLogsTab({ flowId }: { flowId: string }) {
     let cancelled = false;
     setLoading(true);
 
+    if (!projectId) {
+      setRows([]);
+      setSelectedRevisionId(null);
+      setLoading(false);
+      return () => {
+        cancelled = true;
+      };
+    }
+
     supabase
       .from('flow_sources')
       .select('flow_source_id, revision, created_at, updated_at, disabled, labels, source')
+      .eq('project_id', projectId)
       .eq('flow_id', flowId)
       .order('revision', { ascending: false })
       .then(({ data, error }) => {
@@ -78,7 +90,7 @@ export function AuditLogsTab({ flowId }: { flowId: string }) {
     return () => {
       cancelled = true;
     };
-  }, [flowId, reloadTick]);
+  }, [flowId, projectId, reloadTick]);
 
   const filteredRows = useMemo(() => {
     const query = search.trim().toLowerCase();

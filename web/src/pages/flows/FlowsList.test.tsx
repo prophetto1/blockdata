@@ -1,16 +1,13 @@
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import FlowsList from '@/pages/FlowsList';
-import { PROJECT_FOCUS_STORAGE_KEY } from '@/lib/projectFocus';
+import { loadFlowsList } from '@/pages/flows/flows.api';
 
-const fromMock = vi.fn();
-
-vi.mock('@/lib/supabase', () => ({
-  supabase: {
-    from: (...args: unknown[]) => fromMock(...args),
-  },
+vi.mock('@/pages/flows/flows.api', () => ({
+  loadFlowsList: vi.fn(),
+  formatLabelBadge: ({ key, value }: { key: string; value: string }) => (value ? `${key}:${value}` : key),
 }));
 
 vi.mock('@/components/common/PageHeader', () => ({
@@ -22,75 +19,65 @@ vi.mock('@/components/common/PageHeader', () => ({
   ),
 }));
 
-function buildFlowSourcesQueryResult() {
-  return {
-    select: vi.fn().mockReturnThis(),
-    eq: vi.fn().mockReturnThis(),
-    order: vi.fn().mockReturnThis(),
-    limit: vi.fn().mockResolvedValue({
-      data: [
-        {
-          flow_source_id: 'flow-source-1',
-          project_id: 'project-1',
-          flow_id: 'business-automation',
-          revision: 3,
-          updated_at: '2026-03-07T12:00:00.000Z',
-          labels: { team: 'operations' },
-        },
-      ],
-      error: null,
-    }),
-  };
-}
-
-function buildEmptyFlowSourcesQueryResult() {
-  return {
-    select: vi.fn().mockReturnThis(),
-    eq: vi.fn().mockReturnThis(),
-    order: vi.fn().mockReturnThis(),
-    limit: vi.fn().mockResolvedValue({
-      data: [],
-      error: null,
-    }),
-  };
-}
-
-function buildBrokenFlowSourcesQueryResult() {
-  return {
-    select: vi.fn().mockReturnThis(),
-    eq: vi.fn().mockReturnThis(),
-    order: vi.fn().mockReturnThis(),
-    limit: vi.fn().mockResolvedValue({
-      data: null,
-      error: {
-        message: 'column flow_sources.updated_at does not exist',
-      },
-    }),
-  };
-}
+const loadFlowsListMock = vi.mocked(loadFlowsList);
 
 describe('FlowsList', () => {
-  beforeEach(() => {
-    window.localStorage.setItem(PROJECT_FOCUS_STORAGE_KEY, 'project-1');
-    fromMock.mockReset();
-    fromMock.mockImplementation((table: string) => {
-      if (table === 'flow_sources') {
-        return buildFlowSourcesQueryResult();
-      }
+  beforeAll(() => {
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        observe() {}
+        unobserve() {}
+        disconnect() {}
+      },
+    );
+    vi.stubGlobal(
+      'IntersectionObserver',
+      class {
+        observe() {}
+        unobserve() {}
+        disconnect() {}
+        takeRecords() {
+          return [];
+        }
+      },
+    );
+  });
 
-      throw new Error(`Unexpected table: ${table}`);
+  beforeEach(() => {
+    loadFlowsListMock.mockReset();
+    loadFlowsListMock.mockResolvedValue({
+      total: 1,
+      results: [
+        {
+          routeId: 'company.business/business-automation',
+          flowId: 'business-automation',
+          namespace: 'company.business',
+          labels: [{ key: 'team', value: 'operations' }],
+          lastExecutionDate: '2026-03-07T12:00:00.000Z',
+          lastExecutionStatus: 'SUCCESS',
+          executionStatistics: '3 runs',
+          revision: 3,
+          updatedAt: '2026-03-07T12:00:00.000Z',
+          description: 'Business automation flow',
+          disabled: false,
+          triggerCount: 2,
+        },
+      ],
     });
   });
 
-  it('renders real flow rows for the selected project without exposing project identity in the table', async () => {
+  it('renders the shared page header and the flows list inside a card-style table surface', async () => {
     render(
       <MemoryRouter>
         <FlowsList />
       </MemoryRouter>,
     );
 
+    expect(screen.getByTestId('page-header')).toBeInTheDocument();
+    expect(screen.getByText('Flows')).toBeInTheDocument();
     expect(await screen.findByText('business-automation')).toBeInTheDocument();
-    expect(screen.getByText('Revision 3')).toBeInTheDocument();
+    expect(screen.getByText('company.business')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Create' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Import' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Source search' })).toBeInTheDocument();
@@ -99,17 +86,13 @@ describe('FlowsList', () => {
     expect(screen.getByText('Labels')).toBeInTheDocument();
     expect(screen.getByText('Last execution date')).toBeInTheDocument();
     expect(screen.getByText('Last execution status')).toBeInTheDocument();
-    expect(screen.queryByText('project-1')).not.toBeInTheDocument();
-    expect(screen.queryByText('mock')).not.toBeInTheDocument();
+    expect(screen.getByText('SUCCESS')).toBeInTheDocument();
   });
 
-  it('adds a default flow entry when the selected project has no saved flows yet', async () => {
-    fromMock.mockImplementation((table: string) => {
-      if (table === 'flow_sources') {
-        return buildEmptyFlowSourcesQueryResult();
-      }
-
-      throw new Error(`Unexpected table: ${table}`);
+  it('shows the empty-state row when the API returns no flows', async () => {
+    loadFlowsListMock.mockResolvedValue({
+      total: 0,
+      results: [],
     });
 
     render(
@@ -118,32 +101,13 @@ describe('FlowsList', () => {
       </MemoryRouter>,
     );
 
-    expect((await screen.findAllByText('default')).length).toBeGreaterThan(0);
-    expect(screen.getAllByText('Revision 1').length).toBeGreaterThan(0);
+    expect(await screen.findByText('No flows found.')).toBeInTheDocument();
   });
 
-  it('shows a seeded flow row even before a project is selected so the tabs can be opened', async () => {
-    window.localStorage.removeItem(PROJECT_FOCUS_STORAGE_KEY);
-
-    render(
-      <MemoryRouter>
-        <FlowsList />
-      </MemoryRouter>,
-    );
-
-    expect((await screen.findAllByText('default')).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/env:mock/).length).toBeGreaterThan(0);
-    expect(screen.getAllByText('READY').length).toBeGreaterThan(0);
-    expect(screen.queryByText('Select a project to view its flows.')).not.toBeInTheDocument();
-  });
-
-  it('falls back to the seeded flow row when the flow_sources schema is behind the page query', async () => {
-    fromMock.mockImplementation((table: string) => {
-      if (table === 'flow_sources') {
-        return buildBrokenFlowSourcesQueryResult();
-      }
-
-      throw new Error(`Unexpected table: ${table}`);
+  it('keeps the shared toolbar controls visible while loading an empty result', async () => {
+    loadFlowsListMock.mockResolvedValue({
+      total: 0,
+      results: [],
     });
 
     render(
@@ -152,8 +116,21 @@ describe('FlowsList', () => {
       </MemoryRouter>,
     );
 
-    expect((await screen.findAllByText('default')).length).toBeGreaterThan(0);
-    expect(screen.getAllByText('READY').length).toBeGreaterThan(0);
-    expect(screen.queryByText('column flow_sources.updated_at does not exist')).not.toBeInTheDocument();
+    expect(await screen.findByPlaceholderText('Search flows')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Refresh data' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Page display settings' })).toBeInTheDocument();
+  });
+
+  it('surfaces API errors without dropping the shared page header contract', async () => {
+    loadFlowsListMock.mockRejectedValue(new Error('Kestra API error: 500 Internal Server Error'));
+
+    render(
+      <MemoryRouter>
+        <FlowsList />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText('Kestra API error: 500 Internal Server Error')).toBeInTheDocument();
+    expect(screen.getByTestId('page-header')).toBeInTheDocument();
   });
 });

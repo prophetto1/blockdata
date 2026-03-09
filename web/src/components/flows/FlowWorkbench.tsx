@@ -1352,6 +1352,10 @@ export default function FlowWorkbench({ flowId, flowName, namespace }: FlowWorkb
     () => `flows/${encodeURIComponent(namespace)}/${encodeURIComponent(flowId)}`,
     [flowId, namespace],
   );
+  const flowRequestPath = useMemo(() => {
+    if (!projectId) return flowPath;
+    return `${flowPath}?project_id=${encodeURIComponent(projectId)}`;
+  }, [flowPath, projectId]);
 
   const monacoTheme = useMonacoTheme();
   const [panes, setPanes] = useState<Pane[]>(createInitialPanes);
@@ -1423,7 +1427,9 @@ export default function FlowWorkbench({ flowId, flowName, namespace }: FlowWorkb
 
     const loadFlowSource = async () => {
       try {
-        const metadata = await edgeJson<FlowMetadataResponse>(`${flowPath}?source=true`);
+        const metadata = await edgeJson<FlowMetadataResponse>(
+          `${flowRequestPath}${flowRequestPath.includes('?') ? '&' : '?'}source=true`,
+        );
         if (cancelled) return;
 
         const nextSource = typeof metadata.source === 'string' && metadata.source.trim().length > 0
@@ -1442,7 +1448,7 @@ export default function FlowWorkbench({ flowId, flowName, namespace }: FlowWorkb
     return () => {
       cancelled = true;
     };
-  }, [flowName, flowPath, namespace]);
+  }, [flowName, flowRequestPath, namespace]);
 
   useEffect(() => {
     if (panes.length === 0) {
@@ -1684,7 +1690,7 @@ export default function FlowWorkbench({ flowId, flowName, namespace }: FlowWorkb
   const handleSaveFlow = useCallback(async () => {
     setIsSaving(true);
     try {
-      const saved = await edgeJson<FlowMetadataResponse>(flowPath, {
+      const saved = await edgeJson<FlowMetadataResponse>(flowRequestPath, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/x-yaml',
@@ -1707,7 +1713,7 @@ export default function FlowWorkbench({ flowId, flowName, namespace }: FlowWorkb
     } finally {
       setIsSaving(false);
     }
-  }, [codeDraft, flowPath]);
+  }, [codeDraft, flowRequestPath]);
 
   const moveTabAcrossPanes = useCallback((toPaneId: string, dragInput?: DragTabState | null) => {
     const drag = dragInput ?? dragStateRef.current;
