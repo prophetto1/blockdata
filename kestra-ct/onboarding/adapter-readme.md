@@ -2,7 +2,7 @@
 
 ## What This Covers
 
-This is the short operating guide for the planned Kestra compatibility adapter. It summarizes the runtime layout frozen in [adapter-layout.md](adapter-layout.md).
+This is the short operating guide for the planned Kestra compatibility adapter. It summarizes the runtime layout frozen in [adapter-layout.md](/home/jon/blockdata/kestra-ct/onboarding/adapter-layout.md).
 
 ## Core Rule
 

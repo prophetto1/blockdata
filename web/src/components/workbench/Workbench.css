@@ -1,0 +1,329 @@
+.workbench-shell {
+  --workbench-accent: var(--primary);
+  --workbench-panel-bg: var(--card);
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  flex: 1;
+}
+
+.workbench-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px;
+  background: var(--card);
+  position: relative;
+  top: -5px;
+}
+
+.workbench-toolbar-panels {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.workbench-panel-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted-foreground);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 0 10px;
+  cursor: pointer;
+  transition: background-color 120ms ease, color 120ms ease, border-color 120ms ease;
+}
+
+.workbench-panel-button:hover {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+.workbench-panel-button.is-open {
+  background: var(--background);
+  border-color: var(--border);
+  color: var(--foreground);
+}
+
+.workbench-panel-button.is-focused {
+  border-color: var(--border);
+  color: var(--foreground);
+}
+
+.workbench-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.workbench-tooltip {
+  background: var(--foreground);
+  color: var(--background);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 4px 8px;
+  border-radius: 4px;
+  z-index: 50;
+}
+
+.workbench-tooltip[data-state='open'] {
+  animation: workbench-tooltip-in 120ms ease-out;
+}
+
+@keyframes workbench-tooltip-in {
+  from { opacity: 0; transform: translateY(2px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.workbench-multipane {
+  min-height: 0;
+  flex: 1;
+  display: flex;
+  align-items: stretch;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--background);
+}
+
+.workbench-pane {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.workbench-pane.is-pane-dragover {
+  box-shadow: inset 0 0 0 2px color-mix(in oklab, var(--workbench-accent) 60%, transparent);
+}
+
+.workbench-pane-tabs {
+  min-height: 36px;
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+  align-items: stretch;
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+  background: var(--card);
+}
+
+.workbench-pane-grip {
+  width: 28px;
+  height: 100%;
+  border: 0;
+  border-right: 1px solid var(--border);
+  background: transparent;
+  cursor: grab;
+  position: relative;
+}
+
+.workbench-pane-grip::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 9px;
+  height: 12px;
+  background-image: radial-gradient(var(--muted-foreground) 1px, transparent 1px);
+  background-size: 4px 4px;
+  opacity: 0.55;
+}
+
+.workbench-pane-grip:active {
+  cursor: grabbing;
+}
+
+.workbench-tab-list {
+  min-width: 0;
+  display: flex;
+  align-items: stretch;
+  overflow: auto hidden;
+  scrollbar-width: none;
+}
+
+.workbench-pane-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  padding: 0 6px;
+}
+
+.workbench-tab {
+  border-right: 1px solid var(--border);
+  color: var(--muted-foreground);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+  padding: 0 10px;
+  white-space: nowrap;
+  position: relative;
+  transition: background-color 120ms ease, color 120ms ease;
+}
+
+.workbench-tab:hover {
+  background: color-mix(in oklab, var(--accent) 45%, transparent);
+  color: var(--foreground);
+}
+
+.workbench-tab.is-active {
+  background: var(--background);
+  color: var(--foreground);
+  box-shadow: inset 0 -1px 0 var(--primary);
+}
+
+.workbench-tab-button {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  line-height: inherit;
+  padding: 5px 0;
+  cursor: pointer;
+}
+
+.workbench-tab-close {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  cursor: pointer;
+  opacity: 0.8;
+}
+
+.workbench-tab-close:hover {
+  background: color-mix(in oklab, var(--accent) 65%, transparent);
+  opacity: 1;
+}
+
+.workbench-pane-split-trigger {
+  height: 24px;
+  width: 24px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--background);
+  color: var(--muted-foreground);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 120ms ease, color 120ms ease, border-color 120ms ease;
+}
+
+.workbench-pane-split-trigger:hover:not(:disabled) {
+  color: var(--foreground);
+  background: color-mix(in oklab, var(--accent) 55%, transparent);
+}
+
+.workbench-pane-split-trigger:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.workbench-pane-menu-trigger {
+  height: 24px;
+  width: 24px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--background);
+  color: var(--muted-foreground);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 120ms ease, color 120ms ease, border-color 120ms ease;
+}
+
+.workbench-pane-menu-trigger:hover {
+  color: var(--foreground);
+  background: color-mix(in oklab, var(--accent) 55%, transparent);
+}
+
+.workbench-pane-content {
+  flex: 1;
+  min-height: 0;
+  padding: 0;
+}
+
+.workbench-resizer {
+  position: relative;
+  width: 6px;
+  flex: 0 0 6px;
+  cursor: col-resize;
+  touch-action: none;
+  background: var(--workbench-panel-bg);
+}
+
+.workbench-resizer::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 2px;
+  width: 1px;
+  background: var(--border);
+  transition: background-color 120ms ease;
+}
+
+.workbench-resizer:hover::before,
+.workbench-resizer.is-active::before {
+  background: color-mix(in oklab, var(--workbench-accent) 70%, transparent);
+}
+
+@media (max-width: 48em) {
+  .workbench-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .workbench-toolbar-actions {
+    justify-content: flex-end;
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .workbench-multipane {
+    flex-direction: column;
+  }
+
+  .workbench-resizer {
+    width: 100%;
+    height: 6px;
+    flex: 0 0 6px;
+    cursor: row-resize;
+  }
+
+  .workbench-resizer::before {
+    left: 0;
+    right: 0;
+    top: 2px;
+    bottom: auto;
+    width: auto;
+    height: 1px;
+  }
+
+  .workbench-pane {
+    border-top: 1px solid var(--border);
+    min-height: 220px;
+  }
+}

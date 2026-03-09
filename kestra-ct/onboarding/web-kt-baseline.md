@@ -9,14 +9,14 @@ This document records the current `web-kt` runtime assumptions before page worke
 ### Boot command
 
 ```bash
-cd web-kt
+cd /home/jon/blockdata/web-kt
 npm run dev
 ```
 
 ### Generated client command
 
 ```bash
-cd web-kt
+cd /home/jon/blockdata/web-kt
 npm run generate:openapi
 ```
 
@@ -37,19 +37,19 @@ npm run generate:openapi
 
 ## Route And Boot Locations
 
-- app entrypoint: `web-kt/src/main.js`
-- shared app init: `web-kt/src/utils/init.js`
-- route table: `web-kt/src/routes/routes.js`
-- tenant router hook: `web-kt/src/composables/useTenant.ts`
-- API route helpers: `web-kt/src/override/utils/route.ts`
+- app entrypoint: `/home/jon/blockdata/web-kt/src/main.js`
+- shared app init: `/home/jon/blockdata/web-kt/src/utils/init.js`
+- route table: `/home/jon/blockdata/web-kt/src/routes/routes.js`
+- tenant router hook: `/home/jon/blockdata/web-kt/src/composables/useTenant.ts`
+- API route helpers: `/home/jon/blockdata/web-kt/src/override/utils/route.ts`
 
 ## Store Locations Most Relevant To First Slices
 
-- flows store: `web-kt/src/stores/flow.ts`
-- executions store: `web-kt/src/stores/executions.ts`
-- plugins store: `web-kt/src/stores/plugins.ts`
-- misc config store: `web-kt/src/override/stores/misc.ts`
-- auth store shim: `web-kt/src/override/stores/auth.ts`
+- flows store: `/home/jon/blockdata/web-kt/src/stores/flow.ts`
+- executions store: `/home/jon/blockdata/web-kt/src/stores/executions.ts`
+- plugins store: `/home/jon/blockdata/web-kt/src/stores/plugins.ts`
+- misc config store: `/home/jon/blockdata/web-kt/src/override/stores/misc.ts`
+- auth store shim: `/home/jon/blockdata/web-kt/src/override/stores/auth.ts`
 
 ## Runtime Assumptions
 

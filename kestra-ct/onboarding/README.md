@@ -4,13 +4,28 @@ This directory holds the active worker-guidance and onboarding materials for the
 
 Use these files as the live guidance set:
 
-- [worker-loop.md](worker-loop.md) — per-page execution loop and quick reference
-- [worker-instructions.md](worker-instructions.md) — base policy for all workers
-- [windows-worker-execution-instructions.md](windows-worker-execution-instructions.md) — environment-specific execution manual
-- [adapter-layout.md](adapter-layout.md) — runtime file placement rules
-- [adapter-readme.md](adapter-readme.md) — short adapter operating guide
-- [web-kt-baseline.md](web-kt-baseline.md) — runtime assumptions and bootstrap dependencies
-- [verification-matrix.md](verification-matrix.md) — commands and evidence expectations
-- [templates/](templates/) — packet, capture, implement, verify templates
+- `session-orientation.md`
+- `status-model.md`
+- `worker-instructions.md`
+- `page-worker-loop.md`
+- `windows-worker-execution-instructions.md`
+- `adapter-layout.md`
+- `adapter-readme.md`
+- `web-kt-baseline.md`
+- `verification-matrix.md`
+- `templates/`
 
-Keep [page-registry.yaml](../page-registry.yaml) at the CT root as the master surface index.
+Keep `page-registry.yaml` at the CT root as the master surface index.
+Use each `pages/<page>/` directory as the actual page work unit.
+
+Reading order for a fresh worker:
+
+1. `session-orientation.md`
+2. `status-model.md`
+3. `worker-instructions.md`
+4. `page-worker-loop.md`
+5. `windows-worker-execution-instructions.md` on Windows, or the environment-specific equivalent
+6. `adapter-layout.md`
+7. `web-kt-baseline.md`
+8. `verification-matrix.md`
+9. the page packet for the assigned page

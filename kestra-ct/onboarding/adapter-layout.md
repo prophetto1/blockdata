@@ -183,6 +183,16 @@ Reason:
 - `Flows list` is the first page slice
 - the repo already uses one function directory per domain, so `kestra-flows` fits existing structure
 
+## Existing Flow Function Boundary
+
+The repo already contains `supabase/functions/flows/` for the Blockdata flow system.
+
+Rules:
+
+- do not modify `supabase/functions/flows/` as part of Kestra page execution
+- do not reuse that function directory for the Kestra adapter
+- keep Kestra adapter work in `supabase/functions/kestra-<domain>/`
+
 ## First Slice Mapping
 
 The first end-to-end slice will use this path chain:

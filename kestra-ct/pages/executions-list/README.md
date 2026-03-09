@@ -1,0 +1,1 @@
+Investigation and implementation planning complete. Read `packet.md` for scope, `capture.md` for observed facts, and `implement.md` for the adapter design targeting `kestra-executions/index.ts` with filter, query, and mapper modules. The `verify.md` stub remains ready for the verification phase. Check `kestra-ct/page-registry.yaml` for current status.

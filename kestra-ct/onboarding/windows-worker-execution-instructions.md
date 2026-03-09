@@ -8,18 +8,50 @@ This file is for execution, not preparation. Preparation is already complete. `k
 
 The first live slice is `flows_list`.
 
+## Repo Orientation
+
+Expected Windows repo root: `E:\writing-system\`
+
+All paths in this file are repo-relative unless an absolute path is explicitly written.
+
+Examples:
+
+- `kestra-ct/page-registry.yaml` means `E:\writing-system\kestra-ct\page-registry.yaml`
+- `web-kt/src/routes/routes.js` means `E:\writing-system\web-kt\src\routes\routes.js`
+- `supabase/functions/kestra-flows/index.ts` means `E:\writing-system\supabase\functions\kestra-flows\index.ts`
+
+## Document Authority
+
+Use the files in this order:
+
+1. `kestra-ct/onboarding/session-orientation.md`
+2. `kestra-ct/onboarding/status-model.md`
+3. `kestra-ct/onboarding/worker-instructions.md`
+4. `kestra-ct/onboarding/page-worker-loop.md`
+5. this file
+6. the assigned page packet
+
+Authority rule:
+
+- `worker-instructions.md` defines the general invariant rules
+- this file defines the Windows execution overlay
+- if the two differ on Windows-specific execution details, this file wins
+
 ## Canonical Sources Of Truth
 
 Read and obey these files in this order before changing any runtime code:
 
 1. `kestra-ct/plans/2026-03-09-kestra-integration-preparation-implementation-plan.md`
-2. `kestra-ct/onboarding/worker-instructions.md`
-3. `kestra-ct/onboarding/adapter-layout.md`
-4. `kestra-ct/onboarding/web-kt-baseline.md`
-5. `kestra-ct/onboarding/verification-matrix.md`
-6. `kestra-ct/pages/flows-list/packet.md`
-7. `kestra-ct/generated/database.types.ts`
-8. `kestra-ct/generated/kestra-contract/types.gen.ts`
+2. `kestra-ct/onboarding/session-orientation.md`
+3. `kestra-ct/onboarding/status-model.md`
+4. `kestra-ct/onboarding/worker-instructions.md`
+5. `kestra-ct/onboarding/page-worker-loop.md`
+6. `kestra-ct/onboarding/adapter-layout.md`
+7. `kestra-ct/onboarding/web-kt-baseline.md`
+8. `kestra-ct/onboarding/verification-matrix.md`
+9. `kestra-ct/pages/flows-list/packet.md`
+10. `kestra-ct/generated/database.types.ts`
+11. `kestra-ct/generated/kestra-contract/types.gen.ts`
 
 If any of those files conflict with chat history, follow the files.
 
@@ -50,6 +82,21 @@ The worker must use this order:
 
 If the worker skips sequential thinking, packet review, or verification, stop the run.
 
+## Sequential Thinking Requirement
+
+Sequential thinking for one page means the worker must explicitly break the page down before capture or planning.
+
+Minimum breakdown:
+
+1. identify the route
+2. identify the request method and path
+3. identify the expected response envelope
+4. identify the target backend files
+5. identify bootstrap blockers
+6. identify verification commands
+
+If no sequential-thinking tool is available, write this breakdown as bullet notes before filling `capture.md`.
+
 ## Directory Roles
 
 Use these directories exactly as follows:
@@ -62,6 +109,21 @@ Use these directories exactly as follows:
   Holds runtime adapter functions and shared backend code once implementation starts.
 - `docs-approved/reference/kt-ct/`
   Reference only. Read it if useful. Do not treat it as the active workflow root.
+
+## Current Shared Prerequisite Reality
+
+As of `2026-03-09`:
+
+- there is no finished compatibility gateway running on `localhost:8080`
+- no runtime currently serves Kestra-compatible `/api/v1/main/...` paths by default
+- the gateway or proxy is a shared prerequisite, not an implicit page-local detail
+
+This means a page worker must not pretend endpoint verification is available if the gateway does not exist.
+
+Use the current rule:
+
+- if the gateway is missing, mark the page `blocked` on the shared prerequisite
+- do not invent a private page-only transport workaround unless the packet explicitly assigns gateway work
 
 ## First Assignment
 
@@ -76,6 +138,13 @@ The worker must treat this as:
 - secondary dependency: `POST /api/v1/main/executions/latest`
 
 The first slice is read-only. Do not add create, edit, delete, import, export, enable, disable, or execute behavior in the first pass.
+
+Current `page-registry.yaml` meaning for this page:
+
+- `ct_status: packet_seeded` means the shared packet exists and the worker should start with capture
+- it does not mean the page is implemented
+- it does not mean the page is verified
+- it does not mean the shared prerequisites already exist
 
 ## Required Reading For `flows_list`
 
@@ -155,6 +224,10 @@ For `flows_list`, the expected runtime target shape is:
 - `supabase/functions/_shared/kestra-adapter/mappers/flows.ts`
 - matching test files under the same domain
 
+Do not modify `supabase/functions/flows/` for this work.
+
+That existing function belongs to the Blockdata flow system. The Kestra adapter must live in the separate `kestra-flows` function namespace.
+
 The plan must include:
 
 - failing test first
@@ -190,6 +263,16 @@ For backend typing:
 
 If a needed API type exists only through the generated SDK layer, stop and escalate.
 
+## Type Promotion Rule
+
+Do not invent a type-promotion step during page execution.
+
+Current rule:
+
+- use the CT-staged type files directly as the active reference during early implementation
+- do not copy them into `_shared/` as part of a normal page slice
+- treat runtime promotion into `supabase/functions/_shared/` as a separate hardening task after the early slices prove stable
+
 ## Bootstrap Dependency Rule
 
 The worker must not assume `flows/search` is enough for the page to boot.
@@ -208,6 +291,8 @@ For the first slice, the minimum acceptable path is:
 - the page can render rows without boot-time failure
 
 If the page fails before it reaches the target endpoint because bootstrap endpoints are missing, record that as a blocker instead of forcing unrelated page changes.
+
+The same rule applies if the compatibility gateway is missing.
 
 ## Verification Requirements
 

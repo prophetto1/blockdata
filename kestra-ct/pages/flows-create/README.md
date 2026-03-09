@@ -1,0 +1,1 @@
+Investigation complete. The packet.md and capture.md files document the create-flow page's write-oriented slice, its on-load validation/graph/plugin dependencies, and its secondary blueprint and namespace-file paths. The implement.md and verify.md stubs remain ready for the implementation phase. Check `kestra-ct/page-registry.yaml` for current status.

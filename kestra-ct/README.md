@@ -18,9 +18,9 @@ Initial scope:
 Layout:
 - `plans/` implementation plans and readiness plans
 - `assessments/` plan reviews and go/no-go gates
-- future `_templates/` worker-facing templates
+- `onboarding/` worker-facing instructions, onboarding docs, and templates
 - future `pages/` page packets and page-specific docs
-- future `decisions.md` and `verification-matrix.md`
+- `decisions.md` and `page-registry.yaml` as root control files
 
 Assessments:
 - `assessments/2026-03-09-kestra-integration-preparation-implementation-plan-assessment.md`

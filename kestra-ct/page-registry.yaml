@@ -85,7 +85,7 @@ pages:
     source_route_path: /:tenant?/flows
     source_component: /home/jon/blockdata/web-kt/src/components/flows/Flows.vue
     ct_status: packet_seeded
-    ubuntu_status: not_started
+    ubuntu_status: blocked
     windows_status: not_started
     priority: 1
     golden_path: true
@@ -102,10 +102,16 @@ pages:
     source_route_name: flows/search
     source_route_path: /:tenant?/flows/search
     source_component: /home/jon/blockdata/web-kt/src/components/flows/FlowsSearch.vue
-    ct_status: packet_pending
-    ubuntu_status: not_started
+    ct_status: packet_seeded
+    ubuntu_status: planning
     windows_status: not_started
     priority: 6
+    upstream_method: GET
+    upstream_path: /api/v1/main/flows/source
+    packet: /home/jon/blockdata/kestra-ct/pages/flows-search/packet.md
+    capture: /home/jon/blockdata/kestra-ct/pages/flows-search/capture.md
+    implement: /home/jon/blockdata/kestra-ct/pages/flows-search/implement.md
+    verify: /home/jon/blockdata/kestra-ct/pages/flows-search/verify.md
 
   - page_key: flows_create
     title: Flows create
@@ -113,10 +119,16 @@ pages:
     source_route_name: flows/create
     source_route_path: /:tenant?/flows/new
     source_component: /home/jon/blockdata/web-kt/src/components/flows/FlowCreate.vue
-    ct_status: packet_pending
-    ubuntu_status: not_started
+    ct_status: packet_seeded
+    ubuntu_status: capturing
     windows_status: not_started
     priority: 8
+    upstream_method: POST
+    upstream_path: /api/v1/main/flows
+    packet: /home/jon/blockdata/kestra-ct/pages/flows-create/packet.md
+    capture: /home/jon/blockdata/kestra-ct/pages/flows-create/capture.md
+    implement: /home/jon/blockdata/kestra-ct/pages/flows-create/implement.md
+    verify: /home/jon/blockdata/kestra-ct/pages/flows-create/verify.md
 
   - page_key: flows_update
     title: Flows update
@@ -124,10 +136,16 @@ pages:
     source_route_name: flows/update
     source_route_path: /:tenant?/flows/edit/:namespace/:id/:tab?
     source_component: /home/jon/blockdata/web-kt/src/components/flows/FlowRoot.vue
-    ct_status: packet_pending
-    ubuntu_status: not_started
+    ct_status: packet_seeded
+    ubuntu_status: planning
     windows_status: not_started
     priority: 5
+    upstream_method: GET
+    upstream_path: /api/v1/main/flows/{namespace}/{id}
+    packet: /home/jon/blockdata/kestra-ct/pages/flows-update/packet.md
+    capture: /home/jon/blockdata/kestra-ct/pages/flows-update/capture.md
+    implement: /home/jon/blockdata/kestra-ct/pages/flows-update/implement.md
+    verify: /home/jon/blockdata/kestra-ct/pages/flows-update/verify.md
 
   - page_key: executions_list
     title: Executions list
@@ -135,10 +153,16 @@ pages:
     source_route_name: executions/list
     source_route_path: /:tenant?/executions
     source_component: /home/jon/blockdata/web-kt/src/components/executions/Executions.vue
-    ct_status: packet_pending
-    ubuntu_status: not_started
+    ct_status: packet_seeded
+    ubuntu_status: planning
     windows_status: not_started
     priority: 3
+    upstream_method: GET
+    upstream_path: /api/v1/main/executions/search
+    packet: /home/jon/blockdata/kestra-ct/pages/executions-list/packet.md
+    capture: /home/jon/blockdata/kestra-ct/pages/executions-list/capture.md
+    implement: /home/jon/blockdata/kestra-ct/pages/executions-list/implement.md
+    verify: /home/jon/blockdata/kestra-ct/pages/executions-list/verify.md
 
   - page_key: executions_update
     title: Executions update

@@ -36,3 +36,11 @@ This file records explicit decisions that control the Kestra compatibility effor
 - The preferred Supabase generator path did not yield usable `kt` output during Task 6, so `kestra-ct/generated/database.types.ts` is staged from live `kt` schema metadata instead.
 - The CT-side DB type file is intentionally row-first, with permissive `Insert` and `Update` shapes, until repo migration parity is restored and runtime promotion is approved.
 - The later promotion target for the DB type file is `supabase/functions/_shared/database.types.ts`.
+
+### 2026-03-09: The actual page unit is the page directory, not a mirrored page file
+
+- `kestra-ct/page-registry.yaml` is the master page index and status source.
+- The actual per-page work unit is `kestra-ct/pages/<page>/`.
+- The canonical page workflow artifacts are `packet.md`, `capture.md`, `implement.md`, and `verify.md`.
+- Do not create `page.json` or `page.yaml` as mirrored per-page state files.
+- Automation should read `page-registry.yaml` and the four page docs directly.

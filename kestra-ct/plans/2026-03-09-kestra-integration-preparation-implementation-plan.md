@@ -15,11 +15,11 @@ We are doing compatibility-first Kestra alignment, not redesign. `web-kt` is the
 ## Current State Snapshot
 
 Already true on **March 9, 2026**:
-- [web-kt](web-kt) exists as a copied Kestra UI workspace.
-- [openapi.yml](openapi.yml) exists at repo root where `web-kt` expects `../openapi.yml`.
-- `npm install` and `npm run generate:openapi` already worked in [web-kt](web-kt), and generated SDK files exist under [src/generated/kestra-api](web-kt/src/generated/kestra-api).
+- [web-kt](/home/jon/blockdata/web-kt) exists as a copied Kestra UI workspace.
+- [openapi.yml](/home/jon/blockdata/openapi.yml) exists at repo root where `web-kt` expects `../openapi.yml`.
+- `npm install` and `npm run generate:openapi` already worked in [web-kt](/home/jon/blockdata/web-kt), and generated SDK files exist under [src/generated/kestra-api](/home/jon/blockdata/web-kt/src/generated/kestra-api).
 - Live Supabase already has the `kt` schema with the 21-table Kestra surface.
-- The local repo still stops at [20260308150000_072_registry_superuser_profiles.sql](supabase/migrations/20260308150000_072_registry_superuser_profiles.sql), so repo-to-database drift must be documented and reconciled before broad execution starts.
+- The local repo still stops at [20260308150000_072_registry_superuser_profiles.sql](/home/jon/blockdata/supabase/migrations/20260308150000_072_registry_superuser_profiles.sql), so repo-to-database drift must be documented and reconciled before broad execution starts.
 
 ## Execution Rules For This Plan
 
@@ -34,13 +34,13 @@ Already true on **March 9, 2026**:
 ### Task 1: Create The CT Operating Structure
 
 **Files:**
-- Create: `kestra-ct/_templates/.gitkeep`
+- Create: `kestra-ct/onboarding/templates/.gitkeep`
 - Create: `kestra-ct/generated/.gitkeep`
 - Create: `kestra-ct/pages/.gitkeep`
 - Create: `kestra-ct/readiness/.gitkeep`
 - Create: `kestra-ct/decisions.md`
 - Create: `kestra-ct/page-registry.yaml`
-- Create: `kestra-ct/verification-matrix.md`
+- Create: `kestra-ct/onboarding/verification-matrix.md`
 
 **Purpose**
 
@@ -48,7 +48,7 @@ Create the persistent control surface that page workers will use.
 
 **Steps**
 
-1. Create the `_templates/`, `pages/`, and `readiness/` directories.
+1. Create the `onboarding/templates/`, `pages/`, and `readiness/` directories.
 2. Create `decisions.md` to log deliberate deviations, shims, and unresolved product/contract choices.
 3. Create `page-registry.yaml` with one entry per candidate page or route.
 4. Create `verification-matrix.md` with the commands and evidence expectations for:
@@ -153,11 +153,11 @@ Run the exact baseline inspection commands again and include results in the read
 ### Task 5: Create The Worker Document Templates
 
 **Files:**
-- Create: `kestra-ct/_templates/packet.md`
-- Create: `kestra-ct/_templates/capture.md`
-- Create: `kestra-ct/_templates/implement.md`
-- Create: `kestra-ct/_templates/verify.md`
-- Create: `kestra-ct/worker-instructions.md`
+- Create: `kestra-ct/onboarding/templates/packet.md`
+- Create: `kestra-ct/onboarding/templates/capture.md`
+- Create: `kestra-ct/onboarding/templates/implement.md`
+- Create: `kestra-ct/onboarding/templates/verify.md`
+- Create: `kestra-ct/onboarding/worker-instructions.md`
 
 **Purpose**
 
@@ -166,7 +166,7 @@ Freeze the artifact chain so every worker performs the same sequence:
 
 **Steps**
 
-1. Create `worker-instructions.md` with:
+1. Create `onboarding/worker-instructions.md` with:
    - required skill invocation order
    - stop conditions
    - scope rules
@@ -187,7 +187,7 @@ Check that each template contains YAML frontmatter and the fixed sections needed
 - Create: `kestra-ct/generated/database.types.ts`
 - Create: `kestra-ct/generated/kestra-contract/README.md`
 - Create: `kestra-ct/generated/kestra-contract/` generated contract files
-- Modify: `kestra-ct/verification-matrix.md`
+- Modify: `kestra-ct/onboarding/verification-matrix.md`
 - Modify: `kestra-ct/decisions.md`
 
 **Purpose**
@@ -200,7 +200,7 @@ Separate database row typing from Kestra contract typing before adapter work beg
    - use `--schema kt`
    - expand to `public,kt` only if the adapter later proves it needs both
 2. Place the generated database types in `kestra-ct/generated/database.types.ts`.
-3. Generate backend-facing Kestra contract types from the same [openapi.yml](openapi.yml).
+3. Generate backend-facing Kestra contract types from the same [openapi.yml](/home/jon/blockdata/openapi.yml).
 4. Place those contract artifacts in `kestra-ct/generated/kestra-contract/`.
 5. Record:
    - generation commands
@@ -215,8 +215,8 @@ Run both generators successfully and document the output locations and exit stat
 ### Task 7: Define The Adapter Code Layout Before Page Work
 
 **Files:**
-- Create: `kestra-ct/adapter-layout.md`
-- Create: `kestra-ct/adapter-readme.md`
+- Create: `kestra-ct/onboarding/adapter-layout.md`
+- Create: `kestra-ct/onboarding/adapter-readme.md`
 
 **Purpose**
 
@@ -246,8 +246,8 @@ The layout doc must name the chosen directories and file patterns explicitly.
 ### Task 8: Prepare The web-kt Runtime Baseline
 
 **Files:**
-- Create: `kestra-ct/web-kt-baseline.md`
-- Modify: `kestra-ct/verification-matrix.md`
+- Create: `kestra-ct/onboarding/web-kt-baseline.md`
+- Modify: `kestra-ct/onboarding/verification-matrix.md`
 
 **Purpose**
 

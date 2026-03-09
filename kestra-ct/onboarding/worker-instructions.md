@@ -4,13 +4,31 @@
 
 These instructions define the required worker flow for Kestra compatibility tasks. Workers follow the packet chain, preserve the Kestra contract, and do not improvise process or scope.
 
+## Authority
+
+This file is the general rulebook.
+
+Environment-specific execution overlays may add stricter requirements.
+
+For Windows execution, [windows-worker-execution-instructions.md](/home/jon/blockdata/kestra-ct/onboarding/windows-worker-execution-instructions.md) is the more specific document and wins on environment-specific details.
+
 ## Required Skill Order
 
 1. `using-superpowers`
-2. `brainstorming` if the packet or contract is ambiguous
-3. `writing-plans` before runtime implementation work
-4. `executing-plans` when carrying out an approved packet or implementation plan
-5. `verification-before-completion` before any success or completion claim
+2. sequential thinking before capture or planning
+3. `brainstorming` if the packet or contract is ambiguous
+4. `writing-plans` before runtime implementation work
+5. `executing-plans` when carrying out an approved packet or implementation plan
+6. `verification-before-completion` before any success or completion claim
+
+If a sequential-thinking tool is unavailable, the worker must still write a short pre-plan breakdown covering:
+
+- route
+- request path
+- response shape
+- target runtime files
+- blockers
+- verification path
 
 ## Required Artifact Chain
 
@@ -60,4 +78,3 @@ Workers are building compatibility, not rethinking product UX. Preserve route sh
 - Put proven results in `verify`.
 - Keep notes short and specific.
 - Keep assumptions explicit.
-

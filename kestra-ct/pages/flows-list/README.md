@@ -1,0 +1,1 @@
+This page has been investigated. Read `packet.md` for scope, then `capture.md` for observed facts. Follow `implement.md` next. See `kestra-ct/onboarding/page-worker-loop.md` for the full execution loop.

@@ -1,0 +1,1 @@
+This page has been investigated and planned. Read `packet.md` for scope, `capture.md` for observed facts, and `implement.md` for the implementation plan. The plan is ready for execution — follow `kestra-ct/onboarding/page-implementation-procedure.md` starting at Step 4 (Build with TDD).
