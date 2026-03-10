@@ -1,1 +1,1 @@
-This page needs investigation. The artifact files here are stubs. Follow `kestra-ct/onboarding/page-investigation-procedure.md` step by step to fill them. Check `kestra-ct/page-registry.yaml` for this page's priority and current status before starting.
+This page has been investigated. Read `packet.md` for scope, then `capture.md` for observed facts. Follow `implement.md` next. See `kestra-ct/onboarding/page-worker-loop.md` for the full execution loop.

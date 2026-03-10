@@ -162,7 +162,8 @@ const SUPERUSER_DRILL: NavDrillConfig = {
     {
       label: 'Parsers',
       items: [
-        { label: 'Docling', icon: IconSettings, path: '/app/superuser/docling' },
+        { label: 'Docling', icon: IconSettings, path: '/app/superuser/parsers-docling' },
+        { label: 'Pandoc', icon: IconSettings, path: '/app/superuser/parsers-pandoc' },
       ],
     },
   ],

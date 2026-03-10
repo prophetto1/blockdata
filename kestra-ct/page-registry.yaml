@@ -86,7 +86,7 @@ pages:
     source_component: /home/jon/blockdata/web-kt/src/components/flows/Flows.vue
     ct_status: packet_seeded
     ubuntu_status: blocked
-    windows_status: not_started
+    windows_status: capturing
     priority: 1
     golden_path: true
     upstream_method: GET
@@ -280,10 +280,16 @@ pages:
     source_route_name: logs/list
     source_route_path: /:tenant?/logs
     source_component: /home/jon/blockdata/web-kt/src/components/logs/LogsWrapper.vue
-    ct_status: packet_pending
+    ct_status: packet_seeded
     ubuntu_status: not_started
-    windows_status: not_started
+    windows_status: capturing
     priority: 4
+    upstream_method: GET
+    upstream_path: /api/v1/main/logs/search
+    packet: /home/jon/blockdata/kestra-ct/pages/logs-list/packet.md
+    capture: /home/jon/blockdata/kestra-ct/pages/logs-list/capture.md
+    implement: /home/jon/blockdata/kestra-ct/pages/logs-list/implement.md
+    verify: /home/jon/blockdata/kestra-ct/pages/logs-list/verify.md
 
   - page_key: namespaces_list
     title: Namespaces list
