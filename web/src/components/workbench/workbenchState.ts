@@ -51,7 +51,7 @@ function finalizeStructure(before: Pane[], after: Pane[], fallbackTab: string): 
     : normalizePaneWidths(cleaned);
 }
 
-export function activateTabInPane(input: Pane[], paneId: string, tabId: string, fallbackTab: string): Pane[] {
+export function activateTabInPane(input: Pane[], paneId: string, tabId: string, fallbackTab: string, maxTabsPerPane?: number): Pane[] {
   const targetPane = input.find((pane) => pane.id === paneId);
   if (!targetPane) return input;
 
@@ -73,9 +73,15 @@ export function activateTabInPane(input: Pane[], paneId: string, tabId: string, 
     if (pane.tabs.includes(tabId)) {
       return { ...pane, activeTab: tabId };
     }
+    let tabs = [...pane.tabs, tabId];
+    // Evict oldest non-active tab(s) when over the limit
+    if (maxTabsPerPane && tabs.length > maxTabsPerPane) {
+      const evictable = tabs.filter((t) => t !== tabId);
+      tabs = [tabId, ...evictable.slice(evictable.length - (maxTabsPerPane - 1))];
+    }
     return {
       ...pane,
-      tabs: [...pane.tabs, tabId],
+      tabs,
       activeTab: tabId,
     };
   });
@@ -92,6 +98,18 @@ export function setActiveTabInPane(input: Pane[], paneId: string, tabId: string)
       activeTab: tabId,
     };
   });
+}
+
+export function removeTabFromAll(input: Pane[], tabId: string, fallbackTab: string): Pane[] {
+  const next = input.map((pane) => {
+    if (!pane.tabs.includes(tabId)) return pane;
+    const nextTabs = pane.tabs.filter((tab) => tab !== tabId);
+    const nextActive = nextTabs.includes(pane.activeTab)
+      ? pane.activeTab
+      : (nextTabs[0] ?? fallbackTab);
+    return { ...pane, tabs: nextTabs, activeTab: nextActive };
+  });
+  return finalizeStructure(input, next, fallbackTab);
 }
 
 export function closeTabInPane(input: Pane[], paneId: string, tabId: string, fallbackTab: string): Pane[] {

@@ -12,6 +12,8 @@ export function Component() {
           saveKey="superuser-layout-1"
           renderContent={renderContent}
           hideToolbar
+          maxColumns={4}
+          maxTabsPerPane={2}
         />
       </div>
     </div>

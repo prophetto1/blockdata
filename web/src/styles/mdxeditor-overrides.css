@@ -1,33 +1,121 @@
-/* MDXEditor theme alignment with app design tokens */
+/* MDXEditor theme alignment with app design tokens.
+ *
+ * The app defines raw hex tokens (--background, --foreground, --card, etc.)
+ * in tailwind.css. MDXEditor uses its own token system (--basePageBg,
+ * --baseBg, --accentBase, etc.). This file bridges the two.
+ *
+ * IMPORTANT: Tokens are defined on :root (not .mdxeditor) because MDXEditor
+ * renders select/dropdown portals at <body> level. Portal content inherits
+ * from :root, not from the .mdxeditor container.
+ *
+ * App default is dark mode (:root). Light mode is :root[data-theme="light"].
+ */
+
+/* ── Dark mode (app default — :root without data-theme) ──────────────────── */
+
+:root {
+  /* Base surfaces */
+  --basePageBg: var(--background);
+  --baseBase: var(--background);
+  --baseBg: var(--card);
+  --baseBgHover: var(--secondary);
+  --baseBgActive: var(--accent);
+  --baseBgSubtle: var(--muted);
+
+  /* Base borders & lines */
+  --baseBorder: var(--border);
+  --baseBorderHover: var(--muted-foreground);
+  --baseLine: var(--border);
+
+  /* Base solids (scrollbars, solid controls) */
+  --baseSolid: var(--muted-foreground);
+  --baseSolidHover: var(--foreground);
+
+  /* Base text */
+  --baseText: var(--foreground);
+  --baseTextContrast: var(--foreground);
+
+  /* Accent surfaces */
+  --accentBase: var(--primary);
+  --accentBg: var(--accent);
+  --accentBgHover: var(--accent);
+  --accentBgActive: var(--accent);
+  --accentBgSubtle: var(--accent);
+
+  /* Accent borders & lines */
+  --accentBorder: var(--primary);
+  --accentBorderHover: var(--primary);
+  --accentLine: var(--border);
+
+  /* Accent solids */
+  --accentSolid: var(--primary);
+  --accentSolidHover: var(--primary);
+
+  /* Accent text */
+  --accentText: var(--primary);
+  --accentTextContrast: var(--primary-foreground);
+}
+
+/* ── Light mode ──────────────────────────────────────────────────────────── */
+
+:root[data-theme='light'] {
+  --basePageBg: var(--background);
+  --baseBase: var(--background);
+  --baseBg: var(--card);
+  --baseBgHover: var(--muted);
+  --baseBgActive: var(--accent);
+  --baseBgSubtle: var(--muted);
+
+  --baseBorder: var(--border);
+  --baseBorderHover: var(--muted-foreground);
+  --baseLine: var(--border);
+
+  --baseSolid: var(--muted-foreground);
+  --baseSolidHover: var(--foreground);
+
+  --baseText: var(--foreground);
+  --baseTextContrast: var(--foreground);
+
+  --accentBase: var(--primary);
+  --accentBg: var(--accent);
+  --accentBgHover: var(--accent);
+  --accentBgActive: var(--accent);
+  --accentBgSubtle: var(--accent);
+
+  --accentBorder: var(--primary);
+  --accentBorderHover: var(--primary);
+  --accentLine: var(--border);
+
+  --accentSolid: var(--primary);
+  --accentSolidHover: var(--primary);
+
+  --accentText: var(--primary);
+  --accentTextContrast: var(--primary-foreground);
+}
+
+/* ── Editor container styling ────────────────────────────────────────────── */
 
 .mdxeditor {
-  --accentBase: var(--color-primary);
-  --accentBgSubtle: var(--color-accent);
-  --accentText: var(--color-primary);
-  --baseBase: var(--color-background);
-  --baseBgSubtle: var(--color-muted);
-  --baseText: var(--color-foreground);
-  --baseTextHighContrast: var(--color-foreground);
-  --borderDefault: var(--color-border);
-  font-family: var(--font-sans, inherit);
+  font-family: var(--app-font-sans, inherit);
 }
+
+/* ── Toolbar chrome ──────────────────────────────────────────────────────── */
 
 .mdxeditor [role='toolbar'] {
-  border-color: var(--color-border);
-  background: var(--color-card);
+  border-color: var(--border);
+  background: var(--card);
   flex-shrink: 0;
+  flex-wrap: wrap;
 }
 
-/* Dark mode overrides */
-.dark .mdxeditor,
-.dark-theme .mdxeditor {
-  --baseBase: var(--color-background);
-  --baseBgSubtle: var(--color-muted);
-  --baseText: var(--color-foreground);
-  --borderDefault: var(--color-border);
+/* ── Hide toolbar diff/source toggle (rendered externally in header bar) ── */
+
+.mdxeditor [class*='diffSourceToggleWrapper'] {
+  display: none;
 }
 
-/* Prevent horizontal overflow in prose content */
+/* ── Prevent horizontal overflow in prose content ────────────────────────── */
+
 .mdxeditor .prose {
   overflow-wrap: break-word;
   word-break: break-word;

@@ -16,8 +16,11 @@
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useIsDark } from '@/lib/useIsDark';
+import { appCodeMirrorTheme } from '@/lib/codemirrorTheme';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import '@/styles/mdxeditor-overrides.css';
+
+export type MdxViewMode = 'rich-text' | 'source' | 'diff';
 
 type MDXEditorModule = typeof import('@mdxeditor/editor');
 type LoadState = 'idle' | 'loading' | 'ready' | 'failed';
@@ -29,13 +32,15 @@ type Props = {
   diffMarkdown?: string;
   /** Unique key to force remount when file changes */
   fileKey: string;
+  /** Externally controlled view mode */
+  viewMode: MdxViewMode;
   onChange: (value: string) => void;
   onSave?: () => void;
   /** Optional image upload handler */
   onImageUpload?: (image: File) => Promise<string>;
 };
 
-export function MdxEditorSurface({ content, diffMarkdown, fileKey, onChange, onSave, onImageUpload }: Props) {
+export function MdxEditorSurface({ content, diffMarkdown, fileKey, viewMode, onChange, onSave, onImageUpload }: Props) {
   const [mod, setMod] = useState<MDXEditorModule | null>(null);
   const [loadState, setLoadState] = useState<LoadState>('idle');
   const isDark = useIsDark();
@@ -86,6 +91,7 @@ export function MdxEditorSurface({ content, diffMarkdown, fileKey, onChange, onS
       content={content}
       diffMarkdown={diffMarkdown}
       isDark={isDark}
+      viewMode={viewMode}
       onChange={onChange}
       onSave={onSave}
       onImageUpload={onImageUpload}
@@ -100,6 +106,7 @@ function MdxEditorInner({
   content,
   diffMarkdown,
   isDark,
+  viewMode,
   onChange,
   onSave,
   onImageUpload,
@@ -108,6 +115,7 @@ function MdxEditorInner({
   content: string;
   diffMarkdown?: string;
   isDark: boolean;
+  viewMode: MdxViewMode;
   onChange: (value: string) => void;
   onSave?: () => void;
   onImageUpload?: (image: File) => Promise<string>;
@@ -137,14 +145,13 @@ function MdxEditorInner({
     AdmonitionDirectiveDescriptor,
     // ── Diff/source mode ──
     diffSourcePlugin,
-    // ── Search & replace ──
-    // Note: searchPlugin is not available in all versions — import conditionally
     // ── Toolbar ──
     toolbarPlugin,
     // ── Toolbar components ──
     UndoRedo,
     BoldItalicUnderlineToggles,
     CodeToggle,
+    HighlightToggle,
     BlockTypeSelect,
     CreateLink,
     InsertImage,
@@ -155,9 +162,11 @@ function MdxEditorInner({
     InsertAdmonition,
     ListsToggle,
     Separator,
-    DiffSourceToggleWrapper,
     ConditionalContents,
     ChangeCodeMirrorLanguage,
+    // ── Realm API for viewMode sync ──
+    realmPlugin,
+    viewMode$,
   } = mod as any;
 
   // searchPlugin may not exist in all versions
@@ -171,6 +180,14 @@ function MdxEditorInner({
       onSave?.();
     }
   }
+
+  // ── Custom plugin to sync external viewMode into MDXEditor realm ────────
+
+  const viewModeSyncPlugin = realmPlugin({
+    update(realm: any) {
+      realm.pub(viewMode$, viewMode);
+    },
+  });
 
   // ── Build plugin array ─────────────────────────────────────────────────────
 
@@ -241,6 +258,7 @@ function MdxEditorInner({
         vue: 'Vue',
         svelte: 'Svelte',
       },
+      codeMirrorExtensions: [appCodeMirrorTheme],
     }),
 
     // Front-matter
@@ -253,46 +271,48 @@ function MdxEditorInner({
 
     // Diff/source mode — all 3 views
     diffSourcePlugin({
-      viewMode: 'rich-text',
+      viewMode,
       ...(diffMarkdown != null ? { diffMarkdown } : {}),
     }),
 
-    // Toolbar — full feature set
+    // ViewMode sync — keeps realm in sync when viewMode prop changes
+    viewModeSyncPlugin(),
+
+    // Toolbar — full feature set (mode toggle hidden via CSS, controlled externally)
     toolbarPlugin({
       toolbarContents: () => (
-        <DiffSourceToggleWrapper options={['rich-text', 'source', 'diff']}>
-          <ConditionalContents
-            options={[
-              {
-                when: (editor: any) => editor?.editorType === 'codeblock',
-                contents: () => <ChangeCodeMirrorLanguage />,
-              },
-              {
-                fallback: () => (
-                  <>
-                    <UndoRedo />
-                    <Separator />
-                    <BoldItalicUnderlineToggles />
-                    <CodeToggle />
-                    <Separator />
-                    <BlockTypeSelect />
-                    <Separator />
-                    <ListsToggle />
-                    <Separator />
-                    <CreateLink />
-                    <InsertImage />
-                    <InsertTable />
-                    <InsertThematicBreak />
-                    <Separator />
-                    <InsertCodeBlock />
-                    <InsertAdmonition />
-                    <InsertFrontmatter />
-                  </>
-                ),
-              },
-            ]}
-          />
-        </DiffSourceToggleWrapper>
+        <ConditionalContents
+          options={[
+            {
+              when: (editor: any) => editor?.editorType === 'codeblock',
+              contents: () => <ChangeCodeMirrorLanguage />,
+            },
+            {
+              fallback: () => (
+                <>
+                  <UndoRedo />
+                  <Separator />
+                  <BoldItalicUnderlineToggles />
+                  <CodeToggle />
+                  <HighlightToggle />
+                  <Separator />
+                  <BlockTypeSelect />
+                  <Separator />
+                  <ListsToggle />
+                  <Separator />
+                  <CreateLink />
+                  <InsertImage />
+                  <InsertTable />
+                  <InsertThematicBreak />
+                  <Separator />
+                  <InsertCodeBlock />
+                  <InsertAdmonition />
+                  <InsertFrontmatter />
+                </>
+              ),
+            },
+          ]}
+        />
       ),
     }),
   ];
@@ -315,7 +335,7 @@ function MdxEditorInner({
           markdown={content}
           onChange={onChange}
           className="h-full"
-          contentEditableClassName="prose prose-sm max-w-none dark:prose-invert p-4"
+          contentEditableClassName="prose prose-sm max-w-none dark:prose-invert py-4 px-8"
           plugins={plugins}
         />
       </ScrollArea>

@@ -1,9 +1,9 @@
 import { useCallback, useRef, useState } from 'react';
 import { normalizePaneWidths, type Pane } from '@/components/workbench/workbenchState';
-import { IconFolderCode, IconFileCode } from '@tabler/icons-react';
+import { IconFolderCode, IconFileCode, IconDeviceFloppy, IconLayoutBoard } from '@tabler/icons-react';
 import { type FsNode, readFileContent, writeFileContent, moveNode, deleteNode, renameNode, createFile, createDirectory } from '@/lib/fs-access';
 import { WorkspaceFileTree } from './WorkspaceFileTree';
-import { MdxEditorSurface } from './MdxEditorSurface';
+import { MdxEditorSurface, type MdxViewMode } from './MdxEditorSurface';
 import { CodeEditorSurface } from './CodeEditorSurface';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -13,18 +13,46 @@ const MD_EXTENSIONS = new Set(['.md', '.mdx']);
 export const WORKSPACE_TABS = [
   { id: 'file-tree', label: 'Files', icon: IconFolderCode },
   { id: 'editor', label: 'Editor', icon: IconFileCode },
+  { id: 'blank', label: 'Empty', icon: IconLayoutBoard },
 ];
 
 export const WORKSPACE_DEFAULT_PANES: Pane[] = normalizePaneWidths([
-  { id: 'pane-1', tabs: ['file-tree'], activeTab: 'file-tree', width: 25 },
-  { id: 'pane-2', tabs: ['editor'], activeTab: 'editor', width: 75 },
+  { id: 'pane-1', tabs: ['file-tree'], activeTab: 'file-tree', width: 18 },
+  { id: 'pane-2', tabs: ['editor'], activeTab: 'editor', width: 60 },
+  { id: 'pane-3', tabs: ['blank'], activeTab: 'blank', width: 22 },
 ]);
+
+// ─── View mode toggle button ────────────────────────────────────────────────
+
+type ViewModeBtnProps = {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+};
+
+function ViewModeBtn({ label, active, onClick }: ViewModeBtnProps) {
+  return (
+    <button
+      type="button"
+      className={`rounded px-2 py-0.5 text-xs font-medium transition-colors ${
+        active
+          ? 'bg-accent text-accent-foreground'
+          : 'text-muted-foreground hover:text-foreground'
+      }`}
+      onClick={onClick}
+    >
+      {label}
+    </button>
+  );
+}
 
 // ─── Open file state ─────────────────────────────────────────────────────────
 
 type OpenFile = {
   node: FsNode;
   content: string;
+  /** Content at file open time — used as diff baseline. */
+  originalContent: string;
   dirty: boolean;
 };
 
@@ -36,6 +64,7 @@ export function useWorkspaceEditor(storeKey?: string) {
   const [fileKey, setFileKey] = useState(0);
   const rootHandleRef = useRef<FileSystemDirectoryHandle | null>(null);
   const [treeVersion, setTreeVersion] = useState(0);
+  const [mdxViewMode, setMdxViewMode] = useState<MdxViewMode>('rich-text');
 
   const handleRootHandle = useCallback((handle: FileSystemDirectoryHandle) => {
     rootHandleRef.current = handle;
@@ -49,8 +78,9 @@ export function useWorkspaceEditor(storeKey?: string) {
     if (node.kind !== 'file') return;
     try {
       const content = await readFileContent(node.handle as FileSystemFileHandle);
-      setOpenFile({ node, content, dirty: false });
+      setOpenFile({ node, content, originalContent: content, dirty: false });
       setFileKey((k) => k + 1);
+      setMdxViewMode('rich-text');
     } catch (err) {
       console.error('Failed to read file:', err);
     }
@@ -129,7 +159,7 @@ export function useWorkspaceEditor(storeKey?: string) {
     setSaving(true);
     try {
       await writeFileContent(openFile.node.handle as FileSystemFileHandle, openFile.content);
-      setOpenFile((prev) => prev ? { ...prev, dirty: false } : null);
+      setOpenFile((prev) => prev ? { ...prev, originalContent: prev.content, dirty: false } : null);
     } catch (err) {
       console.error('Failed to save file:', err);
     } finally {
@@ -168,20 +198,39 @@ export function useWorkspaceEditor(storeKey?: string) {
       return (
         <div className="flex h-full flex-col">
           {/* File header bar */}
-          <div className="flex items-center justify-between border-b border-border px-4 py-1.5">
+          <div className="flex items-center justify-between border-b border-border px-3 py-1.5">
             <div className="flex min-w-0 items-center gap-2 text-sm">
               <span className="min-w-0 truncate font-medium">{openFile.node.name}</span>
               {openFile.dirty && (
                 <span className="text-xs text-muted-foreground">(unsaved)</span>
               )}
             </div>
+
+            {/* Center: view mode toggle */}
+            <div className="flex items-center gap-1">
+              {isMd ? (
+                <>
+                  <ViewModeBtn label="Rich Text" active={mdxViewMode === 'rich-text'} onClick={() => setMdxViewMode('rich-text')} />
+                  <ViewModeBtn label="Source" active={mdxViewMode === 'source'} onClick={() => setMdxViewMode('source')} />
+                  <ViewModeBtn label="Diff" active={mdxViewMode === 'diff'} onClick={() => setMdxViewMode('diff')} />
+                </>
+              ) : (
+                <>
+                  <ViewModeBtn label="Edit" active={mdxViewMode === 'rich-text'} onClick={() => setMdxViewMode('rich-text')} />
+                  <ViewModeBtn label="Diff" active={mdxViewMode === 'diff'} onClick={() => setMdxViewMode('diff')} />
+                </>
+              )}
+            </div>
+
+            {/* Save button */}
             <button
               type="button"
-              className="rounded-md bg-primary px-3 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+              className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-accent-foreground disabled:opacity-30"
               onClick={() => void handleSave()}
               disabled={!openFile.dirty || saving}
+              title={saving ? 'Saving\u2026' : 'Save'}
             >
-              {saving ? 'Saving\u2026' : 'Save'}
+              <IconDeviceFloppy size={16} />
             </button>
           </div>
 
@@ -190,15 +239,19 @@ export function useWorkspaceEditor(storeKey?: string) {
             {isMd ? (
               <MdxEditorSurface
                 content={openFile.content}
+                diffMarkdown={openFile.originalContent}
                 fileKey={`${fileKey}`}
+                viewMode={mdxViewMode}
                 onChange={handleChange}
                 onSave={handleSave}
               />
             ) : (
               <CodeEditorSurface
                 content={openFile.content}
+                originalContent={openFile.originalContent}
                 extension={openFile.node.extension}
                 fileKey={`${fileKey}`}
+                viewMode={mdxViewMode === 'diff' ? 'diff' : 'edit'}
                 onChange={handleChange}
                 onSave={handleSave}
               />
@@ -208,8 +261,9 @@ export function useWorkspaceEditor(storeKey?: string) {
       );
     }
 
+    // 'blank' or any unknown tab — render nothing
     return null;
-  }, [openFile, fileKey, handleSelectFile, handleChange, handleSave, saving, handleMoveNode, handleRenameNode, handleDeleteNode, handleCreateFile, handleCreateFolder, handleRootHandle, treeVersion]);
+  }, [openFile, fileKey, handleSelectFile, handleChange, handleSave, saving, mdxViewMode, handleMoveNode, handleRenameNode, handleDeleteNode, handleCreateFile, handleCreateFolder, handleRootHandle, treeVersion]);
 
   return { renderContent };
 }

@@ -1,5 +1,6 @@
 /**
  * Standalone CodeMirror 6 editor surface for non-markdown files.
+ * Supports edit and unified diff view modes.
  */
 import { useEffect, useRef } from 'react';
 import { EditorView, basicSetup } from 'codemirror';
@@ -12,9 +13,11 @@ import { rust } from '@codemirror/lang-rust';
 import { go } from '@codemirror/lang-go';
 import { yaml } from '@codemirror/lang-yaml';
 import { json } from '@codemirror/lang-json';
-import { oneDark } from '@codemirror/theme-one-dark';
-import { useIsDark } from '@/lib/useIsDark';
+import { MergeView } from '@codemirror/merge';
+import { appCodeMirrorTheme } from '@/lib/codemirrorTheme';
 import { ScrollArea } from '@/components/ui/scroll-area';
+
+type ViewMode = 'edit' | 'diff';
 
 function getLanguageExtension(ext: string): Extension | null {
   switch (ext) {
@@ -35,25 +38,28 @@ function getLanguageExtension(ext: string): Extension | null {
 
 type Props = {
   content: string;
+  /** Original file content for diff baseline. */
+  originalContent?: string;
   extension: string;
   fileKey: string;
+  /** Externally controlled view mode. */
+  viewMode: ViewMode;
   onChange: (value: string) => void;
   onSave?: () => void;
 };
 
-export function CodeEditorSurface({ content, extension, fileKey, onChange, onSave }: Props) {
+export function CodeEditorSurface({ content, originalContent, extension, fileKey, viewMode, onChange, onSave }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
-  const isDark = useIsDark();
+  const mergeViewRef = useRef<MergeView | null>(null);
   const onChangeRef = useRef(onChange);
   const onSaveRef = useRef(onSave);
   onChangeRef.current = onChange;
   onSaveRef.current = onSave;
 
-  // Recreate editor when file or extension or theme changes
-  useEffect(() => {
-    if (!containerRef.current) return;
+  // ── Shared extensions ───────────────────────────────────────────────────────
 
+  function buildExtensions(): Extension[] {
     const langExt = getLanguageExtension(extension);
     const extensions: Extension[] = [
       basicSetup,
@@ -76,12 +82,20 @@ export function CodeEditorSurface({ content, extension, fileKey, onChange, onSav
           return false;
         },
       }),
+      EditorView.lineWrapping,
+      appCodeMirrorTheme,
     ];
-    extensions.push(EditorView.lineWrapping);
-    if (isDark) extensions.push(oneDark);
     if (langExt) extensions.push(langExt);
+    return extensions;
+  }
 
-    const state = EditorState.create({ doc: content, extensions });
+  // ── Edit mode ───────────────────────────────────────────────────────────────
+
+  useEffect(() => {
+    if (viewMode !== 'edit') return;
+    if (!containerRef.current) return;
+
+    const state = EditorState.create({ doc: content, extensions: buildExtensions() });
     const view = new EditorView({ state, parent: containerRef.current });
     viewRef.current = view;
 
@@ -89,14 +103,53 @@ export function CodeEditorSurface({ content, extension, fileKey, onChange, onSav
       view.destroy();
       viewRef.current = null;
     };
-    // fileKey forces full recreation on file change
-  }, [extension, fileKey, isDark]);
+  }, [extension, fileKey, viewMode]);
+
+  // ── Diff mode ───────────────────────────────────────────────────────────────
+
+  useEffect(() => {
+    if (viewMode !== 'diff') return;
+    if (!containerRef.current) return;
+
+    const langExt = getLanguageExtension(extension);
+    const sharedExts: Extension[] = [
+      EditorView.lineWrapping,
+      appCodeMirrorTheme,
+    ];
+    if (langExt) sharedExts.push(langExt);
+
+    const mv = new MergeView({
+      a: {
+        doc: originalContent ?? content,
+        extensions: [
+          ...sharedExts,
+          EditorState.readOnly.of(true),
+          EditorView.theme({ '&': { padding: '8px 0' }, '.cm-content': { padding: '0 8px' } }),
+        ],
+      },
+      b: {
+        doc: content,
+        extensions: [
+          ...sharedExts,
+          EditorState.readOnly.of(true),
+          EditorView.theme({ '&': { padding: '8px 0' }, '.cm-content': { padding: '0 8px' } }),
+        ],
+      },
+      parent: containerRef.current,
+    });
+    mergeViewRef.current = mv;
+
+    return () => {
+      mv.destroy();
+      mergeViewRef.current = null;
+    };
+  }, [extension, fileKey, viewMode, originalContent]);
 
   return (
     <ScrollArea className="h-full w-full" viewportClass="!overflow-x-hidden">
       <div
         ref={containerRef}
-        className="[&_.cm-editor]:!h-auto [&_.cm-scroller]:!overflow-visible"
+        className="[&_.cm-editor]:!h-auto [&_.cm-scroller]:!overflow-visible [&_.cm-mergeView]:flex [&_.cm-mergeView]:min-h-0"
       />
     </ScrollArea>
   );
