@@ -247,20 +247,10 @@ pages:
     source_route_name: templates/list
     source_route_path: /:tenant?/templates
     source_component: /home/jon/blockdata/web-kt/src/components/templates/Templates.vue
-    source_store_file: /home/jon/blockdata/web-kt/src/stores/template.ts
-    source_store_method: findTemplates
-    upstream_method: GET
-    upstream_path: /api/v1/main/templates/search
-    candidate_tables:
-      - kt.templates
-    ct_status: packet_seeded
+    ct_status: packet_pending
     ubuntu_status: not_started
-    windows_status: capturing
+    windows_status: not_started
     priority: 6
-    packet: kestra-ct/pages/templates-list/packet.md
-    capture: kestra-ct/pages/templates-list/capture.md
-    implement: kestra-ct/pages/templates-list/implement.md
-    verify: kestra-ct/pages/templates-list/verify.md
 
   - page_key: templates_create
     title: Templates create
@@ -290,20 +280,10 @@ pages:
     source_route_name: logs/list
     source_route_path: /:tenant?/logs
     source_component: /home/jon/blockdata/web-kt/src/components/logs/LogsWrapper.vue
-    source_store_file: /home/jon/blockdata/web-kt/src/stores/logs.ts
-    source_store_method: findLogs
-    upstream_method: GET
-    upstream_path: /api/v1/main/logs/search
-    candidate_tables:
-      - kt.logs
-    ct_status: packet_seeded
+    ct_status: packet_pending
     ubuntu_status: not_started
-    windows_status: capturing
+    windows_status: not_started
     priority: 4
-    packet: kestra-ct/pages/logs-list/packet.md
-    capture: kestra-ct/pages/logs-list/capture.md
-    implement: kestra-ct/pages/logs-list/implement.md
-    verify: kestra-ct/pages/logs-list/verify.md
 
   - page_key: namespaces_list
     title: Namespaces list
