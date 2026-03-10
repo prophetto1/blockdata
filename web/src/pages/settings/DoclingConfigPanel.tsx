@@ -8,6 +8,10 @@ import {
   IconCopy,
   IconDeviceFloppy,
 } from '@tabler/icons-react';
+import { SwitchRoot, SwitchControl, SwitchThumb, SwitchHiddenInput } from '@/components/ui/switch';
+import { CollapsibleRoot, CollapsibleTrigger, CollapsibleIndicator, CollapsibleContent } from '@/components/ui/collapsible';
+import { NumberInputRoot, NumberInputInput } from '@/components/ui/number-input';
+import { FieldRoot, FieldLabel, FieldHelperText } from '@/components/ui/field';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -150,37 +154,26 @@ function setIn(obj: Record<string, unknown>, path: string, value: unknown): Reco
   return clone;
 }
 
-// ─── Field components ─────────────────────────────────────────────────────────
+// ─── Field components (thin adapters over Ark UI primitives) ──────────────────
 
 function FieldRow({ label, description, children }: { label: string; description?: string; children: React.ReactNode }) {
   return (
-    <div className="flex min-h-9 items-start justify-between gap-4 py-1.5">
+    <FieldRoot>
       <div className="min-w-0 flex-1">
-        <div className="text-sm font-medium text-foreground">{label}</div>
-        {description && <div className="text-xs text-muted-foreground">{description}</div>}
+        <FieldLabel>{label}</FieldLabel>
+        {description && <FieldHelperText>{description}</FieldHelperText>}
       </div>
       <div className="shrink-0">{children}</div>
-    </div>
+    </FieldRoot>
   );
 }
 
 function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
   return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      onClick={() => onChange(!checked)}
-      className={`relative h-5 w-9 shrink-0 rounded-full border transition-colors ${
-        checked ? 'border-primary bg-primary' : 'border-input bg-muted'
-      }`}
-    >
-      <span
-        className={`block h-4 w-4 rounded-full bg-background shadow transition-transform ${
-          checked ? 'translate-x-4' : 'translate-x-0'
-        }`}
-      />
-    </button>
+    <SwitchRoot checked={checked} onCheckedChange={(d) => onChange(d.checked)}>
+      <SwitchControl><SwitchThumb /></SwitchControl>
+      <SwitchHiddenInput />
+    </SwitchRoot>
   );
 }
 
@@ -212,37 +205,29 @@ function TextInput({ value, onChange, placeholder }: { value: string; onChange: 
 
 function NumberInput({ value, onChange, min, max, step }: { value: number; onChange: (v: number) => void; min?: number; max?: number; step?: number }) {
   return (
-    <input
-      type="number"
-      value={value}
-      onChange={(e) => {
-        const num = parseFloat(e.currentTarget.value);
-        if (!Number.isNaN(num)) onChange(num);
-      }}
+    <NumberInputRoot
+      value={String(value)}
+      onValueChange={(d) => { const n = parseFloat(d.value); if (!Number.isNaN(n)) onChange(n); }}
       min={min}
       max={max}
       step={step}
-      className="h-8 w-24 rounded-md border border-input bg-background px-2 text-xs text-foreground"
-    />
+    >
+      <NumberInputInput />
+    </NumberInputRoot>
   );
 }
 
 // ─── Section component ────────────────────────────────────────────────────────
 
 function Section({ title, children, defaultOpen = true }: { title: string; children: React.ReactNode; defaultOpen?: boolean }) {
-  const [open, setOpen] = useState(defaultOpen);
   return (
-    <div className="rounded-md border border-border bg-background">
-      <button
-        type="button"
-        className="flex w-full items-center justify-between px-3 py-2 text-sm font-bold text-foreground hover:bg-accent/30"
-        onClick={() => setOpen(!open)}
-      >
+    <CollapsibleRoot defaultOpen={defaultOpen}>
+      <CollapsibleTrigger>
         {title}
-        <span className={cn('text-xs text-muted-foreground transition-transform', open && 'rotate-90')}>▶</span>
-      </button>
-      {open && <div className="border-t border-border px-3 py-2 space-y-1">{children}</div>}
-    </div>
+        <CollapsibleIndicator>&#9654;</CollapsibleIndicator>
+      </CollapsibleTrigger>
+      <CollapsibleContent>{children}</CollapsibleContent>
+    </CollapsibleRoot>
   );
 }
 
@@ -513,6 +498,10 @@ function ConfigEditor({ config, onChange }: { config: DoclingConfig; onChange: (
 }
 
 // ─── Main panel ───────────────────────────────────────────────────────────────
+
+export function Component() {
+  return <DoclingConfigPanel />;
+}
 
 export function DoclingConfigPanel() {
   const [profiles, setProfiles] = useState<ParsingProfile[]>([]);
