@@ -1,1 +1,3 @@
-This page needs investigation. The artifact files here are stubs. Follow `kestra-ct/onboarding/page-investigation-procedure.md` step by step to fill them. Check `kestra-ct/page-registry.yaml` for this page's priority and current status before starting.
+This page has been investigated and implementation planning is complete. Read `packet.md` for scope, then `capture.md` for observed facts. Follow `implement.md` for the execution plan — it is ready for execution (follow procedure Step 4: Build with TDD). See `kestra-ct/onboarding/page-worker-loop.md` for the full execution loop.
+
+**Note:** Templates are not in the OpenAPI spec and have no generated contract types. The adapter must define its own Template type. Additionally, `kestra-templates` is a new domain not yet in the frozen `adapter-layout.md` — a decision update is needed before execution.
