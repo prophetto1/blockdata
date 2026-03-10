@@ -159,6 +159,12 @@ const SUPERUSER_DRILL: NavDrillConfig = {
         { label: 'Layout 3', icon: IconFileCode, path: '/app/superuser/layout-3' },
       ],
     },
+    {
+      label: 'Parsers',
+      items: [
+        { label: 'Docling', icon: IconSettings, path: '/app/superuser/docling' },
+      ],
+    },
   ],
 };
 
