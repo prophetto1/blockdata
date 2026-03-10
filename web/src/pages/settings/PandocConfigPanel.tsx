@@ -8,6 +8,11 @@ import {
   IconCopy,
   IconDeviceFloppy,
 } from '@tabler/icons-react';
+import { SwitchRoot, SwitchControl, SwitchThumb, SwitchHiddenInput } from '@/components/ui/switch';
+import { SegmentGroupRoot, SegmentGroupIndicator, SegmentGroupItem, SegmentGroupItemText, SegmentGroupItemHiddenInput } from '@/components/ui/segment-group';
+import { CollapsibleRoot, CollapsibleTrigger, CollapsibleIndicator, CollapsibleContent } from '@/components/ui/collapsible';
+import { NumberInputRoot, NumberInputInput } from '@/components/ui/number-input';
+import { FieldRoot, FieldLabel, FieldHelperText } from '@/components/ui/field';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -102,65 +107,29 @@ type PandocConfig = {
 
 const INPUT_FORMAT_OPTIONS = [
   { value: '', label: '(auto-detect)' },
-  { value: 'markdown', label: 'Markdown (pandoc)' },
-  { value: 'commonmark', label: 'CommonMark' },
-  { value: 'commonmark_x', label: 'CommonMark (extended)' },
-  { value: 'gfm', label: 'GitHub-Flavored Markdown' },
-  { value: 'markdown_strict', label: 'Markdown (strict)' },
-  { value: 'markdown_mmd', label: 'MultiMarkdown' },
-  { value: 'markdown_phpextra', label: 'PHP Markdown Extra' },
-  { value: 'rst', label: 'reStructuredText' },
+  { value: 'markdown', label: 'Markdown' },
   { value: 'latex', label: 'LaTeX' },
-  { value: 'org', label: 'Org-mode' },
-  { value: 'mediawiki', label: 'MediaWiki' },
-  { value: 'typst', label: 'Typst' },
   { value: 'html', label: 'HTML' },
   { value: 'docx', label: 'DOCX' },
-  { value: 'docx+styles', label: 'DOCX (with styles)' },
-  { value: 'odt', label: 'ODT' },
+  { value: 'rst', label: 'reStructuredText' },
   { value: 'epub', label: 'EPUB' },
-  { value: 'rtf', label: 'RTF' },
-  { value: 'docbook', label: 'DocBook' },
-  { value: 'jats', label: 'JATS XML' },
-  { value: 'djot', label: 'Djot' },
-  { value: 'textile', label: 'Textile' },
-  { value: 'ipynb', label: 'Jupyter Notebook' },
-  { value: 'bibtex', label: 'BibTeX' },
-  { value: 'biblatex', label: 'BibLaTeX' },
-  { value: 'csljson', label: 'CSL JSON' },
-  { value: 'ris', label: 'RIS' },
-  { value: 'fb2', label: 'FictionBook' },
-  { value: 'opml', label: 'OPML' },
-  { value: 'haddock', label: 'Haddock' },
-  { value: 'muse', label: 'Muse' },
+  { value: 'org', label: 'Org-mode' },
+  { value: 'commonmark_x', label: 'CommonMark (extended)' },
   { value: 'csv', label: 'CSV' },
-  { value: 'tsv', label: 'TSV' },
-  { value: 'creole', label: 'Creole' },
-  { value: 'jira', label: 'Jira' },
-  { value: 'dokuwiki', label: 'DokuWiki' },
-  { value: 'tikiwiki', label: 'TikiWiki' },
-  { value: 'twiki', label: 'TWiki' },
-  { value: 'vimwiki', label: 'VimWiki' },
-  { value: 'pod', label: 'Perl POD' },
-  { value: 't2t', label: 'txt2tags' },
-  { value: 'asciidoc', label: 'AsciiDoc' },
+  { value: 'typst', label: 'Typst' },
 ];
 
 const OUTPUT_FORMAT_OPTIONS = [
   { value: 'json', label: 'Pandoc AST (JSON)' },
-  { value: 'markdown', label: 'Markdown' },
-  { value: 'commonmark', label: 'CommonMark' },
-  { value: 'gfm', label: 'GitHub-Flavored Markdown' },
   { value: 'html', label: 'HTML' },
   { value: 'latex', label: 'LaTeX' },
-  { value: 'plain', label: 'Plain text' },
-  { value: 'rst', label: 'reStructuredText' },
-  { value: 'org', label: 'Org-mode' },
-  { value: 'typst', label: 'Typst' },
   { value: 'docx', label: 'DOCX' },
-  { value: 'odt', label: 'ODT' },
-  { value: 'epub', label: 'EPUB' },
   { value: 'pdf', label: 'PDF' },
+  { value: 'epub', label: 'EPUB' },
+  { value: 'rst', label: 'reStructuredText' },
+  { value: 'plain', label: 'Plain text' },
+  { value: 'markdown', label: 'Markdown' },
+  { value: 'commonmark_x', label: 'CommonMark (extended)' },
 ];
 
 const WRAP_OPTIONS = [
@@ -381,61 +350,41 @@ function setIn(obj: Record<string, unknown>, path: string, value: unknown): Reco
   return clone;
 }
 
-// ─── Field components ─────────────────────────────────────────────────────────
+// ─── Field components (thin adapters over Ark UI primitives) ──────────────────
 
 function FieldRow({ label, description, children }: { label: string; description?: string; children: React.ReactNode }) {
   return (
-    <div className="flex min-h-9 items-start justify-between gap-4 py-1.5">
+    <FieldRoot>
       <div className="min-w-0 flex-1">
-        <div className="text-sm font-medium text-foreground">{label}</div>
-        {description && <div className="text-xs text-muted-foreground">{description}</div>}
+        <FieldLabel>{label}</FieldLabel>
+        {description && <FieldHelperText>{description}</FieldHelperText>}
       </div>
       <div className="shrink-0">{children}</div>
-    </div>
+    </FieldRoot>
   );
 }
 
 function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
   return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      onClick={() => onChange(!checked)}
-      className={`relative h-5 w-9 shrink-0 rounded-full border transition-colors ${
-        checked ? 'border-primary bg-primary' : 'border-input bg-muted'
-      }`}
-    >
-      <span
-        className={`block h-4 w-4 rounded-full bg-background shadow transition-transform ${
-          checked ? 'translate-x-4' : 'translate-x-0'
-        }`}
-      />
-    </button>
+    <SwitchRoot checked={checked} onCheckedChange={(d) => onChange(d.checked)}>
+      <SwitchControl><SwitchThumb /></SwitchControl>
+      <SwitchHiddenInput />
+    </SwitchRoot>
   );
 }
 
 function TriToggle({ value, onChange }: { value: boolean | null; onChange: (v: boolean | null) => void }) {
-  // null = default, true = enabled, false = disabled
-  const label = value === null ? 'default' : value ? 'on' : 'off';
-  const next = () => {
-    if (value === null) onChange(true);
-    else if (value === true) onChange(false);
-    else onChange(null);
-  };
+  const triMap: Record<string, boolean | null> = { default: null, on: true, off: false };
   return (
-    <button
-      type="button"
-      onClick={next}
-      className={cn(
-        'inline-flex h-6 min-w-14 items-center justify-center rounded-md border px-2 text-xs font-medium transition-colors',
-        value === null && 'border-input bg-muted text-muted-foreground',
-        value === true && 'border-primary bg-primary text-primary-foreground',
-        value === false && 'border-destructive/50 bg-destructive/10 text-destructive',
-      )}
+    <SegmentGroupRoot
+      value={value === null ? 'default' : value ? 'on' : 'off'}
+      onValueChange={(d) => onChange(d.value ? triMap[d.value] ?? null : null)}
     >
-      {label}
-    </button>
+      <SegmentGroupIndicator />
+      <SegmentGroupItem value="default"><SegmentGroupItemText>default</SegmentGroupItemText><SegmentGroupItemHiddenInput /></SegmentGroupItem>
+      <SegmentGroupItem value="on"><SegmentGroupItemText>on</SegmentGroupItemText><SegmentGroupItemHiddenInput /></SegmentGroupItem>
+      <SegmentGroupItem value="off"><SegmentGroupItemText>off</SegmentGroupItemText><SegmentGroupItemHiddenInput /></SegmentGroupItem>
+    </SegmentGroupRoot>
   );
 }
 
@@ -467,37 +416,29 @@ function TextInput({ value, onChange, placeholder }: { value: string; onChange: 
 
 function NumberInput({ value, onChange, min, max, step }: { value: number; onChange: (v: number) => void; min?: number; max?: number; step?: number }) {
   return (
-    <input
-      type="number"
-      value={value}
-      onChange={(e) => {
-        const num = parseFloat(e.currentTarget.value);
-        if (!Number.isNaN(num)) onChange(num);
-      }}
+    <NumberInputRoot
+      value={String(value)}
+      onValueChange={(d) => { const n = parseFloat(d.value); if (!Number.isNaN(n)) onChange(n); }}
       min={min}
       max={max}
       step={step}
-      className="h-8 w-24 rounded-md border border-input bg-background px-2 text-xs text-foreground"
-    />
+    >
+      <NumberInputInput />
+    </NumberInputRoot>
   );
 }
 
 // ─── Section component ────────────────────────────────────────────────────────
 
 function Section({ title, children, defaultOpen = true }: { title: string; children: React.ReactNode; defaultOpen?: boolean }) {
-  const [open, setOpen] = useState(defaultOpen);
   return (
-    <div className="rounded-md border border-border bg-background">
-      <button
-        type="button"
-        className="flex w-full items-center justify-between px-3 py-2 text-sm font-bold text-foreground hover:bg-accent/30"
-        onClick={() => setOpen(!open)}
-      >
+    <CollapsibleRoot defaultOpen={defaultOpen}>
+      <CollapsibleTrigger>
         {title}
-        <span className={cn('text-xs text-muted-foreground transition-transform', open && 'rotate-90')}>&#9654;</span>
-      </button>
-      {open && <div className="border-t border-border px-3 py-2 space-y-1">{children}</div>}
-    </div>
+        <CollapsibleIndicator>&#9654;</CollapsibleIndicator>
+      </CollapsibleTrigger>
+      <CollapsibleContent>{children}</CollapsibleContent>
+    </CollapsibleRoot>
   );
 }
 
@@ -553,7 +494,7 @@ function ConfigEditor({ config, onChange }: { config: PandocConfig; onChange: (c
         <FieldRow label="Default Image Extension" description="Extension for images without one">
           <TextInput value={(get('reader.default_image_extension', '') as string)} onChange={(v) => set('reader.default_image_extension', v)} placeholder="e.g. png" />
         </FieldRow>
-        {(inputFormat === 'docx' || inputFormat === 'docx+styles') && (
+        {inputFormat === 'docx' && (
           <FieldRow label="Track Changes" description="How to handle DOCX tracked changes">
             <Select value={(get('reader.track_changes', 'accept') as string)} options={TRACK_CHANGES_OPTIONS} onChange={(v) => set('reader.track_changes', v)} />
           </FieldRow>
@@ -723,6 +664,10 @@ function ConfigEditor({ config, onChange }: { config: PandocConfig; onChange: (c
 }
 
 // ─── Main panel ───────────────────────────────────────────────────────────────
+
+export function Component() {
+  return <PandocConfigPanel />;
+}
 
 export function PandocConfigPanel() {
   const [profiles, setProfiles] = useState<ParsingProfile[]>([]);
