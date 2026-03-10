@@ -94,6 +94,18 @@ export function setActiveTabInPane(input: Pane[], paneId: string, tabId: string)
   });
 }
 
+export function removeTabFromAll(input: Pane[], tabId: string, fallbackTab: string): Pane[] {
+  const next = input.map((pane) => {
+    if (!pane.tabs.includes(tabId)) return pane;
+    const nextTabs = pane.tabs.filter((tab) => tab !== tabId);
+    const nextActive = nextTabs.includes(pane.activeTab)
+      ? pane.activeTab
+      : (nextTabs[0] ?? fallbackTab);
+    return { ...pane, tabs: nextTabs, activeTab: nextActive };
+  });
+  return finalizeStructure(input, next, fallbackTab);
+}
+
 export function closeTabInPane(input: Pane[], paneId: string, tabId: string, fallbackTab: string): Pane[] {
   const next = input.map((pane) => {
     if (pane.id !== paneId) return pane;

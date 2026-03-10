@@ -1,4 +1,4 @@
-import { allTabIds, FALLBACK_TAB, hasTab } from '@/lib/tabRegistry';
+import { FALLBACK_TAB } from '@/lib/tabRegistry';
 import type { Pane } from '@/components/workbench/workbenchState';
 
 // ---------------------------------------------------------------------------
@@ -7,16 +7,6 @@ import type { Pane } from '@/components/workbench/workbenchState';
 
 export const PREVIEW_INSTANCE_TAB_PREFIX = 'preview:';
 export const MAX_CONCURRENT_PREVIEW_TABS = 8;
-
-export const NEW_PANE_TAB_PRIORITY: string[] = [
-  'parse',
-  'load',
-  'pull:github',
-  'pull:stripe',
-  'pull:sql_database',
-  'preview',
-  'canvas',
-];
 
 // ---------------------------------------------------------------------------
 // Preview instance tab helpers
@@ -46,10 +36,6 @@ export function getPreviewTabSequence(tabId: string): number {
   return Number.isFinite(sequence) ? sequence : Number.MAX_SAFE_INTEGER;
 }
 
-export function isKnownTab(tabId: string): boolean {
-  return hasTab(tabId) || isPreviewInstanceTab(tabId);
-}
-
 export function enforcePreviewTabCap(input: Pane[], maxConcurrent: number): Pane[] {
   if (maxConcurrent <= 0) return input;
 
@@ -71,19 +57,4 @@ export function enforcePreviewTabCap(input: Pane[], maxConcurrent: number): Pane
       activeTab: tabs.includes(pane.activeTab) ? pane.activeTab : (tabs[0] ?? FALLBACK_TAB),
     };
   });
-}
-
-export function pickNewPaneTab(input: Pane[], sourceActiveTab: string): string {
-  const openTabs = new Set(input.flatMap((pane) => pane.tabs));
-
-  for (const candidate of NEW_PANE_TAB_PRIORITY) {
-    if (hasTab(candidate) && !openTabs.has(candidate)) return candidate;
-  }
-
-  const nextRegistryTab = allTabIds().find((tabId) => tabId !== 'assets' && !openTabs.has(tabId));
-  if (nextRegistryTab) return nextRegistryTab;
-
-  if (sourceActiveTab !== 'assets' && hasTab(sourceActiveTab)) return sourceActiveTab;
-  if (hasTab('parse')) return 'parse';
-  return FALLBACK_TAB;
 }

@@ -1,4 +1,4 @@
-import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import {
   IconDotsVertical,
   IconLayoutColumns,
@@ -18,6 +18,7 @@ import {
   activateTabInPane,
   closeTabInPane,
   normalizePaneWidths,
+  removeTabFromAll,
   setActiveTabInPane,
   type Pane,
 } from './workbenchState';
@@ -31,6 +32,14 @@ export type WorkbenchTab = {
   icon: React.ComponentType<{ size?: number }>;
 };
 
+export type WorkbenchHandle = {
+  addTab: (tabId: string, paneId?: string) => void;
+  removeTab: (tabId: string) => void;
+  toggleTab: (tabId: string, paneId?: string) => void;
+  getPanes: () => readonly Pane[];
+  getFocusedPaneId: () => string | null;
+};
+
 export type WorkbenchProps = {
   tabs: WorkbenchTab[];
   defaultPanes: Pane[];
@@ -40,6 +49,10 @@ export type WorkbenchProps = {
   hideToolbar?: boolean;
   /** Return a label for dynamic tab IDs not in the static `tabs` array, or null to reject. */
   dynamicTabLabel?: (tabId: string) => string | null;
+  /** Called whenever panes change. */
+  onPanesChange?: (panes: readonly Pane[]) => void;
+  /** Pure transform applied after every pane mutation (e.g. enforce tab caps). */
+  transformPanes?: (panes: Pane[]) => Pane[];
 };
 
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -147,7 +160,7 @@ function readPersistedPanes(saveKey: string, isValidTab: (tabId: string) => bool
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
-export function Workbench({ tabs, defaultPanes, saveKey, renderContent, toolbarActions, hideToolbar = false, dynamicTabLabel }: WorkbenchProps) {
+export const Workbench = forwardRef<WorkbenchHandle, WorkbenchProps>(function Workbench({ tabs, defaultPanes, saveKey, renderContent, toolbarActions, hideToolbar = false, dynamicTabLabel, onPanesChange, transformPanes }, ref) {
   const fallbackTab = tabs[0]?.id ?? '';
 
   const staticTabIds = useMemo(() => new Set(tabs.map((tab) => tab.id)), [tabs]);
@@ -165,9 +178,53 @@ export function Workbench({ tabs, defaultPanes, saveKey, renderContent, toolbarA
   const dragPaneStateRef = useRef<DragPaneState | null>(null);
   const pointerPaneStateRef = useRef<PointerPaneState | null>(null);
 
-  const [panes, setPanes] = useState<Pane[]>(() => defaultPanes);
+  const [panes, setPanesRaw] = useState<Pane[]>(() => defaultPanes);
   const [focusedPaneId, setFocusedPaneId] = useState<string | null>(null);
   const [dragOverPaneIndex, setDragOverPaneIndex] = useState<number | null>(null);
+
+  const setPanes = useCallback((updater: Pane[] | ((current: Pane[]) => Pane[])) => {
+    setPanesRaw((current) => {
+      const next = typeof updater === 'function' ? updater(current) : updater;
+      return transformPanes ? transformPanes(next) : next;
+    });
+  }, [transformPanes]);
+
+  // ── onPanesChange notification ─────────────────────────────────────────
+
+  useEffect(() => {
+    onPanesChange?.(panes);
+  }, [panes, onPanesChange]);
+
+  // ── Imperative handle ──────────────────────────────────────────────────
+
+  useImperativeHandle(ref, () => ({
+    addTab(tabId: string, paneId?: string) {
+      const targetPaneId = paneId ?? focusedPaneId ?? panes[panes.length - 1]?.id;
+      if (!targetPaneId) return;
+      setFocusedPaneId(targetPaneId);
+      setPanes((current) => activateTabInPane(current, targetPaneId, tabId, fallbackTab));
+    },
+    removeTab(tabId: string) {
+      setPanes((current) => removeTabFromAll(current, tabId, fallbackTab));
+    },
+    toggleTab(tabId: string, paneId?: string) {
+      const isOpen = panes.some((p) => p.tabs.includes(tabId));
+      if (isOpen) {
+        setPanes((current) => removeTabFromAll(current, tabId, fallbackTab));
+      } else {
+        const targetPaneId = paneId ?? focusedPaneId ?? panes[panes.length - 1]?.id;
+        if (!targetPaneId) return;
+        setFocusedPaneId(targetPaneId);
+        setPanes((current) => activateTabInPane(current, targetPaneId, tabId, fallbackTab));
+      }
+    },
+    getPanes() {
+      return panes;
+    },
+    getFocusedPaneId() {
+      return focusedPaneId;
+    },
+  }), [panes, focusedPaneId, fallbackTab, setPanes]);
 
   // ── localStorage hydration ──────────────────────────────────────────────
 
@@ -709,4 +766,4 @@ export function Workbench({ tabs, defaultPanes, saveKey, renderContent, toolbarA
       </Splitter.Root>
     </div>
   );
-}
+});
