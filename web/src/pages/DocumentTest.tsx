@@ -1,9 +1,5 @@
-import { forwardRef, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
-import { Field } from '@ark-ui/react/field';
+import { forwardRef, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Splitter } from '@ark-ui/react/splitter';
-import { TreeView, createTreeCollection } from '@ark-ui/react/tree-view';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
 import {
   MenuContent,
   MenuItem,
@@ -12,50 +8,46 @@ import {
   MenuRoot,
   MenuTrigger,
 } from '@/components/ui/menu';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   IconArrowsTransferDown,
   IconChevronDown,
   IconDotsVertical,
   IconDownload,
   IconEye,
-  IconFilePlus,
   IconFileCode,
   IconFiles,
-  IconFileText,
-  IconFolder,
-  IconFolderPlus,
-  IconLock,
   IconLayoutColumns,
-  IconPlus,
   IconTransform,
-  IconTrash,
-  IconX,
 } from '@tabler/icons-react';
 import { useLocation } from 'react-router-dom';
 import FlowCanvas from '@/components/flows/FlowCanvas';
 import { useShellHeaderTitle } from '@/components/common/useShellHeaderTitle';
-import { DocxPreview } from '@/components/documents/DocxPreview';
-import { PdfPreview } from '@/components/documents/PdfPreview';
-import { PptxPreview } from '@/components/documents/PptxPreview';
+import { AssetsPanel } from '@/components/documents/AssetsPanel';
+import { PreviewTabPanel } from '@/components/documents/PreviewTabPanel';
 import { edgeFetch } from '@/lib/edge';
 import { fetchAllProjectDocuments } from '@/lib/projectDocuments';
 import { readFocusedProjectId } from '@/lib/projectFocus';
 import {
   type ProjectDocumentRow,
-  formatBytes,
-  getDocumentFormat,
   sortDocumentsByUploadedAt,
 } from '@/lib/projectDetailHelpers';
 import { supabase } from '@/lib/supabase';
+import { createDefaultTextFileContents } from '@/lib/filesTree';
 import {
-  allTabIds,
+  isPreviewInstanceTab,
+  createPreviewInstanceTabId,
+  getPreviewSourceUidFromTabId,
+  getPreviewTabSequence,
+  isKnownTab,
+  enforcePreviewTabCap,
+  pickNewPaneTab,
+  MAX_CONCURRENT_PREVIEW_TABS,
+} from '@/lib/previewTabInstance';
+import {
   FALLBACK_TAB,
   getTab,
   getTabLabel,
   getTabsByGroup,
-  hasTab,
   registerTab,
   registerTabs,
 } from '@/lib/tabRegistry';
@@ -75,39 +67,8 @@ type Pane = {
 
 const MIN_PANE_PERCENT = 18;
 const MAX_COLUMNS = 7;
-const MAX_CONCURRENT_PREVIEW_TABS = 8;
 const DRAG_PAYLOAD_MIME = 'application/x-doc-test-drag';
 const DOCUMENTS_BUCKET = (import.meta.env.VITE_DOCUMENTS_BUCKET as string | undefined) ?? 'documents';
-const VIRTUAL_FOLDERS_STORAGE_KEY_PREFIX = 'blockdata.elt.virtual_folders.';
-const PREVIEW_INSTANCE_TAB_PREFIX = 'preview:';
-const NEW_PANE_TAB_PRIORITY: TabId[] = [
-  'parse',
-  'load',
-  'pull:github',
-  'pull:stripe',
-  'pull:sql_database',
-  'preview',
-  'canvas',
-];
-type EltReservedTopTab = {
-  value: string;
-  label: string;
-  locked?: boolean;
-};
-
-const ELT_RESERVED_TOP_TAB_SHAPES: readonly EltReservedTopTab[] = [
-  { value: 'overview', label: 'Overview' },
-  { value: 'topology', label: 'Topology' },
-  { value: 'executions', label: 'Executions' },
-  { value: 'edit', label: 'Edit' },
-  { value: 'revisions', label: 'Revisions' },
-  { value: 'triggers', label: 'Triggers' },
-  { value: 'logs', label: 'Logs' },
-  { value: 'metrics', label: 'Metrics' },
-  { value: 'dependencies', label: 'Dependencies' },
-  { value: 'concurrency', label: 'Concurrency' },
-  { value: 'auditlogs', label: 'Audit Logs', locked: true },
-] as const;
 
 // ---------------------------------------------------------------------------
 // Register tabs — view tabs are fixed; action tabs are dynamic.
@@ -124,401 +85,14 @@ registerTabs('pull', [
 registerTab({ id: 'load', label: 'Load', group: 'load', render: ({ projectId }) => <DltLoadPanel projectId={projectId} /> });
 registerTab({ id: 'parse', label: 'Parse', group: 'parse', render: ({ projectId }) => <ParseEasyPanel projectId={projectId} /> });
 
-const TEXT_SOURCE_TYPES = new Set([
-  'md',
-  'txt',
-  'csv',
-  'html',
-  'asciidoc',
-  'xml_uspto',
-  'xml_jats',
-  'json_docling',
-  'rst',
-  'latex',
-  'org',
-  'vtt',
-]);
-const TEXT_EXTENSIONS = new Set([
-  'txt',
-  'md',
-  'csv',
-  'html',
-  'xml',
-  'json',
-  'rst',
-  'tex',
-  'org',
-  'vtt',
-]);
-const IMAGE_SOURCE_TYPES = new Set(['image']);
-const IMAGE_EXTENSIONS = new Set(['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'svg', 'tif', 'tiff']);
-const DOCX_SOURCE_TYPES = new Set(['docx', 'docm', 'dotx', 'dotm']);
-const DOCX_EXTENSIONS = new Set(['docx', 'docm', 'dotx', 'dotm']);
-const PPTX_SOURCE_TYPES = new Set(['pptx', 'pptm', 'ppsx']);
-const PPTX_EXTENSIONS = new Set(['pptx', 'pptm', 'ppsx']);
-
-type PreviewKind = 'none' | 'pdf' | 'image' | 'text' | 'markdown' | 'docx' | 'pptx' | 'file';
-
 type DragPayload =
   | { kind: 'tab'; fromPaneId: string; tabId: TabId }
   | { kind: 'pane'; fromIndex: number };
-
-type SignedUrlResult = {
-  url: string | null;
-  error: string | null;
-};
 
 type PendingUpload = {
   file: File;
   relativePath?: string;
 };
-
-type FilesTreeNode = {
-  id: string;
-  label: string;
-  kind: 'folder' | 'file';
-  sourceUid?: string;
-  doc?: ProjectDocumentRow;
-  children?: FilesTreeNode[];
-};
-
-function isPreviewInstanceTab(tabId: TabId): boolean {
-  return tabId.startsWith(PREVIEW_INSTANCE_TAB_PREFIX);
-}
-
-function createPreviewInstanceTabId(sourceUid: string, sequence: number): TabId {
-  return `${PREVIEW_INSTANCE_TAB_PREFIX}${sourceUid}:${sequence}`;
-}
-
-function getPreviewSourceUidFromTabId(tabId: TabId): string | null {
-  if (!isPreviewInstanceTab(tabId)) return null;
-  const value = tabId.slice(PREVIEW_INSTANCE_TAB_PREFIX.length);
-  const separator = value.lastIndexOf(':');
-  if (separator <= 0) return null;
-  return value.slice(0, separator);
-}
-
-function getPreviewTabSequence(tabId: TabId): number {
-  const sourceUid = getPreviewSourceUidFromTabId(tabId);
-  if (!sourceUid) return Number.MAX_SAFE_INTEGER;
-  const suffix = tabId.slice((`${PREVIEW_INSTANCE_TAB_PREFIX}${sourceUid}:`).length);
-  const sequence = Number.parseInt(suffix, 10);
-  return Number.isFinite(sequence) ? sequence : Number.MAX_SAFE_INTEGER;
-}
-
-function isKnownTab(tabId: TabId): boolean {
-  return hasTab(tabId) || isPreviewInstanceTab(tabId);
-}
-
-function enforcePreviewTabCap(input: Pane[], maxConcurrent: number): Pane[] {
-  if (maxConcurrent <= 0) return input;
-
-  const previewInstances = input.flatMap((pane) => pane.tabs)
-    .filter((tabId) => isPreviewInstanceTab(tabId));
-  if (previewInstances.length <= maxConcurrent) return input;
-
-  const removeSet = new Set(
-    [...previewInstances]
-      .sort((a, b) => getPreviewTabSequence(a) - getPreviewTabSequence(b))
-      .slice(0, previewInstances.length - maxConcurrent),
-  );
-
-  return input.map((pane) => {
-    const tabs = pane.tabs.filter((tabId) => !removeSet.has(tabId));
-    return {
-      ...pane,
-      tabs,
-      activeTab: tabs.includes(pane.activeTab) ? pane.activeTab : (tabs[0] ?? FALLBACK_TAB),
-    };
-  });
-}
-
-type MutableFolderNode = {
-  id: string;
-  label: string;
-  folders: Map<string, MutableFolderNode>;
-  files: FilesTreeNode[];
-};
-
-function normalizePath(value: string): string {
-  return value
-    .replace(/\\/g, '/')
-    .split('/')
-    .map((part) => part.trim())
-    .filter((part) => part.length > 0)
-    .join('/');
-}
-
-function joinPath(prefix: string, segment: string): string {
-  const normalizedPrefix = normalizePath(prefix);
-  const normalizedSegment = normalizePath(segment);
-  if (!normalizedPrefix) return normalizedSegment;
-  if (!normalizedSegment) return normalizedPrefix;
-  return `${normalizedPrefix}/${normalizedSegment}`;
-}
-
-function ensureFileExtension(path: string, fallbackExtension = '.txt'): string {
-  const parts = normalizePath(path).split('/').filter((part) => part.length > 0);
-  if (parts.length === 0) return '';
-  const fileName = parts[parts.length - 1] ?? '';
-  if (fileName.includes('.')) return parts.join('/');
-  parts[parts.length - 1] = `${fileName}${fallbackExtension}`;
-  return parts.join('/');
-}
-
-function createDefaultTextFileContents(fileName: string): string {
-  const timestamp = new Date().toISOString();
-  return `# ${fileName}\n\nCreated ${timestamp}\n`;
-}
-
-function getDocumentFolderPath(doc: ProjectDocumentRow | null | undefined): string {
-  if (!doc) return '';
-  const titleParts = normalizePath(doc.doc_title ?? '').split('/').filter((part) => part.length > 0);
-  if (titleParts.length > 1) {
-    return titleParts.slice(0, -1).join('/');
-  }
-  return '';
-}
-
-function readStoredVirtualFolders(projectId: string | null): string[] {
-  if (typeof window === 'undefined' || !projectId) return [];
-  try {
-    const raw = window.localStorage.getItem(`${VIRTUAL_FOLDERS_STORAGE_KEY_PREFIX}${projectId}`);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw) as unknown;
-    if (!Array.isArray(parsed)) return [];
-    return parsed
-      .map((item) => (typeof item === 'string' ? normalizePath(item) : ''))
-      .filter((item) => item.length > 0);
-  } catch {
-    return [];
-  }
-}
-
-function writeStoredVirtualFolders(projectId: string | null, folders: string[]) {
-  if (typeof window === 'undefined' || !projectId) return;
-  const normalized = folders
-    .map((folder) => normalizePath(folder))
-    .filter((folder, index, input) => folder.length > 0 && input.indexOf(folder) === index);
-  window.localStorage.setItem(
-    `${VIRTUAL_FOLDERS_STORAGE_KEY_PREFIX}${projectId}`,
-    JSON.stringify(normalized),
-  );
-}
-
-function buildFilesTreeNodes(docs: ProjectDocumentRow[], extraFolders: string[] = []): FilesTreeNode[] {
-  const root: MutableFolderNode = {
-    id: 'root',
-    label: '',
-    folders: new Map<string, MutableFolderNode>(),
-    files: [],
-  };
-
-  for (const doc of docs) {
-    const titlePathParts = normalizePath(doc.doc_title ?? '').split('/').filter((part) => part.length > 0);
-    const locatorPathParts = normalizePath(doc.source_locator ?? '').split('/').filter((part) => part.length > 0);
-    const locatorName = locatorPathParts[locatorPathParts.length - 1] ?? doc.source_uid;
-    const fallbackName = (doc.doc_title ?? '').trim() || locatorName || doc.source_uid;
-    const displayPathParts = titlePathParts.length > 0 ? titlePathParts : [fallbackName];
-
-    const folderParts = displayPathParts.length > 1 ? displayPathParts.slice(0, -1) : [];
-    const fileLabel = displayPathParts[displayPathParts.length - 1] ?? fallbackName;
-
-    let currentFolder = root;
-    let folderPath = '';
-    for (const part of folderParts) {
-      folderPath = folderPath ? `${folderPath}/${part}` : part;
-      let nextFolder = currentFolder.folders.get(part);
-      if (!nextFolder) {
-        nextFolder = {
-          id: `folder:${folderPath}`,
-          label: part,
-          folders: new Map<string, MutableFolderNode>(),
-          files: [],
-        };
-        currentFolder.folders.set(part, nextFolder);
-      }
-      currentFolder = nextFolder;
-    }
-
-    currentFolder.files.push({
-      id: `doc:${doc.source_uid}`,
-      label: fileLabel,
-      kind: 'file',
-      sourceUid: doc.source_uid,
-      doc,
-    });
-  }
-
-  for (const folderPath of extraFolders) {
-    const parts = folderPath.split('/').filter((p) => p.length > 0);
-    let current = root;
-    let accumulated = '';
-    for (const part of parts) {
-      accumulated = accumulated ? `${accumulated}/${part}` : part;
-      let next = current.folders.get(part);
-      if (!next) {
-        next = {
-          id: `folder:${accumulated}`,
-          label: part,
-          folders: new Map<string, MutableFolderNode>(),
-          files: [],
-        };
-        current.folders.set(part, next);
-      }
-      current = next;
-    }
-  }
-
-  const sortByLabel = (a: { label: string }, b: { label: string }) =>
-    a.label.localeCompare(b.label, undefined, { sensitivity: 'base', numeric: true });
-
-  const toNodes = (folder: MutableFolderNode): FilesTreeNode[] => {
-    const folderNodes = Array.from(folder.folders.values())
-      .sort(sortByLabel)
-      .map((childFolder) => ({
-        id: childFolder.id,
-        label: childFolder.label,
-        kind: 'folder' as const,
-        children: toNodes(childFolder),
-      }));
-    // Keep file insertion order from docs input (already sorted newest-first).
-    const fileNodes = folder.files.map((file) => ({ ...file }));
-    return [...folderNodes, ...fileNodes];
-  };
-
-  return toNodes(root);
-}
-
-function collectFolderNodeIds(nodes: FilesTreeNode[]): string[] {
-  const ids: string[] = [];
-  const walk = (input: FilesTreeNode[]) => {
-    for (const node of input) {
-      if (node.kind !== 'folder') continue;
-      ids.push(node.id);
-      if (node.children?.length) {
-        walk(node.children);
-      }
-    }
-  };
-  walk(nodes);
-  return ids;
-}
-
-function findFirstPreviewableSourceUid(node: FilesTreeNode | null | undefined): string | null {
-  if (!node) return null;
-  if (node.kind === 'file') return node.sourceUid ?? null;
-
-  const children = node.children ?? [];
-  for (const child of children) {
-    if (child.kind !== 'file') continue;
-    if (child.sourceUid) return child.sourceUid;
-  }
-  for (const child of children) {
-    if (child.kind !== 'folder') continue;
-    const nested = findFirstPreviewableSourceUid(child);
-    if (nested) return nested;
-  }
-  return null;
-}
-
-function findFilesTreeNodeById(nodes: FilesTreeNode[], id: string): FilesTreeNode | null {
-  for (const node of nodes) {
-    if (node.id === id) return node;
-    if (node.children?.length) {
-      const nested = findFilesTreeNodeById(node.children, id);
-      if (nested) return nested;
-    }
-  }
-  return null;
-}
-
-function getExtension(name: string): string {
-  const index = name.lastIndexOf('.');
-  if (index < 0 || index === name.length - 1) return '';
-  return name.slice(index + 1).toLowerCase();
-}
-
-function getSourceLocatorExtension(doc: ProjectDocumentRow): string {
-  return getExtension(doc.source_locator ?? '');
-}
-
-function getDocumentTitleExtension(doc: ProjectDocumentRow): string {
-  return getExtension(doc.doc_title ?? '');
-}
-
-function isPdfDocument(doc: ProjectDocumentRow): boolean {
-  if (doc.source_type.toLowerCase() === 'pdf') return true;
-  if (getSourceLocatorExtension(doc) === 'pdf') return true;
-  return getDocumentTitleExtension(doc) === 'pdf';
-}
-
-function isImageDocument(doc: ProjectDocumentRow): boolean {
-  const sourceType = doc.source_type.toLowerCase();
-  if (IMAGE_SOURCE_TYPES.has(sourceType)) return true;
-  return IMAGE_EXTENSIONS.has(getSourceLocatorExtension(doc));
-}
-
-function isTextDocument(doc: ProjectDocumentRow): boolean {
-  const sourceType = doc.source_type.toLowerCase();
-  if (TEXT_SOURCE_TYPES.has(sourceType)) return true;
-  if (sourceType.startsWith('text') || sourceType.includes('plain')) return true;
-  return TEXT_EXTENSIONS.has(getSourceLocatorExtension(doc));
-}
-
-function isMarkdownDocument(doc: ProjectDocumentRow): boolean {
-  const sourceType = doc.source_type.toLowerCase();
-  if (sourceType === 'md' || sourceType === 'markdown' || sourceType === 'mdx') return true;
-  const extension = getSourceLocatorExtension(doc);
-  return extension === 'md' || extension === 'markdown' || extension === 'mdx';
-}
-
-function isDocxDocument(doc: ProjectDocumentRow): boolean {
-  const sourceType = doc.source_type.toLowerCase();
-  if (DOCX_SOURCE_TYPES.has(sourceType)) return true;
-  return DOCX_EXTENSIONS.has(getSourceLocatorExtension(doc));
-}
-
-function isPptxDocument(doc: ProjectDocumentRow): boolean {
-  const sourceType = doc.source_type.toLowerCase();
-  if (PPTX_SOURCE_TYPES.has(sourceType)) return true;
-  return PPTX_EXTENSIONS.has(getSourceLocatorExtension(doc));
-}
-
-async function createSignedUrlForLocator(locator: string | null | undefined): Promise<SignedUrlResult> {
-  const normalized = locator?.trim();
-  if (!normalized) {
-    return { url: null, error: 'No file locator was found.' };
-  }
-
-  const sourceKey = normalized.replace(/^\/+/, '');
-  const { data, error: signedUrlError } = await supabase.storage
-    .from(DOCUMENTS_BUCKET)
-    .createSignedUrl(sourceKey, 60 * 20);
-
-  if (signedUrlError) {
-    return { url: null, error: signedUrlError.message };
-  }
-  if (!data?.signedUrl) {
-    return { url: null, error: 'Storage did not return a signed URL.' };
-  }
-  return { url: data.signedUrl, error: null };
-}
-
-async function resolveSignedUrlForLocators(locators: Array<string | null | undefined>): Promise<SignedUrlResult> {
-  const errors: string[] = [];
-  for (const locator of locators) {
-    if (!locator?.trim()) continue;
-    const result = await createSignedUrlForLocator(locator);
-    if (result.url) return result;
-    if (result.error) errors.push(result.error);
-  }
-
-  return {
-    url: null,
-    error: errors[0] ?? 'No previewable file was available for this document.',
-  };
-}
 
 function resolveRouteProjectId(pathname: string): string | null {
   if (pathname.startsWith('/app/projects/list')) return null;
@@ -652,21 +226,6 @@ function moveTabToPosition(input: Pane[], tabId: TabId, toPaneId: string, insert
   return finalizePanes(next);
 }
 
-function pickNewPaneTab(input: Pane[], sourceActiveTab: TabId): TabId {
-  const openTabs = new Set(input.flatMap((pane) => pane.tabs));
-
-  for (const candidate of NEW_PANE_TAB_PRIORITY) {
-    if (hasTab(candidate) && !openTabs.has(candidate)) return candidate;
-  }
-
-  const nextRegistryTab = allTabIds().find((tabId) => tabId !== 'assets' && !openTabs.has(tabId));
-  if (nextRegistryTab) return nextRegistryTab;
-
-  if (sourceActiveTab !== 'assets' && hasTab(sourceActiveTab)) return sourceActiveTab;
-  if (hasTab('parse')) return 'parse';
-  return FALLBACK_TAB;
-}
-
 function setActiveTab(input: Pane[], paneId: string, tabId: TabId): Pane[] {
   return input.map((pane) => {
     if (pane.id !== paneId) return pane;
@@ -688,319 +247,6 @@ function closeTab(input: Pane[], paneId: string, tabId: TabId): Pane[] {
   return finalizePanes(next);
 }
 
-function PreviewTabPanel({ doc }: { doc: ProjectDocumentRow | null }) {
-  const [previewKind, setPreviewKind] = useState<PreviewKind>('none');
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [previewText, setPreviewText] = useState<string | null>(null);
-  const [previewLoading, setPreviewLoading] = useState(false);
-  const [previewError, setPreviewError] = useState<string | null>(null);
-  const [pdfToolbarHost, setPdfToolbarHost] = useState<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    const loadPreview = async () => {
-      if (!doc) {
-        setPreviewKind('none');
-        setPreviewUrl(null);
-        setPreviewText(null);
-        setPreviewError(null);
-        setPreviewLoading(false);
-        return;
-      }
-
-      setPreviewLoading(true);
-      setPreviewError(null);
-      setPreviewUrl(null);
-      setPreviewText(null);
-
-      const { url: signedUrl, error: signedUrlError } = await resolveSignedUrlForLocators([
-        doc.source_locator,
-        doc.conv_locator,
-      ]);
-
-      if (cancelled) return;
-
-      if (!signedUrl) {
-        setPreviewKind('none');
-        setPreviewError(
-          signedUrlError
-            ? `Preview unavailable: ${signedUrlError}`
-            : 'Preview unavailable for this document.',
-        );
-        setPreviewLoading(false);
-        return;
-      }
-
-      if (isPdfDocument(doc)) {
-        setPreviewKind('pdf');
-        setPreviewUrl(signedUrl);
-        setPreviewLoading(false);
-        return;
-      }
-      if (isImageDocument(doc)) {
-        setPreviewKind('image');
-        setPreviewUrl(signedUrl);
-        setPreviewLoading(false);
-        return;
-      }
-      if (isTextDocument(doc)) {
-        try {
-          const response = await fetch(signedUrl);
-          const text = await response.text();
-          if (cancelled) return;
-          const truncated = text.length > 200000 ? `${text.slice(0, 200000)}\n\n[Preview truncated]` : text;
-          setPreviewKind(isMarkdownDocument(doc) ? 'markdown' : 'text');
-          setPreviewText(truncated.length > 0 ? truncated : '[Empty file]');
-          setPreviewUrl(signedUrl);
-          setPreviewLoading(false);
-          return;
-        } catch {
-          if (cancelled) return;
-          setPreviewKind('file');
-          setPreviewUrl(signedUrl);
-          setPreviewLoading(false);
-          return;
-        }
-      }
-      if (isDocxDocument(doc)) {
-        setPreviewKind('docx');
-        setPreviewUrl(signedUrl);
-        setPreviewLoading(false);
-        return;
-      }
-      if (isPptxDocument(doc)) {
-        setPreviewKind('pptx');
-        setPreviewUrl(signedUrl);
-        setPreviewLoading(false);
-        return;
-      }
-
-      setPreviewKind('file');
-      setPreviewUrl(signedUrl);
-      setPreviewLoading(false);
-    };
-
-    void loadPreview();
-    return () => {
-      cancelled = true;
-    };
-  }, [doc]);
-
-  const selectedDocPath = normalizePath(doc?.doc_title ?? '');
-  const selectedDocPathParts = selectedDocPath.split('/').filter((part) => part.length > 0);
-  const selectedDocTitle = selectedDocPathParts[selectedDocPathParts.length - 1]
-    ?? doc?.doc_title
-    ?? 'Asset';
-  const selectedDocFormat = doc ? getDocumentFormat(doc) : 'FILE';
-
-  const renderPreviewFrame = (
-    content: ReactNode,
-    options?: { scroll?: boolean; padded?: boolean },
-  ) => (
-    <div className="h-full w-full min-h-0 p-2">
-      <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-md border border-border bg-card">
-        {options?.scroll === false ? (
-          <div
-            className={[
-              'min-h-0 flex-1 overflow-hidden',
-              options?.padded === false ? '' : 'p-3',
-            ].join(' ')}
-          >
-            {content}
-          </div>
-        ) : (
-          <ScrollArea
-            className="min-h-0 h-full flex-1"
-            viewportClass={[
-              'h-full overflow-y-auto overflow-x-hidden',
-              options?.padded === false ? '' : 'p-3',
-            ].join(' ').trim()}
-          >
-            {content}
-          </ScrollArea>
-        )}
-      </div>
-    </div>
-  );
-
-  const renderCenteredMessage = (message: ReactNode, isError = false) => (
-    <div
-      className={[
-        'flex h-full w-full items-center justify-center text-sm',
-        isError ? 'text-red-500' : 'text-muted-foreground',
-      ].join(' ')}
-    >
-      {message}
-    </div>
-  );
-
-  const renderUnifiedPreviewHeader = (options?: { downloadUrl?: string | null; centerContent?: ReactNode }) => (
-    <div className="grid min-h-10 grid-cols-[auto_1fr_auto] items-center border-b border-border bg-card px-2">
-      <span className="inline-flex min-w-[34px] justify-center rounded border border-border bg-muted/60 px-1 py-0.5 text-[11px] font-semibold text-muted-foreground">
-        {selectedDocFormat}
-      </span>
-      {options?.centerContent ?? (
-        <span
-          className="min-w-0 px-2 text-center text-[13px] font-medium text-foreground truncate"
-          title={selectedDocTitle}
-        >
-          {selectedDocTitle}
-        </span>
-      )}
-      {options?.downloadUrl ? (
-        <a
-          href={options.downloadUrl}
-          target="_blank"
-          rel="noreferrer"
-          download
-          aria-label="Download file"
-          className="ml-auto inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
-        >
-          <IconDownload size={16} />
-        </a>
-      ) : (
-        <span aria-hidden className="h-8 w-8" />
-      )}
-    </div>
-  );
-
-  const renderPreviewWithUnifiedHeader = (
-    content: ReactNode,
-    options?: {
-      downloadUrl?: string | null;
-      contentClassName?: string;
-      useScrollArea?: boolean;
-      headerCenterContent?: ReactNode;
-    },
-  ) => renderPreviewFrame(
-    <div className="flex h-full min-h-0 flex-col">
-      {renderUnifiedPreviewHeader({
-        downloadUrl: options?.downloadUrl,
-        centerContent: options?.headerCenterContent,
-      })}
-      {options?.useScrollArea === false ? (
-        <div className={['min-h-0 flex-1', options?.contentClassName ?? ''].join(' ').trim()}>
-          {content}
-        </div>
-      ) : (
-        <ScrollArea
-          className="min-h-0 flex-1"
-          viewportClass={[
-            'h-full overflow-y-auto overflow-x-hidden',
-            options?.contentClassName ?? '',
-          ].join(' ').trim()}
-        >
-          {content}
-        </ScrollArea>
-      )}
-    </div>,
-    { scroll: false, padded: false },
-  );
-
-  const renderStandardContentPreview = (
-    content: ReactNode,
-    options?: { contentClassName?: string; downloadUrl?: string | null },
-  ) => renderPreviewWithUnifiedHeader(
-    <div className={['parse-docx-preview-viewport', options?.contentClassName ?? ''].join(' ').trim()}>
-      {content}
-    </div>,
-    { downloadUrl: options?.downloadUrl },
-  );
-
-  if (!doc) {
-    return renderPreviewFrame(renderCenteredMessage('Select an asset to preview.'));
-  }
-
-  if (previewLoading) {
-    return renderPreviewWithUnifiedHeader(renderCenteredMessage('Loading preview...'));
-  }
-
-  if (previewError) {
-    return renderPreviewWithUnifiedHeader(renderCenteredMessage(previewError, true));
-  }
-
-  if (previewKind === 'pdf' && previewUrl) {
-    return renderPreviewWithUnifiedHeader(
-      <PdfPreview
-        key={`${doc.source_uid}:${previewUrl}`}
-        url={previewUrl}
-        hideToolbar={!pdfToolbarHost}
-        toolbarPortalTarget={pdfToolbarHost}
-      />,
-      {
-        downloadUrl: previewUrl,
-        contentClassName: 'overflow-hidden',
-        useScrollArea: false,
-        headerCenterContent: <div className="parse-preview-toolbar-host flex min-w-0 items-center" ref={setPdfToolbarHost} />,
-      },
-    );
-  }
-
-  if (previewKind === 'image' && previewUrl) {
-    return renderStandardContentPreview(
-      <div className="flex h-full w-full items-center justify-center overflow-auto p-4">
-        <img src={previewUrl} alt={doc.doc_title} className="max-h-full max-w-full" />
-      </div>,
-      { downloadUrl: previewUrl },
-    );
-  }
-
-  if (previewKind === 'text') {
-    return renderStandardContentPreview(
-      <pre className="parse-preview-text">{previewText ?? ''}</pre>,
-      { downloadUrl: previewUrl },
-    );
-  }
-
-  if (previewKind === 'markdown') {
-    return renderStandardContentPreview(
-      <div className="parse-markdown-preview">
-        <ReactMarkdown remarkPlugins={[remarkGfm]}>
-          {previewText ?? ''}
-        </ReactMarkdown>
-      </div>,
-      { downloadUrl: previewUrl },
-    );
-  }
-
-  if (previewKind === 'docx' && previewUrl) {
-    return renderPreviewWithUnifiedHeader(
-      <DocxPreview
-        key={`${doc.source_uid}:${previewUrl}`}
-        title={doc.doc_title}
-        url={previewUrl}
-        hideToolbar
-      />,
-      { downloadUrl: previewUrl },
-    );
-  }
-
-  if (previewKind === 'pptx' && previewUrl) {
-    return renderPreviewWithUnifiedHeader(
-      <PptxPreview
-        key={`${doc.source_uid}:${previewUrl}`}
-        title={doc.doc_title}
-        url={previewUrl}
-        hideHeaderMeta
-      />,
-      { downloadUrl: previewUrl },
-    );
-  }
-
-  if (previewUrl) {
-    return renderStandardContentPreview(
-      <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
-        <a href={previewUrl} target="_blank" rel="noreferrer" className="text-primary hover:underline">
-          Open file
-        </a>
-      </div>,
-      { downloadUrl: previewUrl },
-    );
-  }
-
-  return renderPreviewWithUnifiedHeader(renderCenteredMessage('Preview unavailable.'));
-}
 
 /* ------------------------------------------------------------------ */
 /*  ToolbarBtn — standardized toolbar button                           */
@@ -1045,8 +291,6 @@ export default function DocumentTest() {
   const [docs, setDocs] = useState<ProjectDocumentRow[]>([]);
   const [docsLoading, setDocsLoading] = useState(false);
   const [docsError, setDocsError] = useState<string | null>(null);
-  const [filesQueryInput, setFilesQueryInput] = useState('');
-  const [filesQuery, setFilesQuery] = useState('');
   const [selectedSourceUid, setSelectedSourceUid] = useState<string | null>(null);
   const previewTabSequenceRef = useRef(1);
 
@@ -1077,17 +321,6 @@ export default function DocumentTest() {
   }, [cancelPullMenuClose]);
   useEffect(() => () => cancelPullMenuClose(), [cancelPullMenuClose]);
 
-  const supportsDirectoryUpload = useMemo(() => {
-    if (typeof document === 'undefined') return false;
-    const input = document.createElement('input') as HTMLInputElement & { webkitdirectory?: string };
-    return 'webkitdirectory' in input;
-  }, []);
-  const [creatingType, setCreatingType] = useState<'file' | 'folder' | null>(null);
-  const [createName, setCreateName] = useState('');
-  const [virtualFolders, setVirtualFolders] = useState<string[]>([]);
-  const [expandedValue, setExpandedValue] = useState<string[]>([]);
-  const [selectedTreeNodeId, setSelectedTreeNodeId] = useState<string | null>(null);
-  const expandedInitRef = useRef(false);
 
   const paneLayout = useMemo(() => {
     const total = panes.reduce((sum, pane) => sum + pane.width, 0) || 100;
@@ -1130,15 +363,6 @@ export default function DocumentTest() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     void loadDocs();
   }, [loadDocs]);
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      setFilesQuery(filesQueryInput);
-    }, 160);
-    return () => {
-      window.clearTimeout(timer);
-    };
-  }, [filesQueryInput]);
 
   const uploadFiles = useCallback(
     async (pending: readonly PendingUpload[]) => {
@@ -1201,78 +425,6 @@ export default function DocumentTest() {
     [uploadFiles],
   );
 
-  const openNativeFilePicker = useCallback((mode: 'file' | 'folder') => {
-    const tryOpen = (input: HTMLInputElement | null): boolean => {
-      if (!input) return false;
-      try {
-        const pickerInput = input as HTMLInputElement & { showPicker?: () => void };
-        if (typeof pickerInput.showPicker === 'function') {
-          pickerInput.showPicker();
-        } else {
-          input.click();
-        }
-        return true;
-      } catch {
-        return false;
-      }
-    };
-
-    const transientInput = document.createElement('input');
-    transientInput.type = 'file';
-    transientInput.multiple = true;
-    if (mode === 'folder') {
-      (transientInput as HTMLInputElement & { webkitdirectory?: boolean }).webkitdirectory = true;
-    }
-    transientInput.className = 'sr-only';
-    transientInput.onchange = () => {
-      void handleFilesSelected(transientInput.files);
-      transientInput.remove();
-    };
-    document.body.appendChild(transientInput);
-    tryOpen(transientInput);
-  }, [handleFilesSelected]);
-
-  const activeFolderPath = useMemo(() => {
-    if (selectedTreeNodeId?.startsWith('folder:')) {
-      return normalizePath(selectedTreeNodeId.slice('folder:'.length));
-    }
-    const selectedDocSourceUid = selectedTreeNodeId?.startsWith('doc:')
-      ? selectedTreeNodeId.slice('doc:'.length)
-      : selectedSourceUid;
-    if (!selectedDocSourceUid) return '';
-    const selectedDocRow = docs.find((doc) => doc.source_uid === selectedDocSourceUid);
-    return getDocumentFolderPath(selectedDocRow);
-  }, [docs, selectedSourceUid, selectedTreeNodeId]);
-
-  const handleCreateEntry = useCallback(
-    async (name: string, type: 'file' | 'folder') => {
-      if (!name.trim() || !projectId) return;
-      const trimmed = normalizePath(name);
-      const selectedFolderPath = activeFolderPath;
-      if (!trimmed) return;
-
-      if (type === 'folder') {
-        const targetFolderPath = joinPath(selectedFolderPath, trimmed);
-        if (!targetFolderPath) return;
-        setVirtualFolders((prev) => prev.includes(targetFolderPath) ? prev : [...prev, targetFolderPath]);
-        setCreatingType(null);
-        setCreateName('');
-        return;
-      }
-
-      const normalizedName = ensureFileExtension(trimmed);
-      const targetRelativePath = joinPath(selectedFolderPath, normalizedName);
-      if (!targetRelativePath) return;
-      const fileName = targetRelativePath.split('/').filter((part) => part.length > 0).pop() ?? targetRelativePath;
-
-      setCreatingType(null);
-      setCreateName('');
-      const createdFile = new File([createDefaultTextFileContents(fileName)], fileName, { type: 'text/plain' });
-      await uploadFiles([{ file: createdFile, relativePath: targetRelativePath }]);
-    },
-    [activeFolderPath, projectId, uploadFiles],
-  );
-
   const resolvedSelectedSourceUid = useMemo(() => {
     if (selectedSourceUid && docs.some((doc) => doc.source_uid === selectedSourceUid)) {
       return selectedSourceUid;
@@ -1281,15 +433,11 @@ export default function DocumentTest() {
   }, [selectedSourceUid, docs]);
 
   const selectedSourceUidForActions = useMemo(() => {
-    if (selectedTreeNodeId?.startsWith('doc:')) {
-      const sourceUid = selectedTreeNodeId.slice('doc:'.length);
-      return docs.some((doc) => doc.source_uid === sourceUid) ? sourceUid : null;
-    }
     if (selectedSourceUid && docs.some((doc) => doc.source_uid === selectedSourceUid)) {
       return selectedSourceUid;
     }
     return null;
-  }, [docs, selectedSourceUid, selectedTreeNodeId]);
+  }, [docs, selectedSourceUid]);
 
   const selectedDoc = useMemo(
     () => docs.find((doc) => doc.source_uid === resolvedSelectedSourceUid) ?? null,
@@ -1322,58 +470,17 @@ export default function DocumentTest() {
     }
 
     setSelectedSourceUid(null);
-    setSelectedTreeNodeId(null);
     await loadDocs();
   }, [selectedSourceUidForActions, projectId, docs, loadDocs]);
 
-  const filteredDocs = useMemo(() => {
-    const query = filesQuery.trim().toLowerCase();
-    if (!query) return docs;
-    return docs.filter((doc) => {
-      const title = doc.doc_title.toLowerCase();
-      const sourceType = doc.source_type.toLowerCase();
-      const locator = (doc.source_locator ?? '').toLowerCase();
-      return title.includes(query) || sourceType.includes(query) || locator.includes(query);
-    });
-  }, [docs, filesQuery]);
-
-  const filesTreeNodes = useMemo(
-    () => buildFilesTreeNodes(filteredDocs, virtualFolders),
-    [filteredDocs, virtualFolders],
+  const handleCreateFileEntry = useCallback(
+    async (relativePath: string) => {
+      const fileName = relativePath.split('/').filter((part) => part.length > 0).pop() ?? relativePath;
+      const createdFile = new File([createDefaultTextFileContents(fileName)], fileName, { type: 'text/plain' });
+      await uploadFiles([{ file: createdFile, relativePath }]);
+    },
+    [uploadFiles],
   );
-  const filesTreeCollection = useMemo(() => createTreeCollection<FilesTreeNode>({
-    nodeToValue: (node) => node.id,
-    nodeToString: (node) => node.label,
-    rootNode: { id: 'root', label: '', kind: 'folder', children: filesTreeNodes } as FilesTreeNode,
-  }), [filesTreeNodes]);
-  const folderNodeIds = useMemo(() => collectFolderNodeIds(filesTreeNodes), [filesTreeNodes]);
-  const hasFilesTreeNodes = filesTreeNodes.length > 0;
-
-  useEffect(() => {
-    setVirtualFolders(readStoredVirtualFolders(projectId));
-  }, [projectId]);
-
-  useEffect(() => {
-    writeStoredVirtualFolders(projectId, virtualFolders);
-  }, [projectId, virtualFolders]);
-
-  useEffect(() => {
-    expandedInitRef.current = false;
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setExpandedValue([]);
-    setSelectedTreeNodeId(null);
-    setSelectedSourceUid(null);
-  }, [projectId]);
-
-  useEffect(() => {
-    if (!expandedInitRef.current) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setExpandedValue(folderNodeIds);
-      expandedInitRef.current = true;
-      return;
-    }
-    setExpandedValue((current) => current.filter((id) => folderNodeIds.includes(id)));
-  }, [folderNodeIds]);
 
   const openPreviewInRightmostPane = useCallback((sourceUid: string) => {
     const previewTabId = createPreviewInstanceTabId(sourceUid, previewTabSequenceRef.current);
@@ -1417,281 +524,26 @@ export default function DocumentTest() {
 
   const handleSelectFile = useCallback((sourceUid: string) => {
     setSelectedSourceUid(sourceUid);
-    setSelectedTreeNodeId(`doc:${sourceUid}`);
     openPreviewInRightmostPane(sourceUid);
   }, [openPreviewInRightmostPane]);
 
-  const filesTabContent = useMemo(() => {
-    if (!projectId) {
-      return (
-        <div className="flex h-full w-full items-center justify-center p-4 text-sm text-muted-foreground">
-          Select a project from the left rail to load assets.
-        </div>
-      );
-    }
-
-    const selectedInFiltered = !!resolvedSelectedSourceUid
-      && filteredDocs.some((doc) => doc.source_uid === resolvedSelectedSourceUid);
-    const selectedDocNodeId = selectedInFiltered && resolvedSelectedSourceUid ? `doc:${resolvedSelectedSourceUid}` : null;
-    const selectedTreeValue = selectedTreeNodeId && filesTreeCollection.findNode(selectedTreeNodeId)
-      ? [selectedTreeNodeId]
-      : (selectedDocNodeId ? [selectedDocNodeId] : []);
-
-    return (
-      <div className="h-full w-full min-h-0 p-2">
-        <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-md border border-border bg-card">
-          <div className="grid min-h-10 grid-cols-[1fr_auto] items-center gap-2 border-b border-border bg-card px-2">
-              <Field.Root className="min-w-0 flex-1 md:max-w-[56%]">
-                <Field.Input
-                  type="text"
-                  value={filesQueryInput}
-                  onChange={(event) => setFilesQueryInput(event.currentTarget.value)}
-                  placeholder="Search"
-                  className="h-8 w-full rounded-md border border-border bg-background px-3 text-xs leading-none text-foreground shadow-sm outline-none placeholder:text-[11px] placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring"
-                  aria-label="Search assets"
-                />
-              </Field.Root>
-              <div className="ml-auto flex shrink-0 items-center gap-1.5">
-                <button
-                  type="button"
-                  title="Add file"
-                  onClick={() => openNativeFilePicker('file')}
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-transparent bg-transparent text-muted-foreground transition-colors hover:bg-accent/70 hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                >
-                  <IconFilePlus size={16} />
-                </button>
-                <button
-                  type="button"
-                  title="Add folder"
-                  onClick={() => {
-                    if (!supportsDirectoryUpload) {
-                      setDocsError('Folder picker is not supported in this browser. Use drag/drop or Add file.');
-                      return;
-                    }
-                    openNativeFilePicker('folder');
-                  }}
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-transparent bg-transparent text-muted-foreground transition-colors hover:bg-accent/70 hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                >
-                  <IconFolderPlus size={16} />
-                </button>
-                <button
-                  type="button"
-                  title="Create file"
-                  onClick={() => { setCreatingType('file'); setCreateName(''); }}
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-transparent bg-transparent text-muted-foreground transition-colors hover:bg-accent/70 hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                >
-                  <IconPlus size={16} />
-                </button>
-                <button
-                  type="button"
-                  title="Create folder"
-                  onClick={() => { setCreatingType('folder'); setCreateName(''); }}
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-transparent bg-transparent text-muted-foreground transition-colors hover:bg-accent/70 hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                >
-                  <IconFolder size={16} />
-                </button>
-                <button
-                  type="button"
-                  title="Delete selected"
-                  disabled={!selectedSourceUidForActions}
-                  onClick={() => void handleDeleteSelected()}
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-transparent bg-transparent text-muted-foreground transition-colors hover:bg-accent/70 hover:text-red-500 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-muted-foreground"
-                >
-                  <IconTrash size={16} />
-                </button>
-              </div>
-          </div>
-
-          <ScrollArea className="min-h-0 h-full flex-1" viewportClass="h-full overflow-y-auto bg-background p-2">
-          {creatingType ? (
-            <div className="mb-2 flex items-center gap-1.5 rounded border border-primary/40 bg-accent/30 px-2 py-1.5">
-              {creatingType === 'folder' ? (
-                <IconFolder size={14} className="shrink-0 text-muted-foreground" />
-              ) : (
-                <IconFileText size={14} className="shrink-0 text-muted-foreground" />
-              )}
-              <input
-                autoFocus
-                type="text"
-                value={createName}
-                onChange={(e) => setCreateName(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && createName.trim()) {
-                    void handleCreateEntry(createName, creatingType);
-                  }
-                  if (e.key === 'Escape') {
-                    setCreatingType(null);
-                    setCreateName('');
-                  }
-                }}
-                placeholder={creatingType === 'folder' ? 'Folder name' : 'File name'}
-                className="h-7 min-w-0 flex-1 border-none bg-transparent text-sm text-foreground outline-none"
-              />
-              <button
-                type="button"
-                onClick={() => void handleCreateEntry(createName, creatingType)}
-                disabled={!createName.trim()}
-                className="text-xs font-semibold text-primary hover:underline disabled:opacity-40 disabled:no-underline"
-              >
-                Create
-              </button>
-              <button
-                type="button"
-                onClick={() => { setCreatingType(null); setCreateName(''); }}
-                className="inline-flex h-4 w-4 items-center justify-center rounded hover:bg-accent"
-              >
-                <IconX size={12} />
-              </button>
-            </div>
-          ) : null}
-
-          {docsLoading ? (
-            <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
-              Loading project assets...
-            </div>
-          ) : null}
-
-          {!docsLoading && docsError ? (
-            <div className="flex h-full items-center justify-center text-xs text-red-500">
-              {docsError}
-            </div>
-          ) : null}
-
-          {!docsLoading && !docsError && !hasFilesTreeNodes && filesQueryInput.trim().length === 0 ? (
-            <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
-              No assets in this project yet.
-            </div>
-          ) : null}
-
-          {!docsLoading && !docsError && !hasFilesTreeNodes && filesQueryInput.trim().length > 0 ? (
-            <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
-              No assets match that filter.
-            </div>
-          ) : null}
-
-          {!docsLoading && !docsError && hasFilesTreeNodes ? (
-            <div
-              className="h-full"
-              onClick={(event) => {
-                // Clicking empty space clears folder/file selection, so create actions target root.
-                if (event.target !== event.currentTarget) return;
-                setSelectedTreeNodeId(null);
-                setSelectedSourceUid(null);
-              }}
-            >
-              <TreeView.Root
-                collection={filesTreeCollection}
-                selectionMode="single"
-                selectedValue={selectedTreeValue}
-                expandedValue={expandedValue}
-                onExpandedChange={(details) => {
-                  expandedInitRef.current = true;
-                  setExpandedValue(details.expandedValue);
-                }}
-                onSelectionChange={(details) => {
-                  const nextId = details.selectedValue[0];
-                  if (!nextId || nextId === 'root') return;
-                  setSelectedTreeNodeId(nextId);
-                  if (!nextId.startsWith('doc:')) {
-                    const folderNode = findFilesTreeNodeById(filesTreeNodes, nextId);
-                    const nestedSourceUid = findFirstPreviewableSourceUid(folderNode);
-                    if (nestedSourceUid) {
-                      handleSelectFile(nestedSourceUid);
-                      return;
-                    }
-                    setSelectedSourceUid(null);
-                    return;
-                  }
-                  handleSelectFile(nextId.slice('doc:'.length));
-                }}
-                className="text-[13px]"
-              >
-                <TreeView.Tree className="flex flex-col" aria-label="Project assets">
-                  <TreeView.Context>
-                    {(tree) => tree.getVisibleNodes().map((entry) => {
-                      const node = entry.node as FilesTreeNode;
-                      if (node.id === 'root') return null;
-                      const rowPaddingLeft = `${Math.max(0, entry.indexPath.length - 1) * 12}px`;
-
-                      return (
-                        <TreeView.NodeProvider key={node.id} node={node} indexPath={entry.indexPath}>
-                          <TreeView.NodeContext>
-                            {(state) => {
-                              const rowClassName = `flex items-center gap-2 rounded-md px-2.5 py-1.5 ${
-                                state.selected
-                                  ? 'bg-accent/70 text-foreground'
-                                  : 'hover:bg-accent/60'
-                              }`;
-                              const rowStyle: CSSProperties = {
-                                paddingLeft: rowPaddingLeft,
-                                contentVisibility: 'auto',
-                                containIntrinsicSize: '30px',
-                              };
-
-                              if (state.isBranch || node.kind === 'folder') {
-                                return (
-                                  <TreeView.Branch>
-                                    <TreeView.BranchControl className={rowClassName} style={rowStyle}>
-                                      <IconFolder size={15} className="shrink-0 text-muted-foreground" />
-                                      <TreeView.BranchText className="min-w-0 flex-1 truncate text-[13px] text-foreground">
-                                        {node.label}
-                                      </TreeView.BranchText>
-                                    </TreeView.BranchControl>
-                                  </TreeView.Branch>
-                                );
-                              }
-
-                              const fileDoc = node.doc;
-                              if (!fileDoc) return null;
-                              const failed = fileDoc.status.includes('failed');
-
-                              return (
-                                <TreeView.Item className={rowClassName} style={rowStyle}>
-                                  <TreeView.ItemText className="flex w-full min-w-0 items-center gap-2">
-                                    <IconFileText size={15} className="shrink-0 text-muted-foreground" />
-                                    <span className="min-w-0 max-w-[52%] truncate text-[13px] font-medium text-foreground" title={node.label}>
-                                      {node.label}
-                                    </span>
-                                    <span className="ml-auto inline-flex shrink-0 items-center gap-2">
-                                      <span className="w-12 text-right font-mono text-[11px] text-muted-foreground">
-                                        {formatBytes(fileDoc.source_filesize)}
-                                      </span>
-                                      <span className="inline-flex min-w-[34px] justify-center rounded border border-border bg-muted/60 px-1 py-0.5 text-[11px] font-semibold text-muted-foreground">
-                                        {getDocumentFormat(fileDoc)}
-                                      </span>
-                                      <span
-                                        className="inline-flex h-3 w-3 items-center justify-center"
-                                        aria-label={failed ? 'failed' : 'success'}
-                                        title={failed ? 'failed' : 'success'}
-                                      >
-                                        <span
-                                          className={[
-                                            'h-2.5 w-2.5 rounded-full',
-                                            failed
-                                              ? 'bg-red-600 dark:bg-red-400'
-                                              : 'bg-emerald-600 dark:bg-emerald-400',
-                                          ].join(' ')}
-                                        />
-                                      </span>
-                                    </span>
-                                  </TreeView.ItemText>
-                                </TreeView.Item>
-                              );
-                            }}
-                          </TreeView.NodeContext>
-                        </TreeView.NodeProvider>
-                      );
-                    })}
-                  </TreeView.Context>
-                </TreeView.Tree>
-              </TreeView.Root>
-            </div>
-          ) : null}
-          </ScrollArea>
-        </div>
-      </div>
-    );
-  }, [createName, creatingType, docsError, docsLoading, expandedValue, filesQueryInput, filesTreeCollection, filesTreeNodes, filteredDocs, handleCreateEntry, handleDeleteSelected, handleSelectFile, hasFilesTreeNodes, openNativeFilePicker, projectId, resolvedSelectedSourceUid, selectedSourceUidForActions, selectedTreeNodeId, supportsDirectoryUpload, uploadFiles]);
+  const renderAssetsPanel = useCallback(() => (
+    <AssetsPanel
+      projectId={projectId}
+      docs={docs}
+      docsLoading={docsLoading}
+      docsError={docsError}
+      selectedSourceUid={selectedSourceUid}
+      onSelectFile={handleSelectFile}
+      onDeleteSelected={handleDeleteSelected}
+      onUploadFiles={handleFilesSelected}
+      onCreateEntry={(relativePath, type) => {
+        if (type === 'folder') return; // folders handled inside AssetsPanel
+        void handleCreateFileEntry(relativePath);
+      }}
+      selectedSourceUidForActions={selectedSourceUidForActions}
+    />
+  ), [projectId, docs, docsLoading, docsError, selectedSourceUid, handleSelectFile, handleDeleteSelected, handleFilesSelected, handleCreateFileEntry, selectedSourceUidForActions]);
 
   const canvasTabContent = useMemo(() => (
     <div className="h-full w-full min-h-0">
@@ -1727,7 +579,7 @@ export default function DocumentTest() {
 
   const renderTabContent = (tab: TabId) => {
     // View tabs have inline-rendered content (memoized above)
-    if (tab === 'assets') return filesTabContent;
+    if (tab === 'assets') return renderAssetsPanel();
     if (tab === 'preview') return <PreviewTabPanel doc={selectedDoc} />;
     if (isPreviewInstanceTab(tab)) {
       const sourceUid = getPreviewSourceUidFromTabId(tab);
@@ -1873,40 +725,8 @@ export default function DocumentTest() {
 
   return (
     <div className="flex h-[calc(100vh-var(--app-shell-header-height))] flex-col overflow-hidden">
-      {/* Reserved strip for future ELT top submenu tabs (structurally identical to Flows). */}
-      <Tabs value="overview" onValueChange={() => {}} className="w-full">
-        <TabsList
-          aria-label="Flow sections"
-          className="flow-detail-tabs-row flex h-11 min-h-11 w-full items-stretch overflow-x-auto bg-card shadow-[inset_0_-1px_0_var(--border)]"
-        >
-          {ELT_RESERVED_TOP_TAB_SHAPES.map((item) => {
-            const isLocked = Boolean(item.locked);
-            return (
-              <TabsTrigger
-                key={item.value}
-                value={item.value}
-                disabled={isLocked}
-                aria-disabled={isLocked}
-                className="inline-flex h-full shrink-0 items-center gap-1 border-r border-border px-3.5 text-[13px] font-semibold leading-none whitespace-nowrap text-muted-foreground transition-colors first:border-l first:border-l-border hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-muted-foreground data-selected:bg-background data-selected:text-foreground"
-              >
-                <span>{item.label}</span>
-                {isLocked ? <IconLock size={11} aria-hidden /> : null}
-              </TabsTrigger>
-            );
-          })}
-          <button
-            type="button"
-            aria-label="Add preview tab"
-            className="inline-flex h-full shrink-0 items-center px-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-            onClick={() => {}}
-          >
-            <IconPlus size={14} aria-hidden />
-          </button>
-        </TabsList>
-      </Tabs>
+      <div className="flex items-center gap-2 border-b border-border bg-card px-3 py-2">
 
-      <div className="flex min-h-0 flex-1 flex-col gap-3 p-3">
-        <div className="flex items-center gap-2 rounded-md border border-border bg-card p-2">
         <ToolbarBtn
           active={panes.some((p) => p.tabs.includes('assets'))}
           icon={<IconFiles size={15} />}
@@ -2029,10 +849,11 @@ export default function DocumentTest() {
           <ToolbarBtn active={false} icon={<IconTransform size={15} />}>
             Transform
           </ToolbarBtn>
-        </div>
+      </div>
 
+      <div className="flex min-h-0 flex-1 flex-col">
         <Splitter.Root
-        className="flex min-h-0 flex-1 overflow-hidden rounded-md border border-border bg-background"
+        className="flex min-h-0 flex-1 overflow-hidden bg-background"
         orientation="horizontal"
         panels={splitterPanels}
         size={paneLayout.map((pane) => pane.widthPercent)}
@@ -2216,7 +1037,7 @@ export default function DocumentTest() {
                 </div>
               </div>
               <div className={[
-                'flex min-h-0 flex-1',
+                'flex min-h-0 flex-1 bg-card',
                 isKnownTab(pane.activeTab)
                   ? ''
                   : 'items-center justify-center text-sm text-muted-foreground',

@@ -16,7 +16,6 @@ import {
   X,
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   type FsNode,
   clearSavedDirectoryHandle,
@@ -25,6 +24,7 @@ import {
   restoreDirectoryHandle,
   saveDirectoryHandle,
 } from '@/lib/fs-access';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -319,7 +319,7 @@ export function WorkspaceFileTree({ onSelectFile, onMoveNode, onRenameNode, onDe
       </div>
 
       {/* Tree */}
-      <ScrollArea className="flex-1 min-h-0">
+      <ScrollArea className="flex-1 min-h-0" viewportClass="!overflow-x-hidden" contentClass="p-4">
         <TreeView.Root
           aria-label="Workspace file tree"
           collection={collection}
@@ -333,7 +333,7 @@ export function WorkspaceFileTree({ onSelectFile, onMoveNode, onRenameNode, onDe
             }
           }}
         >
-          <TreeView.Tree className="py-1">
+          <TreeView.Tree className="py-1 pb-2">
             {collection.rootNode.children?.map((node, index) => (
               <TreeNodeView
                 key={node.id}
@@ -410,9 +410,9 @@ function TreeNodeView({
     return (
       <TreeView.NodeProvider node={node} indexPath={indexPath}>
         <TreeView.Branch>
-          <TreeView.BranchControl>
+          <TreeView.BranchControl className="min-w-0">
             <TreeView.BranchTrigger
-              className="flex w-full items-center gap-1.5 rounded px-2 py-1 text-sm hover:bg-accent data-[drag-over=true]:bg-accent/50 data-[drag-over=true]:ring-1 data-[drag-over=true]:ring-primary/50"
+              className="flex w-full min-w-0 items-center gap-1.5 overflow-hidden rounded px-2 py-1 text-sm hover:bg-accent data-[drag-over=true]:bg-accent/50 data-[drag-over=true]:ring-1 data-[drag-over=true]:ring-primary/50"
               draggable
               onDragStart={(e) => onDragStart(e, node)}
               onDragOver={(e) => onDragOver(e, node)}
@@ -424,7 +424,7 @@ function TreeNodeView({
               <TreeView.BranchIndicator className="transition-transform data-[state=open]:rotate-90">
                 <ChevronRight size={14} strokeWidth={ICON_STROKE} className="shrink-0" />
               </TreeView.BranchIndicator>
-              <TreeView.BranchText className="flex items-center gap-1.5 truncate">
+              <TreeView.BranchText className="flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden">
                 <FolderClosed
                   size={ICON_SIZE}
                   strokeWidth={ICON_STROKE}
@@ -435,7 +435,7 @@ function TreeNodeView({
                   strokeWidth={ICON_STROKE}
                   className="shrink-0 text-muted-foreground hidden [[data-state=open]_&]:block"
                 />
-                <span className="truncate">{node.name}</span>
+                <span className="min-w-0 truncate">{node.name}</span>
               </TreeView.BranchText>
             </TreeView.BranchTrigger>
           </TreeView.BranchControl>
@@ -466,16 +466,16 @@ function TreeNodeView({
       <TreeView.Item>
         <button
           type="button"
-          className="flex w-full items-center gap-1.5 rounded px-2 py-1 text-sm hover:bg-accent"
+          className="flex w-full min-w-0 items-center gap-1.5 overflow-hidden rounded px-2 py-1 text-sm hover:bg-accent"
           onClick={() => onSelect(node)}
           draggable
           onDragStart={(e) => onDragStart(e, node)}
           onDragEnd={onDragEnd}
           onContextMenu={(e) => onContextMenu(e, node)}
         >
-          <TreeView.ItemText className="flex items-center gap-1.5 truncate">
+          <TreeView.ItemText className="flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden">
             {fileIcon(node.extension)}
-            <span className="truncate">{node.name}</span>
+            <span className="min-w-0 truncate">{node.name}</span>
           </TreeView.ItemText>
         </button>
       </TreeView.Item>

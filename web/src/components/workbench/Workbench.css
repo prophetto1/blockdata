@@ -103,6 +103,7 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .workbench-pane.is-pane-dragover {
@@ -261,8 +262,10 @@
 
 .workbench-pane-content {
   flex: 1;
+  min-width: 0;
   min-height: 0;
-  padding: 0;
+  overflow: hidden;
+  padding: 8px;
 }
 
 .workbench-resizer {

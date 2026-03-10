@@ -198,7 +198,7 @@ export function Component() {
         <Workbench
           tabs={TABS}
           defaultPanes={DEFAULT_PANES}
-          saveKey="superuser-layout-2"
+          saveKey="superuser-layout-3"
           renderContent={renderContent}
           hideToolbar
         />

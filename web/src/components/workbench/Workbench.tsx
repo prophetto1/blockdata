@@ -13,7 +13,7 @@ import {
   MenuRoot,
   MenuTrigger,
 } from '@/components/ui/menu';
-import { ScrollArea } from '@/components/ui/scroll-area';
+
 import {
   activateTabInPane,
   closeTabInPane,
@@ -38,6 +38,8 @@ export type WorkbenchProps = {
   renderContent: (tabId: string) => React.ReactNode;
   toolbarActions?: React.ReactNode;
   hideToolbar?: boolean;
+  /** Return a label for dynamic tab IDs not in the static `tabs` array, or null to reject. */
+  dynamicTabLabel?: (tabId: string) => string | null;
 };
 
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -80,7 +82,7 @@ function createPaneId(input: Pane[]): string {
   return `pane-${max + 1}`;
 }
 
-function parseDragPayload(raw: string, validTabIds: Set<string>): DragPayload | null {
+function parseDragPayload(raw: string, isValidTab: (tabId: string) => boolean): DragPayload | null {
   const value = raw.trim();
   if (!value) return null;
 
@@ -93,25 +95,25 @@ function parseDragPayload(raw: string, validTabIds: Set<string>): DragPayload | 
   if (value.startsWith('tab:')) {
     const segments = value.split(':');
     const fromPaneId = segments[1];
-    const tabId = segments[2];
-    if (!fromPaneId || !tabId || !validTabIds.has(tabId)) return null;
-    return { kind: 'tab', fromPaneId, tabId };
+    const tabIdRaw = segments.slice(2).join(':');
+    if (!fromPaneId || !tabIdRaw || !isValidTab(tabIdRaw)) return null;
+    return { kind: 'tab', fromPaneId, tabId: tabIdRaw };
   }
 
   return null;
 }
 
-function readDragPayload(dataTransfer: DataTransfer | null | undefined, validTabIds: Set<string>): DragPayload | null {
+function readDragPayload(dataTransfer: DataTransfer | null | undefined, isValidTab: (tabId: string) => boolean): DragPayload | null {
   if (!dataTransfer) return null;
   const custom = dataTransfer.getData(DRAG_PAYLOAD_MIME);
-  const parsedCustom = parseDragPayload(custom, validTabIds);
+  const parsedCustom = parseDragPayload(custom, isValidTab);
   if (parsedCustom) return parsedCustom;
 
   const plain = dataTransfer.getData('text/plain');
-  return parseDragPayload(plain, validTabIds);
+  return parseDragPayload(plain, isValidTab);
 }
 
-function readPersistedPanes(saveKey: string, validTabIds: Set<string>, fallbackTab: string): Pane[] | null {
+function readPersistedPanes(saveKey: string, isValidTab: (tabId: string) => boolean, fallbackTab: string): Pane[] | null {
   if (typeof window === 'undefined') return null;
   const raw = window.localStorage.getItem(saveKey);
   if (!raw) return null;
@@ -122,10 +124,10 @@ function readPersistedPanes(saveKey: string, validTabIds: Set<string>, fallbackT
 
     const normalized = parsed.map((item, index): Pane => {
       const tabs = Array.from(
-        new Set((item.tabs ?? []).filter((candidate) => validTabIds.has(candidate))),
+        new Set((item.tabs ?? []).filter((candidate) => isValidTab(candidate))),
       );
       const resolvedTabs = tabs.length > 0 ? tabs : [fallbackTab];
-      const resolvedActive = validTabIds.has(item.activeTab) && resolvedTabs.includes(item.activeTab)
+      const resolvedActive = isValidTab(item.activeTab) && resolvedTabs.includes(item.activeTab)
         ? item.activeTab
         : resolvedTabs[0];
 
@@ -145,12 +147,19 @@ function readPersistedPanes(saveKey: string, validTabIds: Set<string>, fallbackT
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
-export function Workbench({ tabs, defaultPanes, saveKey, renderContent, toolbarActions, hideToolbar = false }: WorkbenchProps) {
+export function Workbench({ tabs, defaultPanes, saveKey, renderContent, toolbarActions, hideToolbar = false, dynamicTabLabel }: WorkbenchProps) {
   const fallbackTab = tabs[0]?.id ?? '';
 
-  const validTabIds = useMemo(() => new Set(tabs.map((tab) => tab.id)), [tabs]);
+  const staticTabIds = useMemo(() => new Set(tabs.map((tab) => tab.id)), [tabs]);
+  const isValidTab = useCallback(
+    (tabId: string) => staticTabIds.has(tabId) || (dynamicTabLabel?.(tabId) != null),
+    [staticTabIds, dynamicTabLabel],
+  );
   const tabLabelMap = useMemo(() => new Map(tabs.map((tab) => [tab.id, tab.label])), [tabs]);
-  const tabLabel = useCallback((tabId: string) => tabLabelMap.get(tabId) ?? tabId, [tabLabelMap]);
+  const tabLabel = useCallback(
+    (tabId: string) => tabLabelMap.get(tabId) ?? dynamicTabLabel?.(tabId) ?? tabId,
+    [tabLabelMap, dynamicTabLabel],
+  );
 
   const dragStateRef = useRef<DragTabState | null>(null);
   const dragPaneStateRef = useRef<DragPaneState | null>(null);
@@ -163,7 +172,7 @@ export function Workbench({ tabs, defaultPanes, saveKey, renderContent, toolbarA
   // ── localStorage hydration ──────────────────────────────────────────────
 
   useEffect(() => {
-    const persisted = readPersistedPanes(saveKey, validTabIds, fallbackTab);
+    const persisted = readPersistedPanes(saveKey, isValidTab, fallbackTab);
     if (persisted && persisted.length > 0) {
       setPanes(persisted);
       setFocusedPaneId(persisted[0]?.id ?? null);
@@ -171,7 +180,7 @@ export function Workbench({ tabs, defaultPanes, saveKey, renderContent, toolbarA
     }
     setPanes(defaultPanes);
     setFocusedPaneId(defaultPanes[0]?.id ?? null);
-  }, [saveKey, validTabIds, fallbackTab, defaultPanes]);
+  }, [saveKey, isValidTab, fallbackTab, defaultPanes]);
 
   // ── localStorage persistence ────────────────────────────────────────────
 
@@ -421,7 +430,7 @@ export function Workbench({ tabs, defaultPanes, saveKey, renderContent, toolbarA
   }, [endPointerPaneDrag, movePane]);
 
   const handlePaneDragOver = useCallback((event: React.DragEvent, paneIndex: number) => {
-    const payload = readDragPayload(event.dataTransfer, validTabIds);
+    const payload = readDragPayload(event.dataTransfer, isValidTab);
     if (!payload && !dragPaneStateRef.current && !dragStateRef.current) return;
     event.preventDefault();
     event.stopPropagation();
@@ -433,13 +442,13 @@ export function Workbench({ tabs, defaultPanes, saveKey, renderContent, toolbarA
     if (dragOverPaneIndex !== paneIndex) {
       setDragOverPaneIndex(paneIndex);
     }
-  }, [dragOverPaneIndex, validTabIds]);
+  }, [dragOverPaneIndex, isValidTab]);
 
   const handlePaneDrop = useCallback((event: React.DragEvent, paneIndex: number, paneId: string) => {
     event.preventDefault();
     event.stopPropagation();
 
-    const payload = readDragPayload(event.dataTransfer, validTabIds);
+    const payload = readDragPayload(event.dataTransfer, isValidTab);
     if (payload?.kind === 'pane') {
       dragPaneStateRef.current = { fromIndex: payload.fromIndex };
       movePane(paneIndex);
@@ -464,7 +473,7 @@ export function Workbench({ tabs, defaultPanes, saveKey, renderContent, toolbarA
     moveTabAcrossPanes(paneId, dragStateRef.current);
     dragStateRef.current = null;
     setDragOverPaneIndex(null);
-  }, [endPaneDrag, movePane, moveTabAcrossPanes, validTabIds]);
+  }, [endPaneDrag, movePane, moveTabAcrossPanes, isValidTab]);
 
   // ── Derived state ───────────────────────────────────────────────────────
 
@@ -673,13 +682,13 @@ export function Workbench({ tabs, defaultPanes, saveKey, renderContent, toolbarA
                 </div>
               </div>
 
-              <ScrollArea
+              <div
                 className="workbench-pane-content"
                 onDragOver={(event) => handlePaneDragOver(event, index)}
                 onDrop={(event) => handlePaneDrop(event, index, pane.id)}
               >
                 {renderContent(pane.activeTab)}
-              </ScrollArea>
+              </div>
             </Splitter.Panel>
 
             {index < paneTemplateStyle.length - 1 && (

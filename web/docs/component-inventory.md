@@ -1,21 +1,21 @@
 # Component Inventory
 
-Generated: 2026-03-09T18:08:42.276Z
+Generated: 2026-03-10T00:03:20.542Z
 Scope: auth
 
 Pages scanned: 42
-Unique component usages: 431
+Unique component usages: 404
 
 ## Category Totals
 
 | Category | Count |
 | --- | ---: |
-| ark-ui | 162 |
-| external-package | 18 |
-| in-file component | 10 |
-| local-components | 132 |
+| ark-ui | 150 |
+| external-package | 17 |
+| in-file component | 9 |
+| local-components | 127 |
 | relative-local | 19 |
-| tabler-icons | 89 |
+| tabler-icons | 81 |
 | unknown | 1 |
 
 ## src/pages/AgentOnboarding.tsx
@@ -93,15 +93,13 @@ Component usages: 4
 
 ## src/pages/DocumentTest.tsx
 
-Component usages: 53
+Component usages: 26
 
 | Used As | Source | Category | Definition |
 | --- | --- | --- | --- |
+| `AssetsPanel` | `@/components/documents/AssetsPanel` | local-components | AssetsPanel comes from @/components/documents/AssetsPanel (named import of AssetsPanel) |
 | `DltLoadPanel` | `@/components/elt/DltLoadPanel` | local-components | DltLoadPanel comes from @/components/elt/DltLoadPanel (named import of DltLoadPanel) |
 | `DltPullPanel` | `@/components/elt/DltPullPanel` | local-components | DltPullPanel comes from @/components/elt/DltPullPanel (named import of DltPullPanel) |
-| `DocxPreview` | `@/components/documents/DocxPreview` | local-components | DocxPreview comes from @/components/documents/DocxPreview (named import of DocxPreview) |
-| `Field.Input` | `@ark-ui/react/field` | ark-ui | Field.Input comes from @ark-ui/react/field (named import of Field) |
-| `Field.Root` | `@ark-ui/react/field` | ark-ui | Field.Root comes from @ark-ui/react/field (named import of Field) |
 | `FlowCanvas` | `@/components/flows/FlowCanvas` | local-components | FlowCanvas comes from @/components/flows/FlowCanvas (default import of default) |
 | `IconArrowsTransferDown` | `@tabler/icons-react` | tabler-icons | IconArrowsTransferDown comes from @tabler/icons-react (named import of IconArrowsTransferDown) |
 | `IconChevronDown` | `@tabler/icons-react` | tabler-icons | IconChevronDown comes from @tabler/icons-react (named import of IconChevronDown) |
@@ -109,17 +107,9 @@ Component usages: 53
 | `IconDownload` | `@tabler/icons-react` | tabler-icons | IconDownload comes from @tabler/icons-react (named import of IconDownload) |
 | `IconEye` | `@tabler/icons-react` | tabler-icons | IconEye comes from @tabler/icons-react (named import of IconEye) |
 | `IconFileCode` | `@tabler/icons-react` | tabler-icons | IconFileCode comes from @tabler/icons-react (named import of IconFileCode) |
-| `IconFilePlus` | `@tabler/icons-react` | tabler-icons | IconFilePlus comes from @tabler/icons-react (named import of IconFilePlus) |
 | `IconFiles` | `@tabler/icons-react` | tabler-icons | IconFiles comes from @tabler/icons-react (named import of IconFiles) |
-| `IconFileText` | `@tabler/icons-react` | tabler-icons | IconFileText comes from @tabler/icons-react (named import of IconFileText) |
-| `IconFolder` | `@tabler/icons-react` | tabler-icons | IconFolder comes from @tabler/icons-react (named import of IconFolder) |
-| `IconFolderPlus` | `@tabler/icons-react` | tabler-icons | IconFolderPlus comes from @tabler/icons-react (named import of IconFolderPlus) |
 | `IconLayoutColumns` | `@tabler/icons-react` | tabler-icons | IconLayoutColumns comes from @tabler/icons-react (named import of IconLayoutColumns) |
-| `IconLock` | `@tabler/icons-react` | tabler-icons | IconLock comes from @tabler/icons-react (named import of IconLock) |
-| `IconPlus` | `@tabler/icons-react` | tabler-icons | IconPlus comes from @tabler/icons-react (named import of IconPlus) |
 | `IconTransform` | `@tabler/icons-react` | tabler-icons | IconTransform comes from @tabler/icons-react (named import of IconTransform) |
-| `IconTrash` | `@tabler/icons-react` | tabler-icons | IconTrash comes from @tabler/icons-react (named import of IconTrash) |
-| `IconX` | `@tabler/icons-react` | tabler-icons | IconX comes from @tabler/icons-react (named import of IconX) |
 | `MenuContent` | `@/components/ui/menu` | local-components | MenuContent comes from @/components/ui/menu (named import of MenuContent) |
 | `MenuItem` | `@/components/ui/menu` | local-components | MenuItem comes from @/components/ui/menu (named import of MenuItem) |
 | `MenuPortal` | `@/components/ui/menu` | local-components | MenuPortal comes from @/components/ui/menu (named import of MenuPortal) |
@@ -127,29 +117,12 @@ Component usages: 53
 | `MenuRoot` | `@/components/ui/menu` | local-components | MenuRoot comes from @/components/ui/menu (named import of MenuRoot) |
 | `MenuTrigger` | `@/components/ui/menu` | local-components | MenuTrigger comes from @/components/ui/menu (named import of MenuTrigger) |
 | `ParseEasyPanel` | `@/components/elt/ParseEasyPanel` | local-components | ParseEasyPanel comes from @/components/elt/ParseEasyPanel (named import of ParseEasyPanel) |
-| `PdfPreview` | `@/components/documents/PdfPreview` | local-components | PdfPreview comes from @/components/documents/PdfPreview (named import of PdfPreview) |
-| `PptxPreview` | `@/components/documents/PptxPreview` | local-components | PptxPreview comes from @/components/documents/PptxPreview (named import of PptxPreview) |
-| `PreviewTabPanel` | `(in-file or unresolved)` | in-file component | PreviewTabPanel is defined in the same page file |
-| `ReactMarkdown` | `react-markdown` | external-package | ReactMarkdown comes from react-markdown (default import of default) |
-| `ScrollArea` | `@/components/ui/scroll-area` | local-components | ScrollArea comes from @/components/ui/scroll-area (named import of ScrollArea) |
+| `PreviewTabPanel` | `@/components/documents/PreviewTabPanel` | local-components | PreviewTabPanel comes from @/components/documents/PreviewTabPanel (named import of PreviewTabPanel) |
 | `Splitter.Panel` | `@ark-ui/react/splitter` | ark-ui | Splitter.Panel comes from @ark-ui/react/splitter (named import of Splitter) |
 | `Splitter.ResizeTrigger` | `@ark-ui/react/splitter` | ark-ui | Splitter.ResizeTrigger comes from @ark-ui/react/splitter (named import of Splitter) |
 | `Splitter.ResizeTriggerIndicator` | `@ark-ui/react/splitter` | ark-ui | Splitter.ResizeTriggerIndicator comes from @ark-ui/react/splitter (named import of Splitter) |
 | `Splitter.Root` | `@ark-ui/react/splitter` | ark-ui | Splitter.Root comes from @ark-ui/react/splitter (named import of Splitter) |
-| `Tabs` | `@/components/ui/tabs` | local-components | Tabs comes from @/components/ui/tabs (named import of Tabs) |
-| `TabsList` | `@/components/ui/tabs` | local-components | TabsList comes from @/components/ui/tabs (named import of TabsList) |
-| `TabsTrigger` | `@/components/ui/tabs` | local-components | TabsTrigger comes from @/components/ui/tabs (named import of TabsTrigger) |
 | `ToolbarBtn` | `(in-file or unresolved)` | unknown | ToolbarBtn was detected in JSX but no matching import was resolved |
-| `TreeView.Branch` | `@ark-ui/react/tree-view` | ark-ui | TreeView.Branch comes from @ark-ui/react/tree-view (named import of TreeView) |
-| `TreeView.BranchControl` | `@ark-ui/react/tree-view` | ark-ui | TreeView.BranchControl comes from @ark-ui/react/tree-view (named import of TreeView) |
-| `TreeView.BranchText` | `@ark-ui/react/tree-view` | ark-ui | TreeView.BranchText comes from @ark-ui/react/tree-view (named import of TreeView) |
-| `TreeView.Context` | `@ark-ui/react/tree-view` | ark-ui | TreeView.Context comes from @ark-ui/react/tree-view (named import of TreeView) |
-| `TreeView.Item` | `@ark-ui/react/tree-view` | ark-ui | TreeView.Item comes from @ark-ui/react/tree-view (named import of TreeView) |
-| `TreeView.ItemText` | `@ark-ui/react/tree-view` | ark-ui | TreeView.ItemText comes from @ark-ui/react/tree-view (named import of TreeView) |
-| `TreeView.NodeContext` | `@ark-ui/react/tree-view` | ark-ui | TreeView.NodeContext comes from @ark-ui/react/tree-view (named import of TreeView) |
-| `TreeView.NodeProvider` | `@ark-ui/react/tree-view` | ark-ui | TreeView.NodeProvider comes from @ark-ui/react/tree-view (named import of TreeView) |
-| `TreeView.Root` | `@ark-ui/react/tree-view` | ark-ui | TreeView.Root comes from @ark-ui/react/tree-view (named import of TreeView) |
-| `TreeView.Tree` | `@ark-ui/react/tree-view` | ark-ui | TreeView.Tree comes from @ark-ui/react/tree-view (named import of TreeView) |
 
 ## src/pages/FlowDetail.tsx
 

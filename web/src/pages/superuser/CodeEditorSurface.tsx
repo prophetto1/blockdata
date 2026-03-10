@@ -14,6 +14,7 @@ import { yaml } from '@codemirror/lang-yaml';
 import { json } from '@codemirror/lang-json';
 import { oneDark } from '@codemirror/theme-one-dark';
 import { useIsDark } from '@/lib/useIsDark';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 function getLanguageExtension(ext: string): Extension | null {
   switch (ext) {
@@ -56,6 +57,10 @@ export function CodeEditorSurface({ content, extension, fileKey, onChange, onSav
     const langExt = getLanguageExtension(extension);
     const extensions: Extension[] = [
       basicSetup,
+      EditorView.theme({
+        '&': { padding: '8px 0' },
+        '.cm-content': { padding: '0 8px' },
+      }),
       EditorView.updateListener.of((update) => {
         if (update.docChanged) {
           onChangeRef.current(update.state.doc.toString());
@@ -72,6 +77,7 @@ export function CodeEditorSurface({ content, extension, fileKey, onChange, onSav
         },
       }),
     ];
+    extensions.push(EditorView.lineWrapping);
     if (isDark) extensions.push(oneDark);
     if (langExt) extensions.push(langExt);
 
@@ -87,9 +93,11 @@ export function CodeEditorSurface({ content, extension, fileKey, onChange, onSav
   }, [extension, fileKey, isDark]);
 
   return (
-    <div
-      ref={containerRef}
-      className="h-full w-full overflow-auto [&_.cm-editor]:h-full [&_.cm-scroller]:overflow-auto"
-    />
+    <ScrollArea className="h-full w-full" viewportClass="!overflow-x-hidden">
+      <div
+        ref={containerRef}
+        className="[&_.cm-editor]:!h-auto [&_.cm-scroller]:!overflow-visible"
+      />
+    </ScrollArea>
   );
 }

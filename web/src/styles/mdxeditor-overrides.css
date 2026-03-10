@@ -15,6 +15,7 @@
 .mdxeditor [role='toolbar'] {
   border-color: var(--color-border);
   background: var(--color-card);
+  flex-shrink: 0;
 }
 
 /* Dark mode overrides */
@@ -24,4 +25,21 @@
   --baseBgSubtle: var(--color-muted);
   --baseText: var(--color-foreground);
   --borderDefault: var(--color-border);
+}
+
+/* Prevent horizontal overflow in prose content */
+.mdxeditor .prose {
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+.mdxeditor .prose pre {
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+.mdxeditor .prose table {
+  display: block;
+  overflow-x: auto;
+  max-width: 100%;
 }

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-03-09T18:08:42.271Z",
+  "generatedAt": "2026-03-10T00:03:20.537Z",
   "scope": "auth",
   "pages": [
     {
@@ -227,16 +227,23 @@
     },
     {
       "page": "src/pages/DocumentTest.tsx",
-      "componentCount": 53,
+      "componentCount": 26,
       "categoryCounts": {
-        "local-components": 17,
-        "ark-ui": 16,
-        "tabler-icons": 17,
-        "in-file component": 1,
-        "external-package": 1,
+        "local-components": 12,
+        "tabler-icons": 9,
+        "ark-ui": 4,
         "unknown": 1
       },
       "components": [
+        {
+          "component": "AssetsPanel",
+          "usedAs": "AssetsPanel",
+          "source": "@/components/documents/AssetsPanel",
+          "importKind": "named",
+          "importedAs": "AssetsPanel",
+          "category": "local-components",
+          "definition": "AssetsPanel comes from @/components/documents/AssetsPanel (named import of AssetsPanel)"
+        },
         {
           "component": "DltLoadPanel",
           "usedAs": "DltLoadPanel",
@@ -254,33 +261,6 @@
           "importedAs": "DltPullPanel",
           "category": "local-components",
           "definition": "DltPullPanel comes from @/components/elt/DltPullPanel (named import of DltPullPanel)"
-        },
-        {
-          "component": "DocxPreview",
-          "usedAs": "DocxPreview",
-          "source": "@/components/documents/DocxPreview",
-          "importKind": "named",
-          "importedAs": "DocxPreview",
-          "category": "local-components",
-          "definition": "DocxPreview comes from @/components/documents/DocxPreview (named import of DocxPreview)"
-        },
-        {
-          "component": "Field",
-          "usedAs": "Field.Input",
-          "source": "@ark-ui/react/field",
-          "importKind": "named",
-          "importedAs": "Field",
-          "category": "ark-ui",
-          "definition": "Field.Input comes from @ark-ui/react/field (named import of Field)"
-        },
-        {
-          "component": "Field",
-          "usedAs": "Field.Root",
-          "source": "@ark-ui/react/field",
-          "importKind": "named",
-          "importedAs": "Field",
-          "category": "ark-ui",
-          "definition": "Field.Root comes from @ark-ui/react/field (named import of Field)"
         },
         {
           "component": "FlowCanvas",
@@ -346,15 +326,6 @@
           "definition": "IconFileCode comes from @tabler/icons-react (named import of IconFileCode)"
         },
         {
-          "component": "IconFilePlus",
-          "usedAs": "IconFilePlus",
-          "source": "@tabler/icons-react",
-          "importKind": "named",
-          "importedAs": "IconFilePlus",
-          "category": "tabler-icons",
-          "definition": "IconFilePlus comes from @tabler/icons-react (named import of IconFilePlus)"
-        },
-        {
           "component": "IconFiles",
           "usedAs": "IconFiles",
           "source": "@tabler/icons-react",
@@ -362,33 +333,6 @@
           "importedAs": "IconFiles",
           "category": "tabler-icons",
           "definition": "IconFiles comes from @tabler/icons-react (named import of IconFiles)"
-        },
-        {
-          "component": "IconFileText",
-          "usedAs": "IconFileText",
-          "source": "@tabler/icons-react",
-          "importKind": "named",
-          "importedAs": "IconFileText",
-          "category": "tabler-icons",
-          "definition": "IconFileText comes from @tabler/icons-react (named import of IconFileText)"
-        },
-        {
-          "component": "IconFolder",
-          "usedAs": "IconFolder",
-          "source": "@tabler/icons-react",
-          "importKind": "named",
-          "importedAs": "IconFolder",
-          "category": "tabler-icons",
-          "definition": "IconFolder comes from @tabler/icons-react (named import of IconFolder)"
-        },
-        {
-          "component": "IconFolderPlus",
-          "usedAs": "IconFolderPlus",
-          "source": "@tabler/icons-react",
-          "importKind": "named",
-          "importedAs": "IconFolderPlus",
-          "category": "tabler-icons",
-          "definition": "IconFolderPlus comes from @tabler/icons-react (named import of IconFolderPlus)"
         },
         {
           "component": "IconLayoutColumns",
@@ -400,24 +344,6 @@
           "definition": "IconLayoutColumns comes from @tabler/icons-react (named import of IconLayoutColumns)"
         },
         {
-          "component": "IconLock",
-          "usedAs": "IconLock",
-          "source": "@tabler/icons-react",
-          "importKind": "named",
-          "importedAs": "IconLock",
-          "category": "tabler-icons",
-          "definition": "IconLock comes from @tabler/icons-react (named import of IconLock)"
-        },
-        {
-          "component": "IconPlus",
-          "usedAs": "IconPlus",
-          "source": "@tabler/icons-react",
-          "importKind": "named",
-          "importedAs": "IconPlus",
-          "category": "tabler-icons",
-          "definition": "IconPlus comes from @tabler/icons-react (named import of IconPlus)"
-        },
-        {
           "component": "IconTransform",
           "usedAs": "IconTransform",
           "source": "@tabler/icons-react",
@@ -425,24 +351,6 @@
           "importedAs": "IconTransform",
           "category": "tabler-icons",
           "definition": "IconTransform comes from @tabler/icons-react (named import of IconTransform)"
-        },
-        {
-          "component": "IconTrash",
-          "usedAs": "IconTrash",
-          "source": "@tabler/icons-react",
-          "importKind": "named",
-          "importedAs": "IconTrash",
-          "category": "tabler-icons",
-          "definition": "IconTrash comes from @tabler/icons-react (named import of IconTrash)"
-        },
-        {
-          "component": "IconX",
-          "usedAs": "IconX",
-          "source": "@tabler/icons-react",
-          "importKind": "named",
-          "importedAs": "IconX",
-          "category": "tabler-icons",
-          "definition": "IconX comes from @tabler/icons-react (named import of IconX)"
         },
         {
           "component": "MenuContent",
@@ -508,49 +416,13 @@
           "definition": "ParseEasyPanel comes from @/components/elt/ParseEasyPanel (named import of ParseEasyPanel)"
         },
         {
-          "component": "PdfPreview",
-          "usedAs": "PdfPreview",
-          "source": "@/components/documents/PdfPreview",
-          "importKind": "named",
-          "importedAs": "PdfPreview",
-          "category": "local-components",
-          "definition": "PdfPreview comes from @/components/documents/PdfPreview (named import of PdfPreview)"
-        },
-        {
-          "component": "PptxPreview",
-          "usedAs": "PptxPreview",
-          "source": "@/components/documents/PptxPreview",
-          "importKind": "named",
-          "importedAs": "PptxPreview",
-          "category": "local-components",
-          "definition": "PptxPreview comes from @/components/documents/PptxPreview (named import of PptxPreview)"
-        },
-        {
           "component": "PreviewTabPanel",
           "usedAs": "PreviewTabPanel",
-          "source": "(in-file or unresolved)",
-          "importKind": null,
-          "importedAs": null,
-          "category": "in-file component",
-          "definition": "PreviewTabPanel is defined in the same page file"
-        },
-        {
-          "component": "ReactMarkdown",
-          "usedAs": "ReactMarkdown",
-          "source": "react-markdown",
-          "importKind": "default",
-          "importedAs": "default",
-          "category": "external-package",
-          "definition": "ReactMarkdown comes from react-markdown (default import of default)"
-        },
-        {
-          "component": "ScrollArea",
-          "usedAs": "ScrollArea",
-          "source": "@/components/ui/scroll-area",
+          "source": "@/components/documents/PreviewTabPanel",
           "importKind": "named",
-          "importedAs": "ScrollArea",
+          "importedAs": "PreviewTabPanel",
           "category": "local-components",
-          "definition": "ScrollArea comes from @/components/ui/scroll-area (named import of ScrollArea)"
+          "definition": "PreviewTabPanel comes from @/components/documents/PreviewTabPanel (named import of PreviewTabPanel)"
         },
         {
           "component": "Splitter",
@@ -589,33 +461,6 @@
           "definition": "Splitter.Root comes from @ark-ui/react/splitter (named import of Splitter)"
         },
         {
-          "component": "Tabs",
-          "usedAs": "Tabs",
-          "source": "@/components/ui/tabs",
-          "importKind": "named",
-          "importedAs": "Tabs",
-          "category": "local-components",
-          "definition": "Tabs comes from @/components/ui/tabs (named import of Tabs)"
-        },
-        {
-          "component": "TabsList",
-          "usedAs": "TabsList",
-          "source": "@/components/ui/tabs",
-          "importKind": "named",
-          "importedAs": "TabsList",
-          "category": "local-components",
-          "definition": "TabsList comes from @/components/ui/tabs (named import of TabsList)"
-        },
-        {
-          "component": "TabsTrigger",
-          "usedAs": "TabsTrigger",
-          "source": "@/components/ui/tabs",
-          "importKind": "named",
-          "importedAs": "TabsTrigger",
-          "category": "local-components",
-          "definition": "TabsTrigger comes from @/components/ui/tabs (named import of TabsTrigger)"
-        },
-        {
           "component": "ToolbarBtn",
           "usedAs": "ToolbarBtn",
           "source": "(in-file or unresolved)",
@@ -623,96 +468,6 @@
           "importedAs": null,
           "category": "unknown",
           "definition": "ToolbarBtn was detected in JSX but no matching import was resolved"
-        },
-        {
-          "component": "TreeView",
-          "usedAs": "TreeView.Branch",
-          "source": "@ark-ui/react/tree-view",
-          "importKind": "named",
-          "importedAs": "TreeView",
-          "category": "ark-ui",
-          "definition": "TreeView.Branch comes from @ark-ui/react/tree-view (named import of TreeView)"
-        },
-        {
-          "component": "TreeView",
-          "usedAs": "TreeView.BranchControl",
-          "source": "@ark-ui/react/tree-view",
-          "importKind": "named",
-          "importedAs": "TreeView",
-          "category": "ark-ui",
-          "definition": "TreeView.BranchControl comes from @ark-ui/react/tree-view (named import of TreeView)"
-        },
-        {
-          "component": "TreeView",
-          "usedAs": "TreeView.BranchText",
-          "source": "@ark-ui/react/tree-view",
-          "importKind": "named",
-          "importedAs": "TreeView",
-          "category": "ark-ui",
-          "definition": "TreeView.BranchText comes from @ark-ui/react/tree-view (named import of TreeView)"
-        },
-        {
-          "component": "TreeView",
-          "usedAs": "TreeView.Context",
-          "source": "@ark-ui/react/tree-view",
-          "importKind": "named",
-          "importedAs": "TreeView",
-          "category": "ark-ui",
-          "definition": "TreeView.Context comes from @ark-ui/react/tree-view (named import of TreeView)"
-        },
-        {
-          "component": "TreeView",
-          "usedAs": "TreeView.Item",
-          "source": "@ark-ui/react/tree-view",
-          "importKind": "named",
-          "importedAs": "TreeView",
-          "category": "ark-ui",
-          "definition": "TreeView.Item comes from @ark-ui/react/tree-view (named import of TreeView)"
-        },
-        {
-          "component": "TreeView",
-          "usedAs": "TreeView.ItemText",
-          "source": "@ark-ui/react/tree-view",
-          "importKind": "named",
-          "importedAs": "TreeView",
-          "category": "ark-ui",
-          "definition": "TreeView.ItemText comes from @ark-ui/react/tree-view (named import of TreeView)"
-        },
-        {
-          "component": "TreeView",
-          "usedAs": "TreeView.NodeContext",
-          "source": "@ark-ui/react/tree-view",
-          "importKind": "named",
-          "importedAs": "TreeView",
-          "category": "ark-ui",
-          "definition": "TreeView.NodeContext comes from @ark-ui/react/tree-view (named import of TreeView)"
-        },
-        {
-          "component": "TreeView",
-          "usedAs": "TreeView.NodeProvider",
-          "source": "@ark-ui/react/tree-view",
-          "importKind": "named",
-          "importedAs": "TreeView",
-          "category": "ark-ui",
-          "definition": "TreeView.NodeProvider comes from @ark-ui/react/tree-view (named import of TreeView)"
-        },
-        {
-          "component": "TreeView",
-          "usedAs": "TreeView.Root",
-          "source": "@ark-ui/react/tree-view",
-          "importKind": "named",
-          "importedAs": "TreeView",
-          "category": "ark-ui",
-          "definition": "TreeView.Root comes from @ark-ui/react/tree-view (named import of TreeView)"
-        },
-        {
-          "component": "TreeView",
-          "usedAs": "TreeView.Tree",
-          "source": "@ark-ui/react/tree-view",
-          "importKind": "named",
-          "importedAs": "TreeView",
-          "category": "ark-ui",
-          "definition": "TreeView.Tree comes from @ark-ui/react/tree-view (named import of TreeView)"
         }
       ]
     },
@@ -4307,14 +4062,14 @@
       ]
     }
   ],
-  "totalComponentUsages": 431,
+  "totalComponentUsages": 404,
   "categoryTotals": {
-    "external-package": 18,
-    "local-components": 132,
-    "tabler-icons": 89,
-    "ark-ui": 162,
-    "in-file component": 10,
+    "external-package": 17,
+    "local-components": 127,
+    "tabler-icons": 81,
+    "ark-ui": 150,
     "unknown": 1,
+    "in-file component": 9,
     "relative-local": 19
   }
 }

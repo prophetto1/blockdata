@@ -1,7 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import {
-  IconChevronDown,
-  IconDotsVertical,
   IconLayoutSidebarRightExpand,
   IconPlayerStop,
   IconPlus,
@@ -10,6 +8,7 @@ import {
   IconSparkles,
   IconX,
 } from '@tabler/icons-react';
+import { useNavigate } from 'react-router-dom';
 import { AppIcon } from '@/components/ui/app-icon';
 import { useAssistantChat, type ChatMessage } from '@/hooks/useAssistantChat';
 
@@ -19,7 +18,7 @@ type AssistantDockHostProps = {
 };
 
 const iconBtn =
-  'inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-slate-300 transition-colors hover:bg-white/10 hover:text-white';
+  'inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground';
 
 function MessageBubble({ message }: { message: ChatMessage }) {
   const isUser = message.role === 'user';
@@ -29,8 +28,8 @@ function MessageBubble({ message }: { message: ChatMessage }) {
       <div
         className={`max-w-[85%] rounded-xl px-3 py-2 text-sm leading-relaxed ${
           isUser
-            ? 'bg-blue-600/90 text-white'
-            : 'bg-white/8 text-slate-100'
+            ? 'bg-primary text-primary-foreground'
+            : 'bg-muted text-foreground'
         }`}
       >
         <p className="whitespace-pre-wrap break-words">{message.content}</p>
@@ -51,12 +50,12 @@ export function AssistantDockHost({
     newThread,
     stopStreaming,
   } = useAssistantChat();
+  const navigate = useNavigate();
 
   const [input, setInput] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  // Auto-scroll to bottom when messages change
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -69,7 +68,7 @@ export function AssistantDockHost({
     setInput('');
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSend();
@@ -77,9 +76,9 @@ export function AssistantDockHost({
   };
 
   return (
-    <div className="grid h-full min-h-0 grid-rows-[auto_1fr_auto] overflow-hidden rounded-[inherit] bg-gradient-to-b from-[#3a3e45] via-[#252a31] to-[#15191f] font-sans text-white">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-[inherit] bg-[var(--chrome,var(--background))] text-foreground">
       {/* Header */}
-      <div className="flex min-h-[42px] items-center justify-between gap-2 border-b border-slate-400/25 bg-[rgba(46,52,61,0.92)] px-2.5 py-2 backdrop-blur-sm">
+      <div className="flex items-center justify-between border-b px-3 py-1.5" style={{ borderColor: 'var(--border)' }}>
         <div className="flex items-center gap-1.5">
           {onDetach && (
             <button
@@ -92,7 +91,7 @@ export function AssistantDockHost({
               <AppIcon icon={IconLayoutSidebarRightExpand} size="md" />
             </button>
           )}
-          <span className="min-w-0 truncate text-[0.94rem] font-semibold leading-tight tracking-tight text-slate-50">
+          <span className="min-w-0 truncate text-sm font-semibold leading-tight text-foreground">
             Assistant
           </span>
         </div>
@@ -106,11 +105,8 @@ export function AssistantDockHost({
           >
             <AppIcon icon={IconPlus} size="md" />
           </button>
-          <button type="button" className={iconBtn} aria-label="Settings" title="Settings">
+          <button type="button" className={iconBtn} aria-label="AI Settings" title="AI Settings" onClick={() => navigate('/app/settings/ai')}>
             <AppIcon icon={IconSettings} size="md" />
-          </button>
-          <button type="button" className={iconBtn} aria-label="Assistant options">
-            <AppIcon icon={IconDotsVertical} size="md" />
           </button>
           <button type="button" className={iconBtn} aria-label="Close assistant" onClick={onClose}>
             <AppIcon icon={IconX} size="md" />
@@ -118,25 +114,25 @@ export function AssistantDockHost({
         </div>
       </div>
 
-      {/* Thread / scroll area */}
-      <div ref={scrollRef} className="min-h-0 overflow-y-auto">
+      {/* Messages */}
+      <div ref={scrollRef} className="flex-1 overflow-y-auto">
         {messages.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center gap-2 px-4 py-8 text-center">
-            <AppIcon icon={IconSparkles} size="lg" className="text-slate-400" />
-            <p className="text-sm text-slate-400">Ask me anything about your project.</p>
+            <AppIcon icon={IconSparkles} size="lg" className="text-muted-foreground" />
+            <p className="text-sm text-muted-foreground">Ask me anything about your project.</p>
           </div>
         ) : (
-          <div className="flex flex-col gap-3 px-2.5 py-3">
+          <div className="flex flex-col gap-3 px-3 py-3">
             {messages.map((msg) => (
               <MessageBubble key={msg.id} message={msg} />
             ))}
             {isStreaming && messages[messages.length - 1]?.role === 'assistant' && !messages[messages.length - 1]?.content && (
               <div className="flex justify-start">
-                <div className="max-w-[85%] rounded-xl bg-white/8 px-3 py-2">
+                <div className="max-w-[85%] rounded-xl bg-muted px-3 py-2">
                   <div className="flex gap-1">
-                    <span className="h-2 w-2 animate-pulse rounded-full bg-slate-400" />
-                    <span className="h-2 w-2 animate-pulse rounded-full bg-slate-400 [animation-delay:150ms]" />
-                    <span className="h-2 w-2 animate-pulse rounded-full bg-slate-400 [animation-delay:300ms]" />
+                    <span className="h-2 w-2 animate-pulse rounded-full bg-muted-foreground" />
+                    <span className="h-2 w-2 animate-pulse rounded-full bg-muted-foreground [animation-delay:150ms]" />
+                    <span className="h-2 w-2 animate-pulse rounded-full bg-muted-foreground [animation-delay:300ms]" />
                   </div>
                 </div>
               </div>
@@ -145,19 +141,20 @@ export function AssistantDockHost({
         )}
 
         {error && (
-          <div className="mx-2.5 mb-2 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-300">
+          <div className="mx-3 mb-2 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
             {error}
           </div>
         )}
       </div>
 
       {/* Composer */}
-      <div className="border-t border-slate-400/25 bg-[rgba(39,45,53,0.94)] px-2.5 pb-3 pt-2.5">
-        <div className="flex items-center gap-2">
-          <input
+      <div className="border-t px-3 pb-3 pt-2.5" style={{ borderColor: 'var(--border)' }}>
+        <div className="flex items-end gap-2">
+          <textarea
             ref={inputRef}
-            className="min-h-[38px] flex-1 rounded-[10px] border border-slate-400/30 bg-[rgba(26,31,38,0.98)] px-3 py-2 text-sm text-white placeholder:text-slate-400 focus:border-blue-500/50 focus:outline-none"
+            className="min-h-[38px] max-h-[120px] flex-1 resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none"
             placeholder="Ask anything..."
+            rows={1}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
@@ -166,7 +163,7 @@ export function AssistantDockHost({
           {isStreaming ? (
             <button
               type="button"
-              className="inline-flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-[10px] bg-red-500/80 text-white transition-colors hover:bg-red-500"
+              className="inline-flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-lg bg-destructive text-destructive-foreground transition-colors hover:bg-destructive/90"
               aria-label="Stop generating"
               onClick={stopStreaming}
             >
@@ -175,7 +172,7 @@ export function AssistantDockHost({
           ) : (
             <button
               type="button"
-              className="inline-flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-[10px] bg-blue-600/80 text-white transition-colors hover:bg-blue-600 disabled:opacity-40"
+              className="inline-flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-40"
               aria-label="Send message"
               onClick={handleSend}
               disabled={!input.trim()}
@@ -185,16 +182,12 @@ export function AssistantDockHost({
           )}
         </div>
         <div className="mt-1.5 flex items-center justify-between">
-          <span className="text-[11px] text-slate-500">
+          <span className="text-[11px] text-muted-foreground">
             {isStreaming ? 'Generating...' : 'Enter to send'}
           </span>
-          <button
-            type="button"
-            className="inline-flex h-[24px] items-center gap-1 rounded-full border border-slate-400/20 bg-[rgba(32,38,46,0.96)] px-2 text-[11px] font-medium text-slate-300"
-          >
+          <span className="text-[11px] font-medium text-muted-foreground">
             Sonnet 4.5
-            <AppIcon icon={IconChevronDown} size="sm" />
-          </button>
+          </span>
         </div>
       </div>
     </div>

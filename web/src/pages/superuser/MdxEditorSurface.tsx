@@ -16,6 +16,7 @@
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useIsDark } from '@/lib/useIsDark';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import '@/styles/mdxeditor-overrides.css';
 
 type MDXEditorModule = typeof import('@mdxeditor/editor');
@@ -303,19 +304,21 @@ function MdxEditorInner({
 
   return (
     <div
-      className={`h-full w-full overflow-auto ${isDark ? 'dark-theme' : 'light-theme'}`}
+      className={`h-full w-full overflow-hidden ${isDark ? 'dark-theme' : 'light-theme'}`}
       onKeyDownCapture={handleSaveKeyDown}
       tabIndex={0}
       role="presentation"
     >
-      <MDXEditor
-        ref={editorRef}
-        markdown={content}
-        onChange={onChange}
-        className="h-full"
-        contentEditableClassName="prose prose-sm max-w-none dark:prose-invert p-4"
-        plugins={plugins}
-      />
+      <ScrollArea className="h-full" viewportClass="!overflow-x-hidden" contentClass="!min-w-0">
+        <MDXEditor
+          ref={editorRef}
+          markdown={content}
+          onChange={onChange}
+          className="h-full"
+          contentEditableClassName="prose prose-sm max-w-none dark:prose-invert p-4"
+          plugins={plugins}
+        />
+      </ScrollArea>
     </div>
   );
 }

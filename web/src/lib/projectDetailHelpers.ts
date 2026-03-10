@@ -61,6 +61,18 @@ const DOCX_EXTENSIONS = new Set([
 ]);
 const PPTX_SOURCE_TYPES = new Set(['pptx', 'pptm', 'ppsx']);
 const PPTX_EXTENSIONS = new Set(['pptx', 'pptm', 'ppsx']);
+const TEXT_EXTENSIONS = new Set([
+  'txt',
+  'md',
+  'csv',
+  'html',
+  'xml',
+  'json',
+  'rst',
+  'tex',
+  'org',
+  'vtt',
+]);
 
 // ---------------------------------------------------------------------------
 // Functions
@@ -190,7 +202,7 @@ export function formatBytes(bytes: number | null | undefined): string {
   return `${rounded} ${units[index]}`;
 }
 
-function getExtension(name: string): string {
+export function getExtension(name: string): string {
   const index = name.lastIndexOf('.');
   if (index < 0 || index === name.length - 1) return '';
   return name.slice(index + 1).toLowerCase();
@@ -200,9 +212,14 @@ function getSourceLocatorExtension(doc: ProjectDocumentRow): string {
   return getExtension(doc.source_locator ?? '');
 }
 
+function getDocumentTitleExtension(doc: ProjectDocumentRow): string {
+  return getExtension(doc.doc_title ?? '');
+}
+
 export function isPdfDocument(doc: ProjectDocumentRow): boolean {
   if (doc.source_type.toLowerCase() === 'pdf') return true;
-  return getSourceLocatorExtension(doc) === 'pdf';
+  if (getSourceLocatorExtension(doc) === 'pdf') return true;
+  return getDocumentTitleExtension(doc) === 'pdf';
 }
 
 export function isImageDocument(doc: ProjectDocumentRow): boolean {
@@ -212,7 +229,10 @@ export function isImageDocument(doc: ProjectDocumentRow): boolean {
 }
 
 export function isTextDocument(doc: ProjectDocumentRow): boolean {
-  return TEXT_SOURCE_TYPES.has(doc.source_type.toLowerCase());
+  const sourceType = doc.source_type.toLowerCase();
+  if (TEXT_SOURCE_TYPES.has(sourceType)) return true;
+  if (sourceType.startsWith('text') || sourceType.includes('plain')) return true;
+  return TEXT_EXTENSIONS.has(getSourceLocatorExtension(doc));
 }
 
 export function isMarkdownDocument(doc: ProjectDocumentRow): boolean {

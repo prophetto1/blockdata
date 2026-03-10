@@ -18,15 +18,7 @@ import {
   type ProjectDocumentRow,
   resolveSignedUrlForLocators,
 } from '@/lib/projectDetailHelpers';
-
-function normalizePath(value: string): string {
-  return value
-    .replace(/\\/g, '/')
-    .split('/')
-    .map((part) => part.trim())
-    .filter((part) => part.length > 0)
-    .join('/');
-}
+import { normalizePath } from '@/lib/filesTree';
 
 export function PreviewTabPanel({ doc }: { doc: ProjectDocumentRow | null }) {
   const [previewKind, setPreviewKind] = useState<PreviewKind>('none');
@@ -138,29 +130,27 @@ export function PreviewTabPanel({ doc }: { doc: ProjectDocumentRow | null }) {
     content: ReactNode,
     options?: { scroll?: boolean; padded?: boolean },
   ) => (
-    <div className="h-full w-full min-h-0 p-2">
-      <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-md border border-border bg-card">
-        {options?.scroll === false ? (
-          <div
-            className={[
-              'min-h-0 flex-1 overflow-hidden',
-              options?.padded === false ? '' : 'p-3',
-            ].join(' ')}
-          >
-            {content}
-          </div>
-        ) : (
-          <ScrollArea
-            className="min-h-0 h-full flex-1"
-            viewportClass={[
-              'h-full overflow-y-auto overflow-x-hidden',
-              options?.padded === false ? '' : 'p-3',
-            ].join(' ').trim()}
-          >
-            {content}
-          </ScrollArea>
-        )}
-      </div>
+    <div className="flex h-full w-full min-h-0 flex-col overflow-hidden">
+      {options?.scroll === false ? (
+        <div
+          className={[
+            'min-h-0 flex-1 overflow-hidden bg-card',
+            options?.padded === false ? '' : 'p-4',
+          ].join(' ')}
+        >
+          {content}
+        </div>
+      ) : (
+        <ScrollArea
+          className="min-h-0 h-full flex-1 bg-card"
+          viewportClass={[
+            'h-full overflow-y-auto overflow-x-hidden',
+            options?.padded === false ? '' : 'p-4',
+          ].join(' ').trim()}
+        >
+          {content}
+        </ScrollArea>
+      )}
     </div>
   );
 
@@ -220,12 +210,12 @@ export function PreviewTabPanel({ doc }: { doc: ProjectDocumentRow | null }) {
         centerContent: options?.headerCenterContent,
       })}
       {options?.useScrollArea === false ? (
-        <div className={['min-h-0 flex-1', options?.contentClassName ?? ''].join(' ').trim()}>
+        <div className={['min-h-0 flex-1 bg-card', options?.contentClassName ?? ''].join(' ').trim()}>
           {content}
         </div>
       ) : (
         <ScrollArea
-          className="min-h-0 flex-1"
+          className="min-h-0 flex-1 bg-card"
           viewportClass={[
             'h-full overflow-y-auto overflow-x-hidden',
             options?.contentClassName ?? '',

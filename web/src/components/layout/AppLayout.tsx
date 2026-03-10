@@ -80,7 +80,10 @@ function AppShellInner() {
   // Close floating chat
   const closeChatDetached = () => {
     rightRail.setChatDetached(false);
-    // Switch back to AI tab in the rail
+  };
+
+  const dockChatToRail = () => {
+    rightRail.setChatDetached(false);
     rightRail.setActiveTab('ai');
   };
 
@@ -356,7 +359,7 @@ function AppShellInner() {
           <div
             className="fixed z-[108] flex flex-col gap-0"
             style={{
-              top: `${styleTokens.shell.headerHeight + 1}px`,
+              top: '50vh',
               insetInlineEnd: showRightRail ? `${styleTokens.shell.rightRailWidth}px` : 0,
             }}
           >
@@ -365,7 +368,7 @@ function AppShellInner() {
               aria-label={rightRail.isOpen ? 'Close panel' : 'Open panel'}
               title={rightRail.isOpen ? 'Close panel' : 'Open panel'}
               onClick={rightRail.toggle}
-              className="inline-flex h-10 w-8 items-center justify-center rounded-bl-md border border-r-0 border-t-0 border-border bg-[var(--chrome,var(--background))] text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+              className="inline-flex h-10 w-8 items-center justify-center rounded-l-md border border-r-0 border-border bg-[var(--chrome,var(--background))] text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
             >
               {rightRail.isOpen
                 ? <IconLayoutSidebarRightCollapse size={16} stroke={1.75} />
@@ -405,8 +408,8 @@ function AppShellInner() {
                 zIndex: 340,
                 bottom: '12px',
                 right: '12px',
-                width: 'min(560px, calc(100vw - 24px))',
-                height: 'min(78vh, 860px)',
+                width: 'min(380px, calc(100vw - 24px))',
+                height: 'min(520px, 60vh)',
                 border: '1px solid var(--border)',
                 borderRadius: '12px',
                 backgroundColor: 'var(--chrome, var(--background))',
@@ -416,7 +419,7 @@ function AppShellInner() {
             >
               <AssistantDockHost
                 onClose={closeChatDetached}
-                onDetach={() => rightRail.setChatDetached(false)}
+                onDetach={dockChatToRail}
               />
             </div>,
             document.body,

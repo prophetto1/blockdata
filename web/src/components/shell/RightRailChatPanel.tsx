@@ -4,9 +4,11 @@ import {
   IconPlayerStop,
   IconPlus,
   IconSend2,
+  IconSettings,
   IconSparkles,
 } from '@tabler/icons-react';
 import { AppIcon } from '@/components/ui/app-icon';
+import { useNavigate } from 'react-router-dom';
 import { useAssistantChat, type ChatMessage } from '@/hooks/useAssistantChat';
 import { useRightRailContext } from '@/components/shell/RightRailContext';
 
@@ -42,6 +44,7 @@ export function RightRailChatPanel() {
   } = useAssistantChat();
 
   const { setChatDetached } = useRightRailContext();
+  const navigate = useNavigate();
 
   const [input, setInput] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -82,6 +85,9 @@ export function RightRailChatPanel() {
           </button>
         </div>
         <div className="flex items-center gap-1">
+          <button type="button" className={iconBtn} aria-label="AI Settings" title="AI Settings" onClick={() => navigate('/app/settings/ai')}>
+            <AppIcon icon={IconSettings} size="md" />
+          </button>
           <button
             type="button"
             className={iconBtn}

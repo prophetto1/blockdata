@@ -966,7 +966,7 @@ body {
   min-height: 0;
   overflow: hidden;
   --parse-preview-surface-bg: var(--background);
-  --parse-preview-surface-padding: 8px;
+  --parse-preview-surface-padding: 16px;
 }
 
 .parse-pdf-viewer {
@@ -1606,6 +1606,8 @@ body {
 
 .parse-docx-render-host {
   min-height: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
   background: light-dark(#ffffff, var(--background));
   border-radius: 4px;
 }
@@ -1622,6 +1624,8 @@ body {
 .parse-docx-preview.is-light .parse-docx-render-host .docx {
   margin: 0 auto;
   min-height: 100%;
+  max-width: 100%;
+  overflow-wrap: break-word;
   background: #fff !important;
   color: #111827 !important;
 }
@@ -1637,6 +1641,8 @@ body {
 .parse-docx-preview.is-dark .parse-docx-render-host .docx {
   margin: 0 auto;
   min-height: 100%;
+  max-width: 100%;
+  overflow-wrap: break-word;
   background: var(--background) !important;
   color: #e5e7eb !important;
 }

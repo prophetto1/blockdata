@@ -80,6 +80,9 @@ export function RightRailProvider({ children }: { children: ReactNode }) {
 
   const setChatDetached = (detached: boolean) => {
     setChatDetachedRaw(detached);
+    if (detached) {
+      setIsOpen(false);
+    }
   };
 
   return (
