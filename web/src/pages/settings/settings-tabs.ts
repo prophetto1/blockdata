@@ -2,6 +2,7 @@ export const CATEGORY_IDS = [
   'instance-config',
   'worker-config',
   'platform-config',
+  'parsers-docling',
   'audit',
 ] as const;
 
@@ -21,6 +22,7 @@ export const ADMIN_SUBTAB_GROUPS: AdminSubTabGroup[] = [
       { id: 'instance-config', label: 'Instance Config' },
       { id: 'worker-config', label: 'Worker Config' },
       { id: 'platform-config', label: 'Platform Config' },
+      { id: 'parsers-docling', label: 'Parsers: Docling' },
       { id: 'audit', label: 'Audit History' },
     ],
   },
