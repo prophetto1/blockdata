@@ -211,6 +211,7 @@ export const router = createBrowserRouter([
               { index: true, lazy: () => import('@/pages/superuser/SuperuserWorkspace') },
               { path: 'layout-1', lazy: () => import('@/pages/superuser/SuperuserLayout1') },
               { path: 'layout-2', lazy: () => import('@/pages/superuser/SuperuserLayout2') },
+              { path: 'layout-3', lazy: () => import('@/pages/superuser/SuperuserLayout3') },
             ],
           },
 

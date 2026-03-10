@@ -199,6 +199,55 @@ export async function renameNode(node: FsNode, newName: string): Promise<void> {
   await moveNode(node, node.parentHandle, newName);
 }
 
+// ─── File / directory creation ───────────────────────────────────────────────
+
+export async function createFile(
+  parentHandle: FileSystemDirectoryHandle,
+  name: string,
+): Promise<FileSystemFileHandle> {
+  // Guard: check for existing file or directory with this name.
+  // getFileHandle throws NotFoundError (no entry) or TypeMismatchError (a directory exists).
+  try {
+    await parentHandle.getFileHandle(name);
+    throw new Error(`"${name}" already exists in this folder.`);
+  } catch (err) {
+    if (err instanceof DOMException && err.name === 'NotFoundError') {
+      // No entry — safe to create.
+    } else if (err instanceof DOMException && err.name === 'TypeMismatchError') {
+      throw new Error(`A folder named "${name}" already exists here.`);
+    } else {
+      throw err;
+    }
+  }
+  const handle = await parentHandle.getFileHandle(name, { create: true });
+  // Write empty content so the file is immediately readable
+  const writable = await (handle as any).createWritable();
+  await writable.write('');
+  await writable.close();
+  return handle;
+}
+
+export async function createDirectory(
+  parentHandle: FileSystemDirectoryHandle,
+  name: string,
+): Promise<FileSystemDirectoryHandle> {
+  // Guard: check for existing directory or file with this name.
+  // getDirectoryHandle throws NotFoundError (no entry) or TypeMismatchError (a file exists).
+  try {
+    await parentHandle.getDirectoryHandle(name);
+    throw new Error(`Folder "${name}" already exists in this directory.`);
+  } catch (err) {
+    if (err instanceof DOMException && err.name === 'NotFoundError') {
+      // No entry — safe to create.
+    } else if (err instanceof DOMException && err.name === 'TypeMismatchError') {
+      throw new Error(`A file named "${name}" already exists here.`);
+    } else {
+      throw err;
+    }
+  }
+  return parentHandle.getDirectoryHandle(name, { create: true });
+}
+
 // ─── Directory picker ────────────────────────────────────────────────────────
 
 export async function pickDirectory(): Promise<FileSystemDirectoryHandle> {
@@ -212,7 +261,7 @@ export async function pickDirectory(): Promise<FileSystemDirectoryHandle> {
 
 const IDB_NAME = 'superuser-workspace';
 const IDB_STORE = 'handles';
-const DIR_HANDLE_KEY = 'selectedDir';
+const DEFAULT_DIR_HANDLE_KEY = 'selectedDir';
 
 function openIDB(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
@@ -233,11 +282,11 @@ function awaitTransaction(tx: IDBTransaction): Promise<void> {
   });
 }
 
-export async function saveDirectoryHandle(handle: FileSystemDirectoryHandle): Promise<void> {
+export async function saveDirectoryHandle(handle: FileSystemDirectoryHandle, storeKey = DEFAULT_DIR_HANDLE_KEY): Promise<void> {
   try {
     const db = await openIDB();
     const tx = db.transaction(IDB_STORE, 'readwrite');
-    tx.objectStore(IDB_STORE).put(handle, DIR_HANDLE_KEY);
+    tx.objectStore(IDB_STORE).put(handle, storeKey);
     await awaitTransaction(tx);
     db.close();
   } catch {
@@ -245,12 +294,12 @@ export async function saveDirectoryHandle(handle: FileSystemDirectoryHandle): Pr
   }
 }
 
-export async function restoreDirectoryHandle(): Promise<FileSystemDirectoryHandle | null> {
+export async function restoreDirectoryHandle(storeKey = DEFAULT_DIR_HANDLE_KEY): Promise<FileSystemDirectoryHandle | null> {
   try {
     const db = await openIDB();
     return await new Promise((resolve) => {
       const tx = db.transaction(IDB_STORE, 'readonly');
-      const req = tx.objectStore(IDB_STORE).get(DIR_HANDLE_KEY);
+      const req = tx.objectStore(IDB_STORE).get(storeKey);
       tx.oncomplete = () => db.close();
       tx.onabort = () => db.close();
       tx.onerror = () => db.close();
@@ -262,11 +311,11 @@ export async function restoreDirectoryHandle(): Promise<FileSystemDirectoryHandl
   }
 }
 
-export async function clearSavedDirectoryHandle(): Promise<void> {
+export async function clearSavedDirectoryHandle(storeKey = DEFAULT_DIR_HANDLE_KEY): Promise<void> {
   try {
     const db = await openIDB();
     const tx = db.transaction(IDB_STORE, 'readwrite');
-    tx.objectStore(IDB_STORE).delete(DIR_HANDLE_KEY);
+    tx.objectStore(IDB_STORE).delete(storeKey);
     await awaitTransaction(tx);
     db.close();
   } catch {

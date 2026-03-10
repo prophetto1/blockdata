@@ -156,7 +156,7 @@ const SUPERUSER_DRILL: NavDrillConfig = {
       items: [
         { label: 'Layout 1', icon: IconFileCode, path: '/app/superuser/layout-1' },
         { label: 'Layout 2', icon: IconWorldCog, path: '/app/superuser/layout-2' },
-        { label: 'Layout 3', icon: IconFileCode, path: '/app/superuser' },
+        { label: 'Layout 3', icon: IconFileCode, path: '/app/superuser/layout-3' },
       ],
     },
   ],

@@ -8,10 +8,13 @@ import {
   ChevronRight,
   File,
   FileCode2,
+  FilePlus,
   FileText,
   FolderClosed,
   FolderOpen,
   FolderOpenDot,
+  FolderPlus,
+  Plus,
   RefreshCw,
   X,
 } from 'lucide-react';
@@ -25,6 +28,14 @@ import {
   saveDirectoryHandle,
 } from '@/lib/fs-access';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  MenuRoot,
+  MenuTrigger,
+  MenuPortal,
+  MenuPositioner,
+  MenuContent,
+  MenuItem,
+} from '@/components/ui/menu';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -51,13 +62,17 @@ type Props = {
   onMoveNode?: (source: FsNode, targetDir: FsNode) => void;
   onRenameNode?: (node: FsNode, newName: string) => void;
   onDeleteNode?: (node: FsNode) => void;
+  onCreateFile?: (parentHandle: FileSystemDirectoryHandle, name: string) => void;
+  onCreateFolder?: (parentHandle: FileSystemDirectoryHandle, name: string) => void;
   onRootHandle?: (handle: FileSystemDirectoryHandle) => void;
   refreshKey?: number;
+  /** IndexedDB key for persisting this tree's directory handle (allows independent persistence per layout). */
+  storeKey?: string;
 };
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
-export function WorkspaceFileTree({ onSelectFile, onMoveNode, onRenameNode, onDeleteNode, onRootHandle, refreshKey }: Props) {
+export function WorkspaceFileTree({ onSelectFile, onMoveNode, onRenameNode, onDeleteNode, onCreateFile, onCreateFolder, onRootHandle, refreshKey, storeKey }: Props) {
   const [nodes, setNodes] = useState<FsNode[]>([]);
   const [folderName, setFolderName] = useState<string | null>(null);
   const [error, setError] = useState('');
@@ -70,7 +85,7 @@ export function WorkspaceFileTree({ onSelectFile, onMoveNode, onRenameNode, onDe
   // ── Session restore ──────────────────────────────────────────────────────
 
   useEffect(() => {
-    restoreDirectoryHandle().then(async (handle) => {
+    restoreDirectoryHandle(storeKey).then(async (handle) => {
       if (!handle) return;
       try {
         const perm = await handle.queryPermission({ mode: 'readwrite' });
@@ -103,20 +118,20 @@ export function WorkspaceFileTree({ onSelectFile, onMoveNode, onRenameNode, onDe
       rootHandleRef.current = handle;
       onRootHandle?.(handle);
       setNeedsReauth(false);
-      saveDirectoryHandle(handle);
+      saveDirectoryHandle(handle, storeKey);
     } catch (err) {
       if (err instanceof DOMException && err.name === 'AbortError') return;
       setError(err instanceof Error ? err.message : 'Failed to open folder');
     }
-  }, [onRootHandle]);
+  }, [onRootHandle, storeKey]);
 
   const reconnectFolder = useCallback(async () => {
     setError('');
     try {
-      const handle = await restoreDirectoryHandle();
+      const handle = await restoreDirectoryHandle(storeKey);
       if (!handle) {
         setNeedsReauth(false);
-        clearSavedDirectoryHandle();
+        clearSavedDirectoryHandle(storeKey);
         return;
       }
       const perm = await (handle as any).requestPermission({ mode: 'readwrite' });
@@ -130,14 +145,14 @@ export function WorkspaceFileTree({ onSelectFile, onMoveNode, onRenameNode, onDe
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not reconnect folder');
     }
-  }, [onRootHandle]);
+  }, [onRootHandle, storeKey]);
 
   const closeFolder = useCallback(() => {
     setNodes([]);
     setFolderName(null);
     setNeedsReauth(false);
-    clearSavedDirectoryHandle();
-  }, []);
+    clearSavedDirectoryHandle(storeKey);
+  }, [storeKey]);
 
   // ── Refresh effect ────────────────────────────────────────────────────────
 
@@ -299,6 +314,47 @@ export function WorkspaceFileTree({ onSelectFile, onMoveNode, onRenameNode, onDe
           <span className="truncate">{folderName}</span>
         </div>
         <div className="flex items-center gap-1">
+          <MenuRoot positioning={{ placement: 'bottom-end', offset: { mainAxis: 4 } }}>
+            <MenuTrigger asChild>
+              <button
+                type="button"
+                className="rounded p-0.5 text-muted-foreground hover:bg-accent"
+                title="New..."
+              >
+                <Plus size={13} strokeWidth={ICON_STROKE} />
+              </button>
+            </MenuTrigger>
+            <MenuPortal>
+              <MenuPositioner>
+                <MenuContent>
+                  <MenuItem
+                    value="new-file"
+                    leftSection={<FilePlus size={14} strokeWidth={ICON_STROKE} />}
+                    onClick={() => {
+                      const root = rootHandleRef.current;
+                      if (!root) return;
+                      const name = window.prompt('New file name:');
+                      if (name?.trim()) onCreateFile?.(root, name.trim());
+                    }}
+                  >
+                    New File
+                  </MenuItem>
+                  <MenuItem
+                    value="new-folder"
+                    leftSection={<FolderPlus size={14} strokeWidth={ICON_STROKE} />}
+                    onClick={() => {
+                      const root = rootHandleRef.current;
+                      if (!root) return;
+                      const name = window.prompt('New folder name:');
+                      if (name?.trim()) onCreateFolder?.(root, name.trim());
+                    }}
+                  >
+                    New Folder
+                  </MenuItem>
+                </MenuContent>
+              </MenuPositioner>
+            </MenuPortal>
+          </MenuRoot>
           <button
             type="button"
             className="rounded p-0.5 text-muted-foreground hover:bg-accent"
@@ -354,12 +410,45 @@ export function WorkspaceFileTree({ onSelectFile, onMoveNode, onRenameNode, onDe
 
       {contextMenu && (
         <div
-          className="fixed z-50 min-w-[140px] rounded-md border border-border bg-popover p-1 shadow-md"
+          className="ui-menu-content fixed z-50 min-w-[8rem] overflow-hidden rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-md"
           style={{ top: contextMenu.y, left: contextMenu.x }}
         >
           <button
             type="button"
-            className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent"
+            className="ui-menu-item relative flex w-full cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground"
+            onClick={() => {
+              const dir = contextMenu.node.kind === 'directory'
+                ? contextMenu.node.handle as FileSystemDirectoryHandle
+                : contextMenu.node.parentHandle;
+              if (!dir) return;
+              const name = window.prompt('New file name:');
+              if (name?.trim()) onCreateFile?.(dir, name.trim());
+              setContextMenu(null);
+            }}
+          >
+            <FilePlus size={14} strokeWidth={ICON_STROKE} className="shrink-0" />
+            New File
+          </button>
+          <button
+            type="button"
+            className="ui-menu-item relative flex w-full cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground"
+            onClick={() => {
+              const dir = contextMenu.node.kind === 'directory'
+                ? contextMenu.node.handle as FileSystemDirectoryHandle
+                : contextMenu.node.parentHandle;
+              if (!dir) return;
+              const name = window.prompt('New folder name:');
+              if (name?.trim()) onCreateFolder?.(dir, name.trim());
+              setContextMenu(null);
+            }}
+          >
+            <FolderPlus size={14} strokeWidth={ICON_STROKE} className="shrink-0" />
+            New Folder
+          </button>
+          <div className="ui-menu-separator -mx-1 my-1 h-px bg-border" />
+          <button
+            type="button"
+            className="ui-menu-item relative flex w-full cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground"
             onClick={() => { onDeleteNode?.(contextMenu.node); setContextMenu(null); }}
           >
             Delete
