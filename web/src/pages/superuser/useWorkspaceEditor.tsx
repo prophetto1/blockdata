@@ -1,14 +1,9 @@
-import { useCallback, useRef, useState } from 'react';
+import { Suspense, useCallback, useRef, useState } from 'react';
 import { normalizePaneWidths, type Pane } from '@/components/workbench/workbenchState';
 import { IconFolderCode, IconFileCode, IconDeviceFloppy, IconLayoutBoard } from '@tabler/icons-react';
 import { type FsNode, readFileContent, writeFileContent, moveNode, deleteNode, renameNode, createFile, createDirectory } from '@/lib/fs-access';
 import { WorkspaceFileTree } from './WorkspaceFileTree';
-import { MdxEditorSurface, type MdxViewMode } from './MdxEditorSurface';
-import { CodeEditorSurface } from './CodeEditorSurface';
-
-// ─── Constants ───────────────────────────────────────────────────────────────
-
-const MD_EXTENSIONS = new Set(['.md', '.mdx']);
+import { resolveEditorProfile, type EditorSurfaceId } from './editorRegistry';
 
 export const WORKSPACE_TABS = [
   { id: 'file-tree', label: 'Files', icon: IconFolderCode },
@@ -58,13 +53,13 @@ type OpenFile = {
 
 // ─── Hook ────────────────────────────────────────────────────────────────────
 
-export function useWorkspaceEditor(storeKey?: string) {
+export function useWorkspaceEditor(storeKey?: string, preferredEditor: EditorSurfaceId = 'mdx') {
   const [openFile, setOpenFile] = useState<OpenFile | null>(null);
   const [saving, setSaving] = useState(false);
   const [fileKey, setFileKey] = useState(0);
   const rootHandleRef = useRef<FileSystemDirectoryHandle | null>(null);
   const [treeVersion, setTreeVersion] = useState(0);
-  const [mdxViewMode, setMdxViewMode] = useState<MdxViewMode>('rich-text');
+  const [activeViewMode, setActiveViewMode] = useState<string>('');
 
   const handleRootHandle = useCallback((handle: FileSystemDirectoryHandle) => {
     rootHandleRef.current = handle;
@@ -80,11 +75,12 @@ export function useWorkspaceEditor(storeKey?: string) {
       const content = await readFileContent(node.handle as FileSystemFileHandle);
       setOpenFile({ node, content, originalContent: content, dirty: false });
       setFileKey((k) => k + 1);
-      setMdxViewMode('rich-text');
+      const profile = resolveEditorProfile(node.extension, preferredEditor);
+      setActiveViewMode(profile.viewModes[0].id);
     } catch (err) {
       console.error('Failed to read file:', err);
     }
-  }, []);
+  }, [preferredEditor]);
 
   const isOpenFileAffected = useCallback((node: FsNode) => {
     if (!openFile) return false;
@@ -193,7 +189,27 @@ export function useWorkspaceEditor(storeKey?: string) {
         );
       }
 
-      const isMd = MD_EXTENSIONS.has(openFile.node.extension);
+      const profile = resolveEditorProfile(openFile.node.extension, preferredEditor);
+      const Surface = profile.component;
+
+      // Build surface-specific props beyond the shared contract
+      const surfaceProps: Record<string, unknown> = {
+        content: openFile.content,
+        fileKey: `${fileKey}`,
+        onChange: handleChange,
+        onSave: handleSave,
+      };
+
+      if (profile.id === 'mdx') {
+        surfaceProps.viewMode = activeViewMode;
+        surfaceProps.diffMarkdown = openFile.originalContent;
+      } else if (profile.id === 'code') {
+        surfaceProps.extension = openFile.node.extension;
+        surfaceProps.originalContent = openFile.originalContent;
+        surfaceProps.viewMode = activeViewMode === 'diff' ? 'diff' : 'edit';
+      } else if (profile.id === 'tiptap') {
+        surfaceProps.viewMode = activeViewMode;
+      }
 
       return (
         <div className="flex h-full flex-col">
@@ -206,20 +222,16 @@ export function useWorkspaceEditor(storeKey?: string) {
               )}
             </div>
 
-            {/* Center: view mode toggle */}
+            {/* Center: view mode toggle — driven by profile */}
             <div className="flex items-center gap-1">
-              {isMd ? (
-                <>
-                  <ViewModeBtn label="Rich Text" active={mdxViewMode === 'rich-text'} onClick={() => setMdxViewMode('rich-text')} />
-                  <ViewModeBtn label="Source" active={mdxViewMode === 'source'} onClick={() => setMdxViewMode('source')} />
-                  <ViewModeBtn label="Diff" active={mdxViewMode === 'diff'} onClick={() => setMdxViewMode('diff')} />
-                </>
-              ) : (
-                <>
-                  <ViewModeBtn label="Edit" active={mdxViewMode === 'rich-text'} onClick={() => setMdxViewMode('rich-text')} />
-                  <ViewModeBtn label="Diff" active={mdxViewMode === 'diff'} onClick={() => setMdxViewMode('diff')} />
-                </>
-              )}
+              {profile.viewModes.map((vm) => (
+                <ViewModeBtn
+                  key={vm.id}
+                  label={vm.label}
+                  active={activeViewMode === vm.id}
+                  onClick={() => setActiveViewMode(vm.id)}
+                />
+              ))}
             </div>
 
             {/* Save button */}
@@ -236,26 +248,15 @@ export function useWorkspaceEditor(storeKey?: string) {
 
           {/* Editor surface */}
           <div className="flex-1 min-h-0 overflow-hidden">
-            {isMd ? (
-              <MdxEditorSurface
-                content={openFile.content}
-                diffMarkdown={openFile.originalContent}
-                fileKey={`${fileKey}`}
-                viewMode={mdxViewMode}
-                onChange={handleChange}
-                onSave={handleSave}
-              />
-            ) : (
-              <CodeEditorSurface
-                content={openFile.content}
-                originalContent={openFile.originalContent}
-                extension={openFile.node.extension}
-                fileKey={`${fileKey}`}
-                viewMode={mdxViewMode === 'diff' ? 'diff' : 'edit'}
-                onChange={handleChange}
-                onSave={handleSave}
-              />
-            )}
+            <Suspense
+              fallback={
+                <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+                  Loading editor...
+                </div>
+              }
+            >
+              <Surface {...surfaceProps} />
+            </Suspense>
           </div>
         </div>
       );
@@ -263,7 +264,7 @@ export function useWorkspaceEditor(storeKey?: string) {
 
     // 'blank' or any unknown tab — render nothing
     return null;
-  }, [openFile, fileKey, handleSelectFile, handleChange, handleSave, saving, mdxViewMode, handleMoveNode, handleRenameNode, handleDeleteNode, handleCreateFile, handleCreateFolder, handleRootHandle, treeVersion]);
+  }, [openFile, fileKey, handleSelectFile, handleChange, handleSave, saving, activeViewMode, preferredEditor, handleMoveNode, handleRenameNode, handleDeleteNode, handleCreateFile, handleCreateFolder, handleRootHandle, treeVersion]);
 
   return { renderContent };
 }

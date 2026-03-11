@@ -140,6 +140,8 @@ function MdxEditorInner({
     codeMirrorPlugin,
     // ── Front-matter ──
     frontmatterPlugin,
+    // ── JSX ──
+    jsxPlugin,
     // ── Directives & admonitions ──
     directivesPlugin,
     AdmonitionDirectiveDescriptor,
@@ -263,6 +265,9 @@ function MdxEditorInner({
 
     // Front-matter
     frontmatterPlugin(),
+
+    // JSX components in MDX
+    jsxPlugin(),
 
     // Directives & admonitions
     directivesPlugin({

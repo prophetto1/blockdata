@@ -2,7 +2,7 @@ import { Workbench } from '@/components/workbench/Workbench';
 import { useWorkspaceEditor, WORKSPACE_TABS, WORKSPACE_DEFAULT_PANES } from './useWorkspaceEditor';
 
 export function Component() {
-  const { renderContent } = useWorkspaceEditor('layout-2-dir');
+  const { renderContent } = useWorkspaceEditor('layout-2-dir', 'tiptap');
   return (
     <div className="h-full w-full min-h-0 p-2">
       <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-md border border-border bg-card">

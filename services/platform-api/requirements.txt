@@ -1,0 +1,11 @@
+# services/platform-api/requirements.txt
+fastapi>=0.110
+uvicorn[standard]>=0.27
+pydantic>=2.6
+httpx>=0.26
+supabase>=2.0
+docling>=2.70.0
+eyecite>=2.7
+lxml>=5.0
+pytest>=8.0
+pytest-asyncio>=0.23

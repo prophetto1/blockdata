@@ -1,0 +1,14 @@
+/* Tiptap suggest-changes mark styles */
+.ProseMirror ins {
+  color: var(--color-green-600);
+  text-decoration: underline;
+}
+
+.ProseMirror del {
+  color: var(--color-red-600);
+  text-decoration: line-through;
+}
+
+.ProseMirror [data-type="modification"] {
+  color: var(--color-amber-600);
+}
