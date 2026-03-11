@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BD2 System Architecture</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<style>
+  :root { --bg: #0d1117; --fg: #c9d1d9; --border: #30363d; --accent: #58a6ff; --green: #3fb950; --red: #f85149; --blue: #58a6ff; --purple: #bc8cff; --orange: #d29922; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--fg); line-height: 1.6; }
+  .container { max-width: 1400px; margin: 0 auto; padding: 2rem; }
+  h1 { font-size: 2rem; margin-bottom: 0.5rem; color: #fff; }
+  h2 { font-size: 1.5rem; margin: 2.5rem 0 1rem; color: #fff; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
+  h3 { font-size: 1.1rem; margin: 1.5rem 0 0.5rem; color: var(--fg); }
+  p, li { color: #8b949e; margin-bottom: 0.5rem; }
+  .subtitle { color: #8b949e; margin-bottom: 2rem; font-size: 1.1rem; }
+  .legend { display: flex; gap: 2rem; flex-wrap: wrap; margin: 1.5rem 0; padding: 1rem; background: #161b22; border-radius: 8px; border: 1px solid var(--border); }
+  .legend-item { display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; }
+  .legend-dot { width: 16px; height: 16px; border-radius: 4px; }
+  .dot-green { background: #238636; border: 1px solid var(--green); }
+  .dot-red { background: #da3633; border: 1px solid var(--red); }
+  .dot-blue { background: #1f6feb; border: 1px solid var(--blue); }
+  .dot-gray { background: #30363d; border: 1px solid #484f58; }
+  .diagram-section { background: #161b22; border: 1px solid var(--border); border-radius: 12px; padding: 2rem; margin: 1.5rem 0; overflow-x: auto; }
+  .diagram-section .mermaid { display: flex; justify-content: center; }
+  .note { background: #1c2128; border-left: 3px solid var(--accent); padding: 1rem 1.5rem; margin: 1rem 0; border-radius: 0 8px 8px 0; font-size: 0.9rem; }
+  .note strong { color: var(--accent); }
+  table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+  th { background: #161b22; color: #fff; text-align: left; padding: 0.75rem 1rem; border: 1px solid var(--border); }
+  td { padding: 0.75rem 1rem; border: 1px solid var(--border); color: #8b949e; }
+  tr:hover td { background: #161b22; }
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
+  .tag-built { background: #238636; color: #fff; }
+  .tag-missing { background: #da3633; color: #fff; }
+  .tag-external { background: #1f6feb; color: #fff; }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin: 1rem 0; }
+  .col-card { background: #161b22; border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; }
+  .col-card h3 { margin-top: 0; }
+  .col-card ul { padding-left: 1.2rem; }
+  @media (max-width: 800px) { .cols { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>BD2 BlockData — System Architecture</h1>
+<p class="subtitle">End-to-end view: what's built, what's missing, and how everything connects.</p>
+
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot dot-green"></div> Built & Working</div>
+  <div class="legend-item"><div class="legend-dot dot-red"></div> Needs Building</div>
+  <div class="legend-item"><div class="legend-dot dot-blue"></div> External Service</div>
+  <div class="legend-item"><div class="legend-dot dot-gray"></div> Shared Infrastructure</div>
+</div>
+
+<!-- ─────────────────────────── DIAGRAM 1 ─────────────────────────── -->
+
+<h2>1. The Full System</h2>
+<p>Everything in the platform — frontend, backend, data, and external services — in one view.</p>
+
+<div class="diagram-section">
+<pre class="mermaid">
+%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#238636', 'primaryTextColor': '#fff', 'lineColor': '#484f58', 'fontSize': '14px'}}}%%
+flowchart TB
+    Browser["Browser"] --> FE
+
+    subgraph FE["FRONTEND · React + TypeScript"]
+        direction LR
+        FE_OK["<b>Built</b><br/>Upload · ELT Workbench<br/>Flows · Settings · Agents<br/>Schemas · Superuser"]
+        FE_NEW["<b>To Build</b><br/>Crew Builder · Exec Dashboard<br/>Traces Viewer · Triggers<br/>Tool Registry · Team Mgmt"]
+    end
+
+    subgraph SB["SUPABASE"]
+        direction LR
+        subgraph SB_OK["Built"]
+            SB_AUTH["Auth + RLS"]
+            SB_STORE["File Storage"]
+            SB_RT["Realtime"]
+            SB_TBL["Tables<br/>source_documents<br/>conversion_parsing<br/>blocks · representations<br/>parsing_profiles"]
+            SB_EDGE["Edge Functions<br/>ingest<br/>conversion-complete<br/>trigger-parse"]
+        end
+        subgraph SB_NEW["To Build"]
+            SB_CREW["crew_definitions<br/>agent_definitions<br/>task_definitions"]
+            SB_EXEC["execution_records<br/>execution_events<br/>flow_states"]
+            SB_VEC["block_embeddings<br/>pgvector"]
+            SB_TRIG["trigger_configs"]
+        end
+    end
+
+    subgraph PY["PYTHON BACKEND · FastAPI"]
+        direction LR
+        PY_OK["<b>Built</b><br/>conversion-service<br/>pipeline-worker"]
+        PY_NEW["<b>To Build</b><br/>Crew Execution API<br/>Embedding Service<br/>Job Queue · Celery+Redis<br/>SupabaseFlowPersistence<br/>Webhook Delivery"]
+    end
+
+    subgraph EXT["EXTERNAL SERVICES"]
+        direction LR
+        Kestra["Kestra<br/>Workflows"]
+        Docling["Docling<br/>Document AI"]
+        CrewAI["crewAI<br/>Agent Engine"]
+        LLMs["LLM Providers<br/>OpenAI · Anthropic"]
+    end
+
+    FE_OK --> SB_EDGE
+    FE_OK --> SB_TBL
+    FE_OK --> Kestra
+    FE_NEW -.-> SB_NEW
+    FE_NEW -.-> PY_NEW
+    SB_EDGE --> PY_OK
+    PY_OK --> Docling
+    PY_NEW -.-> CrewAI
+    PY_NEW -.-> SB_EXEC
+    CrewAI -.-> LLMs
+    CrewAI -.-> SB_VEC
+
+    style FE_OK fill:#238636,stroke:#3fb950,color:#fff
+    style FE_NEW fill:#da3633,stroke:#f85149,color:#fff
+    style SB_OK fill:#238636,stroke:#3fb950,color:#fff
+    style SB_NEW fill:#da3633,stroke:#f85149,color:#fff
+    style PY_OK fill:#238636,stroke:#3fb950,color:#fff
+    style PY_NEW fill:#da3633,stroke:#f85149,color:#fff
+    style Kestra fill:#1f6feb,stroke:#58a6ff,color:#fff
+    style Docling fill:#1f6feb,stroke:#58a6ff,color:#fff
+    style CrewAI fill:#1f6feb,stroke:#58a6ff,color:#fff
+    style LLMs fill:#1f6feb,stroke:#58a6ff,color:#fff
+</pre>
+</div>
+
+<!-- ─────────────────────────── DIAGRAM 2 ─────────────────────────── -->
+
+<h2>2. Document Pipeline — End to End</h2>
+<p>The journey of a document from upload through parsing, embedding, and into an AI agent's knowledge. Steps 1-3 are built. Steps 4-6 need building.</p>
+
+<div class="diagram-section">
+<pre class="mermaid">
+%%{init: {'theme': 'dark', 'themeVariables': {'fontSize': '13px'}}}%%
+flowchart LR
+    subgraph S1["1 · UPLOAD"]
+        direction TB
+        A1["User drops file"]
+        A2["ingest edge fn<br/>SHA256 → source_uid"]
+        A3["Supabase Storage<br/>documents/uploads/"]
+        A4["source_documents<br/>status: converting"]
+        A1 --> A2 --> A3
+        A2 --> A4
+    end
+
+    subgraph S2["2 · PARSE"]
+        direction TB
+        B1["conversion-service<br/>FastAPI · Python"]
+        B2["Docling<br/>PDF · DOCX · PPTX"]
+        B3["Pandoc<br/>RST · LaTeX · EPUB"]
+        B4["Mdast<br/>Markdown"]
+        B1 --> B2
+        B1 --> B3
+        B1 --> B4
+    end
+
+    subgraph S3["3 · EXTRACT BLOCKS"]
+        direction TB
+        C1["conversion-complete<br/>edge function"]
+        C2["blocks table<br/>heading · paragraph<br/>table · code · figure"]
+        C3["conversion_parsing<br/>stats + metadata"]
+        C4["representations<br/>HTML · DocTags · MD"]
+        C1 --> C2
+        C1 --> C3
+        C1 --> C4
+    end
+
+    subgraph S4["4 · EMBED"]
+        direction TB
+        D1["Embedding API<br/>FastAPI endpoint"]
+        D2["Provider<br/>OpenAI / Cohere"]
+        D3["block_embeddings<br/>pgvector"]
+        D1 --> D2 --> D3
+    end
+
+    subgraph S5["5 · RETRIEVE"]
+        direction TB
+        E1["BlockData<br/>KnowledgeSource"]
+        E2["SQL cosine<br/>similarity search"]
+        E1 --> E2
+    end
+
+    subgraph S6["6 · AGENT USES"]
+        direction TB
+        F1["crewAI Agent"]
+        F2["LLM + knowledge<br/>context in prompt"]
+        F3["execution_records<br/>result stored"]
+        F1 --> F2 --> F3
+    end
+
+    A2 --> B1
+    B2 & B3 & B4 --> C1
+    C2 -.-> D1
+    D3 -.-> E1
+    E2 -.-> F1
+
+    style S1 fill:#0d4429,stroke:#238636
+    style S2 fill:#0d4429,stroke:#238636
+    style S3 fill:#0d4429,stroke:#238636
+    style S4 fill:#3d1418,stroke:#da3633
+    style S5 fill:#3d1418,stroke:#da3633
+    style S6 fill:#3d1418,stroke:#da3633
+</pre>
+</div>
+
+<div class="note">
+  <strong>Key insight:</strong> BD2 already produces semantic blocks (headings, paragraphs, tables) — far superior to crewAI's default 4000-char sliding window chunking. The only missing step is generating embeddings from those blocks and making them queryable by agents.
+</div>
+
+<!-- ─────────────────────────── DIAGRAM 3 ─────────────────────────── -->
+
+<h2>3. Crew Execution Pipeline</h2>
+<p>How a user defines a crew, runs it, and monitors results — entirely missing today.</p>
+
+<div class="diagram-section">
+<pre class="mermaid">
+%%{init: {'theme': 'dark', 'themeVariables': {'fontSize': '13px'}}}%%
+sequenceDiagram
+    participant U as User · Browser
+    participant FE as React Frontend
+    participant API as FastAPI Backend
+    participant Q as Job Queue · Celery
+    participant W as Worker Process
+    participant CR as crewAI Engine
+    participant LLM as LLM Provider
+    participant DB as Supabase · Postgres
+    participant VEC as pgvector · Embeddings
+
+    U->>FE: Define agents + tasks
+    FE->>DB: Save crew_definitions
+
+    U->>FE: Click "Run Crew"
+    FE->>API: POST /crews/{id}/kickoff
+    API->>DB: Insert execution_record (PENDING)
+    API->>Q: Enqueue job
+    API-->>FE: Return execution_id
+
+    Q->>W: Job picked up
+    W->>DB: Load crew definitions
+    W->>DB: Update status → RUNNING
+    W->>CR: crew.kickoff(inputs)
+
+    loop Agent execution
+        CR->>VEC: Query knowledge (blocks)
+        VEC-->>CR: Relevant chunks
+        CR->>LLM: Prompt + knowledge context
+        LLM-->>CR: Response
+        CR->>DB: Log event (execution_events)
+    end
+
+    CR-->>W: Final result
+    W->>DB: Update status → SUCCESS + result
+    DB-->>FE: Realtime subscription fires
+    FE-->>U: Dashboard shows result
+</pre>
+</div>
+
+<!-- ─────────────────────────── DIAGRAM 4 ─────────────────────────── -->
+
+<h2>4. Frontend Pages — Layout Pattern Mapping</h2>
+<p>Every crewAI platform page maps to a layout component BD2 already has.</p>
+
+<table>
+  <thead>
+    <tr><th>crewAI Platform Page</th><th>BD2 Layout</th><th>Component</th><th>Status</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Crew Builder</td><td>Multi-pane editor</td><td>Workbench</td><td><span class="tag tag-built">layout built</span></td></tr>
+    <tr><td>Flow Editor</td><td>Tabbed + canvas</td><td>Workbench (FlowDetail pattern)</td><td><span class="tag tag-built">layout built</span></td></tr>
+    <tr><td>Crew/Flow List</td><td>Search + table</td><td>FlowsList pattern</td><td><span class="tag tag-built">layout built</span></td></tr>
+    <tr><td>Execution Dashboard</td><td>List + detail drill-down</td><td>FlowsList + RunDetail</td><td><span class="tag tag-built">layout built</span></td></tr>
+    <tr><td>Traces Viewer</td><td>Three-column inspection</td><td>SchemaLayout</td><td><span class="tag tag-built">layout built</span></td></tr>
+    <tr><td>Triggers Config</td><td>Tabbed admin panels</td><td>SettingsAdmin</td><td><span class="tag tag-built">layout built</span></td></tr>
+    <tr><td>Tool Registry</td><td>Card grid + modals</td><td>Agents page pattern</td><td><span class="tag tag-built">layout built</span></td></tr>
+    <tr><td>Team / Org Settings</td><td>Admin forms</td><td>SettingsAdmin</td><td><span class="tag tag-built">layout built</span></td></tr>
+    <tr><td>Deployment Management</td><td>Tabbed detail</td><td>FlowDetail pattern</td><td><span class="tag tag-built">layout built</span></td></tr>
+  </tbody>
+</table>
+
+<div class="note">
+  <strong>Result:</strong> Zero new layout components needed. All 9 crewAI platform pages map to existing BD2 patterns. The work is in wiring up data, not building UI shells.
+</div>
+
+<!-- ─────────────────────────── SECTION 5 ─────────────────────────── -->
+
+<h2>5. Technology Stack</h2>
+
+<div class="cols">
+  <div class="col-card">
+    <h3>Presentation</h3>
+    <ul>
+      <li>React + TypeScript</li>
+      <li>Workbench (multi-pane)</li>
+      <li>SchemaLayout (3-column)</li>
+      <li>FlowsList (list/table)</li>
+      <li>SettingsAdmin (config panels)</li>
+    </ul>
+  </div>
+  <div class="col-card">
+    <h3>API Layer</h3>
+    <ul>
+      <li>Supabase Edge Functions (TS/Deno)</li>
+      <li>FastAPI (Python) — <span class="tag tag-missing">expand</span></li>
+      <li>Supabase JS Client (realtime + auth)</li>
+    </ul>
+  </div>
+  <div class="col-card">
+    <h3>Processing</h3>
+    <ul>
+      <li>Docling (document AI)</li>
+      <li>crewAI (agent framework) — <span class="tag tag-missing">integrate</span></li>
+      <li>Celery + Redis (job queue) — <span class="tag tag-missing">add</span></li>
+      <li>Embedding providers — <span class="tag tag-missing">add</span></li>
+    </ul>
+  </div>
+  <div class="col-card">
+    <h3>Data</h3>
+    <ul>
+      <li>PostgreSQL via Supabase</li>
+      <li>pgvector (vector search) — <span class="tag tag-missing">add</span></li>
+      <li>Supabase Storage (files)</li>
+      <li>ArangoDB (graph, if needed)</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ─────────────────────────── SECTION 6 ─────────────────────────── -->
+
+<h2>6. Multi-Tenant Data Isolation</h2>
+
+<div class="diagram-section">
+<pre class="mermaid">
+%%{init: {'theme': 'dark', 'themeVariables': {'fontSize': '13px'}}}%%
+flowchart TB
+    subgraph ORG_A["Org A"]
+        UA["Users"] --> CA["Crews · Docs · Executions"]
+    end
+    subgraph ORG_B["Org B"]
+        UB["Users"] --> CB["Crews · Docs · Executions"]
+    end
+
+    subgraph INFRA["Shared Infrastructure"]
+        AUTH["Supabase Auth<br/>JWT → org_id"]
+        RLS["RLS Policies<br/>WHERE org_id = auth.org()"]
+        API["FastAPI<br/>org_id from token"]
+        QUEUE["Job Queue<br/>org-scoped isolation"]
+    end
+
+    CA --> AUTH
+    CB --> AUTH
+    AUTH --> RLS
+    AUTH --> API
+    API --> QUEUE
+
+    style ORG_A fill:#0d3868,stroke:#1f6feb
+    style ORG_B fill:#3d2e08,stroke:#d29922
+    style INFRA fill:#21262d,stroke:#484f58
+</pre>
+</div>
+
+<!-- ─────────────────────────── SECTION 7 ─────────────────────────── -->
+
+<h2>7. Build Phases</h2>
+
+<div class="diagram-section">
+<pre class="mermaid">
+%%{init: {'theme': 'dark', 'themeVariables': {'fontSize': '12px'}}}%%
+gantt
+    title BD2 Agent Platform Build Phases
+    dateFormat YYYY-MM-DD
+    axisFormat %b
+
+    section Phase 1 · Foundation
+    SupabaseFlowPersistence          :p1a, 2026-03-15, 3d
+    Expand FastAPI · crew endpoints  :p1b, after p1a, 7d
+    Crew/agent/task tables           :p1c, after p1a, 5d
+    Basic Crew Builder page          :p1d, after p1c, 7d
+    Sync crew execution              :p1e, after p1b, 5d
+
+    section Phase 2 · Async + Multi-User
+    Celery + Redis job queue         :p2a, after p1e, 5d
+    Execution dashboard page         :p2b, after p2a, 7d
+    Multi-tenant RLS policies        :p2c, after p2a, 5d
+    Embedding service + pgvector     :p2d, after p2a, 7d
+    BlockDataKnowledgeSource         :p2e, after p2d, 3d
+
+    section Phase 3 · Observability
+    Event bus listener               :p3a, after p2b, 5d
+    Traces viewer page               :p3b, after p3a, 7d
+    Execution history + filtering    :p3c, after p3a, 5d
+
+    section Phase 4 · Advanced
+    Trigger system                   :p4a, after p3b, 10d
+    Visual flow editor               :p4b, after p4a, 14d
+    Containerized execution          :p4c, after p4a, 10d
+</pre>
+</div>
+
+</div>
+
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'dark',
+    securityLevel: 'loose',
+    flowchart: { useMaxWidth: true, htmlLabels: true, curve: 'basis' },
+    sequence: { useMaxWidth: true, wrap: true },
+    gantt: { useMaxWidth: true }
+  });
+</script>
+</body>
+</html>
