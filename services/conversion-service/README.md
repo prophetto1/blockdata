@@ -1,3 +1,7 @@
+> **DEPRECATED** — This service has been merged into `services/platform-api/`.
+> See `docs/platform-api/2026-03-10-platform-api-merge.md` for the migration plan.
+> This directory will be removed after the dual-run period.
+
 # Conversion Service (FastAPI) - Multi-Track Ingest Conversion
 
 This service converts non-Markdown uploads into normalized markdown and parser representation artifacts, then calls back the Edge Function.

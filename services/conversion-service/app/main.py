@@ -1,5 +1,13 @@
 from __future__ import annotations
 
+import logging
+
+logging.getLogger(__name__).warning(
+    "DEPRECATED: conversion-service has been merged into services/platform-api/. "
+    "See docs/platform-api/2026-03-10-platform-api-merge.md Task 13. "
+    "This service will be decommissioned after the dual-run period."
+)
+
 import json
 import os
 import subprocess

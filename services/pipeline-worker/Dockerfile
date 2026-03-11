@@ -1,3 +1,5 @@
+# DEPRECATED: Use services/platform-api/Dockerfile instead.
+# See docs/platform-api/2026-03-10-platform-api-merge.md
 FROM python:3.11-slim
 
 WORKDIR /app

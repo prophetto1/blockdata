@@ -1,4 +1,9 @@
-"""Pipeline Worker — FastAPI app for blockdata plugin execution."""
+"""Pipeline Worker — FastAPI app for blockdata plugin execution.
+
+DEPRECATED: This service has been merged into services/platform-api/.
+See docs/platform-api/2026-03-10-platform-api-merge.md Task 13.
+This service will be decommissioned after the dual-run period.
+"""
 
 import logging
 import traceback
@@ -16,6 +21,11 @@ from .shared.context import ExecutionContext
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
 logger = logging.getLogger("pipeline-worker")
+logger.warning(
+    "DEPRECATED: pipeline-worker has been merged into services/platform-api/. "
+    "See docs/platform-api/2026-03-10-platform-api-merge.md Task 13. "
+    "This service will be decommissioned after the dual-run period."
+)
 
 
 @asynccontextmanager

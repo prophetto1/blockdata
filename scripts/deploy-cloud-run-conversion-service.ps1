@@ -1,3 +1,5 @@
+# DEPRECATED: Use scripts/deploy-cloud-run-platform-api.ps1 instead.
+# See docs/platform-api/2026-03-10-platform-api-merge.md
 param(
   [Parameter(Mandatory = $true)]
   [string]$ProjectId,
