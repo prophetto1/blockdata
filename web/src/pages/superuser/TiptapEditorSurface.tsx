@@ -140,6 +140,13 @@ const SuggestChangesPlugin = Extension.create({
   addProseMirrorPlugins() {
     return [suggestChanges()];
   },
+
+  onCreate() {
+    const view = this.editor.view;
+    const wrappedDispatch = withSuggestChanges();
+    // Override dispatch so withSuggestChanges can intercept transactions
+    view.dispatch = wrappedDispatch.bind(view);
+  },
 });
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -162,11 +169,12 @@ export function TiptapEditorSurface({ content, fileKey, viewMode, onChange, onSa
       ],
       content,
       onUpdate({ editor }) {
-        const md = editor.storage.markdown?.getMarkdown?.() ?? editor.getText();
+        const storage = editor.storage as Record<string, any>;
+        const md = storage.markdown?.getMarkdown?.() ?? editor.getText();
         onChangeRef.current(md);
       },
       editorProps: {
-        handleKeyDown(view, event) {
+        handleKeyDown(_view, event) {
           if ((event.ctrlKey || event.metaKey) && event.key === 's') {
             event.preventDefault();
             onSaveRef.current?.();
@@ -174,10 +182,6 @@ export function TiptapEditorSurface({ content, fileKey, viewMode, onChange, onSa
           }
           return false;
         },
-        // withSuggestChanges intercepts transactions when suggest mode is enabled.
-        // Passing no base dispatch uses the default (view.updateState(view.state.apply(tr))).
-        // `this` is bound to the EditorView by ProseMirror.
-        dispatchTransaction: withSuggestChanges(),
       },
     },
     [fileKey],

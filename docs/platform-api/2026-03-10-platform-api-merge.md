@@ -9,7 +9,7 @@
 **Tech Stack:** Python 3.11, FastAPI, Pydantic v2, httpx, Docling, eyecite, Supabase Python SDK, pytest, pytest-asyncio
 
 **Reference docs:**
-- Problem brief: `docs/briefs/2026-03-10-platform-api-merge.md`
+- Problem brief: `docs/platform-api/briefs/2026-03-10-platform-api-merge.md`
 - Architecture diagrams: `docs/architecture/bd2-architecture.html`
 
 **Review notes:** This plan incorporates findings from two independent assessments:
