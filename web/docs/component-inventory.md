@@ -1,22 +1,21 @@
 # Component Inventory
 
-Generated: 2026-03-10T00:03:20.542Z
+Generated: 2026-03-10T19:54:13.372Z
 Scope: auth
 
-Pages scanned: 42
-Unique component usages: 404
+Pages scanned: 44
+Unique component usages: 447
 
 ## Category Totals
 
 | Category | Count |
 | --- | ---: |
-| ark-ui | 150 |
+| ark-ui | 146 |
 | external-package | 17 |
-| in-file component | 9 |
-| local-components | 127 |
-| relative-local | 19 |
-| tabler-icons | 81 |
-| unknown | 1 |
+| in-file component | 26 |
+| local-components | 155 |
+| relative-local | 20 |
+| tabler-icons | 83 |
 
 ## src/pages/AgentOnboarding.tsx
 
@@ -93,22 +92,12 @@ Component usages: 4
 
 ## src/pages/DocumentTest.tsx
 
-Component usages: 26
+Component usages: 10
 
 | Used As | Source | Category | Definition |
 | --- | --- | --- | --- |
-| `AssetsPanel` | `@/components/documents/AssetsPanel` | local-components | AssetsPanel comes from @/components/documents/AssetsPanel (named import of AssetsPanel) |
-| `DltLoadPanel` | `@/components/elt/DltLoadPanel` | local-components | DltLoadPanel comes from @/components/elt/DltLoadPanel (named import of DltLoadPanel) |
-| `DltPullPanel` | `@/components/elt/DltPullPanel` | local-components | DltPullPanel comes from @/components/elt/DltPullPanel (named import of DltPullPanel) |
-| `FlowCanvas` | `@/components/flows/FlowCanvas` | local-components | FlowCanvas comes from @/components/flows/FlowCanvas (default import of default) |
 | `IconArrowsTransferDown` | `@tabler/icons-react` | tabler-icons | IconArrowsTransferDown comes from @tabler/icons-react (named import of IconArrowsTransferDown) |
 | `IconChevronDown` | `@tabler/icons-react` | tabler-icons | IconChevronDown comes from @tabler/icons-react (named import of IconChevronDown) |
-| `IconDotsVertical` | `@tabler/icons-react` | tabler-icons | IconDotsVertical comes from @tabler/icons-react (named import of IconDotsVertical) |
-| `IconDownload` | `@tabler/icons-react` | tabler-icons | IconDownload comes from @tabler/icons-react (named import of IconDownload) |
-| `IconEye` | `@tabler/icons-react` | tabler-icons | IconEye comes from @tabler/icons-react (named import of IconEye) |
-| `IconFileCode` | `@tabler/icons-react` | tabler-icons | IconFileCode comes from @tabler/icons-react (named import of IconFileCode) |
-| `IconFiles` | `@tabler/icons-react` | tabler-icons | IconFiles comes from @tabler/icons-react (named import of IconFiles) |
-| `IconLayoutColumns` | `@tabler/icons-react` | tabler-icons | IconLayoutColumns comes from @tabler/icons-react (named import of IconLayoutColumns) |
 | `IconTransform` | `@tabler/icons-react` | tabler-icons | IconTransform comes from @tabler/icons-react (named import of IconTransform) |
 | `MenuContent` | `@/components/ui/menu` | local-components | MenuContent comes from @/components/ui/menu (named import of MenuContent) |
 | `MenuItem` | `@/components/ui/menu` | local-components | MenuItem comes from @/components/ui/menu (named import of MenuItem) |
@@ -116,13 +105,7 @@ Component usages: 26
 | `MenuPositioner` | `@/components/ui/menu` | local-components | MenuPositioner comes from @/components/ui/menu (named import of MenuPositioner) |
 | `MenuRoot` | `@/components/ui/menu` | local-components | MenuRoot comes from @/components/ui/menu (named import of MenuRoot) |
 | `MenuTrigger` | `@/components/ui/menu` | local-components | MenuTrigger comes from @/components/ui/menu (named import of MenuTrigger) |
-| `ParseEasyPanel` | `@/components/elt/ParseEasyPanel` | local-components | ParseEasyPanel comes from @/components/elt/ParseEasyPanel (named import of ParseEasyPanel) |
-| `PreviewTabPanel` | `@/components/documents/PreviewTabPanel` | local-components | PreviewTabPanel comes from @/components/documents/PreviewTabPanel (named import of PreviewTabPanel) |
-| `Splitter.Panel` | `@ark-ui/react/splitter` | ark-ui | Splitter.Panel comes from @ark-ui/react/splitter (named import of Splitter) |
-| `Splitter.ResizeTrigger` | `@ark-ui/react/splitter` | ark-ui | Splitter.ResizeTrigger comes from @ark-ui/react/splitter (named import of Splitter) |
-| `Splitter.ResizeTriggerIndicator` | `@ark-ui/react/splitter` | ark-ui | Splitter.ResizeTriggerIndicator comes from @ark-ui/react/splitter (named import of Splitter) |
-| `Splitter.Root` | `@ark-ui/react/splitter` | ark-ui | Splitter.Root comes from @ark-ui/react/splitter (named import of Splitter) |
-| `ToolbarBtn` | `(in-file or unresolved)` | unknown | ToolbarBtn was detected in JSX but no matching import was resolved |
+| `Workbench` | `@/components/workbench/Workbench` | local-components | Workbench comes from @/components/workbench/Workbench (named import of Workbench) |
 
 ## src/pages/FlowDetail.tsx
 
@@ -398,6 +381,39 @@ Component usages: 28
 | `Splitter.ResizeTriggerIndicator` | `@ark-ui/react/splitter` | ark-ui | Splitter.ResizeTriggerIndicator comes from @ark-ui/react/splitter (named import of Splitter) |
 | `Splitter.Root` | `@ark-ui/react/splitter` | ark-ui | Splitter.Root comes from @ark-ui/react/splitter (named import of Splitter) |
 
+## src/pages/settings/DoclingConfigPanel.tsx
+
+Component usages: 26
+
+| Used As | Source | Category | Definition |
+| --- | --- | --- | --- |
+| `CollapsibleContent` | `@/components/ui/collapsible` | local-components | CollapsibleContent comes from @/components/ui/collapsible (named import of CollapsibleContent) |
+| `CollapsibleIndicator` | `@/components/ui/collapsible` | local-components | CollapsibleIndicator comes from @/components/ui/collapsible (named import of CollapsibleIndicator) |
+| `CollapsibleRoot` | `@/components/ui/collapsible` | local-components | CollapsibleRoot comes from @/components/ui/collapsible (named import of CollapsibleRoot) |
+| `CollapsibleTrigger` | `@/components/ui/collapsible` | local-components | CollapsibleTrigger comes from @/components/ui/collapsible (named import of CollapsibleTrigger) |
+| `ConfigEditor` | `(in-file or unresolved)` | in-file component | ConfigEditor is defined in the same page file |
+| `DoclingConfigPanel` | `(in-file or unresolved)` | in-file component | DoclingConfigPanel is defined in the same page file |
+| `FieldHelperText` | `@/components/ui/field` | local-components | FieldHelperText comes from @/components/ui/field (named import of FieldHelperText) |
+| `FieldLabel` | `@/components/ui/field` | local-components | FieldLabel comes from @/components/ui/field (named import of FieldLabel) |
+| `FieldRoot` | `@/components/ui/field` | local-components | FieldRoot comes from @/components/ui/field (named import of FieldRoot) |
+| `FieldRow` | `(in-file or unresolved)` | in-file component | FieldRow is defined in the same page file |
+| `IconCopy` | `@tabler/icons-react` | tabler-icons | IconCopy comes from @tabler/icons-react (named import of IconCopy) |
+| `IconDeviceFloppy` | `@tabler/icons-react` | tabler-icons | IconDeviceFloppy comes from @tabler/icons-react (named import of IconDeviceFloppy) |
+| `IconPlus` | `@tabler/icons-react` | tabler-icons | IconPlus comes from @tabler/icons-react (named import of IconPlus) |
+| `IconTrash` | `@tabler/icons-react` | tabler-icons | IconTrash comes from @tabler/icons-react (named import of IconTrash) |
+| `NumberInput` | `(in-file or unresolved)` | in-file component | NumberInput is defined in the same page file |
+| `NumberInputInput` | `@/components/ui/number-input` | local-components | NumberInputInput comes from @/components/ui/number-input (named import of NumberInputInput) |
+| `NumberInputRoot` | `@/components/ui/number-input` | local-components | NumberInputRoot comes from @/components/ui/number-input (named import of NumberInputRoot) |
+| `ScrollArea` | `@/components/ui/scroll-area` | local-components | ScrollArea comes from @/components/ui/scroll-area (named import of ScrollArea) |
+| `Section` | `(in-file or unresolved)` | in-file component | Section is defined in the same page file |
+| `Select` | `(in-file or unresolved)` | in-file component | Select is defined in the same page file |
+| `SwitchControl` | `@/components/ui/switch` | local-components | SwitchControl comes from @/components/ui/switch (named import of SwitchControl) |
+| `SwitchHiddenInput` | `@/components/ui/switch` | local-components | SwitchHiddenInput comes from @/components/ui/switch (named import of SwitchHiddenInput) |
+| `SwitchRoot` | `@/components/ui/switch` | local-components | SwitchRoot comes from @/components/ui/switch (named import of SwitchRoot) |
+| `SwitchThumb` | `@/components/ui/switch` | local-components | SwitchThumb comes from @/components/ui/switch (named import of SwitchThumb) |
+| `TextInput` | `(in-file or unresolved)` | in-file component | TextInput is defined in the same page file |
+| `Toggle` | `(in-file or unresolved)` | in-file component | Toggle is defined in the same page file |
+
 ## src/pages/settings/InstanceConfigPanel.tsx
 
 Component usages: 2
@@ -417,6 +433,45 @@ Component usages: 4
 | `Input` | `@/components/ui/input` | local-components | Input comes from @/components/ui/input (named import of Input) |
 | `McpServerCard` | `@/components/mcp/McpServerCard` | local-components | McpServerCard comes from @/components/mcp/McpServerCard (named import of McpServerCard) |
 | `SettingsPageFrame` | `./SettingsPageHeader` | relative-local | SettingsPageFrame comes from ./SettingsPageHeader (named import of SettingsPageFrame) |
+
+## src/pages/settings/PandocConfigPanel.tsx
+
+Component usages: 32
+
+| Used As | Source | Category | Definition |
+| --- | --- | --- | --- |
+| `CollapsibleContent` | `@/components/ui/collapsible` | local-components | CollapsibleContent comes from @/components/ui/collapsible (named import of CollapsibleContent) |
+| `CollapsibleIndicator` | `@/components/ui/collapsible` | local-components | CollapsibleIndicator comes from @/components/ui/collapsible (named import of CollapsibleIndicator) |
+| `CollapsibleRoot` | `@/components/ui/collapsible` | local-components | CollapsibleRoot comes from @/components/ui/collapsible (named import of CollapsibleRoot) |
+| `CollapsibleTrigger` | `@/components/ui/collapsible` | local-components | CollapsibleTrigger comes from @/components/ui/collapsible (named import of CollapsibleTrigger) |
+| `ConfigEditor` | `(in-file or unresolved)` | in-file component | ConfigEditor is defined in the same page file |
+| `FieldHelperText` | `@/components/ui/field` | local-components | FieldHelperText comes from @/components/ui/field (named import of FieldHelperText) |
+| `FieldLabel` | `@/components/ui/field` | local-components | FieldLabel comes from @/components/ui/field (named import of FieldLabel) |
+| `FieldRoot` | `@/components/ui/field` | local-components | FieldRoot comes from @/components/ui/field (named import of FieldRoot) |
+| `FieldRow` | `(in-file or unresolved)` | in-file component | FieldRow is defined in the same page file |
+| `IconCopy` | `@tabler/icons-react` | tabler-icons | IconCopy comes from @tabler/icons-react (named import of IconCopy) |
+| `IconDeviceFloppy` | `@tabler/icons-react` | tabler-icons | IconDeviceFloppy comes from @tabler/icons-react (named import of IconDeviceFloppy) |
+| `IconPlus` | `@tabler/icons-react` | tabler-icons | IconPlus comes from @tabler/icons-react (named import of IconPlus) |
+| `IconTrash` | `@tabler/icons-react` | tabler-icons | IconTrash comes from @tabler/icons-react (named import of IconTrash) |
+| `NumberInput` | `(in-file or unresolved)` | in-file component | NumberInput is defined in the same page file |
+| `NumberInputInput` | `@/components/ui/number-input` | local-components | NumberInputInput comes from @/components/ui/number-input (named import of NumberInputInput) |
+| `NumberInputRoot` | `@/components/ui/number-input` | local-components | NumberInputRoot comes from @/components/ui/number-input (named import of NumberInputRoot) |
+| `PandocConfigPanel` | `(in-file or unresolved)` | in-file component | PandocConfigPanel is defined in the same page file |
+| `ScrollArea` | `@/components/ui/scroll-area` | local-components | ScrollArea comes from @/components/ui/scroll-area (named import of ScrollArea) |
+| `Section` | `(in-file or unresolved)` | in-file component | Section is defined in the same page file |
+| `SegmentGroupIndicator` | `@/components/ui/segment-group` | local-components | SegmentGroupIndicator comes from @/components/ui/segment-group (named import of SegmentGroupIndicator) |
+| `SegmentGroupItem` | `@/components/ui/segment-group` | local-components | SegmentGroupItem comes from @/components/ui/segment-group (named import of SegmentGroupItem) |
+| `SegmentGroupItemHiddenInput` | `@/components/ui/segment-group` | local-components | SegmentGroupItemHiddenInput comes from @/components/ui/segment-group (named import of SegmentGroupItemHiddenInput) |
+| `SegmentGroupItemText` | `@/components/ui/segment-group` | local-components | SegmentGroupItemText comes from @/components/ui/segment-group (named import of SegmentGroupItemText) |
+| `SegmentGroupRoot` | `@/components/ui/segment-group` | local-components | SegmentGroupRoot comes from @/components/ui/segment-group (named import of SegmentGroupRoot) |
+| `Select` | `(in-file or unresolved)` | in-file component | Select is defined in the same page file |
+| `SwitchControl` | `@/components/ui/switch` | local-components | SwitchControl comes from @/components/ui/switch (named import of SwitchControl) |
+| `SwitchHiddenInput` | `@/components/ui/switch` | local-components | SwitchHiddenInput comes from @/components/ui/switch (named import of SwitchHiddenInput) |
+| `SwitchRoot` | `@/components/ui/switch` | local-components | SwitchRoot comes from @/components/ui/switch (named import of SwitchRoot) |
+| `SwitchThumb` | `@/components/ui/switch` | local-components | SwitchThumb comes from @/components/ui/switch (named import of SwitchThumb) |
+| `TextInput` | `(in-file or unresolved)` | in-file component | TextInput is defined in the same page file |
+| `Toggle` | `(in-file or unresolved)` | in-file component | Toggle is defined in the same page file |
+| `TriToggle` | `(in-file or unresolved)` | in-file component | TriToggle is defined in the same page file |
 
 ## src/pages/settings/PlatformConfigPanel.tsx
 
@@ -540,11 +595,12 @@ Component usages: 14
 
 ## src/pages/settings/SettingsAdmin.tsx
 
-Component usages: 9
+Component usages: 10
 
 | Used As | Source | Category | Definition |
 | --- | --- | --- | --- |
 | `Button` | `@/components/ui/button` | local-components | Button comes from @/components/ui/button (named import of Button) |
+| `DoclingConfigPanel` | `./DoclingConfigPanel` | relative-local | DoclingConfigPanel comes from ./DoclingConfigPanel (named import of DoclingConfigPanel) |
 | `ErrorAlert` | `@/components/common/ErrorAlert` | local-components | ErrorAlert comes from @/components/common/ErrorAlert (named import of ErrorAlert) |
 | `Field.Input` | `@ark-ui/react/field` | ark-ui | Field.Input comes from @ark-ui/react/field (named import of Field) |
 | `Field.Root` | `@ark-ui/react/field` | ark-ui | Field.Root comes from @ark-ui/react/field (named import of Field) |

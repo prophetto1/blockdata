@@ -129,16 +129,12 @@ function ThemeToggleRow() {
 function AccountMenuContent({
   userLabel,
   docsSiteUrl,
-  isSuperuser,
   onNavigate,
-  onNavigateSuperuser,
   onSignOut,
 }: {
   userLabel?: string;
   docsSiteUrl: string;
-  isSuperuser: boolean;
   onNavigate: () => void;
-  onNavigateSuperuser: () => void;
   onSignOut?: () => void | Promise<void>;
 }) {
   return (
@@ -154,17 +150,6 @@ function AccountMenuContent({
           </p>
         </div>
         <div className="ml-2 mt-0.5 flex shrink-0 items-center gap-1">
-          {isSuperuser && (
-            <button
-              type="button"
-              onClick={onNavigateSuperuser}
-              className="inline-flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
-              title="Superuser Tools"
-              aria-label="Superuser Tools"
-            >
-              <IconShieldCog size={14} stroke={1.75} />
-            </button>
-          )}
           <button
             type="button"
             onClick={onNavigate}
@@ -206,17 +191,6 @@ function AccountMenuContent({
           <span>Docs</span>
           <IconBook2 size={16} stroke={1.75} className="text-muted-foreground" />
         </MenuItem>
-
-        {isSuperuser && (
-          <MenuItem
-            value="superuser"
-            className="flex items-center justify-between px-3 py-2"
-            onClick={onNavigateSuperuser}
-          >
-            <span>Superuser Tools</span>
-            <IconShieldCog size={16} stroke={1.75} className="text-muted-foreground" />
-          </MenuItem>
-        )}
 
         {onSignOut && (
           <MenuItem
@@ -535,8 +509,54 @@ export function LeftRailShadcn({
           </SidebarGroup>
         </SidebarContent>
 
+        {/* ---- Admin (superusers only) ---- */}
+        {isSuperuser && (
+          <div className={desktopCompact ? 'px-0 pb-1' : 'px-2 pb-1'}>
+            {desktopCompact ? (
+              <div className="flex flex-col items-center gap-0.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveDrillId('superuser');
+                    navigateTo('/app/superuser');
+                  }}
+                  className={cn(
+                    'flex h-9 w-9 items-center justify-center rounded-md transition-colors',
+                    location.pathname.startsWith('/app/superuser')
+                      ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                      : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+                  )}
+                  title="Admin"
+                  aria-label="Admin"
+                >
+                  <IconShieldCog size={20} stroke={1.75} />
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveDrillId('superuser');
+                  navigateTo('/app/superuser');
+                }}
+                className={cn(
+                  'flex w-full items-center gap-2.5 rounded-md px-2.5 h-9 text-sm leading-snug transition-colors',
+                  location.pathname.startsWith('/app/superuser')
+                    ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium'
+                    : 'text-sidebar-foreground/80 font-normal hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+                )}
+              >
+                <IconShieldCog size={16} stroke={1.75} className="shrink-0" />
+                <span className="truncate">Admin</span>
+                <IconChevronRight size={14} stroke={1.75} className="ml-auto shrink-0 text-sidebar-foreground/40" />
+              </button>
+            )}
+          </div>
+        )}
+
         {/* ---- Footer: Account card (Vercel-style) ---- */}
         <SidebarFooter className="border-0 px-0 pt-0">
+          <div className="mx-2.5 h-px bg-sidebar-border" />
           <MenuRoot positioning={{ placement: 'top-start', offset: { mainAxis: 8, crossAxis: 0 } }}>
             <div className={cn(desktopCompact ? 'flex justify-center px-0 py-2' : 'flex items-center gap-2 px-3 py-2')}>
               {/* Avatar + username + dots — all trigger the menu */}
@@ -579,9 +599,7 @@ export function LeftRailShadcn({
               <AccountMenuContent
                 userLabel={userLabel}
                 docsSiteUrl={docsSiteUrl}
-                isSuperuser={isSuperuser}
                 onNavigate={() => { navigate('/app/settings'); onNavigate?.(); }}
-                onNavigateSuperuser={() => { navigate('/app/superuser'); onNavigate?.(); }}
                 onSignOut={onSignOut}
               />
             </MenuPositioner>

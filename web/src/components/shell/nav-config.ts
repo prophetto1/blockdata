@@ -171,6 +171,9 @@ const SUPERUSER_DRILL: NavDrillConfig = {
 
 export const DRILL_CONFIGS: NavDrillConfig[] = [FLOWS_DRILL, SETTINGS_DRILL, SUPERUSER_DRILL];
 
+/** Flat list of superuser/admin nav items for first-level sidebar rendering */
+export const ADMIN_NAV_ITEMS: NavItem[] = SUPERUSER_DRILL.sections.flatMap((s) => s.items);
+
 const DRILL_BY_ID = new Map(DRILL_CONFIGS.map((c) => [c.id, c]));
 
 /* ------------------------------------------------------------------ */

@@ -212,7 +212,8 @@ export const router = createBrowserRouter([
               { path: 'layout-1', lazy: () => import('@/pages/superuser/SuperuserLayout1') },
               { path: 'layout-2', lazy: () => import('@/pages/superuser/SuperuserLayout2') },
               { path: 'layout-3', lazy: () => import('@/pages/superuser/SuperuserLayout3') },
-              { path: 'docling', lazy: () => import('@/pages/superuser/DoclingProfileEditor') },
+              { path: 'parsers-docling', lazy: () => import('@/pages/settings/DoclingConfigPanel') },
+              { path: 'parsers-pandoc', lazy: () => import('@/pages/settings/PandocConfigPanel') },
             ],
           },
 
