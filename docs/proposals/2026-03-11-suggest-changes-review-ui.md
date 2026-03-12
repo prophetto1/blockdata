@@ -13,6 +13,9 @@
 - Library plugin API: `web/node_modules/@handlewithcare/prosemirror-suggest-changes/dist/plugin.d.ts`
 - Library utils (mark lookup): `web/node_modules/@handlewithcare/prosemirror-suggest-changes/dist/utils.js`
 - Library schema (block marks): `web/node_modules/@handlewithcare/prosemirror-suggest-changes/dist/schema.js`
+- Library dispatch wrapper: `web/node_modules/@handlewithcare/prosemirror-suggest-changes/dist/withSuggestChanges.js` (lines 105-114)
+- Tiptap 3.x `dispatchTransaction` middleware: `web/node_modules/@tiptap/core/dist/index.d.ts` (lines 1175-1187) — `{ transaction, next }` pattern
+- `tiptap-markdown` serialization API: `web/node_modules/tiptap-markdown/index.d.ts` — `addStorage()` returning `{ markdown: { serialize: { open, close } } }`
 - Current Tiptap surface: `web/src/pages/superuser/TiptapEditorSurface.tsx`
 - Current editor hook: `web/src/pages/superuser/useWorkspaceEditor.tsx`
 - Workbench component types: `web/src/components/workbench/Workbench.tsx` (lines 29-53)
@@ -45,10 +48,12 @@
 - ~~Suggestion collection walks `editor.state.doc.descendants` and groups consecutive text nodes with the same mark ID.~~ **REVISED:** The collector walks **all** descendants (text and block nodes) and checks for suggestion marks on each. Block-level insertions/deletions and attribute/mark modifications are all represented as marks in this library (see `schema.js`). Each occurrence is tracked as a separate item keyed by `${type}-${id}-${from}` to avoid collapsing disjoint ranges with the same ID.
 - The `SuggestionId` type from the library is `number | string`. We use it as-is without wrapping.
 - **NEW:** Layout 2's Workbench `saveKey` changes from `"superuser-layout-2"` to `"superuser-layout-2-v2"` to force a clean slate. The Workbench's `readPersistedPanes` filters out unknown tab IDs but falls back to `tabs[0]` (file-tree) when all are invalid — changing saveKey is simpler and more reliable than a migration.
-- ~~Per-item accept/reject uses `applySuggestion(id)` / `revertSuggestion(id)`.~~ **REVISED (v2):** Per-item accept/reject uses the **scoped** variants `applySuggestion(id, from, to)` / `revertSuggestion(id, from, to)` (from `commands.d.ts` line 30/54). These act on a single suggestion within a specific range — exactly one row. The earlier revision incorrectly used `applySuggestionsInRange(from, to)` which acts on *all* suggestions in the range regardless of ID. Navigation still uses `selectSuggestion(id)`.
+- ~~Per-item accept/reject uses `applySuggestion(id)` / `revertSuggestion(id)`.~~ **REVISED (v2):** Per-item accept/reject uses the **scoped** variants `applySuggestion(id, from, to)` / `revertSuggestion(id, from, to)` (from `commands.d.ts` line 30/54). These act on a single suggestion within a specific range — exactly one row. The earlier revision incorrectly used `applySuggestionsInRange(from, to)` which acts on *all* suggestions in the range regardless of ID. ~~Navigation still uses `selectSuggestion(id)`.~~ **REVISED (v5):** Navigation uses custom `TextSelection.create(state.doc, item.from, item.to)` because `selectSuggestion(id)` selects from the first to last match globally — spanning content between disjoint ranges with the same ID.
 - **NEW:** Block-level suggestion support requires the Tiptap schema to allow suggestion marks on block nodes. The library README (line 67) shows `doc.marks: "insertion modification deletion"`. Without this, the `withSuggestChanges` dispatch wrapper won't produce block-level marks. Task 1 adds a `Node.create` extension that patches the `doc` spec to allow these marks, and updates the mark renderers to spread `HTMLAttributes` for block-context pass-through.
+- **NEW (v4):** The `SuggestChangesPlugin` extension overrides `view.dispatch` in `onCreate()`, which bypasses Tiptap's `dispatchTransaction` pipeline. This prevents `onUpdate` from firing → `onChange` never called → `dirty` never true → save permanently disabled. Fix: replace `onCreate` with Tiptap 3.x `dispatchTransaction({ transaction, next })` middleware, which preserves the full Tiptap lifecycle. **Critical:** the returned function from `withSuggestChanges` uses `this.state` in its core logic (not just the fallback path), so `.call(view, transaction)` is required. Task 0 handles this.
+- **NEW (v4):** Save must preserve tracked suggestions — not strip or flatten them. The existing `tiptap-markdown` serializer has no knowledge of suggestion marks, so it silently drops `<ins>`, `<del>`, and modification spans on save. Fix: add `addStorage()` with `markdown.serialize` specs (`open`/`close` functions) to each mark extension, emitting the same HTML that `parseHTML` already handles. This gives lossless Markdown round-trips. `tiptap-markdown` v0.9.0 supports this API. No dependency swap needed — `@tiptap/markdown` does not exist as a package.
 
-**Revision changelog (from three independent assessments):**
+**Revision changelog (from five independent assessments):**
 
 | # | Severity | Finding | Resolution |
 |---|----------|---------|------------|
@@ -64,6 +69,153 @@
 | 10 | Major | v2 revision used `applySuggestionsInRange(from, to)` which acts on *all* suggestions in range, not one | Corrected to `applySuggestion(id, from, to)` / `revertSuggestion(id, from, to)` — scoped by both ID and range |
 | 11 | Major | Mark renderers in `TiptapEditorSurface.tsx` don't handle block context (`inline` param) — always emit inline tags | Added `HTMLAttributes` spread to `renderHTML` in all three mark extensions; noted CSS verification step |
 | 12 | Minor | No test coverage for layout-2 tab wiring or pane defaults | Added `WORKSPACE_TABS_TIPTAP` / `WORKSPACE_DEFAULT_PANES_TIPTAP` assertions to Task 3 |
+| 13 | Critical | `SuggestChangesPlugin.onCreate()` overrides `view.dispatch` with `withSuggestChanges()` (no args), bypassing Tiptap's `dispatchTransaction` pipeline — `onUpdate` never fires, `onChange` never called, `dirty` never true, save permanently disabled | Replaced `onCreate` override with Tiptap 3.x `dispatchTransaction({ transaction, next })` middleware in new Task 0 |
+| 14 | Critical | `tiptap-markdown` serializer silently strips suggestion marks on save, destroying all tracked changes | Added `addStorage()` with `markdown.serialize` specs to all three mark extensions in Task 0. Emits same HTML that `parseHTML` already handles |
+| 15 | Critical | `withSuggestChanges(next)(transaction)` crashes — the returned function uses `this.state` in core logic (line 111), not just the fallback path. `isSuggestChangesEnabled(this.state)` and `transformToSuggestionTransaction(tr, this.state, ...)` both require `this` to be the EditorView | Added `.call(view, transaction)` in Task 0. Access view via `this.editor.view` in the extension’s `dispatchTransaction` method |
+| 16 | Major | `selectSuggestion(id)` selects from first to last match globally — spans content between disjoint ranges with same ID, making per-occurrence navigation misleading | Replaced with custom `TextSelection.create(state.doc, item.from, item.to)` in Task 5. Handler now receives full `SuggestionItem`, not just `id` |
+| 17 | Major | `setTiptapEditor(null)` only added to `handleSelectFile` — missing from `handleMoveNode` (line 100), `handleRenameNode` (line 110), and `handleDeleteNode` (line 123) which all clear `openFile` | Added `setTiptapEditor(null)` to all four file-close paths in Task 2 |
+| 18 | Major | ModificationMark hardcodes `‘span’` tag for all contexts — semantically wrong for block modifications (should be `‘div’`). Partially mitigated by `...HTMLAttributes` spread adding `display: block` via CSS | Noted as known limitation — works visually via CSS override but semantically incorrect. Not blocking for this phase |
+| 19 | Minor | Task 3 round-trip tests left as skeleton with “implementer’s choice” for export strategy | Prescribed: add `export` to mark extension constants in `TiptapEditorSurface.tsx`. Tests import directly |
+| 20 | Minor | No automated end-to-end test verifying dirty → save → reload → suggestions present | Covered by manual verification in Task 8 steps 1-2. Automated e2e requires File System Access API mocking — deferred to future phase |
+
+---
+
+### Task 0: Fix save — rewire suggest-changes dispatch and add Markdown serialization
+
+> **Why:** Layout 2's save is completely broken. The `SuggestChangesPlugin` overrides `view.dispatch` in `onCreate()`, bypassing Tiptap's `dispatchTransaction` pipeline. This prevents `onUpdate` from firing, so `onChange` never triggers, `dirty` never becomes `true`, and save is permanently disabled (both Ctrl+S and the save icon). Additionally, the `tiptap-markdown` serializer has no knowledge of suggestion marks — even if save worked, it would silently strip all `<ins>`, `<del>`, and modification spans. Both must be fixed together: the dispatch wiring so save triggers, and the serialization so save preserves tracked changes.
+
+**Files:**
+- Modify: `web/src/pages/superuser/TiptapEditorSurface.tsx`
+
+**Step 1: Replace `onCreate` dispatch override with `dispatchTransaction` middleware**
+
+The current `SuggestChangesPlugin` (lines 137-150) uses `onCreate()` to override `view.dispatch`. Replace it with Tiptap 3.x's `dispatchTransaction({ transaction, next })` middleware, which preserves the full Tiptap lifecycle:
+
+```ts
+// Before (broken — bypasses Tiptap pipeline):
+const SuggestChangesPlugin = Extension.create({
+  name: 'suggestChanges',
+
+  addProseMirrorPlugins() {
+    return [suggestChanges()];
+  },
+
+  onCreate() {
+    const view = this.editor.view;
+    const wrappedDispatch = withSuggestChanges();
+    // Override dispatch so withSuggestChanges can intercept transactions
+    view.dispatch = wrappedDispatch.bind(view);
+  },
+});
+
+// After (preserves Tiptap lifecycle):
+const SuggestChangesPlugin = Extension.create({
+  name: 'suggestChanges',
+
+  addProseMirrorPlugins() {
+    return [suggestChanges()];
+  },
+
+  dispatchTransaction({ transaction, next }) {
+    const view = this.editor.view;
+    withSuggestChanges(next).call(view, transaction);
+  },
+});
+```
+
+> **How this works:** Tiptap 3.x calls each extension's `dispatchTransaction` in sequence, passing `next` as a continuation. `withSuggestChanges(next)` returns a wrapped dispatch that intercepts the transaction (transforming it into suggestion marks when suggest mode is enabled) and then calls `next(transformedTr)`. Because `next` feeds back into Tiptap's pipeline, `onUpdate` fires normally, which triggers `onChange` → `dirty: true` → save enabled.
+>
+> **Critical: `this` binding.** The returned function from `withSuggestChanges` uses `this.state` in its core logic (line 111 of `withSuggestChanges.js`) — not just the fallback default dispatch path. Specifically: `isSuggestChangesEnabled(this.state)` and `transformToSuggestionTransaction(tr, this.state, generateId)`. It also uses `dispatch.call(this, transaction)` to pass the view context to the wrapped dispatch. Therefore `.call(view, transaction)` is required — calling the returned function without binding `this` to the EditorView will crash with `Cannot read properties of undefined (reading 'state')`. The `this.editor.view` accessor is available in Tiptap extension methods.
+
+**Step 2: Add Markdown serialization to InsertionMark**
+
+Add `addStorage()` to the existing `InsertionMark` extension (after `renderHTML`, before the closing `});`):
+
+```ts
+const InsertionMark = Mark.create({
+  // ... existing name, inclusive, excludes, addAttributes, parseHTML, renderHTML ...
+
+  addStorage() {
+    return {
+      markdown: {
+        serialize: {
+          open(_state: any, mark: any) {
+            return `<ins data-id="${JSON.stringify(mark.attrs.id)}">`;
+          },
+          close: '</ins>',
+        },
+      },
+    };
+  },
+});
+```
+
+**Step 3: Add Markdown serialization to DeletionMark**
+
+```ts
+const DeletionMark = Mark.create({
+  // ... existing ...
+
+  addStorage() {
+    return {
+      markdown: {
+        serialize: {
+          open(_state: any, mark: any) {
+            return `<del data-id="${JSON.stringify(mark.attrs.id)}">`;
+          },
+          close: '</del>',
+        },
+      },
+    };
+  },
+});
+```
+
+**Step 4: Add Markdown serialization to ModificationMark**
+
+```ts
+const ModificationMark = Mark.create({
+  // ... existing ...
+
+  addStorage() {
+    return {
+      markdown: {
+        serialize: {
+          open(_state: any, mark: any) {
+            const attrs = [
+              `data-type="modification"`,
+              `data-id="${JSON.stringify(mark.attrs.id)}"`,
+              `data-mod-type="${mark.attrs.type}"`,
+              `data-mod-prev-val="${JSON.stringify(mark.attrs.previousValue)}"`,
+              `data-mod-new-val="${JSON.stringify(mark.attrs.newValue)}"`,
+            ].join(' ');
+            return `<span ${attrs}>`;
+          },
+          close: '</span>',
+        },
+      },
+    };
+  },
+});
+```
+
+> **Round-trip guarantee:** The `open`/`close` functions emit the same HTML tags and `data-*` attributes that the existing `parseHTML` definitions match on (`ins[data-id]`, `del[data-id]`, `span[data-type="modification"]`). When a saved Markdown file with embedded suggestion HTML is reopened, `tiptap-markdown` passes the HTML through to Tiptap's parsing pipeline, which hits `parseHTML` and restores the marks with all attributes intact.
+
+**Step 5: Remove unused `withSuggestChanges` import if no longer needed elsewhere**
+
+Check whether `withSuggestChanges` is still referenced. After the `dispatchTransaction` rewrite, it is still used (in the middleware body), so keep the import.
+
+**Step 6: Verify**
+
+Run: `cd web && npx tsc --noEmit`
+Expected: clean
+
+**Step 7: Commit**
+
+```bash
+git add web/src/pages/superuser/TiptapEditorSurface.tsx
+git commit -m "fix: rewire suggest-changes dispatch and add Markdown serialization for save"
+```
 
 ---
 
@@ -250,9 +402,11 @@ const handleEditorReady = useCallback((editor: Editor) => {
 }, []);
 ```
 
-**Step 2: Clear the editor when file changes**
+**Step 2: Clear the editor on ALL file-close paths**
 
-In `handleSelectFile` (line 72-83), add a line to clear the editor before the new file loads. This prevents the panel from showing stale suggestions during the load:
+The hook clears `openFile` in four places. Every one must also clear `tiptapEditor` to prevent the suggestions panel from showing stale data or holding a dead editor reference.
+
+In `handleSelectFile` (line 72-83), add before the `try`:
 
 ```ts
   const handleSelectFile = useCallback(async (node: FsNode) => {
@@ -261,6 +415,33 @@ In `handleSelectFile` (line 72-83), add a line to clear the editor before the ne
     try {
       const content = await readFileContent(node.handle as FileSystemFileHandle);
       // ... rest unchanged
+```
+
+In `handleMoveNode` (line 92), add alongside the existing `setOpenFile(null)` at line 100:
+
+```ts
+  if (isOpenFileAffected(source)) {
+    setTiptapEditor(null); // ← add this line
+    setOpenFile(null);
+  }
+```
+
+In `handleRenameNode` (line 106), add alongside the existing `setOpenFile(null)` at line 110:
+
+```ts
+  if (isOpenFileAffected(node)) {
+    setTiptapEditor(null); // ← add this line
+    setOpenFile(null);
+  }
+```
+
+In `handleDeleteNode` (line 116), add alongside the existing `setOpenFile(null)` at line 123:
+
+```ts
+  if (isOpenFileAffected(node)) {
+    setTiptapEditor(null); // ← add this line
+    setOpenFile(null);
+  }
 ```
 
 **Step 3: Pass `onEditorReady` in the tiptap surfaceProps block**
@@ -476,7 +657,7 @@ describe('collectSuggestions', () => {
 
 **Step 2: Add layout-2 tab/saveKey assertions**
 
-Append to the same test file (or create a separate `layout2Config.test.ts` — implementer's choice):
+Append to the same test file (`collectSuggestions.test.ts`):
 
 ```ts
 import { WORKSPACE_TABS_TIPTAP, WORKSPACE_DEFAULT_PANES_TIPTAP } from './useWorkspaceEditor';
@@ -497,6 +678,43 @@ describe('layout 2 tab config', () => {
 ```
 
 > These assertions catch regressions in the tab wiring and pane defaults that the collector tests don't cover. The `saveKey` change (`"superuser-layout-2-v2"`) is verified during manual testing (Task 8, step 11).
+
+**Step 2b: Add save/serialization round-trip tests**
+
+Create: `web/src/pages/superuser/suggestionMarkdown.test.ts`
+
+These tests verify that suggestion marks survive a Markdown save → reload round-trip. They require a real Tiptap editor instance (not mocks) because they exercise the `tiptap-markdown` serializer and parser integration.
+
+```ts
+// web/src/pages/superuser/suggestionMarkdown.test.ts
+import { describe, it, expect } from 'vitest';
+import { Editor } from '@tiptap/core';
+import StarterKit from '@tiptap/starter-kit';
+import { Markdown } from 'tiptap-markdown';
+// Import the mark extensions from the editor surface
+// Export these from TiptapEditorSurface.tsx (add `export` before each Mark.create)
+
+describe('suggestion mark Markdown round-trip', () => {
+  it('insertion mark survives save and reload', () => {
+    // 1. Create editor with suggestion marks + Markdown extension
+    // 2. Set content with an insertion mark
+    // 3. Serialize to Markdown via storage.markdown.getMarkdown()
+    // 4. Assert serialized output contains <ins data-id="...">
+    // 5. Create a new editor, load the serialized Markdown
+    // 6. Assert the editor JSON contains an insertion mark with correct attrs
+  });
+
+  it('deletion mark survives save and reload', () => {
+    // Same pattern: set content with deletion, serialize, assert <del>, reload, assert mark
+  });
+
+  it('modification mark survives save and reload', () => {
+    // Same pattern: set content with modification span, serialize, assert data-* attrs, reload, assert mark
+  });
+});
+```
+
+> **Export strategy:** Add `export` before `const InsertionMark`, `const DeletionMark`, and `const ModificationMark` in `TiptapEditorSurface.tsx`. The round-trip tests import them directly. The test structure above is a skeleton — the implementer fills in the editor setup using the pattern: create Editor with extensions, set HTML content with marks, call `storage.markdown.getMarkdown()`, assert output contains expected HTML tags, create new Editor loading the serialized Markdown, assert `editor.getJSON()` contains the marks with correct attrs.
 
 **Step 3: Run tests to verify they fail**
 
@@ -619,10 +837,10 @@ git commit -m "feat: add collectSuggestions utility with block-node support"
 // web/src/pages/superuser/SuggestionsPanel.tsx
 import { useCallback, useEffect, useState } from 'react';
 import type { Editor } from '@tiptap/react';
+import { TextSelection } from '@tiptap/pm/state';
 import {
   applySuggestion,
   revertSuggestion,
-  selectSuggestion,
   applySuggestions,
   revertSuggestions,
 } from '@handlewithcare/prosemirror-suggest-changes';
@@ -667,9 +885,10 @@ export function SuggestionsPanel({ editor }: Props) {
     revertSuggestion(item.id, item.from, item.to)(editor.view.state, editor.view.dispatch);
   }, [editor]);
 
-  const handleNavigate = useCallback((id: SuggestionItem['id']) => {
+  const handleNavigate = useCallback((item: SuggestionItem) => {
     if (!editor) return;
-    selectSuggestion(id)(editor.view.state, editor.view.dispatch);
+    const { state, dispatch } = editor.view;
+    dispatch(state.tr.setSelection(TextSelection.create(state.doc, item.from, item.to)));
     editor.view.focus();
   }, [editor]);
 
@@ -729,7 +948,7 @@ export function SuggestionsPanel({ editor }: Props) {
             <div
               key={`${item.type}-${JSON.stringify(item.id)}-${item.from}`}
               className="flex items-start gap-2 border-b border-border/50 px-3 py-2 hover:bg-accent/50 cursor-pointer"
-              onClick={() => handleNavigate(item.id)}
+              onClick={() => handleNavigate(item)}
             >
               {/* Type badge */}
               <span
@@ -979,55 +1198,68 @@ Expected: all tests pass, including new collector tests
 
 > Start the dev server if not running: `cd web && npm run dev`
 
-1. **Layout 2, `.md` file, visual mode:**
+1. **Save works in visual mode (Task 0 regression):**
+   - Open layout 2 → open any `.md` file
+   - Edit text in visual mode → save icon should enable (no longer permanently disabled)
+   - Click save icon → file saves successfully
+   - Ctrl+S → file saves successfully
+   - Reload the file → edits are preserved
+
+2. **Save preserves tracked suggestions (Task 0 serialization):**
+   - Switch to suggest mode → type new text (insertion) and delete existing text (deletion)
+   - Save the file (Ctrl+S or save icon)
+   - Close and reopen the file → suggestions should still appear with green/red marks
+   - Pane 3 should show the same suggestion items as before save
+
+3. **Layout 2, `.md` file, visual mode:**
    - Open layout 2 → open any `.md` file
    - Pane 2: Tiptap editor loads
    - Pane 3: "No suggestions" message
    - View mode buttons show "Visual" and "Suggest"
 
-2. **Layout 2, suggest mode, create suggestions:**
+4. **Layout 2, suggest mode, create suggestions:**
    - Click "Suggest" button
    - Type new text → text appears green (insertion mark)
    - Select existing text and delete → text appears red with strikethrough (deletion mark)
    - Pane 3 updates live — shows items with "add" and "del" badges
 
-3. **Block-level suggestions:**
+5. **Block-level suggestions:**
    - In suggest mode, select a heading and change its level (or wrap text in a list)
    - Pane 3 should show a "mod" badge item for the attribute change
    - Block insertions/deletions should appear with "(block change)" text
 
-4. **Per-item navigation:**
+6. **Per-item navigation:**
    - Click a row in the suggestions panel → cursor jumps to that suggestion in the editor
    - Editor gains focus
 
-5. **Per-item accept:**
+7. **Per-item accept:**
    - Click the checkmark button on an insertion item → insertion is accepted (mark removed, text stays), item disappears from list
    - Click the checkmark button on a deletion item → deletion is accepted (text removed), item disappears from list
 
-6. **Per-item reject:**
+8. **Per-item reject:**
    - Create new suggestions
    - Click the X button on an insertion → insertion is rejected (text removed), item disappears
    - Click the X button on a deletion → deletion is rejected (text restored, mark removed), item disappears
 
-7. **Batch accept / reject:**
+9. **Batch accept / reject:**
    - Create several suggestions
    - Click "Accept All" in the panel header → all suggestions applied, list becomes "No suggestions"
    - Create more suggestions
    - Click "Reject All" → all reverted, list becomes "No suggestions"
 
-8. **File switching:**
-   - Switch to a different `.md` file → editor reloads, suggestions panel resets to "No suggestions"
-   - Open a `.py` file → CodeMirror loads, suggestions panel shows "No suggestions"
+10. **File switching:**
+    - Switch to a different `.md` file → editor reloads, suggestions panel resets to "No suggestions"
+    - Open a `.py` file → CodeMirror loads, suggestions panel shows "No suggestions"
 
-9. **Disjoint range display:**
-   - Create two separate insertions in different paragraphs
-   - Panel should show two separate items, not one merged item
+11. **Disjoint range display:**
+    - Create two separate insertions in different paragraphs
+    - Panel should show two separate items, not one merged item
 
-10. **Other layouts unchanged:**
+12. **Other layouts unchanged:**
     - Open layout 1 → `.md` file → MDXEditor, pane 3 shows blank (no suggestions tab)
     - Open layout 3 → same as layout 1
 
-11. **Fresh state migration:**
+13. **Fresh state migration:**
     - Clear localStorage key `"superuser-layout-2"` (old) — confirm it has no effect
     - Confirm pane 3 defaults to suggestions tab (from `"superuser-layout-2-v2"`)
 
