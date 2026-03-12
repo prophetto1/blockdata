@@ -77,6 +77,7 @@ export default defineConfig({
       '/oo-api': {
         target: 'http://localhost:9980',
         changeOrigin: true,
+        ws: true,
         rewrite: (path) => path.replace(/^\/oo-api/, ''),
       },
       '/platform-api': {

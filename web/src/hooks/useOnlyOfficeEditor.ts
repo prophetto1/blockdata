@@ -87,17 +87,27 @@ export function useOnlyOfficeEditor(
         const config = await configRes.json();
         if (cancelled) return;
 
-        // 3. Add event handlers
+        // Tell the editor to route all Document Server requests through the
+        // Vite proxy (/oo-api → localhost:9980) so that the iframe's origin
+        // matches the page origin, avoiding CORS blocks on cache/file URLs.
+        config.documentServerUrl = '/oo-api/';
+
+        // 3. Add event handlers — setState('ready') only when editor signals onAppReady,
+        //    not immediately after construction (the editor still needs to fetch the doc).
         config.events = {
           onAppReady: () => {
             console.log('[OnlyOffice] Editor ready');
+            if (!cancelled) setState({ status: 'ready' });
           },
           onDocumentStateChange: (event: { data: boolean }) => {
             console.log('[OnlyOffice] Dirty:', event.data);
           },
           onError: (event: { data: { errorCode: number; errorDescription: string } }) => {
             console.error('[OnlyOffice] Error:', event.data);
-            setState({ status: 'error', message: event.data.errorDescription });
+            if (!cancelled) setState({ status: 'error', message: event.data.errorDescription });
+          },
+          onDownloadAs: (event: { data: { fileType: string; url: string } }) => {
+            console.log('[OnlyOffice] Download:', event.data);
           },
         };
 
@@ -105,10 +115,10 @@ export function useOnlyOfficeEditor(
         await new Promise((r) => setTimeout(r, 0)); // ensure DOM is ready
         if (cancelled) return;
 
+        console.log('[OnlyOffice] Mounting editor in container:', containerId);
         const editor = new DocsAPI.DocEditor(containerId, config);
         editorRef.current = editor;
         activeDocRef.current = doc.source_uid;
-        setState({ status: 'ready' });
       } catch (err) {
         if (cancelled) return;
         const message = err instanceof Error ? err.message : 'Unknown error';

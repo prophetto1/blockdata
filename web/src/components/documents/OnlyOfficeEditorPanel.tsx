@@ -1,4 +1,4 @@
-import { memo, useId } from 'react';
+import { useCallback, useEffect, useId, useRef } from 'react';
 import { IconAlertCircle, IconLoader2 } from '@tabler/icons-react';
 import { useOnlyOfficeEditor } from '@/hooks/useOnlyOfficeEditor';
 import type { ProjectDocumentRow } from '@/lib/projectDetailHelpers';
@@ -7,19 +7,38 @@ type Props = {
   doc: ProjectDocumentRow;
 };
 
-/**
- * Static wrapper — React never re-renders or reconciles this node's subtree.
- * OnlyOffice's DocEditor replaces the div's children with an iframe; if React
- * tried to reconcile, it would hit an insertBefore error on the mutated DOM.
- */
-const EditorHost = memo(
-  ({ id }: { id: string }) => <div id={id} className="h-full w-full" />,
-  () => true,
-);
-
 export function OnlyOfficeEditorPanel({ doc }: Props) {
   const instanceId = useId();
   const containerId = `oo-editor-${instanceId.replace(/:/g, '')}`;
+  const hostRef = useRef<HTMLDivElement>(null);
+  const editorDivRef = useRef<HTMLDivElement | null>(null);
+
+  // Create a detached div for OnlyOffice to own. React never sees its children.
+  const getEditorDiv = useCallback(() => {
+    if (!editorDivRef.current) {
+      const div = document.createElement('div');
+      div.id = containerId;
+      div.style.width = '100%';
+      div.style.height = '100%';
+      editorDivRef.current = div;
+    }
+    return editorDivRef.current;
+  }, [containerId]);
+
+  // Mount the editor div into the host ref imperatively
+  useEffect(() => {
+    const host = hostRef.current;
+    if (!host) return;
+    const editorDiv = getEditorDiv();
+    host.appendChild(editorDiv);
+
+    return () => {
+      // On unmount, remove imperatively — React never touches editorDiv's children
+      if (editorDiv.parentNode === host) {
+        host.removeChild(editorDiv);
+      }
+    };
+  }, [getEditorDiv]);
 
   const { state } = useOnlyOfficeEditor(
     containerId,
@@ -47,8 +66,9 @@ export function OnlyOfficeEditorPanel({ doc }: Props) {
         )}
       </div>
 
-      {/* Editor layer — OnlyOffice manages this div's contents */}
-      <EditorHost id={containerId} />
+      {/* Host div — React manages this empty div. The OnlyOffice editor div
+          is appended/removed imperatively, so React never reconciles its mutated subtree. */}
+      <div ref={hostRef} className="h-full w-full" />
     </div>
   );
 }

@@ -58,7 +58,6 @@ export function PreviewTabPanel({ doc }: { doc: ProjectDocumentRow | null }) {
       setParsedPreviewUrl(null);
       setPreviewText(null);
       setPdfPreviewMode('file');
-      setDocxEditMode(false);
 
       const { url: signedUrl, error: signedUrlError } = await resolveSignedUrlForLocators([
         doc.source_locator,
@@ -142,7 +141,8 @@ export function PreviewTabPanel({ doc }: { doc: ProjectDocumentRow | null }) {
     return () => {
       cancelled = true;
     };
-  }, [doc]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [doc?.source_uid]);
 
   const selectedDocPath = normalizePath(doc?.doc_title ?? '');
   const selectedDocPathParts = selectedDocPath.split('/').filter((part) => part.length > 0);

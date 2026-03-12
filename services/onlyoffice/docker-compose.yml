@@ -67,6 +67,7 @@ services:
       - oo-data:/var/www/onlyoffice/Data
       - oo-logs:/var/log/onlyoffice
       - oo-fonts:/usr/share/fonts/truetype/custom
+      - ./ds-docservice-cors.conf:/etc/nginx/includes/ds-docservice.conf:ro
     healthcheck:
       test: ["CMD-SHELL", "curl -fs http://localhost/healthcheck || exit 1"]
       interval: 15s

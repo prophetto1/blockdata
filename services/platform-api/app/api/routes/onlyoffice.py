@@ -174,6 +174,9 @@ async def open_document(
         )
 
     filename = (doc_row.get("doc_title") or source_locator).split("/")[-1]
+    # Ensure filename includes .docx extension — OnlyOffice needs it
+    if not filename.lower().endswith(".docx"):
+        filename = f"{filename}.docx"
 
     storage_key = source_locator.lstrip("/")
     try:
@@ -188,16 +191,20 @@ async def open_document(
         raise HTTPException(502, f"Failed to fetch file from storage: {e}")
 
     session_id = uuid.uuid4().hex[:12]
-    _session_doc_path(session_id).write_bytes(content)
-    _write_session(session_id, {
-        "session_id": session_id,
-        "owner_id": _auth.subject_id,
-        "source_uid": req.source_uid,
-        "source_locator": source_locator,
-        "filename": filename,
-        "content_hash": _content_hash(content),
-        "size": len(content),
-    })
+    try:
+        _session_doc_path(session_id).write_bytes(content)
+        _write_session(session_id, {
+            "session_id": session_id,
+            "owner_id": _auth.subject_id,
+            "source_uid": req.source_uid,
+            "source_locator": source_locator,
+            "filename": filename,
+            "content_hash": _content_hash(content),
+            "size": len(content),
+        })
+    except OSError as e:
+        logger.error(f"Failed to initialize session cache for {session_id}: {e}")
+        raise HTTPException(500, "Failed to initialize local OnlyOffice session cache")
     logger.info(f"Opened {filename} (source_uid={req.source_uid}) as session {session_id}")
 
     return {"session_id": session_id, "filename": filename}
