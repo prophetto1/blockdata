@@ -273,7 +273,7 @@ export function AssetsPanel({
           </div>
         </div>
 
-        <ScrollArea className="min-h-0 h-full flex-1" viewportClass="h-full overflow-y-auto bg-background p-2">
+        <ScrollArea className="min-h-0 h-full flex-1" viewportClass="h-full overflow-auto bg-background p-2">
           {creatingType ? (
             <div className="mb-2 flex items-center gap-1.5 rounded border border-primary/40 bg-accent/30 px-2 py-1.5">
               {creatingType === 'folder' ? (
