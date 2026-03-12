@@ -1,6 +1,15 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { TreeView, createTreeCollection } from '@ark-ui/react/tree-view';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import {
+  DialogRoot,
+  DialogContent,
+  DialogTitle,
+  DialogDescription,
+  DialogCloseTrigger,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import {
   IconChevronRight,
   IconFilePlus,
@@ -69,6 +78,7 @@ export function AssetsPanel({
   const [virtualFolders, setVirtualFolders] = useState<string[]>([]);
   const [expandedValue, setExpandedValue] = useState<string[]>([]);
   const [selectedTreeNodeId, setSelectedTreeNodeId] = useState<string | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const expandedInitRef = useRef(false);
 
   const supportsDirectoryUpload = useMemo(() => {
@@ -224,56 +234,62 @@ export function AssetsPanel({
   // ── Render ──────────────────────────────────────────────────────────────
 
   return (
-    <div className="h-full w-full min-h-0 p-2">
+    <div className="h-full w-full min-h-0 p-1">
       <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-md border border-border bg-card">
         <div className="flex min-h-10 items-center justify-end border-b border-border bg-card px-2">
           <div className="ml-auto flex shrink-0 items-center gap-1.5">
-            <button
-              type="button"
-              title="Add file"
-              onClick={() => openNativeFilePicker('file')}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-transparent bg-transparent text-muted-foreground transition-colors hover:bg-accent/70 hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-            >
+            <ToolbarButton tip="Add file" onClick={() => openNativeFilePicker('file')}>
               <IconFilePlus size={16} />
-            </button>
-            <button
-              type="button"
-              title="Add folder"
-              onClick={() => {
-                if (!supportsDirectoryUpload) return;
-                openNativeFilePicker('folder');
-              }}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-transparent bg-transparent text-muted-foreground transition-colors hover:bg-accent/70 hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            </ToolbarButton>
+            <ToolbarButton
+              tip="Add folder"
+              onClick={() => { if (supportsDirectoryUpload) openNativeFilePicker('folder'); }}
             >
               <IconFolderPlus size={16} />
-            </button>
-            <button
-              type="button"
-              title="Create file"
-              onClick={() => { setCreatingType('file'); setCreateName(''); }}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-transparent bg-transparent text-muted-foreground transition-colors hover:bg-accent/70 hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-            >
+            </ToolbarButton>
+            <ToolbarButton tip="Create file" onClick={() => { setCreatingType('file'); setCreateName(''); }}>
               <IconPlus size={16} />
-            </button>
-            <button
-              type="button"
-              title="Create folder"
-              onClick={() => { setCreatingType('folder'); setCreateName(''); }}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-transparent bg-transparent text-muted-foreground transition-colors hover:bg-accent/70 hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-            >
+            </ToolbarButton>
+            <ToolbarButton tip="Create folder" onClick={() => { setCreatingType('folder'); setCreateName(''); }}>
               <IconFolder size={16} />
-            </button>
-            <button
-              type="button"
-              title="Delete selected"
+            </ToolbarButton>
+            <ToolbarButton
+              tip="Delete selected"
               disabled={!selectedSourceUidForActions}
-              onClick={() => void onDeleteSelected()}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-transparent bg-transparent text-muted-foreground transition-colors hover:bg-accent/70 hover:text-red-500 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-muted-foreground"
+              onClick={() => setDeleteDialogOpen(true)}
+              variant="danger"
             >
               <IconTrash size={16} />
-            </button>
+            </ToolbarButton>
           </div>
         </div>
+
+        {/* ── Delete confirmation dialog ── */}
+        <DialogRoot open={deleteDialogOpen} onOpenChange={(e) => setDeleteDialogOpen(e.open)}>
+          <DialogContent>
+            <DialogCloseTrigger />
+            <DialogTitle>Delete asset</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this asset? This action cannot be undone.
+            </DialogDescription>
+            <DialogFooter>
+              <button
+                type="button"
+                onClick={() => setDeleteDialogOpen(false)}
+                className="inline-flex h-9 items-center justify-center rounded-md border border-border bg-transparent px-4 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => { setDeleteDialogOpen(false); onDeleteSelected(); }}
+                className="inline-flex h-9 items-center justify-center rounded-md bg-red-600 px-4 text-sm font-medium text-white transition-colors hover:bg-red-700"
+              >
+                Delete
+              </button>
+            </DialogFooter>
+          </DialogContent>
+        </DialogRoot>
 
         <ScrollArea className="min-h-0 h-full flex-1 bg-card" viewportClass="h-full overflow-auto p-2">
           {creatingType ? (
@@ -381,6 +397,43 @@ export function AssetsPanel({
         </ScrollArea>
       </div>
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// ToolbarButton — icon button wrapped in Ark UI Tooltip
+// ---------------------------------------------------------------------------
+
+const TOOLBAR_BTN = 'inline-flex h-8 w-8 items-center justify-center rounded-md border border-transparent bg-transparent text-muted-foreground transition-colors hover:bg-accent/70 hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring';
+const TOOLBAR_BTN_DANGER = 'inline-flex h-8 w-8 items-center justify-center rounded-md border border-transparent bg-transparent text-muted-foreground transition-colors hover:bg-accent/70 hover:text-red-500 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-muted-foreground';
+
+function ToolbarButton({
+  tip,
+  children,
+  onClick,
+  disabled,
+  variant,
+}: {
+  tip: string;
+  children: ReactNode;
+  onClick: () => void;
+  disabled?: boolean;
+  variant?: 'danger';
+}) {
+  return (
+    <Tooltip openDelay={400}>
+      <TooltipTrigger asChild>
+        <button
+          type="button"
+          disabled={disabled}
+          onClick={onClick}
+          className={variant === 'danger' ? TOOLBAR_BTN_DANGER : TOOLBAR_BTN}
+        >
+          {children}
+        </button>
+      </TooltipTrigger>
+      <TooltipContent>{tip}</TooltipContent>
+    </Tooltip>
   );
 }
 

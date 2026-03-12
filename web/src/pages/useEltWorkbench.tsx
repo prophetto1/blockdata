@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import {
   IconArrowsTransferDown,
@@ -6,6 +6,7 @@ import {
   IconEye,
   IconFileCode,
   IconFiles,
+  IconFolder,
   IconLayoutColumns,
 } from '@tabler/icons-react';
 import type { WorkbenchHandle, WorkbenchTab } from '@/components/workbench/Workbench';
@@ -16,6 +17,9 @@ import FlowCanvas from '@/components/flows/FlowCanvas';
 import { DltPullPanel } from '@/components/elt/DltPullPanel';
 import { DltLoadPanel } from '@/components/elt/DltLoadPanel';
 import { ParseEasyPanel } from '@/components/elt/ParseEasyPanel';
+import type { FsNode } from '@/lib/fs-access';
+import { WorkspaceFileTree } from '@/pages/superuser/WorkspaceFileTree';
+import { LocalFilePreview } from '@/components/documents/LocalFilePreview';
 import { edgeFetch } from '@/lib/edge';
 import { fetchAllProjectDocuments } from '@/lib/projectDocuments';
 import { readFocusedProjectId } from '@/lib/projectFocus';
@@ -27,7 +31,6 @@ import { supabase } from '@/lib/supabase';
 import { createDefaultTextFileContents } from '@/lib/filesTree';
 import {
   isPreviewInstanceTab,
-  createPreviewInstanceTabId,
   getPreviewSourceUidFromTabId,
   enforcePreviewTabCap,
   MAX_CONCURRENT_PREVIEW_TABS,
@@ -41,6 +44,7 @@ import {
 // ─── Tab registration (runs once at module load) ─────────────────────────────
 
 registerTab({ id: 'assets', label: 'Assets', group: 'view', render: () => null });
+registerTab({ id: 'files', label: 'Files', group: 'view', render: () => null });
 registerTab({ id: 'preview', label: 'Preview', group: 'view', render: () => null });
 registerTab({ id: 'canvas', label: 'Canvas', group: 'view', render: () => null });
 registerTabs('pull', [
@@ -57,6 +61,7 @@ const DOCUMENTS_BUCKET = (import.meta.env.VITE_DOCUMENTS_BUCKET as string | unde
 
 export const ELT_TABS: WorkbenchTab[] = [
   { id: 'assets', label: 'Assets', icon: IconFiles },
+  { id: 'files', label: 'Files', icon: IconFolder },
   { id: 'preview', label: 'Preview', icon: IconEye },
   { id: 'canvas', label: 'Canvas', icon: IconLayoutColumns },
   { id: 'parse', label: 'Parse', icon: IconFileCode },
@@ -70,10 +75,15 @@ export const ELT_PULL_TABS: WorkbenchTab[] = [
 ];
 
 export const ELT_DEFAULT_PANES: Pane[] = normalizePaneWidths([
-  { id: 'pane-1', tabs: ['assets'], activeTab: 'assets', width: 20, minWidth: 20, maxTabs: 3 },
-  { id: 'pane-2', tabs: ['preview'], activeTab: 'preview', width: 50 },
-  { id: 'pane-3', tabs: ['parse'], activeTab: 'parse', width: 30 },
+  { id: 'pane-1', tabs: ['assets'], activeTab: 'assets', width: 18, minWidth: 18, maxWidth: 18, maxTabs: 3 },
+  { id: 'pane-2', tabs: ['parse'], activeTab: 'parse', width: 18, minWidth: 18, maxWidth: 18 },
+  { id: 'pane-3', tabs: ['preview'], activeTab: 'preview', width: 64 },
 ]);
+
+export type ActiveSelection =
+  | { kind: 'supabase'; sourceUid: string }
+  | { kind: 'local'; node: FsNode }
+  | null;
 
 type PendingUpload = {
   file: File;
@@ -91,7 +101,7 @@ function resolveRouteProjectId(pathname: string): string | null {
 
 // ─── Hook ────────────────────────────────────────────────────────────────────
 
-export function useEltWorkbench(workbenchRef: React.RefObject<WorkbenchHandle | null>) {
+export function useEltWorkbench(_workbenchRef: React.RefObject<WorkbenchHandle | null>) {
   const location = useLocation();
   const routeProjectId = useMemo(
     () => resolveRouteProjectId(location.pathname),
@@ -103,9 +113,12 @@ export function useEltWorkbench(workbenchRef: React.RefObject<WorkbenchHandle | 
   const [docs, setDocs] = useState<ProjectDocumentRow[]>([]);
   const [docsLoading, setDocsLoading] = useState(false);
   const [docsError, setDocsError] = useState<string | null>(null);
-  const [selectedSourceUid, setSelectedSourceUid] = useState<string | null>(null);
+  const [activeSelection, setActiveSelection] = useState<ActiveSelection>(null);
   const [openTabIds, setOpenTabIds] = useState<ReadonlySet<string>>(new Set());
-  const previewTabSequenceRef = useRef(1);
+
+  // Derive selectedSourceUid from activeSelection for Supabase-backed flows
+  const selectedSourceUid = activeSelection?.kind === 'supabase' ? activeSelection.sourceUid : null;
+
 
   // ── Doc loading ──────────────────────────────────────────────────────────
 
@@ -237,7 +250,7 @@ export function useEltWorkbench(workbenchRef: React.RefObject<WorkbenchHandle | 
       }
     }
 
-    setSelectedSourceUid(null);
+    setActiveSelection(null);
     await loadDocs();
   }, [selectedSourceUidForActions, projectId, docs, loadDocs]);
 
@@ -254,61 +267,62 @@ export function useEltWorkbench(workbenchRef: React.RefObject<WorkbenchHandle | 
 
   // ── Preview instance management ──────────────────────────────────────────
 
-  const openPreviewForFile = useCallback((sourceUid: string) => {
-    const handle = workbenchRef.current;
-    if (!handle) return;
-
-    const previewTabId = createPreviewInstanceTabId(sourceUid, previewTabSequenceRef.current);
-    previewTabSequenceRef.current += 1;
-
-    const currentPanes = handle.getPanes();
-    const rightmostPaneId = currentPanes.length > 0
-      ? currentPanes[currentPanes.length - 1].id
-      : undefined;
-    handle.addTab(previewTabId, rightmostPaneId);
-  }, [workbenchRef]);
-
   const handleSelectFile = useCallback((sourceUid: string) => {
-    setSelectedSourceUid(sourceUid);
-    openPreviewForFile(sourceUid);
-  }, [openPreviewForFile]);
+    setActiveSelection({ kind: 'supabase', sourceUid });
+  }, []);
+
+  const handleSelectLocalFile = useCallback((node: FsNode) => {
+    setActiveSelection({ kind: 'local', node });
+  }, []);
 
   // ── transformPanes: enforce preview tab cap ──────────────────────────────
 
   const transformPanes = useCallback((panes: Pane[]): Pane[] => {
     let result = enforcePreviewTabCap(panes, MAX_CONCURRENT_PREVIEW_TABS);
 
-    // Invariant: 'assets' must always be in the first pane
-    const firstPane = result[0];
-    if (firstPane && !firstPane.tabs.includes('assets')) {
-      // Remove 'assets' from any other pane
-      result = result.map((pane, i) => {
-        if (i === 0) return pane;
-        if (!pane.tabs.includes('assets')) return pane;
-        const nextTabs = pane.tabs.filter((t) => t !== 'assets');
-        return {
-          ...pane,
-          tabs: nextTabs,
-          activeTab: nextTabs.includes(pane.activeTab) ? pane.activeTab : (nextTabs[0] ?? 'preview'),
-        };
-      });
-      // Add 'assets' to the first pane
-      result = result.map((pane, i) => {
-        if (i !== 0) return pane;
-        return { ...pane, tabs: ['assets', ...pane.tabs], activeTab: pane.activeTab || 'assets' };
-      });
-    } else if (firstPane?.tabs.includes('assets')) {
-      // Remove 'assets' from any pane other than the first
-      result = result.map((pane, i) => {
-        if (i === 0) return pane;
-        if (!pane.tabs.includes('assets')) return pane;
-        const nextTabs = pane.tabs.filter((t) => t !== 'assets');
-        return {
-          ...pane,
-          tabs: nextTabs,
-          activeTab: nextTabs.includes(pane.activeTab) ? pane.activeTab : (nextTabs[0] ?? 'preview'),
-        };
-      });
+    // Pinned tabs: 'assets' and 'files' must only exist in pane index 0.
+    const PINNED_TABS = ['assets', 'files'] as const;
+    const pinnedSet = new Set<string>(PINNED_TABS);
+
+    // Collect which pinned tabs exist anywhere
+    const activePinned = PINNED_TABS.filter((id) => result.some((p) => p.tabs.includes(id)));
+
+    if (activePinned.length > 0) {
+      const firstPane = result[0];
+
+      // Check: are all pinned tabs already in pane-0 and nowhere else,
+      // and does pane-0 contain only pinned tabs?
+      const firstPanePinned = firstPane ? firstPane.tabs.filter((t) => pinnedSet.has(t)) : [];
+      const firstPaneNonPinned = firstPane ? firstPane.tabs.filter((t) => !pinnedSet.has(t)) : [];
+      const pinnedElsewhere = result.slice(1).some((p) => p.tabs.some((t) => pinnedSet.has(t)));
+      const alreadyCorrect = firstPane
+        && firstPanePinned.length === activePinned.length
+        && activePinned.every((id) => firstPanePinned.includes(id))
+        && firstPaneNonPinned.length === 0
+        && !pinnedElsewhere;
+
+      if (!alreadyCorrect) {
+        // Strip all pinned tabs from every pane
+        result = result.map((pane) => {
+          const nextTabs = pane.tabs.filter((t) => !pinnedSet.has(t));
+          if (nextTabs.length === pane.tabs.length) return pane;
+          return {
+            ...pane,
+            tabs: nextTabs,
+            activeTab: nextTabs.includes(pane.activeTab) ? pane.activeTab : (nextTabs[0] ?? 'preview'),
+          };
+        });
+
+        // Remove any panes that became empty
+        result = result.filter((pane) => pane.tabs.length > 0);
+
+        // Insert a dedicated pinned pane at index 0
+        const pinnedPaneId = firstPane?.id ?? 'pane-1';
+        result = normalizePaneWidths([
+          { id: pinnedPaneId, tabs: [...activePinned], activeTab: activePinned[0], width: 18, minWidth: 18, maxWidth: 18, maxTabs: 3 },
+          ...result,
+        ]);
+      }
     }
 
     // Remove empty panes (except first) that lost all tabs
@@ -370,7 +384,14 @@ export function useEltWorkbench(workbenchRef: React.RefObject<WorkbenchHandle | 
       );
     }
 
+    if (tabId === 'files') {
+      return <WorkspaceFileTree storeKey="elt-local-dir" onSelectFile={handleSelectLocalFile} />;
+    }
+
     if (tabId === 'preview') {
+      if (activeSelection?.kind === 'local') {
+        return <LocalFilePreview node={activeSelection.node} />;
+      }
       return <PreviewTabPanel doc={selectedDoc} />;
     }
 
@@ -402,7 +423,7 @@ export function useEltWorkbench(workbenchRef: React.RefObject<WorkbenchHandle | 
         Unknown tab: {tabId}
       </div>
     );
-  }, [projectId, docs, docsLoading, docsError, selectedSourceUid, selectedDoc, docsBySourceUid, handleSelectFile, handleDeleteSelected, handleFilesSelected, handleCreateFileEntry, selectedSourceUidForActions, loadDocs]);
+  }, [projectId, docs, docsLoading, docsError, selectedSourceUid, selectedDoc, docsBySourceUid, activeSelection, handleSelectFile, handleSelectLocalFile, handleDeleteSelected, handleFilesSelected, handleCreateFileEntry, selectedSourceUidForActions, loadDocs]);
 
   return {
     projectId,

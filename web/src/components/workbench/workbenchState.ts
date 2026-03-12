@@ -5,6 +5,8 @@ export type Pane = {
   width: number;
   /** Per-pane minimum width percentage. Overrides the global MIN_PANE_PERCENT in Workbench. */
   minWidth?: number;
+  /** Per-pane maximum width percentage. Constrains how wide this pane can be resized. */
+  maxWidth?: number;
   /** Per-pane maximum number of tabs. Overrides the global maxTabsPerPane in Workbench. */
   maxTabs?: number;
 };

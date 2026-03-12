@@ -98,12 +98,14 @@ export default function DocumentTest() {
           ref={workbenchRef}
           tabs={ELT_TABS}
           defaultPanes={ELT_DEFAULT_PANES}
-          saveKey="elt-document-workbench"
+          saveKey="elt-document-workbench-v2"
           renderContent={renderContent}
           dynamicTabLabel={dynamicTabLabel}
           transformPanes={transformPanes}
           onPanesChange={handlePanesChange}
           hideToolbar
+          minColumns={3}
+          disableDrag
         />
       </div>
     </div>

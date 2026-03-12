@@ -1,0 +1,116 @@
+# OnlyOffice Bootstrap Fix Assessment
+
+- Source plan: `docs/plans/2026-03-12-onlyoffice-bootstrap-fix.md`
+- Date reviewed: `2026-03-12`
+- Reviewer: `Codex`
+- Verdict: `Conditional Pass`
+
+## What This Is
+
+This plan is an environment and bootstrap repair pass for the OnlyOffice ELT integration. Unlike the earlier implementation plan, it correctly treats the main failure mode as a runtime topology problem across Vite, platform-api, and the OnlyOffice container, not as a React-only bug.
+
+## Scope
+
+The plan covers three kinds of work:
+
+1. Bootstrap and verify the three required services.
+2. Prove the network boundaries with curl before using the browser.
+3. Harden the backend DOCX gate and clean up the hanging bridge test setup.
+
+That overall scope is appropriate for the current problem.
+
+## Findings
+
+### Major
+
+#### 1. The plan replaces useful bridge smoke coverage with a much narrower helper test
+
+Task 6 creates a new `services/platform-api/tests/test_onlyoffice.py`, but the proposed file only tests `_is_supported_docx(...)`. See [`2026-03-12-onlyoffice-bootstrap-fix.md:281`](/home/jon/BD2/docs/plans/2026-03-12-onlyoffice-bootstrap-fix.md#L281). Task 7 then frames the previous test file as deleted because of the hanging fixture issue. See [`2026-03-12-onlyoffice-bootstrap-fix.md:411`](/home/jon/BD2/docs/plans/2026-03-12-onlyoffice-bootstrap-fix.md#L411).
+
+That is a regression in verification quality. The earlier bridge suite covered `open`, `config`, per-session token scope, callback SSRF rejection, and concurrency behavior. The hanging fixture is a cleanup problem, not a reason to discard route-level coverage.
+
+The plan should keep or restore route smoke tests and fix the fixture lifecycle separately.
+
+#### 2. Task 7 would overwrite an existing shared `conftest.py` with a conflicting minimal fixture
+
+The plan says to create or update `services/platform-api/tests/conftest.py` with only a `client()` fixture. See [`2026-03-12-onlyoffice-bootstrap-fix.md:425`](/home/jon/BD2/docs/plans/2026-03-12-onlyoffice-bootstrap-fix.md#L425). But that file already exists and currently provides an autouse settings-cache reset fixture at [`conftest.py:1`](/home/jon/BD2/services/platform-api/tests/conftest.py#L1).
+
+If executed literally, the proposed file would clobber existing behavior that other tests rely on. It also would not fix tests that instantiate `TestClient` directly inside test modules, which already exists in the suite, for example at [`test_auth.py:54`](/home/jon/BD2/services/platform-api/tests/test_auth.py#L54).
+
+The plan needs to say "merge into existing conftest" and explicitly distinguish:
+
+- tests that should use a shared fixture
+- tests that must be updated individually to close their own clients
+
+#### 3. The DOCX hardening task expands supported formats without reconciling the rest of the bridge contract
+
+Task 6 proposes `_is_supported_docx()` that accepts `docx`, `docm`, `dotx`, and `dotm` based on `source_type` or extension. See [`2026-03-12-onlyoffice-bootstrap-fix.md:339`](/home/jon/BD2/docs/plans/2026-03-12-onlyoffice-bootstrap-fix.md#L339). That does mirror the frontend detection constants at [`projectDetailHelpers.ts:50`](/home/jon/BD2/web/src/lib/projectDetailHelpers.ts#L50).
+
+But the rest of the bridge still hardcodes:
+
+- `fileType: "docx"` in the config payload at [`onlyoffice.py:237`](/home/jon/BD2/services/platform-api/app/api/routes/onlyoffice.py#L237)
+- DOCX MIME type in the served file response at [`onlyoffice.py:283`](/home/jon/BD2/services/platform-api/app/api/routes/onlyoffice.py#L283)
+- DOCX MIME type on writeback at [`onlyoffice.py:381`](/home/jon/BD2/services/platform-api/app/api/routes/onlyoffice.py#L381)
+
+So the plan is silently widening supported formats without updating the downstream fileType and content-type handling. If the intent is bootstrap only, keep the gate to `.docx` for now. If the intent is real Word-family support, then the bridge contract needs to be widened coherently.
+
+#### 4. The smoke-test instructions are too environment-specific to be a reliable shared plan
+
+Task 4 hardcodes:
+
+- a specific localStorage key at [`2026-03-12-onlyoffice-bootstrap-fix.md:184`](/home/jon/BD2/docs/plans/2026-03-12-onlyoffice-bootstrap-fix.md#L184)
+- a specific `source_uid` at [`2026-03-12-onlyoffice-bootstrap-fix.md:198`](/home/jon/BD2/docs/plans/2026-03-12-onlyoffice-bootstrap-fix.md#L198)
+- a specific Supabase URL in expected output at [`2026-03-12-onlyoffice-bootstrap-fix.md:111`](/home/jon/BD2/docs/plans/2026-03-12-onlyoffice-bootstrap-fix.md#L111)
+
+Those details may be valid on one machine, but they make the plan brittle and user-specific. A better plan would describe how to identify:
+
+- the current auth token
+- any known owned DOCX document
+- expected non-empty env output
+
+without baking in one operator's exact project ref and test document.
+
+### Minor
+
+#### 5. The topology section hardcodes browser origin more narrowly than the current dev setup
+
+The plan says `Browser (localhost:5274)` at [`2026-03-12-onlyoffice-bootstrap-fix.md:16`](/home/jon/BD2/docs/plans/2026-03-12-onlyoffice-bootstrap-fix.md#L16). The current Vite server binds `0.0.0.0` at [`vite.config.ts:70`](/home/jon/BD2/web/vite.config.ts#L70), so local browser access may be `localhost`, LAN IP, or another host alias. That is a minor documentation issue, but the plan should describe the browser as "the Vite dev origin" rather than one fixed hostname.
+
+#### 6. The failure-code mapping for `/open` is not fully accurate
+
+Task 4 maps `401` on `/open` to "JWT expired or SUPABASE_SERVICE_ROLE_KEY not set" at [`2026-03-12-onlyoffice-bootstrap-fix.md:204`](/home/jon/BD2/docs/plans/2026-03-12-onlyoffice-bootstrap-fix.md#L204). Those are different failure classes. An expired or invalid browser JWT is a direct auth failure. Missing service-role or storage credentials are more likely to surface later as bridge/storage failures, not the same 401 condition.
+
+This is a minor issue, but the troubleshooting table should keep auth failures and storage/backend config failures separate.
+
+## Required Changes Before Implementation
+
+1. Keep the route-level OnlyOffice smoke tests and fix their client lifecycle. Do not replace them with only a helper-level `_is_supported_docx()` test.
+2. Update Task 7 to merge with the existing [`conftest.py`](/home/jon/BD2/services/platform-api/tests/conftest.py), not overwrite it, and explicitly address direct `TestClient(...)` call sites that bypass shared fixtures.
+3. Decide whether Task 6 is a bootstrap-only fix or a format-support expansion. If bootstrap-only, keep the gate to `.docx`. If expanding support to `docm` and templates, update `fileType` and content-type handling consistently.
+4. Replace machine-specific values in the smoke test with operator instructions for discovering the current token and a known owned DOCX source.
+5. Tighten the troubleshooting guidance so auth, bridge startup, and storage-credential failures map to distinct observable symptoms.
+
+## Verification Expectations
+
+Before this plan should be called complete, the following should be true:
+
+- OnlyOffice Document Server is healthy and serves the JS API.
+- `start-dev.sh` starts platform-api with non-placeholder OnlyOffice JWT and valid Supabase env.
+- Vite proxies both `/oo-api` and `/platform-api`.
+- Curl verifies `open`, `config`, and container-side fetch using a real owned DOCX.
+- Browser flow proves assets → preview → Edit → editor load.
+- Backend smoke tests pass and exit cleanly.
+
+## Acceptance Criteria Check
+
+- Scope boundaries: `Pass`
+- Network and bootstrap clarity: `Pass`
+- API and data contract clarity: `Partial Pass`
+- Verification design: `Partial Pass`
+- Test-suite integration safety: `Fail`
+
+## Final Recommendation
+
+`Go with revisions.`
+
+This plan is materially closer to the real problem than the previous implementation plan. The bootstrap-first sequencing is correct. The remaining issues are mostly execution-safety issues: preserve route smoke coverage, do not overwrite the existing shared test fixtures, and avoid widening supported formats unless the whole bridge contract is updated to match.

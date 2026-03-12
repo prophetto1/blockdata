@@ -55,8 +55,12 @@ export type WorkbenchProps = {
   transformPanes?: (panes: Pane[]) => Pane[];
   /** Maximum number of columns (panes). Splitting is blocked when at the limit. */
   maxColumns?: number;
+  /** Minimum number of columns (panes). Removal is blocked at the limit. */
+  minColumns?: number;
   /** Maximum number of tabs per pane. Adding tabs beyond this is blocked. */
   maxTabsPerPane?: number;
+  /** Disable all drag-and-drop (pane reorder + tab move between panes). */
+  disableDrag?: boolean;
 };
 
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -89,6 +93,7 @@ type PersistedPane = {
   activeTab: string;
   width: number;
   minWidth?: number;
+  maxWidth?: number;
   maxTabs?: number;
 };
 
@@ -156,6 +161,7 @@ function readPersistedPanes(saveKey: string, isValidTab: (tabId: string) => bool
         activeTab: resolvedActive,
         width: Number.isFinite(item.width) && item.width > 0 ? item.width : 100 / parsed.length,
         ...(Number.isFinite(item.minWidth) && item.minWidth! > 0 ? { minWidth: item.minWidth } : {}),
+        ...(Number.isFinite(item.maxWidth) && item.maxWidth! > 0 ? { maxWidth: item.maxWidth } : {}),
         ...(Number.isFinite(item.maxTabs) && item.maxTabs! > 0 ? { maxTabs: item.maxTabs } : {}),
       };
     });
@@ -168,7 +174,7 @@ function readPersistedPanes(saveKey: string, isValidTab: (tabId: string) => bool
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
-export const Workbench = forwardRef<WorkbenchHandle, WorkbenchProps>(function Workbench({ tabs, defaultPanes, saveKey, renderContent, toolbarActions, hideToolbar = false, dynamicTabLabel, onPanesChange, transformPanes, maxColumns, maxTabsPerPane }, ref) {
+export const Workbench = forwardRef<WorkbenchHandle, WorkbenchProps>(function Workbench({ tabs, defaultPanes, saveKey, renderContent, toolbarActions, hideToolbar = false, dynamicTabLabel, onPanesChange, transformPanes, maxColumns, minColumns, maxTabsPerPane, disableDrag = false }, ref) {
   const fallbackTab = tabs[0]?.id ?? '';
 
   const staticTabIds = useMemo(() => new Set(tabs.map((tab) => tab.id)), [tabs]);
@@ -257,6 +263,7 @@ export const Workbench = forwardRef<WorkbenchHandle, WorkbenchProps>(function Wo
       activeTab: pane.activeTab,
       width: pane.width,
       ...(pane.minWidth != null ? { minWidth: pane.minWidth } : {}),
+      ...(pane.maxWidth != null ? { maxWidth: pane.maxWidth } : {}),
       ...(pane.maxTabs != null ? { maxTabs: pane.maxTabs } : {}),
     }));
     window.localStorage.setItem(saveKey, JSON.stringify(payload));
@@ -278,12 +285,13 @@ export const Workbench = forwardRef<WorkbenchHandle, WorkbenchProps>(function Wo
 
   const removeColumn = useCallback((paneId: string) => {
     setPanes((current) => {
-      if (current.length <= 1) return current;
+      const floor = minColumns ?? 1;
+      if (current.length <= floor) return current;
       const filtered = current.filter((pane) => pane.id !== paneId);
       if (filtered.length === current.length) return current;
       return normalizePaneWidths(filtered);
     });
-  }, []);
+  }, [minColumns]);
 
   const movePaneByOffset = useCallback((paneId: string, offset: number) => {
     setPanes((current) => {
@@ -380,6 +388,16 @@ export const Workbench = forwardRef<WorkbenchHandle, WorkbenchProps>(function Wo
   const openPanelFromToolbar = useCallback((tabId: string) => {
     const existingPane = panes.find((pane) => pane.tabs.includes(tabId));
     if (existingPane) {
+      // Already the active tab — toggle it off
+      if (existingPane.activeTab === tabId) {
+        if (existingPane.tabs.length > 1) {
+          closeTab(existingPane.id, tabId);
+        } else if (panes.length > (minColumns ?? 1)) {
+          removeColumn(existingPane.id);
+        }
+        return;
+      }
+      // Exists but not active — just activate it
       setFocusedPaneId(existingPane.id);
       setPanes((current) => setActiveTabInPane(current, existingPane.id, tabId));
       return;
@@ -392,7 +410,7 @@ export const Workbench = forwardRef<WorkbenchHandle, WorkbenchProps>(function Wo
 
     setFocusedPaneId(targetPaneId);
     setPanes((current) => activateTabInPane(current, targetPaneId, tabId, fallbackTab, maxTabsPerPane));
-  }, [focusedPaneId, panes, fallbackTab]);
+  }, [focusedPaneId, panes, fallbackTab, closeTab, removeColumn]);
 
   // ── Drag-and-drop: tabs ─────────────────────────────────────────────────
 
@@ -554,7 +572,11 @@ export const Workbench = forwardRef<WorkbenchHandle, WorkbenchProps>(function Wo
   }, [panes]);
 
   const splitterPanels = useMemo(
-    () => paneTemplateStyle.map((pane) => ({ id: pane.id, minSize: pane.minWidth ?? MIN_PANE_PERCENT })),
+    () => paneTemplateStyle.map((pane) => ({
+      id: pane.id,
+      minSize: pane.minWidth ?? MIN_PANE_PERCENT,
+      ...(pane.maxWidth != null ? { maxSize: pane.maxWidth } : {}),
+    })),
     [paneTemplateStyle],
   );
 
@@ -627,20 +649,20 @@ export const Workbench = forwardRef<WorkbenchHandle, WorkbenchProps>(function Wo
               data-workbench-pane-index={index}
               className={`workbench-pane${dragOverPaneIndex === index ? ' is-pane-dragover' : ''}`}
               onPointerDown={() => setFocusedPaneId(pane.id)}
-              onDragOver={(event) => handlePaneDragOver(event, index)}
-              onDrop={(event) => handlePaneDrop(event, index, pane.id)}
+              onDragOver={disableDrag ? undefined : (event) => handlePaneDragOver(event, index)}
+              onDrop={disableDrag ? undefined : (event) => handlePaneDrop(event, index, pane.id)}
             >
               <div
                 className="workbench-pane-tabs"
-                onDragOver={(event) => handlePaneDragOver(event, index)}
-                onDrop={(event) => handlePaneDrop(event, index, pane.id)}
+                onDragOver={disableDrag ? undefined : (event) => handlePaneDragOver(event, index)}
+                onDrop={disableDrag ? undefined : (event) => handlePaneDrop(event, index, pane.id)}
               >
                 <button
                   type="button"
                   aria-label="Move column"
                   title="Drag to move column"
-                  draggable
-                  onDragStart={(event) => {
+                  draggable={!disableDrag}
+                  onDragStart={disableDrag ? undefined : (event) => {
                     dragPaneStateRef.current = { fromIndex: index };
                     dragStateRef.current = null;
                     event.dataTransfer.effectAllowed = 'move';
@@ -649,10 +671,10 @@ export const Workbench = forwardRef<WorkbenchHandle, WorkbenchProps>(function Wo
                     event.dataTransfer.setData('text/plain', payload);
                     setDragOverPaneIndex(index);
                   }}
-                  onDragEnd={endPaneDrag}
-                  onPointerDown={(event) => startPointerPaneDrag(event, index)}
-                  onPointerUp={endPointerPaneDrag}
-                  onPointerCancel={endPointerPaneDrag}
+                  onDragEnd={disableDrag ? undefined : endPaneDrag}
+                  onPointerDown={disableDrag ? undefined : (event) => startPointerPaneDrag(event, index)}
+                  onPointerUp={disableDrag ? undefined : endPointerPaneDrag}
+                  onPointerCancel={disableDrag ? undefined : endPointerPaneDrag}
                   className="workbench-pane-grip"
                 />
                 <div className="workbench-tab-list">
@@ -660,8 +682,8 @@ export const Workbench = forwardRef<WorkbenchHandle, WorkbenchProps>(function Wo
                     <div
                       key={`${pane.id}-${tabId}`}
                       className={`workbench-tab${pane.activeTab === tabId ? ' is-active' : ''}`}
-                      draggable
-                      onDragStart={(event) => {
+                      draggable={!disableDrag}
+                      onDragStart={disableDrag ? undefined : (event) => {
                         dragStateRef.current = { tabId, fromPaneId: pane.id };
                         dragPaneStateRef.current = null;
                         event.dataTransfer.effectAllowed = 'move';
@@ -669,7 +691,7 @@ export const Workbench = forwardRef<WorkbenchHandle, WorkbenchProps>(function Wo
                         event.dataTransfer.setData(DRAG_PAYLOAD_MIME, payload);
                         event.dataTransfer.setData('text/plain', payload);
                       }}
-                      onDragEnd={() => {
+                      onDragEnd={disableDrag ? undefined : () => {
                         dragStateRef.current = null;
                       }}
                     >
@@ -719,14 +741,14 @@ export const Workbench = forwardRef<WorkbenchHandle, WorkbenchProps>(function Wo
                           <MenuItem
                             value={`${pane.id}-move-right`}
                             onClick={() => movePaneByOffset(pane.id, 1)}
-                            disabled={index >= panes.length - 1}
+                            disabled={disableDrag || index >= panes.length - 1}
                           >
                             Move right
                           </MenuItem>
                           <MenuItem
                             value={`${pane.id}-move-left`}
                             onClick={() => movePaneByOffset(pane.id, -1)}
-                            disabled={index <= 0}
+                            disabled={disableDrag || index <= 0}
                           >
                             Move left
                           </MenuItem>
@@ -739,7 +761,7 @@ export const Workbench = forwardRef<WorkbenchHandle, WorkbenchProps>(function Wo
                           <MenuItem
                             value={`${pane.id}-remove`}
                             onClick={() => removeColumn(pane.id)}
-                            disabled={panes.length <= 1}
+                            disabled={panes.length <= (minColumns ?? 1)}
                           >
                             Remove pane
                           </MenuItem>
@@ -752,8 +774,8 @@ export const Workbench = forwardRef<WorkbenchHandle, WorkbenchProps>(function Wo
 
               <div
                 className="workbench-pane-content"
-                onDragOver={(event) => handlePaneDragOver(event, index)}
-                onDrop={(event) => handlePaneDrop(event, index, pane.id)}
+                onDragOver={disableDrag ? undefined : (event) => handlePaneDragOver(event, index)}
+                onDrop={disableDrag ? undefined : (event) => handlePaneDrop(event, index, pane.id)}
               >
                 {renderContent(pane.activeTab)}
               </div>

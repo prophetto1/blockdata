@@ -189,7 +189,7 @@ export function ParseEasyPanel({ projectId: _projectId, selectedDocument = null,
   }, [panelView, mode]);
 
   return (
-    <div className="h-full w-full min-h-0 p-2">
+    <div className="h-full w-full min-h-0 p-1">
       <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-md border border-border bg-card">
         <div className="grid min-h-10 grid-cols-[auto_1fr_auto] items-center border-b border-border bg-card px-2">
           <SegmentGroupRoot

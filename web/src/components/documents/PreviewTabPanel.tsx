@@ -1,10 +1,12 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { IconDownload } from '@tabler/icons-react';
+import { IconDownload, IconEdit, IconEye } from '@tabler/icons-react';
 import ReactMarkdown from 'react-markdown';
+import remarkFrontmatter from 'remark-frontmatter';
 import remarkGfm from 'remark-gfm';
 import { PdfResultsHighlighter } from '@/components/documents/PdfResultsHighlighter';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { DocxPreview } from '@/components/documents/DocxPreview';
+import { OnlyOfficeEditorPanel } from '@/components/documents/OnlyOfficeEditorPanel';
 import { PdfPreview } from '@/components/documents/PdfPreview';
 import { PptxPreview } from '@/components/documents/PptxPreview';
 import {
@@ -32,6 +34,8 @@ export function PreviewTabPanel({ doc }: { doc: ProjectDocumentRow | null }) {
   const [previewError, setPreviewError] = useState<string | null>(null);
   const [pdfPreviewMode, setPdfPreviewMode] = useState<'file' | 'parsed'>('file');
   const [pdfToolbarHost, setPdfToolbarHost] = useState<HTMLDivElement | null>(null);
+  const [docxEditMode, setDocxEditMode] = useState(false);
+  const [docxPreviewRevision, setDocxPreviewRevision] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -54,6 +58,7 @@ export function PreviewTabPanel({ doc }: { doc: ProjectDocumentRow | null }) {
       setParsedPreviewUrl(null);
       setPreviewText(null);
       setPdfPreviewMode('file');
+      setDocxEditMode(false);
 
       const { url: signedUrl, error: signedUrlError } = await resolveSignedUrlForLocators([
         doc.source_locator,
@@ -158,27 +163,29 @@ export function PreviewTabPanel({ doc }: { doc: ProjectDocumentRow | null }) {
     content: ReactNode,
     options?: { scroll?: boolean; padded?: boolean },
   ) => (
-    <div className="flex h-full w-full min-h-0 flex-col overflow-hidden">
-      {options?.scroll === false ? (
-        <div
-          className={[
-            'min-h-0 flex-1 overflow-hidden bg-card',
-            options?.padded === false ? '' : 'p-4',
-          ].join(' ')}
-        >
-          {content}
-        </div>
-      ) : (
-        <ScrollArea
-          className="min-h-0 h-full flex-1 bg-card"
-          viewportClass={[
-            'h-full overflow-y-auto overflow-x-hidden',
-            options?.padded === false ? '' : 'p-4',
-          ].join(' ').trim()}
-        >
-          {content}
-        </ScrollArea>
-      )}
+    <div className="h-full w-full min-h-0 p-1">
+      <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-md border border-border bg-card">
+        {options?.scroll === false ? (
+          <div
+            className={[
+              'min-h-0 flex-1 overflow-hidden bg-card',
+              options?.padded === false ? '' : 'p-4',
+            ].join(' ')}
+          >
+            {content}
+          </div>
+        ) : (
+          <ScrollArea
+            className="min-h-0 h-full flex-1 bg-card"
+            viewportClass={[
+              'h-full overflow-y-auto overflow-x-hidden',
+              options?.padded === false ? '' : 'p-4',
+            ].join(' ').trim()}
+          >
+            {content}
+          </ScrollArea>
+        )}
+      </div>
     </div>
   );
 
@@ -267,7 +274,7 @@ export function PreviewTabPanel({ doc }: { doc: ProjectDocumentRow | null }) {
     content: ReactNode,
     options?: { contentClassName?: string; downloadUrl?: string | null },
   ) => renderPreviewWithUnifiedHeader(
-    <div className={['parse-docx-preview-viewport', options?.contentClassName ?? ''].join(' ').trim()}>
+    <div className={['p-4', options?.contentClassName ?? ''].join(' ').trim()}>
       {content}
     </div>,
     { downloadUrl: options?.downloadUrl },
@@ -334,7 +341,7 @@ export function PreviewTabPanel({ doc }: { doc: ProjectDocumentRow | null }) {
 
   if (previewKind === 'image' && previewUrl) {
     return renderStandardContentPreview(
-      <div className="flex h-full w-full items-center justify-center overflow-auto p-4">
+      <div className="flex h-full w-full items-center justify-center overflow-auto">
         <img src={previewUrl} alt={doc.doc_title} className="max-h-full max-w-full" />
       </div>,
       { downloadUrl: previewUrl },
@@ -351,7 +358,7 @@ export function PreviewTabPanel({ doc }: { doc: ProjectDocumentRow | null }) {
   if (previewKind === 'markdown') {
     return renderStandardContentPreview(
       <div className="parse-markdown-preview">
-        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+        <ReactMarkdown remarkPlugins={[remarkFrontmatter, remarkGfm]}>
           {previewText ?? ''}
         </ReactMarkdown>
       </div>,
@@ -360,14 +367,38 @@ export function PreviewTabPanel({ doc }: { doc: ProjectDocumentRow | null }) {
   }
 
   if (previewKind === 'docx' && previewUrl) {
+    const docxToggleAction = (
+      <button
+        type="button"
+        aria-pressed={docxEditMode}
+        onClick={() => {
+          setDocxEditMode((prev) => {
+            if (prev) setDocxPreviewRevision((r) => r + 1);
+            return !prev;
+          });
+        }}
+        className="inline-flex h-8 items-center gap-1.5 rounded-md border border-border px-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+      >
+        {docxEditMode ? <><IconEye size={14} /> Preview</> : <><IconEdit size={14} /> Edit</>}
+      </button>
+    );
+
     return renderPreviewWithUnifiedHeader(
-      <DocxPreview
-        key={`${doc.source_uid}:${previewUrl}`}
-        title={doc.doc_title}
-        url={previewUrl}
-        hideToolbar
-      />,
-      { downloadUrl: previewUrl },
+      docxEditMode ? (
+        <OnlyOfficeEditorPanel key={doc.source_uid} doc={doc} />
+      ) : (
+        <DocxPreview
+          key={`${doc.source_uid}:${previewUrl}:${docxPreviewRevision}`}
+          title={doc.doc_title}
+          url={previewUrl}
+          hideToolbar
+        />
+      ),
+      {
+        downloadUrl: previewUrl,
+        useScrollArea: docxEditMode ? false : undefined,
+        headerActions: docxToggleAction,
+      },
     );
   }
 

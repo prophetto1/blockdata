@@ -140,7 +140,7 @@ async def open_document(
 
     sb = get_supabase_admin()
     result = (
-        sb.table("documents_v2")
+        sb.table("view_documents")
         .select("source_uid, source_locator, doc_title, owner_id")
         .eq("source_uid", req.source_uid)
         .limit(1)
@@ -162,16 +162,18 @@ async def open_document(
     if not source_locator:
         raise HTTPException(404, "Document has no storage locator")
 
-    filename = (doc_row.get("doc_title") or "document.docx").split("/")[-1]
-
     # Only DOCX files are supported — reject anything else before pulling
     # from storage, since the bridge hardcodes fileType: "docx" and serves
     # all cached files with the DOCX content type.
-    if not filename.lower().endswith(".docx"):
+    # Gate on source_locator (immutable storage path), not doc_title which
+    # the user can rename freely.
+    if not source_locator.lower().endswith(".docx"):
         raise HTTPException(
             400,
-            f"Only .docx files can be edited in OnlyOffice (got: {filename})",
+            f"Only .docx files can be edited in OnlyOffice (got: {source_locator.split('/')[-1]})",
         )
+
+    filename = (doc_row.get("doc_title") or source_locator).split("/")[-1]
 
     storage_key = source_locator.lstrip("/")
     try:
