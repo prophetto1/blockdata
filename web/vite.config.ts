@@ -73,6 +73,13 @@ export default defineConfig({
     fs: {
       allow: [path.resolve(__dirname, '..')],
     },
+    proxy: {
+      '/oo-api': {
+        target: 'http://localhost:9980',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/oo-api/, ''),
+      },
+    },
   },
   build: {
     rollupOptions: {

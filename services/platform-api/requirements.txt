@@ -7,5 +7,6 @@ supabase>=2.0
 docling>=2.70.0
 eyecite>=2.7
 lxml>=5.0
+PyJWT>=2.8
 pytest>=8.0
 pytest-asyncio>=0.23

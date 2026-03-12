@@ -88,6 +88,8 @@ type PersistedPane = {
   tabs: string[];
   activeTab: string;
   width: number;
+  minWidth?: number;
+  maxTabs?: number;
 };
 
 function createPaneId(input: Pane[]): string {
@@ -153,6 +155,8 @@ function readPersistedPanes(saveKey: string, isValidTab: (tabId: string) => bool
         tabs: resolvedTabs,
         activeTab: resolvedActive,
         width: Number.isFinite(item.width) && item.width > 0 ? item.width : 100 / parsed.length,
+        ...(Number.isFinite(item.minWidth) && item.minWidth! > 0 ? { minWidth: item.minWidth } : {}),
+        ...(Number.isFinite(item.maxTabs) && item.maxTabs! > 0 ? { maxTabs: item.maxTabs } : {}),
       };
     });
 
@@ -252,6 +256,8 @@ export const Workbench = forwardRef<WorkbenchHandle, WorkbenchProps>(function Wo
       tabs: pane.tabs,
       activeTab: pane.activeTab,
       width: pane.width,
+      ...(pane.minWidth != null ? { minWidth: pane.minWidth } : {}),
+      ...(pane.maxTabs != null ? { maxTabs: pane.maxTabs } : {}),
     }));
     window.localStorage.setItem(saveKey, JSON.stringify(payload));
   }, [panes, saveKey]);
@@ -548,7 +554,7 @@ export const Workbench = forwardRef<WorkbenchHandle, WorkbenchProps>(function Wo
   }, [panes]);
 
   const splitterPanels = useMemo(
-    () => paneTemplateStyle.map((pane) => ({ id: pane.id, minSize: MIN_PANE_PERCENT })),
+    () => paneTemplateStyle.map((pane) => ({ id: pane.id, minSize: pane.minWidth ?? MIN_PANE_PERCENT })),
     [paneTemplateStyle],
   );
 

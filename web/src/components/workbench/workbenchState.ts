@@ -3,6 +3,10 @@ export type Pane = {
   tabs: string[];
   activeTab: string;
   width: number;
+  /** Per-pane minimum width percentage. Overrides the global MIN_PANE_PERCENT in Workbench. */
+  minWidth?: number;
+  /** Per-pane maximum number of tabs. Overrides the global maxTabsPerPane in Workbench. */
+  maxTabs?: number;
 };
 
 function withResolvedActiveTab(pane: Pane): Pane {
@@ -74,10 +78,11 @@ export function activateTabInPane(input: Pane[], paneId: string, tabId: string, 
       return { ...pane, activeTab: tabId };
     }
     let tabs = [...pane.tabs, tabId];
-    // Evict oldest non-active tab(s) when over the limit
-    if (maxTabsPerPane && tabs.length > maxTabsPerPane) {
+    // Evict oldest non-active tab(s) when over the limit (per-pane maxTabs takes precedence)
+    const effectiveMax = pane.maxTabs ?? maxTabsPerPane;
+    if (effectiveMax && tabs.length > effectiveMax) {
       const evictable = tabs.filter((t) => t !== tabId);
-      tabs = [tabId, ...evictable.slice(evictable.length - (maxTabsPerPane - 1))];
+      tabs = [tabId, ...evictable.slice(evictable.length - (effectiveMax - 1))];
     }
     return {
       ...pane,

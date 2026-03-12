@@ -41,3 +41,27 @@ async def download_from_storage(
         )
         resp.raise_for_status()
     return resp.content
+
+
+async def upsert_to_storage(
+    supabase_url: str,
+    supabase_key: str,
+    bucket: str,
+    path: str,
+    content: bytes,
+    content_type: str = "application/octet-stream",
+) -> str:
+    """Upload bytes to Supabase Storage, overwriting if the file exists. Returns the public URL."""
+    url = f"{supabase_url}/storage/v1/object/{bucket}/{path}"
+    async with httpx.AsyncClient() as client:
+        resp = await client.post(
+            url,
+            content=content,
+            headers={
+                "Authorization": f"Bearer {supabase_key}",
+                "Content-Type": content_type,
+                "x-upsert": "true",
+            },
+        )
+        resp.raise_for_status()
+    return f"{supabase_url}/storage/v1/object/public/{bucket}/{path}"

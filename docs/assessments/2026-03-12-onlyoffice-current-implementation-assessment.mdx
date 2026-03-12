@@ -1,0 +1,74 @@
+# OnlyOffice Current Implementation Assessment
+
+## Plan Metadata
+
+- Source plan: `docs/plans/2026-03-11-onlyoffice-elt-workbench-integration.md`
+- Implementation scope reviewed:
+  - `services/platform-api/app/core/config.py`
+  - `services/platform-api/app/infra/storage.py`
+  - `services/platform-api/app/main.py`
+  - `services/platform-api/app/api/routes/onlyoffice.py`
+  - `services/platform-api/tests/test_onlyoffice.py`
+  - `web/src/components/workbench/Workbench.tsx`
+  - `web/src/components/workbench/workbenchState.ts`
+  - `web/src/pages/useEltWorkbench.tsx`
+- Date reviewed: `2026-03-12`
+- Reviewer: `Codex`
+
+## Verdict
+
+`Conditional Pass`
+
+## Findings
+
+### Major
+
+1. Existing ELT users will not reliably receive the new three-pane default layout.
+   The new default layout adds a third `parse` pane in `useEltWorkbench`, but `Workbench` still hydrates persisted panes from localStorage first and keeps them as-is. There is no migration step that inserts the new pane or applies the new pane constraints to already-saved `elt-document-workbench` layouts. In practice, anyone with an older saved two-pane layout will keep that layout and may never see the new default structure unless they clear local state manually.
+
+2. The new backend smoke tests are present but do not currently complete under a fresh local run.
+   I ran `timeout 25s python3 -m pytest services/platform-api/tests/test_onlyoffice.py -q` and it exited with code `124`. A single-test run also stalled after collection at `TestOpenAndConfig::test_open_returns_session_id`. That means the project now has the right tests on paper, but the verification story is still incomplete because the bridge test suite is not finishing cleanly in the current environment.
+
+### Minor
+
+1. The callback origin check still does not compare scheme explicitly.
+   The callback handler now validates host and port, which fixes the earlier hostname-only SSRF bug. But the code comments say it validates the full origin, while the implementation only checks scheme membership plus host and port. If a deployment depends on `https` specifically for the internal document-server URL, the check should compare scheme as well to match the stated contract.
+
+2. The new workbench pane behavior has no matching frontend regression coverage.
+   The current review scope adds pane persistence fields, per-pane tab limits, a mandatory first-pane `assets` invariant, and a new default third pane. None of those behaviors has visible automated coverage in the current worktree, so layout regressions will be easy to miss.
+
+## Specific Gaps, Contradictions, And Ambiguity
+
+- The implementation meaningfully fixes the earlier bridge issues:
+  placeholder secret rejection, per-session token scoping, session-owner enforcement, wrong-port callback rejection, and fail-closed concurrency checks are all now present.
+- The updated workbench defaults imply a rollout to a new three-pane ELT layout, but persisted client state still wins over those defaults without a migration path.
+- The backend test file exists and targets the right cases, but the executable verification result is still a timeout rather than a passing run.
+
+## Required Changes Before Calling This Complete
+
+1. Add a layout migration for the `elt-document-workbench` saved state, or intentionally version the save key so the new default pane structure can actually take effect.
+2. Fix the bridge test harness so `services/platform-api/tests/test_onlyoffice.py` completes and passes in a clean local run.
+3. Align the callback validation implementation with its stated contract by checking scheme as well as host and port.
+4. Add at least one focused frontend regression test for the new pane invariants and persisted-layout behavior.
+
+## Verification Expectations
+
+- Backend import and route registration should keep passing for `/onlyoffice/open`, `/onlyoffice/config`, `/onlyoffice/doc/{session_id}`, and `/onlyoffice/callback/{session_id}`.
+- `services/platform-api/tests/test_onlyoffice.py` should complete without timeout.
+- Existing users with old persisted ELT layout state should be verified against the new pane rollout path, either by migration or by an intentional layout reset.
+- Callback origin validation should reject wrong scheme, wrong host, and wrong port.
+
+## Acceptance Criteria Check
+
+- Alignment with implementation direction: `Pass`
+- Security/auth implications: `Pass`
+- API/data contract clarity: `Partial`
+- Operational readiness: `Partial`
+- Test/verification clarity: `Partial`
+- Rollout safety: `Partial`
+
+## Final Recommendation
+
+`Proceed with caution`, but do not call the implementation complete yet.
+
+The important backend security fixes are now in place. The remaining issues are narrower: rollout correctness for persisted ELT layouts, runnable verification for the new bridge tests, and one contract gap in callback origin validation. Those are fixable without redesign, but they should be addressed before this work is treated as finished.

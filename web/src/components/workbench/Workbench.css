@@ -266,6 +266,7 @@
   min-height: 0;
   overflow: hidden;
   padding: 8px;
+  background: var(--background);
 }
 
 .workbench-resizer {

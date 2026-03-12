@@ -6,7 +6,13 @@
 
 **Architecture:** The OnlyOffice Document Server is a server-native editor — it fetches documents from a URL and saves via callback. It cannot fetch directly from Supabase Storage (signed URLs expire, no callback mechanism). So platform-api acts as a **shuttle**: on edit-open it pulls the `.docx` from Supabase Storage into a local cache, serves it to the OnlyOffice container, and on save callback writes the modified file back to Supabase Storage. The frontend adds a preview/edit mode toggle to `PreviewTabPanel` for `.docx` files. No new pages, no new routes, no separate upload flow — OnlyOffice plugs into the existing document pipeline.
 
-**Tech Stack:** React 19, FastAPI (platform-api), PyJWT, python-multipart, supabase-py, OnlyOffice Document Server (Docker, Community Edition), Vite dev proxy
+**Infra reuse:** The bridge router reuses existing platform-api infrastructure modules (`5b30042`) instead of creating inline clients:
+- `get_supabase_admin()` from `app.infra.supabase_client` — cached singleton with proper error handling
+- `download_bytes()` from `app.infra.http_client` — for downloading modified files from the OnlyOffice container
+- `download_from_storage()` from `app.infra.storage` — for pulling files from Supabase Storage on open
+- `upsert_to_storage()` (new) from `app.infra.storage` — for writing modified files back with `x-upsert: true` header (existing `upload_to_storage` only does POST/create, not overwrite)
+
+**Tech Stack:** React 19, FastAPI (platform-api), PyJWT, supabase-py, OnlyOffice Document Server (Docker, Community Edition), Vite dev proxy
 
 **What this proves:** That OnlyOffice can live inside the existing workbench tab system without a separate UI, using the existing Supabase Storage pipeline — not that OnlyOffice works (it's a mature project).
 
@@ -65,10 +71,9 @@ cd services/platform-api && uvicorn app.main:app --port 8000
 Append:
 ```
 PyJWT>=2.8
-python-multipart>=0.0.9
 ```
 
-`PyJWT` signs OnlyOffice editor configs. `python-multipart` is required by FastAPI for `UploadFile` / `File(...)` — without it, upload endpoints throw a runtime error.
+`PyJWT` signs OnlyOffice editor configs. (The older pilot plan included `python-multipart` for `UploadFile` endpoints, but this version has no upload endpoint — the bridge pulls files from Supabase Storage, not from browser uploads.)
 
 **Step 2: Install**
 
@@ -80,7 +85,7 @@ cd services/platform-api && pip install -r requirements.txt
 
 ```bash
 git add services/platform-api/requirements.txt
-git commit -m "deps: add PyJWT and python-multipart for onlyoffice bridge"
+git commit -m "deps: add PyJWT for onlyoffice bridge"
 ```
 
 ---
@@ -99,10 +104,14 @@ The bridge's job is to shuttle files between Supabase Storage and the OnlyOffice
 ```python
     onlyoffice_jwt_secret: str = ""
     onlyoffice_storage_dir: str = ""
-    onlyoffice_callback_token: str = ""
     onlyoffice_bridge_url: str = ""
     onlyoffice_docserver_url: str = ""
+    onlyoffice_docserver_internal_url: str = ""
 ```
+
+> **Removed:** `onlyoffice_callback_token` — the old design leaked a static shared secret to the browser via the editor config. Replaced with per-session signed JWTs (see Task 1.3).
+>
+> **Added:** `onlyoffice_docserver_internal_url` — the hostname the OnlyOffice container uses in its callback URLs (e.g., `http://documentserver:9980`), which may differ from `onlyoffice_docserver_url` (the browser-facing URL). Used for SSRF validation in the save callback.
 
 **Step 2: Load them in `from_env()`**
 
@@ -111,9 +120,9 @@ Add to the `return cls(...)` call:
 ```python
     onlyoffice_jwt_secret=os.environ.get("ONLYOFFICE_JWT_SECRET", "my-jwt-secret-change-me"),
     onlyoffice_storage_dir=os.environ.get("ONLYOFFICE_STORAGE_DIR", "/app/cache/onlyoffice"),
-    onlyoffice_callback_token=os.environ.get("ONLYOFFICE_CALLBACK_TOKEN", "oo-callback-secret-change-me"),
     onlyoffice_bridge_url=os.environ.get("ONLYOFFICE_BRIDGE_URL", "http://host.docker.internal:8000"),
     onlyoffice_docserver_url=os.environ.get("ONLYOFFICE_DOCSERVER_URL", "http://localhost:9980"),
+    onlyoffice_docserver_internal_url=os.environ.get("ONLYOFFICE_DOCSERVER_INTERNAL_URL", "http://localhost:9980"),
 ```
 
 **Step 3: Commit**
@@ -125,12 +134,61 @@ git commit -m "config: add onlyoffice settings (jwt, cache dir, bridge url, docs
 
 ---
 
-### Task 1.2: Create the OnlyOffice bridge router
+### Task 1.2: Add `upsert_to_storage` helper to infra/storage.py
+
+The existing `upload_to_storage()` does a POST (create). The save callback needs to **overwrite** existing files. Add an upsert variant.
+
+**Files:**
+- Modify: `services/platform-api/app/infra/storage.py`
+
+**Step 1: Append `upsert_to_storage` after `download_from_storage`**
+
+```python
+async def upsert_to_storage(
+    supabase_url: str,
+    supabase_key: str,
+    bucket: str,
+    path: str,
+    content: bytes,
+    content_type: str = "application/octet-stream",
+) -> str:
+    """Upload bytes to Supabase Storage, overwriting if the file exists. Returns the public URL."""
+    url = f"{supabase_url}/storage/v1/object/{bucket}/{path}"
+    async with httpx.AsyncClient() as client:
+        resp = await client.post(
+            url,
+            content=content,
+            headers={
+                "Authorization": f"Bearer {supabase_key}",
+                "Content-Type": content_type,
+                "x-upsert": "true",
+            },
+        )
+        resp.raise_for_status()
+    return f"{supabase_url}/storage/v1/object/public/{bucket}/{path}"
+```
+
+**Step 2: Commit**
+
+```bash
+git add services/platform-api/app/infra/storage.py
+git commit -m "feat: add upsert_to_storage helper with x-upsert header"
+```
+
+---
+
+### Task 1.3: Create the OnlyOffice bridge router
 
 **Files:**
 - Create: `services/platform-api/app/api/routes/onlyoffice.py`
 
 This bridge is a **Supabase Storage shuttle** — it pulls files from Supabase Storage into a local cache for the OnlyOffice container to access, and writes modified files back to Supabase Storage on save callback.
+
+> **Infra reuse:** This router uses existing infra modules instead of inline clients:
+> - `get_supabase_admin()` from `app.infra.supabase_client` — cached singleton, proper error handling
+> - `download_bytes()` from `app.infra.http_client` — for downloading modified files from the OnlyOffice container
+> - `download_from_storage()` from `app.infra.storage` — for pulling files from Supabase Storage on open
+> - `upsert_to_storage()` from `app.infra.storage` — for writing modified files back (with `x-upsert: true`)
 
 **Endpoints:**
 
@@ -152,26 +210,36 @@ container to access. On save callback, downloads the modified file from
 the container and writes it back to Supabase Storage.
 
 Auth model:
-- Browser-facing routes: Depends(require_auth) — Supabase JWT
-- Container-facing routes: ONLYOFFICE_CALLBACK_TOKEN query param
+- Browser-facing routes: Depends(require_auth) — Supabase JWT + session owner check
+- Container-facing routes: per-session signed JWT (short-lived, scoped to one session)
+  The browser never receives a reusable bridge secret. The /config endpoint
+  generates scoped JWTs that are embedded in the document/callback URLs.
+  The container presents these JWTs back to the bridge on doc-fetch and callback.
+
+Infra reuse:
+- get_supabase_admin() from app.infra.supabase_client (not inline create_client)
+- download_bytes() from app.infra.http_client (not inline httpx)
+- download_from_storage() / upsert_to_storage() from app.infra.storage
 """
 
 import hashlib
 import json
 import logging
+import time
 import uuid
 from pathlib import Path
 from urllib.parse import urlparse
 
-import httpx
 import jwt
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
-from supabase import create_client
 
 from app.auth.dependencies import require_auth, AuthPrincipal
 from app.core.config import get_settings
+from app.infra.http_client import download_bytes
+from app.infra.storage import download_from_storage, upsert_to_storage
+from app.infra.supabase_client import get_supabase_admin
 
 logger = logging.getLogger("platform-api.onlyoffice")
 
@@ -182,6 +250,8 @@ router = APIRouter(prefix="/onlyoffice", tags=["onlyoffice"])
 # ---------------------------------------------------------------------------
 
 DOCUMENTS_BUCKET = "documents"
+DOCX_CONTENT_TYPE = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+SESSION_TOKEN_TTL = 3600 * 8  # 8 hours — covers a long editing session
 
 
 def _cache_dir() -> Path:
@@ -214,34 +284,57 @@ def _content_hash(data: bytes) -> str:
 
 
 def _sign_config(payload: dict) -> str:
+    """Sign the OnlyOffice editor config payload (JWT for the editor iframe)."""
     secret = get_settings().onlyoffice_jwt_secret
     if not secret:
         raise HTTPException(500, "ONLYOFFICE_JWT_SECRET not configured")
     return jwt.encode(payload, secret, algorithm="HS256")
 
 
-def _verify_callback_token(token: str) -> None:
-    expected = get_settings().onlyoffice_callback_token
-    if not expected:
-        raise HTTPException(500, "ONLYOFFICE_CALLBACK_TOKEN not configured")
-    if token != expected:
-        raise HTTPException(401, "Invalid callback token")
+def _sign_session_token(session_id: str) -> str:
+    """Create a short-lived, per-session JWT for container-facing routes.
+
+    This replaces the old static ONLYOFFICE_CALLBACK_TOKEN design. The token
+    is scoped to a single session_id and expires after SESSION_TOKEN_TTL.
+    The browser receives this token embedded in the editor config URLs, but
+    it cannot be reused across sessions or after expiry.
+    """
+    secret = get_settings().onlyoffice_jwt_secret
+    if not secret:
+        raise HTTPException(500, "ONLYOFFICE_JWT_SECRET not configured")
+    payload = {
+        "sub": session_id,
+        "purpose": "oo-session",
+        "exp": int(time.time()) + SESSION_TOKEN_TTL,
+    }
+    return jwt.encode(payload, secret, algorithm="HS256")
 
 
-def _supabase_admin():
-    """Create a Supabase admin client for storage operations."""
-    settings = get_settings()
-    return create_client(settings.supabase_url, settings.supabase_service_role_key)
+def _verify_session_token(session_id: str, token: str) -> None:
+    """Verify a per-session JWT on container-facing routes.
+
+    Checks signature, expiry, and that the token is scoped to the
+    requested session_id.
+    """
+    secret = get_settings().onlyoffice_jwt_secret
+    if not secret:
+        raise HTTPException(500, "ONLYOFFICE_JWT_SECRET not configured")
+    try:
+        payload = jwt.decode(token, secret, algorithms=["HS256"])
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(401, "Session token expired")
+    except jwt.InvalidTokenError:
+        raise HTTPException(401, "Invalid session token")
+    if payload.get("sub") != session_id or payload.get("purpose") != "oo-session":
+        raise HTTPException(401, "Token does not match session")
 
 
 # ---------------------------------------------------------------------------
-# 1. Open — pull file from Supabase Storage into local cache
+# 1. Open — look up document, verify ownership, pull from Supabase Storage
 # ---------------------------------------------------------------------------
 
 class OpenRequest(BaseModel):
-    source_uid: str
-    source_locator: str
-    filename: str
+    source_uid: str  # Only accept the document identifier — NOT a storage path
 
 
 @router.post("/open")
@@ -249,38 +342,78 @@ async def open_document(
     req: OpenRequest,
     _auth: AuthPrincipal = Depends(require_auth),
 ):
-    """Pull a file from Supabase Storage into the local cache for editing.
+    """Look up a document by source_uid, verify ownership, then pull from
+    Supabase Storage into the local cache for editing.
+
+    The caller sends only source_uid. The server resolves source_locator
+    and filename from the documents_v2 row, ensuring the authenticated
+    user owns the document (matching the RLS policy: owner_id = auth.uid()).
+    This prevents any authenticated user from fetching arbitrary storage
+    paths with service-role credentials.
 
     Returns a session_id that identifies this editing session.
-    The session_id is used for all subsequent operations.
     """
     settings = get_settings()
     if not settings.onlyoffice_jwt_secret:
         raise HTTPException(503, "OnlyOffice is not configured")
 
-    # Download from Supabase Storage
-    storage_key = req.source_locator.lstrip("/")
-    sb = _supabase_admin()
+    # Step 1: Look up the document row and verify ownership
+    sb = get_supabase_admin()
+    result = (
+        sb.table("documents_v2")
+        .select("source_uid, source_locator, doc_title, owner_id")
+        .eq("source_uid", req.source_uid)
+        .limit(1)
+        .execute()
+    )
+    if not result.data:
+        raise HTTPException(404, "Document not found")
+
+    doc_row = result.data[0]
+
+    # Authorization: owner_id must match the authenticated user
+    # (mirrors the RLS policy on documents_v2)
+    if doc_row["owner_id"] != _auth.subject_id:
+        logger.warning(
+            f"User {_auth.subject_id} attempted to open document "
+            f"{req.source_uid} owned by {doc_row['owner_id']}"
+        )
+        raise HTTPException(403, "Access denied")
+
+    source_locator = doc_row.get("source_locator")
+    if not source_locator:
+        raise HTTPException(404, "Document has no storage locator")
+
+    filename = (doc_row.get("doc_title") or "document.docx").split("/")[-1]
+
+    # Step 2: Download from Supabase Storage using infra helper
+    storage_key = source_locator.lstrip("/")
     try:
-        content = sb.storage.from_(DOCUMENTS_BUCKET).download(storage_key)
+        content = await download_from_storage(
+            settings.supabase_url,
+            settings.supabase_service_role_key,
+            DOCUMENTS_BUCKET,
+            storage_key,
+        )
     except Exception as e:
         logger.error(f"Failed to download {storage_key} from Supabase Storage: {e}")
         raise HTTPException(502, f"Failed to fetch file from storage: {e}")
 
-    # Write to local cache
+    # Step 3: Write to local cache (store owner_id for session binding)
     session_id = uuid.uuid4().hex[:12]
     _session_doc_path(session_id).write_bytes(content)
     _write_session(session_id, {
         "session_id": session_id,
+        "owner_id": _auth.subject_id,
         "source_uid": req.source_uid,
-        "source_locator": req.source_locator,
-        "filename": req.filename,
+        "source_locator": source_locator,
+        "filename": filename,
         "content_hash": _content_hash(content),
         "size": len(content),
     })
-    logger.info(f"Opened {req.filename} (source_uid={req.source_uid}) as session {session_id}")
+    logger.info(f"Opened {filename} (source_uid={req.source_uid}) as session {session_id}")
 
-    return {"session_id": session_id, "filename": req.filename}
+    return {"session_id": session_id, "filename": filename}
 
 
 # ---------------------------------------------------------------------------
@@ -297,15 +430,27 @@ async def generate_config(
     req: ConfigRequest,
     _auth: AuthPrincipal = Depends(require_auth),
 ):
-    """Generate a JWT-signed OnlyOffice editor config for an open session."""
+    """Generate a JWT-signed OnlyOffice editor config for an open session.
+
+    Session ownership is enforced: the caller must be the user who opened
+    the session. This prevents a leaked or guessed session_id from granting
+    access to another user's editing session.
+    """
     session = _read_session(req.session_id)
+
+    # Enforce session ownership (Critical fix: authorization on every browser-facing route)
+    if session.get("owner_id") != _auth.subject_id:
+        raise HTTPException(403, "You do not own this editing session")
+
     path = _session_doc_path(req.session_id)
     if not path.is_file():
         raise HTTPException(404, f"Session file not found for {req.session_id}")
 
     settings = get_settings()
     bridge_url = settings.onlyoffice_bridge_url
-    cb_token = settings.onlyoffice_callback_token
+
+    # Per-session signed token for container-facing routes (replaces static callback secret)
+    session_token = _sign_session_token(req.session_id)
 
     doc_key = f"{req.session_id}_{session.get('content_hash', 'initial')}"
 
@@ -314,11 +459,11 @@ async def generate_config(
             "fileType": "docx",
             "key": doc_key,
             "title": session.get("filename", "document.docx"),
-            "url": f"{bridge_url}/onlyoffice/doc/{req.session_id}?token={cb_token}",
+            "url": f"{bridge_url}/onlyoffice/doc/{req.session_id}?token={session_token}",
         },
         "editorConfig": {
             "mode": req.mode,
-            "callbackUrl": f"{bridge_url}/onlyoffice/callback/{req.session_id}?token={cb_token}",
+            "callbackUrl": f"{bridge_url}/onlyoffice/callback/{req.session_id}?token={session_token}",
             "lang": "en",
             "customization": {
                 "autosave": True,
@@ -350,14 +495,14 @@ async def generate_config(
 @router.get("/doc/{session_id}")
 async def serve_document(session_id: str, token: str = Query(...)):
     """Serve a cached file. Called by the OnlyOffice Document Server."""
-    _verify_callback_token(token)
+    _verify_session_token(session_id, token)
     path = _session_doc_path(session_id)
     if not path.is_file():
         raise HTTPException(404, f"Session {session_id} not found")
     session = _read_session(session_id)
     return FileResponse(
         path,
-        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        media_type=DOCX_CONTENT_TYPE,
         filename=session.get("filename", f"{session_id}.docx"),
     )
 
@@ -371,11 +516,13 @@ async def save_callback(session_id: str, request: Request, token: str = Query(..
     """Handle save callbacks from the OnlyOffice Document Server.
 
     On status 2 or 6 (ready for saving / force-save):
-    1. Downloads the modified file from the Document Server
-    2. Updates the local cache
-    3. Writes the modified file back to Supabase Storage at the original locator
+    1. Downloads the modified file from the Document Server (via infra/http_client)
+    2. Optimistic concurrency check: verifies the storage file hasn't changed
+       since the session was opened (using content_hash)
+    3. Updates the local cache
+    4. Writes the modified file back to Supabase Storage (via infra/storage upsert)
     """
-    _verify_callback_token(token)
+    _verify_session_token(session_id, token)
     settings = get_settings()
 
     body = await request.json()
@@ -388,8 +535,11 @@ async def save_callback(session_id: str, request: Request, token: str = Query(..
             logger.error(f"No download URL in callback for {session_id}")
             return {"error": 1}
 
-        # SSRF protection: constrain download URL to the Document Server host
-        docserver_host = urlparse(settings.onlyoffice_docserver_url).hostname
+        # SSRF protection: constrain download URL to the Document Server host.
+        # Uses onlyoffice_docserver_internal_url because the container may use
+        # a different hostname (e.g., Docker service name) than the browser-facing URL.
+        internal_url = settings.onlyoffice_docserver_internal_url or settings.onlyoffice_docserver_url
+        docserver_host = urlparse(internal_url).hostname
         parsed_download = urlparse(download_url)
 
         if parsed_download.scheme not in {"http", "https"}:
@@ -397,32 +547,56 @@ async def save_callback(session_id: str, request: Request, token: str = Query(..
             return {"error": 1}
 
         if parsed_download.hostname != docserver_host:
-            logger.error(f"Blocked download from untrusted host: {parsed_download.hostname}")
+            logger.error(f"Blocked download from untrusted host: {parsed_download.hostname} (expected {docserver_host})")
             return {"error": 1}
 
         try:
-            # Download modified file from OnlyOffice
-            async with httpx.AsyncClient(timeout=30) as client:
-                resp = await client.get(download_url)
-                resp.raise_for_status()
+            session = _read_session(session_id)
 
-            new_content = resp.content
+            # Optimistic concurrency check: verify the source file in Supabase
+            # Storage hasn't been modified since this session was opened.
+            # This prevents silent last-write-wins when two editors or an
+            # editor + upload modify the same file concurrently.
+            storage_key = session["source_locator"].lstrip("/")
+            try:
+                current_content = await download_from_storage(
+                    settings.supabase_url,
+                    settings.supabase_service_role_key,
+                    DOCUMENTS_BUCKET,
+                    storage_key,
+                )
+                current_hash = _content_hash(current_content)
+                expected_hash = session.get("content_hash")
+                if expected_hash and current_hash != expected_hash:
+                    logger.warning(
+                        f"Conflict for session {session_id}: storage hash {current_hash} "
+                        f"!= session hash {expected_hash}. File was modified externally."
+                    )
+                    # Return error 1 to signal save failure to OnlyOffice.
+                    # The user will see a save error in the editor UI.
+                    return {"error": 1}
+            except Exception as e:
+                # If we can't read the current file (deleted?), log but proceed
+                logger.warning(f"Could not verify concurrency for {session_id}: {e}")
+
+            # Download modified file from OnlyOffice using infra helper
+            new_content = await download_bytes(download_url)
 
             # Update local cache
             _session_doc_path(session_id).write_bytes(new_content)
 
-            session = _read_session(session_id)
             session["content_hash"] = _content_hash(new_content)
             session["size"] = len(new_content)
             _write_session(session_id, session)
 
-            # Write back to Supabase Storage at original locator
-            storage_key = session["source_locator"].lstrip("/")
-            sb = _supabase_admin()
-            sb.storage.from_(DOCUMENTS_BUCKET).update(
+            # Write back to Supabase Storage at original locator (upsert overwrites)
+            await upsert_to_storage(
+                settings.supabase_url,
+                settings.supabase_service_role_key,
+                DOCUMENTS_BUCKET,
                 storage_key,
                 new_content,
-                {"content-type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document"},
+                DOCX_CONTENT_TYPE,
             )
             logger.info(f"Saved session {session_id} back to Supabase Storage: {storage_key} ({len(new_content)} bytes)")
 
@@ -442,14 +616,14 @@ git commit -m "feat: onlyoffice bridge — supabase storage shuttle with JWT con
 
 ---
 
-### Task 1.3: Mount the bridge router in main.py
+### Task 1.4: Mount the bridge router in main.py
 
 **Files:**
 - Modify: `services/platform-api/app/main.py`
 
 **Step 1: Add the router**
 
-Insert after the functions router mount (line 73), before the plugin catch-all:
+Insert after the functions router mount (around line 73), before the plugin catch-all:
 
 ```python
     # 6. OnlyOffice bridge
@@ -562,9 +736,139 @@ git commit -m "types: ambient declarations for OnlyOffice DocsAPI"
 
 ---
 
-### Task 2.3: Create the `useOnlyOfficeEditor` hook
+### Task 2.3: Extract shared `platformApiFetch` helper
 
-This hook encapsulates the entire OnlyOffice lifecycle: script loading, session opening, config fetching, editor mounting/destroying. It's used by the preview panel to swap between read-only preview and live editing.
+The codebase has duplicate token-acquisition and platform-api fetch patterns in `services-panel.api.ts` and the old pilot. Extract a shared helper so the OnlyOffice hook (and `services-panel.api.ts`) can consume it instead of rolling their own.
+
+**Files:**
+- Create: `web/src/lib/platformApi.ts`
+
+**Step 1: Write the shared helper**
+
+```ts
+// web/src/lib/platformApi.ts
+/**
+ * Shared authenticated fetch for platform-api (VITE_PIPELINE_WORKER_URL).
+ *
+ * Reuses requireAccessToken() from lib/edge.ts — the same token helper
+ * that edgeFetch uses for Supabase Edge Functions. This module targets
+ * the platform-api base URL instead.
+ */
+import { supabase } from '@/lib/supabase';
+
+const PLATFORM_API_URL = (
+  import.meta.env.VITE_PIPELINE_WORKER_URL ?? 'http://localhost:8000'
+).replace(/\/+$/, '');
+
+async function requireAccessToken(): Promise<string> {
+  const sessionResult = await supabase.auth.getSession();
+  if (sessionResult.error) throw new Error(sessionResult.error.message);
+
+  let token = sessionResult.data.session?.access_token ?? null;
+  if (!token) {
+    const refreshed = await supabase.auth.refreshSession();
+    if (refreshed.error) throw new Error(refreshed.error.message);
+    token = refreshed.data.session?.access_token ?? null;
+  }
+
+  if (!token) throw new Error('Not authenticated');
+  return token;
+}
+
+/**
+ * Authenticated fetch against platform-api. Automatically attaches
+ * the Supabase JWT as a Bearer token.
+ */
+export async function platformApiFetch(
+  path: string,
+  init: RequestInit = {},
+): Promise<Response> {
+  const token = await requireAccessToken();
+  const headers = new Headers(init.headers);
+  headers.set('Authorization', `Bearer ${token}`);
+  return fetch(`${PLATFORM_API_URL}${path}`, { ...init, headers });
+}
+```
+
+> **Follow-up (out of scope):** `services-panel.api.ts` should be updated to import `platformApiFetch` from this module and drop its local `pipelineFetch` copy. That's a separate cleanup PR.
+
+**Step 2: Commit**
+
+```bash
+git add web/src/lib/platformApi.ts
+git commit -m "feat: shared platformApiFetch helper for platform-api calls"
+```
+
+---
+
+### Task 2.4: Extract shared `useExternalScript` hook
+
+The codebase has no script-loading utility. Extract a reusable hook so the OnlyOffice integration (and future external scripts) don't use module-level singletons.
+
+**Files:**
+- Create: `web/src/hooks/useExternalScript.ts`
+
+**Step 1: Write the hook**
+
+```ts
+// web/src/hooks/useExternalScript.ts
+import { useEffect, useState } from 'react';
+
+type ScriptStatus = 'idle' | 'loading' | 'ready' | 'error';
+
+const cache = new Map<string, Promise<void>>();
+
+/**
+ * Load an external script tag by URL. Returns its loading status.
+ * Deduplicates across multiple consumers of the same URL.
+ */
+export function useExternalScript(src: string | null): ScriptStatus {
+  const [status, setStatus] = useState<ScriptStatus>(() => {
+    if (!src) return 'idle';
+    return cache.has(src) ? 'ready' : 'idle';
+  });
+
+  useEffect(() => {
+    if (!src) {
+      setStatus('idle');
+      return;
+    }
+
+    if (cache.has(src)) {
+      cache.get(src)!.then(() => setStatus('ready')).catch(() => setStatus('error'));
+      return;
+    }
+
+    setStatus('loading');
+
+    const promise = new Promise<void>((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = src;
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error(`Failed to load script: ${src}`));
+      document.head.appendChild(script);
+    });
+
+    cache.set(src, promise);
+    promise.then(() => setStatus('ready')).catch(() => setStatus('error'));
+  }, [src]);
+
+  return status;
+}
+```
+
+**Step 2: Commit**
+
+```bash
+git add web/src/hooks/useExternalScript.ts
+git commit -m "feat: useExternalScript hook — reusable external script loader"
+```
+
+---
+
+### Task 2.5: Create the `useOnlyOfficeEditor` hook
+
+This hook encapsulates the OnlyOffice lifecycle: session opening, config fetching, editor mounting/destroying. It consumes the shared `platformApiFetch` and `useExternalScript` utilities.
 
 **Files:**
 - Create: `web/src/hooks/useOnlyOfficeEditor.ts`
@@ -574,7 +878,8 @@ This hook encapsulates the entire OnlyOffice lifecycle: script loading, session 
 ```ts
 // web/src/hooks/useOnlyOfficeEditor.ts
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import { platformApiFetch } from '@/lib/platformApi';
+import { useExternalScript } from '@/hooks/useExternalScript';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -592,67 +897,17 @@ type SessionInfo = {
 };
 
 // ---------------------------------------------------------------------------
-// Auth helper — reuse the shared pattern from lib/edge.ts
-// ---------------------------------------------------------------------------
-
-const PLATFORM_API_URL = (
-  import.meta.env.VITE_PIPELINE_WORKER_URL ?? 'http://localhost:8000'
-).replace(/\/+$/, '');
-
-async function getAccessToken(): Promise<string> {
-  const sessionResult = await supabase.auth.getSession();
-  if (sessionResult.error) throw new Error(sessionResult.error.message);
-
-  let token = sessionResult.data.session?.access_token ?? null;
-  if (!token) {
-    const refreshed = await supabase.auth.refreshSession();
-    if (refreshed.error) throw new Error(refreshed.error.message);
-    token = refreshed.data.session?.access_token ?? null;
-  }
-
-  if (!token) throw new Error('Not authenticated');
-  return token;
-}
-
-async function bridgeFetch(path: string, init: RequestInit = {}): Promise<Response> {
-  const token = await getAccessToken();
-  const headers = new Headers(init.headers);
-  headers.set('Authorization', `Bearer ${token}`);
-  return fetch(`${PLATFORM_API_URL}${path}`, { ...init, headers });
-}
-
-// ---------------------------------------------------------------------------
-// Script loader
-// ---------------------------------------------------------------------------
-
-const OO_API_SCRIPT = '/oo-api/web-apps/apps/api/documents/api.js';
-let scriptPromise: Promise<void> | null = null;
-
-function loadOnlyOfficeApi(): Promise<void> {
-  if (scriptPromise) return scriptPromise;
-  scriptPromise = new Promise((resolve, reject) => {
-    if (typeof DocsAPI !== 'undefined') {
-      resolve();
-      return;
-    }
-    const script = document.createElement('script');
-    script.src = OO_API_SCRIPT;
-    script.onload = () => resolve();
-    script.onerror = () => reject(new Error('Failed to load OnlyOffice API script'));
-    document.head.appendChild(script);
-  });
-  return scriptPromise;
-}
-
-// ---------------------------------------------------------------------------
 // Hook
 // ---------------------------------------------------------------------------
 
+const OO_API_SCRIPT = '/oo-api/web-apps/apps/api/documents/api.js';
+
 export function useOnlyOfficeEditor(
   containerId: string,
-  doc: { source_uid: string; source_locator: string; filename: string } | null,
+  doc: { source_uid: string } | null,
   active: boolean,
 ) {
+  const scriptStatus = useExternalScript(active ? OO_API_SCRIPT : null);
   const [state, setState] = useState<OnlyOfficeEditorState>({ status: 'idle' });
   const editorRef = useRef<DocsAPI.DocEditor | null>(null);
   const sessionRef = useRef<SessionInfo | null>(null);
@@ -666,9 +921,14 @@ export function useOnlyOfficeEditor(
   }, []);
 
   useEffect(() => {
-    if (!active || !doc) {
-      destroy();
-      setState({ status: 'idle' });
+    if (!active || !doc || scriptStatus !== 'ready') {
+      if (!active || !doc) {
+        destroy();
+        setState({ status: 'idle' });
+      }
+      if (scriptStatus === 'error') {
+        setState({ status: 'error', message: 'Failed to load OnlyOffice API script' });
+      }
       return;
     }
 
@@ -684,28 +944,20 @@ export function useOnlyOfficeEditor(
       setState({ status: 'opening' });
 
       try {
-        // 1. Load OnlyOffice JS API
-        await loadOnlyOfficeApi();
-        if (cancelled) return;
-
-        // 2. Open session — pull file from Supabase Storage into bridge cache
-        const openRes = await bridgeFetch('/onlyoffice/open', {
+        // 1. Open session — bridge looks up doc, verifies ownership, pulls from storage
+        const openRes = await platformApiFetch('/onlyoffice/open', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            source_uid: doc.source_uid,
-            source_locator: doc.source_locator,
-            filename: doc.filename,
-          }),
+          body: JSON.stringify({ source_uid: doc.source_uid }),
         });
         if (!openRes.ok) throw new Error(await openRes.text());
-        const { session_id } = await openRes.json();
+        const { session_id, filename } = await openRes.json();
         if (cancelled) return;
 
-        sessionRef.current = { sessionId: session_id, filename: doc.filename };
+        sessionRef.current = { sessionId: session_id, filename };
 
-        // 3. Get signed editor config
-        const configRes = await bridgeFetch('/onlyoffice/config', {
+        // 2. Get signed editor config
+        const configRes = await platformApiFetch('/onlyoffice/config', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ session_id }),
@@ -714,7 +966,7 @@ export function useOnlyOfficeEditor(
         const config = await configRes.json();
         if (cancelled) return;
 
-        // 4. Add event handlers
+        // 3. Add event handlers
         config.events = {
           onAppReady: () => {
             console.log('[OnlyOffice] Editor ready');
@@ -728,7 +980,7 @@ export function useOnlyOfficeEditor(
           },
         };
 
-        // 5. Mount editor
+        // 4. Mount editor
         await new Promise((r) => setTimeout(r, 0)); // ensure DOM is ready
         if (cancelled) return;
 
@@ -750,7 +1002,7 @@ export function useOnlyOfficeEditor(
       cancelled = true;
       destroy();
     };
-  }, [active, doc?.source_uid, containerId, destroy]);
+  }, [active, doc?.source_uid, containerId, destroy, scriptStatus]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -772,7 +1024,7 @@ git commit -m "feat: useOnlyOfficeEditor hook — lifecycle management for workb
 
 ---
 
-### Task 2.4: Create the `OnlyOfficeEditorPanel` component
+### Task 2.6: Create the `OnlyOfficeEditorPanel` component
 
 This is a thin wrapper around the hook that provides the DOM container and loading/error states.
 
@@ -794,15 +1046,9 @@ type Props = {
 };
 
 export function OnlyOfficeEditorPanel({ doc }: Props) {
-  const filename = doc.doc_title?.split('/').pop() ?? doc.doc_title ?? 'document.docx';
-
   const { state } = useOnlyOfficeEditor(
     EDITOR_CONTAINER_ID,
-    {
-      source_uid: doc.source_uid,
-      source_locator: doc.source_locator ?? '',
-      filename,
-    },
+    { source_uid: doc.source_uid },
     true,
   );
 
@@ -840,7 +1086,7 @@ git commit -m "feat: OnlyOfficeEditorPanel — wrapper component for workbench e
 
 ---
 
-### Task 2.5: Add "Edit in OnlyOffice" toggle to PreviewTabPanel
+### Task 2.7: Add "Edit in OnlyOffice" toggle to PreviewTabPanel
 
 This is the key integration point. When viewing a `.docx` file, the unified preview header gets an "Edit" / "Preview" toggle button. Clicking "Edit" lazy-loads the `OnlyOfficeEditorPanel` and hides the `DocxPreview`. Clicking "Preview" destroys the editor and shows the read-only preview again.
 
@@ -852,7 +1098,7 @@ This is the key integration point. When viewing a `.docx` file, the unified prev
 After the existing imports, add:
 
 ```tsx
-import { lazy, Suspense, useState as useStateReact } from 'react';
+import { lazy, Suspense } from 'react';
 import { IconEdit, IconEye } from '@tabler/icons-react';
 ```
 
@@ -866,12 +1112,15 @@ const OnlyOfficeEditorPanel = lazy(() =>
 );
 ```
 
-**Step 2: Add edit mode state**
+**Step 2: Add edit mode state and preview revision counter**
 
 Inside the `PreviewTabPanel` component, after the existing state declarations (around line 34), add:
 
 ```tsx
   const [docxEditMode, setDocxEditMode] = useState(false);
+  // Bumped when switching from edit → preview to force DocxPreview to
+  // re-resolve its signed URL and refetch the (potentially modified) file.
+  const [previewRevision, setPreviewRevision] = useState(0);
 ```
 
 **Step 3: Reset edit mode when document changes**
@@ -880,6 +1129,7 @@ Inside the existing `useEffect` that resets state when `doc` changes (the one st
 
 ```tsx
       setDocxEditMode(false);
+      setPreviewRevision(0);
 ```
 
 **Step 4: Modify the docx rendering block**
@@ -907,7 +1157,16 @@ With:
     const editToggle = (
       <button
         type="button"
-        onClick={() => setDocxEditMode((prev) => !prev)}
+        onClick={() => {
+          setDocxEditMode((prev) => {
+            if (prev) {
+              // Switching from edit → preview: bump revision to force
+              // DocxPreview to refetch the (potentially modified) file.
+              setPreviewRevision((r) => r + 1);
+            }
+            return !prev;
+          });
+        }}
         className="inline-flex h-8 items-center gap-1.5 rounded-md border border-border px-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
       >
         {docxEditMode ? <IconEye size={14} /> : <IconEdit size={14} />}
@@ -935,9 +1194,12 @@ With:
       );
     }
 
+    // previewRevision in the key forces DocxPreview to remount and
+    // refetch the signed URL after an edit session, so the user sees
+    // the updated content without a full page refresh.
     return renderPreviewWithUnifiedHeader(
       <DocxPreview
-        key={`${doc.source_uid}:${previewUrl}`}
+        key={`${doc.source_uid}:${previewUrl}:${previewRevision}`}
         title={doc.doc_title}
         url={previewUrl}
         hideToolbar
@@ -980,7 +1242,14 @@ git commit -m "feat: add Edit/Preview toggle for docx files in PreviewTabPanel �
 
 ```python
 # services/platform-api/tests/test_onlyoffice.py
-"""Smoke tests for the OnlyOffice bridge routes."""
+"""Smoke tests for the OnlyOffice bridge routes.
+
+Mock targets match the infra modules the bridge imports:
+- app.api.routes.onlyoffice.download_from_storage  (from app.infra.storage)
+- app.api.routes.onlyoffice.upsert_to_storage      (from app.infra.storage)
+- app.api.routes.onlyoffice.download_bytes          (from app.infra.http_client)
+- app.api.routes.onlyoffice.get_supabase_admin      (from app.infra.supabase_client)
+"""
 
 import json
 import os
@@ -991,12 +1260,23 @@ from fastapi.testclient import TestClient
 
 # Override settings before importing app
 os.environ.setdefault("ONLYOFFICE_JWT_SECRET", "test-secret")
-os.environ.setdefault("ONLYOFFICE_CALLBACK_TOKEN", "test-callback-token")
 os.environ.setdefault("ONLYOFFICE_DOCSERVER_URL", "http://docserver:9980")
+os.environ.setdefault("ONLYOFFICE_DOCSERVER_INTERNAL_URL", "http://docserver:9980")
 os.environ.setdefault("SUPABASE_URL", "http://localhost:54321")
 os.environ.setdefault("SUPABASE_SERVICE_ROLE_KEY", "test-key")
 
 from app.main import create_app
+
+FAKE_DOCX = b"PK\x03\x04" + b"\x00" * 100
+TEST_USER_ID = "test-user"
+
+# Fake document row matching what documents_v2 would return
+FAKE_DOC_ROW = {
+    "source_uid": "abc123",
+    "source_locator": "/uploads/abc123/test.docx",
+    "doc_title": "test.docx",
+    "owner_id": TEST_USER_ID,
+}
 
 
 @pytest.fixture
@@ -1010,29 +1290,68 @@ def tmp_cache(tmp_path):
 
 
 @pytest.fixture
-def mock_supabase_storage():
-    """Mock Supabase storage operations."""
-    mock_bucket = MagicMock()
-    mock_bucket.download.return_value = b"PK\x03\x04" + b"\x00" * 100
-    mock_bucket.update.return_value = None
+def mock_supabase_admin():
+    """Mock get_supabase_admin for document row lookup."""
+    mock_execute = MagicMock()
+    mock_execute.execute.return_value = MagicMock(data=[FAKE_DOC_ROW])
+
+    mock_query = MagicMock()
+    mock_query.select.return_value = mock_query
+    mock_query.eq.return_value = mock_query
+    mock_query.limit.return_value = mock_execute
 
     mock_client = MagicMock()
-    mock_client.storage.from_.return_value = mock_bucket
+    mock_client.table.return_value = mock_query
 
-    with patch("app.api.routes.onlyoffice._supabase_admin", return_value=mock_client):
-        yield mock_bucket
+    with patch(
+        "app.api.routes.onlyoffice.get_supabase_admin",
+        return_value=mock_client,
+    ):
+        yield mock_client
 
 
 @pytest.fixture
-def client(tmp_cache, mock_supabase_storage):
-    """Test client with auth overridden."""
+def mock_storage_download():
+    """Mock download_from_storage (infra/storage.py) as used by the bridge."""
+    with patch(
+        "app.api.routes.onlyoffice.download_from_storage",
+        new_callable=AsyncMock,
+        return_value=FAKE_DOCX,
+    ) as m:
+        yield m
+
+
+@pytest.fixture
+def mock_storage_upsert():
+    """Mock upsert_to_storage (infra/storage.py) as used by the bridge."""
+    with patch(
+        "app.api.routes.onlyoffice.upsert_to_storage",
+        new_callable=AsyncMock,
+        return_value="https://example.com/storage/v1/object/public/documents/test.docx",
+    ) as m:
+        yield m
+
+
+@pytest.fixture
+def mock_download_bytes():
+    """Mock download_bytes (infra/http_client.py) as used by the bridge."""
+    with patch(
+        "app.api.routes.onlyoffice.download_bytes",
+        new_callable=AsyncMock,
+    ) as m:
+        yield m
+
+
+@pytest.fixture
+def client(tmp_cache, mock_supabase_admin, mock_storage_download, mock_storage_upsert, mock_download_bytes):
+    """Test client with auth overridden and infra mocked."""
     from app.auth.dependencies import require_auth, AuthPrincipal
 
     app = create_app()
 
     principal = AuthPrincipal(
         subject_type="user",
-        subject_id="test-user",
+        subject_id=TEST_USER_ID,
         roles=frozenset({"authenticated"}),
         auth_source="test",
         email="test@example.com",
@@ -1047,26 +1366,50 @@ class TestOpenAndConfig:
     def test_open_returns_session_id(self, client):
         resp = client.post(
             "/onlyoffice/open",
-            json={
-                "source_uid": "abc123",
-                "source_locator": "/uploads/abc123/test.docx",
-                "filename": "test.docx",
-            },
+            json={"source_uid": "abc123"},
         )
         assert resp.status_code == 200
         data = resp.json()
         assert "session_id" in data
         assert data["filename"] == "test.docx"
 
+    def test_open_rejects_wrong_owner(self, client, mock_supabase_admin):
+        """A user cannot open a document owned by someone else."""
+        other_doc = {**FAKE_DOC_ROW, "owner_id": "other-user"}
+        mock_execute = MagicMock()
+        mock_execute.execute.return_value = MagicMock(data=[other_doc])
+        mock_query = MagicMock()
+        mock_query.select.return_value = mock_query
+        mock_query.eq.return_value = mock_query
+        mock_query.limit.return_value = mock_execute
+        mock_supabase_admin.table.return_value = mock_query
+
+        resp = client.post(
+            "/onlyoffice/open",
+            json={"source_uid": "abc123"},
+        )
+        assert resp.status_code == 403
+
+    def test_open_404_for_missing_document(self, client, mock_supabase_admin):
+        mock_execute = MagicMock()
+        mock_execute.execute.return_value = MagicMock(data=[])
+        mock_query = MagicMock()
+        mock_query.select.return_value = mock_query
+        mock_query.eq.return_value = mock_query
+        mock_query.limit.return_value = mock_execute
+        mock_supabase_admin.table.return_value = mock_query
+
+        resp = client.post(
+            "/onlyoffice/open",
+            json={"source_uid": "nonexistent"},
+        )
+        assert resp.status_code == 404
+
     def test_config_returns_signed_jwt(self, client):
         # Open first
         open_resp = client.post(
             "/onlyoffice/open",
-            json={
-                "source_uid": "abc123",
-                "source_locator": "/uploads/abc123/test.docx",
-                "filename": "test.docx",
-            },
+            json={"source_uid": "abc123"},
         )
         session_id = open_resp.json()["session_id"]
 
@@ -1088,80 +1431,122 @@ class TestOpenAndConfig:
         )
         assert resp.status_code == 404
 
+    def test_config_rejects_different_user(self, client):
+        """A user cannot get config for a session opened by another user."""
+        from app.auth.dependencies import require_auth, AuthPrincipal
 
-class TestContainerRoutes:
-    def test_doc_serve_requires_token(self, client):
+        # Open as test-user
         open_resp = client.post(
             "/onlyoffice/open",
-            json={
-                "source_uid": "abc123",
-                "source_locator": "/uploads/abc123/test.docx",
-                "filename": "test.docx",
-            },
+            json={"source_uid": "abc123"},
         )
         session_id = open_resp.json()["session_id"]
+
+        # Switch to a different user
+        other_principal = AuthPrincipal(
+            subject_type="user",
+            subject_id="other-user",
+            roles=frozenset({"authenticated"}),
+            auth_source="test",
+            email="other@example.com",
+        )
+        client.app.dependency_overrides[require_auth] = lambda: other_principal
+
+        resp = client.post(
+            "/onlyoffice/config",
+            json={"session_id": session_id},
+        )
+        assert resp.status_code == 403
+
+
+class TestContainerRoutes:
+    def _get_session_token(self, client, session_id: str) -> str:
+        """Helper: get a per-session token via /config."""
+        resp = client.post(
+            "/onlyoffice/config",
+            json={"session_id": session_id},
+        )
+        assert resp.status_code == 200
+        # Extract session token from the document URL query param
+        doc_url = resp.json()["document"]["url"]
+        return doc_url.split("token=")[1]
+
+    def test_doc_serve_requires_valid_session_token(self, client):
+        open_resp = client.post(
+            "/onlyoffice/open",
+            json={"source_uid": "abc123"},
+        )
+        session_id = open_resp.json()["session_id"]
+        session_token = self._get_session_token(client, session_id)
 
         # Wrong token
         resp = client.get(f"/onlyoffice/doc/{session_id}?token=wrong")
         assert resp.status_code == 401
 
-        # Correct token
-        resp = client.get(f"/onlyoffice/doc/{session_id}?token=test-callback-token")
+        # Correct per-session token
+        resp = client.get(f"/onlyoffice/doc/{session_id}?token={session_token}")
         assert resp.status_code == 200
 
-    def test_callback_writes_back_to_supabase(self, client, tmp_cache, mock_supabase_storage):
+    def test_session_token_scoped_to_session(self, client, mock_supabase_admin):
+        """A session token for session A cannot be used on session B."""
+        open_a = client.post("/onlyoffice/open", json={"source_uid": "abc123"})
+        session_a = open_a.json()["session_id"]
+        token_a = self._get_session_token(client, session_a)
+
+        open_b = client.post("/onlyoffice/open", json={"source_uid": "abc123"})
+        session_b = open_b.json()["session_id"]
+
+        # Token A should not work for session B
+        resp = client.get(f"/onlyoffice/doc/{session_b}?token={token_a}")
+        assert resp.status_code == 401
+
+    def test_callback_writes_back_to_supabase(self, client, mock_download_bytes, mock_storage_download, mock_storage_upsert):
         open_resp = client.post(
             "/onlyoffice/open",
-            json={
-                "source_uid": "abc123",
-                "source_locator": "/uploads/abc123/test.docx",
-                "filename": "test.docx",
-            },
+            json={"source_uid": "abc123"},
         )
         session_id = open_resp.json()["session_id"]
+        session_token = self._get_session_token(client, session_id)
 
         new_content = b"PK\x03\x04" + b"\xff" * 200
+        mock_download_bytes.return_value = new_content
+        # Concurrency check: storage still has the original content
+        mock_storage_download.return_value = FAKE_DOCX
 
-        mock_response = AsyncMock()
-        mock_response.content = new_content
-        mock_response.raise_for_status = lambda: None
-
-        mock_client_instance = AsyncMock()
-        mock_client_instance.get = AsyncMock(return_value=mock_response)
-        mock_client_instance.__aenter__ = AsyncMock(return_value=mock_client_instance)
-        mock_client_instance.__aexit__ = AsyncMock(return_value=False)
-
-        with patch("app.api.routes.onlyoffice.httpx.AsyncClient", return_value=mock_client_instance):
-            resp = client.post(
-                f"/onlyoffice/callback/{session_id}?token=test-callback-token",
-                json={
-                    "status": 2,
-                    "url": "http://docserver:9980/cache/files/output.docx",
-                },
-            )
+        resp = client.post(
+            f"/onlyoffice/callback/{session_id}?token={session_token}",
+            json={
+                "status": 2,
+                "url": "http://docserver:9980/cache/files/output.docx",
+            },
+        )
 
         assert resp.status_code == 200
         assert resp.json() == {"error": 0}
 
-        # Verify Supabase Storage update was called
-        mock_supabase_storage.update.assert_called_once()
-        call_args = mock_supabase_storage.update.call_args
-        assert call_args[0][0] == "uploads/abc123/test.docx"
-        assert call_args[0][1] == new_content
+        # Verify download_bytes was called with the OnlyOffice download URL
+        mock_download_bytes.assert_called_once_with(
+            "http://docserver:9980/cache/files/output.docx"
+        )
+
+        # Verify upsert_to_storage was called with correct args
+        mock_storage_upsert.assert_called_once()
+        call_args = mock_storage_upsert.call_args
+        # Positional: (supabase_url, supabase_key, bucket, path, content, content_type)
+        assert call_args[0][2] == "documents"
+        assert call_args[0][3] == "uploads/abc123/test.docx"
+        assert call_args[0][4] == new_content
 
     def test_callback_rejects_wrong_host(self, client):
         open_resp = client.post(
             "/onlyoffice/open",
-            json={
-                "source_uid": "abc123",
-                "source_locator": "/uploads/abc123/test.docx",
-                "filename": "test.docx",
-            },
+            json={"source_uid": "abc123"},
         )
         session_id = open_resp.json()["session_id"]
+        session_token = self._get_session_token(client, session_id)
 
         resp = client.post(
-            f"/onlyoffice/callback/{session_id}?token=test-callback-token",
+            f"/onlyoffice/callback/{session_id}?token={session_token}",
             json={
                 "status": 2,
                 "url": "http://evil.example.com/malicious.docx",
@@ -1169,6 +1554,28 @@ class TestContainerRoutes:
         )
         assert resp.status_code == 200
         assert resp.json() == {"error": 1}
+
+    def test_callback_rejects_on_concurrency_conflict(self, client, mock_storage_download):
+        """If the file in storage changed since session open, save is rejected."""
+        open_resp = client.post(
+            "/onlyoffice/open",
+            json={"source_uid": "abc123"},
+        )
+        session_id = open_resp.json()["session_id"]
+        session_token = self._get_session_token(client, session_id)
+
+        # Storage now returns different content (someone else modified it)
+        mock_storage_download.return_value = b"PK\x03\x04" + b"\xAA" * 100
+
+        resp = client.post(
+            f"/onlyoffice/callback/{session_id}?token={session_token}",
+            json={
+                "status": 2,
+                "url": "http://docserver:9980/cache/files/output.docx",
+            },
+        )
+        assert resp.status_code == 200
+        assert resp.json() == {"error": 1}  # Conflict — save rejected
 ```
 
 **Step 2: Run tests**
@@ -1200,7 +1607,7 @@ git commit -m "test: smoke tests for onlyoffice bridge (open, config, serve, cal
 2. Click the `.docx` in the assets panel
 3. Verify: `DocxPreview` renders with an "Edit" button in the header
 4. Click "Edit":
-   - Browser calls `POST /onlyoffice/open` with the `source_uid` and `source_locator`
+   - Browser calls `POST /onlyoffice/open` with the `source_uid`
    - Bridge pulls the file from Supabase Storage into local cache
    - Browser calls `POST /onlyoffice/config` to get signed editor config
    - OnlyOffice editor iframe mounts, replacing the preview
@@ -1230,9 +1637,9 @@ git commit -m "test: smoke tests for onlyoffice bridge (open, config, serve, cal
 
 ```
 Phase 0 (docker networking + pip deps)
-  └─ Phase 1 (bridge: open from Supabase, config, serve, callback → write back to Supabase)
-       └─ Phase 2 (vite proxy + types + hook + panel component + PreviewTabPanel toggle)
-            └─ Phase 3 (smoke tests + manual e2e)
+  └─ Phase 1 (upsert_to_storage helper + bridge with server-side authz + mount router)
+       └─ Phase 2 (vite proxy + types + shared platformApiFetch + useExternalScript + hook + panel + toggle)
+            └─ Phase 3 (smoke tests incl. ownership rejection + manual e2e)
 ```
 
 All phases are sequential.

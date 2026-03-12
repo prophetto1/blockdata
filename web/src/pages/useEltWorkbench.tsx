@@ -70,8 +70,9 @@ export const ELT_PULL_TABS: WorkbenchTab[] = [
 ];
 
 export const ELT_DEFAULT_PANES: Pane[] = normalizePaneWidths([
-  { id: 'pane-1', tabs: ['assets'], activeTab: 'assets', width: 28 },
-  { id: 'pane-2', tabs: ['preview'], activeTab: 'preview', width: 72 },
+  { id: 'pane-1', tabs: ['assets'], activeTab: 'assets', width: 20, minWidth: 20, maxTabs: 3 },
+  { id: 'pane-2', tabs: ['preview'], activeTab: 'preview', width: 50 },
+  { id: 'pane-3', tabs: ['parse'], activeTab: 'parse', width: 30 },
 ]);
 
 type PendingUpload = {
@@ -275,7 +276,45 @@ export function useEltWorkbench(workbenchRef: React.RefObject<WorkbenchHandle | 
   // ── transformPanes: enforce preview tab cap ──────────────────────────────
 
   const transformPanes = useCallback((panes: Pane[]): Pane[] => {
-    return enforcePreviewTabCap(panes, MAX_CONCURRENT_PREVIEW_TABS);
+    let result = enforcePreviewTabCap(panes, MAX_CONCURRENT_PREVIEW_TABS);
+
+    // Invariant: 'assets' must always be in the first pane
+    const firstPane = result[0];
+    if (firstPane && !firstPane.tabs.includes('assets')) {
+      // Remove 'assets' from any other pane
+      result = result.map((pane, i) => {
+        if (i === 0) return pane;
+        if (!pane.tabs.includes('assets')) return pane;
+        const nextTabs = pane.tabs.filter((t) => t !== 'assets');
+        return {
+          ...pane,
+          tabs: nextTabs,
+          activeTab: nextTabs.includes(pane.activeTab) ? pane.activeTab : (nextTabs[0] ?? 'preview'),
+        };
+      });
+      // Add 'assets' to the first pane
+      result = result.map((pane, i) => {
+        if (i !== 0) return pane;
+        return { ...pane, tabs: ['assets', ...pane.tabs], activeTab: pane.activeTab || 'assets' };
+      });
+    } else if (firstPane?.tabs.includes('assets')) {
+      // Remove 'assets' from any pane other than the first
+      result = result.map((pane, i) => {
+        if (i === 0) return pane;
+        if (!pane.tabs.includes('assets')) return pane;
+        const nextTabs = pane.tabs.filter((t) => t !== 'assets');
+        return {
+          ...pane,
+          tabs: nextTabs,
+          activeTab: nextTabs.includes(pane.activeTab) ? pane.activeTab : (nextTabs[0] ?? 'preview'),
+        };
+      });
+    }
+
+    // Remove empty panes (except first) that lost all tabs
+    result = result.filter((pane, i) => i === 0 || pane.tabs.length > 0);
+
+    return result;
   }, []);
 
   // ── onPanesChange: track open tabs for toolbar active states ─────────────

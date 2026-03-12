@@ -1,10 +1,12 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { TreeView, createTreeCollection } from '@ark-ui/react/tree-view';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
+  IconChevronRight,
   IconFilePlus,
   IconFileText,
   IconFolder,
+  IconFolderOpen,
   IconFolderPlus,
   IconPlus,
   IconTrash,
@@ -273,7 +275,7 @@ export function AssetsPanel({
           </div>
         </div>
 
-        <ScrollArea className="min-h-0 h-full flex-1" viewportClass="h-full overflow-auto bg-background p-2">
+        <ScrollArea className="min-h-0 h-full flex-1 bg-card" viewportClass="h-full overflow-auto p-2">
           {creatingType ? (
             <div className="mb-2 flex items-center gap-1.5 rounded border border-primary/40 bg-accent/30 px-2 py-1.5">
               {creatingType === 'folder' ? (
@@ -368,82 +370,10 @@ export function AssetsPanel({
                 }}
                 className="text-[13px]"
               >
-                <TreeView.Tree className="flex flex-col" aria-label="Project assets">
-                  <TreeView.Context>
-                    {(tree) => tree.getVisibleNodes().map((entry) => {
-                      const node = entry.node as FilesTreeNode;
-                      if (node.id === 'root') return null;
-                      const rowPaddingLeft = `${Math.max(0, entry.indexPath.length - 1) * 12}px`;
-
-                      return (
-                        <TreeView.NodeProvider key={node.id} node={node} indexPath={entry.indexPath}>
-                          <TreeView.NodeContext>
-                            {(state) => {
-                              const rowClassName = `flex items-center gap-2 rounded-md px-2.5 py-1.5 ${
-                                state.selected
-                                  ? 'bg-accent/70 text-foreground'
-                                  : 'hover:bg-accent/60'
-                              }`;
-                              const rowStyle: CSSProperties = {
-                                paddingLeft: rowPaddingLeft,
-                                contentVisibility: 'auto',
-                                containIntrinsicSize: '30px',
-                              };
-
-                              if (state.isBranch || node.kind === 'folder') {
-                                return (
-                                  <TreeView.Branch>
-                                    <TreeView.BranchControl className={rowClassName} style={rowStyle}>
-                                      <IconFolder size={15} className="shrink-0 text-muted-foreground" />
-                                      <TreeView.BranchText className="min-w-0 flex-1 truncate text-[13px] text-foreground">
-                                        {node.label}
-                                      </TreeView.BranchText>
-                                    </TreeView.BranchControl>
-                                  </TreeView.Branch>
-                                );
-                              }
-
-                              const fileDoc = node.doc;
-                              if (!fileDoc) return null;
-                              const failed = fileDoc.status.includes('failed');
-
-                              return (
-                                <TreeView.Item className={rowClassName} style={rowStyle}>
-                                  <TreeView.ItemText className="flex w-full min-w-0 items-center gap-2">
-                                    <IconFileText size={15} className="shrink-0 text-muted-foreground" />
-                                    <span className="min-w-0 max-w-[52%] truncate text-[13px] font-medium text-foreground" title={node.label}>
-                                      {node.label}
-                                    </span>
-                                    <span className="ml-auto inline-flex shrink-0 items-center gap-2">
-                                      <span className="w-12 text-right font-mono text-[11px] text-muted-foreground">
-                                        {formatBytes(fileDoc.source_filesize)}
-                                      </span>
-                                      <span className="inline-flex min-w-[34px] justify-center rounded border border-border bg-muted/60 px-1 py-0.5 text-[11px] font-semibold text-muted-foreground">
-                                        {getDocumentFormat(fileDoc)}
-                                      </span>
-                                      <span
-                                        className="inline-flex h-3 w-3 items-center justify-center"
-                                        aria-label={failed ? 'failed' : 'success'}
-                                        title={failed ? 'failed' : 'success'}
-                                      >
-                                        <span
-                                          className={`h-2.5 w-2.5 rounded-full ${
-                                            failed
-                                              ? 'bg-red-600 dark:bg-red-400'
-                                              : 'bg-emerald-600 dark:bg-emerald-400'
-                                          }`}
-                                        />
-                                      </span>
-                                    </span>
-                                  </TreeView.ItemText>
-                                </TreeView.Item>
-                              );
-                            }}
-                          </TreeView.NodeContext>
-                        </TreeView.NodeProvider>
-                      );
-                    })}
-                  </TreeView.Context>
+                <TreeView.Tree className="flex flex-col py-1" aria-label="Project assets">
+                  {filesTreeCollection.rootNode.children?.map((node, index) => (
+                    <AssetTreeNode key={node.id} node={node} indexPath={[index]} />
+                  ))}
                 </TreeView.Tree>
               </TreeView.Root>
             </div>
@@ -451,5 +381,88 @@ export function AssetsPanel({
         </ScrollArea>
       </div>
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// AssetTreeNode — recursive tree node following the same pattern as
+// WorkspaceFileTree's TreeNodeView, using Ark UI's BranchContent,
+// BranchIndicator, and BranchIndentGuide for proper nesting.
+// ---------------------------------------------------------------------------
+
+const ROW_BASE = 'flex w-full min-w-0 items-center gap-1.5 overflow-hidden rounded px-2 py-1 text-[13px]';
+const ROW_HOVER = 'hover:bg-accent/60';
+const ROW_SELECTED = 'bg-accent/70 text-foreground';
+
+type AssetTreeNodeProps = TreeView.NodeProviderProps<FilesTreeNode>;
+
+function AssetTreeNode({ node, indexPath }: AssetTreeNodeProps) {
+  if (node.kind === 'folder') {
+    return (
+      <TreeView.NodeProvider node={node} indexPath={indexPath}>
+        <TreeView.Branch>
+          <TreeView.BranchControl className="min-w-0">
+            <TreeView.BranchTrigger className={`${ROW_BASE} ${ROW_HOVER}`}>
+              <TreeView.BranchIndicator className="transition-transform data-[state=open]:rotate-90">
+                <IconChevronRight size={14} className="shrink-0 text-muted-foreground" />
+              </TreeView.BranchIndicator>
+              <TreeView.BranchText className="flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden">
+                <IconFolder size={15} className="shrink-0 text-muted-foreground [[data-state=open]_&]:hidden" />
+                <IconFolderOpen size={15} className="hidden shrink-0 text-muted-foreground [[data-state=open]_&]:block" />
+                <span className="min-w-0 truncate">{node.label}</span>
+              </TreeView.BranchText>
+            </TreeView.BranchTrigger>
+          </TreeView.BranchControl>
+          <TreeView.BranchContent className="pl-3">
+            <TreeView.BranchIndentGuide />
+            {(node.children ?? []).map((child, i) => (
+              <AssetTreeNode key={child.id} node={child} indexPath={[...indexPath, i]} />
+            ))}
+          </TreeView.BranchContent>
+        </TreeView.Branch>
+      </TreeView.NodeProvider>
+    );
+  }
+
+  const fileDoc = node.doc;
+  if (!fileDoc) return null;
+  const failed = fileDoc.status.includes('failed');
+
+  return (
+    <TreeView.NodeProvider node={node} indexPath={indexPath}>
+      <TreeView.Item>
+        <TreeView.NodeContext>
+          {(state) => (
+            <TreeView.ItemText className={`${ROW_BASE} ${state.selected ? ROW_SELECTED : ROW_HOVER}`}>
+              <IconFileText size={15} className="shrink-0 text-muted-foreground" />
+              <span
+                className="min-w-0 flex-1 truncate font-medium text-foreground"
+                title={`${node.label} — ${formatBytes(fileDoc.source_filesize)}`}
+              >
+                {node.label}
+              </span>
+              <span className="inline-flex shrink-0 items-center gap-1.5">
+                <span className="inline-flex min-w-[28px] justify-center rounded border border-border bg-muted/60 px-1 py-0.5 text-[10px] font-semibold uppercase text-muted-foreground">
+                  {getDocumentFormat(fileDoc)}
+                </span>
+                <span
+                  className="inline-flex h-3 w-3 items-center justify-center"
+                  aria-label={failed ? 'failed' : 'success'}
+                  title={failed ? 'Conversion failed' : fileDoc.status}
+                >
+                  <span
+                    className={`h-2 w-2 rounded-full ${
+                      failed
+                        ? 'bg-red-600 dark:bg-red-400'
+                        : 'bg-emerald-600 dark:bg-emerald-400'
+                    }`}
+                  />
+                </span>
+              </span>
+            </TreeView.ItemText>
+          )}
+        </TreeView.NodeContext>
+      </TreeView.Item>
+    </TreeView.NodeProvider>
   );
 }

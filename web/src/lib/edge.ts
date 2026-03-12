@@ -39,7 +39,7 @@ function tryGetJwtProjectRef(token: unknown): string | null {
   }
 }
 
-async function requireAccessToken(): Promise<string> {
+export async function requireAccessToken(): Promise<string> {
   const sessionResult = await supabase.auth.getSession();
   if (sessionResult.error) throw new Error(sessionResult.error.message);
 
