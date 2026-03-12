@@ -46,9 +46,33 @@ router = APIRouter(prefix="/onlyoffice", tags=["onlyoffice"])
 # ---------------------------------------------------------------------------
 
 DOCUMENTS_BUCKET = "documents"
-DOCX_CONTENT_TYPE = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 SESSION_TOKEN_TTL = 3600 * 8  # 8 hours — covers a long editing session
 _PLACEHOLDER_SECRETS = {"", "my-jwt-secret-change-me"}
+
+# OnlyOffice supported formats and their MIME types
+_OO_CONTENT_TYPES: dict[str, str] = {
+    "docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "doc": "application/msword",
+    "odt": "application/vnd.oasis.opendocument.text",
+    "rtf": "application/rtf",
+    "txt": "text/plain",
+    "csv": "text/csv",
+    "xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "xls": "application/vnd.ms-excel",
+    "ods": "application/vnd.oasis.opendocument.spreadsheet",
+    "pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    "ppt": "application/vnd.ms-powerpoint",
+    "odp": "application/vnd.oasis.opendocument.presentation",
+    "pdf": "application/pdf",
+    "epub": "application/epub+zip",
+    "html": "text/html",
+}
+_OO_SUPPORTED_EXTENSIONS = set(_OO_CONTENT_TYPES.keys())
+
+
+def _get_file_ext(path: str) -> str:
+    """Extract lowercase extension without dot from a file path."""
+    return path.rsplit(".", 1)[-1].lower() if "." in path else ""
 
 
 def _cache_dir() -> Path:
@@ -61,8 +85,8 @@ def _session_meta_path(session_id: str) -> Path:
     return _cache_dir() / f"{session_id}.meta.json"
 
 
-def _session_doc_path(session_id: str) -> Path:
-    return _cache_dir() / f"{session_id}.docx"
+def _session_doc_path(session_id: str, ext: str = "docx") -> Path:
+    return _cache_dir() / f"{session_id}.{ext}"
 
 
 def _read_session(session_id: str) -> dict:
@@ -162,21 +186,18 @@ async def open_document(
     if not source_locator:
         raise HTTPException(404, "Document has no storage locator")
 
-    # Only DOCX files are supported — reject anything else before pulling
-    # from storage, since the bridge hardcodes fileType: "docx" and serves
-    # all cached files with the DOCX content type.
-    # Gate on source_locator (immutable storage path), not doc_title which
-    # the user can rename freely.
-    if not source_locator.lower().endswith(".docx"):
+    file_ext = _get_file_ext(source_locator)
+    if file_ext not in _OO_SUPPORTED_EXTENSIONS:
         raise HTTPException(
             400,
-            f"Only .docx files can be edited in OnlyOffice (got: {source_locator.split('/')[-1]})",
+            f"Unsupported file type for OnlyOffice (got: .{file_ext}). "
+            f"Supported: {', '.join(sorted(_OO_SUPPORTED_EXTENSIONS))}",
         )
 
     filename = (doc_row.get("doc_title") or source_locator).split("/")[-1]
-    # Ensure filename includes .docx extension — OnlyOffice needs it
-    if not filename.lower().endswith(".docx"):
-        filename = f"{filename}.docx"
+    # Ensure filename includes the correct extension — OnlyOffice needs it
+    if not filename.lower().endswith(f".{file_ext}"):
+        filename = f"{filename}.{file_ext}"
 
     storage_key = source_locator.lstrip("/")
     try:
@@ -192,12 +213,13 @@ async def open_document(
 
     session_id = uuid.uuid4().hex[:12]
     try:
-        _session_doc_path(session_id).write_bytes(content)
+        _session_doc_path(session_id, file_ext).write_bytes(content)
         _write_session(session_id, {
             "session_id": session_id,
             "owner_id": _auth.subject_id,
             "source_uid": req.source_uid,
             "source_locator": source_locator,
+            "file_ext": file_ext,
             "filename": filename,
             "content_hash": _content_hash(content),
             "size": len(content),
@@ -230,7 +252,8 @@ async def generate_config(
     if session.get("owner_id") != _auth.subject_id:
         raise HTTPException(403, "You do not own this editing session")
 
-    path = _session_doc_path(req.session_id)
+    file_ext = session.get("file_ext", "docx")
+    path = _session_doc_path(req.session_id, file_ext)
     if not path.is_file():
         raise HTTPException(404, f"Session file not found for {req.session_id}")
 
@@ -243,9 +266,9 @@ async def generate_config(
 
     config = {
         "document": {
-            "fileType": "docx",
+            "fileType": file_ext,
             "key": doc_key,
-            "title": session.get("filename", "document.docx"),
+            "title": session.get("filename", f"document.{file_ext}"),
             "url": f"{bridge_url}/onlyoffice/doc/{req.session_id}?token={session_token}",
         },
         "editorConfig": {
@@ -283,14 +306,16 @@ async def generate_config(
 async def serve_document(session_id: str, token: str = Query(...)):
     """Serve a cached file. Called by the OnlyOffice Document Server."""
     _verify_session_token(session_id, token)
-    path = _session_doc_path(session_id)
+    session = _read_session(session_id)
+    file_ext = session.get("file_ext", "docx")
+    path = _session_doc_path(session_id, file_ext)
     if not path.is_file():
         raise HTTPException(404, f"Session {session_id} not found")
-    session = _read_session(session_id)
+    content_type = _OO_CONTENT_TYPES.get(file_ext, "application/octet-stream")
     return FileResponse(
         path,
-        media_type=DOCX_CONTENT_TYPE,
-        filename=session.get("filename", f"{session_id}.docx"),
+        media_type=content_type,
+        filename=session.get("filename", f"{session_id}.{file_ext}"),
     )
 
 
@@ -375,19 +400,21 @@ async def save_callback(session_id: str, request: Request, token: str = Query(..
 
             new_content = await download_bytes(download_url)
 
-            _session_doc_path(session_id).write_bytes(new_content)
+            file_ext = session.get("file_ext", "docx")
+            _session_doc_path(session_id, file_ext).write_bytes(new_content)
 
             session["content_hash"] = _content_hash(new_content)
             session["size"] = len(new_content)
             _write_session(session_id, session)
 
+            content_type = _OO_CONTENT_TYPES.get(file_ext, "application/octet-stream")
             await upsert_to_storage(
                 settings.supabase_url,
                 settings.supabase_service_role_key,
                 DOCUMENTS_BUCKET,
                 storage_key,
                 new_content,
-                DOCX_CONTENT_TYPE,
+                content_type,
             )
             logger.info(f"Saved session {session_id} back to Supabase Storage: {storage_key} ({len(new_content)} bytes)")
 

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import {
   PROJECT_FOCUS_STORAGE_KEY,
+  PROJECT_FOCUS_CHANGED_EVENT,
   PROJECT_LIST_CHANGED_EVENT,
   readFocusedProjectId,
 } from '@/lib/projectFocus';
@@ -37,7 +38,13 @@ export function useProjectFocus() {
   const activeProjectMatch = location.pathname.match(/^\/app\/elt\/([^/]+)/);
   const activeProjectId = activeProjectMatch ? activeProjectMatch[1] : null;
 
-  const [focusedProjectId, setFocusedProjectId] = useState<string | null>(() => readFocusedProjectId());
+  const [focusedProjectId, setFocusedProjectIdRaw] = useState<string | null>(() => readFocusedProjectId());
+
+  // Broadcast focus changes so all hook instances stay in sync
+  const setFocusedProjectId = useCallback((id: string | null) => {
+    setFocusedProjectIdRaw(id);
+    window.dispatchEvent(new CustomEvent(PROJECT_FOCUS_CHANGED_EVENT, { detail: { projectId: id } }));
+  }, []);
   const [projectOptions, setProjectOptions] = useState<ProjectOption[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -114,12 +121,22 @@ export function useProjectFocus() {
   useEffect(() => {
     const handler = (e: Event) => {
       const focusId = (e as CustomEvent).detail?.focusProjectId;
-      setFocusedProjectId(focusId ?? null);
+      setFocusedProjectIdRaw(focusId ?? null);
       void loadProjectOptions();
     };
     window.addEventListener(PROJECT_LIST_CHANGED_EVENT, handler);
     return () => window.removeEventListener(PROJECT_LIST_CHANGED_EVENT, handler);
   }, [loadProjectOptions]);
+
+  // Sync focused project across all hook instances
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const id = (e as CustomEvent).detail?.projectId ?? null;
+      setFocusedProjectIdRaw(id);
+    };
+    window.addEventListener(PROJECT_FOCUS_CHANGED_EVENT, handler);
+    return () => window.removeEventListener(PROJECT_FOCUS_CHANGED_EVENT, handler);
+  }, []);
 
   useEffect(() => {
     if (activeProjectId) return;

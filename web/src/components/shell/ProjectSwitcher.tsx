@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { IconChevronDown, IconPlus, IconSearch } from '@tabler/icons-react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Popover } from '@ark-ui/react/popover';
 import { Portal } from '@ark-ui/react/portal';
 import { useProjectFocus } from '@/hooks/useProjectFocus';
@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 
 export function ProjectSwitcher() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { projectOptions, resolvedProjectId, resolvedProjectName, setFocusedProjectId } = useProjectFocus();
   const [search, setSearch] = useState('');
 
@@ -64,7 +65,9 @@ export function ProjectSwitcher() {
                     )}
                     onClick={() => {
                       setFocusedProjectId(project.value);
-                      navigate(`/app/elt/${project.value}`);
+                      if (location.pathname.startsWith('/app/elt')) {
+                        navigate(`/app/elt/${project.value}`);
+                      }
                     }}
                   >
                     <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded bg-primary/10 text-[10px] font-bold text-primary">

@@ -1,6 +1,7 @@
 export const PROJECT_FOCUS_STORAGE_KEY = 'blockdata.shell.focused_project_id';
 
 export const PROJECT_LIST_CHANGED_EVENT = 'project-list-changed';
+export const PROJECT_FOCUS_CHANGED_EVENT = 'project-focus-changed';
 
 export function readFocusedProjectId(): string | null {
   if (typeof window === 'undefined') return null;
