@@ -74,6 +74,7 @@ export const TOP_LEVEL_NAV: Array<NavItem | 'divider'> = [
   { label: 'Flows', icon: IconFolderPlus, path: '/app/flows', drillId: 'flows' },
   { label: 'ELT', icon: IconCode, path: '/app/elt' },
   { label: 'Database', icon: IconDatabase, path: '/app/database' },
+  { label: 'Docs', icon: IconFileText, path: '/app/docs' },
   'divider',
   { label: 'Schema', icon: IconSchema, path: '/app/schemas' },
   { label: 'API', icon: IconTerminal2, path: '/app/api-editor' },
