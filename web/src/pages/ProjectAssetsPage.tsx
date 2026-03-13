@@ -14,8 +14,15 @@ import {
   IconChevronLeft,
   IconChevronRight,
 } from '@tabler/icons-react';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+  DialogRoot,
+  DialogContent,
+  DialogTitle,
+  DialogDescription,
+  DialogCloseTrigger,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/native-select';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -40,7 +47,7 @@ const PAGE_SIZE_OPTIONS = [25, 50, 100] as const;
 
 // ── Sort ────────────────────────────────────────────────────────────────────
 
-type SortField = 'name' | 'format' | 'size' | 'status';
+type SortField = 'name' | 'format' | 'size';
 type SortDirection = 'asc' | 'desc';
 
 function compareRows(a: ProjectDocumentRow, b: ProjectDocumentRow, field: SortField, dir: SortDirection): number {
@@ -54,9 +61,6 @@ function compareRows(a: ProjectDocumentRow, b: ProjectDocumentRow, field: SortFi
       break;
     case 'size':
       cmp = (a.source_filesize ?? 0) - (b.source_filesize ?? 0);
-      break;
-    case 'status':
-      cmp = (a.status ?? '').localeCompare(b.status ?? '');
       break;
   }
   return dir === 'asc' ? cmp : -cmp;
@@ -146,16 +150,14 @@ export default function ProjectAssetsPage() {
   // --- Actions ---
   const [deleting, setDeleting] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
-  const handleDelete = async () => {
-    if (selected.size === 0 || !resolvedProjectId) return;
-    const confirmed = window.confirm(`Delete ${selected.size} file${selected.size === 1 ? '' : 's'}? This cannot be undone.`);
-    if (!confirmed) return;
-
+  const deleteDocuments = async (uids: string[]) => {
+    if (uids.length === 0 || !resolvedProjectId) return;
     setDeleting(true);
     setError(null);
     try {
-      for (const uid of selected) {
+      for (const uid of uids) {
         const doc = docs.find((d) => d.source_uid === uid);
         const { error: rpcErr } = await supabase.rpc('delete_source_document', { p_source_uid: uid });
         if (rpcErr) throw new Error(rpcErr.message);
@@ -164,12 +166,28 @@ export default function ProjectAssetsPage() {
           await supabase.storage.from(DOCUMENTS_BUCKET).remove([locator]);
         }
       }
-      setSelected(new Set());
+      setSelected((prev) => {
+        const next = new Set(prev);
+        uids.forEach((uid) => next.delete(uid));
+        return next;
+      });
       void loadDocs(resolvedProjectId);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Delete failed');
     } finally {
       setDeleting(false);
+    }
+  };
+
+  const confirmDelete = async () => {
+    setDeleteConfirmOpen(false);
+    await deleteDocuments(Array.from(selected));
+  };
+
+  const handleSingleDownload = async (doc: ProjectDocumentRow) => {
+    const result = await resolveSignedUrlForLocators([doc.source_locator, doc.conv_locator]);
+    if (result.url) {
+      await downloadFromSignedUrl(result.url, doc.doc_title ?? 'download');
     }
   };
 
@@ -283,8 +301,6 @@ export default function ProjectAssetsPage() {
     { value: 'format:desc', label: 'Format (Z-A)' },
     { value: 'size:asc', label: 'Size (smallest)' },
     { value: 'size:desc', label: 'Size (largest)' },
-    { value: 'status:asc', label: 'Status (A-Z)' },
-    { value: 'status:desc', label: 'Status (Z-A)' },
   ];
 
   if (!resolvedProjectId) {
@@ -296,161 +312,162 @@ export default function ProjectAssetsPage() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-var(--app-shell-header-height))] overflow-hidden p-6 gap-4">
-      {/* Left: dropzone + staged files */}
-      <div className="flex w-[280px] shrink-0 flex-col gap-2">
-        <div className="text-sm font-bold text-foreground px-1">Add Documents</div>
+    <div className="flex h-[calc(100vh-var(--app-shell-header-height))] gap-4 overflow-hidden px-4 pt-3 pb-3">
+        {/* Left: upload sidebar */}
+        <aside className="flex w-[260px] shrink-0 flex-col gap-3 overflow-y-auto">
+          <div className="flex flex-col gap-2.5 rounded-lg border border-border bg-card p-3">
+            <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Upload</span>
 
-        <FileUpload.Root
-          maxFiles={25}
-          accept={{
-            'text/*': ['.md', '.markdown', '.txt', '.csv', '.html', '.htm', '.rst', '.org'],
-            'application/pdf': ['.pdf'],
-            'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
-            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
-            'application/vnd.openxmlformats-officedocument.presentationml.presentation': ['.pptx'],
-            'application/vnd.oasis.opendocument.text': ['.odt'],
-            'application/epub+zip': ['.epub'],
-            'application/rtf': ['.rtf'],
-            'application/x-tex': ['.tex', '.latex'],
-          }}
-          onFileChange={(details) => addFiles(details.acceptedFiles)}
-          className="flex flex-col gap-0"
-        >
-          <FileUpload.Dropzone
-            className={cn(
-              'flex min-h-32 flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border p-4 text-center',
-              'cursor-pointer transition-colors duration-150',
-              'hover:bg-muted/50',
-              'data-dragging:border-primary data-dragging:border-solid data-dragging:bg-primary/5',
+            <FileUpload.Root
+              maxFiles={25}
+              accept={{
+                'text/*': ['.md', '.markdown', '.txt', '.csv', '.html', '.htm', '.rst', '.org'],
+                'application/pdf': ['.pdf'],
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
+                'application/vnd.openxmlformats-officedocument.presentationml.presentation': ['.pptx'],
+                'application/vnd.oasis.opendocument.text': ['.odt'],
+                'application/epub+zip': ['.epub'],
+                'application/rtf': ['.rtf'],
+                'application/x-tex': ['.tex', '.latex'],
+              }}
+              onFileChange={(details) => addFiles(details.acceptedFiles)}
+              className="flex flex-col gap-0"
+            >
+              <FileUpload.Dropzone
+                className={cn(
+                  'flex min-h-28 flex-col items-center justify-center gap-1.5 rounded-md border-2 border-dashed border-border/80 p-3 text-center',
+                  'cursor-pointer transition-colors duration-150',
+                  'hover:border-primary/40 hover:bg-muted/40',
+                  'data-dragging:border-primary data-dragging:border-solid data-dragging:bg-primary/5',
+                )}
+              >
+                <IconUpload size={24} className="text-muted-foreground/70" />
+                <span className="text-xs font-medium text-foreground">
+                  Drop files or browse
+                </span>
+                <span className="text-[10px] leading-tight text-muted-foreground">
+                  PDF, DOCX, MD, TXT, HTML, XLSX, PPTX, CSV, EPUB, RTF, TEX
+                </span>
+              </FileUpload.Dropzone>
+              <FileUpload.HiddenInput />
+            </FileUpload.Root>
+
+            {/* Google Drive import */}
+            {pickerReady && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={openPicker}
+                disabled={importing}
+                className="h-8 gap-2 text-xs"
+              >
+                {importing ? (
+                  <IconLoader2 size={14} className="animate-spin" />
+                ) : (
+                  <IconBrandGoogleDrive size={14} />
+                )}
+                {importing ? 'Importing\u2026' : 'Google Drive'}
+              </Button>
             )}
-          >
-            <IconUpload size={32} className="text-muted-foreground" />
-            <span className="text-sm font-medium text-foreground">
-              Drag files here or click to browse
-            </span>
-            <span className="text-xs text-muted-foreground">
-              MD, TXT, CSV, HTML, RST, PDF, DOCX, XLSX, PPTX, ODT, EPUB, RTF, TEX, ORG
-            </span>
-          </FileUpload.Dropzone>
-          <FileUpload.HiddenInput />
-        </FileUpload.Root>
 
-        {/* Google Drive import */}
-        {pickerReady && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={openPicker}
-            disabled={importing}
-            className="gap-2"
-          >
-            {importing ? (
-              <IconLoader2 size={14} className="animate-spin" />
-            ) : (
-              <IconBrandGoogleDrive size={14} />
+            {importError && (
+              <div className="rounded-md border border-destructive/30 bg-destructive/10 px-2 py-1.5 text-xs text-destructive">
+                {importError}
+              </div>
             )}
-            {importing ? 'Importing\u2026' : 'Import from Google Drive'}
-          </Button>
-        )}
-
-        {importError && (
-          <div className="rounded-md border border-destructive/30 bg-destructive/10 px-2 py-1.5 text-xs text-destructive">
-            {importError}
           </div>
-        )}
 
-        {/* Upload button */}
-        {pendingCount > 0 && uploadStatus !== 'uploading' && (
-          <Button size="sm" onClick={() => void startUpload()}>
-            Upload {pendingCount} file{pendingCount === 1 ? '' : 's'}
-          </Button>
-        )}
+          {/* Staged files */}
+          {stagedFiles.length > 0 && (
+            <div className="flex flex-col gap-2 rounded-lg border border-border bg-card p-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Staged ({stagedFiles.length})
+                </span>
+                {uploadStatus === 'done' && stagedFiles.some((f) => f.status === 'done') && (
+                  <button onClick={clearDone} className="text-[10px] text-muted-foreground hover:text-foreground transition-colors">
+                    Clear done
+                  </button>
+                )}
+              </div>
 
-        {/* Clear done button */}
-        {uploadStatus === 'done' && stagedFiles.some((f) => f.status === 'done') && (
-          <Button variant="outline" size="sm" onClick={clearDone}>
-            Clear completed
-          </Button>
-        )}
-
-        {/* Staged file list */}
-        {stagedFiles.length > 0 && (
-          <div className="max-h-64 overflow-y-auto">
-            <ul className="flex flex-col">
-              {stagedFiles.map((sf) => (
-                <li
-                  key={sf.id}
-                  className={cn(
-                    'grid grid-cols-[1fr_auto_auto_auto] items-center gap-2 border-b border-border px-1 py-1.5',
-                    sf.status === 'error' && 'bg-destructive/5',
-                  )}
-                >
-                  <div className="flex items-center gap-2 min-w-0">
-                    <IconFile size={14} className="flex-none text-muted-foreground" />
-                    <div className="min-w-0">
+              <ul className="flex flex-col gap-0.5">
+                {stagedFiles.map((sf) => (
+                  <li
+                    key={sf.id}
+                    className={cn(
+                      'flex items-center gap-2 rounded-md px-2 py-1.5',
+                      sf.status === 'error' ? 'bg-destructive/5' : 'hover:bg-muted/40',
+                    )}
+                  >
+                    <FileStatusIcon status={sf.status} />
+                    <div className="min-w-0 flex-1">
                       <span className="block truncate text-xs text-foreground">{sf.file.name}</span>
                       {sf.status === 'error' && sf.error && (
                         <span className="block truncate text-[10px] text-destructive">{sf.error}</span>
                       )}
                     </div>
-                  </div>
-                  <span className="text-xs text-muted-foreground whitespace-nowrap">
-                    {formatBytes(sf.file.size)}
-                  </span>
-                  <FileStatusIcon status={sf.status} />
-                  {sf.status !== 'uploading' && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-5 w-5"
-                      onClick={() => removeFile(sf.id)}
-                      aria-label={`Remove ${sf.file.name}`}
-                    >
-                      <IconX size={12} />
-                    </Button>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-      </div>
+                    <span className="shrink-0 text-[10px] tabular-nums text-muted-foreground">
+                      {formatBytes(sf.file.size)}
+                    </span>
+                    {sf.status !== 'uploading' && (
+                      <button
+                        onClick={() => removeFile(sf.id)}
+                        aria-label={`Remove ${sf.file.name}`}
+                        className="shrink-0 rounded p-0.5 text-muted-foreground/60 hover:bg-muted hover:text-foreground transition-colors"
+                      >
+                        <IconX size={12} />
+                      </button>
+                    )}
+                  </li>
+                ))}
+              </ul>
 
-      {/* File table */}
-      <section className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-lg border border-border bg-card">
-        {/* Toolbar: search + sort + actions */}
-        <div className="flex flex-wrap items-center gap-2 border-b border-border px-3 py-2">
-          <div className="relative min-w-[180px] flex-1">
-            <IconSearch size={14} className="pointer-events-none absolute left-2 top-2 text-muted-foreground" />
-            <Input
-              value={query}
-              onChange={(e) => setQuery(e.currentTarget.value)}
-              placeholder="Search files"
-              className="h-8 pl-7 text-xs"
+              {/* Upload action */}
+              {pendingCount > 0 && uploadStatus !== 'uploading' && (
+                <Button size="sm" className="h-8 text-xs" onClick={() => void startUpload()}>
+                  <IconUpload size={13} className="mr-1.5" />
+                  Upload {pendingCount} file{pendingCount === 1 ? '' : 's'}
+                </Button>
+              )}
+            </div>
+          )}
+        </aside>
+
+        {/* File table */}
+        <section className="flex min-h-0 min-w-0 flex-1 max-w-4xl flex-col overflow-hidden rounded-lg border border-border bg-card">
+          {/* Toolbar */}
+          <div className="flex items-center gap-2 border-b border-border px-3 py-2">
+            <div className="relative max-w-xs flex-1">
+              <IconSearch size={14} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={query}
+                onChange={(e) => setQuery(e.currentTarget.value)}
+                placeholder="Search files..."
+                className="h-8 pl-8 text-xs"
+              />
+            </div>
+            <NativeSelect
+              value={sortValue}
+              onChange={(e) => {
+                const [f, d] = e.currentTarget.value.split(':') as [SortField, SortDirection];
+                setSortField(f);
+                setSortDirection(d);
+              }}
+              options={sortOptions}
+              containerClassName="w-[150px]"
             />
-          </div>
-          <NativeSelect
-            value={sortValue}
-            onChange={(e) => {
-              const [f, d] = e.currentTarget.value.split(':') as [SortField, SortDirection];
-              setSortField(f);
-              setSortDirection(d);
-            }}
-            options={sortOptions}
-            containerClassName="w-[160px]"
-          />
 
-          <span className="text-xs text-muted-foreground">
-            {filteredRows.length} file{filteredRows.length === 1 ? '' : 's'}
-          </span>
+            <span className="text-xs tabular-nums text-muted-foreground">
+              {filteredRows.length} file{filteredRows.length === 1 ? '' : 's'}
+            </span>
 
-          {selected.size > 0 && (
-            <>
-              <span className="text-xs text-primary font-medium">
-                {selected.size} selected
-              </span>
+            {selected.size > 0 && (
               <div className="ml-auto flex items-center gap-1">
+                <span className="mr-1 text-xs font-medium text-primary tabular-nums">
+                  {selected.size} selected
+                </span>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -466,77 +483,88 @@ export default function ProjectAssetsPage() {
                   size="sm"
                   className="h-7 gap-1.5 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive"
                   disabled={deleting}
-                  onClick={() => void handleDelete()}
+                  onClick={() => setDeleteConfirmOpen(true)}
                 >
                   {deleting ? <IconLoader2 size={13} className="animate-spin" /> : <IconTrash size={13} />}
                   Delete
                 </Button>
               </div>
-            </>
-          )}
-        </div>
+            )}
+          </div>
 
-        {/* Table */}
-        <ScrollArea className="min-h-0 flex-1" viewportClass="h-full overflow-auto">
-          <table className="w-full text-left text-sm">
-            <thead className="sticky top-0 z-10 bg-muted/25 text-xs uppercase tracking-wide text-muted-foreground">
-              <tr className="border-b border-border">
-                <th className="w-8 px-3 py-2">
-                  <input
-                    type="checkbox"
-                    checked={allPageSelected}
-                    ref={(el) => { if (el) el.indeterminate = somePageSelected; }}
-                    onChange={toggleSelectAll}
-                    className="h-3.5 w-3.5 rounded border-border"
-                  />
-                </th>
-                <th className="px-3 py-2 font-medium">Name</th>
-                <th className="px-3 py-2 font-medium">Format</th>
-                <th className="px-3 py-2 font-medium">Size</th>
-                <th className="px-3 py-2 font-medium">Parse Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading && (
-                <tr>
-                  <td colSpan={5} className="px-3 py-8 text-center">
-                    <div className="inline-flex items-center gap-2 text-sm text-muted-foreground">
-                      <IconLoader2 size={16} className="animate-spin" />
-                      Loading files…
-                    </div>
-                  </td>
+          {/* Table */}
+          <ScrollArea className="min-h-0 flex-1" viewportClass="h-full overflow-auto">
+            <table className="w-full table-fixed text-left text-sm">
+              <colgroup>
+                <col className="w-10" />
+                <col />
+                <col className="w-20" />
+                <col className="w-20" />
+                <col className="w-24" />
+                <col className="w-16" />
+              </colgroup>
+              <thead className="sticky top-0 z-10 bg-card text-xs text-muted-foreground">
+                <tr className="border-b border-border">
+                  <th className="py-2 pl-3 pr-1">
+                    <input
+                      type="checkbox"
+                      checked={allPageSelected}
+                      ref={(el) => { if (el) el.indeterminate = somePageSelected; }}
+                      onChange={toggleSelectAll}
+                      className="h-3.5 w-3.5 rounded border-border"
+                    />
+                  </th>
+                  <th className="px-3 py-2 font-medium">Name</th>
+                  <th className="px-3 py-2 font-medium">Format</th>
+                  <th className="px-3 py-2 font-medium text-right">Size</th>
+                  <th className="px-3 py-2 font-medium">Status</th>
+                  <th className="px-3 py-2 font-medium"></th>
                 </tr>
-              )}
+              </thead>
+              <tbody>
+                {loading && (
+                  <tr>
+                    <td colSpan={6} className="px-3 py-10 text-center">
+                      <div className="inline-flex items-center gap-2 text-sm text-muted-foreground">
+                        <IconLoader2 size={16} className="animate-spin" />
+                        Loading files...
+                      </div>
+                    </td>
+                  </tr>
+                )}
 
-              {!loading && error && (
-                <tr>
-                  <td colSpan={5} className="px-3 py-8 text-center text-sm text-destructive">
-                    {error}
-                  </td>
-                </tr>
-              )}
+                {!loading && error && (
+                  <tr>
+                    <td colSpan={6} className="px-3 py-10 text-center text-sm text-destructive">
+                      {error}
+                    </td>
+                  </tr>
+                )}
 
-              {!loading && !error && filteredRows.length === 0 && (
-                <tr>
-                  <td colSpan={5} className="px-3 py-12 text-center text-sm text-muted-foreground">
-                    {docs.length === 0
-                      ? 'No files in this project yet. Drag files to the left to upload.'
-                      : 'No files match your search.'}
-                  </td>
-                </tr>
-              )}
+                {!loading && !error && filteredRows.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="px-3 py-16 text-center">
+                      <div className="flex flex-col items-center gap-1.5 text-muted-foreground">
+                        <IconFile size={28} className="opacity-40" />
+                        <span className="text-sm">
+                          {docs.length === 0
+                            ? 'No files yet. Drop files in the upload panel to get started.'
+                            : 'No files match your search.'}
+                        </span>
+                      </div>
+                    </td>
+                  </tr>
+                )}
 
-              {!loading && !error && pagedRows.map((doc) => {
-                const isFailed = doc.status === 'conversion_failed' || doc.status === 'parse_failed';
-                return (
+                {!loading && !error && pagedRows.map((doc) => (
                   <tr
                     key={doc.source_uid}
                     className={cn(
-                      'border-b border-border/60 transition-colors hover:bg-muted/20',
+                      'border-b border-border/40 transition-colors hover:bg-accent/30',
                       selected.has(doc.source_uid) && 'bg-accent/20',
                     )}
                   >
-                    <td className="w-8 px-3 py-2.5">
+                    <td className="py-1.5 pl-3 pr-1">
                       <input
                         type="checkbox"
                         checked={selected.has(doc.source_uid)}
@@ -544,79 +572,112 @@ export default function ProjectAssetsPage() {
                         className="h-3.5 w-3.5 rounded border-border"
                       />
                     </td>
-                    <td className="px-3 py-2.5">
-                      <span className="block max-w-[300px] truncate text-foreground">
-                        {doc.doc_title}
+                    <td className="truncate px-3 py-1.5 text-foreground">
+                      {doc.doc_title}
+                    </td>
+                    <td className="px-3 py-1.5">
+                      <span className="inline-flex rounded bg-muted/60 px-1.5 py-0 text-[9px] font-semibold uppercase leading-4 text-muted-foreground">
+                        {getDocumentFormat(doc)}
                       </span>
                     </td>
-                    <td className="px-3 py-2.5">
-                      <Badge variant="gray" size="xs" className="uppercase">
-                        {getDocumentFormat(doc)}
-                      </Badge>
-                    </td>
-                    <td className="px-3 py-2.5 text-muted-foreground">
+                    <td className="px-3 py-1.5 text-right tabular-nums text-muted-foreground">
                       {formatBytes(doc.source_filesize)}
                     </td>
-                    <td className="px-3 py-2.5">
-                      {doc.status === 'parsed' && (
-                        <Badge variant="green" size="xs">parsed</Badge>
-                      )}
-                      {doc.status === 'converting' && (
-                        <Badge variant="gray" size="xs">parsing…</Badge>
-                      )}
-                      {isFailed && (
-                        <Badge variant="red" size="xs">failed</Badge>
+                    <td className="px-3 py-1.5">
+                      {doc.status?.includes('failed') ? (
+                        <span className="text-xs text-destructive" title={doc.error ?? undefined}>failed</span>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">uploaded</span>
                       )}
                     </td>
+                    <td className="px-2 py-1.5">
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => void handleSingleDownload(doc)}
+                          className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-accent"
+                          title="Download"
+                        >
+                          <IconDownload size={14} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void deleteDocuments([doc.source_uid])}
+                          disabled={deleting}
+                          className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 disabled:opacity-50"
+                          title="Delete"
+                        >
+                          <IconTrash size={14} />
+                        </button>
+                      </div>
+                    </td>
                   </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </ScrollArea>
+                ))}
+              </tbody>
+            </table>
+          </ScrollArea>
 
-        {/* Pagination footer */}
-        {filteredRows.length > 0 && (
-          <div className="flex items-center justify-between border-t border-border px-3 py-1.5 text-xs text-muted-foreground">
-            <div className="flex items-center gap-2">
-              <span>
-                {safePageIndex * pageSize + 1}–{Math.min((safePageIndex + 1) * pageSize, filteredRows.length)} of {filteredRows.length}
-              </span>
-              <NativeSelect
-                value={String(pageSize)}
-                onChange={(e) => setPageSize(Number(e.currentTarget.value))}
-                options={PAGE_SIZE_OPTIONS.map((n) => ({ value: String(n), label: `${n} / page` }))}
-                containerClassName="w-[100px]"
-              />
+          {/* Pagination footer */}
+          {filteredRows.length > 0 && (
+            <div className="flex items-center justify-between border-t border-border px-3 py-1.5 text-xs text-muted-foreground">
+              <div className="flex items-center gap-2">
+                <span className="tabular-nums">
+                  {safePageIndex * pageSize + 1}–{Math.min((safePageIndex + 1) * pageSize, filteredRows.length)} of {filteredRows.length}
+                </span>
+                <NativeSelect
+                  value={String(pageSize)}
+                  onChange={(e) => setPageSize(Number(e.currentTarget.value))}
+                  options={PAGE_SIZE_OPTIONS.map((n) => ({ value: String(n), label: `${n} / page` }))}
+                  containerClassName="w-[100px]"
+                />
+              </div>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  disabled={safePageIndex === 0}
+                  onClick={() => setPageIndex((i) => Math.max(0, i - 1))}
+                  aria-label="Previous page"
+                >
+                  <IconChevronLeft size={14} />
+                </Button>
+                <span className="tabular-nums">
+                  {safePageIndex + 1} / {totalPages}
+                </span>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  disabled={safePageIndex >= totalPages - 1}
+                  onClick={() => setPageIndex((i) => Math.min(totalPages - 1, i + 1))}
+                  aria-label="Next page"
+                >
+                  <IconChevronRight size={14} />
+                </Button>
+              </div>
             </div>
-            <div className="flex items-center gap-1">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7"
-                disabled={safePageIndex === 0}
-                onClick={() => setPageIndex((i) => Math.max(0, i - 1))}
-                aria-label="Previous page"
-              >
-                <IconChevronLeft size={14} />
-              </Button>
-              <span>
-                Page {safePageIndex + 1} of {totalPages}
-              </span>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7"
-                disabled={safePageIndex >= totalPages - 1}
-                onClick={() => setPageIndex((i) => Math.min(totalPages - 1, i + 1))}
-                aria-label="Next page"
-              >
-                <IconChevronRight size={14} />
-              </Button>
-            </div>
-          </div>
-        )}
-      </section>
+          )}
+        </section>
+
+      {/* Delete confirmation dialog */}
+      <DialogRoot open={deleteConfirmOpen} onOpenChange={(e) => setDeleteConfirmOpen(e.open)}>
+        <DialogContent>
+          <DialogTitle>Delete {selected.size} file{selected.size === 1 ? '' : 's'}?</DialogTitle>
+          <DialogDescription>
+            This cannot be undone. The selected files and any parsed artifacts will be permanently removed.
+          </DialogDescription>
+          <DialogCloseTrigger />
+          <DialogFooter>
+            <Button variant="outline" size="sm" onClick={() => setDeleteConfirmOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" size="sm" onClick={() => void confirmDelete()}>
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </DialogRoot>
     </div>
   );
 }

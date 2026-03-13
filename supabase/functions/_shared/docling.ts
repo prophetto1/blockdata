@@ -285,10 +285,35 @@ export function extractDoclingBlocks(
       return;
     }
 
-    // Groups: recurse into children
+    // Groups
     const group = groupsMap.get(pointer);
-    if (group?.children) {
-      for (const child of group.children) resolveAndEmit(child);
+    if (group) {
+      if (group.label === "inline" && group.children) {
+        // Inline groups contain text fragments split by the parser (e.g. bracket
+        // syntax misread as markdown links). Merge children into one block.
+        const parts: string[] = [];
+        const allPageNos = new Set<number>();
+        for (const childRef of group.children) {
+          visited.add(childRef.$ref);
+          const textItem = textsMap.get(childRef.$ref);
+          if (textItem) {
+            parts.push(textItem.text ?? textItem.orig ?? "");
+            for (const p of extractPageNos(textItem.prov)) allPageNos.add(p);
+          }
+        }
+        const pageNos = Array.from(allPageNos).sort((a, b) => a - b);
+        blocks.push({
+          block_type: "paragraph",
+          block_content: parts.join(""),
+          pointer,
+          page_no: pageNos[0] ?? null,
+          page_nos: pageNos,
+          parser_block_type: "inline",
+          parser_path: pointer,
+        });
+      } else if (group.children) {
+        for (const child of group.children) resolveAndEmit(child);
+      }
       return;
     }
 

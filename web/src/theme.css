@@ -1725,7 +1725,8 @@ body {
 
 .parse-markdown-preview {
   color: var(--foreground);
-  line-height: 1.55;
+  font-size: 0.9375rem;
+  line-height: 1.65;
   word-break: break-word;
   width: min(100%, 920px);
   margin-inline: auto;
@@ -1742,21 +1743,21 @@ body {
 .parse-markdown-preview h1,
 .parse-markdown-preview h2,
 .parse-markdown-preview h3 {
-  margin: 0.95rem 0 0.55rem;
+  margin: 1.25rem 0 0.6rem;
   font-weight: 650;
   line-height: 1.25;
 }
 
 .parse-markdown-preview h1 {
-  font-size: 1.18rem;
+  font-size: 1.5rem;
 }
 
 .parse-markdown-preview h2 {
-  font-size: 1.06rem;
+  font-size: 1.25rem;
 }
 
 .parse-markdown-preview h3 {
-  font-size: 0.96rem;
+  font-size: 1.1rem;
 }
 
 .parse-markdown-preview p,
@@ -1765,7 +1766,7 @@ body {
 .parse-markdown-preview blockquote,
 .parse-markdown-preview table,
 .parse-markdown-preview pre {
-  margin: 0.6rem 0;
+  margin: 0.75rem 0;
 }
 
 .parse-markdown-preview ul,
@@ -1814,7 +1815,7 @@ body {
 .parse-markdown-preview table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.82rem;
+  font-size: 0.875rem;
 }
 
 .parse-markdown-preview th,

@@ -27,6 +27,7 @@ export type DocumentRow = {
   status: 'uploaded' | 'converting' | 'parsed' | 'conversion_failed' | 'parse_failed';
   uploaded_at: string;
   error: string | null;
+  pipeline_config?: Record<string, unknown> | null;
 };
 
 export type BlockRow = {

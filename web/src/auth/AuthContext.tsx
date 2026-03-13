@@ -72,9 +72,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (autoLoginAttemptedRef.current) return;
     autoLoginAttemptedRef.current = true;
 
-    void supabase.auth.signInWithPassword({
+    supabase.auth.signInWithPassword({
       email: DEV_AUTO_LOGIN_EMAIL,
       password: DEV_AUTO_LOGIN_PASSWORD,
+    }).then(({ error }) => {
+      if (error) console.error('[auto-login] failed:', error.message);
+      else console.log('[auto-login] success');
     });
   }, [loading, session]);
 

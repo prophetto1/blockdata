@@ -1,4 +1,5 @@
 import asyncio
+import hashlib
 import os
 from typing import Any, Optional
 
@@ -48,6 +49,13 @@ def _run_convert_in_process(req_dict: dict) -> tuple:
     return asyncio.run(convert(req))
 
 
+def _build_docling_conv_uid(docling_json_bytes: bytes) -> str:
+    digest = hashlib.sha256()
+    digest.update(b"docling\ndoclingdocument_json\n")
+    digest.update(docling_json_bytes)
+    return digest.hexdigest()
+
+
 @router.post("/convert")
 async def convert_route(
     body: ConvertRequest,
@@ -78,6 +86,10 @@ async def convert_route(
         "docling_key": None,
         "html_key": None,
         "doctags_key": None,
+        "pipeline_config": body.pipeline_config,
+        "blocks": [],
+        "conv_uid": None,
+        "docling_artifact_size_bytes": None,
         "success": False,
         "error": None,
     }
@@ -85,11 +97,11 @@ async def convert_route(
     try:
         # Docling conversion is CPU-bound — offload to process pool.
         if use_pool:
-            markdown_bytes, docling_json_bytes, html_bytes, doctags_bytes = (
+            markdown_bytes, docling_json_bytes, html_bytes, doctags_bytes, blocks = (
                 await pool.submit(_run_convert_in_process, body.model_dump())
             )
         else:
-            markdown_bytes, docling_json_bytes, html_bytes, doctags_bytes = await convert(body)
+            markdown_bytes, docling_json_bytes, html_bytes, doctags_bytes, blocks = await convert(body)
 
         md_url = append_token_if_needed(body.output.signed_upload_url, body.output.token)
         await upload_bytes(md_url, markdown_bytes, "text/markdown; charset=utf-8")
@@ -98,6 +110,8 @@ async def convert_route(
             url = append_token_if_needed(body.docling_output.signed_upload_url, body.docling_output.token)
             await upload_bytes(url, docling_json_bytes, "application/json; charset=utf-8")
             callback_payload["docling_key"] = body.docling_output.key
+            callback_payload["conv_uid"] = _build_docling_conv_uid(docling_json_bytes)
+            callback_payload["docling_artifact_size_bytes"] = len(docling_json_bytes)
 
         if body.html_output and html_bytes:
             url = append_token_if_needed(body.html_output.signed_upload_url, body.html_output.token)
@@ -109,6 +123,7 @@ async def convert_route(
             await upload_bytes(url, doctags_bytes, "text/plain; charset=utf-8")
             callback_payload["doctags_key"] = body.doctags_output.key
 
+        callback_payload["blocks"] = blocks
         callback_payload["success"] = True
     except Exception as e:
         callback_payload["success"] = False

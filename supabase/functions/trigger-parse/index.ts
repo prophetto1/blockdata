@@ -174,6 +174,26 @@ Deno.serve(async (req) => {
       .eq("source_uid", source_uid);
     if (updateErr) throw new Error(`DB update failed: ${updateErr.message}`);
 
+    // Pre-insert conversion_parsing with pipeline_config so the profile is
+    // visible in the UI immediately.  conversion-complete will upsert over
+    // this row with the full parsing results.
+    if (Object.keys(pipeline_config).length > 0) {
+      await supabaseAdmin
+        .from("conversion_parsing")
+        .insert({
+          source_uid,
+          conv_uid: `pending:${source_uid}`,
+          conv_status: "pending",
+          conv_parsing_tool: "docling",
+          conv_representation_type: "doclingdocument_json",
+          conv_total_blocks: 0,
+          conv_block_type_freq: {},
+          conv_total_characters: 0,
+          conv_locator: "",
+          pipeline_config,
+        });
+    }
+
     // Call the conversion service.
     const supabaseUrl = requireEnv("SUPABASE_URL").replace(/\/+$/, "");
     const callback_url = `${supabaseUrl}/functions/v1/conversion-complete`;

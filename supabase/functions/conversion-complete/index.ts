@@ -14,9 +14,53 @@ type ConversionCompleteBody = {
   html_key?: string | null;
   doctags_key?: string | null;
   pipeline_config?: Record<string, unknown> | null;
+  blocks?: CallbackDoclingBlock[] | null;
+  conv_uid?: string | null;
+  docling_artifact_size_bytes?: number | null;
   success: boolean;
   error?: string | null;
 };
+
+type CallbackDoclingBlock = {
+  block_type: string;
+  block_content: string;
+  pointer: string;
+  page_no: number | null;
+  page_nos: number[];
+  parser_block_type: string;
+  parser_path: string;
+};
+
+function normalizeCallbackBlocks(raw: unknown): CallbackDoclingBlock[] {
+  if (!Array.isArray(raw)) return [];
+  const blocks: CallbackDoclingBlock[] = [];
+  for (const entry of raw) {
+    if (!entry || typeof entry !== "object") continue;
+    const row = entry as Record<string, unknown>;
+    if (
+      typeof row.block_type !== "string" ||
+      typeof row.block_content !== "string" ||
+      typeof row.pointer !== "string" ||
+      typeof row.parser_block_type !== "string" ||
+      typeof row.parser_path !== "string"
+    ) {
+      continue;
+    }
+    const page_nos = Array.isArray(row.page_nos)
+      ? row.page_nos.filter((value): value is number => typeof value === "number" && Number.isFinite(value))
+      : [];
+    blocks.push({
+      block_type: row.block_type,
+      block_content: row.block_content,
+      pointer: row.pointer,
+      page_no: typeof row.page_no === "number" && Number.isFinite(row.page_no) ? row.page_no : null,
+      page_nos,
+      parser_block_type: row.parser_block_type,
+      parser_path: row.parser_path,
+    });
+  }
+  return blocks;
+}
 
 function json(status: number, body: unknown): Response {
   return new Response(JSON.stringify(body, null, 2), {
@@ -51,6 +95,7 @@ Deno.serve(async (req) => {
     const docling_key = (body.docling_key || "").trim();
     const html_key = (body.html_key || "").trim();
     const doctags_key = (body.doctags_key || "").trim();
+    const callbackBlocks = normalizeCallbackBlocks(body.blocks);
     if (!source_uid || !conversion_job_id || !md_key) {
       return json(400, { error: "Missing source_uid, conversion_job_id, or md_key" });
     }
@@ -133,29 +178,39 @@ Deno.serve(async (req) => {
     // -----------------------------------------------------------------------
     // Docling track (only track)
     // -----------------------------------------------------------------------
-    const { data: dlDownload, error: dlErr } = await supabaseAdmin.storage
-      .from(bucket)
-      .download(docling_key!);
-    if (dlErr || !dlDownload) {
-      throw new Error(`Storage download docling JSON failed: ${dlErr?.message ?? "unknown"}`);
+    let conv_uid = (body.conv_uid || "").trim();
+    let doclingArtifactSizeBytes = typeof body.docling_artifact_size_bytes === "number" &&
+        Number.isFinite(body.docling_artifact_size_bytes)
+      ? body.docling_artifact_size_bytes
+      : null;
+    let extractedBlocks = callbackBlocks;
+
+    if (!conv_uid || doclingArtifactSizeBytes == null || extractedBlocks.length === 0) {
+      const { data: dlDownload, error: dlErr } = await supabaseAdmin.storage
+        .from(bucket)
+        .download(docling_key!);
+      if (dlErr || !dlDownload) {
+        throw new Error(`Storage download docling JSON failed: ${dlErr?.message ?? "unknown"}`);
+      }
+
+      const doclingBytes = new Uint8Array(await dlDownload.arrayBuffer());
+      const convPrefix = new TextEncoder().encode("docling\ndoclingdocument_json\n");
+      conv_uid = await sha256Hex(concatBytes([convPrefix, doclingBytes]));
+      doclingArtifactSizeBytes = doclingBytes.byteLength;
+      extractedBlocks = extractDoclingBlocks(doclingBytes).blocks;
     }
 
-    const doclingBytes = new Uint8Array(await dlDownload.arrayBuffer());
-    const convPrefix = new TextEncoder().encode("docling\ndoclingdocument_json\n");
-    const conv_uid = await sha256Hex(concatBytes([convPrefix, doclingBytes]));
-    const extracted = extractDoclingBlocks(doclingBytes);
-
-    const conv_total_blocks = extracted.blocks.length;
-    const conv_total_characters = extracted.blocks.reduce((sum, b) => sum + b.block_content.length, 0);
+    const conv_total_blocks = extractedBlocks.length;
+    const conv_total_characters = extractedBlocks.reduce((sum, b) => sum + b.block_content.length, 0);
     const freqMap: Record<string, number> = {};
-    for (const b of extracted.blocks) {
+    for (const b of extractedBlocks) {
       freqMap[b.block_type] = (freqMap[b.block_type] || 0) + 1;
     }
 
     {
       const { error: convInsErr } = await supabaseAdmin
         .from("conversion_parsing")
-        .insert({
+        .upsert({
           conv_uid,
           source_uid,
           conv_status: "success",
@@ -166,12 +221,12 @@ Deno.serve(async (req) => {
           conv_total_characters,
           conv_locator: docling_key,
           pipeline_config: body.pipeline_config ?? {},
-        });
-      if (convInsErr) throw new Error(`DB insert conversion_parsing failed: ${convInsErr.message}`);
+        }, { onConflict: "source_uid" });
+      if (convInsErr) throw new Error(`DB upsert conversion_parsing failed: ${convInsErr.message}`);
     }
 
     try {
-      const blockRows = extracted.blocks.map((b, idx) => ({
+      const blockRows = extractedBlocks.map((b, idx) => ({
         block_uid: `${conv_uid}:${idx}`,
         conv_uid,
         block_index: idx,
@@ -198,7 +253,7 @@ Deno.serve(async (req) => {
         representation_type: "doclingdocument_json",
         artifact_locator: docling_key!,
         artifact_hash: conv_uid,
-        artifact_size_bytes: doclingBytes.byteLength,
+        artifact_size_bytes: doclingArtifactSizeBytes,
         artifact_meta: { source_type: docRow.source_type },
       });
 

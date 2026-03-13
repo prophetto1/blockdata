@@ -23,6 +23,7 @@ class ConvertRequest(BaseModel):
     html_output: Optional[OutputTarget] = None
     doctags_output: Optional[OutputTarget] = None
     callback_url: str
+    pipeline_config: Optional[dict[str, Any]] = None
 
 
 class CitationsRequest(BaseModel):
