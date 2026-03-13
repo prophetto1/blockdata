@@ -1,16 +1,15 @@
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-export type IngestTrack = "docling" | "pandoc";
+export type IngestTrack = "docling";
 
-export type TrackEnabledMap = Record<IngestTrack, boolean>;
+export type TrackEnabledMap = { docling: boolean };
 export type ExtensionTrackRouting = Record<string, IngestTrack>;
 export type TrackCapabilityCatalog = {
   version: string;
-  tracks: Record<IngestTrack, { extensions: string[] }>;
+  tracks: { docling: { extensions: string[] } };
 };
 export type ParserArtifactSourceTypes = {
   docling: string[];
-  pandoc: string[];
 };
 
 export type RuntimePolicy = {
@@ -71,7 +70,10 @@ export type AdminPolicyRow = {
   updated_by: string | null;
 };
 
-const ALL_TRACKS: IngestTrack[] = ["docling", "pandoc"];
+const ALL_EXTENSIONS: string[] = [
+  "md", "markdown", "txt", "docx", "pdf", "pptx", "xlsx",
+  "html", "htm", "csv", "rst", "tex", "latex", "odt", "epub", "rtf", "org",
+];
 
 const DEFAULT_POLICY: RuntimePolicy = {
   models: {
@@ -105,58 +107,23 @@ const DEFAULT_POLICY: RuntimePolicy = {
   },
   upload: {
     max_files_per_batch: 25,
-    allowed_extensions: [
-      "md",
-      "markdown",
-      "docx",
-      "pdf",
-      "pptx",
-      "xlsx",
-      "html",
-      "htm",
-      "csv",
-      "txt",
-    ],
+    allowed_extensions: ALL_EXTENSIONS,
     track_enabled: {
       docling: true,
-      pandoc: false,
     },
-    extension_track_routing: {
-      md: "docling",
-      markdown: "docling",
-      txt: "docling",
-      docx: "docling",
-      pdf: "docling",
-      pptx: "docling",
-      xlsx: "docling",
-      html: "docling",
-      htm: "docling",
-      csv: "docling",
-      rst: "pandoc",
-      tex: "pandoc",
-      latex: "pandoc",
-      odt: "pandoc",
-      epub: "pandoc",
-      rtf: "pandoc",
-      org: "pandoc",
-    },
+    extension_track_routing: Object.fromEntries(
+      ALL_EXTENSIONS.map((ext) => [ext, "docling" as const]),
+    ),
     track_capability_catalog: {
-      version: "2026-02-13",
+      version: "2026-03-13",
       tracks: {
-        mdast: {
-          extensions: ["md", "markdown", "txt"],
-        },
         docling: {
-          extensions: ["md", "markdown", "txt", "docx", "pdf", "pptx", "xlsx", "html", "htm", "csv"],
-        },
-        pandoc: {
-          extensions: ["rst", "tex", "latex", "odt", "epub", "rtf", "org"],
+          extensions: [...ALL_EXTENSIONS],
         },
       },
     },
     parser_artifact_source_types: {
-      docling: ["md", "markdown", "txt", "docx", "pdf", "pptx", "xlsx", "html", "csv"],
-      pandoc: ["docx", "html", "txt", "rst", "latex", "odt", "epub", "rtf", "org"],
+      docling: ["md", "markdown", "txt", "docx", "pdf", "pptx", "xlsx", "html", "csv", "rst", "latex", "odt", "epub", "rtf", "org"],
     },
   },
 };
@@ -206,21 +173,12 @@ function asObject(value: unknown): Record<string, unknown> | null {
   return value as Record<string, unknown>;
 }
 
-function asTrack(value: unknown): IngestTrack | null {
-  if (value !== "mdast" && value !== "docling" && value !== "pandoc") return null;
-  return value;
-}
-
 function asTrackEnabledMap(value: unknown): TrackEnabledMap | null {
   const obj = asObject(value);
   if (!obj) return null;
-  const parsed: Partial<TrackEnabledMap> = {};
-  for (const track of ALL_TRACKS) {
-    const v = asBoolean(obj[track]);
-    if (v === null) return null;
-    parsed[track] = v;
-  }
-  return parsed as TrackEnabledMap;
+  const v = asBoolean(obj.docling);
+  if (v === null) return null;
+  return { docling: v };
 }
 
 function asExtensionTrackRouting(value: unknown): ExtensionTrackRouting | null {
@@ -228,11 +186,10 @@ function asExtensionTrackRouting(value: unknown): ExtensionTrackRouting | null {
   if (!obj) return null;
   const out: ExtensionTrackRouting = {};
   for (const [rawExt, rawTrack] of Object.entries(obj)) {
-    const track = asTrack(rawTrack);
-    if (!track) return null;
+    if (rawTrack !== "docling") return null;
     const ext = normalizeExtensionToken(rawExt);
     if (!ext) return null;
-    out[ext] = track;
+    out[ext] = "docling";
   }
   return out;
 }
@@ -246,18 +203,16 @@ function asTrackCapabilityCatalog(value: unknown): TrackCapabilityCatalog | null
   const tracksObj = asObject(obj.tracks);
   if (!tracksObj) return null;
 
-  const tracks: Partial<TrackCapabilityCatalog["tracks"]> = {};
-  for (const track of ALL_TRACKS) {
-    const entry = asObject(tracksObj[track]);
-    if (!entry) return null;
-    const extArray = asNormalizedExtensionArray(entry.extensions);
-    if (!extArray || extArray.length === 0) return null;
-    tracks[track] = { extensions: extArray };
-  }
+  const doclingEntry = asObject(tracksObj.docling);
+  if (!doclingEntry) return null;
+  const extArray = asNormalizedExtensionArray(doclingEntry.extensions);
+  if (!extArray || extArray.length === 0) return null;
 
   return {
     version,
-    tracks: tracks as TrackCapabilityCatalog["tracks"],
+    tracks: {
+      docling: { extensions: extArray },
+    },
   };
 }
 
@@ -265,9 +220,8 @@ function asParserArtifactSourceTypes(value: unknown): ParserArtifactSourceTypes 
   const obj = asObject(value);
   if (!obj) return null;
   const docling = asNormalizedExtensionArray(obj.docling);
-  const pandoc = asNormalizedExtensionArray(obj.pandoc);
-  if (!docling || !pandoc || docling.length === 0 || pandoc.length === 0) return null;
-  return { docling, pandoc };
+  if (!docling || docling.length === 0) return null;
+  return { docling };
 }
 
 export function applyPolicyValue(
@@ -534,18 +488,11 @@ export function validateRuntimePolicy(policy: RuntimePolicy): string[] {
   if (policy.upload.parser_artifact_source_types.docling.length === 0) {
     errors.push("upload.parser_artifact_source_types.docling must include at least one source_type");
   }
-  if (policy.upload.parser_artifact_source_types.pandoc.length === 0) {
-    errors.push("upload.parser_artifact_source_types.pandoc must include at least one source_type");
-  }
 
-  for (const track of ALL_TRACKS) {
-    if (!Array.isArray(policy.upload.track_capability_catalog.tracks[track].extensions)) {
-      errors.push(`upload.track_capability_catalog.tracks.${track}.extensions must be an array`);
-      continue;
-    }
-    if (policy.upload.track_capability_catalog.tracks[track].extensions.length === 0) {
-      errors.push(`upload.track_capability_catalog.tracks.${track}.extensions must include at least one extension`);
-    }
+  if (!Array.isArray(policy.upload.track_capability_catalog.tracks.docling.extensions)) {
+    errors.push("upload.track_capability_catalog.tracks.docling.extensions must be an array");
+  } else if (policy.upload.track_capability_catalog.tracks.docling.extensions.length === 0) {
+    errors.push("upload.track_capability_catalog.tracks.docling.extensions must include at least one extension");
   }
 
   const seenAllowed = new Set<string>();
@@ -565,14 +512,14 @@ export function validateRuntimePolicy(policy: RuntimePolicy): string[] {
       errors.push(`upload.track_enabled.${track} must be true for allowed extension: ${ext}`);
       continue;
     }
-    const capSet = new Set(policy.upload.track_capability_catalog.tracks[track].extensions);
+    const capSet = new Set(policy.upload.track_capability_catalog.tracks.docling.extensions);
     if (!capSet.has(ext)) {
       errors.push(`routing/capability mismatch: extension ${ext} routed to ${track} but missing from capability catalog`);
     }
   }
 
   for (const [ext, track] of Object.entries(policy.upload.extension_track_routing)) {
-    const capSet = new Set(policy.upload.track_capability_catalog.tracks[track].extensions);
+    const capSet = new Set(policy.upload.track_capability_catalog.tracks.docling.extensions);
     if (!capSet.has(ext)) {
       errors.push(`routing/capability mismatch: extension ${ext} routed to ${track} but missing from capability catalog`);
     }

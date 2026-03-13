@@ -85,7 +85,7 @@ const FLOW_STEPS = [
 
 const PIPELINE_STAGES = [
   { icon: IconUpload, step: '01', title: 'Ingest', text: 'Files, databases, or APIs. PDF, Word, Markdown, PostgreSQL, Snowflake — every source normalizes into addressable blocks with deterministic IDs.' },
-  { icon: IconTable, step: '02', title: 'Parse', text: 'Documents decompose into typed blocks via Docling, Remark, or Pandoc. Databases arrive as structured rows via dlt.' },
+  { icon: IconTable, step: '02', title: 'Parse', text: 'Documents decompose into typed blocks via Docling. Databases arrive as structured rows via dlt.' },
   { icon: IconTransform, step: '03', title: 'Transform', text: 'Run dlt, dbt, Python, or custom scripts. Clean, merge, chunk, segment. Chain transforms in any order.' },
   { icon: IconBrain, step: '04', title: 'Extract', text: 'Define schema fields — the AI fills them per block. Metadata, revision, or both. Same instructions on block 1 and block 5,000.' },
   { icon: IconChecks, step: '05', title: 'Review', text: 'AI writes to staging. You review in the grid, edit inline, confirm per-block or in bulk. Nothing ships without approval.' },

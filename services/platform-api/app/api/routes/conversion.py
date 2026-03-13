@@ -8,7 +8,7 @@ from fastapi.responses import JSONResponse
 from app.auth.dependencies import require_auth
 from app.auth.principals import AuthPrincipal
 from app.domain.conversion.models import ConvertRequest, CitationsRequest
-from app.domain.conversion.service import convert, resolve_track
+from app.domain.conversion.service import convert
 from app.domain.conversion.callbacks import send_conversion_callback
 from app.infra.http_client import upload_bytes, append_token_if_needed
 from app.workers.conversion_pool import get_conversion_pool, PoolOverloaded
@@ -54,7 +54,7 @@ async def convert_route(
     auth: AuthPrincipal = Depends(require_auth),
 ):
     shared_secret = os.environ.get("CONVERSION_SERVICE_KEY", "")
-    track = resolve_track(body)
+    track = "docling"
 
     # Admission control: check capacity BEFORE entering the try/finally callback block.
     # If we reject here, no callback fires — the job was never accepted.
@@ -76,7 +76,6 @@ async def convert_route(
         "track": track,
         "md_key": body.output.key,
         "docling_key": None,
-        "pandoc_key": None,
         "html_key": None,
         "doctags_key": None,
         "success": False,
@@ -84,13 +83,13 @@ async def convert_route(
     }
 
     try:
-        # Docling and Pandoc tracks are CPU-bound — offload to process pool.
+        # Docling conversion is CPU-bound — offload to process pool.
         if use_pool:
-            markdown_bytes, docling_json_bytes, pandoc_json_bytes, html_bytes, doctags_bytes = (
+            markdown_bytes, docling_json_bytes, html_bytes, doctags_bytes = (
                 await pool.submit(_run_convert_in_process, body.model_dump())
             )
         else:
-            markdown_bytes, docling_json_bytes, pandoc_json_bytes, html_bytes, doctags_bytes = await convert(body)
+            markdown_bytes, docling_json_bytes, html_bytes, doctags_bytes = await convert(body)
 
         md_url = append_token_if_needed(body.output.signed_upload_url, body.output.token)
         await upload_bytes(md_url, markdown_bytes, "text/markdown; charset=utf-8")
@@ -99,11 +98,6 @@ async def convert_route(
             url = append_token_if_needed(body.docling_output.signed_upload_url, body.docling_output.token)
             await upload_bytes(url, docling_json_bytes, "application/json; charset=utf-8")
             callback_payload["docling_key"] = body.docling_output.key
-
-        if body.pandoc_output and pandoc_json_bytes:
-            url = append_token_if_needed(body.pandoc_output.signed_upload_url, body.pandoc_output.token)
-            await upload_bytes(url, pandoc_json_bytes, "application/json; charset=utf-8")
-            callback_payload["pandoc_key"] = body.pandoc_output.key
 
         if body.html_output and html_bytes:
             url = append_token_if_needed(body.html_output.signed_upload_url, body.html_output.token)

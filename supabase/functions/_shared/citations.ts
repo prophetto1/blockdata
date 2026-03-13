@@ -26,7 +26,6 @@ type CitationsResponse = {
 
 const KNOWN_SUFFIXES = [
   ".docling.json",
-  ".pandoc.ast.json",
   ".citations.json",
   ".doctags",
   ".md",

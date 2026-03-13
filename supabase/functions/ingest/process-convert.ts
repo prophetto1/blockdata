@@ -64,7 +64,6 @@ export async function processConversion(ctx: IngestContext): Promise<{ status: n
   // Representation artifact upload targets. We provision by source capability
   // (superuser runtime policy) so callbacks can carry multiple parser artifacts.
   const doclingArtifactSourceTypes = new Set(runtimePolicy.upload.parser_artifact_source_types.docling);
-  const pandocArtifactSourceTypes = new Set(runtimePolicy.upload.parser_artifact_source_types.pandoc);
 
   let docling_output: SignedUploadTarget | null = null;
   let html_output: SignedUploadTarget | null = null;
@@ -112,23 +111,6 @@ export async function processConversion(ctx: IngestContext): Promise<{ status: n
       token: doctagsUpload.token ?? null,
     };
   }
-  let pandoc_output: SignedUploadTarget | null = null;
-  if (pandocArtifactSourceTypes.has(source_type)) {
-    const pandoc_key = `converted/${source_uid}/${basenameNoExt(originalFilename)}.pandoc.ast.json`;
-    const { data: pandocUpload, error: pandocErr } = await (supabaseAdmin.storage as any)
-      .from(bucket)
-      .createSignedUploadUrl(pandoc_key);
-    if (pandocErr || !pandocUpload?.signedUrl) {
-      throw new Error(`Create signed upload URL for pandoc AST failed: ${pandocErr?.message ?? "unknown"}`);
-    }
-    pandoc_output = {
-      bucket,
-      key: pandoc_key,
-      signed_upload_url: pandocUpload.signedUrl,
-      token: pandocUpload.token ?? null,
-    };
-  }
-
   // Call the conversion service.
   const supabaseUrl = requireEnv("SUPABASE_URL").replace(/\/+$/, "");
   const callback_url = `${supabaseUrl}/functions/v1/conversion-complete`;
@@ -158,7 +140,6 @@ export async function processConversion(ctx: IngestContext): Promise<{ status: n
           token: signedUpload.token ?? null,
         },
         docling_output,
-        pandoc_output,
         html_output,
         doctags_output,
         callback_url,

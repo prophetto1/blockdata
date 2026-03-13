@@ -149,7 +149,7 @@ export function toArtifactLocator(locator: string | null | undefined, nextExtens
   const filename = lastSlash >= 0 ? normalized.slice(lastSlash + 1) : normalized;
   const lowered = filename.toLowerCase();
   let basename = filename;
-  const knownSuffixes = ['.docling.json', '.pandoc.ast.json', '.citations.json', '.doctags', '.md', '.html'];
+  const knownSuffixes = ['.docling.json', '.citations.json', '.doctags', '.md', '.html'];
   for (const suffix of knownSuffixes) {
     if (lowered.endsWith(suffix)) {
       basename = filename.slice(0, filename.length - suffix.length);

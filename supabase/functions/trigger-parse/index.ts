@@ -166,25 +166,6 @@ Deno.serve(async (req) => {
       };
     }
 
-    // Pandoc artifact upload target (if source type supports it).
-    const pandocArtifactSourceTypes = new Set(runtimePolicy.upload.parser_artifact_source_types.pandoc);
-    let pandoc_output: SignedUploadTarget | null = null;
-    if (pandocArtifactSourceTypes.has(source_type)) {
-      const pandoc_key = `converted/${source_uid}/${baseName}.pandoc.ast.json`;
-      const { data: pandocUpload, error: pandocErr } = await (supabaseAdmin.storage as any)
-        .from(bucket)
-        .createSignedUploadUrl(pandoc_key);
-      if (pandocErr || !pandocUpload?.signedUrl) {
-        throw new Error(`Signed upload URL (pandoc) failed: ${pandocErr?.message ?? "unknown"}`);
-      }
-      pandoc_output = {
-        bucket,
-        key: pandoc_key,
-        signed_upload_url: pandocUpload.signedUrl,
-        token: pandocUpload.token ?? null,
-      };
-    }
-
     // Update document status to converting.
     const { error: updateErr } = await supabaseAdmin
       .from("source_documents")
@@ -222,7 +203,6 @@ Deno.serve(async (req) => {
             token: signedUpload.token ?? null,
           },
           docling_output,
-          pandoc_output,
           html_output,
           doctags_output,
           callback_url,

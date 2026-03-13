@@ -2,17 +2,15 @@ import { corsPreflight, withCorsHeaders } from "../_shared/cors.ts";
 import { getEnv, requireEnv } from "../_shared/env.ts";
 import { concatBytes, sha256Hex } from "../_shared/hash.ts";
 import { extractDoclingBlocks } from "../_shared/docling.ts";
-import { extractPandocBlocks } from "../_shared/pandoc.ts";
 import { insertRepresentationArtifact } from "../_shared/representation.ts";
 import { createAdminClient } from "../_shared/supabase.ts";
 
 type ConversionCompleteBody = {
   source_uid: string;
   conversion_job_id: string;
-  track?: "docling" | "pandoc" | null;
+  track?: "docling" | null;
   md_key: string;
   docling_key?: string | null;
-  pandoc_key?: string | null;
   html_key?: string | null;
   doctags_key?: string | null;
   pipeline_config?: Record<string, unknown> | null;
@@ -49,10 +47,8 @@ Deno.serve(async (req) => {
     const body = await readJson<ConversionCompleteBody>(req);
     const source_uid = (body.source_uid || "").trim();
     const conversion_job_id = (body.conversion_job_id || "").trim();
-    const track = (body.track || "").trim();
     const md_key = (body.md_key || "").trim();
     const docling_key = (body.docling_key || "").trim();
-    const pandoc_key = (body.pandoc_key || "").trim();
     const html_key = (body.html_key || "").trim();
     const doctags_key = (body.doctags_key || "").trim();
     if (!source_uid || !conversion_job_id || !md_key) {
@@ -93,13 +89,10 @@ Deno.serve(async (req) => {
       return json(200, { ok: false, status: "conversion_failed" });
     }
 
-    const resolvedTrack: "docling" | "pandoc" =
-      track === "pandoc" ? "pandoc" : "docling";
-
     const insertSupplementalRepresentation = async (
       key: string,
-      parsing_tool: "docling" | "pandoc",
-      representation_type: "markdown_bytes" | "doclingdocument_json" | "pandoc_ast_json" | "html_bytes" | "doctags_text",
+      parsing_tool: "docling",
+      representation_type: "markdown_bytes" | "doclingdocument_json" | "html_bytes" | "doctags_text",
       conv_uid: string,
     ) => {
       const { data: download, error: dlErr } = await supabaseAdmin.storage
@@ -124,289 +117,137 @@ Deno.serve(async (req) => {
       });
     };
 
-    if (resolvedTrack === "pandoc" && !pandoc_key) {
-      const errMsg = "Invalid callback payload: track=pandoc but pandoc_key is missing";
+    if (!docling_key) {
+      // Graceful drain: in-flight legacy pandoc/mdast jobs may call back without
+      // a docling_key. Mark as conversion_failed so the document can be re-parsed
+      // via the now-Docling-only pipeline, but don't throw — let the callback
+      // complete cleanly so the conversion service doesn't retry.
+      const errMsg = "Missing docling_key — legacy non-Docling job; re-parse required";
       await supabaseAdmin
         .from("source_documents")
         .update({ status: "conversion_failed", error: errMsg })
         .eq("source_uid", source_uid);
-      return json(200, { ok: false, status: "conversion_failed", error: errMsg });
+      return json(200, { ok: false, status: "conversion_failed", error: errMsg, drain: true });
     }
 
-    if (resolvedTrack === "docling" && !docling_key) {
-      const errMsg = "Invalid callback payload: track=docling but docling_key is missing";
+    // -----------------------------------------------------------------------
+    // Docling track (only track)
+    // -----------------------------------------------------------------------
+    const { data: dlDownload, error: dlErr } = await supabaseAdmin.storage
+      .from(bucket)
+      .download(docling_key!);
+    if (dlErr || !dlDownload) {
+      throw new Error(`Storage download docling JSON failed: ${dlErr?.message ?? "unknown"}`);
+    }
+
+    const doclingBytes = new Uint8Array(await dlDownload.arrayBuffer());
+    const convPrefix = new TextEncoder().encode("docling\ndoclingdocument_json\n");
+    const conv_uid = await sha256Hex(concatBytes([convPrefix, doclingBytes]));
+    const extracted = extractDoclingBlocks(doclingBytes);
+
+    const conv_total_blocks = extracted.blocks.length;
+    const conv_total_characters = extracted.blocks.reduce((sum, b) => sum + b.block_content.length, 0);
+    const freqMap: Record<string, number> = {};
+    for (const b of extracted.blocks) {
+      freqMap[b.block_type] = (freqMap[b.block_type] || 0) + 1;
+    }
+
+    {
+      const { error: convInsErr } = await supabaseAdmin
+        .from("conversion_parsing")
+        .insert({
+          conv_uid,
+          source_uid,
+          conv_status: "success",
+          conv_parsing_tool: "docling",
+          conv_representation_type: "doclingdocument_json",
+          conv_total_blocks,
+          conv_block_type_freq: freqMap,
+          conv_total_characters,
+          conv_locator: docling_key,
+          pipeline_config: body.pipeline_config ?? {},
+        });
+      if (convInsErr) throw new Error(`DB insert conversion_parsing failed: ${convInsErr.message}`);
+    }
+
+    try {
+      const blockRows = extracted.blocks.map((b, idx) => ({
+        block_uid: `${conv_uid}:${idx}`,
+        conv_uid,
+        block_index: idx,
+        block_type: b.block_type,
+        block_locator: {
+          type: "docling_json_pointer",
+          pointer: b.pointer,
+          parser_block_type: b.parser_block_type,
+          parser_path: b.parser_path,
+          ...(b.page_no != null ? { page_no: b.page_no } : {}),
+          ...(b.page_nos.length > 0 ? { page_nos: b.page_nos } : {}),
+        },
+        block_content: b.block_content,
+      }));
+      if (blockRows.length === 0) throw new Error("No blocks extracted from docling JSON");
+
+      const { error: insErr } = await supabaseAdmin.from("blocks").insert(blockRows);
+      if (insErr) throw new Error(`DB insert blocks failed: ${insErr.message}`);
+
+      await insertRepresentationArtifact(supabaseAdmin, {
+        source_uid,
+        conv_uid,
+        parsing_tool: "docling",
+        representation_type: "doclingdocument_json",
+        artifact_locator: docling_key!,
+        artifact_hash: conv_uid,
+        artifact_size_bytes: doclingBytes.byteLength,
+        artifact_meta: { source_type: docRow.source_type },
+      });
+
+      await insertSupplementalRepresentation(
+        md_key,
+        "docling",
+        "markdown_bytes",
+        conv_uid,
+      );
+
+      if (html_key) {
+        await insertSupplementalRepresentation(
+          html_key,
+          "docling",
+          "html_bytes",
+          conv_uid,
+        );
+      }
+
+      if (doctags_key) {
+        await insertSupplementalRepresentation(
+          doctags_key,
+          "docling",
+          "doctags_text",
+          conv_uid,
+        );
+      }
+
+      const { error: finalErr } = await supabaseAdmin
+        .from("source_documents")
+        .update({ status: "ingested", error: null })
+        .eq("source_uid", source_uid);
+      if (finalErr) throw new Error(`DB update source_documents failed: ${finalErr.message}`);
+
+      return json(200, {
+        ok: true,
+        status: "ingested",
+        conv_uid,
+        blocks_count: blockRows.length,
+        track: "docling",
+      });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
       await supabaseAdmin
         .from("source_documents")
-        .update({ status: "conversion_failed", error: errMsg })
+        .update({ status: "ingest_failed", error: msg })
         .eq("source_uid", source_uid);
-      return json(200, { ok: false, status: "conversion_failed", error: errMsg });
+      return json(200, { ok: false, status: "ingest_failed", error: msg });
     }
-
-    // -----------------------------------------------------------------------
-    // Branch: Pandoc track
-    // -----------------------------------------------------------------------
-    if (resolvedTrack === "pandoc") {
-      const { data: pandocDownload, error: pandocDlErr } = await supabaseAdmin.storage
-        .from(bucket)
-        .download(pandoc_key!);
-      if (pandocDlErr || !pandocDownload) {
-        throw new Error(`Storage download pandoc AST failed: ${pandocDlErr?.message ?? "unknown"}`);
-      }
-
-      const pandocBytes = new Uint8Array(await pandocDownload.arrayBuffer());
-      const convPrefix = new TextEncoder().encode("pandoc\npandoc_ast_json\n");
-      const conv_uid = await sha256Hex(concatBytes([convPrefix, pandocBytes]));
-      const extracted = extractPandocBlocks(pandocBytes);
-
-      const conv_total_blocks = extracted.blocks.length;
-      const conv_total_characters = extracted.blocks.reduce((sum, b) => sum + b.block_content.length, 0);
-      const freqMap: Record<string, number> = {};
-      for (const b of extracted.blocks) {
-        freqMap[b.block_type] = (freqMap[b.block_type] || 0) + 1;
-      }
-
-      {
-        const { error: convInsErr } = await supabaseAdmin
-          .from("conversion_parsing")
-          .insert({
-            conv_uid,
-            source_uid,
-            conv_status: "success",
-            conv_parsing_tool: "pandoc",
-            conv_representation_type: "pandoc_ast_json",
-            conv_total_blocks,
-            conv_block_type_freq: freqMap,
-            conv_total_characters,
-            conv_locator: pandoc_key,
-            pipeline_config: body.pipeline_config ?? {},
-          });
-        if (convInsErr) throw new Error(`DB insert conversion_parsing failed: ${convInsErr.message}`);
-      }
-
-      try {
-        const blockRows = extracted.blocks.map((b, idx) => ({
-          block_uid: `${conv_uid}:${idx}`,
-          conv_uid,
-          block_index: idx,
-          block_type: b.block_type,
-          block_locator: {
-            type: "pandoc_ast_path",
-            path: b.path,
-            parser_block_type: b.parser_block_type,
-            parser_path: b.path,
-          },
-          block_content: b.block_content,
-        }));
-        if (blockRows.length === 0) throw new Error("No blocks extracted from pandoc AST");
-
-        const { error: insErr } = await supabaseAdmin.from("blocks").insert(blockRows);
-        if (insErr) throw new Error(`DB insert blocks failed: ${insErr.message}`);
-
-        await insertRepresentationArtifact(supabaseAdmin, {
-          source_uid,
-          conv_uid,
-          parsing_tool: "pandoc",
-          representation_type: "pandoc_ast_json",
-          artifact_locator: pandoc_key!,
-          artifact_hash: conv_uid,
-          artifact_size_bytes: pandocBytes.byteLength,
-          artifact_meta: { source_type: docRow.source_type },
-        });
-
-        await insertSupplementalRepresentation(
-          md_key,
-          "docling",
-          "markdown_bytes",
-          conv_uid,
-        );
-
-        if (docling_key) {
-          await insertSupplementalRepresentation(
-            docling_key,
-            "docling",
-            "doclingdocument_json",
-            conv_uid,
-          );
-        }
-
-        if (html_key) {
-          await insertSupplementalRepresentation(
-            html_key,
-            "docling",
-            "html_bytes",
-            conv_uid,
-          );
-        }
-
-        if (doctags_key) {
-          await insertSupplementalRepresentation(
-            doctags_key,
-            "docling",
-            "doctags_text",
-            conv_uid,
-          );
-        }
-
-        const { error: finalErr } = await supabaseAdmin
-          .from("source_documents")
-          .update({ status: "ingested", error: null })
-          .eq("source_uid", source_uid);
-        if (finalErr) throw new Error(`DB update source_documents failed: ${finalErr.message}`);
-
-        return json(200, {
-          ok: true,
-          status: "ingested",
-          conv_uid,
-          blocks_count: blockRows.length,
-          track: "pandoc",
-        });
-      } catch (e) {
-        const msg = e instanceof Error ? e.message : String(e);
-        await supabaseAdmin
-          .from("source_documents")
-          .update({ status: "ingest_failed", error: msg })
-          .eq("source_uid", source_uid);
-        return json(200, { ok: false, status: "ingest_failed", error: msg });
-      }
-    }
-
-    // -----------------------------------------------------------------------
-    // Branch: Docling track
-    // -----------------------------------------------------------------------
-    if (resolvedTrack === "docling") {
-      const { data: dlDownload, error: dlErr } = await supabaseAdmin.storage
-        .from(bucket)
-        .download(docling_key!);
-      if (dlErr || !dlDownload) {
-        throw new Error(`Storage download docling JSON failed: ${dlErr?.message ?? "unknown"}`);
-      }
-
-      const doclingBytes = new Uint8Array(await dlDownload.arrayBuffer());
-      const convPrefix = new TextEncoder().encode("docling\ndoclingdocument_json\n");
-      const conv_uid = await sha256Hex(concatBytes([convPrefix, doclingBytes]));
-      const extracted = extractDoclingBlocks(doclingBytes);
-
-      const conv_total_blocks = extracted.blocks.length;
-      const conv_total_characters = extracted.blocks.reduce((sum, b) => sum + b.block_content.length, 0);
-      const freqMap: Record<string, number> = {};
-      for (const b of extracted.blocks) {
-        freqMap[b.block_type] = (freqMap[b.block_type] || 0) + 1;
-      }
-
-      {
-        const { error: convInsErr } = await supabaseAdmin
-          .from("conversion_parsing")
-          .insert({
-            conv_uid,
-            source_uid,
-            conv_status: "success",
-            conv_parsing_tool: "docling",
-            conv_representation_type: "doclingdocument_json",
-            conv_total_blocks,
-            conv_block_type_freq: freqMap,
-            conv_total_characters,
-            conv_locator: docling_key,
-            pipeline_config: body.pipeline_config ?? {},
-          });
-        if (convInsErr) throw new Error(`DB insert conversion_parsing failed: ${convInsErr.message}`);
-      }
-
-      try {
-        const blockRows = extracted.blocks.map((b, idx) => ({
-          block_uid: `${conv_uid}:${idx}`,
-          conv_uid,
-          block_index: idx,
-          block_type: b.block_type,
-          block_locator: {
-            type: "docling_json_pointer",
-            pointer: b.pointer,
-            parser_block_type: b.parser_block_type,
-            parser_path: b.parser_path,
-            ...(b.page_no != null ? { page_no: b.page_no } : {}),
-            ...(b.page_nos.length > 0 ? { page_nos: b.page_nos } : {}),
-          },
-          block_content: b.block_content,
-        }));
-        if (blockRows.length === 0) throw new Error("No blocks extracted from docling JSON");
-
-        const { error: insErr } = await supabaseAdmin.from("blocks").insert(blockRows);
-        if (insErr) throw new Error(`DB insert blocks failed: ${insErr.message}`);
-
-        await insertRepresentationArtifact(supabaseAdmin, {
-          source_uid,
-          conv_uid,
-          parsing_tool: "docling",
-          representation_type: "doclingdocument_json",
-          artifact_locator: docling_key!,
-          artifact_hash: conv_uid,
-          artifact_size_bytes: doclingBytes.byteLength,
-          artifact_meta: { source_type: docRow.source_type },
-        });
-
-        await insertSupplementalRepresentation(
-          md_key,
-          "docling",
-          "markdown_bytes",
-          conv_uid,
-        );
-
-        if (pandoc_key) {
-          await insertSupplementalRepresentation(
-            pandoc_key,
-            "pandoc",
-            "pandoc_ast_json",
-            conv_uid,
-          );
-        }
-
-        if (html_key) {
-          await insertSupplementalRepresentation(
-            html_key,
-            "docling",
-            "html_bytes",
-            conv_uid,
-          );
-        }
-
-        if (doctags_key) {
-          await insertSupplementalRepresentation(
-            doctags_key,
-            "docling",
-            "doctags_text",
-            conv_uid,
-          );
-        }
-
-        const { error: finalErr } = await supabaseAdmin
-          .from("source_documents")
-          .update({ status: "ingested", error: null })
-          .eq("source_uid", source_uid);
-        if (finalErr) throw new Error(`DB update source_documents failed: ${finalErr.message}`);
-
-        return json(200, {
-          ok: true,
-          status: "ingested",
-          conv_uid,
-          blocks_count: blockRows.length,
-          track: "docling",
-        });
-      } catch (e) {
-        const msg = e instanceof Error ? e.message : String(e);
-        await supabaseAdmin
-          .from("source_documents")
-          .update({ status: "ingest_failed", error: msg })
-          .eq("source_uid", source_uid);
-        return json(200, { ok: false, status: "ingest_failed", error: msg });
-      }
-    }
-
-    // No valid track resolved — should not happen with docling/pandoc only.
-    const errMsg = `Unexpected resolved track: ${resolvedTrack}`;
-    await supabaseAdmin
-      .from("source_documents")
-      .update({ status: "conversion_failed", error: errMsg })
-      .eq("source_uid", source_uid);
-    return json(200, { ok: false, status: "conversion_failed", error: errMsg });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     return json(400, { error: msg });

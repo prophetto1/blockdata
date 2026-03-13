@@ -2,9 +2,9 @@
 > See `docs/platform-api/2026-03-10-platform-api-merge.md` for the migration plan.
 > This directory will be removed after the dual-run period.
 
-# Conversion Service (FastAPI) - Multi-Track Ingest Conversion
+# Conversion Service (FastAPI) - Docling-Only Parsing
 
-This service converts non-Markdown uploads into normalized markdown and parser representation artifacts, then calls back the Edge Function.
+This service converts uploads into normalized markdown and Docling representation artifacts, then calls back the Edge Function.
 
 It never writes Postgres directly and does not require Supabase service-role keys.
 
@@ -26,8 +26,8 @@ Body (JSON):
 {
   "source_uid": "...",
   "conversion_job_id": "...",
-  "track": "docling|pandoc|mdast",
-  "source_type": "docx|pdf|pptx|xlsx|html|csv|txt|rst|latex|odt|epub|rtf|org",
+  "track": "docling",
+  "source_type": "docx|pdf|pptx|xlsx|html|csv|txt|md|markdown|rst|latex|odt|epub|rtf|org",
   "source_download_url": "https://...signed...",
   "output": {
     "bucket": "documents",
@@ -38,12 +38,6 @@ Body (JSON):
   "docling_output": {
     "bucket": "documents",
     "key": "converted/<source_uid>/<name>.docling.json",
-    "signed_upload_url": "https://...signed...",
-    "token": null
-  },
-  "pandoc_output": {
-    "bucket": "documents",
-    "key": "converted/<source_uid>/<name>.pandoc.ast.json",
     "signed_upload_url": "https://...signed...",
     "token": null
   },
@@ -66,13 +60,9 @@ Body (JSON):
 Notes:
 
 1. `output` (markdown target) is required.
-2. `docling_output` is used when Docling JSON is available (primary or supplemental).
-3. `pandoc_output` is used when Pandoc AST is available (primary or supplemental).
-4. `html_output` and `doctags_output` are used when Docling output exports are requested.
-5. `track=mdast` currently supports `txt` conversion path in this service.
-6. For backward compatibility, if `track` is omitted:
-   - `txt` defaults to `mdast`
-   - non-`txt` defaults to `docling`
+2. `docling_output` is used when Docling JSON is requested.
+3. `html_output` and `doctags_output` are used when Docling output exports are requested.
+4. All formats are parsed via Docling. `track` must be `"docling"` (or omitted, defaults to `"docling"`).
 
 On completion (success or failure), the service POSTs to `callback_url` with:
 
@@ -80,10 +70,9 @@ On completion (success or failure), the service POSTs to `callback_url` with:
 {
   "source_uid": "...",
   "conversion_job_id": "...",
-  "track": "docling|pandoc|mdast",
+  "track": "docling",
   "md_key": "converted/<source_uid>/<name>.md",
   "docling_key": "converted/<source_uid>/<name>.docling.json",
-  "pandoc_key": "converted/<source_uid>/<name>.pandoc.ast.json",
   "html_key": "converted/<source_uid>/<name>.html",
   "doctags_key": "converted/<source_uid>/<name>.doctags",
   "success": true,
@@ -94,28 +83,17 @@ On completion (success or failure), the service POSTs to `callback_url` with:
 Key semantics:
 
 1. `docling_key` is null unless Docling JSON upload succeeded.
-2. `pandoc_key` is null unless Pandoc AST upload succeeded.
-3. `html_key` / `doctags_key` are null unless those exports were requested and uploaded.
-4. `track` is the resolved conversion track used by the service.
-5. Callback auth uses the same shared secret in `X-Conversion-Service-Key`.
+2. `html_key` / `doctags_key` are null unless those exports were requested and uploaded.
+3. Callback auth uses the same shared secret in `X-Conversion-Service-Key`.
 
 ## Determinism
 
 1. Docling JSON representation is canonicalized (`sort_keys=True`, compact separators).
-2. Pandoc AST JSON is canonicalized (`sort_keys=True`, compact separators).
-3. This supports stable `conv_uid` generation in `conversion-complete`.
+2. This supports stable `conv_uid` generation in `conversion-complete`.
 
-## Track behavior summary
+## Track behavior
 
-1. `docling`:
-   - converts via Docling to markdown,
-   - emits `doclingdocument_json` when requested,
-   - can emit `html_bytes` and `doctags_text` when requested,
-   - can emit supplemental `pandoc_ast_json` when requested and supported.
-2. `pandoc`:
-   - converts via Pandoc to markdown (`gfm`),
-   - emits `pandoc_ast_json`,
-   - can emit supplemental `doclingdocument_json` when requested and supported.
-3. `mdast`:
-   - currently direct text decode path for `txt`,
-   - can emit supplemental parser artifacts when requested and supported.
+All formats are converted via Docling:
+- Produces markdown export as primary output.
+- Emits `doclingdocument_json` when requested.
+- Can emit `html_bytes` and `doctags_text` when requested.

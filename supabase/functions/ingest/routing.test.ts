@@ -10,32 +10,51 @@ Deno.test("resolveIngestRoute resolves markdown to docling track", () => {
   assertEquals(resolved.track, "docling");
 });
 
-Deno.test("resolveIngestRoute resolves rst to pandoc when enabled and allowed", () => {
+Deno.test("resolveIngestRoute resolves rst to docling track", () => {
   const policy = runtimePolicyDefaults();
-  policy.upload.track_enabled.pandoc = true;
-  policy.upload.allowed_extensions.push("rst");
   const resolved = resolveIngestRoute("spec.rst", policy);
   assertEquals(resolved.extension, "rst");
   assertEquals(resolved.source_type, "rst");
-  assertEquals(resolved.track, "pandoc");
+  assertEquals(resolved.track, "docling");
 });
 
-Deno.test("resolveIngestRoute rejects disabled extension", () => {
+Deno.test("resolveIngestRoute resolves odt to docling track", () => {
+  const policy = runtimePolicyDefaults();
+  const resolved = resolveIngestRoute("doc.odt", policy);
+  assertEquals(resolved.extension, "odt");
+  assertEquals(resolved.source_type, "odt");
+  assertEquals(resolved.track, "docling");
+});
+
+Deno.test("resolveIngestRoute resolves epub to docling track", () => {
+  const policy = runtimePolicyDefaults();
+  const resolved = resolveIngestRoute("book.epub", policy);
+  assertEquals(resolved.extension, "epub");
+  assertEquals(resolved.source_type, "epub");
+  assertEquals(resolved.track, "docling");
+});
+
+Deno.test("resolveIngestRoute resolves rtf to docling track", () => {
+  const policy = runtimePolicyDefaults();
+  const resolved = resolveIngestRoute("memo.rtf", policy);
+  assertEquals(resolved.extension, "rtf");
+  assertEquals(resolved.source_type, "rtf");
+  assertEquals(resolved.track, "docling");
+});
+
+Deno.test("resolveIngestRoute resolves org to docling track", () => {
+  const policy = runtimePolicyDefaults();
+  const resolved = resolveIngestRoute("notes.org", policy);
+  assertEquals(resolved.extension, "org");
+  assertEquals(resolved.source_type, "org");
+  assertEquals(resolved.track, "docling");
+});
+
+Deno.test("resolveIngestRoute rejects unsupported extension", () => {
   const policy = runtimePolicyDefaults();
   assertThrows(
-    () => resolveIngestRoute("paper.rst", policy),
+    () => resolveIngestRoute("photo.jpg", policy),
     Error,
     "Extension not enabled by runtime policy",
-  );
-});
-
-Deno.test("resolveIngestRoute rejects when routed track is disabled", () => {
-  const policy = runtimePolicyDefaults();
-  policy.upload.allowed_extensions.push("rst");
-  policy.upload.track_enabled.pandoc = false;
-  assertThrows(
-    () => resolveIngestRoute("paper.rst", policy),
-    Error,
-    "Track disabled by runtime policy",
   );
 });

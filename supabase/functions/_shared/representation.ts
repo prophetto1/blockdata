@@ -1,10 +1,9 @@
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-export type ParsingTool = "docling" | "pandoc";
+export type ParsingTool = "docling";
 export type RepresentationType =
   | "markdown_bytes"
   | "doclingdocument_json"
-  | "pandoc_ast_json"
   | "html_bytes"
   | "doctags_text"
   | "citations_json";

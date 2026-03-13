@@ -41,25 +41,17 @@ const DOCX_EXTENSIONS = new Set(['docx', 'docm', 'dotx', 'dotm']);
 const PPTX_SOURCE_TYPES = new Set(['pptx', 'pptm', 'ppsx']);
 const PPTX_EXTENSIONS = new Set(['pptx', 'pptm', 'ppsx']);
 
-type ParserTrack = 'docling' | 'pandoc';
+type ParserTrack = 'docling';
 type TrackInfo = { track: ParserTrack; rep: string; badgeClass: string };
 
+const DOCLING_TRACK: TrackInfo = { track: 'docling', rep: 'doclingdocument_json', badgeClass: 'bg-violet-500/15 text-violet-400' };
+
 const TRACK_MAP: Record<string, TrackInfo> = {
-  md: { track: 'docling', rep: 'doclingdocument_json', badgeClass: 'bg-violet-500/15 text-violet-400' },
-  markdown: { track: 'docling', rep: 'doclingdocument_json', badgeClass: 'bg-violet-500/15 text-violet-400' },
-  txt: { track: 'docling', rep: 'doclingdocument_json', badgeClass: 'bg-violet-500/15 text-violet-400' },
-  docx: { track: 'docling', rep: 'doclingdocument_json', badgeClass: 'bg-violet-500/15 text-violet-400' },
-  pdf: { track: 'docling', rep: 'doclingdocument_json', badgeClass: 'bg-violet-500/15 text-violet-400' },
-  pptx: { track: 'docling', rep: 'doclingdocument_json', badgeClass: 'bg-violet-500/15 text-violet-400' },
-  xlsx: { track: 'docling', rep: 'doclingdocument_json', badgeClass: 'bg-violet-500/15 text-violet-400' },
-  html: { track: 'docling', rep: 'doclingdocument_json', badgeClass: 'bg-violet-500/15 text-violet-400' },
-  csv: { track: 'docling', rep: 'doclingdocument_json', badgeClass: 'bg-violet-500/15 text-violet-400' },
-  rst: { track: 'pandoc', rep: 'pandoc_ast_json', badgeClass: 'bg-orange-500/15 text-orange-400' },
-  latex: { track: 'pandoc', rep: 'pandoc_ast_json', badgeClass: 'bg-orange-500/15 text-orange-400' },
-  odt: { track: 'pandoc', rep: 'pandoc_ast_json', badgeClass: 'bg-orange-500/15 text-orange-400' },
-  epub: { track: 'pandoc', rep: 'pandoc_ast_json', badgeClass: 'bg-orange-500/15 text-orange-400' },
-  rtf: { track: 'pandoc', rep: 'pandoc_ast_json', badgeClass: 'bg-orange-500/15 text-orange-400' },
-  org: { track: 'pandoc', rep: 'pandoc_ast_json', badgeClass: 'bg-orange-500/15 text-orange-400' },
+  md: DOCLING_TRACK, markdown: DOCLING_TRACK, txt: DOCLING_TRACK,
+  docx: DOCLING_TRACK, pdf: DOCLING_TRACK, pptx: DOCLING_TRACK,
+  xlsx: DOCLING_TRACK, html: DOCLING_TRACK, csv: DOCLING_TRACK,
+  rst: DOCLING_TRACK, latex: DOCLING_TRACK, odt: DOCLING_TRACK,
+  epub: DOCLING_TRACK, rtf: DOCLING_TRACK, org: DOCLING_TRACK,
 };
 
 function getTrackInfo(sourceType: string): TrackInfo {
