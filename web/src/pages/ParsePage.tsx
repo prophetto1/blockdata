@@ -4,8 +4,11 @@ import {
   IconPlayerPlay,
   IconEye,
   IconDownload,
+  IconFileText,
   IconChevronDown,
   IconChevronRight,
+  IconRefresh,
+  IconTrash,
   IconX,
 } from '@tabler/icons-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -20,6 +23,8 @@ import {
 import { useBatchParse, type FileDispatchStatus } from '@/hooks/useBatchParse';
 import { supabase } from '@/lib/supabase';
 import { cn } from '@/lib/utils';
+import Markdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 const DOCUMENTS_BUCKET =
   (import.meta.env.VITE_DOCUMENTS_BUCKET as string | undefined) ?? 'documents';
@@ -103,6 +108,7 @@ export default function ParsePage() {
   const [configOpen, setConfigOpen] = useState(false);
 
   const [jsonModal, setJsonModal] = useState<{ title: string; content: string } | null>(null);
+  const [preview, setPreview] = useState<{ title: string; markdown: string; loading: boolean } | null>(null);
 
   const parsedConfig = useMemo(() => {
     try {
@@ -219,8 +225,12 @@ export default function ParsePage() {
     .filter((d) => d.status === 'uploaded' || d.status === 'conversion_failed' || d.status === 'ingest_failed')
     .map((d) => d.source_uid);
 
-  const selectedUids = docs
-    .filter((d) => selected.has(d.source_uid))
+  const selectedParseableUids = docs
+    .filter((d) => selected.has(d.source_uid) && (d.status === 'uploaded' || d.status === 'conversion_failed' || d.status === 'ingest_failed'))
+    .map((d) => d.source_uid);
+
+  const selectedResetableUids = docs
+    .filter((d) => selected.has(d.source_uid) && (d.status === 'converting' || d.status === 'conversion_failed' || d.status === 'ingest_failed'))
     .map((d) => d.source_uid);
 
   const parsedCount = docs.filter((d) => d.status === 'ingested').length;
@@ -230,21 +240,25 @@ export default function ParsePage() {
     batch.start([uid]);
   };
 
-  const handleViewJson = async (doc: ProjectDocumentRow) => {
+  const handlePreview = async (doc: ProjectDocumentRow) => {
     const baseName = getBaseName(doc.source_locator);
     if (!baseName) return;
-    const key = `converted/${doc.source_uid}/${baseName}.docling.json`;
+    setPreview({ title: doc.doc_title, markdown: '', loading: true });
+    const key = `converted/${doc.source_uid}/${baseName}.md`;
     const { data, error: urlError } = await supabase.storage
       .from(DOCUMENTS_BUCKET)
       .createSignedUrl(key, 60 * 20);
-    if (urlError || !data?.signedUrl) return;
+    if (urlError || !data?.signedUrl) {
+      setPreview({ title: doc.doc_title, markdown: 'No markdown available. Reset and re-parse with Docling.', loading: false });
+      return;
+    }
     try {
       const resp = await fetch(data.signedUrl);
+      if (!resp.ok) throw new Error();
       const text = await resp.text();
-      const formatted = JSON.stringify(JSON.parse(text), null, 2);
-      setJsonModal({ title: doc.doc_title, content: formatted });
+      setPreview({ title: doc.doc_title, markdown: text, loading: false });
     } catch {
-      setJsonModal({ title: doc.doc_title, content: 'Failed to load JSON.' });
+      setPreview({ title: doc.doc_title, markdown: 'No markdown available. Reset and re-parse with Docling.', loading: false });
     }
   };
 
@@ -256,6 +270,48 @@ export default function ParsePage() {
       .from(DOCUMENTS_BUCKET)
       .createSignedUrl(key, 60 * 20);
     if (data?.signedUrl) window.open(data.signedUrl, '_blank');
+  };
+
+  const handleDownloadMd = async (doc: ProjectDocumentRow) => {
+    const baseName = getBaseName(doc.source_locator);
+    if (!baseName) return;
+    const key = `converted/${doc.source_uid}/${baseName}.md`;
+    const { data } = await supabase.storage
+      .from(DOCUMENTS_BUCKET)
+      .createSignedUrl(key, 60 * 20);
+    if (data?.signedUrl) window.open(data.signedUrl, '_blank');
+  };
+
+  const handleReset = async (uid: string) => {
+    const { error: rpcErr } = await supabase.rpc('reset_source_document', { p_source_uid: uid });
+    if (rpcErr) {
+      console.error('Reset failed:', rpcErr.message);
+      return;
+    }
+    setDocs((prev) => prev.map((d) => d.source_uid === uid ? { ...d, status: 'uploaded', error: null } : d));
+  };
+
+  const handleResetAndParse = async (uid: string) => {
+    await handleReset(uid);
+    batch.start([uid]);
+  };
+
+  const handleDelete = async (uid: string) => {
+    const { error: rpcErr } = await supabase.rpc('delete_source_document', { p_source_uid: uid });
+    if (rpcErr) {
+      console.error('Delete failed:', rpcErr.message);
+      return;
+    }
+    setDocs((prev) => prev.filter((d) => d.source_uid !== uid));
+    setSelected((prev) => { const next = new Set(prev); next.delete(uid); return next; });
+  };
+
+  const handleBulkDelete = async () => {
+    for (const uid of Array.from(selected)) await handleDelete(uid);
+  };
+
+  const handleBulkReset = async () => {
+    for (const uid of selectedResetableUids) await handleReset(uid);
   };
 
   if (!resolvedProjectId) {
@@ -295,14 +351,38 @@ export default function ParsePage() {
           Parse All ({unparsedUids.length})
         </button>
 
+        {selectedParseableUids.length > 0 && (
+          <button
+            type="button"
+            disabled={batch.isRunning || !selectedProfileId}
+            onClick={() => batch.start(selectedParseableUids)}
+            className="h-7 rounded-md border border-border px-2 text-xs font-medium text-foreground hover:bg-accent disabled:opacity-50 transition-colors"
+          >
+            Parse Selected ({selectedParseableUids.length})
+          </button>
+        )}
+
+        {selectedResetableUids.length > 0 && (
+          <button
+            type="button"
+            onClick={() => void handleBulkReset()}
+            className="flex items-center gap-1 h-7 rounded-md border border-border px-2 text-xs font-medium text-foreground hover:bg-accent transition-colors"
+            title="Reset selected files to unparsed"
+          >
+            <IconRefresh size={12} />
+            Reset ({selectedResetableUids.length})
+          </button>
+        )}
+
         {selected.size > 0 && (
           <button
             type="button"
-            disabled={selectedUids.length === 0 || batch.isRunning || !selectedProfileId}
-            onClick={() => batch.start(selectedUids)}
-            className="h-7 rounded-md border border-border px-2 text-xs font-medium text-foreground hover:bg-accent disabled:opacity-50 transition-colors"
+            onClick={() => void handleBulkDelete()}
+            className="flex items-center gap-1 h-7 rounded-md border border-destructive/50 px-2 text-xs font-medium text-destructive hover:bg-destructive/10 transition-colors"
+            title="Delete selected files"
           >
-            Parse Selected ({selectedUids.length})
+            <IconTrash size={12} />
+            Delete ({selected.size})
           </button>
         )}
 
@@ -460,11 +540,19 @@ export default function ParsePage() {
                           <>
                             <button
                               type="button"
-                              onClick={() => void handleViewJson(doc)}
+                              onClick={() => void handlePreview(doc)}
                               className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-accent"
-                              title="View DoclingDocument JSON"
+                              title="Preview markdown"
                             >
                               <IconEye size={14} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => void handleDownloadMd(doc)}
+                              className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-accent"
+                              title="Download markdown"
+                            >
+                              <IconFileText size={14} />
                             </button>
                             <button
                               type="button"
@@ -474,8 +562,35 @@ export default function ParsePage() {
                             >
                               <IconDownload size={14} />
                             </button>
+                            <button
+                              type="button"
+                              onClick={() => void handleResetAndParse(doc.source_uid)}
+                              disabled={batch.isRunning}
+                              className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-accent disabled:opacity-50"
+                              title="Reset & re-parse"
+                            >
+                              <IconRefresh size={14} />
+                            </button>
                           </>
                         )}
+                        {(isConverting || doc.status === 'conversion_failed' || doc.status === 'ingest_failed') && (
+                          <button
+                            type="button"
+                            onClick={() => void handleReset(doc.source_uid)}
+                            className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-accent"
+                            title="Reset to unparsed"
+                          >
+                            <IconRefresh size={14} />
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => void handleDelete(doc.source_uid)}
+                          className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                          title="Delete file"
+                        >
+                          <IconTrash size={14} />
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -524,9 +639,37 @@ export default function ParsePage() {
       )}
     </section>
 
-      {/* Right: reserved for block-based preview */}
-      <section className="flex min-h-0 flex-1 flex-col items-center justify-center text-sm text-muted-foreground">
-        <p>Select a parsed file to preview</p>
+      {/* Right: markdown preview */}
+      <section className="flex min-h-0 flex-1 flex-col overflow-hidden">
+        {!preview && (
+          <div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
+            <p>Click the eye icon on a parsed file to preview</p>
+          </div>
+        )}
+        {preview?.loading && (
+          <div className="flex flex-1 items-center justify-center">
+            <IconLoader2 size={20} className="animate-spin text-muted-foreground" />
+          </div>
+        )}
+        {preview && !preview.loading && (
+          <>
+            <div className="flex items-center justify-between border-b border-border px-4 py-2">
+              <h3 className="truncate text-sm font-medium text-foreground">{preview.title}</h3>
+              <button
+                type="button"
+                onClick={() => setPreview(null)}
+                className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-accent"
+              >
+                <IconX size={14} />
+              </button>
+            </div>
+            <ScrollArea className="min-h-0 flex-1" viewportClass="h-full overflow-auto">
+              <div className="prose prose-sm dark:prose-invert max-w-none px-6 py-4">
+                <Markdown remarkPlugins={[remarkGfm]}>{preview.markdown}</Markdown>
+              </div>
+            </ScrollArea>
+          </>
+        )}
       </section>
     </div>
   );

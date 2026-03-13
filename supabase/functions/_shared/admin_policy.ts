@@ -123,9 +123,9 @@ const DEFAULT_POLICY: RuntimePolicy = {
       pandoc: false,
     },
     extension_track_routing: {
-      md: "mdast",
-      markdown: "mdast",
-      txt: "mdast",
+      md: "docling",
+      markdown: "docling",
+      txt: "docling",
       docx: "docling",
       pdf: "docling",
       pptx: "docling",
@@ -148,7 +148,7 @@ const DEFAULT_POLICY: RuntimePolicy = {
           extensions: ["md", "markdown", "txt"],
         },
         docling: {
-          extensions: ["docx", "pdf", "pptx", "xlsx", "html", "htm", "csv"],
+          extensions: ["md", "markdown", "txt", "docx", "pdf", "pptx", "xlsx", "html", "htm", "csv"],
         },
         pandoc: {
           extensions: ["rst", "tex", "latex", "odt", "epub", "rtf", "org"],
@@ -156,7 +156,7 @@ const DEFAULT_POLICY: RuntimePolicy = {
       },
     },
     parser_artifact_source_types: {
-      docling: ["docx", "pdf", "pptx", "xlsx", "html", "csv"],
+      docling: ["md", "markdown", "txt", "docx", "pdf", "pptx", "xlsx", "html", "csv"],
       pandoc: ["docx", "html", "txt", "rst", "latex", "odt", "epub", "rtf", "org"],
     },
   },

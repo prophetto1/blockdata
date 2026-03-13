@@ -1,10 +1,7 @@
 import { corsPreflight, withCorsHeaders } from "../_shared/cors.ts";
 import { getEnv, requireEnv } from "../_shared/env.ts";
-import { concatBytes, sha256Hex } from "../_shared/hash.ts";
 import { loadRuntimePolicy } from "../_shared/admin_policy.ts";
 import { isConversionAckTimeoutError, raceWithAckTimeout, resolveConversionAckTimeoutMs } from "../_shared/conversion-ack-timeout.ts";
-import { extractBlocks } from "../_shared/markdown.ts";
-import { insertRepresentationArtifact } from "../_shared/representation.ts";
 import { basenameNoExt } from "../_shared/sanitize.ts";
 import { createAdminClient, requireUserId } from "../_shared/supabase.ts";
 
@@ -72,96 +69,6 @@ Deno.serve(async (req) => {
         .single();
       if (profileErr) throw new Error(`Profile lookup failed: ${profileErr.message}`);
       pipeline_config = (profile.config as Record<string, unknown>) ?? {};
-    }
-
-    // Markdown files: parse inline via mdast (no conversion service needed).
-    if (source_type === "md" || source_type === "markdown" || source_type === "txt") {
-      const bucket = getEnv("DOCUMENTS_BUCKET", "documents");
-      const source_key = doc.source_locator as string;
-
-      // Download the file from storage.
-      const { data: fileData, error: dlErr } = await supabaseAdmin.storage
-        .from(bucket)
-        .download(source_key);
-      if (dlErr || !fileData) throw new Error(`Failed to download file: ${dlErr?.message ?? "unknown"}`);
-      const fileBytes = new Uint8Array(await fileData.arrayBuffer());
-      const markdown = new TextDecoder().decode(fileBytes);
-
-      // Clean up stale DB rows from previous parse attempts.
-      const prevConv = await supabaseAdmin.from("conversion_parsing").select("conv_uid").eq("source_uid", source_uid).maybeSingle();
-      if (prevConv.data?.conv_uid) {
-        await supabaseAdmin.from("blocks").delete().eq("conv_uid", prevConv.data.conv_uid);
-      }
-      await supabaseAdmin.from("conversion_representations").delete().eq("source_uid", source_uid);
-      await supabaseAdmin.from("conversion_parsing").delete().eq("source_uid", source_uid);
-
-      // Generate conv_uid and extract blocks.
-      const convPrefix = new TextEncoder().encode("mdast\nmarkdown_bytes\n");
-      const conv_uid = await sha256Hex(concatBytes([convPrefix, fileBytes]));
-      const extracted = extractBlocks(markdown);
-
-      const conv_total_blocks = extracted.blocks.length;
-      const conv_total_characters = extracted.blocks.reduce((sum, b) => sum + b.block_content.length, 0);
-      const freqMap: Record<string, number> = {};
-      for (const b of extracted.blocks) {
-        freqMap[b.block_type] = (freqMap[b.block_type] || 0) + 1;
-      }
-
-      // Insert conversion_parsing row.
-      const { error: cpErr } = await supabaseAdmin.from("conversion_parsing").insert({
-        conv_uid,
-        source_uid,
-        conv_status: "success",
-        conv_parsing_tool: "mdast",
-        conv_representation_type: "markdown_bytes",
-        conv_total_blocks,
-        conv_block_type_freq: freqMap,
-        conv_total_characters,
-        conv_locator: source_key,
-        pipeline_config: pipeline_config ?? {},
-      });
-      if (cpErr) throw new Error(`DB insert conversion_parsing failed: ${cpErr.message}`);
-
-      // Insert blocks.
-      const blockRows = extracted.blocks.map((b, idx) => ({
-        block_uid: `${conv_uid}:${idx}`,
-        conv_uid,
-        block_index: idx,
-        block_type: b.block_type,
-        block_locator: {
-          type: "text_offset_range",
-          start_offset: b.start_offset,
-          end_offset: b.end_offset,
-          parser_block_type: b.parser_block_type,
-          parser_path: b.parser_path,
-        },
-        block_content: b.block_content,
-      }));
-
-      if (blockRows.length > 0) {
-        const { error: blkErr } = await supabaseAdmin.from("blocks").insert(blockRows);
-        if (blkErr) throw new Error(`DB insert blocks failed: ${blkErr.message}`);
-      }
-
-      // Insert representation artifact.
-      await insertRepresentationArtifact(supabaseAdmin, {
-        source_uid,
-        conv_uid,
-        parsing_tool: "mdast",
-        representation_type: "markdown_bytes",
-        artifact_locator: source_key,
-        artifact_hash: conv_uid,
-        artifact_size_bytes: fileBytes.byteLength,
-        artifact_meta: { source_type },
-      });
-
-      // Update status to ingested.
-      await supabaseAdmin
-        .from("source_documents")
-        .update({ status: "ingested", error: null })
-        .eq("source_uid", source_uid);
-
-      return json(200, { source_uid, conv_uid, status: "ingested", blocks_count: blockRows.length });
     }
 
     const track = runtimePolicy.upload.extension_track_routing[source_type];
