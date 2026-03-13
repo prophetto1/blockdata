@@ -159,6 +159,8 @@ function AppShellInner() {
   const isApiEditorRoute = /^\/app\/api-editor(?:\/|$)/.test(location.pathname);
   const isMarketplaceServiceDetailRoute = /^\/app\/marketplace\/services\/[^/]+(?:\/|$)/.test(location.pathname);
   const isSuperuserRoute = /^\/app\/superuser(?:\/|$)/.test(location.pathname);
+  const isAssetsRoute = location.pathname === '/app/assets';
+  const isParseRoute = location.pathname === '/app/parse';
   const lockMainScroll = (
     isEltRoute
     || isEditorLayoutRoute
@@ -167,6 +169,8 @@ function AppShellInner() {
     || isApiEditorRoute
     || isMarketplaceServiceDetailRoute
     || isSuperuserRoute
+    || isAssetsRoute
+    || isParseRoute
   );
 
   useEffect(() => {
@@ -345,7 +349,7 @@ function AppShellInner() {
         )}
 
         <main style={shellMainStyle}>
-          {(isFlowsRoute || isMarketplaceServiceDetailRoute || isSuperuserRoute) ? (
+          {(isFlowsRoute || isMarketplaceServiceDetailRoute || isSuperuserRoute || isAssetsRoute || isParseRoute) ? (
             <Outlet />
           ) : (
             <AppPageShell mode="fluid">

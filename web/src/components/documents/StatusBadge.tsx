@@ -1,14 +1,15 @@
+import { Badge } from '@/components/ui/badge';
 import type { FileDispatchStatus } from '@/hooks/useBatchParse';
 
 export function StatusBadge({ status, error }: { status: string; error?: string | null }) {
-  const variant =
+  const variant: 'green' | 'red' | 'blue' | 'gray' =
     status === 'parsed'
-      ? 'bg-green-500/10 text-green-600 dark:text-green-400'
+      ? 'green'
       : status === 'conversion_failed' || status === 'parse_failed'
-        ? 'bg-destructive/10 text-destructive'
+        ? 'red'
         : status === 'converting'
-          ? 'bg-primary/10 text-primary'
-          : 'bg-muted/60 text-muted-foreground';
+          ? 'blue'
+          : 'gray';
   const label =
     status === 'parsed'
       ? 'parsed'
@@ -16,28 +17,25 @@ export function StatusBadge({ status, error }: { status: string; error?: string 
         ? 'unparsed'
         : status.replace(/_/g, ' ');
   return (
-    <span
-      className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium ${variant}`}
-      title={error ?? undefined}
-    >
+    <Badge variant={variant} size="xs" title={error ?? undefined}>
       {label}
-    </span>
+    </Badge>
   );
 }
 
 export function DispatchBadge({ status }: { status: FileDispatchStatus }) {
   if (status === 'idle') return null;
-  const variant =
+  const variant: 'blue' | 'red' | 'default' | 'gray' =
     status === 'dispatched'
-      ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400'
+      ? 'blue'
       : status === 'dispatch_error'
-        ? 'bg-destructive/10 text-destructive'
+        ? 'red'
         : status === 'dispatching'
-          ? 'bg-primary/10 text-primary'
-          : 'bg-muted/60 text-muted-foreground';
+          ? 'default'
+          : 'gray';
   return (
-    <span className={`ml-1 inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium ${variant}`}>
+    <Badge variant={variant} size="xs" className="ml-1">
       {status === 'dispatching' ? 'sending...' : status}
-    </span>
+    </Badge>
   );
 }

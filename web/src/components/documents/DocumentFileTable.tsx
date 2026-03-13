@@ -1,10 +1,16 @@
 import type { ReactNode } from 'react';
 import { IconLoader2 } from '@tabler/icons-react';
+import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { StatusBadge } from '@/components/documents/StatusBadge';
 import type { ProjectDocumentRow } from '@/lib/projectDetailHelpers';
 import { getDocumentFormat, formatBytes } from '@/lib/projectDetailHelpers';
 import { cn } from '@/lib/utils';
+
+export interface ExtraColumn {
+  header: string;
+  render: (doc: ProjectDocumentRow) => ReactNode;
+}
 
 interface DocumentFileTableProps {
   docs: ProjectDocumentRow[];
@@ -19,6 +25,8 @@ interface DocumentFileTableProps {
   onDocClick?: (doc: ProjectDocumentRow) => void;
   renderRowActions?: (doc: ProjectDocumentRow) => ReactNode;
   emptyMessage?: string;
+  hideStatus?: boolean;
+  extraColumns?: ExtraColumn[];
 }
 
 export function DocumentFileTable({
@@ -34,7 +42,10 @@ export function DocumentFileTable({
   onDocClick,
   renderRowActions,
   emptyMessage = 'No files in this project yet.',
+  hideStatus = false,
+  extraColumns = [],
 }: DocumentFileTableProps) {
+  const baseCols = 4 + (hideStatus ? 0 : 1) + extraColumns.length + (renderRowActions ? 1 : 0);
   return (
     <div className="flex h-full flex-col">
       <ScrollArea className="min-h-0 flex-1" viewportClass="h-full overflow-auto">
@@ -55,14 +66,17 @@ export function DocumentFileTable({
               <th className="px-3 py-2 font-medium">Name</th>
               <th className="px-3 py-2 font-medium">Format</th>
               <th className="px-3 py-2 font-medium">Size</th>
-              <th className="px-3 py-2 font-medium">Status</th>
+              {!hideStatus && <th className="px-3 py-2 font-medium">Status</th>}
+              {extraColumns.map((col) => (
+                <th key={col.header} className="px-3 py-2 font-medium">{col.header}</th>
+              ))}
               {renderRowActions && <th className="px-3 py-2 font-medium">Actions</th>}
             </tr>
           </thead>
           <tbody>
             {loading && (
               <tr>
-                <td colSpan={renderRowActions ? 6 : 5} className="px-3 py-8 text-center">
+                <td colSpan={baseCols} className="px-3 py-8 text-center">
                   <div className="inline-flex items-center gap-2 text-sm text-muted-foreground">
                     <IconLoader2 size={16} className="animate-spin" />
                     Loading files…
@@ -73,7 +87,7 @@ export function DocumentFileTable({
 
             {!loading && error && (
               <tr>
-                <td colSpan={renderRowActions ? 6 : 5} className="px-3 py-8 text-center text-sm text-destructive">
+                <td colSpan={baseCols} className="px-3 py-8 text-center text-sm text-destructive">
                   {error}
                 </td>
               </tr>
@@ -81,7 +95,7 @@ export function DocumentFileTable({
 
             {!loading && !error && docs.length === 0 && (
               <tr>
-                <td colSpan={renderRowActions ? 6 : 5} className="px-3 py-12 text-center text-sm text-muted-foreground">
+                <td colSpan={baseCols} className="px-3 py-12 text-center text-sm text-muted-foreground">
                   {emptyMessage}
                 </td>
               </tr>
@@ -118,16 +132,21 @@ export function DocumentFileTable({
                     </span>
                   </td>
                   <td className="px-3 py-2.5">
-                    <span className="inline-flex rounded bg-muted/60 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-muted-foreground">
+                    <Badge variant="gray" size="xs" className="uppercase">
                       {getDocumentFormat(doc)}
-                    </span>
+                    </Badge>
                   </td>
                   <td className="px-3 py-2.5 text-muted-foreground">
                     {formatBytes(doc.source_filesize)}
                   </td>
-                  <td className="px-3 py-2.5">
-                    <StatusBadge status={doc.status} error={doc.error} />
-                  </td>
+                  {!hideStatus && (
+                    <td className="px-3 py-2.5">
+                      <StatusBadge status={doc.status} error={doc.error} />
+                    </td>
+                  )}
+                  {extraColumns.map((col) => (
+                    <td key={col.header} className="px-3 py-2.5">{col.render(doc)}</td>
+                  ))}
                   {renderRowActions && (
                     <td className="px-3 py-2.5">{renderRowActions(doc)}</td>
                   )}

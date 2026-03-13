@@ -1,21 +1,21 @@
 # Component Inventory
 
-Generated: 2026-03-12T20:26:21.831Z
+Generated: 2026-03-13T18:50:21.230Z
 Scope: auth
 
-Pages scanned: 44
-Unique component usages: 447
+Pages scanned: 46
+Unique component usages: 453
 
 ## Category Totals
 
 | Category | Count |
 | --- | ---: |
-| ark-ui | 146 |
-| external-package | 17 |
-| in-file component | 26 |
-| local-components | 155 |
+| ark-ui | 149 |
+| external-package | 18 |
+| in-file component | 21 |
+| local-components | 149 |
 | relative-local | 20 |
-| tabler-icons | 83 |
+| tabler-icons | 96 |
 
 ## src/pages/AgentOnboarding.tsx
 
@@ -89,6 +89,16 @@ Component usages: 4
 | `ErrorAlert` | `@/components/common/ErrorAlert` | local-components | ErrorAlert comes from @/components/common/ErrorAlert (named import of ErrorAlert) |
 | `IconDatabase` | `@tabler/icons-react` | tabler-icons | IconDatabase comes from @tabler/icons-react (named import of IconDatabase) |
 | `PageHeader` | `@/components/common/PageHeader` | local-components | PageHeader comes from @/components/common/PageHeader (named import of PageHeader) |
+
+## src/pages/DocsEditor.tsx
+
+Component usages: 3
+
+| Used As | Source | Category | Definition |
+| --- | --- | --- | --- |
+| `IconLoader2` | `@tabler/icons-react` | tabler-icons | IconLoader2 comes from @tabler/icons-react (named import of IconLoader2) |
+| `OnlyOfficeEditorPanel` | `@/components/documents/OnlyOfficeEditorPanel` | local-components | OnlyOfficeEditorPanel comes from @/components/documents/OnlyOfficeEditorPanel (named import of OnlyOfficeEditorPanel) |
+| `ScrollArea` | `@/components/ui/scroll-area` | local-components | ScrollArea comes from @/components/ui/scroll-area (named import of ScrollArea) |
 
 ## src/pages/DocumentTest.tsx
 
@@ -250,6 +260,55 @@ Component usages: 1
 | Used As | Source | Category | Definition |
 | --- | --- | --- | --- |
 | `Link` | `react-router-dom` | external-package | Link comes from react-router-dom (named import of Link) |
+
+## src/pages/ParsePage.tsx
+
+Component usages: 9
+
+| Used As | Source | Category | Definition |
+| --- | --- | --- | --- |
+| `ActionMenu` | `(in-file or unresolved)` | in-file component | ActionMenu is defined in the same page file |
+| `DispatchBadge` | `(in-file or unresolved)` | in-file component | DispatchBadge is defined in the same page file |
+| `IconDotsVertical` | `@tabler/icons-react` | tabler-icons | IconDotsVertical comes from @tabler/icons-react (named import of IconDotsVertical) |
+| `IconLoader2` | `@tabler/icons-react` | tabler-icons | IconLoader2 comes from @tabler/icons-react (named import of IconLoader2) |
+| `IconPlayerPlay` | `@tabler/icons-react` | tabler-icons | IconPlayerPlay comes from @tabler/icons-react (named import of IconPlayerPlay) |
+| `IconX` | `@tabler/icons-react` | tabler-icons | IconX comes from @tabler/icons-react (named import of IconX) |
+| `Markdown` | `react-markdown` | external-package | Markdown comes from react-markdown (default import of default) |
+| `ScrollArea` | `@/components/ui/scroll-area` | local-components | ScrollArea comes from @/components/ui/scroll-area (named import of ScrollArea) |
+| `StatusBadge` | `(in-file or unresolved)` | in-file component | StatusBadge is defined in the same page file |
+
+## src/pages/ProjectAssetsPage.tsx
+
+Component usages: 26
+
+| Used As | Source | Category | Definition |
+| --- | --- | --- | --- |
+| `Button` | `@/components/ui/button` | local-components | Button comes from @/components/ui/button (named import of Button) |
+| `DialogCloseTrigger` | `@/components/ui/dialog` | local-components | DialogCloseTrigger comes from @/components/ui/dialog (named import of DialogCloseTrigger) |
+| `DialogContent` | `@/components/ui/dialog` | local-components | DialogContent comes from @/components/ui/dialog (named import of DialogContent) |
+| `DialogDescription` | `@/components/ui/dialog` | local-components | DialogDescription comes from @/components/ui/dialog (named import of DialogDescription) |
+| `DialogFooter` | `@/components/ui/dialog` | local-components | DialogFooter comes from @/components/ui/dialog (named import of DialogFooter) |
+| `DialogRoot` | `@/components/ui/dialog` | local-components | DialogRoot comes from @/components/ui/dialog (named import of DialogRoot) |
+| `DialogTitle` | `@/components/ui/dialog` | local-components | DialogTitle comes from @/components/ui/dialog (named import of DialogTitle) |
+| `FileStatusIcon` | `(in-file or unresolved)` | in-file component | FileStatusIcon is defined in the same page file |
+| `FileUpload.Dropzone` | `@ark-ui/react/file-upload` | ark-ui | FileUpload.Dropzone comes from @ark-ui/react/file-upload (named import of FileUpload) |
+| `FileUpload.HiddenInput` | `@ark-ui/react/file-upload` | ark-ui | FileUpload.HiddenInput comes from @ark-ui/react/file-upload (named import of FileUpload) |
+| `FileUpload.Root` | `@ark-ui/react/file-upload` | ark-ui | FileUpload.Root comes from @ark-ui/react/file-upload (named import of FileUpload) |
+| `IconAlertCircle` | `@tabler/icons-react` | tabler-icons | IconAlertCircle comes from @tabler/icons-react (named import of IconAlertCircle) |
+| `IconBrandGoogleDrive` | `@tabler/icons-react` | tabler-icons | IconBrandGoogleDrive comes from @tabler/icons-react (named import of IconBrandGoogleDrive) |
+| `IconCheck` | `@tabler/icons-react` | tabler-icons | IconCheck comes from @tabler/icons-react (named import of IconCheck) |
+| `IconChevronLeft` | `@tabler/icons-react` | tabler-icons | IconChevronLeft comes from @tabler/icons-react (named import of IconChevronLeft) |
+| `IconChevronRight` | `@tabler/icons-react` | tabler-icons | IconChevronRight comes from @tabler/icons-react (named import of IconChevronRight) |
+| `IconDownload` | `@tabler/icons-react` | tabler-icons | IconDownload comes from @tabler/icons-react (named import of IconDownload) |
+| `IconFile` | `@tabler/icons-react` | tabler-icons | IconFile comes from @tabler/icons-react (named import of IconFile) |
+| `IconLoader2` | `@tabler/icons-react` | tabler-icons | IconLoader2 comes from @tabler/icons-react (named import of IconLoader2) |
+| `IconSearch` | `@tabler/icons-react` | tabler-icons | IconSearch comes from @tabler/icons-react (named import of IconSearch) |
+| `IconTrash` | `@tabler/icons-react` | tabler-icons | IconTrash comes from @tabler/icons-react (named import of IconTrash) |
+| `IconUpload` | `@tabler/icons-react` | tabler-icons | IconUpload comes from @tabler/icons-react (named import of IconUpload) |
+| `IconX` | `@tabler/icons-react` | tabler-icons | IconX comes from @tabler/icons-react (named import of IconX) |
+| `Input` | `@/components/ui/input` | local-components | Input comes from @/components/ui/input (named import of Input) |
+| `NativeSelect` | `@/components/ui/native-select` | local-components | NativeSelect comes from @/components/ui/native-select (named import of NativeSelect) |
+| `ScrollArea` | `@/components/ui/scroll-area` | local-components | ScrollArea comes from @/components/ui/scroll-area (named import of ScrollArea) |
 
 ## src/pages/Projects.tsx
 
@@ -433,45 +492,6 @@ Component usages: 4
 | `Input` | `@/components/ui/input` | local-components | Input comes from @/components/ui/input (named import of Input) |
 | `McpServerCard` | `@/components/mcp/McpServerCard` | local-components | McpServerCard comes from @/components/mcp/McpServerCard (named import of McpServerCard) |
 | `SettingsPageFrame` | `./SettingsPageHeader` | relative-local | SettingsPageFrame comes from ./SettingsPageHeader (named import of SettingsPageFrame) |
-
-## src/pages/settings/PandocConfigPanel.tsx
-
-Component usages: 32
-
-| Used As | Source | Category | Definition |
-| --- | --- | --- | --- |
-| `CollapsibleContent` | `@/components/ui/collapsible` | local-components | CollapsibleContent comes from @/components/ui/collapsible (named import of CollapsibleContent) |
-| `CollapsibleIndicator` | `@/components/ui/collapsible` | local-components | CollapsibleIndicator comes from @/components/ui/collapsible (named import of CollapsibleIndicator) |
-| `CollapsibleRoot` | `@/components/ui/collapsible` | local-components | CollapsibleRoot comes from @/components/ui/collapsible (named import of CollapsibleRoot) |
-| `CollapsibleTrigger` | `@/components/ui/collapsible` | local-components | CollapsibleTrigger comes from @/components/ui/collapsible (named import of CollapsibleTrigger) |
-| `ConfigEditor` | `(in-file or unresolved)` | in-file component | ConfigEditor is defined in the same page file |
-| `FieldHelperText` | `@/components/ui/field` | local-components | FieldHelperText comes from @/components/ui/field (named import of FieldHelperText) |
-| `FieldLabel` | `@/components/ui/field` | local-components | FieldLabel comes from @/components/ui/field (named import of FieldLabel) |
-| `FieldRoot` | `@/components/ui/field` | local-components | FieldRoot comes from @/components/ui/field (named import of FieldRoot) |
-| `FieldRow` | `(in-file or unresolved)` | in-file component | FieldRow is defined in the same page file |
-| `IconCopy` | `@tabler/icons-react` | tabler-icons | IconCopy comes from @tabler/icons-react (named import of IconCopy) |
-| `IconDeviceFloppy` | `@tabler/icons-react` | tabler-icons | IconDeviceFloppy comes from @tabler/icons-react (named import of IconDeviceFloppy) |
-| `IconPlus` | `@tabler/icons-react` | tabler-icons | IconPlus comes from @tabler/icons-react (named import of IconPlus) |
-| `IconTrash` | `@tabler/icons-react` | tabler-icons | IconTrash comes from @tabler/icons-react (named import of IconTrash) |
-| `NumberInput` | `(in-file or unresolved)` | in-file component | NumberInput is defined in the same page file |
-| `NumberInputInput` | `@/components/ui/number-input` | local-components | NumberInputInput comes from @/components/ui/number-input (named import of NumberInputInput) |
-| `NumberInputRoot` | `@/components/ui/number-input` | local-components | NumberInputRoot comes from @/components/ui/number-input (named import of NumberInputRoot) |
-| `PandocConfigPanel` | `(in-file or unresolved)` | in-file component | PandocConfigPanel is defined in the same page file |
-| `ScrollArea` | `@/components/ui/scroll-area` | local-components | ScrollArea comes from @/components/ui/scroll-area (named import of ScrollArea) |
-| `Section` | `(in-file or unresolved)` | in-file component | Section is defined in the same page file |
-| `SegmentGroupIndicator` | `@/components/ui/segment-group` | local-components | SegmentGroupIndicator comes from @/components/ui/segment-group (named import of SegmentGroupIndicator) |
-| `SegmentGroupItem` | `@/components/ui/segment-group` | local-components | SegmentGroupItem comes from @/components/ui/segment-group (named import of SegmentGroupItem) |
-| `SegmentGroupItemHiddenInput` | `@/components/ui/segment-group` | local-components | SegmentGroupItemHiddenInput comes from @/components/ui/segment-group (named import of SegmentGroupItemHiddenInput) |
-| `SegmentGroupItemText` | `@/components/ui/segment-group` | local-components | SegmentGroupItemText comes from @/components/ui/segment-group (named import of SegmentGroupItemText) |
-| `SegmentGroupRoot` | `@/components/ui/segment-group` | local-components | SegmentGroupRoot comes from @/components/ui/segment-group (named import of SegmentGroupRoot) |
-| `Select` | `(in-file or unresolved)` | in-file component | Select is defined in the same page file |
-| `SwitchControl` | `@/components/ui/switch` | local-components | SwitchControl comes from @/components/ui/switch (named import of SwitchControl) |
-| `SwitchHiddenInput` | `@/components/ui/switch` | local-components | SwitchHiddenInput comes from @/components/ui/switch (named import of SwitchHiddenInput) |
-| `SwitchRoot` | `@/components/ui/switch` | local-components | SwitchRoot comes from @/components/ui/switch (named import of SwitchRoot) |
-| `SwitchThumb` | `@/components/ui/switch` | local-components | SwitchThumb comes from @/components/ui/switch (named import of SwitchThumb) |
-| `TextInput` | `(in-file or unresolved)` | in-file component | TextInput is defined in the same page file |
-| `Toggle` | `(in-file or unresolved)` | in-file component | Toggle is defined in the same page file |
-| `TriToggle` | `(in-file or unresolved)` | in-file component | TriToggle is defined in the same page file |
 
 ## src/pages/settings/PlatformConfigPanel.tsx
 

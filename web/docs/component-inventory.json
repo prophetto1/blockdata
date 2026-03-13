@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-03-12T20:26:21.826Z",
+  "generatedAt": "2026-03-13T18:50:21.224Z",
   "scope": "auth",
   "pages": [
     {
@@ -222,6 +222,43 @@
           "importedAs": "PageHeader",
           "category": "local-components",
           "definition": "PageHeader comes from @/components/common/PageHeader (named import of PageHeader)"
+        }
+      ]
+    },
+    {
+      "page": "src/pages/DocsEditor.tsx",
+      "componentCount": 3,
+      "categoryCounts": {
+        "tabler-icons": 1,
+        "local-components": 2
+      },
+      "components": [
+        {
+          "component": "IconLoader2",
+          "usedAs": "IconLoader2",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconLoader2",
+          "category": "tabler-icons",
+          "definition": "IconLoader2 comes from @tabler/icons-react (named import of IconLoader2)"
+        },
+        {
+          "component": "OnlyOfficeEditorPanel",
+          "usedAs": "OnlyOfficeEditorPanel",
+          "source": "@/components/documents/OnlyOfficeEditorPanel",
+          "importKind": "named",
+          "importedAs": "OnlyOfficeEditorPanel",
+          "category": "local-components",
+          "definition": "OnlyOfficeEditorPanel comes from @/components/documents/OnlyOfficeEditorPanel (named import of OnlyOfficeEditorPanel)"
+        },
+        {
+          "component": "ScrollArea",
+          "usedAs": "ScrollArea",
+          "source": "@/components/ui/scroll-area",
+          "importKind": "named",
+          "importedAs": "ScrollArea",
+          "category": "local-components",
+          "definition": "ScrollArea comes from @/components/ui/scroll-area (named import of ScrollArea)"
         }
       ]
     },
@@ -1198,6 +1235,345 @@
           "importedAs": "Link",
           "category": "external-package",
           "definition": "Link comes from react-router-dom (named import of Link)"
+        }
+      ]
+    },
+    {
+      "page": "src/pages/ParsePage.tsx",
+      "componentCount": 9,
+      "categoryCounts": {
+        "in-file component": 3,
+        "tabler-icons": 4,
+        "external-package": 1,
+        "local-components": 1
+      },
+      "components": [
+        {
+          "component": "ActionMenu",
+          "usedAs": "ActionMenu",
+          "source": "(in-file or unresolved)",
+          "importKind": null,
+          "importedAs": null,
+          "category": "in-file component",
+          "definition": "ActionMenu is defined in the same page file"
+        },
+        {
+          "component": "DispatchBadge",
+          "usedAs": "DispatchBadge",
+          "source": "(in-file or unresolved)",
+          "importKind": null,
+          "importedAs": null,
+          "category": "in-file component",
+          "definition": "DispatchBadge is defined in the same page file"
+        },
+        {
+          "component": "IconDotsVertical",
+          "usedAs": "IconDotsVertical",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconDotsVertical",
+          "category": "tabler-icons",
+          "definition": "IconDotsVertical comes from @tabler/icons-react (named import of IconDotsVertical)"
+        },
+        {
+          "component": "IconLoader2",
+          "usedAs": "IconLoader2",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconLoader2",
+          "category": "tabler-icons",
+          "definition": "IconLoader2 comes from @tabler/icons-react (named import of IconLoader2)"
+        },
+        {
+          "component": "IconPlayerPlay",
+          "usedAs": "IconPlayerPlay",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconPlayerPlay",
+          "category": "tabler-icons",
+          "definition": "IconPlayerPlay comes from @tabler/icons-react (named import of IconPlayerPlay)"
+        },
+        {
+          "component": "IconX",
+          "usedAs": "IconX",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconX",
+          "category": "tabler-icons",
+          "definition": "IconX comes from @tabler/icons-react (named import of IconX)"
+        },
+        {
+          "component": "Markdown",
+          "usedAs": "Markdown",
+          "source": "react-markdown",
+          "importKind": "default",
+          "importedAs": "default",
+          "category": "external-package",
+          "definition": "Markdown comes from react-markdown (default import of default)"
+        },
+        {
+          "component": "ScrollArea",
+          "usedAs": "ScrollArea",
+          "source": "@/components/ui/scroll-area",
+          "importKind": "named",
+          "importedAs": "ScrollArea",
+          "category": "local-components",
+          "definition": "ScrollArea comes from @/components/ui/scroll-area (named import of ScrollArea)"
+        },
+        {
+          "component": "StatusBadge",
+          "usedAs": "StatusBadge",
+          "source": "(in-file or unresolved)",
+          "importKind": null,
+          "importedAs": null,
+          "category": "in-file component",
+          "definition": "StatusBadge is defined in the same page file"
+        }
+      ]
+    },
+    {
+      "page": "src/pages/ProjectAssetsPage.tsx",
+      "componentCount": 26,
+      "categoryCounts": {
+        "local-components": 10,
+        "in-file component": 1,
+        "ark-ui": 3,
+        "tabler-icons": 12
+      },
+      "components": [
+        {
+          "component": "Button",
+          "usedAs": "Button",
+          "source": "@/components/ui/button",
+          "importKind": "named",
+          "importedAs": "Button",
+          "category": "local-components",
+          "definition": "Button comes from @/components/ui/button (named import of Button)"
+        },
+        {
+          "component": "DialogCloseTrigger",
+          "usedAs": "DialogCloseTrigger",
+          "source": "@/components/ui/dialog",
+          "importKind": "named",
+          "importedAs": "DialogCloseTrigger",
+          "category": "local-components",
+          "definition": "DialogCloseTrigger comes from @/components/ui/dialog (named import of DialogCloseTrigger)"
+        },
+        {
+          "component": "DialogContent",
+          "usedAs": "DialogContent",
+          "source": "@/components/ui/dialog",
+          "importKind": "named",
+          "importedAs": "DialogContent",
+          "category": "local-components",
+          "definition": "DialogContent comes from @/components/ui/dialog (named import of DialogContent)"
+        },
+        {
+          "component": "DialogDescription",
+          "usedAs": "DialogDescription",
+          "source": "@/components/ui/dialog",
+          "importKind": "named",
+          "importedAs": "DialogDescription",
+          "category": "local-components",
+          "definition": "DialogDescription comes from @/components/ui/dialog (named import of DialogDescription)"
+        },
+        {
+          "component": "DialogFooter",
+          "usedAs": "DialogFooter",
+          "source": "@/components/ui/dialog",
+          "importKind": "named",
+          "importedAs": "DialogFooter",
+          "category": "local-components",
+          "definition": "DialogFooter comes from @/components/ui/dialog (named import of DialogFooter)"
+        },
+        {
+          "component": "DialogRoot",
+          "usedAs": "DialogRoot",
+          "source": "@/components/ui/dialog",
+          "importKind": "named",
+          "importedAs": "DialogRoot",
+          "category": "local-components",
+          "definition": "DialogRoot comes from @/components/ui/dialog (named import of DialogRoot)"
+        },
+        {
+          "component": "DialogTitle",
+          "usedAs": "DialogTitle",
+          "source": "@/components/ui/dialog",
+          "importKind": "named",
+          "importedAs": "DialogTitle",
+          "category": "local-components",
+          "definition": "DialogTitle comes from @/components/ui/dialog (named import of DialogTitle)"
+        },
+        {
+          "component": "FileStatusIcon",
+          "usedAs": "FileStatusIcon",
+          "source": "(in-file or unresolved)",
+          "importKind": null,
+          "importedAs": null,
+          "category": "in-file component",
+          "definition": "FileStatusIcon is defined in the same page file"
+        },
+        {
+          "component": "FileUpload",
+          "usedAs": "FileUpload.Dropzone",
+          "source": "@ark-ui/react/file-upload",
+          "importKind": "named",
+          "importedAs": "FileUpload",
+          "category": "ark-ui",
+          "definition": "FileUpload.Dropzone comes from @ark-ui/react/file-upload (named import of FileUpload)"
+        },
+        {
+          "component": "FileUpload",
+          "usedAs": "FileUpload.HiddenInput",
+          "source": "@ark-ui/react/file-upload",
+          "importKind": "named",
+          "importedAs": "FileUpload",
+          "category": "ark-ui",
+          "definition": "FileUpload.HiddenInput comes from @ark-ui/react/file-upload (named import of FileUpload)"
+        },
+        {
+          "component": "FileUpload",
+          "usedAs": "FileUpload.Root",
+          "source": "@ark-ui/react/file-upload",
+          "importKind": "named",
+          "importedAs": "FileUpload",
+          "category": "ark-ui",
+          "definition": "FileUpload.Root comes from @ark-ui/react/file-upload (named import of FileUpload)"
+        },
+        {
+          "component": "IconAlertCircle",
+          "usedAs": "IconAlertCircle",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconAlertCircle",
+          "category": "tabler-icons",
+          "definition": "IconAlertCircle comes from @tabler/icons-react (named import of IconAlertCircle)"
+        },
+        {
+          "component": "IconBrandGoogleDrive",
+          "usedAs": "IconBrandGoogleDrive",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconBrandGoogleDrive",
+          "category": "tabler-icons",
+          "definition": "IconBrandGoogleDrive comes from @tabler/icons-react (named import of IconBrandGoogleDrive)"
+        },
+        {
+          "component": "IconCheck",
+          "usedAs": "IconCheck",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconCheck",
+          "category": "tabler-icons",
+          "definition": "IconCheck comes from @tabler/icons-react (named import of IconCheck)"
+        },
+        {
+          "component": "IconChevronLeft",
+          "usedAs": "IconChevronLeft",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconChevronLeft",
+          "category": "tabler-icons",
+          "definition": "IconChevronLeft comes from @tabler/icons-react (named import of IconChevronLeft)"
+        },
+        {
+          "component": "IconChevronRight",
+          "usedAs": "IconChevronRight",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconChevronRight",
+          "category": "tabler-icons",
+          "definition": "IconChevronRight comes from @tabler/icons-react (named import of IconChevronRight)"
+        },
+        {
+          "component": "IconDownload",
+          "usedAs": "IconDownload",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconDownload",
+          "category": "tabler-icons",
+          "definition": "IconDownload comes from @tabler/icons-react (named import of IconDownload)"
+        },
+        {
+          "component": "IconFile",
+          "usedAs": "IconFile",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconFile",
+          "category": "tabler-icons",
+          "definition": "IconFile comes from @tabler/icons-react (named import of IconFile)"
+        },
+        {
+          "component": "IconLoader2",
+          "usedAs": "IconLoader2",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconLoader2",
+          "category": "tabler-icons",
+          "definition": "IconLoader2 comes from @tabler/icons-react (named import of IconLoader2)"
+        },
+        {
+          "component": "IconSearch",
+          "usedAs": "IconSearch",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconSearch",
+          "category": "tabler-icons",
+          "definition": "IconSearch comes from @tabler/icons-react (named import of IconSearch)"
+        },
+        {
+          "component": "IconTrash",
+          "usedAs": "IconTrash",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconTrash",
+          "category": "tabler-icons",
+          "definition": "IconTrash comes from @tabler/icons-react (named import of IconTrash)"
+        },
+        {
+          "component": "IconUpload",
+          "usedAs": "IconUpload",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconUpload",
+          "category": "tabler-icons",
+          "definition": "IconUpload comes from @tabler/icons-react (named import of IconUpload)"
+        },
+        {
+          "component": "IconX",
+          "usedAs": "IconX",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconX",
+          "category": "tabler-icons",
+          "definition": "IconX comes from @tabler/icons-react (named import of IconX)"
+        },
+        {
+          "component": "Input",
+          "usedAs": "Input",
+          "source": "@/components/ui/input",
+          "importKind": "named",
+          "importedAs": "Input",
+          "category": "local-components",
+          "definition": "Input comes from @/components/ui/input (named import of Input)"
+        },
+        {
+          "component": "NativeSelect",
+          "usedAs": "NativeSelect",
+          "source": "@/components/ui/native-select",
+          "importKind": "named",
+          "importedAs": "NativeSelect",
+          "category": "local-components",
+          "definition": "NativeSelect comes from @/components/ui/native-select (named import of NativeSelect)"
+        },
+        {
+          "component": "ScrollArea",
+          "usedAs": "ScrollArea",
+          "source": "@/components/ui/scroll-area",
+          "importKind": "named",
+          "importedAs": "ScrollArea",
+          "category": "local-components",
+          "definition": "ScrollArea comes from @/components/ui/scroll-area (named import of ScrollArea)"
         }
       ]
     },
@@ -2429,305 +2805,6 @@
           "importedAs": "SettingsPageFrame",
           "category": "relative-local",
           "definition": "SettingsPageFrame comes from ./SettingsPageHeader (named import of SettingsPageFrame)"
-        }
-      ]
-    },
-    {
-      "page": "src/pages/settings/PandocConfigPanel.tsx",
-      "componentCount": 32,
-      "categoryCounts": {
-        "local-components": 19,
-        "in-file component": 9,
-        "tabler-icons": 4
-      },
-      "components": [
-        {
-          "component": "CollapsibleContent",
-          "usedAs": "CollapsibleContent",
-          "source": "@/components/ui/collapsible",
-          "importKind": "named",
-          "importedAs": "CollapsibleContent",
-          "category": "local-components",
-          "definition": "CollapsibleContent comes from @/components/ui/collapsible (named import of CollapsibleContent)"
-        },
-        {
-          "component": "CollapsibleIndicator",
-          "usedAs": "CollapsibleIndicator",
-          "source": "@/components/ui/collapsible",
-          "importKind": "named",
-          "importedAs": "CollapsibleIndicator",
-          "category": "local-components",
-          "definition": "CollapsibleIndicator comes from @/components/ui/collapsible (named import of CollapsibleIndicator)"
-        },
-        {
-          "component": "CollapsibleRoot",
-          "usedAs": "CollapsibleRoot",
-          "source": "@/components/ui/collapsible",
-          "importKind": "named",
-          "importedAs": "CollapsibleRoot",
-          "category": "local-components",
-          "definition": "CollapsibleRoot comes from @/components/ui/collapsible (named import of CollapsibleRoot)"
-        },
-        {
-          "component": "CollapsibleTrigger",
-          "usedAs": "CollapsibleTrigger",
-          "source": "@/components/ui/collapsible",
-          "importKind": "named",
-          "importedAs": "CollapsibleTrigger",
-          "category": "local-components",
-          "definition": "CollapsibleTrigger comes from @/components/ui/collapsible (named import of CollapsibleTrigger)"
-        },
-        {
-          "component": "ConfigEditor",
-          "usedAs": "ConfigEditor",
-          "source": "(in-file or unresolved)",
-          "importKind": null,
-          "importedAs": null,
-          "category": "in-file component",
-          "definition": "ConfigEditor is defined in the same page file"
-        },
-        {
-          "component": "FieldHelperText",
-          "usedAs": "FieldHelperText",
-          "source": "@/components/ui/field",
-          "importKind": "named",
-          "importedAs": "FieldHelperText",
-          "category": "local-components",
-          "definition": "FieldHelperText comes from @/components/ui/field (named import of FieldHelperText)"
-        },
-        {
-          "component": "FieldLabel",
-          "usedAs": "FieldLabel",
-          "source": "@/components/ui/field",
-          "importKind": "named",
-          "importedAs": "FieldLabel",
-          "category": "local-components",
-          "definition": "FieldLabel comes from @/components/ui/field (named import of FieldLabel)"
-        },
-        {
-          "component": "FieldRoot",
-          "usedAs": "FieldRoot",
-          "source": "@/components/ui/field",
-          "importKind": "named",
-          "importedAs": "FieldRoot",
-          "category": "local-components",
-          "definition": "FieldRoot comes from @/components/ui/field (named import of FieldRoot)"
-        },
-        {
-          "component": "FieldRow",
-          "usedAs": "FieldRow",
-          "source": "(in-file or unresolved)",
-          "importKind": null,
-          "importedAs": null,
-          "category": "in-file component",
-          "definition": "FieldRow is defined in the same page file"
-        },
-        {
-          "component": "IconCopy",
-          "usedAs": "IconCopy",
-          "source": "@tabler/icons-react",
-          "importKind": "named",
-          "importedAs": "IconCopy",
-          "category": "tabler-icons",
-          "definition": "IconCopy comes from @tabler/icons-react (named import of IconCopy)"
-        },
-        {
-          "component": "IconDeviceFloppy",
-          "usedAs": "IconDeviceFloppy",
-          "source": "@tabler/icons-react",
-          "importKind": "named",
-          "importedAs": "IconDeviceFloppy",
-          "category": "tabler-icons",
-          "definition": "IconDeviceFloppy comes from @tabler/icons-react (named import of IconDeviceFloppy)"
-        },
-        {
-          "component": "IconPlus",
-          "usedAs": "IconPlus",
-          "source": "@tabler/icons-react",
-          "importKind": "named",
-          "importedAs": "IconPlus",
-          "category": "tabler-icons",
-          "definition": "IconPlus comes from @tabler/icons-react (named import of IconPlus)"
-        },
-        {
-          "component": "IconTrash",
-          "usedAs": "IconTrash",
-          "source": "@tabler/icons-react",
-          "importKind": "named",
-          "importedAs": "IconTrash",
-          "category": "tabler-icons",
-          "definition": "IconTrash comes from @tabler/icons-react (named import of IconTrash)"
-        },
-        {
-          "component": "NumberInput",
-          "usedAs": "NumberInput",
-          "source": "(in-file or unresolved)",
-          "importKind": null,
-          "importedAs": null,
-          "category": "in-file component",
-          "definition": "NumberInput is defined in the same page file"
-        },
-        {
-          "component": "NumberInputInput",
-          "usedAs": "NumberInputInput",
-          "source": "@/components/ui/number-input",
-          "importKind": "named",
-          "importedAs": "NumberInputInput",
-          "category": "local-components",
-          "definition": "NumberInputInput comes from @/components/ui/number-input (named import of NumberInputInput)"
-        },
-        {
-          "component": "NumberInputRoot",
-          "usedAs": "NumberInputRoot",
-          "source": "@/components/ui/number-input",
-          "importKind": "named",
-          "importedAs": "NumberInputRoot",
-          "category": "local-components",
-          "definition": "NumberInputRoot comes from @/components/ui/number-input (named import of NumberInputRoot)"
-        },
-        {
-          "component": "PandocConfigPanel",
-          "usedAs": "PandocConfigPanel",
-          "source": "(in-file or unresolved)",
-          "importKind": null,
-          "importedAs": null,
-          "category": "in-file component",
-          "definition": "PandocConfigPanel is defined in the same page file"
-        },
-        {
-          "component": "ScrollArea",
-          "usedAs": "ScrollArea",
-          "source": "@/components/ui/scroll-area",
-          "importKind": "named",
-          "importedAs": "ScrollArea",
-          "category": "local-components",
-          "definition": "ScrollArea comes from @/components/ui/scroll-area (named import of ScrollArea)"
-        },
-        {
-          "component": "Section",
-          "usedAs": "Section",
-          "source": "(in-file or unresolved)",
-          "importKind": null,
-          "importedAs": null,
-          "category": "in-file component",
-          "definition": "Section is defined in the same page file"
-        },
-        {
-          "component": "SegmentGroupIndicator",
-          "usedAs": "SegmentGroupIndicator",
-          "source": "@/components/ui/segment-group",
-          "importKind": "named",
-          "importedAs": "SegmentGroupIndicator",
-          "category": "local-components",
-          "definition": "SegmentGroupIndicator comes from @/components/ui/segment-group (named import of SegmentGroupIndicator)"
-        },
-        {
-          "component": "SegmentGroupItem",
-          "usedAs": "SegmentGroupItem",
-          "source": "@/components/ui/segment-group",
-          "importKind": "named",
-          "importedAs": "SegmentGroupItem",
-          "category": "local-components",
-          "definition": "SegmentGroupItem comes from @/components/ui/segment-group (named import of SegmentGroupItem)"
-        },
-        {
-          "component": "SegmentGroupItemHiddenInput",
-          "usedAs": "SegmentGroupItemHiddenInput",
-          "source": "@/components/ui/segment-group",
-          "importKind": "named",
-          "importedAs": "SegmentGroupItemHiddenInput",
-          "category": "local-components",
-          "definition": "SegmentGroupItemHiddenInput comes from @/components/ui/segment-group (named import of SegmentGroupItemHiddenInput)"
-        },
-        {
-          "component": "SegmentGroupItemText",
-          "usedAs": "SegmentGroupItemText",
-          "source": "@/components/ui/segment-group",
-          "importKind": "named",
-          "importedAs": "SegmentGroupItemText",
-          "category": "local-components",
-          "definition": "SegmentGroupItemText comes from @/components/ui/segment-group (named import of SegmentGroupItemText)"
-        },
-        {
-          "component": "SegmentGroupRoot",
-          "usedAs": "SegmentGroupRoot",
-          "source": "@/components/ui/segment-group",
-          "importKind": "named",
-          "importedAs": "SegmentGroupRoot",
-          "category": "local-components",
-          "definition": "SegmentGroupRoot comes from @/components/ui/segment-group (named import of SegmentGroupRoot)"
-        },
-        {
-          "component": "Select",
-          "usedAs": "Select",
-          "source": "(in-file or unresolved)",
-          "importKind": null,
-          "importedAs": null,
-          "category": "in-file component",
-          "definition": "Select is defined in the same page file"
-        },
-        {
-          "component": "SwitchControl",
-          "usedAs": "SwitchControl",
-          "source": "@/components/ui/switch",
-          "importKind": "named",
-          "importedAs": "SwitchControl",
-          "category": "local-components",
-          "definition": "SwitchControl comes from @/components/ui/switch (named import of SwitchControl)"
-        },
-        {
-          "component": "SwitchHiddenInput",
-          "usedAs": "SwitchHiddenInput",
-          "source": "@/components/ui/switch",
-          "importKind": "named",
-          "importedAs": "SwitchHiddenInput",
-          "category": "local-components",
-          "definition": "SwitchHiddenInput comes from @/components/ui/switch (named import of SwitchHiddenInput)"
-        },
-        {
-          "component": "SwitchRoot",
-          "usedAs": "SwitchRoot",
-          "source": "@/components/ui/switch",
-          "importKind": "named",
-          "importedAs": "SwitchRoot",
-          "category": "local-components",
-          "definition": "SwitchRoot comes from @/components/ui/switch (named import of SwitchRoot)"
-        },
-        {
-          "component": "SwitchThumb",
-          "usedAs": "SwitchThumb",
-          "source": "@/components/ui/switch",
-          "importKind": "named",
-          "importedAs": "SwitchThumb",
-          "category": "local-components",
-          "definition": "SwitchThumb comes from @/components/ui/switch (named import of SwitchThumb)"
-        },
-        {
-          "component": "TextInput",
-          "usedAs": "TextInput",
-          "source": "(in-file or unresolved)",
-          "importKind": null,
-          "importedAs": null,
-          "category": "in-file component",
-          "definition": "TextInput is defined in the same page file"
-        },
-        {
-          "component": "Toggle",
-          "usedAs": "Toggle",
-          "source": "(in-file or unresolved)",
-          "importKind": null,
-          "importedAs": null,
-          "category": "in-file component",
-          "definition": "Toggle is defined in the same page file"
-        },
-        {
-          "component": "TriToggle",
-          "usedAs": "TriToggle",
-          "source": "(in-file or unresolved)",
-          "importKind": null,
-          "importedAs": null,
-          "category": "in-file component",
-          "definition": "TriToggle is defined in the same page file"
         }
       ]
     },
@@ -4469,13 +4546,13 @@
       ]
     }
   ],
-  "totalComponentUsages": 447,
+  "totalComponentUsages": 453,
   "categoryTotals": {
-    "external-package": 17,
-    "local-components": 155,
-    "tabler-icons": 83,
-    "in-file component": 26,
-    "ark-ui": 146,
+    "external-package": 18,
+    "local-components": 149,
+    "tabler-icons": 96,
+    "in-file component": 21,
+    "ark-ui": 149,
     "relative-local": 20
   }
 }

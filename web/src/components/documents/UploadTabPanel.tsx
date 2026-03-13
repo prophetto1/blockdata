@@ -8,6 +8,7 @@ import {
   IconAlertCircle,
 } from '@tabler/icons-react';
 import { useDirectUpload, type StagedFile } from '@/hooks/useDirectUpload';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { useEffect } from 'react';
 
@@ -51,7 +52,7 @@ export function UploadTabPanel({ projectId, onUploadComplete }: UploadTabPanelPr
   }, [uploadStatus, onUploadComplete]);
 
   return (
-    <div className="flex flex-col gap-3 p-4">
+    <div className="flex h-full min-h-0 flex-col gap-3 overflow-hidden p-4">
       <FileUpload.Root
         maxFiles={25}
         accept={{
@@ -108,7 +109,7 @@ export function UploadTabPanel({ projectId, onUploadComplete }: UploadTabPanelPr
       )}
 
       {stagedFiles.length > 0 && (
-        <div className="max-h-64 overflow-y-auto">
+        <ScrollArea className="min-h-0 flex-1" viewportClass="h-full overflow-auto">
           <ul className="flex flex-col">
             {stagedFiles.map((sf) => (
               <li
@@ -144,7 +145,7 @@ export function UploadTabPanel({ projectId, onUploadComplete }: UploadTabPanelPr
               </li>
             ))}
           </ul>
-        </div>
+        </ScrollArea>
       )}
     </div>
   );

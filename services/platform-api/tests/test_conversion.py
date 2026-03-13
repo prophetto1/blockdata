@@ -50,8 +50,8 @@ def test_all_source_types_accepted():
 # ── convert() function tests ──
 
 
-def test_convert_returns_4_tuple_with_all_artifacts(monkeypatch):
-    """convert() returns (markdown, docling_json, html, doctags) — 4-tuple, not 5."""
+def test_convert_returns_5_tuple_with_all_artifacts(monkeypatch):
+    """convert() returns (markdown, docling_json, html, doctags, blocks) — 5-tuple."""
     import app.domain.conversion.service as svc
 
     class FakeDoc:
@@ -74,7 +74,7 @@ def test_convert_returns_4_tuple_with_all_artifacts(monkeypatch):
         def convert(self, _: str):
             return FakeResult()
 
-    monkeypatch.setattr(svc, "_build_docling_converter", lambda: FakeConverter())
+    monkeypatch.setattr(svc, "_build_docling_converter", lambda _cfg=None: FakeConverter())
 
     req = _build_request(track="docling", source_type="txt")
     req.docling_output = OutputTarget(
@@ -91,12 +91,13 @@ def test_convert_returns_4_tuple_with_all_artifacts(monkeypatch):
     )
 
     result = asyncio.run(convert(req))
-    assert len(result) == 4, f"Expected 4-tuple, got {len(result)}-tuple"
-    markdown_bytes, docling_json_bytes, html_bytes, doctags_bytes = result
+    assert len(result) == 5, f"Expected 5-tuple, got {len(result)}-tuple"
+    markdown_bytes, docling_json_bytes, html_bytes, doctags_bytes, blocks = result
     assert markdown_bytes == b"# Hello\n"
     assert docling_json_bytes is not None
     assert html_bytes == b"<h1>Hello</h1>"
     assert doctags_bytes == b"<doctag>Hello</doctag>"
+    assert isinstance(blocks, list)
 
 
 def test_convert_omits_optional_artifacts_when_not_requested(monkeypatch):
@@ -114,16 +115,17 @@ def test_convert_omits_optional_artifacts_when_not_requested(monkeypatch):
         def convert(self, _: str):
             return FakeResult()
 
-    monkeypatch.setattr(svc, "_build_docling_converter", lambda: FakeConverter())
+    monkeypatch.setattr(svc, "_build_docling_converter", lambda _cfg=None: FakeConverter())
 
     req = _build_request(track="docling", source_type="md")
     result = asyncio.run(convert(req))
-    assert len(result) == 4
-    markdown_bytes, docling_json_bytes, html_bytes, doctags_bytes = result
+    assert len(result) == 5
+    markdown_bytes, docling_json_bytes, html_bytes, doctags_bytes, blocks = result
     assert markdown_bytes == b"# Minimal\n"
     assert docling_json_bytes is None
     assert html_bytes is None
     assert doctags_bytes is None
+    assert isinstance(blocks, list)
 
 
 def test_convert_works_for_rst_source_type(monkeypatch):
@@ -144,7 +146,7 @@ def test_convert_works_for_rst_source_type(monkeypatch):
         def convert(self, _: str):
             return FakeResult()
 
-    monkeypatch.setattr(svc, "_build_docling_converter", lambda: FakeConverter())
+    monkeypatch.setattr(svc, "_build_docling_converter", lambda _cfg=None: FakeConverter())
 
     req = _build_request(track="docling", source_type="rst")
     req.docling_output = OutputTarget(
@@ -152,10 +154,11 @@ def test_convert_works_for_rst_source_type(monkeypatch):
         signed_upload_url="https://example.test/u", token=None,
     )
     result = asyncio.run(convert(req))
-    assert len(result) == 4
-    markdown_bytes, docling_json_bytes, html_bytes, doctags_bytes = result
+    assert len(result) == 5
+    markdown_bytes, docling_json_bytes, html_bytes, doctags_bytes, blocks = result
     assert markdown_bytes == b"# RST doc\n"
     assert docling_json_bytes is not None
+    assert isinstance(blocks, list)
 
 
 # ── reconstruct_from_dict tests ──
@@ -167,7 +170,7 @@ def test_reconstruct_from_dict():
         "schema_name": "DoclingDocument",
         "version": "1.3.0",
         "name": "test",
-        "origin": {"mimetype": "text/plain", "filename": "test.txt"},
+        "origin": {"mimetype": "text/plain", "filename": "test.txt", "binary_hash": 0},
         "furniture": {"self_ref": "#/furniture", "children": [], "content_layer": "furniture", "name": "_root_", "label": "unspecified"},
         "body": {
             "self_ref": "#/body",
