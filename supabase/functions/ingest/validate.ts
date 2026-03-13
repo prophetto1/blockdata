@@ -22,7 +22,7 @@ export async function validateProjectOwnership(
 }
 
 export type IdempotencyResult =
-  | { action: "return_existing"; response: IngestResponse }
+  | { action: "return_existing"; response: IngestResponse; currentProjectId: string | null }
   | { action: "retry"; previousProjectId: string | null }
   | { action: "proceed" };
 
@@ -80,5 +80,6 @@ export async function checkIdempotency(
       status: existing.status ?? "uploaded",
       error: existing.error ?? undefined,
     },
+    currentProjectId: existing.project_id ?? null,
   };
 }

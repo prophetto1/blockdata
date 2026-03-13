@@ -18,6 +18,7 @@ import {
   isPdfDocument,
   isPptxDocument,
   isTextDocument,
+  isXlsxDocument,
   type PreviewKind,
   type ProjectDocumentRow,
   resolveSignedUrlForLocators,
@@ -34,8 +35,8 @@ export function PreviewTabPanel({ doc }: { doc: ProjectDocumentRow | null }) {
   const [previewError, setPreviewError] = useState<string | null>(null);
   const [pdfPreviewMode, setPdfPreviewMode] = useState<'file' | 'parsed'>('file');
   const [pdfToolbarHost, setPdfToolbarHost] = useState<HTMLDivElement | null>(null);
-  const [docxEditMode, setDocxEditMode] = useState(false);
-  const [docxPreviewRevision, setDocxPreviewRevision] = useState(0);
+  const [editMode, setEditMode] = useState(false);
+  const [previewRevision, setPreviewRevision] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -49,6 +50,7 @@ export function PreviewTabPanel({ doc }: { doc: ProjectDocumentRow | null }) {
         setPreviewError(null);
         setPreviewLoading(false);
         setPdfPreviewMode('file');
+        setEditMode(false);
         return;
       }
 
@@ -58,6 +60,7 @@ export function PreviewTabPanel({ doc }: { doc: ProjectDocumentRow | null }) {
       setParsedPreviewUrl(null);
       setPreviewText(null);
       setPdfPreviewMode('file');
+      setEditMode(false);
 
       const { url: signedUrl, error: signedUrlError } = await resolveSignedUrlForLocators([
         doc.source_locator,
@@ -118,6 +121,12 @@ export function PreviewTabPanel({ doc }: { doc: ProjectDocumentRow | null }) {
           setPreviewLoading(false);
           return;
         }
+      }
+      if (isXlsxDocument(doc)) {
+        setPreviewKind('xlsx');
+        setPreviewUrl(signedUrl);
+        setPreviewLoading(false);
+        return;
       }
       if (isDocxDocument(doc)) {
         setPreviewKind('docx');
@@ -280,6 +289,22 @@ export function PreviewTabPanel({ doc }: { doc: ProjectDocumentRow | null }) {
     { downloadUrl: options?.downloadUrl },
   );
 
+  const renderEditToggle = () => (
+    <button
+      type="button"
+      aria-pressed={editMode}
+      onClick={() => {
+        setEditMode((prev) => {
+          if (prev) setPreviewRevision((r) => r + 1);
+          return !prev;
+        });
+      }}
+      className="inline-flex h-8 items-center gap-1.5 rounded-md border border-border px-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+    >
+      {editMode ? <><IconEye size={14} /> Preview</> : <><IconEdit size={14} /> Edit</>}
+    </button>
+  );
+
   if (!doc) {
     return renderPreviewFrame(renderCenteredMessage('Select an asset to preview.'));
   }
@@ -366,29 +391,30 @@ export function PreviewTabPanel({ doc }: { doc: ProjectDocumentRow | null }) {
     );
   }
 
-  if (previewKind === 'docx' && previewUrl) {
-    const docxToggleAction = (
-      <button
-        type="button"
-        aria-pressed={docxEditMode}
-        onClick={() => {
-          setDocxEditMode((prev) => {
-            if (prev) setDocxPreviewRevision((r) => r + 1);
-            return !prev;
-          });
-        }}
-        className="inline-flex h-8 items-center gap-1.5 rounded-md border border-border px-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
-      >
-        {docxEditMode ? <><IconEye size={14} /> Preview</> : <><IconEdit size={14} /> Edit</>}
-      </button>
-    );
-
+  if (previewKind === 'xlsx' && previewUrl) {
     return renderPreviewWithUnifiedHeader(
-      docxEditMode ? (
+      editMode ? (
+        <OnlyOfficeEditorPanel key={doc.source_uid} doc={doc} />
+      ) : (
+        <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
+          Click Edit to open in spreadsheet editor.
+        </div>
+      ),
+      {
+        downloadUrl: previewUrl,
+        useScrollArea: editMode ? false : undefined,
+        headerActions: renderEditToggle(),
+      },
+    );
+  }
+
+  if (previewKind === 'docx' && previewUrl) {
+    return renderPreviewWithUnifiedHeader(
+      editMode ? (
         <OnlyOfficeEditorPanel key={doc.source_uid} doc={doc} />
       ) : (
         <DocxPreview
-          key={`${doc.source_uid}:${previewUrl}:${docxPreviewRevision}`}
+          key={`${doc.source_uid}:${previewUrl}:${previewRevision}`}
           title={doc.doc_title}
           url={previewUrl}
           hideToolbar
@@ -396,21 +422,29 @@ export function PreviewTabPanel({ doc }: { doc: ProjectDocumentRow | null }) {
       ),
       {
         downloadUrl: previewUrl,
-        useScrollArea: docxEditMode ? false : undefined,
-        headerActions: docxToggleAction,
+        useScrollArea: editMode ? false : undefined,
+        headerActions: renderEditToggle(),
       },
     );
   }
 
   if (previewKind === 'pptx' && previewUrl) {
     return renderPreviewWithUnifiedHeader(
-      <PptxPreview
-        key={`${doc.source_uid}:${previewUrl}`}
-        title={doc.doc_title}
-        url={previewUrl}
-        hideHeaderMeta
-      />,
-      { downloadUrl: previewUrl },
+      editMode ? (
+        <OnlyOfficeEditorPanel key={doc.source_uid} doc={doc} />
+      ) : (
+        <PptxPreview
+          key={`${doc.source_uid}:${previewUrl}:${previewRevision}`}
+          title={doc.doc_title}
+          url={previewUrl}
+          hideHeaderMeta
+        />
+      ),
+      {
+        downloadUrl: previewUrl,
+        useScrollArea: editMode ? false : undefined,
+        headerActions: renderEditToggle(),
+      },
     );
   }
 

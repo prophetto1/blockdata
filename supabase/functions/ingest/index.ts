@@ -60,6 +60,14 @@ Deno.serve(async (req) => {
     // Idempotency check + retry handling (Gap 4: preserves previous project_id).
     const idem = await checkIdempotency(supabaseAdmin, source_uid, ownerId);
     if (idem.action === "return_existing") {
+      // Re-assign to target project if caller specified a different one.
+      if (project_id && project_id !== idem.currentProjectId) {
+        const { error: moveErr } = await supabaseAdmin
+          .from("source_documents")
+          .update({ project_id, updated_at: new Date().toISOString() })
+          .eq("source_uid", source_uid);
+        if (moveErr) throw new Error(`Failed to reassign document to project: ${moveErr.message}`);
+      }
       return json(200, idem.response);
     }
     if (idem.action === "retry") {

@@ -10,7 +10,7 @@ export type ProjectDocumentRow = DocumentRow & {
   conv_locator?: string | null;
 };
 
-export type PreviewKind = 'none' | 'pdf' | 'image' | 'text' | 'markdown' | 'docx' | 'pptx' | 'file';
+export type PreviewKind = 'none' | 'pdf' | 'image' | 'text' | 'markdown' | 'docx' | 'xlsx' | 'pptx' | 'file';
 
 export type TestBlockCardRow = {
   blockUid: string;
@@ -61,6 +61,8 @@ const DOCX_EXTENSIONS = new Set([
 ]);
 const PPTX_SOURCE_TYPES = new Set(['pptx', 'pptm', 'ppsx']);
 const PPTX_EXTENSIONS = new Set(['pptx', 'pptm', 'ppsx']);
+const XLSX_SOURCE_TYPES = new Set(['xlsx']);
+const XLSX_EXTENSIONS = new Set(['xlsx']);
 const TEXT_EXTENSIONS = new Set([
   'txt',
   'md',
@@ -252,6 +254,16 @@ export function isPptxDocument(doc: ProjectDocumentRow): boolean {
   const sourceType = doc.source_type.toLowerCase();
   if (PPTX_SOURCE_TYPES.has(sourceType)) return true;
   return PPTX_EXTENSIONS.has(getSourceLocatorExtension(doc));
+}
+
+export function isXlsxDocument(doc: ProjectDocumentRow): boolean {
+  const sourceType = doc.source_type.toLowerCase();
+  if (XLSX_SOURCE_TYPES.has(sourceType)) return true;
+  return XLSX_EXTENSIONS.has(getSourceLocatorExtension(doc));
+}
+
+export function isOnlyOfficeEditable(doc: ProjectDocumentRow): boolean {
+  return isDocxDocument(doc) || isXlsxDocument(doc) || isPptxDocument(doc);
 }
 
 export function getDocumentFormat(doc: ProjectDocumentRow): string {

@@ -1,4 +1,4 @@
-import { defineConfig, type ViteDevServer } from 'vite'
+import { defineConfig, loadEnv, type ViteDevServer } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import path from 'path'
@@ -57,8 +57,11 @@ function superuserToolsPlugin() {
   }
 }
 
-export default defineConfig({
-  plugins: [react(), tailwindcss(), superuserToolsPlugin()],
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), 'VITE_')
+
+  return {
+    plugins: [react(), tailwindcss(), superuserToolsPlugin()],
   resolve: {
     dedupe: ['react', 'react-dom'],
     alias: {
@@ -75,13 +78,13 @@ export default defineConfig({
     },
     proxy: {
       '/oo-api': {
-        target: 'http://localhost:9980',
+        target: env.VITE_ONLYOFFICE_URL || 'http://localhost:9980',
         changeOrigin: true,
         ws: true,
         rewrite: (path) => path.replace(/^\/oo-api/, ''),
       },
       '/platform-api': {
-        target: 'http://localhost:8000',
+        target: env.VITE_PLATFORM_API_URL || 'http://localhost:8000',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/platform-api/, ''),
       },
@@ -95,4 +98,5 @@ export default defineConfig({
       },
     },
   },
+}
 })
