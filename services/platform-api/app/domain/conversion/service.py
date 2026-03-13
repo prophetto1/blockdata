@@ -454,6 +454,16 @@ def extract_docling_blocks(doc: Any) -> list[dict[str, Any]]:
     return blocks
 
 
+def reconstruct_from_dict(doc_dict: dict[str, Any]) -> tuple[str, list[dict[str, Any]]]:
+    """Reconstruct HTML and blocks from a DoclingDocument JSON dict."""
+    from docling_core.types.doc import DoclingDocument as DoclingDoc
+
+    doc = DoclingDoc.model_validate(doc_dict)
+    html = doc.export_to_html()
+    blocks = extract_docling_blocks(doc)
+    return html, blocks
+
+
 async def convert(
     req: ConvertRequest,
 ) -> tuple[bytes, Optional[bytes], Optional[bytes], Optional[bytes], list[dict[str, Any]]]:

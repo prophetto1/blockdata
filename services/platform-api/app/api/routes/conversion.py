@@ -1,5 +1,6 @@
 import asyncio
 import hashlib
+import json
 import os
 from typing import Any, Optional
 
@@ -8,10 +9,10 @@ from fastapi.responses import JSONResponse
 
 from app.auth.dependencies import require_auth
 from app.auth.principals import AuthPrincipal
-from app.domain.conversion.models import ConvertRequest, CitationsRequest
-from app.domain.conversion.service import convert
+from app.domain.conversion.models import ConvertRequest, CitationsRequest, ReconstructRequest
+from app.domain.conversion.service import convert, reconstruct_from_dict
 from app.domain.conversion.callbacks import send_conversion_callback
-from app.infra.http_client import upload_bytes, append_token_if_needed
+from app.infra.http_client import upload_bytes, append_token_if_needed, download_bytes
 from app.workers.conversion_pool import get_conversion_pool, PoolOverloaded
 
 from eyecite import get_citations, resolve_citations
@@ -160,3 +161,14 @@ async def citations_route(
         results.append(entry)
 
     return {"citations": results, "resources": resources, "total": len(results)}
+
+
+@router.post("/reconstruct")
+async def reconstruct_route(
+    body: ReconstructRequest,
+    auth: AuthPrincipal = Depends(require_auth),
+):
+    raw = await download_bytes(body.docling_json_url)
+    doc_dict = json.loads(raw)
+    html, blocks = reconstruct_from_dict(doc_dict)
+    return {"html": html, "blocks": blocks}

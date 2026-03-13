@@ -36,7 +36,7 @@ export async function readDirectory(
 ): Promise<FsNode[]> {
   const entries: FsNode[] = [];
 
-  for await (const [name, handle] of dirHandle.entries()) {
+  for await (const [name, handle] of (dirHandle as any).entries()) {
     if (name.startsWith('.') && name !== '.env.example') continue;
     if (IGNORED.has(name)) continue;
 
@@ -141,7 +141,7 @@ async function moveDirectory(
   const newDirHandle = await targetDirHandle.getDirectoryHandle(name, { create: true });
   // 2. Recursively copy all children
   const srcHandle = node.handle as FileSystemDirectoryHandle;
-  for await (const [childName, childHandle] of srcHandle.entries()) {
+  for await (const [childName, childHandle] of (srcHandle as any).entries()) {
     if (childHandle.kind === 'file') {
       const file = await (childHandle as FileSystemFileHandle).getFile();
       const content = await file.arrayBuffer();

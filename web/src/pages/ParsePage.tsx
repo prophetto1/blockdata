@@ -111,39 +111,6 @@ async function fetchBlocks(sourceUid: string): Promise<BlockRow[]> {
   return (blocks ?? []) as BlockRow[];
 }
 
-/** Reconstruct markdown from extracted blocks. */
-function blocksToMarkdown(blocks: BlockRow[]): string {
-  return blocks
-    .map((b) => {
-      switch (b.block_type) {
-        case 'heading':
-          return `## ${b.block_content}`;
-        case 'paragraph':
-        case 'other':
-          return b.block_content;
-        case 'list_item':
-          return `- ${b.block_content}`;
-        case 'code_block':
-          return `\`\`\`\n${b.block_content}\n\`\`\``;
-        case 'table':
-          return b.block_content;
-        case 'figure':
-          return b.block_content ? `*[Figure: ${b.block_content}]*` : '*[Figure]*';
-        case 'caption':
-          return `*${b.block_content}*`;
-        case 'footnote':
-          return `> ${b.block_content}`;
-        case 'page_header':
-        case 'page_footer':
-          return `<small>${b.block_content}</small>`;
-        case 'checkbox':
-          return `- [ ] ${b.block_content}`;
-        default:
-          return b.block_content;
-      }
-    })
-    .join('\n\n');
-}
 
 /** Simple dropdown menu anchored to a trigger button. */
 function ActionMenu({ items }: { items: { label: string; onClick: () => void; danger?: boolean }[] }) {
@@ -192,7 +159,7 @@ function ActionMenu({ items }: { items: { label: string; onClick: () => void; da
 export default function ParsePage() {
   useShellHeaderTitle({ title: 'Parse' });
 
-  const { resolvedProjectId, resolvedProjectName } = useProjectFocus();
+  const { resolvedProjectId } = useProjectFocus();
 
   const [docs, setDocs] = useState<ProjectDocumentRow[]>([]);
   const [loading, setLoading] = useState(false);
@@ -202,7 +169,7 @@ export default function ParsePage() {
   const [profiles, setProfiles] = useState<ParsingProfile[]>([]);
   const [selectedProfileId, setSelectedProfileId] = useState<string>('');
   const [configText, setConfigText] = useState('{}');
-  const [configOpen, setConfigOpen] = useState(false);
+  const [_configOpen, _setConfigOpen] = useState(false);
 
   const [jsonModal, setJsonModal] = useState<{ title: string; content: string } | null>(null);
   const [preview, setPreview] = useState<{ title: string; markdown: string; loading: boolean; isRaw?: boolean } | null>(null);

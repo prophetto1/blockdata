@@ -86,17 +86,17 @@ export function useGoogleDrivePicker(opts: {
         }
 
         gapi.load('picker', () => {
-          const view = new google.picker.View(google.picker.ViewId.DOCS);
+          const view = new (google.picker as any).View((google.picker as any).ViewId.DOCS);
           view.setMimeTypes(PICKER_MIME_TYPES);
 
-          const picker = new google.picker.PickerBuilder()
+          const picker = new (google.picker as any).PickerBuilder()
             .setAppId(GOOGLE_APP_ID!)
             .setOAuthToken(tokenResponse.access_token)
             .setDeveloperKey(GOOGLE_API_KEY!)
             .addView(view)
-            .enableFeature(google.picker.Feature.MULTISELECT_ENABLED)
+            .enableFeature((google.picker as any).Feature.MULTISELECT_ENABLED)
             .setCallback((data: google.picker.CallbackData) => {
-              if (data.action === google.picker.Action.PICKED && data.docs) {
+              if (data.action === (google.picker as any).Action.PICKED && data.docs) {
                 const files: GoogleDriveFile[] = data.docs.map((doc) => ({
                   id: doc.id,
                   name: doc.name,
@@ -106,8 +106,8 @@ export function useGoogleDrivePicker(opts: {
                 onFilesSelectedRef.current(files, tokenResponse.access_token);
               }
               if (
-                data.action === google.picker.Action.PICKED ||
-                data.action === google.picker.Action.CANCEL
+                data.action === (google.picker as any).Action.PICKED ||
+                data.action === (google.picker as any).Action.CANCEL
               ) {
                 setIsOpen(false);
               }

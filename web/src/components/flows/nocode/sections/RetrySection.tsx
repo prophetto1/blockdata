@@ -8,7 +8,7 @@ type Props = {
   onChange: (value: FlowRetry | undefined) => void;
 };
 
-export function RetrySection({ retry, onChange }: Props) {
+export function RetrySection({ retry, onChange: _onChange }: Props) {
   const selectedType = retry?.type ?? '';
 
   return (

@@ -575,7 +575,7 @@ export function Component() {
                   )}
                 >
                   <span className="text-sm font-medium">{(cfg.name as string) ?? 'Unnamed'}</span>
-                  {cfg.is_default && (
+                  {Boolean(cfg.is_default) && (
                     <span className="text-[10px] font-medium text-primary">default</span>
                   )}
                 </button>

@@ -11,7 +11,7 @@ import { DocumentFileTable } from '@/components/documents/DocumentFileTable';
 import { UploadTabPanel } from '@/components/documents/UploadTabPanel';
 import { ParseTabPanel, ParseRowActions, useParseTab } from '@/components/documents/ParseTabPanel';
 import { EditTabPanel } from '@/components/documents/EditTabPanel';
-import { isOnlyOfficeEditable } from '@/lib/projectDetailHelpers';
+
 import { cn } from '@/lib/utils';
 
 type Tab = 'upload' | 'parse' | 'edit';

@@ -26,6 +26,10 @@ class ConvertRequest(BaseModel):
     pipeline_config: Optional[dict[str, Any]] = None
 
 
+class ReconstructRequest(BaseModel):
+    docling_json_url: str
+
+
 class CitationsRequest(BaseModel):
     text: str
 

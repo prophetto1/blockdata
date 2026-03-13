@@ -88,7 +88,7 @@ export function WorkspaceFileTree({ onSelectFile, onMoveNode, onRenameNode, onDe
     restoreDirectoryHandle(storeKey).then(async (handle) => {
       if (!handle) return;
       try {
-        const perm = await handle.queryPermission({ mode: 'readwrite' });
+        const perm = await (handle as any).queryPermission({ mode: 'readwrite' });
         if (perm === 'granted') {
           const children = await readDirectory(handle);
           setFolderName(handle.name);
