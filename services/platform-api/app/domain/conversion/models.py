@@ -16,7 +16,7 @@ class ConvertRequest(BaseModel):
     source_uid: str
     conversion_job_id: str
     track: Optional[str] = Field(default=None, pattern=r"^(mdast|docling|pandoc)$")
-    source_type: str = Field(pattern=r"^(docx|pdf|pptx|xlsx|html|csv|txt|rst|latex|odt|epub|rtf|org)$")
+    source_type: str = Field(pattern=r"^(docx|pdf|pptx|xlsx|html|csv|txt|md|markdown|rst|latex|odt|epub|rtf|org)$")
     source_download_url: str
     output: OutputTarget
     docling_output: Optional[OutputTarget] = None

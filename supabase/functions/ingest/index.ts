@@ -9,7 +9,6 @@ import { uploadToStorage } from "./storage.ts";
 import { resolveIngestRoute } from "./routing.ts";
 import { parseIngestMode } from "./mode.ts";
 import { validateProjectOwnership, checkIdempotency } from "./validate.ts";
-import { processMarkdown } from "./process-md.ts";
 import { processConversion } from "./process-convert.ts";
 import { processUploadOnly } from "./process-upload-only.ts";
 
@@ -87,12 +86,6 @@ Deno.serve(async (req) => {
     if (ingestMode === "upload_only") {
       const { status, body } = await processUploadOnly(ctx);
       return json(status, body);
-    }
-
-    if (source_type === "md") {
-      const resp = await processMarkdown(ctx);
-      const httpStatus = resp.status === "ingest_failed" ? 500 : 200;
-      return json(httpStatus, resp);
     }
 
     const { status, body } = await processConversion(ctx);

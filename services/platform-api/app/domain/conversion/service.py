@@ -12,8 +12,8 @@ from app.infra.http_client import download_bytes
 
 SOURCE_SUFFIX_BY_TYPE: dict[str, str] = {
     "docx": ".docx", "pdf": ".pdf", "pptx": ".pptx", "xlsx": ".xlsx",
-    "html": ".html", "csv": ".csv", "txt": ".txt", "rst": ".rst",
-    "latex": ".tex", "odt": ".odt", "epub": ".epub", "rtf": ".rtf", "org": ".org",
+    "html": ".html", "csv": ".csv", "txt": ".txt", "md": ".md", "markdown": ".md",
+    "rst": ".rst", "latex": ".tex", "odt": ".odt", "epub": ".epub", "rtf": ".rtf", "org": ".org",
 }
 
 PANDOC_READER_BY_SOURCE_TYPE: dict[str, str] = {
@@ -25,8 +25,6 @@ PANDOC_READER_BY_SOURCE_TYPE: dict[str, str] = {
 def resolve_track(req: ConvertRequest) -> str:
     if req.track:
         return req.track
-    if req.source_type == "txt":
-        return "mdast"
     return "docling"
 
 

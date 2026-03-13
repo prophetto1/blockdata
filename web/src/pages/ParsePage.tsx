@@ -1,14 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   IconLoader2,
   IconPlayerPlay,
-  IconEye,
-  IconDownload,
-  IconFileText,
-  IconChevronDown,
-  IconChevronRight,
-  IconRefresh,
-  IconTrash,
+  IconDotsVertical,
   IconX,
 } from '@tabler/icons-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -84,12 +78,62 @@ function DispatchBadge({ status }: { status: FileDispatchStatus }) {
   );
 }
 
-function getBaseName(locator: string | null | undefined): string | null {
-  if (!locator) return null;
-  const lastSlash = locator.lastIndexOf('/');
-  const filename = lastSlash >= 0 ? locator.slice(lastSlash + 1) : locator;
-  const lastDot = filename.lastIndexOf('.');
-  return lastDot > 0 ? filename.slice(0, lastDot) : filename;
+/** Look up the real storage key for a parsed artifact from conversion_representations. */
+async function getArtifactLocator(
+  sourceUid: string,
+  reprType: 'markdown_bytes' | 'doclingdocument_json',
+): Promise<string | null> {
+  const { data } = await supabase
+    .from('conversion_representations')
+    .select('artifact_locator')
+    .eq('source_uid', sourceUid)
+    .eq('representation_type', reprType)
+    .maybeSingle();
+  return data?.artifact_locator ?? null;
+}
+
+/** Simple dropdown menu anchored to a trigger button. */
+function ActionMenu({ items }: { items: { label: string; onClick: () => void; danger?: boolean }[] }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-accent"
+      >
+        <IconDotsVertical size={14} />
+      </button>
+      {open && (
+        <div className="absolute right-0 top-7 z-30 min-w-[160px] rounded-md border border-border bg-popover py-1 shadow-md">
+          {items.map((item) => (
+            <button
+              key={item.label}
+              type="button"
+              onClick={() => { setOpen(false); item.onClick(); }}
+              className={cn(
+                'block w-full px-3 py-1.5 text-left text-xs hover:bg-accent',
+                item.danger ? 'text-destructive' : 'text-foreground',
+              )}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default function ParsePage() {
@@ -240,20 +284,27 @@ export default function ParsePage() {
     batch.start([uid]);
   };
 
-  const handlePreview = async (doc: ProjectDocumentRow) => {
-    const baseName = getBaseName(doc.source_locator);
-    if (!baseName) return;
-    setPreview({ title: doc.doc_title, markdown: '', loading: true });
-    const key = `converted/${doc.source_uid}/${baseName}.md`;
-    const { data, error: urlError } = await supabase.storage
+  const signedUrlForArtifact = async (
+    sourceUid: string,
+    reprType: 'markdown_bytes' | 'doclingdocument_json',
+  ): Promise<string | null> => {
+    const locator = await getArtifactLocator(sourceUid, reprType);
+    if (!locator) return null;
+    const { data } = await supabase.storage
       .from(DOCUMENTS_BUCKET)
-      .createSignedUrl(key, 60 * 20);
-    if (urlError || !data?.signedUrl) {
+      .createSignedUrl(locator, 60 * 20);
+    return data?.signedUrl ?? null;
+  };
+
+  const handlePreview = async (doc: ProjectDocumentRow) => {
+    setPreview({ title: doc.doc_title, markdown: '', loading: true });
+    const url = await signedUrlForArtifact(doc.source_uid, 'markdown_bytes');
+    if (!url) {
       setPreview({ title: doc.doc_title, markdown: 'No markdown available. Reset and re-parse with Docling.', loading: false });
       return;
     }
     try {
-      const resp = await fetch(data.signedUrl);
+      const resp = await fetch(url);
       if (!resp.ok) throw new Error();
       const text = await resp.text();
       setPreview({ title: doc.doc_title, markdown: text, loading: false });
@@ -262,38 +313,24 @@ export default function ParsePage() {
     }
   };
 
-  const handleDownloadJson = async (doc: ProjectDocumentRow) => {
-    const baseName = getBaseName(doc.source_locator);
-    if (!baseName) return;
-    const key = `converted/${doc.source_uid}/${baseName}.docling.json`;
-    const { data } = await supabase.storage
-      .from(DOCUMENTS_BUCKET)
-      .createSignedUrl(key, 60 * 20);
-    if (data?.signedUrl) window.open(data.signedUrl, '_blank');
-  };
-
   const handleDownloadMd = async (doc: ProjectDocumentRow) => {
-    const baseName = getBaseName(doc.source_locator);
-    if (!baseName) return;
-    const key = `converted/${doc.source_uid}/${baseName}.md`;
-    const { data } = await supabase.storage
-      .from(DOCUMENTS_BUCKET)
-      .createSignedUrl(key, 60 * 20);
-    if (data?.signedUrl) window.open(data.signedUrl, '_blank');
+    const url = await signedUrlForArtifact(doc.source_uid, 'markdown_bytes');
+    if (url) window.open(url, '_blank');
   };
 
-  const handleReset = async (uid: string) => {
+  const handleDownloadJson = async (doc: ProjectDocumentRow) => {
+    const url = await signedUrlForArtifact(doc.source_uid, 'doclingdocument_json');
+    if (url) window.open(url, '_blank');
+  };
+
+  const handleReset = async (uid: string): Promise<boolean> => {
     const { error: rpcErr } = await supabase.rpc('reset_source_document', { p_source_uid: uid });
     if (rpcErr) {
       console.error('Reset failed:', rpcErr.message);
-      return;
+      return false;
     }
     setDocs((prev) => prev.map((d) => d.source_uid === uid ? { ...d, status: 'uploaded', error: null } : d));
-  };
-
-  const handleResetAndParse = async (uid: string) => {
-    await handleReset(uid);
-    batch.start([uid]);
+    return true;
   };
 
   const handleDelete = async (uid: string) => {
@@ -366,10 +403,9 @@ export default function ParsePage() {
           <button
             type="button"
             onClick={() => void handleBulkReset()}
-            className="flex items-center gap-1 h-7 rounded-md border border-border px-2 text-xs font-medium text-foreground hover:bg-accent transition-colors"
+            className="h-7 rounded-md border border-border px-2 text-xs font-medium text-foreground hover:bg-accent transition-colors"
             title="Reset selected files to unparsed"
           >
-            <IconRefresh size={12} />
             Reset ({selectedResetableUids.length})
           </button>
         )}
@@ -378,10 +414,9 @@ export default function ParsePage() {
           <button
             type="button"
             onClick={() => void handleBulkDelete()}
-            className="flex items-center gap-1 h-7 rounded-md border border-destructive/50 px-2 text-xs font-medium text-destructive hover:bg-destructive/10 transition-colors"
+            className="h-7 rounded-md border border-destructive/50 px-2 text-xs font-medium text-destructive hover:bg-destructive/10 transition-colors"
             title="Delete selected files"
           >
-            <IconTrash size={12} />
             Delete ({selected.size})
           </button>
         )}
@@ -536,61 +571,21 @@ export default function ParsePage() {
                             <IconLoader2 size={14} className="animate-spin text-primary" />
                           </span>
                         )}
-                        {isIngested && (
-                          <>
-                            <button
-                              type="button"
-                              onClick={() => void handlePreview(doc)}
-                              className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-accent"
-                              title="Preview markdown"
-                            >
-                              <IconEye size={14} />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => void handleDownloadMd(doc)}
-                              className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-accent"
-                              title="Download markdown"
-                            >
-                              <IconFileText size={14} />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => void handleDownloadJson(doc)}
-                              className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-accent"
-                              title="Download DoclingDocument JSON"
-                            >
-                              <IconDownload size={14} />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => void handleResetAndParse(doc.source_uid)}
-                              disabled={batch.isRunning}
-                              className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-accent disabled:opacity-50"
-                              title="Reset & re-parse"
-                            >
-                              <IconRefresh size={14} />
-                            </button>
-                          </>
-                        )}
-                        {(isConverting || doc.status === 'conversion_failed' || doc.status === 'ingest_failed') && (
-                          <button
-                            type="button"
-                            onClick={() => void handleReset(doc.source_uid)}
-                            className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-accent"
-                            title="Reset to unparsed"
-                          >
-                            <IconRefresh size={14} />
-                          </button>
-                        )}
-                        <button
-                          type="button"
-                          onClick={() => void handleDelete(doc.source_uid)}
-                          className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                          title="Delete file"
-                        >
-                          <IconTrash size={14} />
-                        </button>
+                        <ActionMenu
+                          items={[
+                            ...(isIngested
+                              ? [
+                                  { label: 'Preview', onClick: () => void handlePreview(doc) },
+                                  { label: 'Download MD', onClick: () => void handleDownloadMd(doc) },
+                                  { label: 'Download DoclingJson', onClick: () => void handleDownloadJson(doc) },
+                                ]
+                              : []),
+                            ...(!isConverting
+                              ? [{ label: 'Reset', onClick: () => void handleReset(doc.source_uid) }]
+                              : []),
+                            { label: 'Delete', onClick: () => void handleDelete(doc.source_uid), danger: true },
+                          ]}
+                        />
                       </div>
                     </td>
                   </tr>

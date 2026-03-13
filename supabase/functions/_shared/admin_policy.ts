@@ -118,7 +118,7 @@ const DEFAULT_POLICY: RuntimePolicy = {
       "txt",
     ],
     track_enabled: {
-      mdast: true,
+      mdast: false,
       docling: true,
       pandoc: false,
     },
