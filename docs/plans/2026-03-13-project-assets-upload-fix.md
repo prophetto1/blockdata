@@ -1,3 +1,305 @@
+# Project Assets Upload Fix — Implementation Plan
+
+> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
+
+**Goal:** Make the Project Assets page upload files reliably and display them in the table. Eliminate Uppy from the Assets upload path.
+
+**Architecture:** Replace the Uppy-based uploader with a simple hook that POSTs each file to the existing `ingest` edge function via `edgeFetch` + `FormData`. Keep the ingest edge function as-is (it handles storage upload, content hashing, DB insert, validation). Fix the idempotency bug where re-uploading identical bytes to a different project silently fails to update `project_id`.
+
+**Tech Stack:** React, Supabase edge functions (Deno), Ark UI FileUpload (dropzone only), `edgeFetch` (existing auth wrapper)
+
+---
+
+## Data Flow (After Fix)
+
+```
+User drops files → Ark UI FileUpload.Dropzone → onFileChange → files[] stored in React state
+User clicks Upload →
+  for each file:
+    const form = new FormData()
+    form.append('file', file)
+    form.append('project_id', projectId)
+    form.append('ingest_mode', 'upload_only')
+    const resp = await edgeFetch('ingest', { method: 'POST', body: form })
+                          ↓
+                 ingest edge function (unchanged except idempotency fix)
+                   ├── sha256 → source_uid
+                   ├── checkIdempotency → update project_id if different
+                   ├── uploadToStorage → documents bucket
+                   └── INSERT source_documents
+                          ↓
+  all done → loadDocs(projectId) → table refreshes
+```
+
+No Uppy. No instance lifecycle. No ghost files. Just `fetch`.
+
+## Files Overview
+
+| File | Change |
+|------|--------|
+| `supabase/functions/ingest/validate.ts` | Return `currentProjectId` from idempotency check |
+| `supabase/functions/ingest/index.ts` | Update `project_id` on idempotent re-upload |
+| `web/src/hooks/useDirectUpload.ts` | **Create** — simple upload hook using `edgeFetch` |
+| `web/src/pages/ProjectAssetsPage.tsx` | Replace `ProjectParseUppyUploader` with Ark dropzone + `useDirectUpload` |
+
+**Not modified:** `useUppyTransport.ts`, `ProjectParseUppyUploader.tsx` — these stay for ELT pages and cloud import. Assets just stops using them.
+
+---
+
+## Task 1: Fix ingest idempotency to update `project_id`
+
+**Problem:** `checkIdempotency` returns `"return_existing"` with HTTP 200 when identical bytes are re-uploaded. The `project_id` column is never updated to the caller's target project. Files appear to upload (200) but don't show in the target project's table.
+
+**Files:**
+- Modify: `supabase/functions/ingest/validate.ts:24-83`
+- Modify: `supabase/functions/ingest/index.ts:60-64`
+
+### Step 1: Update `IdempotencyResult` type
+
+In `supabase/functions/ingest/validate.ts`, change the type at lines 24-27:
+
+```typescript
+export type IdempotencyResult =
+  | { action: "return_existing"; response: IngestResponse; currentProjectId: string | null }
+  | { action: "retry"; previousProjectId: string | null }
+  | { action: "proceed" };
+```
+
+### Step 2: Return `currentProjectId` from the existing branch
+
+In `supabase/functions/ingest/validate.ts`, change the return at lines 75-83:
+
+```typescript
+  return {
+    action: "return_existing",
+    response: {
+      source_uid: sourceUid,
+      conv_uid: existingConv?.conv_uid ?? null,
+      status: existing.status ?? "uploaded",
+      error: existing.error ?? undefined,
+    },
+    currentProjectId: existing.project_id ?? null,
+  };
+```
+
+### Step 3: Update `index.ts` to reassign project on idempotent hit
+
+In `supabase/functions/ingest/index.ts`, replace lines 60-64:
+
+FROM:
+```typescript
+    // Idempotency check + retry handling (Gap 4: preserves previous project_id).
+    const idem = await checkIdempotency(supabaseAdmin, source_uid, ownerId);
+    if (idem.action === "return_existing") {
+      return json(200, idem.response);
+    }
+```
+
+TO:
+```typescript
+    // Idempotency check + retry handling (Gap 4: preserves previous project_id).
+    const idem = await checkIdempotency(supabaseAdmin, source_uid, ownerId);
+    if (idem.action === "return_existing") {
+      // Re-assign to target project if caller specified a different one.
+      if (project_id && project_id !== idem.currentProjectId) {
+        const { error: moveErr } = await supabaseAdmin
+          .from("source_documents")
+          .update({ project_id, updated_at: new Date().toISOString() })
+          .eq("source_uid", source_uid);
+        if (moveErr) throw new Error(`Failed to reassign document to project: ${moveErr.message}`);
+      }
+      return json(200, idem.response);
+    }
+```
+
+### Step 4: Deploy
+
+```bash
+supabase functions deploy ingest
+```
+
+### Step 5: Commit
+
+```bash
+git add supabase/functions/ingest/validate.ts supabase/functions/ingest/index.ts
+git commit -m "fix(ingest): update project_id on idempotent re-upload"
+```
+
+---
+
+## Task 2: Create `useDirectUpload` hook
+
+**Purpose:** Replace Uppy with a minimal hook that uploads files via `edgeFetch('ingest', ...)`. Tracks per-file progress using `XMLHttpRequest` (the only browser API that supports upload progress — `fetch` doesn't).
+
+**Files:**
+- Create: `web/src/hooks/useDirectUpload.ts`
+
+### Step 1: Write the hook
+
+```typescript
+import { useCallback, useRef, useState } from 'react';
+import { requireAccessToken } from '@/lib/edge';
+
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
+const ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
+
+type IngestResponse = {
+  source_uid?: string;
+  status?: string;
+  error?: string;
+};
+
+export type StagedFile = {
+  id: string;
+  file: File;
+  status: 'pending' | 'uploading' | 'done' | 'error';
+  progress: number;
+  error?: string;
+};
+
+export type UploadStatus = 'idle' | 'uploading' | 'done';
+
+function ingestUrl(): string {
+  return `${SUPABASE_URL.replace(/\/+$/, '')}/functions/v1/ingest`;
+}
+
+function uploadOneFile(
+  file: File,
+  projectId: string,
+  token: string,
+  onProgress: (pct: number) => void,
+): Promise<IngestResponse> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', ingestUrl());
+    xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+    xhr.setRequestHeader('apikey', ANON_KEY);
+
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100));
+    };
+
+    xhr.onload = () => {
+      try {
+        const body = JSON.parse(xhr.responseText) as IngestResponse;
+        if (xhr.status >= 200 && xhr.status < 300) resolve(body);
+        else reject(new Error(body.error ?? `HTTP ${xhr.status}`));
+      } catch {
+        reject(new Error(`HTTP ${xhr.status}: ${xhr.responseText.slice(0, 200)}`));
+      }
+    };
+
+    xhr.onerror = () => reject(new Error('Network error'));
+    xhr.onabort = () => reject(new Error('Upload aborted'));
+
+    const form = new FormData();
+    form.append('file', file);
+    form.append('project_id', projectId);
+    form.append('ingest_mode', 'upload_only');
+    xhr.send(form);
+  });
+}
+
+export function useDirectUpload(projectId: string) {
+  const [files, setFiles] = useState<StagedFile[]>([]);
+  const [uploadStatus, setUploadStatus] = useState<UploadStatus>('idle');
+  const abortRef = useRef(false);
+
+  const addFiles = useCallback((incoming: File[]) => {
+    setFiles((prev) => {
+      const existing = new Set(prev.map((f) => `${f.file.name}:${f.file.size}`));
+      const newFiles = incoming
+        .filter((f) => !existing.has(`${f.name}:${f.size}`))
+        .map((f) => ({
+          id: `${f.name}-${f.size}-${Date.now()}`,
+          file: f,
+          status: 'pending' as const,
+          progress: 0,
+        }));
+      return [...prev, ...newFiles];
+    });
+  }, []);
+
+  const removeFile = useCallback((id: string) => {
+    setFiles((prev) => prev.filter((f) => f.id !== id));
+  }, []);
+
+  const clearDone = useCallback(() => {
+    setFiles((prev) => prev.filter((f) => f.status !== 'done'));
+    setUploadStatus('idle');
+  }, []);
+
+  const startUpload = useCallback(async (): Promise<string[]> => {
+    abortRef.current = false;
+    setUploadStatus('uploading');
+
+    const token = await requireAccessToken();
+    const sourceUids: string[] = [];
+
+    const pending = files.filter((f) => f.status === 'pending');
+    for (const staged of pending) {
+      if (abortRef.current) break;
+
+      setFiles((prev) =>
+        prev.map((f) => (f.id === staged.id ? { ...f, status: 'uploading' as const, progress: 0 } : f)),
+      );
+
+      try {
+        const resp = await uploadOneFile(staged.file, projectId, token, (pct) => {
+          setFiles((prev) =>
+            prev.map((f) => (f.id === staged.id ? { ...f, progress: pct } : f)),
+          );
+        });
+        if (resp.source_uid) sourceUids.push(resp.source_uid);
+        setFiles((prev) =>
+          prev.map((f) => (f.id === staged.id ? { ...f, status: 'done' as const, progress: 100 } : f)),
+        );
+      } catch (err) {
+        setFiles((prev) =>
+          prev.map((f) =>
+            f.id === staged.id
+              ? { ...f, status: 'error' as const, error: err instanceof Error ? err.message : String(err) }
+              : f,
+          ),
+        );
+      }
+    }
+
+    setUploadStatus('done');
+    return sourceUids;
+  }, [files, projectId]);
+
+  const pendingCount = files.filter((f) => f.status === 'pending').length;
+
+  return { files, uploadStatus, pendingCount, addFiles, removeFile, clearDone, startUpload };
+}
+```
+
+### Step 2: Verify TypeScript compiles
+
+```bash
+cd web && npx tsc --noEmit
+```
+
+### Step 3: Commit
+
+```bash
+git add web/src/hooks/useDirectUpload.ts
+git commit -m "feat: add useDirectUpload hook — uploads to ingest via XHR without Uppy"
+```
+
+---
+
+## Task 3: Rewrite `ProjectAssetsPage` to use `useDirectUpload`
+
+**Purpose:** Replace `ProjectParseUppyUploader` with an Ark UI dropzone + the new `useDirectUpload` hook. Same three-column layout: dropzone left, table center, actions right.
+
+**Files:**
+- Modify: `web/src/pages/ProjectAssetsPage.tsx`
+
+### Step 1: Full rewrite of ProjectAssetsPage.tsx
+
+```tsx
 import { useCallback, useEffect, useState } from 'react';
 import { FileUpload } from '@ark-ui/react/file-upload';
 import {
@@ -10,7 +312,6 @@ import {
   IconX,
   IconCheck,
   IconAlertCircle,
-  IconBrandGoogleDrive,
 } from '@tabler/icons-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useShellHeaderTitle } from '@/components/common/useShellHeaderTitle';
@@ -22,8 +323,6 @@ import {
   formatBytes,
 } from '@/lib/projectDetailHelpers';
 import { useDirectUpload, type StagedFile } from '@/hooks/useDirectUpload';
-import { useGoogleDrivePicker } from '@/hooks/useGoogleDrivePicker';
-import { edgeJson } from '@/lib/edge';
 import { cn } from '@/lib/utils';
 
 function StatusBadge({ status }: { status: ProjectDocumentRow['status'] }) {
@@ -83,41 +382,6 @@ export default function ProjectAssetsPage() {
     clearDone,
     startUpload,
   } = useDirectUpload(resolvedProjectId ?? '');
-
-  // --- Google Drive import state ---
-  const [importing, setImporting] = useState(false);
-  const [importError, setImportError] = useState<string | null>(null);
-
-  const { openPicker, isReady: pickerReady } = useGoogleDrivePicker({
-    onFilesSelected: async (files, accessToken) => {
-      if (!resolvedProjectId) return;
-      setImporting(true);
-      setImportError(null);
-      try {
-        const result = await edgeJson<{
-          results: Array<{ file_id: string; status: string; error?: string }>;
-        }>('google-drive-import', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            project_id: resolvedProjectId,
-            google_access_token: accessToken,
-            files,
-            ingest_mode: 'upload_only',
-          }),
-        });
-        const failures = result.results.filter((r) => r.status === 'error');
-        if (failures.length > 0) {
-          setImportError(`${failures.length} file(s) failed to import`);
-        }
-        void loadDocs(resolvedProjectId);
-      } catch (e) {
-        setImportError(e instanceof Error ? e.message : 'Import failed');
-      } finally {
-        setImporting(false);
-      }
-    },
-  });
 
   const loadDocs = useCallback(async (projectId: string) => {
     setLoading(true);
@@ -188,17 +452,6 @@ export default function ProjectAssetsPage() {
 
         <FileUpload.Root
           maxFiles={25}
-          accept={{
-            'text/*': ['.md', '.markdown', '.txt', '.csv', '.html', '.htm', '.rst', '.org'],
-            'application/pdf': ['.pdf'],
-            'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
-            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
-            'application/vnd.openxmlformats-officedocument.presentationml.presentation': ['.pptx'],
-            'application/vnd.oasis.opendocument.text': ['.odt'],
-            'application/epub+zip': ['.epub'],
-            'application/rtf': ['.rtf'],
-            'application/x-tex': ['.tex', '.latex'],
-          }}
           onFileChange={(details) => addFiles(details.acceptedFiles)}
           className="flex flex-col gap-0"
         >
@@ -214,35 +467,9 @@ export default function ProjectAssetsPage() {
             <span className="text-sm font-medium text-foreground">
               Drag files here or click to browse
             </span>
-            <span className="text-xs text-muted-foreground">
-              MD, TXT, CSV, HTML, RST, PDF, DOCX, XLSX, PPTX, ODT, EPUB, RTF, TEX, ORG
-            </span>
           </FileUpload.Dropzone>
           <FileUpload.HiddenInput />
         </FileUpload.Root>
-
-        {/* Google Drive import */}
-        {pickerReady && (
-          <button
-            type="button"
-            onClick={openPicker}
-            disabled={importing}
-            className="flex items-center justify-center gap-2 rounded-md border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors"
-          >
-            {importing ? (
-              <IconLoader2 size={14} className="animate-spin" />
-            ) : (
-              <IconBrandGoogleDrive size={14} />
-            )}
-            {importing ? 'Importing…' : 'Import from Google Drive'}
-          </button>
-        )}
-
-        {importError && (
-          <div className="rounded-md border border-destructive/30 bg-destructive/10 px-2 py-1.5 text-xs text-destructive">
-            {importError}
-          </div>
-        )}
 
         {/* Upload button */}
         {pendingCount > 0 && uploadStatus !== 'uploading' && (
@@ -280,12 +507,7 @@ export default function ProjectAssetsPage() {
                 >
                   <div className="flex items-center gap-2 min-w-0">
                     <IconFile size={14} className="flex-none text-muted-foreground" />
-                    <div className="min-w-0">
-                      <span className="block truncate text-xs text-foreground">{sf.file.name}</span>
-                      {sf.status === 'error' && sf.error && (
-                        <span className="block truncate text-[10px] text-destructive">{sf.error}</span>
-                      )}
-                    </div>
+                    <span className="truncate text-xs text-foreground">{sf.file.name}</span>
                   </div>
                   <span className="text-xs text-muted-foreground whitespace-nowrap">
                     {formatSize(sf.file.size)}
@@ -465,3 +687,40 @@ export default function ProjectAssetsPage() {
     </div>
   );
 }
+```
+
+### Step 2: Verify TypeScript compiles
+
+```bash
+cd web && npx tsc --noEmit
+```
+
+### Step 3: Manual test
+
+1. Navigate to `/app/assets`, select a project
+2. Drop 3+ files onto the dropzone → they appear in staged list
+3. Click "Upload 3 files" → progress per file, then checkmarks
+4. Table refreshes and shows all files
+5. Upload the same files to a different project → files move, appear in new project
+
+### Step 4: Commit
+
+```bash
+git add web/src/hooks/useDirectUpload.ts web/src/pages/ProjectAssetsPage.tsx
+git commit -m "feat(assets): replace Uppy with direct upload via edgeFetch
+
+Eliminates Uppy from the Assets upload path. Uses a simple useDirectUpload
+hook that POSTs each file to the ingest edge function via XMLHttpRequest
+for progress tracking. No instance lifecycle, no ghost files."
+```
+
+---
+
+## Verification Checklist
+
+1. `cd web && npx tsc --noEmit` — zero errors
+2. `npm run dev` — no console errors
+3. New project → upload 3 files → all appear in table with status "uploaded"
+4. Same files → different project → files move to new project
+5. `/app/docs` still works (uses Uppy via `ProjectParseUppyUploader` — unchanged)
+6. `/app/elt/:projectId` still works (uses Uppy via `ProjectParseUppyUploader` — unchanged)

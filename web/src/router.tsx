@@ -31,6 +31,7 @@ import DocumentTest from '@/pages/DocumentTest';
 import DatabasePlaceholder from '@/pages/DatabasePlaceholder';
 import DocsEditor from '@/pages/DocsEditor';
 import ProjectAssetsPage from '@/pages/ProjectAssetsPage';
+import ParsePage from '@/pages/ParsePage';
 import AppHome from '@/pages/AppHome';
 import EarlyAccess from '@/pages/EarlyAccess';
 import ProjectsHome from '@/pages/ProjectsHome';
@@ -115,6 +116,7 @@ export const router = createBrowserRouter([
           { path: '/app/projects/list', element: <Projects /> },
           { path: '/app/database', element: <DatabasePlaceholder /> },
           { path: '/app/assets', element: <ProjectAssetsPage /> },
+          { path: '/app/parse', element: <ParsePage /> },
           { path: '/app/docs', element: <DocsEditor /> },
           { path: '/app/tests', element: <TestsPage /> },
           { path: '/app/marketplace/integrations', element: <IntegrationsCatalog /> },

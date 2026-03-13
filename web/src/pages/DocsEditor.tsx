@@ -69,7 +69,7 @@ export default function DocsEditor() {
   return (
     <div className="flex h-[calc(100vh-var(--app-shell-header-height))] overflow-hidden">
       {/* ── Left sidebar: file list ── */}
-      <div className="flex w-[320px] shrink-0 flex-col border-r border-border bg-card">
+      <div className="flex w-[400px] shrink-0 flex-col border-r border-border bg-card">
         <div className="flex h-10 items-center border-b border-border px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
           {resolvedProjectName ?? 'Documents'}
         </div>
@@ -99,7 +99,7 @@ export default function DocsEditor() {
                 key={doc.source_uid}
                 type="button"
                 onClick={() => editable && setSelectedSourceUid(doc.source_uid)}
-                className={`flex w-full items-center gap-2 px-3 py-2 text-left text-[13px] transition-colors ${
+                className={`flex w-full items-center gap-2 px-3 py-1.5 text-left transition-colors border-b border-border/40 ${
                   !editable
                     ? 'opacity-50 cursor-default'
                     : doc.source_uid === selectedSourceUid
@@ -107,20 +107,20 @@ export default function DocsEditor() {
                       : 'text-foreground/80 hover:bg-accent/60'
                 }`}
               >
-                <span className={`shrink-0 rounded px-1 py-0.5 text-[9px] font-semibold uppercase ${
+                <span className={`shrink-0 self-start mt-0.5 rounded px-1 py-0.5 text-[9px] font-semibold uppercase ${
                   editable
                     ? 'bg-muted/60 text-muted-foreground'
                     : 'bg-muted/40 text-muted-foreground/60'
                 }`}>
                   {getDocumentFormat(doc)}
                 </span>
-                <span className="min-w-0 flex-1 truncate">{doc.doc_title}</span>
-                {!editable && (
-                  <span className="shrink-0 text-[9px] text-muted-foreground/60">view only</span>
-                )}
-                <span className="shrink-0 text-[10px] text-muted-foreground">
-                  {formatBytes(doc.source_filesize)}
-                </span>
+                <div className="min-w-0 flex-1">
+                  <span className="block truncate text-[13px]">{doc.doc_title}</span>
+                  <span className="block text-[10px] text-muted-foreground">
+                    {formatBytes(doc.source_filesize)}
+                    {!editable && <span className="ml-2 text-muted-foreground/60">view only</span>}
+                  </span>
+                </div>
               </button>
             );
           })}

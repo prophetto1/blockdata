@@ -28,6 +28,7 @@ import {
   IconArrowsShuffle,
   IconLock,
   IconClipboardList,
+  IconScan,
 } from '@tabler/icons-react';
 
 /* ------------------------------------------------------------------ */
@@ -72,17 +73,20 @@ export type NavDrillConfig = {
 /* ------------------------------------------------------------------ */
 
 export const TOP_LEVEL_NAV: Array<NavItem | 'divider'> = [
-  { label: 'Flows', icon: IconFolderPlus, path: '/app/flows', drillId: 'flows' },
-  { label: 'ELT', icon: IconCode, path: '/app/elt' },
-  { label: 'Database', icon: IconDatabase, path: '/app/database' },
   { label: 'Assets', icon: IconFolder, path: '/app/assets' },
-  { label: 'Docs', icon: IconFileText, path: '/app/docs' },
+  { label: 'Parse', icon: IconScan, path: '/app/parse' },
+  { label: 'Edit', icon: IconFileText, path: '/app/docs' },
+  { label: 'ELT', icon: IconCode, path: '/app/elt' },
   'divider',
+  { label: 'Flows', icon: IconFolderPlus, path: '/app/flows', drillId: 'flows' },
+  'divider',
+  { label: 'Database', icon: IconDatabase, path: '/app/database' },
   { label: 'Schema', icon: IconSchema, path: '/app/schemas' },
-  { label: 'API', icon: IconTerminal2, path: '/app/api-editor' },
   'divider',
   { label: 'Integrations', icon: IconApps, path: '/app/marketplace/integrations' },
   { label: 'Services', icon: IconServer, path: '/app/marketplace/services' },
+  { label: 'API', icon: IconTerminal2, path: '/app/api-editor' },
+  'divider',
   { label: 'Tests', icon: IconTestPipe, path: '/app/tests' },
   'divider',
   { label: 'Settings', icon: IconSettings, path: '/app/settings', drillId: 'settings' },

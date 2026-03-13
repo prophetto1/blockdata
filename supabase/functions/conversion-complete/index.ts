@@ -16,6 +16,7 @@ type ConversionCompleteBody = {
   pandoc_key?: string | null;
   html_key?: string | null;
   doctags_key?: string | null;
+  pipeline_config?: Record<string, unknown> | null;
   success: boolean;
   error?: string | null;
 };
@@ -181,6 +182,7 @@ Deno.serve(async (req) => {
             conv_block_type_freq: freqMap,
             conv_total_characters,
             conv_locator: pandoc_key,
+            pipeline_config: body.pipeline_config ?? {},
           });
         if (convInsErr) throw new Error(`DB insert conversion_parsing failed: ${convInsErr.message}`);
       }
@@ -308,6 +310,7 @@ Deno.serve(async (req) => {
             conv_block_type_freq: freqMap,
             conv_total_characters,
             conv_locator: docling_key,
+            pipeline_config: body.pipeline_config ?? {},
           });
         if (convInsErr) throw new Error(`DB insert conversion_parsing failed: ${convInsErr.message}`);
       }
@@ -437,6 +440,7 @@ Deno.serve(async (req) => {
           conv_block_type_freq: freqMap,
           conv_total_characters,
           conv_locator: md_key,
+          pipeline_config: body.pipeline_config ?? {},
         });
       if (convInsErr) throw new Error(`DB insert conversion_parsing failed: ${convInsErr.message}`);
     }
