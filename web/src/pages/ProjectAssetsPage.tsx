@@ -157,7 +157,7 @@ export default function ProjectAssetsPage() {
     try {
       for (const uid of selected) {
         const doc = docs.find((d) => d.source_uid === uid);
-        const { error: rpcErr } = await supabase.rpc('delete_document', { p_source_uid: uid });
+        const { error: rpcErr } = await supabase.rpc('delete_source_document', { p_source_uid: uid });
         if (rpcErr) throw new Error(rpcErr.message);
         const locator = doc?.source_locator?.replace(/^\/+/, '');
         if (locator) {

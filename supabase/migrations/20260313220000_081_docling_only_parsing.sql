@@ -6,16 +6,16 @@
 -- =========================================================================
 
 -- Delete overlays for runs tied to non-docling conversions
-DELETE FROM public.block_overlays_v2
+DELETE FROM public.block_overlays
   WHERE run_id IN (
-    SELECT run_id FROM public.runs_v2
+    SELECT run_id FROM public.runs
     WHERE conv_uid IN (
       SELECT conv_uid FROM public.conversion_parsing WHERE conv_parsing_tool != 'docling'
     )
   );
 
 -- Delete runs tied to non-docling conversions
-DELETE FROM public.runs_v2
+DELETE FROM public.runs
   WHERE conv_uid IN (
     SELECT conv_uid FROM public.conversion_parsing WHERE conv_parsing_tool != 'docling'
   );

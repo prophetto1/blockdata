@@ -236,7 +236,7 @@ export function useEltWorkbench(_workbenchRef: React.RefObject<WorkbenchHandle |
     if (!doc) return;
     setDocsError(null);
 
-    const { error: deleteError } = await supabase.rpc('delete_document', { p_source_uid: doc.source_uid });
+    const { error: deleteError } = await supabase.rpc('delete_source_document', { p_source_uid: doc.source_uid });
     if (deleteError) {
       setDocsError(deleteError.message);
       return;
