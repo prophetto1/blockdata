@@ -116,7 +116,7 @@ Deno.serve(async (req) => {
     .maybeSingle();
   if (srcErr) return json(500, { error: srcErr.message });
   if (!srcDoc) return json(404, { error: "Source document not found" });
-  if (srcDoc.status !== "ingested") return json(409, { error: "Document not ingested yet" });
+  if (srcDoc.status !== "parsed") return json(409, { error: "Document not parsed yet" });
 
   const doc = { ...srcDoc, ...conv };
 

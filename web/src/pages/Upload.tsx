@@ -100,7 +100,7 @@ function isPptxDocument(doc: UploadDocumentRow): boolean {
 }
 
 function isUploadFailed(status: UploadDocumentRow['status']): boolean {
-  return status === 'ingest_failed';
+  return status === 'parse_failed';
 }
 
 function formatDateTime(value: string): string {

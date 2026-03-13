@@ -24,7 +24,7 @@ type Props = {
   selectedDocument?: {
     source_uid: string;
     source_type: string;
-    status: 'uploaded' | 'converting' | 'ingested' | 'conversion_failed' | 'ingest_failed';
+    status: 'uploaded' | 'converting' | 'parsed' | 'conversion_failed' | 'parse_failed';
     doc_title: string;
   } | null;
   onParseQueued?: () => Promise<void> | void;
@@ -66,7 +66,7 @@ type AdvancedConfigState = {
   preserveVerySmallText: boolean;
 };
 
-const PARSEABLE_STATUSES = new Set(['uploaded', 'conversion_failed', 'ingest_failed']);
+const PARSEABLE_STATUSES = new Set(['uploaded', 'conversion_failed', 'parse_failed']);
 
 function ConfigSwitch({
   label,
@@ -143,7 +143,7 @@ export function ParseEasyPanel({ projectId: _projectId, selectedDocument = null,
     if (!selectedDocument) return 'Select a document in Assets first';
     if (selectedDocument.source_type === 'md') return 'Markdown files do not use the conversion service';
     if (selectedDocument.status === 'converting') return 'Document is already converting';
-    if (selectedDocument.status === 'ingested') return 'Document is already parsed';
+    if (selectedDocument.status === 'parsed') return 'Document is already parsed';
     if (!PARSEABLE_STATUSES.has(selectedDocument.status)) return `Cannot parse in status: ${selectedDocument.status}`;
     return null;
   }, [selectedDocument]);

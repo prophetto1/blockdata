@@ -493,14 +493,13 @@ export default function ProjectAssetsPage() {
                 <th className="px-3 py-2 font-medium">Name</th>
                 <th className="px-3 py-2 font-medium">Format</th>
                 <th className="px-3 py-2 font-medium">Size</th>
-                <th className="px-3 py-2 font-medium">Status</th>
                 <th className="px-3 py-2 font-medium">Parse Status</th>
               </tr>
             </thead>
             <tbody>
               {loading && (
                 <tr>
-                  <td colSpan={6} className="px-3 py-8 text-center">
+                  <td colSpan={5} className="px-3 py-8 text-center">
                     <div className="inline-flex items-center gap-2 text-sm text-muted-foreground">
                       <IconLoader2 size={16} className="animate-spin" />
                       Loading files…
@@ -511,7 +510,7 @@ export default function ProjectAssetsPage() {
 
               {!loading && error && (
                 <tr>
-                  <td colSpan={6} className="px-3 py-8 text-center text-sm text-destructive">
+                  <td colSpan={5} className="px-3 py-8 text-center text-sm text-destructive">
                     {error}
                   </td>
                 </tr>
@@ -519,7 +518,7 @@ export default function ProjectAssetsPage() {
 
               {!loading && !error && filteredRows.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-3 py-12 text-center text-sm text-muted-foreground">
+                  <td colSpan={5} className="px-3 py-12 text-center text-sm text-muted-foreground">
                     {docs.length === 0
                       ? 'No files in this project yet. Drag files to the left to upload.'
                       : 'No files match your search.'}
@@ -528,7 +527,7 @@ export default function ProjectAssetsPage() {
               )}
 
               {!loading && !error && pagedRows.map((doc) => {
-                const isFailed = doc.status === 'conversion_failed' || doc.status === 'ingest_failed';
+                const isFailed = doc.status === 'conversion_failed' || doc.status === 'parse_failed';
                 return (
                   <tr
                     key={doc.source_uid}
@@ -559,13 +558,14 @@ export default function ProjectAssetsPage() {
                       {formatBytes(doc.source_filesize)}
                     </td>
                     <td className="px-3 py-2.5">
-                      <Badge variant={isFailed ? 'red' : 'green'} size="xs">
-                        {isFailed ? 'failed' : 'uploaded'}
-                      </Badge>
-                    </td>
-                    <td className="px-3 py-2.5">
-                      {doc.status === 'ingested' && (
+                      {doc.status === 'parsed' && (
                         <Badge variant="green" size="xs">parsed</Badge>
+                      )}
+                      {doc.status === 'converting' && (
+                        <Badge variant="gray" size="xs">parsing…</Badge>
+                      )}
+                      {isFailed && (
+                        <Badge variant="red" size="xs">failed</Badge>
                       )}
                     </td>
                   </tr>

@@ -49,7 +49,7 @@ Deno.test("checkIdempotency returns existing doc when same project uploads ident
   const existing: ExistingDocRow = {
     source_uid: "abc123",
     owner_id: "owner-1",
-    status: "ingested",
+    status: "parsed",
     error: null,
     project_id: "project-a",
   };
@@ -66,7 +66,7 @@ Deno.test("checkIdempotency returns existing doc when same project uploads ident
     response: {
       source_uid: "abc123",
       conv_uid: "conv-1",
-      status: "ingested",
+      status: "parsed",
       error: undefined,
     },
   });
@@ -76,7 +76,7 @@ Deno.test("checkIdempotency returns existing doc when different project uploads 
   const existing: ExistingDocRow = {
     source_uid: "abc123",
     owner_id: "owner-1",
-    status: "ingested",
+    status: "parsed",
     error: null,
     project_id: "project-a",
   };
@@ -95,7 +95,7 @@ Deno.test("checkIdempotency returns existing doc when different project uploads 
     response: {
       source_uid: "abc123",
       conv_uid: "conv-1",
-      status: "ingested",
+      status: "parsed",
       error: undefined,
     },
   });

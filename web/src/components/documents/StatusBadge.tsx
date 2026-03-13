@@ -2,16 +2,16 @@ import type { FileDispatchStatus } from '@/hooks/useBatchParse';
 
 export function StatusBadge({ status, error }: { status: string; error?: string | null }) {
   const variant =
-    status === 'ingested'
+    status === 'parsed'
       ? 'bg-green-500/10 text-green-600 dark:text-green-400'
-      : status === 'conversion_failed' || status === 'ingest_failed'
+      : status === 'conversion_failed' || status === 'parse_failed'
         ? 'bg-destructive/10 text-destructive'
         : status === 'converting'
           ? 'bg-primary/10 text-primary'
           : 'bg-muted/60 text-muted-foreground';
   const label =
-    status === 'ingested'
-      ? 'success'
+    status === 'parsed'
+      ? 'parsed'
       : status === 'uploaded'
         ? 'unparsed'
         : status.replace(/_/g, ' ');

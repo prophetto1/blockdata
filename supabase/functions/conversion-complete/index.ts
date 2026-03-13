@@ -72,8 +72,8 @@ Deno.serve(async (req) => {
       .eq("source_uid", source_uid)
       .maybeSingle();
 
-    if (docRow.status === "ingested" && existingConv?.conv_uid) {
-      return json(200, { ok: true, noop: true, status: "ingested", conv_uid: existingConv.conv_uid });
+    if (docRow.status === "parsed" && existingConv?.conv_uid) {
+      return json(200, { ok: true, noop: true, status: "parsed", conv_uid: existingConv.conv_uid });
     }
 
     if (docRow.conversion_job_id !== conversion_job_id) {
@@ -229,13 +229,13 @@ Deno.serve(async (req) => {
 
       const { error: finalErr } = await supabaseAdmin
         .from("source_documents")
-        .update({ status: "ingested", error: null })
+        .update({ status: "parsed", error: null })
         .eq("source_uid", source_uid);
       if (finalErr) throw new Error(`DB update source_documents failed: ${finalErr.message}`);
 
       return json(200, {
         ok: true,
-        status: "ingested",
+        status: "parsed",
         conv_uid,
         blocks_count: blockRows.length,
         track: "docling",
@@ -244,9 +244,9 @@ Deno.serve(async (req) => {
       const msg = e instanceof Error ? e.message : String(e);
       await supabaseAdmin
         .from("source_documents")
-        .update({ status: "ingest_failed", error: msg })
+        .update({ status: "parse_failed", error: msg })
         .eq("source_uid", source_uid);
-      return json(200, { ok: false, status: "ingest_failed", error: msg });
+      return json(200, { ok: false, status: "parse_failed", error: msg });
     }
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);

@@ -122,14 +122,14 @@ export function ParseTabPanel({ docs, selected, parseTab }: ParseTabPanelProps) 
   const { profiles, selectedProfileId, handleProfileChange, batch, jsonModal, setJsonModal } = parseTab;
 
   const unparsedUids = docs
-    .filter((d) => d.status === 'uploaded' || d.status === 'conversion_failed' || d.status === 'ingest_failed')
+    .filter((d) => d.status === 'uploaded' || d.status === 'conversion_failed' || d.status === 'parse_failed')
     .map((d) => d.source_uid);
 
   const selectedUids = docs
     .filter((d) => selected.has(d.source_uid))
     .map((d) => d.source_uid);
 
-  const parsedCount = docs.filter((d) => d.status === 'ingested').length;
+  const parsedCount = docs.filter((d) => d.status === 'parsed').length;
   const convertingCount = docs.filter((d) => d.status === 'converting').length;
 
   return (
@@ -247,9 +247,9 @@ export function ParseRowActions({
   const canParse =
     doc.status === 'uploaded' ||
     doc.status === 'conversion_failed' ||
-    doc.status === 'ingest_failed';
+    doc.status === 'parse_failed';
   const isConverting = doc.status === 'converting';
-  const isIngested = doc.status === 'ingested';
+  const isParsed = doc.status === 'parsed';
 
   return (
     <div className="flex items-center gap-1">
@@ -270,7 +270,7 @@ export function ParseRowActions({
           <IconLoader2 size={14} className="animate-spin text-primary" />
         </span>
       )}
-      {isIngested && (
+      {isParsed && (
         <>
           <button
             type="button"

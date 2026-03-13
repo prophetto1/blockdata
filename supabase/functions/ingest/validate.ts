@@ -61,7 +61,7 @@ export async function checkIdempotency(
     .maybeSingle();
 
   // Allow retry for failed conversions: delete the stale rows and re-process.
-  if (existing.status === "conversion_failed" || existing.status === "ingest_failed") {
+  if (existing.status === "conversion_failed" || existing.status === "parse_failed") {
     const previousProjectId: string | null = existing.project_id ?? null;
     if (existingConv?.conv_uid) {
       await supabaseAdmin.from("blocks").delete().eq("conv_uid", existingConv.conv_uid);

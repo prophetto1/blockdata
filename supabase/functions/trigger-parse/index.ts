@@ -48,7 +48,7 @@ Deno.serve(async (req) => {
     if (doc.owner_id !== ownerId) return json(403, { error: "Document not owned by you" });
 
     // Only allow re-parse from uploaded or failed states.
-    const parseable = ["uploaded", "conversion_failed", "ingest_failed"];
+    const parseable = ["uploaded", "conversion_failed", "parse_failed"];
     if (!parseable.includes(doc.status)) {
       return json(409, { error: `Cannot parse document in status: ${doc.status}` });
     }
@@ -68,7 +68,8 @@ Deno.serve(async (req) => {
         .eq("id", profile_id)
         .single();
       if (profileErr) throw new Error(`Profile lookup failed: ${profileErr.message}`);
-      pipeline_config = (profile.config as Record<string, unknown>) ?? {};
+      const profileConfig = (profile.config as Record<string, unknown>) ?? {};
+      pipeline_config = { ...profileConfig, _profile_id: profile_id, _profile_name: profileConfig.name ?? null };
     }
 
     const track = runtimePolicy.upload.extension_track_routing[source_type];

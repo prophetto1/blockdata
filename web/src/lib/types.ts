@@ -24,7 +24,7 @@ export type DocumentRow = {
   source_filesize: number;
   source_total_characters: number | null;
   doc_title: string;
-  status: 'uploaded' | 'converting' | 'ingested' | 'conversion_failed' | 'ingest_failed';
+  status: 'uploaded' | 'converting' | 'parsed' | 'conversion_failed' | 'parse_failed';
   uploaded_at: string;
   error: string | null;
 };

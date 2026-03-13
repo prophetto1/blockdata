@@ -29,25 +29,18 @@ type ParsingProfile = {
   config: Record<string, unknown>;
 };
 
-function getPipeline(sourceType: string): string {
-  const t = sourceType.toLowerCase();
-  if (t === 'pdf' || t === 'image') return 'standard';
-  if (['wav', 'mp3', 'm4a', 'flac', 'ogg', 'aac', 'wma'].includes(t)) return 'asr';
-  return 'simple';
-}
-
 function StatusBadge({ status, error }: { status: string; error?: string | null }) {
   const variant =
-    status === 'ingested'
+    status === 'parsed'
       ? 'bg-green-500/10 text-green-600 dark:text-green-400'
-      : status === 'conversion_failed' || status === 'ingest_failed'
+      : status === 'conversion_failed' || status === 'parse_failed'
         ? 'bg-destructive/10 text-destructive'
         : status === 'converting'
           ? 'bg-primary/10 text-primary'
           : 'bg-muted/60 text-muted-foreground';
   const label =
-    status === 'ingested'
-      ? 'success'
+    status === 'parsed'
+      ? 'parsed'
       : status === 'uploaded'
         ? 'unparsed'
         : status.replace(/_/g, ' ');
@@ -266,18 +259,18 @@ export default function ParsePage() {
   const someSelected = selected.size > 0 && selected.size < docs.length;
 
   const unparsedUids = docs
-    .filter((d) => d.status === 'uploaded' || d.status === 'conversion_failed' || d.status === 'ingest_failed')
+    .filter((d) => d.status === 'uploaded' || d.status === 'conversion_failed' || d.status === 'parse_failed')
     .map((d) => d.source_uid);
 
   const selectedParseableUids = docs
-    .filter((d) => selected.has(d.source_uid) && (d.status === 'uploaded' || d.status === 'conversion_failed' || d.status === 'ingest_failed'))
+    .filter((d) => selected.has(d.source_uid) && (d.status === 'uploaded' || d.status === 'conversion_failed' || d.status === 'parse_failed'))
     .map((d) => d.source_uid);
 
   const selectedResetableUids = docs
-    .filter((d) => selected.has(d.source_uid) && (d.status === 'converting' || d.status === 'conversion_failed' || d.status === 'ingest_failed'))
+    .filter((d) => selected.has(d.source_uid) && (d.status === 'converting' || d.status === 'conversion_failed' || d.status === 'parse_failed'))
     .map((d) => d.source_uid);
 
-  const parsedCount = docs.filter((d) => d.status === 'ingested').length;
+  const parsedCount = docs.filter((d) => d.status === 'parsed').length;
   const convertingCount = docs.filter((d) => d.status === 'converting').length;
 
   const handleSingleParse = (uid: string) => {
@@ -471,7 +464,6 @@ export default function ParsePage() {
               <th className="px-3 py-2 font-medium">Name</th>
               <th className="px-3 py-2 font-medium">Format</th>
               <th className="px-3 py-2 font-medium">Size</th>
-              <th className="px-3 py-2 font-medium">Pipeline</th>
               <th className="px-3 py-2 font-medium">Status</th>
               <th className="px-3 py-2 font-medium">Actions</th>
             </tr>
@@ -479,7 +471,7 @@ export default function ParsePage() {
           <tbody>
             {loading && (
               <tr>
-                <td colSpan={7} className="px-3 py-8 text-center">
+                <td colSpan={6} className="px-3 py-8 text-center">
                   <div className="inline-flex items-center gap-2 text-sm text-muted-foreground">
                     <IconLoader2 size={16} className="animate-spin" />
                     Loading files...
@@ -490,7 +482,7 @@ export default function ParsePage() {
 
             {!loading && error && (
               <tr>
-                <td colSpan={7} className="px-3 py-8 text-center text-sm text-destructive">
+                <td colSpan={6} className="px-3 py-8 text-center text-sm text-destructive">
                   {error}
                 </td>
               </tr>
@@ -498,7 +490,7 @@ export default function ParsePage() {
 
             {!loading && !error && docs.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-3 py-12 text-center text-sm text-muted-foreground">
+                <td colSpan={6} className="px-3 py-12 text-center text-sm text-muted-foreground">
                   No files in this project. Upload files first on the Project Assets page.
                 </td>
               </tr>
@@ -511,9 +503,9 @@ export default function ParsePage() {
                 const canParse =
                   doc.status === 'uploaded' ||
                   doc.status === 'conversion_failed' ||
-                  doc.status === 'ingest_failed';
+                  doc.status === 'parse_failed';
                 const isConverting = doc.status === 'converting';
-                const isIngested = doc.status === 'ingested';
+                const isParsed = doc.status === 'parsed';
 
                 return (
                   <tr
@@ -545,11 +537,6 @@ export default function ParsePage() {
                       {formatBytes(doc.source_filesize)}
                     </td>
                     <td className="px-3 py-2.5">
-                      <span className="inline-flex rounded bg-muted/60 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-                        {getPipeline(doc.source_type)}
-                      </span>
-                    </td>
-                    <td className="px-3 py-2.5">
                       <StatusBadge status={doc.status} error={doc.error} />
                       <DispatchBadge status={dStatus} />
                     </td>
@@ -573,7 +560,7 @@ export default function ParsePage() {
                         )}
                         <ActionMenu
                           items={[
-                            ...(isIngested
+                            ...(isParsed
                               ? [
                                   { label: 'Preview', onClick: () => void handlePreview(doc) },
                                   { label: 'Download MD', onClick: () => void handleDownloadMd(doc) },

@@ -52,7 +52,7 @@ const originalDoc = {
   source_filesize: 1234,
   source_total_characters: null,
   doc_title: 'Original Draft.docx',
-  status: 'ingested' as const,
+  status: 'parsed' as const,
   uploaded_at: '2026-03-10T00:00:00.000Z',
   error: null,
   source_locator: 'projects/project-1/source/original-draft.docx',
