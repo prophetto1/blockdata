@@ -59,7 +59,7 @@ async def convert_route(
     # Admission control: check capacity BEFORE entering the try/finally callback block.
     # If we reject here, no callback fires — the job was never accepted.
     pool = get_conversion_pool()
-    use_pool = track in ("docling", "pandoc") and pool._max_workers > 0
+    use_pool = pool._max_workers > 0
     if use_pool:
         pool_status = pool.status()
         capacity = pool_status["max_workers"] + pool_status["max_queue_depth"]
@@ -85,7 +85,6 @@ async def convert_route(
 
     try:
         # Docling and Pandoc tracks are CPU-bound — offload to process pool.
-        # mdast (plain text passthrough) stays inline since it's just a decode.
         if use_pool:
             markdown_bytes, docling_json_bytes, pandoc_json_bytes, html_bytes, doctags_bytes = (
                 await pool.submit(_run_convert_in_process, body.model_dump())

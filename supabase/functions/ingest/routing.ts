@@ -4,7 +4,7 @@ import { detectExtension, sourceTypeFromExtension } from "./storage.ts";
 export type IngestRoute = {
   extension: string;
   source_type: string;
-  track: "mdast" | "docling" | "pandoc";
+  track: "docling" | "pandoc";
 };
 
 export function resolveIngestRoute(

@@ -7,7 +7,7 @@ type GenerateCitationsBody = {
   source_uid?: string;
 };
 
-type ParsingTool = "mdast" | "docling" | "pandoc";
+type ParsingTool = "docling" | "pandoc";
 
 function json(status: number, body: unknown): Response {
   return new Response(JSON.stringify(body, null, 2), {
@@ -26,7 +26,7 @@ async function readJson<T>(req: Request): Promise<T> {
 }
 
 function toParsingTool(value: string | null | undefined): ParsingTool {
-  if (value === "mdast" || value === "docling" || value === "pandoc") return value;
+  if (value === "docling" || value === "pandoc") return value;
   throw new Error(`Unsupported parsing tool for citations generation: ${value ?? "null"}`);
 }
 

@@ -2,7 +2,6 @@ import { corsPreflight, withCorsHeaders } from "../_shared/cors.ts";
 import { getEnv, requireEnv } from "../_shared/env.ts";
 import { concatBytes, sha256Hex } from "../_shared/hash.ts";
 import { extractDoclingBlocks } from "../_shared/docling.ts";
-import { extractBlocks } from "../_shared/markdown.ts";
 import { extractPandocBlocks } from "../_shared/pandoc.ts";
 import { insertRepresentationArtifact } from "../_shared/representation.ts";
 import { createAdminClient } from "../_shared/supabase.ts";
@@ -10,7 +9,7 @@ import { createAdminClient } from "../_shared/supabase.ts";
 type ConversionCompleteBody = {
   source_uid: string;
   conversion_job_id: string;
-  track?: "mdast" | "docling" | "pandoc" | null;
+  track?: "docling" | "pandoc" | null;
   md_key: string;
   docling_key?: string | null;
   pandoc_key?: string | null;
@@ -94,15 +93,12 @@ Deno.serve(async (req) => {
       return json(200, { ok: false, status: "conversion_failed" });
     }
 
-    const requestedTrack = track === "mdast" || track === "docling" || track === "pandoc"
-      ? track
-      : null;
-    const resolvedTrack: "mdast" | "docling" | "pandoc" = requestedTrack ??
-      (pandoc_key ? "pandoc" : docling_key ? "docling" : "mdast");
+    const resolvedTrack: "docling" | "pandoc" =
+      track === "pandoc" ? "pandoc" : "docling";
 
     const insertSupplementalRepresentation = async (
       key: string,
-      parsing_tool: "mdast" | "docling" | "pandoc",
+      parsing_tool: "docling" | "pandoc",
       representation_type: "markdown_bytes" | "doclingdocument_json" | "pandoc_ast_json" | "html_bytes" | "doctags_text",
       conv_uid: string,
     ) => {
@@ -219,7 +215,7 @@ Deno.serve(async (req) => {
 
         await insertSupplementalRepresentation(
           md_key,
-          "mdast",
+          "docling",
           "markdown_bytes",
           conv_uid,
         );
@@ -349,7 +345,7 @@ Deno.serve(async (req) => {
 
         await insertSupplementalRepresentation(
           md_key,
-          "mdast",
+          "docling",
           "markdown_bytes",
           conv_uid,
         );
@@ -404,136 +400,13 @@ Deno.serve(async (req) => {
       }
     }
 
-    // -----------------------------------------------------------------------
-    // Fallback: mdast track (txt, legacy conversions, or no parser artifact key)
-    // -----------------------------------------------------------------------
-    const { data: download, error: mdDlErr } = await supabaseAdmin.storage
-      .from(bucket)
-      .download(md_key);
-    if (mdDlErr || !download) {
-      throw new Error(`Storage download failed: ${mdDlErr?.message ?? "unknown"}`);
-    }
-
-    const mdBytes = new Uint8Array(await download.arrayBuffer());
-    const markdown = new TextDecoder().decode(mdBytes);
-    const convPrefix = new TextEncoder().encode("mdast\nmarkdown_bytes\n");
-    const conv_uid = await sha256Hex(concatBytes([convPrefix, mdBytes]));
-    const extracted = extractBlocks(markdown);
-
-    const conv_total_blocks = extracted.blocks.length;
-    const conv_total_characters = extracted.blocks.reduce((sum, b) => sum + b.block_content.length, 0);
-    const freqMap: Record<string, number> = {};
-    for (const b of extracted.blocks) {
-      freqMap[b.block_type] = (freqMap[b.block_type] || 0) + 1;
-    }
-
-    {
-      const { error: convInsErr } = await supabaseAdmin
-        .from("conversion_parsing")
-        .insert({
-          conv_uid,
-          source_uid,
-          conv_status: "success",
-          conv_parsing_tool: "mdast",
-          conv_representation_type: "markdown_bytes",
-          conv_total_blocks,
-          conv_block_type_freq: freqMap,
-          conv_total_characters,
-          conv_locator: md_key,
-          pipeline_config: body.pipeline_config ?? {},
-        });
-      if (convInsErr) throw new Error(`DB insert conversion_parsing failed: ${convInsErr.message}`);
-    }
-
-    try {
-      const blockRows = extracted.blocks.map((b, idx) => ({
-        block_uid: `${conv_uid}:${idx}`,
-        conv_uid,
-        block_index: idx,
-        block_type: b.block_type,
-        block_locator: {
-          type: "text_offset_range",
-          start_offset: b.start_offset,
-          end_offset: b.end_offset,
-          parser_block_type: b.parser_block_type,
-          parser_path: b.parser_path,
-        },
-        block_content: b.block_content,
-      }));
-
-      if (blockRows.length === 0) throw new Error("No blocks extracted from markdown");
-
-      const { error: insErr } = await supabaseAdmin.from("blocks").insert(blockRows);
-      if (insErr) throw new Error(`DB insert blocks failed: ${insErr.message}`);
-
-      await insertRepresentationArtifact(supabaseAdmin, {
-        source_uid,
-        conv_uid,
-        parsing_tool: "mdast",
-        representation_type: "markdown_bytes",
-        artifact_locator: md_key,
-        artifact_hash: conv_uid,
-        artifact_size_bytes: mdBytes.byteLength,
-        artifact_meta: { source_type: docRow.source_type },
-      });
-
-      if (docling_key) {
-        await insertSupplementalRepresentation(
-          docling_key,
-          "docling",
-          "doclingdocument_json",
-          conv_uid,
-        );
-      }
-
-      if (pandoc_key) {
-        await insertSupplementalRepresentation(
-          pandoc_key,
-          "pandoc",
-          "pandoc_ast_json",
-          conv_uid,
-        );
-      }
-
-      if (html_key) {
-        await insertSupplementalRepresentation(
-          html_key,
-          "docling",
-          "html_bytes",
-          conv_uid,
-        );
-      }
-
-      if (doctags_key) {
-        await insertSupplementalRepresentation(
-          doctags_key,
-          "docling",
-          "doctags_text",
-          conv_uid,
-        );
-      }
-
-      const { error: finalErr } = await supabaseAdmin
-        .from("source_documents")
-        .update({ status: "ingested", error: null })
-        .eq("source_uid", source_uid);
-      if (finalErr) throw new Error(`DB update source_documents failed: ${finalErr.message}`);
-
-      return json(200, {
-        ok: true,
-        status: "ingested",
-        conv_uid,
-        blocks_count: blockRows.length,
-        track: "mdast",
-      });
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      await supabaseAdmin
-        .from("source_documents")
-        .update({ status: "ingest_failed", error: msg })
-        .eq("source_uid", source_uid);
-      return json(200, { ok: false, status: "ingest_failed", error: msg });
-    }
+    // No valid track resolved — should not happen with docling/pandoc only.
+    const errMsg = `Unexpected resolved track: ${resolvedTrack}`;
+    await supabaseAdmin
+      .from("source_documents")
+      .update({ status: "conversion_failed", error: errMsg })
+      .eq("source_uid", source_uid);
+    return json(200, { ok: false, status: "conversion_failed", error: errMsg });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     return json(400, { error: msg });

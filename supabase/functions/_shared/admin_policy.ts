@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-export type IngestTrack = "mdast" | "docling" | "pandoc";
+export type IngestTrack = "docling" | "pandoc";
 
 export type TrackEnabledMap = Record<IngestTrack, boolean>;
 export type ExtensionTrackRouting = Record<string, IngestTrack>;
@@ -71,7 +71,7 @@ export type AdminPolicyRow = {
   updated_by: string | null;
 };
 
-const ALL_TRACKS: IngestTrack[] = ["mdast", "docling", "pandoc"];
+const ALL_TRACKS: IngestTrack[] = ["docling", "pandoc"];
 
 const DEFAULT_POLICY: RuntimePolicy = {
   models: {
@@ -118,7 +118,6 @@ const DEFAULT_POLICY: RuntimePolicy = {
       "txt",
     ],
     track_enabled: {
-      mdast: false,
       docling: true,
       pandoc: false,
     },

@@ -2,12 +2,12 @@ import { assertEquals, assertThrows } from "https://deno.land/std@0.224.0/assert
 import { runtimePolicyDefaults } from "../_shared/admin_policy.ts";
 import { resolveIngestRoute } from "./routing.ts";
 
-Deno.test("resolveIngestRoute resolves markdown to mdast track", () => {
+Deno.test("resolveIngestRoute resolves markdown to docling track", () => {
   const policy = runtimePolicyDefaults();
   const resolved = resolveIngestRoute("sample.md", policy);
   assertEquals(resolved.extension, "md");
   assertEquals(resolved.source_type, "md");
-  assertEquals(resolved.track, "mdast");
+  assertEquals(resolved.track, "docling");
 });
 
 Deno.test("resolveIngestRoute resolves rst to pandoc when enabled and allowed", () => {

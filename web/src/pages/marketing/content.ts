@@ -106,7 +106,7 @@ export const MORE_USE_CASES = [
 export const CAPABILITIES = [
   {
     title: 'Multi-Format Ingestion',
-    description: 'Markdown via mdast. DOCX/PDF and more via Docling. Every format produces the same block inventory.',
+    description: 'Markdown, DOCX, PDF and more via Docling. Every format produces the same block inventory.',
   },
   {
     title: 'Schema-First Extraction',

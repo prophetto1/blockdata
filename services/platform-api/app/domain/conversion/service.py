@@ -1,4 +1,4 @@
-"""Document conversion logic — Docling, Pandoc, mdast tracks."""
+"""Document conversion logic — Docling and Pandoc tracks."""
 
 import json
 import os
@@ -145,15 +145,6 @@ async def convert(
 ) -> tuple[bytes, Optional[bytes], Optional[bytes], Optional[bytes], Optional[bytes]]:
     """Run the conversion pipeline. Returns (markdown, docling_json, pandoc_json, html, doctags)."""
     track = resolve_track(req)
-
-    if track == "mdast":
-        if req.source_type != "txt":
-            raise RuntimeError(f"mdast track only supports txt, got: {req.source_type}")
-        source_bytes = await download_bytes(req.source_download_url)
-        markdown_bytes = source_bytes.decode("utf-8", errors="replace").encode("utf-8")
-        docling_json_bytes = await _maybe_build_docling_json_bytes(req) if req.docling_output is not None else None
-        pandoc_json_bytes = await _maybe_build_pandoc_ast_bytes(req, source_bytes) if req.pandoc_output is not None else None
-        return markdown_bytes, docling_json_bytes, pandoc_json_bytes, None, None
 
     if track == "docling":
         converter = _build_docling_converter()

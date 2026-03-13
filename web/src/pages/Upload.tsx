@@ -41,12 +41,13 @@ const DOCX_EXTENSIONS = new Set(['docx', 'docm', 'dotx', 'dotm']);
 const PPTX_SOURCE_TYPES = new Set(['pptx', 'pptm', 'ppsx']);
 const PPTX_EXTENSIONS = new Set(['pptx', 'pptm', 'ppsx']);
 
-type ParserTrack = 'mdast' | 'docling' | 'pandoc';
+type ParserTrack = 'docling' | 'pandoc';
 type TrackInfo = { track: ParserTrack; rep: string; badgeClass: string };
 
 const TRACK_MAP: Record<string, TrackInfo> = {
-  md: { track: 'mdast', rep: 'markdown_bytes', badgeClass: 'bg-teal-500/15 text-teal-400' },
-  txt: { track: 'mdast', rep: 'markdown_bytes', badgeClass: 'bg-teal-500/15 text-teal-400' },
+  md: { track: 'docling', rep: 'doclingdocument_json', badgeClass: 'bg-violet-500/15 text-violet-400' },
+  markdown: { track: 'docling', rep: 'doclingdocument_json', badgeClass: 'bg-violet-500/15 text-violet-400' },
+  txt: { track: 'docling', rep: 'doclingdocument_json', badgeClass: 'bg-violet-500/15 text-violet-400' },
   docx: { track: 'docling', rep: 'doclingdocument_json', badgeClass: 'bg-violet-500/15 text-violet-400' },
   pdf: { track: 'docling', rep: 'doclingdocument_json', badgeClass: 'bg-violet-500/15 text-violet-400' },
   pptx: { track: 'docling', rep: 'doclingdocument_json', badgeClass: 'bg-violet-500/15 text-violet-400' },
@@ -63,8 +64,8 @@ const TRACK_MAP: Record<string, TrackInfo> = {
 
 function getTrackInfo(sourceType: string): TrackInfo {
   return TRACK_MAP[sourceType.toLowerCase()] ?? {
-    track: 'mdast' as ParserTrack,
-    rep: 'markdown_bytes',
+    track: 'docling' as ParserTrack,
+    rep: 'doclingdocument_json',
     badgeClass: 'bg-zinc-500/15 text-zinc-400',
   };
 }
