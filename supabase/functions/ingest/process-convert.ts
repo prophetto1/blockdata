@@ -1,3 +1,7 @@
+import {
+  loadArangoConfigFromEnv,
+  syncAssetToArango,
+} from "../_shared/arangodb.ts";
 import { getEnv, requireEnv } from "../_shared/env.ts";
 import { isConversionAckTimeoutError, raceWithAckTimeout, resolveConversionAckTimeoutMs } from "../_shared/conversion-ack-timeout.ts";
 import { basenameNoExt } from "../_shared/sanitize.ts";
@@ -42,6 +46,37 @@ export async function processConversion(ctx: IngestContext): Promise<{ status: n
       error: null,
     });
     if (error) throw new Error(`DB insert source_documents failed: ${error.message}`);
+  }
+
+  const arangoConfig = loadArangoConfigFromEnv();
+  if (arangoConfig) {
+    try {
+      await syncAssetToArango(arangoConfig, {
+        source_uid,
+        project_id,
+        owner_id: ownerId,
+        source_type,
+        doc_title,
+        source_locator: source_key,
+        source_filesize: fileBytes.byteLength,
+        source_total_characters: null,
+        status: "converting",
+        conversion_job_id,
+        error: null,
+        uploaded_at: null,
+        updated_at: null,
+        conv_uid: null,
+        conv_locator: null,
+        conv_status: "pending",
+        conv_representation_type: null,
+        pipeline_config: null,
+        block_count: null,
+      });
+    } catch (error) {
+      await supabaseAdmin.from("source_documents").delete().eq("source_uid", source_uid);
+      await supabaseAdmin.storage.from(bucket).remove([source_key]);
+      throw error;
+    }
   }
 
   // Signed download URL for conversion service to fetch the original.
@@ -177,6 +212,29 @@ export async function processConversion(ctx: IngestContext): Promise<{ status: n
       .from("source_documents")
       .update({ status: "conversion_failed", error: `conversion service unreachable: ${msg}`.slice(0, 1000) })
       .eq("source_uid", source_uid);
+    if (arangoConfig) {
+      await syncAssetToArango(arangoConfig, {
+        source_uid,
+        project_id,
+        owner_id: ownerId,
+        source_type,
+        doc_title,
+        source_locator: source_key,
+        source_filesize: fileBytes.byteLength,
+        source_total_characters: null,
+        status: "conversion_failed",
+        conversion_job_id,
+        error: `conversion service unreachable: ${msg}`.slice(0, 1000),
+        uploaded_at: null,
+        updated_at: null,
+        conv_uid: null,
+        conv_locator: null,
+        conv_status: "failed",
+        conv_representation_type: null,
+        pipeline_config: null,
+        block_count: null,
+      });
+    }
     return { status: 502, body: { source_uid, conv_uid: null, status: "conversion_failed", error: `conversion service unreachable: ${msg}` } };
   }
 
@@ -188,6 +246,29 @@ export async function processConversion(ctx: IngestContext): Promise<{ status: n
       .from("source_documents")
       .update({ status: "conversion_failed", error: `conversion request failed: HTTP ${convertResp.status} ${msg}`.slice(0, 1000) })
       .eq("source_uid", source_uid);
+    if (arangoConfig) {
+      await syncAssetToArango(arangoConfig, {
+        source_uid,
+        project_id,
+        owner_id: ownerId,
+        source_type,
+        doc_title,
+        source_locator: source_key,
+        source_filesize: fileBytes.byteLength,
+        source_total_characters: null,
+        status: "conversion_failed",
+        conversion_job_id,
+        error: `conversion request failed: HTTP ${convertResp.status} ${msg}`.slice(0, 1000),
+        uploaded_at: null,
+        updated_at: null,
+        conv_uid: null,
+        conv_locator: null,
+        conv_status: "failed",
+        conv_representation_type: null,
+        pipeline_config: null,
+        block_count: null,
+      });
+    }
     return { status: 502, body: { source_uid, conv_uid: null, status: "conversion_failed", error: "conversion request failed" } };
   }
 

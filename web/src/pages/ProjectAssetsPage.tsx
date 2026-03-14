@@ -11,7 +11,10 @@ export default function ProjectAssetsPage() {
           defaultPanes={ASSETS_DEFAULT_PANES}
           saveKey="project-assets"
           renderContent={renderContent}
+          className="assets-workbench"
           hideToolbar
+          disableDrag
+          lockLayout
           maxColumns={3}
         />
       </div>

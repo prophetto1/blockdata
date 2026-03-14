@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { IconEdit, IconEye } from '@tabler/icons-react';
+import { IconEdit, IconEye, IconChevronRight } from '@tabler/icons-react';
+import { JsonTreeView } from '@ark-ui/react/json-tree-view';
 import ReactMarkdown from 'react-markdown';
 import remarkFrontmatter from 'remark-frontmatter';
 import remarkGfm from 'remark-gfm';
@@ -18,6 +19,7 @@ import {
   dedupeLocators,
   isDocxDocument,
   isImageDocument,
+  isJsonDocument,
   isMarkdownDocument,
   isPdfDocument,
   isPptxDocument,
@@ -105,6 +107,24 @@ export function PreviewTabPanel({ doc }: { doc: ProjectDocumentRow | null }) {
         setPreviewUrl(signedUrl);
         setPreviewLoading(false);
         return;
+      }
+      if (isJsonDocument(doc)) {
+        try {
+          const response = await fetch(signedUrl);
+          const text = await response.text();
+          if (cancelled) return;
+          setPreviewKind('json');
+          setPreviewText(text);
+          setPreviewUrl(signedUrl);
+          setPreviewLoading(false);
+          return;
+        } catch {
+          if (cancelled) return;
+          setPreviewKind('file');
+          setPreviewUrl(signedUrl);
+          setPreviewLoading(false);
+          return;
+        }
       }
       if (isTextDocument(doc)) {
         try {
@@ -284,6 +304,35 @@ export function PreviewTabPanel({ doc }: { doc: ProjectDocumentRow | null }) {
       <div className="flex h-full w-full items-center justify-center overflow-auto">
         <img src={previewUrl} alt={doc.doc_title} className="max-h-full max-w-full" />
       </div>,
+      { downloadUrl: previewUrl },
+    );
+  }
+
+  if (previewKind === 'json' && previewText) {
+    let jsonData: unknown;
+    try {
+      jsonData = JSON.parse(previewText);
+    } catch {
+      jsonData = null;
+    }
+    if (jsonData !== null && typeof jsonData === 'object') {
+      return renderStandardContentPreview(
+        <JsonTreeView.Root
+          defaultExpandedDepth={2}
+          data={jsonData as Record<string, unknown>}
+          className="json-tree-root"
+        >
+          <JsonTreeView.Tree
+            className="json-tree"
+            arrow={<IconChevronRight size={14} />}
+          />
+        </JsonTreeView.Root>,
+        { downloadUrl: previewUrl, contentClassName: 'overflow-auto' },
+      );
+    }
+    // Fall through to plain text if JSON parse fails
+    return renderStandardContentPreview(
+      <pre className="parse-preview-text">{previewText}</pre>,
       { downloadUrl: previewUrl },
     );
   }

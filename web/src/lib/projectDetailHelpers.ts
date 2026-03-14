@@ -10,7 +10,7 @@ export type ProjectDocumentRow = DocumentRow & {
   conv_locator?: string | null;
 };
 
-export type PreviewKind = 'none' | 'pdf' | 'image' | 'text' | 'markdown' | 'docx' | 'xlsx' | 'pptx' | 'file';
+export type PreviewKind = 'none' | 'pdf' | 'image' | 'text' | 'json' | 'markdown' | 'docx' | 'xlsx' | 'pptx' | 'file';
 
 export type TestBlockCardRow = {
   blockUid: string;
@@ -235,6 +235,13 @@ export function isTextDocument(doc: ProjectDocumentRow): boolean {
   if (TEXT_SOURCE_TYPES.has(sourceType)) return true;
   if (sourceType.startsWith('text') || sourceType.includes('plain')) return true;
   return TEXT_EXTENSIONS.has(getSourceLocatorExtension(doc));
+}
+
+export function isJsonDocument(doc: ProjectDocumentRow): boolean {
+  const sourceType = doc.source_type.toLowerCase();
+  if (sourceType === 'json' || sourceType === 'json_docling') return true;
+  const ext = getExtension(doc.source_locator ?? '');
+  return ext === 'json';
 }
 
 export function isMarkdownDocument(doc: ProjectDocumentRow): boolean {

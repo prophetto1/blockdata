@@ -18,18 +18,33 @@ export type ArangoBlockRecord = {
   block_locator: Record<string, unknown>;
 };
 
-export type ArangoParsedDocument = {
+export type ArangoAssetDocument = {
   source_uid: string;
   project_id: string | null;
   owner_id: string;
-  conv_uid: string;
   source_type: string;
   doc_title: string;
   source_locator: string;
-  conv_locator: string;
+  source_filesize: number | null;
+  source_total_characters: number | null;
+  status: string;
+  conversion_job_id: string | null;
+  error: string | null;
   uploaded_at: string | null;
   updated_at: string | null;
+  conv_uid: string | null;
+  conv_locator: string | null;
+  conv_status: string | null;
+  conv_representation_type: string | null;
   pipeline_config: Record<string, unknown> | null;
+  block_count: number | null;
+};
+
+export type ArangoParsedDocument = ArangoAssetDocument & {
+  conv_uid: string;
+  conv_locator: string;
+  conv_status: string;
+  conv_representation_type: string;
   blocks: ArangoBlockRecord[];
 };
 
@@ -105,6 +120,14 @@ async function ensureCollection(
   );
 }
 
+async function ensureDocumentsCollection(config: ArangoConfig): Promise<void> {
+  await ensureCollection(config, config.documentsCollection);
+}
+
+async function ensureBlocksCollection(config: ArangoConfig): Promise<void> {
+  await ensureCollection(config, config.blocksCollection);
+}
+
 async function replaceDocument(
   config: ArangoConfig,
   collection: string,
@@ -178,26 +201,12 @@ export async function syncParsedDocumentToArango(
   config: ArangoConfig,
   document: ArangoParsedDocument,
 ): Promise<void> {
-  await ensureCollection(config, config.documentsCollection);
-  await ensureCollection(config, config.blocksCollection);
-
+  await ensureBlocksCollection(config);
   const synced_at = new Date().toISOString();
 
-  await replaceDocument(config, config.documentsCollection, {
-    _key: toArangoKey(document.source_uid),
-    source_uid: document.source_uid,
-    project_id: document.project_id,
-    owner_id: document.owner_id,
-    conv_uid: document.conv_uid,
-    source_type: document.source_type,
-    doc_title: document.doc_title,
-    source_locator: document.source_locator,
-    conv_locator: document.conv_locator,
-    uploaded_at: document.uploaded_at,
-    updated_at: document.updated_at,
-    pipeline_config: document.pipeline_config ?? {},
+  await syncAssetToArango(config, {
+    ...document,
     block_count: document.blocks.length,
-    synced_at,
   });
 
   await deleteBlocksForSource(config, document.source_uid);
@@ -223,4 +232,37 @@ export async function syncParsedDocumentToArango(
       synced_at,
     })),
   );
+}
+
+export async function syncAssetToArango(
+  config: ArangoConfig,
+  asset: ArangoAssetDocument,
+): Promise<void> {
+  await ensureDocumentsCollection(config);
+
+  const synced_at = new Date().toISOString();
+
+  await replaceDocument(config, config.documentsCollection, {
+    _key: toArangoKey(asset.source_uid),
+    source_uid: asset.source_uid,
+    project_id: asset.project_id,
+    owner_id: asset.owner_id,
+    source_type: asset.source_type,
+    doc_title: asset.doc_title,
+    source_locator: asset.source_locator,
+    source_filesize: asset.source_filesize,
+    source_total_characters: asset.source_total_characters,
+    status: asset.status,
+    conversion_job_id: asset.conversion_job_id,
+    error: asset.error,
+    uploaded_at: asset.uploaded_at,
+    updated_at: asset.updated_at,
+    conv_uid: asset.conv_uid,
+    conv_locator: asset.conv_locator,
+    conv_status: asset.conv_status,
+    conv_representation_type: asset.conv_representation_type,
+    pipeline_config: asset.pipeline_config ?? {},
+    block_count: asset.block_count,
+    synced_at,
+  });
 }
