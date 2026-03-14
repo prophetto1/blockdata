@@ -116,3 +116,48 @@ The intended behavior is:
 3. Upsert fresh block rows for the current parse output.
 
 This keeps project-linked document and block data queryable in Arango without changing Supabase's role as the primary system of record.
+
+## Case.law Import
+
+There is also a local importer for CAP-style extracted case JSON trees.
+
+Expected local layout:
+
+```text
+<root>/
+  us/
+    134/
+      VolumeMetadata.json
+      CasesMetadata.json
+      cases/
+        1000-01.json
+  s-ct/
+    134/
+      VolumeMetadata.json
+      CasesMetadata.json
+      cases/
+        1000-01.json
+```
+
+Run it with:
+
+```powershell
+node scripts/import-case-law-to-arango.mjs `
+  --root F:\case-law `
+  --reporters us,s-ct,f,f2d,f3d,f-supp,f-supp-2d,f-supp-3d
+```
+
+Dry-run first:
+
+```powershell
+node scripts/import-case-law-to-arango.mjs `
+  --root F:\case-law `
+  --reporters us,s-ct `
+  --dry-run
+```
+
+Default collections:
+
+- `case_law_volumes`
+- `case_law_cases`
+- `case_law_opinions`
