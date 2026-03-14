@@ -267,9 +267,14 @@ export function isOnlyOfficeEditable(doc: ProjectDocumentRow): boolean {
 }
 
 export function getDocumentFormat(doc: ProjectDocumentRow): string {
-  const type = typeof doc.source_type === 'string' ? doc.source_type.trim() : '';
+  const type = typeof doc.source_type === 'string' ? doc.source_type.trim().toLowerCase() : '';
+  const locatorExtension = getExtension(doc.source_locator ?? '');
+  const titleExtension = getExtension(doc.doc_title ?? '');
+  const displayExtension = locatorExtension || titleExtension;
+
+  if (type === 'binary' && displayExtension) return displayExtension.toUpperCase();
   if (type.length > 0) return type.toUpperCase();
-  const extension = getExtension(doc.source_locator ?? '');
-  if (extension) return extension.toUpperCase();
+  if (displayExtension) return displayExtension.toUpperCase();
   return '--';
 }
+

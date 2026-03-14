@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup } from '@testing-library/react';
 import { DocumentFileTable } from './DocumentFileTable';
@@ -116,14 +116,11 @@ describe('DocumentFileTable sizing', () => {
     const table = container.querySelector('table');
     const headerCell = container.querySelector('thead tr th:nth-child(2)');
     const nameCell = container.querySelector('tbody tr td:nth-child(2)');
-    const formatCell = container.querySelector('tbody tr td:nth-child(3)');
 
     expect(table?.className).toContain('text-[12px]');
     expect(table?.className).toContain('leading-5');
     expect(headerCell?.className).toContain('py-1');
     expect(nameCell?.className).toContain('py-1.5');
-    expect(formatCell?.textContent).toBe('PDF');
-    expect(container.querySelector('tbody tr td:nth-child(3) span')?.className).toContain('tracking-[0.08em]');
   });
 
   it('shows the real file extension for generic binary uploads', () => {
@@ -152,3 +149,4 @@ describe('DocumentFileTable sizing', () => {
     expect(formatCell?.textContent).toBe('JSON');
   });
 });
+

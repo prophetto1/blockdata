@@ -9,29 +9,11 @@ const GOOGLE_APP_ID = (import.meta.env.VITE_GOOGLE_APP_ID as string | undefined)
 const SCOPE = 'https://www.googleapis.com/auth/drive.readonly';
 
 /**
- * MIME types the Google Picker will allow the user to select.
- * Aligned with the ingest pipeline's allowed_extensions so that every
- * file the user can pick will be accepted server-side.
- *
- * Google Workspace types (Docs/Sheets/Slides) are included because the
- * google-drive-import edge function exports them to DOCX/XLSX/PPTX.
+ * Assets upload is intentionally broader than parse/extract support.
+ * Do not restrict the Google picker to parse-routable MIME types.
+ * Unsupported Google Workspace-native types will still be rejected
+ * server-side by the import function if we cannot export them.
  */
-const PICKER_MIME_TYPES = [
-  // Binary files the pipeline accepts directly
-  'application/pdf',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',   // .docx
-  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',         // .xlsx
-  'application/vnd.openxmlformats-officedocument.presentationml.presentation', // .pptx
-  'text/plain',     // .txt
-  'text/markdown',  // .md
-  'text/csv',       // .csv
-  'text/html',      // .html
-  // Google Workspace types → exported to Office formats by edge function
-  'application/vnd.google-apps.document',     // → .docx
-  'application/vnd.google-apps.spreadsheet',  // → .xlsx
-  'application/vnd.google-apps.presentation', // → .pptx
-].join(',');
-
 // ── Types ────────────────────────────────────────────────────────────────────
 
 export type GoogleDriveFile = {
@@ -87,7 +69,6 @@ export function useGoogleDrivePicker(opts: {
 
         gapi.load('picker', () => {
           const view = new (google.picker as any).View((google.picker as any).ViewId.DOCS);
-          view.setMimeTypes(PICKER_MIME_TYPES);
 
           const picker = new (google.picker as any).PickerBuilder()
             .setAppId(GOOGLE_APP_ID!)
@@ -128,3 +109,4 @@ export function useGoogleDrivePicker(opts: {
 
   return { openPicker, isReady, isOpen, error };
 }
+
