@@ -334,7 +334,7 @@ function ConfigEditor({ config, onChange }: { config: DoclingConfig; onChange: (
             {(get('pdf_pipeline.ocr_options.kind', 'auto') as string) === 'rapidocr' && (
               <>
                 <FieldRow label="Backend">
-                  <Select
+                  <ConfigSelect
                     value={(get('pdf_pipeline.ocr_options.backend', 'onnxruntime') as string)}
                     options={[
                       { value: 'onnxruntime', label: 'ONNX Runtime' },
@@ -424,7 +424,7 @@ function ConfigEditor({ config, onChange }: { config: DoclingConfig; onChange: (
       {pipelineMode === 'asr' && (
         <Section title="ASR Pipeline">
           <FieldRow label="Model">
-            <Select
+            <ConfigSelect
               value={(get('asr_pipeline.asr_options.kind', 'whisper_native') as string)}
               options={[
                 { value: 'whisper_native', label: 'Whisper (Native)' },
@@ -434,7 +434,7 @@ function ConfigEditor({ config, onChange }: { config: DoclingConfig; onChange: (
             />
           </FieldRow>
           <FieldRow label="Preset">
-            <Select
+            <ConfigSelect
               value={(get('asr_pipeline.asr_options.preset', 'whisper_tiny') as string)}
               options={[
                 { value: 'whisper_tiny', label: 'Tiny' },
@@ -459,7 +459,7 @@ function ConfigEditor({ config, onChange }: { config: DoclingConfig; onChange: (
         {!!get('enrichments.do_picture_description', false) && (
           <>
             <FieldRow label="Description Engine">
-              <Select
+              <ConfigSelect
                 value={(get('enrichments.picture_description_options.kind', 'picture_description_vlm_engine') as string)}
                 options={PICTURE_DESC_KIND_OPTIONS}
                 onChange={(v) => set('enrichments.picture_description_options.kind', v)}
@@ -467,7 +467,7 @@ function ConfigEditor({ config, onChange }: { config: DoclingConfig; onChange: (
             </FieldRow>
             {(get('enrichments.picture_description_options.kind', 'picture_description_vlm_engine') as string) === 'picture_description_vlm_engine' && (
               <FieldRow label="VLM Preset">
-                <Select
+                <ConfigSelect
                   value={(get('enrichments.picture_description_options.preset', 'smolvlm') as string)}
                   options={PICTURE_DESC_PRESET_OPTIONS}
                   onChange={(v) => set('enrichments.picture_description_options.preset', v)}
