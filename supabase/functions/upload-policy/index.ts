@@ -22,7 +22,6 @@ Deno.serve(async (req) => {
     return json(200, {
       upload: {
         max_files_per_batch: policy.upload.max_files_per_batch,
-        allowed_extensions: policy.upload.allowed_extensions,
       },
     });
   } catch (e) {

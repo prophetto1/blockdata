@@ -1,5 +1,7 @@
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+// This is a canonicalization map, not an upload allowlist.
+// Unknown extensions still upload successfully and fall back to "binary".
 const SOURCE_TYPE_BY_EXTENSION: Record<string, string> = {
   adoc: "asciidoc",
   asciidoc: "asciidoc",
@@ -101,13 +103,6 @@ export function detectSourceTypeForUpload(
   if (fromMimeType) return fromMimeType;
 
   return "binary";
-}
-
-export function detectSourceType(filename: string): string {
-  const extension = detectExtension(filename);
-  const sourceType = extension ? sourceTypeFromExtension(extension) : null;
-  if (!sourceType) throw new Error(`Unsupported file type: ${filename}`);
-  return sourceType;
 }
 
 export async function uploadToStorage(

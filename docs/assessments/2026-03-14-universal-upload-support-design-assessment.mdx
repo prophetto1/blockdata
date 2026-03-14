@@ -1,0 +1,133 @@
+# Universal Upload Support Design Assessment
+
+- Source plan: `docs/plans/2026-03-14-universal-upload-support-design.md`
+- Date reviewed: `2026-03-14`
+- Reviewer: `Codex`
+- Verdict: `Conditional Pass`
+
+## What This Is
+
+This design correctly reframes the problem as an ingest-architecture issue rather than a parser-support issue. That is the right direction for the stated requirement: upload support should be type-agnostic, while parse and preview remain capability-gated.
+
+The design is materially stronger than the current repo state because it addresses storage, identity, lifecycle states, security, and backend service boundaries together instead of widening extension lists piecemeal.
+
+## Findings
+
+### Major
+
+#### 1. The design leaves the blob-dedupe policy open
+
+The document correctly argues that `source_uid` should not remain a global content-addressed primary key tied to `source_type`. That is a real current-state flaw.
+
+But the implementation plan will still need a firm choice between:
+
+- a full `stored_blobs` plus `source_documents` split, or
+- a simpler UUID-backed `source_documents` model with best-effort dedupe
+
+That decision affects migrations, storage layout, idempotency behavior, and cleanup strategy. It should be made explicitly before implementation begins.
+
+#### 2. Admission security controls need a concrete MVP policy
+
+The design is correct that unrestricted file-type upload does not remove the need for:
+
+- size limits
+- auth and quota controls
+- malware scanning or quarantine
+- safe preview/download behavior
+
+But the document still leaves the MVP security bar somewhat open-ended. The implementation plan should specify which controls are required in phase 1 versus deferred to later phases.
+
+#### 3. The transport recommendation is correct, but the migration boundary needs to be explicit
+
+The recommendation to move from edge-buffered multipart upload to direct-to-storage plus finalize is the right long-term call.
+
+The remaining gap is rollout clarity. The implementation plan should state whether:
+
+- the existing `ingest` endpoint stays as a compatibility path for small files, or
+- all upload surfaces migrate together to upload sessions
+
+Without that decision, implementation could drift into maintaining two half-owned upload systems indefinitely.
+
+### Minor
+
+#### 4. Preview policy should eventually distinguish “safe inline” from “supported renderer”
+
+The design correctly says preview must be allowlisted. The next plan should formalize the exact preview policy vocabulary so implementation does not collapse:
+
+- renderer exists
+- renderer is enabled
+- inline delivery is safe
+
+into one boolean.
+
+#### 5. Capability naming should be finalized before schema work starts
+
+The design proposes cleaner namespaces such as `ingest.admission.*` and `parse.routing.*`. That is directionally right.
+
+The follow-on implementation plan should lock the exact field names early so migrations, edge functions, and frontend consumers do not all invent slightly different terms.
+
+## Specific Gaps, Contradictions, and Ambiguity
+
+- The design intentionally presents two acceptable data-model paths, but the implementation plan must choose one.
+- The document recommends direct-to-storage uploads, but it does not yet define the exact upload-session contract.
+- Security controls are identified clearly, but phase-1 versus later-phase obligations are not fully enumerated.
+
+## Required Changes Before Implementation
+
+1. Choose the canonical storage model.
+   Decide between:
+   - `stored_blobs` plus `source_documents`, or
+   - UUID-backed `source_documents` with a lighter dedupe strategy.
+
+2. Define the upload-session contract.
+   Specify request and response payloads for:
+   - create session
+   - complete upload
+   - finalize metadata
+
+3. Define the MVP security baseline.
+   State which of the following are required in the first implementation pass:
+   - max file size
+   - batch limits
+   - quarantine
+   - malware scanning
+   - attachment-only download for active content
+
+4. Define the compatibility strategy for the existing `ingest` endpoint.
+   Say whether it is:
+   - retained temporarily for small uploads, or
+   - replaced as the primary browser upload path immediately.
+
+5. Freeze policy and status names before writing migrations.
+   That includes:
+   - lifecycle status columns
+   - capability fields
+   - runtime policy namespaces
+
+## Verification Expectations
+
+Before implementation should be considered ready, the follow-on implementation plan should include tests for:
+
+- cross-user identical-byte uploads
+- unsupported-format successful storage
+- parse gating independent from upload success
+- upload-source convergence across local and remote imports
+- active-content download and preview behavior
+- large-file upload path behavior after the transport change
+
+## Acceptance Criteria Check
+
+- Alignment with product direction: `Pass`
+- Scope boundaries: `Pass`
+- API and data contract clarity: `Partial Pass`
+- Dependency and sequencing correctness: `Pass`
+- Risk handling and rollback strategy: `Partial Pass`
+- Security and auth implications: `Partial Pass`
+- Operational readiness: `Partial Pass`
+- Test and verification clarity: `Pass`
+
+## Final Recommendation
+
+`Go with revisions.`
+
+The design is sound and is pointed at the right problem. It should be used as the basis for the implementation plan, but only after the team locks the storage model, upload-session contract, and MVP security baseline.
