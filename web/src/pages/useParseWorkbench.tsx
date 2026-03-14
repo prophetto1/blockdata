@@ -6,7 +6,8 @@ import { normalizePaneWidths, type Pane } from '@/components/workbench/workbench
 import { useProjectDocuments } from '@/hooks/useProjectDocuments';
 import { useProjectFocus } from '@/hooks/useProjectFocus';
 import { useShellHeaderTitle } from '@/components/common/useShellHeaderTitle';
-import { DocumentFileTable } from '@/components/documents/DocumentFileTable';
+import { Badge } from '@/components/ui/badge';
+import { DocumentFileTable, type ExtraColumn } from '@/components/documents/DocumentFileTable';
 import { PreviewTabPanel } from '@/components/documents/PreviewTabPanel';
 import { ParseTabPanel, useParseTab, ParseRowActions } from '@/components/documents/ParseTabPanel';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -41,10 +42,60 @@ type ReconstructBlock = {
   parser_path: string;
 };
 
+type ReconstructViewState = {
+  html: string;
+  loading: boolean;
+  error: string | null;
+};
+
+type ReconstructBlocksState = {
+  blocks: ReconstructBlock[];
+  loading: boolean;
+  error: string | null;
+};
+
+async function readReconstructError(resp: Response): Promise<string> {
+  try {
+    const text = (await resp.text()).trim();
+    if (!text) return '';
+
+    try {
+      const parsed = JSON.parse(text) as { detail?: unknown; message?: unknown };
+      if (typeof parsed.detail === 'string' && parsed.detail.trim()) return parsed.detail.trim();
+      if (typeof parsed.message === 'string' && parsed.message.trim()) return parsed.message.trim();
+    } catch {
+      // Fall through to plain-text handling.
+    }
+
+    return text.replace(/\s+/g, ' ');
+  } catch {
+    return '';
+  }
+}
+
+function formatReconstructError(status: number, detail: string): string {
+  if (status === 401) {
+    return detail
+      ? `Reconstruct request was unauthorized: ${detail}`
+      : 'Reconstruct request was unauthorized (401).';
+  }
+  if (status === 403) {
+    return detail
+      ? `Reconstruct request was forbidden: ${detail}`
+      : 'Reconstruct request was forbidden (403).';
+  }
+  if (status >= 500) {
+    return detail
+      ? `Reconstruct service failed: ${detail}`
+      : `Reconstruct service failed (${status}).`;
+  }
+  return detail ? `Reconstruct failed (${status}): ${detail}` : `Reconstruct failed (${status}).`;
+}
+
 // ─── Tab components ──────────────────────────────────────────────────────────
 
 function DoclingMdTab({ sourceUid }: { sourceUid: string | null }) {
-  const [state, setState] = useState<{ html: string; loading: boolean } | null>(null);
+  const [state, setState] = useState<ReconstructViewState | null>(null);
 
   useEffect(() => {
     if (!sourceUid) {
@@ -52,14 +103,14 @@ function DoclingMdTab({ sourceUid }: { sourceUid: string | null }) {
       return;
     }
     let cancelled = false;
-    setState({ html: '', loading: true });
+    setState({ html: '', loading: true, error: null });
 
     (async () => {
       // 1. Get the doclingdocument_json artifact locator
       const locator = await getArtifactLocator(sourceUid, 'doclingdocument_json');
       if (cancelled) return;
       if (!locator) {
-        setState({ html: '<p>No DoclingDocument JSON available. Reset and re-parse with Docling.</p>', loading: false });
+        setState({ html: '', loading: false, error: 'No DoclingDocument JSON available. Reset and re-parse with Docling.' });
         return;
       }
 
@@ -67,7 +118,7 @@ function DoclingMdTab({ sourceUid }: { sourceUid: string | null }) {
       const { data } = await supabase.storage.from(DOCUMENTS_BUCKET).createSignedUrl(locator, 60 * 20);
       if (cancelled) return;
       if (!data?.signedUrl) {
-        setState({ html: '<p>Could not generate download URL.</p>', loading: false });
+        setState({ html: '', loading: false, error: 'Could not generate download URL for the Docling JSON artifact.' });
         return;
       }
 
@@ -80,14 +131,15 @@ function DoclingMdTab({ sourceUid }: { sourceUid: string | null }) {
         });
         if (cancelled) return;
         if (!resp.ok) {
-          setState({ html: `<p>Reconstruct failed (${resp.status}).</p>`, loading: false });
+          const detail = await readReconstructError(resp);
+          setState({ html: '', loading: false, error: formatReconstructError(resp.status, detail) });
           return;
         }
         const result = await resp.json();
-        setState({ html: result.html ?? '<p>No HTML returned.</p>', loading: false });
+        setState({ html: result.html ?? '<p>No HTML returned.</p>', loading: false, error: null });
       } catch {
         if (cancelled) return;
-        setState({ html: '<p>Failed to reconstruct document.</p>', loading: false });
+        setState({ html: '', loading: false, error: 'Failed to reach the reconstruct service.' });
       }
     })();
 
@@ -110,6 +162,14 @@ function DoclingMdTab({ sourceUid }: { sourceUid: string | null }) {
     );
   }
 
+  if (state.error) {
+    return (
+      <div className="flex h-full items-center justify-center px-6 text-center text-sm text-muted-foreground">
+        {state.error}
+      </div>
+    );
+  }
+
   return (
     <ScrollArea className="h-full" viewportClass="h-full overflow-auto">
       <div className="parse-markdown-preview px-6 py-4" dangerouslySetInnerHTML={{ __html: state.html }} />
@@ -118,7 +178,7 @@ function DoclingMdTab({ sourceUid }: { sourceUid: string | null }) {
 }
 
 function BlocksTab({ sourceUid }: { sourceUid: string | null }) {
-  const [state, setState] = useState<{ blocks: ReconstructBlock[]; loading: boolean } | null>(null);
+  const [state, setState] = useState<ReconstructBlocksState | null>(null);
 
   useEffect(() => {
     if (!sourceUid) {
@@ -126,14 +186,14 @@ function BlocksTab({ sourceUid }: { sourceUid: string | null }) {
       return;
     }
     let cancelled = false;
-    setState({ blocks: [], loading: true });
+    setState({ blocks: [], loading: true, error: null });
 
     (async () => {
       // 1. Get the doclingdocument_json artifact locator
       const locator = await getArtifactLocator(sourceUid, 'doclingdocument_json');
       if (cancelled) return;
       if (!locator) {
-        setState({ blocks: [], loading: false });
+        setState({ blocks: [], loading: false, error: 'No DoclingDocument JSON available. Reset and re-parse with Docling.' });
         return;
       }
 
@@ -141,7 +201,7 @@ function BlocksTab({ sourceUid }: { sourceUid: string | null }) {
       const { data } = await supabase.storage.from(DOCUMENTS_BUCKET).createSignedUrl(locator, 60 * 20);
       if (cancelled) return;
       if (!data?.signedUrl) {
-        setState({ blocks: [], loading: false });
+        setState({ blocks: [], loading: false, error: 'Could not generate download URL for the Docling JSON artifact.' });
         return;
       }
 
@@ -154,14 +214,15 @@ function BlocksTab({ sourceUid }: { sourceUid: string | null }) {
         });
         if (cancelled) return;
         if (!resp.ok) {
-          setState({ blocks: [], loading: false });
+          const detail = await readReconstructError(resp);
+          setState({ blocks: [], loading: false, error: formatReconstructError(resp.status, detail) });
           return;
         }
         const result = await resp.json();
-        setState({ blocks: result.blocks ?? [], loading: false });
+        setState({ blocks: result.blocks ?? [], loading: false, error: null });
       } catch {
         if (cancelled) return;
-        setState({ blocks: [], loading: false });
+        setState({ blocks: [], loading: false, error: 'Failed to reach the reconstruct service.' });
       }
     })();
 
@@ -184,10 +245,18 @@ function BlocksTab({ sourceUid }: { sourceUid: string | null }) {
     );
   }
 
+  if (state.error) {
+    return (
+      <div className="flex h-full items-center justify-center px-6 text-center text-sm text-muted-foreground">
+        {state.error}
+      </div>
+    );
+  }
+
   if (state.blocks.length === 0) {
     return (
       <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-        No blocks found. Reset and re-parse with Docling.
+        No blocks found in the reconstructed document.
       </div>
     );
   }
@@ -290,6 +359,24 @@ export function useParseWorkbench() {
     />
   ), [parseTab, handleDoclingMdPreview, handleBlocksPreview, handleReset, handleDelete]);
 
+  const parseExtraColumns: ExtraColumn[] = useMemo(() => [
+    {
+      header: 'Profile',
+      render: (doc) => {
+        const name = (doc.pipeline_config as Record<string, unknown> | null)?.name as string | undefined;
+        if (!name) return <span className="text-muted-foreground">—</span>;
+        return <Badge variant="gray" size="xs">{name}</Badge>;
+      },
+    },
+    {
+      header: 'Blocks',
+      render: (doc) => {
+        if (doc.conv_total_blocks == null) return <span className="text-muted-foreground">—</span>;
+        return <span className="text-sm text-foreground">{doc.conv_total_blocks}</span>;
+      },
+    },
+  ], []);
+
   const renderContent = useCallback((tabId: string) => {
     if (tabId === 'parse') {
       return (
@@ -314,6 +401,7 @@ export function useParseWorkbench() {
               activeDoc={activeDocUid}
               onDocClick={handleDocClick}
               renderRowActions={renderRowActions}
+              extraColumns={parseExtraColumns}
             />
           </div>
         </div>
@@ -333,7 +421,7 @@ export function useParseWorkbench() {
     }
 
     return null;
-  }, [docs, loading, error, selected, toggleSelect, toggleSelectAll, allSelected, someSelected, activeDocUid, activeDoc, handleDocClick, renderRowActions, parseTab, handleReset, handleDelete]);
+  }, [docs, loading, error, selected, toggleSelect, toggleSelectAll, allSelected, someSelected, activeDocUid, activeDoc, handleDocClick, renderRowActions, parseTab, parseExtraColumns, handleReset, handleDelete]);
 
   return { renderContent, workbenchRef };
 }

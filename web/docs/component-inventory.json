@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-03-13T18:50:21.224Z",
+  "generatedAt": "2026-03-14T04:56:17.920Z",
   "scope": "auth",
   "pages": [
     {
@@ -1240,340 +1240,37 @@
     },
     {
       "page": "src/pages/ParsePage.tsx",
-      "componentCount": 9,
+      "componentCount": 1,
       "categoryCounts": {
-        "in-file component": 3,
-        "tabler-icons": 4,
-        "external-package": 1,
         "local-components": 1
       },
       "components": [
         {
-          "component": "ActionMenu",
-          "usedAs": "ActionMenu",
-          "source": "(in-file or unresolved)",
-          "importKind": null,
-          "importedAs": null,
-          "category": "in-file component",
-          "definition": "ActionMenu is defined in the same page file"
-        },
-        {
-          "component": "DispatchBadge",
-          "usedAs": "DispatchBadge",
-          "source": "(in-file or unresolved)",
-          "importKind": null,
-          "importedAs": null,
-          "category": "in-file component",
-          "definition": "DispatchBadge is defined in the same page file"
-        },
-        {
-          "component": "IconDotsVertical",
-          "usedAs": "IconDotsVertical",
-          "source": "@tabler/icons-react",
+          "component": "Workbench",
+          "usedAs": "Workbench",
+          "source": "@/components/workbench/Workbench",
           "importKind": "named",
-          "importedAs": "IconDotsVertical",
-          "category": "tabler-icons",
-          "definition": "IconDotsVertical comes from @tabler/icons-react (named import of IconDotsVertical)"
-        },
-        {
-          "component": "IconLoader2",
-          "usedAs": "IconLoader2",
-          "source": "@tabler/icons-react",
-          "importKind": "named",
-          "importedAs": "IconLoader2",
-          "category": "tabler-icons",
-          "definition": "IconLoader2 comes from @tabler/icons-react (named import of IconLoader2)"
-        },
-        {
-          "component": "IconPlayerPlay",
-          "usedAs": "IconPlayerPlay",
-          "source": "@tabler/icons-react",
-          "importKind": "named",
-          "importedAs": "IconPlayerPlay",
-          "category": "tabler-icons",
-          "definition": "IconPlayerPlay comes from @tabler/icons-react (named import of IconPlayerPlay)"
-        },
-        {
-          "component": "IconX",
-          "usedAs": "IconX",
-          "source": "@tabler/icons-react",
-          "importKind": "named",
-          "importedAs": "IconX",
-          "category": "tabler-icons",
-          "definition": "IconX comes from @tabler/icons-react (named import of IconX)"
-        },
-        {
-          "component": "Markdown",
-          "usedAs": "Markdown",
-          "source": "react-markdown",
-          "importKind": "default",
-          "importedAs": "default",
-          "category": "external-package",
-          "definition": "Markdown comes from react-markdown (default import of default)"
-        },
-        {
-          "component": "ScrollArea",
-          "usedAs": "ScrollArea",
-          "source": "@/components/ui/scroll-area",
-          "importKind": "named",
-          "importedAs": "ScrollArea",
+          "importedAs": "Workbench",
           "category": "local-components",
-          "definition": "ScrollArea comes from @/components/ui/scroll-area (named import of ScrollArea)"
-        },
-        {
-          "component": "StatusBadge",
-          "usedAs": "StatusBadge",
-          "source": "(in-file or unresolved)",
-          "importKind": null,
-          "importedAs": null,
-          "category": "in-file component",
-          "definition": "StatusBadge is defined in the same page file"
+          "definition": "Workbench comes from @/components/workbench/Workbench (named import of Workbench)"
         }
       ]
     },
     {
       "page": "src/pages/ProjectAssetsPage.tsx",
-      "componentCount": 26,
+      "componentCount": 1,
       "categoryCounts": {
-        "local-components": 10,
-        "in-file component": 1,
-        "ark-ui": 3,
-        "tabler-icons": 12
+        "local-components": 1
       },
       "components": [
         {
-          "component": "Button",
-          "usedAs": "Button",
-          "source": "@/components/ui/button",
+          "component": "Workbench",
+          "usedAs": "Workbench",
+          "source": "@/components/workbench/Workbench",
           "importKind": "named",
-          "importedAs": "Button",
+          "importedAs": "Workbench",
           "category": "local-components",
-          "definition": "Button comes from @/components/ui/button (named import of Button)"
-        },
-        {
-          "component": "DialogCloseTrigger",
-          "usedAs": "DialogCloseTrigger",
-          "source": "@/components/ui/dialog",
-          "importKind": "named",
-          "importedAs": "DialogCloseTrigger",
-          "category": "local-components",
-          "definition": "DialogCloseTrigger comes from @/components/ui/dialog (named import of DialogCloseTrigger)"
-        },
-        {
-          "component": "DialogContent",
-          "usedAs": "DialogContent",
-          "source": "@/components/ui/dialog",
-          "importKind": "named",
-          "importedAs": "DialogContent",
-          "category": "local-components",
-          "definition": "DialogContent comes from @/components/ui/dialog (named import of DialogContent)"
-        },
-        {
-          "component": "DialogDescription",
-          "usedAs": "DialogDescription",
-          "source": "@/components/ui/dialog",
-          "importKind": "named",
-          "importedAs": "DialogDescription",
-          "category": "local-components",
-          "definition": "DialogDescription comes from @/components/ui/dialog (named import of DialogDescription)"
-        },
-        {
-          "component": "DialogFooter",
-          "usedAs": "DialogFooter",
-          "source": "@/components/ui/dialog",
-          "importKind": "named",
-          "importedAs": "DialogFooter",
-          "category": "local-components",
-          "definition": "DialogFooter comes from @/components/ui/dialog (named import of DialogFooter)"
-        },
-        {
-          "component": "DialogRoot",
-          "usedAs": "DialogRoot",
-          "source": "@/components/ui/dialog",
-          "importKind": "named",
-          "importedAs": "DialogRoot",
-          "category": "local-components",
-          "definition": "DialogRoot comes from @/components/ui/dialog (named import of DialogRoot)"
-        },
-        {
-          "component": "DialogTitle",
-          "usedAs": "DialogTitle",
-          "source": "@/components/ui/dialog",
-          "importKind": "named",
-          "importedAs": "DialogTitle",
-          "category": "local-components",
-          "definition": "DialogTitle comes from @/components/ui/dialog (named import of DialogTitle)"
-        },
-        {
-          "component": "FileStatusIcon",
-          "usedAs": "FileStatusIcon",
-          "source": "(in-file or unresolved)",
-          "importKind": null,
-          "importedAs": null,
-          "category": "in-file component",
-          "definition": "FileStatusIcon is defined in the same page file"
-        },
-        {
-          "component": "FileUpload",
-          "usedAs": "FileUpload.Dropzone",
-          "source": "@ark-ui/react/file-upload",
-          "importKind": "named",
-          "importedAs": "FileUpload",
-          "category": "ark-ui",
-          "definition": "FileUpload.Dropzone comes from @ark-ui/react/file-upload (named import of FileUpload)"
-        },
-        {
-          "component": "FileUpload",
-          "usedAs": "FileUpload.HiddenInput",
-          "source": "@ark-ui/react/file-upload",
-          "importKind": "named",
-          "importedAs": "FileUpload",
-          "category": "ark-ui",
-          "definition": "FileUpload.HiddenInput comes from @ark-ui/react/file-upload (named import of FileUpload)"
-        },
-        {
-          "component": "FileUpload",
-          "usedAs": "FileUpload.Root",
-          "source": "@ark-ui/react/file-upload",
-          "importKind": "named",
-          "importedAs": "FileUpload",
-          "category": "ark-ui",
-          "definition": "FileUpload.Root comes from @ark-ui/react/file-upload (named import of FileUpload)"
-        },
-        {
-          "component": "IconAlertCircle",
-          "usedAs": "IconAlertCircle",
-          "source": "@tabler/icons-react",
-          "importKind": "named",
-          "importedAs": "IconAlertCircle",
-          "category": "tabler-icons",
-          "definition": "IconAlertCircle comes from @tabler/icons-react (named import of IconAlertCircle)"
-        },
-        {
-          "component": "IconBrandGoogleDrive",
-          "usedAs": "IconBrandGoogleDrive",
-          "source": "@tabler/icons-react",
-          "importKind": "named",
-          "importedAs": "IconBrandGoogleDrive",
-          "category": "tabler-icons",
-          "definition": "IconBrandGoogleDrive comes from @tabler/icons-react (named import of IconBrandGoogleDrive)"
-        },
-        {
-          "component": "IconCheck",
-          "usedAs": "IconCheck",
-          "source": "@tabler/icons-react",
-          "importKind": "named",
-          "importedAs": "IconCheck",
-          "category": "tabler-icons",
-          "definition": "IconCheck comes from @tabler/icons-react (named import of IconCheck)"
-        },
-        {
-          "component": "IconChevronLeft",
-          "usedAs": "IconChevronLeft",
-          "source": "@tabler/icons-react",
-          "importKind": "named",
-          "importedAs": "IconChevronLeft",
-          "category": "tabler-icons",
-          "definition": "IconChevronLeft comes from @tabler/icons-react (named import of IconChevronLeft)"
-        },
-        {
-          "component": "IconChevronRight",
-          "usedAs": "IconChevronRight",
-          "source": "@tabler/icons-react",
-          "importKind": "named",
-          "importedAs": "IconChevronRight",
-          "category": "tabler-icons",
-          "definition": "IconChevronRight comes from @tabler/icons-react (named import of IconChevronRight)"
-        },
-        {
-          "component": "IconDownload",
-          "usedAs": "IconDownload",
-          "source": "@tabler/icons-react",
-          "importKind": "named",
-          "importedAs": "IconDownload",
-          "category": "tabler-icons",
-          "definition": "IconDownload comes from @tabler/icons-react (named import of IconDownload)"
-        },
-        {
-          "component": "IconFile",
-          "usedAs": "IconFile",
-          "source": "@tabler/icons-react",
-          "importKind": "named",
-          "importedAs": "IconFile",
-          "category": "tabler-icons",
-          "definition": "IconFile comes from @tabler/icons-react (named import of IconFile)"
-        },
-        {
-          "component": "IconLoader2",
-          "usedAs": "IconLoader2",
-          "source": "@tabler/icons-react",
-          "importKind": "named",
-          "importedAs": "IconLoader2",
-          "category": "tabler-icons",
-          "definition": "IconLoader2 comes from @tabler/icons-react (named import of IconLoader2)"
-        },
-        {
-          "component": "IconSearch",
-          "usedAs": "IconSearch",
-          "source": "@tabler/icons-react",
-          "importKind": "named",
-          "importedAs": "IconSearch",
-          "category": "tabler-icons",
-          "definition": "IconSearch comes from @tabler/icons-react (named import of IconSearch)"
-        },
-        {
-          "component": "IconTrash",
-          "usedAs": "IconTrash",
-          "source": "@tabler/icons-react",
-          "importKind": "named",
-          "importedAs": "IconTrash",
-          "category": "tabler-icons",
-          "definition": "IconTrash comes from @tabler/icons-react (named import of IconTrash)"
-        },
-        {
-          "component": "IconUpload",
-          "usedAs": "IconUpload",
-          "source": "@tabler/icons-react",
-          "importKind": "named",
-          "importedAs": "IconUpload",
-          "category": "tabler-icons",
-          "definition": "IconUpload comes from @tabler/icons-react (named import of IconUpload)"
-        },
-        {
-          "component": "IconX",
-          "usedAs": "IconX",
-          "source": "@tabler/icons-react",
-          "importKind": "named",
-          "importedAs": "IconX",
-          "category": "tabler-icons",
-          "definition": "IconX comes from @tabler/icons-react (named import of IconX)"
-        },
-        {
-          "component": "Input",
-          "usedAs": "Input",
-          "source": "@/components/ui/input",
-          "importKind": "named",
-          "importedAs": "Input",
-          "category": "local-components",
-          "definition": "Input comes from @/components/ui/input (named import of Input)"
-        },
-        {
-          "component": "NativeSelect",
-          "usedAs": "NativeSelect",
-          "source": "@/components/ui/native-select",
-          "importKind": "named",
-          "importedAs": "NativeSelect",
-          "category": "local-components",
-          "definition": "NativeSelect comes from @/components/ui/native-select (named import of NativeSelect)"
-        },
-        {
-          "component": "ScrollArea",
-          "usedAs": "ScrollArea",
-          "source": "@/components/ui/scroll-area",
-          "importKind": "named",
-          "importedAs": "ScrollArea",
-          "category": "local-components",
-          "definition": "ScrollArea comes from @/components/ui/scroll-area (named import of ScrollArea)"
+          "definition": "Workbench comes from @/components/workbench/Workbench (named import of Workbench)"
         }
       ]
     },
@@ -4546,13 +4243,13 @@
       ]
     }
   ],
-  "totalComponentUsages": 453,
+  "totalComponentUsages": 420,
   "categoryTotals": {
-    "external-package": 18,
-    "local-components": 149,
-    "tabler-icons": 96,
-    "in-file component": 21,
-    "ark-ui": 149,
+    "external-package": 17,
+    "local-components": 140,
+    "tabler-icons": 80,
+    "in-file component": 17,
+    "ark-ui": 146,
     "relative-local": 20
   }
 }

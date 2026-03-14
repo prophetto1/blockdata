@@ -28,7 +28,15 @@ param(
   [string]$SecretName = 'platform-api-m2m-token',
 
   # If not provided, the script reads from $env:CONVERSION_SERVICE_KEY
-  [string]$ConversionServiceKey
+  [string]$ConversionServiceKey,
+
+  [string]$SupabaseUrl,
+
+  [string]$SupabaseServiceRoleKey,
+
+  [string]$SupabaseServiceRoleSecretName = 'supabase-service-role-key',
+
+  [switch]$UseExistingSupabaseServiceRoleSecret
 )
 
 $ErrorActionPreference = 'Stop'
@@ -163,6 +171,32 @@ function Ensure-Secret {
   }
 }
 
+function Ensure-ExistingSecretAccess {
+  param(
+    [Parameter(Mandatory = $true)][string]$Name,
+    [Parameter(Mandatory = $true)][string]$ServiceAccountEmail
+  )
+
+  $describeExit = Invoke-GcloudAllowFail -Args @('secrets', 'describe', $Name, '--project', $ProjectId)
+  if ($describeExit -ne 0) {
+    throw "Secret Manager secret not found: $Name. Create it (and add a version) first."
+  }
+
+  $latestVersion = & gcloud secrets versions list $Name --project $ProjectId --limit 1 --format 'value(name)'
+  if (-not $latestVersion) {
+    throw "Secret Manager secret has no versions: $Name. Add a version first."
+  }
+
+  Write-Host "Granting secret accessor to runtime service account"
+  & gcloud secrets add-iam-policy-binding $Name `
+    --project $ProjectId `
+    --member "serviceAccount:$ServiceAccountEmail" `
+    --role "roles/secretmanager.secretAccessor" | Out-Null
+  if ($LASTEXITCODE -ne 0) {
+    throw "Failed to grant secret accessor: $Name -> $ServiceAccountEmail"
+  }
+}
+
 Ensure-Command -Name gcloud
 
 if (-not (Test-Path -LiteralPath 'services/platform-api')) {
@@ -176,9 +210,7 @@ Write-Host "Service: $ServiceName"
 Ensure-GcloudServiceEnabled -ServiceName 'run.googleapis.com'
 Ensure-GcloudServiceEnabled -ServiceName 'cloudbuild.googleapis.com'
 Ensure-GcloudServiceEnabled -ServiceName 'artifactregistry.googleapis.com'
-if ($UseSecretManager) {
-  Ensure-GcloudServiceEnabled -ServiceName 'secretmanager.googleapis.com'
-}
+Ensure-GcloudServiceEnabled -ServiceName 'secretmanager.googleapis.com'
 
 # Cloud Run source deployments typically use an Artifact Registry repo named like this.
 # If your org policy disallows auto-creation, this avoids a deploy-time failure.
@@ -192,6 +224,12 @@ if ($UseExistingSecret -and -not $UseSecretManager) {
 if ($UseExistingSecret -and -not $SecretName) {
   throw "UseExistingSecret requires -SecretName."
 }
+if (-not $SupabaseUrl) {
+  $SupabaseUrl = $env:SUPABASE_URL
+}
+if (-not $SupabaseUrl) {
+  throw "Missing Supabase URL. Provide -SupabaseUrl or set `$env:SUPABASE_URL."
+}
 
 if (-not $UseExistingSecret) {
   if (-not $ConversionServiceKey) {
@@ -204,6 +242,23 @@ if (-not $UseExistingSecret) {
       throw "Missing conversion shared secret. Provide -ConversionServiceKey or set `$env:CONVERSION_SERVICE_KEY."
     }
   }
+}
+
+if ($UseExistingSupabaseServiceRoleSecret) {
+  Write-Host "Using existing Secret Manager secret for SUPABASE_SERVICE_ROLE_KEY: $SupabaseServiceRoleSecretName"
+  Ensure-ExistingSecretAccess -Name $SupabaseServiceRoleSecretName -ServiceAccountEmail $runtimeServiceAccountEmail
+} else {
+  if (-not $SupabaseServiceRoleKey) {
+    $SupabaseServiceRoleKey = $env:SUPABASE_SERVICE_ROLE_KEY
+  }
+  if (-not $SupabaseServiceRoleKey) {
+    if (Is-InteractiveShell) {
+      $SupabaseServiceRoleKey = Read-SecretPlaintext -Prompt 'Enter SUPABASE_SERVICE_ROLE_KEY (input hidden)'
+    } else {
+      throw "Missing Supabase service role key. Provide -SupabaseServiceRoleKey or set `$env:SUPABASE_SERVICE_ROLE_KEY."
+    }
+  }
+  Ensure-Secret -Name $SupabaseServiceRoleSecretName -ServiceAccountEmail $runtimeServiceAccountEmail -SecretValue $SupabaseServiceRoleKey
 }
 
 $deployArgs = @(
@@ -222,35 +277,23 @@ $deployArgs = @(
   '--ingress', 'all'
 )
 
+$secretMappings = @("SUPABASE_SERVICE_ROLE_KEY=${SupabaseServiceRoleSecretName}:latest")
+$envVarEntries = @("SUPABASE_URL=$SupabaseUrl", 'CONVERSION_MAX_WORKERS=2')
+
 if ($UseSecretManager) {
   if ($UseExistingSecret) {
     Write-Host "Using existing Secret Manager secret: $SecretName"
-    $describeExit = Invoke-GcloudAllowFail -Args @('secrets', 'describe', $SecretName, '--project', $ProjectId)
-    if ($describeExit -ne 0) {
-      throw "Secret Manager secret not found: $SecretName. Create it (and add a version) first, or omit -UseExistingSecret."
-    }
-
-    $latestVersion = & gcloud secrets versions list $SecretName --project $ProjectId --limit 1 --format 'value(name)'
-    if (-not $latestVersion) {
-      throw "Secret Manager secret has no versions: $SecretName. Add a version first (Secret Manager -> Add version), or omit -UseExistingSecret."
-    }
-
-    Write-Host "Granting secret accessor to runtime service account"
-    & gcloud secrets add-iam-policy-binding $SecretName `
-      --project $ProjectId `
-      --member "serviceAccount:$runtimeServiceAccountEmail" `
-      --role "roles/secretmanager.secretAccessor" | Out-Null
-    if ($LASTEXITCODE -ne 0) {
-      throw "Failed to grant secret accessor: $SecretName -> $runtimeServiceAccountEmail"
-    }
+    Ensure-ExistingSecretAccess -Name $SecretName -ServiceAccountEmail $runtimeServiceAccountEmail
   } else {
     Ensure-Secret -Name $SecretName -ServiceAccountEmail $runtimeServiceAccountEmail -SecretValue $ConversionServiceKey
   }
-  $deployArgs += @('--set-secrets', "PLATFORM_API_M2M_TOKEN=${SecretName}:latest,CONVERSION_SERVICE_KEY=${SecretName}:latest")
-  $deployArgs += @('--set-env-vars', "CONVERSION_MAX_WORKERS=2")
+  $secretMappings += @("PLATFORM_API_M2M_TOKEN=${SecretName}:latest", "CONVERSION_SERVICE_KEY=${SecretName}:latest")
 } else {
-  $deployArgs += @('--set-env-vars', "PLATFORM_API_M2M_TOKEN=$ConversionServiceKey,CONVERSION_SERVICE_KEY=$ConversionServiceKey,CONVERSION_MAX_WORKERS=2")
+  $envVarEntries += @("PLATFORM_API_M2M_TOKEN=$ConversionServiceKey", "CONVERSION_SERVICE_KEY=$ConversionServiceKey")
 }
+
+$deployArgs += @('--set-secrets', ($secretMappings -join ','))
+$deployArgs += @('--set-env-vars', ($envVarEntries -join ','))
 
 Write-Host "Deploying Cloud Run service..."
 & gcloud @deployArgs
@@ -264,6 +307,8 @@ Write-Host "Cloud Run URL: $url"
 Write-Host ""
 Write-Host "Next: set Supabase secrets:"
 Write-Host "  PLATFORM_API_URL=$url"
+Write-Host "  SUPABASE_URL=$SupabaseUrl"
+Write-Host "  SUPABASE_SERVICE_ROLE_KEY -> Secret Manager secret '$SupabaseServiceRoleSecretName'"
 Write-Host "  PLATFORM_API_M2M_TOKEN=<same shared secret>"
 Write-Host "  (CONVERSION_SERVICE_URL=$url for backward compat)"
 Write-Host "  (CONVERSION_SERVICE_KEY=<same shared secret> for backward compat)"

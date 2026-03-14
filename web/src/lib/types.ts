@@ -28,6 +28,8 @@ export type DocumentRow = {
   uploaded_at: string;
   error: string | null;
   pipeline_config?: Record<string, unknown> | null;
+  conv_total_blocks?: number | null;
+  conv_parsing_tool?: string | null;
 };
 
 export type BlockRow = {

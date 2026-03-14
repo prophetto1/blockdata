@@ -11,6 +11,24 @@ from app.core.config import get_settings
 logger = logging.getLogger("platform-api.auth")
 
 
+class SupabaseAuthConfigError(RuntimeError):
+    """Raised when server-side Supabase auth settings are missing."""
+
+
+def _require_supabase_auth_settings() -> tuple[str, str]:
+    settings = get_settings()
+    missing: list[str] = []
+    if not settings.supabase_url:
+        missing.append("SUPABASE_URL")
+    if not settings.supabase_service_role_key:
+        missing.append("SUPABASE_SERVICE_ROLE_KEY")
+    if missing:
+        raise SupabaseAuthConfigError(
+            f"Missing required Supabase auth settings: {', '.join(missing)}"
+        )
+    return settings.supabase_url, settings.supabase_service_role_key
+
+
 def _verify_supabase_jwt(token: str) -> Any:
     """Validate a Supabase JWT and return the user object.
 
@@ -19,8 +37,8 @@ def _verify_supabase_jwt(token: str) -> Any:
     """
     from supabase import create_client
 
-    settings = get_settings()
-    client = create_client(settings.supabase_url, settings.supabase_service_role_key)
+    supabase_url, service_role_key = _require_supabase_auth_settings()
+    client = create_client(supabase_url, service_role_key)
     response = client.auth.get_user(token)
     if not response or not response.user:
         raise ValueError("Invalid JWT: no user returned")
@@ -35,8 +53,8 @@ def _check_superuser(email: str) -> bool:
     """
     from supabase import create_client
 
-    settings = get_settings()
-    admin = create_client(settings.supabase_url, settings.supabase_service_role_key)
+    supabase_url, service_role_key = _require_supabase_auth_settings()
+    admin = create_client(supabase_url, service_role_key)
 
     # First check if any active superuser profiles exist at all
     any_active = (
@@ -93,6 +111,9 @@ async def require_auth(
         # Path 2: Supabase JWT
         try:
             user = _verify_supabase_jwt(token)
+        except SupabaseAuthConfigError as e:
+            logger.error("Supabase JWT validation unavailable: %s", e)
+            raise HTTPException(status_code=500, detail="Server auth configuration error")
         except Exception as e:
             logger.debug(f"JWT validation failed: {e}")
             raise HTTPException(status_code=401, detail="Invalid bearer token")

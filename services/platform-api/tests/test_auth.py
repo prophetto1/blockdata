@@ -69,6 +69,30 @@ def test_m2m_bearer_auth(monkeypatch):
     get_settings.cache_clear()
 
 
+def test_m2m_bearer_auth_does_not_require_supabase_config(monkeypatch):
+    monkeypatch.setenv("PLATFORM_API_M2M_TOKEN", "secret-token")
+    monkeypatch.delenv("SUPABASE_URL", raising=False)
+    monkeypatch.delenv("SUPABASE_SERVICE_ROLE_KEY", raising=False)
+
+    from app.core.config import get_settings
+    get_settings.cache_clear()
+
+    app = FastAPI()
+
+    @app.get("/test")
+    async def test_route(auth: AuthPrincipal = Depends(require_auth)):
+        return {"subject_type": auth.subject_type, "source": auth.auth_source}
+
+    client = TestClient(app)
+
+    resp = client.get("/test", headers={"Authorization": "Bearer secret-token"})
+    assert resp.status_code == 200
+    assert resp.json()["subject_type"] == "machine"
+    assert resp.json()["source"] == "m2m_bearer"
+
+    get_settings.cache_clear()
+
+
 def test_legacy_header_auth(monkeypatch):
     monkeypatch.setenv("CONVERSION_SERVICE_KEY", "legacy-key")
     monkeypatch.setenv("PLATFORM_API_M2M_TOKEN", "")
@@ -88,6 +112,29 @@ def test_legacy_header_auth(monkeypatch):
     resp = client.get("/test", headers={"X-Conversion-Service-Key": "legacy-key"})
     assert resp.status_code == 200
     assert resp.json()["source"] == "legacy_header"
+
+    get_settings.cache_clear()
+
+
+def test_supabase_jwt_auth_returns_500_when_supabase_config_missing(monkeypatch):
+    monkeypatch.setenv("PLATFORM_API_M2M_TOKEN", "m2m-token")
+    monkeypatch.delenv("SUPABASE_URL", raising=False)
+    monkeypatch.delenv("SUPABASE_SERVICE_ROLE_KEY", raising=False)
+
+    from app.core.config import get_settings
+    get_settings.cache_clear()
+
+    app = FastAPI()
+
+    @app.get("/test")
+    async def test_route(auth: AuthPrincipal = Depends(require_auth)):
+        return {"subject_type": auth.subject_type}
+
+    client = TestClient(app)
+
+    resp = client.get("/test", headers={"Authorization": "Bearer user-jwt-token"})
+    assert resp.status_code == 500
+    assert resp.json()["detail"] == "Server auth configuration error"
 
     get_settings.cache_clear()
 
