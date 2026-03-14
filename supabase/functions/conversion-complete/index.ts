@@ -1,4 +1,8 @@
 import { corsPreflight, withCorsHeaders } from "../_shared/cors.ts";
+import {
+  loadArangoConfigFromEnv,
+  syncParsedDocumentToArango,
+} from "../_shared/arangodb.ts";
 import { getEnv, requireEnv } from "../_shared/env.ts";
 import { concatBytes, sha256Hex } from "../_shared/hash.ts";
 import { extractDoclingBlocks } from "../_shared/docling.ts";
@@ -47,13 +51,17 @@ function normalizeCallbackBlocks(raw: unknown): CallbackDoclingBlock[] {
       continue;
     }
     const page_nos = Array.isArray(row.page_nos)
-      ? row.page_nos.filter((value): value is number => typeof value === "number" && Number.isFinite(value))
+      ? row.page_nos.filter((value): value is number =>
+        typeof value === "number" && Number.isFinite(value)
+      )
       : [];
     blocks.push({
       block_type: row.block_type,
       block_content: row.block_content,
       pointer: row.pointer,
-      page_no: typeof row.page_no === "number" && Number.isFinite(row.page_no) ? row.page_no : null,
+      page_no: typeof row.page_no === "number" && Number.isFinite(row.page_no)
+        ? row.page_no
+        : null,
       page_nos,
       parser_block_type: row.parser_block_type,
       parser_path: row.parser_path,
@@ -74,7 +82,9 @@ async function readJson<T>(req: Request): Promise<T> {
   try {
     return JSON.parse(text) as T;
   } catch (e) {
-    throw new Error(`Invalid JSON body: ${e instanceof Error ? e.message : String(e)}`);
+    throw new Error(
+      `Invalid JSON body: ${e instanceof Error ? e.message : String(e)}`,
+    );
   }
 }
 
@@ -85,7 +95,9 @@ Deno.serve(async (req) => {
 
   const expectedKey = requireEnv("CONVERSION_SERVICE_KEY");
   const gotKey = req.headers.get("X-Conversion-Service-Key");
-  if (!gotKey || gotKey !== expectedKey) return json(401, { error: "Unauthorized" });
+  if (!gotKey || gotKey !== expectedKey) {
+    return json(401, { error: "Unauthorized" });
+  }
 
   try {
     const body = await readJson<ConversionCompleteBody>(req);
@@ -97,7 +109,9 @@ Deno.serve(async (req) => {
     const doctags_key = (body.doctags_key || "").trim();
     const callbackBlocks = normalizeCallbackBlocks(body.blocks);
     if (!source_uid || !conversion_job_id || !md_key) {
-      return json(400, { error: "Missing source_uid, conversion_job_id, or md_key" });
+      return json(400, {
+        error: "Missing source_uid, conversion_job_id, or md_key",
+      });
     }
 
     const supabaseAdmin = createAdminClient();
@@ -105,10 +119,14 @@ Deno.serve(async (req) => {
 
     const { data: docRow, error: fetchErr } = await supabaseAdmin
       .from("source_documents")
-      .select("source_uid, source_type, conversion_job_id, status")
+      .select(
+        "source_uid, owner_id, project_id, source_type, source_locator, doc_title, uploaded_at, updated_at, conversion_job_id, status",
+      )
       .eq("source_uid", source_uid)
       .maybeSingle();
-    if (fetchErr) throw new Error(`DB fetch source_documents failed: ${fetchErr.message}`);
+    if (fetchErr) {
+      throw new Error(`DB fetch source_documents failed: ${fetchErr.message}`);
+    }
     if (!docRow) return json(404, { error: "Document not found" });
 
     const { data: existingConv } = await supabaseAdmin
@@ -118,15 +136,25 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     if (docRow.status === "parsed" && existingConv?.conv_uid) {
-      return json(200, { ok: true, noop: true, status: "parsed", conv_uid: existingConv.conv_uid });
+      return json(200, {
+        ok: true,
+        noop: true,
+        status: "parsed",
+        conv_uid: existingConv.conv_uid,
+      });
     }
 
     if (docRow.conversion_job_id !== conversion_job_id) {
-      return json(409, { error: "Stale conversion callback (job id mismatch)" });
+      return json(409, {
+        error: "Stale conversion callback (job id mismatch)",
+      });
     }
 
     if (!body.success) {
-      const errMsg = (body.error || "conversion failed").toString().slice(0, 1000);
+      const errMsg = (body.error || "conversion failed").toString().slice(
+        0,
+        1000,
+      );
       await supabaseAdmin
         .from("source_documents")
         .update({ status: "conversion_failed", error: errMsg })
@@ -137,17 +165,27 @@ Deno.serve(async (req) => {
     const insertSupplementalRepresentation = async (
       key: string,
       parsing_tool: "docling",
-      representation_type: "markdown_bytes" | "doclingdocument_json" | "html_bytes" | "doctags_text",
+      representation_type:
+        | "markdown_bytes"
+        | "doclingdocument_json"
+        | "html_bytes"
+        | "doctags_text",
       conv_uid: string,
     ) => {
       const { data: download, error: dlErr } = await supabaseAdmin.storage
         .from(bucket)
         .download(key);
       if (dlErr || !download) {
-        throw new Error(`Storage download ${representation_type} failed: ${dlErr?.message ?? "unknown"}`);
+        throw new Error(
+          `Storage download ${representation_type} failed: ${
+            dlErr?.message ?? "unknown"
+          }`,
+        );
       }
       const bytes = new Uint8Array(await download.arrayBuffer());
-      const prefix = new TextEncoder().encode(`${parsing_tool}\n${representation_type}\n`);
+      const prefix = new TextEncoder().encode(
+        `${parsing_tool}\n${representation_type}\n`,
+      );
       const artifact_hash = await sha256Hex(concatBytes([prefix, bytes]));
 
       await insertRepresentationArtifact(supabaseAdmin, {
@@ -158,7 +196,10 @@ Deno.serve(async (req) => {
         artifact_locator: key,
         artifact_hash,
         artifact_size_bytes: bytes.byteLength,
-        artifact_meta: { source_type: docRow.source_type, role: "supplemental" },
+        artifact_meta: {
+          source_type: docRow.source_type,
+          role: "supplemental",
+        },
       });
     };
 
@@ -167,41 +208,60 @@ Deno.serve(async (req) => {
       // a docling_key. Mark as conversion_failed so the document can be re-parsed
       // via the now-Docling-only pipeline, but don't throw — let the callback
       // complete cleanly so the conversion service doesn't retry.
-      const errMsg = "Missing docling_key — legacy non-Docling job; re-parse required";
+      const errMsg =
+        "Missing docling_key — legacy non-Docling job; re-parse required";
       await supabaseAdmin
         .from("source_documents")
         .update({ status: "conversion_failed", error: errMsg })
         .eq("source_uid", source_uid);
-      return json(200, { ok: false, status: "conversion_failed", error: errMsg, drain: true });
+      return json(200, {
+        ok: false,
+        status: "conversion_failed",
+        error: errMsg,
+        drain: true,
+      });
     }
 
     // -----------------------------------------------------------------------
     // Docling track (only track)
     // -----------------------------------------------------------------------
     let conv_uid = (body.conv_uid || "").trim();
-    let doclingArtifactSizeBytes = typeof body.docling_artifact_size_bytes === "number" &&
+    let doclingArtifactSizeBytes =
+      typeof body.docling_artifact_size_bytes === "number" &&
         Number.isFinite(body.docling_artifact_size_bytes)
-      ? body.docling_artifact_size_bytes
-      : null;
+        ? body.docling_artifact_size_bytes
+        : null;
     let extractedBlocks = callbackBlocks;
 
-    if (!conv_uid || doclingArtifactSizeBytes == null || extractedBlocks.length === 0) {
+    if (
+      !conv_uid || doclingArtifactSizeBytes == null ||
+      extractedBlocks.length === 0
+    ) {
       const { data: dlDownload, error: dlErr } = await supabaseAdmin.storage
         .from(bucket)
         .download(docling_key!);
       if (dlErr || !dlDownload) {
-        throw new Error(`Storage download docling JSON failed: ${dlErr?.message ?? "unknown"}`);
+        throw new Error(
+          `Storage download docling JSON failed: ${
+            dlErr?.message ?? "unknown"
+          }`,
+        );
       }
 
       const doclingBytes = new Uint8Array(await dlDownload.arrayBuffer());
-      const convPrefix = new TextEncoder().encode("docling\ndoclingdocument_json\n");
+      const convPrefix = new TextEncoder().encode(
+        "docling\ndoclingdocument_json\n",
+      );
       conv_uid = await sha256Hex(concatBytes([convPrefix, doclingBytes]));
       doclingArtifactSizeBytes = doclingBytes.byteLength;
       extractedBlocks = extractDoclingBlocks(doclingBytes).blocks;
     }
 
     const conv_total_blocks = extractedBlocks.length;
-    const conv_total_characters = extractedBlocks.reduce((sum, b) => sum + b.block_content.length, 0);
+    const conv_total_characters = extractedBlocks.reduce(
+      (sum, b) => sum + b.block_content.length,
+      0,
+    );
     const freqMap: Record<string, number> = {};
     for (const b of extractedBlocks) {
       freqMap[b.block_type] = (freqMap[b.block_type] || 0) + 1;
@@ -222,7 +282,11 @@ Deno.serve(async (req) => {
           conv_locator: docling_key,
           pipeline_config: body.pipeline_config ?? {},
         }, { onConflict: "source_uid" });
-      if (convInsErr) throw new Error(`DB upsert conversion_parsing failed: ${convInsErr.message}`);
+      if (convInsErr) {
+        throw new Error(
+          `DB upsert conversion_parsing failed: ${convInsErr.message}`,
+        );
+      }
     }
 
     try {
@@ -241,9 +305,13 @@ Deno.serve(async (req) => {
         },
         block_content: b.block_content,
       }));
-      if (blockRows.length === 0) throw new Error("No blocks extracted from docling JSON");
+      if (blockRows.length === 0) {
+        throw new Error("No blocks extracted from docling JSON");
+      }
 
-      const { error: insErr } = await supabaseAdmin.from("blocks").insert(blockRows);
+      const { error: insErr } = await supabaseAdmin.from("blocks").insert(
+        blockRows,
+      );
       if (insErr) throw new Error(`DB insert blocks failed: ${insErr.message}`);
 
       await insertRepresentationArtifact(supabaseAdmin, {
@@ -282,11 +350,33 @@ Deno.serve(async (req) => {
         );
       }
 
+      const arangoConfig = loadArangoConfigFromEnv();
+      if (arangoConfig) {
+        await syncParsedDocumentToArango(arangoConfig, {
+          source_uid,
+          project_id: docRow.project_id ?? null,
+          owner_id: docRow.owner_id,
+          conv_uid,
+          source_type: docRow.source_type,
+          doc_title: docRow.doc_title,
+          source_locator: docRow.source_locator,
+          conv_locator: docling_key,
+          uploaded_at: docRow.uploaded_at ?? null,
+          updated_at: docRow.updated_at ?? null,
+          pipeline_config: body.pipeline_config ?? {},
+          blocks: blockRows,
+        });
+      }
+
       const { error: finalErr } = await supabaseAdmin
         .from("source_documents")
         .update({ status: "parsed", error: null })
         .eq("source_uid", source_uid);
-      if (finalErr) throw new Error(`DB update source_documents failed: ${finalErr.message}`);
+      if (finalErr) {
+        throw new Error(
+          `DB update source_documents failed: ${finalErr.message}`,
+        );
+      }
 
       return json(200, {
         ok: true,

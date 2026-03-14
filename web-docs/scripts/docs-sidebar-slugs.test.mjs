@@ -17,6 +17,17 @@ assert.ok(sidebar.length > 0, 'generateSidebar() should return at least one item
 const internal = findGroup(sidebar, 'Internal');
 assert.ok(internal, 'Expected an Internal group in the sections sidebar');
 
+for (const slug of [
+  'internal/docs-site-direction',
+  'internal/shell-contract-spec',
+  'internal/arango-local-dev',
+]) {
+  assert.ok(
+    findLink(internal.items ?? [], slug),
+    `Expected Internal to contain a direct link for "${slug}"`
+  );
+}
+
 const styleGuide = findGroup(internal.items ?? [], 'Style Guide');
 assert.ok(styleGuide, 'Expected a Style Guide group under Internal');
 

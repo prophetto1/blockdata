@@ -40,6 +40,13 @@ execution, and export.
   `X-Conversion-Service-Key`)
 - `DBT_SERVICE_URL` (URL of the dbt-runner service)
 - `DBT_SERVICE_KEY` (shared secret; used in header `X-DBT-Service-Key`)
+- `ARANGO_SYNC_ENABLED` (`true` to mirror parsed documents + blocks into ArangoDB)
+- `ARANGO_URL` (ArangoDB base URL, required when sync is enabled)
+- `ARANGO_DATABASE` (ArangoDB database name, required when sync is enabled)
+- `ARANGO_USERNAME` (ArangoDB username, required when sync is enabled)
+- `ARANGO_PASSWORD` (ArangoDB password, required when sync is enabled)
+- `ARANGO_DOCUMENTS_COLLECTION` (optional; default `blockdata_documents`)
+- `ARANGO_BLOCKS_COLLECTION` (optional; default `blockdata_blocks`)
 
 ## JWT mode
 

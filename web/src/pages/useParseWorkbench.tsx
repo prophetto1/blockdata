@@ -3,6 +3,10 @@ import { IconBraces, IconFileCode, IconLoader2, IconFileText, IconLayoutList, Ic
 import ReactMarkdown from 'react-markdown';
 import remarkFrontmatter from 'remark-frontmatter';
 import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
+import remarkEmoji from 'remark-emoji';
+import rehypeKatex from 'rehype-katex';
+import 'katex/dist/katex.min.css';
 import type { WorkbenchTab, WorkbenchHandle } from '@/components/workbench/Workbench';
 import { normalizePaneWidths, type Pane } from '@/components/workbench/workbenchState';
 import { useProjectDocuments } from '@/hooks/useProjectDocuments';
@@ -21,7 +25,7 @@ import { ParseConfigColumn } from '@/components/documents/ParseConfigColumn';
 import { ParseSettingsColumn } from '@/components/documents/ParseSettingsColumn';
 import { ParseTabPanel, useParseTab } from '@/components/documents/ParseTabPanel';
 import { cn } from '@/lib/utils';
-import { dedupeLocators, formatBytes, getDocumentFormat, resolveSignedUrlForLocators, toArtifactLocator, type ProjectDocumentRow } from '@/lib/projectDetailHelpers';
+import { formatBytes, getDocumentFormat, getFilenameFromLocator, resolveSignedUrlForLocators, type ProjectDocumentRow } from '@/lib/projectDetailHelpers';
 import { supabase } from '@/lib/supabase';
 import { TABLES } from '@/lib/tables';
 import type { BlockRow } from '@/lib/types';
@@ -34,7 +38,7 @@ const DOCUMENTS_BUCKET =
 
 async function getArtifactLocator(
   sourceUid: string,
-  reprType: 'doclingdocument_json',
+  reprType: 'doclingdocument_json' | 'markdown_bytes',
 ): Promise<string | null> {
   const { data } = await supabase
     .from('conversion_representations')
@@ -50,6 +54,7 @@ type DoclingMarkdownState = {
   loading: boolean;
   error: string | null;
   downloadUrl: string | null;
+  downloadFilename: string | null;
 };
 
 type ParsedBlocksState = {
@@ -170,19 +175,18 @@ function DoclingMdTab({ doc }: { doc: ProjectDocumentRow | null }) {
       return;
     }
     let cancelled = false;
-    setState({ markdown: '', loading: true, error: null, downloadUrl: null });
+    setState({ markdown: '', loading: true, error: null, downloadUrl: null, downloadFilename: null });
 
     (async () => {
-      const markdownLocators = dedupeLocators([
-        toArtifactLocator(doc.conv_locator, 'md'),
-        toArtifactLocator(doc.source_locator, 'md'),
-      ]);
-      if (markdownLocators.length === 0) {
-        setState({ markdown: '', loading: false, error: 'No Docling markdown artifact is available for this document.', downloadUrl: null });
+      const locator = await getArtifactLocator(doc.source_uid, 'markdown_bytes');
+      if (cancelled) return;
+      if (!locator) {
+        setState({ markdown: '', loading: false, error: 'No Docling markdown artifact is available for this document.', downloadUrl: null, downloadFilename: null });
         return;
       }
+      const downloadFilename = getFilenameFromLocator(locator) ?? `${doc.doc_title || 'document'}.md`;
 
-      const { url: signedUrl, error: signedUrlError } = await resolveSignedUrlForLocators(markdownLocators);
+      const { url: signedUrl, error: signedUrlError } = await resolveSignedUrlForLocators([locator]);
       if (cancelled) return;
       if (!signedUrl) {
         setState({
@@ -190,6 +194,7 @@ function DoclingMdTab({ doc }: { doc: ProjectDocumentRow | null }) {
           loading: false,
           error: signedUrlError ?? 'Could not generate download URL for the Docling markdown artifact.',
           downloadUrl: null,
+          downloadFilename,
         });
         return;
       }
@@ -198,15 +203,15 @@ function DoclingMdTab({ doc }: { doc: ProjectDocumentRow | null }) {
         const resp = await fetch(signedUrl);
         if (cancelled) return;
         if (!resp.ok) {
-          setState({ markdown: '', loading: false, error: `Failed to load Docling markdown (${resp.status}).`, downloadUrl: signedUrl });
+          setState({ markdown: '', loading: false, error: `Failed to load Docling markdown (${resp.status}).`, downloadUrl: signedUrl, downloadFilename });
           return;
         }
         const markdown = await resp.text();
         if (cancelled) return;
-        setState({ markdown: markdown || '[Empty markdown file]', loading: false, error: null, downloadUrl: signedUrl });
+        setState({ markdown: markdown || '[Empty markdown file]', loading: false, error: null, downloadUrl: signedUrl, downloadFilename });
       } catch {
         if (cancelled) return;
-        setState({ markdown: '', loading: false, error: 'Failed to load the Docling markdown artifact.', downloadUrl: signedUrl });
+        setState({ markdown: '', loading: false, error: 'Failed to load the Docling markdown artifact.', downloadUrl: signedUrl, downloadFilename });
       }
     })();
 
@@ -231,18 +236,23 @@ function DoclingMdTab({ doc }: { doc: ProjectDocumentRow | null }) {
 
   if (state.error) {
     return (
-      <DocumentPreviewShell doc={doc} downloadUrl={state.downloadUrl}>
+      <DocumentPreviewShell doc={doc} downloadUrl={state.downloadUrl} downloadFilename={state.downloadFilename}>
         <DocumentPreviewMessage message={state.error} />
       </DocumentPreviewShell>
     );
   }
 
   return (
-    <DocumentPreviewShell doc={doc} downloadUrl={state.downloadUrl}>
-      <div className="docling-md-preview px-6 py-4">
-        <ReactMarkdown remarkPlugins={[remarkFrontmatter, remarkGfm]}>
-          {state.markdown}
-        </ReactMarkdown>
+    <DocumentPreviewShell doc={doc} downloadUrl={state.downloadUrl} downloadFilename={state.downloadFilename}>
+      <div className="px-6 py-4">
+        <div className="docling-md-preview">
+          <ReactMarkdown
+            remarkPlugins={[remarkFrontmatter, remarkGfm, remarkMath, remarkEmoji]}
+            rehypePlugins={[rehypeKatex]}
+          >
+            {state.markdown}
+          </ReactMarkdown>
+        </div>
       </div>
     </DocumentPreviewShell>
   );
@@ -565,9 +575,7 @@ function ParseFileNavigator({
 // ─── Tabs & panes ────────────────────────────────────────────────────────────
 
 export const PARSE_TABS: WorkbenchTab[] = [
-  { id: 'parse', label: 'File List', icon: IconFileCode },
-  { id: 'parse-navigator', label: 'Navigator', icon: IconLayoutList },
-  { id: 'parse-compact', label: 'Compact Table', icon: IconFileCode },
+  { id: 'parse-compact', label: 'File List', icon: IconFileCode },
   { id: 'config', label: 'Parse Config', icon: IconSettings },
   { id: 'parse-settings', label: 'Parse Settings', icon: IconSettings },
   { id: 'docling-md', label: 'Docling Markdown', icon: IconFileText },
@@ -576,7 +584,7 @@ export const PARSE_TABS: WorkbenchTab[] = [
 ];
 
 export const PARSE_DEFAULT_PANES: Pane[] = normalizePaneWidths([
-  { id: 'pane-parse', tabs: ['parse', 'parse-navigator', 'parse-compact'], activeTab: 'parse', width: 32 },
+  { id: 'pane-parse', tabs: ['parse-compact'], activeTab: 'parse-compact', width: 32 },
   { id: 'pane-config', tabs: ['config', 'parse-settings'], activeTab: 'config', width: 24 },
   { id: 'pane-preview', tabs: ['docling-md', 'blocks', 'docling-json'], activeTab: 'docling-md', width: 44 },
 ]);

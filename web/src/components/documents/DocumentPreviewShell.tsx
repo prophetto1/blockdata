@@ -1,7 +1,7 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { IconDownload } from '@tabler/icons-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { getDocumentFormat, type ProjectDocumentRow } from '@/lib/projectDetailHelpers';
+import { downloadFromSignedUrl, getDocumentFormat, type ProjectDocumentRow } from '@/lib/projectDetailHelpers';
 import { normalizePath } from '@/lib/filesTree';
 
 function getSelectedDocTitle(doc: ProjectDocumentRow | null): string {
@@ -56,16 +56,19 @@ export function DocumentPreviewFrame({
 function DocumentPreviewHeader({
   doc,
   downloadUrl,
+  downloadFilename,
   centerContent,
   actions,
 }: {
   doc: ProjectDocumentRow | null;
   downloadUrl?: string | null;
+  downloadFilename?: string | null;
   centerContent?: ReactNode;
   actions?: ReactNode;
 }) {
   const selectedDocTitle = getSelectedDocTitle(doc);
   const selectedDocFormat = getSelectedDocFormat(doc);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   return (
     <div className="grid min-h-10 grid-cols-[auto_1fr_auto] items-center border-b border-border bg-card px-2">
@@ -83,16 +86,24 @@ function DocumentPreviewHeader({
       <div className="ml-auto flex min-w-[32px] items-center justify-end gap-2">
         {actions}
         {downloadUrl ? (
-          <a
-            href={downloadUrl}
-            target="_blank"
-            rel="noreferrer"
-            download
+          <button
+            type="button"
             aria-label="Download file"
+            disabled={isDownloading}
             className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+            onClick={async () => {
+              const fallbackBase = selectedDocTitle || 'document';
+              const filename = downloadFilename?.trim() || fallbackBase;
+              setIsDownloading(true);
+              try {
+                await downloadFromSignedUrl(downloadUrl, filename);
+              } finally {
+                setIsDownloading(false);
+              }
+            }}
           >
             <IconDownload size={16} />
-          </a>
+          </button>
         ) : null}
       </div>
     </div>
@@ -103,6 +114,7 @@ export function DocumentPreviewShell({
   doc,
   children,
   downloadUrl,
+  downloadFilename,
   contentClassName,
   useScrollArea = true,
   headerCenterContent,
@@ -111,6 +123,7 @@ export function DocumentPreviewShell({
   doc: ProjectDocumentRow | null;
   children: ReactNode;
   downloadUrl?: string | null;
+  downloadFilename?: string | null;
   contentClassName?: string;
   useScrollArea?: boolean;
   headerCenterContent?: ReactNode;
@@ -122,6 +135,7 @@ export function DocumentPreviewShell({
         <DocumentPreviewHeader
           doc={doc}
           downloadUrl={downloadUrl}
+          downloadFilename={downloadFilename}
           centerContent={headerCenterContent}
           actions={headerActions}
         />
@@ -132,6 +146,7 @@ export function DocumentPreviewShell({
               'h-full overflow-y-auto overflow-x-hidden',
               contentClassName ?? '',
             ].join(' ').trim()}
+            contentClass="!min-w-0"
           >
             {children}
           </ScrollArea>
@@ -150,14 +165,16 @@ export function DocumentPreviewStandardContent({
   children,
   contentClassName,
   downloadUrl,
+  downloadFilename,
 }: {
   doc: ProjectDocumentRow | null;
   children: ReactNode;
   contentClassName?: string;
   downloadUrl?: string | null;
+  downloadFilename?: string | null;
 }) {
   return (
-    <DocumentPreviewShell doc={doc} downloadUrl={downloadUrl}>
+    <DocumentPreviewShell doc={doc} downloadUrl={downloadUrl} downloadFilename={downloadFilename}>
       <div className={['p-4', contentClassName ?? ''].join(' ').trim()}>
         {children}
       </div>
