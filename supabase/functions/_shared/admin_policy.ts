@@ -44,7 +44,6 @@ export type RuntimePolicy = {
   };
   upload: {
     max_files_per_batch: number;
-    allowed_extensions: string[];
     track_enabled: TrackEnabledMap;
     extension_track_routing: ExtensionTrackRouting;
     track_capability_catalog: TrackCapabilityCatalog;
@@ -70,7 +69,7 @@ export type AdminPolicyRow = {
   updated_by: string | null;
 };
 
-const ALL_EXTENSIONS: string[] = [
+const DOCLING_SUPPORTED_EXTENSIONS: string[] = [
   "md", "markdown", "txt", "docx", "pdf", "pptx", "xlsx",
   "html", "htm", "csv", "rst", "tex", "latex", "odt", "epub", "rtf", "org",
 ];
@@ -107,18 +106,17 @@ const DEFAULT_POLICY: RuntimePolicy = {
   },
   upload: {
     max_files_per_batch: 25,
-    allowed_extensions: ALL_EXTENSIONS,
     track_enabled: {
       docling: true,
     },
     extension_track_routing: Object.fromEntries(
-      ALL_EXTENSIONS.map((ext) => [ext, "docling" as const]),
+      DOCLING_SUPPORTED_EXTENSIONS.map((ext) => [ext, "docling" as const]),
     ),
     track_capability_catalog: {
       version: "2026-03-13",
       tracks: {
         docling: {
-          extensions: [...ALL_EXTENSIONS],
+          extensions: [...DOCLING_SUPPORTED_EXTENSIONS],
         },
       },
     },
@@ -353,12 +351,6 @@ export function applyPolicyValue(
     policy.upload.max_files_per_batch = parsed;
     return true;
   }
-  if (key === "upload.allowed_extensions") {
-    const parsed = asNormalizedExtensionArray(value);
-    if (!parsed || parsed.length === 0) return false;
-    policy.upload.allowed_extensions = parsed;
-    return true;
-  }
   if (key === "upload.track_enabled") {
     const parsed = asTrackEnabledMap(value);
     if (!parsed) return false;
@@ -479,9 +471,6 @@ export function validateRuntimePolicy(policy: RuntimePolicy): string[] {
   if (policy.upload.max_files_per_batch < 1 || policy.upload.max_files_per_batch > 500) {
     errors.push("upload.max_files_per_batch must be within [1,500]");
   }
-  if (policy.upload.allowed_extensions.length === 0) {
-    errors.push("upload.allowed_extensions must include at least one extension");
-  }
   if (!policy.upload.track_capability_catalog.version.trim()) {
     errors.push("upload.track_capability_catalog.version must be non-empty");
   }
@@ -495,33 +484,13 @@ export function validateRuntimePolicy(policy: RuntimePolicy): string[] {
     errors.push("upload.track_capability_catalog.tracks.docling.extensions must include at least one extension");
   }
 
-  const seenAllowed = new Set<string>();
-  for (const ext of policy.upload.allowed_extensions) {
-    if (seenAllowed.has(ext)) {
-      errors.push(`upload.allowed_extensions contains duplicate extension: ${ext}`);
-      continue;
-    }
-    seenAllowed.add(ext);
-
-    const track = policy.upload.extension_track_routing[ext];
-    if (!track) {
-      errors.push(`upload.extension_track_routing must include mapping for allowed extension: ${ext}`);
-      continue;
-    }
-    if (!policy.upload.track_enabled[track]) {
-      errors.push(`upload.track_enabled.${track} must be true for allowed extension: ${ext}`);
-      continue;
-    }
-    const capSet = new Set(policy.upload.track_capability_catalog.tracks.docling.extensions);
-    if (!capSet.has(ext)) {
-      errors.push(`routing/capability mismatch: extension ${ext} routed to ${track} but missing from capability catalog`);
-    }
-  }
-
   for (const [ext, track] of Object.entries(policy.upload.extension_track_routing)) {
     const capSet = new Set(policy.upload.track_capability_catalog.tracks.docling.extensions);
     if (!capSet.has(ext)) {
       errors.push(`routing/capability mismatch: extension ${ext} routed to ${track} but missing from capability catalog`);
+    }
+    if (!policy.upload.track_enabled[track]) {
+      errors.push(`upload.track_enabled.${track} must be true for routed extension: ${ext}`);
     }
   }
 

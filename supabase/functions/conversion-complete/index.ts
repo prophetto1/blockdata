@@ -1,6 +1,7 @@
 import { corsPreflight, withCorsHeaders } from "../_shared/cors.ts";
 import {
   loadArangoConfigFromEnv,
+  syncAssetToArango,
   syncParsedDocumentToArango,
 } from "../_shared/arangodb.ts";
 import { getEnv, requireEnv } from "../_shared/env.ts";
@@ -120,7 +121,7 @@ Deno.serve(async (req) => {
     const { data: docRow, error: fetchErr } = await supabaseAdmin
       .from("source_documents")
       .select(
-        "source_uid, owner_id, project_id, source_type, source_locator, doc_title, uploaded_at, updated_at, conversion_job_id, status",
+        "source_uid, owner_id, project_id, source_type, source_filesize, source_total_characters, source_locator, doc_title, uploaded_at, updated_at, conversion_job_id, status, error",
       )
       .eq("source_uid", source_uid)
       .maybeSingle();
@@ -159,6 +160,30 @@ Deno.serve(async (req) => {
         .from("source_documents")
         .update({ status: "conversion_failed", error: errMsg })
         .eq("source_uid", source_uid);
+      const arangoConfig = loadArangoConfigFromEnv();
+      if (arangoConfig) {
+        await syncAssetToArango(arangoConfig, {
+          source_uid,
+          project_id: docRow.project_id ?? null,
+          owner_id: docRow.owner_id,
+          source_type: docRow.source_type,
+          doc_title: docRow.doc_title,
+          source_locator: docRow.source_locator,
+          source_filesize: docRow.source_filesize ?? null,
+          source_total_characters: docRow.source_total_characters ?? null,
+          status: "conversion_failed",
+          conversion_job_id: docRow.conversion_job_id ?? null,
+          error: errMsg,
+          uploaded_at: docRow.uploaded_at ?? null,
+          updated_at: docRow.updated_at ?? null,
+          conv_uid: null,
+          conv_locator: null,
+          conv_status: "failed",
+          conv_representation_type: null,
+          pipeline_config: body.pipeline_config ?? {},
+          block_count: null,
+        });
+      }
       return json(200, { ok: false, status: "conversion_failed" });
     }
 
@@ -214,6 +239,30 @@ Deno.serve(async (req) => {
         .from("source_documents")
         .update({ status: "conversion_failed", error: errMsg })
         .eq("source_uid", source_uid);
+      const arangoConfig = loadArangoConfigFromEnv();
+      if (arangoConfig) {
+        await syncAssetToArango(arangoConfig, {
+          source_uid,
+          project_id: docRow.project_id ?? null,
+          owner_id: docRow.owner_id,
+          source_type: docRow.source_type,
+          doc_title: docRow.doc_title,
+          source_locator: docRow.source_locator,
+          source_filesize: docRow.source_filesize ?? null,
+          source_total_characters: docRow.source_total_characters ?? null,
+          status: "conversion_failed",
+          conversion_job_id: docRow.conversion_job_id ?? null,
+          error: errMsg,
+          uploaded_at: docRow.uploaded_at ?? null,
+          updated_at: docRow.updated_at ?? null,
+          conv_uid: null,
+          conv_locator: null,
+          conv_status: "failed",
+          conv_representation_type: null,
+          pipeline_config: body.pipeline_config ?? {},
+          block_count: null,
+        });
+      }
       return json(200, {
         ok: false,
         status: "conversion_failed",
@@ -356,14 +405,22 @@ Deno.serve(async (req) => {
           source_uid,
           project_id: docRow.project_id ?? null,
           owner_id: docRow.owner_id,
-          conv_uid,
           source_type: docRow.source_type,
           doc_title: docRow.doc_title,
           source_locator: docRow.source_locator,
-          conv_locator: docling_key,
+          source_filesize: docRow.source_filesize ?? null,
+          source_total_characters: conv_total_characters,
+          status: "parsed",
+          conversion_job_id: docRow.conversion_job_id ?? null,
+          error: null,
           uploaded_at: docRow.uploaded_at ?? null,
           updated_at: docRow.updated_at ?? null,
+          conv_uid,
+          conv_locator: docling_key,
+          conv_status: "success",
+          conv_representation_type: "doclingdocument_json",
           pipeline_config: body.pipeline_config ?? {},
+          block_count: blockRows.length,
           blocks: blockRows,
         });
       }
@@ -391,6 +448,30 @@ Deno.serve(async (req) => {
         .from("source_documents")
         .update({ status: "parse_failed", error: msg })
         .eq("source_uid", source_uid);
+      const arangoConfig = loadArangoConfigFromEnv();
+      if (arangoConfig) {
+        await syncAssetToArango(arangoConfig, {
+          source_uid,
+          project_id: docRow.project_id ?? null,
+          owner_id: docRow.owner_id,
+          source_type: docRow.source_type,
+          doc_title: docRow.doc_title,
+          source_locator: docRow.source_locator,
+          source_filesize: docRow.source_filesize ?? null,
+          source_total_characters: docRow.source_total_characters ?? null,
+          status: "parse_failed",
+          conversion_job_id: docRow.conversion_job_id ?? null,
+          error: msg,
+          uploaded_at: docRow.uploaded_at ?? null,
+          updated_at: docRow.updated_at ?? null,
+          conv_uid,
+          conv_locator: docling_key,
+          conv_status: "failed",
+          conv_representation_type: "doclingdocument_json",
+          pipeline_config: body.pipeline_config ?? {},
+          block_count: null,
+        });
+      }
       return json(200, { ok: false, status: "parse_failed", error: msg });
     }
   } catch (e) {

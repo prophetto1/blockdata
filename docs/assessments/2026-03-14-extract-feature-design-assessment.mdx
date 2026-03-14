@@ -3,212 +3,159 @@
 - Source plan: `docs/plans/2026-03-14-extract-feature-design.md`
 - Date reviewed: `2026-03-14`
 - Reviewer: `Codex`
-- Verdict: `Fail`
+- Verdict: `Conditional Pass`
 
 ## What This Is
 
-This plan proposes a new Extract workflow that feels like LlamaParse Extract while using Docling as the extraction engine. The goal is sound, and the current product gap is real: Parse is implemented, while Extract is still a placeholder surface in `web/src/pages/useExtractWorkbench.tsx:65-285`.
+This revision is a substantial improvement over the earlier draft. It adopts the right high-level architecture for this repo:
 
-The problem is execution readiness. The plan assumes a Docling integration model that is not yet grounded in the cited Docling docs, and it understates how much new runtime, orchestration, and schema-contract work is still needed.
+- Docling remains the parse and structure layer
+- extraction runs over stored parse artifacts
+- provider, model, and key handling stay in the platform
+
+That shift removes the biggest problem in the first version. The plan is now directionally correct and close to execution-ready, but a few important implementation assumptions are still inaccurate or underdefined.
 
 ## Reference Inputs Reviewed
 
 - Plan: `docs/plans/2026-03-14-extract-feature-design.md`
-- Current Extract workbench: `web/src/pages/useExtractWorkbench.tsx:65-285`
-- Current Parse workbench: `web/src/pages/useParseWorkbench.tsx`
-- Current document list hook: `web/src/hooks/useProjectDocuments.ts:6-114`
-- Current parse orchestration pattern: `supabase/functions/trigger-parse/index.ts:22-260`
-- Current conversion route pattern: `services/platform-api/app/api/routes/conversion.py:60-135`
-- Current platform API dependency baseline: `services/platform-api/requirements.txt:1-12`
+- Current Extract workbench: `web/src/pages/useExtractWorkbench.tsx:163-285`
+- Current Parse artifacts loader: `web/src/pages/parseArtifacts.ts:13-260`
+- Current Docling page metadata helper: `web/src/lib/doclingNativeItems.ts:1-182`
+- Current worker LLM implementation: `supabase/functions/worker/index.ts:34-39`, `:440-698`, `:984-1060`
+- Current key crypto helpers: `supabase/functions/_shared/api_key_crypto.ts:28-68`
+- Current provider connection flow: `supabase/functions/provider-connections/index.ts`, `web/src/components/agents/forms/GoogleAuthPanel.tsx`
 - Docling extraction docs: <https://docling-project.github.io/docling/examples/extraction/>
 - Docling plugin docs: <https://docling-project.github.io/docling/concepts/plugins/>
-- Docling remote-VLM example: <https://docling-project.github.io/docling/examples/vlm_pipeline_with_remote_model/>
 
 ## Findings
 
 ### Critical
 
-#### 1. The plan’s core provider contract is not proved by the cited Docling API
-
-The plan says Extract will be powered by `DocumentExtractor` with `llm_provider` and `llm_model` fields for OpenAI or Anthropic, and that the backend can set an LLM API key and call `DocumentExtractor.extract(...)` directly (`docs/plans/2026-03-14-extract-feature-design.md:5-10`, `:88-107`).
-
-The official Docling extraction page does confirm a beta `DocumentExtractor`, but it only shows:
-
-- installation via `docling[vlm]`
-- `allowed_formats=[InputFormat.PDF, InputFormat.IMAGE]`
-- extraction results organized by `result.pages`
-
-The separate remote-model example documents API-backed VLM usage through `ApiVlmOptions` and `VlmEngineType.API_OPENAI`, not through a `DocumentExtractor` provider switch. I did not find Docling documentation that establishes a first-class Anthropic path for this extractor flow. That means the plan currently treats a crucial assumption as settled when it is still unverified.
-
-This is a blocker because the engine choice drives the whole backend contract, settings model, and security design.
-
-#### 2. The runtime and deployment requirements for extraction are missing
-
-The plan says to “ensure `docling` version includes `DocumentExtractor`” in `requirements.txt` (`docs/plans/2026-03-14-extract-feature-design.md:77-83`), but the service already depends on `docling>=2.70.0` today (`services/platform-api/requirements.txt:1-12`). The official extraction docs call out `docling[vlm]`, which is a materially different runtime requirement.
-
-That omission matters because the existing deployment guidance in `docs/platform-api/docling/gcp-deployment-architecture.md` is centered on parsing and conversion capacity, not beta VLM extraction. The plan does not define:
-
-- whether extraction runs in the existing platform API container or a separate service
-- whether remote VLM inference is required
-- what concurrency, timeout, temp-file, and cost controls apply
-- how non-PDF or non-image documents are handled when the cited extractor examples are PDF/image only
-
-Without that runtime plan, the implementation order is not execution-ready.
+None.
 
 ### Major
 
-#### 3. “Follow trigger-parse/conversion-complete” is too vague for a different job lifecycle
+#### 1. The plan overstates what the existing LLM call layer already provides
 
-The plan says the new edge functions should follow the `trigger-parse` and `conversion-complete` patterns (`docs/plans/2026-03-14-extract-feature-design.md:109-113`). But the current parse orchestrator does much more than simple job dispatch:
+The new architecture says extraction will run in edge functions using the "existing LLM call infrastructure" and includes a provider matrix for Anthropic, OpenAI, Google, Custom, and Vertex AI (`docs/plans/2026-03-14-extract-feature-design.md:14-29`, `:231-245`).
 
-- it validates document ownership
-- it restricts allowed source states
-- it creates signed download and upload URLs
-- it deletes stale storage artifacts
-- it mutates `source_documents.status`
-- it pre-seeds `conversion_parsing`
+The current worker code does not provide that abstraction today. It supports two runtime transports:
 
-See `supabase/functions/trigger-parse/index.ts:40-230`.
+- `vertex_ai`
+- `litellm_openai`
 
-Extraction is not just “parse again with a different endpoint.” It needs its own idempotency, retry policy, storage strategy, callback auth, and failure model. The plan names new tables, but it does not define how those lifecycle rules differ from parse or which parse behaviors should explicitly not carry over.
+See `supabase/functions/worker/index.ts:34-39` and `:1042-1058`.
 
-#### 4. The schema story is too thin for reliable extraction quality
+It also does not decrypt and forward per-user provider keys for general model execution. Instead, it reads only Anthropic default model settings from `user_api_keys`, while the actual runtime auth comes from platform-managed Vertex or a platform LiteLLM key (`supabase/functions/worker/index.ts:984-1058`).
 
-The frontend reuse idea is sensible, but the current schema builder only supports a narrow subset of JSON Schema: primitive types, objects, enums, arrays, required fields, and ordering (`web/src/pages/Schemas.tsx:23-149`). It does not model field descriptions, examples, defaults, or extraction guidance.
+That means the plan's core direction is good, but the "reuse existing infrastructure" claim is too strong. The implementation still needs an explicit extraction-side provider adapter layer, or the MVP needs to be narrowed to the transports the platform actually has today.
 
-That is a weak fit for the kind of extraction the user asked for. The official Docling examples get stronger results by using explicit Pydantic models with field descriptions and examples, not just bare type skeletons.
+#### 2. Vertex AI fallback is routed through the wrong settings surface
 
-If the MVP really only supports a narrow canonical schema subset, the plan needs to say so. If not, it needs a richer schema contract and a clear mapping to Docling templates.
+The plan says the Config tab can read from `user_api_keys` plus `providerRegistry.tsx`, and the provider matrix lists "Vertex AI" as a default fallback (`docs/plans/2026-03-14-extract-feature-design.md:21-29`, `:370-384`).
 
-#### 5. The current Extract UI gap is larger than the plan acknowledges
+In the current product, Vertex AI is not represented as a normal `user_api_keys` entry. It is managed through `user_provider_connections` and the Google Vertex service-account flow, not the standard API-key form. See:
 
-The plan correctly says Extract is placeholder-only, but the current surface is not merely missing a backend. Its information architecture is different from the proposed one.
+- `supabase/functions/provider-connections/index.ts`
+- `web/src/components/agents/forms/GoogleAuthPanel.tsx`
+- `supabase/functions/agent-config/index.ts:62-79`
 
-Today Extract renders:
+So the plan's settings and provider-resolution sections do not yet match the real auth model. This needs one explicit decision:
 
-- `File List`
-- `Extract Config`
-- `Extract Targets`
-- `Badges`
-- `Token`
-- `Contracts`
+- either MVP extraction uses only API-key-backed providers in `user_api_keys`, or
+- the plan adds first-class support for Vertex-backed `user_provider_connections` in the Extract config flow.
 
-See `web/src/pages/useExtractWorkbench.tsx:163-176`.
+#### 3. Page-level extraction is still underplanned operationally
 
-Those tabs are static preview shells, and the file list currently consumes all project documents through `useProjectDocuments()` with no parsed-only filter (`web/src/hooks/useProjectDocuments.ts:12-20`, `web/src/pages/useExtractWorkbench.tsx:181-233`). The plan proposes a very different workbench but does not spell out the migration path, empty states, or how existing placeholder concepts like Badges/Token/Contracts should be retired or folded into schema presets.
+The plan says page-level extraction will load Docling JSON and "split content by page using provenance metadata (same logic as `doclingNativeItems.ts`)," then make one LLM call per page inside a single synchronous edge function (`docs/plans/2026-03-14-extract-feature-design.md:225-247`).
 
-#### 6. Secret-handling and provider resolution are underspecified
+That helper does not currently build page-level reading-order text. It extracts native items and page numbers, but it does not assemble full page payloads suitable for LLM extraction. See `web/src/lib/doclingNativeItems.ts:56-170`.
 
-The plan says the config panel will read provider/model from `user_api_keys` and that the backend will receive an API key via header without storing it (`docs/plans/2026-03-14-extract-feature-design.md:99-105`, `:172-175`). That is not enough detail for a BYO-key system.
+There is also still an execution-risk mismatch: one call per page inside a synchronous edge function is plausible for short documents, but it can exceed time limits on larger files. The plan notes timeout risk, but leaves chunking as a future enhancement (`docs/plans/2026-03-14-extract-feature-design.md:243-245`).
 
-The repo already has provider definitions and settings flows for OpenAI, Anthropic, Google, and custom endpoints (`web/src/components/agents/providerRegistry.tsx:4-65`), but the plan does not define:
+Before implementation starts, the plan should define one of these:
 
-- whether the browser ever handles raw provider secrets
-- how edge functions retrieve the real key material
-- how callback and service logs avoid leaking secrets
-- whether “Anthropic” is native Docling support or a separate fallback path
-
-This needs a concrete auth and secret-flow design before implementation starts.
+- a hard page-count or token-size limit for synchronous MVP
+- batching and continuation behavior
+- or a background-job path for page-level extraction
 
 ### Minor
 
-#### 7. The parsed-document filter is mentioned, but not designed
+#### 4. The secret helper name is wrong in the backend flow
 
-The plan says the file list should filter to `status='parsed'` (`docs/plans/2026-03-14-extract-feature-design.md:157-161`). The current shared hook has no filter argument and simply loads all project documents (`web/src/hooks/useProjectDocuments.ts:12-20`).
+The plan says the edge function will call `decryptSecret()` from `_shared/api_key_crypto.ts` (`docs/plans/2026-03-14-extract-feature-design.md:220-223`, `:256-266`).
 
-That is a small issue, but the plan should say whether Extract extends the shared hook, applies a local filter, or introduces an extract-specific document source.
+That helper does not exist under that name. The current exported helper is `decryptApiKey()` in `supabase/functions/_shared/api_key_crypto.ts:67-68`.
 
-#### 8. The AI schema-generation source is ambiguous
+#### 5. The idempotency note is internally inconsistent
 
-The plan says schema suggestion will use the “first N pages of document text” (`docs/plans/2026-03-14-extract-feature-design.md:135-138`), but it never says which text source is authoritative:
+The idempotency section says:
 
-- Docling markdown
-- normalized blocks
-- raw Docling JSON
-- a fresh file download and re-read
+- return existing results if the same `source_uid + schema_uid` already completed
+- re-extraction creates a new job
 
-That matters because the platform already has parse artifacts, and re-reading the source document would duplicate work.
+See `docs/plans/2026-03-14-extract-feature-design.md:247`.
+
+Those are both reasonable behaviors, but they need a trigger distinction. For example:
+
+- automatic dedupe for accidental duplicate submits within a short window
+- explicit "Run again" action creates a new job
+
+Right now the plan says both without defining when each applies.
 
 ## Specific Gaps, Contradictions, and Ambiguity
 
-- The plan treats `DocumentExtractor + OpenAI/Anthropic` as settled, but the cited Docling docs only prove a beta extractor plus a separate remote-VLM pattern.
-- The dependency step is incomplete. The repo already has `docling>=2.70.0`, while the official extractor docs call for `docling[vlm]`.
-- The plan says to copy the parse orchestration pattern without defining which parse-side behaviors are inappropriate for extraction jobs.
-- The plan proposes JSON Schema to Docling-template conversion without defining the supported schema subset.
-- The plan proposes parsed-only selection, but the current shared document hook does not support that contract.
-- The plan does not answer whether “plugin or extension” is even the right integration point. Docling plugins are framework extension points, not the user-facing structured extraction feature itself.
+- The plan now has the right architecture, but it still overclaims current multi-provider reuse.
+- Vertex AI fallback is described as if it lived in `user_api_keys`, while the current product routes it through provider connections.
+- Page-level extraction depends on page assembly logic that does not exist yet in the cited helper.
+- The sync edge-function model still needs clear guardrails for larger documents.
+- The idempotency behavior needs one explicit rule.
 
 ## Required Changes Before Implementation
 
-1. Prove the engine choice with a short technical spike.
-   Decide whether MVP extraction is:
-   - native Docling `DocumentExtractor`, or
-   - parse-first plus a platform-managed structured-output LLM call over existing Docling artifacts.
+1. Rewrite the provider section to distinguish between:
+   - what exists today
+   - what must be built for extraction
 
-2. Replace the provider section with a documented capability matrix.
-   For each supported provider, specify:
-   - native Docling support or not
-   - auth mechanism
-   - model identifier format
-   - allowed file formats
-   - expected latency and cost envelope
-
-3. Add a real runtime plan.
-   State the package/runtime requirements, deployment target, concurrency limits, timeout budget, and fallback behavior for unsupported formats.
-
-4. Define the extraction job lifecycle separately from parse.
-   Cover idempotency, retries, callback auth, result storage, cancellation, stale-job cleanup, and whether extraction affects `source_documents.status`.
-
-5. Tighten the schema contract.
+2. Decide the MVP provider surface.
    Either:
-   - declare a narrow MVP schema subset that the current builder can support, or
-   - extend the builder to capture field descriptions/examples and document the conversion rules.
+   - API-key providers only, or
+   - API-key providers plus Vertex service-account connections
 
-6. Rework the frontend section to match the current Extract surface.
-   State explicitly how the placeholder tabs map to the new design, what gets removed, and how parsed-only document selection is enforced.
+3. Add an extraction adapter module to the plan.
+   Define where provider-specific calls live and whether they reuse worker helpers, new shared helpers, or a simplified extraction-specific adapter.
 
-7. Expand verification.
-   Add failure-mode and auth coverage, not just happy-path tests.
+4. Define page-level execution limits.
+   Add page-count or token limits, or add a background path for larger jobs.
 
-## Recommended Direction
+5. Replace `decryptSecret()` with the real helper name and clarify the exact secret lookup path.
 
-The strongest near-term option is not a “Docling plugin.”
-
-Docling plugins are extension points for pipeline behavior. They are not the main path for building a LlamaParse-style structured extraction workbench. For this product, there are two realistic options:
-
-1. Native Docling extraction path
-   Use `DocumentExtractor` only after a small spike proves the exact model/runtime contract you want. Treat this as a dedicated extraction engine integration, not as a plugin feature.
-
-2. Parse-first extraction path
-   Reuse the existing Parse pipeline and stored Docling outputs, then run structured extraction against those artifacts with the user’s configured provider. This fits the current architecture better, avoids re-downloading and re-processing the source file, and gives you a clearer place to support OpenAI, Anthropic, Google, or custom providers through your existing settings model.
-
-For this repo as it exists today, the parse-first path looks safer for MVP. That is an inference from the current codebase and Docling docs, not a documented Docling requirement.
+6. Clarify dedupe versus explicit re-run behavior.
 
 ## Verification Expectations
 
-Before this plan should be considered ready, it should define and pass checks for:
+Before implementation should be considered ready, the revised plan should verify:
 
-- engine validation against the chosen provider and model path
-- supported file-type matrix, including rejection behavior for unsupported formats
-- secure key retrieval and redaction in service logs
-- extraction job idempotency and callback authentication
-- parsed-only file selection in the Extract UI
-- schema round-trip coverage for the exact supported schema subset
-- end-to-end result rendering for both document-level and page-level outputs
+- provider resolution for each supported MVP provider
+- no secret material in logs or job rows
+- successful document-level extraction from stored `markdown_bytes`
+- successful page-level extraction from assembled page text, not just raw page tags
+- clear rejection or fallback behavior for oversized extraction requests
+- parsed-only file visibility in the Extract UI
 
 ## Acceptance Criteria Check
 
 - Alignment with product direction: `Pass`
-- Scope boundaries: `Partial Pass`
-- API and data contract clarity: `Fail`
-- Dependency and sequencing correctness: `Fail`
-- Risk handling and rollback strategy: `Fail`
-- Security and auth implications: `Fail`
-- Operational readiness: `Fail`
-- Test and verification clarity: `Fail`
+- Scope boundaries: `Pass`
+- API and data contract clarity: `Partial Pass`
+- Dependency and sequencing correctness: `Partial Pass`
+- Risk handling and rollback strategy: `Partial Pass`
+- Security and auth implications: `Partial Pass`
+- Operational readiness: `Partial Pass`
+- Test and verification clarity: `Pass`
 
 ## Final Recommendation
 
-`No-Go` as written.
+`Proceed after one revision pass.`
 
-The product direction is good, and the current Extract placeholder is the right place to invest next. But this plan is not implementation-ready yet. It needs one more revision centered on engine proof, runtime design, secret flow, and the exact schema contract.
+This version is no longer blocked on architecture. The remaining work is to tighten the provider adapter story, align Vertex auth with the current settings model, and put firm bounds around page-level execution. Once those are written into the plan, it should be ready to implement.

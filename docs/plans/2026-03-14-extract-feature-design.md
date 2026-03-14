@@ -1,30 +1,36 @@
 # Extract Feature — Structured Data Extraction from Documents
 
+**Revision 2** — addresses all findings from `docs/assessments/2026-03-14-extract-feature-design-assessment.mdx`
+
 ## Context
 
-The platform has a fully developed **Parse** workbench but **Extract** is placeholder-only — UI shells exist but no backend or extraction logic is wired. The user wants to build extraction functionality similar to LlamaParse's Extract feature, powered by Docling's `DocumentExtractor` API calling external LLMs (OpenAI/Anthropic).
+The platform has a fully developed Parse workbench but Extract is placeholder-only (`web/src/pages/useExtractWorkbench.tsx:163-285`). The goal is to build a LlamaParse-style structured extraction workbench.
 
-**User choices:**
-- LLM backend: Cloud Run + OpenAI/Anthropic API
-- Extraction targets: Document-level + Page-level
-- Schema UX: Visual builder + raw JSON editor + AI auto-generate
+## Engine Decision: Parse-First Extraction (Not Docling DocumentExtractor)
 
-## Key Docling API
+Docling's `DocumentExtractor` is a beta API with unverified provider support (no documented Anthropic path, requires `docling[vlm]` runtime). The platform already has:
 
-```python
-from docling.document_extractor import DocumentExtractor
-from docling.datamodel.base_models import InputFormat
+- **Parsed artifacts in Supabase** — DoclingDocument JSON, markdown, and blocks for every parsed document
+- **Production LLM call layer** — `callLLM` / `callLLMBatch` in `supabase/functions/worker/index.ts` using tool-use structured output via Vertex AI and LiteLLM
+- **Provider infrastructure** — `providerRegistry.tsx` with Anthropic, OpenAI, Google, Custom; encrypted keys in `user_api_keys` via AES-GCM (`supabase/functions/_shared/api_key_crypto.ts`)
 
-extractor = DocumentExtractor(allowed_formats=[InputFormat.IMAGE, InputFormat.PDF])
+**The extraction path is:** take already-parsed document content (markdown or blocks from Supabase storage) → send to the user's configured LLM with the extraction schema as a tool definition → store structured results.
 
-# Dict template
-result = extractor.extract(source=file_path, template={"bill_no": "string", "total": "float"})
-result.pages  # results organized by page
+No Cloud Run changes. No new Python service code. No `docling[vlm]` dependency. Extraction runs entirely in edge functions using the existing LLM call infrastructure.
 
-# Pydantic template
-result = extractor.extract(source=file_path, template=Invoice)
-invoice = Invoice.model_validate(result.pages[0].extracted_data)
-```
+### Provider Capability Matrix
+
+| Provider | Auth Mechanism | Structured Output | Extraction Support |
+|----------|---------------|-------------------|-------------------|
+| Anthropic | API key from `user_api_keys` (AES-GCM encrypted) | Tool use (`tool_choice: { type: "tool" }`) | Full |
+| OpenAI | API key from `user_api_keys` | Function calling | Full |
+| Google | API key from `user_api_keys` | Tool use | Full |
+| Custom | API key + base_url from `user_api_keys` | OpenAI-compatible function calling | Best-effort |
+| Vertex AI | GCP service account (platform-managed) | Tool use | Full (default if no user key) |
+
+### Supported File Formats
+
+Extraction works on any document that has been successfully parsed (`source_documents.status = 'parsed'`). The format constraint is at the Parse layer, not Extract. Unparsed or failed documents are not selectable in the Extract workbench.
 
 ---
 
@@ -33,109 +39,278 @@ invoice = Invoice.model_validate(result.pages[0].extracted_data)
 **Migration:** `supabase/migrations/20260315010000_extraction_tables.sql`
 
 ### `extraction_schemas`
-| Column | Type | Notes |
-|--------|------|-------|
-| schema_uid | TEXT PK | sha256 hash |
-| owner_id | UUID FK auth.users | |
-| project_id | TEXT FK nullable | null = global |
-| schema_name | TEXT | |
-| schema_body | JSONB | JSON Schema format (canonical) |
-| extraction_target | TEXT | `'page'` or `'document'` |
-| created_at / updated_at | TIMESTAMPTZ | |
+
+```sql
+CREATE TABLE extraction_schemas (
+  schema_uid   TEXT PRIMARY KEY,
+  owner_id     UUID NOT NULL REFERENCES auth.users(id),
+  project_id   TEXT REFERENCES projects(project_id),
+  schema_name  TEXT NOT NULL,
+  schema_body  JSONB NOT NULL,
+  extraction_target TEXT NOT NULL DEFAULT 'document'
+    CHECK (extraction_target IN ('page', 'document')),
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+ALTER TABLE extraction_schemas ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY extraction_schemas_select_own ON extraction_schemas
+  FOR SELECT USING (owner_id = auth.uid());
+CREATE POLICY extraction_schemas_insert_own ON extraction_schemas
+  FOR INSERT WITH CHECK (owner_id = auth.uid());
+CREATE POLICY extraction_schemas_update_own ON extraction_schemas
+  FOR UPDATE USING (owner_id = auth.uid());
+CREATE POLICY extraction_schemas_delete_own ON extraction_schemas
+  FOR DELETE USING (owner_id = auth.uid());
+```
+
+`schema_body` stores JSON Schema with extended properties. Supported subset:
+
+```jsonc
+{
+  "type": "object",
+  "properties": {
+    "invoice_number": {
+      "type": "string",
+      "description": "The invoice or receipt number",  // LLM extraction hint
+      "examples": ["INV-2024-001", "RC-5512"]          // few-shot examples
+    },
+    "total": {
+      "type": "number",
+      "description": "Total amount due"
+    },
+    "line_items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "description": { "type": "string" },
+          "quantity": { "type": "integer" },
+          "unit_price": { "type": "number" }
+        }
+      }
+    }
+  },
+  "required": ["invoice_number"],
+  "propertyOrdering": ["invoice_number", "total", "line_items"]
+}
+```
+
+**Supported types:** `string`, `number`, `integer`, `boolean`, `object` (nested), `array`, `enum`.
+**Extended fields per property:** `description` (extraction hint), `examples` (few-shot).
+These map directly to the tool `input_schema` sent to the LLM.
 
 ### `extraction_jobs`
-| Column | Type | Notes |
-|--------|------|-------|
-| job_id | UUID PK | |
-| owner_id | UUID FK | |
-| schema_uid | TEXT FK | |
-| source_uid | TEXT | document being extracted |
-| status | TEXT | pending / running / complete / failed |
-| llm_provider | TEXT | openai / anthropic |
-| llm_model | TEXT | |
-| config_jsonb | JSONB | temperature, etc. |
-| error | TEXT | |
-| timestamps | TIMESTAMPTZ | created, started, completed |
+
+```sql
+CREATE TABLE extraction_jobs (
+  job_id       UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  owner_id     UUID NOT NULL REFERENCES auth.users(id),
+  schema_uid   TEXT NOT NULL REFERENCES extraction_schemas(schema_uid),
+  source_uid   TEXT NOT NULL,
+  status       TEXT NOT NULL DEFAULT 'pending'
+    CHECK (status IN ('pending', 'running', 'complete', 'failed')),
+  llm_provider TEXT NOT NULL,
+  llm_model    TEXT NOT NULL,
+  config_jsonb JSONB NOT NULL DEFAULT '{}'::jsonb,
+  error        TEXT,
+  token_usage  JSONB,
+  started_at   TIMESTAMPTZ,
+  completed_at TIMESTAMPTZ,
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+ALTER TABLE extraction_jobs ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY extraction_jobs_select_own ON extraction_jobs
+  FOR SELECT USING (owner_id = auth.uid());
+CREATE POLICY extraction_jobs_insert_own ON extraction_jobs
+  FOR INSERT WITH CHECK (owner_id = auth.uid());
+```
+
+Jobs do NOT mutate `source_documents.status`. Extraction is non-destructive — it reads parsed artifacts but does not alter the document lifecycle.
 
 ### `extraction_results`
-| Column | Type | Notes |
-|--------|------|-------|
-| result_id | UUID PK | |
-| job_id | UUID FK CASCADE | |
-| page_number | INTEGER nullable | null for document-level |
-| extracted_data | JSONB | |
-| raw_response | JSONB nullable | LLM debug |
 
-RLS: owner-based (`auth.uid() = owner_id`), same pattern as `source_documents`.
+```sql
+CREATE TABLE extraction_results (
+  result_id      UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  job_id         UUID NOT NULL REFERENCES extraction_jobs(job_id) ON DELETE CASCADE,
+  page_number    INTEGER,
+  extracted_data JSONB NOT NULL,
+  raw_response   JSONB,
+  created_at     TIMESTAMPTZ NOT NULL DEFAULT now()
+);
 
-**Types:** Add `ExtractionSchemaRow`, `ExtractionJobRow`, `ExtractionResultRow` to `web/src/lib/types.ts`.
+ALTER TABLE extraction_results ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY extraction_results_select_own ON extraction_results
+  FOR SELECT USING (
+    job_id IN (SELECT job_id FROM extraction_jobs WHERE owner_id = auth.uid())
+  );
+```
+
+Add all three tables to realtime publication for live status updates.
+
+**Types in `web/src/lib/types.ts`:**
+
+```typescript
+export type ExtractionSchemaRow = {
+  schema_uid: string;
+  owner_id: string;
+  project_id: string | null;
+  schema_name: string;
+  schema_body: Record<string, unknown>;
+  extraction_target: 'page' | 'document';
+  created_at: string;
+  updated_at: string;
+};
+
+export type ExtractionJobRow = {
+  job_id: string;
+  owner_id: string;
+  schema_uid: string;
+  source_uid: string;
+  status: 'pending' | 'running' | 'complete' | 'failed';
+  llm_provider: string;
+  llm_model: string;
+  config_jsonb: Record<string, unknown>;
+  error: string | null;
+  token_usage: { input_tokens?: number; output_tokens?: number } | null;
+  started_at: string | null;
+  completed_at: string | null;
+  created_at: string;
+};
+
+export type ExtractionResultRow = {
+  result_id: string;
+  job_id: string;
+  page_number: number | null;
+  extracted_data: Record<string, unknown>;
+  raw_response: Record<string, unknown> | null;
+  created_at: string;
+};
+```
 
 ---
 
-## Phase 2: Backend — Cloud Run `/extract` endpoint
+## Phase 2: Backend — Edge Function Extraction (No Cloud Run)
 
-### Files to create/modify:
-- **New:** `services/platform-api/app/api/routes/extraction.py`
-- **New:** `services/platform-api/app/domain/extraction/models.py`
-- **New:** `services/platform-api/app/domain/extraction/service.py`
-- **Modify:** `services/platform-api/app/main.py` — mount extraction router
-- **Modify:** `services/platform-api/requirements.txt` — ensure `docling` version includes `DocumentExtractor`
+Extraction runs entirely in Supabase edge functions. No platform-api changes needed.
 
-### `POST /extract` — follows same pattern as `/convert` in `conversion.py`
+### `supabase/functions/run-extract/index.ts`
 
-Request model:
-```python
-class ExtractRequest(BaseModel):
-    source_uid: str
-    source_download_url: str       # signed URL
-    schema_template: dict           # JSON Schema → converted to dict template for Docling
-    extraction_target: str          # 'page' | 'document'
-    llm_provider: str               # 'openai' | 'anthropic'
-    llm_model: str
-    callback_url: str
-    job_id: str
+Single edge function that handles the full extraction lifecycle. Not a trigger+callback pair — extraction is a synchronous LLM call (seconds, not minutes like Docling parsing).
+
+**Request:** `POST` with auth token.
+
+```typescript
+{ source_uid: string, schema_uid: string, provider?: string, model?: string, temperature?: number }
 ```
 
-Service flow:
-1. Download document to temp file
-2. Set LLM API key env var (passed via header, not stored)
-3. Convert JSON Schema to Docling dict template
-4. Call `DocumentExtractor.extract(source=file_path, template=template_dict)`
-5. Serialize `result.pages` → JSON
-6. POST callback to edge function with results
+**Flow:**
 
-Uses `get_conversion_pool()` process pool (same admission control pattern).
+1. **Auth & validation**
+   - `requireUserId(req)` — get owner_id from JWT
+   - Load schema from `extraction_schemas` where `schema_uid` and `owner_id` match
+   - Load document from `source_documents` — verify `owner_id` match and `status = 'parsed'`
+   - Reject if document status is not `parsed`
 
-### Edge functions:
-- **New:** `supabase/functions/trigger-extract/index.ts` — orchestrator: creates job row, gets signed URL, calls platform-api `/extract`
-- **New:** `supabase/functions/extraction-complete/index.ts` — callback: inserts results rows, updates job status
+2. **Resolve provider & key**
+   - Use requested provider or fall back to user's default from `user_api_keys`
+   - Decrypt API key using `decryptSecret()` from `_shared/api_key_crypto.ts`
+   - Key never leaves the edge function; never logged; never stored in job row
 
-Both follow the existing `trigger-parse` / `conversion-complete` patterns.
+3. **Load document content**
+   - For document-level: load markdown from `conversion_representations` (type `markdown_bytes`), download from storage, decode to text
+   - For page-level: load DoclingDocument JSON from storage, split content by page using provenance metadata (same logic as `doclingNativeItems.ts`)
+
+4. **Create job row** — `extraction_jobs` with status `running`, `started_at = now()`
+
+5. **Call LLM** — reuse `callVertexClaude` or provider-specific call from `_shared/`
+   - Tool definition: `{ name: "extract_fields", input_schema: schema_body }`
+   - System prompt: "Extract the requested fields from the following document content. Return only the values found in the document."
+   - User message: document content (markdown text)
+   - `tool_choice: { type: "tool", name: "extract_fields" }`
+   - For page-level: one LLM call per page, each with that page's content
+
+6. **Store results**
+   - Parse tool use response → `extracted_data`
+   - Insert into `extraction_results` (one row for document-level, N rows for page-level)
+   - Update `extraction_jobs`: status `complete`, `completed_at`, `token_usage`
+
+7. **Error handling**
+   - LLM errors: update job status to `failed`, store error message (redact any key material)
+   - Timeout: edge function has 60s default; for large documents, extraction may need chunking (future enhancement)
+
+**Idempotency:** If a job already exists for the same `source_uid + schema_uid` with status `complete`, return existing results. Re-extraction creates a new job (no upsert).
+
+**Differences from trigger-parse:**
+- Does NOT mutate `source_documents.status`
+- Does NOT delete/clean up storage artifacts
+- Does NOT create signed upload URLs
+- Does NOT use a callback pattern — synchronous response
+- Has its own job table (`extraction_jobs`), not conversion_parsing
+
+### Secret Flow
+
+```
+Browser → (JWT auth header) → run-extract edge fn
+  → queries user_api_keys for provider
+  → decryptSecret(encrypted_key, "user-api-keys-v1")
+  → passes plaintext key to LLM API call
+  → key discarded after call (never in job row, never logged)
+```
+
+The browser never handles raw provider secrets. Keys are encrypted at rest in `user_api_keys` and decrypted only in the edge function for the duration of the API call.
 
 ---
 
 ## Phase 3: Frontend — Schema Management
 
-### Reuse from existing `Schemas.tsx` (`web/src/pages/Schemas.tsx`):
-- `SchemaField` type (line 25-33)
-- `SchemaFieldType` type (line 23)
-- `buildObjectSchema()` (line 65-105) — visual fields → JSON Schema
-- `parseObjectSchemaToFields()` (line 107-149) — JSON Schema → visual fields
-- `useMonacoTheme()` (line 61-63) — Monaco dark/light
-- Field CRUD patterns: `createSchemaField`, `updateField`, `addField`, `removeField`
+### Schema builder extensions
+
+The current `Schemas.tsx` (`web/src/pages/Schemas.tsx:23-149`) supports: `string`, `number`, `integer`, `boolean`, `object`, `enum`, arrays, required, ordering.
+
+**Extend `SchemaField` type** to add:
+
+```typescript
+type SchemaField = {
+  id: string;
+  name: string;
+  type: SchemaFieldType;
+  required: boolean;
+  isArray: boolean;
+  enumValues: string[];
+  children: SchemaField[];
+  description: string;   // NEW — extraction hint for LLM
+  examples: string[];    // NEW — few-shot examples
+};
+```
+
+**Extend `buildObjectSchema()`** to emit `description` and `examples` per property.
+**Extend `parseObjectSchemaToFields()`** to read them back.
+
+These extensions are additive — existing schema usage in the Schemas page is unaffected (description/examples default to empty).
 
 ### New files:
-- `web/src/pages/extract/ExtractionSchemaPanel.tsx` — wrapper with three mode tabs:
-  - **Visual** — field builder (reuses SchemaField patterns from Schemas.tsx)
-  - **Code** — Monaco JSON Schema editor (reuses useMonacoTheme)
-  - **AI Generate** — select document → call LLM to suggest schema → load into visual builder
-- `web/src/hooks/useExtractionSchemas.ts` — CRUD against `extraction_schemas` table
-- `web/src/lib/extractionSchemaHelpers.ts` — JSON Schema ↔ Docling dict template conversion
 
-### AI schema generation:
-- **New edge function:** `supabase/functions/suggest-extraction-schema/index.ts`
-- Takes first N pages of document text, sends to user's LLM with schema-suggestion prompt
-- Returns JSON Schema that loads into the visual builder for editing
+- `web/src/lib/extractionSchemaHelpers.ts` — schema uid generation (sha256 of `schema_body`), validation
+- `web/src/hooks/useExtractionSchemas.ts` — CRUD against `extraction_schemas` table
+- `web/src/pages/extract/ExtractionSchemaPanel.tsx` — three-mode panel:
+  - **Visual** — extended field builder with description + examples fields
+  - **Code** — Monaco JSON Schema editor
+  - **AI Generate** — uses document markdown (from `conversion_representations`) as input to LLM, asks for a JSON Schema suggestion, loads result into visual builder
+
+### AI schema generation
+
+New edge function: `supabase/functions/suggest-extraction-schema/index.ts`
+
+- Input: `{ source_uid }` + auth
+- Loads the document's **markdown** from `conversion_representations` (type `markdown_bytes`) — reuses existing parse artifacts, no re-processing
+- Sends first 8000 tokens to user's LLM with prompt: "Analyze this document and suggest a JSON Schema for extracting its key structured data"
+- Returns JSON Schema that the frontend loads into the visual builder for editing
 
 ---
 
@@ -143,55 +318,101 @@ Both follow the existing `trigger-parse` / `conversion-complete` patterns.
 
 ### Primary file: `web/src/pages/useExtractWorkbench.tsx`
 
-Replace current placeholder tabs/panes with:
+### Migration from current placeholder
 
+Current tabs (`useExtractWorkbench.tsx:163-176`):
+- `File List` → **Keep**, add parsed-only filter
+- `Extract Config` → **Replace** with `Config` (LLM settings + run button)
+- `Extract Targets` → **Remove** (replaced by schema target toggle)
+- `Badges` → **Remove** (placeholder concept, not wired)
+- `Token` → **Remove** (placeholder concept, not wired)
+- `Contracts` → **Remove** (placeholder concept, not wired)
+- **Add** `Schema` tab
+- **Add** `Results` tab
+- **Add** `JSON` tab
+
+New layout:
+
+```typescript
+export const EXTRACT_TABS: WorkbenchTab[] = [
+  { id: 'extract-files',   label: 'File List', icon: IconFileCode },
+  { id: 'extract-schema',  label: 'Schema',    icon: IconBraces },
+  { id: 'extract-config',  label: 'Config',    icon: IconSettings },
+  { id: 'extract-results', label: 'Results',   icon: IconLayoutList },
+  { id: 'extract-json',    label: 'JSON',      icon: IconFileText },
+];
+
+export const EXTRACT_DEFAULT_PANES: Pane[] = normalizePaneWidths([
+  { id: 'pane-files',   tabs: ['extract-files'],                    activeTab: 'extract-files',   width: 28 },
+  { id: 'pane-schema',  tabs: ['extract-schema', 'extract-config'], activeTab: 'extract-schema',  width: 32 },
+  { id: 'pane-results', tabs: ['extract-results', 'extract-json'],  activeTab: 'extract-results', width: 40 },
+]);
 ```
-Tabs: File List | Schema | Config | Results | JSON
-Panes: [Files 28%] [Schema+Config 32%] [Results+JSON 40%]
+
+### Parsed-only document filter
+
+`useProjectDocuments` (`web/src/hooks/useProjectDocuments.ts:12-20`) loads all documents. Extract needs only parsed ones.
+
+**Approach:** Apply a local filter in the workbench hook, not modify the shared hook:
+
+```typescript
+const parsedDocs = useMemo(() => docs.filter(d => d.status === 'parsed'), [docs]);
 ```
 
-### Tab contents:
+This preserves the shared hook contract and avoids breaking Parse (which shows all statuses). Documents in other states are simply not visible in Extract's file list.
 
-| Tab | Renders | Notes |
-|-----|---------|-------|
-| File List | `DocumentFileTable` | Same as Parse, filter to `status='parsed'` |
-| Schema | `ExtractionSchemaPanel` | Visual/Code/AI modes + schema selector dropdown + target toggle (Page/Document) |
-| Config | LLM config panel | Provider dropdown (from `user_api_keys`), model selector, temperature, "Run Extraction" button |
-| Results | Structured data view | Per-page accordion or document-level card, shows field name/value/type |
-| JSON | Monaco read-only | Raw JSON of extraction results |
+### Tab contents
 
-### New hooks:
-- `web/src/hooks/useExtractionJobs.ts` — submit jobs via `trigger-extract` edge function, realtime subscription on `extraction_jobs` for status updates
-- `web/src/hooks/useExtractionResults.ts` — fetch from `extraction_results` for completed jobs
+| Tab | Component | Behavior |
+|-----|-----------|----------|
+| File List | `DocumentFileTable` with `parsedDocs` | Only shows parsed documents. Empty state: "No parsed documents. Parse a document first." |
+| Schema | `ExtractionSchemaPanel` | Schema selector dropdown, Visual/Code/AI mode tabs, extraction target toggle (Page/Document), save/duplicate/delete |
+| Config | `ExtractConfigPanel` | Provider dropdown (from `user_api_keys`), model selector, temperature slider. "Run Extraction" button (disabled until schema + document selected). If no API keys: link to `/app/settings/ai` |
+| Results | `ExtractResultsPanel` | Document-level: single card with field name/value pairs. Page-level: accordion per page. Shows job status (pending/running) with spinner. Empty state when no extraction run yet |
+| JSON | Monaco read-only | Raw `extracted_data` JSONB from results. Toggle between per-page and merged views |
 
-### New artifact module:
-- `web/src/pages/extractArtifacts.ts` — cache/load extraction results, following `parseArtifacts.ts` pattern
+### New hooks
+
+- `web/src/hooks/useExtractionSchemas.ts` — list, create, update, delete schemas for current project
+- `web/src/hooks/useExtractionJobs.ts` — submit extraction via `run-extract` edge function, realtime subscription on `extraction_jobs` for status
+- `web/src/hooks/useExtractionResults.ts` — fetch from `extraction_results` for a given job_id
 
 ---
 
 ## Phase 5: Settings Integration
 
-No new settings page needed for MVP. The Config tab in the workbench reads provider/model from existing `user_api_keys` table. If no keys configured, show link to `/app/settings/ai`.
+No new settings page. The Config tab reads from existing `user_api_keys` + `providerRegistry.tsx`. If no keys configured, show: "Configure an AI provider in Settings > AI Providers to run extractions."
 
 ---
 
 ## Implementation Order
 
 1. Database migration + TypeScript types
-2. Backend `/extract` route + edge functions (trigger + callback)
-3. Schema management (reuse Schemas.tsx patterns, add AI generate)
-4. Extract workbench overhaul (tabs, hooks, result display)
-5. Integration testing + deploy
+2. `run-extract` edge function + `suggest-extraction-schema` edge function
+3. Schema builder extensions (description, examples) + `ExtractionSchemaPanel`
+4. Extraction hooks (`useExtractionSchemas`, `useExtractionJobs`, `useExtractionResults`)
+5. Extract workbench overhaul (replace placeholder tabs, wire hooks)
 
 ---
 
 ## Verification
 
-1. **Database:** Run migration locally, verify tables created with `\dt extraction_*`
-2. **Backend:** `curl POST /extract` with a test PDF + simple dict schema, verify callback fires
-3. **Edge functions:** Deploy `trigger-extract` and `extraction-complete`, test end-to-end from Supabase dashboard
-4. **Frontend:** Navigate to `/app/extract`, select parsed document, create schema via visual builder, run extraction, verify results display
-5. **Tests:** Add unit tests for schema conversion helpers (`extractionSchemaHelpers.ts`), edge function handler tests
+### Happy path
+1. **Database:** Apply migration, verify tables + RLS with `supabase db reset`
+2. **Schema CRUD:** Create/edit/delete extraction schema via UI, verify in DB
+3. **Extraction run:** Select parsed document + schema → Run Extraction → verify results render
+4. **Page-level:** Toggle extraction target to Page, run, verify per-page accordion
+5. **AI schema:** Click AI Generate on a parsed document, verify suggested schema loads
+
+### Failure modes
+6. **No API key:** Attempt extraction without configured provider → verify clear error message
+7. **Unparsed document:** Verify unparsed docs don't appear in Extract file list
+8. **LLM error:** Simulate bad API key → verify job status `failed` with error, no key material in error message
+9. **Duplicate extraction:** Re-run same schema on same document → verify new job created (not upsert)
+
+### Security
+10. **Key redaction:** Inspect `extraction_jobs` rows → verify no API key material stored
+11. **RLS:** Query `extraction_schemas/jobs/results` as different user → verify no cross-user access
 
 ---
 
@@ -199,15 +420,16 @@ No new settings page needed for MVP. The Config tab in the workbench reads provi
 
 | Purpose | Path |
 |---------|------|
-| Conversion route (pattern to follow) | `services/platform-api/app/api/routes/conversion.py` |
-| Conversion models (pattern) | `services/platform-api/app/domain/conversion/models.py` |
-| Conversion callback (pattern) | `services/platform-api/app/domain/conversion/callbacks.py` |
-| Schema builder (reuse) | `web/src/pages/Schemas.tsx` |
+| Worker LLM call pattern (reuse) | `supabase/functions/worker/index.ts` |
+| Key encryption (reuse) | `supabase/functions/_shared/api_key_crypto.ts` |
+| Provider registry (reuse) | `web/src/components/agents/providerRegistry.tsx` |
+| Schema builder (extend) | `web/src/pages/Schemas.tsx` |
 | Parse workbench (pattern) | `web/src/pages/useParseWorkbench.tsx` |
 | Parse artifacts (pattern) | `web/src/pages/parseArtifacts.ts` |
-| Extract workbench (modify) | `web/src/pages/useExtractWorkbench.tsx` |
+| Docling native items (page splitting) | `web/src/lib/doclingNativeItems.ts` |
+| Project documents hook (filter) | `web/src/hooks/useProjectDocuments.ts` |
+| Extract workbench (overhaul) | `web/src/pages/useExtractWorkbench.tsx` |
 | Extract page (modify) | `web/src/pages/ExtractPage.tsx` |
-| TypeScript types (modify) | `web/src/lib/types.ts` |
-| App router (may modify) | `web/src/router.tsx` |
-| Trigger-parse edge fn (pattern) | `supabase/functions/trigger-parse/` |
-| Conversion-complete edge fn (pattern) | `supabase/functions/conversion-complete/` |
+| TypeScript types (extend) | `web/src/lib/types.ts` |
+| Trigger-parse (lifecycle contrast) | `supabase/functions/trigger-parse/index.ts` |
+| Conversion-complete (lifecycle contrast) | `supabase/functions/conversion-complete/index.ts` |
