@@ -19,7 +19,7 @@ import { isPlainRecord, parseJsonTextarea, parseTagsText, SERVICE_TYPE_LABELS } 
 /* ------------------------------------------------------------------ */
 
 const PIPELINE_WORKER_URL = (
-  import.meta.env.VITE_PIPELINE_WORKER_URL ?? 'http://localhost:8000'
+  import.meta.env.VITE_PLATFORM_API_URL ?? 'http://localhost:8000'
 ).replace(/\/+$/, '');
 
 async function requireAccessToken(): Promise<string> {

@@ -18,7 +18,6 @@ type IngestResponse = {
 type UploadPolicyResponse = {
   upload: {
     max_files_per_batch?: number;
-    allowed_extensions?: string[];
   };
 };
 
@@ -49,7 +48,6 @@ type UseUppyTransportOptions = {
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
 const DEFAULT_MAX_FILES = 10;
-const DEFAULT_ALLOWED_EXTENSIONS = ['.md', '.docx', '.pdf', '.pptx', '.xlsx', '.html', '.csv', '.txt'];
 const BLOCKED_COMPANION_HOSTS = new Set(['companion.uppy.io']);
 
 function getIngestEndpoint(): string | null {
@@ -71,15 +69,6 @@ function resolveCompanionUrl(value: string | undefined): { url: string | null; w
   }
 }
 
-function normalizeExtensions(value: string[] | undefined): string[] {
-  if (!Array.isArray(value) || value.length === 0) return DEFAULT_ALLOWED_EXTENSIONS;
-  const normalized = value
-    .map((ext) => ext.trim().toLowerCase())
-    .filter((ext) => ext.length > 0)
-    .map((ext) => (ext.startsWith('.') ? ext : `.${ext}`));
-  return normalized.length > 0 ? normalized : DEFAULT_ALLOWED_EXTENSIONS;
-}
-
 export function useUppyTransport({
   projectId,
   ingestMode = 'upload_only',
@@ -93,7 +82,6 @@ export function useUppyTransport({
   const [setupError, setSetupError] = useState<string | null>(null);
   const [remoteWarning, setRemoteWarning] = useState<string | null>(null);
   const [maxFiles, setMaxFiles] = useState(DEFAULT_MAX_FILES);
-  const [allowedExtensions, setAllowedExtensions] = useState(DEFAULT_ALLOWED_EXTENSIONS);
   const uppyRef = useRef<Uppy<UppyMeta, UppyBody> | null>(null);
   const onBatchUploadedRef = useRef(onBatchUploaded);
   onBatchUploadedRef.current = onBatchUploaded;
@@ -107,7 +95,6 @@ export function useUppyTransport({
         const next = typeof data.upload.max_files_per_batch === 'number' && data.upload.max_files_per_batch > 0
           ? data.upload.max_files_per_batch : DEFAULT_MAX_FILES;
         setMaxFiles(next);
-        setAllowedExtensions(normalizeExtensions(data.upload.allowed_extensions));
       })
       .catch(() => {});
     return () => { cancelled = true; };
@@ -134,7 +121,7 @@ export function useUppyTransport({
     try {
       instance = new Uppy<UppyMeta, UppyBody>({
         autoProceed: false,
-        restrictions: { maxNumberOfFiles: maxFiles, allowedFileTypes: allowedExtensions },
+        restrictions: { maxNumberOfFiles: maxFiles },
         meta: { project_id: projectId, ingest_mode: ingestMode },
       });
 
@@ -240,7 +227,7 @@ export function useUppyTransport({
       instance?.destroy();
       uppyRef.current = null;
     };
-  }, [allowedExtensions, companionUrl, enableRemoteSources, ingestMode, maxFiles, projectId, session?.access_token]);
+  }, [companionUrl, enableRemoteSources, ingestMode, maxFiles, projectId, session?.access_token]);
 
   const addFiles = (files: File[]) => {
     const uppy = uppyRef.current;
@@ -273,7 +260,6 @@ export function useUppyTransport({
     remoteWarning,
     remoteSourcesActive,
     maxFiles,
-    allowedExtensions,
     addFiles,
     removeFile,
     startUpload,

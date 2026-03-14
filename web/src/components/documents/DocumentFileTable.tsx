@@ -50,8 +50,8 @@ export function DocumentFileTable({
     <div className="flex h-full flex-col">
       <ScrollArea className="min-h-0 flex-1" viewportClass="h-full overflow-auto">
         <table className="w-full text-left text-sm">
-          <thead className="sticky top-0 z-10 bg-muted/30 text-xs text-muted-foreground">
-            <tr className="border-b border-border">
+          <thead className="sticky top-0 z-10 border-b border-border bg-card text-xs text-muted-foreground">
+            <tr>
               <th className="w-10 px-3 py-2">
                 <input
                   type="checkbox"
@@ -155,9 +155,8 @@ export function DocumentFileTable({
           </tbody>
         </table>
       </ScrollArea>
-
       {docs.length > 0 && (
-        <div className="flex items-center border-t border-border px-3 py-2 text-xs text-muted-foreground">
+        <div className="flex-none flex items-center border-t border-border px-3 py-2 text-xs text-muted-foreground">
           <span>{docs.length} file{docs.length === 1 ? '' : 's'}</span>
           {selected.size > 0 && (
             <span className="ml-2 text-primary font-medium">

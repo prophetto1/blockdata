@@ -10,36 +10,24 @@ export type IngestRoute = {
 export function resolveIngestRoute(
   filename: string,
   policy: RuntimePolicy,
-): IngestRoute {
+): IngestRoute | null {
   const extension = detectExtension(filename);
-  if (!extension) {
-    throw new Error("Unsupported file type: missing file extension");
-  }
-
-  if (!policy.upload.allowed_extensions.includes(extension)) {
-    throw new Error(`Extension not enabled by runtime policy: .${extension}`);
-  }
-
-  const track = policy.upload.extension_track_routing[extension];
-  if (!track) {
-    throw new Error(`Runtime routing policy missing extension mapping: .${extension}`);
-  }
-
-  if (!policy.upload.track_enabled[track]) {
-    throw new Error(`Track disabled by runtime policy: ${track}`);
-  }
-
-  const capability = policy.upload.track_capability_catalog.tracks[track];
-  if (!capability.extensions.includes(extension)) {
-    throw new Error(
-      `Routing policy conflicts with capability catalog: .${extension} -> ${track}`,
-    );
-  }
+  if (!extension) return null;
 
   const source_type = sourceTypeFromExtension(extension);
-  if (!source_type) {
-    throw new Error(`No source_type mapping for extension: .${extension}`);
+  if (!source_type) return null;
+
+  const routingKeys = new Set<string>([extension, source_type]);
+  for (const key of routingKeys) {
+    const track = policy.upload.extension_track_routing[key];
+    if (!track) continue;
+    if (!policy.upload.track_enabled[track]) continue;
+
+    const capability = policy.upload.track_capability_catalog.tracks[track];
+    if (!capability?.extensions.includes(key)) continue;
+
+    return { extension, source_type, track };
   }
 
-  return { extension, source_type, track };
+  return null;
 }

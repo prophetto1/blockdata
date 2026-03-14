@@ -5,7 +5,7 @@ import { loadRuntimePolicy } from "../_shared/admin_policy.ts";
 import { sanitizeFilename } from "../_shared/sanitize.ts";
 import { createAdminClient, requireUserId } from "../_shared/supabase.ts";
 import type { IngestContext } from "./types.ts";
-import { uploadToStorage } from "./storage.ts";
+import { detectSourceTypeForUpload, uploadToStorage } from "./storage.ts";
 import { resolveIngestRoute } from "./routing.ts";
 import { parseIngestMode } from "./mode.ts";
 import { validateProjectOwnership, checkIdempotency } from "./validate.ts";
@@ -40,9 +40,8 @@ Deno.serve(async (req) => {
     const originalFilename = sanitizeFilename(file.name || "upload");
     const supabaseAdmin = createAdminClient();
     const runtimePolicy = await loadRuntimePolicy(supabaseAdmin);
+    const source_type = detectSourceTypeForUpload(originalFilename, file.type);
     const route = resolveIngestRoute(originalFilename, runtimePolicy);
-    const source_type = route.source_type;
-    const ingest_track = route.track;
 
     const fileBytes = new Uint8Array(await file.arrayBuffer());
     const sourceUidPrefix = new TextEncoder().encode(`${source_type}\n`);
@@ -79,11 +78,11 @@ Deno.serve(async (req) => {
 
     // Build shared context for processors.
     const ctx: IngestContext = {
-      supabaseAdmin, runtimePolicy, ownerId, ingest_track, source_uid, source_type, source_key,
+      supabaseAdmin, runtimePolicy, ownerId, ingest_track: route?.track ?? "docling", source_uid, source_type, source_key,
       bucket, fileBytes, originalFilename, requestedTitle, project_id,
     };
 
-    if (ingestMode === "upload_only") {
+    if (ingestMode === "upload_only" || !route) {
       const { status, body } = await processUploadOnly(ctx);
       return json(status, body);
     }

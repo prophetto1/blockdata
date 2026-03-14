@@ -333,13 +333,17 @@ export function ParseRowActions({
   parseTab,
   onReset,
   onDelete,
+  onDoclingMdPreview,
+  onBlocksPreview,
 }: {
   doc: ProjectDocumentRow;
   parseTab: ReturnType<typeof useParseTab>;
   onReset?: (uid: string) => void;
   onDelete?: (uid: string) => void;
+  onDoclingMdPreview?: (doc: ProjectDocumentRow) => void;
+  onBlocksPreview?: (doc: ProjectDocumentRow) => void;
 }) {
-  const { batch, handleViewJson, handleDownloadJson } = parseTab;
+  const { batch, handleDownloadJson } = parseTab;
   const dStatus = batch.dispatchStatus.get(doc.source_uid) ?? 'idle';
   const canParse =
     doc.status === 'uploaded' ||
@@ -351,9 +355,14 @@ export function ParseRowActions({
   const menuItems: { label: string; onClick: () => void; danger?: boolean }[] = [];
 
   if (isParsed) {
+    if (onDoclingMdPreview) {
+      menuItems.push({ label: 'Docling MD Preview', onClick: () => onDoclingMdPreview(doc) });
+    }
+    if (onBlocksPreview) {
+      menuItems.push({ label: 'Blocks Preview', onClick: () => onBlocksPreview(doc) });
+    }
     menuItems.push(
-      { label: 'View JSON', onClick: () => void handleViewJson(doc) },
-      { label: 'Download JSON', onClick: () => void handleDownloadJson(doc) },
+      { label: 'Download DoclingJson', onClick: () => void handleDownloadJson(doc) },
     );
   }
   if (!isConverting && onReset) {

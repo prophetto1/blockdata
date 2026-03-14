@@ -6,11 +6,15 @@ import {
   IconX,
   IconCheck,
   IconAlertCircle,
+  IconBrandGoogleDrive,
 } from '@tabler/icons-react';
-import { useDirectUpload, type StagedFile } from '@/hooks/useDirectUpload';
+import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useDirectUpload, type StagedFile } from '@/hooks/useDirectUpload';
+import { useGoogleDrivePicker } from '@/hooks/useGoogleDrivePicker';
+import { edgeJson } from '@/lib/edge';
 import { cn } from '@/lib/utils';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 function FileStatusIcon({ status }: { status: StagedFile['status'] }) {
   switch (status) {
@@ -51,21 +55,44 @@ export function UploadTabPanel({ projectId, onUploadComplete }: UploadTabPanelPr
     if (uploadStatus === 'done') onUploadComplete();
   }, [uploadStatus, onUploadComplete]);
 
+  // Google Drive import
+  const [importing, setImporting] = useState(false);
+  const [importError, setImportError] = useState<string | null>(null);
+
+  const { openPicker, isReady: pickerReady } = useGoogleDrivePicker({
+    onFilesSelected: async (files, accessToken) => {
+      setImporting(true);
+      setImportError(null);
+      try {
+        const result = await edgeJson<{
+          results: Array<{ file_id: string; status: string; error?: string }>;
+        }>('google-drive-import', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            project_id: projectId,
+            google_access_token: accessToken,
+            files,
+            ingest_mode: 'upload_only',
+          }),
+        });
+        const failures = result.results.filter((r) => r.status === 'error');
+        if (failures.length > 0) {
+          setImportError(`${failures.length} file(s) failed to import`);
+        }
+        onUploadComplete();
+      } catch (e) {
+        setImportError(e instanceof Error ? e.message : 'Import failed');
+      } finally {
+        setImporting(false);
+      }
+    },
+  });
+
   return (
     <div className="flex h-full min-h-0 flex-col gap-3 overflow-hidden p-4">
       <FileUpload.Root
         maxFiles={25}
-        accept={{
-          'text/*': ['.md', '.markdown', '.txt', '.csv', '.html', '.htm', '.rst', '.org'],
-          'application/pdf': ['.pdf'],
-          'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
-          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
-          'application/vnd.openxmlformats-officedocument.presentationml.presentation': ['.pptx'],
-          'application/vnd.oasis.opendocument.text': ['.odt'],
-          'application/epub+zip': ['.epub'],
-          'application/rtf': ['.rtf'],
-          'application/x-tex': ['.tex', '.latex'],
-        }}
         onFileChange={(details) => addFiles(details.acceptedFiles)}
         className="flex flex-col gap-0"
       >
@@ -82,30 +109,45 @@ export function UploadTabPanel({ projectId, onUploadComplete }: UploadTabPanelPr
             Drag files here or click to browse
           </span>
           <span className="text-xs text-muted-foreground">
-            MD, TXT, CSV, HTML, RST, PDF, DOCX, XLSX, PPTX, ODT, EPUB, RTF, TEX, ORG
+            Any file format
           </span>
         </FileUpload.Dropzone>
         <FileUpload.HiddenInput />
       </FileUpload.Root>
 
-      {pendingCount > 0 && uploadStatus !== 'uploading' && (
-        <button
-          type="button"
-          onClick={() => void startUpload()}
-          className="rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+      {pickerReady && (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={openPicker}
+          disabled={importing}
+          className="h-8 gap-2 text-xs"
         >
+          {importing ? (
+            <IconLoader2 size={14} className="animate-spin" />
+          ) : (
+            <IconBrandGoogleDrive size={14} />
+          )}
+          {importing ? 'Importing\u2026' : 'Google Drive'}
+        </Button>
+      )}
+
+      {importError && (
+        <div className="rounded-md border border-destructive/30 bg-destructive/10 px-2 py-1.5 text-xs text-destructive">
+          {importError}
+        </div>
+      )}
+
+      {pendingCount > 0 && uploadStatus !== 'uploading' && (
+        <Button size="sm" onClick={() => void startUpload()}>
           Upload {pendingCount} file{pendingCount === 1 ? '' : 's'}
-        </button>
+        </Button>
       )}
 
       {uploadStatus === 'done' && stagedFiles.some((f) => f.status === 'done') && (
-        <button
-          type="button"
-          onClick={clearDone}
-          className="rounded-md border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted/50 transition-colors"
-        >
+        <Button variant="outline" size="sm" onClick={clearDone}>
           Clear completed
-        </button>
+        </Button>
       )}
 
       {stagedFiles.length > 0 && (

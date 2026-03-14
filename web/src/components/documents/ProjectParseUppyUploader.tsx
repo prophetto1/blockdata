@@ -57,7 +57,6 @@ export function ProjectParseUppyUploader({
     error,
     remoteWarning,
     remoteSourcesActive,
-    allowedExtensions,
     addFiles,
     removeFile,
     startUpload,
@@ -100,11 +99,6 @@ export function ProjectParseUppyUploader({
     );
   }
 
-  const acceptMap: Record<string, string[]> = {};
-  for (const ext of allowedExtensions) {
-    acceptMap[`application/${ext.replace('.', '')}`] = [ext];
-  }
-
   return (
     <div className="flex flex-col gap-0">
       {!hideHeader && (
@@ -115,7 +109,6 @@ export function ProjectParseUppyUploader({
 
       <ArkFileUpload.Root
         maxFiles={20}
-        accept={acceptMap}
         onFileChange={(details) => {
           addFiles(details.acceptedFiles);
         }}
@@ -135,7 +128,7 @@ export function ProjectParseUppyUploader({
             Drag files here or click to browse
           </span>
           <span className="text-xs text-muted-foreground">
-            {allowedExtensions.map((e) => e.replace('.', '').toUpperCase()).join(', ')}
+            Any file format
           </span>
         </ArkFileUpload.Dropzone>
         <ArkFileUpload.HiddenInput />

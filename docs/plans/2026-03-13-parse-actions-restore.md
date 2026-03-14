@@ -1,26 +1,34 @@
-# Parse Actions Restore — 5 Row Actions + Parse Preview System
+# Parse Actions Restore — 5 Row Actions + 3-Tab Preview Pane
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
 **Goal:** Restore the 5 per-row actions in the Parse page 3-dot menu and the parse-artifact preview system that was lost during the Workbench refactor.
 
-**Architecture:** Add two optional callback props to `ParseRowActions` for preview triggers. Implement parse artifact data fetching (`conversion_representations`, `blocks` table) and preview state management in `useParseWorkbench`. Render parse-specific previews (Docling MD, blocks) in the Workbench preview pane, falling back to `PreviewTabPanel` for source files. All action logic lives in the composition layer (`useParseWorkbench`), not in shared components.
+**Architecture:** The preview pane gets 3 dedicated tabs (Docling MD, Preview, Blocks) instead of alternating views in one tab. Each tab is a self-contained component that fetches data based on `activeDocUid`. The 3-dot menu actions set the active doc and programmatically switch to the relevant tab via the Workbench `addTab` ref API. Two optional callback props are added to `ParseRowActions`. All new logic lives in the composition layer (`useParseWorkbench.tsx`).
 
-**Tech Stack:** React, Supabase (`conversion_representations`, `conversion_parsing`, `blocks` tables), `react-markdown`, `remark-gfm`, ScrollArea
+**Tech Stack:** React, Supabase (`conversion_representations`, `conversion_parsing`, `blocks` tables), `react-markdown`, `remark-gfm`, ScrollArea, Workbench ref (`WorkbenchHandle.addTab`)
 
 ---
 
 ## Target: 5 Per-Row Actions (3-dot menu)
 
-| # | Action | Condition | Data source |
-|---|--------|-----------|-------------|
-| 1 | Docling MD Preview | parsed | `conversion_representations` → `markdown_bytes` → signed URL → fetch text → render markdown |
-| 2 | Blocks Preview | parsed | `conversion_parsing` → `conv_uid` → `blocks` table → render block cards |
-| 3 | Download DoclingJson | parsed | `conversion_representations` → `doclingdocument_json` → signed URL → open in new tab |
-| 4 | Reset | not converting | `supabase.rpc('reset_source_document')` → refreshDocs |
-| 5 | Delete | always | `supabase.rpc('delete_source_document')` → refreshDocs |
+| # | Action | Condition | Behavior |
+|---|--------|-----------|----------|
+| 1 | Docling MD Preview | parsed | Sets `activeDocUid` → switches to `docling-md` tab → tab fetches `markdown_bytes` from `conversion_representations` → renders markdown |
+| 2 | Blocks Preview | parsed | Sets `activeDocUid` → switches to `blocks` tab → tab fetches blocks from `blocks` table → renders block cards |
+| 3 | Download DoclingJson | parsed | Existing `handleDownloadJson` from `useParseTab` — opens signed URL in new tab |
+| 4 | Reset | not converting | `supabase.rpc('reset_source_document')` → `refreshDocs()` |
+| 5 | Delete | always | `supabase.rpc('delete_source_document')` → `refreshDocs()` |
 
-**Removed:** `View JSON` (modal showing formatted JSON) — not in target spec. The existing `handleDownloadJson` in `useParseTab` serves action #3.
+**Removed:** `View JSON` (modal showing formatted JSON) — not in target spec.
+
+## Preview Pane: 3 Tabs
+
+| Tab ID | Label | Content |
+|--------|-------|---------|
+| `docling-md` | Docling MD | Reconstructed markdown from `markdown_bytes` artifact (via `conversion_representations`). Self-contained component with own fetch/loading/error. |
+| `preview` | Preview | Source file preview via `PreviewTabPanel` (unchanged). |
+| `blocks` | Blocks | Block cards from `blocks` table (via `conversion_parsing` → `conv_uid`). Self-contained component with own fetch/loading/error. |
 
 ---
 
@@ -29,12 +37,11 @@
 - `ActionMenu` component — untouched (rendering, styling, click-outside behavior)
 - `ParseTabPanel` toolbar layout — untouched (profile selector, parse buttons, progress bar)
 - `DocumentFileTable` — untouched
-- `PreviewTabPanel` — untouched (still handles source file preview)
+- `PreviewTabPanel` — untouched (still handles source file preview in its own tab)
 - `StatusBadge` / `DispatchBadge` — untouched
 - `useBatchParse` — untouched
-- `useParseTab` return values — untouched (handleViewJson stays available, just not wired to menu)
-- Parse pane layout (toolbar + file table in single pane) — untouched
-- 2-pane Workbench structure (parse | preview) — untouched
+- `useParseTab` return values — untouched (`handleDownloadJson` reused as-is for action #3)
+- `Workbench` component — untouched (already supports multi-tab panes and ref API)
 
 ---
 
@@ -140,7 +147,7 @@ git commit -m "feat: add preview callback props to ParseRowActions"
 
 ---
 
-### Task 2: Add parse artifact data fetchers to useParseWorkbench
+### Task 2: Add parse artifact data fetchers
 
 **Files:**
 - Modify: `web/src/pages/useParseWorkbench.tsx`
@@ -162,7 +169,7 @@ const DOCUMENTS_BUCKET =
   (import.meta.env.VITE_DOCUMENTS_BUCKET as string | undefined) ?? 'documents';
 ```
 
-Add these functions before the `useParseWorkbench` hook definition:
+Add these functions before `PARSE_TABS`:
 
 ```tsx
 async function getArtifactLocator(
@@ -215,64 +222,373 @@ git commit -m "feat: add parse artifact data fetchers to useParseWorkbench"
 
 ---
 
-### Task 3: Add parse preview state and action handlers
+### Task 3: Create DoclingMdTab and BlocksTab components
 
 **Files:**
 - Modify: `web/src/pages/useParseWorkbench.tsx`
 
-**What changes:** Add preview state (parsePreview, blocksPreview) and all 5 action handler functions inside `useParseWorkbench`.
+**What changes:** Add two self-contained tab components that manage their own data fetching and rendering. These live in the composition layer (same file as the hook), NOT in shared components. Each component takes a `sourceUid` prop and reactively fetches data when it changes.
 
-**Step 1: Add state declarations**
+**Step 1: Add imports**
 
-Inside `useParseWorkbench()`, after the existing `activeDoc` useMemo, add:
+Add to existing imports:
 
 ```tsx
-  const [parsePreview, setParsePreview] = useState<{
-    title: string;
-    markdown: string;
-    loading: boolean;
-  } | null>(null);
-
-  const [blocksPreview, setBlocksPreview] = useState<{
-    title: string;
-    blocks: BlockRow[];
-    loading: boolean;
-  } | null>(null);
+import { useEffect } from 'react';
+import Markdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { IconLoader2 } from '@tabler/icons-react';
 ```
 
-**Step 2: Add handler functions**
+**Step 2: Add DoclingMdTab component**
 
-After the state declarations, add:
+Place after the data fetcher functions, before `PARSE_TABS`:
 
 ```tsx
-  const handleDoclingMdPreview = useCallback(async (doc: ProjectDocumentRow) => {
-    setParsePreview({ title: doc.doc_title, markdown: '', loading: true });
-    setBlocksPreview(null);
-    const locator = await getArtifactLocator(doc.source_uid, 'markdown_bytes');
-    if (!locator) {
-      setParsePreview({ title: doc.doc_title, markdown: 'No markdown available. Reset and re-parse with Docling.', loading: false });
+function DoclingMdTab({ sourceUid }: { sourceUid: string | null }) {
+  const [state, setState] = useState<{ title: string; markdown: string; loading: boolean } | null>(null);
+
+  useEffect(() => {
+    if (!sourceUid) {
+      setState(null);
       return;
     }
-    const { data } = await supabase.storage.from(DOCUMENTS_BUCKET).createSignedUrl(locator, 60 * 20);
-    if (!data?.signedUrl) {
-      setParsePreview({ title: doc.doc_title, markdown: 'Could not generate download URL.', loading: false });
+    let cancelled = false;
+    setState({ title: '', markdown: '', loading: true });
+
+    (async () => {
+      const locator = await getArtifactLocator(sourceUid, 'markdown_bytes');
+      if (cancelled) return;
+      if (!locator) {
+        setState({ title: '', markdown: 'No markdown available. Reset and re-parse with Docling.', loading: false });
+        return;
+      }
+      const { data } = await supabase.storage.from(DOCUMENTS_BUCKET).createSignedUrl(locator, 60 * 20);
+      if (cancelled) return;
+      if (!data?.signedUrl) {
+        setState({ title: '', markdown: 'Could not generate download URL.', loading: false });
+        return;
+      }
+      try {
+        const resp = await fetch(data.signedUrl);
+        if (!resp.ok) throw new Error();
+        const text = await resp.text();
+        if (cancelled) return;
+        setState({ title: 'Docling MD', markdown: text, loading: false });
+      } catch {
+        if (cancelled) return;
+        setState({ title: '', markdown: 'Failed to load markdown.', loading: false });
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [sourceUid]);
+
+  if (!sourceUid) {
+    return (
+      <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+        Select a parsed file to preview its Docling markdown.
+      </div>
+    );
+  }
+
+  if (!state || state.loading) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <IconLoader2 size={20} className="animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  return (
+    <ScrollArea className="h-full" viewportClass="h-full overflow-auto">
+      <div className="parse-markdown-preview px-6 py-4">
+        <Markdown remarkPlugins={[remarkGfm]}>{state.markdown}</Markdown>
+      </div>
+    </ScrollArea>
+  );
+}
+```
+
+**Step 3: Add BlocksTab component**
+
+Place after `DoclingMdTab`:
+
+```tsx
+function BlocksTab({ sourceUid }: { sourceUid: string | null }) {
+  const [state, setState] = useState<{ blocks: BlockRow[]; loading: boolean } | null>(null);
+
+  useEffect(() => {
+    if (!sourceUid) {
+      setState(null);
       return;
     }
-    try {
-      const resp = await fetch(data.signedUrl);
-      if (!resp.ok) throw new Error();
-      const text = await resp.text();
-      setParsePreview({ title: `${doc.doc_title} — Docling MD`, markdown: text, loading: false });
-    } catch {
-      setParsePreview({ title: doc.doc_title, markdown: 'Failed to load markdown.', loading: false });
-    }
+    let cancelled = false;
+    setState({ blocks: [], loading: true });
+
+    (async () => {
+      const blocks = await fetchBlocks(sourceUid);
+      if (cancelled) return;
+      setState({ blocks, loading: false });
+    })();
+
+    return () => { cancelled = true; };
+  }, [sourceUid]);
+
+  if (!sourceUid) {
+    return (
+      <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+        Select a parsed file to preview its blocks.
+      </div>
+    );
+  }
+
+  if (!state || state.loading) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <IconLoader2 size={20} className="animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (state.blocks.length === 0) {
+    return (
+      <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+        No blocks found. Reset and re-parse with Docling.
+      </div>
+    );
+  }
+
+  return (
+    <ScrollArea className="h-full" viewportClass="h-full overflow-auto">
+      <div className="divide-y divide-border">
+        {state.blocks.map((b) => (
+          <div key={b.block_uid} className="px-4 py-2">
+            <div className="mb-1 flex items-center gap-2">
+              <span className="inline-flex rounded bg-muted/60 px-1.5 py-0 text-[9px] font-semibold uppercase leading-4 text-muted-foreground">
+                {b.block_type}
+              </span>
+              <span className="text-[10px] text-muted-foreground">#{b.block_index}</span>
+            </div>
+            <div className="whitespace-pre-wrap text-xs text-foreground">{b.block_content}</div>
+          </div>
+        ))}
+      </div>
+    </ScrollArea>
+  );
+}
+```
+
+**Step 4: Verify compile**
+
+Run: `cd web && npx tsc --noEmit`
+Expected: No new errors (components are standalone, not yet rendered)
+
+**Step 5: Commit**
+
+```bash
+git add web/src/pages/useParseWorkbench.tsx
+git commit -m "feat: add DoclingMdTab and BlocksTab preview components"
+```
+
+---
+
+### Task 4: Update tabs, panes, and add workbenchRef
+
+**Files:**
+- Modify: `web/src/pages/useParseWorkbench.tsx` (PARSE_TABS, PARSE_DEFAULT_PANES, hook)
+- Modify: `web/src/pages/ParsePage.tsx` (pass ref to Workbench)
+
+**What changes:** Add 2 new tab definitions. Update default panes so preview pane has 3 tabs. Add `workbenchRef` to the hook and return it. Update ParsePage to pass the ref.
+
+**Step 1: Add icon imports**
+
+Add to the existing `@tabler/icons-react` import:
+
+```tsx
+import { IconFileCode, IconEye, IconLoader2, IconFileText, IconLayoutList } from '@tabler/icons-react';
+```
+
+(Remove duplicate `IconLoader2` if it was already added in Task 3.)
+
+**Step 2: Add `useRef` and `WorkbenchHandle` imports**
+
+Update the react import:
+
+```tsx
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+```
+
+Add:
+
+```tsx
+import type { WorkbenchHandle } from '@/components/workbench/Workbench';
+```
+
+**Step 3: Update PARSE_TABS**
+
+Change from:
+
+```tsx
+export const PARSE_TABS: WorkbenchTab[] = [
+  { id: 'parse', label: 'Parse', icon: IconFileCode },
+  { id: 'preview', label: 'Preview', icon: IconEye },
+];
+```
+
+To:
+
+```tsx
+export const PARSE_TABS: WorkbenchTab[] = [
+  { id: 'parse', label: 'Parse', icon: IconFileCode },
+  { id: 'docling-md', label: 'Docling MD', icon: IconFileText },
+  { id: 'preview', label: 'Preview', icon: IconEye },
+  { id: 'blocks', label: 'Blocks', icon: IconLayoutList },
+];
+```
+
+**Step 4: Update PARSE_DEFAULT_PANES**
+
+Change from:
+
+```tsx
+export const PARSE_DEFAULT_PANES: Pane[] = normalizePaneWidths([
+  { id: 'pane-parse', tabs: ['parse'], activeTab: 'parse', width: 44 },
+  { id: 'pane-preview', tabs: ['preview'], activeTab: 'preview', width: 56 },
+]);
+```
+
+To:
+
+```tsx
+export const PARSE_DEFAULT_PANES: Pane[] = normalizePaneWidths([
+  { id: 'pane-parse', tabs: ['parse'], activeTab: 'parse', width: 44 },
+  { id: 'pane-preview', tabs: ['docling-md', 'preview', 'blocks'], activeTab: 'preview', width: 56 },
+]);
+```
+
+**Step 5: Add workbenchRef to the hook**
+
+Inside `useParseWorkbench()`, at the top (after `useShellHeaderTitle`), add:
+
+```tsx
+  const workbenchRef = useRef<WorkbenchHandle>(null);
+```
+
+Update the return from:
+
+```tsx
+  return { renderContent };
+```
+
+To:
+
+```tsx
+  return { renderContent, workbenchRef };
+```
+
+**Step 6: Update ParsePage.tsx to pass ref**
+
+Read and modify `web/src/pages/ParsePage.tsx`. Change from:
+
+```tsx
+import { Workbench } from '@/components/workbench/Workbench';
+import { useParseWorkbench, PARSE_TABS, PARSE_DEFAULT_PANES } from './useParseWorkbench';
+
+export default function ParsePage() {
+  const { renderContent } = useParseWorkbench();
+  return (
+    <div className="h-full w-full min-h-0 p-2">
+      <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-md border border-border bg-card">
+        <Workbench
+          tabs={PARSE_TABS}
+          defaultPanes={PARSE_DEFAULT_PANES}
+          saveKey="parse-documents"
+          renderContent={renderContent}
+          hideToolbar
+          maxColumns={3}
+        />
+      </div>
+    </div>
+  );
+}
+```
+
+To:
+
+```tsx
+import { Workbench } from '@/components/workbench/Workbench';
+import { useParseWorkbench, PARSE_TABS, PARSE_DEFAULT_PANES } from './useParseWorkbench';
+
+export default function ParsePage() {
+  const { renderContent, workbenchRef } = useParseWorkbench();
+  return (
+    <div className="h-full w-full min-h-0 p-2">
+      <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-md border border-border bg-card">
+        <Workbench
+          ref={workbenchRef}
+          tabs={PARSE_TABS}
+          defaultPanes={PARSE_DEFAULT_PANES}
+          saveKey="parse-documents"
+          renderContent={renderContent}
+          hideToolbar
+          maxColumns={3}
+        />
+      </div>
+    </div>
+  );
+}
+```
+
+**Step 7: Verify compile**
+
+Run: `cd web && npx tsc --noEmit`
+Expected: No new errors
+
+**Step 8: Commit**
+
+```bash
+git add web/src/pages/useParseWorkbench.tsx web/src/pages/ParsePage.tsx
+git commit -m "feat: add 3-tab preview pane with workbenchRef for programmatic tab switching"
+```
+
+---
+
+### Task 5: Wire action handlers and renderContent
+
+**Files:**
+- Modify: `web/src/pages/useParseWorkbench.tsx`
+
+**What changes:** Implement the 5 action handlers. Wire them into `renderRowActions` and `ParseTabPanel`. Add `renderContent` branches for the 2 new tabs. Add `refreshDocs` to destructured state.
+
+**Step 1: Add `refreshDocs` to destructured docState**
+
+Change from:
+
+```tsx
+  const { docs, loading, error, selected, toggleSelect, toggleSelectAll, allSelected, someSelected } = docState;
+```
+
+To:
+
+```tsx
+  const { docs, loading, error, selected, toggleSelect, toggleSelectAll, allSelected, someSelected, refreshDocs } = docState;
+```
+
+**Step 2: Add action handlers**
+
+After `handleDocClick`, add:
+
+```tsx
+  const handleDoclingMdPreview = useCallback((doc: ProjectDocumentRow) => {
+    setActiveDocUid(doc.source_uid);
+    workbenchRef.current?.addTab('docling-md', 'pane-preview');
   }, []);
 
-  const handleBlocksPreview = useCallback(async (doc: ProjectDocumentRow) => {
-    setBlocksPreview({ title: doc.doc_title, blocks: [], loading: true });
-    setParsePreview(null);
-    const blocks = await fetchBlocks(doc.source_uid);
-    setBlocksPreview({ title: doc.doc_title, blocks, loading: false });
+  const handleBlocksPreview = useCallback((doc: ProjectDocumentRow) => {
+    setActiveDocUid(doc.source_uid);
+    workbenchRef.current?.addTab('blocks', 'pane-preview');
   }, []);
 
   const handleReset = useCallback(async (uid: string) => {
@@ -295,64 +611,7 @@ After the state declarations, add:
   }, [activeDocUid, refreshDocs]);
 ```
 
-**Step 3: Update handleDocClick to clear parse previews**
-
-When user clicks a row to view source file, dismiss any active parse preview:
-
-Change from:
-
-```tsx
-  const handleDocClick = useCallback((doc: ProjectDocumentRow) => {
-    setActiveDocUid(doc.source_uid);
-  }, []);
-```
-
-To:
-
-```tsx
-  const handleDocClick = useCallback((doc: ProjectDocumentRow) => {
-    setActiveDocUid(doc.source_uid);
-    setParsePreview(null);
-    setBlocksPreview(null);
-  }, []);
-```
-
-**Step 4: Add `refreshDocs` to destructured docState**
-
-The current line 28 doesn't destructure `refreshDocs`. Change from:
-
-```tsx
-  const { docs, loading, error, selected, toggleSelect, toggleSelectAll, allSelected, someSelected } = docState;
-```
-
-To:
-
-```tsx
-  const { docs, loading, error, selected, toggleSelect, toggleSelectAll, allSelected, someSelected, refreshDocs } = docState;
-```
-
-**Step 5: Verify compile**
-
-Run: `cd web && npx tsc --noEmit`
-Expected: No new errors
-
-**Step 6: Commit**
-
-```bash
-git add web/src/pages/useParseWorkbench.tsx
-git commit -m "feat: add parse preview state and action handlers"
-```
-
----
-
-### Task 4: Wire all 5 actions into ParseRowActions + ParseTabPanel toolbar
-
-**Files:**
-- Modify: `web/src/pages/useParseWorkbench.tsx` (renderRowActions + renderContent parse branch)
-
-**What changes:** Pass all callback props so the 5 menu items and toolbar bulk actions appear.
-
-**Step 1: Update renderRowActions**
+**Step 3: Update renderRowActions**
 
 Change from:
 
@@ -377,9 +636,9 @@ To:
   ), [parseTab, handleDoclingMdPreview, handleBlocksPreview, handleReset, handleDelete]);
 ```
 
-**Step 2: Wire bulk Reset and Delete into ParseTabPanel**
+**Step 4: Wire bulk Reset and Delete into ParseTabPanel**
 
-Change from:
+In the `renderContent` function, change from:
 
 ```tsx
           <ParseTabPanel docs={docs} selected={selected} parseTab={parseTab} />
@@ -397,41 +656,21 @@ To:
           />
 ```
 
-**Step 3: Verify compile**
+**Step 5: Add renderContent branches for new tabs**
 
-Run: `cd web && npx tsc --noEmit`
-Expected: No new errors
-
-**Step 4: Commit**
-
-```bash
-git add web/src/pages/useParseWorkbench.tsx
-git commit -m "feat: wire all 5 parse actions into row menu and toolbar"
-```
-
----
-
-### Task 5: Render parse artifact previews in the Workbench preview pane
-
-**Files:**
-- Modify: `web/src/pages/useParseWorkbench.tsx` (renderContent preview branch + imports)
-
-**What changes:** The preview pane checks parse preview state first. If active, renders parse-specific preview (Docling MD rendered as markdown, or block cards). Otherwise falls back to `PreviewTabPanel` for source file preview.
-
-**Step 1: Add imports**
-
-Add to existing imports:
+In the `renderContent` callback, add these branches before the existing `if (tabId === 'preview')`:
 
 ```tsx
-import Markdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { IconX, IconLoader2 } from '@tabler/icons-react';
+    if (tabId === 'docling-md') {
+      return <DoclingMdTab sourceUid={activeDocUid} />;
+    }
+
+    if (tabId === 'blocks') {
+      return <BlocksTab sourceUid={activeDocUid} />;
+    }
 ```
 
-**Step 2: Replace the preview branch in renderContent**
-
-Change from:
+The existing `if (tabId === 'preview')` stays unchanged:
 
 ```tsx
     if (tabId === 'preview') {
@@ -439,100 +678,24 @@ Change from:
     }
 ```
 
-To:
+**Step 6: Update renderContent dependency array**
+
+Add the new handlers to the useCallback deps:
 
 ```tsx
-    if (tabId === 'preview') {
-      if (parsePreview?.loading || blocksPreview?.loading) {
-        return (
-          <div className="flex h-full items-center justify-center">
-            <IconLoader2 size={20} className="animate-spin text-muted-foreground" />
-          </div>
-        );
-      }
-
-      if (parsePreview) {
-        return (
-          <div className="flex h-full min-h-0 flex-col">
-            <div className="flex items-center justify-between border-b border-border px-4 py-2">
-              <h3 className="truncate text-sm font-medium text-foreground">{parsePreview.title}</h3>
-              <button
-                type="button"
-                onClick={() => setParsePreview(null)}
-                className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-accent"
-              >
-                <IconX size={14} />
-              </button>
-            </div>
-            <ScrollArea className="min-h-0 flex-1" viewportClass="h-full overflow-auto">
-              <div className="parse-markdown-preview px-6 py-4">
-                <Markdown remarkPlugins={[remarkGfm]}>{parsePreview.markdown}</Markdown>
-              </div>
-            </ScrollArea>
-          </div>
-        );
-      }
-
-      if (blocksPreview) {
-        return (
-          <div className="flex h-full min-h-0 flex-col">
-            <div className="flex items-center justify-between border-b border-border px-4 py-2">
-              <h3 className="truncate text-sm font-medium text-foreground">
-                {blocksPreview.title} — {blocksPreview.blocks.length} blocks
-              </h3>
-              <button
-                type="button"
-                onClick={() => setBlocksPreview(null)}
-                className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-accent"
-              >
-                <IconX size={14} />
-              </button>
-            </div>
-            <ScrollArea className="min-h-0 flex-1" viewportClass="h-full overflow-auto">
-              {blocksPreview.blocks.length === 0 ? (
-                <div className="px-6 py-4 text-sm text-muted-foreground">No blocks found. Reset and re-parse with Docling.</div>
-              ) : (
-                <div className="divide-y divide-border">
-                  {blocksPreview.blocks.map((b) => (
-                    <div key={b.block_uid} className="px-4 py-2">
-                      <div className="mb-1 flex items-center gap-2">
-                        <span className="inline-flex rounded bg-muted/60 px-1.5 py-0 text-[9px] font-semibold uppercase leading-4 text-muted-foreground">
-                          {b.block_type}
-                        </span>
-                        <span className="text-[10px] text-muted-foreground">#{b.block_index}</span>
-                      </div>
-                      <div className="whitespace-pre-wrap text-xs text-foreground">{b.block_content}</div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </ScrollArea>
-          </div>
-        );
-      }
-
-      return <PreviewTabPanel doc={activeDoc} />;
-    }
+  }, [docs, loading, error, selected, toggleSelect, toggleSelectAll, allSelected, someSelected, activeDocUid, activeDoc, handleDocClick, renderRowActions, parseTab, handleReset, handleDelete]);
 ```
 
-**Step 3: Update renderContent dependency array**
-
-Add `parsePreview`, `blocksPreview`, `handleReset`, `handleDelete` to the useCallback deps:
-
-```tsx
-  }, [docs, loading, error, selected, toggleSelect, toggleSelectAll, allSelected, someSelected, activeDocUid, activeDoc, handleDocClick, renderRowActions, parseTab, parsePreview, blocksPreview, handleReset, handleDelete]);
-```
-
-**Step 4: Verify compile**
+**Step 7: Verify compile**
 
 Run: `cd web && npx tsc --noEmit`
 Expected: No new errors
 
-**Step 5: Commit**
+**Step 8: Commit**
 
 ```bash
 git add web/src/pages/useParseWorkbench.tsx
-git commit -m "feat: render parse artifact previews in Workbench preview pane"
+git commit -m "feat: wire all 5 parse actions and 3-tab preview rendering"
 ```
 
 ---
@@ -549,19 +712,23 @@ Run: `cd web && npm run dev`
 
 Go to `/app/parse`, select a project with documents.
 
-**Step 3: Test each action**
+**Step 3: Verify 3-tab preview pane**
+
+The right pane should show 3 tabs: Docling MD | Preview | Blocks. Default active tab is Preview.
+
+**Step 4: Test each action**
 
 1. **Parse a file** → select unparsed file, click play button or "Parse All" → wait for status to become "parsed"
-2. **Docling MD Preview** → click 3-dot menu on a parsed file → "Docling MD Preview" → preview pane shows loading spinner then rendered markdown with title "DocTitle — Docling MD"
-3. **Blocks Preview** → click 3-dot menu → "Blocks Preview" → preview pane shows block cards with type badge, index number, content text. If no blocks: "No blocks found. Reset and re-parse with Docling."
+2. **Docling MD Preview** → click 3-dot menu on a parsed file → "Docling MD Preview" → preview pane switches to "Docling MD" tab → shows loading spinner then rendered markdown
+3. **Blocks Preview** → click 3-dot menu → "Blocks Preview" → preview pane switches to "Blocks" tab → shows block cards with type badge, index number, content text. If no blocks: "No blocks found. Reset and re-parse with Docling."
 4. **Download DoclingJson** → click 3-dot menu → "Download DoclingJson" → browser opens JSON file in new tab
-5. **Reset** → click 3-dot menu → "Reset" → doc status returns to "uploaded", preview stays unchanged
+5. **Reset** → click 3-dot menu → "Reset" → doc status returns to "uploaded"
 6. **Delete** → click 3-dot menu → "Delete" → doc removed from list
-7. **X button** → close parse preview via X → falls back to `PreviewTabPanel` source file view (or "Select an asset to preview" if no doc selected)
-8. **Row click clears parse preview** → while parse preview is showing, click a different row → parse preview dismissed, source file preview shown
+7. **Tab switching** → manually click between Docling MD / Preview / Blocks tabs → each shows its respective content for the active doc
+8. **Row click** → click a different row → all tabs update to show content for the newly selected doc
 9. **Toolbar bulk actions** → select multiple files → "Reset (N)" and "Delete (N)" buttons appear in toolbar and work
 
-**Step 4: Commit (only if fixes needed)**
+**Step 5: Commit (only if fixes needed)**
 
 ---
 
@@ -570,13 +737,16 @@ Go to `/app/parse`, select a project with documents.
 | File | Change | Lines |
 |------|--------|-------|
 | `web/src/components/documents/ParseTabPanel.tsx` | Add 2 optional props to `ParseRowActions`, update menu items | ~10 lines changed |
-| `web/src/pages/useParseWorkbench.tsx` | Add data fetchers, preview state, 4 handlers, preview rendering, wire all props | ~140 lines added |
+| `web/src/pages/useParseWorkbench.tsx` | Add data fetchers, 2 tab components, action handlers, workbenchRef, tab/pane config, renderContent branches | ~160 lines added |
+| `web/src/pages/ParsePage.tsx` | Destructure `workbenchRef`, pass `ref` to Workbench | ~2 lines changed |
 
 ## What is NOT Changed
 
 - No shared component layouts or styles modified
 - No new files created
-- No new dependencies added (`react-markdown`, `remark-gfm`, `ScrollArea` already in use)
+- No new dependencies added (`react-markdown`, `remark-gfm`, `ScrollArea`, `@tabler/icons-react` already in use)
 - No router changes
-- `PreviewTabPanel` untouched — still renders source files when no parse preview is active
+- `Workbench` component untouched — already supports multi-tab panes and `addTab` ref API
+- `PreviewTabPanel` untouched — still renders source files in its own tab
 - `useParseTab` untouched — `handleDownloadJson` reused as-is for action #3
+- `ActionMenu` component untouched — only the items list changes

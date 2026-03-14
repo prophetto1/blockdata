@@ -4,7 +4,7 @@ import { concatBytes, sha256Hex } from "../_shared/hash.ts";
 import { loadRuntimePolicy } from "../_shared/admin_policy.ts";
 import { sanitizeFilename } from "../_shared/sanitize.ts";
 import { createAdminClient, requireUserId } from "../_shared/supabase.ts";
-import { uploadToStorage } from "../ingest/storage.ts";
+import { detectSourceTypeForUpload, uploadToStorage } from "../ingest/storage.ts";
 import { resolveIngestRoute } from "../ingest/routing.ts";
 import { validateProjectOwnership, checkIdempotency } from "../ingest/validate.ts";
 import { processUploadOnly } from "../ingest/process-upload-only.ts";
@@ -175,10 +175,9 @@ Deno.serve(async (req) => {
           originalFilename = `${base}.${filenameExt}`;
         }
 
-        // 3. Validate extension against ingest policy
+        // 3. Accept the upload regardless of parse support.
+        const source_type = detectSourceTypeForUpload(originalFilename, file.mimeType);
         const route = resolveIngestRoute(originalFilename, runtimePolicy);
-        const source_type = route.source_type;
-        const ingest_track = route.track;
 
         // 4. Content-addressed source_uid (same as ingest function)
         const sourceUidPrefix = new TextEncoder().encode(`${source_type}\n`);
@@ -219,7 +218,7 @@ Deno.serve(async (req) => {
           supabaseAdmin,
           runtimePolicy,
           ownerId,
-          ingest_track,
+          ingest_track: route?.track ?? "docling",
           source_uid,
           source_type,
           source_key,
@@ -230,7 +229,7 @@ Deno.serve(async (req) => {
           project_id,
         };
 
-        if (ingestMode === "upload_only") {
+        if (ingestMode === "upload_only" || !route) {
           await processUploadOnly(ctx);
         } else if (source_type === "md") {
           await processMarkdown(ctx);

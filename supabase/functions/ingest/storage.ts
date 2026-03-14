@@ -1,6 +1,8 @@
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const SOURCE_TYPE_BY_EXTENSION: Record<string, string> = {
+  adoc: "asciidoc",
+  asciidoc: "asciidoc",
   md: "md",
   markdown: "md",
   docx: "docx",
@@ -18,9 +20,26 @@ const SOURCE_TYPE_BY_EXTENSION: Record<string, string> = {
   epub: "epub",
   rtf: "rtf",
   org: "org",
+  vtt: "vtt",
+  jpg: "image",
+  jpeg: "image",
+  png: "image",
+  gif: "image",
+  webp: "image",
+  bmp: "image",
+  tif: "image",
+  tiff: "image",
+  svg: "image",
+  mp3: "audio",
+  wav: "audio",
+  flac: "audio",
+  aac: "audio",
+  ogg: "audio",
+  m4a: "audio",
 };
 
 const MIME_FOR_SOURCE_TYPE: Record<string, string> = {
+  asciidoc: "text/plain",
   md: "text/markdown",
   docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
   pdf: "application/pdf",
@@ -35,6 +54,10 @@ const MIME_FOR_SOURCE_TYPE: Record<string, string> = {
   epub: "application/epub+zip",
   rtf: "application/rtf",
   org: "text/plain",
+  vtt: "text/vtt",
+  image: "application/octet-stream",
+  audio: "application/octet-stream",
+  binary: "application/octet-stream",
 };
 
 export function normalizeExtension(value: string): string {
@@ -51,6 +74,33 @@ export function detectExtension(filename: string): string | null {
 export function sourceTypeFromExtension(extension: string): string | null {
   const ext = normalizeExtension(extension);
   return SOURCE_TYPE_BY_EXTENSION[ext] ?? null;
+}
+
+function normalizeMimeType(value: string): string {
+  return value.trim().toLowerCase();
+}
+
+export function sourceTypeFromMimeType(mimeType: string): string | null {
+  const normalized = normalizeMimeType(mimeType);
+  if (!normalized) return null;
+  if (normalized === "text/vtt" || normalized === "application/vtt") return "vtt";
+  if (normalized.startsWith("image/")) return "image";
+  if (normalized.startsWith("audio/")) return "audio";
+  return null;
+}
+
+export function detectSourceTypeForUpload(
+  filename: string,
+  browserMime = "",
+): string {
+  const extension = detectExtension(filename);
+  const fromExtension = extension ? sourceTypeFromExtension(extension) : null;
+  if (fromExtension) return fromExtension;
+
+  const fromMimeType = sourceTypeFromMimeType(browserMime);
+  if (fromMimeType) return fromMimeType;
+
+  return "binary";
 }
 
 export function detectSourceType(filename: string): string {

@@ -1,5 +1,5 @@
 /**
- * Shared authenticated fetch for platform-api (VITE_PIPELINE_WORKER_URL).
+ * Shared authenticated fetch for platform-api (VITE_PLATFORM_API_URL).
  *
  * Reuses requireAccessToken() from lib/edge.ts — the same token helper
  * that edgeFetch uses for Supabase Edge Functions. This module targets
@@ -9,7 +9,7 @@ import { requireAccessToken } from '@/lib/edge';
 import { supabase } from '@/lib/supabase';
 
 const PLATFORM_API_URL = (
-  import.meta.env.VITE_PIPELINE_WORKER_URL ?? '/platform-api'
+  import.meta.env.VITE_PLATFORM_API_URL ?? '/platform-api'
 ).replace(/\/+$/, '');
 
 /**
