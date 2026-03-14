@@ -15,7 +15,7 @@ import UppyLibraryDemo from '@/pages/UppyLibraryDemo';
 import Schemas from '@/pages/Schemas';
 import SchemaLayout from '@/pages/SchemaLayout';
 import RunDetail from '@/pages/RunDetail';
-import { SettingsLayout, SettingsAccount, SettingsAiOverview, SettingsProviderForm, SettingsModelRoles, SettingsAdmin, SettingsGridSample, SettingsThemes } from '@/pages/settings';
+import { SettingsLayout, SettingsAccount, SettingsAiOverview, SettingsProviderForm, SettingsModelRoles, SettingsGridSample, SettingsThemes } from '@/pages/settings';
 import PlatformLanding from '@/pages/experiments/PlatformLanding';
 import Landing from '@/pages/Landing';
 import Agents from '@/pages/Agents';
@@ -29,9 +29,9 @@ import { ScalarApiPlaygroundPage } from '@/pages/settings/ScalarApiPlaygroundPag
 import Commands from '@/pages/Commands';
 import DocumentTest from '@/pages/DocumentTest';
 import DatabasePlaceholder from '@/pages/DatabasePlaceholder';
-import DocsEditor from '@/pages/DocsEditor';
 import ProjectAssetsPage from '@/pages/ProjectAssetsPage';
 import ParsePage from '@/pages/ParsePage';
+import ExtractPage from '@/pages/ExtractPage';
 import AppHome from '@/pages/AppHome';
 import EarlyAccess from '@/pages/EarlyAccess';
 import ProjectsHome from '@/pages/ProjectsHome';
@@ -66,6 +66,19 @@ function LegacyToEltProjectUppyDemo() {
   return <Navigate to={`/app/elt/${projectId}/upload-uppy-demo`} replace />;
 }
 
+
+function LegacySettingsAdminRedirect() {
+  const { category } = useParams<{ category?: string }>();
+  const targetByCategory: Record<string, string> = {
+    'instance-config': '/app/superuser/instance-config',
+    'worker-config': '/app/superuser/worker-config',
+    audit: '/app/superuser/audit',
+    'parsers-docling': '/app/superuser/parsers-docling',
+    'platform-config': '/app/superuser/instance-config',
+  };
+
+  return <Navigate to={targetByCategory[category ?? ''] ?? '/app/superuser/instance-config'} replace />;
+}
 
 export const router = createBrowserRouter([
   // Marketing pages: full-width with PublicNav
@@ -117,7 +130,7 @@ export const router = createBrowserRouter([
           { path: '/app/database', element: <DatabasePlaceholder /> },
           { path: '/app/assets', element: <ProjectAssetsPage /> },
           { path: '/app/parse', element: <ParsePage /> },
-          { path: '/app/docs', element: <DocsEditor /> },
+          { path: '/app/extract', element: <ExtractPage /> },
           { path: '/app/tests', element: <TestsPage /> },
           { path: '/app/marketplace/integrations', element: <IntegrationsCatalog /> },
           { path: '/app/marketplace/services', element: <ServicesCatalog /> },
@@ -139,8 +152,6 @@ export const router = createBrowserRouter([
           { path: '/app/ui/:section', element: <Navigate to="/app/schemas" replace /> },
           { path: '/app/projects/:projectId/upload-uppy-demo', element: <LegacyToEltProjectUppyDemo /> },
           { path: '/app/projects/:projectId/runs/:runId', element: <LegacyToEltProjectRun /> },
-          { path: '/app/extract', element: <LegacyToElt /> },
-          { path: '/app/extract/:projectId', element: <LegacyToEltProject /> },
           { path: '/app/transform', element: <LegacyToElt /> },
           { path: '/app/transform/:projectId', element: <LegacyToEltProject /> },
           { path: '/app/upload', element: <LegacyToElt /> },
@@ -172,8 +183,8 @@ export const router = createBrowserRouter([
               { path: 'model-roles', element: <SettingsModelRoles /> },
               { path: 'mcp', element: <McpServers /> },
               { path: 'grid-sample', element: <SettingsGridSample /> },
-              { path: 'admin', element: <Navigate to="/app/settings/admin/instance-config" replace /> },
-              { path: 'admin/:category', element: <SettingsAdmin /> },
+              { path: 'admin', element: <Navigate to="/app/superuser/instance-config" replace /> },
+              { path: 'admin/:category', element: <LegacySettingsAdminRedirect /> },
             ],
           },
 
@@ -219,6 +230,10 @@ export const router = createBrowserRouter([
               { path: 'layout-2', lazy: () => import('@/pages/superuser/SuperuserLayout2') },
               { path: 'layout-3', lazy: () => import('@/pages/superuser/SuperuserLayout3') },
               { path: 'parsers-docling', lazy: () => import('@/pages/settings/DoclingConfigPanel') },
+              { path: 'document-views', lazy: () => import('@/pages/superuser/SuperuserDocumentViews') },
+              { path: 'instance-config', lazy: () => import('@/pages/superuser/SuperuserInstanceConfig') },
+              { path: 'worker-config', lazy: () => import('@/pages/superuser/SuperuserWorkerConfig') },
+              { path: 'audit', lazy: () => import('@/pages/superuser/SuperuserAuditHistory') },
             ],
           },
 
@@ -234,3 +249,4 @@ export const router = createBrowserRouter([
   // Catch-all 404 for routes outside /app
   { path: '*', element: <NotFound /> },
 ]);
+

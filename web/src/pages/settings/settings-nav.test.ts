@@ -9,7 +9,7 @@ describe('settings nav', () => {
   });
 
   it('resolves admin sub-paths via aliases', () => {
-    for (const sub of ['audit', 'worker-config', 'platform-config']) {
+    for (const sub of ['audit', 'worker-config']) {
       const item = findNavItemByPath(`/app/settings/admin/${sub}`);
       expect(item?.id).toBe('admin-services');
     }

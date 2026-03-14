@@ -125,4 +125,30 @@ describe('DocumentFileTable sizing', () => {
     expect(formatCell?.textContent).toBe('PDF');
     expect(container.querySelector('tbody tr td:nth-child(3) span')?.className).toContain('tracking-[0.08em]');
   });
+
+  it('shows the real file extension for generic binary uploads', () => {
+    const binaryDoc = {
+      ...baseDoc,
+      source_type: 'binary',
+      doc_title: 'Comprehensive_AI_Funding_Landscape.json',
+      source_locator: 'projects/project-1/source/comprehensive-ai-funding-landscape.json',
+      conv_locator: null,
+    };
+
+    const { container } = render(
+      <DocumentFileTable
+        docs={[binaryDoc]}
+        loading={false}
+        error={null}
+        selected={new Set()}
+        toggleSelect={() => {}}
+        toggleSelectAll={() => {}}
+        allSelected={false}
+        someSelected={false}
+      />,
+    );
+
+    const formatCell = container.querySelector('tbody tr td:nth-child(3)');
+    expect(formatCell?.textContent).toBe('JSON');
+  });
 });

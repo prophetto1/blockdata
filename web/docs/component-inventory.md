@@ -1,21 +1,22 @@
 # Component Inventory
 
-Generated: 2026-03-14T07:20:02.071Z
+Generated: 2026-03-14T15:22:33.573Z
 Scope: auth
 
-Pages scanned: 46
-Unique component usages: 420
+Pages scanned: 45
+Unique component usages: 427
 
 ## Category Totals
 
 | Category | Count |
 | --- | ---: |
-| ark-ui | 146 |
+| ark-ui | 158 |
 | external-package | 17 |
 | in-file component | 17 |
-| local-components | 140 |
-| relative-local | 20 |
-| tabler-icons | 80 |
+| local-components | 138 |
+| relative-local | 17 |
+| tabler-icons | 79 |
+| unknown | 1 |
 
 ## src/pages/AgentOnboarding.tsx
 
@@ -90,16 +91,6 @@ Component usages: 4
 | `IconDatabase` | `@tabler/icons-react` | tabler-icons | IconDatabase comes from @tabler/icons-react (named import of IconDatabase) |
 | `PageHeader` | `@/components/common/PageHeader` | local-components | PageHeader comes from @/components/common/PageHeader (named import of PageHeader) |
 
-## src/pages/DocsEditor.tsx
-
-Component usages: 3
-
-| Used As | Source | Category | Definition |
-| --- | --- | --- | --- |
-| `IconLoader2` | `@tabler/icons-react` | tabler-icons | IconLoader2 comes from @tabler/icons-react (named import of IconLoader2) |
-| `OnlyOfficeEditorPanel` | `@/components/documents/OnlyOfficeEditorPanel` | local-components | OnlyOfficeEditorPanel comes from @/components/documents/OnlyOfficeEditorPanel (named import of OnlyOfficeEditorPanel) |
-| `ScrollArea` | `@/components/ui/scroll-area` | local-components | ScrollArea comes from @/components/ui/scroll-area (named import of ScrollArea) |
-
 ## src/pages/DocumentTest.tsx
 
 Component usages: 10
@@ -115,6 +106,14 @@ Component usages: 10
 | `MenuPositioner` | `@/components/ui/menu` | local-components | MenuPositioner comes from @/components/ui/menu (named import of MenuPositioner) |
 | `MenuRoot` | `@/components/ui/menu` | local-components | MenuRoot comes from @/components/ui/menu (named import of MenuRoot) |
 | `MenuTrigger` | `@/components/ui/menu` | local-components | MenuTrigger comes from @/components/ui/menu (named import of MenuTrigger) |
+| `Workbench` | `@/components/workbench/Workbench` | local-components | Workbench comes from @/components/workbench/Workbench (named import of Workbench) |
+
+## src/pages/ExtractPage.tsx
+
+Component usages: 1
+
+| Used As | Source | Category | Definition |
+| --- | --- | --- | --- |
 | `Workbench` | `@/components/workbench/Workbench` | local-components | Workbench comes from @/components/workbench/Workbench (named import of Workbench) |
 
 ## src/pages/FlowDetail.tsx
@@ -409,15 +408,27 @@ Component usages: 28
 
 ## src/pages/settings/DoclingConfigPanel.tsx
 
-Component usages: 26
+Component usages: 39
 
 | Used As | Source | Category | Definition |
 | --- | --- | --- | --- |
+| `ArkSelect.Content` | `@ark-ui/react/select` | ark-ui | ArkSelect.Content comes from @ark-ui/react/select (named import of Select) |
+| `ArkSelect.Control` | `@ark-ui/react/select` | ark-ui | ArkSelect.Control comes from @ark-ui/react/select (named import of Select) |
+| `ArkSelect.HiddenSelect` | `@ark-ui/react/select` | ark-ui | ArkSelect.HiddenSelect comes from @ark-ui/react/select (named import of Select) |
+| `ArkSelect.Indicator` | `@ark-ui/react/select` | ark-ui | ArkSelect.Indicator comes from @ark-ui/react/select (named import of Select) |
+| `ArkSelect.Item` | `@ark-ui/react/select` | ark-ui | ArkSelect.Item comes from @ark-ui/react/select (named import of Select) |
+| `ArkSelect.ItemIndicator` | `@ark-ui/react/select` | ark-ui | ArkSelect.ItemIndicator comes from @ark-ui/react/select (named import of Select) |
+| `ArkSelect.ItemText` | `@ark-ui/react/select` | ark-ui | ArkSelect.ItemText comes from @ark-ui/react/select (named import of Select) |
+| `ArkSelect.Positioner` | `@ark-ui/react/select` | ark-ui | ArkSelect.Positioner comes from @ark-ui/react/select (named import of Select) |
+| `ArkSelect.Root` | `@ark-ui/react/select` | ark-ui | ArkSelect.Root comes from @ark-ui/react/select (named import of Select) |
+| `ArkSelect.Trigger` | `@ark-ui/react/select` | ark-ui | ArkSelect.Trigger comes from @ark-ui/react/select (named import of Select) |
+| `ArkSelect.ValueText` | `@ark-ui/react/select` | ark-ui | ArkSelect.ValueText comes from @ark-ui/react/select (named import of Select) |
 | `CollapsibleContent` | `@/components/ui/collapsible` | local-components | CollapsibleContent comes from @/components/ui/collapsible (named import of CollapsibleContent) |
 | `CollapsibleIndicator` | `@/components/ui/collapsible` | local-components | CollapsibleIndicator comes from @/components/ui/collapsible (named import of CollapsibleIndicator) |
 | `CollapsibleRoot` | `@/components/ui/collapsible` | local-components | CollapsibleRoot comes from @/components/ui/collapsible (named import of CollapsibleRoot) |
 | `CollapsibleTrigger` | `@/components/ui/collapsible` | local-components | CollapsibleTrigger comes from @/components/ui/collapsible (named import of CollapsibleTrigger) |
 | `ConfigEditor` | `(in-file or unresolved)` | in-file component | ConfigEditor is defined in the same page file |
+| `ConfigSelect` | `(in-file or unresolved)` | in-file component | ConfigSelect is defined in the same page file |
 | `DoclingConfigPanel` | `(in-file or unresolved)` | in-file component | DoclingConfigPanel is defined in the same page file |
 | `FieldHelperText` | `@/components/ui/field` | local-components | FieldHelperText comes from @/components/ui/field (named import of FieldHelperText) |
 | `FieldLabel` | `@/components/ui/field` | local-components | FieldLabel comes from @/components/ui/field (named import of FieldLabel) |
@@ -430,9 +441,10 @@ Component usages: 26
 | `NumberInput` | `(in-file or unresolved)` | in-file component | NumberInput is defined in the same page file |
 | `NumberInputInput` | `@/components/ui/number-input` | local-components | NumberInputInput comes from @/components/ui/number-input (named import of NumberInputInput) |
 | `NumberInputRoot` | `@/components/ui/number-input` | local-components | NumberInputRoot comes from @/components/ui/number-input (named import of NumberInputRoot) |
+| `Portal` | `@ark-ui/react/portal` | ark-ui | Portal comes from @ark-ui/react/portal (named import of Portal) |
 | `ScrollArea` | `@/components/ui/scroll-area` | local-components | ScrollArea comes from @/components/ui/scroll-area (named import of ScrollArea) |
 | `Section` | `(in-file or unresolved)` | in-file component | Section is defined in the same page file |
-| `Select` | `(in-file or unresolved)` | in-file component | Select is defined in the same page file |
+| `Select` | `(in-file or unresolved)` | unknown | Select was detected in JSX but no matching import was resolved |
 | `SwitchControl` | `@/components/ui/switch` | local-components | SwitchControl comes from @/components/ui/switch (named import of SwitchControl) |
 | `SwitchHiddenInput` | `@/components/ui/switch` | local-components | SwitchHiddenInput comes from @/components/ui/switch (named import of SwitchHiddenInput) |
 | `SwitchRoot` | `@/components/ui/switch` | local-components | SwitchRoot comes from @/components/ui/switch (named import of SwitchRoot) |
@@ -459,15 +471,6 @@ Component usages: 4
 | `Input` | `@/components/ui/input` | local-components | Input comes from @/components/ui/input (named import of Input) |
 | `McpServerCard` | `@/components/mcp/McpServerCard` | local-components | McpServerCard comes from @/components/mcp/McpServerCard (named import of McpServerCard) |
 | `SettingsPageFrame` | `./SettingsPageHeader` | relative-local | SettingsPageFrame comes from ./SettingsPageHeader (named import of SettingsPageFrame) |
-
-## src/pages/settings/PlatformConfigPanel.tsx
-
-Component usages: 2
-
-| Used As | Source | Category | Definition |
-| --- | --- | --- | --- |
-| `Button` | `@/components/ui/button` | local-components | Button comes from @/components/ui/button (named import of Button) |
-| `SettingCard` | `./setting-card-shared` | relative-local | SettingCard comes from ./setting-card-shared (named import of SettingCard) |
 
 ## src/pages/settings/ScalarApiPlayground.tsx
 
@@ -582,18 +585,16 @@ Component usages: 14
 
 ## src/pages/settings/SettingsAdmin.tsx
 
-Component usages: 10
+Component usages: 8
 
 | Used As | Source | Category | Definition |
 | --- | --- | --- | --- |
 | `Button` | `@/components/ui/button` | local-components | Button comes from @/components/ui/button (named import of Button) |
-| `DoclingConfigPanel` | `./DoclingConfigPanel` | relative-local | DoclingConfigPanel comes from ./DoclingConfigPanel (named import of DoclingConfigPanel) |
 | `ErrorAlert` | `@/components/common/ErrorAlert` | local-components | ErrorAlert comes from @/components/common/ErrorAlert (named import of ErrorAlert) |
 | `Field.Input` | `@ark-ui/react/field` | ark-ui | Field.Input comes from @ark-ui/react/field (named import of Field) |
 | `Field.Root` | `@ark-ui/react/field` | ark-ui | Field.Root comes from @ark-ui/react/field (named import of Field) |
 | `InstanceConfigPanel` | `./InstanceConfigPanel` | relative-local | InstanceConfigPanel comes from ./InstanceConfigPanel (named import of InstanceConfigPanel) |
 | `Navigate` | `react-router-dom` | external-package | Navigate comes from react-router-dom (named import of Navigate) |
-| `PlatformConfigPanel` | `./PlatformConfigPanel` | relative-local | PlatformConfigPanel comes from ./PlatformConfigPanel (named import of PlatformConfigPanel) |
 | `ScrollArea` | `@/components/ui/scroll-area` | local-components | ScrollArea comes from @/components/ui/scroll-area (named import of ScrollArea) |
 | `WorkerConfigPanel` | `./WorkerConfigPanel` | relative-local | WorkerConfigPanel comes from ./WorkerConfigPanel (named import of WorkerConfigPanel) |
 

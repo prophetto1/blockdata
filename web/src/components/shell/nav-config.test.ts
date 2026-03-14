@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   TOP_LEVEL_NAV,
   ALL_TOP_LEVEL_ITEMS,
+  BOTTOM_RAIL_NAV,
   getDrillConfig,
   findDrillByRoute,
   resolveFlowDrillPath,
@@ -12,27 +13,39 @@ describe('nav-config side rail', () => {
   it('keeps the primary global pages in the top-level nav', () => {
     const paths = ALL_TOP_LEVEL_ITEMS.map((item) => item.path);
 
+    expect(paths).toContain('/app/assets');
+    expect(paths).toContain('/app/parse');
+    expect(paths).toContain('/app/extract');
+    expect(paths).toContain('/app/rag');
     expect(paths).toContain('/app/flows');
-    expect(paths).toContain('/app/elt');
     expect(paths).toContain('/app/database');
     expect(paths).toContain('/app/settings');
+    expect(paths).not.toContain('/app/elt');
     expect(paths).not.toContain('/app/executions');
     expect(paths).not.toContain('/app/logs');
-    expect(paths).not.toContain('/app/assets');
     expect(paths).not.toContain('/app/namespaces');
     expect(paths).not.toContain('/app/plugins');
     expect(paths).not.toContain('/app/blueprints');
     expect(paths).not.toContain('/app/tenant');
   });
 
-  it('includes editor and catalog items', () => {
+  it('keeps ELT in the lower utility rail', () => {
+    const paths = BOTTOM_RAIL_NAV.map((item) => item.path);
+
+    expect(paths).toContain('/app/elt');
+    expect(paths).not.toContain('/app/rag');
+  });
+
+  it('includes extract plus editor and catalog items', () => {
     const paths = ALL_TOP_LEVEL_ITEMS.map((item) => item.path);
 
+    expect(paths).toContain('/app/extract');
     expect(paths).toContain('/app/schemas');
     expect(paths).toContain('/app/api-editor');
     expect(paths).toContain('/app/marketplace/integrations');
     expect(paths).toContain('/app/marketplace/services');
     expect(paths).toContain('/app/tests');
+    expect(paths).not.toContain('/app/docs');
   });
 
   it('has dividers in TOP_LEVEL_NAV', () => {
@@ -77,7 +90,7 @@ describe('drill configs', () => {
 
   it('findDrillByRoute matches correctly', () => {
     expect(findDrillByRoute('/app/flows/abc/edit')?.id).toBe('flows');
-    expect(findDrillByRoute('/app/flows')).toBeNull(); // list page — no drill
+    expect(findDrillByRoute('/app/flows')).toBeNull();
     expect(findDrillByRoute('/app/settings/profile')?.id).toBe('settings');
     expect(findDrillByRoute('/app/settings')?.id).toBe('settings');
     expect(findDrillByRoute('/app/elt')).toBeNull();
@@ -89,3 +102,5 @@ describe('drill configs', () => {
     expect(resolveFlowDrillPath('overview', 'abc')).toBe('/app/flows/abc/overview');
   });
 });
+
+

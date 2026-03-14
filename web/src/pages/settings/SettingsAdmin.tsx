@@ -9,8 +9,6 @@ import { cn } from '@/lib/utils';
 import { edgeFetch } from '@/lib/edge';
 import { InstanceConfigPanel } from './InstanceConfigPanel';
 import { WorkerConfigPanel } from './WorkerConfigPanel';
-import { PlatformConfigPanel } from './PlatformConfigPanel';
-import { DoclingConfigPanel } from './DoclingConfigPanel';
 import { CATEGORY_IDS, type CategoryId } from './settings-tabs';
 
 type AuditRow = {
@@ -36,8 +34,6 @@ type Category = {
 const CATEGORIES: Category[] = [
   { id: 'instance-config', label: 'Instance Config' },
   { id: 'worker-config', label: 'Worker Config' },
-  { id: 'platform-config', label: 'Platform Config' },
-  { id: 'parsers-docling', label: 'Parsers: Docling' },
   { id: 'audit', label: 'Audit History' },
 ];
 
@@ -248,14 +244,6 @@ export default function SettingsAdmin() {
             ) : selectedCategory === 'worker-config' ? (
               <div className="h-full overflow-hidden">
                 <WorkerConfigPanel />
-              </div>
-            ) : selectedCategory === 'platform-config' ? (
-              <div className="h-full overflow-hidden p-3 md:p-4">
-                <PlatformConfigPanel />
-              </div>
-            ) : selectedCategory === 'parsers-docling' ? (
-              <div className="h-full overflow-hidden">
-                <DoclingConfigPanel />
               </div>
             ) : selectedCategory === 'audit' ? (
               <ScrollArea className="h-full" contentClass="p-3 md:p-4">

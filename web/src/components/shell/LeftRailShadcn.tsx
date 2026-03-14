@@ -22,6 +22,7 @@ import { useSuperuserProbe } from '@/hooks/useSuperuserProbe';
 import {
   TOP_LEVEL_NAV,
   ALL_TOP_LEVEL_ITEMS,
+  BOTTOM_RAIL_NAV,
   findDrillByRoute,
   getDrillConfig,
   resolveFlowDrillPath,
@@ -139,7 +140,7 @@ function AccountMenuContent({
 }) {
   return (
     <MenuContent className="min-w-64 p-0">
-      {/* Account header — username + email, gear icon right */}
+      {/* Account header â€” username + email, gear icon right */}
       <div className="flex items-start justify-between px-3 pb-2 pt-3">
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium text-foreground">
@@ -162,7 +163,7 @@ function AccountMenuContent({
         </div>
       </div>
 
-      {/* Flat menu list — label left, icon right (Vercel style) */}
+      {/* Flat menu list â€” label left, icon right (Vercel style) */}
       <div className="py-1.5">
         {/* Theme row (custom, not a MenuItem) */}
         <ThemeToggleRow />
@@ -261,7 +262,7 @@ export function LeftRailShadcn({
   }, [location.pathname]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /**
-   * Back out of drill view. Only switches the sidebar to the top-level nav —
+   * Back out of drill view. Only switches the sidebar to the top-level nav â€”
    * does NOT navigate away from the current page. The user stays on whatever
    * content they were viewing. The skipAutoDrillRef prevents the route-based
    * auto-drill from immediately re-activating.
@@ -275,7 +276,7 @@ export function LeftRailShadcn({
 
   /* ------ Active item detection ------ */
   const activeMenuPath = useMemo(() => {
-    const allItems = ALL_TOP_LEVEL_ITEMS;
+    const allItems = [...ALL_TOP_LEVEL_ITEMS, ...BOTTOM_RAIL_NAV];
     // Sort by path length descending so more specific paths match first
     const sorted = [...allItems].sort((a, b) => b.path.length - a.path.length);
     for (const item of sorted) {
@@ -357,7 +358,7 @@ export function LeftRailShadcn({
             <div className="space-y-0.5">
               {section.items.map((item) => {
                 const ItemIcon = item.icon;
-                // For flows drill, paths are tab slugs — resolve to full path
+                // For flows drill, paths are tab slugs â€” resolve to full path
                 const resolvedPath = flowId
                   ? resolveFlowDrillPath(item.path, flowId)
                   : item.path;
@@ -436,6 +437,63 @@ export function LeftRailShadcn({
     </div>
   );
 
+
+  const renderBottomUtilityNav = () => {
+    if (desktopCompact) {
+      return (
+        <div className="flex flex-col items-center gap-0.5">
+          {BOTTOM_RAIL_NAV.map((item) => {
+            const ItemIcon = item.icon;
+            const isActive = activeMenuPath === item.path;
+
+            return (
+              <button
+                key={item.path}
+                type="button"
+                onClick={() => navigateTo(item.path)}
+                className={cn(
+                  'flex h-9 w-9 items-center justify-center rounded-md transition-colors',
+                  isActive
+                    ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                    : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+                )}
+                title={item.label}
+                aria-label={item.label}
+              >
+                <ItemIcon size={20} stroke={1.75} />
+              </button>
+            );
+          })}
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-0.5">
+        {BOTTOM_RAIL_NAV.map((item) => {
+          const ItemIcon = item.icon;
+          const isActive = activeMenuPath === item.path;
+
+          return (
+            <button
+              key={item.path}
+              type="button"
+              onClick={() => navigateTo(item.path)}
+              className={cn(
+                'flex w-full items-center gap-2.5 rounded-md px-2.5 h-9 text-sm leading-snug transition-colors',
+                isActive
+                  ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium'
+                  : 'text-sidebar-foreground/80 font-normal hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+              )}
+            >
+              <ItemIcon size={16} stroke={1.75} className="shrink-0" />
+              <span className="truncate">{item.label}</span>
+            </button>
+          );
+        })}
+      </div>
+    );
+  };
   return (
     <SidebarProvider
       open={!desktopCompact}
@@ -509,6 +567,13 @@ export function LeftRailShadcn({
           </SidebarGroup>
         </SidebarContent>
 
+
+        {BOTTOM_RAIL_NAV.length > 0 && (
+          <div className={desktopCompact ? 'px-0 pb-1' : 'px-2 pb-1'}>
+            {renderBottomUtilityNav()}
+          </div>
+        )}
+
         {/* ---- Admin (superusers only) ---- */}
         {isSuperuser && (
           <div className={desktopCompact ? 'px-0 pb-1' : 'px-2 pb-1'}>
@@ -526,7 +591,6 @@ export function LeftRailShadcn({
                       ? 'bg-sidebar-accent text-sidebar-accent-foreground'
                       : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
                   )}
-                  title="Admin"
                   aria-label="Admin"
                 >
                   <IconShieldCog size={20} stroke={1.75} />
@@ -559,7 +623,7 @@ export function LeftRailShadcn({
           <div className="mx-2.5 h-px bg-sidebar-border" />
           <MenuRoot positioning={{ placement: 'top-start', offset: { mainAxis: 8, crossAxis: 0 } }}>
             <div className={cn(desktopCompact ? 'flex justify-center px-0 py-2' : 'flex items-center gap-2 px-3 py-2')}>
-              {/* Avatar + username + dots — all trigger the menu */}
+              {/* Avatar + username + dots â€” all trigger the menu */}
               <MenuTrigger
                 className={cn(
                   'flex items-center gap-2 rounded-md border-0 bg-transparent transition-colors hover:bg-sidebar-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring',
@@ -609,3 +673,7 @@ export function LeftRailShadcn({
     </SidebarProvider>
   );
 }
+
+
+
+

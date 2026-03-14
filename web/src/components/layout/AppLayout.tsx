@@ -161,6 +161,7 @@ function AppShellInner() {
   const isSuperuserRoute = /^\/app\/superuser(?:\/|$)/.test(location.pathname);
   const isAssetsRoute = location.pathname === '/app/assets';
   const isParseRoute = location.pathname === '/app/parse';
+  const isExtractRoute = location.pathname === '/app/extract';
   const lockMainScroll = (
     isEltRoute
     || isEditorLayoutRoute
@@ -171,6 +172,7 @@ function AppShellInner() {
     || isSuperuserRoute
     || isAssetsRoute
     || isParseRoute
+    || isExtractRoute
   );
 
   useEffect(() => {
@@ -349,7 +351,7 @@ function AppShellInner() {
         )}
 
         <main style={shellMainStyle}>
-          {(isFlowsRoute || isMarketplaceServiceDetailRoute || isSuperuserRoute || isAssetsRoute || isParseRoute) ? (
+          {(isFlowsRoute || isMarketplaceServiceDetailRoute || isSuperuserRoute || isAssetsRoute || isParseRoute || isExtractRoute) ? (
             <Outlet />
           ) : (
             <AppPageShell mode="fluid">
@@ -432,3 +434,4 @@ function AppShellInner() {
     </>
   );
 }
+

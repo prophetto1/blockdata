@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { IconBraces, IconFileCode, IconLoader2, IconFileText, IconLayoutList, IconSettings } from '@tabler/icons-react';
+import { IconBraces, IconDownload, IconFileCode, IconLoader2, IconFileText, IconLayoutList, IconSettings } from '@tabler/icons-react';
 import ReactMarkdown from 'react-markdown';
 import remarkFrontmatter from 'remark-frontmatter';
 import remarkGfm from 'remark-gfm';
@@ -13,8 +13,10 @@ import { useProjectDocuments } from '@/hooks/useProjectDocuments';
 import { useProjectFocus } from '@/hooks/useProjectFocus';
 import { useShellHeaderTitle } from '@/components/common/useShellHeaderTitle';
 import { Badge, type BadgeProps } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { FieldErrorText, FieldHelperText, FieldLabel, FieldRoot } from '@/components/ui/field';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { JsonViewer, parseJsonViewerContent, type ParsedJsonViewerContent } from '@/components/json/JsonViewer';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { DocumentFileTable, type ExtraColumn } from '@/components/documents/DocumentFileTable';
 import {
   DocumentPreviewFrame,
@@ -25,54 +27,65 @@ import { ParseConfigColumn } from '@/components/documents/ParseConfigColumn';
 import { ParseSettingsColumn } from '@/components/documents/ParseSettingsColumn';
 import { ParseTabPanel, useParseTab } from '@/components/documents/ParseTabPanel';
 import { cn } from '@/lib/utils';
-import { formatBytes, getDocumentFormat, getFilenameFromLocator, resolveSignedUrlForLocators, type ProjectDocumentRow } from '@/lib/projectDetailHelpers';
+import { downloadFromSignedUrl, formatBytes, getDocumentFormat, type ProjectDocumentRow } from '@/lib/projectDetailHelpers';
 import { supabase } from '@/lib/supabase';
-import { TABLES } from '@/lib/tables';
 import type { BlockRow } from '@/lib/types';
 import { useBlockTypeRegistry } from '@/hooks/useBlockTypeRegistry';
-
-const DOCUMENTS_BUCKET =
-  (import.meta.env.VITE_DOCUMENTS_BUCKET as string | undefined) ?? 'documents';
+import {
+  createLoadingParseArtifactBundle,
+  getParseArtifactCacheKey,
+  primeParseArtifactsForDocument,
+  type ParseArtifactBundle,
+} from './parseArtifacts';
 
 // ─── Data fetchers ───────────────────────────────────────────────────────────
-
-async function getArtifactLocator(
-  sourceUid: string,
-  reprType: 'doclingdocument_json' | 'markdown_bytes',
-): Promise<string | null> {
-  const { data } = await supabase
-    .from('conversion_representations')
-    .select('artifact_locator')
-    .eq('source_uid', sourceUid)
-    .eq('representation_type', reprType)
-    .maybeSingle();
-  return data?.artifact_locator ?? null;
-}
-
-type DoclingMarkdownState = {
-  markdown: string;
-  loading: boolean;
-  error: string | null;
-  downloadUrl: string | null;
-  downloadFilename: string | null;
-};
-
-type ParsedBlocksState = {
-  blocks: BlockRow[];
-  loading: boolean;
-  error: string | null;
-};
-
-type DoclingJsonState = {
-  content: ParsedJsonViewerContent | null;
-  loading: boolean;
-  error: string | null;
-  downloadUrl: string | null;
-};
 
 type ParsedBlockMetadata = {
   pageNo: number | null;
 };
+
+export function getParsedBlockBadgeVariant(
+  blockType: string,
+  badgeColorMap: Record<string, string>,
+): BadgeProps['variant'] {
+  if (blockType.trim().toLowerCase() === 'paragraph') return 'green';
+  return (badgeColorMap[blockType] ?? 'gray') as BadgeProps['variant'];
+}
+
+export type ParseDownloadItem = {
+  id: 'docling-markdown' | 'document-json';
+  label: string;
+  description: string;
+  formatLabel: string;
+  downloadUrl: string | null;
+  downloadFilename: string | null;
+  error: string | null;
+};
+
+export function getParseDownloadItems(artifacts: ParseArtifactBundle | null): ParseDownloadItem[] {
+  if (!artifacts) return [];
+
+  return [
+    {
+      id: 'docling-markdown',
+      label: 'Docling Markdown',
+      description: 'The markdown artifact produced directly by the Docling parse.',
+      formatLabel: 'MD',
+      downloadUrl: artifacts.markdown.downloadUrl,
+      downloadFilename: artifacts.markdown.downloadFilename,
+      error: artifacts.markdown.error,
+    },
+    {
+      id: 'document-json',
+      label: 'Document Json',
+      description: 'The full Docling document payload for downstream inspection or export.',
+      formatLabel: 'JSON',
+      downloadUrl: artifacts.json.downloadUrl,
+      downloadFilename: artifacts.json.downloadFilename,
+      error: artifacts.json.error,
+    },
+  ];
+}
 
 function getParsedBlockMetadata(block: BlockRow): ParsedBlockMetadata {
   const locator = (block.block_locator ?? null) as Record<string, unknown> | null;
@@ -86,60 +99,18 @@ function getParsedBlockMetadata(block: BlockRow): ParsedBlockMetadata {
   };
 }
 
-function DoclingJsonTab({ doc }: { doc: ProjectDocumentRow | null }) {
-  const [state, setState] = useState<DoclingJsonState | null>(null);
-
-  useEffect(() => {
-    if (!doc) {
-      setState(null);
-      return;
-    }
-    let cancelled = false;
-    setState({ content: null, loading: true, error: null, downloadUrl: null });
-
-    (async () => {
-      const locator = await getArtifactLocator(doc.source_uid, 'doclingdocument_json');
-      if (cancelled) return;
-      if (!locator) {
-        setState({ content: null, loading: false, error: 'No DoclingDocument JSON available. Reset and re-parse with Docling.', downloadUrl: null });
-        return;
-      }
-
-      const { data } = await supabase.storage.from(DOCUMENTS_BUCKET).createSignedUrl(locator, 60 * 20);
-      if (cancelled) return;
-      if (!data?.signedUrl) {
-        setState({ content: null, loading: false, error: 'Could not generate download URL for the Docling JSON artifact.', downloadUrl: null });
-        return;
-      }
-
-      try {
-        const resp = await fetch(data.signedUrl);
-        if (cancelled) return;
-        if (!resp.ok) {
-          setState({ content: null, loading: false, error: `Failed to load Docling JSON (${resp.status}).`, downloadUrl: data.signedUrl });
-          return;
-        }
-        const raw = await resp.text();
-        if (cancelled) return;
-        setState({ content: parseJsonViewerContent(raw), loading: false, error: null, downloadUrl: data.signedUrl });
-      } catch {
-        if (cancelled) return;
-        setState({ content: null, loading: false, error: 'Failed to load the Docling JSON artifact.', downloadUrl: data.signedUrl });
-      }
-    })();
-
-    return () => { cancelled = true; };
-  }, [doc]);
+function DownloadsTab({ doc, artifacts }: { doc: ProjectDocumentRow | null; artifacts: ParseArtifactBundle | null }) {
+  const [downloadingId, setDownloadingId] = useState<ParseDownloadItem['id'] | null>(null);
 
   if (!doc) {
     return (
       <DocumentPreviewFrame>
-        <DocumentPreviewMessage message="Select a parsed file to preview its DoclingDocument JSON." />
+        <DocumentPreviewMessage message="Select a parsed file to access its downloadable parse artifacts." />
       </DocumentPreviewFrame>
     );
   }
 
-  if (!state || state.loading) {
+  if (!artifacts || artifacts.markdown.loading || artifacts.json.loading) {
     return (
       <DocumentPreviewShell doc={doc}>
         <DocumentPreviewMessage message={<IconLoader2 size={20} className="animate-spin text-muted-foreground" />} />
@@ -147,18 +118,75 @@ function DoclingJsonTab({ doc }: { doc: ProjectDocumentRow | null }) {
     );
   }
 
-  if (state.error) {
-    return (
-      <DocumentPreviewShell doc={doc} downloadUrl={state.downloadUrl}>
-        <DocumentPreviewMessage message={state.error} />
-      </DocumentPreviewShell>
-    );
-  }
+  const downloads = getParseDownloadItems(artifacts);
 
   return (
-    <DocumentPreviewShell doc={doc} downloadUrl={state.downloadUrl}>
-      <div className="h-full min-h-0 px-4 py-4">
-        <JsonViewer value={state.content?.data ?? ''} mode={state.content?.mode ?? 'raw'} />
+    <DocumentPreviewShell doc={doc}>
+      <div className="space-y-4 px-4 py-4">
+        <div className="rounded-xl border border-border bg-muted/20 px-4 py-3">
+          <div className="text-sm font-medium text-foreground">Download parse artifacts</div>
+          <div className="mt-1 text-sm text-muted-foreground">
+            Each generated output is listed below, and new downloads can be added as another row.
+          </div>
+        </div>
+
+        <div className="overflow-hidden rounded-xl border border-border bg-background/90">
+          {downloads.map((item) => {
+            const isDownloading = downloadingId === item.id;
+            const isDisabled = !item.downloadUrl || isDownloading;
+
+            return (
+              <FieldRoot
+                key={item.id}
+                className="items-center gap-3 border-b border-border px-4 py-3 last:border-b-0"
+              >
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge size="sm" variant="outline">{item.formatLabel}</Badge>
+                    <FieldLabel>{item.label}</FieldLabel>
+                  </div>
+                  <FieldHelperText className="mt-1">
+                    {item.downloadFilename ?? item.description}
+                  </FieldHelperText>
+                  {item.error ? (
+                    <FieldErrorText className="mt-1 block">{item.error}</FieldErrorText>
+                  ) : null}
+                </div>
+
+                <Tooltip openDelay={150}>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      disabled={isDisabled}
+                      aria-label={item.downloadUrl ? `Download ${item.label}` : `${item.label} unavailable`}
+                      className="shrink-0"
+                      onClick={async () => {
+                        if (!item.downloadUrl) return;
+                        setDownloadingId(item.id);
+                        try {
+                          await downloadFromSignedUrl(item.downloadUrl, item.downloadFilename ?? item.label);
+                        } finally {
+                          setDownloadingId((current) => (current === item.id ? null : current));
+                        }
+                      }}
+                    >
+                      {isDownloading ? (
+                        <IconLoader2 size={16} className="animate-spin" />
+                      ) : (
+                        <IconDownload size={16} />
+                      )}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent className="px-2 py-1 text-xs">
+                    {item.downloadUrl ? `Download ${item.label}` : `${item.label} unavailable`}
+                  </TooltipContent>
+                </Tooltip>
+              </FieldRoot>
+            );
+          })}
+        </div>
       </div>
     </DocumentPreviewShell>
   );
@@ -166,58 +194,7 @@ function DoclingJsonTab({ doc }: { doc: ProjectDocumentRow | null }) {
 
 // ─── Tab components ──────────────────────────────────────────────────────────
 
-function DoclingMdTab({ doc }: { doc: ProjectDocumentRow | null }) {
-  const [state, setState] = useState<DoclingMarkdownState | null>(null);
-
-  useEffect(() => {
-    if (!doc) {
-      setState(null);
-      return;
-    }
-    let cancelled = false;
-    setState({ markdown: '', loading: true, error: null, downloadUrl: null, downloadFilename: null });
-
-    (async () => {
-      const locator = await getArtifactLocator(doc.source_uid, 'markdown_bytes');
-      if (cancelled) return;
-      if (!locator) {
-        setState({ markdown: '', loading: false, error: 'No Docling markdown artifact is available for this document.', downloadUrl: null, downloadFilename: null });
-        return;
-      }
-      const downloadFilename = getFilenameFromLocator(locator) ?? `${doc.doc_title || 'document'}.md`;
-
-      const { url: signedUrl, error: signedUrlError } = await resolveSignedUrlForLocators([locator]);
-      if (cancelled) return;
-      if (!signedUrl) {
-        setState({
-          markdown: '',
-          loading: false,
-          error: signedUrlError ?? 'Could not generate download URL for the Docling markdown artifact.',
-          downloadUrl: null,
-          downloadFilename,
-        });
-        return;
-      }
-
-      try {
-        const resp = await fetch(signedUrl);
-        if (cancelled) return;
-        if (!resp.ok) {
-          setState({ markdown: '', loading: false, error: `Failed to load Docling markdown (${resp.status}).`, downloadUrl: signedUrl, downloadFilename });
-          return;
-        }
-        const markdown = await resp.text();
-        if (cancelled) return;
-        setState({ markdown: markdown || '[Empty markdown file]', loading: false, error: null, downloadUrl: signedUrl, downloadFilename });
-      } catch {
-        if (cancelled) return;
-        setState({ markdown: '', loading: false, error: 'Failed to load the Docling markdown artifact.', downloadUrl: signedUrl, downloadFilename });
-      }
-    })();
-
-    return () => { cancelled = true; };
-  }, [doc]);
-
+function DoclingMdTab({ doc, artifacts }: { doc: ProjectDocumentRow | null; artifacts: ParseArtifactBundle | null }) {
   if (!doc) {
     return (
       <DocumentPreviewFrame>
@@ -226,7 +203,7 @@ function DoclingMdTab({ doc }: { doc: ProjectDocumentRow | null }) {
     );
   }
 
-  if (!state || state.loading) {
+  if (!artifacts || artifacts.markdown.loading) {
     return (
       <DocumentPreviewShell doc={doc}>
         <DocumentPreviewMessage message={<IconLoader2 size={20} className="animate-spin text-muted-foreground" />} />
@@ -234,23 +211,31 @@ function DoclingMdTab({ doc }: { doc: ProjectDocumentRow | null }) {
     );
   }
 
-  if (state.error) {
+  if (artifacts.markdown.error) {
     return (
-      <DocumentPreviewShell doc={doc} downloadUrl={state.downloadUrl} downloadFilename={state.downloadFilename}>
-        <DocumentPreviewMessage message={state.error} />
+      <DocumentPreviewShell
+        doc={doc}
+        downloadUrl={artifacts.markdown.downloadUrl}
+        downloadFilename={artifacts.markdown.downloadFilename}
+      >
+        <DocumentPreviewMessage message={artifacts.markdown.error} />
       </DocumentPreviewShell>
     );
   }
 
   return (
-    <DocumentPreviewShell doc={doc} downloadUrl={state.downloadUrl} downloadFilename={state.downloadFilename}>
+    <DocumentPreviewShell
+      doc={doc}
+      downloadUrl={artifacts.markdown.downloadUrl}
+      downloadFilename={artifacts.markdown.downloadFilename}
+    >
       <div className="px-6 py-4">
         <div className="docling-md-preview">
           <ReactMarkdown
             remarkPlugins={[remarkFrontmatter, remarkGfm, remarkMath, remarkEmoji]}
             rehypePlugins={[rehypeKatex]}
           >
-            {state.markdown}
+            {artifacts.markdown.markdown}
           </ReactMarkdown>
         </div>
       </div>
@@ -258,56 +243,9 @@ function DoclingMdTab({ doc }: { doc: ProjectDocumentRow | null }) {
   );
 }
 
-function BlocksTab({ doc }: { doc: ProjectDocumentRow | null }) {
-  const [state, setState] = useState<ParsedBlocksState | null>(null);
+function BlocksTab({ doc, artifacts }: { doc: ProjectDocumentRow | null; artifacts: ParseArtifactBundle | null }) {
   const { registry } = useBlockTypeRegistry();
   const badgeColorMap = useMemo(() => registry?.badgeColor ?? {}, [registry]);
-
-  useEffect(() => {
-    if (!doc) {
-      setState(null);
-      return;
-    }
-    let cancelled = false;
-    setState({ blocks: [], loading: true, error: null });
-
-    (async () => {
-      try {
-        const convUid = doc.conv_uid ?? (
-          await supabase
-            .from(TABLES.conversionParsing)
-            .select('conv_uid')
-            .eq('source_uid', doc.source_uid)
-            .maybeSingle()
-        ).data?.conv_uid ?? null;
-
-        if (cancelled) return;
-        if (!convUid) {
-          setState({ blocks: [], loading: false, error: 'No parsed conversion record was found for this document.' });
-          return;
-        }
-
-        const { data, error } = await supabase
-          .from(TABLES.blocks)
-          .select('block_uid, conv_uid, block_index, block_type, block_locator, block_content')
-          .eq('conv_uid', convUid)
-          .order('block_index', { ascending: true });
-
-        if (cancelled) return;
-        if (error) {
-          setState({ blocks: [], loading: false, error: error.message });
-          return;
-        }
-
-        setState({ blocks: (data ?? []) as BlockRow[], loading: false, error: null });
-      } catch (error) {
-        if (cancelled) return;
-        setState({ blocks: [], loading: false, error: error instanceof Error ? error.message : 'Failed to load stored blocks.' });
-      }
-    })();
-
-    return () => { cancelled = true; };
-  }, [doc, doc?.source_uid]);
 
   if (!doc) {
     return (
@@ -317,7 +255,7 @@ function BlocksTab({ doc }: { doc: ProjectDocumentRow | null }) {
     );
   }
 
-  if (!state || state.loading) {
+  if (!artifacts || artifacts.blocks.loading || artifacts.json.loading) {
     return (
       <DocumentPreviewShell doc={doc}>
         <DocumentPreviewMessage message={<IconLoader2 size={20} className="animate-spin text-muted-foreground" />} />
@@ -325,15 +263,19 @@ function BlocksTab({ doc }: { doc: ProjectDocumentRow | null }) {
     );
   }
 
-  if (state.error) {
+  const isRawDocling = artifacts.mode === 'raw_docling';
+  const state = artifacts.blocks;
+  const effectiveError = isRawDocling ? artifacts.json.error ?? state.error : state.error;
+
+  if (effectiveError) {
     return (
       <DocumentPreviewShell doc={doc}>
-        <DocumentPreviewMessage message={state.error} />
+        <DocumentPreviewMessage message={effectiveError} />
       </DocumentPreviewShell>
     );
   }
 
-  if (state.blocks.length === 0) {
+  if (!isRawDocling && state.blocks.length === 0) {
     return (
       <DocumentPreviewShell doc={doc}>
         <DocumentPreviewMessage message="No stored blocks were found for this parsed document." />
@@ -341,10 +283,75 @@ function BlocksTab({ doc }: { doc: ProjectDocumentRow | null }) {
     );
   }
 
+  if (isRawDocling && state.rawItems.length === 0) {
+    return (
+      <DocumentPreviewShell doc={doc}>
+        <DocumentPreviewMessage message="No raw Docling items were found for this parsed document." />
+      </DocumentPreviewShell>
+    );
+  }
+
   return (
     <DocumentPreviewShell doc={doc}>
       <div className="space-y-3 px-4 py-4">
-        {state.blocks.map((b, i) => (
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="text-xs text-muted-foreground">
+            {isRawDocling
+              ? state.rawItems.length + ' raw Docling item' + (state.rawItems.length === 1 ? '' : 's')
+              : state.blocks.length + ' normalized block' + (state.blocks.length === 1 ? '' : 's')}
+          </div>
+          <Badge size="sm" variant={isRawDocling ? 'teal' : 'gray'}>
+            {isRawDocling ? 'Raw Docling' : 'Normalized'}
+          </Badge>
+        </div>
+
+        {isRawDocling ? state.rawItems.map((item, i) => (
+          <div key={item.pointer} className="rounded-lg border border-border bg-background/70 p-4 shadow-sm">
+            <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
+              <div className="flex min-w-0 items-center gap-2">
+                <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-md bg-muted px-2 text-[10px] font-semibold tabular-nums text-muted-foreground">
+                  {i}
+                </span>
+                <Badge size="xs" variant="teal">
+                  {item.kind}
+                </Badge>
+                <Badge size="xs" variant="outline">
+                  {item.native_label}
+                </Badge>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                {item.page_no != null && (
+                  <span className="rounded-md border border-border bg-card px-2 py-1 text-[10px] font-medium text-muted-foreground">
+                    p.{item.page_no}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <div className="whitespace-pre-wrap text-sm leading-6 text-foreground">
+              {item.content || <span className="italic text-muted-foreground">No text content.</span>}
+            </div>
+
+            <div className="mt-4 grid gap-3 border-t border-border/70 pt-3 sm:grid-cols-2">
+              <div>
+                <div className="mb-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                  Pointer
+                </div>
+                <div className="break-all font-mono text-xs text-foreground/90">
+                  {item.pointer}
+                </div>
+              </div>
+              <div>
+                <div className="mb-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                  Pages
+                </div>
+                <div className="break-all font-mono text-xs text-foreground/90">
+                  {item.page_nos.length > 0 ? item.page_nos.join(', ') : '?'}
+                </div>
+              </div>
+            </div>
+          </div>
+        )) : state.blocks.map((b, i) => (
           <div key={b.block_uid} className="rounded-lg border border-border bg-background/70 p-4 shadow-sm">
             {(() => {
               const metadata = getParsedBlockMetadata(b);
@@ -358,7 +365,7 @@ function BlocksTab({ doc }: { doc: ProjectDocumentRow | null }) {
                       </span>
                       <Badge
                         size="xs"
-                        variant={(badgeColorMap[b.block_type] ?? 'gray') as BadgeProps['variant']}
+                        variant={getParsedBlockBadgeVariant(b.block_type, badgeColorMap)}
                       >
                         {b.block_type}
                       </Badge>
@@ -580,7 +587,7 @@ export const PARSE_TABS: WorkbenchTab[] = [
   { id: 'parse-settings', label: 'Parse Settings', icon: IconSettings },
   { id: 'docling-md', label: 'Docling Markdown', icon: IconFileText },
   { id: 'blocks', label: 'Parsed Blocks', icon: IconLayoutList },
-  { id: 'docling-json', label: 'DoclingDocument Json', icon: IconBraces },
+  { id: 'docling-json', label: 'Downloads', icon: IconBraces },
 ];
 
 export const PARSE_DEFAULT_PANES: Pane[] = normalizePaneWidths([
@@ -595,6 +602,8 @@ export function useParseWorkbench() {
   useShellHeaderTitle({ title: 'Parse Documents' });
   const { resolvedProjectId } = useProjectFocus();
   const workbenchRef = useRef<WorkbenchHandle>(null);
+  const artifactsCacheRef = useRef(new Map<string, ParseArtifactBundle>());
+  const artifactsRequestRef = useRef(new Map<string, Promise<ParseArtifactBundle>>());
 
   const docState = useProjectDocuments(resolvedProjectId);
   const { docs, loading, error, selected, toggleSelect, toggleSelectAll, allSelected, someSelected, refreshDocs } = docState;
@@ -602,10 +611,50 @@ export function useParseWorkbench() {
   const parseTab = useParseTab();
 
   const [activeDocUid, setActiveDocUid] = useState<string | null>(null);
+  const [activeArtifacts, setActiveArtifacts] = useState<ParseArtifactBundle | null>(null);
   const activeDoc = useMemo(
     () => docs.find((d) => d.source_uid === activeDocUid) ?? null,
     [docs, activeDocUid],
   );
+
+  useEffect(() => {
+    if (!activeDoc) {
+      setActiveArtifacts(null);
+      return;
+    }
+
+    const cacheKey = getParseArtifactCacheKey(activeDoc);
+    const cached = artifactsCacheRef.current.get(cacheKey);
+    if (cached) {
+      setActiveArtifacts(cached);
+      return;
+    }
+
+    let cancelled = false;
+    setActiveArtifacts(createLoadingParseArtifactBundle(activeDoc));
+
+    const existingRequest = artifactsRequestRef.current.get(cacheKey);
+    const request = existingRequest ?? primeParseArtifactsForDocument(activeDoc);
+    if (!existingRequest) {
+      artifactsRequestRef.current.set(cacheKey, request);
+    }
+
+    request
+      .then((bundle) => {
+        artifactsCacheRef.current.set(cacheKey, bundle);
+        artifactsRequestRef.current.delete(cacheKey);
+        if (!cancelled && getParseArtifactCacheKey(activeDoc) === cacheKey) {
+          setActiveArtifacts(bundle);
+        }
+      })
+      .catch(() => {
+        artifactsRequestRef.current.delete(cacheKey);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeDoc]);
 
   const handleDocClick = useCallback((doc: ProjectDocumentRow) => {
     setActiveDocUid(doc.source_uid);
@@ -632,15 +681,21 @@ export function useParseWorkbench() {
 
   const parseExtraColumns: ExtraColumn[] = useMemo(() => [
     {
+      id: 'profile',
       header: 'Profile',
+      collapseBelow: 700,
+      className: 'w-[8.5rem]',
       render: (doc) => {
         const name = getParseProfileName(doc);
         if (!name) return <span className="text-muted-foreground">—</span>;
-        return <span className="text-foreground/85">{name}</span>;
+        return <span className="block truncate text-foreground/85">{name}</span>;
       },
     },
     {
+      id: 'blocks',
       header: 'Blocks',
+      collapseBelow: 620,
+      className: 'w-[4.5rem] whitespace-nowrap text-right',
       render: (doc) => {
         if (doc.conv_total_blocks == null) return <span className="text-muted-foreground">—</span>;
         return <span className="tabular-nums text-foreground/90">{doc.conv_total_blocks}</span>;
@@ -716,19 +771,19 @@ export function useParseWorkbench() {
     }
 
     if (tabId === 'docling-md') {
-      return <DoclingMdTab doc={activeDoc} />;
+      return <DoclingMdTab doc={activeDoc} artifacts={activeArtifacts} />;
     }
 
     if (tabId === 'blocks') {
-      return <BlocksTab doc={activeDoc} />;
+      return <BlocksTab doc={activeDoc} artifacts={activeArtifacts} />;
     }
 
     if (tabId === 'docling-json') {
-      return <DoclingJsonTab doc={activeDoc} />;
+      return <DownloadsTab doc={activeDoc} artifacts={activeArtifacts} />;
     }
 
     return null;
-  }, [docs, loading, error, selected, toggleSelect, toggleSelectAll, allSelected, someSelected, activeDocUid, activeDoc, handleDocClick, parseTab, parseExtraColumns, handleReset, handleDelete]);
+  }, [docs, loading, error, selected, toggleSelect, toggleSelectAll, allSelected, someSelected, activeDocUid, activeDoc, activeArtifacts, handleDocClick, parseTab, parseExtraColumns, handleReset, handleDelete]);
 
   return { renderContent, workbenchRef };
 }

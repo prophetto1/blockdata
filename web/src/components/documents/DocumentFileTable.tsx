@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { IconLoader2 } from '@tabler/icons-react';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -8,8 +8,11 @@ import { getDocumentFormat, formatBytes } from '@/lib/projectDetailHelpers';
 import { cn } from '@/lib/utils';
 
 export interface ExtraColumn {
+  id?: string;
   header: string;
   render: (doc: ProjectDocumentRow) => ReactNode;
+  collapseBelow?: number;
+  className?: string;
 }
 
 interface DocumentFileTableProps {
@@ -47,35 +50,71 @@ export function DocumentFileTable({
   extraColumns = [],
   className,
 }: DocumentFileTableProps) {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const [containerWidth, setContainerWidth] = useState<number | null>(null);
   const classTokens = className?.split(/\s+/) ?? [];
   const isParseTable = classTokens.includes('parse-documents-table');
   const isParseDense = classTokens.includes('parse-documents-table-compact');
+  const showParseSize = !isParseTable || containerWidth == null || containerWidth >= 560;
+  const showParseFormat = !isParseTable || containerWidth == null || containerWidth >= 460;
+  const showParseStatus = hideStatus ? false : (!isParseTable || containerWidth == null || containerWidth >= 340);
+  const shouldWrapParseName = isParseTable && containerWidth != null && containerWidth < 260;
+  const visibleExtraColumns = useMemo(
+    () => extraColumns.filter((col) => !isParseTable || col.collapseBelow == null || containerWidth == null || containerWidth >= col.collapseBelow),
+    [containerWidth, extraColumns, isParseTable],
+  );
+
+  useEffect(() => {
+    if (!isParseTable) return;
+    const node = containerRef.current;
+    if (!node) return;
+
+    const updateWidth = () => setContainerWidth(node.clientWidth);
+    updateWidth();
+
+    if (typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (!entry) return;
+      setContainerWidth(entry.contentRect.width);
+    });
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [isParseTable]);
+
   const tableClassName = cn(
     'w-full text-left',
     isParseDense
-      ? 'text-[12px] leading-5'
+      ? 'table-fixed text-[12px] leading-5'
       : isParseTable
-      ? 'text-[length:var(--parse-json-font-size)] leading-[var(--parse-json-line-height)]'
+      ? 'table-fixed text-[length:var(--parse-json-font-size)] leading-[var(--parse-json-line-height)]'
       : 'text-sm',
   );
   const headerCellClassName = cn(
-    'px-3 font-medium',
+    'font-medium',
     isParseDense
-      ? 'py-1 text-[10px] uppercase tracking-[0.08em] text-muted-foreground'
+      ? 'px-2 py-1 text-[10px] uppercase tracking-[0.08em] text-muted-foreground'
       : isParseTable
-      ? 'py-1.5 text-[11px]'
-      : 'py-2',
+      ? 'px-2.5 py-1.5 text-[11px]'
+      : 'px-3 py-2',
   );
-  const bodyCellClassName = isParseDense ? 'px-3 py-1.5' : isParseTable ? 'px-3 py-2' : 'px-3 py-2.5';
+  const bodyCellClassName = isParseDense ? 'px-2 py-1.5' : isParseTable ? 'px-2.5 py-2' : 'px-3 py-2.5';
 
-  const baseCols = 4 + (hideStatus ? 0 : 1) + extraColumns.length + (renderRowActions ? 1 : 0);
+  const baseCols =
+    1 +
+    1 +
+    (showParseFormat ? 1 : 0) +
+    (showParseSize ? 1 : 0) +
+    (showParseStatus ? 1 : 0) +
+    visibleExtraColumns.length +
+    (renderRowActions ? 1 : 0);
   return (
-    <div className={cn('flex h-full flex-col', className)}>
+    <div ref={containerRef} className={cn('flex h-full flex-col', className)}>
       <ScrollArea className="min-h-0 flex-1" viewportClass="h-full overflow-auto">
         <table className={tableClassName}>
           <thead className="sticky top-0 z-10 border-b border-border bg-card text-muted-foreground">
             <tr>
-              <th className={cn('w-10 px-3', isParseDense ? 'py-1' : isParseTable ? 'py-1.5' : 'py-2')}>
+              <th className={cn('w-9', isParseDense ? 'px-2 py-1' : isParseTable ? 'px-2.5 py-1.5' : 'px-3 py-2')}>
                 <input
                   type="checkbox"
                   checked={allSelected}
@@ -87,13 +126,13 @@ export function DocumentFileTable({
                 />
               </th>
               <th className={headerCellClassName}>Name</th>
-              <th className={headerCellClassName}>Format</th>
-              <th className={headerCellClassName}>Size</th>
-              {!hideStatus && <th className={headerCellClassName}>Status</th>}
-              {extraColumns.map((col) => (
-                <th key={col.header} className={headerCellClassName}>{col.header}</th>
+              {showParseFormat && <th className={cn(headerCellClassName, isParseTable && 'w-[4.75rem]')}>Format</th>}
+              {showParseSize && <th className={cn(headerCellClassName, isParseTable && 'w-[4.5rem]')}>Size</th>}
+              {showParseStatus && <th className={cn(headerCellClassName, isParseTable && 'w-[6.5rem]')}>Status</th>}
+              {visibleExtraColumns.map((col) => (
+                <th key={col.id ?? col.header} className={cn(headerCellClassName, col.className)}>{col.header}</th>
               ))}
-              {renderRowActions && <th className={headerCellClassName}>Actions</th>}
+              {renderRowActions && <th className={cn(headerCellClassName, isParseTable && 'w-[4.5rem]')}>Actions</th>}
             </tr>
           </thead>
           <tbody>
@@ -156,33 +195,45 @@ export function DocumentFileTable({
                   </td>
                   <td className={bodyCellClassName}>
                     <span className={cn(
-                      'block truncate',
-                      isParseDense ? 'max-w-[280px] font-medium text-foreground/95' : 'max-w-[300px] text-foreground',
+                      'block min-w-0',
+                      isParseDense
+                        ? shouldWrapParseName
+                          ? 'w-full break-words font-medium leading-4 text-foreground/95'
+                          : 'w-full truncate font-medium text-foreground/95'
+                        : isParseTable
+                        ? shouldWrapParseName
+                          ? 'w-full break-words leading-5 text-foreground'
+                          : 'w-full truncate text-foreground'
+                        : 'max-w-[300px] text-foreground',
                     )}>
                       {doc.doc_title}
                     </span>
                   </td>
-                  <td className={bodyCellClassName}>
-                    {isParseDense ? (
-                      <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-                        {getDocumentFormat(doc)}
-                      </span>
-                    ) : (
-                      <Badge variant="gray" size="xs" className="uppercase">
-                        {getDocumentFormat(doc)}
-                      </Badge>
-                    )}
-                  </td>
-                  <td className={cn(bodyCellClassName, 'text-muted-foreground')}>
-                    {formatBytes(doc.source_filesize)}
-                  </td>
-                  {!hideStatus && (
-                    <td className={bodyCellClassName}>
+                  {showParseFormat && (
+                    <td className={cn(bodyCellClassName, 'whitespace-nowrap')}>
+                      {isParseDense ? (
+                        <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                          {getDocumentFormat(doc)}
+                        </span>
+                      ) : (
+                        <Badge variant="gray" size="xs" className="uppercase">
+                          {getDocumentFormat(doc)}
+                        </Badge>
+                      )}
+                    </td>
+                  )}
+                  {showParseSize && (
+                    <td className={cn(bodyCellClassName, 'whitespace-nowrap text-muted-foreground')}>
+                      {formatBytes(doc.source_filesize)}
+                    </td>
+                  )}
+                  {showParseStatus && (
+                    <td className={cn(bodyCellClassName, 'whitespace-nowrap')}>
                       <StatusBadge status={doc.status} error={doc.error} />
                     </td>
                   )}
-                  {extraColumns.map((col) => (
-                    <td key={col.header} className={bodyCellClassName}>{col.render(doc)}</td>
+                  {visibleExtraColumns.map((col) => (
+                    <td key={col.id ?? col.header} className={cn(bodyCellClassName, col.className)}>{col.render(doc)}</td>
                   ))}
                   {renderRowActions && (
                     <td className={bodyCellClassName}>{renderRowActions(doc)}</td>

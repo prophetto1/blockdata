@@ -12,6 +12,7 @@ import { PreviewTabPanel } from '@/components/documents/PreviewTabPanel';
 import type { ProjectDocumentRow } from '@/lib/projectDetailHelpers';
 import { downloadFromSignedUrl, resolveSignedUrlForLocators } from '@/lib/projectDetailHelpers';
 import { supabase } from '@/lib/supabase';
+import { cn } from '@/lib/utils';
 
 const DOCUMENTS_BUCKET = (import.meta.env.VITE_DOCUMENTS_BUCKET as string | undefined) ?? 'documents';
 
@@ -98,20 +99,27 @@ export function useAssetsWorkbench() {
 
     if (tabId === 'files') {
       return (
-        <DocumentFileTable
-          docs={docs}
-          loading={loading}
-          error={error}
-          selected={selected}
-          toggleSelect={toggleSelect}
-          toggleSelectAll={toggleSelectAll}
-          allSelected={allSelected}
-          someSelected={someSelected}
-          activeDoc={activeDocUid}
-          onDocClick={handleDocClick}
-          renderRowActions={renderRowActions}
-          hideStatus
-        />
+        <div className="flex h-full flex-col">
+          <div className="min-h-0 flex-1 p-1">
+            <div className="mx-auto flex h-full min-h-0 w-full max-w-[58rem] flex-col overflow-hidden rounded-md border border-border bg-card">
+              <DocumentFileTable
+                docs={docs}
+                loading={loading}
+                error={error}
+                selected={selected}
+                toggleSelect={toggleSelect}
+                toggleSelectAll={toggleSelectAll}
+                allSelected={allSelected}
+                someSelected={someSelected}
+                activeDoc={activeDocUid}
+                onDocClick={handleDocClick}
+                renderRowActions={renderRowActions}
+                hideStatus
+                className={cn('parse-documents-table', 'parse-documents-table-compact')}
+              />
+            </div>
+          </div>
+        </div>
       );
     }
 

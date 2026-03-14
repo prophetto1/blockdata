@@ -3,7 +3,7 @@ import { findAdminSubTabGroup } from './settings-tabs';
 
 describe('settings tab grouping', () => {
   it('maps config panels to the operations group', () => {
-    for (const id of ['instance-config', 'worker-config', 'platform-config'] as const) {
+    for (const id of ['instance-config', 'worker-config'] as const) {
       const group = findAdminSubTabGroup(id);
       expect(group?.id).toBe('operations');
     }

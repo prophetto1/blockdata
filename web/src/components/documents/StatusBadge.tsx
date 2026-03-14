@@ -15,7 +15,9 @@ export function StatusBadge({ status, error }: { status: string; error?: string 
       ? 'parsed'
       : status === 'uploaded'
         ? 'unparsed'
-        : status.replace(/_/g, ' ');
+        : status === 'conversion_failed'
+          ? 'failed'
+          : status.replace(/_/g, ' ');
   return (
     <Badge variant={variant} size="xs" title={error ?? undefined}>
       {status === 'converting' && <IconLoader2 size={10} className="mr-1 animate-spin" />}

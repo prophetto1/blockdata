@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-03-14T07:20:02.066Z",
+  "generatedAt": "2026-03-14T15:22:33.559Z",
   "scope": "auth",
   "pages": [
     {
@@ -226,43 +226,6 @@
       ]
     },
     {
-      "page": "src/pages/DocsEditor.tsx",
-      "componentCount": 3,
-      "categoryCounts": {
-        "tabler-icons": 1,
-        "local-components": 2
-      },
-      "components": [
-        {
-          "component": "IconLoader2",
-          "usedAs": "IconLoader2",
-          "source": "@tabler/icons-react",
-          "importKind": "named",
-          "importedAs": "IconLoader2",
-          "category": "tabler-icons",
-          "definition": "IconLoader2 comes from @tabler/icons-react (named import of IconLoader2)"
-        },
-        {
-          "component": "OnlyOfficeEditorPanel",
-          "usedAs": "OnlyOfficeEditorPanel",
-          "source": "@/components/documents/OnlyOfficeEditorPanel",
-          "importKind": "named",
-          "importedAs": "OnlyOfficeEditorPanel",
-          "category": "local-components",
-          "definition": "OnlyOfficeEditorPanel comes from @/components/documents/OnlyOfficeEditorPanel (named import of OnlyOfficeEditorPanel)"
-        },
-        {
-          "component": "ScrollArea",
-          "usedAs": "ScrollArea",
-          "source": "@/components/ui/scroll-area",
-          "importKind": "named",
-          "importedAs": "ScrollArea",
-          "category": "local-components",
-          "definition": "ScrollArea comes from @/components/ui/scroll-area (named import of ScrollArea)"
-        }
-      ]
-    },
-    {
       "page": "src/pages/DocumentTest.tsx",
       "componentCount": 10,
       "categoryCounts": {
@@ -351,6 +314,24 @@
           "category": "local-components",
           "definition": "MenuTrigger comes from @/components/ui/menu (named import of MenuTrigger)"
         },
+        {
+          "component": "Workbench",
+          "usedAs": "Workbench",
+          "source": "@/components/workbench/Workbench",
+          "importKind": "named",
+          "importedAs": "Workbench",
+          "category": "local-components",
+          "definition": "Workbench comes from @/components/workbench/Workbench (named import of Workbench)"
+        }
+      ]
+    },
+    {
+      "page": "src/pages/ExtractPage.tsx",
+      "componentCount": 1,
+      "categoryCounts": {
+        "local-components": 1
+      },
+      "components": [
         {
           "component": "Workbench",
           "usedAs": "Workbench",
@@ -2187,13 +2168,114 @@
     },
     {
       "page": "src/pages/settings/DoclingConfigPanel.tsx",
-      "componentCount": 26,
+      "componentCount": 39,
       "categoryCounts": {
+        "ark-ui": 12,
         "local-components": 14,
         "in-file component": 8,
-        "tabler-icons": 4
+        "tabler-icons": 4,
+        "unknown": 1
       },
       "components": [
+        {
+          "component": "ArkSelect",
+          "usedAs": "ArkSelect.Content",
+          "source": "@ark-ui/react/select",
+          "importKind": "named",
+          "importedAs": "Select",
+          "category": "ark-ui",
+          "definition": "ArkSelect.Content comes from @ark-ui/react/select (named import of Select)"
+        },
+        {
+          "component": "ArkSelect",
+          "usedAs": "ArkSelect.Control",
+          "source": "@ark-ui/react/select",
+          "importKind": "named",
+          "importedAs": "Select",
+          "category": "ark-ui",
+          "definition": "ArkSelect.Control comes from @ark-ui/react/select (named import of Select)"
+        },
+        {
+          "component": "ArkSelect",
+          "usedAs": "ArkSelect.HiddenSelect",
+          "source": "@ark-ui/react/select",
+          "importKind": "named",
+          "importedAs": "Select",
+          "category": "ark-ui",
+          "definition": "ArkSelect.HiddenSelect comes from @ark-ui/react/select (named import of Select)"
+        },
+        {
+          "component": "ArkSelect",
+          "usedAs": "ArkSelect.Indicator",
+          "source": "@ark-ui/react/select",
+          "importKind": "named",
+          "importedAs": "Select",
+          "category": "ark-ui",
+          "definition": "ArkSelect.Indicator comes from @ark-ui/react/select (named import of Select)"
+        },
+        {
+          "component": "ArkSelect",
+          "usedAs": "ArkSelect.Item",
+          "source": "@ark-ui/react/select",
+          "importKind": "named",
+          "importedAs": "Select",
+          "category": "ark-ui",
+          "definition": "ArkSelect.Item comes from @ark-ui/react/select (named import of Select)"
+        },
+        {
+          "component": "ArkSelect",
+          "usedAs": "ArkSelect.ItemIndicator",
+          "source": "@ark-ui/react/select",
+          "importKind": "named",
+          "importedAs": "Select",
+          "category": "ark-ui",
+          "definition": "ArkSelect.ItemIndicator comes from @ark-ui/react/select (named import of Select)"
+        },
+        {
+          "component": "ArkSelect",
+          "usedAs": "ArkSelect.ItemText",
+          "source": "@ark-ui/react/select",
+          "importKind": "named",
+          "importedAs": "Select",
+          "category": "ark-ui",
+          "definition": "ArkSelect.ItemText comes from @ark-ui/react/select (named import of Select)"
+        },
+        {
+          "component": "ArkSelect",
+          "usedAs": "ArkSelect.Positioner",
+          "source": "@ark-ui/react/select",
+          "importKind": "named",
+          "importedAs": "Select",
+          "category": "ark-ui",
+          "definition": "ArkSelect.Positioner comes from @ark-ui/react/select (named import of Select)"
+        },
+        {
+          "component": "ArkSelect",
+          "usedAs": "ArkSelect.Root",
+          "source": "@ark-ui/react/select",
+          "importKind": "named",
+          "importedAs": "Select",
+          "category": "ark-ui",
+          "definition": "ArkSelect.Root comes from @ark-ui/react/select (named import of Select)"
+        },
+        {
+          "component": "ArkSelect",
+          "usedAs": "ArkSelect.Trigger",
+          "source": "@ark-ui/react/select",
+          "importKind": "named",
+          "importedAs": "Select",
+          "category": "ark-ui",
+          "definition": "ArkSelect.Trigger comes from @ark-ui/react/select (named import of Select)"
+        },
+        {
+          "component": "ArkSelect",
+          "usedAs": "ArkSelect.ValueText",
+          "source": "@ark-ui/react/select",
+          "importKind": "named",
+          "importedAs": "Select",
+          "category": "ark-ui",
+          "definition": "ArkSelect.ValueText comes from @ark-ui/react/select (named import of Select)"
+        },
         {
           "component": "CollapsibleContent",
           "usedAs": "CollapsibleContent",
@@ -2238,6 +2320,15 @@
           "importedAs": null,
           "category": "in-file component",
           "definition": "ConfigEditor is defined in the same page file"
+        },
+        {
+          "component": "ConfigSelect",
+          "usedAs": "ConfigSelect",
+          "source": "(in-file or unresolved)",
+          "importKind": null,
+          "importedAs": null,
+          "category": "in-file component",
+          "definition": "ConfigSelect is defined in the same page file"
         },
         {
           "component": "DoclingConfigPanel",
@@ -2348,6 +2439,15 @@
           "definition": "NumberInputRoot comes from @/components/ui/number-input (named import of NumberInputRoot)"
         },
         {
+          "component": "Portal",
+          "usedAs": "Portal",
+          "source": "@ark-ui/react/portal",
+          "importKind": "named",
+          "importedAs": "Portal",
+          "category": "ark-ui",
+          "definition": "Portal comes from @ark-ui/react/portal (named import of Portal)"
+        },
+        {
           "component": "ScrollArea",
           "usedAs": "ScrollArea",
           "source": "@/components/ui/scroll-area",
@@ -2371,8 +2471,8 @@
           "source": "(in-file or unresolved)",
           "importKind": null,
           "importedAs": null,
-          "category": "in-file component",
-          "definition": "Select is defined in the same page file"
+          "category": "unknown",
+          "definition": "Select was detected in JSX but no matching import was resolved"
         },
         {
           "component": "SwitchControl",
@@ -2502,34 +2602,6 @@
           "importedAs": "SettingsPageFrame",
           "category": "relative-local",
           "definition": "SettingsPageFrame comes from ./SettingsPageHeader (named import of SettingsPageFrame)"
-        }
-      ]
-    },
-    {
-      "page": "src/pages/settings/PlatformConfigPanel.tsx",
-      "componentCount": 2,
-      "categoryCounts": {
-        "local-components": 1,
-        "relative-local": 1
-      },
-      "components": [
-        {
-          "component": "Button",
-          "usedAs": "Button",
-          "source": "@/components/ui/button",
-          "importKind": "named",
-          "importedAs": "Button",
-          "category": "local-components",
-          "definition": "Button comes from @/components/ui/button (named import of Button)"
-        },
-        {
-          "component": "SettingCard",
-          "usedAs": "SettingCard",
-          "source": "./setting-card-shared",
-          "importKind": "named",
-          "importedAs": "SettingCard",
-          "category": "relative-local",
-          "definition": "SettingCard comes from ./setting-card-shared (named import of SettingCard)"
         }
       ]
     },
@@ -3217,11 +3289,11 @@
     },
     {
       "page": "src/pages/settings/SettingsAdmin.tsx",
-      "componentCount": 10,
+      "componentCount": 8,
       "categoryCounts": {
         "local-components": 3,
-        "relative-local": 4,
         "ark-ui": 2,
+        "relative-local": 2,
         "external-package": 1
       },
       "components": [
@@ -3233,15 +3305,6 @@
           "importedAs": "Button",
           "category": "local-components",
           "definition": "Button comes from @/components/ui/button (named import of Button)"
-        },
-        {
-          "component": "DoclingConfigPanel",
-          "usedAs": "DoclingConfigPanel",
-          "source": "./DoclingConfigPanel",
-          "importKind": "named",
-          "importedAs": "DoclingConfigPanel",
-          "category": "relative-local",
-          "definition": "DoclingConfigPanel comes from ./DoclingConfigPanel (named import of DoclingConfigPanel)"
         },
         {
           "component": "ErrorAlert",
@@ -3287,15 +3350,6 @@
           "importedAs": "Navigate",
           "category": "external-package",
           "definition": "Navigate comes from react-router-dom (named import of Navigate)"
-        },
-        {
-          "component": "PlatformConfigPanel",
-          "usedAs": "PlatformConfigPanel",
-          "source": "./PlatformConfigPanel",
-          "importKind": "named",
-          "importedAs": "PlatformConfigPanel",
-          "category": "relative-local",
-          "definition": "PlatformConfigPanel comes from ./PlatformConfigPanel (named import of PlatformConfigPanel)"
         },
         {
           "component": "ScrollArea",
@@ -4243,13 +4297,14 @@
       ]
     }
   ],
-  "totalComponentUsages": 420,
+  "totalComponentUsages": 427,
   "categoryTotals": {
     "external-package": 17,
-    "local-components": 140,
-    "tabler-icons": 80,
+    "local-components": 138,
+    "tabler-icons": 79,
     "in-file component": 17,
-    "ark-ui": 146,
-    "relative-local": 20
+    "ark-ui": 158,
+    "relative-local": 17,
+    "unknown": 1
   }
 }

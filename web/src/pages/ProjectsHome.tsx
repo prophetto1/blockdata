@@ -14,6 +14,11 @@ type ProjectBootstrapRow = {
   updated_at: string;
 };
 
+type ProjectsHomeProps = {
+  title?: string;
+  basePath?: string;
+};
+
 const DEFAULT_PROJECT_NAME = 'Default Project';
 const DEFAULT_PROJECT_DESCRIPTION = 'Auto-created for new accounts';
 
@@ -40,8 +45,8 @@ async function loadProjects(): Promise<ProjectBootstrapRow[]> {
   return (data ?? []) as ProjectBootstrapRow[];
 }
 
-export default function ProjectsHome() {
-  useShellHeaderTitle({ title: 'ELT' });
+export default function ProjectsHome({ title = 'ELT', basePath = '/app/elt' }: ProjectsHomeProps) {
+  useShellHeaderTitle({ title });
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -93,13 +98,13 @@ export default function ProjectsHome() {
       const targetProject = focusedProject ?? defaultProject ?? projects[0];
 
       writeFocusedProjectId(targetProject.project_id);
-      navigate(`/app/elt/${targetProject.project_id}`, { replace: true });
+      navigate(`${basePath}/${targetProject.project_id}`, { replace: true });
     } catch (bootstrapError) {
       setError(bootstrapError instanceof Error ? bootstrapError.message : String(bootstrapError));
     } finally {
       setLoading(false);
     }
-  }, [navigate]);
+  }, [basePath, navigate]);
 
   useEffect(() => {
     void bootstrap();

@@ -94,7 +94,7 @@ type PendingUpload = {
 
 function resolveRouteProjectId(pathname: string): string | null {
   if (pathname.startsWith('/app/projects/list')) return null;
-  const match = pathname.match(/^\/app\/elt\/([^/]+)(?:\/|$)/);
+  const match = pathname.match(/^\/app\/(?:elt|rag)\/([^/]+)(?:\/|$)/);
   if (!match) return null;
   return match[1] ?? null;
 }
@@ -434,3 +434,4 @@ export function useEltWorkbench(_workbenchRef: React.RefObject<WorkbenchHandle |
     handlePanesChange,
   };
 }
+

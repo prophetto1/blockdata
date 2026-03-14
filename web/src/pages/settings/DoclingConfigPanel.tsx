@@ -1,4 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Select as ArkSelect, createListCollection } from '@ark-ui/react/select';
+import { Portal } from '@ark-ui/react/portal';
 import { supabase } from '@/lib/supabase';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
@@ -12,6 +15,7 @@ import { SwitchRoot, SwitchControl, SwitchThumb, SwitchHiddenInput } from '@/com
 import { CollapsibleRoot, CollapsibleTrigger, CollapsibleIndicator, CollapsibleContent } from '@/components/ui/collapsible';
 import { NumberInputRoot, NumberInputInput } from '@/components/ui/number-input';
 import { FieldRoot, FieldLabel, FieldHelperText } from '@/components/ui/field';
+import { useShellHeaderTitle } from '@/components/common/useShellHeaderTitle';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -19,6 +23,12 @@ type ParsingProfile = {
   id: string;
   parser: string;
   config: Record<string, unknown>;
+};
+
+type ProfileOption = {
+  label: string;
+  value: string;
+  isDefault: boolean;
 };
 
 type DoclingConfig = {
@@ -177,7 +187,7 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
   );
 }
 
-function Select({ value, options, onChange }: { value: string; options: { value: string; label: string }[]; onChange: (v: string) => void }) {
+function ConfigSelect({ value, options, onChange }: { value: string; options: { value: string; label: string }[]; onChange: (v: string) => void }) {
   return (
     <select
       value={value}
@@ -258,7 +268,7 @@ function ConfigEditor({ config, onChange }: { config: DoclingConfig; onChange: (
           <Toggle checked={!!get('is_default', false)} onChange={(v) => set('is_default', v)} />
         </FieldRow>
         <FieldRow label="Pipeline" description="Which processing pipeline to use for PDF/image documents">
-          <Select value={pipelineMode} options={PIPELINE_OPTIONS} onChange={(v) => set('pipeline', v)} />
+          <ConfigSelect value={pipelineMode} options={PIPELINE_OPTIONS} onChange={(v) => set('pipeline', v)} />
         </FieldRow>
         <FieldRow label="Document Timeout" description="Max seconds per document (0 = no limit)">
           <NumberInput value={(get('document_timeout', 0) as number)} onChange={(v) => set('document_timeout', v || null)} min={0} step={10} />
@@ -271,7 +281,7 @@ function ConfigEditor({ config, onChange }: { config: DoclingConfig; onChange: (
       {/* Accelerator */}
       <Section title="Accelerator" defaultOpen={false}>
         <FieldRow label="Device">
-          <Select value={(get('accelerator_options.device', 'auto') as string)} options={DEVICE_OPTIONS} onChange={(v) => set('accelerator_options.device', v)} />
+          <ConfigSelect value={(get('accelerator_options.device', 'auto') as string)} options={DEVICE_OPTIONS} onChange={(v) => set('accelerator_options.device', v)} />
         </FieldRow>
         <FieldRow label="Threads">
           <NumberInput value={(get('accelerator_options.num_threads', 4) as number)} onChange={(v) => set('accelerator_options.num_threads', v)} min={1} max={32} />
@@ -286,7 +296,7 @@ function ConfigEditor({ config, onChange }: { config: DoclingConfig; onChange: (
               <Toggle checked={!!get('pdf_pipeline.do_ocr', true)} onChange={(v) => set('pdf_pipeline.do_ocr', v)} />
             </FieldRow>
             <FieldRow label="Engine">
-              <Select value={(get('pdf_pipeline.ocr_options.kind', 'auto') as string)} options={OCR_ENGINE_OPTIONS} onChange={(v) => set('pdf_pipeline.ocr_options.kind', v)} />
+              <ConfigSelect value={(get('pdf_pipeline.ocr_options.kind', 'auto') as string)} options={OCR_ENGINE_OPTIONS} onChange={(v) => set('pdf_pipeline.ocr_options.kind', v)} />
             </FieldRow>
             <FieldRow label="Languages" description="Comma-separated language codes">
               <TextInput
@@ -344,7 +354,7 @@ function ConfigEditor({ config, onChange }: { config: DoclingConfig; onChange: (
 
           <Section title="Layout">
             <FieldRow label="Model">
-              <Select value={(get('pdf_pipeline.layout_options.model', 'heron') as string)} options={LAYOUT_MODEL_OPTIONS} onChange={(v) => set('pdf_pipeline.layout_options.model', v)} />
+              <ConfigSelect value={(get('pdf_pipeline.layout_options.model', 'heron') as string)} options={LAYOUT_MODEL_OPTIONS} onChange={(v) => set('pdf_pipeline.layout_options.model', v)} />
             </FieldRow>
             <FieldRow label="Create Orphan Clusters">
               <Toggle checked={!!get('pdf_pipeline.layout_options.create_orphan_clusters', true)} onChange={(v) => set('pdf_pipeline.layout_options.create_orphan_clusters', v)} />
@@ -356,7 +366,7 @@ function ConfigEditor({ config, onChange }: { config: DoclingConfig; onChange: (
               <Toggle checked={!!get('pdf_pipeline.do_table_structure', true)} onChange={(v) => set('pdf_pipeline.do_table_structure', v)} />
             </FieldRow>
             <FieldRow label="Mode">
-              <Select value={(get('pdf_pipeline.table_structure_options.mode', 'accurate') as string)} options={TABLE_MODE_OPTIONS} onChange={(v) => set('pdf_pipeline.table_structure_options.mode', v)} />
+              <ConfigSelect value={(get('pdf_pipeline.table_structure_options.mode', 'accurate') as string)} options={TABLE_MODE_OPTIONS} onChange={(v) => set('pdf_pipeline.table_structure_options.mode', v)} />
             </FieldRow>
             <FieldRow label="Cell Matching" description="Align detected cells with OCR text">
               <Toggle checked={!!get('pdf_pipeline.table_structure_options.do_cell_matching', true)} onChange={(v) => set('pdf_pipeline.table_structure_options.do_cell_matching', v)} />
@@ -393,10 +403,10 @@ function ConfigEditor({ config, onChange }: { config: DoclingConfig; onChange: (
       {pipelineMode === 'vlm' && (
         <Section title="VLM Pipeline">
           <FieldRow label="Model Preset">
-            <Select value={(get('vlm_pipeline.vlm_options.preset', 'granite_docling') as string)} options={VLM_PRESET_OPTIONS} onChange={(v) => set('vlm_pipeline.vlm_options.preset', v)} />
+            <ConfigSelect value={(get('vlm_pipeline.vlm_options.preset', 'granite_docling') as string)} options={VLM_PRESET_OPTIONS} onChange={(v) => set('vlm_pipeline.vlm_options.preset', v)} />
           </FieldRow>
           <FieldRow label="Response Format">
-            <Select value={(get('vlm_pipeline.vlm_options.response_format', 'doctags') as string)} options={VLM_RESPONSE_FORMAT_OPTIONS} onChange={(v) => set('vlm_pipeline.vlm_options.response_format', v)} />
+            <ConfigSelect value={(get('vlm_pipeline.vlm_options.response_format', 'doctags') as string)} options={VLM_RESPONSE_FORMAT_OPTIONS} onChange={(v) => set('vlm_pipeline.vlm_options.response_format', v)} />
           </FieldRow>
           <FieldRow label="Scale">
             <NumberInput value={(get('vlm_pipeline.vlm_options.scale', 2.0) as number)} onChange={(v) => set('vlm_pipeline.vlm_options.scale', v)} min={0.5} max={4} step={0.5} />
@@ -504,6 +514,9 @@ export function Component() {
 }
 
 export function DoclingConfigPanel() {
+  useShellHeaderTitle({ title: 'Profiles', breadcrumbs: ['Settings', 'Admin', 'Docling', 'Profiles'] });
+
+  const navigate = useNavigate();
   const [profiles, setProfiles] = useState<ParsingProfile[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [editConfig, setEditConfig] = useState<DoclingConfig | null>(null);
@@ -516,6 +529,30 @@ export function DoclingConfigPanel() {
     if (!editConfig || !savedConfig) return false;
     return JSON.stringify(editConfig) !== JSON.stringify(savedConfig);
   }, [editConfig, savedConfig]);
+
+  const selectedProfile = useMemo(
+    () => profiles.find((profile) => profile.id === selectedId) ?? null,
+    [profiles, selectedId],
+  );
+
+  const selectedProfileConfig = useMemo(
+    () => (selectedProfile ? (selectedProfile.config as DoclingConfig) : null),
+    [selectedProfile],
+  );
+
+  const profileCollection = useMemo(
+    () => createListCollection<ProfileOption>({
+      items: profiles.map((profile) => {
+        const config = profile.config as DoclingConfig;
+        return {
+          label: config.name ?? 'Unnamed',
+          value: profile.id,
+          isDefault: Boolean(config.is_default),
+        };
+      }),
+    }),
+    [profiles],
+  );
 
   const loadProfiles = useCallback(async () => {
     setLoading(true);
@@ -551,6 +588,14 @@ export function DoclingConfigPanel() {
     setEditConfig(profile.config as DoclingConfig);
     setSavedConfig(profile.config as DoclingConfig);
   }, []);
+
+  const handleProfileChange = useCallback((nextId: string | null) => {
+    if (!nextId) return;
+    const profile = profiles.find((item) => item.id === nextId);
+    if (profile) {
+      selectProfile(profile);
+    }
+  }, [profiles, selectProfile]);
 
   const handleSave = useCallback(async () => {
     if (!selectedId || !editConfig || saving) return;
@@ -655,102 +700,149 @@ export function DoclingConfigPanel() {
     }
   }, [selectedId, profiles, selectProfile]);
 
-  if (loading) {
-    return <p className="p-4 text-sm text-muted-foreground">Loading docling profiles...</p>;
-  }
 
   return (
-    <div className="flex h-full min-h-0 gap-0 overflow-hidden">
-      {/* Profile list */}
-      <nav className="w-48 shrink-0 border-r border-border">
-        <ScrollArea className="h-full">
-          <div className="p-2 space-y-0.5">
-            {profiles.map((profile) => {
-              const cfg = profile.config as DoclingConfig;
-              return (
-                <button
-                  key={profile.id}
-                  type="button"
-                  onClick={() => selectProfile(profile)}
-                  className={cn(
-                    'flex w-full flex-col items-start rounded-md px-2.5 py-1.5 text-left transition-colors',
-                    profile.id === selectedId
-                      ? 'bg-accent text-accent-foreground'
-                      : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground',
-                  )}
-                >
-                  <span className="text-sm font-medium">{cfg.name ?? 'Unnamed'}</span>
-                  {cfg.is_default && (
-                    <span className="text-[10px] font-medium text-primary">default</span>
-                  )}
-                </button>
-              );
-            })}
-            <button
-              type="button"
-              onClick={() => { void handleCreate(); }}
-              className="flex w-full items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm text-muted-foreground hover:bg-accent/50 hover:text-foreground"
-            >
-              <IconPlus size={14} />
-              Add Profile
-            </button>
-          </div>
-        </ScrollArea>
+    <div className="flex h-full min-h-0 overflow-hidden">
+      <nav className="w-56 shrink-0 border-r border-border">
+        <div className="p-2">
+          <button
+            type="button"
+            className="flex w-full items-center rounded-md bg-accent px-2.5 py-1.5 text-sm font-medium text-accent-foreground"
+            aria-current="page"
+          >
+            Profiles
+          </button>
+          <button
+            type="button"
+            className="mt-1 flex w-full items-center rounded-md px-2.5 py-1.5 text-sm text-muted-foreground transition hover:bg-accent/50 hover:text-foreground"
+            onClick={() => navigate('/app/superuser/document-views')}
+          >
+            Block Types
+          </button>
+        </div>
       </nav>
 
-      {/* Config editor */}
-      <div className="min-w-0 flex-1 overflow-hidden">
+      <div className="min-w-0 flex flex-1 flex-col overflow-hidden">
         {error && (
           <div className="border-b border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-700 dark:text-red-300">
             {error}
           </div>
         )}
 
-        {editConfig ? (
-          <>
-            {/* Toolbar */}
-            <div className="flex items-center justify-between border-b border-border px-3 py-2">
-              <div className="text-sm font-medium text-foreground">
-                {editConfig.name ?? 'Unnamed'}
-                {isDirty && <span className="ml-2 text-xs text-muted-foreground">(unsaved)</span>}
+        <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border px-3 py-3">
+          <div className="flex min-w-0 flex-1 flex-wrap items-end gap-3">
+            <div className="min-w-[220px] max-w-sm flex-1">
+              <div className="mb-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                Active profile
               </div>
-              <div className="flex items-center gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => { void handleDuplicate(); }}
-                  className="inline-flex h-7 items-center gap-1 rounded-md border border-border px-2 text-xs text-muted-foreground hover:bg-accent hover:text-foreground"
-                  title="Duplicate profile"
-                >
-                  <IconCopy size={13} />
-                  Duplicate
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { void handleDelete(); }}
-                  className="inline-flex h-7 items-center gap-1 rounded-md border border-border px-2 text-xs text-red-500 hover:bg-red-500/10"
-                  title="Delete profile"
-                >
-                  <IconTrash size={13} />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { void handleSave(); }}
-                  disabled={!isDirty || saving}
-                  className="inline-flex h-7 items-center gap-1 rounded-md bg-primary px-2.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-                >
-                  <IconDeviceFloppy size={13} />
-                  {saving ? 'Saving...' : 'Save'}
-                </button>
-              </div>
+              <ArkSelect.Root
+                collection={profileCollection}
+                value={selectedId ? [selectedId] : []}
+                onValueChange={(details) => handleProfileChange(details.value[0] ?? null)}
+                disabled={profileCollection.items.length === 0}
+                positioning={{ placement: 'bottom-start', sameWidth: true, offset: { mainAxis: 6 }, strategy: 'fixed' }}
+              >
+                <ArkSelect.Control className="relative">
+                  <ArkSelect.Trigger className="flex h-9 w-full items-center justify-between rounded-md border border-input bg-background px-3 text-sm text-foreground shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring data-[disabled]:cursor-not-allowed data-[disabled]:opacity-60">
+                    <ArkSelect.ValueText placeholder="Select a profile" />
+                    <ArkSelect.Indicator className="ml-2 shrink-0 text-muted-foreground">
+                      <span aria-hidden="true">v</span>
+                    </ArkSelect.Indicator>
+                  </ArkSelect.Trigger>
+                </ArkSelect.Control>
+                <Portal>
+                  <ArkSelect.Positioner className="z-50">
+                    <ArkSelect.Content className="max-h-72 overflow-y-auto rounded-md border border-border bg-popover p-1 shadow-md">
+                      {profileCollection.items.map((item) => (
+                        <ArkSelect.Item
+                          key={item.value}
+                          item={item}
+                          className={cn(
+                            'flex cursor-pointer items-center justify-between rounded-md px-2.5 py-2 text-sm text-popover-foreground',
+                            'data-[state=checked]:bg-accent data-[state=checked]:font-medium',
+                            'data-highlighted:bg-accent data-highlighted:outline-none',
+                          )}
+                        >
+                          <div className="flex min-w-0 items-center gap-2">
+                            <ArkSelect.ItemText>{item.label}</ArkSelect.ItemText>
+                            {item.isDefault && (
+                              <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-[0.08em] text-primary">
+                                default
+                              </span>
+                            )}
+                          </div>
+                          <ArkSelect.ItemIndicator className="text-primary">Selected</ArkSelect.ItemIndicator>
+                        </ArkSelect.Item>
+                      ))}
+                    </ArkSelect.Content>
+                  </ArkSelect.Positioner>
+                </Portal>
+                <ArkSelect.HiddenSelect />
+              </ArkSelect.Root>
             </div>
 
-            {/* Editor */}
-            <ScrollArea className="h-[calc(100%-41px)]" contentClass="p-3 space-y-3">
-              <ConfigEditor config={editConfig} onChange={setEditConfig} />
-            </ScrollArea>
-          </>
+            {selectedProfileConfig?.is_default && (
+              <span className="rounded-full bg-primary/10 px-2 py-1 text-[10px] font-medium uppercase tracking-[0.08em] text-primary">
+                Default profile
+              </span>
+            )}
+
+            {isDirty && (
+              <span className="rounded-full bg-amber-500/10 px-2 py-1 text-[10px] font-medium uppercase tracking-[0.08em] text-amber-700 dark:text-amber-300">
+                Unsaved changes
+              </span>
+            )}
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => { void handleCreate(); }}
+              className="inline-flex h-7 items-center gap-1 rounded-md border border-border px-2 text-xs text-muted-foreground hover:bg-accent hover:text-foreground"
+              title="Add profile"
+            >
+              <IconPlus size={13} />
+              Add Profile
+            </button>
+            <button
+              type="button"
+              onClick={() => { void handleDuplicate(); }}
+              className="inline-flex h-7 items-center gap-1 rounded-md border border-border px-2 text-xs text-muted-foreground hover:bg-accent hover:text-foreground"
+              title="Duplicate profile"
+            >
+              <IconCopy size={13} />
+              Duplicate
+            </button>
+            <button
+              type="button"
+              onClick={() => { void handleDelete(); }}
+              className="inline-flex h-7 items-center gap-1 rounded-md border border-border px-2 text-xs text-red-500 hover:bg-red-500/10"
+              title="Delete profile"
+            >
+              <IconTrash size={13} />
+            </button>
+            <button
+              type="button"
+              onClick={() => { void handleSave(); }}
+              disabled={!isDirty || saving}
+              className="inline-flex h-7 items-center gap-1 rounded-md bg-primary px-2.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+            >
+              <IconDeviceFloppy size={13} />
+              {saving ? 'Saving...' : 'Save'}
+            </button>
+          </div>
+        </div>
+
+        {loading ? (
+          <div className="flex min-h-0 flex-1 items-center justify-center text-sm text-muted-foreground">
+            Loading docling profiles...
+          </div>
+        ) : editConfig ? (
+          <ScrollArea className="min-h-0 flex-1" contentClass="p-3 space-y-3">
+            <ConfigEditor config={editConfig} onChange={setEditConfig} />
+          </ScrollArea>
         ) : (
-          <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+          <div className="flex min-h-0 flex-1 items-center justify-center text-sm text-muted-foreground">
             No profiles. Click "Add Profile" to create one.
           </div>
         )}
@@ -758,3 +850,5 @@ export function DoclingConfigPanel() {
     </div>
   );
 }
+
+

@@ -228,6 +228,8 @@ export function InstanceConfigPanel() {
   });
 
   const dirtyKeys = useMemo(() => {
+    if (loading) return new Set<string>();
+
     const dirty = new Set<string>();
     for (const key of ALL_INSTANCE_KEYS) {
       if (JSON.stringify(values[key]) !== JSON.stringify(serverValues[key])) {
@@ -235,7 +237,7 @@ export function InstanceConfigPanel() {
       }
     }
     return dirty;
-  }, [values, serverValues]);
+  }, [loading, values, serverValues]);
 
   const loadConfig = useCallback(async () => {
     setLoading(true);
@@ -341,7 +343,7 @@ export function InstanceConfigPanel() {
   return (
     <div className="flex h-full gap-0 overflow-hidden">
       {/* Section sidebar */}
-      <nav className="w-44 shrink-0 overflow-y-auto border-r border-border pr-2">
+      <nav className="w-56 shrink-0 overflow-y-auto border-r border-border pr-2">
         <ul className="space-y-0.5 py-1">
           {SECTIONS.map((section) => {
             const sectionDirtyCount = section.settings.filter((s) => dirtyKeys.has(s.key)).length;

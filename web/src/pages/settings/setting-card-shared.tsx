@@ -15,6 +15,13 @@ import { cn } from '@/lib/utils';
 
 export type FieldType = 'text' | 'number' | 'boolean' | 'select' | 'password' | 'textarea';
 
+export type SelectItemDef =
+  | string
+  | {
+    label: string;
+    value: string;
+  };
+
 export type SettingDef = {
   key: string;
   label: string;
@@ -22,7 +29,7 @@ export type SettingDef = {
   fieldType: FieldType;
   defaultValue: unknown;
   placeholder?: string;
-  selectItems?: string[];
+  selectItems?: SelectItemDef[];
 };
 
 export type SectionDef = {
@@ -47,6 +54,16 @@ export type PolicyRow = {
 export const inputClass =
   'h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring';
 
+export function toSelectItemOptions(selectItems: SelectItemDef[]): { label: string; value: string }[] {
+  return selectItems.map((item) => {
+    if (typeof item === 'string') {
+      return { label: item, value: item };
+    }
+
+    return item;
+  });
+}
+
 /* ------------------------------------------------------------------ */
 /*  Setting card component                                             */
 /* ------------------------------------------------------------------ */
@@ -69,7 +86,7 @@ export function SettingCard({
   const selectCollection = useMemo(() => {
     if (setting.fieldType !== 'select' || !setting.selectItems) return null;
     return createListCollection({
-      items: setting.selectItems.map((item) => ({ label: item, value: item })),
+      items: toSelectItemOptions(setting.selectItems),
     });
   }, [setting.fieldType, setting.selectItems]);
 
