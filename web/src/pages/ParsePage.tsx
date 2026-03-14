@@ -10,11 +10,13 @@ export default function ParsePage() {
           ref={workbenchRef}
           tabs={PARSE_TABS}
           defaultPanes={PARSE_DEFAULT_PANES}
-          saveKey="parse-documents"
+          saveKey="parse-documents-v3"
           renderContent={renderContent}
+          className="parse-workbench"
           hideToolbar
           disableDrag
-          maxColumns={2}
+          lockLayout
+          maxColumns={3}
         />
       </div>
     </div>

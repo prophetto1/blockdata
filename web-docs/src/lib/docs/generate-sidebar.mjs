@@ -7,6 +7,7 @@
 
 const sectionsSidebar = [
   { slug: 'blockdata' },
+  { slug: 'docling-md-astro-preview' },
   {
     label: 'Internal',
     items: [

@@ -1826,6 +1826,161 @@ body {
   vertical-align: top;
 }
 
+/* ── Docling MD preview ──
+   Source-aligned with web-docs prose system.
+   Tokens:  web-docs/src/styles/workbench-shell.css:5-17
+   Rules:   web-docs/src/styles/workbench-shell.css:46-132
+   Overlay: web-docs/src/styles/global.css:264-350        */
+
+.docling-md-preview {
+  /* workbench-shell.css:47-48, 52-54 */
+  color: var(--foreground);
+  font-family: var(--app-font-prose);
+  font-size: var(--workbench-prose-font-size);
+  line-height: var(--workbench-prose-line-height);
+  word-break: break-word;
+  /* global.css:409 — content width cap */
+  width: min(100%, 65rem);
+  margin-inline: auto;
+}
+
+/* workbench-shell.css:57-64 */
+.docling-md-preview > :first-child { margin-top: 0; }
+.docling-md-preview > :last-child  { margin-bottom: 0; }
+
+/* workbench-shell.css:67-70 */
+.docling-md-preview :is(p, ul, ol, blockquote, pre, table) {
+  margin: var(--workbench-prose-block-gap) 0;
+}
+
+/* workbench-shell.css:72-74 */
+.docling-md-preview li + li { margin-top: 0.25rem; }
+
+/* workbench-shell.css:76-81 */
+.docling-md-preview :is(h1, h2, h3, h4) {
+  letter-spacing: var(--workbench-prose-heading-letter-spacing);
+  font-weight: 700;
+  line-height: 1.12;
+}
+
+/* workbench-shell.css:83-86 */
+.docling-md-preview h1 {
+  font-size: var(--workbench-prose-h1-size);
+}
+
+/* workbench-shell.css:88-92 */
+.docling-md-preview h2 {
+  font-size: var(--workbench-prose-h2-size);
+  margin-top: var(--workbench-prose-h2-top);
+  margin-bottom: var(--workbench-prose-heading-bottom);
+}
+
+/* workbench-shell.css:94-98 */
+.docling-md-preview h3 {
+  font-size: var(--workbench-prose-h3-size);
+  margin-top: var(--workbench-prose-h3-top);
+  margin-bottom: 0.4rem;
+}
+
+/* workbench-shell.css:100-104 */
+.docling-md-preview h4 {
+  font-size: var(--workbench-prose-h4-size);
+  margin-top: var(--workbench-prose-h4-top);
+  margin-bottom: 0.35rem;
+}
+
+/* global.css:288-292 — non-heading → heading extra gap */
+.docling-md-preview
+  :not(h1, h2, h3, h4, h5, h6)
+  + :is(h1, h2, h3, h4, h5, h6) {
+  margin-top: 1.15rem;
+}
+
+.docling-md-preview :is(ul, ol) { padding-left: 1.25rem; }
+
+/* workbench-shell.css:120-122 */
+.docling-md-preview a {
+  color: var(--primary);
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+/* workbench-shell.css:107-112 — uses theme-aware --sl-color-bg-inline-code */
+.docling-md-preview code:not(pre code) {
+  border: 0;
+  border-radius: 0.2rem;
+  background: color-mix(in oklab, var(--sl-color-bg-inline-code) 88%, var(--background) 12%);
+  padding: var(--workbench-prose-code-inline-padding);
+  font-size: 0.88em;
+  font-family: var(--app-font-mono);
+}
+
+/* workbench-shell.css:114-118 */
+.docling-md-preview pre {
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius) + 0.2rem);
+  padding: 0.8rem 1rem;
+  background: color-mix(in oklab, var(--card) 88%, var(--background) 12%);
+}
+
+.docling-md-preview pre code {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  font-size: 0.875rem;
+  line-height: 1.55;
+}
+
+/* workbench-shell.css:124-127 */
+.docling-md-preview blockquote {
+  border-inline-start: 3px solid var(--border);
+  padding: 0.12rem 0 0.12rem 0.72rem;
+  color: var(--muted-foreground);
+}
+
+/* workbench-shell.css:129-132 */
+.docling-md-preview table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.docling-md-preview :is(th, td) {
+  border: 1px solid var(--border);
+  padding: 0.5rem 0.6rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.docling-md-preview th {
+  font-weight: 600;
+  background: color-mix(in oklab, var(--card) 92%, var(--foreground) 8%);
+}
+
+.docling-md-preview hr {
+  border: 0;
+  border-top: 1px solid var(--border);
+  margin: 1.5rem 0;
+}
+
+.parse-documents-table {
+  font-family: var(--app-font-prose);
+  width: 100%;
+}
+
+.parse-workbench .workbench-tab {
+  font-size: 13px;
+}
+
+.parse-documents-table thead {
+  letter-spacing: -0.01em;
+}
+
+.parse-documents-table tbody td:first-child + td {
+  font-weight: 500;
+}
+
 .parse-playground-resizer {
   position: absolute;
   top: 0;

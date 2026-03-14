@@ -63,6 +63,45 @@ const baseDoc = {
   conv_locator: 'projects/project-1/converted/quarterly-report.md',
 };
 
+describe('PreviewTabPanel markdown class contract', () => {
+  beforeEach(() => {
+    resolveSignedUrlForLocatorsMock.mockReset();
+  });
+
+  afterEach(() => {
+    cleanup();
+  });
+
+  it('markdown preview uses parse-markdown-preview, not docling-md-preview', async () => {
+    const mdDoc = {
+      ...baseDoc,
+      source_type: 'md',
+      doc_title: 'notes.md',
+      source_locator: 'projects/project-1/source/notes.md',
+      conv_locator: null,
+    };
+    resolveSignedUrlForLocatorsMock.mockResolvedValueOnce({
+      url: 'https://example.test/notes.md',
+      error: null,
+    });
+
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
+      new Response('# Hello world', { status: 200 }),
+    );
+
+    const { container } = render(<PreviewTabPanel doc={mdDoc} />);
+
+    await waitFor(() => {
+      const mdPreview = container.querySelector('.parse-markdown-preview');
+      expect(mdPreview).toBeInTheDocument();
+    });
+
+    expect(container.querySelector('.docling-md-preview')).not.toBeInTheDocument();
+
+    fetchSpy.mockRestore();
+  });
+});
+
 describe('PreviewTabPanel parsed PDF toggle', () => {
   beforeEach(() => {
     resolveSignedUrlForLocatorsMock.mockReset();

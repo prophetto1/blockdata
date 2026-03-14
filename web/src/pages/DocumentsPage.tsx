@@ -8,6 +8,7 @@ import { useShellHeaderTitle } from '@/components/common/useShellHeaderTitle';
 import { useProjectFocus } from '@/hooks/useProjectFocus';
 import { useProjectDocuments } from '@/hooks/useProjectDocuments';
 import { DocumentFileTable } from '@/components/documents/DocumentFileTable';
+import { ParseConfigColumn } from '@/components/documents/ParseConfigColumn';
 import { UploadTabPanel } from '@/components/documents/UploadTabPanel';
 import { ParseTabPanel, ParseRowActions, useParseTab } from '@/components/documents/ParseTabPanel';
 import { EditTabPanel } from '@/components/documents/EditTabPanel';
@@ -35,6 +36,10 @@ export default function DocumentsPage() {
   const editDoc = useMemo(
     () => docState.docs.find((d) => d.source_uid === editDocUid) ?? null,
     [docState.docs, editDocUid],
+  );
+  const parseSelectedDoc = useMemo(
+    () => docState.docs.find((doc) => docState.selected.has(doc.source_uid)) ?? null,
+    [docState.docs, docState.selected],
   );
 
   const handleDocClick = useCallback(
@@ -126,11 +131,15 @@ export default function DocumentsPage() {
             />
           )}
           {activeTab === 'parse' && (
-            <ParseTabPanel
-              docs={docState.docs}
-              selected={docState.selected}
-              parseTab={parseTab}
-            />
+            <>
+              <ParseConfigColumn
+                docs={docState.docs}
+                selected={docState.selected}
+                selectedDoc={parseSelectedDoc}
+                parseTab={parseTab}
+              />
+              <ParseTabPanel parseTab={parseTab} />
+            </>
           )}
           {activeTab === 'edit' && (
             <EditTabPanel selectedDoc={editDoc} />

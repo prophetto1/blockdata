@@ -45,6 +45,7 @@ export type WorkbenchProps = {
   defaultPanes: Pane[];
   saveKey: string;
   renderContent: (tabId: string) => React.ReactNode;
+  className?: string;
   toolbarActions?: React.ReactNode;
   hideToolbar?: boolean;
   /** Return a label for dynamic tab IDs not in the static `tabs` array, or null to reject. */
@@ -61,6 +62,8 @@ export type WorkbenchProps = {
   maxTabsPerPane?: number;
   /** Disable all drag-and-drop (pane reorder + tab move between panes). */
   disableDrag?: boolean;
+  /** Lock pane chrome so tabs and panes cannot be closed, split, or rearranged from the UI. */
+  lockLayout?: boolean;
 };
 
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -174,7 +177,7 @@ function readPersistedPanes(saveKey: string, isValidTab: (tabId: string) => bool
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
-export const Workbench = forwardRef<WorkbenchHandle, WorkbenchProps>(function Workbench({ tabs, defaultPanes, saveKey, renderContent, toolbarActions, hideToolbar = false, dynamicTabLabel, onPanesChange, transformPanes, maxColumns, minColumns, maxTabsPerPane, disableDrag = false }, ref) {
+export const Workbench = forwardRef<WorkbenchHandle, WorkbenchProps>(function Workbench({ tabs, defaultPanes, saveKey, renderContent, className, toolbarActions, hideToolbar = false, dynamicTabLabel, onPanesChange, transformPanes, maxColumns, minColumns, maxTabsPerPane, disableDrag = false, lockLayout = false }, ref) {
   const fallbackTab = tabs[0]?.id ?? '';
 
   const staticTabIds = useMemo(() => new Set(tabs.map((tab) => tab.id)), [tabs]);
@@ -594,7 +597,7 @@ export const Workbench = forwardRef<WorkbenchHandle, WorkbenchProps>(function Wo
   // ── Render ──────────────────────────────────────────────────────────────
 
   return (
-    <div className="workbench-shell flex flex-col gap-2">
+    <div className={['workbench-shell flex flex-col gap-2', className].filter(Boolean).join(' ')}>
       {!hideToolbar && (
         <div className="workbench-toolbar">
           <div className="workbench-toolbar-panels" role="toolbar" aria-label="Panels">
@@ -702,74 +705,78 @@ export const Workbench = forwardRef<WorkbenchHandle, WorkbenchProps>(function Wo
                       >
                         {tabLabel(tabId)}
                       </button>
-                      <button
-                        type="button"
-                        aria-label={`Close ${tabLabel(tabId)} tab`}
-                        className="workbench-tab-close"
-                        onClick={() => closeTabOrColumn(pane, tabId)}
-                      >
-                        <IconX size={12} />
-                      </button>
+                      {!lockLayout && (
+                        <button
+                          type="button"
+                          aria-label={`Close ${tabLabel(tabId)} tab`}
+                          className="workbench-tab-close"
+                          onClick={() => closeTabOrColumn(pane, tabId)}
+                        >
+                          <IconX size={12} />
+                        </button>
+                      )}
                     </div>
                   ))}
                 </div>
 
-                <div className="workbench-pane-actions">
-                  <button
-                    type="button"
-                    title="Split panel"
-                    aria-label="Split panel"
-                    onClick={() => splitPanel(index)}
-                    className="workbench-pane-split-trigger"
-                  >
-                    <IconLayoutColumns size={14} />
-                  </button>
+                {!lockLayout && (
+                  <div className="workbench-pane-actions">
+                    <button
+                      type="button"
+                      title="Split panel"
+                      aria-label="Split panel"
+                      onClick={() => splitPanel(index)}
+                      className="workbench-pane-split-trigger"
+                    >
+                      <IconLayoutColumns size={14} />
+                    </button>
 
-                  <MenuRoot positioning={{ placement: 'bottom-end', offset: { mainAxis: 6 } }}>
-                    <MenuTrigger asChild>
-                      <button
-                        type="button"
-                        aria-label="Pane actions"
-                        className="workbench-pane-menu-trigger"
-                      >
-                        <IconDotsVertical size={14} />
-                      </button>
-                    </MenuTrigger>
-                    <MenuPortal>
-                      <MenuPositioner>
-                        <MenuContent>
-                          <MenuItem
-                            value={`${pane.id}-move-right`}
-                            onClick={() => movePaneByOffset(pane.id, 1)}
-                            disabled={disableDrag || index >= panes.length - 1}
-                          >
-                            Move right
-                          </MenuItem>
-                          <MenuItem
-                            value={`${pane.id}-move-left`}
-                            onClick={() => movePaneByOffset(pane.id, -1)}
-                            disabled={disableDrag || index <= 0}
-                          >
-                            Move left
-                          </MenuItem>
-                          <MenuItem
-                            value={`${pane.id}-close-all`}
-                            onClick={() => closeAllPanelsInPane(pane.id)}
-                          >
-                            Close all panels
-                          </MenuItem>
-                          <MenuItem
-                            value={`${pane.id}-remove`}
-                            onClick={() => removeColumn(pane.id)}
-                            disabled={panes.length <= (minColumns ?? 1)}
-                          >
-                            Remove pane
-                          </MenuItem>
-                        </MenuContent>
-                      </MenuPositioner>
-                    </MenuPortal>
-                  </MenuRoot>
-                </div>
+                    <MenuRoot positioning={{ placement: 'bottom-end', offset: { mainAxis: 6 } }}>
+                      <MenuTrigger asChild>
+                        <button
+                          type="button"
+                          aria-label="Pane actions"
+                          className="workbench-pane-menu-trigger"
+                        >
+                          <IconDotsVertical size={14} />
+                        </button>
+                      </MenuTrigger>
+                      <MenuPortal>
+                        <MenuPositioner>
+                          <MenuContent>
+                            <MenuItem
+                              value={`${pane.id}-move-right`}
+                              onClick={() => movePaneByOffset(pane.id, 1)}
+                              disabled={disableDrag || index >= panes.length - 1}
+                            >
+                              Move right
+                            </MenuItem>
+                            <MenuItem
+                              value={`${pane.id}-move-left`}
+                              onClick={() => movePaneByOffset(pane.id, -1)}
+                              disabled={disableDrag || index <= 0}
+                            >
+                              Move left
+                            </MenuItem>
+                            <MenuItem
+                              value={`${pane.id}-close-all`}
+                              onClick={() => closeAllPanelsInPane(pane.id)}
+                            >
+                              Close all panels
+                            </MenuItem>
+                            <MenuItem
+                              value={`${pane.id}-remove`}
+                              onClick={() => removeColumn(pane.id)}
+                              disabled={panes.length <= (minColumns ?? 1)}
+                            >
+                              Remove pane
+                            </MenuItem>
+                          </MenuContent>
+                        </MenuPositioner>
+                      </MenuPortal>
+                    </MenuRoot>
+                  </div>
+                )}
               </div>
 
               <div

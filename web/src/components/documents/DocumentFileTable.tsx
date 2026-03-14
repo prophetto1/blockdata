@@ -27,6 +27,7 @@ interface DocumentFileTableProps {
   emptyMessage?: string;
   hideStatus?: boolean;
   extraColumns?: ExtraColumn[];
+  className?: string;
 }
 
 export function DocumentFileTable({
@@ -44,15 +45,37 @@ export function DocumentFileTable({
   emptyMessage = 'No files in this project yet.',
   hideStatus = false,
   extraColumns = [],
+  className,
 }: DocumentFileTableProps) {
+  const classTokens = className?.split(/\s+/) ?? [];
+  const isParseTable = classTokens.includes('parse-documents-table');
+  const isParseDense = classTokens.includes('parse-documents-table-compact');
+  const tableClassName = cn(
+    'w-full text-left',
+    isParseDense
+      ? 'text-[12px] leading-5'
+      : isParseTable
+      ? 'text-[length:var(--parse-json-font-size)] leading-[var(--parse-json-line-height)]'
+      : 'text-sm',
+  );
+  const headerCellClassName = cn(
+    'px-3 font-medium',
+    isParseDense
+      ? 'py-1 text-[10px] uppercase tracking-[0.08em] text-muted-foreground'
+      : isParseTable
+      ? 'py-1.5 text-[11px]'
+      : 'py-2',
+  );
+  const bodyCellClassName = isParseDense ? 'px-3 py-1.5' : isParseTable ? 'px-3 py-2' : 'px-3 py-2.5';
+
   const baseCols = 4 + (hideStatus ? 0 : 1) + extraColumns.length + (renderRowActions ? 1 : 0);
   return (
-    <div className="flex h-full flex-col">
+    <div className={cn('flex h-full flex-col', className)}>
       <ScrollArea className="min-h-0 flex-1" viewportClass="h-full overflow-auto">
-        <table className="w-full text-left text-sm">
-          <thead className="sticky top-0 z-10 border-b border-border bg-card text-xs text-muted-foreground">
+        <table className={tableClassName}>
+          <thead className="sticky top-0 z-10 border-b border-border bg-card text-muted-foreground">
             <tr>
-              <th className="w-10 px-3 py-2">
+              <th className={cn('w-10 px-3', isParseDense ? 'py-1' : isParseTable ? 'py-1.5' : 'py-2')}>
                 <input
                   type="checkbox"
                   checked={allSelected}
@@ -63,14 +86,14 @@ export function DocumentFileTable({
                   className="h-3.5 w-3.5 rounded border-border"
                 />
               </th>
-              <th className="px-3 py-2 font-medium">Name</th>
-              <th className="px-3 py-2 font-medium">Format</th>
-              <th className="px-3 py-2 font-medium">Size</th>
-              {!hideStatus && <th className="px-3 py-2 font-medium">Status</th>}
+              <th className={headerCellClassName}>Name</th>
+              <th className={headerCellClassName}>Format</th>
+              <th className={headerCellClassName}>Size</th>
+              {!hideStatus && <th className={headerCellClassName}>Status</th>}
               {extraColumns.map((col) => (
-                <th key={col.header} className="px-3 py-2 font-medium">{col.header}</th>
+                <th key={col.header} className={headerCellClassName}>{col.header}</th>
               ))}
-              {renderRowActions && <th className="px-3 py-2 font-medium">Actions</th>}
+              {renderRowActions && <th className={headerCellClassName}>Actions</th>}
             </tr>
           </thead>
           <tbody>
@@ -106,15 +129,20 @@ export function DocumentFileTable({
               docs.map((doc) => (
                 <tr
                   key={doc.source_uid}
+                  aria-current={activeDoc === doc.source_uid ? 'true' : undefined}
                   onClick={() => onDocClick?.(doc)}
                   className={cn(
                     'border-b border-border/60 transition-colors hover:bg-accent/30',
                     selected.has(doc.source_uid) && 'bg-accent/20',
-                    activeDoc === doc.source_uid && 'bg-accent/40',
+                    activeDoc === doc.source_uid && (
+                      isParseTable
+                        ? 'bg-primary/10 font-medium ring-1 ring-inset ring-primary/25'
+                        : 'bg-accent/40'
+                    ),
                     onDocClick && 'cursor-pointer',
                   )}
                 >
-                  <td className="w-10 px-3 py-2.5">
+                  <td className={cn('w-10', bodyCellClassName)}>
                     <input
                       type="checkbox"
                       checked={selected.has(doc.source_uid)}
@@ -126,29 +154,38 @@ export function DocumentFileTable({
                       className="h-3.5 w-3.5 rounded border-border"
                     />
                   </td>
-                  <td className="px-3 py-2.5">
-                    <span className="block max-w-[300px] truncate text-foreground">
+                  <td className={bodyCellClassName}>
+                    <span className={cn(
+                      'block truncate',
+                      isParseDense ? 'max-w-[280px] font-medium text-foreground/95' : 'max-w-[300px] text-foreground',
+                    )}>
                       {doc.doc_title}
                     </span>
                   </td>
-                  <td className="px-3 py-2.5">
-                    <Badge variant="gray" size="xs" className="uppercase">
-                      {getDocumentFormat(doc)}
-                    </Badge>
+                  <td className={bodyCellClassName}>
+                    {isParseDense ? (
+                      <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                        {getDocumentFormat(doc)}
+                      </span>
+                    ) : (
+                      <Badge variant="gray" size="xs" className="uppercase">
+                        {getDocumentFormat(doc)}
+                      </Badge>
+                    )}
                   </td>
-                  <td className="px-3 py-2.5 text-muted-foreground">
+                  <td className={cn(bodyCellClassName, 'text-muted-foreground')}>
                     {formatBytes(doc.source_filesize)}
                   </td>
                   {!hideStatus && (
-                    <td className="px-3 py-2.5">
+                    <td className={bodyCellClassName}>
                       <StatusBadge status={doc.status} error={doc.error} />
                     </td>
                   )}
                   {extraColumns.map((col) => (
-                    <td key={col.header} className="px-3 py-2.5">{col.render(doc)}</td>
+                    <td key={col.header} className={bodyCellClassName}>{col.render(doc)}</td>
                   ))}
                   {renderRowActions && (
-                    <td className="px-3 py-2.5">{renderRowActions(doc)}</td>
+                    <td className={bodyCellClassName}>{renderRowActions(doc)}</td>
                   )}
                 </tr>
               ))}

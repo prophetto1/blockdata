@@ -15,7 +15,7 @@
 export default {
   // Root-level files/directories shown in the docs sidebar.
   '.': {
-    order: ['blockdata', 'internal', 'plans'],
+    order: ['blockdata', 'docling-md-astro-preview', 'internal', 'plans'],
     hidden: ['index'],
   },
 

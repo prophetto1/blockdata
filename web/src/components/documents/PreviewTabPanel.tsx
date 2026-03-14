@@ -1,17 +1,21 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { IconDownload, IconEdit, IconEye } from '@tabler/icons-react';
+import { IconEdit, IconEye } from '@tabler/icons-react';
 import ReactMarkdown from 'react-markdown';
 import remarkFrontmatter from 'remark-frontmatter';
 import remarkGfm from 'remark-gfm';
 import { PdfResultsHighlighter } from '@/components/documents/PdfResultsHighlighter';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { DocxPreview } from '@/components/documents/DocxPreview';
 import { OnlyOfficeEditorPanel } from '@/components/documents/OnlyOfficeEditorPanel';
 import { PdfPreview } from '@/components/documents/PdfPreview';
 import { PptxPreview } from '@/components/documents/PptxPreview';
 import {
+  DocumentPreviewFrame,
+  DocumentPreviewMessage,
+  DocumentPreviewShell,
+  DocumentPreviewStandardContent,
+} from '@/components/documents/DocumentPreviewShell';
+import {
   dedupeLocators,
-  getDocumentFormat,
   isDocxDocument,
   isImageDocument,
   isMarkdownDocument,
@@ -24,7 +28,6 @@ import {
   resolveSignedUrlForLocators,
   toDoclingJsonLocator,
 } from '@/lib/projectDetailHelpers';
-import { normalizePath } from '@/lib/filesTree';
 
 export function PreviewTabPanel({ doc }: { doc: ProjectDocumentRow | null }) {
   const [previewKind, setPreviewKind] = useState<PreviewKind>('none');
@@ -153,12 +156,6 @@ export function PreviewTabPanel({ doc }: { doc: ProjectDocumentRow | null }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [doc?.source_uid]);
 
-  const selectedDocPath = normalizePath(doc?.doc_title ?? '');
-  const selectedDocPathParts = selectedDocPath.split('/').filter((part) => part.length > 0);
-  const selectedDocTitle = selectedDocPathParts[selectedDocPathParts.length - 1]
-    ?? doc?.doc_title
-    ?? 'Asset';
-  const selectedDocFormat = doc ? getDocumentFormat(doc) : 'FILE';
   const canShowParsedPdfView = Boolean(
     doc
     && previewKind === 'pdf'
@@ -167,82 +164,6 @@ export function PreviewTabPanel({ doc }: { doc: ProjectDocumentRow | null }) {
     && parsedPreviewUrl,
   );
   const pdfViewToggleLabel = pdfPreviewMode === 'parsed' ? 'File view' : 'Parsed view';
-
-  const renderPreviewFrame = (
-    content: ReactNode,
-    options?: { scroll?: boolean; padded?: boolean },
-  ) => (
-    <div className="h-full w-full min-h-0 p-1">
-      <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-md border border-border bg-card">
-        {options?.scroll === false ? (
-          <div
-            className={[
-              'min-h-0 flex-1 overflow-hidden bg-card',
-              options?.padded === false ? '' : 'p-4',
-            ].join(' ')}
-          >
-            {content}
-          </div>
-        ) : (
-          <ScrollArea
-            className="min-h-0 h-full flex-1 bg-card"
-            viewportClass={[
-              'h-full overflow-y-auto overflow-x-hidden',
-              options?.padded === false ? '' : 'p-4',
-            ].join(' ').trim()}
-          >
-            {content}
-          </ScrollArea>
-        )}
-      </div>
-    </div>
-  );
-
-  const renderCenteredMessage = (message: ReactNode, isError = false) => (
-    <div
-      className={[
-        'flex h-full w-full items-center justify-center text-sm',
-        isError ? 'text-red-500' : 'text-muted-foreground',
-      ].join(' ')}
-    >
-      {message}
-    </div>
-  );
-
-  const renderUnifiedPreviewHeader = (options?: {
-    downloadUrl?: string | null;
-    centerContent?: ReactNode;
-    actions?: ReactNode;
-  }) => (
-    <div className="grid min-h-10 grid-cols-[auto_1fr_auto] items-center border-b border-border bg-card px-2">
-      <span className="inline-flex min-w-[34px] justify-center rounded border border-border bg-muted/60 px-1 py-0.5 text-[11px] font-semibold text-muted-foreground">
-        {selectedDocFormat}
-      </span>
-      {options?.centerContent ?? (
-        <span
-          className="min-w-0 px-2 text-center text-[13px] font-medium text-foreground truncate"
-          title={selectedDocTitle}
-        >
-          {selectedDocTitle}
-        </span>
-      )}
-      <div className="ml-auto flex min-w-[32px] items-center justify-end gap-2">
-        {options?.actions}
-        {options?.downloadUrl ? (
-          <a
-            href={options.downloadUrl}
-            target="_blank"
-            rel="noreferrer"
-            download
-            aria-label="Download file"
-            className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
-          >
-            <IconDownload size={16} />
-          </a>
-        ) : null}
-      </div>
-    </div>
-  );
 
   const renderPreviewWithUnifiedHeader = (
     content: ReactNode,
@@ -253,40 +174,30 @@ export function PreviewTabPanel({ doc }: { doc: ProjectDocumentRow | null }) {
       headerCenterContent?: ReactNode;
       headerActions?: ReactNode;
     },
-  ) => renderPreviewFrame(
-    <div className="flex h-full min-h-0 flex-col">
-      {renderUnifiedPreviewHeader({
-        downloadUrl: options?.downloadUrl,
-        centerContent: options?.headerCenterContent,
-        actions: options?.headerActions,
-      })}
-      {options?.useScrollArea === false ? (
-        <div className={['min-h-0 flex-1 bg-card', options?.contentClassName ?? ''].join(' ').trim()}>
-          {content}
-        </div>
-      ) : (
-        <ScrollArea
-          className="min-h-0 flex-1 bg-card"
-          viewportClass={[
-            'h-full overflow-y-auto overflow-x-hidden',
-            options?.contentClassName ?? '',
-          ].join(' ').trim()}
-        >
-          {content}
-        </ScrollArea>
-      )}
-    </div>,
-    { scroll: false, padded: false },
+  ) => (
+    <DocumentPreviewShell
+      doc={doc}
+      downloadUrl={options?.downloadUrl}
+      contentClassName={options?.contentClassName}
+      useScrollArea={options?.useScrollArea !== false}
+      headerCenterContent={options?.headerCenterContent}
+      headerActions={options?.headerActions}
+    >
+      {content}
+    </DocumentPreviewShell>
   );
 
   const renderStandardContentPreview = (
     content: ReactNode,
     options?: { contentClassName?: string; downloadUrl?: string | null },
-  ) => renderPreviewWithUnifiedHeader(
-    <div className={['p-4', options?.contentClassName ?? ''].join(' ').trim()}>
+  ) => (
+    <DocumentPreviewStandardContent
+      doc={doc}
+      contentClassName={options?.contentClassName}
+      downloadUrl={options?.downloadUrl}
+    >
       {content}
-    </div>,
-    { downloadUrl: options?.downloadUrl },
+    </DocumentPreviewStandardContent>
   );
 
   const renderEditToggle = () => (
@@ -306,15 +217,19 @@ export function PreviewTabPanel({ doc }: { doc: ProjectDocumentRow | null }) {
   );
 
   if (!doc) {
-    return renderPreviewFrame(renderCenteredMessage('Select an asset to preview.'));
+    return (
+      <DocumentPreviewFrame>
+        <DocumentPreviewMessage message="Select an asset to preview." />
+      </DocumentPreviewFrame>
+    );
   }
 
   if (previewLoading) {
-    return renderPreviewWithUnifiedHeader(renderCenteredMessage('Loading preview...'));
+    return renderPreviewWithUnifiedHeader(<DocumentPreviewMessage message="Loading preview..." />);
   }
 
   if (previewError) {
-    return renderPreviewWithUnifiedHeader(renderCenteredMessage(previewError, true));
+    return renderPreviewWithUnifiedHeader(<DocumentPreviewMessage message={previewError} isError />);
   }
 
   if (previewKind === 'pdf' && previewUrl) {
@@ -459,5 +374,5 @@ export function PreviewTabPanel({ doc }: { doc: ProjectDocumentRow | null }) {
     );
   }
 
-  return renderPreviewWithUnifiedHeader(renderCenteredMessage('Preview unavailable.'));
+  return renderPreviewWithUnifiedHeader(<DocumentPreviewMessage message="Preview unavailable." />);
 }

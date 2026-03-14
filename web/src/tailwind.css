@@ -6,7 +6,27 @@
   color-scheme: dark;
   --radius: 0.625rem;
   --app-font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --app-font-prose: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --app-font-mono: "JetBrains Mono", "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+
+  /* Inline code bg — theme-aware, from web-docs/src/styles/global.css:85 */
+  --sl-color-bg-inline-code: color-mix(in oklab, var(--card) 80%, var(--foreground) 20%);
+
+  /* Workbench prose tokens — mirrored from web-docs/src/styles/workbench-shell.css:5-17 */
+  --workbench-prose-font-size: 1rem;
+  --workbench-prose-line-height: 1.6;
+  --workbench-prose-block-gap: 0.8rem;
+  --workbench-prose-heading-letter-spacing: -0.02em;
+  --workbench-prose-h1-size: clamp(1.8rem, 2.6vw, 2.35rem);
+  --workbench-prose-h2-size: clamp(1.3rem, 2vw, 1.6rem);
+  --workbench-prose-h3-size: clamp(1.1rem, 1.6vw, 1.25rem);
+  --workbench-prose-h4-size: 1.05rem;
+  --workbench-prose-h2-top: 1.55rem;
+  --workbench-prose-h3-top: 1.2rem;
+  --workbench-prose-h4-top: 1rem;
+  --workbench-prose-heading-bottom: 0.5rem;
+  --workbench-prose-code-inline-padding: 0.02rem 0.18rem;
+
   --app-font-size-nav-label: 0.75rem;
   --app-font-size-nav-caption: 0.8125rem;
   --app-font-size-nav: 1rem;
@@ -108,6 +128,21 @@
   --json-key: #ef9a9a;
   --json-accent: #ffcc80;
   --json-null: #78909c;
+  --parse-json-font-family: var(--app-font-prose);
+  --parse-json-font-size: 0.875rem;
+  --parse-json-line-height: 1.65;
+  --parse-json-bg: color-mix(in oklab, var(--card) 92%, var(--background) 8%);
+  --parse-json-border: var(--border);
+  --parse-json-hover-bg: color-mix(in oklab, var(--foreground) 4%, var(--background) 96%);
+  --parse-json-indent-guide: color-mix(in oklab, var(--border) 72%, transparent);
+  --parse-json-string: var(--json-string);
+  --parse-json-number: var(--json-number);
+  --parse-json-boolean: var(--json-boolean);
+  --parse-json-key: var(--json-key);
+  --parse-json-null: var(--json-null);
+  --parse-json-brace: color-mix(in oklab, var(--foreground) 68%, transparent);
+  --parse-json-colon: color-mix(in oklab, var(--muted-foreground) 76%, transparent);
+  --parse-json-preview-text: color-mix(in oklab, var(--muted-foreground) 82%, transparent);
 
   /* Marketing (dark) */
   --app-marketing-demo-row-alt: rgba(255, 255, 255, 0.01);
@@ -158,6 +193,8 @@
   --muted-foreground: #44403c;
   --accent: #f5ebe6;
   --accent-foreground: #1c1917;
+  /* Inline code bg — light theme override, from web-docs/src/styles/global.css:156 */
+  --sl-color-bg-inline-code: color-mix(in oklab, var(--accent) 72%, var(--background) 28%);
   --destructive: #dc2626;
   --destructive-foreground: #ffffff;
   --border: #d6d3d1;
@@ -197,6 +234,11 @@
   --json-key: #c62828;
   --json-accent: #e65100;
   --json-null: #546e7a;
+  --parse-json-hover-bg: color-mix(in oklab, var(--foreground) 5%, var(--background) 95%);
+  --parse-json-indent-guide: color-mix(in oklab, var(--border) 82%, transparent);
+  --parse-json-brace: color-mix(in oklab, var(--foreground) 72%, transparent);
+  --parse-json-colon: color-mix(in oklab, var(--muted-foreground) 78%, transparent);
+  --parse-json-preview-text: color-mix(in oklab, var(--muted-foreground) 86%, transparent);
 
   /* ── Marketing (light) ── */
   --app-marketing-demo-row-alt: rgba(28, 25, 23, 0.02);
