@@ -29,7 +29,7 @@ Each local migration from `_075` to `_091` was verified against the remote DB by
 
 ### Already applied in substance — verified by object/value inspection
 
-All 13 local migrations from `_075` to `_087` are already applied on the remote. Every verification is based on direct DB queries, not behavior inference.
+12 of the 13 local migrations from `_075` to `_087` are already applied on the remote (`_085_` is the exception — see "Not applied" below). Every verification is based on direct DB queries, not behavior inference.
 
 | Local file | What it does | Verification method | Verified result |
 |---|---|---|---|
@@ -43,7 +43,7 @@ All 13 local migrations from `_075` to `_087` are already applied on the remote.
 | `_082_consolidate_delete_rpcs_add_view` | Rewrite `delete_project()`, create `view_documents` | `pg_proc` for `delete_project`; `information_schema.views` for `view_documents` | Both exist |
 | `_083_rename_ingested_to_parsed` | Rename status `ingested` → `parsed`, `ingest_failed` → `parse_failed` | `SELECT DISTINCT status FROM source_documents` | `parsed` and `parse_failed` present, no `ingested` or `ingest_failed` |
 | `_084_view_documents_add_pipeline_config` | Add `pipeline_config` to `view_documents` | `pg_get_viewdef('view_documents')` | `pipeline_config` column present in view definition |
-| `_085_docling_blocks_view_mode_policy` | Insert `platform.docling_blocks_mode` policy | `SELECT ... FROM admin_runtime_policy WHERE policy_key='platform.docling_blocks_mode'` | **Does NOT exist** — see Phase B below |
+| `_085_docling_blocks_view_mode_policy` | Insert `platform.docling_blocks_mode` policy | `SELECT ... FROM admin_runtime_policy WHERE policy_key='platform.docling_blocks_mode'` | **NOT applied** — listed under "Not applied" below |
 | `_086_registry_source_types_add_binary` | Insert `binary` into `registry_source_types` | `SELECT ... FROM registry_source_types WHERE source_type='binary'` | Exists |
 | `_087_upload_support_all_remove_upload_gates` | Remove MIME allowlist, delete `upload.allowed_extensions` policy | `SELECT ... FROM admin_runtime_policy WHERE policy_key='upload.allowed_extensions'` | Policy does not exist (correctly removed) |
 
@@ -72,17 +72,17 @@ Only 5 local migrations need to be applied to the remote:
 
 ## Reconciliation Plan — Phased Approach
 
-### Phase A: Record and document (no DB changes)
+### Phase A: Record local history and align migration tracking (writes to `schema_migrations`)
 
 1. Create a local stub migration file for the remote-only `085_conversion_parsing_unique_source_uid` so the local directory acknowledges it exists. The file should contain a comment explaining it was applied remotely and the stub is for history alignment only.
 
-2. Register local migrations `_075` through `_084`, `_086`, and `_087` in `schema_migrations` — these are verified as fully applied in substance. Each was confirmed by direct object/value inspection (see table above), not by behavior inference.
+2. Register local migrations `_075` through `_084`, `_086`, and `_087` in `schema_migrations` — these are verified as fully applied in substance. Each was confirmed by direct object/value inspection (see table above), not by behavior inference. This is a DB write to `supabase_migrations.schema_migrations`.
 
    Do NOT register `_085`, `_088`, `_089`, `_090`, or `_091` — they are not yet applied.
 
 ### Phase B: Apply additive, low-risk missing migrations
 
-Apply these 4 migrations. All are purely additive (new columns, new tables, new policy rows). None delete data or modify existing objects.
+Apply these 4 migrations. All are low-risk and idempotent. `_085` and `_089` are purely additive (new row, new table). `_088` modifies an existing view (`CREATE OR REPLACE VIEW`) and adds columns to an existing table. `_090` adds a column to an existing table (`ALTER TABLE ... ADD COLUMN IF NOT EXISTS`). None delete data.
 
 1. **`_085_docling_blocks_view_mode_policy`** — single INSERT with ON CONFLICT DO NOTHING
 
