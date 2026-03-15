@@ -25,6 +25,7 @@ import AgentOnboardingAuth from '@/pages/AgentOnboardingAuth';
 import AgentOnboardingConnect from '@/pages/AgentOnboardingConnect';
 import AgentOnboardingSelect from '@/pages/AgentOnboardingSelect';
 import McpServers from '@/pages/settings/McpServers';
+import ConnectionsPanel from '@/pages/settings/ConnectionsPanel';
 import { ScalarApiPlaygroundPage } from '@/pages/settings/ScalarApiPlaygroundPage';
 import Commands from '@/pages/Commands';
 import DocumentTest from '@/pages/DocumentTest';
@@ -33,6 +34,7 @@ import ProjectAssetsPage from '@/pages/ProjectAssetsPage';
 import ParsePage from '@/pages/ParsePage';
 import ExtractPage from '@/pages/ExtractPage';
 import TransformPage from '@/pages/TransformPage';
+import LoadPage from '@/pages/LoadPage';
 import AppHome from '@/pages/AppHome';
 import EarlyAccess from '@/pages/EarlyAccess';
 import ProjectsHome from '@/pages/ProjectsHome';
@@ -177,6 +179,9 @@ export const router = createBrowserRouter([
           // API Editor (Scalar playground)
           { path: '/app/api-editor', element: <ScalarApiPlaygroundPage /> },
 
+          // Load (GCS → ArangoDB wizard)
+          { path: '/app/load', element: <LoadPage /> },
+
           // Settings (API keys, model defaults, MCP)
           {
             path: '/app/settings',
@@ -189,6 +194,7 @@ export const router = createBrowserRouter([
               { path: 'ai/:providerId', element: <SettingsProviderForm /> },
               { path: 'model-roles', element: <SettingsModelRoles /> },
               { path: 'mcp', element: <McpServers /> },
+              { path: 'connections', element: <ConnectionsPanel /> },
               { path: 'grid-sample', element: <SettingsGridSample /> },
               { path: 'admin', element: <Navigate to="/app/superuser/instance-config" replace /> },
               { path: 'admin/:category', element: <LegacySettingsAdminRedirect /> },

@@ -1,4 +1,5 @@
 import {
+  IconDatabase,
   IconKey,
   IconPalette,
   IconPlugConnected,
@@ -37,6 +38,7 @@ export const SETTINGS_NAV: SettingsNavGroup[] = [
       { id: 'ai-providers', label: 'AI Providers', icon: IconKey, path: '/app/settings/ai' },
       { id: 'model-roles', label: 'Model Roles', icon: IconWand, path: '/app/settings/model-roles' },
       { id: 'mcp-servers', label: 'MCP Servers', icon: IconPlugConnected, path: '/app/settings/mcp' },
+      { id: 'connections', label: 'Connections', icon: IconDatabase, path: '/app/settings/connections' },
       { id: 'admin-services', label: 'Admin', icon: IconServer, path: '/app/superuser/instance-config' },
     ],
   },

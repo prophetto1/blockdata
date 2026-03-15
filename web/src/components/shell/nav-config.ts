@@ -70,6 +70,7 @@ export const TOP_LEVEL_NAV: Array<NavItem | 'divider'> = [
   { label: 'Flows', icon: IconFolderPlus, path: '/app/flows', drillId: 'flows' },
   'divider',
   { label: 'Database', icon: IconDatabase, path: '/app/database' },
+  { label: 'Load', icon: IconPlayerPlay, path: '/app/load' },
   { label: 'Schema', icon: IconSchema, path: '/app/schemas' },
   'divider',
   { label: 'Integrations', icon: IconApps, path: '/app/marketplace/integrations' },
@@ -133,6 +134,7 @@ const SETTINGS_DRILL: NavDrillConfig = {
       items: [
         { label: 'AI Providers', icon: IconKey, path: '/app/settings/ai' },
         { label: 'Model Roles', icon: IconWand, path: '/app/settings/model-roles' },
+        { label: 'Connections', icon: IconDatabase, path: '/app/settings/connections' },
         { label: 'MCP Servers', icon: IconPlugConnected, path: '/app/settings/mcp' },
         { label: 'Admin', icon: IconServer, path: '/app/superuser/instance-config' },
       ],

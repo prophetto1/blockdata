@@ -83,6 +83,11 @@ function ServiceCard({ service }: { service: MarketplaceService }) {
         <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-primary">
           {service.service_type_label}
         </span>
+        {service.primary_stage && (
+          <span className="inline-flex items-center rounded-full bg-violet-500/10 px-2 py-0.5 text-violet-700 dark:text-violet-300">
+            {service.primary_stage}
+          </span>
+        )}
       </div>
 
       <p className="text-[0.8125rem] text-muted-foreground leading-relaxed m-0 line-clamp-2">
@@ -115,8 +120,8 @@ function ServiceCard({ service }: { service: MarketplaceService }) {
 async function fetchServices(): Promise<MarketplaceService[]> {
   // Fetch services with their type labels
   const { data: servicesData, error: svcErr } = await supabase
-    .from('registry_services')
-    .select('service_id, service_type, service_name, description, docs_url, health_status')
+    .from('service_registry')
+    .select('service_id, service_type, service_name, description, docs_url, health_status, primary_stage')
     .eq('enabled', true)
     .order('service_name');
 
@@ -125,7 +130,7 @@ async function fetchServices(): Promise<MarketplaceService[]> {
   // Fetch all functions for enabled services
   const serviceIds = servicesData.map((s) => s.service_id);
   const { data: fnData, error: fnErr } = await supabase
-    .from('registry_service_functions')
+    .from('service_functions')
     .select('function_id, service_id, function_name, function_type, label, description, tags, beta, deprecated')
     .in('service_id', serviceIds)
     .eq('enabled', true)
@@ -158,6 +163,7 @@ async function fetchServices(): Promise<MarketplaceService[]> {
     description: s.description,
     docs_url: s.docs_url,
     health_status: s.health_status,
+    primary_stage: s.primary_stage ?? null,
     functions: fnByService.get(s.service_id) ?? [],
   }));
 }

@@ -70,11 +70,11 @@ describe('ServicesCatalog', () => {
   beforeEach(() => {
     fromMock.mockReset();
     fromMock.mockImplementation((table: string) => {
-      if (table === 'registry_services') {
+      if (table === 'service_registry') {
         return buildServicesQueryResult();
       }
 
-      if (table === 'registry_service_functions') {
+      if (table === 'service_functions') {
         return buildFunctionsQueryResult();
       }
 
