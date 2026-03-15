@@ -33,11 +33,11 @@
 ### Task 1: Extraction Tables Migration
 
 **Files:**
-- Create: `supabase/migrations/20260314170000_090_extraction_tables.sql`
+- Create: `supabase/migrations/20260314180000_091_extraction_tables.sql`
 
 **Step 1: Write the migration**
 
-Create `supabase/migrations/20260314170000_090_extraction_tables.sql`:
+Create `supabase/migrations/20260314180000_091_extraction_tables.sql`:
 
 ```sql
 -- Extraction schemas: user-defined JSON Schemas for structured extraction
@@ -67,21 +67,11 @@ CREATE POLICY extraction_schemas_delete_own ON extraction_schemas
 CREATE INDEX idx_extraction_schemas_project ON extraction_schemas(project_id);
 CREATE INDEX idx_extraction_schemas_body_hash ON extraction_schemas(schema_body_hash);
 
--- Updated_at trigger (reuse pattern from other tables)
-CREATE OR REPLACE FUNCTION public.set_extraction_schemas_updated_at()
-RETURNS trigger
-LANGUAGE plpgsql
-SET search_path = ''
-AS $$
-BEGIN
-  NEW.updated_at = now();
-  RETURN NEW;
-END;
-$$;
-
+-- Reuse the existing set_updated_at() trigger function from migration _004_.
+-- Do NOT create a new function — the shared one already exists.
 CREATE TRIGGER trg_extraction_schemas_updated_at
   BEFORE UPDATE ON public.extraction_schemas
-  FOR EACH ROW EXECUTE FUNCTION public.set_extraction_schemas_updated_at();
+  FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
 
 -- Extraction jobs: one row per extraction run
 CREATE TABLE IF NOT EXISTS public.extraction_jobs (
@@ -114,8 +104,9 @@ CREATE INDEX idx_extraction_jobs_source ON extraction_jobs(source_uid);
 CREATE INDEX idx_extraction_jobs_schema ON extraction_jobs(schema_id);
 
 -- Extraction job items: durable work items, one per document or page.
--- No RLS — items are only accessed through the claim RPC and edge functions
--- using the admin client. The claim RPC verifies ownership via extraction_jobs.
+-- No RLS — items are only accessed through admin-client edge functions.
+-- The claim RPC is service-role-only (REVOKE/GRANT below) and does NOT
+-- verify ownership itself; the calling edge function must do that.
 CREATE TABLE IF NOT EXISTS public.extraction_job_items (
   item_id       uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   job_id        uuid NOT NULL REFERENCES public.extraction_jobs(job_id) ON DELETE CASCADE,
@@ -233,7 +224,7 @@ Mark the task incomplete until one of these paths succeeds.
 **Step 3: Commit**
 
 ```bash
-git add supabase/migrations/20260314170000_090_extraction_tables.sql
+git add supabase/migrations/20260314180000_091_extraction_tables.sql
 git commit -m "feat: add extraction_schemas, extraction_jobs, extraction_job_items, extraction_results tables"
 ```
 
@@ -764,11 +755,11 @@ git commit -m "feat: add Docling page-text assembly helper with tests"
 
 **Delete strategy:** The hook attempts the delete directly and catches the Postgres FK violation from `extraction_jobs.schema_id`, translating it into a friendly error. This is correct because the database FK is the real safety net — a count-then-delete pattern is race-prone (a job could be created between the count and the delete). Letting the FK constraint do the enforcement and catching the error is both simpler and airtight.
 
-**Important:** The existing pattern for hooks in this codebase uses `supabase` from `@/lib/supabase`. Follow the same import pattern as `web/src/hooks/useBatchParse.ts`.
+**Important:** The existing pattern for hooks that query Supabase tables directly uses `import { supabase } from '@/lib/supabase'` (see `web/src/lib/supabase.ts` line 7). Note: `useBatchParse.ts` uses `edgeFetch` instead — that's the edge function call pattern, not the direct table query pattern used here.
 
-**Step 1: Read the existing hook pattern**
+**Step 1: Confirm the supabase import**
 
-Read `web/src/hooks/useBatchParse.ts` to confirm the import style for `supabase`.
+Read `web/src/lib/supabase.ts` to confirm it exports a named `supabase` client. The hook uses this for direct table queries (select, insert, update, delete), not `edgeFetch`.
 
 **Step 2: Implement the hook**
 
@@ -777,6 +768,7 @@ Create `web/src/hooks/useExtractionSchemas.ts`:
 ```typescript
 import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { computeSchemaUid } from '@/lib/extractionSchemaHelpers';
 import type { ExtractionSchemaRow } from '@/lib/types';
 
 export function useExtractionSchemas(projectId: string | null) {
@@ -822,6 +814,7 @@ export function useExtractionSchemas(projectId: string | null) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
 
+    const bodyHash = await computeSchemaUid(schemaBody);
     const { data, error: err } = await supabase
       .from('extraction_schemas')
       .insert({
@@ -829,6 +822,7 @@ export function useExtractionSchemas(projectId: string | null) {
         project_id: projectId,
         schema_name: schemaName,
         schema_body: schemaBody,
+        schema_body_hash: bodyHash,
         extraction_target: extractionTarget,
       })
       .select()
@@ -841,9 +835,13 @@ export function useExtractionSchemas(projectId: string | null) {
     schemaId: string,
     updates: Partial<Pick<ExtractionSchemaRow, 'schema_name' | 'schema_body' | 'extraction_target'>>,
   ) => {
+    const patch: Record<string, unknown> = { ...updates };
+    if (updates.schema_body) {
+      patch.schema_body_hash = await computeSchemaUid(updates.schema_body);
+    }
     const { error: err } = await supabase
       .from('extraction_schemas')
-      .update(updates)
+      .update(patch)
       .eq('schema_id', schemaId);
     if (err) throw new Error(err.message);
   }, []);
@@ -913,4 +911,4 @@ After this plan ships, Phase 4 (extraction edge functions) can begin immediately
 | Schema delete relies on FK constraint, not count-then-delete | The hook attempts the delete directly and catches Postgres error code `23503` (foreign_key_violation). This is airtight against races, unlike a count-then-delete pattern where a job could be created between the two queries. |
 | `updated_at` trigger on `extraction_schemas` only | Jobs, items, and results are written by edge functions using the admin client; they don't need application-level timestamp management. Schemas are modified by users through the CRUD hook. |
 | `schema_body_hash` is optional | Populated by the frontend for dedup detection, not used as PK. The hash column is indexed for lookup but not required on insert. |
-| Migration is `_090_` | `_089_` is taken by `cleanup_outbox` from concurrent Arango work. |
+| Migration is `_091_` at timestamp `180000` | `_089_` is `cleanup_outbox`, `_090_` is `add_overlay_uid` (both from concurrent work). Timestamp `170000` is also taken by `_090_`. |
