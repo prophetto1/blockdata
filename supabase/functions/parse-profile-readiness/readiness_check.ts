@@ -1,9 +1,13 @@
 type ProfileReadinessInput = {
+  profileId: string;
+  parser: string;
   config: Record<string, unknown>;
 };
 
 type ProfileReadinessResult = {
+  profile_id: string;
   profile_name: string;
+  parser: string;
   is_ready: boolean;
   requirements: {
     ocr_backend: string | null;
@@ -71,7 +75,9 @@ export function classifyProfileReadiness(
   }
 
   return {
+    profile_id: input.profileId,
     profile_name: profileName,
+    parser: input.parser,
     is_ready: reasons.length === 0,
     requirements: {
       ocr_backend: ocrBackend,

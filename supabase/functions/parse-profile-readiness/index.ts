@@ -21,10 +21,13 @@ Deno.serve(async (req) => {
 
   // parsing_profiles has columns: id (uuid), parser (text), config (jsonb)
   // Profile name is inside config->>'name', not a separate column.
+  // Filter to docling profiles only — non-docling profiles have different
+  // config shapes and would be misclassified by the Docling-specific classifier.
   const db = createAdminClient();
   const { data: profiles, error } = await db
     .from("parsing_profiles")
-    .select("id, parser, config");
+    .select("id, parser, config")
+    .eq("parser", "docling");
 
   if (error) {
     return json(500, { error: error.message });
@@ -32,6 +35,8 @@ Deno.serve(async (req) => {
 
   const results = (profiles ?? []).map((p) =>
     classifyProfileReadiness({
+      profileId: p.id as string,
+      parser: p.parser as string,
       config: (p.config ?? {}) as Record<string, unknown>,
     })
   );

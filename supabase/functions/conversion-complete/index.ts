@@ -319,8 +319,21 @@ Deno.serve(async (req) => {
       freqMap[b.block_type] = (freqMap[b.block_type] || 0) + 1;
     }
 
+    // If the callback omits pipeline_config, preserve the requested config
+    // that trigger-parse pre-inserted. Without this, the upsert would
+    // overwrite the pre-inserted value with {}.
+    let effectivePipelineConfig = body.pipeline_config;
+    if (effectivePipelineConfig == null) {
+      const { data: existingRow } = await supabaseAdmin
+        .from("conversion_parsing")
+        .select("requested_pipeline_config")
+        .eq("source_uid", source_uid)
+        .maybeSingle();
+      effectivePipelineConfig = (existingRow?.requested_pipeline_config as Record<string, unknown>) ?? {};
+    }
+
     const resolved = resolveAppliedConfig({
-      pipelineConfig: body.pipeline_config,
+      pipelineConfig: effectivePipelineConfig,
       appliedPipelineConfig: body.applied_pipeline_config,
       parserRuntimeMeta: body.parser_runtime_meta,
     });
