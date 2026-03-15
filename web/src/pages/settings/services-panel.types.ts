@@ -15,6 +15,7 @@ export type ServiceRow = {
   auth_type: string;
   auth_config: Record<string, unknown>;
   docs_url: string | null;
+  primary_stage: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -33,6 +34,7 @@ export type ServiceFunctionRow = {
   service_id: string;
   function_name: string;
   function_type: string;
+  bd_stage: string;
   label: string;
   description: string | null;
   long_description: string | null;

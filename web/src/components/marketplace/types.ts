@@ -36,6 +36,7 @@ export type MarketplaceService = {
   description: string | null;
   docs_url: string | null;
   health_status: string;
+  primary_stage: string | null;
   functions: ServiceFunction[];
 };
 
