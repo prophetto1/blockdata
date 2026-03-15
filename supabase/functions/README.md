@@ -18,7 +18,11 @@ execution, and export.
 - `runs`: Creates a `runs` row and populates `block_overlays` (one per block)
   for a `conv_uid` + `schema_id`.
 - `worker`: Claims pending `block_overlays`, calls the LLM, writes structured
-  output back to the overlay.
+  output back to the overlay. Batch-syncs touched overlays to Arango after all mutations.
+- `manage-overlays`: Routes overlay review actions (confirm, reject, update staging)
+  through Arango-aware sync. Replaces direct frontend RPC calls.
+- `manage-document`: Routes document delete and reset through Arango-aware cleanup.
+  Writes `cleanup_outbox` row on partial Arango failure (returns 207).
 - `user-api-keys`: Encrypted storage for per-user provider API keys.
 - `admin-config`: Superuser-only admin runtime policy management.
 - `admin-integration-catalog`: Superuser-only integration catalog sync and mapping management (Kestra-compatible).
@@ -47,6 +51,9 @@ execution, and export.
 - `ARANGO_PASSWORD` (ArangoDB password, required when sync is enabled)
 - `ARANGO_DOCUMENTS_COLLECTION` (optional; default `blockdata_documents`)
 - `ARANGO_BLOCKS_COLLECTION` (optional; default `blockdata_blocks`)
+- `ARANGO_DOCLING_DOCUMENTS_COLLECTION` (optional; default `blockdata_docling_documents`)
+- `ARANGO_RUNS_COLLECTION` (optional; default `blockdata_runs`)
+- `ARANGO_OVERLAYS_COLLECTION` (optional; default `blockdata_overlays`)
 
 ## JWT mode
 

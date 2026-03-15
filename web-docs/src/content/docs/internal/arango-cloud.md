@@ -30,6 +30,9 @@ ARANGO_USERNAME=root
 ARANGO_PASSWORD=<stored-locally>
 ARANGO_DOCUMENTS_COLLECTION=blockdata_documents
 ARANGO_BLOCKS_COLLECTION=blockdata_blocks
+ARANGO_DOCLING_DOCUMENTS_COLLECTION=blockdata_docling_documents
+ARANGO_RUNS_COLLECTION=blockdata_runs
+ARANGO_OVERLAYS_COLLECTION=blockdata_overlays
 ```
 
 ## Secret Handling
@@ -42,15 +45,43 @@ Do not add the password value to docs, examples, or committed `.env` files.
 
 ## Sync Behavior
 
-The Arango integration is wired up in [`supabase/functions/_shared/arangodb.ts`](/e:/writing-system/supabase/functions/_shared/arangodb.ts) and is used by the ingest and conversion-complete paths.
+The Arango integration is wired up in [`supabase/functions/_shared/arangodb.ts`](/e:/writing-system/supabase/functions/_shared/arangodb.ts) and is used by ingest, conversion-complete, runs, worker, manage-overlays, manage-document, and trigger-parse.
 
-When `ARANGO_SYNC_ENABLED=true` and an ingest or conversion-complete flow runs:
+### Self-contained Docling projection (five collections)
 
-1. BlockData upserts one document into `blockdata_documents`.
-2. BlockData clears older block rows for that source document.
-3. BlockData writes fresh block rows into `blockdata_blocks`.
+When `ARANGO_SYNC_ENABLED=true`, Arango maintains a self-contained projection of parsed documents:
 
-The `blockdata_documents` and `blockdata_blocks` collections are created automatically on first sync by the repo's `ensureCollection` calls. Manual pre-creation is not required.
+| Collection | Key | Contents |
+|---|---|---|
+| `blockdata_documents` | `source_uid` | Document metadata and lifecycle status |
+| `blockdata_docling_documents` | `conv_uid` | Full `doclingdocument_json` payload |
+| `blockdata_blocks` | `source_uid:block_index` | Normalized block rows |
+| `blockdata_runs` | `run_id` | Extraction run metadata |
+| `blockdata_overlays` | `overlay_uid` | Per-block overlay state (staging, confirmed) |
+
+All collections are created automatically on first sync. Manual pre-creation is not required.
+
+- The original uploaded file stays in Supabase Storage. Arango stores the full Docling JSON, not the raw binary.
+- `overlay_uid` is a first-class UUID in both Postgres and Arango.
+- Every run and overlay record carries ancestry fields (`source_uid`, `conv_uid`, `project_id`) for cross-collection joins.
+
+### Lifecycle sync points
+
+- **Upload:** `ingest` syncs document metadata to `blockdata_documents` with `status: "uploaded"`.
+- **Conversion start:** `ingest` updates document status to `"converting"`.
+- **Parse success:** `conversion-complete` syncs document metadata, full Docling JSON, and block rows.
+- **Run creation:** `runs` syncs run row and initial overlay rows to Arango.
+- **Worker processing:** `worker` batch-syncs all touched overlay rows once after all mutations (non-fatal).
+- **Review actions:** `manage-overlays` syncs affected overlays after confirm/reject/staging updates.
+- **Re-parse:** `trigger-parse` clears stale Arango projection before new conversion starts.
+- **Delete:** `manage-document` removes all five collection records for the `source_uid`.
+- **Reset:** `manage-document` removes derived data (docling, blocks, runs, overlays) and patches the document row back to upload-stage shape.
+
+### Partial failure recovery
+
+If Arango cleanup fails after a successful Postgres delete/reset, the `manage-document` edge function writes a row to `cleanup_outbox` and returns HTTP 207. A separate reconciliation sweep (not yet implemented) will retry pending outbox entries.
+
+The `trigger-parse` re-parse path also writes an outbox row on Arango cleanup failure.
 
 ## Verification
 

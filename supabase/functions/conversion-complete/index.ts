@@ -325,11 +325,11 @@ Deno.serve(async (req) => {
           .from(bucket)
           .download(docling_key!);
         if (dlErr || !dlData) {
-          console.error("conversion-complete: Docling JSON download for Arango failed:", dlErr);
-          rawBytes = new Uint8Array(0);
-        } else {
-          rawBytes = new Uint8Array(await dlData.arrayBuffer());
+          throw new Error(
+            `Docling JSON download for Arango projection failed: ${dlErr?.message ?? "unknown"}`,
+          );
         }
+        rawBytes = new Uint8Array(await dlData.arrayBuffer());
       }
       if (rawBytes.length > 0) {
         doclingDocumentJson = JSON.parse(new TextDecoder().decode(rawBytes));
@@ -471,7 +471,7 @@ Deno.serve(async (req) => {
           conv_status: "success",
           conv_representation_type: "doclingdocument_json",
           docling_document_json: doclingDocumentJson ?? undefined,
-          pipeline_config: body.pipeline_config ?? {},
+          pipeline_config: effectivePipelineConfig ?? {},
           block_count: blockRows.length,
           blocks: blockRows,
         });
@@ -533,7 +533,7 @@ Deno.serve(async (req) => {
           conv_locator: docling_key,
           conv_status: "failed",
           conv_representation_type: "doclingdocument_json",
-          pipeline_config: body.pipeline_config ?? {},
+          pipeline_config: effectivePipelineConfig ?? {},
           block_count: null,
         });
       }

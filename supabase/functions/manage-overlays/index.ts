@@ -61,50 +61,74 @@ Deno.serve(async (req) => {
       return json(400, { error: `Unknown action: ${action}` });
     }
 
-    // Sync affected overlays to Arango
+    // Sync affected overlays to Arango (partial-failure safe)
     const arangoConfig = loadArangoConfigFromEnv();
     if (arangoConfig) {
-      let query = adminClient
-        .from("block_overlays")
-        .select("overlay_uid, run_id, block_uid, status, overlay_jsonb_staging, overlay_jsonb_confirmed, claimed_by, claimed_at, attempt_count, last_error, confirmed_at, confirmed_by")
-        .eq("run_id", run_id);
+      try {
+        let query = adminClient
+          .from("block_overlays")
+          .select("overlay_uid, run_id, block_uid, status, overlay_jsonb_staging, overlay_jsonb_confirmed, claimed_by, claimed_at, attempt_count, last_error, confirmed_at, confirmed_by")
+          .eq("run_id", run_id);
 
-      if (affectedBlockUids.length > 0) {
-        query = query.in("block_uid", affectedBlockUids);
-      }
-
-      const { data: overlayRows } = await query;
-
-      if (overlayRows && overlayRows.length > 0) {
-        // Verify ownership before syncing
-        const { data: runRow } = await adminClient
-          .from("runs")
-          .select("conv_uid, owner_id")
-          .eq("run_id", run_id)
-          .single();
-
-        if (!runRow || runRow.owner_id !== userId) {
-          return json(403, { error: "Not authorized" });
+        if (affectedBlockUids.length > 0) {
+          query = query.in("block_uid", affectedBlockUids);
         }
 
-        const { data: ancestry } = await adminClient
-          .from("conversion_parsing")
-          .select("source_uid")
-          .eq("conv_uid", runRow.conv_uid)
-          .single();
-        const { data: docRow } = await adminClient
-          .from("source_documents")
-          .select("project_id")
-          .eq("source_uid", ancestry!.source_uid)
-          .single();
+        const { data: overlayRows } = await query;
 
-        await syncOverlaysToArango(arangoConfig, overlayRows.map((o) => ({
-          ...o,
-          source_uid: ancestry!.source_uid,
-          conv_uid: runRow.conv_uid,
-          project_id: docRow!.project_id,
-          owner_id: runRow.owner_id,
-        })));
+        if (overlayRows && overlayRows.length > 0) {
+          // Verify ownership before syncing
+          const { data: runRow } = await adminClient
+            .from("runs")
+            .select("conv_uid, owner_id")
+            .eq("run_id", run_id)
+            .single();
+
+          if (!runRow || runRow.owner_id !== userId) {
+            return json(403, { error: "Not authorized" });
+          }
+
+          const { data: ancestry } = await adminClient
+            .from("conversion_parsing")
+            .select("source_uid")
+            .eq("conv_uid", runRow.conv_uid)
+            .single();
+          const { data: docRow } = await adminClient
+            .from("source_documents")
+            .select("project_id")
+            .eq("source_uid", ancestry!.source_uid)
+            .single();
+
+          await syncOverlaysToArango(arangoConfig, overlayRows.map((o) => ({
+            ...o,
+            source_uid: ancestry!.source_uid,
+            conv_uid: runRow.conv_uid,
+            project_id: docRow!.project_id,
+            owner_id: runRow.owner_id,
+          })));
+        }
+      } catch (err) {
+        // Postgres mutation already committed — enqueue retry and report partial success
+        console.error("manage-overlays: Arango sync failed, writing outbox row:", err);
+        // Resolve source_uid for the outbox entry (best-effort)
+        try {
+          const { data: runRow } = await adminClient
+            .from("runs").select("conv_uid").eq("run_id", run_id).single();
+          if (runRow) {
+            const { data: ancestry } = await adminClient
+              .from("conversion_parsing").select("source_uid").eq("conv_uid", runRow.conv_uid).single();
+            if (ancestry) {
+              await adminClient.from("cleanup_outbox").insert({
+                source_uid: ancestry.source_uid,
+                action: "overlay_sync",
+                last_error: err instanceof Error ? err.message : String(err),
+              });
+            }
+          }
+        } catch (outboxErr) {
+          console.error("manage-overlays: outbox write also failed:", outboxErr);
+        }
+        return json(207, { ok: true, count, partial: true, error: "Arango sync pending" });
       }
     }
 

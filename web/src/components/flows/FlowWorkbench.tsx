@@ -51,6 +51,7 @@ import {
   sortDocumentsByUploadedAt,
 } from '@/lib/projectDetailHelpers';
 import { supabase } from '@/lib/supabase';
+import { manageDocument } from '@/lib/edge';
 import FlowCanvas from './FlowCanvas';
 import { useFlowDocument, type FlowDocumentHandle } from './nocode/useFlowDocument';
 import { NocodeEditor } from './nocode/NocodeEditor';
