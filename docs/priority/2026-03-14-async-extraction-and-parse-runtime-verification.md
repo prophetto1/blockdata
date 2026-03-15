@@ -26,6 +26,41 @@
 - Extraction work is resumable and incremental: page results can appear before the job completes.
 - The extract workbench disables execution when platform Vertex readiness is not proven.
 
+## Runtime Dependency Matrix
+
+The plan must define which parse profiles are purely parser and OCR configuration versus which ones require an LLM or VLM runtime. Do not ship profile verification until this matrix is implemented and source-verified in the conversion runtime.
+
+| Profile | Docling pipeline | OCR dependency | LLM or VLM dependency | Required runtime proof |
+|---|---|---|---|---|
+| `Fast` | `standard` | `tesseract` | None | Conversion service shows `ocr_options.kind = "tesseract"` in `applied_pipeline_config` |
+| `Balanced` | `standard` | `easyocr` | None for baseline parsing; if picture classification uses a model, that model must be declared in `parser_runtime_meta` | Conversion service shows `ocr_options.kind = "easyocr"` and any classification model identifier used |
+| `High Quality` | `standard` | `easyocr` | Potentially yes if `do_picture_description` or `do_chart_extraction` is enabled | Conversion service must name the exact provider and model used for picture description or chart extraction, or reject the profile as unsupported in the current runtime |
+| `AI Vision` | `vlm` | None beyond page image generation | Yes, always | Conversion service must name the exact VLM provider, model, and auth path in `parser_runtime_meta` |
+| Structured extraction | Post-parse extraction | None | Yes, always | `extract-readiness` must prove Vertex auth is live before the UI allows execution |
+
+The current seeded profiles in [20260310120000_075_parsing_pipeline_config.sql](e:\writing-system\supabase\migrations\20260310120000_075_parsing_pipeline_config.sql#L1) imply these dependencies, but the runtime contract must stop relying on implication.
+
+## Required Configuration Contract
+
+Before implementation is considered complete, the conversion service must expose a stable runtime contract for parse profiles:
+
+- `requested_pipeline_config`: the exact config received from `trigger-parse`
+- `applied_pipeline_config`: the exact config actually used after defaults and normalization
+- `parser_runtime_meta.parser`: parser family, such as `docling`
+- `parser_runtime_meta.parser_version`: concrete parser version
+- `parser_runtime_meta.ocr_backend`: concrete OCR backend, such as `tesseract` or `easyocr`
+- `parser_runtime_meta.vlm_provider`: required when a VLM-backed profile is used
+- `parser_runtime_meta.vlm_model`: required when a VLM-backed profile is used
+- `parser_runtime_meta.enrichment_models`: array of provider or model identifiers used for picture description, chart extraction, or other AI enrichments
+
+If a profile requests an OCR backend, VLM, or enrichment model that is not configured in the runtime, the conversion service must reject the job early with a clear error. It must not silently downgrade to another path.
+
+## Explicit Non-Goals
+
+- Do not pretend all profiles are equivalent configuration presets if some of them require different model backends.
+- Do not let the UI present `AI Vision` or other AI-enriched profiles as runnable unless the conversion runtime reports that their dependencies are configured.
+- Do not treat extraction-provider readiness as sufficient proof that parse-profile AI dependencies are also configured.
+
 ### Task 1: Add Parse Runtime Audit Columns
 
 **Files:**
@@ -256,6 +291,19 @@ parser_runtime_meta: parserRuntimeMeta,
 pipeline_config: requestedPipelineConfig,
 ```
 
+Also require the callback contract to preserve runtime dependency evidence:
+
+```typescript
+parser_runtime_meta: {
+  parser: "docling",
+  parser_version: "...",
+  ocr_backend: "easyocr",
+  vlm_provider: null,
+  vlm_model: null,
+  enrichment_models: [],
+}
+```
+
 **Step 4: Run the callback tests again**
 
 Run: `deno test supabase/functions/conversion-complete/index.test.ts`
@@ -318,6 +366,8 @@ Update `<conversion-service-repo>/app/docling_runner.py` so that:
 - incoming `pipeline_config` is validated before conversion starts
 - unsupported keys raise a 400-class request error inside the service, not a silent ignore
 - the service records the exact options it actually applied after defaults and normalization
+- the service resolves profile requirements into an explicit runtime dependency set: OCR backend, optional VLM backend, optional enrichment models
+- if the requested profile needs a VLM or enrichment model that is not configured, the service fails before work begins with a clear error message
 
 Update `<conversion-service-repo>/app/main.py` so the callback body includes:
 
@@ -328,6 +378,10 @@ Update `<conversion-service-repo>/app/main.py` so the callback body includes:
     "parser_runtime_meta": {
         "parser": "docling",
         "parser_version": DOCLING_VERSION,
+        "ocr_backend": resolved_ocr_backend,
+        "vlm_provider": resolved_vlm_provider,
+        "vlm_model": resolved_vlm_model,
+        "enrichment_models": resolved_enrichment_models,
         "runtime_image": os.getenv("SERVICE_IMAGE", ""),
     },
 }
@@ -523,6 +577,8 @@ Create `web/src/hooks/useExtractRuntimeReadiness.ts` and call it from `web/src/p
 - shows a blocking banner when `is_ready === false`
 - disables "Run Extraction" until readiness passes
 
+This readiness check only covers structured extraction on Vertex. It is not sufficient for parse-profile readiness.
+
 **Step 4: Run the tests again**
 
 Run: `deno test supabase/functions/extract-readiness/index.test.ts`
@@ -536,6 +592,89 @@ Expected: PASS
 ```bash
 git add supabase/functions/extract-readiness/index.ts supabase/functions/extract-readiness/index.test.ts supabase/functions/README.md web/src/hooks/useExtractRuntimeReadiness.ts web/src/hooks/useExtractRuntimeReadiness.test.ts web/src/pages/useExtractWorkbench.tsx
 git commit -m "feat: gate extraction on platform vertex readiness"
+```
+
+---
+
+### Task 6A: Add Parse Profile Runtime Readiness Checks
+
+**Files:**
+- Create: `supabase/functions/parse-profile-readiness/index.ts`
+- Create: `supabase/functions/parse-profile-readiness/index.test.ts`
+- Modify: `web/src/components/documents/ParseConfigColumn.tsx`
+- Create: `web/src/components/documents/ParseConfigColumn.test.tsx`
+
+**Step 1: Write the failing readiness tests**
+
+Create `supabase/functions/parse-profile-readiness/index.test.ts` with cases for:
+
+```typescript
+Deno.test("AI Vision is not ready when no VLM runtime is configured", async () => {
+  // mock missing VLM config
+});
+
+Deno.test("High Quality is not ready when picture description is enabled but no enrichment model is configured", async () => {
+  // mock missing enrichment model
+});
+
+Deno.test("Fast is ready when tesseract is configured", async () => {
+  // mock OCR backend availability
+});
+```
+
+**Step 2: Run the readiness tests to verify they fail**
+
+Run: `deno test supabase/functions/parse-profile-readiness/index.test.ts`
+Expected: FAIL
+
+**Step 3: Implement the readiness endpoint**
+
+Create `supabase/functions/parse-profile-readiness/index.ts` so it returns, per profile:
+
+```json
+{
+  "profiles": [
+    {
+      "profile_name": "Fast",
+      "is_ready": true,
+      "requirements": {
+        "ocr_backend": "tesseract",
+        "vlm_model": null,
+        "enrichment_models": []
+      },
+      "reasons": []
+    }
+  ]
+}
+```
+
+The endpoint must distinguish:
+
+- OCR backend readiness
+- VLM runtime readiness
+- enrichment-model readiness
+
+**Step 4: Surface readiness in the Parse UI**
+
+Update `web/src/components/documents/ParseConfigColumn.tsx` so profiles that are not ready:
+
+- show an explicit warning
+- cannot be dispatched
+- explain which dependency is missing
+
+**Step 5: Run the tests again**
+
+Run: `deno test supabase/functions/parse-profile-readiness/index.test.ts`
+Expected: PASS
+
+Run: `npm run test -- src/components/documents/ParseConfigColumn.test.tsx`
+Expected: PASS
+
+**Step 6: Commit**
+
+```bash
+git add supabase/functions/parse-profile-readiness/index.ts supabase/functions/parse-profile-readiness/index.test.ts web/src/components/documents/ParseConfigColumn.tsx web/src/components/documents/ParseConfigColumn.test.tsx
+git commit -m "feat: gate parse profiles on runtime readiness"
 ```
 
 ---
@@ -923,11 +1062,15 @@ Expected: PASS
 2. `deno test supabase/functions/_shared/parse_pipeline_contract.test.ts supabase/functions/conversion-complete/index.test.ts supabase/functions/extract-readiness/index.test.ts supabase/functions/_shared/docling_page_text.test.ts supabase/functions/run-extract/index.test.ts supabase/functions/_shared/extraction_prompt.test.ts supabase/functions/extract-worker/index.test.ts`
 Expected: PASS
 
-3. `cd web && npm run test -- src/components/documents/ParseConfigColumn.test.tsx src/hooks/useExtractRuntimeReadiness.test.ts src/pages/useExtractWorkbench.test.ts src/hooks/useExtractionJobRunner.test.ts`
+3. `deno test supabase/functions/parse-profile-readiness/index.test.ts`
 Expected: PASS
 
-4. Manual smoke test:
+4. `cd web && npm run test -- src/components/documents/ParseConfigColumn.test.tsx src/hooks/useExtractRuntimeReadiness.test.ts src/pages/useExtractWorkbench.test.ts src/hooks/useExtractionJobRunner.test.ts`
+Expected: PASS
+
+5. Manual smoke test:
 - parse one PDF with the "Balanced" profile
+- verify the Parse UI shows whether `Fast`, `Balanced`, `High Quality`, and `AI Vision` are runtime-ready before dispatch
 - confirm the Parse UI shows both requested and applied runtime info
 - submit document-level extraction and confirm `run-extract` returns immediately
 - watch the job move `queued -> running -> complete`
