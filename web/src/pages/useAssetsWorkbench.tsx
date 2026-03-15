@@ -20,12 +20,13 @@ export const ASSETS_TABS: WorkbenchTab[] = [
   { id: 'upload', label: 'Upload', icon: IconUpload },
   { id: 'files', label: 'Files', icon: IconFiles },
   { id: 'preview', label: 'Preview', icon: IconEye },
+  { id: 'preview-2', label: 'Preview-2', icon: IconEye },
 ];
 
 export const ASSETS_DEFAULT_PANES: Pane[] = normalizePaneWidths([
   { id: 'pane-upload', tabs: ['upload'], activeTab: 'upload', width: 20, minWidth: 16, maxWidth: 24, maxTabs: 1 },
   { id: 'pane-files', tabs: ['files'], activeTab: 'files', width: 30, minWidth: 22 },
-  { id: 'pane-preview', tabs: ['preview'], activeTab: 'preview', width: 50 },
+  { id: 'pane-preview', tabs: ['preview', 'preview-2'], activeTab: 'preview', width: 50 },
 ]);
 
 export function useAssetsWorkbench() {
@@ -124,7 +125,24 @@ export function useAssetsWorkbench() {
     }
 
     if (tabId === 'preview') {
-      return <PreviewTabPanel doc={activeDoc} />;
+      return (
+        <PreviewTabPanel
+          doc={activeDoc}
+          allowParsedPdfView={false}
+          showHeaderDownload={false}
+        />
+      );
+    }
+
+    if (tabId === 'preview-2') {
+      return (
+        <PreviewTabPanel
+          doc={activeDoc}
+          pdfViewer="pdfjs-express"
+          allowParsedPdfView={false}
+          showHeaderDownload={false}
+        />
+      );
     }
 
     return null;

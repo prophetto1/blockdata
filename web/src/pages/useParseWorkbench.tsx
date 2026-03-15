@@ -37,6 +37,7 @@ import {
   primeParseArtifactsForDocument,
   type ParseArtifactBundle,
 } from './parseArtifacts';
+import type { DoclingNativeItem } from '@/lib/doclingNativeItems';
 
 // ─── Data fetchers ───────────────────────────────────────────────────────────
 
@@ -53,7 +54,7 @@ export function getParsedBlockBadgeVariant(
 }
 
 export type ParseDownloadItem = {
-  id: 'docling-markdown' | 'document-json';
+  id: 'docling-markdown' | 'document-json' | 'docling-html';
   label: string;
   description: string;
   formatLabel: string;
@@ -84,7 +85,71 @@ export function getParseDownloadItems(artifacts: ParseArtifactBundle | null): Pa
       downloadFilename: artifacts.json.downloadFilename,
       error: artifacts.json.error,
     },
+    {
+      id: 'docling-html',
+      label: 'Docling HTML',
+      description: 'The HTML artifact produced directly by the Docling parse.',
+      formatLabel: 'HTML',
+      downloadUrl: artifacts.html.downloadUrl,
+      downloadFilename: artifacts.html.downloadFilename,
+      error: artifacts.html.error,
+    },
   ];
+}
+
+export function getDoclingNativeIdentityFields(item: DoclingNativeItem): Array<{ label: string; value: string }> {
+  return [
+    { label: 'Block UID', value: item.block_uid?.trim() || '--' },
+    { label: 'Source UID', value: item.source_uid?.trim() || '--' },
+  ];
+}
+
+export function getDoclingNativeSectionLabel(count: number): string {
+  return `${count} block${count === 1 ? '' : 's'}`;
+}
+
+export function getDoclingNativeBadgeLabel(item: DoclingNativeItem): string {
+  return item.native_label;
+}
+
+export function getDoclingNativeBadgeVariant(
+  item: DoclingNativeItem,
+  badgeColorMap: Record<string, string>,
+): BadgeProps['variant'] {
+  const nativeLabel = item.native_label.trim();
+  const configured = badgeColorMap[nativeLabel];
+  if (configured && configured !== 'gray') return configured as BadgeProps['variant'];
+
+  const fallbackByLabel: Record<string, BadgeProps['variant']> = {
+    text: 'dark',
+    paragraph: 'cyan',
+    title: 'blue',
+    section_header: 'violet',
+    list: 'green',
+    list_item: 'teal',
+    code: 'violet',
+    table: 'orange',
+    document_index: 'orange',
+    picture: 'pink',
+    chart: 'pink',
+    caption: 'grape',
+    footnote: 'cyan',
+    formula: 'yellow',
+    page_header: 'dark',
+    page_footer: 'dark',
+    checkbox_selected: 'lime',
+    checkbox_unselected: 'lime',
+    form: 'yellow',
+    key_value_region: 'green',
+    reference: 'indigo',
+    empty_value: 'dark',
+    grading_scale: 'yellow',
+    handwritten_text: 'red',
+    group: 'blue',
+    inline: 'violet',
+  };
+
+  return fallbackByLabel[nativeLabel] ?? 'blue';
 }
 
 function getParsedBlockMetadata(block: BlockRow): ParsedBlockMetadata {
@@ -110,7 +175,7 @@ function DownloadsTab({ doc, artifacts }: { doc: ProjectDocumentRow | null; arti
     );
   }
 
-  if (!artifacts || artifacts.markdown.loading || artifacts.json.loading) {
+  if (!artifacts || artifacts.markdown.loading || artifacts.json.loading || artifacts.html.loading) {
     return (
       <DocumentPreviewShell doc={doc}>
         <DocumentPreviewMessage message={<IconLoader2 size={20} className="animate-spin text-muted-foreground" />} />
@@ -245,7 +310,10 @@ function DoclingMdTab({ doc, artifacts }: { doc: ProjectDocumentRow | null; arti
 
 function BlocksTab({ doc, artifacts }: { doc: ProjectDocumentRow | null; artifacts: ParseArtifactBundle | null }) {
   const { registry } = useBlockTypeRegistry();
-  const badgeColorMap = useMemo(() => registry?.badgeColor ?? {}, [registry]);
+  const badgeColorMap = useMemo(
+    () => ({ ...(registry?.badgeColor ?? {}), ...(registry?.labelBadgeColor ?? {}) }),
+    [registry],
+  );
 
   if (!doc) {
     return (
@@ -295,28 +363,27 @@ function BlocksTab({ doc, artifacts }: { doc: ProjectDocumentRow | null; artifac
     <DocumentPreviewShell doc={doc}>
       <div className="space-y-3 px-4 py-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="text-xs text-muted-foreground">
+          <div className="text-xs font-semibold tracking-[0.04em] text-muted-foreground">
             {isRawDocling
-              ? state.rawItems.length + ' raw Docling item' + (state.rawItems.length === 1 ? '' : 's')
-              : state.blocks.length + ' normalized block' + (state.blocks.length === 1 ? '' : 's')}
+              ? getDoclingNativeSectionLabel(state.rawItems.length)
+              : state.blocks.length + ' block' + (state.blocks.length === 1 ? '' : 's')}
           </div>
-          <Badge size="sm" variant={isRawDocling ? 'teal' : 'gray'}>
-            {isRawDocling ? 'Raw Docling' : 'Normalized'}
-          </Badge>
         </div>
 
         {isRawDocling ? state.rawItems.map((item, i) => (
           <div key={item.pointer} className="rounded-lg border border-border bg-background/70 p-4 shadow-sm">
+            {(() => {
+              const identityFields = getDoclingNativeIdentityFields(item);
+
+              return (
+                <>
             <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
               <div className="flex min-w-0 items-center gap-2">
                 <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-md bg-muted px-2 text-[10px] font-semibold tabular-nums text-muted-foreground">
                   {i}
                 </span>
-                <Badge size="xs" variant="teal">
-                  {item.kind}
-                </Badge>
-                <Badge size="xs" variant="outline">
-                  {item.native_label}
+                <Badge size="xs" variant={getDoclingNativeBadgeVariant(item, badgeColorMap)}>
+                  {getDoclingNativeBadgeLabel(item)}
                 </Badge>
               </div>
               <div className="flex flex-wrap items-center gap-2">
@@ -333,23 +400,20 @@ function BlocksTab({ doc, artifacts }: { doc: ProjectDocumentRow | null; artifac
             </div>
 
             <div className="mt-4 grid gap-3 border-t border-border/70 pt-3 sm:grid-cols-2">
-              <div>
-                <div className="mb-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-                  Pointer
+              {identityFields.map((field) => (
+                <div key={field.label}>
+                  <div className="mb-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                    {field.label}
+                  </div>
+                  <div className="break-all font-mono text-xs text-foreground/90">
+                    {field.value}
+                  </div>
                 </div>
-                <div className="break-all font-mono text-xs text-foreground/90">
-                  {item.pointer}
-                </div>
-              </div>
-              <div>
-                <div className="mb-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-                  Pages
-                </div>
-                <div className="break-all font-mono text-xs text-foreground/90">
-                  {item.page_nos.length > 0 ? item.page_nos.join(', ') : '?'}
-                </div>
-              </div>
+              ))}
             </div>
+                </>
+              );
+            })()}
           </div>
         )) : state.blocks.map((b, i) => (
           <div key={b.block_uid} className="rounded-lg border border-border bg-background/70 p-4 shadow-sm">
@@ -431,6 +495,22 @@ function getParseProfileName(doc: ProjectDocumentRow): string | null {
 
 function formatParseStatus(status: ProjectDocumentRow['status']): string {
   return status.replaceAll('_', ' ');
+}
+
+export function getParseFileListExtraColumns(): ExtraColumn[] {
+  return [
+    {
+      id: 'profile',
+      header: 'Profile',
+      collapseBelow: 500,
+      className: 'w-[8.5rem]',
+      render: (doc) => {
+        const name = getParseProfileName(doc);
+        if (!name) return <span className="text-muted-foreground">—</span>;
+        return <span className="block truncate text-foreground/85">{name}</span>;
+      },
+    },
+  ];
 }
 
 function ParseFileNavigator({
@@ -585,7 +665,7 @@ export const PARSE_TABS: WorkbenchTab[] = [
   { id: 'parse-compact', label: 'File List', icon: IconFileCode },
   { id: 'config', label: 'Parse Config', icon: IconSettings },
   { id: 'parse-settings', label: 'Parse Settings', icon: IconSettings },
-  { id: 'docling-md', label: 'Docling Markdown', icon: IconFileText },
+  { id: 'docling-md', label: 'Parsed Markdown', icon: IconFileText },
   { id: 'blocks', label: 'Parsed Blocks', icon: IconLayoutList },
   { id: 'docling-json', label: 'Downloads', icon: IconBraces },
 ];
@@ -679,29 +759,7 @@ export function useParseWorkbench() {
     refreshDocs();
   }, [activeDocUid, refreshDocs]);
 
-  const parseExtraColumns: ExtraColumn[] = useMemo(() => [
-    {
-      id: 'profile',
-      header: 'Profile',
-      collapseBelow: 700,
-      className: 'w-[8.5rem]',
-      render: (doc) => {
-        const name = getParseProfileName(doc);
-        if (!name) return <span className="text-muted-foreground">—</span>;
-        return <span className="block truncate text-foreground/85">{name}</span>;
-      },
-    },
-    {
-      id: 'blocks',
-      header: 'Blocks',
-      collapseBelow: 620,
-      className: 'w-[4.5rem] whitespace-nowrap text-right',
-      render: (doc) => {
-        if (doc.conv_total_blocks == null) return <span className="text-muted-foreground">—</span>;
-        return <span className="tabular-nums text-foreground/90">{doc.conv_total_blocks}</span>;
-      },
-    },
-  ], []);
+  const parseExtraColumns: ExtraColumn[] = useMemo(() => getParseFileListExtraColumns(), []);
 
   const renderContent = useCallback((tabId: string) => {
     if (tabId === 'parse' || tabId === 'parse-navigator' || tabId === 'parse-compact') {

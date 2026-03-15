@@ -54,9 +54,13 @@ import {
   prettyCellValue,
   stringifyDebugConfig,
 } from './BlockViewerGridRDG.helpers';
+import {
+  DEFAULT_DOCUMENT_VIEW_MODE,
+  loadDocumentViewMode,
+  type DocumentViewMode,
+} from '@/pages/superuser/documentViews';
 
 type RowData = Record<string, unknown>;
-type BlockTypeView = 'normalized' | 'parser_native';
 type ViewerFontSize = 'small' | 'medium' | 'large';
 type ViewerFontFamily = 'sans' | 'serif' | 'mono';
 type ViewerVerticalAlign = 'top' | 'center' | 'bottom';
@@ -289,10 +293,7 @@ export function BlockViewerGridRDG({ convUid, selectedRunId, selectedRun, onExpo
     const stored = typeof localStorage !== 'undefined' ? localStorage.getItem(WRAP_MODE_KEY) : null;
     return stored === 'on' ? 'on' : 'off';
   });
-  const [blockTypeView, setBlockTypeView] = useState<BlockTypeView>(() => {
-    const stored = typeof localStorage !== 'undefined' ? localStorage.getItem(BLOCK_TYPE_VIEW_KEY) : null;
-    return stored === 'normalized' ? 'normalized' : 'parser_native';
-  });
+  const [blockTypeView, setBlockTypeView] = useState<DocumentViewMode>(DEFAULT_DOCUMENT_VIEW_MODE);
   const [typeFilter, setTypeFilter] = useState<string[]>([]);
   const [hiddenCols, setHiddenCols] = useState<Set<string>>(() => {
     if (typeof localStorage === 'undefined') return new Set(DEFAULT_HIDDEN_COLS);
@@ -317,8 +318,29 @@ export function BlockViewerGridRDG({ convUid, selectedRunId, selectedRun, onExpo
   const [rows, setRows] = useState<RowData[]>([]);
   const rowsRef = useRef<RowData[]>([]);
 
+  useEffect(() => {
+    let active = true;
+    if (typeof localStorage !== 'undefined') localStorage.removeItem(BLOCK_TYPE_VIEW_KEY);
+    void loadDocumentViewMode()
+      .then((mode) => {
+        if (!active) return;
+        setBlockTypeView(mode);
+        setTypeFilter([]);
+      })
+      .catch(() => {
+        if (!active) return;
+        setBlockTypeView(DEFAULT_DOCUMENT_VIEW_MODE);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const { registry } = useBlockTypeRegistry();
-  const badgeColorMap = useMemo(() => registry?.badgeColor ?? {}, [registry]);
+  const badgeColorMap = useMemo(
+    () => ({ ...(registry?.badgeColor ?? {}), ...(registry?.labelBadgeColor ?? {}) }),
+    [registry],
+  );
 
   const { blocks, totalCount, loading: blocksLoading, error: blocksError } = useBlocks(convUid, pageIndex, pageSize);
   const {
@@ -342,16 +364,28 @@ export function BlockViewerGridRDG({ convUid, selectedRunId, selectedRun, onExpo
       const { parserBlockType, parserPath } = parserNativeMetaFromLocator(normalizedLocator);
       const pageLabels = formatPageLabels(extractPagesFromLocator(normalizedLocator));
       const normalizedLocatorJson = normalizedLocator ? JSON.stringify(normalizedLocator) : null;
+      const isRawDoclingView = blockTypeView === 'raw_docling';
+      const blockTypeViewValue = isRawDoclingView
+        ? (parserBlockType ?? block.block_type)
+        : block.block_type;
+      const blockLocatorViewValue = isRawDoclingView
+        ? JSON.stringify({
+          type: 'raw_docling_view',
+          parser_block_type: parserBlockType,
+          parser_path: parserPath,
+          source_locator: normalizedLocator,
+        })
+        : normalizedLocatorJson;
 
       const row: RowData = {
         block_index: block.block_index,
         block_pages: pageLabels,
         block_type: block.block_type,
-        block_type_view: block.block_type,
+        block_type_view: blockTypeViewValue,
         block_content: block.block_content,
         block_uid: block.block_uid,
         block_locator: normalizedLocatorJson,
-        block_locator_view: normalizedLocatorJson,
+        block_locator_view: blockLocatorViewValue,
         parser_block_type: parserBlockType,
         parser_path: parserPath,
         _overlay_status: overlay?.status ?? null,
@@ -376,7 +410,7 @@ export function BlockViewerGridRDG({ convUid, selectedRunId, selectedRun, onExpo
 
       return row;
     });
-  }, [blocks, overlayMap, schemaFields]);
+  }, [blockTypeView, blocks, overlayMap, schemaFields]);
 
   const blockTypes = useMemo(() => {
     const types = new Set<string>();
@@ -611,8 +645,8 @@ export function BlockViewerGridRDG({ convUid, selectedRunId, selectedRun, onExpo
       { key: 'parser_path', name: 'Parser Path', sortable: false, resizable: true, renderCell: ({ row }: { row: RowData }) => <span className="text-xs">{prettyCellValue(row.parser_path)}</span> },
     ].filter((column) => {
       if (hiddenCols.has(column.key)) return false;
-      if (column.key === 'parser_block_type' && (blockTypeView !== 'parser_native' || !hasParserTypeData)) return false;
-      if (column.key === 'parser_path' && blockTypeView !== 'parser_native') return false;
+      if (column.key === 'parser_block_type' && (blockTypeView !== 'raw_docling' || !hasParserTypeData)) return false;
+      if (column.key === 'parser_path' && blockTypeView !== 'raw_docling') return false;
       return true;
     });
 
@@ -797,13 +831,6 @@ export function BlockViewerGridRDG({ convUid, selectedRunId, selectedRun, onExpo
     if (typeof localStorage !== 'undefined') localStorage.setItem(VIEW_MODE_KEY, value);
   };
 
-  const handleBlockTypeViewChange = (value: string) => {
-    const next = value === 'parser_native' ? 'parser_native' : 'normalized';
-    setBlockTypeView(next);
-    setTypeFilter([]);
-    if (typeof localStorage !== 'undefined') localStorage.setItem(BLOCK_TYPE_VIEW_KEY, next);
-  };
-
   const handleViewerFontSizeChange = (value: string) => {
     const next: ViewerFontSize = value === 'small' || value === 'large' ? value : 'medium';
     setViewerFontSize(next);
@@ -933,13 +960,11 @@ export function BlockViewerGridRDG({ convUid, selectedRunId, selectedRun, onExpo
         <div className="block-grid-toolbar-group flex shrink-0 items-center gap-1.5 flex-nowrap">
           <SegmentedControl className="block-grid-segmented-boxed" data={[{ value: 'compact', label: 'Compact' }, { value: 'comfortable', label: 'Comfortable' }]} value={viewMode} onChange={handleViewModeChange} size="xs" />
           <SegmentedControl className="block-grid-segmented-boxed" data={[{ value: 'gray', label: 'Rows Gray' }, { value: 'blue', label: 'Rows Blue' }, { value: 'none', label: 'Rows None' }]} value={rowStripeTone} onChange={handleRowStripeToneChange} size="xs" />
-          <div className="block-grid-two-tab inline-flex items-stretch overflow-hidden border border-slate-300/80 bg-slate-100/70 dark:border-slate-600/60 dark:bg-slate-900/30" role="tablist" aria-label="Representation mode">
-            <button type="button" role="tab" aria-selected={blockTypeView === 'normalized'} className={`block-grid-two-tab-option h-6 px-3 text-[11px] font-semibold leading-none${blockTypeView === 'normalized' ? ' is-active bg-sky-100 text-sky-800 dark:bg-sky-900/35 dark:text-sky-200' : ' text-slate-700 dark:text-slate-200'} border-r border-slate-300/70 dark:border-slate-600/60`} onClick={() => handleBlockTypeViewChange('normalized')}>
-              Normalized
-            </button>
-            <button type="button" role="tab" aria-selected={blockTypeView === 'parser_native'} className={`block-grid-two-tab-option h-6 px-3 text-[11px] font-semibold leading-none${blockTypeView === 'parser_native' ? ' is-active bg-sky-100 text-sky-800 dark:bg-sky-900/35 dark:text-sky-200' : ' text-slate-700 dark:text-slate-200'}`} onClick={() => handleBlockTypeViewChange('parser_native')}>
-              Parser Native
-            </button>
+          <div
+            className="inline-flex h-6 items-center rounded border border-slate-300/80 bg-sky-100 px-3 text-[11px] font-semibold text-sky-800 dark:border-slate-600/60 dark:bg-sky-900/35 dark:text-sky-200"
+            aria-label="Representation mode"
+          >
+            Docling Native
           </div>
           <SegmentedControl className="block-grid-segmented-boxed" data={[{ value: 'off', label: 'Wrap Off' }, { value: 'on', label: 'Wrap On' }]} value={wrapMode} onChange={handleWrapModeChange} size="xs" />
           <SegmentedControl className="block-grid-segmented-boxed" data={[{ value: 'small', label: 'S' }, { value: 'medium', label: 'M' }, { value: 'large', label: 'L' }]} value={viewerFontSize} onChange={handleViewerFontSizeChange} size="xs" />

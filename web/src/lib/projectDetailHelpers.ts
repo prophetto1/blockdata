@@ -218,6 +218,17 @@ function getDocumentTitleExtension(doc: ProjectDocumentRow): string {
   return getExtension(doc.doc_title ?? '');
 }
 
+export function getDocumentDisplayName(doc: ProjectDocumentRow): string {
+  const rawTitle = typeof doc.doc_title === 'string' ? doc.doc_title.trim() : '';
+  const fallbackTitle = rawTitle || getFilenameFromLocator(doc.source_locator) || doc.source_uid;
+  const titleExtension = getExtension(fallbackTitle);
+  const locatorExtension = getSourceLocatorExtension(doc);
+  const effectiveExtension = titleExtension || locatorExtension;
+
+  if (!effectiveExtension || titleExtension) return fallbackTitle;
+  return `${fallbackTitle}.${effectiveExtension}`;
+}
+
 export function isPdfDocument(doc: ProjectDocumentRow): boolean {
   if (doc.source_type.toLowerCase() === 'pdf') return true;
   if (getSourceLocatorExtension(doc) === 'pdf') return true;

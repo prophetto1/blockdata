@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-03-14T15:22:33.559Z",
+  "generatedAt": "2026-03-15T00:14:42.304Z",
   "scope": "auth",
   "pages": [
     {
@@ -2168,13 +2168,12 @@
     },
     {
       "page": "src/pages/settings/DoclingConfigPanel.tsx",
-      "componentCount": 39,
+      "componentCount": 38,
       "categoryCounts": {
         "ark-ui": 12,
         "local-components": 14,
         "in-file component": 8,
-        "tabler-icons": 4,
-        "unknown": 1
+        "tabler-icons": 4
       },
       "components": [
         {
@@ -2464,15 +2463,6 @@
           "importedAs": null,
           "category": "in-file component",
           "definition": "Section is defined in the same page file"
-        },
-        {
-          "component": "Select",
-          "usedAs": "Select",
-          "source": "(in-file or unresolved)",
-          "importKind": null,
-          "importedAs": null,
-          "category": "unknown",
-          "definition": "Select was detected in JSX but no matching import was resolved"
         },
         {
           "component": "SwitchControl",
@@ -4297,14 +4287,13 @@
       ]
     }
   ],
-  "totalComponentUsages": 427,
+  "totalComponentUsages": 426,
   "categoryTotals": {
     "external-package": 17,
     "local-components": 138,
     "tabler-icons": 79,
     "in-file component": 17,
     "ark-ui": 158,
-    "relative-local": 17,
-    "unknown": 1
+    "relative-local": 17
   }
 }

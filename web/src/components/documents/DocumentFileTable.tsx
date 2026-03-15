@@ -1,10 +1,9 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { IconLoader2 } from '@tabler/icons-react';
-import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { StatusBadge } from '@/components/documents/StatusBadge';
 import type { ProjectDocumentRow } from '@/lib/projectDetailHelpers';
-import { getDocumentFormat, formatBytes } from '@/lib/projectDetailHelpers';
+import { getDocumentDisplayName, formatBytes } from '@/lib/projectDetailHelpers';
 import { cn } from '@/lib/utils';
 
 export interface ExtraColumn {
@@ -55,9 +54,8 @@ export function DocumentFileTable({
   const classTokens = className?.split(/\s+/) ?? [];
   const isParseTable = classTokens.includes('parse-documents-table');
   const isParseDense = classTokens.includes('parse-documents-table-compact');
-  const showParseSize = !isParseTable || containerWidth == null || containerWidth >= 560;
-  const showParseFormat = !isParseTable || containerWidth == null || containerWidth >= 460;
-  const showParseStatus = hideStatus ? false : (!isParseTable || containerWidth == null || containerWidth >= 340);
+  const showParseSize = !isParseTable || containerWidth == null || containerWidth >= 280;
+  const showParseStatus = hideStatus ? false : (!isParseTable || containerWidth == null || containerWidth >= 240);
   const shouldWrapParseName = isParseTable && containerWidth != null && containerWidth < 260;
   const visibleExtraColumns = useMemo(
     () => extraColumns.filter((col) => !isParseTable || col.collapseBelow == null || containerWidth == null || containerWidth >= col.collapseBelow),
@@ -103,7 +101,6 @@ export function DocumentFileTable({
   const baseCols =
     1 +
     1 +
-    (showParseFormat ? 1 : 0) +
     (showParseSize ? 1 : 0) +
     (showParseStatus ? 1 : 0) +
     visibleExtraColumns.length +
@@ -126,7 +123,6 @@ export function DocumentFileTable({
                 />
               </th>
               <th className={headerCellClassName}>Name</th>
-              {showParseFormat && <th className={cn(headerCellClassName, isParseTable && 'w-[4.75rem]')}>Format</th>}
               {showParseSize && <th className={cn(headerCellClassName, isParseTable && 'w-[4.5rem]')}>Size</th>}
               {showParseStatus && <th className={cn(headerCellClassName, isParseTable && 'w-[6.5rem]')}>Status</th>}
               {visibleExtraColumns.map((col) => (
@@ -206,22 +202,9 @@ export function DocumentFileTable({
                           : 'w-full truncate text-foreground'
                         : 'max-w-[300px] text-foreground',
                     )}>
-                      {doc.doc_title}
+                      {getDocumentDisplayName(doc)}
                     </span>
                   </td>
-                  {showParseFormat && (
-                    <td className={cn(bodyCellClassName, 'whitespace-nowrap')}>
-                      {isParseDense ? (
-                        <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-                          {getDocumentFormat(doc)}
-                        </span>
-                      ) : (
-                        <Badge variant="gray" size="xs" className="uppercase">
-                          {getDocumentFormat(doc)}
-                        </Badge>
-                      )}
-                    </td>
-                  )}
                   {showParseSize && (
                     <td className={cn(bodyCellClassName, 'whitespace-nowrap text-muted-foreground')}>
                       {formatBytes(doc.source_filesize)}

@@ -11,6 +11,10 @@ vi.mock('@/components/documents/PdfPreview', () => ({
   PdfPreview: ({ url }: { url: string }) => <div data-testid="pdf-preview">{url}</div>,
 }));
 
+vi.mock('@/components/documents/PdfjsExpressPreview', () => ({
+  PdfjsExpressPreview: ({ url }: { url: string }) => <div data-testid="pdfjs-express-preview">{url}</div>,
+}));
+
 vi.mock('@/components/documents/PdfResultsHighlighter', () => ({
   PdfResultsHighlighter: ({
     pdfUrl,
@@ -154,5 +158,48 @@ describe('PreviewTabPanel parsed PDF toggle', () => {
     await waitFor(() => {
       expect(screen.queryByRole('button', { name: 'Parsed view' })).not.toBeInTheDocument();
     });
+  });
+
+  it('can hide parsed view and the header download action for assets mode', async () => {
+    resolveSignedUrlForLocatorsMock
+      .mockResolvedValueOnce({
+        url: 'https://example.test/quarterly-report.pdf',
+        error: null,
+      })
+      .mockResolvedValueOnce({
+        url: 'https://example.test/quarterly-report.docling.json',
+        error: null,
+      });
+
+    render(
+      <PreviewTabPanel
+        doc={baseDoc}
+        allowParsedPdfView={false}
+        showHeaderDownload={false}
+      />,
+    );
+
+    expect(await screen.findByTestId('pdf-preview')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Parsed view' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Download file' })).not.toBeInTheDocument();
+  });
+
+  it('can route PDF preview through the PDF.js Express viewer', async () => {
+    resolveSignedUrlForLocatorsMock.mockResolvedValueOnce({
+      url: 'https://example.test/quarterly-report.pdf',
+      error: null,
+    });
+
+    render(
+      <PreviewTabPanel
+        doc={baseDoc}
+        pdfViewer="pdfjs-express"
+        allowParsedPdfView={false}
+        showHeaderDownload={false}
+      />,
+    );
+
+    expect(await screen.findByTestId('pdfjs-express-preview')).toBeInTheDocument();
+    expect(screen.queryByTestId('pdf-preview')).not.toBeInTheDocument();
   });
 });

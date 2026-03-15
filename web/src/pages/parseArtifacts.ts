@@ -8,9 +8,13 @@ import {
 import { supabase } from '@/lib/supabase';
 import { TABLES } from '@/lib/tables';
 import type { BlockRow } from '@/lib/types';
-import { loadDocumentViewMode, type DocumentViewMode } from '@/pages/superuser/documentViews';
+import {
+  DEFAULT_DOCUMENT_VIEW_MODE,
+  loadDocumentViewMode,
+  type DocumentViewMode,
+} from '@/pages/superuser/documentViews';
 
-type RepresentationType = 'doclingdocument_json' | 'markdown_bytes';
+type RepresentationType = 'doclingdocument_json' | 'markdown_bytes' | 'html_bytes';
 
 export type ParseMarkdownState = {
   markdown: string;
@@ -29,6 +33,13 @@ export type ParseJsonState = {
   downloadFilename: string | null;
 };
 
+export type ParseHtmlState = {
+  loading: boolean;
+  error: string | null;
+  downloadUrl: string | null;
+  downloadFilename: string | null;
+};
+
 export type ParseBlocksState = {
   blocks: BlockRow[];
   rawItems: DoclingNativeItem[];
@@ -41,6 +52,7 @@ export type ParseArtifactBundle = {
   mode: DocumentViewMode;
   markdown: ParseMarkdownState;
   json: ParseJsonState;
+  html: ParseHtmlState;
   blocks: ParseBlocksState;
 };
 
@@ -73,7 +85,7 @@ export function getParseArtifactCacheKey(doc: ProjectDocumentRow): string {
 export function createLoadingParseArtifactBundle(doc: ProjectDocumentRow): ParseArtifactBundle {
   return {
     cacheKey: getParseArtifactCacheKey(doc),
-    mode: 'normalized',
+    mode: DEFAULT_DOCUMENT_VIEW_MODE,
     markdown: {
       markdown: '',
       loading: true,
@@ -84,6 +96,12 @@ export function createLoadingParseArtifactBundle(doc: ProjectDocumentRow): Parse
     json: {
       content: null,
       rawText: null,
+      loading: true,
+      error: null,
+      downloadUrl: null,
+      downloadFilename: null,
+    },
+    html: {
       loading: true,
       error: null,
       downloadUrl: null,
@@ -102,25 +120,52 @@ export async function primeParseArtifactsForDocument(
   doc: ProjectDocumentRow,
   deps: ParseArtifactsDeps = defaultDeps,
 ): Promise<ParseArtifactBundle> {
-  const [mode, markdown, json, blocks] = await Promise.all([
-    deps.loadDocumentViewMode().catch(() => 'normalized' as const),
+  const [mode, markdown, json, html, blocks] = await Promise.all([
+    deps.loadDocumentViewMode().catch(() => DEFAULT_DOCUMENT_VIEW_MODE),
     loadMarkdownArtifact(doc, deps),
     loadJsonArtifact(doc, deps),
+    loadHtmlArtifact(doc, deps),
     loadBlocksArtifact(doc, deps),
   ]);
 
-  const rawItems = json.rawText ? extractDoclingNativeItemsFromText(json.rawText).items : [];
+  const rawItems = json.rawText
+    ? attachBlockIdentityToRawItems(extractDoclingNativeItemsFromText(json.rawText).items, blocks.blocks, doc.source_uid)
+    : [];
 
   return {
     cacheKey: getParseArtifactCacheKey(doc),
     mode,
     markdown,
     json,
+    html,
     blocks: {
       ...blocks,
       rawItems,
     },
   };
+}
+
+function attachBlockIdentityToRawItems(
+  rawItems: DoclingNativeItem[],
+  blocks: BlockRow[],
+  sourceUid: string,
+): DoclingNativeItem[] {
+  const blockUidByPointer = new Map<string, string>();
+  for (const block of blocks) {
+    const locator = block.block_locator as Record<string, unknown> | null;
+    const pointer = typeof locator?.parser_path === 'string'
+      ? locator.parser_path
+      : typeof locator?.pointer === 'string'
+        ? locator.pointer
+        : null;
+    if (pointer && !blockUidByPointer.has(pointer)) blockUidByPointer.set(pointer, block.block_uid);
+  }
+
+  return rawItems.map((item) => ({
+    ...item,
+    block_uid: blockUidByPointer.get(item.pointer) ?? null,
+    source_uid: sourceUid,
+  }));
 }
 
 async function loadMarkdownArtifact(doc: ProjectDocumentRow, deps: ParseArtifactsDeps): Promise<ParseMarkdownState> {
@@ -213,6 +258,36 @@ async function loadJsonArtifact(doc: ProjectDocumentRow, deps: ParseArtifactsDep
       downloadFilename,
     };
   }
+}
+
+async function loadHtmlArtifact(doc: ProjectDocumentRow, deps: ParseArtifactsDeps): Promise<ParseHtmlState> {
+  const locator = await deps.getArtifactLocator(doc.source_uid, 'html_bytes');
+  if (!locator) {
+    return {
+      loading: false,
+      error: 'No Docling HTML artifact is available for this document.',
+      downloadUrl: null,
+      downloadFilename: null,
+    };
+  }
+
+  const downloadFilename = getFilenameFromLocator(locator) ?? `${doc.doc_title || 'document'}.html`;
+  const { url: signedUrl, error } = await deps.resolveSignedUrlForLocators([locator]);
+  if (!signedUrl) {
+    return {
+      loading: false,
+      error: error ?? 'Could not generate download URL for the Docling HTML artifact.',
+      downloadUrl: null,
+      downloadFilename,
+    };
+  }
+
+  return {
+    loading: false,
+    error: null,
+    downloadUrl: signedUrl,
+    downloadFilename,
+  };
 }
 
 async function getArtifactLocator(sourceUid: string, reprType: RepresentationType): Promise<string | null> {

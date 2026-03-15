@@ -5,6 +5,7 @@ import { useShellHeaderTitle } from '@/components/common/useShellHeaderTitle';
 import { edgeFetch } from '@/lib/edge';
 import { SettingCard, type PolicyRow, type SettingDef } from '@/pages/settings/setting-card-shared';
 import {
+  DEFAULT_DOCUMENT_VIEW_MODE,
   DOCUMENT_VIEW_MODE_POLICY_KEY,
   getDocumentViewModeValue,
   type DocumentViewMode,
@@ -13,12 +14,11 @@ import {
 const SETTING: SettingDef = {
   key: DOCUMENT_VIEW_MODE_POLICY_KEY,
   label: 'Docling block presentation',
-  description: 'Choose whether the Parse Blocks tab shows Blockdata-normalized blocks or Docling-native items in reading order.',
+  description: 'Parse Blocks uses Docling-native labels and reading order. Normalized aliases are disabled.',
   fieldType: 'select',
-  defaultValue: 'normalized',
+  defaultValue: DEFAULT_DOCUMENT_VIEW_MODE,
   selectItems: [
-    { label: 'Normalized', value: 'normalized' },
-    { label: 'Raw Docling', value: 'raw_docling' },
+    { label: 'Docling Native', value: 'raw_docling' },
   ],
 };
 
@@ -30,8 +30,8 @@ export function Component() {
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<{ kind: 'success' | 'error'; message: string } | null>(null);
   const [saving, setSaving] = useState(false);
-  const [serverValue, setServerValue] = useState<DocumentViewMode>('normalized');
-  const [value, setValue] = useState<DocumentViewMode>('normalized');
+  const [serverValue, setServerValue] = useState<DocumentViewMode>(DEFAULT_DOCUMENT_VIEW_MODE);
+  const [value, setValue] = useState<DocumentViewMode>(DEFAULT_DOCUMENT_VIEW_MODE);
 
   const dirty = useMemo(() => value !== serverValue, [serverValue, value]);
 
@@ -139,7 +139,7 @@ export function Component() {
         <SettingCard
           setting={SETTING}
           value={value}
-          onChange={(_key, nextValue) => setValue(nextValue === 'raw_docling' ? 'raw_docling' : 'normalized')}
+          onChange={() => setValue(DEFAULT_DOCUMENT_VIEW_MODE)}
           dirty={dirty}
           saving={saving}
           onSave={() => void handleSave()}

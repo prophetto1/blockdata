@@ -58,20 +58,29 @@ const documentFileTableMock = vi.fn((props: Record<string, unknown>) => (
   <div data-testid="document-file-table">{String(props.className ?? '')}</div>
 ));
 
+const workbenchMock = vi.fn();
+
 vi.mock('@/components/documents/DocumentFileTable', () => ({
   DocumentFileTable: (props: Record<string, unknown>) => documentFileTableMock(props),
 }));
 
 vi.mock('@/components/workbench/Workbench', () => ({
-  Workbench: ({ defaultPanes, renderContent }: { defaultPanes: Array<{ id: string; activeTab: string }>; renderContent: (tabId: string) => React.ReactNode }) => (
-    <div>
-      {defaultPanes.map((pane) => (
-        <section key={pane.id} data-testid={pane.id}>
-          {renderContent(pane.activeTab)}
-        </section>
-      ))}
-    </div>
-  ),
+  Workbench: (props: {
+    tabs: Array<{ id: string }>;
+    defaultPanes: Array<{ id: string; activeTab: string; tabs: string[] }>;
+    renderContent: (tabId: string) => React.ReactNode;
+  }) => {
+    workbenchMock(props);
+    return (
+      <div>
+        {props.defaultPanes.map((pane) => (
+          <section key={pane.id} data-testid={pane.id}>
+            {props.renderContent(pane.activeTab)}
+          </section>
+        ))}
+      </div>
+    );
+  },
 }));
 
 describe('ProjectAssetsPage', () => {
@@ -82,5 +91,17 @@ describe('ProjectAssetsPage', () => {
     const props = documentFileTableMock.mock.calls[0]?.[0] as { className?: string } | undefined;
     expect(props?.className).toContain('parse-documents-table');
     expect(props?.className).toContain('parse-documents-table-compact');
+  });
+
+  it('registers a Preview-2 tab in the third pane', () => {
+    render(<ProjectAssetsPage />);
+
+    const props = workbenchMock.mock.calls[0]?.[0] as {
+      tabs: Array<{ id: string }>;
+      defaultPanes: Array<{ id: string; tabs: string[] }>;
+    } | undefined;
+
+    expect(props?.tabs.map((tab) => tab.id)).toContain('preview-2');
+    expect(props?.defaultPanes[2]?.tabs).toEqual(['preview', 'preview-2']);
   });
 });
