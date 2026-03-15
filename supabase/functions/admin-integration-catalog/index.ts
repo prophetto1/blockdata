@@ -185,10 +185,10 @@ export async function handleAdminIntegrationCatalogRequest(
           .from(catalogTable)
           .select(includeSchema ? fullSelect : lightSelect),
         supabaseAdmin
-          .from("registry_services")
+          .from("service_registry")
           .select("service_id,service_type,service_name,base_url,enabled"),
         supabaseAdmin
-          .from("registry_service_functions")
+          .from("service_functions")
           .select("function_id,service_id,function_name,function_type,label,entrypoint,enabled"),
       ]);
 

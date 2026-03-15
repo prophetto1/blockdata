@@ -102,12 +102,12 @@ export async function loadAllServices(): Promise<
   try {
     const [servicesRes, functionsRes] = await Promise.all([
       supabase
-        .from('registry_services')
+        .from('service_registry')
         .select('*')
         .order('service_type')
         .order('service_name'),
       supabase
-        .from('registry_service_functions')
+        .from('service_functions')
         .select('*')
         .order('service_id')
         .order('function_name'),
@@ -145,13 +145,13 @@ export async function loadPublicServices(): Promise<
   try {
     const [servicesRes, functionsRes] = await Promise.all([
       supabase
-        .from('registry_services')
+        .from('service_registry')
         .select('*')
         .eq('enabled', true)
         .order('service_type')
         .order('service_name'),
       supabase
-        .from('registry_service_functions')
+        .from('service_functions')
         .select('*')
         .eq('enabled', true)
         .order('service_id')
@@ -397,12 +397,12 @@ export function subscribeToServiceChanges(
     .channel('admin-services-registry')
     .on(
       'postgres_changes',
-      { event: '*', schema: 'public', table: 'registry_services' },
+      { event: '*', schema: 'public', table: 'service_registry' },
       () => onChangeCallback(),
     )
     .on(
       'postgres_changes',
-      { event: '*', schema: 'public', table: 'registry_service_functions' },
+      { event: '*', schema: 'public', table: 'service_functions' },
       () => onChangeCallback(),
     )
     .subscribe();

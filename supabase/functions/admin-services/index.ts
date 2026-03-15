@@ -117,17 +117,17 @@ export async function handleAdminServicesRequest(req: Request, deps: AdminServic
         error: serviceTypesErr,
       }] = await Promise.all([
         supabaseAdmin
-          .from("registry_services")
+          .from("service_registry")
           .select(
             "service_id,service_type,service_name,base_url,health_status,last_heartbeat,enabled,config,created_at,updated_at",
           ),
         supabaseAdmin
-          .from("registry_service_functions")
+          .from("service_functions")
           .select(
             "function_id,service_id,function_name,function_type,label,description,entrypoint,http_method,parameter_schema,result_schema,enabled,tags,created_at,updated_at",
           ),
         supabaseAdmin
-          .from("registry_service_types")
+          .from("service_type_catalog")
           .select("service_type,label,description"),
       ]);
 
@@ -185,7 +185,7 @@ export async function handleAdminServicesRequest(req: Request, deps: AdminServic
           : (Array.isArray(body.plugin_types) ? body.plugin_types : []);
 
         const { data: serviceTypesRows, error: serviceTypesErr } = await supabaseAdmin
-          .from("registry_service_types")
+          .from("service_type_catalog")
           .select("service_type");
         if (serviceTypesErr) {
           return json(500, { error: `Failed to load service types: ${serviceTypesErr.message}` });
@@ -421,7 +421,7 @@ export async function handleAdminServicesRequest(req: Request, deps: AdminServic
         if (serviceRows.length > 0) {
           if (importMode === "upsert") {
             const { data: upserted, error: serviceUpsertErr } = await supabaseAdmin
-              .from("registry_services")
+              .from("service_registry")
               .upsert(serviceRows, { onConflict: "service_type,service_name" })
               .select("service_id,service_type,service_name");
             if (serviceUpsertErr) {
@@ -436,7 +436,7 @@ export async function handleAdminServicesRequest(req: Request, deps: AdminServic
             );
           } else {
             const { data: inserted, error: serviceInsertErr } = await supabaseAdmin
-              .from("registry_services")
+              .from("service_registry")
               .insert(serviceRows)
               .select("service_id,service_type,service_name");
             if (serviceInsertErr) {
@@ -478,14 +478,14 @@ export async function handleAdminServicesRequest(req: Request, deps: AdminServic
         if (functionRowsResolved.length > 0) {
           if (importMode === "upsert") {
             const { error: functionUpsertErr } = await supabaseAdmin
-              .from("registry_service_functions")
+              .from("service_functions")
               .upsert(functionRowsResolved, { onConflict: "service_id,function_name" });
             if (functionUpsertErr) {
               return json(500, { error: `Failed to import functions: ${functionUpsertErr.message}` });
             }
           } else {
             const { error: functionInsertErr } = await supabaseAdmin
-              .from("registry_service_functions")
+              .from("service_functions")
               .insert(functionRowsResolved);
             if (functionInsertErr) {
               return json(500, { error: `Failed to import functions: ${functionInsertErr.message}` });
@@ -522,7 +522,7 @@ export async function handleAdminServicesRequest(req: Request, deps: AdminServic
         if (!isPlainObject(config)) return json(400, { error: "config must be an object" });
 
         const { data, error: insertErr } = await supabaseAdmin
-          .from("registry_services")
+          .from("service_registry")
           .insert({
             service_type: serviceType,
             service_name: serviceName,
@@ -584,7 +584,7 @@ export async function handleAdminServicesRequest(req: Request, deps: AdminServic
         }
 
         const { data, error: insertErr } = await supabaseAdmin
-          .from("registry_service_functions")
+          .from("service_functions")
           .insert({
             service_id: serviceId,
             function_name: functionName,
@@ -672,7 +672,7 @@ export async function handleAdminServicesRequest(req: Request, deps: AdminServic
         update.updated_at = new Date().toISOString();
 
         const { error: updateErr } = await supabaseAdmin
-          .from("registry_services")
+          .from("service_registry")
           .update(update)
           .eq("service_id", serviceId);
 
@@ -769,7 +769,7 @@ export async function handleAdminServicesRequest(req: Request, deps: AdminServic
         update.updated_at = new Date().toISOString();
 
         const { error: updateErr } = await supabaseAdmin
-          .from("registry_service_functions")
+          .from("service_functions")
           .update(update)
           .eq("function_id", functionId);
 
@@ -798,7 +798,7 @@ export async function handleAdminServicesRequest(req: Request, deps: AdminServic
         if (!serviceId) return json(400, { error: "Missing service_id" });
 
         const { error: deleteErr } = await supabaseAdmin
-          .from("registry_services")
+          .from("service_registry")
           .delete()
           .eq("service_id", serviceId);
         if (deleteErr) return json(500, { error: `Failed to delete service: ${deleteErr.message}` });
@@ -815,7 +815,7 @@ export async function handleAdminServicesRequest(req: Request, deps: AdminServic
         if (!functionId) return json(400, { error: "Missing function_id" });
 
         const { error: deleteErr } = await supabaseAdmin
-          .from("registry_service_functions")
+          .from("service_functions")
           .delete()
           .eq("function_id", functionId);
         if (deleteErr) return json(500, { error: `Failed to delete function: ${deleteErr.message}` });

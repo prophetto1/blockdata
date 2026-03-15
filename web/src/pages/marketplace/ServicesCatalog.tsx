@@ -115,7 +115,7 @@ function ServiceCard({ service }: { service: MarketplaceService }) {
 async function fetchServices(): Promise<MarketplaceService[]> {
   // Fetch services with their type labels
   const { data: servicesData, error: svcErr } = await supabase
-    .from('registry_services')
+    .from('service_registry')
     .select('service_id, service_type, service_name, description, docs_url, health_status')
     .eq('enabled', true)
     .order('service_name');
@@ -125,7 +125,7 @@ async function fetchServices(): Promise<MarketplaceService[]> {
   // Fetch all functions for enabled services
   const serviceIds = servicesData.map((s) => s.service_id);
   const { data: fnData, error: fnErr } = await supabase
-    .from('registry_service_functions')
+    .from('service_functions')
     .select('function_id, service_id, function_name, function_type, label, description, tags, beta, deprecated')
     .in('service_id', serviceIds)
     .eq('enabled', true)

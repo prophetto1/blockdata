@@ -38,9 +38,9 @@ def _now_iso() -> str:
 async def list_services(su: SuperuserContext = Depends(require_superuser)):
     sb = get_supabase_admin()
 
-    services_q = sb.table("registry_services").select("*").execute()
-    functions_q = sb.table("registry_service_functions").select("*").execute()
-    types_q = sb.table("registry_service_types").select(
+    services_q = sb.table("service_registry").select("*").execute()
+    functions_q = sb.table("service_functions").select("*").execute()
+    types_q = sb.table("service_type_catalog").select(
         "service_type,label,description"
     ).execute()
 
@@ -82,7 +82,7 @@ async def create_service(
         raise HTTPException(400, f"health_status must be one of: {', '.join(sorted(HEALTH_STATUSES))}")
 
     sb = get_supabase_admin()
-    result = sb.table("registry_services").insert({
+    result = sb.table("service_registry").insert({
         "service_type": body.service_type.strip(),
         "service_name": body.service_name.strip(),
         "base_url": body.base_url.strip(),
@@ -152,7 +152,7 @@ async def update_service(
     update["updated_at"] = _now_iso()
 
     sb = get_supabase_admin()
-    sb.table("registry_services").update(update).eq("service_id", service_id).execute()
+    sb.table("service_registry").update(update).eq("service_id", service_id).execute()
     return {"ok": True, "updated_target": "service", "updated_id": service_id}
 
 
@@ -166,7 +166,7 @@ async def delete_service(
     su: SuperuserContext = Depends(require_superuser),
 ):
     sb = get_supabase_admin()
-    sb.table("registry_services").delete().eq("service_id", service_id).execute()
+    sb.table("service_registry").delete().eq("service_id", service_id).execute()
     return {"ok": True, "deleted_target": "service", "deleted_id": service_id}
 
 
@@ -213,7 +213,7 @@ async def create_function(
         raise HTTPException(400, f"http_method must be one of: {', '.join(sorted(HTTP_METHODS))}")
 
     sb = get_supabase_admin()
-    result = sb.table("registry_service_functions").insert({
+    result = sb.table("service_functions").insert({
         "service_id": body.service_id.strip(),
         "function_name": body.function_name.strip(),
         "function_type": body.function_type,
@@ -316,7 +316,7 @@ async def update_function(
     update["updated_at"] = _now_iso()
 
     sb = get_supabase_admin()
-    sb.table("registry_service_functions").update(update).eq("function_id", function_id).execute()
+    sb.table("service_functions").update(update).eq("function_id", function_id).execute()
     return {"ok": True, "updated_target": "function", "updated_id": function_id}
 
 
@@ -330,7 +330,7 @@ async def delete_function(
     su: SuperuserContext = Depends(require_superuser),
 ):
     sb = get_supabase_admin()
-    sb.table("registry_service_functions").delete().eq("function_id", function_id).execute()
+    sb.table("service_functions").delete().eq("function_id", function_id).execute()
     return {"ok": True, "deleted_target": "function", "deleted_id": function_id}
 
 
@@ -387,7 +387,7 @@ async def import_registry(
     sb = get_supabase_admin()
 
     # Load known service types
-    types_resp = sb.table("registry_service_types").select("service_type").execute()
+    types_resp = sb.table("service_type_catalog").select("service_type").execute()
     known_types = {r["service_type"] for r in (types_resp.data or [])}
     has_custom = "custom" in known_types
 
@@ -497,11 +497,11 @@ async def import_registry(
     rows_list = list(service_rows.values())
     if rows_list:
         if body.import_mode == "upsert":
-            resp = sb.table("registry_services").upsert(
+            resp = sb.table("service_registry").upsert(
                 rows_list, on_conflict="service_type,service_name"
             ).execute()
         else:
-            resp = sb.table("registry_services").insert(rows_list).execute()
+            resp = sb.table("service_registry").insert(rows_list).execute()
         for r in (resp.data or []):
             k = f"{r['service_type']}::{r['service_name']}"
             svc_id_by_key[k] = r["service_id"]
@@ -521,11 +521,11 @@ async def import_registry(
 
     if resolved_fns:
         if body.import_mode == "upsert":
-            sb.table("registry_service_functions").upsert(
+            sb.table("service_functions").upsert(
                 resolved_fns, on_conflict="service_id,function_name"
             ).execute()
         else:
-            sb.table("registry_service_functions").insert(resolved_fns).execute()
+            sb.table("service_functions").insert(resolved_fns).execute()
 
     return {
         "ok": True,

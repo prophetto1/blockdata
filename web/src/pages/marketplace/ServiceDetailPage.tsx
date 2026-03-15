@@ -49,12 +49,12 @@ export default function ServiceDetailPage() {
 
       const [svcRes, fnRes] = await Promise.all([
         supabase
-          .from('registry_services')
+          .from('service_registry')
           .select('*')
           .eq('service_id', serviceId)
           .single(),
         supabase
-          .from('registry_service_functions')
+          .from('service_functions')
           .select('*')
           .eq('service_id', serviceId!)
           .eq('enabled', true)
