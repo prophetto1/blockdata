@@ -9,142 +9,109 @@
 
 ## Root Cause
 
-Migrations were applied to the remote Supabase DB through a different path (likely `supabase db push`, direct SQL, or the dashboard) with different filenames and timestamps than the local migration files. The remote `schema_migrations` table tracks what was applied remotely, but the local files diverged independently after approximately migration `_075`.
+Migrations were applied to the remote Supabase DB through a different path (likely direct SQL or `supabase db push` with ad-hoc filenames) using different names and timestamps than the local migration files. The remote `schema_migrations` table diverged from the local `supabase/migrations/` directory after approximately migration `_075`.
 
 The remote has 5 migrations from `20260310` onward with names that don't match any local file:
 
 | Remote version | Remote name | Local equivalent |
 |---|---|---|
 | `20260310093657` | `parsing_pipeline_config` | `20260310120000_075_parsing_pipeline_config.sql` (different timestamp) |
-| `20260310093711` | `parsing_profiles_rls` | No direct local file — RLS was embedded in `_075_` locally |
+| `20260310093711` | `parsing_profiles_rls` | No direct local file — RLS was embedded in local `_075_` |
 | `20260313063635` | `document_delete_reset_rpcs` | `20260312190000_078_document_delete_reset_rpcs.sql` (different timestamp) |
 | `20260313115300` | `view_documents_add_pipeline_config` | `20260314000000_084_view_documents_add_pipeline_config.sql` (different timestamp) |
-| `20260313165216` | `085_conversion_parsing_unique_source_uid` | No local file — this migration only exists on remote |
+| `20260313165216` | `085_conversion_parsing_unique_source_uid` | No local file — remote-only migration |
 
 ---
 
 ## Full Reconciliation Map
 
-Each local migration from `_075` to `_091` was checked against the remote DB state by querying for the objects it creates or modifies.
+Each local migration from `_075` to `_091` was verified against the remote DB by querying for the specific objects, columns, constraints, policies, or data it creates or modifies.
 
-### Already applied in substance (skip)
+### Already applied in substance — verified by object/value inspection
 
-These local migrations create objects that already exist on the remote. They were applied through the divergent remote path.
+All 13 local migrations from `_075` to `_087` are already applied on the remote. Every verification is based on direct DB queries, not behavior inference.
 
-| Local file | What it does | How we verified |
-|---|---|---|
-| `_075_parsing_pipeline_config` | `pipeline_config` column + `parsing_profiles` table + seed 4 docling profiles | `parsing_profiles` table exists, `pipeline_config` column on `conversion_parsing` exists |
-| `_076_pandoc_parsing_profiles` | Seed 8 pandoc profiles into `parsing_profiles` | Pandoc profiles exist in `parsing_profiles` |
-| `_077_route_md_through_docling` | Route md/txt to docling in `admin_runtime_policy` | Docling routing is live (verified via existing parse behavior) |
-| `_078_document_delete_reset_rpcs` | `delete_source_document()` and `reset_source_document()` RPCs | Both RPCs exist in `pg_proc` |
-| `_080_fix_reset_delete_rpcs_table_names` | Fix table refs in delete/reset RPCs | RPCs exist and reference correct tables (applied via remote `document_delete_reset_rpcs`) |
-| `_082_consolidate_delete_rpcs_add_view` | Rewrite `delete_project()`, create `view_documents` | `view_documents` exists, `delete_project()` exists |
-| `_083_rename_ingested_to_parsed` | Rename `ingested` → `parsed`, `ingest_failed` → `parse_failed` | `parsed` status exists in `source_documents` |
-| `_084_view_documents_add_pipeline_config` | Add `pipeline_config` to `view_documents` | `view_documents` includes `pipeline_config` (verified via `pg_get_viewdef`) |
-| `_086_registry_source_types_add_binary` | Insert `binary` into `registry_source_types` | `binary` source type exists |
-| `_087_upload_support_all_remove_upload_gates` | Remove MIME allowlist, delete `upload.allowed_extensions` policy | `upload.allowed_extensions` policy does not exist |
+| Local file | What it does | Verification method | Verified result |
+|---|---|---|---|
+| `_075_parsing_pipeline_config` | `pipeline_config` column + `parsing_profiles` table + seed 4 docling profiles | `information_schema.columns` for `pipeline_config`; `information_schema.tables` for `parsing_profiles` | Both exist |
+| `_076_pandoc_parsing_profiles` | Seed 8 pandoc profiles | `SELECT ... FROM parsing_profiles WHERE parser='pandoc'` | Pandoc profiles exist |
+| `_077_route_md_through_docling` | Route md/txt/markdown to docling in `admin_runtime_policy` | `SELECT value_jsonb->>'md', ->>'txt', ->>'markdown' FROM admin_runtime_policy WHERE policy_key='upload.extension_track_routing'` | All three route to `docling` |
+| `_078_document_delete_reset_rpcs` | `delete_source_document()` and `reset_source_document()` RPCs | `pg_proc` lookup for both function names | Both exist |
+| `_079_storage_allow_all_artifact_locators` | Expand storage SELECT policy to include `conversion_representations.artifact_locator` paths | `pg_policies` for `storage.objects` — inspected `storage_objects_documents_select_owned` policy body | Policy body includes `conversion_representations.artifact_locator` join path |
+| `_080_fix_reset_delete_rpcs_table_names` | Fix table refs from `_v2` to current names in delete/reset RPCs | `pg_proc.prosrc` for `delete_source_document` | References `block_overlays` and `runs` (not `_v2` names) |
+| `_081_docling_only_parsing` | Delete non-docling data, constrain `conversion_representations`, update routing | `pg_constraint` for `conversion_representations_pairing` CHECK; `conversion_parsing` GROUP BY `conv_parsing_tool`; `admin_runtime_policy` `track_enabled` | Constraint exists (`parsing_tool = 'docling'`), only docling data remains, `track_enabled = {"docling": true}` |
+| `_082_consolidate_delete_rpcs_add_view` | Rewrite `delete_project()`, create `view_documents` | `pg_proc` for `delete_project`; `information_schema.views` for `view_documents` | Both exist |
+| `_083_rename_ingested_to_parsed` | Rename status `ingested` → `parsed`, `ingest_failed` → `parse_failed` | `SELECT DISTINCT status FROM source_documents` | `parsed` and `parse_failed` present, no `ingested` or `ingest_failed` |
+| `_084_view_documents_add_pipeline_config` | Add `pipeline_config` to `view_documents` | `pg_get_viewdef('view_documents')` | `pipeline_config` column present in view definition |
+| `_085_docling_blocks_view_mode_policy` | Insert `platform.docling_blocks_mode` policy | `SELECT ... FROM admin_runtime_policy WHERE policy_key='platform.docling_blocks_mode'` | **Does NOT exist** — see Phase B below |
+| `_086_registry_source_types_add_binary` | Insert `binary` into `registry_source_types` | `SELECT ... FROM registry_source_types WHERE source_type='binary'` | Exists |
+| `_087_upload_support_all_remove_upload_gates` | Remove MIME allowlist, delete `upload.allowed_extensions` policy | `SELECT ... FROM admin_runtime_policy WHERE policy_key='upload.allowed_extensions'` | Policy does not exist (correctly removed) |
+
+**Correction from original analysis:** `_079_` and `_081_` were originally listed as "not applied" based on incomplete checks (searching for policy name substring instead of inspecting policy body; searching for constraint by name pattern instead of by table). Both are fully applied.
 
 ### Not applied — must be applied
 
-These local migrations create objects that do NOT exist on the remote.
+Only 5 local migrations need to be applied to the remote:
 
 | Local file | What it does | Verification |
 |---|---|---|
-| `_079_storage_allow_all_artifact_locators` | Expands storage SELECT RLS policy to allow access to all `conversion_representations.artifact_locator` paths | No artifact-locator storage policy found on remote |
-| `_081_docling_only_parsing` | Deletes non-docling parsed data, constrains `conversion_representations` to docling-only, updates all `admin_runtime_policy` routing | No docling-only constraint found on `conversion_representations`. Data cleanup may already be done, but the constraint is missing. |
 | `_085_docling_blocks_view_mode_policy` | Inserts `platform.docling_blocks_mode` into `admin_runtime_policy` | Policy key does not exist in `admin_runtime_policy` |
-| **`_088_parse_runtime_audit`** | Adds `requested_pipeline_config`, `applied_pipeline_config`, `parser_runtime_meta` to `conversion_parsing`; rebuilds `view_documents` | None of the 3 columns exist on remote |
+| **`_088_parse_runtime_audit`** | Adds `requested_pipeline_config`, `applied_pipeline_config`, `parser_runtime_meta` to `conversion_parsing`; rebuilds `view_documents` | None of the 3 columns exist on `conversion_parsing` |
 | `_089_add_cleanup_outbox` | Creates `cleanup_outbox` table | Table does not exist |
 | `_090_add_overlay_uid` | Adds `overlay_uid` column to `block_overlays` | Column does not exist |
-| **`_091_extraction_tables`** | Creates `extraction_schemas`, `extraction_jobs`, `extraction_job_items`, `extraction_results`, `claim_extraction_items` RPC | None of these tables exist |
+| **`_091_extraction_tables`** | Creates `extraction_schemas`, `extraction_jobs`, `extraction_job_items`, `extraction_results`, `claim_extraction_items` RPC with REVOKE/GRANT | None of these tables/functions exist |
 
 ### Remote-only — no local file
 
-| Remote version | Remote name | What it likely does |
-|---|---|---|
-| `20260310093711` | `parsing_profiles_rls` | Adds RLS policies to `parsing_profiles` (done inline in local `_075_`) |
-| `20260313165216` | `085_conversion_parsing_unique_source_uid` | Adds unique constraint on `conversion_parsing.source_uid` (no local equivalent) |
+| Remote version | Remote name | What it does | Action |
+|---|---|---|---|
+| `20260310093711` | `parsing_profiles_rls` | Adds RLS policies to `parsing_profiles` (embedded in local `_075_`) | No action — already covered by local `_075_` content |
+| `20260313165216` | `085_conversion_parsing_unique_source_uid` | Adds unique constraint on `conversion_parsing.source_uid` | **Create a local stub file** to record this migration exists (Phase A) |
 
 ---
 
-## Recommended Fix: Idempotent Catch-Up Migration
+## Reconciliation Plan — Phased Approach
 
-Write one `_092_reconcile_catch_up.sql` that applies the 7 missing changes idempotently, then register skipped migrations in `schema_migrations` so remote and local histories agree going forward.
+### Phase A: Record and document (no DB changes)
 
-### Part 1: Apply missing objects
+1. Create a local stub migration file for the remote-only `085_conversion_parsing_unique_source_uid` so the local directory acknowledges it exists. The file should contain a comment explaining it was applied remotely and the stub is for history alignment only.
 
-```sql
--- From _079: storage artifact locator policy
--- (Must inspect current policy and expand if needed)
+2. Register local migrations `_075` through `_084`, `_086`, and `_087` in `schema_migrations` — these are verified as fully applied in substance. Each was confirmed by direct object/value inspection (see table above), not by behavior inference.
 
--- From _081: docling-only constraint on conversion_representations
--- (Use IF NOT EXISTS / DO $$ guards)
+   Do NOT register `_085`, `_088`, `_089`, `_090`, or `_091` — they are not yet applied.
 
--- From _085: docling_blocks_mode policy
-INSERT INTO admin_runtime_policy (policy_key, policy_value)
-VALUES ('platform.docling_blocks_mode', '"normalized"')
-ON CONFLICT (policy_key) DO NOTHING;
+### Phase B: Apply additive, low-risk missing migrations
 
--- From _088: parse runtime audit columns
-ALTER TABLE public.conversion_parsing
-  ADD COLUMN IF NOT EXISTS requested_pipeline_config jsonb NOT NULL DEFAULT '{}'::jsonb,
-  ADD COLUMN IF NOT EXISTS applied_pipeline_config jsonb NOT NULL DEFAULT '{}'::jsonb,
-  ADD COLUMN IF NOT EXISTS parser_runtime_meta jsonb NOT NULL DEFAULT '{}'::jsonb;
+Apply these 4 migrations. All are purely additive (new columns, new tables, new policy rows). None delete data or modify existing objects.
 
--- Backfill
-UPDATE public.conversion_parsing
-SET
-  requested_pipeline_config = COALESCE(pipeline_config, '{}'::jsonb),
-  applied_pipeline_config = COALESCE(pipeline_config, '{}'::jsonb)
-WHERE requested_pipeline_config = '{}'::jsonb
-  AND pipeline_config IS NOT NULL
-  AND pipeline_config != '{}'::jsonb;
+1. **`_085_docling_blocks_view_mode_policy`** — single INSERT with ON CONFLICT DO NOTHING
 
--- Rebuild view_documents with new columns
-CREATE OR REPLACE VIEW public.view_documents AS
-SELECT
-  sd.source_uid, sd.owner_id, sd.source_type, sd.source_filesize,
-  sd.source_total_characters, sd.source_locator, sd.doc_title,
-  sd.uploaded_at, sd.updated_at, sd.status, sd.error,
-  sd.conversion_job_id, sd.project_id,
-  cp.conv_uid, cp.conv_status, cp.conv_parsing_tool,
-  cp.conv_representation_type, cp.conv_total_blocks,
-  cp.conv_block_type_freq, cp.conv_total_characters, cp.conv_locator,
-  cp.pipeline_config, cp.requested_pipeline_config,
-  cp.applied_pipeline_config, cp.parser_runtime_meta
-FROM public.source_documents sd
-LEFT JOIN public.conversion_parsing cp ON cp.source_uid = sd.source_uid;
+   ```sql
+   INSERT INTO public.admin_runtime_policy (policy_key, value_jsonb, value_type, description)
+   VALUES (
+     'platform.docling_blocks_mode',
+     '"normalized"'::jsonb,
+     'string',
+     'Controls whether the Parse Blocks tab shows normalized Blockdata blocks or raw Docling-native items.'
+   )
+   ON CONFLICT (policy_key) DO NOTHING;
+   ```
 
--- From _089: cleanup_outbox
--- (Full CREATE TABLE IF NOT EXISTS from the migration file)
+2. **`_088_parse_runtime_audit`** — ADD COLUMN IF NOT EXISTS, backfill, view rebuild
+3. **`_089_add_cleanup_outbox`** — CREATE TABLE IF NOT EXISTS
+4. **`_090_add_overlay_uid`** — ADD COLUMN IF NOT EXISTS
 
--- From _090: overlay_uid
-ALTER TABLE public.block_overlays
-  ADD COLUMN IF NOT EXISTS overlay_uid uuid DEFAULT gen_random_uuid();
+### Phase C: Apply extraction tables migration
 
--- From _091: extraction tables
--- (Full content from 20260314180000_091_extraction_tables.sql, all IF NOT EXISTS)
-```
+5. **`_091_extraction_tables`** — 4 new tables, RPC, REVOKE/GRANT, Realtime publication. All CREATE IF NOT EXISTS. No interaction with existing data.
 
-### Part 2: Register skipped local migrations
+### Phase D: Register applied migrations in history
 
-After the catch-up migration applies, insert version records for all local migrations that were already applied in substance so `supabase migration list` shows them as applied:
+After Phases B and C succeed, register all 5 newly-applied migrations in `schema_migrations` so the remote history matches the local directory.
 
 ```sql
 INSERT INTO supabase_migrations.schema_migrations (version, name) VALUES
-  ('20260310120000', '075_parsing_pipeline_config'),
-  ('20260310130000', '076_pandoc_parsing_profiles'),
-  ('20260312180000', '077_route_md_through_docling'),
-  ('20260312190000', '078_document_delete_reset_rpcs'),
-  ('20260313200000', '079_storage_allow_all_artifact_locators'),
-  ('20260313210000', '080_fix_reset_delete_rpcs_table_names'),
-  ('20260313220000', '081_docling_only_parsing'),
-  ('20260313230000', '082_consolidate_delete_rpcs_add_view'),
-  ('20260313240000', '083_rename_ingested_to_parsed'),
-  ('20260314000000', '084_view_documents_add_pipeline_config'),
   ('20260314010000', '085_docling_blocks_view_mode_policy'),
-  ('20260314120000', '086_registry_source_types_add_binary'),
-  ('20260314130000', '087_upload_support_all_remove_upload_gates'),
   ('20260314140000', '088_parse_runtime_audit'),
   ('20260314160000', '089_add_cleanup_outbox'),
   ('20260314170000', '090_add_overlay_uid'),
@@ -158,7 +125,7 @@ ON CONFLICT (version) DO NOTHING;
 
 ### Why this happened
 
-1. **No single migration path was enforced.** Migrations were applied via direct SQL, dashboard, or `db push` with different filenames than the local files.
+1. **No single migration path was enforced.** Migrations were applied via direct SQL or `db push` with different filenames than the local files.
 2. **No CI gate** checks that `supabase migration list` matches local files before deploy.
 3. **No naming convention** was enforced — remote migrations used short names (`parsing_pipeline_config`) while local files used numbered names (`_075_parsing_pipeline_config`).
 
@@ -174,18 +141,6 @@ ON CONFLICT (version) DO NOTHING;
 
 ### Minimum viable safeguard
 
-At minimum, adopt this rule immediately:
+Adopt this rule immediately:
 
 > **All DDL changes must be authored as local migration files and applied via `supabase db push` or the `apply_migration` MCP tool. No direct SQL for schema changes. No dashboard schema editor.**
-
-This single rule, if followed, would have prevented the entire divergence.
-
----
-
-## Open Questions
-
-1. **`085_conversion_parsing_unique_source_uid`** exists on the remote but has no local file. Should we create a local stub migration to record it, or is the unique constraint already implied by the `ON CONFLICT source_uid` upsert pattern?
-
-2. **`_079_storage_allow_all_artifact_locators`** and **`_081_docling_only_parsing`** need careful review before applying — they modify storage policies and delete data. Should these be applied as-is or rewritten for the current remote state?
-
-3. **Should we keep the divergent remote migration records** (`parsing_pipeline_config`, `parsing_profiles_rls`, `document_delete_reset_rpcs`, `view_documents_add_pipeline_config`, `085_conversion_parsing_unique_source_uid`) in `schema_migrations`, or clean them up to match local naming?
