@@ -1,10 +1,10 @@
 # Component Inventory
 
-Generated: 2026-03-15T00:14:42.310Z
+Generated: 2026-03-15T01:26:28.087Z
 Scope: auth
 
 Pages scanned: 45
-Unique component usages: 426
+Unique component usages: 428
 
 ## Category Totals
 
@@ -12,8 +12,8 @@ Unique component usages: 426
 | --- | ---: |
 | ark-ui | 158 |
 | external-package | 17 |
-| in-file component | 17 |
-| local-components | 138 |
+| in-file component | 18 |
+| local-components | 139 |
 | relative-local | 17 |
 | tabler-icons | 79 |
 
@@ -356,7 +356,7 @@ Component usages: 25
 | `Pagination.NextTrigger` | `@ark-ui/react/pagination` | ark-ui | Pagination.NextTrigger comes from @ark-ui/react/pagination (named import of Pagination) |
 | `Pagination.PrevTrigger` | `@ark-ui/react/pagination` | ark-ui | Pagination.PrevTrigger comes from @ark-ui/react/pagination (named import of Pagination) |
 | `Pagination.Root` | `@ark-ui/react/pagination` | ark-ui | Pagination.Root comes from @ark-ui/react/pagination (named import of Pagination) |
-| `PdfPreview` | `../components/documents/PdfPreview` | relative-local | PdfPreview comes from ../components/documents/PdfPreview (named import of PdfPreview) |
+| `PdfjsExpressPreview` | `../components/documents/PdfjsExpressPreview` | relative-local | PdfjsExpressPreview comes from ../components/documents/PdfjsExpressPreview (named import of PdfjsExpressPreview) |
 | `RadioGroup.Item` | `@ark-ui/react/radio-group` | ark-ui | RadioGroup.Item comes from @ark-ui/react/radio-group (named import of RadioGroup) |
 | `RadioGroup.ItemControl` | `@ark-ui/react/radio-group` | ark-ui | RadioGroup.ItemControl comes from @ark-ui/react/radio-group (named import of RadioGroup) |
 | `RadioGroup.ItemHiddenInput` | `@ark-ui/react/radio-group` | ark-ui | RadioGroup.ItemHiddenInput comes from @ark-ui/react/radio-group (named import of RadioGroup) |
@@ -372,7 +372,7 @@ Component usages: 25
 
 ## src/pages/Schemas.tsx
 
-Component usages: 28
+Component usages: 30
 
 | Used As | Source | Category | Definition |
 | --- | --- | --- | --- |
@@ -389,6 +389,7 @@ Component usages: 28
 | `IconTrash` | `@tabler/icons-react` | tabler-icons | IconTrash comes from @tabler/icons-react (named import of IconTrash) |
 | `Input` | `@/components/ui/input` | local-components | Input comes from @/components/ui/input (named import of Input) |
 | `MonacoEditor` | `@monaco-editor/react` | external-package | MonacoEditor comes from @monaco-editor/react (default import of default) |
+| `SchemaListPlaceholder` | `(in-file or unresolved)` | in-file component | SchemaListPlaceholder is defined in the same page file |
 | `Select.Content` | `@ark-ui/react/select` | ark-ui | Select.Content comes from @ark-ui/react/select (named import of Select) |
 | `Select.Control` | `@ark-ui/react/select` | ark-ui | Select.Control comes from @ark-ui/react/select (named import of Select) |
 | `Select.HiddenSelect` | `@ark-ui/react/select` | ark-ui | Select.HiddenSelect comes from @ark-ui/react/select (named import of Select) |
@@ -404,6 +405,7 @@ Component usages: 28
 | `Splitter.ResizeTrigger` | `@ark-ui/react/splitter` | ark-ui | Splitter.ResizeTrigger comes from @ark-ui/react/splitter (named import of Splitter) |
 | `Splitter.ResizeTriggerIndicator` | `@ark-ui/react/splitter` | ark-ui | Splitter.ResizeTriggerIndicator comes from @ark-ui/react/splitter (named import of Splitter) |
 | `Splitter.Root` | `@ark-ui/react/splitter` | ark-ui | Splitter.Root comes from @ark-ui/react/splitter (named import of Splitter) |
+| `Workbench` | `@/components/workbench/Workbench` | local-components | Workbench comes from @/components/workbench/Workbench (named import of Workbench) |
 
 ## src/pages/settings/DoclingConfigPanel.tsx
 

@@ -6,16 +6,20 @@ import { Splitter } from '@ark-ui/react/splitter';
 import {
   IconAsterisk,
   IconBrackets,
+  IconBraces,
   IconCheck,
   IconChevronDown,
   IconCode,
   IconDeviceFloppy,
   IconEye,
+  IconFileCode,
   IconLayoutColumns,
   IconRefresh,
   IconTrash,
 } from '@tabler/icons-react';
 import { useShellHeaderTitle } from '@/components/common/useShellHeaderTitle';
+import { Workbench, type WorkbenchTab } from '@/components/workbench/Workbench';
+import { normalizePaneWidths, type Pane } from '@/components/workbench/workbenchState';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -34,6 +38,7 @@ type SchemaField = {
 
 type SchemaTypeOption = { value: SchemaFieldType; label: string };
 type SchemaEditorView = 'visual' | 'split' | 'code';
+type SchemaWorkspaceStage = 'start' | 'editing';
 
 type MonacoEditorInstance = Parameters<OnMount>[0];
 
@@ -148,12 +153,79 @@ function parseObjectSchemaToFields(schema: Record<string, unknown>): SchemaField
     });
 }
 
+export const SCHEMA_START_TITLE = 'Create Schema';
+export const SCHEMA_START_DESCRIPTION = 'Start manually or bootstrap with a generated example.';
+export const SCHEMA_START_ACTIONS = ['Auto-Generate', 'Create Manually'] as const;
+
+export const SCHEMA_TABS: WorkbenchTab[] = [
+  { id: 'schema-files', label: 'File List', icon: IconFileCode },
+  { id: 'schema-library', label: 'User Schemas', icon: IconBraces },
+  { id: 'schema-editor', label: 'Schema', icon: IconBraces },
+  { id: 'schema-preview', label: 'Preview', icon: IconEye },
+];
+
+export const SCHEMA_DEFAULT_PANES: Pane[] = normalizePaneWidths([
+  { id: 'pane-schema-left', tabs: ['schema-files', 'schema-library'], activeTab: 'schema-library', width: 28 },
+  { id: 'pane-schema-editor', tabs: ['schema-editor'], activeTab: 'schema-editor', width: 50 },
+  { id: 'pane-schema-right', tabs: ['schema-preview'], activeTab: 'schema-preview', width: 22 },
+]);
+
+function SchemaListPlaceholder({
+  title,
+  description,
+  columns,
+  footer,
+}: {
+  title: string;
+  description: string;
+  columns: string[];
+  footer: string;
+}) {
+  return (
+    <div className="flex h-full min-h-0 flex-col p-1">
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-md border border-border bg-card">
+        <div className="border-b border-border px-3 py-2.5">
+          <div className="text-sm font-semibold text-foreground">{title}</div>
+          <p className="mt-1 text-xs text-muted-foreground">{description}</p>
+        </div>
+        <div className="min-h-0 flex-1 overflow-auto">
+          <table className="w-full table-fixed text-left text-[12px] leading-5">
+            <thead className="sticky top-0 z-10 border-b border-border bg-card text-muted-foreground">
+              <tr>
+                {columns.map((column) => (
+                  <th
+                    key={column}
+                    className="px-2.5 py-1.5 text-[10px] font-medium uppercase tracking-[0.08em]"
+                  >
+                    {column}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td
+                  colSpan={columns.length}
+                  className="px-3 py-10 text-center text-sm text-muted-foreground"
+                >
+                  {description}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div className="border-t border-border px-3 py-2 text-xs text-muted-foreground">{footer}</div>
+      </div>
+    </div>
+  );
+}
+
 export default function Schemas() {
   useShellHeaderTitle({
     title: 'Schema',
   });
   const monacoTheme = useMonacoTheme();
-  const [extractSchemaReady, setExtractSchemaReady] = useState(true);
+  const [workspaceStage, setWorkspaceStage] = useState<SchemaWorkspaceStage>('start');
   const [extractSchemaFields, setExtractSchemaFields] = useState<SchemaField[]>(() => [{
     id: `field-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     name: '',
@@ -215,12 +287,14 @@ export default function Schemas() {
   }, []);
 
   const initializeManualSchema = useCallback(() => {
-    setExtractSchemaReady(true);
+    setWorkspaceStage('editing');
+    setEditorView('split');
     setExtractSchemaFields([createSchemaField({ type: 'string' })]);
   }, [createSchemaField]);
 
   const initializeAutoSchema = useCallback(() => {
-    setExtractSchemaReady(true);
+    setWorkspaceStage('editing');
+    setEditorView('split');
     setExtractSchemaFields([
       createSchemaField({ name: 'test', type: 'string', required: false }),
       createSchemaField({
@@ -499,50 +573,63 @@ export default function Schemas() {
     </div>
   );
 
-  return (
-    <div className="flex h-[calc(100vh-var(--app-shell-header-height))] overflow-hidden">
-      <section className="min-w-0 flex-1 overflow-hidden p-3">
-        <div className="flex h-full min-h-0 flex-col gap-3">
-          <div className="flex flex-wrap items-center gap-2 rounded-md border border-border bg-card p-2">
-            <div role="toolbar" aria-label="Schema view options" className="flex items-center gap-1">
-              <button
-                type="button"
-                aria-pressed={editorView === 'visual'}
-                onClick={() => setEditorView('visual')}
-                className={`inline-flex h-9 items-center gap-1.5 rounded-md border px-2.5 text-[13px] font-semibold ${viewButtonClass(editorView === 'visual')}`}
-              >
-                <IconEye size={15} />
-                Visual
-              </button>
-              <button
-                type="button"
-                aria-pressed={editorView === 'split'}
-                onClick={() => setEditorView('split')}
-                className={`inline-flex h-9 items-center gap-1.5 rounded-md border px-2.5 text-[13px] font-semibold ${viewButtonClass(editorView === 'split')}`}
-              >
-                <IconLayoutColumns size={15} />
-                Split
-              </button>
-              <button
-                type="button"
-                aria-pressed={editorView === 'code'}
-                onClick={() => setEditorView('code')}
-                className={`inline-flex h-9 items-center gap-1.5 rounded-md border px-2.5 text-[13px] font-semibold ${viewButtonClass(editorView === 'code')}`}
-              >
-                <IconCode size={15} />
-                Code
-              </button>
+  const schemaEditorContent = (
+    <div className="flex h-full min-h-0 flex-col p-1">
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-md border border-border bg-card">
+        {workspaceStage === 'start' && (
+          <div className="flex min-h-0 flex-1 items-center justify-center p-6">
+            <div className="flex max-w-[560px] flex-col items-center gap-3 text-center">
+              <h2 className="text-xl font-semibold text-foreground">{SCHEMA_START_TITLE}</h2>
+              <p className="text-sm text-muted-foreground">{SCHEMA_START_DESCRIPTION}</p>
+              <div className="flex items-center gap-2">
+                <Button type="button" onClick={initializeAutoSchema}>{SCHEMA_START_ACTIONS[0]}</Button>
+                <Button type="button" variant="outline" onClick={initializeManualSchema}>{SCHEMA_START_ACTIONS[1]}</Button>
+              </div>
             </div>
+          </div>
+        )}
 
-            {extractSchemaReady && (
-              <div className="flex items-center gap-1">
+        {workspaceStage === 'editing' && (
+          <>
+            <div className="flex flex-wrap items-center gap-2 border-b border-border bg-card px-2 py-1.5">
+              <div role="toolbar" aria-label="Schema view options" className="flex items-center gap-1">
+                <button
+                  type="button"
+                  aria-pressed={editorView === 'visual'}
+                  onClick={() => setEditorView('visual')}
+                  className={`inline-flex h-9 items-center gap-1.5 rounded-md border px-2.5 text-[13px] font-semibold ${viewButtonClass(editorView === 'visual')}`}
+                >
+                  <IconEye size={15} />
+                  Visual
+                </button>
+                <button
+                  type="button"
+                  aria-pressed={editorView === 'split'}
+                  onClick={() => setEditorView('split')}
+                  className={`inline-flex h-9 items-center gap-1.5 rounded-md border px-2.5 text-[13px] font-semibold ${viewButtonClass(editorView === 'split')}`}
+                >
+                  <IconLayoutColumns size={15} />
+                  Split
+                </button>
+                <button
+                  type="button"
+                  aria-pressed={editorView === 'code'}
+                  onClick={() => setEditorView('code')}
+                  className={`inline-flex h-9 items-center gap-1.5 rounded-md border px-2.5 text-[13px] font-semibold ${viewButtonClass(editorView === 'code')}`}
+                >
+                  <IconCode size={15} />
+                  Code
+                </button>
+              </div>
+
+              <div className="ml-auto flex items-center gap-1">
                 <Button
                   type="button"
                   variant="ghost"
                   size="sm"
                   className="h-9 gap-1.5 px-2.5 text-[13px] font-semibold text-muted-foreground"
                   onClick={() => {
-                    setExtractSchemaReady(false);
+                    setWorkspaceStage('start');
                     setExtractSchemaFields([]);
                   }}
                 >
@@ -562,87 +649,142 @@ export default function Schemas() {
                   Save
                 </Button>
               </div>
+            </div>
+
+            {editorView !== 'split' && (
+              <div className="flex min-h-0 flex-1 overflow-hidden bg-background">
+                <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+                  <div className="grid min-h-10 grid-cols-[1fr] border-b border-border bg-card">
+                    <div className="inline-flex min-h-10 items-center px-2 text-xs font-medium text-muted-foreground">
+                      {editorView === 'visual' ? 'Visual' : 'Code'}
+                    </div>
+                  </div>
+                  {editorView === 'visual' ? visualPaneContent : codePaneContent}
+                </div>
+              </div>
             )}
 
-          </div>
-
-          {!extractSchemaReady && (
-            <div className="flex min-h-0 flex-1 items-center justify-center rounded-md border border-border bg-card p-6">
-              <div className="flex max-w-[560px] flex-col items-center gap-3 text-center">
-                <h2 className="text-xl font-semibold text-foreground">Create Schema</h2>
-                <p className="text-sm text-muted-foreground">
-                  Start manually or bootstrap with a generated example.
-                </p>
-                <div className="flex items-center gap-2">
-                  <Button type="button" onClick={initializeAutoSchema}>Auto-Generate</Button>
-                  <Button type="button" variant="outline" onClick={initializeManualSchema}>Create Manually</Button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {extractSchemaReady && editorView !== 'split' && (
-            <div className="flex min-h-0 flex-1 overflow-hidden rounded-md border border-border bg-background">
-              <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-                <div className="grid min-h-10 grid-cols-[1fr] border-b border-border bg-card">
-                  <div className="inline-flex min-h-10 items-center px-2 text-xs font-medium text-muted-foreground">
-                    {editorView === 'visual' ? 'Visual' : 'Code'}
-                  </div>
-                </div>
-                {editorView === 'visual' ? visualPaneContent : codePaneContent}
-              </div>
-            </div>
-          )}
-
-          {extractSchemaReady && editorView === 'split' && (
-            <Splitter.Root
-              className="flex min-h-0 flex-1 overflow-hidden rounded-md border border-border bg-background"
-              orientation="horizontal"
-              panels={splitterPanels}
-              size={splitSize}
-              onResize={({ size }) => {
-                if (
-                  Array.isArray(size)
-                  && size.length === 2
-                  && Number.isFinite(size[0])
-                  && Number.isFinite(size[1])
-                ) {
-                  setSplitSize([size[0], size[1]]);
-                }
-              }}
-            >
-              <Splitter.Panel id="schema-visual" className="flex min-h-0 min-w-0 flex-col">
-                <div className="grid min-h-10 grid-cols-[1fr] border-b border-border bg-card">
-                  <div className="inline-flex min-h-10 items-center px-2 text-xs font-medium text-muted-foreground">
-                    Visual
-                  </div>
-                </div>
-                {visualPaneContent}
-              </Splitter.Panel>
-
-              <Splitter.ResizeTrigger
-                id="schema-visual:schema-code"
-                className="relative w-1.5 cursor-col-resize bg-card"
-                aria-label="Resize schema panes"
+            {editorView === 'split' && (
+              <Splitter.Root
+                className="flex min-h-0 flex-1 overflow-hidden bg-background"
+                orientation="horizontal"
+                panels={splitterPanels}
+                size={splitSize}
+                onResize={({ size }) => {
+                  if (
+                    Array.isArray(size)
+                    && size.length === 2
+                    && Number.isFinite(size[0])
+                    && Number.isFinite(size[1])
+                  ) {
+                    setSplitSize([size[0], size[1]]);
+                  }
+                }}
               >
-                <Splitter.ResizeTriggerIndicator
-                  id="schema-visual:schema-code"
-                  className="absolute bottom-0 left-0.5 top-0 w-px bg-border"
-                />
-              </Splitter.ResizeTrigger>
-
-              <Splitter.Panel id="schema-code" className="flex min-h-0 min-w-0 flex-col">
-                <div className="grid min-h-10 grid-cols-[1fr] border-b border-border bg-card">
-                  <div className="inline-flex min-h-10 items-center px-2 text-xs font-medium text-muted-foreground">
-                    Code
+                <Splitter.Panel id="schema-visual" className="flex min-h-0 min-w-0 flex-col">
+                  <div className="grid min-h-10 grid-cols-[1fr] border-b border-border bg-card">
+                    <div className="inline-flex min-h-10 items-center px-2 text-xs font-medium text-muted-foreground">
+                      Visual
+                    </div>
                   </div>
-                </div>
-                {codePaneContent}
-              </Splitter.Panel>
-            </Splitter.Root>
-          )}
+                  {visualPaneContent}
+                </Splitter.Panel>
+
+                <Splitter.ResizeTrigger
+                  id="schema-visual:schema-code"
+                  className="relative w-1.5 cursor-col-resize bg-card"
+                  aria-label="Resize schema panes"
+                >
+                  <Splitter.ResizeTriggerIndicator
+                    id="schema-visual:schema-code"
+                    className="absolute bottom-0 left-0.5 top-0 w-px bg-border"
+                  />
+                </Splitter.ResizeTrigger>
+
+                <Splitter.Panel id="schema-code" className="flex min-h-0 min-w-0 flex-col">
+                  <div className="grid min-h-10 grid-cols-[1fr] border-b border-border bg-card">
+                    <div className="inline-flex min-h-10 items-center px-2 text-xs font-medium text-muted-foreground">
+                      Code
+                    </div>
+                  </div>
+                  {codePaneContent}
+                </Splitter.Panel>
+              </Splitter.Root>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+
+  const renderContent = useCallback((tabId: string) => {
+    if (tabId === 'schema-files') {
+      return (
+        <SchemaListPlaceholder
+          title="Files List"
+          description="Source files for schema authoring will appear here."
+          columns={['Name', 'Status', 'Schema']}
+          footer="0 files"
+        />
+      );
+    }
+
+    if (tabId === 'schema-library') {
+      return (
+        <SchemaListPlaceholder
+          title="User Schemas"
+          description="Saved user schemas will appear here in a file-list view."
+          columns={['Name', 'Updated', 'Fields']}
+          footer="0 saved schemas"
+        />
+      );
+    }
+
+    if (tabId === 'schema-editor') {
+      return schemaEditorContent;
+    }
+
+    if (tabId === 'schema-preview') {
+      return (
+        <div className="flex h-full min-h-0 flex-col p-1">
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-md border border-border bg-card">
+            <div className="border-b border-border px-3 py-2.5">
+              <div className="text-sm font-semibold text-foreground">Reserved</div>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Placeholder panel for future schema-side previews and actions.
+              </p>
+            </div>
+            <div className="flex min-h-0 flex-1 items-start justify-center p-4">
+              <div className="w-full rounded-xl border border-primary/20 bg-primary/5 px-4 py-4">
+                <div className="text-sm font-semibold text-foreground">Preview Placeholder</div>
+                <p className="mt-3 text-sm leading-6 text-muted-foreground">
+                  The right column is reserved for now.
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
-      </section>
+      );
+    }
+
+    return null;
+  }, [schemaEditorContent]);
+
+  return (
+    <div className="h-full w-full min-h-0 p-2">
+      <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-md border border-border bg-card">
+        <Workbench
+          tabs={SCHEMA_TABS}
+          defaultPanes={SCHEMA_DEFAULT_PANES}
+          saveKey="schema-builder-v1"
+          renderContent={renderContent}
+          className="schema-workbench"
+          hideToolbar
+          disableDrag
+          lockLayout
+          maxColumns={3}
+        />
+      </div>
     </div>
   );
 }

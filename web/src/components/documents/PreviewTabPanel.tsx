@@ -8,7 +8,6 @@ import { PdfResultsHighlighter } from '@/components/documents/PdfResultsHighligh
 import { PdfjsExpressPreview } from '@/components/documents/PdfjsExpressPreview';
 import { DocxPreview } from '@/components/documents/DocxPreview';
 import { OnlyOfficeEditorPanel } from '@/components/documents/OnlyOfficeEditorPanel';
-import { PdfPreview } from '@/components/documents/PdfPreview';
 import { PptxPreview } from '@/components/documents/PptxPreview';
 import {
   DocumentPreviewFrame,
@@ -36,14 +35,12 @@ type PreviewTabPanelProps = {
   doc: ProjectDocumentRow | null;
   allowParsedPdfView?: boolean;
   showHeaderDownload?: boolean;
-  pdfViewer?: 'react-pdf' | 'pdfjs-express';
 };
 
 export function PreviewTabPanel({
   doc,
   allowParsedPdfView = true,
   showHeaderDownload = true,
-  pdfViewer = 'react-pdf',
 }: PreviewTabPanelProps) {
   const [previewKind, setPreviewKind] = useState<PreviewKind>('none');
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -52,7 +49,6 @@ export function PreviewTabPanel({
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewError, setPreviewError] = useState<string | null>(null);
   const [pdfPreviewMode, setPdfPreviewMode] = useState<'file' | 'parsed'>('file');
-  const [pdfToolbarHost, setPdfToolbarHost] = useState<HTMLDivElement | null>(null);
   const [editMode, setEditMode] = useState(false);
   const [previewRevision, setPreviewRevision] = useState(0);
 
@@ -277,17 +273,6 @@ export function PreviewTabPanel({
       </button>
     ) : null;
 
-    if (pdfViewer === 'pdfjs-express') {
-      return renderPreviewWithUnifiedHeader(
-        <PdfjsExpressPreview url={previewUrl} />,
-        {
-          downloadUrl: showHeaderDownload ? previewUrl : null,
-          contentClassName: 'overflow-hidden',
-          useScrollArea: false,
-        },
-      );
-    }
-
     if (pdfPreviewMode === 'parsed' && parsedPreviewUrl && doc?.conv_uid) {
       return renderPreviewWithUnifiedHeader(
         <PdfResultsHighlighter
@@ -307,18 +292,12 @@ export function PreviewTabPanel({
     }
 
     return renderPreviewWithUnifiedHeader(
-      <PdfPreview
-        key={`${doc.source_uid}:${previewUrl}`}
-        url={previewUrl}
-        hideToolbar={!pdfToolbarHost}
-        toolbarPortalTarget={pdfToolbarHost}
-      />,
+      <PdfjsExpressPreview url={previewUrl} />,
       {
         downloadUrl: showHeaderDownload ? previewUrl : null,
         contentClassName: 'overflow-hidden',
         useScrollArea: false,
         headerActions,
-        headerCenterContent: <div className="parse-preview-toolbar-host flex min-w-0 items-center" ref={setPdfToolbarHost} />,
       },
     );
   }

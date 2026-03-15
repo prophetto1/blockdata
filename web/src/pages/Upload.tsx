@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useShellHeaderTitle } from '@/components/common/useShellHeaderTitle';
 import { DocxPreview } from '@/components/documents/DocxPreview';
-import { PdfPreview } from '@/components/documents/PdfPreview';
+import { PdfjsExpressPreview } from '@/components/documents/PdfjsExpressPreview';
 import { PptxPreview } from '@/components/documents/PptxPreview';
 import { ProjectParseUppyUploader, type UploadBatchResult } from '@/components/documents/ProjectParseUppyUploader';
 import { NativeSelect } from '@/components/ui/native-select';
@@ -572,10 +572,7 @@ export default function Upload() {
               )}
 
               {selectedDoc && !previewLoading && previewKind === 'pdf' && previewUrl && (
-                <PdfPreview
-                  key={`${selectedDoc.source_uid}:${previewUrl}`}
-                  url={previewUrl}
-                />
+                <PdfjsExpressPreview url={previewUrl} />
               )}
 
               {selectedDoc && !previewLoading && previewKind === 'image' && previewUrl && (

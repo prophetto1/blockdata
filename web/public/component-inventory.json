@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-03-15T00:14:42.304Z",
+  "generatedAt": "2026-03-15T01:26:28.081Z",
   "scope": "auth",
   "pages": [
     {
@@ -1784,13 +1784,13 @@
           "definition": "Pagination.Root comes from @ark-ui/react/pagination (named import of Pagination)"
         },
         {
-          "component": "PdfPreview",
-          "usedAs": "PdfPreview",
-          "source": "../components/documents/PdfPreview",
+          "component": "PdfjsExpressPreview",
+          "usedAs": "PdfjsExpressPreview",
+          "source": "../components/documents/PdfjsExpressPreview",
           "importKind": "named",
-          "importedAs": "PdfPreview",
+          "importedAs": "PdfjsExpressPreview",
           "category": "relative-local",
-          "definition": "PdfPreview comes from ../components/documents/PdfPreview (named import of PdfPreview)"
+          "definition": "PdfjsExpressPreview comes from ../components/documents/PdfjsExpressPreview (named import of PdfjsExpressPreview)"
         },
         {
           "component": "RadioGroup",
@@ -1904,11 +1904,12 @@
     },
     {
       "page": "src/pages/Schemas.tsx",
-      "componentCount": 28,
+      "componentCount": 30,
       "categoryCounts": {
-        "local-components": 2,
+        "local-components": 3,
         "tabler-icons": 10,
         "external-package": 1,
+        "in-file component": 1,
         "ark-ui": 15
       },
       "components": [
@@ -2028,6 +2029,15 @@
           "importedAs": "default",
           "category": "external-package",
           "definition": "MonacoEditor comes from @monaco-editor/react (default import of default)"
+        },
+        {
+          "component": "SchemaListPlaceholder",
+          "usedAs": "SchemaListPlaceholder",
+          "source": "(in-file or unresolved)",
+          "importKind": null,
+          "importedAs": null,
+          "category": "in-file component",
+          "definition": "SchemaListPlaceholder is defined in the same page file"
         },
         {
           "component": "Select",
@@ -2163,6 +2173,15 @@
           "importedAs": "Splitter",
           "category": "ark-ui",
           "definition": "Splitter.Root comes from @ark-ui/react/splitter (named import of Splitter)"
+        },
+        {
+          "component": "Workbench",
+          "usedAs": "Workbench",
+          "source": "@/components/workbench/Workbench",
+          "importKind": "named",
+          "importedAs": "Workbench",
+          "category": "local-components",
+          "definition": "Workbench comes from @/components/workbench/Workbench (named import of Workbench)"
         }
       ]
     },
@@ -4287,12 +4306,12 @@
       ]
     }
   ],
-  "totalComponentUsages": 426,
+  "totalComponentUsages": 428,
   "categoryTotals": {
     "external-package": 17,
-    "local-components": 138,
+    "local-components": 139,
     "tabler-icons": 79,
-    "in-file component": 17,
+    "in-file component": 18,
     "ark-ui": 158,
     "relative-local": 17
   }

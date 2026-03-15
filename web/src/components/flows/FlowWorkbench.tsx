@@ -33,7 +33,7 @@ import { Switch } from '@ark-ui/react/switch';
 import { Tooltip } from '@ark-ui/react/tooltip';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { DocxPreview } from '@/components/documents/DocxPreview';
-import { PdfPreview } from '@/components/documents/PdfPreview';
+import { PdfjsExpressPreview } from '@/components/documents/PdfjsExpressPreview';
 import { PptxPreview } from '@/components/documents/PptxPreview';
 import { edgeFetch, edgeJson } from '@/lib/edge';
 import { fetchAllProjectDocuments } from '@/lib/projectDocuments';
@@ -1212,7 +1212,7 @@ function FilesPreview({ selectedDoc }: { selectedDoc: ProjectDocumentRow | null 
   if (previewKind === 'pdf' && previewUrl) {
     return (
       <div className="h-full w-full">
-        <PdfPreview key={`${selectedDoc.source_uid}:${previewUrl}`} url={previewUrl} />
+        <PdfjsExpressPreview url={previewUrl} />
       </div>
     );
   }

@@ -377,12 +377,6 @@ function ExtractSchemaTab({ doc: _doc }: { doc: ProjectDocumentRow | null }) {
     ));
   }
 
-  const beginEditing = (mode: 'auto' | 'manual') => {
-    setFields(createStarterSchemaFields(mode));
-    setEditorView('visual');
-    setWorkspaceStage('editing');
-  };
-
   return (
     <div className="flex h-full min-h-0 gap-1 p-1">
       <div className="flex min-h-0 w-[15rem] shrink-0 flex-col overflow-hidden rounded-md border border-border bg-card">
@@ -411,110 +405,114 @@ function ExtractSchemaTab({ doc: _doc }: { doc: ProjectDocumentRow | null }) {
       </div>
 
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-md border border-border bg-card">
-      {workspaceStage === 'editing' && (
-      <div className="flex items-center gap-1 border-b border-border bg-card px-2 py-1.5">
-        <button
-          type="button"
-          aria-pressed={editorView === 'visual'}
-          onClick={() => setEditorView('visual')}
-          className={`inline-flex h-8 items-center gap-1.5 rounded-md border px-2 text-xs font-semibold ${viewBtnClass(editorView === 'visual')}`}
-        >
-          <IconEye size={14} />
-          Visual
-        </button>
-        <button
-          type="button"
-          aria-pressed={editorView === 'code'}
-          onClick={() => setEditorView('code')}
-          className={`inline-flex h-8 items-center gap-1.5 rounded-md border px-2 text-xs font-semibold ${viewBtnClass(editorView === 'code')}`}
-        >
-          <IconCode size={14} />
-          Code
-        </button>
+        {workspaceStage === 'editing' && (
+          <>
+            <div className="flex items-center gap-1 border-b border-border bg-card px-2 py-1.5">
+              <button
+                type="button"
+                aria-pressed={editorView === 'visual'}
+                onClick={() => setEditorView('visual')}
+                className={`inline-flex h-8 items-center gap-1.5 rounded-md border px-2 text-xs font-semibold ${viewBtnClass(editorView === 'visual')}`}
+              >
+                <IconEye size={14} />
+                Visual
+              </button>
+              <button
+                type="button"
+                aria-pressed={editorView === 'code'}
+                onClick={() => setEditorView('code')}
+                className={`inline-flex h-8 items-center gap-1.5 rounded-md border px-2 text-xs font-semibold ${viewBtnClass(editorView === 'code')}`}
+              >
+                <IconCode size={14} />
+                Code
+              </button>
 
-        <div className="ml-auto">
-          <Button
-            type="button"
-            size="sm"
-            variant="ghost"
-            className="h-8 text-xs"
-            onClick={() => {
-              // TODO: persist schema to extraction_schemas table
-              console.log('Save schema:', schemaJson);
-            }}
-          >
-            Save
-          </Button>
-        </div>
+              <div className="ml-auto">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  className="h-8 text-xs"
+                  onClick={() => {
+                    // TODO: persist schema to extraction_schemas table
+                    console.log('Save schema:', schemaJson);
+                  }}
+                >
+                  Save
+                </Button>
+              </div>
+            </div>
+
+            {/* Visual view */}
+            {editorView === 'visual' && (
+              <div className="min-h-0 flex-1 overflow-auto p-3">
+                {fields.length > 0 ? (
+                  <div className="space-y-3">
+                    {renderFieldRows(fields)}
+                    <button
+                      type="button"
+                      className="text-xs font-medium text-muted-foreground hover:text-foreground"
+                      onClick={() => setFields((prev) => [...prev, createSchemaField({ type: 'string' })])}
+                    >
+                      Add property
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex h-full min-h-[160px] flex-col items-center justify-center gap-2 text-sm text-muted-foreground">
+                    <span>No properties yet.</span>
+                    <button
+                      type="button"
+                      className="text-xs font-medium text-foreground hover:underline"
+                      onClick={() => setFields((prev) => [...prev, createSchemaField({ type: 'string' })])}
+                    >
+                      Add your first property
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Code view */}
+            {editorView === 'code' && (
+              <div className="min-h-0 flex-1 p-2">
+                <div className="h-full overflow-hidden rounded-md border border-border/70 bg-background">
+                  <MonacoEditor
+                    language="json"
+                    theme={monacoTheme}
+                    defaultValue={schemaJson}
+                    onMount={(editor) => {
+                      editorRef.current = editor;
+                      editor.onDidFocusEditorText(() => { codeHasFocusRef.current = true; });
+                      editor.onDidBlurEditorText(() => {
+                        codeHasFocusRef.current = false;
+                        try {
+                          const parsed = JSON.parse(editor.getValue());
+                          if (parsed?.type === 'object') {
+                            setFields(parseObjectSchemaToFields(parsed));
+                          }
+                        } catch { /* invalid JSON — user still editing */ }
+                      });
+                    }}
+                    options={{
+                      minimap: { enabled: false },
+                      fontSize: 12,
+                      lineHeight: 1.5,
+                      scrollBeyondLastLine: false,
+                      wordWrap: 'on',
+                      automaticLayout: true,
+                      scrollbar: {
+                        verticalScrollbarSize: 6,
+                        horizontalScrollbarSize: 6,
+                        useShadows: false,
+                      },
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+          </>
+        )}
       </div>
-
-      {/* Visual view */}
-      {editorView === 'visual' && (
-        <div className="min-h-0 flex-1 overflow-auto p-3">
-          {fields.length > 0 ? (
-            <div className="space-y-3">
-              {renderFieldRows(fields)}
-              <button
-                type="button"
-                className="text-xs font-medium text-muted-foreground hover:text-foreground"
-                onClick={() => setFields((prev) => [...prev, createSchemaField({ type: 'string' })])}
-              >
-                Add property
-              </button>
-            </div>
-          ) : (
-            <div className="flex h-full min-h-[160px] flex-col items-center justify-center gap-2 text-sm text-muted-foreground">
-              <span>No properties yet.</span>
-              <button
-                type="button"
-                className="text-xs font-medium text-foreground hover:underline"
-                onClick={() => setFields((prev) => [...prev, createSchemaField({ type: 'string' })])}
-              >
-                Add your first property
-              </button>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Code view */}
-      {editorView === 'code' && (
-        <div className="min-h-0 flex-1 p-2">
-          <div className="h-full overflow-hidden rounded-md border border-border/70 bg-background">
-            <MonacoEditor
-              language="json"
-              theme={monacoTheme}
-              defaultValue={schemaJson}
-              onMount={(editor) => {
-                editorRef.current = editor;
-                editor.onDidFocusEditorText(() => { codeHasFocusRef.current = true; });
-                editor.onDidBlurEditorText(() => {
-                  codeHasFocusRef.current = false;
-                  try {
-                    const parsed = JSON.parse(editor.getValue());
-                    if (parsed?.type === 'object') {
-                      setFields(parseObjectSchemaToFields(parsed));
-                    }
-                  } catch { /* invalid JSON — user still editing */ }
-                });
-              }}
-              options={{
-                minimap: { enabled: false },
-                fontSize: 12,
-                lineHeight: 1.5,
-                scrollBeyondLastLine: false,
-                wordWrap: 'on',
-                automaticLayout: true,
-                scrollbar: {
-                  verticalScrollbarSize: 6,
-                  horizontalScrollbarSize: 6,
-                  useShadows: false,
-                },
-              }}
-            />
-          </div>
-        </div>
-      )}
     </div>
   );
 }

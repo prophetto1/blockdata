@@ -1,5 +1,5 @@
-import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import Schemas, {
   SCHEMA_DEFAULT_PANES,
@@ -19,6 +19,10 @@ vi.mock('@monaco-editor/react', () => ({
   ),
 }));
 
+afterEach(() => {
+  cleanup();
+});
+
 describe('schema page layout', () => {
   it('uses a three-column shell with files and user schemas on the left', () => {
     expect(SCHEMA_TABS.map((tab) => tab.label)).toEqual([
@@ -31,7 +35,7 @@ describe('schema page layout', () => {
     expect(SCHEMA_DEFAULT_PANES).toEqual([
       expect.objectContaining({
         tabs: ['schema-files', 'schema-library'],
-        activeTab: 'schema-files',
+        activeTab: 'schema-library',
       }),
       expect.objectContaining({
         tabs: ['schema-editor'],

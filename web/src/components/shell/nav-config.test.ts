@@ -48,6 +48,14 @@ describe('nav-config side rail', () => {
     expect(paths).not.toContain('/app/docs');
   });
 
+  it('places Transform between Extract and RAG in the top-level nav', () => {
+    const labels = ALL_TOP_LEVEL_ITEMS.map((item) => item.label);
+
+    expect(labels.indexOf('Extract')).toBeGreaterThanOrEqual(0);
+    expect(labels.indexOf('Transform')).toBe(labels.indexOf('Extract') + 1);
+    expect(labels.indexOf('RAG')).toBe(labels.indexOf('Transform') + 1);
+  });
+
   it('has dividers in TOP_LEVEL_NAV', () => {
     const dividers = TOP_LEVEL_NAV.filter((entry) => entry === 'divider');
     expect(dividers.length).toBeGreaterThanOrEqual(3);

@@ -80,8 +80,9 @@ export function RightRailProvider({ children }: { children: ReactNode }) {
 
   const setChatDetached = (detached: boolean) => {
     setChatDetachedRaw(detached);
-    if (detached) {
-      setIsOpen(false);
+    if (detached && activeTab === 'ai' && content !== null) {
+      // Switch to help tab so the rail stays useful while chat floats
+      setActiveTabRaw('help');
     }
   };
 

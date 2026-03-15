@@ -93,7 +93,7 @@ describe('ProjectAssetsPage', () => {
     expect(props?.className).toContain('parse-documents-table-compact');
   });
 
-  it('registers a Preview-2 tab in the third pane', () => {
+  it('registers a single preview tab in the third pane', () => {
     render(<ProjectAssetsPage />);
 
     const props = workbenchMock.mock.calls[0]?.[0] as {
@@ -101,7 +101,7 @@ describe('ProjectAssetsPage', () => {
       defaultPanes: Array<{ id: string; tabs: string[] }>;
     } | undefined;
 
-    expect(props?.tabs.map((tab) => tab.id)).toContain('preview-2');
-    expect(props?.defaultPanes[2]?.tabs).toEqual(['preview', 'preview-2']);
+    expect(props?.tabs.map((tab) => tab.id)).not.toContain('preview-2');
+    expect(props?.defaultPanes[2]?.tabs).toEqual(['preview']);
   });
 });

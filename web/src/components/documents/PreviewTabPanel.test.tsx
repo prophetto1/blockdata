@@ -7,10 +7,6 @@ vi.mock('@/components/ui/scroll-area', () => ({
   ScrollArea: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }));
 
-vi.mock('@/components/documents/PdfPreview', () => ({
-  PdfPreview: ({ url }: { url: string }) => <div data-testid="pdf-preview">{url}</div>,
-}));
-
 vi.mock('@/components/documents/PdfjsExpressPreview', () => ({
   PdfjsExpressPreview: ({ url }: { url: string }) => <div data-testid="pdfjs-express-preview">{url}</div>,
 }));
@@ -128,7 +124,7 @@ describe('PreviewTabPanel parsed PDF toggle', () => {
 
     render(<PreviewTabPanel doc={baseDoc} />);
 
-    expect(await screen.findByTestId('pdf-preview')).toBeInTheDocument();
+    expect(await screen.findByTestId('pdfjs-express-preview')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Parsed view' })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Parsed view' }));
@@ -154,7 +150,7 @@ describe('PreviewTabPanel parsed PDF toggle', () => {
 
     render(<PreviewTabPanel doc={baseDoc} />);
 
-    expect(await screen.findByTestId('pdf-preview')).toBeInTheDocument();
+    expect(await screen.findByTestId('pdfjs-express-preview')).toBeInTheDocument();
     await waitFor(() => {
       expect(screen.queryByRole('button', { name: 'Parsed view' })).not.toBeInTheDocument();
     });
@@ -179,12 +175,12 @@ describe('PreviewTabPanel parsed PDF toggle', () => {
       />,
     );
 
-    expect(await screen.findByTestId('pdf-preview')).toBeInTheDocument();
+    expect(await screen.findByTestId('pdfjs-express-preview')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Parsed view' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Download file' })).not.toBeInTheDocument();
   });
 
-  it('can route PDF preview through the PDF.js Express viewer', async () => {
+  it('uses the PDF.js Express viewer for file view by default', async () => {
     resolveSignedUrlForLocatorsMock.mockResolvedValueOnce({
       url: 'https://example.test/quarterly-report.pdf',
       error: null,
@@ -193,13 +189,11 @@ describe('PreviewTabPanel parsed PDF toggle', () => {
     render(
       <PreviewTabPanel
         doc={baseDoc}
-        pdfViewer="pdfjs-express"
         allowParsedPdfView={false}
         showHeaderDownload={false}
       />,
     );
 
     expect(await screen.findByTestId('pdfjs-express-preview')).toBeInTheDocument();
-    expect(screen.queryByTestId('pdf-preview')).not.toBeInTheDocument();
   });
 });
