@@ -155,6 +155,17 @@ export async function edgeJson<T>(path: string, init: RequestInit = {}): Promise
   return JSON.parse(text) as T;
 }
 
+export async function manageDocument(
+  action: 'delete' | 'reset',
+  sourceUid: string,
+): Promise<{ ok: boolean; partial?: boolean; error?: string }> {
+  const resp = await edgeFetch('manage-document', {
+    method: 'POST',
+    body: JSON.stringify({ action, source_uid: sourceUid }),
+  });
+  return resp.json();
+}
+
 export async function downloadFromEdge(pathWithQuery: string, filename: string): Promise<void> {
   const resp = await edgeFetch(pathWithQuery, { method: 'GET' });
   if (!resp.ok) {

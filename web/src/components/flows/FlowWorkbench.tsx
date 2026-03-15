@@ -819,9 +819,9 @@ function FilesTree({
 
     if (doc) {
       setDocsError(null);
-      const { error: deleteError } = await supabase.rpc('delete_source_document', { p_source_uid: doc.source_uid });
-      if (deleteError) {
-        setDocsError(deleteError.message);
+      const result = await manageDocument('delete', doc.source_uid);
+      if (!result.ok && !result.partial) {
+        setDocsError(result.error ?? 'Delete failed');
         return;
       }
       const locator = doc.source_locator?.replace(/^\/+/, '');

@@ -27,6 +27,7 @@ import {
   IconTrash,
 } from '@tabler/icons-react';
 import { supabase } from '@/lib/supabase';
+import { edgeJson } from '@/lib/edge';
 import { useBlocks } from '@/hooks/useBlocks';
 import { useBlockTypeRegistry } from '@/hooks/useBlockTypeRegistry';
 import { useOverlays } from '@/hooks/useOverlays';
@@ -483,9 +484,12 @@ export function BlockViewerGridRDG({ convUid, selectedRunId, selectedRun, onExpo
     if (!selectedRunId) return;
     setConfirmingAll(true);
     try {
-      const { data, error } = await supabase.rpc('confirm_overlays', { p_run_id: selectedRunId });
-      if (error) throw new Error(error.message);
-      toast.success(`Staged overlays confirmed: ${Number(data ?? 0)} block(s) confirmed.`);
+      const { ok, count } = await edgeJson<{ ok: boolean; count: number }>('manage-overlays', {
+        method: 'POST',
+        body: JSON.stringify({ action: 'confirm', run_id: selectedRunId }),
+      });
+      if (!ok) throw new Error('Confirm failed');
+      toast.success(`Staged overlays confirmed: ${count} block(s) confirmed.`);
       await refetchOverlays();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : String(e));
@@ -498,9 +502,12 @@ export function BlockViewerGridRDG({ convUid, selectedRunId, selectedRun, onExpo
     if (!selectedRunId) return;
     setBlockBusy(blockUid, true);
     try {
-      const { data, error } = await supabase.rpc('confirm_overlays', { p_run_id: selectedRunId, p_block_uids: [blockUid] });
-      if (error) throw new Error(error.message);
-      if (Number(data ?? 0) === 0) toast.info('Block is no longer staged.');
+      const { ok, count } = await edgeJson<{ ok: boolean; count: number }>('manage-overlays', {
+        method: 'POST',
+        body: JSON.stringify({ action: 'confirm', run_id: selectedRunId, block_uids: [blockUid] }),
+      });
+      if (!ok) throw new Error('Confirm failed');
+      if (count === 0) toast.info('Block is no longer staged.');
       await refetchOverlays();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : String(e));
@@ -513,9 +520,12 @@ export function BlockViewerGridRDG({ convUid, selectedRunId, selectedRun, onExpo
     if (!selectedRunId) return;
     setBlockBusy(blockUid, true);
     try {
-      const { data, error } = await supabase.rpc('reject_overlays_to_pending', { p_run_id: selectedRunId, p_block_uids: [blockUid] });
-      if (error) throw new Error(error.message);
-      if (Number(data ?? 0) === 0) toast.info('Block is no longer staged.');
+      const { ok, count } = await edgeJson<{ ok: boolean; count: number }>('manage-overlays', {
+        method: 'POST',
+        body: JSON.stringify({ action: 'reject', run_id: selectedRunId, block_uids: [blockUid] }),
+      });
+      if (!ok) throw new Error('Reject failed');
+      if (count === 0) toast.info('Block is no longer staged.');
       await refetchOverlays();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : String(e));
@@ -542,12 +552,11 @@ export function BlockViewerGridRDG({ convUid, selectedRunId, selectedRun, onExpo
     const nextStaging = { ...(overlay.overlay_jsonb_staging ?? {}), [fieldKey]: parsedValue };
 
     try {
-      const { error } = await supabase.rpc('update_overlay_staging', {
-        p_run_id: selectedRunId,
-        p_block_uid: blockUid,
-        p_staging_jsonb: nextStaging,
+      const { ok } = await edgeJson<{ ok: boolean }>('manage-overlays', {
+        method: 'POST',
+        body: JSON.stringify({ action: 'update_staging', run_id: selectedRunId, block_uid: blockUid, staging_jsonb: nextStaging }),
       });
-      if (error) throw new Error(error.message);
+      if (!ok) throw new Error('Update staging failed');
       patchOverlay(blockUid, (current) => ({ ...current, overlay_jsonb_staging: nextStaging }));
       return true;
     } catch (e) {

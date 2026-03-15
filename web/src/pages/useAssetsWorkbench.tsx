@@ -13,6 +13,7 @@ import type { ProjectDocumentRow } from '@/lib/projectDetailHelpers';
 import { downloadFromSignedUrl, resolveSignedUrlForLocators } from '@/lib/projectDetailHelpers';
 import { supabase } from '@/lib/supabase';
 import { cn } from '@/lib/utils';
+import { manageDocument } from '@/lib/edge';
 
 const DOCUMENTS_BUCKET = (import.meta.env.VITE_DOCUMENTS_BUCKET as string | undefined) ?? 'documents';
 
@@ -47,8 +48,8 @@ export function useAssetsWorkbench() {
   }, []);
 
   const handleDelete = useCallback(async (doc: ProjectDocumentRow) => {
-    const { error: rpcError } = await supabase.rpc('delete_source_document', { p_source_uid: doc.source_uid });
-    if (rpcError) return;
+    const result = await manageDocument('delete', doc.source_uid);
+    if (!result.ok && !result.partial) return;
     const locator = doc.source_locator?.replace(/^\/+/, '');
     if (locator) {
       await supabase.storage.from(DOCUMENTS_BUCKET).remove([locator]);

@@ -29,6 +29,7 @@ import { ParseTabPanel, useParseTab } from '@/components/documents/ParseTabPanel
 import { cn } from '@/lib/utils';
 import { downloadFromSignedUrl, formatBytes, getDocumentFormat, type ProjectDocumentRow } from '@/lib/projectDetailHelpers';
 import { supabase } from '@/lib/supabase';
+import { manageDocument } from '@/lib/edge';
 import type { BlockRow } from '@/lib/types';
 import { useBlockTypeRegistry } from '@/hooks/useBlockTypeRegistry';
 import {
@@ -741,18 +742,22 @@ export function useParseWorkbench() {
   }, []);
 
   const handleReset = useCallback(async (uid: string) => {
-    const { error: rpcErr } = await supabase.rpc('reset_source_document', { p_source_uid: uid });
-    if (rpcErr) {
-      console.error('Reset failed:', rpcErr.message);
+    const result = await manageDocument('reset', uid);
+    if (result.partial) {
+      console.warn('Arango cleanup pending for', uid);
+    } else if (!result.ok) {
+      console.error('Reset failed:', result.error);
       return;
     }
     refreshDocs();
   }, [refreshDocs]);
 
   const handleDelete = useCallback(async (uid: string) => {
-    const { error: rpcErr } = await supabase.rpc('delete_source_document', { p_source_uid: uid });
-    if (rpcErr) {
-      console.error('Delete failed:', rpcErr.message);
+    const result = await manageDocument('delete', uid);
+    if (result.partial) {
+      console.warn('Arango cleanup pending for', uid);
+    } else if (!result.ok) {
+      console.error('Delete failed:', result.error);
       return;
     }
     if (activeDocUid === uid) setActiveDocUid(null);

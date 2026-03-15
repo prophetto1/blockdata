@@ -1,6 +1,7 @@
 import { corsPreflight, withCorsHeaders } from "../_shared/cors.ts";
 import { createAdminClient, requireUserId } from "../_shared/supabase.ts";
 import { buildRuntimePolicySnapshot, loadRuntimePolicy } from "../_shared/admin_policy.ts";
+import { loadArangoConfigFromEnv, syncRunToArango, syncOverlaysToArango } from "../_shared/arangodb.ts";
 
 function json(status: number, body: unknown): Response {
   return new Response(JSON.stringify(body, null, 2), {
@@ -111,9 +112,61 @@ Deno.serve(async (req) => {
     // Fetch total_blocks from the newly created run
     const { data: runRow } = await supabaseAdmin
       .from("runs")
-      .select("total_blocks")
+      .select("run_id, conv_uid, owner_id, schema_id, status, total_blocks, completed_blocks, failed_blocks, started_at, completed_at, model_config")
       .eq("run_id", run_id)
       .single();
+
+    // Sync run and initial overlays to Arango
+    const arangoConfig = loadArangoConfigFromEnv();
+    if (arangoConfig && runRow) {
+      try {
+        // Resolve source_uid and project_id via conversion_parsing
+        const { data: ancestry } = await supabaseAdmin
+          .from("conversion_parsing")
+          .select("source_uid")
+          .eq("conv_uid", runRow.conv_uid)
+          .single();
+        const { data: docRow } = await supabaseAdmin
+          .from("source_documents")
+          .select("project_id")
+          .eq("source_uid", ancestry!.source_uid)
+          .single();
+
+        await syncRunToArango(arangoConfig, {
+          run_id: runRow.run_id,
+          source_uid: ancestry!.source_uid,
+          conv_uid: runRow.conv_uid,
+          project_id: docRow!.project_id,
+          owner_id: runRow.owner_id,
+          schema_id: runRow.schema_id,
+          status: runRow.status,
+          total_blocks: runRow.total_blocks,
+          completed_blocks: runRow.completed_blocks,
+          failed_blocks: runRow.failed_blocks,
+          started_at: runRow.started_at,
+          completed_at: runRow.completed_at,
+          model_config: runRow.model_config,
+        });
+
+        // Fetch and sync the initial overlay rows
+        const { data: overlayRows } = await supabaseAdmin
+          .from("block_overlays")
+          .select("overlay_uid, run_id, block_uid, status, overlay_jsonb_staging, overlay_jsonb_confirmed, claimed_by, claimed_at, attempt_count, last_error, confirmed_at, confirmed_by")
+          .eq("run_id", run_id);
+
+        if (overlayRows && overlayRows.length > 0) {
+          await syncOverlaysToArango(arangoConfig, overlayRows.map((o) => ({
+            ...o,
+            source_uid: ancestry!.source_uid,
+            conv_uid: runRow.conv_uid,
+            project_id: docRow!.project_id,
+            owner_id: runRow.owner_id,
+          })));
+        }
+      } catch (err) {
+        console.error("runs: Arango sync failed (non-fatal):", err);
+      }
+    }
 
     return json(200, {
       run_id,

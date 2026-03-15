@@ -28,6 +28,7 @@ import {
   sortDocumentsByUploadedAt,
 } from '@/lib/projectDetailHelpers';
 import { supabase } from '@/lib/supabase';
+import { manageDocument } from '@/lib/edge';
 import { createDefaultTextFileContents } from '@/lib/filesTree';
 import {
   isPreviewInstanceTab,
@@ -236,9 +237,9 @@ export function useEltWorkbench(_workbenchRef: React.RefObject<WorkbenchHandle |
     if (!doc) return;
     setDocsError(null);
 
-    const { error: deleteError } = await supabase.rpc('delete_source_document', { p_source_uid: doc.source_uid });
-    if (deleteError) {
-      setDocsError(deleteError.message);
+    const result = await manageDocument('delete', doc.source_uid);
+    if (!result.ok && !result.partial) {
+      setDocsError(result.error ?? 'Delete failed');
       return;
     }
 

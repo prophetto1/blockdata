@@ -2,6 +2,7 @@ import { corsPreflight, withCorsHeaders } from "../_shared/cors.ts";
 import {
   loadArangoConfigFromEnv,
   syncAssetToArango,
+  syncDoclingDocumentToArango,
   syncParsedDocumentToArango,
 } from "../_shared/arangodb.ts";
 import { getEnv, requireEnv } from "../_shared/env.ts";
@@ -277,6 +278,7 @@ Deno.serve(async (req) => {
     // -----------------------------------------------------------------------
     // Docling track (only track)
     // -----------------------------------------------------------------------
+    const arangoConfig = loadArangoConfigFromEnv();
     let conv_uid = (body.conv_uid || "").trim();
     let doclingArtifactSizeBytes =
       typeof body.docling_artifact_size_bytes === "number" &&
@@ -284,6 +286,7 @@ Deno.serve(async (req) => {
         ? body.docling_artifact_size_bytes
         : null;
     let extractedBlocks = callbackBlocks;
+    let doclingBytes: Uint8Array | undefined;
 
     if (
       !conv_uid || doclingArtifactSizeBytes == null ||
@@ -300,13 +303,37 @@ Deno.serve(async (req) => {
         );
       }
 
-      const doclingBytes = new Uint8Array(await dlDownload.arrayBuffer());
+      doclingBytes = new Uint8Array(await dlDownload.arrayBuffer());
       const convPrefix = new TextEncoder().encode(
         "docling\ndoclingdocument_json\n",
       );
       conv_uid = await sha256Hex(concatBytes([convPrefix, doclingBytes]));
       doclingArtifactSizeBytes = doclingBytes.byteLength;
       extractedBlocks = extractDoclingBlocks(doclingBytes).blocks;
+    }
+
+    // Always fetch the raw Docling JSON for the Arango self-contained projection.
+    // On the fast path, conv_uid and blocks came from the callback, but Arango
+    // needs the full doclingdocument_json payload.
+    let doclingDocumentJson: Record<string, unknown> | null = null;
+    if (arangoConfig) {
+      let rawBytes: Uint8Array;
+      if (doclingBytes) {
+        rawBytes = doclingBytes;
+      } else {
+        const { data: dlData, error: dlErr } = await supabaseAdmin.storage
+          .from(bucket)
+          .download(docling_key!);
+        if (dlErr || !dlData) {
+          console.error("conversion-complete: Docling JSON download for Arango failed:", dlErr);
+          rawBytes = new Uint8Array(0);
+        } else {
+          rawBytes = new Uint8Array(await dlData.arrayBuffer());
+        }
+      }
+      if (rawBytes.length > 0) {
+        doclingDocumentJson = JSON.parse(new TextDecoder().decode(rawBytes));
+      }
     }
 
     const conv_total_blocks = extractedBlocks.length;
@@ -424,7 +451,6 @@ Deno.serve(async (req) => {
         );
       }
 
-      const arangoConfig = loadArangoConfigFromEnv();
       if (arangoConfig) {
         await syncParsedDocumentToArango(arangoConfig, {
           source_uid,
@@ -444,10 +470,25 @@ Deno.serve(async (req) => {
           conv_locator: docling_key,
           conv_status: "success",
           conv_representation_type: "doclingdocument_json",
+          docling_document_json: doclingDocumentJson ?? undefined,
           pipeline_config: body.pipeline_config ?? {},
           block_count: blockRows.length,
           blocks: blockRows,
         });
+
+        if (doclingDocumentJson) {
+          await syncDoclingDocumentToArango(arangoConfig, {
+            source_uid,
+            conv_uid,
+            project_id: docRow.project_id ?? null,
+            owner_id: docRow.owner_id,
+            doc_title: docRow.doc_title,
+            source_type: docRow.source_type,
+            source_locator: docRow.source_locator,
+            conv_locator: docling_key,
+            docling_document_json: doclingDocumentJson,
+          });
+        }
       }
 
       const { error: finalErr } = await supabaseAdmin
@@ -473,7 +514,6 @@ Deno.serve(async (req) => {
         .from("source_documents")
         .update({ status: "parse_failed", error: msg })
         .eq("source_uid", source_uid);
-      const arangoConfig = loadArangoConfigFromEnv();
       if (arangoConfig) {
         await syncAssetToArango(arangoConfig, {
           source_uid,
