@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useDirectUpload, type StagedFile } from '@/hooks/useDirectUpload';
 import { useGoogleDrivePicker } from '@/hooks/useGoogleDrivePicker';
+import { useDropboxChooser } from '@/hooks/useDropboxChooser';
 import { edgeJson } from '@/lib/edge';
 import { cn } from '@/lib/utils';
 import { useEffect, useState } from 'react';
@@ -90,6 +91,38 @@ export function UploadTabPanel({ projectId, onUploadComplete }: UploadTabPanelPr
         setImportError(e instanceof Error ? e.message : 'Import failed');
       } finally {
         setImporting(false);
+      }
+    },
+  });
+
+  // Dropbox import
+  const [dropboxImporting, setDropboxImporting] = useState(false);
+
+  const { openChooser, isReady: dropboxReady } = useDropboxChooser({
+    onFilesSelected: async (files) => {
+      setDropboxImporting(true);
+      setImportError(null);
+      try {
+        const result = await edgeJson<{
+          results: Array<{ file_id: string; status: string; error?: string }>;
+        }>('dropbox-import', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            project_id: projectId,
+            files,
+            ingest_mode: 'upload_only',
+          }),
+        });
+        const failures = result.results.filter((r) => r.status === 'error');
+        if (failures.length > 0) {
+          setImportError(`${failures.length} file(s) failed to import`);
+        }
+        onUploadComplete();
+      } catch (e) {
+        setImportError(e instanceof Error ? e.message : 'Import failed');
+      } finally {
+        setDropboxImporting(false);
       }
     },
   });
@@ -203,17 +236,24 @@ export function UploadTabPanel({ projectId, onUploadComplete }: UploadTabPanelPr
           <Button
             variant="outline"
             size="sm"
-            disabled
+            onClick={dropboxReady ? openChooser : undefined}
+            disabled={!dropboxReady || dropboxImporting}
             className="h-9 justify-start gap-2 text-sm"
           >
-            <IconBrandDropbox size={16} />
-            Dropbox
-            <span className="ml-auto text-[10px] font-normal text-muted-foreground">Coming soon</span>
+            {dropboxImporting ? (
+              <IconLoader2 size={16} className="animate-spin" />
+            ) : (
+              <IconBrandDropbox size={16} />
+            )}
+            {dropboxImporting ? 'Importing\u2026' : 'Dropbox'}
+            {!dropboxReady && (
+              <span className="ml-auto text-[10px] font-normal text-muted-foreground">Not configured</span>
+            )}
           </Button>
 
-          {!pickerReady && (
+          {!pickerReady && !dropboxReady && (
             <p className="text-xs text-muted-foreground">
-              Configure Google API credentials to enable Google Drive import.
+              Configure cloud storage credentials to enable imports.
             </p>
           )}
 

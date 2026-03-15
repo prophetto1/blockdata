@@ -2,11 +2,11 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-**Revision 2** — addresses all findings from `web-docs/src/content/docs/assessments/2026-03-14-extract-structured-extraction-assessment.mdx`
+**Revision 3** — addresses async architecture and provider config feedback on Revision 2.
 
-**Goal:** Build a LlamaCloud-style structured extraction workbench that takes parsed documents, applies user-defined JSON Schemas, and extracts structured data via LLM tool-use — using the platform's Vertex AI connection by default.
+**Goal:** Build a LlamaCloud-style structured extraction workbench that takes parsed documents, applies user-defined JSON Schemas, and extracts structured data via LLM tool-use.
 
-**Architecture:** Extraction is a post-parse operation. Already-parsed document content (markdown or DoclingDocument JSON from Supabase storage) is sent to Claude via Vertex AI with the extraction schema as a tool definition. The LLM returns structured data conforming to the schema. No Cloud Run changes. No new Python services. Extraction runs in a single Supabase edge function (`run-extract`).
+**Architecture:** Extraction is a post-parse operation with an **async job pattern** (like the parse pipeline). `run-extract` is a thin trigger that validates inputs, creates a job row, and returns `202 Accepted`. A separate `extract-worker` function does the LLM work, writing results incrementally. The frontend calls the worker in a loop (client-driven, like the annotation worker) and watches progress via Supabase Realtime. Users select their own provider and model for extraction via a dedicated Config tab.
 
 **Tech Stack:** Supabase (Postgres + Edge Functions + Realtime), Vertex AI Claude (`callVertexClaude`), React + Ark UI + Monaco Editor, existing `Workbench` multi-pane component.
 
@@ -25,7 +25,8 @@
 
 | Decision | Choice | Rationale |
 |----------|--------|-----------|
-| Provider | Platform Vertex AI by default | Uses existing `callVertexClaude()` with `GCP_VERTEX_SA_KEY`. No per-user API key needed for MVP. |
+| Provider | User-configured, extraction-specific | Config tab shows all providers from `user_api_keys` + Vertex via `user_provider_connections`. User picks provider+model per extraction. |
+| Async pattern | Client-driven worker (like annotations) | `run-extract` returns 202. `extract-worker` claims and processes pages. Frontend calls worker in a loop. Realtime for progress. |
 | Extraction targets | Document + Page (Table Row deferred) | Table Row needs more design. Document and Page cover the primary use cases. |
 | Config UX | Basic + Advanced accordion | Basic: model selector, extraction target. Advanced: system prompt, page range, temperature. |
 | Schema UX | Shared component in both Schemas page and Extract workbench | Same `SchemaFieldEditor` component, same save/load logic. Extract workbench middle column IS the schema builder. |
@@ -38,10 +39,11 @@
 ## Assessment Gap Resolutions
 
 ### From original design assessment
-1. **Provider layer overclaimed** — RESOLVED: MVP uses only `callVertexClaude()`. No multi-provider adapter needed.
-2. **Vertex auth mismatch** — RESOLVED: Uses platform `GCP_VERTEX_SA_KEY` env, not `user_api_keys` or `user_provider_connections`.
-3. **`decryptSecret()` wrong name** — RESOLVED: Not needed. MVP uses platform Vertex, no per-user key decryption.
+1. **Provider layer overclaimed** — RESOLVED: Extraction has its own provider config. Reads from `user_api_keys` (API-key providers) and `user_provider_connections` (Vertex). Uses `decryptWithContext()` for API keys, `callVertexClaude()` for Vertex.
+2. **Vertex auth mismatch** — RESOLVED: Vertex auth goes through `user_provider_connections` (service account) or falls back to platform `GCP_VERTEX_SA_KEY`. Both paths supported.
+3. **`decryptSecret()` wrong name** — RESOLVED: Uses `decryptWithContext()` from `_shared/api_key_crypto.ts` with context `"user-api-keys-v1"`.
 4. **Idempotency undefined** — RESOLVED: Every run creates a new job. No dedup.
+5. **Synchronous edge function** — RESOLVED: Split into `run-extract` (trigger, returns 202) and `extract-worker` (processes pages incrementally). Client-driven worker loop pattern matches annotation worker.
 
 ### From structured extraction plan assessment (Revision 1 → 2)
 5. **Artifact contract mismatch** — FIXED: Uses `representation_type`, `artifact_locator`, `doclingdocument_json`, `documents` bucket. Matches `_shared/representation.ts`.
@@ -569,41 +571,37 @@ git commit -m "feat: add page-level text assembly helper for DoclingDocument wit
 
 ---
 
-## Task 4: `run-extract` Edge Function
+## Task 4a: `run-extract` Edge Function (Async Trigger)
 
 **Files:**
 - Create: `supabase/functions/run-extract/index.ts`
+- Create: `supabase/functions/_shared/extract_helpers.ts`
 
-**Context:** Follow the pattern of `supabase/functions/trigger-parse/index.ts` for auth and request handling. Use `callVertexClaude` from `_shared/vertex_claude.ts` for LLM calls. Use the **correct** artifact contract: `representation_type`, `artifact_locator`, `doclingdocument_json`, `documents` bucket (per `_shared/representation.ts`).
+**Context:** This is a **thin trigger** following the pattern of `trigger-parse/index.ts`. It validates inputs, creates a job row with `pending` status, and returns `202 Accepted` immediately. No LLM work happens here.
 
-**Step 1: Write the edge function**
+**Step 1: Write shared helpers**
+
+Create `supabase/functions/_shared/extract_helpers.ts` with reusable functions for both `run-extract` and `extract-worker`:
 
 ```typescript
 import { createClient } from "jsr:@supabase/supabase-js@2";
-import { callVertexClaude } from "../_shared/vertex_claude.ts";
-import { assemblePageText, getPageCount } from "../_shared/docling_page_text.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const DOCUMENTS_BUCKET = Deno.env.get("DOCUMENTS_BUCKET") ?? "documents";
-const MAX_RANGE_PAGES = 50;
-const DEFAULT_MODEL = "claude-sonnet-4-5-20250929";
-const DEFAULT_TEMPERATURE = 0.3;
-const DEFAULT_MAX_TOKENS = 4096;
-const DEFAULT_SYSTEM_PROMPT =
-  "Extract the requested fields from the following document content. Return only the values found in the document. If a field cannot be found, use null.";
+export const MAX_RANGE_PAGES = 50;
 
-function adminClient() {
+export function adminClient() {
   return createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 }
 
-function userClient(token: string) {
+export function userClient(token: string) {
   return createClient(SUPABASE_URL, Deno.env.get("SUPABASE_ANON_KEY")!, {
     global: { headers: { Authorization: `Bearer ${token}` } },
   });
 }
 
-async function requireUserId(
+export async function requireUserId(
   req: Request,
 ): Promise<{ userId: string; token: string }> {
   const auth = req.headers.get("Authorization") ?? "";
@@ -618,7 +616,7 @@ async function requireUserId(
 }
 
 /** Load an artifact by representation_type and download from the documents bucket. */
-async function loadArtifact(
+export async function loadArtifact(
   db: ReturnType<typeof adminClient>,
   sourceUid: string,
   representationType: string,
@@ -647,7 +645,7 @@ async function loadArtifact(
 }
 
 /** Validate page range and return clamped values. */
-function validatePageRange(
+export function validatePageRange(
   pageRange: { start: number; end: number } | undefined,
   totalPages: number,
 ): { start: number; end: number } {
@@ -674,6 +672,82 @@ function validatePageRange(
   return { start, end: clampedEnd };
 }
 
+/** Sanitize error messages — strip tokens and key material. */
+export function sanitizeError(err: unknown): string {
+  return ((err as Error).message ?? String(err))
+    .replace(/Bearer\s+\S+/g, "Bearer [REDACTED]")
+    .replace(/key[=:]\s*\S+/gi, "key=[REDACTED]")
+    .slice(0, 500);
+}
+
+/** Resolve LLM transport for a given provider.
+ *
+ * For API-key providers (anthropic, openai, google, custom):
+ *   - reads encrypted key from user_api_keys
+ *   - decrypts with decryptWithContext()
+ *   - returns { transport: "api_key", provider, apiKey, baseUrl? }
+ *
+ * For Vertex AI:
+ *   - checks user_provider_connections for GCP service account
+ *   - falls back to platform GCP_VERTEX_SA_KEY
+ *   - returns { transport: "vertex_ai" }
+ */
+export type ResolvedProvider =
+  | { transport: "vertex_ai" }
+  | { transport: "api_key"; provider: string; apiKey: string; baseUrl?: string };
+
+export async function resolveProvider(
+  db: ReturnType<typeof adminClient>,
+  userId: string,
+  provider: string,
+): Promise<ResolvedProvider> {
+  if (provider === "vertex_ai") {
+    return { transport: "vertex_ai" };
+  }
+
+  // API-key providers: load and decrypt
+  const { data: keyRow } = await db
+    .from("user_api_keys")
+    .select("api_key_encrypted, base_url")
+    .eq("user_id", userId)
+    .eq("provider", provider)
+    .maybeSingle();
+
+  if (!keyRow?.api_key_encrypted) {
+    throw new Error(`No API key configured for provider "${provider}"`);
+  }
+
+  // Import decrypt helper
+  const { decryptWithContext } = await import("../_shared/api_key_crypto.ts");
+  const secret = Deno.env.get("API_KEY_ENCRYPTION_SECRET")!;
+  const apiKey = await decryptWithContext(
+    keyRow.api_key_encrypted,
+    secret,
+    "user-api-keys-v1",
+  );
+
+  return {
+    transport: "api_key",
+    provider,
+    apiKey,
+    baseUrl: keyRow.base_url ?? undefined,
+  };
+}
+```
+
+**Step 2: Write the trigger function**
+
+```typescript
+// supabase/functions/run-extract/index.ts
+//
+// Thin trigger: validates inputs, creates job, returns 202.
+// No LLM work. The frontend calls extract-worker to process.
+
+import {
+  adminClient,
+  requireUserId,
+} from "../_shared/extract_helpers.ts";
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, {
@@ -690,13 +764,15 @@ Deno.serve(async (req: Request) => {
     const {
       source_uid,
       schema_id,
-      model = DEFAULT_MODEL,
-      temperature = DEFAULT_TEMPERATURE,
-      system_prompt = DEFAULT_SYSTEM_PROMPT,
+      provider = "vertex_ai",
+      model = "claude-sonnet-4-5-20250929",
+      temperature = 0.3,
+      system_prompt,
       page_range,
     } = body as {
       source_uid: string;
       schema_id: string;
+      provider?: string;
       model?: string;
       temperature?: number;
       system_prompt?: string;
@@ -729,7 +805,7 @@ Deno.serve(async (req: Request) => {
     // 2. Load document — verify ownership and parsed status
     const { data: doc, error: docErr } = await db
       .from("source_documents")
-      .select("*")
+      .select("source_uid, owner_id, status")
       .eq("source_uid", source_uid)
       .eq("owner_id", userId)
       .single();
@@ -741,25 +817,22 @@ Deno.serve(async (req: Request) => {
     }
     if (doc.status !== "parsed") {
       return new Response(
-        JSON.stringify({
-          error: "Document must be parsed before extraction",
-        }),
+        JSON.stringify({ error: "Document must be parsed before extraction" }),
         { status: 400, headers: { "Content-Type": "application/json" } },
       );
     }
 
-    // 3. Create job row
+    // 3. Create job row — status "pending", return immediately
     const { data: job, error: jobErr } = await db
       .from("extraction_jobs")
       .insert({
         owner_id: userId,
         schema_id,
         source_uid,
-        status: "running",
-        llm_provider: "vertex_ai",
+        status: "pending",
+        llm_provider: provider,
         llm_model: model,
         config_jsonb: { temperature, system_prompt, page_range },
-        started_at: new Date().toISOString(),
       })
       .select()
       .single();
@@ -770,173 +843,412 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    // 4. Return 202 Accepted — frontend calls extract-worker next
+    return new Response(
+      JSON.stringify({
+        job_id: job.job_id,
+        status: "pending",
+      }),
+      { status: 202, headers: { "Content-Type": "application/json" } },
+    );
+  } catch (err) {
+    return new Response(
+      JSON.stringify({ error: (err as Error).message }),
+      { status: 400, headers: { "Content-Type": "application/json" } },
+    );
+  }
+});
+```
+
+**Step 3: Commit**
+
+```bash
+git add supabase/functions/_shared/extract_helpers.ts supabase/functions/run-extract/index.ts
+git commit -m "feat: add run-extract trigger (async 202 pattern) and shared extraction helpers"
+```
+
+---
+
+## Task 4b: `extract-worker` Edge Function (LLM Processing)
+
+**Files:**
+- Create: `supabase/functions/extract-worker/index.ts`
+
+**Context:** This is the **worker** that does the actual LLM calls. The frontend calls it after receiving a `job_id` from `run-extract`. For document-level extraction, one call suffices. For page-level, the frontend calls the worker in a loop — each call processes one or more pages and writes results incrementally. The worker resolves the user's chosen provider, decrypts their API key if needed, and calls the appropriate LLM transport.
+
+Pattern reference: `supabase/functions/worker/index.ts` (annotation worker).
+
+**Step 1: Write the worker**
+
+```typescript
+// supabase/functions/extract-worker/index.ts
+//
+// Processes extraction work for a given job_id.
+// Called by the frontend after run-extract returns 202.
+//
+// For document-level: processes the entire document in one call.
+// For page-level: processes a batch of pages per invocation.
+//   The frontend calls again with the same job_id until all pages are done.
+//
+// Request: { job_id: string }
+// Response: { job_id, status, pages_completed, pages_total }
+
+import { callVertexClaude } from "../_shared/vertex_claude.ts";
+import { assemblePageText, getPageCount } from "../_shared/docling_page_text.ts";
+import {
+  adminClient,
+  requireUserId,
+  loadArtifact,
+  validatePageRange,
+  resolveProvider,
+  sanitizeError,
+  type ResolvedProvider,
+} from "../_shared/extract_helpers.ts";
+
+const DEFAULT_MAX_TOKENS = 4096;
+const DEFAULT_SYSTEM_PROMPT =
+  "Extract the requested fields from the following document content. Return only the values found in the document. If a field cannot be found, use null.";
+const PAGES_PER_BATCH = 5; // pages processed per worker call
+
+/** Call LLM with the appropriate transport based on resolved provider. */
+async function callLLM(
+  resolved: ResolvedProvider,
+  params: {
+    model: string;
+    temperature: number;
+    systemPrompt: string;
+    userContent: string;
+    tool: { name: string; description: string; input_schema: unknown };
+  },
+): Promise<Record<string, unknown>> {
+  if (resolved.transport === "vertex_ai") {
+    return callVertexClaude({
+      model: params.model,
+      max_tokens: DEFAULT_MAX_TOKENS,
+      temperature: params.temperature,
+      system: params.systemPrompt,
+      messages: [{ role: "user", content: params.userContent }],
+      tools: [params.tool],
+      tool_choice: { type: "tool", name: params.tool.name },
+    }) as Promise<Record<string, unknown>>;
+  }
+
+  // API-key provider: OpenAI-compatible chat/completions
+  const baseUrl = resolved.baseUrl ?? (
+    resolved.provider === "anthropic"
+      ? "https://api.anthropic.com/v1"
+      : resolved.provider === "openai"
+        ? "https://api.openai.com/v1"
+        : resolved.provider === "google"
+          ? "https://generativelanguage.googleapis.com/v1beta"
+          : resolved.baseUrl
+  );
+
+  if (!baseUrl) throw new Error(`No base URL for provider "${resolved.provider}"`);
+
+  // For Anthropic direct API
+  if (resolved.provider === "anthropic") {
+    const resp = await fetch(`${baseUrl}/messages`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": resolved.apiKey,
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify({
+        model: params.model,
+        max_tokens: DEFAULT_MAX_TOKENS,
+        temperature: params.temperature,
+        system: params.systemPrompt,
+        messages: [{ role: "user", content: params.userContent }],
+        tools: [params.tool],
+        tool_choice: { type: "tool", name: params.tool.name },
+      }),
+    });
+    if (!resp.ok) {
+      const errText = await resp.text();
+      throw new Error(`Anthropic API ${resp.status}: ${errText.slice(0, 300)}`);
+    }
+    return resp.json();
+  }
+
+  // For OpenAI-compatible (openai, custom)
+  const resp = await fetch(`${baseUrl}/chat/completions`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${resolved.apiKey}`,
+    },
+    body: JSON.stringify({
+      model: params.model,
+      temperature: params.temperature,
+      max_tokens: DEFAULT_MAX_TOKENS,
+      messages: [
+        { role: "system", content: params.systemPrompt },
+        { role: "user", content: params.userContent },
+      ],
+      tools: [{
+        type: "function",
+        function: {
+          name: params.tool.name,
+          description: params.tool.description,
+          parameters: params.tool.input_schema,
+        },
+      }],
+      tool_choice: { type: "function", function: { name: params.tool.name } },
+    }),
+  });
+  if (!resp.ok) {
+    const errText = await resp.text();
+    throw new Error(`LLM API ${resp.status}: ${errText.slice(0, 300)}`);
+  }
+  return resp.json();
+}
+
+/** Parse extracted data from LLM response (handles both Anthropic and OpenAI formats). */
+function parseExtractedData(
+  response: Record<string, unknown>,
+  provider: string,
+): Record<string, unknown> {
+  // Anthropic format: content[].type === "tool_use", data in content[].input
+  if (provider === "anthropic" || provider === "vertex_ai") {
+    const content = response.content as Array<{ type: string; input?: Record<string, unknown> }> | undefined;
+    const toolUseBlock = content?.find((b) => b.type === "tool_use");
+    if (!toolUseBlock?.input) throw new Error("LLM did not return a tool_use response");
+    return toolUseBlock.input;
+  }
+
+  // OpenAI format: choices[0].message.tool_calls[0].function.arguments (JSON string)
+  const choices = response.choices as Array<{
+    message?: { tool_calls?: Array<{ function?: { arguments?: string } }> };
+  }> | undefined;
+  const args = choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
+  if (!args) throw new Error("LLM did not return a tool_calls response");
+  return JSON.parse(args);
+}
+
+/** Extract token usage from LLM response (handles both formats). */
+function parseTokenUsage(
+  response: Record<string, unknown>,
+): { input_tokens: number; output_tokens: number } {
+  const usage = response.usage as Record<string, number> | undefined;
+  return {
+    input_tokens: usage?.input_tokens ?? usage?.prompt_tokens ?? 0,
+    output_tokens: usage?.output_tokens ?? usage?.completion_tokens ?? 0,
+  };
+}
+
+Deno.serve(async (req: Request) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, {
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Headers": "authorization, content-type",
+      },
+    });
+  }
+
+  try {
+    const { userId } = await requireUserId(req);
+    const { job_id } = (await req.json()) as { job_id: string };
+    if (!job_id) {
+      return new Response(
+        JSON.stringify({ error: "job_id is required" }),
+        { status: 400, headers: { "Content-Type": "application/json" } },
+      );
+    }
+
+    const db = adminClient();
+
+    // 1. Load job — verify ownership and eligible status
+    const { data: job, error: jobErr } = await db
+      .from("extraction_jobs")
+      .select("*")
+      .eq("job_id", job_id)
+      .eq("owner_id", userId)
+      .single();
+    if (jobErr || !job) {
+      return new Response(
+        JSON.stringify({ error: "Job not found or access denied" }),
+        { status: 404, headers: { "Content-Type": "application/json" } },
+      );
+    }
+    if (job.status === "complete" || job.status === "failed") {
+      return new Response(
+        JSON.stringify({ job_id, status: job.status, message: "Job already finished" }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      );
+    }
+
+    // 2. Load schema
+    const { data: schema } = await db
+      .from("extraction_schemas")
+      .select("*")
+      .eq("schema_id", job.schema_id)
+      .single();
+    if (!schema) {
+      throw new Error("Schema not found");
+    }
+
+    // 3. Set status to running (if still pending)
+    if (job.status === "pending") {
+      await db
+        .from("extraction_jobs")
+        .update({ status: "running", started_at: new Date().toISOString() })
+        .eq("job_id", job_id);
+    }
+
+    // 4. Resolve provider + decrypt API key
+    const config = job.config_jsonb as {
+      temperature?: number;
+      system_prompt?: string;
+      page_range?: { start: number; end: number };
+    };
+    const resolved = await resolveProvider(db, userId, job.llm_provider);
+
     const extractionTarget = schema.extraction_target as string;
+    const tool = {
+      name: "extract_fields",
+      description: "Extract structured data from the document content",
+      input_schema: schema.schema_body,
+    };
+    const systemPrompt = config.system_prompt ?? DEFAULT_SYSTEM_PROMPT;
+    const temperature = config.temperature ?? 0.3;
 
     try {
-      // 4. Load document content using correct artifact contract
-      let contentPayloads: Array<{
-        pageNumber: number | null;
-        text: string;
-      }>;
-
       if (extractionTarget === "document") {
-        // Document-level: load markdown via representation_type + artifact_locator
-        const markdown = await loadArtifact(db, source_uid, "markdown_bytes");
-        contentPayloads = [{ pageNumber: null, text: markdown }];
-      } else {
-        // Page-level: load DoclingDocument JSON and split by page
-        const docJsonText = await loadArtifact(
-          db,
-          source_uid,
-          "doclingdocument_json",
+        // Document-level: single LLM call
+        const markdown = await loadArtifact(db, job.source_uid, "markdown_bytes");
+
+        const response = await callLLM(resolved, {
+          model: job.llm_model,
+          temperature,
+          systemPrompt,
+          userContent: markdown,
+          tool,
+        });
+
+        const extractedData = parseExtractedData(response, job.llm_provider);
+        const usage = parseTokenUsage(response);
+
+        // Write result
+        await db.from("extraction_results").insert({
+          job_id,
+          page_number: null,
+          extracted_data: extractedData,
+          raw_response: response,
+        });
+
+        // Mark complete
+        await db.from("extraction_jobs").update({
+          status: "complete",
+          completed_at: new Date().toISOString(),
+          token_usage: usage,
+        }).eq("job_id", job_id);
+
+        return new Response(
+          JSON.stringify({ job_id, status: "complete", pages_completed: 1, pages_total: 1 }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
         );
-        const docJson = JSON.parse(docJsonText);
-        const totalPages = getPageCount(docJson);
-
-        // Validate and clamp page range — cap on REQUESTED range, not total pages
-        const range = validatePageRange(page_range, totalPages);
-        const pageTextMap = assemblePageText(docJson);
-
-        contentPayloads = [];
-        for (let p = range.start; p <= range.end; p++) {
-          const text = pageTextMap.get(p);
-          if (text) contentPayloads.push({ pageNumber: p, text });
-        }
-
-        if (contentPayloads.length === 0) {
-          throw new Error(
-            `No extractable content found in page range ${range.start}-${range.end}`,
-          );
-        }
       }
 
-      // 5. Call LLM for each content payload
-      const tool = {
-        name: "extract_fields",
-        description:
-          "Extract structured data from the document content",
-        input_schema: schema.schema_body,
-      };
+      // Page-level: process a batch of pages per call
+      const docJsonText = await loadArtifact(db, job.source_uid, "doclingdocument_json");
+      const docJson = JSON.parse(docJsonText);
+      const totalPages = getPageCount(docJson);
+      const range = validatePageRange(config.page_range, totalPages);
+      const pageTextMap = assemblePageText(docJson);
 
-      let totalInputTokens = 0;
-      let totalOutputTokens = 0;
-      const results: Array<{
-        page_number: number | null;
-        extracted_data: Record<string, unknown>;
-        raw_response: Record<string, unknown>;
-      }> = [];
+      // Determine which pages still need processing
+      const { data: existingResults } = await db
+        .from("extraction_results")
+        .select("page_number")
+        .eq("job_id", job_id);
+      const completedPages = new Set(
+        (existingResults ?? []).map((r) => r.page_number),
+      );
 
-      for (const payload of contentPayloads) {
-        const llmResponse = (await callVertexClaude({
-          model,
-          max_tokens: DEFAULT_MAX_TOKENS,
+      const pendingPages: Array<{ pageNumber: number; text: string }> = [];
+      for (let p = range.start; p <= range.end; p++) {
+        if (completedPages.has(p)) continue;
+        const text = pageTextMap.get(p);
+        if (text) pendingPages.push({ pageNumber: p, text });
+      }
+
+      if (pendingPages.length === 0) {
+        // All pages done
+        const totalUsage = await aggregateTokenUsage(db, job_id);
+        await db.from("extraction_jobs").update({
+          status: "complete",
+          completed_at: new Date().toISOString(),
+          token_usage: totalUsage,
+        }).eq("job_id", job_id);
+
+        return new Response(
+          JSON.stringify({
+            job_id,
+            status: "complete",
+            pages_completed: completedPages.size,
+            pages_total: range.end - range.start + 1,
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        );
+      }
+
+      // Process up to PAGES_PER_BATCH pages
+      const batch = pendingPages.slice(0, PAGES_PER_BATCH);
+      for (const page of batch) {
+        const response = await callLLM(resolved, {
+          model: job.llm_model,
           temperature,
-          system: system_prompt,
-          messages: [
-            {
-              role: "user",
-              content: payload.text,
-            },
-          ],
-          tools: [tool],
-          tool_choice: { type: "tool", name: "extract_fields" },
-        })) as Record<string, unknown>;
+          systemPrompt,
+          userContent: page.text,
+          tool,
+        });
 
-        // Parse tool_use response
-        const content = llmResponse.content as
-          | Array<{
-              type: string;
-              input?: Record<string, unknown>;
-            }>
-          | undefined;
-        const toolUseBlock = content?.find((b) => b.type === "tool_use");
+        const extractedData = parseExtractedData(response, job.llm_provider);
 
-        if (!toolUseBlock?.input) {
-          throw new Error(
-            `LLM did not return a tool_use response for page ${payload.pageNumber ?? "document"}`,
-          );
-        }
-
-        const extractedData = toolUseBlock.input;
-
-        // Accumulate token usage
-        const usage = llmResponse.usage as
-          | {
-              input_tokens?: number;
-              output_tokens?: number;
-            }
-          | undefined;
-        totalInputTokens += usage?.input_tokens ?? 0;
-        totalOutputTokens += usage?.output_tokens ?? 0;
-
-        results.push({
-          page_number: payload.pageNumber,
+        // Write result incrementally (triggers realtime)
+        await db.from("extraction_results").insert({
+          job_id,
+          page_number: page.pageNumber,
           extracted_data: extractedData,
-          raw_response: llmResponse,
+          raw_response: response,
         });
       }
 
-      // 6. Store results
-      const { error: insertErr } = await db
-        .from("extraction_results")
-        .insert(
-          results.map((r) => ({
-            job_id: job.job_id,
-            page_number: r.page_number,
-            extracted_data: r.extracted_data,
-            raw_response: r.raw_response,
-          })),
-        );
-      if (insertErr)
-        throw new Error(`Failed to store results: ${insertErr.message}`);
+      const newCompleted = completedPages.size + batch.length;
+      const totalExpected = range.end - range.start + 1;
+      const allDone = newCompleted >= totalExpected;
 
-      // 7. Update job to complete
-      await db
-        .from("extraction_jobs")
-        .update({
+      if (allDone) {
+        const totalUsage = await aggregateTokenUsage(db, job_id);
+        await db.from("extraction_jobs").update({
           status: "complete",
           completed_at: new Date().toISOString(),
-          token_usage: {
-            input_tokens: totalInputTokens,
-            output_tokens: totalOutputTokens,
-          },
-        })
-        .eq("job_id", job.job_id);
+          token_usage: totalUsage,
+        }).eq("job_id", job_id);
+      }
 
       return new Response(
         JSON.stringify({
-          job_id: job.job_id,
-          status: "complete",
-          results_count: results.length,
-          token_usage: {
-            input_tokens: totalInputTokens,
-            output_tokens: totalOutputTokens,
-          },
+          job_id,
+          status: allDone ? "complete" : "running",
+          pages_completed: newCompleted,
+          pages_total: totalExpected,
         }),
         { status: 200, headers: { "Content-Type": "application/json" } },
       );
     } catch (llmError) {
-      // Update job to failed — sanitize error message
-      const errorMsg = (llmError as Error).message
-        .replace(/Bearer\s+\S+/g, "Bearer [REDACTED]")
-        .replace(/key[=:]\s*\S+/gi, "key=[REDACTED]")
-        .slice(0, 500);
-
-      await db
-        .from("extraction_jobs")
-        .update({
-          status: "failed",
-          error: errorMsg,
-          completed_at: new Date().toISOString(),
-        })
-        .eq("job_id", job.job_id);
+      const errorMsg = sanitizeError(llmError);
+      await db.from("extraction_jobs").update({
+        status: "failed",
+        error: errorMsg,
+        completed_at: new Date().toISOString(),
+      }).eq("job_id", job_id);
 
       return new Response(
-        JSON.stringify({
-          job_id: job.job_id,
-          status: "failed",
-          error: errorMsg,
-        }),
+        JSON.stringify({ job_id, status: "failed", error: errorMsg }),
         { status: 500, headers: { "Content-Type": "application/json" } },
       );
     }
@@ -947,27 +1259,53 @@ Deno.serve(async (req: Request) => {
     );
   }
 });
+
+/** Sum token usage across all results for a job. */
+async function aggregateTokenUsage(
+  db: ReturnType<typeof adminClient>,
+  jobId: string,
+): Promise<{ input_tokens: number; output_tokens: number }> {
+  const { data: results } = await db
+    .from("extraction_results")
+    .select("raw_response")
+    .eq("job_id", jobId);
+
+  let inputTokens = 0;
+  let outputTokens = 0;
+  for (const r of results ?? []) {
+    const usage = parseTokenUsage(r.raw_response ?? {});
+    inputTokens += usage.input_tokens;
+    outputTokens += usage.output_tokens;
+  }
+  return { input_tokens: inputTokens, output_tokens: outputTokens };
+}
 ```
 
 **Step 2: Deploy and test**
 
-Run: `npx supabase functions deploy run-extract` (from `supabase/` directory)
+Run: `npx supabase functions deploy run-extract && npx supabase functions deploy extract-worker`
 
-Test with curl:
+Test flow:
 ```bash
-curl -X POST https://<project-ref>.supabase.co/functions/v1/run-extract \
-  -H "Authorization: Bearer <user-jwt>" \
-  -H "Content-Type: application/json" \
-  -d '{"source_uid": "<parsed-doc-uid>", "schema_id": "<saved-schema-id>"}'
-```
+# 1. Trigger extraction — returns 202 with job_id
+JOB=$(curl -s -X POST .../functions/v1/run-extract \
+  -H "Authorization: Bearer <jwt>" \
+  -d '{"source_uid":"...","schema_id":"...","provider":"vertex_ai","model":"claude-sonnet-4-5-20250929"}')
 
-Expected: `{ "job_id": "...", "status": "complete", "results_count": 1 }`
+# 2. Call worker — processes pages
+curl -X POST .../functions/v1/extract-worker \
+  -H "Authorization: Bearer <jwt>" \
+  -d "{\"job_id\": \"$(echo $JOB | jq -r .job_id)\"}"
+
+# 3. Call worker again if page-level and status is "running"
+# Repeat until status is "complete"
+```
 
 **Step 3: Commit**
 
 ```bash
-git add supabase/functions/run-extract/index.ts
-git commit -m "feat: add run-extract edge function for structured extraction"
+git add supabase/functions/extract-worker/index.ts
+git commit -m "feat: add extract-worker for async LLM processing with multi-provider support"
 ```
 
 ---
@@ -1230,19 +1568,34 @@ export function useExtractionJobs(sourceUid: string | null) {
     return () => { supabase.removeChannel(channel); };
   }, [sourceUid, fetchJobs]);
 
+  /** Submit extraction: creates job (202), then drives the worker loop. */
   const submitExtraction = useCallback(async (params: {
     source_uid: string;
     schema_id: string;
+    provider?: string;
     model?: string;
     temperature?: number;
     system_prompt?: string;
     page_range?: { start: number; end: number };
   }) => {
-    const { data, error } = await supabase.functions.invoke('run-extract', {
+    // 1. Trigger: create job, get job_id
+    const { data: triggerData, error: triggerErr } = await supabase.functions.invoke('run-extract', {
       body: params,
     });
-    if (error) throw new Error(error.message);
-    return data as { job_id: string; status: string; results_count: number };
+    if (triggerErr) throw new Error(triggerErr.message);
+    const { job_id } = triggerData as { job_id: string; status: string };
+
+    // 2. Worker loop: call extract-worker until done
+    let status = 'pending';
+    while (status !== 'complete' && status !== 'failed') {
+      const { data: workerData, error: workerErr } = await supabase.functions.invoke('extract-worker', {
+        body: { job_id },
+      });
+      if (workerErr) throw new Error(workerErr.message);
+      status = (workerData as { status: string }).status;
+    }
+
+    return { job_id, status };
   }, []);
 
   const latestJob = jobs[0] ?? null;
@@ -1339,8 +1692,11 @@ const [schemaName, setSchemaName] = useState('Untitled Schema');
 const [extractionTarget, setExtractionTarget] = useState<'document' | 'page'>('document');
 const [editorMode, setEditorMode] = useState<'visual' | 'code' | 'split'>('visual');
 
-// Advanced config state
+// Provider + model config (extraction-specific)
+const [provider, setProvider] = useState('vertex_ai');
 const [model, setModel] = useState('claude-sonnet-4-5-20250929');
+
+// Advanced config state
 const [systemPrompt, setSystemPrompt] = useState('');
 const [temperature, setTemperature] = useState(0.3);
 const [pageRangeStart, setPageRangeStart] = useState<number | null>(null);
@@ -1359,7 +1715,7 @@ For each tab in `renderContent(tabId)`:
 
 **`extract-schema`**: Render `SchemaSelector` at top + `SchemaFieldEditor` below. Include extraction target toggle (Document / Page) as a segmented control. Save button calls `createSchema(schemaName, buildObjectSchema(fields), extractionTarget)`.
 
-**`extract-config`**: Basic section: model selector dropdown (hardcoded options: `claude-sonnet-4-5-20250929`, `claude-haiku-3-5-20241022`). Advanced accordion (Ark UI `Collapsible`): system prompt textarea, page range inputs (only when target is `page`), temperature slider. "Run Extraction" button — disabled until both `activeDocUid` and `activeSchemaId` are set. On click:
+**`extract-config`**: Basic section: provider selector dropdown (reads from `user_api_keys` + adds `vertex_ai` as option), model selector (changes available models based on selected provider). Advanced accordion (Ark UI `Collapsible`): system prompt textarea, page range inputs (only when target is `page`), temperature slider. "Run Extraction" button — disabled until both `activeDocUid` and `activeSchemaId` are set. On click:
 
 ```typescript
 const handleRunExtraction = async () => {
@@ -1367,6 +1723,7 @@ const handleRunExtraction = async () => {
   await submitExtraction({
     source_uid: activeDocUid,
     schema_id: activeSchemaId,
+    provider,
     model,
     temperature,
     system_prompt: systemPrompt || undefined,
@@ -1442,7 +1799,7 @@ Task 1 (DB Migration)
                                                    └── Task 9 (AI Schema Suggest, optional)
 ```
 
-Tasks 2-7 can proceed in parallel after Task 1. Task 8 requires all of 2-7.
+Tasks 2-7 can proceed in parallel after Task 1. Task 4b depends on Task 4a and Task 3. Task 8 requires all of 2-7.
 
 ---
 
@@ -1455,9 +1812,13 @@ Each task below must have passing tests before the task is considered complete.
 - Tests: page grouping, table reconstruction from `table_cells`, furniture traversal, empty document, `getPageCount`
 - Run: `cd supabase && deno test functions/_shared/docling_page_text.test.ts`
 
-### Task 4: Edge function
+### Task 4a: Trigger function
 - **File:** `supabase/functions/run-extract/index.test.ts`
-- Test paths: success (document-level), success (page-level), missing artifact (404), invalid page range (400), `start > totalPages` (400), oversized page request (400), empty range result (400), LLM failure (500 with sanitized error)
+- Test paths: valid request returns 202 + job_id, missing schema (404), unparsed document (400), missing fields (400)
+
+### Task 4b: Worker function
+- **File:** `supabase/functions/extract-worker/index.test.ts`
+- Test paths: document-level success, page-level batch processing, resume after partial completion, missing artifact (500 + job failed), invalid page range (500 + job failed), `start > totalPages` (500 + job failed), LLM failure (500 with sanitized error), already-complete job returns immediately, provider resolution for API-key providers
 
 ### Task 6: Schema CRUD hook
 - **File:** `web/src/hooks/useExtractionSchemas.test.ts`
@@ -1508,7 +1869,10 @@ Each task below must have passing tests before the task is considered complete.
 |---------|------|
 | Vertex Claude transport (reuse) | `supabase/functions/_shared/vertex_claude.ts` |
 | Vertex auth (reuse) | `supabase/functions/_shared/vertex_auth.ts` |
+| API key crypto (reuse) | `supabase/functions/_shared/api_key_crypto.ts` |
 | Representation types (contract) | `supabase/functions/_shared/representation.ts` |
+| Extraction shared helpers (new) | `supabase/functions/_shared/extract_helpers.ts` |
+| Annotation worker (pattern) | `supabase/functions/worker/index.ts` |
 | Schema helpers (reuse) | `web/src/lib/extractionSchemaHelpers.ts` |
 | Docling native items (pattern for page text) | `web/src/lib/doclingNativeItems.ts` |
 | Parse artifact loader (pattern) | `web/src/pages/parseArtifacts.ts` |

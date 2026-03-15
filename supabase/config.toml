@@ -431,6 +431,9 @@ verify_jwt = false
 [functions.google-drive-import]
 verify_jwt = false
 
+[functions.dropbox-import]
+verify_jwt = false
+
 [analytics]
 enabled = true
 port = 54327
