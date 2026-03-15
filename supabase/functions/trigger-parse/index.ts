@@ -4,6 +4,8 @@ import { loadRuntimePolicy } from "../_shared/admin_policy.ts";
 import { isConversionAckTimeoutError, raceWithAckTimeout, resolveConversionAckTimeoutMs } from "../_shared/conversion-ack-timeout.ts";
 import { basenameNoExt } from "../_shared/sanitize.ts";
 import { createAdminClient, requireUserId } from "../_shared/supabase.ts";
+import { buildRequestedPipelineConfig } from "../_shared/parse_pipeline_contract.ts";
+import { deleteProjectionForSourceFromArango, loadArangoConfigFromEnv } from "../_shared/arangodb.ts";
 
 type SignedUploadTarget = {
   bucket: string;
@@ -68,8 +70,11 @@ Deno.serve(async (req) => {
         .eq("id", profile_id)
         .single();
       if (profileErr) throw new Error(`Profile lookup failed: ${profileErr.message}`);
-      const profileConfig = (profile.config as Record<string, unknown>) ?? {};
-      pipeline_config = { ...profileConfig, _profile_id: profile_id, _profile_name: profileConfig.name ?? null };
+      pipeline_config = buildRequestedPipelineConfig({
+        profileId: profile_id,
+        profileConfig: (profile.config as Record<string, unknown>) ?? null,
+        configOverride: null,
+      });
     }
 
     const track = runtimePolicy.upload.extension_track_routing[source_type];
@@ -100,6 +105,21 @@ Deno.serve(async (req) => {
     );
     await supabaseAdmin.from("conversion_representations").delete().eq("source_uid", source_uid);
     await supabaseAdmin.from("conversion_parsing").delete().eq("source_uid", source_uid);
+
+    // Clear stale Arango projection data from previous conversion attempts.
+    const arangoConfig = loadArangoConfigFromEnv();
+    if (arangoConfig) {
+      try {
+        await deleteProjectionForSourceFromArango(arangoConfig, source_uid);
+      } catch (err) {
+        console.error("trigger-parse: Arango cleanup failed, writing outbox row:", err);
+        await supabaseAdmin.from("cleanup_outbox").insert({
+          source_uid,
+          action: "reparse_cleanup",
+          last_error: err instanceof Error ? err.message : String(err),
+        });
+      }
+    }
 
     // Signed download URL for the original file.
     const { data: signedDownload, error: dlErr } = await supabaseAdmin.storage
@@ -178,7 +198,7 @@ Deno.serve(async (req) => {
     // visible in the UI immediately.  conversion-complete will upsert over
     // this row with the full parsing results.
     if (Object.keys(pipeline_config).length > 0) {
-      await supabaseAdmin
+      const { error: preInsertErr } = await supabaseAdmin
         .from("conversion_parsing")
         .insert({
           source_uid,
@@ -191,7 +211,11 @@ Deno.serve(async (req) => {
           conv_total_characters: 0,
           conv_locator: "",
           pipeline_config,
+          requested_pipeline_config: pipeline_config,
         });
+      if (preInsertErr) {
+        throw new Error(`DB pre-insert conversion_parsing failed: ${preInsertErr.message}`);
+      }
     }
 
     // Call the conversion service.

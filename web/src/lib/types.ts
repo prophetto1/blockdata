@@ -28,6 +28,9 @@ export type DocumentRow = {
   uploaded_at: string;
   error: string | null;
   pipeline_config?: Record<string, unknown> | null;
+  requested_pipeline_config?: Record<string, unknown> | null;
+  applied_pipeline_config?: Record<string, unknown> | null;
+  parser_runtime_meta?: Record<string, unknown> | null;
   conv_total_blocks?: number | null;
   conv_parsing_tool?: string | null;
 };

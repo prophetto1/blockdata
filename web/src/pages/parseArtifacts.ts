@@ -79,6 +79,9 @@ export function getParseArtifactCacheKey(doc: ProjectDocumentRow): string {
     status: doc.status,
     conv_total_blocks: doc.conv_total_blocks ?? null,
     pipeline_config: doc.pipeline_config ?? null,
+    requested_pipeline_config: doc.requested_pipeline_config ?? null,
+    applied_pipeline_config: doc.applied_pipeline_config ?? null,
+    parser_runtime_meta: doc.parser_runtime_meta ?? null,
   });
 }
 

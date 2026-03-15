@@ -9,6 +9,7 @@ import { concatBytes, sha256Hex } from "../_shared/hash.ts";
 import { extractDoclingBlocks } from "../_shared/docling.ts";
 import { insertRepresentationArtifact } from "../_shared/representation.ts";
 import { createAdminClient } from "../_shared/supabase.ts";
+import { resolveAppliedConfig } from "../_shared/parse_pipeline_contract.ts";
 
 type ConversionCompleteBody = {
   source_uid: string;
@@ -19,6 +20,8 @@ type ConversionCompleteBody = {
   html_key?: string | null;
   doctags_key?: string | null;
   pipeline_config?: Record<string, unknown> | null;
+  applied_pipeline_config?: Record<string, unknown> | null;
+  parser_runtime_meta?: Record<string, unknown> | null;
   blocks?: CallbackDoclingBlock[] | null;
   conv_uid?: string | null;
   docling_artifact_size_bytes?: number | null;
@@ -316,6 +319,12 @@ Deno.serve(async (req) => {
       freqMap[b.block_type] = (freqMap[b.block_type] || 0) + 1;
     }
 
+    const resolved = resolveAppliedConfig({
+      pipelineConfig: body.pipeline_config,
+      appliedPipelineConfig: body.applied_pipeline_config,
+      parserRuntimeMeta: body.parser_runtime_meta,
+    });
+
     {
       const { error: convInsErr } = await supabaseAdmin
         .from("conversion_parsing")
@@ -329,7 +338,10 @@ Deno.serve(async (req) => {
           conv_block_type_freq: freqMap,
           conv_total_characters,
           conv_locator: docling_key,
-          pipeline_config: body.pipeline_config ?? {},
+          pipeline_config: resolved.requestedPipelineConfig,
+          requested_pipeline_config: resolved.requestedPipelineConfig,
+          applied_pipeline_config: resolved.appliedPipelineConfig,
+          parser_runtime_meta: resolved.parserRuntimeMeta,
         }, { onConflict: "source_uid" });
       if (convInsErr) {
         throw new Error(
