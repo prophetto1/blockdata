@@ -28,7 +28,6 @@ import { ParseSettingsColumn } from '@/components/documents/ParseSettingsColumn'
 import { ParseTabPanel, useParseTab } from '@/components/documents/ParseTabPanel';
 import { cn } from '@/lib/utils';
 import { downloadFromSignedUrl, formatBytes, getDocumentFormat, type ProjectDocumentRow } from '@/lib/projectDetailHelpers';
-import { supabase } from '@/lib/supabase';
 import { manageDocument } from '@/lib/edge';
 import type { BlockRow } from '@/lib/types';
 import { useBlockTypeRegistry } from '@/hooks/useBlockTypeRegistry';

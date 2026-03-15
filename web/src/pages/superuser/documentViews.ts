@@ -1,9 +1,9 @@
 import { edgeFetch } from '@/lib/edge';
 
 export const DOCUMENT_VIEW_MODE_POLICY_KEY = 'platform.docling_blocks_mode';
-export const DEFAULT_DOCUMENT_VIEW_MODE = 'raw_docling';
-
 export type DocumentViewMode = 'normalized' | 'raw_docling';
+
+export const DEFAULT_DOCUMENT_VIEW_MODE: DocumentViewMode = 'raw_docling';
 
 type PolicyLike = {
   policy_key: string;

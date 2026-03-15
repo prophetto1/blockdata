@@ -26,7 +26,6 @@ import {
   IconRotateClockwise,
   IconTrash,
 } from '@tabler/icons-react';
-import { supabase } from '@/lib/supabase';
 import { edgeJson } from '@/lib/edge';
 import { useBlocks } from '@/hooks/useBlocks';
 import { useBlockTypeRegistry } from '@/hooks/useBlockTypeRegistry';
