@@ -11,7 +11,7 @@
 **Upstream context:**
 - Merged plan: `docs/priority/2026-03-14-extraction-and-parse-verification-merged.md` (Phase 3)
 - Quick wins (shipped): `docs/plans/2026-03-14-parse-runtime-quick-wins.md`
-- Latest migration: `20260314160000_089_add_cleanup_outbox.sql`
+- Latest migration: `20260314170000_090_add_overlay_uid.sql`
 - Docling traversal reference: `web/src/lib/doclingNativeItems.ts`
 - Vertex Claude transport: `supabase/functions/_shared/vertex_claude.ts` — returns raw Anthropic Messages API response shape
 
@@ -58,7 +58,12 @@ ALTER TABLE public.extraction_schemas ENABLE ROW LEVEL SECURITY;
 CREATE POLICY extraction_schemas_select_own ON extraction_schemas
   FOR SELECT USING (owner_id = auth.uid());
 CREATE POLICY extraction_schemas_insert_own ON extraction_schemas
-  FOR INSERT WITH CHECK (owner_id = auth.uid());
+  FOR INSERT WITH CHECK (
+    owner_id = auth.uid()
+    AND (project_id IS NULL OR project_id IN (
+      SELECT project_id FROM projects WHERE owner_id = auth.uid()
+    ))
+  );
 CREATE POLICY extraction_schemas_update_own ON extraction_schemas
   FOR UPDATE USING (owner_id = auth.uid());
 CREATE POLICY extraction_schemas_delete_own ON extraction_schemas
@@ -97,8 +102,10 @@ CREATE TABLE IF NOT EXISTS public.extraction_jobs (
 ALTER TABLE public.extraction_jobs ENABLE ROW LEVEL SECURITY;
 CREATE POLICY extraction_jobs_select_own ON extraction_jobs
   FOR SELECT USING (owner_id = auth.uid());
-CREATE POLICY extraction_jobs_insert_own ON extraction_jobs
-  FOR INSERT WITH CHECK (owner_id = auth.uid());
+-- No INSERT policy: jobs are created exclusively by the run-extract edge
+-- function using the admin client (service role), which bypasses RLS.
+-- Omitting the INSERT policy with RLS enabled means user-scoped clients
+-- cannot insert rows, which is the correct security boundary.
 
 CREATE INDEX idx_extraction_jobs_source ON extraction_jobs(source_uid);
 CREATE INDEX idx_extraction_jobs_schema ON extraction_jobs(schema_id);
@@ -803,7 +810,7 @@ export function useExtractionSchemas(projectId: string | null) {
         filter: `project_id=eq.${projectId}`,
       }, () => fetchSchemas())
       .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    return () => { void supabase.removeChannel(channel); };
   }, [projectId, fetchSchemas]);
 
   const createSchema = useCallback(async (
@@ -811,6 +818,7 @@ export function useExtractionSchemas(projectId: string | null) {
     schemaBody: Record<string, unknown>,
     extractionTarget: 'page' | 'document' = 'document',
   ) => {
+    if (!projectId) throw new Error('No project selected');
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
 
