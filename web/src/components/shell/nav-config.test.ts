@@ -40,6 +40,7 @@ describe('nav-config side rail', () => {
     const paths = ALL_TOP_LEVEL_ITEMS.map((item) => item.path);
 
     expect(paths).toContain('/app/extract');
+    expect(paths).toContain('/app/transform');
     expect(paths).toContain('/app/schemas');
     expect(paths).toContain('/app/api-editor');
     expect(paths).toContain('/app/marketplace/integrations');

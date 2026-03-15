@@ -587,8 +587,8 @@ export const EXTRACT_DEFAULT_PANES: Pane[] = normalizePaneWidths([
   { id: 'pane-extract-preview', tabs: ['extract-results', 'extract-downloads'], activeTab: 'extract-results', width: 44 },
 ]);
 
-export function useExtractWorkbench() {
-  useShellHeaderTitle({ title: 'Extract Documents' });
+export function useExtractWorkbench(options?: { title?: string }) {
+  useShellHeaderTitle({ title: options?.title ?? 'Extract Documents' });
   const { resolvedProjectId } = useProjectFocus();
   const docState = useProjectDocuments(resolvedProjectId);
   const {

@@ -2,19 +2,22 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
+**Revision 2** — addresses all findings from `web-docs/src/content/docs/assessments/2026-03-14-extract-structured-extraction-assessment.mdx`
+
 **Goal:** Build a LlamaCloud-style structured extraction workbench that takes parsed documents, applies user-defined JSON Schemas, and extracts structured data via LLM tool-use — using the platform's Vertex AI connection by default.
 
 **Architecture:** Extraction is a post-parse operation. Already-parsed document content (markdown or DoclingDocument JSON from Supabase storage) is sent to Claude via Vertex AI with the extraction schema as a tool definition. The LLM returns structured data conforming to the schema. No Cloud Run changes. No new Python services. Extraction runs in a single Supabase edge function (`run-extract`).
 
 **Tech Stack:** Supabase (Postgres + Edge Functions + Realtime), Vertex AI Claude (`callVertexClaude`), React + Ark UI + Monaco Editor, existing `Workbench` multi-pane component.
 
-**Supersedes:** `docs/plans/2026-03-14-extract-feature-design.md` (Revision 2). This plan addresses all gaps from `docs/assessments/2026-03-14-extract-feature-design-assessment.mdx`.
+**Supersedes:** `docs/plans/2026-03-14-extract-feature-design.md` (Revision 2).
 
 **Reference materials:**
 - LlamaCloud UI screenshots: `docs/extract/image.png`, `docs/extract/image copy.png`
 - LlamaCloud result JSON: `docs/extract/resultjson.json`
 - LlamaCloud schema example: `docs/extract/schema.json`
 - Docling extraction docs: `https://docling-project.github.io/docling/examples/extraction/`
+- Assessment: `web-docs/src/content/docs/assessments/2026-03-14-extract-structured-extraction-assessment.mdx`
 
 ---
 
@@ -26,17 +29,29 @@
 | Extraction targets | Document + Page (Table Row deferred) | Table Row needs more design. Document and Page cover the primary use cases. |
 | Config UX | Basic + Advanced accordion | Basic: model selector, extraction target. Advanced: system prompt, page range, temperature. |
 | Schema UX | Shared component in both Schemas page and Extract workbench | Same `SchemaFieldEditor` component, same save/load logic. Extract workbench middle column IS the schema builder. |
-| Page-level limit | 50 pages max (sync edge function) | Prevents timeout. Returns 400 for larger docs. Background job path deferred. |
+| Schema identity | UUID primary key | Each saved schema is an independent record. Body hash stored as optional column, not used as PK. |
+| Page-level limit | 50 pages max on **requested range** | Cap applies to `(end - start + 1)`, not total document pages. A 200-page doc with range 1-5 is fine. |
 | Re-runs | Always create new job | No deduplication. Every "Run Extraction" creates a new `extraction_jobs` row. |
 | LLM call pattern | Tool-use with `tool_choice: { type: "tool" }` | Schema becomes the tool's `input_schema`. LLM is forced to return conforming structured output. |
+| Artifact contract | `representation_type`, `artifact_locator`, `documents` bucket | Matches live repo: `supabase/functions/_shared/representation.ts` |
 
 ## Assessment Gap Resolutions
 
+### From original design assessment
 1. **Provider layer overclaimed** — RESOLVED: MVP uses only `callVertexClaude()`. No multi-provider adapter needed.
 2. **Vertex auth mismatch** — RESOLVED: Uses platform `GCP_VERTEX_SA_KEY` env, not `user_api_keys` or `user_provider_connections`.
-3. **Page-level execution** — RESOLVED: 50-page hard cap. 400 error for larger docs.
-4. **`decryptSecret()` wrong name** — RESOLVED: Not needed. MVP uses platform Vertex, no per-user key decryption.
-5. **Idempotency undefined** — RESOLVED: Every run creates a new job. No dedup.
+3. **`decryptSecret()` wrong name** — RESOLVED: Not needed. MVP uses platform Vertex, no per-user key decryption.
+4. **Idempotency undefined** — RESOLVED: Every run creates a new job. No dedup.
+
+### From structured extraction plan assessment (Revision 1 → 2)
+5. **Artifact contract mismatch** — FIXED: Uses `representation_type`, `artifact_locator`, `doclingdocument_json`, `documents` bucket. Matches `_shared/representation.ts`.
+6. **Schema identity collision** — FIXED: UUID primary key. Body hash is an indexed column, not the PK. No cross-user or cross-name collisions.
+7. **Page-text helper wrong Docling shape** — FIXED: Rewritten to match `doclingNativeItems.ts` exactly — `self_ref` resolution, body+furniture traversal, `tableToText()` from `table_cells`, key-value and form items.
+8. **`focusedProjectId` vs `resolvedProjectId`** — FIXED: Uses `resolvedProjectId` throughout, matching both existing workbenches.
+9. **Page-range validation missing** — FIXED: 50-page cap on requested range (not total pages), explicit validation rules including `start > totalPages`, defined empty-result behavior.
+10. **No automated tests** — FIXED: Each task includes required test files. Tests are mandatory, not optional.
+11. **Migration missing indexes and FK** — FIXED: Indexes on query paths, `project_id` typed as UUID (matching `projects.project_id`), FK on `extraction_jobs.source_uid` referencing `source_documents.source_uid`, guarded publication.
+12. **Docs path wrong** — FIXED: All docs references use `web-docs/src/content/docs/` for published content.
 
 ---
 
@@ -50,15 +65,16 @@
 ```sql
 -- Extraction schemas: user-defined JSON Schemas for structured extraction
 CREATE TABLE IF NOT EXISTS extraction_schemas (
-  schema_uid   TEXT PRIMARY KEY,
-  owner_id     UUID NOT NULL REFERENCES auth.users(id),
-  project_id   TEXT REFERENCES projects(project_id),
-  schema_name  TEXT NOT NULL,
-  schema_body  JSONB NOT NULL,
+  schema_id        UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  owner_id         UUID NOT NULL REFERENCES auth.users(id),
+  project_id       UUID REFERENCES projects(project_id),
+  schema_name      TEXT NOT NULL,
+  schema_body      JSONB NOT NULL,
+  schema_body_hash TEXT,
   extraction_target TEXT NOT NULL DEFAULT 'document'
     CHECK (extraction_target IN ('page', 'document')),
-  created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+  created_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at       TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 ALTER TABLE extraction_schemas ENABLE ROW LEVEL SECURITY;
@@ -72,12 +88,15 @@ CREATE POLICY extraction_schemas_update_own ON extraction_schemas
 CREATE POLICY extraction_schemas_delete_own ON extraction_schemas
   FOR DELETE USING (owner_id = auth.uid());
 
+CREATE INDEX idx_extraction_schemas_project ON extraction_schemas(project_id);
+CREATE INDEX idx_extraction_schemas_body_hash ON extraction_schemas(schema_body_hash);
+
 -- Extraction jobs: one row per extraction run
 CREATE TABLE IF NOT EXISTS extraction_jobs (
   job_id       UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   owner_id     UUID NOT NULL REFERENCES auth.users(id),
-  schema_uid   TEXT NOT NULL REFERENCES extraction_schemas(schema_uid),
-  source_uid   TEXT NOT NULL,
+  schema_id    UUID NOT NULL REFERENCES extraction_schemas(schema_id),
+  source_uid   TEXT NOT NULL REFERENCES source_documents(source_uid),
   status       TEXT NOT NULL DEFAULT 'pending'
     CHECK (status IN ('pending', 'running', 'complete', 'failed')),
   llm_provider TEXT NOT NULL DEFAULT 'vertex_ai',
@@ -97,6 +116,9 @@ CREATE POLICY extraction_jobs_select_own ON extraction_jobs
 CREATE POLICY extraction_jobs_insert_own ON extraction_jobs
   FOR INSERT WITH CHECK (owner_id = auth.uid());
 
+CREATE INDEX idx_extraction_jobs_source ON extraction_jobs(source_uid);
+CREATE INDEX idx_extraction_jobs_schema ON extraction_jobs(schema_id);
+
 -- Extraction results: structured data extracted from documents
 CREATE TABLE IF NOT EXISTS extraction_results (
   result_id      UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -114,10 +136,21 @@ CREATE POLICY extraction_results_select_own ON extraction_results
     job_id IN (SELECT job_id FROM extraction_jobs WHERE owner_id = auth.uid())
   );
 
--- Realtime publication for live status updates
-ALTER PUBLICATION supabase_realtime ADD TABLE extraction_schemas;
-ALTER PUBLICATION supabase_realtime ADD TABLE extraction_jobs;
-ALTER PUBLICATION supabase_realtime ADD TABLE extraction_results;
+CREATE INDEX idx_extraction_results_job ON extraction_results(job_id);
+
+-- Realtime publication (guarded for repeatable migration)
+DO $$ BEGIN
+  ALTER PUBLICATION supabase_realtime ADD TABLE extraction_schemas;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+  ALTER PUBLICATION supabase_realtime ADD TABLE extraction_jobs;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+  ALTER PUBLICATION supabase_realtime ADD TABLE extraction_results;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 ```
 
 **Step 2: Verify migration applies**
@@ -138,7 +171,6 @@ git commit -m "feat: add extraction_schemas, extraction_jobs, extraction_results
 
 **Files:**
 - Modify: `web/src/lib/types.ts` — add extraction row types
-- Modify: `web/src/lib/tables.ts` — add table name constants (if this file exists; otherwise add to types.ts)
 
 **Step 1: Add TypeScript types to `web/src/lib/types.ts`**
 
@@ -146,11 +178,12 @@ Add these types alongside existing row types:
 
 ```typescript
 export type ExtractionSchemaRow = {
-  schema_uid: string;
-  owner_id: string;
-  project_id: string | null;
+  schema_id: string;  // UUID
+  owner_id: string;   // UUID
+  project_id: string | null;  // UUID
   schema_name: string;
   schema_body: Record<string, unknown>;
+  schema_body_hash: string | null;
   extraction_target: 'page' | 'document';
   created_at: string;
   updated_at: string;
@@ -159,7 +192,7 @@ export type ExtractionSchemaRow = {
 export type ExtractionJobRow = {
   job_id: string;
   owner_id: string;
-  schema_uid: string;
+  schema_id: string;
   source_uid: string;
   status: 'pending' | 'running' | 'complete' | 'failed';
   llm_provider: string;
@@ -195,102 +228,205 @@ git commit -m "feat: add extraction schema, job, and result TypeScript types"
 
 **Files:**
 - Create: `supabase/functions/_shared/docling_page_text.ts`
+- Create: `supabase/functions/_shared/docling_page_text.test.ts`
 
-**Context:** The existing `web/src/lib/doclingNativeItems.ts` extracts native items with page numbers, but does not assemble full reading-order text per page. This helper does that for the edge function.
+**Context:** Must match the exact Docling structure used in `web/src/lib/doclingNativeItems.ts`. That file uses `self_ref` for item resolution, traverses both `body` and `furniture`, reconstructs tables from `table_cells` via a grid, and handles text, table, key_value, and form item kinds.
 
 **Step 1: Write the helper**
-
-Study the DoclingDocument structure in `web/src/lib/doclingNativeItems.ts:56-170` first. The key data model is:
-
-```
-DoclingDocument.body.children[] → each has $ref → resolves to texts/tables/etc
-  → each item has prov[].page_no (1-based page number)
-  → each text item has text (string content)
-  → each table item has text (markdown table representation)
-```
-
-Write `supabase/functions/_shared/docling_page_text.ts`:
 
 ```typescript
 /**
  * Assemble reading-order text per page from a DoclingDocument JSON.
  *
- * Walks the document body tree, groups text content by page number,
- * and returns a Map<pageNumber, pageText> suitable for page-level extraction.
+ * Mirrors the traversal in web/src/lib/doclingNativeItems.ts:
+ *  - resolves items by self_ref (not $ref index math)
+ *  - traverses body AND furniture
+ *  - reconstructs tables from table_cells via grid
+ *  - includes key_value and form item text
  */
 
-type DocItem = {
+// ---------------------------------------------------------------------------
+// Types (matching doclingNativeItems.ts)
+// ---------------------------------------------------------------------------
+
+type DoclingRef = { $ref: string };
+type DoclingProv = { page_no?: number };
+
+type DoclingTextItem = {
+  self_ref: string;
+  children?: DoclingRef[];
+  label: string;
+  prov?: DoclingProv[];
   text?: string;
-  prov?: Array<{ page_no: number }>;
-  children?: Array<{ $ref: string }>;
+  orig?: string;
+};
+
+type DoclingTableCell = {
+  text: string;
+  start_row_offset_idx: number;
+  start_col_offset_idx: number;
+};
+
+type DoclingTableItem = {
+  self_ref: string;
+  children?: DoclingRef[];
+  label: string;
+  prov?: DoclingProv[];
+  data?: {
+    table_cells?: DoclingTableCell[];
+    num_rows?: number;
+    num_cols?: number;
+  };
+};
+
+type DoclingPictureItem = {
+  self_ref: string;
+  children?: DoclingRef[];
+  label?: string;
+  prov?: DoclingProv[];
+};
+
+type DoclingNodeItem = {
+  self_ref: string;
+  children?: DoclingRef[];
+  label?: string;
+  name?: string;
 };
 
 type DoclingDocument = {
-  texts?: DocItem[];
-  tables?: DocItem[];
-  key_value_items?: DocItem[];
-  form_items?: DocItem[];
-  body?: { children?: Array<{ $ref: string }> };
+  body?: { children?: DoclingRef[] };
+  furniture?: { children?: DoclingRef[] };
+  groups?: DoclingNodeItem[];
+  texts?: DoclingTextItem[];
+  tables?: DoclingTableItem[];
+  pictures?: DoclingPictureItem[];
+  key_value_items?: DoclingTextItem[];
+  form_items?: DoclingTextItem[];
 };
 
-/**
- * Resolve a $ref like "#/texts/3" to the actual item.
- */
-function resolveRef(doc: DoclingDocument, ref: string): DocItem | null {
-  const match = ref.match(/^#\/(\w+)\/(\d+)$/);
-  if (!match) return null;
-  const [, collection, indexStr] = match;
-  const items = (doc as Record<string, unknown>)[collection] as DocItem[] | undefined;
-  if (!items) return null;
-  return items[parseInt(indexStr, 10)] ?? null;
+// ---------------------------------------------------------------------------
+// Table text reconstruction (same logic as doclingNativeItems.ts:198-217)
+// ---------------------------------------------------------------------------
+
+function tableToText(table: DoclingTableItem): string {
+  const cells = table.data?.table_cells ?? [];
+  const numRows = table.data?.num_rows ?? 0;
+  const numCols = table.data?.num_cols ?? 0;
+  if (cells.length === 0 || numRows === 0 || numCols === 0) {
+    return cells.map((cell) => cell.text).join(" ");
+  }
+
+  const grid: string[][] = Array.from({ length: numRows }, () =>
+    Array.from({ length: numCols }, () => ""),
+  );
+
+  for (const cell of cells) {
+    if (
+      cell.start_row_offset_idx < numRows &&
+      cell.start_col_offset_idx < numCols
+    ) {
+      grid[cell.start_row_offset_idx]![cell.start_col_offset_idx] = cell.text;
+    }
+  }
+
+  return grid.map((row) => row.join(" | ")).join("\n");
 }
 
-/**
- * Walk the body tree in reading order, collecting text per page.
- */
-function walkChildren(
-  doc: DoclingDocument,
-  children: Array<{ $ref: string }>,
-  pages: Map<number, string[]>,
-): void {
-  for (const child of children) {
-    const item = resolveRef(doc, child.$ref);
-    if (!item) continue;
+// ---------------------------------------------------------------------------
+// Page number extraction (same logic as doclingNativeItems.ts:85-92)
+// ---------------------------------------------------------------------------
 
-    // Recurse into children first (reading order)
-    if (item.children && item.children.length > 0) {
-      walkChildren(doc, item.children, pages);
-    }
+function extractFirstPageNo(prov: DoclingProv[] | undefined): number | null {
+  for (const item of prov ?? []) {
+    const pageNo =
+      typeof item.page_no === "number" && Number.isFinite(item.page_no)
+        ? Math.trunc(item.page_no)
+        : null;
+    if (pageNo && pageNo > 0) return pageNo;
+  }
+  return null;
+}
 
-    // Extract text content
-    const text = item.text?.trim();
-    if (!text) continue;
+// ---------------------------------------------------------------------------
+// Document traversal (mirrors doclingNativeItems.ts:74-196)
+// ---------------------------------------------------------------------------
 
-    // Determine page number (use first provenance entry)
-    const pageNo = item.prov?.[0]?.page_no ?? 0;
-    const page = pageNo > 0 ? pageNo : 1; // unlocated items go to page 1
+export function assemblePageText(doc: DoclingDocument): Map<number, string> {
+  const textsMap = new Map(
+    (doc.texts ?? []).map((item) => [item.self_ref, item]),
+  );
+  const tablesMap = new Map(
+    (doc.tables ?? []).map((item) => [item.self_ref, item]),
+  );
+  const kvMap = new Map(
+    (doc.key_value_items ?? []).map((item) => [item.self_ref, item]),
+  );
+  const formMap = new Map(
+    (doc.form_items ?? []).map((item) => [item.self_ref, item]),
+  );
+  const groupsMap = new Map(
+    (doc.groups ?? []).map((item) => [item.self_ref, item]),
+  );
 
+  const pages = new Map<number, string[]>();
+  const visited = new Set<string>();
+
+  function addToPage(pageNo: number | null, text: string): void {
+    const page = pageNo ?? 1; // unlocated items go to page 1
     if (!pages.has(page)) pages.set(page, []);
     pages.get(page)!.push(text);
   }
-}
 
-/**
- * Assemble reading-order text per page from a DoclingDocument.
- *
- * @param doc  Parsed DoclingDocument JSON
- * @returns    Map where key = 1-based page number, value = concatenated text
- */
-export function assemblePageText(doc: DoclingDocument): Map<number, string> {
-  const pages = new Map<number, string[]>();
+  function walk(ref: DoclingRef): void {
+    const pointer = ref.$ref;
+    if (visited.has(pointer)) return;
+    visited.add(pointer);
 
-  if (doc.body?.children) {
-    walkChildren(doc, doc.body.children, pages);
+    const textItem = textsMap.get(pointer);
+    if (textItem) {
+      const content = textItem.text ?? textItem.orig ?? "";
+      if (content.trim()) addToPage(extractFirstPageNo(textItem.prov), content);
+      for (const child of textItem.children ?? []) walk(child);
+      return;
+    }
+
+    const tableItem = tablesMap.get(pointer);
+    if (tableItem) {
+      const content = tableToText(tableItem);
+      if (content.trim()) addToPage(extractFirstPageNo(tableItem.prov), content);
+      for (const child of tableItem.children ?? []) walk(child);
+      return;
+    }
+
+    const kvItem = kvMap.get(pointer);
+    if (kvItem) {
+      const content = kvItem.text ?? kvItem.orig ?? "";
+      if (content.trim()) addToPage(extractFirstPageNo(kvItem.prov), content);
+      for (const child of kvItem.children ?? []) walk(child);
+      return;
+    }
+
+    const formItem = formMap.get(pointer);
+    if (formItem) {
+      const content = formItem.text ?? formItem.orig ?? "";
+      if (content.trim()) addToPage(extractFirstPageNo(formItem.prov), content);
+      for (const child of formItem.children ?? []) walk(child);
+      return;
+    }
+
+    const group = groupsMap.get(pointer);
+    if (group) {
+      for (const child of group.children ?? []) walk(child);
+    }
   }
+
+  // Traverse body AND furniture (same as doclingNativeItems.ts:192-193)
+  for (const child of doc.body?.children ?? []) walk(child);
+  for (const child of doc.furniture?.children ?? []) walk(child);
 
   const result = new Map<number, string>();
   for (const [page, texts] of pages) {
-    result.set(page, texts.join('\n\n'));
+    result.set(page, texts.join("\n\n"));
   }
   return result;
 }
@@ -301,13 +437,22 @@ export function assemblePageText(doc: DoclingDocument): Map<number, string> {
  */
 export function getPageCount(doc: DoclingDocument): number {
   let max = 0;
-  for (const collection of ['texts', 'tables', 'key_value_items', 'form_items'] as const) {
+  for (const collection of [
+    "texts",
+    "tables",
+    "key_value_items",
+    "form_items",
+  ] as const) {
     const items = doc[collection];
     if (!items) continue;
     for (const item of items) {
       if (!item.prov) continue;
       for (const p of item.prov) {
-        if (p.page_no > max) max = p.page_no;
+        const pageNo =
+          typeof p.page_no === "number" && Number.isFinite(p.page_no)
+            ? Math.trunc(p.page_no)
+            : 0;
+        if (pageNo > max) max = pageNo;
       }
     }
   }
@@ -315,11 +460,111 @@ export function getPageCount(doc: DoclingDocument): number {
 }
 ```
 
-**Step 2: Commit**
+**Step 2: Write the test**
+
+```typescript
+// supabase/functions/_shared/docling_page_text.test.ts
+import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
+import { assemblePageText, getPageCount } from "./docling_page_text.ts";
+
+const fixture = {
+  texts: [
+    { self_ref: "#/texts/0", label: "title", text: "Introduction", prov: [{ page_no: 1 }] },
+    { self_ref: "#/texts/1", label: "paragraph", text: "Page one content.", prov: [{ page_no: 1 }] },
+    { self_ref: "#/texts/2", label: "paragraph", text: "Page two content.", prov: [{ page_no: 2 }] },
+    { self_ref: "#/texts/3", label: "header", text: "Header text", prov: [{ page_no: 1 }] },
+  ],
+  tables: [
+    {
+      self_ref: "#/tables/0",
+      label: "table",
+      prov: [{ page_no: 2 }],
+      data: {
+        table_cells: [
+          { text: "Name", start_row_offset_idx: 0, start_col_offset_idx: 0 },
+          { text: "Age", start_row_offset_idx: 0, start_col_offset_idx: 1 },
+          { text: "Alice", start_row_offset_idx: 1, start_col_offset_idx: 0 },
+          { text: "30", start_row_offset_idx: 1, start_col_offset_idx: 1 },
+        ],
+        num_rows: 2,
+        num_cols: 2,
+      },
+    },
+  ],
+  key_value_items: [
+    { self_ref: "#/key_value_items/0", label: "kv", text: "Invoice: 12345", prov: [{ page_no: 1 }] },
+  ],
+  form_items: [
+    { self_ref: "#/form_items/0", label: "form", text: "Field: Value", prov: [{ page_no: 2 }] },
+  ],
+  groups: [
+    { self_ref: "#/groups/0", children: [{ $ref: "#/texts/0" }, { $ref: "#/texts/1" }] },
+  ],
+  body: {
+    children: [
+      { $ref: "#/groups/0" },
+      { $ref: "#/texts/2" },
+      { $ref: "#/tables/0" },
+      { $ref: "#/key_value_items/0" },
+      { $ref: "#/form_items/0" },
+    ],
+  },
+  furniture: {
+    children: [{ $ref: "#/texts/3" }],
+  },
+};
+
+Deno.test("assemblePageText groups text by page in reading order", () => {
+  const result = assemblePageText(fixture);
+  assertEquals(result.size, 2);
+
+  const page1 = result.get(1)!;
+  // Page 1 should have: Introduction, Page one content, Invoice: 12345, Header text (from furniture)
+  assertEquals(page1.includes("Introduction"), true);
+  assertEquals(page1.includes("Page one content"), true);
+  assertEquals(page1.includes("Invoice: 12345"), true);
+  assertEquals(page1.includes("Header text"), true);
+
+  const page2 = result.get(2)!;
+  // Page 2 should have: Page two content, table, form field
+  assertEquals(page2.includes("Page two content"), true);
+  assertEquals(page2.includes("Name | Age"), true);
+  assertEquals(page2.includes("Alice | 30"), true);
+  assertEquals(page2.includes("Field: Value"), true);
+});
+
+Deno.test("assemblePageText reconstructs tables from table_cells", () => {
+  const result = assemblePageText(fixture);
+  const page2 = result.get(2)!;
+  // Table should be reconstructed as grid, not just cell text concatenated
+  assertEquals(page2.includes("Name | Age\nAlice | 30"), true);
+});
+
+Deno.test("assemblePageText traverses furniture", () => {
+  const result = assemblePageText(fixture);
+  const page1 = result.get(1)!;
+  assertEquals(page1.includes("Header text"), true);
+});
+
+Deno.test("getPageCount returns max page number", () => {
+  assertEquals(getPageCount(fixture), 2);
+});
+
+Deno.test("getPageCount returns 0 for empty document", () => {
+  assertEquals(getPageCount({}), 0);
+});
+```
+
+**Step 3: Run tests**
+
+Run: `cd supabase && deno test functions/_shared/docling_page_text.test.ts`
+Expected: All 5 tests pass.
+
+**Step 4: Commit**
 
 ```bash
-git add supabase/functions/_shared/docling_page_text.ts
-git commit -m "feat: add page-level text assembly helper for DoclingDocument"
+git add supabase/functions/_shared/docling_page_text.ts supabase/functions/_shared/docling_page_text.test.ts
+git commit -m "feat: add page-level text assembly helper for DoclingDocument with tests"
 ```
 
 ---
@@ -329,7 +574,7 @@ git commit -m "feat: add page-level text assembly helper for DoclingDocument"
 **Files:**
 - Create: `supabase/functions/run-extract/index.ts`
 
-**Context:** Follow the pattern of `supabase/functions/trigger-parse/index.ts` for auth and request handling. Use `callVertexClaude` from `_shared/vertex_claude.ts` for LLM calls.
+**Context:** Follow the pattern of `supabase/functions/trigger-parse/index.ts` for auth and request handling. Use `callVertexClaude` from `_shared/vertex_claude.ts` for LLM calls. Use the **correct** artifact contract: `representation_type`, `artifact_locator`, `doclingdocument_json`, `documents` bucket (per `_shared/representation.ts`).
 
 **Step 1: Write the edge function**
 
@@ -340,7 +585,8 @@ import { assemblePageText, getPageCount } from "../_shared/docling_page_text.ts"
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const MAX_PAGES = 50;
+const DOCUMENTS_BUCKET = Deno.env.get("DOCUMENTS_BUCKET") ?? "documents";
+const MAX_RANGE_PAGES = 50;
 const DEFAULT_MODEL = "claude-sonnet-4-5-20250929";
 const DEFAULT_TEMPERATURE = 0.3;
 const DEFAULT_MAX_TOKENS = 4096;
@@ -357,13 +603,75 @@ function userClient(token: string) {
   });
 }
 
-async function requireUserId(req: Request): Promise<{ userId: string; token: string }> {
+async function requireUserId(
+  req: Request,
+): Promise<{ userId: string; token: string }> {
   const auth = req.headers.get("Authorization") ?? "";
   const token = auth.replace("Bearer ", "");
   if (!token) throw new Error("Missing auth token");
-  const { data: { user }, error } = await userClient(token).auth.getUser();
+  const {
+    data: { user },
+    error,
+  } = await userClient(token).auth.getUser();
   if (error || !user) throw new Error("Unauthorized");
   return { userId: user.id, token };
+}
+
+/** Load an artifact by representation_type and download from the documents bucket. */
+async function loadArtifact(
+  db: ReturnType<typeof adminClient>,
+  sourceUid: string,
+  representationType: string,
+): Promise<string> {
+  const { data: rep } = await db
+    .from("conversion_representations")
+    .select("artifact_locator")
+    .eq("source_uid", sourceUid)
+    .eq("representation_type", representationType)
+    .maybeSingle();
+
+  if (!rep?.artifact_locator) {
+    throw new Error(
+      `No ${representationType} representation found for this document`,
+    );
+  }
+
+  const { data: fileData } = await db.storage
+    .from(DOCUMENTS_BUCKET)
+    .download(rep.artifact_locator);
+  if (!fileData) {
+    throw new Error(`Failed to download ${representationType} artifact`);
+  }
+
+  return fileData.text();
+}
+
+/** Validate page range and return clamped values. */
+function validatePageRange(
+  pageRange: { start: number; end: number } | undefined,
+  totalPages: number,
+): { start: number; end: number } {
+  const start = pageRange?.start ?? 1;
+  const end = pageRange?.end ?? totalPages;
+
+  if (start < 1) throw new Error("Page range start must be >= 1");
+  if (end < start)
+    throw new Error("Page range end must be >= start");
+  if (start > totalPages)
+    throw new Error(
+      `Page range start (${start}) exceeds document page count (${totalPages})`,
+    );
+
+  const clampedEnd = Math.min(end, totalPages);
+  const rangeSize = clampedEnd - start + 1;
+
+  if (rangeSize > MAX_RANGE_PAGES) {
+    throw new Error(
+      `Requested page range (${rangeSize} pages) exceeds maximum of ${MAX_RANGE_PAGES}. Narrow the page range.`,
+    );
+  }
+
+  return { start, end: clampedEnd };
 }
 
 Deno.serve(async (req: Request) => {
@@ -381,23 +689,23 @@ Deno.serve(async (req: Request) => {
     const body = await req.json();
     const {
       source_uid,
-      schema_uid,
+      schema_id,
       model = DEFAULT_MODEL,
       temperature = DEFAULT_TEMPERATURE,
       system_prompt = DEFAULT_SYSTEM_PROMPT,
       page_range,
     } = body as {
       source_uid: string;
-      schema_uid: string;
+      schema_id: string;
       model?: string;
       temperature?: number;
       system_prompt?: string;
       page_range?: { start: number; end: number };
     };
 
-    if (!source_uid || !schema_uid) {
+    if (!source_uid || !schema_id) {
       return new Response(
-        JSON.stringify({ error: "source_uid and schema_uid are required" }),
+        JSON.stringify({ error: "source_uid and schema_id are required" }),
         { status: 400, headers: { "Content-Type": "application/json" } },
       );
     }
@@ -408,7 +716,7 @@ Deno.serve(async (req: Request) => {
     const { data: schema, error: schemaErr } = await db
       .from("extraction_schemas")
       .select("*")
-      .eq("schema_uid", schema_uid)
+      .eq("schema_id", schema_id)
       .eq("owner_id", userId)
       .single();
     if (schemaErr || !schema) {
@@ -433,7 +741,9 @@ Deno.serve(async (req: Request) => {
     }
     if (doc.status !== "parsed") {
       return new Response(
-        JSON.stringify({ error: "Document must be parsed before extraction" }),
+        JSON.stringify({
+          error: "Document must be parsed before extraction",
+        }),
         { status: 400, headers: { "Content-Type": "application/json" } },
       );
     }
@@ -443,7 +753,7 @@ Deno.serve(async (req: Request) => {
       .from("extraction_jobs")
       .insert({
         owner_id: userId,
-        schema_uid,
+        schema_id,
         source_uid,
         status: "running",
         llm_provider: "vertex_ai",
@@ -463,71 +773,48 @@ Deno.serve(async (req: Request) => {
     const extractionTarget = schema.extraction_target as string;
 
     try {
-      // 4. Load document content
-      let contentPayloads: Array<{ pageNumber: number | null; text: string }>;
+      // 4. Load document content using correct artifact contract
+      let contentPayloads: Array<{
+        pageNumber: number | null;
+        text: string;
+      }>;
 
       if (extractionTarget === "document") {
-        // Document-level: load markdown from conversion_representations
-        const { data: rep } = await db
-          .from("conversion_representations")
-          .select("storage_path")
-          .eq("source_uid", source_uid)
-          .eq("rep_type", "markdown_bytes")
-          .single();
-
-        if (!rep?.storage_path) {
-          throw new Error("No markdown representation found for this document");
-        }
-
-        const { data: fileData } = await db.storage
-          .from("conversion-artifacts")
-          .download(rep.storage_path);
-        if (!fileData) throw new Error("Failed to download markdown");
-
-        const markdown = await fileData.text();
+        // Document-level: load markdown via representation_type + artifact_locator
+        const markdown = await loadArtifact(db, source_uid, "markdown_bytes");
         contentPayloads = [{ pageNumber: null, text: markdown }];
       } else {
         // Page-level: load DoclingDocument JSON and split by page
-        const { data: rep } = await db
-          .from("conversion_representations")
-          .select("storage_path")
-          .eq("source_uid", source_uid)
-          .eq("rep_type", "docling_document")
-          .single();
-
-        if (!rep?.storage_path) {
-          throw new Error("No DoclingDocument found for this document");
-        }
-
-        const { data: fileData } = await db.storage
-          .from("conversion-artifacts")
-          .download(rep.storage_path);
-        if (!fileData) throw new Error("Failed to download DoclingDocument");
-
-        const docJson = JSON.parse(await fileData.text());
+        const docJsonText = await loadArtifact(
+          db,
+          source_uid,
+          "doclingdocument_json",
+        );
+        const docJson = JSON.parse(docJsonText);
         const totalPages = getPageCount(docJson);
 
-        if (totalPages > MAX_PAGES) {
-          throw new Error(
-            `Document has ${totalPages} pages, maximum is ${MAX_PAGES} for page-level extraction`,
-          );
-        }
-
+        // Validate and clamp page range — cap on REQUESTED range, not total pages
+        const range = validatePageRange(page_range, totalPages);
         const pageTextMap = assemblePageText(docJson);
-        const startPage = page_range?.start ?? 1;
-        const endPage = page_range?.end ?? totalPages;
 
         contentPayloads = [];
-        for (let p = startPage; p <= endPage; p++) {
+        for (let p = range.start; p <= range.end; p++) {
           const text = pageTextMap.get(p);
           if (text) contentPayloads.push({ pageNumber: p, text });
+        }
+
+        if (contentPayloads.length === 0) {
+          throw new Error(
+            `No extractable content found in page range ${range.start}-${range.end}`,
+          );
         }
       }
 
       // 5. Call LLM for each content payload
       const tool = {
         name: "extract_fields",
-        description: "Extract structured data from the document content",
+        description:
+          "Extract structured data from the document content",
         input_schema: schema.schema_body,
       };
 
@@ -540,7 +827,7 @@ Deno.serve(async (req: Request) => {
       }> = [];
 
       for (const payload of contentPayloads) {
-        const llmResponse = await callVertexClaude({
+        const llmResponse = (await callVertexClaude({
           model,
           max_tokens: DEFAULT_MAX_TOKENS,
           temperature,
@@ -553,21 +840,32 @@ Deno.serve(async (req: Request) => {
           ],
           tools: [tool],
           tool_choice: { type: "tool", name: "extract_fields" },
-        }) as Record<string, unknown>;
+        })) as Record<string, unknown>;
 
         // Parse tool_use response
-        const content = llmResponse.content as Array<{
-          type: string;
-          input?: Record<string, unknown>;
-        }>;
+        const content = llmResponse.content as
+          | Array<{
+              type: string;
+              input?: Record<string, unknown>;
+            }>
+          | undefined;
         const toolUseBlock = content?.find((b) => b.type === "tool_use");
-        const extractedData = toolUseBlock?.input ?? {};
+
+        if (!toolUseBlock?.input) {
+          throw new Error(
+            `LLM did not return a tool_use response for page ${payload.pageNumber ?? "document"}`,
+          );
+        }
+
+        const extractedData = toolUseBlock.input;
 
         // Accumulate token usage
-        const usage = llmResponse.usage as {
-          input_tokens?: number;
-          output_tokens?: number;
-        } | undefined;
+        const usage = llmResponse.usage as
+          | {
+              input_tokens?: number;
+              output_tokens?: number;
+            }
+          | undefined;
         totalInputTokens += usage?.input_tokens ?? 0;
         totalOutputTokens += usage?.output_tokens ?? 0;
 
@@ -589,7 +887,8 @@ Deno.serve(async (req: Request) => {
             raw_response: r.raw_response,
           })),
         );
-      if (insertErr) throw new Error(`Failed to store results: ${insertErr.message}`);
+      if (insertErr)
+        throw new Error(`Failed to store results: ${insertErr.message}`);
 
       // 7. Update job to complete
       await db
@@ -633,7 +932,11 @@ Deno.serve(async (req: Request) => {
         .eq("job_id", job.job_id);
 
       return new Response(
-        JSON.stringify({ job_id: job.job_id, status: "failed", error: errorMsg }),
+        JSON.stringify({
+          job_id: job.job_id,
+          status: "failed",
+          error: errorMsg,
+        }),
         { status: 500, headers: { "Content-Type": "application/json" } },
       );
     }
@@ -655,7 +958,7 @@ Test with curl:
 curl -X POST https://<project-ref>.supabase.co/functions/v1/run-extract \
   -H "Authorization: Bearer <user-jwt>" \
   -H "Content-Type: application/json" \
-  -d '{"source_uid": "<parsed-doc-uid>", "schema_uid": "<saved-schema-uid>"}'
+  -d '{"source_uid": "<parsed-doc-uid>", "schema_id": "<saved-schema-id>"}'
 ```
 
 Expected: `{ "job_id": "...", "status": "complete", "results_count": 1 }`
@@ -680,7 +983,7 @@ git commit -m "feat: add run-extract edge function for structured extraction"
 **Step 1: Study the current visual field editor**
 
 Read these files to understand the duplicated UI patterns:
-- `web/src/pages/Schemas.tsx` — look for the `renderFieldRows` / field editor inline code
+- `web/src/pages/Schemas.tsx` — look for the field editor inline code
 - `web/src/pages/useExtractWorkbench.tsx` — look for the `ExtractSchemaTab` component
 
 Both render the same pattern:
@@ -730,10 +1033,10 @@ Implementation notes:
 //
 // Props:
 //   schemas: ExtractionSchemaRow[]
-//   selectedSchemaUid: string | null
-//   onSelect: (schemaUid: string) => void
+//   selectedSchemaId: string | null
+//   onSelect: (schemaId: string) => void
 //   onNew: () => void
-//   onDelete?: (schemaUid: string) => void
+//   onDelete?: (schemaId: string) => void
 //
 // Renders:
 //   - Ark UI Select dropdown listing saved schemas by name
@@ -785,7 +1088,6 @@ export function useExtractionSchemas(projectId: string | null) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch schemas for this project
   const fetchSchemas = useCallback(async () => {
     if (!projectId) { setSchemas([]); setLoading(false); return; }
     setLoading(true);
@@ -821,20 +1123,19 @@ export function useExtractionSchemas(projectId: string | null) {
     schemaBody: Record<string, unknown>,
     extractionTarget: 'page' | 'document' = 'document',
   ) => {
-    const schemaUid = await computeSchemaUid(schemaBody);
+    const bodyHash = await computeSchemaUid(schemaBody);
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
 
     const { data, error: err } = await supabase
       .from('extraction_schemas')
-      .upsert({
-        schema_uid: schemaUid,
+      .insert({
         owner_id: user.id,
         project_id: projectId,
         schema_name: schemaName,
         schema_body: schemaBody,
+        schema_body_hash: bodyHash,
         extraction_target: extractionTarget,
-        updated_at: new Date().toISOString(),
       })
       .select()
       .single();
@@ -843,21 +1144,29 @@ export function useExtractionSchemas(projectId: string | null) {
   }, [projectId]);
 
   const updateSchema = useCallback(async (
-    schemaUid: string,
+    schemaId: string,
     updates: Partial<Pick<ExtractionSchemaRow, 'schema_name' | 'schema_body' | 'extraction_target'>>,
   ) => {
+    const patchPayload: Record<string, unknown> = {
+      ...updates,
+      updated_at: new Date().toISOString(),
+    };
+    // Recompute body hash if schema_body changed
+    if (updates.schema_body) {
+      patchPayload.schema_body_hash = await computeSchemaUid(updates.schema_body);
+    }
     const { error: err } = await supabase
       .from('extraction_schemas')
-      .update({ ...updates, updated_at: new Date().toISOString() })
-      .eq('schema_uid', schemaUid);
+      .update(patchPayload)
+      .eq('schema_id', schemaId);
     if (err) throw new Error(err.message);
   }, []);
 
-  const deleteSchema = useCallback(async (schemaUid: string) => {
+  const deleteSchema = useCallback(async (schemaId: string) => {
     const { error: err } = await supabase
       .from('extraction_schemas')
       .delete()
-      .eq('schema_uid', schemaUid);
+      .eq('schema_id', schemaId);
     if (err) throw new Error(err.message);
   }, []);
 
@@ -923,7 +1232,7 @@ export function useExtractionJobs(sourceUid: string | null) {
 
   const submitExtraction = useCallback(async (params: {
     source_uid: string;
-    schema_uid: string;
+    schema_id: string;
     model?: string;
     temperature?: number;
     system_prompt?: string;
@@ -1012,16 +1321,19 @@ export const EXTRACT_DEFAULT_PANES: Pane[] = normalizePaneWidths([
 
 **Step 2: Wire up hooks and state**
 
-Add to the workbench hook:
+Add to the workbench hook, using `resolvedProjectId` (not `focusedProjectId`):
 
 ```typescript
 // Inside useExtractWorkbench():
-const { focusedProjectId } = useProjectFocus();
-const { docs } = useProjectDocuments(focusedProjectId);
-const parsedDocs = useMemo(() => docs.filter(d => d.status === 'parsed'), [docs]);
+const { resolvedProjectId } = useProjectFocus();
+const docState = useProjectDocuments(resolvedProjectId);
+const parsedDocs = useMemo(() =>
+  (docState.docs ?? []).filter(d => d.status === 'parsed'),
+  [docState.docs],
+);
 
 const [activeDocUid, setActiveDocUid] = useState<string | null>(null);
-const [activeSchemaUid, setActiveSchemaUid] = useState<string | null>(null);
+const [activeSchemaId, setActiveSchemaId] = useState<string | null>(null);
 const [fields, setFields] = useState<SchemaField[]>([]);
 const [schemaName, setSchemaName] = useState('Untitled Schema');
 const [extractionTarget, setExtractionTarget] = useState<'document' | 'page'>('document');
@@ -1034,7 +1346,7 @@ const [temperature, setTemperature] = useState(0.3);
 const [pageRangeStart, setPageRangeStart] = useState<number | null>(null);
 const [pageRangeEnd, setPageRangeEnd] = useState<number | null>(null);
 
-const { schemas, createSchema, updateSchema, deleteSchema } = useExtractionSchemas(focusedProjectId);
+const { schemas, createSchema, updateSchema, deleteSchema } = useExtractionSchemas(resolvedProjectId);
 const { jobs, submitExtraction, latestJob } = useExtractionJobs(activeDocUid);
 const { results } = useExtractionResults(latestJob?.job_id ?? null);
 ```
@@ -1047,14 +1359,14 @@ For each tab in `renderContent(tabId)`:
 
 **`extract-schema`**: Render `SchemaSelector` at top + `SchemaFieldEditor` below. Include extraction target toggle (Document / Page) as a segmented control. Save button calls `createSchema(schemaName, buildObjectSchema(fields), extractionTarget)`.
 
-**`extract-config`**: Basic section: model selector dropdown (hardcoded options for now: `claude-sonnet-4-5-20250929`, `claude-haiku-3-5-20241022`). Advanced accordion (Ark UI `Collapsible`): system prompt textarea, page range inputs (only when target is `page`), temperature slider. "Run Extraction" button — disabled until both `activeDocUid` and `activeSchemaUid` are set. On click:
+**`extract-config`**: Basic section: model selector dropdown (hardcoded options: `claude-sonnet-4-5-20250929`, `claude-haiku-3-5-20241022`). Advanced accordion (Ark UI `Collapsible`): system prompt textarea, page range inputs (only when target is `page`), temperature slider. "Run Extraction" button — disabled until both `activeDocUid` and `activeSchemaId` are set. On click:
 
 ```typescript
 const handleRunExtraction = async () => {
-  if (!activeDocUid || !activeSchemaUid) return;
+  if (!activeDocUid || !activeSchemaId) return;
   await submitExtraction({
     source_uid: activeDocUid,
-    schema_uid: activeSchemaUid,
+    schema_id: activeSchemaId,
     model,
     temperature,
     system_prompt: systemPrompt || undefined,
@@ -1068,6 +1380,7 @@ const handleRunExtraction = async () => {
 **`extract-results`**: If `latestJob?.status === 'running'`, show spinner. If `complete`, render results:
 - Document-level (single result): field/value card
 - Page-level (multiple results): accordion per page, each showing field/value pairs
+- If `latestJob?.status === 'failed'`, show error message from `latestJob.error`
 Empty state when no job has been run.
 
 **`extract-json`**: Monaco editor in read-only mode showing `JSON.stringify(results.map(r => r.extracted_data), null, 2)`.
@@ -1079,6 +1392,7 @@ Empty state when no job has been run.
 3. Select a doc + schema → Run Extraction → confirm spinner, then results.
 4. Check the JSON tab shows raw extracted data.
 5. Re-run → confirm a new job is created.
+6. Page-level → confirm per-page accordion with page range validation.
 
 **Step 5: Commit**
 
@@ -1097,7 +1411,7 @@ git commit -m "feat: overhaul extract workbench with schema builder, config, and
 **Goal:** AI-powered schema suggestion. Given a parsed document, use the LLM to analyze its content and suggest a JSON Schema. Lower priority than the core extraction loop.
 
 **Flow:**
-1. Load markdown for `source_uid` (first 32000 chars / ~8000 tokens)
+1. Load markdown for `source_uid` (first 32000 chars / ~8000 tokens) using `loadArtifact(db, source_uid, "markdown_bytes")`
 2. Call `callVertexClaude` with prompt: "Analyze this document and suggest a JSON Schema for extracting its key structured data. Return only a valid JSON Schema object."
 3. Parse the tool_use response as a JSON Schema
 4. Return to frontend, which loads it via `parseObjectSchemaToFields()`
@@ -1113,31 +1427,56 @@ Task 1 (DB Migration)
   │
   ├── Task 2 (TypeScript Types)
   │
-  ├── Task 3 (Page Text Helper) ──────┐
-  │                                    │
-  ├── Task 4 (Edge Function) ─────────┤
-  │                                    │
-  ├── Task 5 (Shared Components) ─────┤
-  │                                    │
-  ├── Task 6 (Schema CRUD Hook) ──────┤
-  │                                    │
-  ├── Task 7 (Job & Results Hooks) ───┤
-  │                                    │
-  └────────────────────────────────────┴── Task 8 (Workbench Overhaul)
-                                               │
-                                               └── Task 9 (AI Schema Suggest, optional)
+  ├── Task 3 (Page Text Helper + Tests) ──┐
+  │                                        │
+  ├── Task 4 (Edge Function) ─────────────┤
+  │                                        │
+  ├── Task 5 (Shared Components) ─────────┤
+  │                                        │
+  ├── Task 6 (Schema CRUD Hook) ──────────┤
+  │                                        │
+  ├── Task 7 (Job & Results Hooks) ───────┤
+  │                                        │
+  └────────────────────────────────────────┴── Task 8 (Workbench Overhaul)
+                                                   │
+                                                   └── Task 9 (AI Schema Suggest, optional)
 ```
 
 Tasks 2-7 can proceed in parallel after Task 1. Task 8 requires all of 2-7.
 
 ---
 
+## Automated Test Requirements
+
+Each task below must have passing tests before the task is considered complete.
+
+### Task 3: Page text helper
+- **File:** `supabase/functions/_shared/docling_page_text.test.ts`
+- Tests: page grouping, table reconstruction from `table_cells`, furniture traversal, empty document, `getPageCount`
+- Run: `cd supabase && deno test functions/_shared/docling_page_text.test.ts`
+
+### Task 4: Edge function
+- **File:** `supabase/functions/run-extract/index.test.ts`
+- Test paths: success (document-level), success (page-level), missing artifact (404), invalid page range (400), `start > totalPages` (400), oversized page request (400), empty range result (400), LLM failure (500 with sanitized error)
+
+### Task 6: Schema CRUD hook
+- **File:** `web/src/hooks/useExtractionSchemas.test.ts`
+- Test: create schema returns UUID `schema_id` (not body hash), two schemas with same body but different names are distinct records, update preserves `schema_id`, delete removes record
+
+### Task 8: Workbench
+- **File:** `web/src/pages/ExtractWorkbench.test.tsx`
+- Test: parsed-only filter excludes unparsed docs, schema save/select round-trip, "Run Extraction" button disabled when no schema or doc selected, results rendering for document-level (single card) and page-level (accordion), failed job shows error message
+
+---
+
 ## Verification Checklist
 
 ### Happy Path
-- [ ] Apply migration — tables exist, RLS active
-- [ ] Create schema via UI — appears in DB and schema selector
+- [ ] Apply migration — tables exist, RLS active, indexes created
+- [ ] Create schema via UI — UUID PK generated, appears in selector
+- [ ] Two schemas with same body but different names — both save successfully
 - [ ] Select parsed document + schema → Run Extraction → results render
+- [ ] Page-level extraction with range 1-5 on a 200-page doc → succeeds (not rejected)
 - [ ] Page-level extraction → per-page accordion in results
 - [ ] JSON tab shows raw extracted data
 - [ ] Re-run same extraction → new job created (not deduped)
@@ -1145,13 +1484,21 @@ Tasks 2-7 can proceed in parallel after Task 1. Task 8 requires all of 2-7.
 ### Failure Modes
 - [ ] Unparsed documents do not appear in Extract file list
 - [ ] Run extraction without schema selected → button disabled
-- [ ] Document with >50 pages in page mode → 400 error with clear message
+- [ ] Page range 1-60 → 400 error "exceeds maximum of 50"
+- [ ] Page range start=5, end=3 → 400 error "end must be >= start"
+- [ ] Page range start=100 on 10-page doc → 400 error "exceeds document page count"
+- [ ] Valid range with no content → 400 error "No extractable content found"
 - [ ] LLM error → job status `failed`, error displayed in UI, no key material in error
 
 ### Security
 - [ ] No API key material in `extraction_jobs` rows
 - [ ] RLS prevents cross-user access to schemas/jobs/results
 - [ ] Error messages sanitized (no Bearer tokens, no key values)
+
+### Automated Tests
+- [ ] `docling_page_text.test.ts` — all tests pass
+- [ ] Edge function test paths validated
+- [ ] Schema CRUD: UUID identity, no cross-user collision
 
 ---
 
@@ -1161,11 +1508,15 @@ Tasks 2-7 can proceed in parallel after Task 1. Task 8 requires all of 2-7.
 |---------|------|
 | Vertex Claude transport (reuse) | `supabase/functions/_shared/vertex_claude.ts` |
 | Vertex auth (reuse) | `supabase/functions/_shared/vertex_auth.ts` |
+| Representation types (contract) | `supabase/functions/_shared/representation.ts` |
 | Schema helpers (reuse) | `web/src/lib/extractionSchemaHelpers.ts` |
 | Docling native items (pattern for page text) | `web/src/lib/doclingNativeItems.ts` |
+| Parse artifact loader (pattern) | `web/src/pages/parseArtifacts.ts` |
 | Parse workbench (pattern) | `web/src/pages/useParseWorkbench.tsx` |
+| Project focus hook (use resolvedProjectId) | `web/src/hooks/useProjectFocus.ts` |
 | Workbench component (layout) | `web/src/components/workbench/Workbench.tsx` |
 | Extract workbench (overhaul target) | `web/src/pages/useExtractWorkbench.tsx` |
 | Schemas page (refactor target) | `web/src/pages/Schemas.tsx` |
 | TypeScript types (extend) | `web/src/lib/types.ts` |
 | Trigger-parse edge fn (auth pattern) | `supabase/functions/trigger-parse/index.ts` |
+| Published docs site | `web-docs/src/content/docs/` |

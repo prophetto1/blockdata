@@ -64,6 +64,7 @@ export const TOP_LEVEL_NAV: Array<NavItem | 'divider'> = [
   { label: 'Assets', icon: IconFolder, path: '/app/assets' },
   { label: 'Parse', icon: IconScan, path: '/app/parse' },
   { label: 'Extract', icon: IconWand, path: '/app/extract' },
+  { label: 'Transform', icon: IconArrowsShuffle, path: '/app/transform' },
   { label: 'RAG', icon: IconTransform, path: '/app/rag' },
   'divider',
   { label: 'Flows', icon: IconFolderPlus, path: '/app/flows', drillId: 'flows' },
