@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { IconEdit, IconEye, IconChevronRight } from '@tabler/icons-react';
+import { IconChevronRight } from '@tabler/icons-react';
 import { JsonTreeView } from '@ark-ui/react/json-tree-view';
 import ReactMarkdown from 'react-markdown';
 import remarkFrontmatter from 'remark-frontmatter';
@@ -7,7 +7,6 @@ import remarkGfm from 'remark-gfm';
 import { PdfResultsHighlighter } from '@/components/documents/PdfResultsHighlighter';
 import { PdfjsExpressPreview } from '@/components/documents/PdfjsExpressPreview';
 import { DocxPreview } from '@/components/documents/DocxPreview';
-import { OnlyOfficeEditorPanel } from '@/components/documents/OnlyOfficeEditorPanel';
 import { PptxPreview } from '@/components/documents/PptxPreview';
 import {
   DocumentPreviewFrame,
@@ -49,8 +48,6 @@ export function PreviewTabPanel({
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewError, setPreviewError] = useState<string | null>(null);
   const [pdfPreviewMode, setPdfPreviewMode] = useState<'file' | 'parsed'>('file');
-  const [editMode, setEditMode] = useState(false);
-  const [previewRevision, setPreviewRevision] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -64,7 +61,6 @@ export function PreviewTabPanel({
         setPreviewError(null);
         setPreviewLoading(false);
         setPdfPreviewMode('file');
-        setEditMode(false);
         return;
       }
 
@@ -74,7 +70,6 @@ export function PreviewTabPanel({
       setParsedPreviewUrl(null);
       setPreviewText(null);
       setPdfPreviewMode('file');
-      setEditMode(false);
 
       const { url: signedUrl, error: signedUrlError } = await resolveSignedUrlForLocators([
         doc.source_locator,
@@ -229,22 +224,6 @@ export function PreviewTabPanel({
     </DocumentPreviewStandardContent>
   );
 
-  const renderEditToggle = () => (
-    <button
-      type="button"
-      aria-pressed={editMode}
-      onClick={() => {
-        setEditMode((prev) => {
-          if (prev) setPreviewRevision((r) => r + 1);
-          return !prev;
-        });
-      }}
-      className="inline-flex h-8 items-center gap-1.5 rounded-md border border-border px-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
-    >
-      {editMode ? <><IconEye size={14} /> Preview</> : <><IconEdit size={14} /> Edit</>}
-    </button>
-  );
-
   if (!doc) {
     return (
       <DocumentPreviewFrame>
@@ -360,57 +339,39 @@ export function PreviewTabPanel({
 
   if (previewKind === 'xlsx' && previewUrl) {
     return renderPreviewWithUnifiedHeader(
-      editMode ? (
-        <OnlyOfficeEditorPanel key={doc.source_uid} doc={doc} />
-      ) : (
-        <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
-          Click Edit to open in spreadsheet editor.
-        </div>
-      ),
+      <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
+        Spreadsheet editing is no longer available.
+      </div>,
       {
         downloadUrl: showHeaderDownload ? previewUrl : null,
-        useScrollArea: editMode ? false : undefined,
-        headerActions: renderEditToggle(),
       },
     );
   }
 
   if (previewKind === 'docx' && previewUrl) {
     return renderPreviewWithUnifiedHeader(
-      editMode ? (
-        <OnlyOfficeEditorPanel key={doc.source_uid} doc={doc} />
-      ) : (
-        <DocxPreview
-          key={`${doc.source_uid}:${previewUrl}:${previewRevision}`}
-          title={doc.doc_title}
-          url={previewUrl}
-          hideToolbar
-        />
-      ),
+      <DocxPreview
+        key={`${doc.source_uid}:${previewUrl}`}
+        title={doc.doc_title}
+        url={previewUrl}
+        hideToolbar
+      />,
       {
         downloadUrl: showHeaderDownload ? previewUrl : null,
-        useScrollArea: editMode ? false : undefined,
-        headerActions: renderEditToggle(),
       },
     );
   }
 
   if (previewKind === 'pptx' && previewUrl) {
     return renderPreviewWithUnifiedHeader(
-      editMode ? (
-        <OnlyOfficeEditorPanel key={doc.source_uid} doc={doc} />
-      ) : (
-        <PptxPreview
-          key={`${doc.source_uid}:${previewUrl}:${previewRevision}`}
-          title={doc.doc_title}
-          url={previewUrl}
-          hideHeaderMeta
-        />
-      ),
+      <PptxPreview
+        key={`${doc.source_uid}:${previewUrl}`}
+        title={doc.doc_title}
+        url={previewUrl}
+        hideHeaderMeta
+      />,
       {
         downloadUrl: showHeaderDownload ? previewUrl : null,
-        useScrollArea: editMode ? false : undefined,
-        headerActions: renderEditToggle(),
       },
     );
   }

@@ -280,10 +280,6 @@ export function isXlsxDocument(doc: ProjectDocumentRow): boolean {
   return XLSX_EXTENSIONS.has(getSourceLocatorExtension(doc));
 }
 
-export function isOnlyOfficeEditable(doc: ProjectDocumentRow): boolean {
-  return isDocxDocument(doc) || isXlsxDocument(doc) || isPptxDocument(doc);
-}
-
 export function getDocumentFormat(doc: ProjectDocumentRow): string {
   const type = typeof doc.source_type === 'string' ? doc.source_type.trim().toLowerCase() : '';
   const locatorExtension = getExtension(doc.source_locator ?? '');

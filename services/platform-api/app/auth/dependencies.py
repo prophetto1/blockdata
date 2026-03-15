@@ -1,14 +1,35 @@
-"""FastAPI auth dependencies — M2M bearer, legacy header, and Supabase JWT auth."""
+"""FastAPI auth dependencies — M2M bearer, legacy header, and Supabase JWT auth.
+
+Security schemes are declared as module-level objects so OpenAPI documents
+them automatically. require_auth consumes them via Security(), which means
+any route using Depends(require_auth) or Depends(require_role(...)) inherits
+the security metadata in the OpenAPI spec through the dependency chain.
+"""
 
 import logging
 from typing import Any, Callable
 
-from fastapi import Depends, Header, HTTPException, Request
+from fastapi import Depends, HTTPException, Security
+from fastapi.security import APIKeyHeader, HTTPAuthorizationCredentials, HTTPBearer
 
 from app.auth.principals import AuthPrincipal
 from app.core.config import get_settings
 
 logger = logging.getLogger("platform-api.auth")
+
+# ---------------------------------------------------------------------------
+#  OpenAPI security scheme declarations
+# ---------------------------------------------------------------------------
+
+bearer_scheme = HTTPBearer(
+    auto_error=False,
+    description="M2M token or Supabase JWT",
+)
+api_key_scheme = APIKeyHeader(
+    name="X-Conversion-Service-Key",
+    auto_error=False,
+    description="Deprecated. Legacy machine-to-machine key — use Bearer token instead.",
+)
 
 
 class SupabaseAuthConfigError(RuntimeError):
@@ -81,23 +102,22 @@ def _check_superuser(email: str) -> bool:
 
 
 async def require_auth(
-    request: Request,
-    authorization: str | None = Header(default=None),
-    x_conversion_service_key: str | None = Header(default=None),
+    bearer_creds: HTTPAuthorizationCredentials | None = Security(bearer_scheme),
+    api_key: str | None = Security(api_key_scheme),
 ) -> AuthPrincipal:
     """Authenticate via Bearer token (M2M or JWT) or legacy X-Conversion-Service-Key header.
 
     Auth resolution order:
-    1. Bearer token that exactly matches PLATFORM_API_M2M_TOKEN → machine M2M
-    2. Bearer token that does NOT match M2M → validate as Supabase JWT
-    3. X-Conversion-Service-Key header → legacy machine auth
-    4. No credentials → 401
+    1. Bearer token that exactly matches PLATFORM_API_M2M_TOKEN -> machine M2M
+    2. Bearer token that does NOT match M2M -> validate as Supabase JWT
+    3. X-Conversion-Service-Key header -> legacy machine auth (deprecated)
+    4. No credentials -> 401
     """
     settings = get_settings()
 
     # --- Path 1 & 2: Bearer token ---
-    if authorization and authorization.lower().startswith("bearer "):
-        token = authorization[7:].strip()
+    if bearer_creds is not None:
+        token = bearer_creds.credentials
 
         # Path 1: M2M bearer (exact match)
         if settings.platform_api_m2m_token and token == settings.platform_api_m2m_token:
@@ -137,9 +157,9 @@ async def require_auth(
             email=email,
         )
 
-    # --- Path 3: Legacy header ---
-    if x_conversion_service_key:
-        if settings.conversion_service_key and x_conversion_service_key == settings.conversion_service_key:
+    # --- Path 3: Legacy header (deprecated) ---
+    if api_key:
+        if settings.conversion_service_key and api_key == settings.conversion_service_key:
             return AuthPrincipal(
                 subject_type="machine",
                 subject_id="legacy-caller",

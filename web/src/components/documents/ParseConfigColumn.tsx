@@ -258,6 +258,12 @@ export function ParseConfigColumn({
                 >
                   Cancel
                 </ActionButton>
+                <ActionButton
+                  disabled={batch.progress.errors === 0}
+                  onClick={batch.retryFailed}
+                >
+                  Retry Failed ({batch.progress.errors})
+                </ActionButton>
               </div>
             </div>
           </div>

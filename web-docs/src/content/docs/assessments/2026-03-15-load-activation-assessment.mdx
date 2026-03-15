@@ -1,0 +1,189 @@
+---
+title: Load Activation Plan Assessment
+description: Quality gate assessment for the March 15, 2026 load activation implementation plan.
+---
+
+# Load Activation Plan Assessment
+
+- Source plan: `docs/plans/2026-03-15-load-activation.md`
+- Date reviewed: `2026-03-15`
+- Reviewer: `Codex`
+- Verdict: `Fail`
+
+## Executive Summary
+
+This revision is materially better than the earlier draft. It fixes several problems that previously blocked implementation:
+
+- `_maybe_finalize_run()` now uses persisted counts instead of the leaked `objects` local and guards against concurrent `running` items before finalizing.
+- Artifact cleanup is now implemented in the route instead of importing a missing helper.
+- The sample FastAPI tests now use `dependency_overrides`, which matches how FastAPI actually resolves dependencies.
+- The migration now publishes both `service_runs` and `service_run_items` to Realtime and backfills `execution_plane` more completely.
+
+Those changes remove several earlier blockers, but the plan is still not implementation-ready. The remaining gaps are smaller in number and more concrete, but they are still serious:
+
+- the project authorization model is inconsistent and currently unsafe
+- user-scoped FastAPI routes still accept machine auth even though they write UUID user foreign keys
+- the router registration step is still ambiguous around the existing catch-all plugin route
+- the submit path still has a multi-write consistency gap
+
+## Findings By Severity
+
+### Critical
+
+#### 1. Project authorization is still inconsistent and unsafe
+
+The migration defines project-aware visibility for runs and items:
+
+- `docs/plans/2026-03-15-load-activation.md:670-671`
+- `docs/plans/2026-03-15-load-activation.md:733-734`
+
+But the route implementation does not apply a single consistent rule:
+
+- `submit_load()` accepts any caller-supplied `project_id` and writes it with the service-role client, with no ownership check: `docs/plans/2026-03-15-load-activation.md:1511-1575`
+- `step_load()` and `get_load_run()` then authorize only on `created_by == auth.user_id`, not the project-owner path encoded in the policies: `docs/plans/2026-03-15-load-activation.md:1604-1609`, `docs/plans/2026-03-15-load-activation.md:1699-1705`
+
+That leaves the plan with two incompatible models at once:
+
+- project owners are part of the database visibility model
+- only the run creator is part of the route-level execution model
+
+It also means a caller can attach a run to an arbitrary `project_id` without the route proving they own that project first.
+
+Required change:
+
+- Decide whether load runs are `creator-owned` or `project-owned`.
+- If they are creator-owned, remove the project-owner branch from the RLS design for this feature.
+- If they are project-owned, add an explicit project ownership check in `submit_load()` and align `step_load()` and `get_load_run()` with that same rule before any service-role read or write.
+
+#### 2. User-scoped FastAPI routes still allow machine auth even though they write UUID user foreign keys
+
+The current auth layer returns a machine principal with `subject_id = "m2m-caller"` for M2M bearer auth:
+
+- `services/platform-api/app/auth/dependencies.py:122-129`
+
+But the new plan writes `auth.user_id` into UUID user columns:
+
+- `user_provider_connections.user_id UUID NOT NULL REFERENCES auth.users(id)`: `supabase/migrations/20260213181000_022_provider_connections.sql:3-15`
+- `service_runs.created_by uuid REFERENCES auth.users(id)`: `docs/plans/2026-03-15-load-activation.md:717-721`
+- connection route write path: `docs/plans/2026-03-15-load-activation.md:448-465`
+- load-run write path: `docs/plans/2026-03-15-load-activation.md:1556-1565`
+
+The plan currently uses `require_auth`, not a user-only dependency, for both `/connections/*` and `/load-runs*`.
+
+That makes the route contract ambiguous and runtime-fragile. A machine-authenticated call is not a supported subject for these user-owned rows.
+
+Required change:
+
+- Gate `/connections/*` and `/load-runs*` to `subject_type == "user"`, or
+- define a separate machine-compatible ownership model instead of writing machine sentinel IDs into user foreign keys.
+
+### Major
+
+#### 3. The router registration step is still not implementation-safe
+
+The plan says to add:
+
+- `from .api.routes.load_runs import router as load_runs_router`
+- `app.include_router(load_runs_router)`
+
+Trace:
+
+- `docs/plans/2026-03-15-load-activation.md:1709-1716`
+
+But `platform-api` already has a catch-all plugin route and explicitly documents that it must remain last:
+
+- `services/platform-api/app/main.py:49-77`
+
+Because the plugin executor handles `POST /{function_name}`, `POST /load-runs` can be swallowed if `load_runs_router` is mounted after the plugin router.
+
+Required change:
+
+- State the exact insertion point in `main.py`: mount `load_runs_router` before `plugin_router`.
+- Add a route-level test that proves `POST /load-runs` resolves to the load route, not the plugin executor.
+
+#### 4. The submit path still has a write-consistency gap
+
+`submit_load()` performs two separate writes:
+
+- insert the parent `service_runs` row with `rows_affected = len(objects)`
+- insert the child `service_run_items` rows
+
+Trace:
+
+- `docs/plans/2026-03-15-load-activation.md:1556-1587`
+
+There is still no transaction or compensating cleanup around that sequence. If the run insert succeeds and the item insert fails, the plan leaves behind a pending run whose persisted total does not match reality.
+
+That problem matters more now because `_maybe_finalize_run()` correctly trusts persisted totals.
+
+Required change:
+
+- Make run creation and item creation atomic, preferably through a database function or other single-transaction boundary, or
+- add explicit compensation logic that marks the run failed and cleans up partial state if item creation fails.
+
+#### 5. Verification is more honest now, but it still under-specifies route happy-path coverage
+
+The plan now correctly says `tests/test_load_runs.py` covers the guard rails and `_maybe_finalize_run()` helper rather than the full route chain:
+
+- `docs/plans/2026-03-15-load-activation.md:1720-1823`
+- `docs/plans/2026-03-15-load-activation.md:1913`
+
+That is a good correction, but it still leaves the implementation plan without a concrete automated task for:
+
+- successful `submit_load()` creation
+- successful `step_load()` processing through the plugin chain
+- successful artifact cleanup on full completion
+
+The verification section mentions manual or integration checks later:
+
+- `docs/plans/2026-03-15-load-activation.md:1917-1919`
+
+But there is no explicit implementation task to add those tests.
+
+Required change:
+
+- Add at least one integration-style test task for the `submit -> step -> finalize` path with mocked plugins and storage cleanup, or
+- narrow the success criteria so the plan does not imply stronger automated coverage than it creates.
+
+## What Improved In This Revision
+
+- Finalization logic now uses persisted run state and checks both `pending` and `running` items before stamping a terminal status.
+- Artifact cleanup now exists as concrete code in the route draft.
+- The connection and load-runs tests now use `dependency_overrides`, which is the correct FastAPI testing pattern.
+- The verification section no longer claims that the load-runs unit suite covers submit, step, claim, and complete behavior end to end.
+- The earlier Realtime and `execution_plane` omissions have been addressed in the migration text.
+
+## Required Changes Before Implementation
+
+1. Choose one ownership model for load runs and apply it consistently across RLS, route authorization, and `project_id` handling.
+2. Restrict `/connections/*` and `/load-runs*` to authenticated user principals, or design a real machine-compatible ownership path.
+3. Specify the exact router-mounting order in `services/platform-api/app/main.py`.
+4. Make `submit_load()` atomic or add compensation for partial parent/child writes.
+5. Add a concrete integration-style verification task for the route happy path and cleanup path.
+
+## Verification Expectations
+
+The verification section should prove these cases before the plan is considered complete:
+
+- reject `project_id` values the caller does not own
+- reject machine-authenticated calls to user-scoped routes, or prove a supported machine path
+- confirm `POST /load-runs` resolves to the load route and not `POST /{function_name}`
+- verify `submit_load()` does not leave an orphaned run when item creation fails
+- verify successful `submit -> step -> finalize -> cleanup` behavior in at least one automated test path
+
+## Go / No-Go Recommendation
+
+`No-go` in the current form.
+
+This is close enough that the next revision could plausibly earn a `Conditional Pass`. The plan no longer has broad architectural drift or obviously broken orchestration math. What still blocks it is a smaller set of concrete execution details:
+
+- route-level authorization must match the intended ownership model
+- user-only tables and columns need a user-only auth contract
+- the route must be mounted safely around the existing catch-all plugin endpoint
+- submit-time writes need an atomicity story
+
+Once those are tightened, this becomes a strong vertical-slice implementation plan.
+
+## Docs Navigation Note
+
+This assessment is published under `web-docs/src/content/docs/assessments/`. No sidebar code change was required because the docs site already includes `assessments` in `web-docs/src/lib/docs/sidebar-order.mjs`.

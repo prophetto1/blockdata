@@ -160,6 +160,7 @@ const SUPERUSER_DRILL: NavDrillConfig = {
         { label: 'Instance Config', icon: IconServer, path: '/app/superuser/instance-config' },
         { label: 'Worker Config', icon: IconServer, path: '/app/superuser/worker-config' },
         { label: 'Audit History', icon: IconClipboardList, path: '/app/superuser/audit' },
+        { label: 'API Endpoints', icon: IconCode, path: '/app/superuser/api-endpoints' },
       ],
     },
   ],

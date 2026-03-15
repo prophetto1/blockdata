@@ -1,7 +1,6 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import ProjectAssetsPage from './ProjectAssetsPage';
-import DocsEditor from './DocsEditor';
 import { fetchAllProjectDocuments } from '@/lib/projectDocuments';
 
 vi.mock('@/components/common/useShellHeaderTitle', () => ({
@@ -28,12 +27,6 @@ vi.mock('@/components/documents/ProjectParseUppyUploader', () => ({
     <button type="button" onClick={() => void onBatchUploaded?.()}>
       Simulate upload
     </button>
-  ),
-}));
-
-vi.mock('@/components/documents/OnlyOfficeEditorPanel', () => ({
-  OnlyOfficeEditorPanel: ({ doc }: { doc: { doc_title: string } }) => (
-    <div data-testid="onlyoffice-editor">{doc.doc_title}</div>
   ),
 }));
 
@@ -74,29 +67,21 @@ describe('project asset surfaces', () => {
     fetchAllProjectDocumentsMock.mockReset();
   });
 
-  it('refreshes the docs editor when the project assets page uploads a file', async () => {
+  it('refreshes project assets when the upload surface reports a new file', async () => {
     fetchAllProjectDocumentsMock
-      .mockResolvedValueOnce([originalDoc])
       .mockResolvedValueOnce([originalDoc])
       .mockResolvedValueOnce([uploadedDoc, originalDoc]);
 
-    render(
-      <>
-        <ProjectAssetsPage />
-        <DocsEditor />
-      </>,
-    );
+    render(<ProjectAssetsPage />);
 
     expect(await screen.findByText('Original Draft.docx')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Simulate upload' }));
 
     await waitFor(() => {
-      expect(fetchAllProjectDocumentsMock).toHaveBeenCalledTimes(3);
+      expect(fetchAllProjectDocumentsMock).toHaveBeenCalledTimes(2);
     });
 
-    await waitFor(() => {
-      expect(screen.getAllByText('Uploaded Notes.docx').length).toBeGreaterThan(1);
-    });
+    expect(await screen.findByText('Uploaded Notes.docx')).toBeInTheDocument();
   });
 });
