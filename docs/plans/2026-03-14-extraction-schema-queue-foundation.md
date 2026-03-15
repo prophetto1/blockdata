@@ -65,7 +65,13 @@ CREATE POLICY extraction_schemas_insert_own ON extraction_schemas
     ))
   );
 CREATE POLICY extraction_schemas_update_own ON extraction_schemas
-  FOR UPDATE USING (owner_id = auth.uid());
+  FOR UPDATE USING (owner_id = auth.uid())
+  WITH CHECK (
+    owner_id = auth.uid()
+    AND (project_id IS NULL OR project_id IN (
+      SELECT project_id FROM projects WHERE owner_id = auth.uid()
+    ))
+  );
 CREATE POLICY extraction_schemas_delete_own ON extraction_schemas
   FOR DELETE USING (owner_id = auth.uid());
 
