@@ -70,6 +70,7 @@ export const TOP_LEVEL_NAV: Array<NavItem | 'divider'> = [
   { label: 'Flows', icon: IconFolderPlus, path: '/app/flows', drillId: 'flows' },
   'divider',
   { label: 'Database', icon: IconDatabase, path: '/app/database' },
+  { label: 'Load', icon: IconPlayerPlay, path: '/app/load' },
   { label: 'Schema', icon: IconSchema, path: '/app/schemas' },
   'divider',
   { label: 'Integrations', icon: IconApps, path: '/app/marketplace/integrations' },

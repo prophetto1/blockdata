@@ -34,6 +34,7 @@ import ProjectAssetsPage from '@/pages/ProjectAssetsPage';
 import ParsePage from '@/pages/ParsePage';
 import ExtractPage from '@/pages/ExtractPage';
 import TransformPage from '@/pages/TransformPage';
+import LoadPage from '@/pages/LoadPage';
 import AppHome from '@/pages/AppHome';
 import EarlyAccess from '@/pages/EarlyAccess';
 import ProjectsHome from '@/pages/ProjectsHome';
@@ -177,6 +178,9 @@ export const router = createBrowserRouter([
           { path: '/app/schemas/advanced/:schemaId', element: <Navigate to="/app/schemas" replace /> },
           // API Editor (Scalar playground)
           { path: '/app/api-editor', element: <ScalarApiPlaygroundPage /> },
+
+          // Load (GCS → ArangoDB wizard)
+          { path: '/app/load', element: <LoadPage /> },
 
           // Settings (API keys, model defaults, MCP)
           {
