@@ -1,0 +1,296 @@
+---
+title: Structured Extraction Plan Assessment
+description: Quality gate assessment for the March 14, 2026 structured extraction implementation plan.
+---
+
+# Structured Extraction Plan Assessment
+
+- Source plan: `docs/plans/2026-03-14-extract-structured-extraction.md`
+- Date reviewed: `2026-03-14`
+- Reviewer: `Codex`
+- Verdict: `Fail`
+
+## Executive Summary
+
+Revision 2 is materially better than the earlier draft. It fixes the artifact-contract mismatch, moves schema identity to a UUID primary key, aligns page-text assembly with the live Docling structure, keeps `resolvedProjectId`, and adds explicit automated test expectations. Those were the right corrections.
+
+The plan is still not execution-ready. The remaining issues are no longer basic repo mismatches; they are execution, contract, and lifecycle gaps that would surface during implementation or first use. The largest blockers are:
+
+- the `run-extract` API contract contradicts its own validation/test expectations
+- `run-extract` is designed as a synchronous LLM execution endpoint when it should be a validate-and-queue job API
+- the schema selection/save/delete lifecycle is not fully specified for the workbench
+- the proposed model picker is already out of sync with the platform's current extraction-model surfaces
+
+## Source Inputs Reviewed
+
+### Plan and docs
+
+- `docs/plans/2026-03-14-extract-structured-extraction.md`
+- `web-docs/src/content/docs/assessments/2026-03-14-extract-structured-extraction-assessment.mdx`
+- `web-docs/src/lib/docs/sidebar-order.mjs`
+
+### Live repo sources
+
+- `supabase/functions/_shared/representation.ts`
+- `supabase/functions/conversion-complete/index.ts`
+- `supabase/functions/_shared/supabase.ts`
+- `supabase/functions/_shared/vertex_claude.ts`
+- `supabase/functions/_shared/vertex_auth.ts`
+- `web/src/pages/parseArtifacts.ts`
+- `web/src/lib/doclingNativeItems.ts`
+- `web/src/lib/extractionSchemaHelpers.ts`
+- `web/src/hooks/useProjectFocus.ts`
+- `web/src/pages/useExtractWorkbench.tsx`
+- `web/src/pages/useExtractWorkbench.test.ts`
+- `web/src/pages/Schemas.tsx`
+- `web/src/pages/Schemas.test.tsx`
+- `web/src/pages/settings/SettingsProviderForm.tsx`
+- `supabase/migrations/20260228120000_057_model_roles_and_embedding_providers.sql`
+- `supabase/migrations/20260209201249_008_projects.sql`
+
+### External runtime guidance
+
+- [Supabase Edge Functions Overview](https://supabase.com/docs/guides/functions)
+- [Supabase Edge Functions Limits](https://supabase.com/docs/guides/functions/limits)
+
+## What Revision 2 Correctly Fixes
+
+The following previously-blocking issues are now corrected in the plan and verified against the repo:
+
+- The artifact contract now matches the live parse pipeline: `representation_type`, `artifact_locator`, `doclingdocument_json`, and the `documents` bucket are all consistent with `supabase/functions/_shared/representation.ts`, `supabase/functions/conversion-complete/index.ts`, and `web/src/pages/parseArtifacts.ts`.
+- Schema identity now uses a UUID row key instead of the body hash as the primary key. That resolves the original saved-schema collision problem.
+- The page-text helper design now mirrors the live Docling walker pattern in `web/src/lib/doclingNativeItems.ts`, including `self_ref` resolution, `tableToText()`, `key_value_items`, `form_items`, and traversal of both `body` and `furniture`.
+- The workbench wiring now explicitly calls for `resolvedProjectId`, which matches the current route-aware project resolution in `web/src/hooks/useProjectFocus.ts` and the current extract workbench entrypoint in `web/src/pages/useExtractWorkbench.tsx`.
+- The plan now includes explicit automated test files and concrete failure-path expectations.
+
+## Findings By Severity
+
+### Critical
+
+#### 1. `run-extract` returns the wrong HTTP status for client-side validation failures
+
+The plan's implementation and its verification contract disagree.
+
+The code path in Task 4 validates page ranges and empty page selections inside the inner `try` block (`docs/plans/...:796-809`). Any error thrown there is caught by the generic failure handler (`docs/plans/...:918-940`), which marks the job `failed` and returns HTTP `500`.
+
+The same plan later requires HTTP `400` for invalid page range, oversized page request, `start > totalPages`, and empty-range cases (`docs/plans/...:1459-1460`, `docs/plans/...:1481-1487`).
+
+This is a real contract break, not a style issue. If implemented as written, the API, tests, and UI error expectations will disagree on first pass.
+
+Trace:
+
+- Plan implementation: `docs/plans/2026-03-14-extract-structured-extraction.md:796-809`
+- Plan failure handler: `docs/plans/2026-03-14-extract-structured-extraction.md:918-940`
+- Plan expected test contract: `docs/plans/2026-03-14-extract-structured-extraction.md:1459-1460`
+- Plan failure-mode checklist: `docs/plans/2026-03-14-extract-structured-extraction.md:1481-1487`
+
+Required change:
+
+Move request validation into a pre-job or pre-LLM client-error path, or split the inner catch into `4xx` validation failures and `5xx` execution failures.
+
+#### 2. `run-extract` is the wrong shape for this feature and should be an async job API
+
+The plan currently designs `run-extract` as a synchronous execution endpoint:
+
+1. receive the request
+2. load schema and document
+3. split page payloads when page mode is selected
+4. call Vertex/Claude inside the same request
+5. insert results
+6. return a final success or failure response
+
+That shape is visible directly in Task 4. The function creates the job row and then immediately performs the actual extraction work in the same request lifecycle (`docs/plans/...:751-904`). In page mode it can loop over up to 50 payloads (`docs/plans/...:668-671`, `docs/plans/...:829-877`).
+
+That is the wrong execution model for this feature. Extraction is already modeled in the plan as a durable job with `extraction_jobs` and `extraction_results` tables. Once the design introduces queued work, job status, incremental results, and realtime table watching, the HTTP function should stop at validation plus job creation and return immediately with `202 Accepted` and `job_id`.
+
+The actual LLM work should happen in background execution that:
+
+- picks up the queued job
+- marks it `running`
+- writes `extraction_results` incrementally
+- updates the job to `complete` or `failed`
+
+The UI can then observe `extraction_jobs` and `extraction_results` via realtime, which is already the natural fit for the data model the plan proposes.
+
+Keeping the work synchronous is wrong for two reasons:
+
+- operationally, a single Edge Function request is being used for potentially long-running, multi-call LLM orchestration
+- architecturally, the plan already has a job system, but the endpoint still behaves like a blocking RPC instead of a queueing API
+
+The official Supabase guidance reinforces this direction: Edge Functions have runtime limits, and long-running or fan-out work should not rely on one request staying open while all downstream processing completes.
+
+Trace:
+
+- Job row creation before synchronous execution: `docs/plans/2026-03-14-extract-structured-extraction.md:751-771`
+- Requested-range cap: `docs/plans/2026-03-14-extract-structured-extraction.md:668-671`
+- Sequential LLM loop: `docs/plans/2026-03-14-extract-structured-extraction.md:829-877`
+- External guidance: [Supabase Edge Functions Overview](https://supabase.com/docs/guides/functions)
+- External guidance: [Supabase Edge Functions Limits](https://supabase.com/docs/guides/functions/limits)
+
+Required change:
+
+Redesign `run-extract` as an async job API:
+
+1. Validate request inputs only.
+2. Create an `extraction_jobs` row in `pending` or `queued`.
+3. Return `202 Accepted` immediately with `job_id`.
+4. Execute the LLM work in background processing.
+5. Write `extraction_results` incrementally and update job state to `running`, `complete`, or `failed`.
+6. Make the UI consume progress from realtime table updates, not from one long-lived HTTP response.
+
+### Major
+
+#### 3. The schema selection and save lifecycle is still under-specified in the workbench
+
+The plan adds `activeSchemaId`, `fields`, `schemaName`, and `extractionTarget` state (`docs/plans/...:1335-1340`) and defines a `SchemaSelector` API (`docs/plans/...:1034-1044`). It also says the run button is disabled until `activeDocUid` and `activeSchemaId` are set (`docs/plans/...:1362-1377`).
+
+What it does not specify is the core state transition logic:
+
+- what happens when a saved schema is selected
+- how `activeSchemaId` is set after creating a new schema
+- whether pressing Save updates the selected schema or always creates a new row
+- how selected schema JSON is loaded back into `fields`
+- what `New Schema` resets and what it preserves
+
+Those transitions matter because the current surfaces already have non-trivial editor state in `web/src/pages/Schemas.tsx` and `web/src/pages/useExtractWorkbench.tsx`, and the current tests only cover the pre-persistence placeholder flow in `web/src/pages/useExtractWorkbench.test.ts`.
+
+Trace:
+
+- `SchemaSelector` contract: `docs/plans/2026-03-14-extract-structured-extraction.md:1034-1044`
+- Workbench state: `docs/plans/2026-03-14-extract-structured-extraction.md:1335-1351`
+- Save/run expectations: `docs/plans/2026-03-14-extract-structured-extraction.md:1360-1377`
+- Current extract workbench state surface: `web/src/pages/useExtractWorkbench.tsx:138-188`, `web/src/pages/useExtractWorkbench.tsx:590-675`
+- Current schema page state surface: `web/src/pages/Schemas.tsx:223-331`
+
+Required change:
+
+Add an explicit schema-state flow before implementation. At minimum, define create, select, edit, update, duplicate, delete, and reset behaviors, plus exactly when `activeSchemaId` changes.
+
+#### 4. The delete action conflicts with the proposed foreign-key behavior
+
+The plan exposes schema deletion in two places:
+
+- `SchemaSelector` allows an optional delete action (`docs/plans/...:1038-1044`)
+- `useExtractionSchemas` defines `deleteSchema()` (`docs/plans/...:1165-1170`)
+
+But the migration also defines `extraction_jobs.schema_id` as a required foreign key to `extraction_schemas(schema_id)` without any delete rule (`docs/plans/...:97-99`). The default behavior is restrictive. Once a schema is referenced by a job, delete will fail.
+
+This may be acceptable, but the plan never says whether that is the intended product behavior. Right now the UI contract suggests deletion is available, while the database contract suggests it may be blocked after first use.
+
+Trace:
+
+- Jobs FK: `docs/plans/2026-03-14-extract-structured-extraction.md:97-99`
+- Selector delete affordance: `docs/plans/2026-03-14-extract-structured-extraction.md:1038-1044`
+- Delete hook: `docs/plans/2026-03-14-extract-structured-extraction.md:1165-1170`
+
+Required change:
+
+- If schemas are immutable history objects, disable delete after use and say so.
+- If users must be able to delete saved schemas, add a safe delete strategy such as soft-delete or `ON DELETE SET NULL` plus a denormalized schema snapshot on jobs.
+
+#### 5. The hardcoded model picker is already out of sync with the platform's current extraction model surfaces
+
+The plan hardcodes `claude-sonnet-4-5-20250929` and `claude-haiku-3-5-20241022` in the extract config UI (`docs/plans/...:1362-1374`).
+
+The current repo's settings surface for extraction-capable Anthropic models uses `claude-sonnet-4-5-20250929` and `claude-haiku-4-5-20251001`, not the older 3.5 Haiku ID. The current model-role seed also assigns extraction to Sonnet 4.5.
+
+This is a concrete drift issue. If implemented as written, the extract workbench will present a different model list than the rest of the platform, and the older Haiku option may not match current provider expectations.
+
+Trace:
+
+- Planned hardcoded options: `docs/plans/2026-03-14-extract-structured-extraction.md:1362-1374`
+- Current extraction-capable settings options: `web/src/pages/settings/SettingsProviderForm.tsx:68-69`
+- Current extraction role seed: `supabase/migrations/20260228120000_057_model_roles_and_embedding_providers.sql:56-57`
+
+Required change:
+
+Either drive the model picker from the platform's existing model-role/config surfaces or, at minimum, align the hardcoded defaults with the current platform model list before implementation starts.
+
+### Minor
+
+#### 6. `updated_at` handling for `extraction_schemas` does not follow the repo's normal migration pattern
+
+The migration adds an `updated_at` column (`docs/plans/...:77`) and the hook orders by that field (`docs/plans/...:1094-1099`), but the plan does not add the repo's normal `set_updated_at()` trigger pattern. Instead, the frontend hook writes `updated_at` manually during updates (`docs/plans/...:1150-1157`).
+
+That can work, but it is a weaker contract than the rest of the schema. Other repo tables with `updated_at` typically install a database trigger, such as `supabase/migrations/20260209201249_008_projects.sql`.
+
+Trace:
+
+- Planned column: `docs/plans/2026-03-14-extract-structured-extraction.md:77`
+- Planned hook ordering: `docs/plans/2026-03-14-extract-structured-extraction.md:1094-1099`
+- Planned manual update write: `docs/plans/2026-03-14-extract-structured-extraction.md:1150-1157`
+- Existing trigger pattern: `supabase/migrations/20260209201249_008_projects.sql:20-31`
+
+Required change:
+
+Add a standard `set_updated_at()` trigger in the migration or clearly declare that frontend-managed timestamps are intentional.
+
+#### 7. The test-file guidance should align with the current test inventory instead of creating parallel naming
+
+The plan proposes a new `web/src/pages/ExtractWorkbench.test.tsx` file (`docs/plans/...:1467-1468`), but the current workbench coverage already lives in `web/src/pages/useExtractWorkbench.test.ts`. The schema page already has `web/src/pages/Schemas.test.tsx`.
+
+This is not a blocker, but staying aligned with the current test layout will make the implementation easier to review and less likely to strand duplicate test files.
+
+Trace:
+
+- Planned file: `docs/plans/2026-03-14-extract-structured-extraction.md:1467-1468`
+- Existing workbench test: `web/src/pages/useExtractWorkbench.test.ts`
+- Existing schema-page test: `web/src/pages/Schemas.test.tsx`
+
+Required change:
+
+Prefer extending the current workbench and schema-page test files unless there is a deliberate reason to split them.
+
+## Specific Gaps, Contradictions, and Ambiguity
+
+- The Task 4 implementation returns `500` for several failures that the same plan classifies as `400`.
+- The workbench state model does not define how a selected schema becomes the active editable schema.
+- The plan advertises schema deletion without defining whether used schemas are deletable.
+- The model picker diverges from current platform model surfaces.
+- The plan uses a job-based data model but still makes `run-extract` behave like a blocking synchronous execution endpoint.
+
+## Required Changes Before Implementation
+
+1. Split Task 4 error handling into client-validation failures and execution failures so the HTTP contract matches the test contract.
+2. Redesign `run-extract` as a validate-and-queue endpoint with background execution.
+3. Add an explicit schema lifecycle spec covering create, select, edit, update, delete, duplicate, and reset behaviors.
+4. Decide and document schema-delete semantics, then align the database FK and UI affordances.
+5. Replace the stale hardcoded model list with either the platform-configured extraction model source or an updated repo-aligned list.
+6. Add the normal `updated_at` trigger pattern, or explicitly declare that manual timestamp writes are part of the design.
+7. Align the testing plan with the current test inventory and file layout.
+
+## Verification Expectations
+
+Before this plan should be marked implementation-ready, the revised version should prove all of the following:
+
+- invalid page range, oversized range, and empty-range requests return `400`, not `500`
+- `run-extract` returns `202` with `job_id` after validation and job creation, without doing the full LLM workload inline
+- background processing transitions jobs through `pending` or `queued` -> `running` -> `complete` or `failed`
+- results can appear incrementally in `extraction_results` while the job is still in progress
+- the workbench can create a schema, select it, re-open it, edit it, save it, and then run extraction without hidden state transitions
+- deleting a schema either works safely after prior runs or is intentionally blocked with a defined UX
+- the model selector matches the platform's current extraction model surface
+- ordering by `updated_at` works independently of frontend correctness
+
+## Acceptance Criteria Check
+
+| Area | Verdict | Notes |
+| --- | --- | --- |
+| Alignment with product direction | Pass | Post-parse extraction and Vertex-first MVP are still the right shape. |
+| Scope boundaries | Pass | Document and page targets remain well-scoped for MVP. |
+| API and data contract clarity | Fail | The Task 4 HTTP contract still contradicts the test contract. |
+| Dependency and sequencing correctness | Conditional Pass | Task ordering is mostly sound, but schema lifecycle gaps will create implementation drift. |
+| Risk handling and rollback strategy | Fail | The plan still uses a blocking execution model where the feature shape clearly wants queued background work. |
+| Security and auth implications | Conditional Pass | Ownership checks are improved, but schema delete/project lifecycle behavior still needs definition. |
+| Operational readiness | Fail | `run-extract` is designed as synchronous inline execution instead of an async job API. |
+| Test and verification clarity | Conditional Pass | The plan now has real tests, but one of the central test contracts currently disagrees with the implementation. |
+
+## Publishing Status
+
+This assessment is already in the published docs tree under `web-docs/src/content/docs/assessments/`. No sidebar code change was needed because the docs site already includes `assessments` in `web-docs/src/lib/docs/sidebar-order.mjs`.
+
+## Final Recommendation
+
+`No-go until revised.`
+
+This revision is much closer. The original contract mismatches are largely fixed, and the plan now has a solid product shape. The remaining issues are the kind that cause avoidable implementation churn: wrong error semantics, the wrong execution shape for `run-extract`, an under-specified schema lifecycle, and a stale model surface. Tighten those points and reassess; this plan should not need a ground-up rewrite.

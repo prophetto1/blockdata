@@ -1,0 +1,16 @@
+-- STUB: This migration was applied directly to the remote Supabase DB
+-- (project dbdzzhshmigewyprahej) outside the local migration workflow.
+-- It appears in schema_migrations as version 20260313165216 / name
+-- 085_conversion_parsing_unique_source_uid.
+--
+-- This local file exists only for history alignment so that
+-- `supabase migration list` shows a complete picture.
+--
+-- The migration adds a unique constraint on conversion_parsing.source_uid.
+-- The constraint is already present on the remote and is also enforced by
+-- the ON CONFLICT (source_uid) upsert pattern in conversion-complete.
+--
+-- No SQL here — the constraint already exists on the remote. Running this
+-- file against a fresh local DB (supabase db reset) is a no-op because
+-- the column is already the primary key or has the constraint from the
+-- original table creation.

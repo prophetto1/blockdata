@@ -184,41 +184,6 @@
   grid-template-rows: var(--shell-pane-header-height, 50px) minmax(0, 1fr);
 }
 
-.schema-layout-middle-toolbar-host {
-  margin-left: auto;
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  position: relative;
-  z-index: 1;
-}
-
-.schema-layout-middle-toolbar-host .parse-pdf-toolbar {
-  height: 100%;
-  min-height: var(--shell-pane-header-height, 50px);
-  max-height: var(--shell-pane-header-height, 50px);
-  padding: 0;
-  border-bottom: 0;
-  background: transparent;
-}
-
-.schema-layout-middle-toolbar-host .parse-pdf-toolbar-controls {
-  margin-left: auto;
-}
-
-.schema-layout-middle-toolbar-host.parse-preview-toolbar-host {
-  margin-left: 8px;
-  flex: 1 1 auto;
-  justify-content: stretch;
-}
-
-.schema-layout-middle-toolbar-host.parse-preview-toolbar-host .parse-pdf-toolbar {
-  width: 100%;
-  justify-content: center;
-  gap: 16px;
-  transform: translateX(-100px);
-}
-
 .schema-layout-middle-sheet-wrap {
   min-height: 100%;
   display: flex;

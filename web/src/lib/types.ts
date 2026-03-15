@@ -28,8 +28,64 @@ export type DocumentRow = {
   uploaded_at: string;
   error: string | null;
   pipeline_config?: Record<string, unknown> | null;
+  requested_pipeline_config?: Record<string, unknown> | null;
+  applied_pipeline_config?: Record<string, unknown> | null;
+  parser_runtime_meta?: Record<string, unknown> | null;
   conv_total_blocks?: number | null;
   conv_parsing_tool?: string | null;
+};
+
+export type ExtractionSchemaRow = {
+  schema_id: string;
+  owner_id: string;
+  project_id: string | null;
+  schema_name: string;
+  schema_body: Record<string, unknown>;
+  schema_body_hash: string | null;
+  extraction_target: 'page' | 'document';
+  created_at: string;
+  updated_at: string;
+};
+
+export type ExtractionJobRow = {
+  job_id: string;
+  owner_id: string;
+  schema_id: string;
+  source_uid: string;
+  status: 'queued' | 'running' | 'complete' | 'failed' | 'cancelled';
+  llm_provider: string;
+  llm_model: string;
+  config_jsonb: Record<string, unknown>;
+  total_items: number;
+  completed_items: number;
+  failed_items: number;
+  token_usage: { input_tokens?: number; output_tokens?: number } | null;
+  error: string | null;
+  started_at: string | null;
+  completed_at: string | null;
+  created_at: string;
+};
+
+export type ExtractionJobItemRow = {
+  item_id: string;
+  job_id: string;
+  target_kind: 'document' | 'page';
+  page_number: number | null;
+  status: 'pending' | 'claimed' | 'complete' | 'failed';
+  claimed_by: string | null;
+  claimed_at: string | null;
+  attempt_count: number;
+  last_error: string | null;
+};
+
+export type ExtractionResultRow = {
+  result_id: string;
+  item_id: string;
+  job_id: string;
+  page_number: number | null;
+  extracted_data: Record<string, unknown>;
+  raw_response: Record<string, unknown> | null;
+  created_at: string;
 };
 
 export type BlockRow = {
@@ -69,6 +125,7 @@ export type RunWithSchema = RunRow & {
 };
 
 export type BlockOverlayRow = {
+  overlay_uid: string;
   run_id: string;
   block_uid: string;
   overlay_jsonb_staging: Record<string, unknown>;

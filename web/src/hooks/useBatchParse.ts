@@ -33,7 +33,9 @@ export function useBatchParse(options: UseBatchParseOptions) {
     setErrors((prev) => new Map(prev).set(uid, message));
   };
 
-  const dispatchOne = async (sourceUid: string): Promise<void> => {
+  const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+  const dispatchOne = async (sourceUid: string, attempt = 0): Promise<void> => {
     if (cancelledRef.current) return;
     updateStatus(sourceUid, 'dispatching');
     try {
@@ -48,6 +50,13 @@ export function useBatchParse(options: UseBatchParseOptions) {
       });
       if (!resp.ok) {
         const text = await resp.text().catch(() => '');
+        // Retry on 502/503/429 (service overloaded) up to 2 times
+        if (attempt < 2 && (resp.status === 502 || resp.status === 503 || resp.status === 429)) {
+          const backoff = (attempt + 1) * 3000; // 3s, 6s
+          updateStatus(sourceUid, 'queued');
+          await wait(backoff);
+          return dispatchOne(sourceUid, attempt + 1);
+        }
         throw new Error(`HTTP ${resp.status}: ${text.slice(0, 300)}`);
       }
       updateStatus(sourceUid, 'dispatched');
@@ -83,7 +92,10 @@ export function useBatchParse(options: UseBatchParseOptions) {
             if (cancelledRef.current || (idx >= queue.length && active === 0)) {
               setIsRunning(false);
             }
-            next();
+            // Space dispatches 1.5s apart to avoid overwhelming the
+            // conversion service. Without this, all files in a wave
+            // dispatch simultaneously and the service rejects overflow.
+            setTimeout(next, 1500);
           });
         }
         if (idx >= queue.length && active === 0) {
@@ -101,6 +113,14 @@ export function useBatchParse(options: UseBatchParseOptions) {
     setIsRunning(false);
   }, []);
 
+  const retryFailed = useCallback(() => {
+    const failedUids: string[] = [];
+    dispatchStatus.forEach((status, uid) => {
+      if (status === 'dispatch_error') failedUids.push(uid);
+    });
+    if (failedUids.length > 0) start(failedUids);
+  }, [dispatchStatus, start]);
+
   const progress: BatchParseProgress = (() => {
     let queued = 0;
     let dispatching = 0;
@@ -115,5 +135,5 @@ export function useBatchParse(options: UseBatchParseOptions) {
     return { queued, dispatching, dispatched, errors: errs, total: dispatchStatus.size };
   })();
 
-  return { dispatchStatus, progress, start, cancel, isRunning, errors };
+  return { dispatchStatus, progress, start, cancel, retryFailed, isRunning, errors };
 }

@@ -528,6 +528,15 @@ export async function loadRuntimePolicy(
   return policy;
 }
 
+export async function loadAdminPolicyValue(
+  supabaseAdmin: SupabaseClient,
+  policyKey: string,
+): Promise<unknown | null> {
+  const rows = await listAdminPolicyRows(supabaseAdmin);
+  const row = rows.find((candidate) => candidate.policy_key === policyKey);
+  return row?.value_jsonb ?? null;
+}
+
 export function buildRuntimePolicySnapshot(
   policy: RuntimePolicy,
   snapshotAt: string,

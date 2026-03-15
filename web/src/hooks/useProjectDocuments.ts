@@ -65,6 +65,21 @@ export function useProjectDocuments(projectId: string | null) {
     };
   }, [projectId]);
 
+  // Polling fallback: refetch docs while any are in a transitional state.
+  // Realtime should handle updates, but polling ensures the UI reflects
+  // status changes even if the Realtime connection drops.
+  useEffect(() => {
+    if (!projectId) return;
+    const hasTransitional = docs.some((d) => d.status === 'converting');
+    if (!hasTransitional) return;
+
+    const interval = setInterval(() => {
+      void loadDocs(projectId);
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [projectId, docs, loadDocs]);
+
   const refreshDocs = useCallback(() => {
     if (projectId) void loadDocs(projectId);
   }, [projectId, loadDocs]);

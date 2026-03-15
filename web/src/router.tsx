@@ -32,6 +32,7 @@ import DatabasePlaceholder from '@/pages/DatabasePlaceholder';
 import ProjectAssetsPage from '@/pages/ProjectAssetsPage';
 import ParsePage from '@/pages/ParsePage';
 import ExtractPage from '@/pages/ExtractPage';
+import TransformPage from '@/pages/TransformPage';
 import AppHome from '@/pages/AppHome';
 import EarlyAccess from '@/pages/EarlyAccess';
 import ProjectsHome from '@/pages/ProjectsHome';
@@ -64,6 +65,12 @@ function LegacyToEltProjectUppyDemo() {
   const { projectId } = useParams<{ projectId: string }>();
   if (!projectId) return <Navigate to="/app/elt" replace />;
   return <Navigate to={`/app/elt/${projectId}/upload-uppy-demo`} replace />;
+}
+
+function LegacyToTransform() {
+  const { projectId } = useParams<{ projectId: string }>();
+  const target = projectId ? `/app/transform` : '/app/transform';
+  return <Navigate to={target} replace />;
 }
 
 
@@ -152,8 +159,8 @@ export const router = createBrowserRouter([
           { path: '/app/ui/:section', element: <Navigate to="/app/schemas" replace /> },
           { path: '/app/projects/:projectId/upload-uppy-demo', element: <LegacyToEltProjectUppyDemo /> },
           { path: '/app/projects/:projectId/runs/:runId', element: <LegacyToEltProjectRun /> },
-          { path: '/app/transform', element: <LegacyToElt /> },
-          { path: '/app/transform/:projectId', element: <LegacyToEltProject /> },
+          { path: '/app/transform', element: <TransformPage /> },
+          { path: '/app/transform/:projectId', element: <LegacyToTransform /> },
           { path: '/app/upload', element: <LegacyToElt /> },
           { path: '/app/documents', element: <LegacyToElt /> },
 
@@ -234,6 +241,7 @@ export const router = createBrowserRouter([
               { path: 'instance-config', lazy: () => import('@/pages/superuser/SuperuserInstanceConfig') },
               { path: 'worker-config', lazy: () => import('@/pages/superuser/SuperuserWorkerConfig') },
               { path: 'audit', lazy: () => import('@/pages/superuser/SuperuserAuditHistory') },
+              { path: 'api-endpoints', lazy: () => import('@/pages/superuser/SuperuserApiEndpoints') },
             ],
           },
 

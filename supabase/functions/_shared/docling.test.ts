@@ -51,3 +51,46 @@ Deno.test("extractDoclingBlocks emits ordered unique page_nos and first page_no"
   assertEquals(result.blocks[0].page_nos, [1, 2, 3]);
   assertEquals(result.blocks[0].page_no, 1);
 });
+
+Deno.test("extractDoclingBlocks preserves native docling labels as block_type", () => {
+  const doc = {
+    furniture: { self_ref: "#/furniture", children: [] },
+    body: {
+      self_ref: "#/body",
+      children: [
+        { $ref: "#/texts/0" },
+        { $ref: "#/texts/1" },
+        { $ref: "#/texts/2" },
+        { $ref: "#/texts/3" },
+        { $ref: "#/pictures/0" },
+      ],
+    },
+    texts: [
+      { self_ref: "#/texts/0", label: "title", text: "Title" },
+      { self_ref: "#/texts/1", label: "section_header", text: "Section" },
+      { self_ref: "#/texts/2", label: "text", text: "Loose text" },
+      { self_ref: "#/texts/3", label: "formula", text: "E = mc^2" },
+    ],
+    tables: [],
+    pictures: [
+      { self_ref: "#/pictures/0", label: "picture", prov: [{ page_no: 4 }] },
+    ],
+  };
+
+  const result = extractDoclingBlocks(encoder.encode(JSON.stringify(doc)));
+
+  assertEquals(result.blocks.map((block) => block.block_type), [
+    "title",
+    "section_header",
+    "text",
+    "formula",
+    "picture",
+  ]);
+  assertEquals(result.blocks.map((block) => block.parser_block_type), [
+    "title",
+    "section_header",
+    "text",
+    "formula",
+    "picture",
+  ]);
+});

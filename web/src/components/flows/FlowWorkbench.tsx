@@ -33,7 +33,7 @@ import { Switch } from '@ark-ui/react/switch';
 import { Tooltip } from '@ark-ui/react/tooltip';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { DocxPreview } from '@/components/documents/DocxPreview';
-import { PdfPreview } from '@/components/documents/PdfPreview';
+import { PdfjsExpressPreview } from '@/components/documents/PdfjsExpressPreview';
 import { PptxPreview } from '@/components/documents/PptxPreview';
 import { edgeFetch, edgeJson } from '@/lib/edge';
 import { fetchAllProjectDocuments } from '@/lib/projectDocuments';
@@ -51,6 +51,7 @@ import {
   sortDocumentsByUploadedAt,
 } from '@/lib/projectDetailHelpers';
 import { supabase } from '@/lib/supabase';
+import { manageDocument } from '@/lib/edge';
 import FlowCanvas from './FlowCanvas';
 import { useFlowDocument, type FlowDocumentHandle } from './nocode/useFlowDocument';
 import { NocodeEditor } from './nocode/NocodeEditor';
@@ -819,9 +820,9 @@ function FilesTree({
 
     if (doc) {
       setDocsError(null);
-      const { error: deleteError } = await supabase.rpc('delete_source_document', { p_source_uid: doc.source_uid });
-      if (deleteError) {
-        setDocsError(deleteError.message);
+      const result = await manageDocument('delete', doc.source_uid);
+      if (!result.ok && !result.partial) {
+        setDocsError(result.error ?? 'Delete failed');
         return;
       }
       const locator = doc.source_locator?.replace(/^\/+/, '');
@@ -1212,7 +1213,7 @@ function FilesPreview({ selectedDoc }: { selectedDoc: ProjectDocumentRow | null 
   if (previewKind === 'pdf' && previewUrl) {
     return (
       <div className="h-full w-full">
-        <PdfPreview key={`${selectedDoc.source_uid}:${previewUrl}`} url={previewUrl} />
+        <PdfjsExpressPreview url={previewUrl} />
       </div>
     );
   }

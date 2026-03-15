@@ -15,6 +15,7 @@ import { AppPageShell } from '@/components/layout/AppPageShell';
 import { styleTokens } from '@/lib/styleTokens';
 import { Drawer } from '@ark-ui/react/drawer';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useDraggable } from '@/hooks/useDraggable';
 
 const DESKTOP_NAV_OPEN_KEY = 'blockdata.shell.nav_open_desktop';
 const DESKTOP_NAV_OPEN_MIGRATION_KEY = 'blockdata.shell.nav_open_desktop.reset_once_v1';
@@ -59,6 +60,39 @@ export function AppLayout() {
 /* ------------------------------------------------------------------ */
 /*  Inner shell — has access to all contexts                           */
 /* ------------------------------------------------------------------ */
+
+function DraggableChat({ onClose, onDock }: { onClose: () => void; onDock: () => void }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const { position, isDragging, handleRef } = useDraggable(containerRef);
+
+  return (
+    <div
+      ref={containerRef}
+      style={{
+        position: 'fixed',
+        zIndex: 340,
+        ...(position
+          ? { top: `${position.y}px`, left: `${position.x}px` }
+          : { bottom: '12px', right: '12px' }),
+        width: 'min(380px, calc(100vw - 24px))',
+        height: 'min(520px, 60vh)',
+        border: '1px solid var(--border)',
+        borderRadius: '12px',
+        backgroundColor: 'var(--chrome, var(--background))',
+        overflow: 'hidden',
+        boxShadow: '0 24px 64px rgba(0, 0, 0, 0.24)',
+        userSelect: isDragging ? 'none' : undefined,
+      }}
+    >
+      <AssistantDockHost
+        onClose={onClose}
+        onDetach={onDock}
+        dragHandleRef={handleRef}
+        isDragging={isDragging}
+      />
+    </div>
+  );
+}
 
 function AppShellInner() {
   const [navOpened, setNavOpened] = useState(false);
@@ -141,8 +175,8 @@ function AppShellInner() {
     : styleTokens.shell.navbarCompactWidth;
   const isMobile = useIsMobile();
 
-  // Right rail is shown when open AND (has help content OR AI tab is active)
-  const hasRailContent = rightRail.content !== null || rightRail.activeTab === 'ai';
+  // Right rail is shown when open AND (has help content OR AI tab is active and not detached)
+  const hasRailContent = rightRail.content !== null || (rightRail.activeTab === 'ai' && !rightRail.chatDetached);
   const showRightRail = !isMobile && hasRailContent && rightRail.isOpen;
   const showRightRailToggle = !isMobile;
 
@@ -162,6 +196,7 @@ function AppShellInner() {
   const isAssetsRoute = location.pathname === '/app/assets';
   const isParseRoute = location.pathname === '/app/parse';
   const isExtractRoute = location.pathname === '/app/extract';
+  const isSchemasRoute = /^\/app\/schemas(?:\/|$)/.test(location.pathname);
   const lockMainScroll = (
     isEltRoute
     || isEditorLayoutRoute
@@ -173,6 +208,7 @@ function AppShellInner() {
     || isAssetsRoute
     || isParseRoute
     || isExtractRoute
+    || isSchemasRoute
   );
 
   useEffect(() => {
@@ -351,7 +387,7 @@ function AppShellInner() {
         )}
 
         <main style={shellMainStyle}>
-          {(isFlowsRoute || isMarketplaceServiceDetailRoute || isSuperuserRoute || isAssetsRoute || isParseRoute || isExtractRoute) ? (
+          {(isFlowsRoute || isMarketplaceServiceDetailRoute || isSuperuserRoute || isAssetsRoute || isParseRoute || isExtractRoute || isSchemasRoute) ? (
             <Outlet />
           ) : (
             <AppPageShell mode="fluid">
@@ -408,26 +444,7 @@ function AppShellInner() {
       {/* Floating detached chat */}
       {rightRail.chatDetached && canPortal
         ? createPortal(
-            <div
-              style={{
-                position: 'fixed',
-                zIndex: 340,
-                bottom: '12px',
-                right: '12px',
-                width: 'min(380px, calc(100vw - 24px))',
-                height: 'min(520px, 60vh)',
-                border: '1px solid var(--border)',
-                borderRadius: '12px',
-                backgroundColor: 'var(--chrome, var(--background))',
-                overflow: 'hidden',
-                boxShadow: '0 24px 64px rgba(0, 0, 0, 0.24)',
-              }}
-            >
-              <AssistantDockHost
-                onClose={closeChatDetached}
-                onDetach={dockChatToRail}
-              />
-            </div>,
+            <DraggableChat onClose={closeChatDetached} onDock={dockChatToRail} />,
             document.body,
           )
         : null}

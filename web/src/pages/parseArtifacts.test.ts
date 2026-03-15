@@ -1,7 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import type { ProjectDocumentRow } from '@/lib/projectDetailHelpers';
-import { getParseArtifactCacheKey, primeParseArtifactsForDocument } from './parseArtifacts';
+import {
+  createLoadingParseArtifactBundle,
+  getParseArtifactCacheKey,
+  primeParseArtifactsForDocument,
+} from './parseArtifacts';
 
 const baseDoc: ProjectDocumentRow = {
   source_uid: 'source-1',
@@ -33,10 +37,18 @@ describe('getParseArtifactCacheKey', () => {
 });
 
 describe('primeParseArtifactsForDocument', () => {
+  it('starts the loading bundle in raw_docling mode by default', () => {
+    expect(createLoadingParseArtifactBundle(baseDoc).mode).toBe('raw_docling');
+  });
+
   it('preloads markdown, parsed blocks, and docling json together for the selected document', async () => {
     const loadDocumentViewMode = vi.fn(async () => 'raw_docling' as const);
-    const getArtifactLocator = vi.fn(async (_sourceUid: string, reprType: 'doclingdocument_json' | 'markdown_bytes') => {
+    const getArtifactLocator = vi.fn(async (
+      _sourceUid: string,
+      reprType: 'doclingdocument_json' | 'markdown_bytes' | 'html_bytes',
+    ) => {
       if (reprType === 'markdown_bytes') return 'converted/source-1/example.md';
+      if (reprType === 'html_bytes') return 'converted/source-1/example.html';
       return 'converted/source-1/example.docling.json';
     });
     const resolveSignedUrlForLocators = vi.fn(async (locators: Array<string | null | undefined>) => ({
@@ -69,7 +81,7 @@ describe('primeParseArtifactsForDocument', () => {
         conv_uid: 'conv-1',
         block_index: 0,
         block_type: 'paragraph',
-        block_locator: { page_no: 3, type: 'docling' },
+        block_locator: { page_no: 3, type: 'docling_json_pointer', parser_path: '#/texts/0' },
         block_content: 'Hello from normalized blocks',
       },
     ]));
@@ -90,14 +102,16 @@ describe('primeParseArtifactsForDocument', () => {
     expect(bundle.blocks.blocks).toHaveLength(1);
     expect(bundle.blocks.rawItems).toEqual([
       expect.objectContaining({
+        block_uid: 'block-1',
+        source_uid: 'source-1',
         native_label: 'paragraph',
         content: 'Hello from Docling',
         page_no: 3,
       }),
     ]);
     expect(loadDocumentViewMode).toHaveBeenCalledOnce();
-    expect(getArtifactLocator).toHaveBeenCalledTimes(2);
-    expect(resolveSignedUrlForLocators).toHaveBeenCalledTimes(2);
+    expect(getArtifactLocator).toHaveBeenCalledTimes(3);
+    expect(resolveSignedUrlForLocators).toHaveBeenCalledTimes(3);
     expect(fetchText).toHaveBeenCalledTimes(2);
     expect(fetchBlocks).toHaveBeenCalledWith(baseDoc);
   });

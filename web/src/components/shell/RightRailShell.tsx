@@ -35,8 +35,9 @@ export function RightRailShell({
   sections,
   footer,
 }: RightRailShellProps) {
-  const { activeTab, setActiveTab, content } = useRightRailContext();
+  const { activeTab, setActiveTab, content, chatDetached } = useRightRailContext();
   const hasHelp = content !== null;
+  const visibleTabs = chatDetached ? TAB_DEFS.filter((t) => t.id !== 'ai') : TAB_DEFS;
 
   return (
     <aside
@@ -53,7 +54,7 @@ export function RightRailShell({
           className="flex shrink-0 border-b"
           style={{ borderColor: 'var(--border)' }}
         >
-          {TAB_DEFS.map((tab) => {
+          {visibleTabs.map((tab) => {
             const isActive = activeTab === tab.id;
             return (
               <button
@@ -141,7 +142,7 @@ export function RightRailShell({
             </div>
           ) : null}
         </>
-      ) : (
+      ) : chatDetached ? null : (
         <RightRailChatPanel />
       )}
     </aside>

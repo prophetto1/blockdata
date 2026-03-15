@@ -40,12 +40,21 @@ describe('nav-config side rail', () => {
     const paths = ALL_TOP_LEVEL_ITEMS.map((item) => item.path);
 
     expect(paths).toContain('/app/extract');
+    expect(paths).toContain('/app/transform');
     expect(paths).toContain('/app/schemas');
     expect(paths).toContain('/app/api-editor');
     expect(paths).toContain('/app/marketplace/integrations');
     expect(paths).toContain('/app/marketplace/services');
     expect(paths).toContain('/app/tests');
     expect(paths).not.toContain('/app/docs');
+  });
+
+  it('places Transform between Extract and RAG in the top-level nav', () => {
+    const labels = ALL_TOP_LEVEL_ITEMS.map((item) => item.label);
+
+    expect(labels.indexOf('Extract')).toBeGreaterThanOrEqual(0);
+    expect(labels.indexOf('Transform')).toBe(labels.indexOf('Extract') + 1);
+    expect(labels.indexOf('RAG')).toBe(labels.indexOf('Transform') + 1);
   });
 
   it('has dividers in TOP_LEVEL_NAV', () => {

@@ -189,6 +189,31 @@ export function ParseConfigColumn({
                   ) : null}
                 </div>
               )}
+
+              {/* Runtime audit details — visible after conversion-complete sends them */}
+              {selectedDoc?.parser_runtime_meta &&
+                typeof selectedDoc.parser_runtime_meta === 'object' &&
+                Object.keys(selectedDoc.parser_runtime_meta).length > 0 && (
+                <div className="mt-3 space-y-1 border-t border-border/70 pt-3 text-xs text-muted-foreground">
+                  <div className="font-medium text-foreground/80">Applied Runtime</div>
+                  {'parser_version' in selectedDoc.parser_runtime_meta && (
+                    <div>Parser: {String(selectedDoc.parser_runtime_meta.parser_version)}</div>
+                  )}
+                  {'ocr_backend' in selectedDoc.parser_runtime_meta && (
+                    <div>OCR: {String(selectedDoc.parser_runtime_meta.ocr_backend)}</div>
+                  )}
+                  {'vlm_model' in selectedDoc.parser_runtime_meta && (
+                    <div>VLM: {String(selectedDoc.parser_runtime_meta.vlm_model)}</div>
+                  )}
+                  {selectedDoc.applied_pipeline_config &&
+                    JSON.stringify(selectedDoc.applied_pipeline_config) !==
+                      JSON.stringify(selectedDoc.requested_pipeline_config) && (
+                    <div className="text-amber-500">
+                      Applied config differs from requested config
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="px-1 py-1">
@@ -232,6 +257,12 @@ export function ParseConfigColumn({
                   onClick={batch.cancel}
                 >
                   Cancel
+                </ActionButton>
+                <ActionButton
+                  disabled={batch.progress.errors === 0}
+                  onClick={batch.retryFailed}
+                >
+                  Retry Failed ({batch.progress.errors})
                 </ActionButton>
               </div>
             </div>

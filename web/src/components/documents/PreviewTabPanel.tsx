@@ -1,13 +1,12 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { IconEdit, IconEye, IconChevronRight } from '@tabler/icons-react';
+import { IconChevronRight } from '@tabler/icons-react';
 import { JsonTreeView } from '@ark-ui/react/json-tree-view';
 import ReactMarkdown from 'react-markdown';
 import remarkFrontmatter from 'remark-frontmatter';
 import remarkGfm from 'remark-gfm';
 import { PdfResultsHighlighter } from '@/components/documents/PdfResultsHighlighter';
+import { PdfjsExpressPreview } from '@/components/documents/PdfjsExpressPreview';
 import { DocxPreview } from '@/components/documents/DocxPreview';
-import { OnlyOfficeEditorPanel } from '@/components/documents/OnlyOfficeEditorPanel';
-import { PdfPreview } from '@/components/documents/PdfPreview';
 import { PptxPreview } from '@/components/documents/PptxPreview';
 import {
   DocumentPreviewFrame,
@@ -31,7 +30,17 @@ import {
   toDoclingJsonLocator,
 } from '@/lib/projectDetailHelpers';
 
-export function PreviewTabPanel({ doc }: { doc: ProjectDocumentRow | null }) {
+type PreviewTabPanelProps = {
+  doc: ProjectDocumentRow | null;
+  allowParsedPdfView?: boolean;
+  showHeaderDownload?: boolean;
+};
+
+export function PreviewTabPanel({
+  doc,
+  allowParsedPdfView = true,
+  showHeaderDownload = true,
+}: PreviewTabPanelProps) {
   const [previewKind, setPreviewKind] = useState<PreviewKind>('none');
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [parsedPreviewUrl, setParsedPreviewUrl] = useState<string | null>(null);
@@ -39,9 +48,6 @@ export function PreviewTabPanel({ doc }: { doc: ProjectDocumentRow | null }) {
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewError, setPreviewError] = useState<string | null>(null);
   const [pdfPreviewMode, setPdfPreviewMode] = useState<'file' | 'parsed'>('file');
-  const [pdfToolbarHost, setPdfToolbarHost] = useState<HTMLDivElement | null>(null);
-  const [editMode, setEditMode] = useState(false);
-  const [previewRevision, setPreviewRevision] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -55,7 +61,6 @@ export function PreviewTabPanel({ doc }: { doc: ProjectDocumentRow | null }) {
         setPreviewError(null);
         setPreviewLoading(false);
         setPdfPreviewMode('file');
-        setEditMode(false);
         return;
       }
 
@@ -65,7 +70,6 @@ export function PreviewTabPanel({ doc }: { doc: ProjectDocumentRow | null }) {
       setParsedPreviewUrl(null);
       setPreviewText(null);
       setPdfPreviewMode('file');
-      setEditMode(false);
 
       const { url: signedUrl, error: signedUrlError } = await resolveSignedUrlForLocators([
         doc.source_locator,
@@ -89,7 +93,7 @@ export function PreviewTabPanel({ doc }: { doc: ProjectDocumentRow | null }) {
         setPreviewKind('pdf');
         setPreviewUrl(signedUrl);
         setPreviewLoading(false);
-        if (!doc.conv_uid) return;
+        if (!allowParsedPdfView || !doc.conv_uid) return;
 
         const doclingLocators = dedupeLocators([
           toDoclingJsonLocator(doc.conv_locator),
@@ -174,7 +178,7 @@ export function PreviewTabPanel({ doc }: { doc: ProjectDocumentRow | null }) {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [doc?.source_uid]);
+  }, [allowParsedPdfView, doc?.source_uid]);
 
   const canShowParsedPdfView = Boolean(
     doc
@@ -220,22 +224,6 @@ export function PreviewTabPanel({ doc }: { doc: ProjectDocumentRow | null }) {
     </DocumentPreviewStandardContent>
   );
 
-  const renderEditToggle = () => (
-    <button
-      type="button"
-      aria-pressed={editMode}
-      onClick={() => {
-        setEditMode((prev) => {
-          if (prev) setPreviewRevision((r) => r + 1);
-          return !prev;
-        });
-      }}
-      className="inline-flex h-8 items-center gap-1.5 rounded-md border border-border px-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
-    >
-      {editMode ? <><IconEye size={14} /> Preview</> : <><IconEdit size={14} /> Edit</>}
-    </button>
-  );
-
   if (!doc) {
     return (
       <DocumentPreviewFrame>
@@ -253,7 +241,7 @@ export function PreviewTabPanel({ doc }: { doc: ProjectDocumentRow | null }) {
   }
 
   if (previewKind === 'pdf' && previewUrl) {
-    const headerActions = canShowParsedPdfView ? (
+    const headerActions = allowParsedPdfView && canShowParsedPdfView ? (
       <button
         type="button"
         aria-pressed={pdfPreviewMode === 'parsed'}
@@ -274,7 +262,7 @@ export function PreviewTabPanel({ doc }: { doc: ProjectDocumentRow | null }) {
           convUid={doc.conv_uid}
         />,
         {
-          downloadUrl: previewUrl,
+          downloadUrl: showHeaderDownload ? previewUrl : null,
           contentClassName: 'overflow-hidden',
           useScrollArea: false,
           headerActions,
@@ -283,18 +271,12 @@ export function PreviewTabPanel({ doc }: { doc: ProjectDocumentRow | null }) {
     }
 
     return renderPreviewWithUnifiedHeader(
-      <PdfPreview
-        key={`${doc.source_uid}:${previewUrl}`}
-        url={previewUrl}
-        hideToolbar={!pdfToolbarHost}
-        toolbarPortalTarget={pdfToolbarHost}
-      />,
+      <PdfjsExpressPreview url={previewUrl} />,
       {
-        downloadUrl: previewUrl,
+        downloadUrl: showHeaderDownload ? previewUrl : null,
         contentClassName: 'overflow-hidden',
         useScrollArea: false,
         headerActions,
-        headerCenterContent: <div className="parse-preview-toolbar-host flex min-w-0 items-center" ref={setPdfToolbarHost} />,
       },
     );
   }
@@ -304,7 +286,7 @@ export function PreviewTabPanel({ doc }: { doc: ProjectDocumentRow | null }) {
       <div className="flex h-full w-full items-center justify-center overflow-auto">
         <img src={previewUrl} alt={doc.doc_title} className="max-h-full max-w-full" />
       </div>,
-      { downloadUrl: previewUrl },
+      { downloadUrl: showHeaderDownload ? previewUrl : null },
     );
   }
 
@@ -327,20 +309,20 @@ export function PreviewTabPanel({ doc }: { doc: ProjectDocumentRow | null }) {
             arrow={<IconChevronRight size={14} />}
           />
         </JsonTreeView.Root>,
-        { downloadUrl: previewUrl, contentClassName: 'overflow-auto' },
+        { downloadUrl: showHeaderDownload ? previewUrl : null, contentClassName: 'overflow-auto' },
       );
     }
     // Fall through to plain text if JSON parse fails
     return renderStandardContentPreview(
       <pre className="parse-preview-text">{previewText}</pre>,
-      { downloadUrl: previewUrl },
+      { downloadUrl: showHeaderDownload ? previewUrl : null },
     );
   }
 
   if (previewKind === 'text') {
     return renderStandardContentPreview(
       <pre className="parse-preview-text">{previewText ?? ''}</pre>,
-      { downloadUrl: previewUrl },
+      { downloadUrl: showHeaderDownload ? previewUrl : null },
     );
   }
 
@@ -351,63 +333,45 @@ export function PreviewTabPanel({ doc }: { doc: ProjectDocumentRow | null }) {
           {previewText ?? ''}
         </ReactMarkdown>
       </div>,
-      { downloadUrl: previewUrl },
+      { downloadUrl: showHeaderDownload ? previewUrl : null },
     );
   }
 
   if (previewKind === 'xlsx' && previewUrl) {
     return renderPreviewWithUnifiedHeader(
-      editMode ? (
-        <OnlyOfficeEditorPanel key={doc.source_uid} doc={doc} />
-      ) : (
-        <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
-          Click Edit to open in spreadsheet editor.
-        </div>
-      ),
+      <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
+        Spreadsheet editing is no longer available.
+      </div>,
       {
-        downloadUrl: previewUrl,
-        useScrollArea: editMode ? false : undefined,
-        headerActions: renderEditToggle(),
+        downloadUrl: showHeaderDownload ? previewUrl : null,
       },
     );
   }
 
   if (previewKind === 'docx' && previewUrl) {
     return renderPreviewWithUnifiedHeader(
-      editMode ? (
-        <OnlyOfficeEditorPanel key={doc.source_uid} doc={doc} />
-      ) : (
-        <DocxPreview
-          key={`${doc.source_uid}:${previewUrl}:${previewRevision}`}
-          title={doc.doc_title}
-          url={previewUrl}
-          hideToolbar
-        />
-      ),
+      <DocxPreview
+        key={`${doc.source_uid}:${previewUrl}`}
+        title={doc.doc_title}
+        url={previewUrl}
+        hideToolbar
+      />,
       {
-        downloadUrl: previewUrl,
-        useScrollArea: editMode ? false : undefined,
-        headerActions: renderEditToggle(),
+        downloadUrl: showHeaderDownload ? previewUrl : null,
       },
     );
   }
 
   if (previewKind === 'pptx' && previewUrl) {
     return renderPreviewWithUnifiedHeader(
-      editMode ? (
-        <OnlyOfficeEditorPanel key={doc.source_uid} doc={doc} />
-      ) : (
-        <PptxPreview
-          key={`${doc.source_uid}:${previewUrl}:${previewRevision}`}
-          title={doc.doc_title}
-          url={previewUrl}
-          hideHeaderMeta
-        />
-      ),
+      <PptxPreview
+        key={`${doc.source_uid}:${previewUrl}`}
+        title={doc.doc_title}
+        url={previewUrl}
+        hideHeaderMeta
+      />,
       {
-        downloadUrl: previewUrl,
-        useScrollArea: editMode ? false : undefined,
-        headerActions: renderEditToggle(),
+        downloadUrl: showHeaderDownload ? previewUrl : null,
       },
     );
   }
@@ -419,7 +383,7 @@ export function PreviewTabPanel({ doc }: { doc: ProjectDocumentRow | null }) {
           Open file
         </a>
       </div>,
-      { downloadUrl: previewUrl },
+      { downloadUrl: showHeaderDownload ? previewUrl : null },
     );
   }
 

@@ -63,6 +63,8 @@ export type DoclingNativeItem = {
   content: string;
   page_no: number | null;
   page_nos: number[];
+  block_uid?: string | null;
+  source_uid?: string | null;
 };
 
 export function extractDoclingNativeItemsFromText(jsonText: string): { items: DoclingNativeItem[] } {

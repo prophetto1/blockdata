@@ -3,7 +3,8 @@ import { useSuperuserProbe } from '@/hooks/useSuperuserProbe';
 
 // Mirror the auth bypass flag from AuthGuard — when auth is bypassed,
 // superuser gating is also bypassed so the page is accessible in dev.
-const AUTH_BYPASS_ENABLED = true;
+// Off by default. Set VITE_AUTH_BYPASS=true in .env.local to enable.
+const AUTH_BYPASS_ENABLED = import.meta.env.VITE_AUTH_BYPASS === 'true';
 
 export function SuperuserGuard() {
   const isSuperuser = useSuperuserProbe();

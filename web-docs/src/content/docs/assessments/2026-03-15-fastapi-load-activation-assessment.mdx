@@ -1,0 +1,323 @@
+---
+title: FastAPI and Load Activation Assessment
+description: Quality gate assessment for the March 15, 2026 FastAPI execution-plane, Kestra absorption, and load activation planning set.
+---
+
+# FastAPI and Load Activation Assessment
+
+- Source paths:
+  - `docs/fastapi/fastapi-integration.md`
+  - `docs/plans/2026-03-15-fastapi-execution-plane-systematic-buildout.md`
+  - `docs/plans/2026-03-15-kestra-absorption-context-update.md`
+  - `docs/plans/2026-03-15-load-activation.md`
+  - `docs/plans/ongoing-issues.md`
+- Date reviewed: `2026-03-15`
+- Reviewer: `Codex`
+- Verdict: `Fail`
+
+## Executive Summary
+
+The March 15 document set has a strong architectural center. The direction is much clearer than earlier connector-first framing:
+
+- FastAPI is the intended execution-plane bridge.
+- The service registry is the platform backbone.
+- Load is the right first activation slice.
+- The imported Kestra catalog should be absorbed, not treated as product destiny.
+
+That part is good. The failure is in execution readiness, not architectural intent.
+
+The main blockers are:
+
+- the load plan creates a cross-user run visibility problem by allowing `project_id = null` while existing RLS exposes null-project runs broadly
+- the proposed FastAPI load routes use the service-role client without any explicit ownership check, which bypasses the RLS model the plan assumes is protecting it
+- the docs disagree on whether credential CRUD/testing stays in Edge or moves to FastAPI
+- the systematic buildout says batch load work should be worker-backed, but the load plan still drives item processing through synchronous HTTP step calls
+- several referenced files and operational assumptions are not actually in place yet
+
+This planning set should not move into implementation unchanged.
+
+## Source Inputs Reviewed
+
+### Planning and direction docs
+
+- `docs/fastapi/fastapi-integration.md`
+- `docs/plans/2026-03-15-fastapi-execution-plane-systematic-buildout.md`
+- `docs/plans/2026-03-15-kestra-absorption-context-update.md`
+- `docs/plans/2026-03-15-load-activation.md`
+- `docs/plans/ongoing-issues.md`
+
+### Live repo sources
+
+- `services/platform-api/app/api/routes/plugin_execution.py`
+- `services/platform-api/app/auth/dependencies.py`
+- `services/platform-api/app/auth/principals.py`
+- `services/platform-api/app/domain/plugins/models.py`
+- `services/platform-api/app/infra/supabase_client.py`
+- `services/platform-api/app/main.py`
+- `services/platform-api/app/workers/conversion_pool.py`
+- `services/pipeline-worker/app/main.py`
+- `services/pipeline-worker/app/routes/admin_services.py`
+- `supabase/functions/admin-services/index.ts`
+- `supabase/functions/admin-integration-catalog/index.ts`
+- `web/src/lib/platformApi.ts`
+- `web/src/pages/marketplace/ServicesCatalog.tsx`
+- `web/src/pages/marketplace/ServiceDetailPage.tsx`
+- `web/src/pages/settings/services-panel.api.ts`
+- `supabase/migrations/20260213181000_022_provider_connections.sql`
+- `supabase/migrations/20260227150000_050_unified_service_registry.sql`
+- `supabase/migrations/20260227170000_053_service_registry_conversion_seed_and_rls_fix.sql`
+- `supabase/migrations/20260303110000_065_service_schema_extensions.sql`
+
+## What Is Strong
+
+- `docs/plans/2026-03-15-kestra-absorption-context-update.md` is the clearest document in the set. It correctly reframes the work around registry-first activation instead of a parallel connector subsystem.
+- `docs/fastapi/fastapi-integration.md` correctly states the core architectural pressure: heavy execution should stop accumulating inside Edge Functions.
+- `docs/plans/2026-03-15-fastapi-execution-plane-systematic-buildout.md` accurately identifies the current repo state. FastAPI exists, `pipeline-worker` is deprecated, and the codebase still has unresolved ownership drift.
+- `docs/plans/2026-03-15-load-activation.md` does real source checking instead of planning against a fictional repo. The registry naming drift and current plugin/runtime patterns are real.
+
+## Findings By Severity
+
+### Critical
+
+#### 1. The load plan makes `project_id` optional even though the current RLS exposes null-project runs and items to every authenticated user
+
+The current `service_runs` RLS allows authenticated users to select rows when `project_id IS NULL`:
+
+- `supabase/migrations/20260227170000_053_service_registry_conversion_seed_and_rls_fix.sql:11-18`
+
+The proposed `service_run_items` policy copies the same pattern:
+
+- `docs/plans/2026-03-15-load-activation.md:607-612`
+
+But the load API makes `project_id` optional:
+
+- `docs/plans/2026-03-15-load-activation.md:1320`
+
+The same plan then says the current `service_runs` RLS is "verified sufficient" for the Load page:
+
+- `docs/plans/2026-03-15-load-activation.md:49`
+
+That is not sufficient for a user-facing load feature. As written, a run created without `project_id` can become visible to every authenticated user, and the same is true for its child `service_run_items`.
+
+Required change:
+
+- Require `project_id` for user-created load runs, or
+- add a user-owned execution scope separate from nullable project scope, and
+- remove the null-project visibility path for user-facing load data.
+
+#### 2. The proposed FastAPI load routes bypass RLS with the service-role client and do not perform an ownership check
+
+`get_supabase_admin()` is explicitly a service-role client:
+
+- `services/platform-api/app/infra/supabase_client.py:1-18`
+
+The proposed load routes use that client for submit, step, and get:
+
+- `docs/plans/2026-03-15-load-activation.md:1329`
+- `docs/plans/2026-03-15-load-activation.md:1417`
+- `docs/plans/2026-03-15-load-activation.md:1520`
+
+The step and get paths then read and mutate runs by `run_id` only:
+
+- `docs/plans/2026-03-15-load-activation.md:1420-1524`
+
+There is no explicit ownership or project-membership check before:
+
+- reading the run
+- claiming the next item
+- updating run status
+- updating item status
+- returning run and item details
+
+That means the route is not actually protected by the RLS story the plan cites. It is using a privileged client and therefore must implement its own authorization checks before every read and write.
+
+Required change:
+
+- Add a dedicated authorization helper that verifies the caller owns the target project or run before any service-role query or mutation.
+- Treat this as a non-optional security requirement, not a cleanup item.
+
+### Major
+
+#### 3. The document set disagrees on where credential CRUD and connection testing belong
+
+The direction docs repeatedly place secrets and connection management in Edge:
+
+- `docs/fastapi/fastapi-integration.md:29-37`
+- `docs/plans/2026-03-15-fastapi-execution-plane-systematic-buildout.md:75-98`
+- `docs/plans/2026-03-15-load-activation.md:45-50`
+
+But Part C of the load plan moves all new connection CRUD and testing to FastAPI:
+
+- `docs/plans/2026-03-15-load-activation.md:259-260`
+- `docs/plans/2026-03-15-load-activation.md:367-488`
+- `docs/plans/2026-03-15-load-activation.md:1558`
+
+This is not a small wording mismatch. It changes:
+
+- which plane owns encrypted credential storage
+- which auth surface users hit
+- which codebase is the long-term connection-management home
+- how future integrations are expected to onboard
+
+Right now the planning set contains two incompatible ownership rules.
+
+Required change:
+
+- Pick one boundary and restate it consistently across all March 15 docs.
+- If FastAPI is the new home for generic connection management, revise the architectural docs to say that explicitly and explain why this does not recreate the "one-off endpoint" problem.
+- If Edge remains the home for credential CRUD/testing, then Part C of the load plan needs to be reworked around that boundary.
+
+#### 4. The load plan still uses synchronous HTTP stepping even though the systematic plan says batch loads should be worker-backed
+
+The systematic buildout says:
+
+- batch loads should be worker-backed: `docs/plans/2026-03-15-fastapi-execution-plane-systematic-buildout.md:129-149`
+- run/item/claim primitives should support long-running execution away from request lifetimes: `docs/plans/2026-03-15-fastapi-execution-plane-systematic-buildout.md:199-216`
+
+But the load plan's execution model is still:
+
+- submit a run over HTTP
+- process one item with `POST /load-runs/{run_id}/step`
+- do the download, transform-to-artifact, and destination write inside that request
+
+Trace:
+
+- `docs/plans/2026-03-15-load-activation.md:1281-1290`
+- `docs/plans/2026-03-15-load-activation.md:1407-1515`
+
+That may be acceptable as a temporary spike, but the plan does not describe it as a temporary spike. It presents it as the implementation path for the first real Load surface.
+
+Required change:
+
+- Either mark the synchronous step route as a temporary bootstrap phase with explicit worker migration criteria, or
+- extend the load plan so the first user-facing load path is actually driven by a worker loop rather than request/response stepping.
+
+#### 5. Several referenced files are missing or mislocated, which makes the plan set weaker as an implementation handoff
+
+Two direct examples:
+
+- The systematic buildout asks to modify `docs/plans/2026-03-15-load-activation-plan-set.md`, but that file does not exist:
+  - `docs/plans/2026-03-15-fastapi-execution-plane-systematic-buildout.md:269-294`
+- The load plan points its context document to `docs/pipeline/2026-03-15-kestra-absorption-context-update.md`, but the actual file is under `docs/plans/`:
+  - `docs/plans/2026-03-15-load-activation.md:11`
+
+These are easy to fix, but they still matter. A plan that is supposed to be executed task-by-task should not contain broken references in its prerequisite doc chain.
+
+Required change:
+
+- Fix all broken file references before implementation starts.
+- Recheck commit blocks and "modify these files" lists against the real tree.
+
+#### 6. The load page expects Realtime updates for `service_runs`, but the plan only publishes `service_run_items`
+
+The UI section says the hook should subscribe to:
+
+- `service_runs`
+- `service_run_items`
+
+Trace:
+
+- `docs/plans/2026-03-15-load-activation.md:1588-1592`
+
+But the migration shown in Task 6 only adds `service_run_items` to the realtime publication:
+
+- `docs/plans/2026-03-15-load-activation.md:620-623`
+
+I did not find a corresponding publication step for `service_runs` in the current migrations.
+
+Required change:
+
+- Either add `service_runs` to the realtime publication, or
+- change the UI plan so run-level status is polled or derived from another already-published stream.
+
+#### 7. The new `execution_plane` contract is incomplete and would misclassify existing non-Edge services
+
+The load plan formalizes `execution_plane` and says the frontend will use it as part of the routing boundary:
+
+- `docs/plans/2026-03-15-load-activation.md:50`
+- `docs/plans/2026-03-15-load-activation.md:141-147`
+- `docs/plans/2026-03-15-load-activation.md:1668`
+
+But the proposed backfill only updates:
+
+- `load-runner`
+- `transform-runner`
+- `docling-service`
+
+Trace:
+
+- `docs/plans/2026-03-15-load-activation.md:179-185`
+
+The repo already contains other non-Edge runtime services, including `conversion-service`:
+
+- `supabase/migrations/20260227170000_053_service_registry_conversion_seed_and_rls_fix.sql:31-45`
+
+and `pipeline-worker`-typed services introduced later:
+
+- `supabase/migrations/20260303110000_065_service_schema_extensions.sql`
+
+Those services would remain `edge` by default if this migration shipped as written.
+
+Required change:
+
+- Backfill every known non-Edge runtime service in the same migration, or
+- do not let the frontend depend on `execution_plane` until that data is complete and verified.
+
+### Minor
+
+#### 8. The defaulting logic for `source_download_function` is wrong for the common "list then download" shape
+
+The request model describes `source_function_name` as the list/discovery function and `source_download_function` as the per-item download function:
+
+- `docs/plans/2026-03-15-load-activation.md:1315-1318`
+
+But when creating the run, the plan stores:
+
+- `body.source_download_function or body.source_function_name`
+
+Trace:
+
+- `docs/plans/2026-03-15-load-activation.md:1377-1379`
+
+If the caller omits `source_download_function`, the step route will later call the list function as though it were the download function.
+
+Required change:
+
+- Make the download function explicit when source discovery and source retrieval are different, or
+- model source functions so the correct item-execution function can be resolved from registry metadata rather than a fragile fallback.
+
+## Required Changes Before Implementation
+
+1. Fix load-run authorization before anything else.
+2. Make `project_id` mandatory for user-facing load runs, or redesign run ownership so null-project rows are never cross-user visible.
+3. Resolve the Edge-versus-FastAPI ownership rule for credentials and testing, then update every March 15 doc to match.
+4. Decide whether the first load slice is a temporary synchronous bootstrap or a true worker-backed flow. Document the answer directly in the load plan.
+5. Fix broken source document paths and missing referenced files.
+6. Complete the operational plumbing for Realtime and `execution_plane` before UI code depends on them.
+7. Correct the `source_download_function` contract so the route code cannot silently call the wrong function.
+
+## Verification Expectations
+
+The current verification list is not enough for a go decision. Add these checks:
+
+- Authorization test: user A cannot read, step, or mutate user B's run or run items.
+- Null-project test: creating a user-facing load run without `project_id` is rejected, or the row stays private to the creator by policy.
+- Boundary test: one explicit test proving which plane owns connection CRUD and testing.
+- Worker-mode test: if the first slice stays synchronous, document and test its timeout/size limits; if it becomes worker-backed, prove the worker can progress a run without a long-lived client request.
+- Realtime test: verify `service_runs` and `service_run_items` both deliver the UI signals the Load page expects.
+- Routing test: verify existing non-Edge services are correctly labeled by `execution_plane` after migration.
+
+## Go / No-Go Recommendation
+
+`No-go` for direct implementation from the current March 15 plan set.
+
+Recommended disposition:
+
+- `docs/plans/2026-03-15-kestra-absorption-context-update.md`: keep as the north-star context document
+- `docs/fastapi/fastapi-integration.md`: keep, but revise to match the chosen credential-management boundary
+- `docs/plans/2026-03-15-fastapi-execution-plane-systematic-buildout.md`: keep as the high-level placement rule after fixing broken references
+- `docs/plans/2026-03-15-load-activation.md`: revise before implementation starts
+
+## Docs Navigation Note
+
+This assessment is published under `web-docs/src/content/docs/assessments/`. No sidebar code change was required because the docs site already includes `assessments` in `web-docs/src/lib/docs/sidebar-order.mjs`.

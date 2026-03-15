@@ -1,0 +1,2444 @@
+{
+  "run_id": "e6e298e4-8c5d-440b-84b6-59086701adad",
+  "extraction_agent_id": "473a80aa-f13d-4c15-a296-84a3d85e04a8",
+  "data": {
+    "basics": {
+      "name": "Dr. Rachel Zhang",
+      "email": "rachel.zhang@email.com",
+      "phone": "(555) 123-4567",
+      "location": {
+        "city": "New York City",
+        "region": "",
+        "country": "USA"
+      },
+      "profiles": [
+        {
+          "network": "LinkedIn",
+          "url": "https://linkedin.com/in/rachelzhang"
+        },
+        {
+          "network": "GitHub",
+          "url": "https://github.com/rzhang-ai"
+        },
+        {
+          "network": "Google Scholar",
+          "url": "https://scholar.google.com/rachelzhang"
+        }
+      ],
+      "summary": "AI researcher with 12+ years of experience spanning classical machine learning, deep learning, and probabilistic modeling. Led groundbreaking research in reinforcement learning, generative models, and multi-task learning. Published 25+ papers in top-tier conferences (NeurIPS, ICML, ICLR). Strong track record of transitioning theoretical advances into practical applications in both academic and industrial settings."
+    },
+    "skills": [
+      {
+        "category": "Research Areas",
+        "keywords": [
+          "Deep Learning",
+          "Reinforcement Learning",
+          "Probabilistic Models",
+          "Multi-Task Learning",
+          "Zero-Shot Learning",
+          "Neural Architecture Search"
+        ],
+        "level": "expert"
+      },
+      {
+        "category": "Frameworks",
+        "keywords": [
+          "PyTorch",
+          "TensorFlow",
+          "JAX",
+          "Ray"
+        ],
+        "level": "expert"
+      },
+      {
+        "category": "Programming Languages",
+        "keywords": [
+          "Python",
+          "C++",
+          "Julia",
+          "CUDA"
+        ],
+        "level": "advanced"
+      },
+      {
+        "category": "Tools",
+        "keywords": [
+          "Git",
+          "Version Control",
+          "Docker",
+          "Kubernetes",
+          "Cloud Platforms (AWS, GCP)"
+        ],
+        "level": "advanced"
+      },
+      {
+        "category": "Soft Skills",
+        "keywords": [
+          "Research Leadership",
+          "Technical Writing",
+          "Team Mentoring"
+        ],
+        "level": "expert"
+      }
+    ],
+    "experience": [
+      {
+        "company": "DeepMind",
+        "position": "Senior Research Scientist",
+        "startDate": "2019",
+        "endDate": "Present",
+        "highlights": [
+          "Lead researcher on large-scale multi-task learning systems, developing novel architectures that improve cross-task generalization by 40%",
+          "Pioneered new approach to zero-shot learning using contrastive training, published in NeurIPS 2023",
+          "Built and led team of 6 researchers working on foundational ML models",
+          "Developed novel regularization techniques for large language models, reducing catastrophic forgetting by 35%"
+        ],
+        "technologies": [
+          "Deep Learning",
+          "Multi-Task Learning",
+          "Zero-Shot Learning",
+          "Neural Architecture Search",
+          "PyTorch",
+          "TensorFlow",
+          "JAX",
+          "Ray"
+        ]
+      },
+      {
+        "company": "Google Research",
+        "position": "Research Scientist",
+        "startDate": "2015",
+        "endDate": "2019",
+        "highlights": [
+          "Developed probabilistic frameworks for robust ML, published in ICML 2018",
+          "Created novel attention mechanisms for computer vision models, improving accuracy by 25%",
+          "Led collaboration with Google Brain team on efficient training methods for transformer models",
+          "Mentored 4 PhD interns and collaborated with academic institutions"
+        ],
+        "technologies": [
+          "Probabilistic Models",
+          "Attention Mechanisms",
+          "Computer Vision",
+          "Transformer Models"
+        ]
+      },
+      {
+        "company": "Columbia University",
+        "position": "Research Assistant Professor",
+        "startDate": "2011",
+        "endDate": "2015",
+        "highlights": [
+          "Published seminal work on Bayesian optimization methods (cited 1000+ times)",
+          "Taught graduate-level courses in Machine Learning and Statistical Learning Theory",
+          "Supervised 5 PhD students and 3 MSc students",
+          "Secured $500K in research grants for probabilistic ML research"
+        ],
+        "technologies": [
+          "Bayesian Optimization",
+          "Probabilistic ML"
+        ]
+      }
+    ],
+    "education": [
+      {
+        "institution": "Columbia University",
+        "degree": "Ph.D. in Computer Science",
+        "field": "Computer Science",
+        "graduationDate": "2011"
+      },
+      {
+        "institution": "Stanford University",
+        "degree": "M.S. in Computer Science",
+        "field": "Computer Science",
+        "graduationDate": "2007"
+      }
+    ],
+    "publications": [
+      {
+        "title": "Scalable Multi-Task Learning with Efficient Cross-Task Transfer",
+        "publisher": "NeurIPS 2023 (Spotlight)",
+        "date": "2023",
+        "url": ""
+      },
+      {
+        "title": "Zero-Shot Learning through Contrastive Optimization",
+        "publisher": "ICML 2022 (Best Paper Award)",
+        "date": "2022",
+        "url": ""
+      },
+      {
+        "title": "Probabilistic Frameworks for Robust Deep Learning",
+        "publisher": "ICLR 2021",
+        "date": "2021",
+        "url": ""
+      }
+    ]
+  },
+  "extraction_metadata": {
+    "field_metadata": {
+      "basics": {
+        "name": {
+          "parsing_confidence": 0.995353622168994,
+          "extraction_confidence": 0.9999992065742468,
+          "confidence": 0.9953528324297967,
+          "citation": [
+            {
+              "page": 1,
+              "matching_text": "# Dr. Rachel Zhang, Ph.D.",
+              "bounding_boxes": [
+                {
+                  "x": 181,
+                  "y": 22,
+                  "w": 255,
+                  "h": 28
+                }
+              ],
+              "page_dimensions": {
+                "width": 612,
+                "height": 792
+              }
+            }
+          ]
+        },
+        "email": {
+          "parsing_confidence": 0.995353622168994,
+          "extraction_confidence": 1,
+          "confidence": 0.995353622168994,
+          "citation": [
+            {
+              "page": 1,
+              "matching_text": "New York City Area | rachel.zhang@email.com | (555) 123-4567\nlinkedin.com/in/rachelzhang | github.com/rzhang-ai |\nscholar.google.com/rachelzhang",
+              "bounding_boxes": [
+                {
+                  "x": 180,
+                  "y": 83,
+                  "w": 317,
+                  "h": 43
+                }
+              ],
+              "page_dimensions": {
+                "width": 612,
+                "height": 792
+              }
+            }
+          ]
+        },
+        "phone": {
+          "parsing_confidence": 0.995353622168994,
+          "extraction_confidence": 1,
+          "confidence": 0.995353622168994,
+          "citation": [
+            {
+              "page": 1,
+              "matching_text": "New York City Area | rachel.zhang@email.com | (555) 123-4567\nlinkedin.com/in/rachelzhang | github.com/rzhang-ai |\nscholar.google.com/rachelzhang",
+              "bounding_boxes": [
+                {
+                  "x": 180,
+                  "y": 83,
+                  "w": 317,
+                  "h": 43
+                }
+              ],
+              "page_dimensions": {
+                "width": 612,
+                "height": 792
+              }
+            }
+          ]
+        },
+        "location": {
+          "city": {
+            "parsing_confidence": 0.995353622168994,
+            "extraction_confidence": 0.9999786379705351,
+            "confidence": 0.9953323593955893,
+            "citation": [
+              {
+                "page": 1,
+                "matching_text": "New York City Area | rachel.zhang@email.com | (555) 123-4567\nlinkedin.com/in/rachelzhang | github.com/rzhang-ai |\nscholar.google.com/rachelzhang",
+                "bounding_boxes": [
+                  {
+                    "x": 180,
+                    "y": 83,
+                    "w": 317,
+                    "h": 43
+                  }
+                ],
+                "page_dimensions": {
+                  "width": 612,
+                  "height": 792
+                }
+              }
+            ]
+          },
+          "region": {
+            "parsing_confidence": 0.995353622168994,
+            "extraction_confidence": 0.01,
+            "confidence": 0.009953536221689941
+          },
+          "country": {
+            "parsing_confidence": 0.995353622168994,
+            "extraction_confidence": 0.9252119947591256,
+            "confidence": 0.9209131102576961
+          }
+        },
+        "profiles": [
+          {
+            "network": {
+              "parsing_confidence": 0.995353622168994,
+              "extraction_confidence": 0.9999971615133558,
+              "confidence": 0.9953507968710312,
+              "citation": [
+                {
+                  "page": 1,
+                  "matching_text": "New York City Area | rachel.zhang@email.com | (555) 123-4567\nlinkedin.com/in/rachelzhang | github.com/rzhang-ai |\nscholar.google.com/rachelzhang",
+                  "bounding_boxes": [
+                    {
+                      "x": 180,
+                      "y": 83,
+                      "w": 317,
+                      "h": 43
+                    }
+                  ],
+                  "page_dimensions": {
+                    "width": 612,
+                    "height": 792
+                  }
+                }
+              ]
+            },
+            "url": {
+              "parsing_confidence": 0.995353622168994,
+              "extraction_confidence": 0.8707128618742277,
+              "confidence": 0.8666672009356435,
+              "citation": [
+                {
+                  "page": 1,
+                  "matching_text": "New York City Area | rachel.zhang@email.com | (555) 123-4567\nlinkedin.com/in/rachelzhang | github.com/rzhang-ai |\nscholar.google.com/rachelzhang",
+                  "bounding_boxes": [
+                    {
+                      "x": 180,
+                      "y": 83,
+                      "w": 317,
+                      "h": 43
+                    }
+                  ],
+                  "page_dimensions": {
+                    "width": 612,
+                    "height": 792
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "network": {
+              "parsing_confidence": 0.995353622168994,
+              "extraction_confidence": 0.99999853235266,
+              "confidence": 0.9953521613408981,
+              "citation": [
+                {
+                  "page": 1,
+                  "matching_text": "New York City Area | rachel.zhang@email.com | (555) 123-4567\nlinkedin.com/in/rachelzhang | github.com/rzhang-ai |\nscholar.google.com/rachelzhang",
+                  "bounding_boxes": [
+                    {
+                      "x": 180,
+                      "y": 83,
+                      "w": 317,
+                      "h": 43
+                    }
+                  ],
+                  "page_dimensions": {
+                    "width": 612,
+                    "height": 792
+                  }
+                }
+              ]
+            },
+            "url": {
+              "parsing_confidence": 0.995353622168994,
+              "extraction_confidence": 1,
+              "confidence": 0.995353622168994,
+              "citation": [
+                {
+                  "page": 1,
+                  "matching_text": "New York City Area | rachel.zhang@email.com | (555) 123-4567\nlinkedin.com/in/rachelzhang | github.com/rzhang-ai |\nscholar.google.com/rachelzhang",
+                  "bounding_boxes": [
+                    {
+                      "x": 180,
+                      "y": 83,
+                      "w": 317,
+                      "h": 43
+                    }
+                  ],
+                  "page_dimensions": {
+                    "width": 612,
+                    "height": 792
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "network": {
+              "parsing_confidence": 0.995353622168994,
+              "extraction_confidence": 0.9999842504336702,
+              "confidence": 0.9953379457811001,
+              "citation": [
+                {
+                  "page": 1,
+                  "matching_text": "New York City Area | rachel.zhang@email.com | (555) 123-4567\nlinkedin.com/in/rachelzhang | github.com/rzhang-ai |\nscholar.google.com/rachelzhang",
+                  "bounding_boxes": [
+                    {
+                      "x": 180,
+                      "y": 83,
+                      "w": 317,
+                      "h": 43
+                    }
+                  ],
+                  "page_dimensions": {
+                    "width": 612,
+                    "height": 792
+                  }
+                }
+              ]
+            },
+            "url": {
+              "parsing_confidence": 0.995353622168994,
+              "extraction_confidence": 0.9999992296559196,
+              "confidence": 0.9953528554042232,
+              "citation": [
+                {
+                  "page": 1,
+                  "matching_text": "New York City Area | rachel.zhang@email.com | (555) 123-4567\nlinkedin.com/in/rachelzhang | github.com/rzhang-ai |\nscholar.google.com/rachelzhang",
+                  "bounding_boxes": [
+                    {
+                      "x": 180,
+                      "y": 83,
+                      "w": 317,
+                      "h": 43
+                    }
+                  ],
+                  "page_dimensions": {
+                    "width": 612,
+                    "height": 792
+                  }
+                }
+              ]
+            }
+          }
+        ],
+        "summary": {
+          "parsing_confidence": 0.995353622168994,
+          "extraction_confidence": 0.9993274672221549,
+          "confidence": 0.9946842142325386,
+          "citation": [
+            {
+              "page": 1,
+              "matching_text": "Strong track record of transitioning theoretical advances into practical applications in both academic and industrial settings.",
+              "bounding_boxes": [
+                {
+                  "x": 180,
+                  "y": 194,
+                  "w": 409,
+                  "h": 94
+                }
+              ],
+              "page_dimensions": {
+                "width": 612,
+                "height": 792
+              }
+            }
+          ]
+        }
+      },
+      "skills": [
+        {
+          "category": {
+            "parsing_confidence": 0.995353622168994,
+            "extraction_confidence": 0.9999991507675272,
+            "confidence": 0.9953527768823762,
+            "citation": [
+              {
+                "page": 1,
+                "matching_text": "### Research Areas",
+                "bounding_boxes": [
+                  {
+                    "x": 11,
+                    "y": 53,
+                    "w": 81,
+                    "h": 11
+                  }
+                ],
+                "page_dimensions": {
+                  "width": 612,
+                  "height": 792
+                }
+              }
+            ]
+          },
+          "keywords": [
+            {
+              "parsing_confidence": 0.995353622168994,
+              "extraction_confidence": 0.9999999031936799,
+              "confidence": 0.9953535258124727,
+              "citation": [
+                {
+                  "page": 1,
+                  "matching_text": "AI researcher with 12+ years of experience spanning classical machine learning, deep learning, and probabilistic modeling.",
+                  "bounding_boxes": [
+                    {
+                      "x": 180,
+                      "y": 194,
+                      "w": 409,
+                      "h": 94
+                    }
+                  ],
+                  "page_dimensions": {
+                    "width": 612,
+                    "height": 792
+                  }
+                }
+              ]
+            },
+            {
+              "parsing_confidence": 0.995353622168994,
+              "extraction_confidence": 1,
+              "confidence": 0.995353622168994,
+              "citation": [
+                {
+                  "page": 1,
+                  "matching_text": "Led groundbreaking research in reinforcement learning, generative models, and multi-task learning.",
+                  "bounding_boxes": [
+                    {
+                      "x": 180,
+                      "y": 194,
+                      "w": 409,
+                      "h": 94
+                    }
+                  ],
+                  "page_dimensions": {
+                    "width": 612,
+                    "height": 792
+                  }
+                }
+              ]
+            },
+            {
+              "parsing_confidence": 0.995353622168994,
+              "extraction_confidence": 1,
+              "confidence": 0.995353622168994,
+              "citation": [
+                {
+                  "page": 1,
+                  "matching_text": "* Probabilistic Models",
+                  "bounding_boxes": [
+                    {
+                      "x": 12,
+                      "y": 114,
+                      "w": 109,
+                      "h": 11
+                    }
+                  ],
+                  "page_dimensions": {
+                    "width": 612,
+                    "height": 792
+                  }
+                }
+              ]
+            },
+            {
+              "parsing_confidence": 0.995353622168994,
+              "extraction_confidence": 0.9999998621940971,
+              "confidence": 0.9953534850033894,
+              "citation": [
+                {
+                  "page": 1,
+                  "matching_text": "Led groundbreaking research in reinforcement learning, generative models, and multi-task learning.",
+                  "bounding_boxes": [
+                    {
+                      "x": 180,
+                      "y": 194,
+                      "w": 409,
+                      "h": 94
+                    }
+                  ],
+                  "page_dimensions": {
+                    "width": 612,
+                    "height": 792
+                  }
+                }
+              ]
+            },
+            {
+              "parsing_confidence": 0.995353622168994,
+              "extraction_confidence": 1,
+              "confidence": 0.995353622168994,
+              "citation": [
+                {
+                  "page": 1,
+                  "matching_text": "* Zero-Shot Learning",
+                  "bounding_boxes": [
+                    {
+                      "x": 12,
+                      "y": 154,
+                      "w": 106,
+                      "h": 12
+                    }
+                  ],
+                  "page_dimensions": {
+                    "width": 612,
+                    "height": 792
+                  }
+                }
+              ]
+            },
+            {
+              "parsing_confidence": 0.995353622168994,
+              "extraction_confidence": 1,
+              "confidence": 0.995353622168994,
+              "citation": [
+                {
+                  "page": 1,
+                  "matching_text": "* Neural Architecture Search",
+                  "bounding_boxes": [
+                    {
+                      "x": 12,
+                      "y": 174,
+                      "w": 106,
+                      "h": 27
+                    }
+                  ],
+                  "page_dimensions": {
+                    "width": 612,
+                    "height": 792
+                  }
+                }
+              ]
+            }
+          ],
+          "level": {
+            "parsing_confidence": 0.995353622168994,
+            "extraction_confidence": 0.99999158136958,
+            "confidence": 0.9953452426547118
+          }
+        },
+        {
+          "category": {
+            "parsing_confidence": 0.995353622168994,
+            "extraction_confidence": 0.9976921329889235,
+            "confidence": 0.9930564783800346,
+            "citation": [
+              {
+                "page": 1,
+                "matching_text": "### Frameworks",
+                "bounding_boxes": [
+                  {
+                    "x": 11,
+                    "y": 215,
+                    "w": 63,
+                    "h": 11
+                  }
+                ],
+                "page_dimensions": {
+                  "width": 612,
+                  "height": 792
+                }
+              }
+            ]
+          },
+          "keywords": [
+            {
+              "parsing_confidence": 0.995353622168994,
+              "extraction_confidence": 1,
+              "confidence": 0.995353622168994,
+              "citation": [
+                {
+                  "page": 1,
+                  "matching_text": "* PyTorch",
+                  "bounding_boxes": [
+                    {
+                      "x": 12,
+                      "y": 237,
+                      "w": 49,
+                      "h": 12
+                    }
+                  ],
+                  "page_dimensions": {
+                    "width": 612,
+                    "height": 792
+                  }
+                }
+              ]
+            },
+            {
+              "parsing_confidence": 0.995353622168994,
+              "extraction_confidence": 1,
+              "confidence": 0.995353622168994,
+              "citation": [
+                {
+                  "page": 1,
+                  "matching_text": "* TensorFlow",
+                  "bounding_boxes": [
+                    {
+                      "x": 12,
+                      "y": 257,
+                      "w": 65,
+                      "h": 10
+                    }
+                  ],
+                  "page_dimensions": {
+                    "width": 612,
+                    "height": 792
+                  }
+                }
+              ]
+            },
+            {
+              "parsing_confidence": 0.995353622168994,
+              "extraction_confidence": 1,
+              "confidence": 0.995353622168994,
+              "citation": [
+                {
+                  "page": 1,
+                  "matching_text": "* JAX",
+                  "bounding_boxes": [
+                    {
+                      "x": 12,
+                      "y": 276,
+                      "w": 29,
+                      "h": 11
+                    }
+                  ],
+                  "page_dimensions": {
+                    "width": 612,
+                    "height": 792
+                  }
+                }
+              ]
+            },
+            {
+              "parsing_confidence": 0.995353622168994,
+              "extraction_confidence": 1,
+              "confidence": 0.995353622168994,
+              "citation": [
+                {
+                  "page": 1,
+                  "matching_text": "* Ray",
+                  "bounding_boxes": [
+                    {
+                      "x": 12,
+                      "y": 296,
+                      "w": 27,
+                      "h": 11
+                    }
+                  ],
+                  "page_dimensions": {
+                    "width": 612,
+                    "height": 792
+                  }
+                }
+              ]
+            }
+          ],
+          "level": {
+            "parsing_confidence": 0.995353622168994,
+            "extraction_confidence": 0.5544690941117628,
+            "confidence": 0.551892821204904
+          }
+        },
+        {
+          "category": {
+            "parsing_confidence": 0.995353622168994,
+            "extraction_confidence": 0.2542694051733064,
+            "confidence": 0.25308797344600603,
+            "citation": [
+              {
+                "page": 1,
+                "matching_text": "### Programming",
+                "bounding_boxes": [
+                  {
+                    "x": 11,
+                    "y": 322,
+                    "w": 70,
+                    "h": 12
+                  }
+                ],
+                "page_dimensions": {
+                  "width": 612,
+                  "height": 792
+                }
+              }
+            ]
+          },
+          "keywords": [
+            {
+              "parsing_confidence": 0.995353622168994,
+              "extraction_confidence": 1,
+              "confidence": 0.995353622168994,
+              "citation": [
+                {
+                  "page": 1,
+                  "matching_text": "* Python\n* C++",
+                  "bounding_boxes": [
+                    {
+                      "x": 12,
+                      "y": 343,
+                      "w": 44,
+                      "h": 12
+                    }
+                  ],
+                  "page_dimensions": {
+                    "width": 612,
+                    "height": 792
+                  }
+                }
+              ]
+            },
+            {
+              "parsing_confidence": 0.995353622168994,
+              "extraction_confidence": 1,
+              "confidence": 0.995353622168994,
+              "citation": [
+                {
+                  "page": 1,
+                  "matching_text": "* Python\n* C++",
+                  "bounding_boxes": [
+                    {
+                      "x": 12,
+                      "y": 343,
+                      "w": 44,
+                      "h": 12
+                    }
+                  ],
+                  "page_dimensions": {
+                    "width": 612,
+                    "height": 792
+                  }
+                }
+              ]
+            },
+            {
+              "parsing_confidence": 0.995353622168994,
+              "extraction_confidence": 1,
+              "confidence": 0.995353622168994,
+              "citation": [
+                {
+                  "page": 1,
+                  "matching_text": "* Julia",
+                  "bounding_boxes": [
+                    {
+                      "x": 12,
+                      "y": 383,
+                      "w": 31,
+                      "h": 11
+                    }
+                  ],
+                  "page_dimensions": {
+                    "width": 612,
+                    "height": 792
+                  }
+                }
+              ]
+            },
+            {
+              "parsing_confidence": 0.995353622168994,
+              "extraction_confidence": 1,
+              "confidence": 0.995353622168994,
+              "citation": [
+                {
+                  "page": 1,
+                  "matching_text": "* CUDA",
+                  "bounding_boxes": [
+                    {
+                      "x": 12,
+                      "y": 402,
+                      "w": 39,
+                      "h": 11
+                    }
+                  ],
+                  "page_dimensions": {
+                    "width": 612,
+                    "height": 792
+                  }
+                }
+              ]
+            }
+          ],
+          "level": {
+            "parsing_confidence": 0.995353622168994,
+            "extraction_confidence": 0.1366083368768231,
+            "confidence": 0.13597360292882804
+          }
+        },
+        {
+          "category": {
+            "parsing_confidence": 0.995353622168994,
+            "extraction_confidence": 0.9999988527586979,
+            "confidence": 0.9953524802582085,
+            "citation": [
+              {
+                "page": 2,
+                "matching_text": "## Tools",
+                "bounding_boxes": [
+                  {
+                    "x": 11,
+                    "y": 271,
+                    "w": 27,
+                    "h": 10
+                  }
+                ],
+                "page_dimensions": {
+                  "width": 612,
+                  "height": 792
+                }
+              }
+            ]
+          },
+          "keywords": [
+            {
+              "parsing_confidence": 0.995353622168994,
+              "extraction_confidence": 1,
+              "confidence": 0.995353622168994,
+              "citation": [
+                {
+                  "page": 2,
+                  "matching_text": "* Git & Version Control",
+                  "bounding_boxes": [
+                    {
+                      "x": 12,
+                      "y": 292,
+                      "w": 113,
+                      "h": 10
+                    }
+                  ],
+                  "page_dimensions": {
+                    "width": 612,
+                    "height": 792
+                  }
+                }
+              ]
+            },
+            {
+              "parsing_confidence": 0.995353622168994,
+              "extraction_confidence": 0.9482102397987047,
+              "confidence": 0.9438044967613711,
+              "citation": [
+                {
+                  "page": 2,
+                  "matching_text": "* Git & Version Control",
+                  "bounding_boxes": [
+                    {
+                      "x": 12,
+                      "y": 292,
+                      "w": 113,
+                      "h": 10
+                    }
+                  ],
+                  "page_dimensions": {
+                    "width": 612,
+                    "height": 792
+                  }
+                }
+              ]
+            },
+            {
+              "parsing_confidence": 0.995353622168994,
+              "extraction_confidence": 1,
+              "confidence": 0.995353622168994,
+              "citation": [
+                {
+                  "page": 2,
+                  "matching_text": "* Docker & Kubernetes",
+                  "bounding_boxes": [
+                    {
+                      "x": 12,
+                      "y": 312,
+                      "w": 115,
+                      "h": 10
+                    }
+                  ],
+                  "page_dimensions": {
+                    "width": 612,
+                    "height": 792
+                  }
+                }
+              ]
+            },
+            {
+              "parsing_confidence": 0.995353622168994,
+              "extraction_confidence": 1,
+              "confidence": 0.995353622168994,
+              "citation": [
+                {
+                  "page": 2,
+                  "matching_text": "* Docker & Kubernetes",
+                  "bounding_boxes": [
+                    {
+                      "x": 12,
+                      "y": 312,
+                      "w": 115,
+                      "h": 10
+                    }
+                  ],
+                  "page_dimensions": {
+                    "width": 612,
+                    "height": 792
+                  }
+                }
+              ]
+            },
+            {
+              "parsing_confidence": 0.995353622168994,
+              "extraction_confidence": 0.9257404140559657,
+              "confidence": 0.9214390743188299,
+              "citation": [
+                {
+                  "page": 2,
+                  "matching_text": "* Cloud Platforms (AWS, GCP)",
+                  "bounding_boxes": [
+                    {
+                      "x": 12,
+                      "y": 332,
+                      "w": 122,
+                      "h": 28
+                    }
+                  ],
+                  "page_dimensions": {
+                    "width": 612,
+                    "height": 792
+                  }
+                }
+              ]
+            }
+          ],
+          "level": {
+            "parsing_confidence": 0.995353622168994,
+            "extraction_confidence": 0.9957226700601052,
+            "confidence": 0.9910961663201079
+          }
+        },
+        {
+          "category": {
+            "parsing_confidence": 0.995353622168994,
+            "extraction_confidence": 0.9999997467855445,
+            "confidence": 0.9953533701310685,
+            "citation": [
+              {
+                "page": 2,
+                "matching_text": "## Soft Skills",
+                "bounding_boxes": [
+                  {
+                    "x": 11,
+                    "y": 374,
+                    "w": 52,
+                    "h": 10
+                  }
+                ],
+                "page_dimensions": {
+                  "width": 612,
+                  "height": 792
+                }
+              }
+            ]
+          },
+          "keywords": [
+            {
+              "parsing_confidence": 0.995353622168994,
+              "extraction_confidence": 1,
+              "confidence": 0.995353622168994,
+              "citation": [
+                {
+                  "page": 2,
+                  "matching_text": "* Research Leadership",
+                  "bounding_boxes": [
+                    {
+                      "x": 12,
+                      "y": 395,
+                      "w": 112,
+                      "h": 11
+                    }
+                  ],
+                  "page_dimensions": {
+                    "width": 612,
+                    "height": 792
+                  }
+                }
+              ]
+            },
+            {
+              "parsing_confidence": 0.995353622168994,
+              "extraction_confidence": 1,
+              "confidence": 0.995353622168994,
+              "citation": [
+                {
+                  "page": 2,
+                  "matching_text": "* Technical Writing",
+                  "bounding_boxes": [
+                    {
+                      "x": 12,
+                      "y": 415,
+                      "w": 94,
+                      "h": 11
+                    }
+                  ],
+                  "page_dimensions": {
+                    "width": 612,
+                    "height": 792
+                  }
+                }
+              ]
+            },
+            {
+              "parsing_confidence": 0.995353622168994,
+              "extraction_confidence": 1,
+              "confidence": 0.995353622168994,
+              "citation": [
+                {
+                  "page": 2,
+                  "matching_text": "* Team Mentoring",
+                  "bounding_boxes": [
+                    {
+                      "x": 12,
+                      "y": 435,
+                      "w": 89,
+                      "h": 11
+                    }
+                  ],
+                  "page_dimensions": {
+                    "width": 612,
+                    "height": 792
+                  }
+                }
+              ]
+            }
+          ],
+          "level": {
+            "parsing_confidence": 0.995353622168994,
+            "extraction_confidence": 0.984575363688984,
+            "confidence": 0.9800006545461849
+          }
+        }
+      ],
+      "experience": [
+        {
+          "company": {
+            "parsing_confidence": 0.995353622168994,
+            "extraction_confidence": 1,
+            "confidence": 0.995353622168994,
+            "citation": [
+              {
+                "page": 1,
+                "matching_text": "### DeepMind",
+                "bounding_boxes": [
+                  {
+                    "x": 181,
+                    "y": 340,
+                    "w": 58,
+                    "h": 13
+                  }
+                ],
+                "page_dimensions": {
+                  "width": 612,
+                  "height": 792
+                }
+              }
+            ]
+          },
+          "position": {
+            "parsing_confidence": 0.995353622168994,
+            "extraction_confidence": 1,
+            "confidence": 0.995353622168994,
+            "citation": [
+              {
+                "page": 1,
+                "matching_text": "**Senior Research Scientist**",
+                "bounding_boxes": [
+                  {
+                    "x": 180,
+                    "y": 358,
+                    "w": 142,
+                    "h": 14
+                  }
+                ],
+                "page_dimensions": {
+                  "width": 612,
+                  "height": 792
+                }
+              }
+            ]
+          },
+          "startDate": {
+            "parsing_confidence": 0.995353622168994,
+            "extraction_confidence": 1,
+            "confidence": 0.995353622168994,
+            "citation": [
+              {
+                "page": 1,
+                "matching_text": "*2019 - Present*",
+                "bounding_boxes": [
+                  {
+                    "x": 181,
+                    "y": 376,
+                    "w": 70,
+                    "h": 12
+                  }
+                ],
+                "page_dimensions": {
+                  "width": 612,
+                  "height": 792
+                }
+              }
+            ]
+          },
+          "endDate": {
+            "parsing_confidence": 0.995353622168994,
+            "extraction_confidence": 1,
+            "confidence": 0.995353622168994,
+            "citation": [
+              {
+                "page": 1,
+                "matching_text": "*2019 - Present*",
+                "bounding_boxes": [
+                  {
+                    "x": 181,
+                    "y": 376,
+                    "w": 70,
+                    "h": 12
+                  }
+                ],
+                "page_dimensions": {
+                  "width": 612,
+                  "height": 792
+                }
+              }
+            ]
+          },
+          "highlights": [
+            {
+              "parsing_confidence": 0.995353622168994,
+              "extraction_confidence": 0.9995314683201344,
+              "confidence": 0.9948872674643389,
+              "citation": [
+                {
+                  "page": 1,
+                  "matching_text": "* Lead researcher on large-scale multi-task learning systems, developing novel architectures that improve cross-task generalization by 40%",
+                  "bounding_boxes": [
+                    {
+                      "x": 182,
+                      "y": 396,
+                      "w": 397,
+                      "h": 29
+                    }
+                  ],
+                  "page_dimensions": {
+                    "width": 612,
+                    "height": 792
+                  }
+                }
+              ]
+            },
+            {
+              "parsing_confidence": 0.995353622168994,
+              "extraction_confidence": 0.9999867329090566,
+              "confidence": 0.9953404167219678,
+              "citation": [
+                {
+                  "page": 1,
+                  "matching_text": "* Pioneered new approach to zero-shot learning using contrastive training, published in NeurIPS 2023",
+                  "bounding_boxes": [
+                    {
+                      "x": 182,
+                      "y": 432,
+                      "w": 374,
+                      "h": 28
+                    }
+                  ],
+                  "page_dimensions": {
+                    "width": 612,
+                    "height": 792
+                  }
+                }
+              ]
+            },
+            {
+              "parsing_confidence": 0.995353622168994,
+              "extraction_confidence": 0.9999911617968239,
+              "confidence": 0.9953448250314493,
+              "citation": [
+                {
+                  "page": 1,
+                  "matching_text": "* Built and led team of 6 researchers working on foundational ML models",
+                  "bounding_boxes": [
+                    {
+                      "x": 182,
+                      "y": 468,
+                      "w": 365,
+                      "h": 12
+                    }
+                  ],
+                  "page_dimensions": {
+                    "width": 612,
+                    "height": 792
+                  }
+                }
+              ]
+            },
+            {
+              "parsing_confidence": 0.995353622168994,
+              "extraction_confidence": 0.9999997980367616,
+              "confidence": 0.9953534211441531,
+              "citation": [
+                {
+                  "page": 1,
+                  "matching_text": "* Developed novel regularization techniques for large language models, reducing catastrophic forgetting by 35%",
+                  "bounding_boxes": [
+                    {
+                      "x": 182,
+                      "y": 489,
+                      "w": 405,
+                      "h": 28
+                    }
+                  ],
+                  "page_dimensions": {
+                    "width": 612,
+                    "height": 792
+                  }
+                }
+              ]
+            }
+          ],
+          "technologies": [
+            {
+              "parsing_confidence": 0.995353622168994,
+              "extraction_confidence": 0.5117492161104241,
+              "confidence": 0.509371435897654,
+              "citation": [
+                {
+                  "page": 1,
+                  "matching_text": "AI researcher with 12+ years of experience spanning classical machine learning, deep learning, and probabilistic modeling.",
+                  "bounding_boxes": [
+                    {
+                      "x": 180,
+                      "y": 194,
+                      "w": 409,
+                      "h": 94
+                    }
+                  ],
+                  "page_dimensions": {
+                    "width": 612,
+                    "height": 792
+                  }
+                }
+              ]
+            },
+            {
+              "parsing_confidence": 0.995353622168994,
+              "extraction_confidence": 0.8920373445488619,
+              "confidence": 0.8878926020067206,
+              "citation": [
+                {
+                  "page": 1,
+                  "matching_text": "Led groundbreaking research in reinforcement learning, generative models, and multi-task learning.",
+                  "bounding_boxes": [
+                    {
+                      "x": 180,
+                      "y": 194,
+                      "w": 409,
+                      "h": 94
+                    }
+                  ],
+                  "page_dimensions": {
+                    "width": 612,
+                    "height": 792
+                  }
+                }
+              ]
+            },
+            {
+              "parsing_confidence": 0.995353622168994,
+              "extraction_confidence": 0.9626987300754427,
+              "confidence": 0.9582256680380826,
+              "citation": [
+                {
+                  "page": 1,
+                  "matching_text": "* Zero-Shot Learning",
+                  "bounding_boxes": [
+                    {
+                      "x": 12,
+                      "y": 154,
+                      "w": 106,
+                      "h": 12
+                    }
+                  ],
+                  "page_dimensions": {
+                    "width": 612,
+                    "height": 792
+                  }
+                }
+              ]
+            },
+            {
+              "parsing_confidence": 0.995353622168994,
+              "extraction_confidence": 0.697276003935966,
+              "confidence": 0.6940361961691855,
+              "citation": [
+                {
+                  "page": 1,
+                  "matching_text": "* Neural Architecture Search",
+                  "bounding_boxes": [
+                    {
+                      "x": 12,
+                      "y": 174,
+                      "w": 106,
+                      "h": 27
+                    }
+                  ],
+                  "page_dimensions": {
+                    "width": 612,
+                    "height": 792
+                  }
+                }
+              ]
+            },
+            {
+              "parsing_confidence": 0.995353622168994,
+              "extraction_confidence": 0.973246756759453,
+              "confidence": 0.9687246846047475,
+              "citation": [
+                {
+                  "page": 1,
+                  "matching_text": "* PyTorch",
+                  "bounding_boxes": [
+                    {
+                      "x": 12,
+                      "y": 237,
+                      "w": 49,
+                      "h": 12
+                    }
+                  ],
+                  "page_dimensions": {
+                    "width": 612,
+                    "height": 792
+                  }
+                }
+              ]
+            },
+            {
+              "parsing_confidence": 0.995353622168994,
+              "extraction_confidence": 0.9963899614730897,
+              "confidence": 0.9917603572450642,
+              "citation": [
+                {
+                  "page": 1,
+                  "matching_text": "* TensorFlow",
+                  "bounding_boxes": [
+                    {
+                      "x": 12,
+                      "y": 257,
+                      "w": 65,
+                      "h": 10
+                    }
+                  ],
+                  "page_dimensions": {
+                    "width": 612,
+                    "height": 792
+                  }
+                }
+              ]
+            },
+            {
+              "parsing_confidence": 0.995353622168994,
+              "extraction_confidence": 0.9730157809923246,
+              "confidence": 0.9684947820383029,
+              "citation": [
+                {
+                  "page": 1,
+                  "matching_text": "* JAX",
+                  "bounding_boxes": [
+                    {
+                      "x": 12,
+                      "y": 276,
+                      "w": 29,
+                      "h": 11
+                    }
+                  ],
+                  "page_dimensions": {
+                    "width": 612,
+                    "height": 792
+                  }
+                }
+              ]
+            },
+            {
+              "parsing_confidence": 0.995353622168994,
+              "extraction_confidence": 0.9321163540932675,
+              "confidence": 0.9277853893296905,
+              "citation": [
+                {
+                  "page": 1,
+                  "matching_text": "* Ray",
+                  "bounding_boxes": [
+                    {
+                      "x": 12,
+                      "y": 296,
+                      "w": 27,
+                      "h": 11
+                    }
+                  ],
+                  "page_dimensions": {
+                    "width": 612,
+                    "height": 792
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "company": {
+            "parsing_confidence": 0.995353622168994,
+            "extraction_confidence": 1,
+            "confidence": 0.995353622168994,
+            "citation": [
+              {
+                "page": 1,
+                "matching_text": "### Google Research",
+                "bounding_boxes": [
+                  {
+                    "x": 180,
+                    "y": 533,
+                    "w": 96,
+                    "h": 13
+                  }
+                ],
+                "page_dimensions": {
+                  "width": 612,
+                  "height": 792
+                }
+              }
+            ]
+          },
+          "position": {
+            "parsing_confidence": 0.995353622168994,
+            "extraction_confidence": 1,
+            "confidence": 0.995353622168994,
+            "citation": [
+              {
+                "page": 1,
+                "matching_text": "**Senior Research Scientist**",
+                "bounding_boxes": [
+                  {
+                    "x": 180,
+                    "y": 358,
+                    "w": 142,
+                    "h": 14
+                  }
+                ],
+                "page_dimensions": {
+                  "width": 612,
+                  "height": 792
+                }
+              }
+            ]
+          },
+          "startDate": {
+            "parsing_confidence": 0.995353622168994,
+            "extraction_confidence": 1,
+            "confidence": 0.995353622168994,
+            "citation": [
+              {
+                "page": 1,
+                "matching_text": "*2015 - 2019*",
+                "bounding_boxes": [
+                  {
+                    "x": 180,
+                    "y": 568,
+                    "w": 57,
+                    "h": 12
+                  }
+                ],
+                "page_dimensions": {
+                  "width": 612,
+                  "height": 792
+                }
+              }
+            ]
+          },
+          "endDate": {
+            "parsing_confidence": 0.995353622168994,
+            "extraction_confidence": 1,
+            "confidence": 0.995353622168994,
+            "citation": [
+              {
+                "page": 1,
+                "matching_text": "*2019 - Present*",
+                "bounding_boxes": [
+                  {
+                    "x": 181,
+                    "y": 376,
+                    "w": 70,
+                    "h": 12
+                  }
+                ],
+                "page_dimensions": {
+                  "width": 612,
+                  "height": 792
+                }
+              }
+            ]
+          },
+          "highlights": [
+            {
+              "parsing_confidence": 0.995353622168994,
+              "extraction_confidence": 0.9999996060867179,
+              "confidence": 0.9953532300859819,
+              "citation": [
+                {
+                  "page": 1,
+                  "matching_text": "* Developed probabilistic frameworks for robust ML, published in ICML 2018",
+                  "bounding_boxes": [
+                    {
+                      "x": 182,
+                      "y": 589,
+                      "w": 383,
+                      "h": 12
+                    }
+                  ],
+                  "page_dimensions": {
+                    "width": 612,
+                    "height": 792
+                  }
+                }
+              ]
+            },
+            {
+              "parsing_confidence": 0.995353622168994,
+              "extraction_confidence": 0.9999997914060477,
+              "confidence": 0.995353414544248,
+              "citation": [
+                {
+                  "page": 1,
+                  "matching_text": "* Created novel attention mechanisms for computer vision models, improving accuracy by 25%",
+                  "bounding_boxes": [
+                    {
+                      "x": 182,
+                      "y": 608,
+                      "w": 388,
+                      "h": 28
+                    }
+                  ],
+                  "page_dimensions": {
+                    "width": 612,
+                    "height": 792
+                  }
+                }
+              ]
+            },
+            {
+              "parsing_confidence": 0.995353622168994,
+              "extraction_confidence": 0.9999843202745309,
+              "confidence": 0.9953380152974537,
+              "citation": [
+                {
+                  "page": 1,
+                  "matching_text": "* Led collaboration with Google Brain team on efficient training methods for transformer models",
+                  "bounding_boxes": [
+                    {
+                      "x": 182,
+                      "y": 644,
+                      "w": 380,
+                      "h": 28
+                    }
+                  ],
+                  "page_dimensions": {
+                    "width": 612,
+                    "height": 792
+                  }
+                }
+              ]
+            },
+            {
+              "parsing_confidence": 0.995353622168994,
+              "extraction_confidence": 0.9999996672542529,
+              "confidence": 0.9953532909693095,
+              "citation": [
+                {
+                  "page": 1,
+                  "matching_text": "* Mentored 4 PhD interns and collaborated with academic institutions",
+                  "bounding_boxes": [
+                    {
+                      "x": 182,
+                      "y": 680,
+                      "w": 349,
+                      "h": 12
+                    }
+                  ],
+                  "page_dimensions": {
+                    "width": 612,
+                    "height": 792
+                  }
+                }
+              ]
+            }
+          ],
+          "technologies": [
+            {
+              "parsing_confidence": 0.995353622168994,
+              "extraction_confidence": 0.9901421675225434,
+              "confidence": 0.9855415929058224,
+              "citation": [
+                {
+                  "page": 1,
+                  "matching_text": "* Probabilistic Models",
+                  "bounding_boxes": [
+                    {
+                      "x": 12,
+                      "y": 114,
+                      "w": 109,
+                      "h": 11
+                    }
+                  ],
+                  "page_dimensions": {
+                    "width": 612,
+                    "height": 792
+                  }
+                }
+              ]
+            },
+            {
+              "parsing_confidence": 0.995353622168994,
+              "extraction_confidence": 0.7012704491864811,
+              "confidence": 0.6980120817178415,
+              "citation": [
+                {
+                  "page": 1,
+                  "matching_text": "* Created novel attention mechanisms for computer vision models, improving accuracy by 25%",
+                  "bounding_boxes": [
+                    {
+                      "x": 182,
+                      "y": 608,
+                      "w": 388,
+                      "h": 28
+                    }
+                  ],
+                  "page_dimensions": {
+                    "width": 612,
+                    "height": 792
+                  }
+                }
+              ]
+            },
+            {
+              "parsing_confidence": 0.995353622168994,
+              "extraction_confidence": 0.7851779726946585,
+              "confidence": 0.7815297391689359,
+              "citation": [
+                {
+                  "page": 1,
+                  "matching_text": "* Created novel attention mechanisms for computer vision models, improving accuracy by 25%",
+                  "bounding_boxes": [
+                    {
+                      "x": 182,
+                      "y": 608,
+                      "w": 388,
+                      "h": 28
+                    }
+                  ],
+                  "page_dimensions": {
+                    "width": 612,
+                    "height": 792
+                  }
+                }
+              ]
+            },
+            {
+              "parsing_confidence": 0.995353622168994,
+              "extraction_confidence": 0.8863607064003605,
+              "confidence": 0.882242339663867,
+              "citation": [
+                {
+                  "page": 1,
+                  "matching_text": "* Led collaboration with Google Brain team on efficient training methods for transformer models",
+                  "bounding_boxes": [
+                    {
+                      "x": 182,
+                      "y": 644,
+                      "w": 380,
+                      "h": 28
+                    }
+                  ],
+                  "page_dimensions": {
+                    "width": 612,
+                    "height": 792
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "company": {
+            "parsing_confidence": 0.995353622168994,
+            "extraction_confidence": 1,
+            "confidence": 0.995353622168994,
+            "citation": [
+              {
+                "page": 2,
+                "matching_text": "## Columbia University",
+                "bounding_boxes": [
+                  {
+                    "x": 180,
+                    "y": 54,
+                    "w": 114,
+                    "h": 13
+                  }
+                ],
+                "page_dimensions": {
+                  "width": 612,
+                  "height": 792
+                }
+              }
+            ]
+          },
+          "position": {
+            "parsing_confidence": 0.995353622168994,
+            "extraction_confidence": 1,
+            "confidence": 0.995353622168994,
+            "citation": [
+              {
+                "page": 2,
+                "matching_text": "Research Assistant Professor",
+                "bounding_boxes": [
+                  {
+                    "x": 180,
+                    "y": 72,
+                    "w": 163,
+                    "h": 11
+                  }
+                ],
+                "page_dimensions": {
+                  "width": 612,
+                  "height": 792
+                }
+              }
+            ]
+          },
+          "startDate": {
+            "parsing_confidence": 0.995353622168994,
+            "extraction_confidence": 1,
+            "confidence": 0.995353622168994,
+            "citation": [
+              {
+                "page": 2,
+                "matching_text": "*2011 - 2015*",
+                "bounding_boxes": [
+                  {
+                    "x": 180,
+                    "y": 89,
+                    "w": 55,
+                    "h": 9
+                  }
+                ],
+                "page_dimensions": {
+                  "width": 612,
+                  "height": 792
+                }
+              }
+            ]
+          },
+          "endDate": {
+            "parsing_confidence": 0.995353622168994,
+            "extraction_confidence": 1,
+            "confidence": 0.995353622168994,
+            "citation": [
+              {
+                "page": 2,
+                "matching_text": "*2011 - 2015*",
+                "bounding_boxes": [
+                  {
+                    "x": 180,
+                    "y": 89,
+                    "w": 55,
+                    "h": 9
+                  }
+                ],
+                "page_dimensions": {
+                  "width": 612,
+                  "height": 792
+                }
+              }
+            ]
+          },
+          "highlights": [
+            {
+              "parsing_confidence": 0.995353622168994,
+              "extraction_confidence": 0.9999993611780835,
+              "confidence": 0.9953529863152856,
+              "citation": [
+                {
+                  "page": 2,
+                  "matching_text": "* Published seminal work on Bayesian optimization methods (cited 1000+ times)",
+                  "bounding_boxes": [
+                    {
+                      "x": 182,
+                      "y": 110,
+                      "w": 401,
+                      "h": 12
+                    }
+                  ],
+                  "page_dimensions": {
+                    "width": 612,
+                    "height": 792
+                  }
+                }
+              ]
+            },
+            {
+              "parsing_confidence": 0.995353622168994,
+              "extraction_confidence": 0.999999474782325,
+              "confidence": 0.9953530993916788,
+              "citation": [
+                {
+                  "page": 2,
+                  "matching_text": "* Taught graduate-level courses in Machine Learning and Statistical Learning Theory",
+                  "bounding_boxes": [
+                    {
+                      "x": 182,
+                      "y": 130,
+                      "w": 385,
+                      "h": 28
+                    }
+                  ],
+                  "page_dimensions": {
+                    "width": 612,
+                    "height": 792
+                  }
+                }
+              ]
+            },
+            {
+              "parsing_confidence": 0.995353622168994,
+              "extraction_confidence": 0.9999977165307458,
+              "confidence": 0.9953513493096007,
+              "citation": [
+                {
+                  "page": 2,
+                  "matching_text": "* Supervised 5 PhD students and 3 MSc students",
+                  "bounding_boxes": [
+                    {
+                      "x": 182,
+                      "y": 166,
+                      "w": 249,
+                      "h": 11
+                    }
+                  ],
+                  "page_dimensions": {
+                    "width": 612,
+                    "height": 792
+                  }
+                }
+              ]
+            },
+            {
+              "parsing_confidence": 0.995353622168994,
+              "extraction_confidence": 0.9999988710402727,
+              "confidence": 0.9953524984548402,
+              "citation": [
+                {
+                  "page": 2,
+                  "matching_text": "* Secured $500K in research grants for probabilistic ML research",
+                  "bounding_boxes": [
+                    {
+                      "x": 182,
+                      "y": 186,
+                      "w": 327,
+                      "h": 11
+                    }
+                  ],
+                  "page_dimensions": {
+                    "width": 612,
+                    "height": 792
+                  }
+                }
+              ]
+            }
+          ],
+          "technologies": [
+            {
+              "parsing_confidence": 0.995353622168994,
+              "extraction_confidence": 0.9934936287038298,
+              "confidence": 0.9888774819321747,
+              "citation": [
+                {
+                  "page": 2,
+                  "matching_text": "* Published seminal work on Bayesian optimization methods (cited 1000+ times)",
+                  "bounding_boxes": [
+                    {
+                      "x": 182,
+                      "y": 110,
+                      "w": 401,
+                      "h": 12
+                    }
+                  ],
+                  "page_dimensions": {
+                    "width": 612,
+                    "height": 792
+                  }
+                }
+              ]
+            },
+            {
+              "parsing_confidence": 0.995353622168994,
+              "extraction_confidence": 0.6665698315399706,
+              "confidence": 0.6634726962518859,
+              "citation": [
+                {
+                  "page": 2,
+                  "matching_text": "* Secured $500K in research grants for probabilistic ML research",
+                  "bounding_boxes": [
+                    {
+                      "x": 182,
+                      "y": 186,
+                      "w": 327,
+                      "h": 11
+                    }
+                  ],
+                  "page_dimensions": {
+                    "width": 612,
+                    "height": 792
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "education": [
+        {
+          "institution": {
+            "parsing_confidence": 0.995353622168994,
+            "extraction_confidence": 1,
+            "confidence": 0.995353622168994,
+            "citation": [
+              {
+                "page": 2,
+                "matching_text": "## Columbia University",
+                "bounding_boxes": [
+                  {
+                    "x": 180,
+                    "y": 250,
+                    "w": 114,
+                    "h": 13
+                  }
+                ],
+                "page_dimensions": {
+                  "width": 612,
+                  "height": 792
+                }
+              }
+            ]
+          },
+          "degree": {
+            "parsing_confidence": 0.995353622168994,
+            "extraction_confidence": 0.7078909034527165,
+            "confidence": 0.704601774852143,
+            "citation": [
+              {
+                "page": 2,
+                "matching_text": "Ph.D. in Computer Science",
+                "bounding_boxes": [
+                  {
+                    "x": 180,
+                    "y": 269,
+                    "w": 148,
+                    "h": 13
+                  }
+                ],
+                "page_dimensions": {
+                  "width": 612,
+                  "height": 792
+                }
+              }
+            ]
+          },
+          "field": {
+            "parsing_confidence": 0.995353622168994,
+            "extraction_confidence": 0.9999998435918493,
+            "confidence": 0.9953534664875747,
+            "citation": [
+              {
+                "page": 2,
+                "matching_text": "Ph.D. in Computer Science",
+                "bounding_boxes": [
+                  {
+                    "x": 180,
+                    "y": 269,
+                    "w": 148,
+                    "h": 13
+                  }
+                ],
+                "page_dimensions": {
+                  "width": 612,
+                  "height": 792
+                }
+              }
+            ]
+          },
+          "graduationDate": {
+            "parsing_confidence": 0.995353622168994,
+            "extraction_confidence": 1,
+            "confidence": 0.995353622168994,
+            "citation": [
+              {
+                "page": 2,
+                "matching_text": "*2007 - 2011*",
+                "bounding_boxes": [
+                  {
+                    "x": 180,
+                    "y": 286,
+                    "w": 56,
+                    "h": 10
+                  }
+                ],
+                "page_dimensions": {
+                  "width": 612,
+                  "height": 792
+                }
+              }
+            ]
+          }
+        },
+        {
+          "institution": {
+            "parsing_confidence": 0.995353622168994,
+            "extraction_confidence": 1,
+            "confidence": 0.995353622168994,
+            "citation": [
+              {
+                "page": 2,
+                "matching_text": "## Stanford University",
+                "bounding_boxes": [
+                  {
+                    "x": 180,
+                    "y": 373,
+                    "w": 110,
+                    "h": 13
+                  }
+                ],
+                "page_dimensions": {
+                  "width": 612,
+                  "height": 792
+                }
+              }
+            ]
+          },
+          "degree": {
+            "parsing_confidence": 0.995353622168994,
+            "extraction_confidence": 0.9999991730404654,
+            "confidence": 0.9953527990518258,
+            "citation": [
+              {
+                "page": 2,
+                "matching_text": "M.S. in Computer Science",
+                "bounding_boxes": [
+                  {
+                    "x": 180,
+                    "y": 391,
+                    "w": 143,
+                    "h": 12
+                  }
+                ],
+                "page_dimensions": {
+                  "width": 612,
+                  "height": 792
+                }
+              }
+            ]
+          },
+          "field": {
+            "parsing_confidence": 0.995353622168994,
+            "extraction_confidence": 1,
+            "confidence": 0.995353622168994,
+            "citation": [
+              {
+                "page": 2,
+                "matching_text": "M.S. in Computer Science",
+                "bounding_boxes": [
+                  {
+                    "x": 180,
+                    "y": 391,
+                    "w": 143,
+                    "h": 12
+                  }
+                ],
+                "page_dimensions": {
+                  "width": 612,
+                  "height": 792
+                }
+              }
+            ]
+          },
+          "graduationDate": {
+            "parsing_confidence": 0.995353622168994,
+            "extraction_confidence": 1,
+            "confidence": 0.995353622168994,
+            "citation": [
+              {
+                "page": 2,
+                "matching_text": "*2005 - 2007*",
+                "bounding_boxes": [
+                  {
+                    "x": 180,
+                    "y": 408,
+                    "w": 59,
+                    "h": 10
+                  }
+                ],
+                "page_dimensions": {
+                  "width": 612,
+                  "height": 792
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "publications": [
+        {
+          "title": {
+            "parsing_confidence": 0.995353622168994,
+            "extraction_confidence": 1,
+            "confidence": 0.995353622168994,
+            "citation": [
+              {
+                "page": 2,
+                "matching_text": "\"Scalable Multi-Task Learning with Efficient Cross-Task Transfer\"",
+                "bounding_boxes": [
+                  {
+                    "x": 192,
+                    "y": 472,
+                    "w": 330,
+                    "h": 12
+                  }
+                ],
+                "page_dimensions": {
+                  "width": 612,
+                  "height": 792
+                }
+              }
+            ]
+          },
+          "publisher": {
+            "parsing_confidence": 0.995353622168994,
+            "extraction_confidence": 0.9707799802172558,
+            "confidence": 0.9662693696383899,
+            "citation": [
+              {
+                "page": 2,
+                "matching_text": "*NeurIPS 2023 (Spotlight)*",
+                "bounding_boxes": [
+                  {
+                    "x": 192,
+                    "y": 488,
+                    "w": 119,
+                    "h": 11
+                  }
+                ],
+                "page_dimensions": {
+                  "width": 612,
+                  "height": 792
+                }
+              }
+            ]
+          },
+          "date": {
+            "parsing_confidence": 0.995353622168994,
+            "extraction_confidence": 1,
+            "confidence": 0.995353622168994,
+            "citation": [
+              {
+                "page": 2,
+                "matching_text": "*NeurIPS 2023 (Spotlight)*",
+                "bounding_boxes": [
+                  {
+                    "x": 192,
+                    "y": 488,
+                    "w": 119,
+                    "h": 11
+                  }
+                ],
+                "page_dimensions": {
+                  "width": 612,
+                  "height": 792
+                }
+              }
+            ]
+          },
+          "url": {
+            "parsing_confidence": 0.995353622168994,
+            "extraction_confidence": 0.01,
+            "confidence": 0.009953536221689941
+          }
+        },
+        {
+          "title": {
+            "parsing_confidence": 0.995353622168994,
+            "extraction_confidence": 1,
+            "confidence": 0.995353622168994,
+            "citation": [
+              {
+                "page": 2,
+                "matching_text": "\"Zero-Shot Learning through Contrastive Optimization\"",
+                "bounding_boxes": [
+                  {
+                    "x": 192,
+                    "y": 531,
+                    "w": 281,
+                    "h": 12
+                  }
+                ],
+                "page_dimensions": {
+                  "width": 612,
+                  "height": 792
+                }
+              }
+            ]
+          },
+          "publisher": {
+            "parsing_confidence": 0.995353622168994,
+            "extraction_confidence": 0.9999997347905332,
+            "confidence": 0.9953533581917906,
+            "citation": [
+              {
+                "page": 2,
+                "matching_text": "*ICML 2022 (Best Paper Award)*",
+                "bounding_boxes": [
+                  {
+                    "x": 192,
+                    "y": 548,
+                    "w": 145,
+                    "h": 11
+                  }
+                ],
+                "page_dimensions": {
+                  "width": 612,
+                  "height": 792
+                }
+              }
+            ]
+          },
+          "date": {
+            "parsing_confidence": 0.995353622168994,
+            "extraction_confidence": 1,
+            "confidence": 0.995353622168994,
+            "citation": [
+              {
+                "page": 2,
+                "matching_text": "*ICML 2022 (Best Paper Award)*",
+                "bounding_boxes": [
+                  {
+                    "x": 192,
+                    "y": 548,
+                    "w": 145,
+                    "h": 11
+                  }
+                ],
+                "page_dimensions": {
+                  "width": 612,
+                  "height": 792
+                }
+              }
+            ]
+          },
+          "url": {
+            "parsing_confidence": 0.995353622168994,
+            "extraction_confidence": 0.01,
+            "confidence": 0.009953536221689941
+          }
+        },
+        {
+          "title": {
+            "parsing_confidence": 0.995353622168994,
+            "extraction_confidence": 1,
+            "confidence": 0.995353622168994,
+            "citation": [
+              {
+                "page": 2,
+                "matching_text": "\"Probabilistic Frameworks for Robust Deep Learning\"",
+                "bounding_boxes": [
+                  {
+                    "x": 192,
+                    "y": 591,
+                    "w": 270,
+                    "h": 12
+                  }
+                ],
+                "page_dimensions": {
+                  "width": 612,
+                  "height": 792
+                }
+              }
+            ]
+          },
+          "publisher": {
+            "parsing_confidence": 0.995353622168994,
+            "extraction_confidence": 1,
+            "confidence": 0.995353622168994,
+            "citation": [
+              {
+                "page": 2,
+                "matching_text": "*ICLR 2021*",
+                "bounding_boxes": [
+                  {
+                    "x": 192,
+                    "y": 606,
+                    "w": 49,
+                    "h": 9
+                  }
+                ],
+                "page_dimensions": {
+                  "width": 612,
+                  "height": 792
+                }
+              }
+            ]
+          },
+          "date": {
+            "parsing_confidence": 0.995353622168994,
+            "extraction_confidence": 1,
+            "confidence": 0.995353622168994,
+            "citation": [
+              {
+                "page": 2,
+                "matching_text": "*ICLR 2021*",
+                "bounding_boxes": [
+                  {
+                    "x": 192,
+                    "y": 606,
+                    "w": 49,
+                    "h": 9
+                  }
+                ],
+                "page_dimensions": {
+                  "width": 612,
+                  "height": 792
+                }
+              }
+            ]
+          },
+          "url": {
+            "parsing_confidence": 0.995353622168994,
+            "extraction_confidence": 0.01,
+            "confidence": 0.009953536221689941
+          }
+        }
+      ]
+    },
+    "usage": {
+      "num_pages_extracted": 2,
+      "num_document_tokens": 882,
+      "num_output_tokens": 842
+    },
+    "parse_job_id": "56e9725a-732c-4ab7-8b49-6ba45622b551"
+  }
+}

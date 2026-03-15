@@ -77,12 +77,6 @@ export default defineConfig(({ mode }) => {
       allow: [path.resolve(__dirname, '..')],
     },
     proxy: {
-      '/oo-api': {
-        target: env.VITE_ONLYOFFICE_URL || 'http://localhost:9980',
-        changeOrigin: true,
-        ws: true,
-        rewrite: (path) => path.replace(/^\/oo-api/, ''),
-      },
       '/platform-api': {
         target: env.VITE_PLATFORM_API_URL || 'http://localhost:8000',
         changeOrigin: true,

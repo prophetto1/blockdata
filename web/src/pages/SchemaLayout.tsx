@@ -6,9 +6,9 @@ import { useEffect, useLayoutEffect, useMemo, useState, type CSSProperties } fro
 import { useShellHeaderTitle } from '@/components/common/useShellHeaderTitle';
 import { useHeaderCenter } from '@/components/shell/HeaderCenterContext';
 import { DoubleArrowIcon } from '@/components/icons/DoubleArrowIcon';
+import { PdfjsExpressPreview } from '../components/documents/PdfjsExpressPreview';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { PdfPreview } from '../components/documents/PdfPreview';
 import { ICON_TOKENS } from '../lib/iconTokens';
 import './SchemaLayout.css';
 
@@ -90,7 +90,6 @@ export default function SchemaLayout() {
   const [previewView, setPreviewView] = useState<PreviewView>('Preview');
   const [docPage, setDocPage] = useState(1);
   const [docsPerPage, setDocsPerPage] = useState(DOCS_PER_PAGE);
-  const [pdfToolbarHost, setPdfToolbarHost] = useState<HTMLDivElement | null>(null);
 
   const isLeftCollapsed = leftColumnState === 'collapsed';
   const isRightCollapsed = rightColumnState === 'collapsed';
@@ -288,13 +287,8 @@ export default function SchemaLayout() {
                 <div className="schema-layout-middle-virtual-preview">
                   <div className="flex items-center justify-start flex-nowrap schema-layout-middle-header">
                     {previewSelector}
-                    <div className="schema-layout-middle-toolbar-host" ref={setPdfToolbarHost} />
                   </div>
-                  <PdfPreview
-                    url="/layout-sample.pdf"
-                    hideToolbar={!pdfToolbarHost}
-                    toolbarPortalTarget={pdfToolbarHost}
-                  />
+                  <PdfjsExpressPreview url="/layout-sample.pdf" />
                 </div>
               ) : (
                 <div className="schema-layout-middle-virtual-preview">

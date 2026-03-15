@@ -111,6 +111,12 @@ export type ExtractDoclingBlocksResult = {
   blocks: DoclingBlockDraft[];
 };
 
+function getNativeBlockType(label: string | undefined, fallback: string): string {
+  if (typeof label !== "string") return fallback;
+  const trimmed = label.trim();
+  return trimmed.length > 0 ? trimmed : fallback;
+}
+
 /**
  * Extract blocks from DoclingDocument JSON bytes.
  * Traverses `body.children[]` then `furniture.children[]` in order.
@@ -165,7 +171,7 @@ export function extractDoclingBlocks(
     // Try texts
     const textItem = textsMap.get(pointer);
     if (textItem) {
-      const blockType = mapDoclingLabel(textItem.label);
+      const blockType = getNativeBlockType(textItem.label, "text");
       const content = textItem.text ?? textItem.orig ?? "";
       const pageNos = extractPageNos(textItem.prov);
       const pageNo = pageNos[0] ?? null;
@@ -205,7 +211,7 @@ export function extractDoclingBlocks(
       const pageNos = extractPageNos(tableItem.prov);
       const pageNo = pageNos[0] ?? null;
       blocks.push({
-        block_type: mapDoclingLabel(tableItem.label),
+        block_type: getNativeBlockType(tableItem.label, "table"),
         block_content: content,
         pointer,
         page_no: pageNo,
@@ -235,7 +241,7 @@ export function extractDoclingBlocks(
       const pageNos = extractPageNos(picItem.prov);
       const pageNo = pageNos[0] ?? null;
       blocks.push({
-        block_type: "figure",
+        block_type: getNativeBlockType(picItem.label, "picture"),
         block_content: content,
         pointer,
         page_no: pageNo,
@@ -256,7 +262,7 @@ export function extractDoclingBlocks(
       const pageNos = extractPageNos(kvItem.prov);
       const pageNo = pageNos[0] ?? null;
       blocks.push({
-        block_type: "key_value_region",
+        block_type: getNativeBlockType(kvItem.label, "key_value_region"),
         block_content: content,
         pointer,
         page_no: pageNo,
@@ -274,7 +280,7 @@ export function extractDoclingBlocks(
       const pageNos = extractPageNos(formItem.prov);
       const pageNo = pageNos[0] ?? null;
       blocks.push({
-        block_type: "form_region",
+        block_type: getNativeBlockType(formItem.label, "form"),
         block_content: content,
         pointer,
         page_no: pageNo,
@@ -303,7 +309,7 @@ export function extractDoclingBlocks(
         }
         const pageNos = Array.from(allPageNos).sort((a, b) => a - b);
         blocks.push({
-          block_type: "paragraph",
+          block_type: getNativeBlockType(group.label ?? group.name, "inline"),
           block_content: parts.join(""),
           pointer,
           page_no: pageNos[0] ?? null,
@@ -331,53 +337,6 @@ export function extractDoclingBlocks(
   }
 
   return { docTitle, blocks };
-}
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-/**
- * Map Docling item labels to platform block_type enum.
- * Labels from DoclingDocument can be lowercase or UPPERCASE.
- */
-function mapDoclingLabel(label: string): string {
-  switch (label.toLowerCase()) {
-    case "title":
-    case "section_header":
-      return "heading";
-    case "paragraph":
-    case "text":
-      return "paragraph";
-    case "list_item":
-      return "list_item";
-    case "code":
-      return "code_block";
-    case "table":
-    case "document_index":
-      return "table";
-    case "picture":
-      return "figure";
-    case "caption":
-      return "caption";
-    case "footnote":
-      return "footnote";
-    case "formula":
-      return "other"; // no dedicated platform type for formulas yet
-    case "page_header":
-      return "page_header";
-    case "page_footer":
-      return "page_footer";
-    case "checkbox_selected":
-    case "checkbox_unselected":
-      return "checkbox";
-    case "form":
-      return "form_region";
-    case "key_value_region":
-      return "key_value_region";
-    default:
-      return "other";
-  }
 }
 
 /**

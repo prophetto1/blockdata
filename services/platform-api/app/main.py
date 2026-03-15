@@ -72,11 +72,7 @@ def create_app() -> FastAPI:
     from app.api.routes.functions import router as functions_router
     app.include_router(functions_router)
 
-    # 6. OnlyOffice bridge
-    from app.api.routes.onlyoffice import router as onlyoffice_router
-    app.include_router(onlyoffice_router)
-
-    # 7. Plugin catch-all MUST be last
+    # 6. Plugin catch-all MUST be last
     from app.api.routes.plugin_execution import router as plugin_router
     app.include_router(plugin_router)
 

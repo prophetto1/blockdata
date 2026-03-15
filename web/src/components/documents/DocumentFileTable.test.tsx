@@ -9,6 +9,8 @@ vi.mock('@/components/ui/scroll-area', () => ({
 
 afterEach(() => {
   cleanup();
+  vi.restoreAllMocks();
+  vi.unstubAllGlobals();
 });
 
 const baseDoc = {
@@ -26,6 +28,23 @@ const baseDoc = {
   source_locator: 'projects/project-1/source/quarterly-report.pdf',
   conv_locator: 'projects/project-1/converted/quarterly-report.md',
 };
+
+class ResizeObserverMock {
+  private readonly callback: ResizeObserverCallback;
+
+  constructor(callback: ResizeObserverCallback) {
+    this.callback = callback;
+  }
+
+  observe(target: Element) {
+    const width = (target as HTMLElement).clientWidth;
+    this.callback([{ contentRect: { width } as DOMRectReadOnly, target } as ResizeObserverEntry], this as unknown as ResizeObserver);
+  }
+
+  unobserve() {}
+
+  disconnect() {}
+}
 
 describe('DocumentFileTable sizing', () => {
   it('uses compact parse typography when rendered as parse-documents-table', () => {
@@ -123,18 +142,18 @@ describe('DocumentFileTable sizing', () => {
     expect(nameCell?.className).toContain('py-1.5');
   });
 
-  it('shows the real file extension for generic binary uploads', () => {
-    const binaryDoc = {
+  it('removes the format column and appends a missing extension to the displayed file name', () => {
+    const extensionlessDoc = {
       ...baseDoc,
-      source_type: 'binary',
-      doc_title: 'Comprehensive_AI_Funding_Landscape.json',
-      source_locator: 'projects/project-1/source/comprehensive-ai-funding-landscape.json',
+      source_type: 'md',
+      doc_title: 'README',
+      source_locator: 'projects/project-1/source/README.md',
       conv_locator: null,
     };
 
-    const { container } = render(
+    const { container, queryByText } = render(
       <DocumentFileTable
-        docs={[binaryDoc]}
+        docs={[extensionlessDoc]}
         loading={false}
         error={null}
         selected={new Set()}
@@ -145,8 +164,33 @@ describe('DocumentFileTable sizing', () => {
       />,
     );
 
-    const formatCell = container.querySelector('tbody tr td:nth-child(3)');
-    expect(formatCell?.textContent).toBe('JSON');
+    const headerText = Array.from(container.querySelectorAll('thead th')).map((cell) => cell.textContent?.trim());
+    expect(headerText).not.toContain('Format');
+    expect(queryByText('README.md')).toBeTruthy();
+    expect(queryByText('README')).toBeFalsy();
+  });
+
+  it('keeps size and status visible in a narrow parse/extract pane when there is still room', () => {
+    vi.stubGlobal('ResizeObserver', ResizeObserverMock);
+    vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(300);
+
+    const { container } = render(
+      <DocumentFileTable
+        docs={[baseDoc]}
+        loading={false}
+        error={null}
+        selected={new Set()}
+        toggleSelect={() => {}}
+        toggleSelectAll={() => {}}
+        allSelected={false}
+        someSelected={false}
+        className="parse-documents-table parse-documents-table-compact"
+      />,
+    );
+
+    const headerText = Array.from(container.querySelectorAll('thead th')).map((cell) => cell.textContent?.trim());
+    expect(headerText).toContain('Size');
+    expect(headerText).toContain('Status');
   });
 });
 

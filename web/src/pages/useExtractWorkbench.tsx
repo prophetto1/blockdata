@@ -23,7 +23,7 @@ import { useShellHeaderTitle } from '@/components/common/useShellHeaderTitle';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { DocumentFileTable } from '@/components/documents/DocumentFileTable';
+import { DocumentFileTable, type ExtraColumn } from '@/components/documents/DocumentFileTable';
 import { DocumentPreviewFrame, DocumentPreviewMessage } from '@/components/documents/DocumentPreviewShell';
 import { formatBytes, getDocumentFormat, type ProjectDocumentRow } from '@/lib/projectDetailHelpers';
 import { cn } from '@/lib/utils';
@@ -122,13 +122,39 @@ function ExtractConfigTab({ doc }: { doc: ProjectDocumentRow | null }) {
 
 type MonacoEditorInstance = Parameters<OnMount>[0];
 type SchemaEditorView = 'visual' | 'code';
+type SchemaWorkspaceStage = 'start' | 'editing';
 
-function ExtractSchemaTab({ doc }: { doc: ProjectDocumentRow | null }) {
+export const EXTRACT_SCHEMA_LIBRARY_TITLE = 'Saved Schemas';
+export const EXTRACT_SCHEMA_EDITOR_TITLE = 'Schema Editor';
+export const EXTRACT_SCHEMA_DETAILS_TITLE = 'Details';
+export const EXTRACT_SCHEMA_START_TITLE = 'Create Schema';
+export const EXTRACT_SCHEMA_START_DESCRIPTION = 'Start manually or bootstrap with a generated example.';
+export const EXTRACT_SCHEMA_START_ACTIONS = ['Auto-Generate', 'Create Manually'] as const;
+
+function createStarterSchemaFields(mode: 'auto' | 'manual'): SchemaField[] {
+  if (mode === 'auto') {
+    return [
+      createSchemaField({
+        name: 'title',
+        type: 'string',
+        description: 'Generated example title field',
+      }),
+      createSchemaField({
+        name: 'summary',
+        type: 'string',
+        description: 'Generated example summary field',
+      }),
+    ];
+  }
+
+  return [createSchemaField({ type: 'string' })];
+}
+
+function ExtractSchemaTab({ doc: _doc }: { doc: ProjectDocumentRow | null }) {
   const monacoTheme = useMonacoTheme();
+  const [workspaceStage, setWorkspaceStage] = useState<SchemaWorkspaceStage>('start');
   const [editorView, setEditorView] = useState<SchemaEditorView>('visual');
-  const [fields, setFields] = useState<SchemaField[]>(() => [
-    createSchemaField({ type: 'string' }),
-  ]);
+  const [fields, setFields] = useState<SchemaField[]>(() => createStarterSchemaFields('manual'));
   const editorRef = useRef<MonacoEditorInstance | null>(null);
   const codeHasFocusRef = useRef(false);
 
@@ -176,8 +202,6 @@ function ExtractSchemaTab({ doc }: { doc: ProjectDocumentRow | null }) {
       return removeFrom(prev);
     });
   }, []);
-
-  if (!doc) return <EmptyPanel message="Select a file to define the extraction schema." />;
 
   const iconBtnClass = 'inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md';
   const iconActiveClass = 'bg-accent text-foreground';
@@ -354,111 +378,141 @@ function ExtractSchemaTab({ doc }: { doc: ProjectDocumentRow | null }) {
   }
 
   return (
-    <div className="flex h-full flex-col">
-      {/* View toggle toolbar */}
-      <div className="flex items-center gap-1 border-b border-border bg-card px-2 py-1.5">
-        <button
-          type="button"
-          aria-pressed={editorView === 'visual'}
-          onClick={() => setEditorView('visual')}
-          className={`inline-flex h-8 items-center gap-1.5 rounded-md border px-2 text-xs font-semibold ${viewBtnClass(editorView === 'visual')}`}
-        >
-          <IconEye size={14} />
-          Visual
-        </button>
-        <button
-          type="button"
-          aria-pressed={editorView === 'code'}
-          onClick={() => setEditorView('code')}
-          className={`inline-flex h-8 items-center gap-1.5 rounded-md border px-2 text-xs font-semibold ${viewBtnClass(editorView === 'code')}`}
-        >
-          <IconCode size={14} />
-          Code
-        </button>
-
-        <div className="ml-auto">
+    <div className="flex h-full min-h-0 gap-1 p-1">
+      <div className="flex min-h-0 w-[15rem] shrink-0 flex-col overflow-hidden rounded-md border border-border bg-card">
+        <div className="flex items-center justify-between border-b border-border px-3 py-2.5">
+          <div>
+            <div className="text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+              {EXTRACT_SCHEMA_LIBRARY_TITLE}
+            </div>
+            <div className="text-xs text-foreground/75">User schema presets</div>
+          </div>
           <Button
             type="button"
-            size="sm"
             variant="ghost"
-            className="h-8 text-xs"
-            onClick={() => {
-              // TODO: persist schema to extraction_schemas table
-              console.log('Save schema:', schemaJson);
-            }}
+            size="sm"
+            className="h-7 px-2 text-[11px]"
+            onClick={() => setWorkspaceStage('start')}
           >
-            Save
+            New
           </Button>
+        </div>
+        <div className="min-h-0 flex-1 px-3 py-3">
+          <div className="rounded-lg border border-dashed border-border/80 bg-muted/20 px-3 py-4 text-sm text-muted-foreground">
+            Saved schemas will appear here in a file-list style view.
+          </div>
         </div>
       </div>
 
-      {/* Visual view */}
-      {editorView === 'visual' && (
-        <div className="min-h-0 flex-1 overflow-auto p-3">
-          {fields.length > 0 ? (
-            <div className="space-y-3">
-              {renderFieldRows(fields)}
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-md border border-border bg-card">
+        {workspaceStage === 'editing' && (
+          <>
+            <div className="flex items-center gap-1 border-b border-border bg-card px-2 py-1.5">
               <button
                 type="button"
-                className="text-xs font-medium text-muted-foreground hover:text-foreground"
-                onClick={() => setFields((prev) => [...prev, createSchemaField({ type: 'string' })])}
+                aria-pressed={editorView === 'visual'}
+                onClick={() => setEditorView('visual')}
+                className={`inline-flex h-8 items-center gap-1.5 rounded-md border px-2 text-xs font-semibold ${viewBtnClass(editorView === 'visual')}`}
               >
-                Add property
+                <IconEye size={14} />
+                Visual
               </button>
-            </div>
-          ) : (
-            <div className="flex h-full min-h-[160px] flex-col items-center justify-center gap-2 text-sm text-muted-foreground">
-              <span>No properties yet.</span>
               <button
                 type="button"
-                className="text-xs font-medium text-foreground hover:underline"
-                onClick={() => setFields((prev) => [...prev, createSchemaField({ type: 'string' })])}
+                aria-pressed={editorView === 'code'}
+                onClick={() => setEditorView('code')}
+                className={`inline-flex h-8 items-center gap-1.5 rounded-md border px-2 text-xs font-semibold ${viewBtnClass(editorView === 'code')}`}
               >
-                Add your first property
+                <IconCode size={14} />
+                Code
               </button>
-            </div>
-          )}
-        </div>
-      )}
 
-      {/* Code view */}
-      {editorView === 'code' && (
-        <div className="min-h-0 flex-1 p-2">
-          <div className="h-full overflow-hidden rounded-md border border-border/70 bg-background">
-            <MonacoEditor
-              language="json"
-              theme={monacoTheme}
-              defaultValue={schemaJson}
-              onMount={(editor) => {
-                editorRef.current = editor;
-                editor.onDidFocusEditorText(() => { codeHasFocusRef.current = true; });
-                editor.onDidBlurEditorText(() => {
-                  codeHasFocusRef.current = false;
-                  try {
-                    const parsed = JSON.parse(editor.getValue());
-                    if (parsed?.type === 'object') {
-                      setFields(parseObjectSchemaToFields(parsed));
-                    }
-                  } catch { /* invalid JSON — user still editing */ }
-                });
-              }}
-              options={{
-                minimap: { enabled: false },
-                fontSize: 12,
-                lineHeight: 1.5,
-                scrollBeyondLastLine: false,
-                wordWrap: 'on',
-                automaticLayout: true,
-                scrollbar: {
-                  verticalScrollbarSize: 6,
-                  horizontalScrollbarSize: 6,
-                  useShadows: false,
-                },
-              }}
-            />
-          </div>
-        </div>
-      )}
+              <div className="ml-auto">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  className="h-8 text-xs"
+                  onClick={() => {
+                    // TODO: persist schema to extraction_schemas table
+                    console.log('Save schema:', schemaJson);
+                  }}
+                >
+                  Save
+                </Button>
+              </div>
+            </div>
+
+            {/* Visual view */}
+            {editorView === 'visual' && (
+              <div className="min-h-0 flex-1 overflow-auto p-3">
+                {fields.length > 0 ? (
+                  <div className="space-y-3">
+                    {renderFieldRows(fields)}
+                    <button
+                      type="button"
+                      className="text-xs font-medium text-muted-foreground hover:text-foreground"
+                      onClick={() => setFields((prev) => [...prev, createSchemaField({ type: 'string' })])}
+                    >
+                      Add property
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex h-full min-h-[160px] flex-col items-center justify-center gap-2 text-sm text-muted-foreground">
+                    <span>No properties yet.</span>
+                    <button
+                      type="button"
+                      className="text-xs font-medium text-foreground hover:underline"
+                      onClick={() => setFields((prev) => [...prev, createSchemaField({ type: 'string' })])}
+                    >
+                      Add your first property
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Code view */}
+            {editorView === 'code' && (
+              <div className="min-h-0 flex-1 p-2">
+                <div className="h-full overflow-hidden rounded-md border border-border/70 bg-background">
+                  <MonacoEditor
+                    language="json"
+                    theme={monacoTheme}
+                    defaultValue={schemaJson}
+                    onMount={(editor) => {
+                      editorRef.current = editor;
+                      editor.onDidFocusEditorText(() => { codeHasFocusRef.current = true; });
+                      editor.onDidBlurEditorText(() => {
+                        codeHasFocusRef.current = false;
+                        try {
+                          const parsed = JSON.parse(editor.getValue());
+                          if (parsed?.type === 'object') {
+                            setFields(parseObjectSchemaToFields(parsed));
+                          }
+                        } catch { /* invalid JSON — user still editing */ }
+                      });
+                    }}
+                    options={{
+                      minimap: { enabled: false },
+                      fontSize: 12,
+                      lineHeight: 1.5,
+                      scrollBeyondLastLine: false,
+                      wordWrap: 'on',
+                      automaticLayout: true,
+                      scrollbar: {
+                        verticalScrollbarSize: 6,
+                        horizontalScrollbarSize: 6,
+                        useShadows: false,
+                      },
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
 }
@@ -504,6 +558,17 @@ function ExtractDownloadsTab({ doc }: { doc: ProjectDocumentRow | null }) {
   );
 }
 
+export function getExtractFileListExtraColumns(): ExtraColumn[] {
+  return [
+    {
+      id: 'schema',
+      header: 'Schema',
+      className: 'w-[7rem]',
+      render: () => <span className="text-muted-foreground">—</span>,
+    },
+  ];
+}
+
 // ---------------------------------------------------------------------------
 // Tabs, panes, and hook
 // ---------------------------------------------------------------------------
@@ -522,8 +587,8 @@ export const EXTRACT_DEFAULT_PANES: Pane[] = normalizePaneWidths([
   { id: 'pane-extract-preview', tabs: ['extract-results', 'extract-downloads'], activeTab: 'extract-results', width: 44 },
 ]);
 
-export function useExtractWorkbench() {
-  useShellHeaderTitle({ title: 'Extract Documents' });
+export function useExtractWorkbench(options?: { title?: string }) {
+  useShellHeaderTitle({ title: options?.title ?? 'Extract Documents' });
   const { resolvedProjectId } = useProjectFocus();
   const docState = useProjectDocuments(resolvedProjectId);
   const {
@@ -559,6 +624,8 @@ export function useExtractWorkbench() {
     setActiveDocUid(doc.source_uid);
   }, []);
 
+  const extractExtraColumns = useMemo(() => getExtractFileListExtraColumns(), []);
+
   const renderContent = useCallback((tabId: string) => {
     if (tabId === 'extract-files') {
       return (
@@ -576,6 +643,7 @@ export function useExtractWorkbench() {
                 someSelected={someSelected}
                 activeDoc={activeDocUid}
                 onDocClick={handleDocClick}
+                extraColumns={extractExtraColumns}
                 className={cn('parse-documents-table', 'parse-documents-table-compact')}
               />
             </div>
@@ -601,7 +669,7 @@ export function useExtractWorkbench() {
     }
 
     return null;
-  }, [activeDoc, activeDocUid, allSelected, docs, error, handleDocClick, loading, selected, someSelected, toggleSelect, toggleSelectAll]);
+  }, [activeDoc, activeDocUid, allSelected, docs, error, extractExtraColumns, handleDocClick, loading, selected, someSelected, toggleSelect, toggleSelectAll]);
 
   return { renderContent };
 }

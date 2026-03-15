@@ -34,7 +34,7 @@ def _now_iso() -> str:
 #  GET /admin/services — list everything
 # ---------------------------------------------------------------------------
 
-@router.get("")
+@router.get("", openapi_extra={"x-required-role": "platform_admin"})
 async def list_services(su: SuperuserContext = Depends(require_superuser)):
     sb = get_supabase_admin()
 
@@ -73,7 +73,7 @@ class CreateServiceBody(BaseModel):
     docs_url: str | None = None
 
 
-@router.post("/service")
+@router.post("/service", openapi_extra={"x-required-role": "platform_admin"})
 async def create_service(
     body: CreateServiceBody,
     su: SuperuserContext = Depends(require_superuser),
@@ -116,7 +116,7 @@ class UpdateServiceBody(BaseModel):
     docs_url: str | None = None
 
 
-@router.patch("/service/{service_id}")
+@router.patch("/service/{service_id}", openapi_extra={"x-required-role": "platform_admin"})
 async def update_service(
     service_id: str,
     body: UpdateServiceBody,
@@ -160,7 +160,7 @@ async def update_service(
 #  DELETE /admin/services/service/{service_id}
 # ---------------------------------------------------------------------------
 
-@router.delete("/service/{service_id}")
+@router.delete("/service/{service_id}", openapi_extra={"x-required-role": "platform_admin"})
 async def delete_service(
     service_id: str,
     su: SuperuserContext = Depends(require_superuser),
@@ -202,7 +202,7 @@ class CreateFunctionBody(BaseModel):
     plugin_group: str | None = None
 
 
-@router.post("/function")
+@router.post("/function", openapi_extra={"x-required-role": "platform_admin"})
 async def create_function(
     body: CreateFunctionBody,
     su: SuperuserContext = Depends(require_superuser),
@@ -276,7 +276,7 @@ class UpdateFunctionBody(BaseModel):
     plugin_group: str | None = None
 
 
-@router.patch("/function/{function_id}")
+@router.patch("/function/{function_id}", openapi_extra={"x-required-role": "platform_admin"})
 async def update_function(
     function_id: str,
     body: UpdateFunctionBody,
@@ -324,7 +324,7 @@ async def update_function(
 #  DELETE /admin/services/function/{function_id}
 # ---------------------------------------------------------------------------
 
-@router.delete("/function/{function_id}")
+@router.delete("/function/{function_id}", openapi_extra={"x-required-role": "platform_admin"})
 async def delete_function(
     function_id: str,
     su: SuperuserContext = Depends(require_superuser),
@@ -379,7 +379,7 @@ def _infer_function_type(plugin_type: str) -> str:
     return "utility"
 
 
-@router.post("/import")
+@router.post("/import", openapi_extra={"x-required-role": "platform_admin"})
 async def import_registry(
     body: ImportRegistryBody,
     su: SuperuserContext = Depends(require_superuser),

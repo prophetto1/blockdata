@@ -15,13 +15,13 @@
 export default {
   // Root-level files/directories shown in the docs sidebar.
   '.': {
-    order: ['blockdata', 'docling-md-astro-preview', 'internal', 'plans'],
+    order: ['blockdata', 'docling-md-astro-preview', 'internal', 'plans', 'assessments'],
     hidden: ['index'],
   },
 
   internal: {
     label: 'Internal',
-    order: ['docs-site-direction', 'shell-contract-spec', 'arango-local-dev', 'style-guide'],
+    order: ['docs-site-direction', 'shell-contract-spec', 'arango-cloud', 'style-guide'],
   },
 
   'internal/style-guide': {

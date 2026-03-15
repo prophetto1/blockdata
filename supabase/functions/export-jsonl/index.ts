@@ -1,5 +1,17 @@
+import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { loadAdminPolicyValue } from "../_shared/admin_policy.ts";
 import { corsPreflight, withCorsHeaders } from "../_shared/cors.ts";
-import { createUserClient } from "../_shared/supabase.ts";
+import { createAdminClient, createUserClient } from "../_shared/supabase.ts";
+
+const DOCUMENT_VIEW_MODE_POLICY_KEY = "platform.docling_blocks_mode";
+
+type BlockView = "normalized" | "raw_docling";
+
+type ExportJsonlDeps = {
+  createAdminClient?: typeof createAdminClient;
+  createUserClient?: typeof createUserClient;
+  loadAdminPolicyValue?: typeof loadAdminPolicyValue;
+};
 
 function text(status: number, body: string, headers: Record<string, string> = {}): Response {
   return new Response(body, {
@@ -17,16 +29,37 @@ function json(status: number, body: unknown): Response {
   });
 }
 
-type BlockView = "normalized" | "parser_native";
-
 function asObject(value: unknown): Record<string, unknown> | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   return value as Record<string, unknown>;
 }
 
 function resolveBlockView(raw: string): BlockView | null {
-  if (raw === "normalized" || raw === "parser_native") return raw;
+  if (raw === "normalized") return "normalized";
+  if (raw === "raw_docling" || raw === "parser_native") return "raw_docling";
   return null;
+}
+
+function normalizeDocumentViewMode(value: unknown): BlockView {
+  return value === "raw_docling" ? "raw_docling" : "normalized";
+}
+
+async function resolveEffectiveBlockView(
+  requestedValue: string | null,
+  deps: Required<ExportJsonlDeps>,
+): Promise<BlockView | null> {
+  if (requestedValue) return resolveBlockView(requestedValue.trim().toLowerCase());
+
+  try {
+    const supabaseAdmin = deps.createAdminClient();
+    const configuredValue = await deps.loadAdminPolicyValue(
+      supabaseAdmin,
+      DOCUMENT_VIEW_MODE_POLICY_KEY,
+    );
+    return normalizeDocumentViewMode(configuredValue);
+  } catch {
+    return "normalized";
+  }
 }
 
 function parserNativeMetaFromLocator(
@@ -50,7 +83,10 @@ function parserNativeMetaFromLocator(
   return { parser_block_type, parser_path, parser_locator_type };
 }
 
-Deno.serve(async (req) => {
+export async function handleExportJsonlRequest(
+  req: Request,
+  deps: ExportJsonlDeps = {},
+): Promise<Response> {
   const preflight = corsPreflight(req);
   if (preflight) return preflight;
   if (req.method !== "GET") return json(405, { error: "Method not allowed" });
@@ -58,15 +94,25 @@ Deno.serve(async (req) => {
   const authHeader = req.headers.get("Authorization");
   if (!authHeader) return json(401, { error: "Missing Authorization header" });
 
+  const resolvedDeps: Required<ExportJsonlDeps> = {
+    createAdminClient,
+    createUserClient,
+    loadAdminPolicyValue,
+    ...deps,
+  };
+
   const url = new URL(req.url);
   const run_id = (url.searchParams.get("run_id") || "").trim();
   const conv_uid = (url.searchParams.get("conv_uid") || "").trim();
-  const blockViewRaw = (url.searchParams.get("block_view") || "normalized").trim().toLowerCase();
-  const block_view = resolveBlockView(blockViewRaw);
+  const block_view = await resolveEffectiveBlockView(url.searchParams.get("block_view"), resolvedDeps);
   if (!run_id && !conv_uid) return json(400, { error: "Missing run_id or conv_uid" });
-  if (!block_view) return json(400, { error: "Invalid block_view. Expected normalized or parser_native" });
+  if (!block_view) {
+    return json(400, {
+      error: "Invalid block_view. Expected normalized, raw_docling, or parser_native",
+    });
+  }
 
-  const supabase = createUserClient(authHeader);
+  const supabase = resolvedDeps.createUserClient(authHeader);
 
   let resolvedConvUid = conv_uid;
   let schemaRef: string | null = null;
@@ -98,7 +144,6 @@ Deno.serve(async (req) => {
     }
   }
 
-  // Fetch conversion + source document by conv_uid
   const { data: conv, error: convErr } = await supabase
     .from("conversion_parsing")
     .select(
@@ -120,7 +165,6 @@ Deno.serve(async (req) => {
 
   const doc = { ...srcDoc, ...conv };
 
-  // Fetch blocks from blocks
   const { data: blocks, error: blkErr } = await supabase
     .from("blocks")
     .select("block_uid, block_type, block_index, block_locator, block_content")
@@ -129,17 +173,16 @@ Deno.serve(async (req) => {
   if (blkErr) return json(500, { error: blkErr.message });
   if (!blocks || blocks.length === 0) return json(404, { error: "No blocks found" });
 
-  // Assemble v2 canonical export shape: { immutable, user_defined }
   let out = "";
   for (const b of blocks) {
     const overlayData = run_id ? (overlaysByBlockUid.get(b.block_uid) ?? null) : null;
     const parserMeta = parserNativeMetaFromLocator(b.block_locator);
-    const blockTypeForView = block_view === "parser_native"
+    const blockTypeForView = block_view === "raw_docling"
       ? (parserMeta.parser_block_type ?? b.block_type)
       : b.block_type;
-    const blockLocatorForView = block_view === "parser_native"
+    const blockLocatorForView = block_view === "raw_docling"
       ? {
-        type: "parser_native_view",
+        type: "raw_docling_view",
         parser_block_type: parserMeta.parser_block_type,
         parser_path: parserMeta.parser_path,
         parser_locator_type: parserMeta.parser_locator_type,
@@ -184,4 +227,8 @@ Deno.serve(async (req) => {
   return text(200, out, {
     "Content-Disposition": `attachment; filename="export-${run_id || doc.conv_uid}.jsonl"`,
   });
-});
+}
+
+if (import.meta.main) {
+  Deno.serve((req) => handleExportJsonlRequest(req));
+}

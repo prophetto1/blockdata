@@ -218,6 +218,17 @@ function getDocumentTitleExtension(doc: ProjectDocumentRow): string {
   return getExtension(doc.doc_title ?? '');
 }
 
+export function getDocumentDisplayName(doc: ProjectDocumentRow): string {
+  const rawTitle = typeof doc.doc_title === 'string' ? doc.doc_title.trim() : '';
+  const fallbackTitle = rawTitle || getFilenameFromLocator(doc.source_locator) || doc.source_uid;
+  const titleExtension = getExtension(fallbackTitle);
+  const locatorExtension = getSourceLocatorExtension(doc);
+  const effectiveExtension = titleExtension || locatorExtension;
+
+  if (!effectiveExtension || titleExtension) return fallbackTitle;
+  return `${fallbackTitle}.${effectiveExtension}`;
+}
+
 export function isPdfDocument(doc: ProjectDocumentRow): boolean {
   if (doc.source_type.toLowerCase() === 'pdf') return true;
   if (getSourceLocatorExtension(doc) === 'pdf') return true;
@@ -267,10 +278,6 @@ export function isXlsxDocument(doc: ProjectDocumentRow): boolean {
   const sourceType = doc.source_type.toLowerCase();
   if (XLSX_SOURCE_TYPES.has(sourceType)) return true;
   return XLSX_EXTENSIONS.has(getSourceLocatorExtension(doc));
-}
-
-export function isOnlyOfficeEditable(doc: ProjectDocumentRow): boolean {
-  return isDocxDocument(doc) || isXlsxDocument(doc) || isPptxDocument(doc);
 }
 
 export function getDocumentFormat(doc: ProjectDocumentRow): string {

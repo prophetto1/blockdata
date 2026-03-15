@@ -2,6 +2,7 @@ import { corsPreflight, withCorsHeaders } from "../_shared/cors.ts";
 import { createAdminClient, requireUserId } from "../_shared/supabase.ts";
 import { getEnv } from "../_shared/env.ts";
 import { callVertexClaude } from "../_shared/vertex_claude.ts";
+import { loadArangoConfigFromEnv, syncOverlaysToArango } from "../_shared/arangodb.ts";
 
 type LlmUsage = {
   input_tokens: number;
@@ -716,6 +717,7 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const runId = typeof body?.run_id === "string" ? body.run_id.trim() : "";
     if (!runId) return json(400, { error: "Missing run_id" });
+    const touchedBlockUids = new Set<string>();
 
     const batchSize = Math.min(Math.max(Number(body?.batch_size) || 25, 1), 100);
     const modelOverride =
@@ -876,6 +878,7 @@ Deno.serve(async (req) => {
           `Release incomplete for run ${runId}. unresolved=${unresolved.length}/${target.length}; sample=[${sample}]`,
         );
       }
+      for (const uid of target) touchedBlockUids.add(uid);
     };
 
     // â”€â”€ 2. Load context â”€â”€
@@ -1125,6 +1128,7 @@ Deno.serve(async (req) => {
           .eq("run_id", runId)
           .eq("block_uid", blockUid);
       }
+      touchedBlockUids.add(blockUid);
       failed++;
     };
 
@@ -1148,6 +1152,7 @@ Deno.serve(async (req) => {
           })
           .eq("run_id", runId)
           .eq("block_uid", blockUid);
+        touchedBlockUids.add(blockUid);
         failed++;
         continue;
       }
@@ -1207,6 +1212,7 @@ Deno.serve(async (req) => {
           })
           .eq("run_id", runId)
           .eq("block_uid", block.block_uid);
+        touchedBlockUids.add(block.block_uid);
 
         succeeded++;
       } catch (err) {
@@ -1277,6 +1283,7 @@ Deno.serve(async (req) => {
             })
             .eq("run_id", runId)
             .eq("block_uid", block.block_uid);
+          touchedBlockUids.add(block.block_uid);
           succeeded++;
         }
         const missingBlocks = pack.filter((b) => missingSet.has(b.block_uid));
@@ -1410,6 +1417,37 @@ Deno.serve(async (req) => {
     }
 
     await supabase.from("runs").update(runUpdate).eq("run_id", runId);
+
+    // Batch Arango overlay sync — one call after all mutations, non-fatal.
+    const arangoConfig = loadArangoConfigFromEnv();
+    if (arangoConfig && touchedBlockUids.size > 0 && runId) {
+      try {
+        const { data: touchedOverlays } = await supabase
+          .from("block_overlays")
+          .select("overlay_uid, run_id, block_uid, status, overlay_jsonb_staging, overlay_jsonb_confirmed, claimed_by, claimed_at, attempt_count, last_error, confirmed_at, confirmed_by")
+          .eq("run_id", runId)
+          .in("block_uid", Array.from(touchedBlockUids));
+
+        if (touchedOverlays && touchedOverlays.length > 0) {
+          const { data: runRow } = await supabase
+            .from("runs").select("conv_uid, owner_id").eq("run_id", runId).single();
+          const { data: ancestry } = await supabase
+            .from("conversion_parsing").select("source_uid").eq("conv_uid", runRow!.conv_uid).single();
+          const { data: docRow } = await supabase
+            .from("source_documents").select("project_id").eq("source_uid", ancestry!.source_uid).single();
+
+          await syncOverlaysToArango(arangoConfig, touchedOverlays.map((o) => ({
+            ...o,
+            source_uid: ancestry!.source_uid,
+            conv_uid: runRow!.conv_uid,
+            project_id: docRow!.project_id,
+            owner_id: runRow!.owner_id,
+          })));
+        }
+      } catch (err) {
+        console.error("worker: Arango overlay sync failed (non-fatal):", err);
+      }
+    }
 
     return json(200, {
       worker_id: workerId,

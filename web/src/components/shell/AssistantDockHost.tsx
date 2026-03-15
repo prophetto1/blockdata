@@ -15,6 +15,8 @@ import { useAssistantChat, type ChatMessage } from '@/hooks/useAssistantChat';
 type AssistantDockHostProps = {
   onClose: () => void;
   onDetach?: () => void;
+  dragHandleRef?: React.Ref<HTMLDivElement>;
+  isDragging?: boolean;
 };
 
 const iconBtn =
@@ -41,6 +43,8 @@ function MessageBubble({ message }: { message: ChatMessage }) {
 export function AssistantDockHost({
   onClose,
   onDetach,
+  dragHandleRef,
+  isDragging,
 }: AssistantDockHostProps) {
   const {
     messages,
@@ -78,7 +82,11 @@ export function AssistantDockHost({
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-[inherit] bg-[var(--chrome,var(--background))] text-foreground">
       {/* Header */}
-      <div className="flex items-center justify-between border-b px-3 py-1.5" style={{ borderColor: 'var(--border)' }}>
+      <div
+        ref={dragHandleRef}
+        className="flex items-center justify-between border-b px-3 py-1.5"
+        style={{ borderColor: 'var(--border)', cursor: isDragging ? 'grabbing' : 'grab' }}
+      >
         <div className="flex items-center gap-1.5">
           {onDetach && (
             <button

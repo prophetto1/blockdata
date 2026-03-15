@@ -20,7 +20,7 @@ assert.ok(internal, 'Expected an Internal group in the sections sidebar');
 for (const slug of [
   'internal/docs-site-direction',
   'internal/shell-contract-spec',
-  'internal/arango-local-dev',
+  'internal/arango-cloud',
 ]) {
   assert.ok(
     findLink(internal.items ?? [], slug),
