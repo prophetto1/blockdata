@@ -18,7 +18,7 @@ type DocumentViewPayload = {
 };
 
 export function normalizeDocumentViewMode(value: unknown): DocumentViewMode {
-  return value === 'normalized' || value === 'raw_docling' ? 'raw_docling' : DEFAULT_DOCUMENT_VIEW_MODE;
+  return value === 'normalized' || value === 'raw_docling' ? value as DocumentViewMode : DEFAULT_DOCUMENT_VIEW_MODE;
 }
 
 export function getDocumentViewModeValue(payload: DocumentViewPayload | null | undefined): DocumentViewMode {

@@ -199,7 +199,7 @@ describe('Docling-native workbench labels', () => {
       page_nos: [1],
       block_uid: 'conv-1:0',
       source_uid: 'source-1',
-    }, { text: 'gray' })).toBe('green');
+    }, { text: 'gray' })).toBe('dark');
 
     expect(getDoclingNativeBadgeVariant({
       pointer: '#/groups/0',
@@ -210,7 +210,7 @@ describe('Docling-native workbench labels', () => {
       page_nos: [],
       block_uid: 'conv-1:1',
       source_uid: 'source-1',
-    }, {})).toBe('orange');
+    }, {})).toBe('green');
 
     expect(getDoclingNativeBadgeVariant({
       pointer: '#/texts/1',

@@ -434,6 +434,18 @@ verify_jwt = false
 [functions.dropbox-import]
 verify_jwt = false
 
+[functions.extract-readiness]
+verify_jwt = false
+
+[functions.parse-profile-readiness]
+verify_jwt = false
+
+[functions.manage-document]
+verify_jwt = false
+
+[functions.manage-overlays]
+verify_jwt = false
+
 [analytics]
 enabled = true
 port = 54327

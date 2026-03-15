@@ -126,17 +126,19 @@ Deno.serve(async (req) => {
           .select("source_uid")
           .eq("conv_uid", runRow.conv_uid)
           .single();
+        if (!ancestry) throw new Error(`conversion_parsing not found for conv_uid=${runRow.conv_uid}`);
         const { data: docRow } = await supabaseAdmin
           .from("source_documents")
           .select("project_id")
-          .eq("source_uid", ancestry!.source_uid)
+          .eq("source_uid", ancestry.source_uid)
           .single();
+        if (!docRow) throw new Error(`source_documents not found for source_uid=${ancestry.source_uid}`);
 
         await syncRunToArango(arangoConfig, {
           run_id: runRow.run_id,
-          source_uid: ancestry!.source_uid,
+          source_uid: ancestry.source_uid,
           conv_uid: runRow.conv_uid,
-          project_id: docRow!.project_id,
+          project_id: docRow.project_id,
           owner_id: runRow.owner_id,
           schema_id: runRow.schema_id,
           status: runRow.status,
@@ -157,9 +159,9 @@ Deno.serve(async (req) => {
         if (overlayRows && overlayRows.length > 0) {
           await syncOverlaysToArango(arangoConfig, overlayRows.map((o) => ({
             ...o,
-            source_uid: ancestry!.source_uid,
+            source_uid: ancestry.source_uid,
             conv_uid: runRow.conv_uid,
-            project_id: docRow!.project_id,
+            project_id: docRow.project_id,
             owner_id: runRow.owner_id,
           })));
         }
