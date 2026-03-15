@@ -134,6 +134,7 @@ const SETTINGS_DRILL: NavDrillConfig = {
       items: [
         { label: 'AI Providers', icon: IconKey, path: '/app/settings/ai' },
         { label: 'Model Roles', icon: IconWand, path: '/app/settings/model-roles' },
+        { label: 'Connections', icon: IconDatabase, path: '/app/settings/connections' },
         { label: 'MCP Servers', icon: IconPlugConnected, path: '/app/settings/mcp' },
         { label: 'Admin', icon: IconServer, path: '/app/superuser/instance-config' },
       ],
