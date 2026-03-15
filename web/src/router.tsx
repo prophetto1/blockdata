@@ -25,6 +25,7 @@ import AgentOnboardingAuth from '@/pages/AgentOnboardingAuth';
 import AgentOnboardingConnect from '@/pages/AgentOnboardingConnect';
 import AgentOnboardingSelect from '@/pages/AgentOnboardingSelect';
 import McpServers from '@/pages/settings/McpServers';
+import ConnectionsPanel from '@/pages/settings/ConnectionsPanel';
 import { ScalarApiPlaygroundPage } from '@/pages/settings/ScalarApiPlaygroundPage';
 import Commands from '@/pages/Commands';
 import DocumentTest from '@/pages/DocumentTest';
@@ -189,6 +190,7 @@ export const router = createBrowserRouter([
               { path: 'ai/:providerId', element: <SettingsProviderForm /> },
               { path: 'model-roles', element: <SettingsModelRoles /> },
               { path: 'mcp', element: <McpServers /> },
+              { path: 'connections', element: <ConnectionsPanel /> },
               { path: 'grid-sample', element: <SettingsGridSample /> },
               { path: 'admin', element: <Navigate to="/app/superuser/instance-config" replace /> },
               { path: 'admin/:category', element: <LegacySettingsAdminRedirect /> },
