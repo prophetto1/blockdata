@@ -30,6 +30,7 @@ class PluginParam(BaseModel):
 class BasePlugin(ABC):
     """Every plugin implements this. Maps to Kestra's RunnableTask<Output>."""
     task_types: list[str] = []
+    credential_schema: list[dict] = []
 
     @abstractmethod
     async def run(self, params: dict[str, Any], context: "ExecutionContext") -> PluginOutput:
@@ -38,6 +39,14 @@ class BasePlugin(ABC):
     @classmethod
     def parameter_schema(cls) -> list[dict]:
         return []
+
+    async def test_connection(self, creds: dict[str, Any]) -> PluginOutput:
+        """Test whether the given credentials can reach the service.
+
+        Plugins override this with real connectivity checks.
+        Default implementation returns success.
+        """
+        return success(data={"valid": True})
 
 
 @dataclass
@@ -49,6 +58,7 @@ class ExecutionContext:
     """
     execution_id: str = ""
     task_run_id: str = ""
+    user_id: str = ""          # authenticated user — set by route, used by connection resolver
     variables: dict[str, Any] = field(default_factory=dict)
     supabase_url: str = ""
     supabase_key: str = ""

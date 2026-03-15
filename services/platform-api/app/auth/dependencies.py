@@ -186,3 +186,12 @@ def require_role(role: str) -> Callable:
 # Backward-compatible aliases for admin_services.py migration
 SuperuserContext = AuthPrincipal
 require_superuser = require_role("platform_admin")
+
+
+async def require_user_auth(
+    auth: AuthPrincipal = Depends(require_auth),
+) -> AuthPrincipal:
+    """Require human user authentication. Rejects M2M and legacy machine tokens."""
+    if auth.subject_type != "user":
+        raise HTTPException(status_code=403, detail="User authentication required")
+    return auth
