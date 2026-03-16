@@ -349,7 +349,7 @@ async function loadBlocksArtifact(doc: ProjectDocumentRow, deps: ParseArtifactsD
         blocks: [],
         rawItems: [],
         loading: false,
-        error: 'No stored blocks were found for this parsed document.',
+        error: null,
       };
     }
 

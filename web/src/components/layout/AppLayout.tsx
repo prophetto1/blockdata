@@ -193,7 +193,7 @@ function AppShellInner() {
   const isSettingsRoute = /^\/app\/settings(?:\/|$)/.test(location.pathname);
   const isFlowsRoute = /^\/app\/flows(?:\/|$)/.test(location.pathname);
   const isApiEditorRoute = /^\/app\/api-editor(?:\/|$)/.test(location.pathname);
-  const isMarketplaceServiceDetailRoute = /^\/app\/marketplace\/services\/[^/]+(?:\/|$)/.test(location.pathname);
+  const isMarketplaceRoute = /^\/app\/marketplace(?:\/|$)/.test(location.pathname);
   const isSuperuserRoute = /^\/app\/superuser(?:\/|$)/.test(location.pathname);
   const isAssetsRoute = location.pathname === '/app/assets';
   const isParseRoute = location.pathname === '/app/parse';
@@ -201,7 +201,7 @@ function AppShellInner() {
   const isSchemasRoute = /^\/app\/schemas(?:\/|$)/.test(location.pathname);
   const isFullBleedRoute = (
     isFlowsRoute
-    || isMarketplaceServiceDetailRoute
+    || isMarketplaceRoute
     || isSuperuserRoute
     || isAssetsRoute
     || isParseRoute

@@ -410,10 +410,11 @@ Deno.serve(async (req) => {
         throw new Error("No blocks extracted from docling JSON");
       }
 
-      const { error: insErr } = await supabaseAdmin.from("blocks").insert(
+      const { error: insErr } = await supabaseAdmin.from("blocks").upsert(
         blockRows,
+        { onConflict: "block_uid" },
       );
-      if (insErr) throw new Error(`DB insert blocks failed: ${insErr.message}`);
+      if (insErr) throw new Error(`DB upsert blocks failed: ${insErr.message}`);
 
       await insertRepresentationArtifact(supabaseAdmin, {
         source_uid,
@@ -510,32 +511,43 @@ Deno.serve(async (req) => {
       });
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
+
+      // Clean up rows written during this attempt to avoid state divergence.
+      await supabaseAdmin.from("blocks").delete().eq("conv_uid", conv_uid);
+      await supabaseAdmin.from("conversion_representations").delete().eq("source_uid", source_uid);
+      await supabaseAdmin.from("conversion_parsing").delete().eq("source_uid", source_uid);
+
       await supabaseAdmin
         .from("source_documents")
         .update({ status: "parse_failed", error: msg })
         .eq("source_uid", source_uid);
+
       if (arangoConfig) {
-        await syncAssetToArango(arangoConfig, {
-          source_uid,
-          project_id: docRow.project_id ?? null,
-          owner_id: docRow.owner_id,
-          source_type: docRow.source_type,
-          doc_title: docRow.doc_title,
-          source_locator: docRow.source_locator,
-          source_filesize: docRow.source_filesize ?? null,
-          source_total_characters: docRow.source_total_characters ?? null,
-          status: "parse_failed",
-          conversion_job_id: docRow.conversion_job_id ?? null,
-          error: msg,
-          uploaded_at: docRow.uploaded_at ?? null,
-          updated_at: docRow.updated_at ?? null,
-          conv_uid,
-          conv_locator: docling_key,
-          conv_status: "failed",
-          conv_representation_type: "doclingdocument_json",
-          pipeline_config: effectivePipelineConfig ?? {},
-          block_count: null,
-        });
+        try {
+          await syncAssetToArango(arangoConfig, {
+            source_uid,
+            project_id: docRow.project_id ?? null,
+            owner_id: docRow.owner_id,
+            source_type: docRow.source_type,
+            doc_title: docRow.doc_title,
+            source_locator: docRow.source_locator,
+            source_filesize: docRow.source_filesize ?? null,
+            source_total_characters: docRow.source_total_characters ?? null,
+            status: "parse_failed",
+            conversion_job_id: docRow.conversion_job_id ?? null,
+            error: msg,
+            uploaded_at: docRow.uploaded_at ?? null,
+            updated_at: docRow.updated_at ?? null,
+            conv_uid,
+            conv_locator: docling_key,
+            conv_status: "failed",
+            conv_representation_type: "doclingdocument_json",
+            pipeline_config: effectivePipelineConfig ?? {},
+            block_count: null,
+          });
+        } catch (arangoErr) {
+          console.error("conversion-complete: Arango sync in error path failed:", arangoErr);
+        }
       }
       return json(200, { ok: false, status: "parse_failed", error: msg });
     }

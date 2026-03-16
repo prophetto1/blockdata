@@ -100,9 +100,14 @@ Deno.serve(async (req) => {
     }
 
     // Clean up stale DB rows from previous conversion attempts (re-parse).
-    await supabaseAdmin.from("blocks").delete().eq("conv_uid",
-      (await supabaseAdmin.from("conversion_parsing").select("conv_uid").eq("source_uid", source_uid).maybeSingle()).data?.conv_uid ?? "__none__"
-    );
+    const { data: prevConv } = await supabaseAdmin
+      .from("conversion_parsing")
+      .select("conv_uid")
+      .eq("source_uid", source_uid)
+      .maybeSingle();
+    if (prevConv?.conv_uid) {
+      await supabaseAdmin.from("blocks").delete().eq("conv_uid", prevConv.conv_uid);
+    }
     await supabaseAdmin.from("conversion_representations").delete().eq("source_uid", source_uid);
     await supabaseAdmin.from("conversion_parsing").delete().eq("source_uid", source_uid);
 
