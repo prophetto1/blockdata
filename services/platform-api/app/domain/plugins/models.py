@@ -73,23 +73,44 @@ class ExecutionContext:
             self.supabase_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
 
     def render(self, template: str) -> str:
-        """Render Kestra-style {{ expression }} templates.
+        """Render Jinja2/Kestra-style {{ expression }} templates.
 
-        Supports dotted paths: {{ outputs.task1.value }}
-        Unresolved expressions are preserved as-is.
+        Supports:
+        - Variable substitution: {{ outputs.task1.value }}
+        - Filters: {{ name | upper }}, {{ items | join(",") }}
+        - Conditions: {% if active %}yes{% else %}no{% endif %}
+        - Loops: {% for x in items %}{{ x }}{% endfor %}
+        - Nested dict access via dot notation (Jinja2 native)
+        - Unresolved variables are preserved as-is: {{ unknown }} stays as {{ unknown }}
         """
         if not isinstance(template, str):
             return str(template)
+        if "{{" not in template and "{%" not in template:
+            return template
+        try:
+            from jinja2 import Environment, Undefined
 
-        def replace_expr(match: re.Match) -> str:
-            expr = match.group(1).strip()
-            value = self._resolve(expr)
-            return str(value) if value is not None else match.group(0)
+            class _PreserveUndefined(Undefined):
+                """Render undefined variables back as {{ name }} instead of empty string."""
+                def __str__(self):
+                    return "{{ " + self._undefined_name + " }}"
+                def __iter__(self):
+                    return iter([])
+                def __bool__(self):
+                    return False
 
-        return re.sub(r"\{\{\s*(.+?)\s*\}\}", replace_expr, template)
+            env = Environment(undefined=_PreserveUndefined)
+            tmpl = env.from_string(template)
+            return tmpl.render(**self.variables)
+        except Exception:
+            return template
 
     def _resolve(self, dotted_path: str) -> Any:
-        """Resolve a dotted path like 'outputs.task1.value' against variables."""
+        """Resolve a dotted path like 'outputs.task1.value' against variables.
+
+        Kept for backward compatibility and direct programmatic access
+        to nested variables outside of templates.
+        """
         parts = dotted_path.split(".")
         current: Any = self.variables
         for part in parts:
