@@ -34,7 +34,7 @@ export function ProjectSwitcher() {
       </Popover.Trigger>
       <Portal>
         <Popover.Positioner className="z-[140]">
-          <Popover.Content className="relative z-[140] w-80 rounded-md border border-border bg-popover p-0 shadow-md outline-none">
+          <Popover.Content className="relative z-[140] w-80 max-w-[calc(100vw-32px)] rounded-md border border-border bg-popover p-0 shadow-md outline-none">
             {/* Search input */}
             <div className="flex items-center gap-2 border-b border-border px-3 py-2">
               <IconSearch size={14} stroke={1.75} className="shrink-0 text-muted-foreground" />
