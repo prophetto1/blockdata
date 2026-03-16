@@ -65,3 +65,39 @@ async def upsert_to_storage(
         )
         resp.raise_for_status()
     return f"{supabase_url}/storage/v1/object/public/{bucket}/{path}"
+
+
+async def list_storage(
+    supabase_url: str,
+    supabase_key: str,
+    bucket: str,
+    prefix: str,
+) -> list[dict]:
+    """List files in a Supabase Storage bucket by prefix."""
+    url = f"{supabase_url}/storage/v1/object/list/{bucket}"
+    async with httpx.AsyncClient() as client:
+        resp = await client.post(
+            url,
+            json={"prefix": prefix, "limit": 1000},
+            headers={"Authorization": f"Bearer {supabase_key}"},
+        )
+        resp.raise_for_status()
+    return resp.json()
+
+
+async def delete_from_storage(
+    supabase_url: str,
+    supabase_key: str,
+    bucket: str,
+    paths: list[str],
+) -> None:
+    """Delete files from Supabase Storage."""
+    url = f"{supabase_url}/storage/v1/object/{bucket}"
+    async with httpx.AsyncClient() as client:
+        resp = await client.request(
+            "DELETE",
+            url,
+            json={"prefixes": paths},
+            headers={"Authorization": f"Bearer {supabase_key}"},
+        )
+        resp.raise_for_status()

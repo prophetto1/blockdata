@@ -111,6 +111,39 @@ class ExecutionContext:
             self.supabase_url, self.supabase_key, bucket, path, content
         )
 
+    async def download_file(self, uri: str) -> bytes:
+        """Download an artifact from a URL or bucket/path reference.
+
+        Accepts:
+        - Full URLs (http:// or https://) — fetched directly
+        - Bucket/path strings (e.g. "pipeline/artifacts/file.jsonl") — fetched from Supabase Storage
+        """
+        if uri.startswith(("http://", "https://")):
+            import httpx as _httpx
+            async with _httpx.AsyncClient() as client:
+                resp = await client.get(uri, timeout=120)
+                resp.raise_for_status()
+                return resp.content
+        from app.infra.storage import download_from_storage
+        bucket, _, path = uri.partition("/")
+        return await download_from_storage(
+            self.supabase_url, self.supabase_key, bucket, path
+        )
+
+    async def list_files(self, bucket: str, prefix: str) -> list[dict]:
+        """List files in a storage bucket by prefix."""
+        from app.infra.storage import list_storage
+        return await list_storage(
+            self.supabase_url, self.supabase_key, bucket, prefix
+        )
+
+    async def delete_files(self, bucket: str, paths: list[str]) -> None:
+        """Delete files from a storage bucket."""
+        from app.infra.storage import delete_from_storage
+        await delete_from_storage(
+            self.supabase_url, self.supabase_key, bucket, paths
+        )
+
 
 def success(data: dict[str, Any] | None = None, logs: list[str] | None = None) -> PluginOutput:
     return PluginOutput(data=data or {}, state="SUCCESS", logs=logs or [])
