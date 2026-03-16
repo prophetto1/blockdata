@@ -51,6 +51,17 @@ def test_storage_local_backend_round_trips_file(tmp_path) -> None:
         assert handle.read() == b'{"name":"Ada"}\n'
 
 
+def test_run_context_supports_plugin_configuration_and_identity_crypto() -> None:
+    run_context = RunContext(execution_id="exec-config")
+    run_context.set_plugin_configuration({"mongodb": {"uri": "mongodb://example"}})
+
+    encrypted = run_context.encrypt("secret")
+
+    assert encrypted == "secret"
+    assert run_context.decrypt(encrypted) == "secret"
+    assert run_context.plugin_configuration("mongodb") == {"uri": "mongodb://example"}
+
+
 @dataclass(slots=True)
 class EchoOutput:
     message: str
@@ -89,6 +100,25 @@ def test_run_worker_task_returns_success_result() -> None:
     assert result.attempt_number == 1
     assert result.output.message == "Ada"
     assert result.metrics["echo.calls"] == 1
+
+
+def test_in_memory_queue_emits_and_receives_worker_task() -> None:
+    from blockdata.queues.queue import InMemoryQueue
+
+    task = EchoTask(id="echo", type="blockdata.test.echo", message=Property.of_value("Ada"))
+    worker_task = WorkerTask(
+        task=task,
+        run_context=RunContext(execution_id="exec-queue"),
+        execution_id="exec-queue",
+        task_run_id="task-queue",
+    )
+    queue = InMemoryQueue()
+
+    queue.emit(worker_task)
+    queued = queue.receive_nowait()
+
+    assert queued.task_run_id == "task-queue"
+    assert queue.is_empty() is True
 
 
 def test_run_worker_task_skips_disabled_and_run_if_false() -> None:
