@@ -1,16 +1,27 @@
-"""Auth provider tests — no mocks. Uses real crypto operations.
+"""Auth provider tests.
 
-For OAuth2 tests that call external token endpoints, we generate a
-throwaway RSA key pair so jwt.encode() works with real signing.
-The HTTP call to the token endpoint is the only thing that would
-need a live service — those tests are marked for integration runs.
+Unit tests: no mocks, no external calls, always run.
+Integration tests (@pytest.mark.integration): call real GCP token endpoint,
+require docs/test-keys/agchain-2d87e20320d7.json. Skipped if file missing.
 """
+import json
+import os
+from pathlib import Path
+
 import pytest
 import base64
 
 from app.infra.auth_providers import (
     APIKeyAuth, BasicAuth, ConnectionStringAuth, IAMAuth,
-    resolve_auth, AuthResult,
+    OAuth2ServiceAccount, resolve_auth, AuthResult,
+)
+
+# Resolve SA key relative to repo root (2 levels up from this test file)
+_REPO_ROOT = Path(__file__).resolve().parents[4]
+_SA_KEY_FILE = _REPO_ROOT / "docs" / "test-keys" / "agchain-2d87e20320d7.json"
+_skip_no_sa = pytest.mark.skipif(
+    not _SA_KEY_FILE.is_file(),
+    reason=f"GCP SA key not found at {_SA_KEY_FILE}",
 )
 
 
@@ -134,3 +145,35 @@ async def test_resolve_auth_unknown_fallback():
     result = await resolve_auth({"some_field": "value"})
     assert result.credentials == {"some_field": "value"}
     assert result.headers == {}
+
+
+# ---------------------------------------------------------------------------
+# Integration tests — real GCP token exchange (skipped without SA key)
+# ---------------------------------------------------------------------------
+
+def _load_sa_creds() -> dict:
+    return json.loads(_SA_KEY_FILE.read_text())
+
+
+@_skip_no_sa
+@pytest.mark.asyncio
+async def test_oauth2_service_account_real_token():
+    """Full OAuth2 SA flow: sign JWT with real RSA key, exchange for access token."""
+    creds = _load_sa_creds()
+    result = await OAuth2ServiceAccount().authenticate(creds)
+
+    assert result.token.startswith("ya29.")
+    assert result.headers["Authorization"] == f"Bearer {result.token}"
+    assert result.credentials["client_email"] == creds["client_email"]
+    assert result.credentials["access_token"] == result.token
+
+
+@_skip_no_sa
+@pytest.mark.asyncio
+async def test_resolve_auth_detects_oauth2_sa():
+    """resolve_auth auto-detects OAuth2 SA from client_email + private_key."""
+    creds = _load_sa_creds()
+    result = await resolve_auth(creds)
+
+    assert result.token.startswith("ya29.")
+    assert "Authorization" in result.headers

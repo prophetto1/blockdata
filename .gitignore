@@ -25,6 +25,9 @@ third_party/meta-configurator/meta_configurator/NUL
 .env
 .env.*
 
+# GCP service account keys (never commit)
+docs/test-keys/
+
 # OS generated files
 .DS_Store
 Thumbs.db

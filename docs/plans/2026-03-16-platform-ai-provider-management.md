@@ -41,7 +41,15 @@ Python `crypto.py` and Deno `api_key_crypto.ts` have **different key derivation*
 - **Python** (`crypto.py:22`): `SHA256(secret + context)`
 - **Deno** (`api_key_crypto.ts:18`): `SHA256(secret + "\n" + context + "\n")`
 
-Phase 2 will need Deno to decrypt platform keys. This plan adds `encrypt_for_deno()` to Python so keys are encrypted with Deno-compatible derivation from day one.
+Phase 2 will need Deno to decrypt platform keys. This plan adds `encrypt_for_deno()` to Python so keys are encrypted with Deno-compatible derivation, avoiding a re-encryption migration later.
+
+**Encryption secret:** `SUPABASE_SERVICE_ROLE_KEY` from environment, matching the established pattern in the connections route (`app/api/routes/connections.py`) and connection resolver (`app/infra/connection.py`). No policy table indirection.
+
+**Two derivation functions, two purposes:**
+- `encrypt_with_context` — Python-to-Python round-trips (user provider connections)
+- `encrypt_for_deno` — Python-encrypts, Deno-decrypts (platform API keys, consumed by `assistant-chat` in Phase 2)
+
+**Test route is side-effect-free.** The `/{provider}/test` endpoint validates a key against the provider API but does not update `is_valid` in the database. Only the save route (`PUT /{provider}`) should set validation state, ensuring a tested ad-hoc key cannot mark a different saved key as valid.
 
 ---
 
@@ -284,13 +292,9 @@ async def save_platform_key(provider: str, body: SaveKeyRequest,
         if not base_url.startswith(("http://", "https://")):
             raise HTTPException(400, "base_url must use http or https")
 
-    sb_policy = get_supabase_admin()
-    policy_row = sb_policy.table("admin_runtime_policy").select("value").eq(
-        "policy_key", "secret_storage.encryption_key"
-    ).maybeSingle().execute()
-    secret = policy_row.data["value"] if policy_row.data else ""
+    secret = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
     if not secret:
-        raise HTTPException(500, "Encryption key not configured. Set secret_storage.encryption_key in Instance Config.")
+        raise HTTPException(500, "SUPABASE_SERVICE_ROLE_KEY not set")
 
     key_suffix = api_key[-4:]
     encrypted = encrypt_for_deno(api_key, secret, CRYPTO_CONTEXT)
@@ -328,7 +332,6 @@ async def delete_platform_key(provider: str,
 async def test_api_key(provider: str, body: TestKeyRequest,
                        su: AuthPrincipal = Depends(require_superuser)):
     """Validate an API key by making a lightweight probe request to the provider."""
-    provider = body.provider
     api_key = body.api_key.strip()
 
     if not api_key:
@@ -359,12 +362,6 @@ async def test_api_key(provider: str, body: TestKeyRequest,
                 resp = await client.get(url, headers=headers)
 
         if resp.is_success:
-            # Update is_valid in table if this provider has a saved key
-            sb = get_supabase_admin()
-            sb.table("platform_api_keys").update({
-                "is_valid": True,
-                "updated_at": _now(),
-            }).eq("provider", provider).execute()
             return {"valid": True}
 
         if resp.status_code in (401, 403):
@@ -778,6 +775,8 @@ When this plan is complete, the next step is migrating `assistant-chat` to FastA
 | Key validation in FastAPI | Same `httpx` probes as the edge function, but lives where all future AI execution will live. |
 | Model role CRUD via FastAPI | Browser shouldn't write directly to tables. Consistent with platform_api_keys pattern. |
 | `encrypt_for_deno` in Python | Key derivation differs between runtimes. Platform keys encrypted Deno-compatible for Phase 2. |
+| `SUPABASE_SERVICE_ROLE_KEY` as encryption secret | Matches connections route and connection resolver. No policy table indirection — one established pattern for all encryption. |
+| Test route is side-effect-free | Prevents ad-hoc tested keys from marking a different saved key as valid. Save route owns `is_valid` state. |
 | No edge function changes | Clean separation. This plan builds the new surface. Phase 2 migrates the old. |
 | Chat streaming deferred | Requires SSE infrastructure, 4 provider ports, client streaming support. Separate scope. |
 | Settings routes redirect | Old bookmarks work. SuperuserGuard denies non-admin users. |
