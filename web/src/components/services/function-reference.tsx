@@ -362,9 +362,9 @@ export function FunctionReferenceHeader({
   const fullUrl = `${baseUrl}${fn.entrypoint}`;
 
   return (
-    <div className="border-b border-border bg-muted/30 px-5 py-3 space-y-1.5">
+    <div className="border-b border-border bg-card px-3 py-2.5 space-y-1.5">
       <div className="flex flex-wrap items-center gap-2">
-        <h4 className="font-mono text-sm font-semibold text-foreground">{fn.function_name}</h4>
+        <h4 className="text-sm font-semibold text-foreground">{fn.function_name}</h4>
         <Pill variant="primary">{fn.function_type}</Pill>
         {fn.deprecated && <Pill variant="red">Deprecated</Pill>}
         {fn.beta && <Pill variant="amber">Beta</Pill>}

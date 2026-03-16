@@ -346,7 +346,7 @@ function BlocksTab({ doc, artifacts }: { doc: ProjectDocumentRow | null; artifac
   if (!isRawDocling && state.blocks.length === 0) {
     return (
       <DocumentPreviewShell doc={doc}>
-        <DocumentPreviewMessage message="No stored blocks were found for this parsed document." />
+        <DocumentPreviewMessage message="No blocks found. The document may be empty or blocks are still being written." />
       </DocumentPreviewShell>
     );
   }
@@ -722,6 +722,15 @@ export function useParseWorkbench() {
     request
       .then((bundle) => {
         artifactsCacheRef.current.set(cacheKey, bundle);
+        // Evict oldest entries beyond cache limit (insertion-order via Map).
+        const MAX_ARTIFACT_CACHE = 50;
+        if (artifactsCacheRef.current.size > MAX_ARTIFACT_CACHE) {
+          const iter = artifactsCacheRef.current.keys();
+          for (let i = artifactsCacheRef.current.size - MAX_ARTIFACT_CACHE; i > 0; i--) {
+            const oldest = iter.next().value;
+            if (oldest) artifactsCacheRef.current.delete(oldest);
+          }
+        }
         artifactsRequestRef.current.delete(cacheKey);
         if (!cancelled && getParseArtifactCacheKey(activeDoc) === cacheKey) {
           setActiveArtifacts(bundle);
