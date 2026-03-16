@@ -25,7 +25,7 @@ import {
 } from '@/components/documents/DocumentPreviewShell';
 import { ParseConfigColumn } from '@/components/documents/ParseConfigColumn';
 import { ParseSettingsColumn } from '@/components/documents/ParseSettingsColumn';
-import { ParseTabPanel, useParseTab } from '@/components/documents/ParseTabPanel';
+import { ParseRowActions, ParseTabPanel, useParseTab } from '@/components/documents/ParseTabPanel';
 import { cn } from '@/lib/utils';
 import { downloadFromSignedUrl, formatBytes, getDocumentFormat, type ProjectDocumentRow } from '@/lib/projectDetailHelpers';
 import { manageDocument } from '@/lib/edge';
@@ -686,7 +686,7 @@ export function useParseWorkbench() {
   const artifactsRequestRef = useRef(new Map<string, Promise<ParseArtifactBundle>>());
 
   const docState = useProjectDocuments(resolvedProjectId);
-  const { docs, loading, error, selected, toggleSelect, toggleSelectAll, allSelected, someSelected, refreshDocs } = docState;
+  const { docs, loading, error, selected, toggleSelect, toggleSelectAll, clearSelection, allSelected, someSelected, refreshDocs } = docState;
 
   const parseTab = useParseTab();
 
@@ -741,26 +741,34 @@ export function useParseWorkbench() {
   }, []);
 
   const handleReset = useCallback(async (uid: string) => {
-    const result = await manageDocument('reset', uid);
-    if (result.partial) {
-      console.warn('Arango cleanup pending for', uid);
-    } else if (!result.ok) {
-      console.error('Reset failed:', result.error);
-      return;
+    try {
+      const result = await manageDocument('reset', uid);
+      if (result.partial) {
+        console.warn('Arango cleanup pending for', uid);
+      } else if (!result.ok) {
+        window.alert(`Reset failed: ${result.error ?? 'Unknown error'}`);
+        return;
+      }
+      refreshDocs();
+    } catch (err) {
+      window.alert(`Reset failed: ${err instanceof Error ? err.message : String(err)}`);
     }
-    refreshDocs();
   }, [refreshDocs]);
 
   const handleDelete = useCallback(async (uid: string) => {
-    const result = await manageDocument('delete', uid);
-    if (result.partial) {
-      console.warn('Arango cleanup pending for', uid);
-    } else if (!result.ok) {
-      console.error('Delete failed:', result.error);
-      return;
+    try {
+      const result = await manageDocument('delete', uid);
+      if (result.partial) {
+        console.warn('Arango cleanup pending for', uid);
+      } else if (!result.ok) {
+        window.alert(`Delete failed: ${result.error ?? 'Unknown error'}`);
+        return;
+      }
+      if (activeDocUid === uid) setActiveDocUid(null);
+      refreshDocs();
+    } catch (err) {
+      window.alert(`Delete failed: ${err instanceof Error ? err.message : String(err)}`);
     }
-    if (activeDocUid === uid) setActiveDocUid(null);
-    refreshDocs();
   }, [activeDocUid, refreshDocs]);
 
   const parseExtraColumns: ExtraColumn[] = useMemo(() => getParseFileListExtraColumns(), []);
@@ -797,6 +805,14 @@ export function useParseWorkbench() {
                   activeDoc={activeDocUid}
                   onDocClick={handleDocClick}
                   extraColumns={parseExtraColumns}
+                  renderRowActions={(doc) => (
+                    <ParseRowActions
+                      doc={doc}
+                      parseTab={parseTab}
+                      onReset={handleReset}
+                      onDelete={handleDelete}
+                    />
+                  )}
                   className={cn(
                     'parse-documents-table',
                     tabId === 'parse-compact' && 'parse-documents-table-compact',
@@ -818,7 +834,10 @@ export function useParseWorkbench() {
           selectedDoc={activeDoc}
           parseTab={parseTab}
           onReset={(uids) => { for (const uid of uids) void handleReset(uid); }}
-          onDelete={(uids) => { for (const uid of uids) void handleDelete(uid); }}
+          onDelete={(uids) => {
+            clearSelection();
+            for (const uid of uids) void handleDelete(uid);
+          }}
         />
       );
     }
@@ -845,7 +864,7 @@ export function useParseWorkbench() {
     }
 
     return null;
-  }, [docs, loading, error, selected, toggleSelect, toggleSelectAll, allSelected, someSelected, activeDocUid, activeDoc, activeArtifacts, handleDocClick, parseTab, parseExtraColumns, handleReset, handleDelete]);
+  }, [docs, loading, error, selected, toggleSelect, toggleSelectAll, clearSelection, allSelected, someSelected, activeDocUid, activeDoc, activeArtifacts, handleDocClick, parseTab, parseExtraColumns, handleReset, handleDelete]);
 
   return { renderContent, workbenchRef };
 }
