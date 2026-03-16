@@ -238,6 +238,14 @@ export default function ServicesCatalog() {
           matchesCategory={matchesCategory}
           renderCard={renderCard}
           emptyMessage="No services match your search."
+          toolbarRight={
+            <Link
+              to="/app/marketplace/functions"
+              className="rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-foreground no-underline transition-colors hover:border-primary hover:text-primary shrink-0"
+            >
+              Function Catalog
+            </Link>
+          }
         />
       </div>
     </div>

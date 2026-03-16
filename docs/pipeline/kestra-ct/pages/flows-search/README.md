@@ -1,1 +1,0 @@
-Investigation complete. The packet.md and capture.md files contain the full trace of this page's frontend contract, endpoint shape, and database mapping. The implement.md and verify.md stubs are ready for the implementation phase. Check `kestra-ct/page-registry.yaml` for current status.

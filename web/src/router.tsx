@@ -41,6 +41,7 @@ import ProjectsHome from '@/pages/ProjectsHome';
 import IntegrationsCatalog from '@/pages/marketplace/IntegrationsCatalog';
 import ServicesCatalog from '@/pages/marketplace/ServicesCatalog';
 import ServiceDetailPage from '@/pages/marketplace/ServiceDetailPage';
+import FunctionCatalogPage from '@/pages/marketplace/FunctionCatalogPage';
 import TestsPage from '@/pages/kestra/TestsPage';
 import { FlowsRouteShell } from '@/components/layout/FlowsRouteShell';
 import { featureFlags } from '@/lib/featureFlags';
@@ -141,9 +142,11 @@ export const router = createBrowserRouter([
           { path: '/app/parse', element: <ParsePage /> },
           { path: '/app/extract', element: <ExtractPage /> },
           { path: '/app/tests', element: <TestsPage /> },
+          { path: '/app/test-integrations', lazy: () => import('@/pages/TestIntegrations') },
           { path: '/app/marketplace/integrations', element: <IntegrationsCatalog /> },
           { path: '/app/marketplace/services', element: <ServicesCatalog /> },
           { path: '/app/marketplace/services/:serviceId', element: <ServiceDetailPage /> },
+          { path: '/app/marketplace/functions', element: <FunctionCatalogPage /> },
           {
             path: '/app/flows',
             element: <FlowsRouteShell />,

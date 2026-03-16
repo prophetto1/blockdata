@@ -78,6 +78,7 @@ export const TOP_LEVEL_NAV: Array<NavItem | 'divider'> = [
   { label: 'API', icon: IconTerminal2, path: '/app/api-editor' },
   'divider',
   { label: 'Tests', icon: IconTestPipe, path: '/app/tests' },
+  { label: 'Test-Integrations', icon: IconPlugConnected, path: '/app/test-integrations' },
   'divider',
   { label: 'Settings', icon: IconSettings, path: '/app/settings', drillId: 'settings' },
 ];

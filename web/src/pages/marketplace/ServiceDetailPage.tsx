@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { IconChevronRight } from '@tabler/icons-react';
 import { ArrowLeft02Icon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
@@ -27,6 +27,7 @@ type ServiceDetail = ServiceRow & { service_type_label: string };
 
 export default function ServiceDetailPage() {
   const { serviceId } = useParams<{ serviceId: string }>();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
   const [service, setService] = useState<ServiceDetail | null>(null);
@@ -80,6 +81,15 @@ export default function ServiceDetailPage() {
 
     void load();
   }, [serviceId]);
+
+  // Auto-select function from ?fn= query param
+  useEffect(() => {
+    const fnParam = searchParams.get('fn');
+    if (fnParam && functions.length > 0 && !selectedFunctionId) {
+      const match = functions.find((f) => f.function_name === fnParam);
+      if (match) setSelectedFunctionId(match.function_id);
+    }
+  }, [searchParams, functions, selectedFunctionId]);
 
   const baseUrl = service?.base_url ?? '';
 
@@ -253,10 +263,17 @@ export default function ServiceDetailPage() {
             <div className="h-full w-full min-h-0 basis-[24%] shrink-0 p-1">
               <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-md border border-border bg-card">
                 {/* Header chrome */}
-                <div className="grid min-h-10 grid-cols-[1fr_auto] items-center border-b border-border bg-card px-2">
+                <div className="grid min-h-10 grid-cols-[1fr_auto_auto] items-center gap-2 border-b border-border bg-card px-2">
                   <span className="truncate text-sm font-semibold text-foreground">
                     Functions
                   </span>
+                  <Link
+                    to="/app/marketplace/functions"
+                    className="inline-flex h-6 items-center rounded-md border border-border px-2 text-[10px] font-medium text-muted-foreground no-underline transition-colors hover:border-primary hover:text-primary"
+                    title="View all functions across all services"
+                  >
+                    Catalog
+                  </Link>
                   <span className="text-[11px] font-medium text-muted-foreground">
                     {functions.length}
                   </span>

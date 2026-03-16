@@ -11,6 +11,7 @@ type Props<T> = {
   matchesCategory: (item: T, category: string) => boolean;
   renderCard: (item: T) => ReactNode;
   emptyMessage?: string;
+  toolbarRight?: ReactNode;
 };
 
 export default function MarketplaceGrid<T>({
@@ -20,6 +21,7 @@ export default function MarketplaceGrid<T>({
   matchesCategory,
   renderCard,
   emptyMessage = 'No results match your search.',
+  toolbarRight,
 }: Props<T>) {
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
@@ -70,6 +72,7 @@ export default function MarketplaceGrid<T>({
           <span className="text-xs text-muted-foreground whitespace-nowrap">
             {filtered.length} of {items.length}
           </span>
+          {toolbarRight}
         </div>
 
         {/* Category filters */}
