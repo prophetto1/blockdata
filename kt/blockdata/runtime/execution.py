@@ -11,8 +11,12 @@ from typing import Any, get_args, get_origin, get_type_hints
 from blockdata.core.models.property import Property
 from blockdata.core.runners.run_context import RunContext
 from blockdata.connectors.mongodb.mongodb_connection import MongoDbConnection
+from blockdata.core.models.flows.state import State
+from blockdata.queues.queue import InMemoryQueue
 
 from blockdata.runtime.registry import resolve, resolve_by_function_name
+from blockdata.worker.runner import run_worker_task
+from blockdata.worker.worker_task import WorkerTask
 
 _EXPLICIT_ALIASES = {
     "from": "from_",
@@ -62,7 +66,20 @@ def execute_task(task_type: str, request: ExecutionRequest, function_name: str |
     )
 
     if hasattr(task, "run"):
-        output = task.run(context)
+        dispatch_queue: InMemoryQueue[WorkerTask] = InMemoryQueue()
+        dispatch_queue.emit(
+            WorkerTask(
+                task=task,
+                run_context=context,
+                execution_id=context.execution_id,
+                task_run_id=context.task_run_id or request.task_run_id or "task-run",
+            )
+        )
+        worker_task = dispatch_queue.receive_nowait()
+        worker_result = run_worker_task(worker_task)
+        if worker_result.state in {State.FAILED, State.KILLED}:
+            raise RuntimeError(worker_result.error or f"Task {task_type} failed")
+        output = worker_result.output
     elif hasattr(task, "evaluate"):
         output = task.evaluate(context)
     else:

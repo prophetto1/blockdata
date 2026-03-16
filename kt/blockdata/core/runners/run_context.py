@@ -2,15 +2,14 @@ from __future__ import annotations
 
 import logging
 import re
-import shutil
 import uuid
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
 from typing import Any, Mapping
-from urllib.parse import urlparse
 
 from blockdata.core.models.property import Property
+from blockdata.core.storages.storage import LocalStorage
 
 _WHOLE_TEMPLATE = re.compile(r"^\s*\{\{\s*(.+?)\s*\}\}\s*$")
 _PARTIAL_TEMPLATE = re.compile(r"\{\{\s*(.+?)\s*\}\}")
@@ -79,35 +78,6 @@ class WorkingDirectory:
         return self.root / f"{uuid.uuid4().hex}{suffix}"
 
 
-class LocalStorage:
-    def __init__(self, root: Path):
-        self.root = root
-        self.root.mkdir(parents=True, exist_ok=True)
-
-    def put_file_bytes(self, name: str, content: bytes) -> str:
-        target = self.root / f"{uuid.uuid4().hex}-{Path(name).name}"
-        target.write_bytes(content)
-        return str(target)
-
-    def put_file(self, path: str | Path) -> str:
-        source = Path(path)
-        target = self.root / f"{uuid.uuid4().hex}-{source.name}"
-        shutil.copyfile(source, target)
-        return str(target)
-
-    def get_file(self, uri: str | Path):
-        return self._resolve_path(uri).open("rb")
-
-    def _resolve_path(self, uri: str | Path) -> Path:
-        if isinstance(uri, Path):
-            return uri
-
-        parsed = urlparse(uri)
-        if parsed.scheme == "file":
-            return Path(parsed.path)
-        return Path(uri)
-
-
 @dataclass(slots=True, kw_only=True)
 class RunContext:
     execution_id: str = "exec"
@@ -119,6 +89,8 @@ class RunContext:
     _logger: logging.Logger = field(init=False, repr=False)
     storage: LocalStorage = field(init=False)
     _working_directory: WorkingDirectory = field(init=False, repr=False)
+    _plugin_configuration: Any = field(default=None, init=False, repr=False)
+    _runtime_directory: Path = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
         if self.runtime_root is None:
@@ -127,6 +99,7 @@ class RunContext:
             root = runtime_root / f"{self.execution_id}-{uuid.uuid4().hex}"
         else:
             root = self.runtime_root
+        self._runtime_directory = root
         self.storage = LocalStorage(root / "storage")
         self._working_directory = WorkingDirectory(root / "working")
         self._logger = logging.getLogger(f"kt.blockdata.{self.execution_id}")
@@ -142,6 +115,40 @@ class RunContext:
 
     def metric_value(self, name: str) -> Any:
         return self._metrics.get(name)
+
+    def metrics(self) -> dict[str, Any]:
+        return dict(self._metrics)
+
+    def set_plugin_configuration(self, value: Any) -> None:
+        self._plugin_configuration = value
+
+    def plugin_configuration(self, name: str | None = None) -> Any:
+        if name is None:
+            return self._plugin_configuration
+        if isinstance(self._plugin_configuration, Mapping):
+            return self._plugin_configuration.get(name)
+        return None
+
+    def encrypt(self, plaintext: str) -> str:
+        return plaintext
+
+    def decrypt(self, encrypted: str) -> str:
+        return encrypted
+
+    def cleanup(self) -> None:
+        if self.runtime_root is None and self._runtime_directory.exists():
+            for child in self._runtime_directory.iterdir():
+                if child.is_dir():
+                    for nested in child.rglob("*"):
+                        if nested.is_file():
+                            nested.unlink()
+                    for nested in sorted(child.rglob("*"), reverse=True):
+                        if nested.is_dir():
+                            nested.rmdir()
+                    child.rmdir()
+                elif child.is_file():
+                    child.unlink()
+            self._runtime_directory.rmdir()
 
     def render(self, value: Any) -> RenderedValue:
         if isinstance(value, Property):
