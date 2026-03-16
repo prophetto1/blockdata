@@ -4,6 +4,14 @@
   --top-command-bar-leading-offset: 100px;
 }
 
+@media (max-width: 767px) {
+  :root {
+    --shell-guide-left-width: auto;
+    --shell-guide-middle-width: 0px;
+    --top-command-bar-leading-offset: 0px;
+  }
+}
+
 .top-command-bar {
   height: 100%;
   display: grid;
@@ -43,6 +51,20 @@
 
 .top-command-bar--minimal .top-command-bar-left {
   overflow: visible;
+}
+
+@media (max-width: 767px) {
+  .top-command-bar--minimal .project-switcher-trigger {
+    width: auto;
+    flex: 1 1 auto;
+    margin-inline-start: 0;
+    max-width: 160px;
+  }
+
+  .top-command-bar--minimal .top-command-bar-left,
+  .top-command-bar--minimal .top-command-bar-center {
+    transform: none;
+  }
 }
 
 .top-command-bar--shell-guides::before,
@@ -133,7 +155,7 @@
   flex: 0 0 auto;
 }
 
-@media (max-width: 1200px) {
+@media (max-width: 767px) {
   .top-command-bar--shell-guides {
     grid-template-columns: auto;
     padding-inline-start: calc(var(--app-shell-navbar-offset, 0px) + 0.75rem);
@@ -176,6 +198,13 @@
 
 .top-command-bar-search-wrap {
   width: min(360px, 100%);
+  min-width: 0;
+}
+
+@media (max-width: 767px) {
+  .top-command-bar-search-wrap {
+    width: 100%;
+  }
 }
 
 .top-command-bar-search-positioner {

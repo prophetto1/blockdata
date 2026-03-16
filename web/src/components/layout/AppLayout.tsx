@@ -75,7 +75,9 @@ function DraggableChat({ onClose, onDock }: { onClose: () => void; onDock: () =>
           ? { top: `${position.y}px`, left: `${position.x}px` }
           : { bottom: '12px', right: '12px' }),
         width: 'min(380px, calc(100vw - 24px))',
-        height: 'min(520px, 60vh)',
+        height: 'min(520px, calc(100dvh - 24px))',
+        maxWidth: 'calc(100vw - 24px)',
+        maxHeight: 'calc(100dvh - 24px)',
         border: '1px solid var(--border)',
         borderRadius: '12px',
         backgroundColor: 'var(--chrome, var(--background))',
@@ -197,18 +199,22 @@ function AppShellInner() {
   const isParseRoute = location.pathname === '/app/parse';
   const isExtractRoute = location.pathname === '/app/extract';
   const isSchemasRoute = /^\/app\/schemas(?:\/|$)/.test(location.pathname);
-  const lockMainScroll = (
-    isEltRoute
-    || isEditorLayoutRoute
-    || isEditorRoute
-    || isSettingsRoute
-    || isApiEditorRoute
+  const isFullBleedRoute = (
+    isFlowsRoute
     || isMarketplaceServiceDetailRoute
     || isSuperuserRoute
     || isAssetsRoute
     || isParseRoute
     || isExtractRoute
     || isSchemasRoute
+  );
+  const lockMainScroll = (
+    isEltRoute
+    || isEditorLayoutRoute
+    || isEditorRoute
+    || isSettingsRoute
+    || isApiEditorRoute
+    || isFullBleedRoute
   );
 
   useEffect(() => {
@@ -234,12 +240,13 @@ function AppShellInner() {
     '--app-shell-header-height': `${styleTokens.shell.headerHeight}px`,
   } as CSSProperties;
 
+  const mobilePad = isMobile && !isFullBleedRoute;
   const shellMainStyle: CSSProperties = {
     position: 'absolute',
     inset: 0,
     paddingTop: `${styleTokens.shell.headerHeight}px`,
-    paddingInlineStart: `${mainInsetStart}px`,
-    paddingInlineEnd: `${mainInsetEnd}px`,
+    paddingInlineStart: mobilePad ? '16px' : `${mainInsetStart}px`,
+    paddingInlineEnd: mobilePad ? '16px' : `${mainInsetEnd}px`,
     overflow: lockMainScroll ? 'hidden' : 'auto',
     overscrollBehavior: lockMainScroll ? 'none' : 'auto',
     backgroundColor: 'var(--background)',
@@ -387,7 +394,7 @@ function AppShellInner() {
         )}
 
         <main style={shellMainStyle}>
-          {(isFlowsRoute || isMarketplaceServiceDetailRoute || isSuperuserRoute || isAssetsRoute || isParseRoute || isExtractRoute || isSchemasRoute) ? (
+          {isFullBleedRoute ? (
             <Outlet />
           ) : (
             <AppPageShell mode="fluid">

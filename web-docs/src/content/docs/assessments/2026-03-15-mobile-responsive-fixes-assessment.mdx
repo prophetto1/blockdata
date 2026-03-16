@@ -1,0 +1,136 @@
+---
+title: Mobile Responsive Fixes Plan Assessment
+description: Viability assessment of the mobile responsive fixes implementation plan — code references verified against actual codebase.
+---
+
+# Mobile Responsive Fixes Plan Assessment
+
+- Source plan: `docs/plans/2026-03-15-mobile-responsive-fixes.md`
+- Date reviewed: `2026-03-15`
+- Reviewer: `Codex`
+- Verdict: `Conditional Pass`
+
+## Executive Summary
+
+Six of the seven tasks are viable and can be implemented as written. All file paths, line numbers, and code snippets are accurate against the current codebase. The one exception is **Task 1 (mobile content padding)**, which has a critical flaw: the proposed padding targets `shellMainStyle` on `<main>`, which wraps ALL routes — including full-bleed workbenches (Parse, Extract, Flows, Schemas, Assets) that manage their own internal layout. The plan incorrectly assumes full-bleed routes are insulated. With Task 1 corrected, the plan is implementable.
+
+## Verification of Code References
+
+Every plan reference was checked against the actual code:
+
+| Reference | Plan says | Actual | Match |
+|-----------|-----------|--------|-------|
+| `AppLayout.tsx:237-246` shellMainStyle | Inline style with inset, padding, overflow | Lines 237-246 identical | Yes |
+| `AppLayout.tsx:64-95` DraggableChat | Fixed position, `min(380px)`, `min(520px, 60vh)` | Lines 64-95 identical | Yes |
+| `AppLayout.tsx:180-181` right-rail guard | `showRightRailToggle = !isMobile` | Lines 180-181 identical | Yes |
+| `TopCommandBar.css:136-154` 1200px breakpoint | `@media (max-width: 1200px)` | Lines 136-154 identical | Yes |
+| `TopCommandBar.css:177-179` search-wrap | `width: min(360px, 100%)` | Lines 177-179 identical | Yes |
+| `TopCommandBar.css:37-42` project-switcher | `width: 196px; flex: 0 0 196px` | Lines 37-42 identical | Yes |
+| `ProjectSwitcher.tsx:37` Popover.Content | `w-80` with no max-width | Line 37 identical | Yes |
+| `TopCommandBar.tsx:128` hamburger toggle | `h-8 w-8 ... sm:hidden` | Line 128 identical | Yes |
+| `tailwind.css:95-96` CSS variables | `--app-shell-page-gap: 1rem` | Lines 95-96 identical | Yes |
+| `useIsMobile()` breakpoint | 768px | 768px in `use-mobile.tsx:3` | Yes |
+
+## Findings By Task
+
+### Task 1: Mobile content edge padding — CRITICAL FLAW
+
+**The proposed fix will break full-bleed routes.**
+
+The plan adds `paddingInlineStart: '16px'` and `paddingInlineEnd: '16px'` to `shellMainStyle` when `isMobile` is true. The plan states: "Full-bleed routes render their own Outlet without AppPageShell, so they manage their own padding."
+
+This analysis is **incorrect**. `shellMainStyle` is applied to the `<main>` element at `AppLayout.tsx:389`:
+
+```tsx
+<main style={shellMainStyle}>
+  {(isFlowsRoute || isMarketplaceServiceDetailRoute || ...) ? (
+    <Outlet />           // full-bleed routes
+  ) : (
+    <AppPageShell mode="fluid">
+      <Outlet />         // wrapped routes
+    </AppPageShell>
+  )}
+</main>
+```
+
+The `<main>` element wraps BOTH code paths. Adding 16px inline padding to it would pad every route, including:
+- Parse workbench (three-pane layout)
+- Extract workbench
+- Flows (code editor)
+- Schemas
+- Assets
+
+These full-bleed routes use absolute positioning or flex layouts that expect to fill their container edge-to-edge. Adding 16px side padding would create misaligned gutters.
+
+**Correct fix**: Apply the mobile padding inside `AppPageShell` (which already wraps only the non-full-bleed routes), or make the padding conditional on the current route not being full-bleed:
+
+```tsx
+const isFullBleedRoute = isFlowsRoute || isMarketplaceServiceDetailRoute
+  || isSuperuserRoute || isAssetsRoute || isParseRoute || isExtractRoute
+  || isSchemasRoute;
+
+const shellMainStyle: CSSProperties = {
+  ...
+  paddingInlineStart: (isMobile && !isFullBleedRoute) ? '16px' : `${mainInsetStart}px`,
+  paddingInlineEnd: (isMobile && !isFullBleedRoute) ? '16px' : `${mainInsetEnd}px`,
+};
+```
+
+### Task 2: TopCommandBar CSS breakpoint — PASS with note
+
+The 1200px → 767px breakpoint change is correct and well-targeted. All CSS selectors and line references are accurate.
+
+**Note**: The hamburger button uses Tailwind `sm:hidden`, which fires at 640px — not 768px. This creates a dead zone at 640-768px where `isMobile` is `true` (no desktop nav) but the hamburger is hidden (sm breakpoint). This is a **pre-existing** issue not introduced by the plan, but worth noting for a follow-up. The plan could add `hidden md:hidden` (768px) instead of `sm:hidden` to align with `useIsMobile()`, or change `sm:hidden` to use a custom breakpoint.
+
+### Task 3: ProjectSwitcher popover — PASS
+
+Simple, correct. Adding `max-w-[calc(100vw-32px)]` to `Popover.Content` is the right approach. The `w-80` (320px) will win on screens >= 352px; the max-width constrains on smaller screens.
+
+### Task 4: DraggableChat — PASS
+
+Code references match. The change from `60vh` to `calc(100dvh - 24px)` is correct — on iPhone SE (375x667), the current `60vh` gives only 400px of chat height, while the fix gives 520px (capped by the min). The `maxWidth`/`maxHeight` constraints prevent drag-out-of-viewport.
+
+### Task 5: Right-rail toggle — PASS (verify only)
+
+Confirmed: `showRightRailToggle = !isMobile` at line 181 correctly hides the toggle. No change needed.
+
+### Task 6: Touch target — PASS
+
+Simple change, `h-8 w-8` → `h-10 w-10` (32px → 40px). The icon stays 24px. The same `sm:hidden` note from Task 2 applies — this touch target only matters below 640px currently, not below 768px.
+
+### Task 7: CSS variable overrides — PASS
+
+The variables exist at `tailwind.css:95-96`. Adding a `@media (max-width: 767px)` block to reduce gap and padding is straightforward and low-risk.
+
+## Plan Completeness
+
+### Covered well
+- Header breakpoint alignment (CSS ↔ JS)
+- Popover overflow containment
+- Floating chat viewport constraints
+- Touch target sizing
+- CSS variable tightening
+
+### Missing or underspecified
+
+1. **The `sm:hidden` / `useIsMobile()` breakpoint gap (640px vs 768px)**: The hamburger button disappears at 640px but `isMobile` is true until 768px. Between 640-768px there is no navigation toggle and no desktop sidebar. This should be a Task 2.5: change `sm:hidden` to a 768px breakpoint (`md:hidden` or a custom class).
+
+2. **Left-rail Drawer on mobile**: The mobile nav uses an Ark UI `Drawer` component. The plan doesn't assess whether the drawer plays well with the new padding/breakpoint changes. It likely does (the drawer is a portal overlay), but it wasn't verified.
+
+3. **Settings sidebar on mobile**: The settings route uses a left sidebar for navigation. On mobile, this sidebar may not collapse. The plan doesn't address this.
+
+## Risk Assessment
+
+| Task | Risk | Reason |
+|------|------|--------|
+| 1 | **High** | Will break full-bleed routes unless corrected |
+| 2 | Low | CSS-only, scoped to specific classes |
+| 3 | Low | Single class addition |
+| 4 | Low | Inline style change, no layout dependencies |
+| 5 | None | Verify only |
+| 6 | Low | Class change, icon size unchanged |
+| 7 | Low | CSS variable override, additive |
+
+## Verdict
+
+**Conditional pass.** Implementable after correcting Task 1 to exclude full-bleed routes from the mobile padding. The remaining six tasks can be executed as written. Consider adding a follow-up task to align the hamburger button's CSS breakpoint (`sm:hidden` → `md:hidden`) with `useIsMobile()`.
