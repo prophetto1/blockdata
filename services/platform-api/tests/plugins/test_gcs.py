@@ -2,11 +2,21 @@ import pytest
 from unittest.mock import patch, MagicMock, AsyncMock
 from app.plugins.gcs import GCSListPlugin, GCSDownloadCsvPlugin
 from app.domain.plugins.models import ExecutionContext
+from app.infra.auth_providers import AuthResult
 
 
 @pytest.fixture
 def ctx():
-    return ExecutionContext(execution_id="test-1")
+    return ExecutionContext(execution_id="test-1", user_id="user-1")
+
+
+def _mock_gcp_auth():
+    """Return a mock AuthResult with GCP OAuth token."""
+    return AuthResult(
+        headers={"Authorization": "Bearer fake-token"},
+        token="fake-token",
+        credentials={"project_id": "proj", "client_email": "sa@x", "private_key": "k"},
+    )
 
 
 @pytest.mark.asyncio
@@ -25,10 +35,10 @@ async def test_gcs_list_returns_matching_objects(ctx):
     }
 
     with patch("app.plugins.gcs.resolve_connection_sync") as mock_conn, \
-         patch("app.plugins.gcs.get_gcs_access_token") as mock_token, \
+         patch("app.plugins.gcs.resolve_auth", new_callable=AsyncMock) as mock_auth, \
          patch("app.plugins.gcs.httpx") as mock_httpx:
         mock_conn.return_value = {"project_id": "proj", "client_email": "sa@x", "private_key": "k"}
-        mock_token.return_value = "fake-token"
+        mock_auth.return_value = _mock_gcp_auth()
         mock_client = AsyncMock()
         mock_client.get.return_value = mock_resp
         mock_httpx.AsyncClient.return_value.__aenter__ = AsyncMock(return_value=mock_client)
@@ -50,14 +60,13 @@ async def test_gcs_download_csv_parses_rows(ctx):
     mock_resp.status_code = 200
     mock_resp.text = csv_content
 
-    # Mock upload_file on the context so JSONL is "written" to storage
     ctx.upload_file = AsyncMock(return_value="https://storage.example.com/pipeline/load-artifacts/test/a.csv.jsonl")
 
     with patch("app.plugins.gcs.resolve_connection_sync") as mock_conn, \
-         patch("app.plugins.gcs.get_gcs_access_token") as mock_token, \
+         patch("app.plugins.gcs.resolve_auth", new_callable=AsyncMock) as mock_auth, \
          patch("app.plugins.gcs.httpx") as mock_httpx:
         mock_conn.return_value = {"project_id": "proj", "client_email": "sa@x", "private_key": "k"}
-        mock_token.return_value = "fake-token"
+        mock_auth.return_value = _mock_gcp_auth()
         mock_client = AsyncMock()
         mock_client.get.return_value = mock_resp
         mock_httpx.AsyncClient.return_value.__aenter__ = AsyncMock(return_value=mock_client)

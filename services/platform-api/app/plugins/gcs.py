@@ -1,15 +1,19 @@
-"""GCS source plugins — List and Download CSV. Translated from io.kestra.plugin.gcp.gcs."""
+"""GCS source plugins — List and Download CSV.
+
+Refactored onto substrate: uses resolve_auth (OAuth2ServiceAccount auto-detected),
+encode_jsonl for serialization. No inline httpx auth or json.dumps.
+"""
 import csv
 import fnmatch
 import io
-import json as json_mod
 from typing import Any
 
 import httpx
 
 from ..domain.plugins.models import BasePlugin, PluginOutput, success, failed
+from ..infra.auth_providers import resolve_auth
 from ..infra.connection import resolve_connection_sync
-from ..infra.gcs_auth import get_gcs_access_token
+from ..infra.serialization import encode_jsonl
 
 GCS_API = "https://storage.googleapis.com/storage/v1"
 
@@ -21,19 +25,18 @@ class GCSListPlugin(BasePlugin):
 
     async def run(self, params: dict[str, Any], context) -> PluginOutput:
         creds = resolve_connection_sync(params["connection_id"], context.user_id)
-        token = get_gcs_access_token(creds)
+        auth = await resolve_auth(creds)
         bucket = params["bucket"]
         prefix = params.get("prefix", "")
         glob_pattern = params.get("glob", "*")
 
-        headers = {"Authorization": f"Bearer {token}"}
         url = f"{GCS_API}/b/{bucket}/o"
         query: dict[str, Any] = {"maxResults": 1000}
         if prefix:
             query["prefix"] = prefix
 
         async with httpx.AsyncClient() as client:
-            resp = await client.get(url, headers=headers, params=query, timeout=30)
+            resp = await client.get(url, headers=auth.headers, params=query, timeout=30)
             if resp.status_code != 200:
                 return failed(f"GCS list failed: HTTP {resp.status_code} — {resp.text[:300]}")
             body = resp.json()
@@ -52,11 +55,11 @@ class GCSListPlugin(BasePlugin):
 
     async def test_connection(self, creds: dict[str, Any]) -> PluginOutput:
         """Test GCS credentials by listing buckets."""
-        token = get_gcs_access_token(creds)
+        auth = await resolve_auth(creds)
         async with httpx.AsyncClient() as client:
             resp = await client.get(
                 f"https://storage.googleapis.com/storage/v1/b?project={creds.get('project_id', '')}",
-                headers={"Authorization": f"Bearer {token}"},
+                headers=auth.headers,
                 timeout=10,
             )
         if resp.status_code == 200:
@@ -71,18 +74,16 @@ class GCSDownloadCsvPlugin(BasePlugin):
 
     async def run(self, params: dict[str, Any], context) -> PluginOutput:
         creds = resolve_connection_sync(params["connection_id"], context.user_id)
-        token = get_gcs_access_token(creds)
+        auth = await resolve_auth(creds)
         bucket = params["bucket"]
         object_name = params["object_name"]
         key_column = params.get("key_column")
 
-        headers = {"Authorization": f"Bearer {token}"}
-        # URL-encode the object name for the media download endpoint
         encoded = object_name.replace("/", "%2F")
         url = f"{GCS_API}/b/{bucket}/o/{encoded}?alt=media"
 
         async with httpx.AsyncClient() as client:
-            resp = await client.get(url, headers=headers, timeout=120)
+            resp = await client.get(url, headers=auth.headers, timeout=120)
             if resp.status_code != 200:
                 return failed(f"GCS download failed: HTTP {resp.status_code}")
 
@@ -95,11 +96,9 @@ class GCSDownloadCsvPlugin(BasePlugin):
                 doc["_key"] = doc[key_column]
             documents.append(doc)
 
-        # Write JSONL to platform storage (artifact handoff contract)
-        jsonl_lines = [json_mod.dumps(doc) for doc in documents]
-        jsonl_bytes = ("\n".join(jsonl_lines)).encode("utf-8")
+        # Write JSONL to platform storage via substrate serialization
         storage_path = f"load-artifacts/{context.execution_id}/{object_name.replace('/', '_')}.jsonl"
-        storage_uri = await context.upload_file("pipeline", storage_path, jsonl_bytes)
+        storage_uri = await context.upload_file("pipeline", storage_path, encode_jsonl(documents))
 
         return success(
             data={"storage_uri": storage_uri, "row_count": len(documents), "object_name": object_name},
