@@ -1,0 +1,237 @@
+---
+title: Kestra Plugin Translation Problem Statement Assessment
+description: Quality gate assessment for the March 16, 2026 Kestra plugin translation problem statement and design decision document.
+---
+
+# Kestra Plugin Translation Problem Statement Assessment
+
+- Source plan: `docs/plans/2026-03-16-kestra-plugin-translation-problem-statement.md`
+- Date reviewed: `2026-03-16`
+- Reviewer: `Codex`
+- Verdict: `Fail`
+
+## Executive Summary
+
+This document is a strong problem statement. It correctly distinguishes external integration translation from core orchestration work, and it gives the team a useful option set for discussion.
+
+It is not yet an implementation-ready plan. The document stops at framing and tradeoffs. It does not choose a sequence, lock scope, define a delivery unit, specify acceptance criteria, or convert the option set into executable work with risk controls. The most important unresolved decisions are still explicitly delegated back to the team at the end of the document.
+
+## Findings By Severity
+
+### Critical
+
+#### 1. The document does not make the implementation decision it is supposed to gate
+
+The document presents three options and three possible sequences, but it never selects one as the committed path. Instead, it ends by asking the team to choose the sequence, decide whether orchestration is in scope, estimate required integrations, and identify urgent plugins.
+
+References:
+
+- `docs/plans/2026-03-16-kestra-plugin-translation-problem-statement.md:229-327`
+- `docs/plans/2026-03-16-kestra-plugin-translation-problem-statement.md:331-336`
+
+Why this matters:
+
+- No team can start execution safely without knowing whether the next unit of work is MongoDB hand translation, translation tooling, RunnableTask primitives, or orchestration-adjacent work.
+- Dependency order, staffing, test setup, and delivery milestones all change based on that decision.
+
+Required change:
+
+- Convert the problem statement into a committed implementation plan that names one chosen sequence, explains why it was selected, and states what is explicitly deferred.
+
+#### 2. Scope boundaries and definition of done are not fixed
+
+The document spans four materially different workstreams: external integrations, translation tooling, core RunnableTask primitives, and orchestration-engine work. It explains the differences well, but it never defines the exact scope of the next delivery slice.
+
+References:
+
+- `docs/plans/2026-03-16-kestra-plugin-translation-problem-statement.md:18-96`
+- `docs/plans/2026-03-16-kestra-plugin-translation-problem-statement.md:229-303`
+
+Why this matters:
+
+- The plan cannot be quality-gated if there is no bounded slice to assess.
+- The current wording allows different readers to infer different implementations from the same document.
+
+Required change:
+
+- Add an explicit in-scope list, out-of-scope list, and definition of done for the next implementation increment.
+
+### Major
+
+#### 3. API and data-contract expectations are described informally, not specified canonically
+
+The document says Java `@PluginProperty` fields map to Python params, Java `Output` maps to `PluginOutput`, and tooling may generate `parameter_schema()` plus typed outputs. That is directionally useful, but it does not define the canonical translation contract.
+
+References:
+
+- `docs/plans/2026-03-16-kestra-plugin-translation-problem-statement.md:39-58`
+- `docs/plans/2026-03-16-kestra-plugin-translation-problem-statement.md:251-258`
+
+Missing details include:
+
+- how Java property types map to Blockdata schema types
+- how required vs optional fields are inferred
+- how defaults, enums, nested objects, and secret-bearing fields are represented
+- what output shape each translated plugin must expose
+- when data stays inline versus uploaded to storage
+
+Required change:
+
+- Add a canonical translation contract with examples for inputs, outputs, connection references, file artifacts, and error semantics.
+
+#### 4. Dependency and sequencing logic is still a discussion aid, not an execution plan
+
+The three sequences are useful for decision-making, but they are not decomposed into milestones, prerequisite tasks, or critical dependencies. The plan includes effort estimates, yet it does not show what must land first in the codebase, registry, storage layer, tests, or UI.
+
+References:
+
+- `docs/plans/2026-03-16-kestra-plugin-translation-problem-statement.md:307-327`
+
+Required change:
+
+- Replace the sequence menu with a milestone-based task list for the selected path, including prerequisites, owners if known, and stop/go checkpoints.
+
+#### 5. Security and isolation risks are acknowledged, but not planned
+
+The document correctly identifies sandboxing, dependency management, file I/O bridging, and resource limits for script execution. It also suggests optional LLM-assisted body translation in the generator path. Those are important flags, but there is no security plan attached to either area.
+
+References:
+
+- `docs/plans/2026-03-16-kestra-plugin-translation-problem-statement.md:209-225`
+- `docs/plans/2026-03-16-kestra-plugin-translation-problem-statement.md:251-258`
+
+Missing details include:
+
+- whether scripts are in scope or explicitly deferred
+- what isolation boundary is required before enabling script plugins
+- whether generated code can be merged automatically or must stay human-reviewed
+- how secrets, credentials, and outbound network behavior are controlled in translated plugins
+
+Required change:
+
+- Add security constraints and merge controls for both generated code and runtime execution. If scripts are not in scope, say so explicitly.
+
+#### 6. Operational readiness and rollback strategy are absent
+
+The document does not define how translated plugins are rolled out, disabled, monitored, or backed out if they fail. That is especially important for externally connected plugins that may write data or mutate remote systems.
+
+References:
+
+- `docs/plans/2026-03-16-kestra-plugin-translation-problem-statement.md:233-303`
+
+Missing details include:
+
+- feature-flag or staged activation strategy
+- failure handling and retry boundaries
+- observability requirements per plugin run
+- rollback procedure for bad translations or malformed generated code
+
+Required change:
+
+- Add rollout, monitoring, and rollback requirements for the selected implementation slice.
+
+#### 7. Verification expectations are missing
+
+The document estimates effort and discusses tradeoffs, but it does not define the tests or acceptance checks that would prove the chosen slice is complete.
+
+References:
+
+- `docs/plans/2026-03-16-kestra-plugin-translation-problem-statement.md:136`
+- `docs/plans/2026-03-16-kestra-plugin-translation-problem-statement.md:163`
+- `docs/plans/2026-03-16-kestra-plugin-translation-problem-statement.md:245`
+- `docs/plans/2026-03-16-kestra-plugin-translation-problem-statement.md:270`
+- `docs/plans/2026-03-16-kestra-plugin-translation-problem-statement.md:301`
+
+Required change:
+
+- Define verification at three levels: unit translation tests, end-to-end plugin activation tests, and operational acceptance checks for logging, failure reporting, and cleanup behavior.
+
+### Minor
+
+#### 8. Some effort claims are too confident for the level of uncertainty in the plan
+
+The document estimates one hour per task class, two hours for serdes translation, and 15-minute review for future integrations after generator work. Those numbers may turn out to be right, but they are currently unsupported by a complexity rubric, sample sizing method, or failure-rate assumption.
+
+References:
+
+- `docs/plans/2026-03-16-kestra-plugin-translation-problem-statement.md:136`
+- `docs/plans/2026-03-16-kestra-plugin-translation-problem-statement.md:163`
+- `docs/plans/2026-03-16-kestra-plugin-translation-problem-statement.md:261-268`
+
+Suggested change:
+
+- Recast these as hypotheses, then attach validation criteria from the first pilot slice.
+
+#### 9. The “recommended sequencing” section does not actually recommend one sequence
+
+The heading implies a recommendation, but the content remains a menu of choices. That creates mild reader confusion at the exact point where the document should become decisive.
+
+Reference:
+
+- `docs/plans/2026-03-16-kestra-plugin-translation-problem-statement.md:307-327`
+
+Suggested change:
+
+- Rename the section to `Candidate Sequences` unless the revised document selects one path.
+
+## Specific Gaps, Contradictions, and Ambiguity
+
+### Gaps
+
+- No committed path from the option set to an implementation slice
+- No explicit in-scope and out-of-scope boundaries
+- No canonical input/output translation contract
+- No rollout, rollback, or monitoring plan
+- No acceptance criteria or verification checklist
+
+### Contradictions
+
+- Option B claims future integrations become a 15-minute review task, yet the same section says generated code still needs human review for correctness and may rely on optional LLM body translation. That is not impossible, but it is not substantiated enough to use as a planning assumption.
+
+### Ambiguity
+
+- “Core primitives first” mixes truly mechanical RunnableTask work with adjacent runtime concerns, but the next delivery unit is not enumerated.
+- Script plugin treatment is unclear. The document raises important runtime risks, but does not say whether script support is part of the near-term plan or explicitly deferred.
+
+## Verification Expectations and Acceptance Criteria Check
+
+Current assessment against the quality gate:
+
+| Criterion | Status | Notes |
+|---|---|---|
+| Alignment with product direction and constraints | Partial | The architecture diagnosis is strong, but no execution decision is made. |
+| Clear scope boundaries | Fail | The next delivery slice is not fixed. |
+| API/data contract clarity | Fail | Mapping rules are implied, not specified. |
+| Dependency and sequencing correctness | Partial | The tradeoff analysis is solid, but no executable sequence is chosen. |
+| Risk handling and rollback strategy | Fail | Missing from the current document. |
+| Security/auth implications | Partial | Risks are identified, but there is no policy or control plan. |
+| Operational readiness | Fail | No rollout, observability, or disablement plan. |
+| Test/verification clarity | Fail | No acceptance criteria or verification matrix. |
+
+Minimum acceptance criteria for a revised implementation plan:
+
+1. One chosen sequence with an explicit rationale and named deferrals.
+2. A bounded phase-1 scope with concrete plugin/task targets.
+3. A canonical translation contract for plugin inputs, outputs, errors, and file artifacts.
+4. A milestone/task breakdown with dependency order.
+5. Security and rollout constraints for generated code and runtime execution.
+6. A verification matrix covering unit, integration, and end-to-end checks.
+
+## Required Changes Before Implementation
+
+1. Publish a follow-on implementation plan that selects one sequence and names the first shippable slice.
+2. Define the exact targets for that slice, for example specific MongoDB task classes, specific core RunnableTasks, or the generator MVP scope.
+3. Specify the canonical Java-to-Blockdata translation contract.
+4. Add rollout, rollback, and observability requirements.
+5. Add a verification section with explicit pass/fail acceptance criteria.
+6. Mark orchestration-engine work and script-runtime work as either in scope with constraints or out of scope for this phase.
+
+## Go / No-Go Recommendation
+
+`No-go` for implementation from this document alone.
+
+This is a good design-decision precursor. It sharpens the problem, identifies the key fork in the road, and correctly warns that FlowableTask work is an orchestration-engine effort, not a simple plugin translation exercise.
+
+The next step should not be coding from this document. The next step should be converting it into a committed implementation plan with one chosen path, a bounded first slice, and concrete verification requirements.
+
+This assessment is published under `web-docs/src/content/docs/assessments/`. No sidebar code change was needed because the docs site already includes `assessments` in `web-docs/src/lib/docs/sidebar-order.mjs`.

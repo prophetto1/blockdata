@@ -3,8 +3,10 @@
 import logging
 import os
 import re
+import tempfile
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any
 
 from pydantic import BaseModel, Field
@@ -110,6 +112,73 @@ class ExecutionContext:
         return await upload_to_storage(
             self.supabase_url, self.supabase_key, bucket, path, content
         )
+
+    async def download_file(self, uri: str) -> bytes:
+        """Download an artifact from a URL or bucket/path reference.
+
+        Accepts:
+        - Full URLs (http:// or https://) — fetched directly
+        - Bucket/path strings (e.g. "pipeline/artifacts/file.jsonl") — fetched from Supabase Storage
+        """
+        if uri.startswith(("http://", "https://")):
+            import httpx as _httpx
+            async with _httpx.AsyncClient() as client:
+                resp = await client.get(uri, timeout=120)
+                resp.raise_for_status()
+                return resp.content
+        from app.infra.storage import download_from_storage
+        bucket, _, path = uri.partition("/")
+        return await download_from_storage(
+            self.supabase_url, self.supabase_key, bucket, path
+        )
+
+    async def list_files(self, bucket: str, prefix: str) -> list[dict]:
+        """List files in a storage bucket by prefix."""
+        from app.infra.storage import list_storage
+        return await list_storage(
+            self.supabase_url, self.supabase_key, bucket, prefix
+        )
+
+    async def delete_files(self, bucket: str, paths: list[str]) -> None:
+        """Delete files from a storage bucket."""
+        from app.infra.storage import delete_from_storage
+        await delete_from_storage(
+            self.supabase_url, self.supabase_key, bucket, paths
+        )
+
+    # --- Temp file management ---
+
+    _work_dir: tempfile.TemporaryDirectory | None = field(default=None, repr=False)
+
+    @property
+    def work_dir(self) -> Path:
+        """Lazily create and return the execution's working directory.
+
+        Uses stdlib TemporaryDirectory — automatically handles cleanup.
+        """
+        if self._work_dir is None:
+            prefix = f"bd-{self.execution_id[:8]}-" if self.execution_id else "bd-"
+            self._work_dir = tempfile.TemporaryDirectory(prefix=prefix)
+        return Path(self._work_dir.name)
+
+    def create_temp_file(self, suffix: str = ".tmp") -> Path:
+        """Create a temp file in the execution's working directory.
+
+        Returns the Path to an empty file. Caller writes to it.
+        Cleaned up automatically when cleanup() is called.
+        """
+        fd, path_str = tempfile.mkstemp(suffix=suffix, dir=self.work_dir)
+        os.close(fd)
+        return Path(path_str)
+
+    def cleanup(self) -> None:
+        """Delete all temp files created during this execution.
+
+        Safe to call multiple times.
+        """
+        if self._work_dir is not None:
+            self._work_dir.cleanup()
+            self._work_dir = None
 
 
 def success(data: dict[str, Any] | None = None, logs: list[str] | None = None) -> PluginOutput:

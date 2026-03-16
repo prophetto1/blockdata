@@ -2,54 +2,59 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-**Goal:** Move AI provider API key management and model role configuration from user settings to the superuser area, add platform-level API key storage backed by FastAPI, and fix the assistant chat to use platform keys — so chat works for all users without individual key configuration.
+**Goal:** Create platform-level AI provider key management entirely through FastAPI, with superuser UI pages that are bidirectionally synced with the `platform_api_keys` table. No edge functions are created or modified.
 
-**Architecture:** Currently, API keys are per-user (`user_api_keys` table) and the chat fails for OpenAI/Google when no user key exists. This plan adds a `platform_api_keys` table, a FastAPI admin route for CRUD (`/admin/ai-providers`), a small update to the existing `assistant-chat` edge function to fall back to platform keys, superuser UI pages for provider and model role management, and removes these pages from user settings. The chat panel stays front-facing for all users. FastAPI is chosen over edge functions because the chat backend will evolve into an agent execution environment (MCP tool calls, vector search, KG context) that edge functions cannot support — building key management on FastAPI now avoids a rewrite later.
+**Architecture:** New `platform_api_keys` table (service_role only). FastAPI owns all backend work: encrypted key CRUD, key validation (replaces `test-api-key` edge function), and model role CRUD (replaces direct browser supabase writes). Frontend superuser pages call FastAPI via `platformApiFetch`. Chat streaming migration to FastAPI is Phase 2 (separate plan).
 
-**Tech Stack:** Supabase Postgres migrations, Python FastAPI (`services/platform-api/`) for admin key management, existing Deno `assistant-chat` edge function for current chat streaming (minimal change: read platform keys from shared table), React/TypeScript frontend (Vite), AES-GCM encryption (Python `app/infra/crypto.py` from load-activation plan, cross-compatible with Deno `api_key_crypto.ts`).
-
-**Parallel plan dependency:** `docs/plans/2026-03-15-load-activation.md` creates shared infrastructure this plan reuses:
-- `services/platform-api/app/infra/crypto.py` — `encrypt_with_context()` / `decrypt_with_context()` (Task 5/8)
-- `cryptography>=42.0.0` in `requirements.txt` (Task 8)
-- `require_role("platform_admin")` auth pattern (from `app/auth/dependencies.py`)
-- Router registration pattern in `app/main.py`
-
-If load-activation has not yet been implemented when this plan executes, Task 2 below includes the crypto module creation as a fallback. If it already exists, skip that step.
-
-**Existing patterns reused:**
-- Encryption cross-compat: Python `crypto.py` and Deno `api_key_crypto.ts` use the same AES-GCM algorithm, same key derivation (SHA-256 of `secret\ncontext\n` in Deno / `secret + context` in Python). FastAPI encrypts, edge function decrypts — proven compatible by load-activation plan design.
-- Admin route pattern: `services/platform-api/app/api/routes/admin_services.py` — uses `require_superuser` (alias for `require_role("platform_admin")`), `get_supabase_admin()`, `openapi_extra={"x-required-role": "platform_admin"}`.
-- Frontend edge calls: `web/src/lib/edge.ts` — `edgeFetch()` / `edgeJson()` for edge functions. `web/src/lib/platformApi.ts` — `platformApiFetch()` for FastAPI calls.
-- Superuser UI: Pages under `/app/superuser/` use lazy imports in `router.tsx` (line 234+), gated by `SuperuserGuard`. Nav items in `SUPERUSER_DRILL` config in `nav-config.ts` (line 143).
-
-**Key files referenced:**
-- `supabase/functions/assistant-chat/index.ts` — chat edge function (409 lines). `getUserApiKey()` at line 74, provider dispatch at lines 315-333, Vertex AI fallback at line 321.
-- `supabase/functions/_shared/api_key_crypto.ts` — `encryptWithContext()` / `decryptWithContext()` with context-scoped key derivation (70 lines). User keys use context `"user-api-keys-v1"`.
-- `supabase/functions/_shared/superuser.ts` — `requireSuperuser(req)` checks `registry_superuser_profiles` (69 lines).
-- `supabase/functions/test-api-key/index.ts` — per-provider key validation (168 lines). Supports: anthropic, openai, google, voyage, cohere, jina, custom.
-- `services/platform-api/app/api/routes/admin_services.py` — admin CRUD pattern with `require_superuser` auth (536 lines).
-- `services/platform-api/app/auth/dependencies.py` — `require_auth`, `require_role()`, `require_superuser` alias (189 lines).
-- `services/platform-api/app/infra/supabase_client.py` — `get_supabase_admin()` cached singleton (19 lines).
-- `web/src/pages/settings/SettingsAiOverview.tsx` — provider dashboard (120 lines).
-- `web/src/pages/settings/SettingsProviderForm.tsx` — provider detail form with PROVIDERS array at lines 59-163 (749 lines).
-- `web/src/pages/settings/SettingsModelRoles.tsx` — model role assignments UI (186 lines).
-- `web/src/hooks/useAssistantChat.ts` — chat state + SSE streaming via `edgeFetch('assistant-chat')` (203 lines).
-- `web/src/components/shell/RightRailChatPanel.tsx` — chat panel UI, settings link at line 88, hardcoded "Sonnet 4.5" at line 175 (182 lines).
-- `web/src/components/shell/nav-config.ts` — `SETTINGS_DRILL` (line 118), `SUPERUSER_DRILL` (line 143) (177 lines).
-- `web/src/router.tsx` — settings routes at lines 188-190, superuser routes at lines 234-245 (259 lines).
-- `web/src/lib/edge.ts` — `edgeFetch()` / `edgeJson()` (185 lines).
+**Tech Stack:** Supabase Postgres migration, Python FastAPI (`services/platform-api/`), AES-GCM encryption (`app/infra/crypto.py`), `httpx` for provider API validation, React/TypeScript frontend (Vite).
 
 ---
 
-## Scope Guardrails
+## Architectural Alignment
 
-- Platform API keys are admin-managed via FastAPI. Regular users never see or configure API keys.
-- `user_api_keys` table stays (backward compat). Its UI is removed from settings. The `assistant-chat` resolution chain still checks user keys first, then platform keys — respecting any existing per-user overrides.
-- `test-api-key` edge function is unchanged — the superuser form calls it directly for key validation (superusers are authenticated users, same auth flow).
-- Model role assignments (`model_role_catalog` + `model_role_assignments`) stay as-is in the database. Only the UI moves from settings to superuser.
-- Chat panel stays in the right rail, works for all users. Current chat stays on the edge function — it just gains a platform key fallback. Full chat migration to FastAPI is a future plan when MCP/vector/KG scope solidifies.
-- The existing Vertex AI Claude fallback (line 321 of assistant-chat) remains as the last-resort for Anthropic.
-- No new edge functions are created. The only edge function change is a small addition to `assistant-chat` to query `platform_api_keys`.
+This plan follows the FastAPI Execution Plane direction (`docs/plans/2026-03-15-fastapi-execution-plane-systematic-buildout.md`):
+
+- **No new edge functions.** No modifications to existing edge functions.
+- **All new backend work lands in FastAPI.** Key validation, key CRUD, model role CRUD.
+- **Edge functions are not the future pattern.** The existing `assistant-chat` and `test-api-key` edge functions are untouched here and scheduled for migration in Phase 2.
+
+## Scope
+
+### In scope (this plan)
+- `platform_api_keys` table migration
+- FastAPI routes: key CRUD, key validation, model role CRUD
+- Superuser UI: AI Providers overview + detail form, Model Roles page
+- Router/nav rewire: move from settings to superuser, redirects for old URLs
+- Chat panel cleanup: remove settings gear and hardcoded model name
+
+### Out of scope (Phase 2 — separate plan)
+- `assistant-chat` edge function migration to FastAPI (requires SSE streaming, `sse-starlette`, porting 4 provider streaming implementations to Python, client-side streaming support in `platformApiFetch`)
+- `test-api-key` edge function deprecation (replaced by FastAPI route in this plan, but edge function stays for backward compat)
+- Vertex SA credential migration into `platform_api_keys`
+
+---
+
+## Crypto Cross-Compatibility
+
+Python `crypto.py` and Deno `api_key_crypto.ts` have **different key derivation**:
+
+- **Python** (`crypto.py:22`): `SHA256(secret + context)`
+- **Deno** (`api_key_crypto.ts:18`): `SHA256(secret + "\n" + context + "\n")`
+
+Phase 2 will need Deno to decrypt platform keys. This plan adds `encrypt_for_deno()` to Python so keys are encrypted with Deno-compatible derivation from day one.
+
+---
+
+## Existing infrastructure reused
+
+- `services/platform-api/app/infra/crypto.py` — AES-GCM encrypt/decrypt (exists)
+- `services/platform-api/app/auth/dependencies.py` — `require_superuser`, `require_user_auth` (exists)
+- `services/platform-api/app/infra/supabase_client.py` — `get_supabase_admin()` (exists)
+- `services/platform-api/requirements.txt` — `httpx>=0.26` (exists, used for provider validation calls)
+- `web/src/lib/platformApi.ts` — `platformApiFetch()` (exists)
+- `web/src/pages/settings/SettingsProviderForm.tsx` — `PROVIDERS` array lines 59-163 (reference for provider metadata)
+- `web/src/pages/settings/SettingsModelRoles.tsx` — reference for model role UI (186 lines)
+- `web/src/pages/settings/SettingsPageHeader.tsx` — `SettingsPageFrame` / `SettingsSection` components
 
 ---
 
@@ -58,7 +63,7 @@ If load-activation has not yet been implemented when this plan executes, Task 2 
 ### Task 1: Create platform_api_keys table
 
 **Files:**
-- Create: `supabase/migrations/20260316100000_096_platform_api_keys.sql`
+- Create: `supabase/migrations/20260316100000_097_platform_api_keys.sql`
 
 **Step 1: Write the migration**
 
@@ -70,10 +75,10 @@ If load-activation has not yet been implemented when this plan executes, Task 2 
 CREATE TABLE IF NOT EXISTS public.platform_api_keys (
   provider            text PRIMARY KEY,
   api_key_encrypted   text NOT NULL,
-  key_suffix          text,            -- last 4 chars for admin display
-  is_valid            boolean,         -- null=untested, true=valid, false=invalid
+  key_suffix          text,
+  is_valid            boolean,
   default_model       text,
-  base_url            text,            -- custom/self-hosted providers only
+  base_url            text,
   configured_by       uuid REFERENCES auth.users(id),
   created_at          timestamptz NOT NULL DEFAULT now(),
   updated_at          timestamptz NOT NULL DEFAULT now()
@@ -82,7 +87,6 @@ CREATE TABLE IF NOT EXISTS public.platform_api_keys (
 COMMENT ON TABLE public.platform_api_keys IS
   'Platform-level API keys for AI providers. One row per provider. Admin-managed via FastAPI.';
 
--- Lock down: service_role only. No user access.
 ALTER TABLE public.platform_api_keys ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY platform_api_keys_service_role
@@ -95,13 +99,13 @@ GRANT ALL ON TABLE public.platform_api_keys TO service_role;
 
 **Step 2: Verify**
 
-Run: `npx supabase db reset`
+Run: `cd supabase && npx supabase db reset`
 Expected: PASS
 
 **Step 3: Commit**
 
 ```bash
-git add supabase/migrations/20260316100000_096_platform_api_keys.sql
+git add supabase/migrations/20260316100000_097_platform_api_keys.sql
 git commit -m "feat: add platform_api_keys table for admin-managed AI provider keys"
 ```
 
@@ -109,35 +113,75 @@ git commit -m "feat: add platform_api_keys table for admin-managed AI provider k
 
 # Part B — FastAPI Backend
 
-### Task 2: Admin AI provider route in FastAPI
+### Task 2: Add Deno-compatible encryption to crypto.py
+
+**Files:**
+- Modify: `services/platform-api/app/infra/crypto.py`
+
+**Step 1: Add Deno-compatible key derivation and encrypt function**
+
+Add after the existing `_derive_key` function (after line 22):
+
+```python
+def _derive_key_deno_compat(secret: str, context: str) -> bytes:
+    """Key derivation matching Deno api_key_crypto.ts deriveAesKey format."""
+    return hashlib.sha256(f"{secret}\n{context}\n".encode("utf-8")).digest()
+
+
+def encrypt_for_deno(plaintext: str, secret: str, context: str) -> str:
+    """Encrypt a value that Deno's decryptWithContext can decrypt.
+
+    Uses the Deno key derivation convention: SHA256(secret + '\\n' + context + '\\n').
+    Format: enc:v1:{base64url(iv)}:{base64url(ciphertext)}
+    """
+    key = _derive_key_deno_compat(secret, context)
+    iv = os.urandom(12)
+    aesgcm = AESGCM(key)
+    ct = aesgcm.encrypt(iv, plaintext.encode("utf-8"), None)
+    return f"enc:v1:{_b64url_encode(iv)}:{_b64url_encode(ct)}"
+```
+
+**Step 2: Verify**
+
+Run: `cd services/platform-api && python -c "from app.infra.crypto import encrypt_for_deno; print('OK')"`
+Expected: `OK`
+
+**Step 3: Commit**
+
+```bash
+git add services/platform-api/app/infra/crypto.py
+git commit -m "feat: add Deno-compatible encryption for cross-runtime key sharing"
+```
+
+---
+
+### Task 3: Create admin AI providers route (CRUD + validation)
 
 **Files:**
 - Create: `services/platform-api/app/api/routes/admin_ai_providers.py`
 - Modify: `services/platform-api/app/main.py` (register router)
 
-**Prerequisite check:** Verify `services/platform-api/app/infra/crypto.py` exists (created by load-activation Task 5). If it does not exist yet, create it with `encrypt_with_context` and `decrypt_with_context` following the load-activation plan's spec. The functions must be cross-compatible with the Deno `api_key_crypto.ts` — same AES-GCM-256, SHA-256 key derivation.
-
-**Step 1: Implement the admin AI provider route**
+**Step 1: Create the route**
 
 Create `services/platform-api/app/api/routes/admin_ai_providers.py`:
 
 ```python
-"""Admin AI provider key management — CRUD for platform_api_keys.
+"""Admin AI provider key management — CRUD + validation for platform_api_keys.
 
-Superuser-only. These keys are used by all AI features (chat, extraction,
-embedding, etc.) as the platform default. Individual users do not configure keys.
+Superuser-only. These keys are the platform default for all AI features.
+Key validation uses httpx to probe each provider's API directly.
 """
-import json as json_mod
 import logging
 import os
 from datetime import datetime, timezone
-from typing import Any
 
+import httpx
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
-from app.auth.dependencies import require_superuser, SuperuserContext
-from app.infra.crypto import encrypt_with_context, decrypt_with_context
+from app.auth.dependencies import require_superuser
+from app.auth.principals import AuthPrincipal
+from app.infra.crypto import encrypt_for_deno
 from app.infra.supabase_client import get_supabase_admin
 
 logger = logging.getLogger("admin-ai-providers")
@@ -149,24 +193,68 @@ VALID_PROVIDERS = {
     "anthropic", "openai", "google", "voyage", "cohere", "jina", "custom",
 }
 
+# Provider validation endpoints
+PROVIDER_VALIDATION = {
+    "anthropic": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "headers": lambda key: {
+            "x-api-key": key,
+            "anthropic-version": "2023-06-01",
+            "Content-Type": "application/json",
+        },
+        "body": {
+            "model": "claude-haiku-4-5-20251001",
+            "max_tokens": 1,
+            "messages": [{"role": "user", "content": "ping"}],
+        },
+    },
+    "openai": {
+        "method": "GET",
+        "url": "https://api.openai.com/v1/models",
+        "headers": lambda key: {"Authorization": f"Bearer {key}"},
+    },
+    "google": {
+        "method": "GET",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models",
+        "headers": lambda key: {"x-goog-api-key": key},
+    },
+    "voyage": {
+        "method": "GET",
+        "url": "https://api.voyageai.com/v1/models",
+        "headers": lambda key: {"Authorization": f"Bearer {key}"},
+    },
+    "cohere": {
+        "method": "GET",
+        "url": "https://api.cohere.com/v2/models",
+        "headers": lambda key: {"Authorization": f"Bearer {key}"},
+    },
+    "jina": {
+        "method": "GET",
+        "url": "https://api.jina.ai/v1/models",
+        "headers": lambda key: {"Authorization": f"Bearer {key}"},
+    },
+}
+
 
 def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
 class SaveKeyRequest(BaseModel):
-    provider: str
     api_key: str
     default_model: str | None = None
     base_url: str | None = None
 
 
-class DeleteKeyRequest(BaseModel):
-    provider: str
+class TestKeyRequest(BaseModel):
+    api_key: str
+    base_url: str | None = None
 
 
-@router.get("", summary="List platform AI provider keys", openapi_extra={"x-required-role": "platform_admin"})
-async def list_platform_keys(su: SuperuserContext = Depends(require_superuser)):
+@router.get("", summary="List platform AI provider keys",
+            openapi_extra={"x-required-role": "platform_admin"})
+async def list_platform_keys(su: AuthPrincipal = Depends(require_superuser)):
     """Return all platform keys with safe fields only (never the encrypted key)."""
     sb = get_supabase_admin()
     result = sb.table("platform_api_keys").select(
@@ -175,36 +263,41 @@ async def list_platform_keys(su: SuperuserContext = Depends(require_superuser)):
     return {"keys": result.data or []}
 
 
-@router.post("", summary="Save platform AI provider key", openapi_extra={"x-required-role": "platform_admin"})
-async def save_platform_key(body: SaveKeyRequest, su: SuperuserContext = Depends(require_superuser)):
+@router.put("/{provider}", summary="Save platform AI provider key",
+            openapi_extra={"x-required-role": "platform_admin"})
+async def save_platform_key(provider: str, body: SaveKeyRequest,
+                            su: AuthPrincipal = Depends(require_superuser)):
     """Encrypt and upsert a platform API key for a provider."""
-    if body.provider not in VALID_PROVIDERS:
+    if provider not in VALID_PROVIDERS:
         raise HTTPException(400, f"Invalid provider. Must be one of: {', '.join(sorted(VALID_PROVIDERS))}")
 
     api_key = body.api_key.strip()
     if not api_key:
         raise HTTPException(400, "Missing api_key")
 
-    if body.provider == "custom" and not body.base_url:
+    if provider == "custom" and not body.base_url:
         raise HTTPException(400, "Custom provider requires base_url")
 
+    base_url = None
     if body.base_url:
         base_url = body.base_url.strip()
         if not base_url.startswith(("http://", "https://")):
             raise HTTPException(400, "base_url must use http or https")
-    else:
-        base_url = None
 
-    secret = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
+    sb_policy = get_supabase_admin()
+    policy_row = sb_policy.table("admin_runtime_policy").select("value").eq(
+        "policy_key", "secret_storage.encryption_key"
+    ).maybeSingle().execute()
+    secret = policy_row.data["value"] if policy_row.data else ""
     if not secret:
-        raise HTTPException(500, "Encryption secret not configured")
+        raise HTTPException(500, "Encryption key not configured. Set secret_storage.encryption_key in Instance Config.")
 
     key_suffix = api_key[-4:]
-    encrypted = encrypt_with_context(api_key, secret, CRYPTO_CONTEXT)
+    encrypted = encrypt_for_deno(api_key, secret, CRYPTO_CONTEXT)
 
     sb = get_supabase_admin()
     sb.table("platform_api_keys").upsert({
-        "provider": body.provider,
+        "provider": provider,
         "api_key_encrypted": encrypted,
         "key_suffix": key_suffix,
         "is_valid": None,
@@ -214,26 +307,84 @@ async def save_platform_key(body: SaveKeyRequest, su: SuperuserContext = Depends
         "updated_at": _now(),
     }, on_conflict="provider").execute()
 
-    return {"ok": True, "provider": body.provider, "key_suffix": key_suffix}
+    return {"ok": True, "provider": provider, "key_suffix": key_suffix}
 
 
-@router.delete("", summary="Delete platform AI provider key", openapi_extra={"x-required-role": "platform_admin"})
-async def delete_platform_key(body: DeleteKeyRequest, su: SuperuserContext = Depends(require_superuser)):
+@router.delete("/{provider}", summary="Delete platform AI provider key",
+               openapi_extra={"x-required-role": "platform_admin"})
+async def delete_platform_key(provider: str,
+                              su: AuthPrincipal = Depends(require_superuser)):
     """Remove a platform API key."""
-    if body.provider not in VALID_PROVIDERS:
-        raise HTTPException(400, f"Invalid provider")
+    if provider not in VALID_PROVIDERS:
+        raise HTTPException(400, "Invalid provider")
 
     sb = get_supabase_admin()
-    sb.table("platform_api_keys").delete().eq("provider", body.provider).execute()
-    return {"ok": True, "deleted": body.provider}
+    sb.table("platform_api_keys").delete().eq("provider", provider).execute()
+    return {"ok": True, "deleted": provider}
+
+
+@router.post("/{provider}/test", summary="Test an API key against a provider",
+             openapi_extra={"x-required-role": "platform_admin"})
+async def test_api_key(provider: str, body: TestKeyRequest,
+                       su: AuthPrincipal = Depends(require_superuser)):
+    """Validate an API key by making a lightweight probe request to the provider."""
+    provider = body.provider
+    api_key = body.api_key.strip()
+
+    if not api_key:
+        return {"valid": False, "error": "No API key provided"}
+
+    if provider == "custom":
+        if not body.base_url:
+            return {"valid": False, "error": "Custom provider requires base_url"}
+        base_url = body.base_url.strip().rstrip("/")
+        url = f"{base_url}/models"
+        headers = {"Authorization": f"Bearer {api_key}"}
+        method = "GET"
+        json_body = None
+    elif provider in PROVIDER_VALIDATION:
+        spec = PROVIDER_VALIDATION[provider]
+        method = spec["method"]
+        url = spec["url"]
+        headers = spec["headers"](api_key)
+        json_body = spec.get("body")
+    else:
+        return {"valid": False, "error": f"Unknown provider: {provider}"}
+
+    try:
+        async with httpx.AsyncClient(timeout=15) as client:
+            if method == "POST":
+                resp = await client.post(url, headers=headers, json=json_body)
+            else:
+                resp = await client.get(url, headers=headers)
+
+        if resp.is_success:
+            # Update is_valid in table if this provider has a saved key
+            sb = get_supabase_admin()
+            sb.table("platform_api_keys").update({
+                "is_valid": True,
+                "updated_at": _now(),
+            }).eq("provider", provider).execute()
+            return {"valid": True}
+
+        if resp.status_code in (401, 403):
+            return {"valid": False, "error": "Invalid or disabled API key"}
+
+        logger.warning("Provider %s validation failed: HTTP %s", provider, resp.status_code)
+        return {"valid": False, "error": f"Provider returned HTTP {resp.status_code}"}
+
+    except httpx.TimeoutException:
+        return {"valid": False, "error": "Provider did not respond in time"}
+    except Exception:
+        logger.exception("Unexpected error validating %s key", provider)
+        return {"valid": False, "error": "Validation failed unexpectedly"}
 ```
 
-**Step 2: Register the router**
+**Step 2: Register the router in main.py**
 
-In `services/platform-api/app/main.py`, add alongside the other admin routes (after the admin_router include):
+In `services/platform-api/app/main.py`, add alongside the other admin route includes:
 
 ```python
-    # Admin AI provider keys (platform_admin role required)
     from app.api.routes.admin_ai_providers import router as admin_ai_router
     app.include_router(admin_ai_router)
 ```
@@ -241,193 +392,247 @@ In `services/platform-api/app/main.py`, add alongside the other admin routes (af
 **Step 3: Verify**
 
 Run: `cd services/platform-api && python -c "from app.main import create_app; app = create_app(); print('OK')"`
-Expected: `OK` (no import errors)
+Expected: `OK`
 
 **Step 4: Commit**
 
 ```bash
 git add services/platform-api/app/api/routes/admin_ai_providers.py services/platform-api/app/main.py
-git commit -m "feat: add FastAPI admin route for platform AI provider key management"
+git commit -m "feat: add FastAPI admin route for platform AI provider CRUD and key validation"
 ```
 
 ---
 
-### Task 3: Update assistant-chat edge function to read platform keys
+### Task 4: Create admin model roles route
 
 **Files:**
-- Modify: `supabase/functions/assistant-chat/index.ts`
-- Modify: `supabase/functions/_shared/api_key_crypto.ts`
+- Create: `services/platform-api/app/api/routes/admin_model_roles.py`
+- Modify: `services/platform-api/app/main.py` (register router)
 
-**Step 1: Add platform key decryption helper**
+**Step 1: Create the route**
 
-In `supabase/functions/_shared/api_key_crypto.ts`, after line 69, add:
+Create `services/platform-api/app/api/routes/admin_model_roles.py`:
 
-```typescript
-const PLATFORM_API_KEYS_CONTEXT = "platform-api-keys-v1";
+```python
+"""Admin model role management — CRUD for model_role_assignments.
 
-export async function decryptPlatformApiKey(encrypted: string, secret: string): Promise<string> {
-  return decryptWithContext(encrypted, secret, PLATFORM_API_KEYS_CONTEXT);
-}
-```
+Superuser-only. Model roles determine which AI model is used for each
+operational function (chat, extraction, embedding, etc.).
+"""
+import logging
+from datetime import datetime, timezone
 
-**Step 2: Add the platform key resolver to assistant-chat**
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
 
-In `supabase/functions/assistant-chat/index.ts`, add the import at line 12:
+from app.auth.dependencies import require_superuser
+from app.auth.principals import AuthPrincipal
+from app.infra.supabase_client import get_supabase_admin
 
-Change:
-```typescript
-import { decryptApiKey } from "../_shared/api_key_crypto.ts";
-```
-to:
-```typescript
-import { decryptApiKey, decryptPlatformApiKey } from "../_shared/api_key_crypto.ts";
-```
+logger = logging.getLogger("admin-model-roles")
+router = APIRouter(prefix="/admin/model-roles", tags=["admin-model-roles"])
 
-After the `getUserApiKey` function (after line 94), add:
 
-```typescript
-/** Get platform-level API key for a provider (admin-configured via FastAPI). */
-async function getPlatformApiKey(
-  supabase: ReturnType<typeof createAdminClient>,
-  provider: string,
-): Promise<{ key: string; baseUrl?: string } | null> {
-  const { data: row } = await supabase
-    .from("platform_api_keys")
-    .select("api_key_encrypted, is_valid, base_url")
-    .eq("provider", provider)
-    .maybeSingle();
+def _now() -> str:
+    return datetime.now(timezone.utc).isoformat()
 
-  if (!row?.api_key_encrypted) return null;
-  if (row.is_valid === false) return null;
 
-  const secret = getEnv("API_KEY_ENCRYPTION_SECRET", "");
-  if (!secret) return null;
+class CreateAssignmentRequest(BaseModel):
+    role_key: str
+    provider: str
+    model_id: str
+    priority: int = 0
+    config_jsonb: dict | None = None
 
-  const key = await decryptPlatformApiKey(row.api_key_encrypted, secret);
-  return { key, baseUrl: row.base_url ?? undefined };
-}
-```
 
-**Step 3: Update the provider dispatch**
+class PatchAssignmentRequest(BaseModel):
+    is_active: bool | None = None
+    priority: int | None = None
 
-Replace the provider dispatch block (lines 315-333) with:
 
-```typescript
-    if (provider === "anthropic") {
-      const userKey = await getUserApiKey(supabase, userId, "anthropic");
-      const platformKey = !userKey ? await getPlatformApiKey(supabase, "anthropic") : null;
-      const apiKey = userKey ?? platformKey?.key;
-      if (apiKey) {
-        rawStream = await callAnthropicStream(apiKey, model, messages, maxTokens);
-      } else {
-        // Last resort: Vertex AI Claude (platform GCP service account)
-        rawStream = await callVertexClaudeStream({ model, max_tokens: maxTokens, messages });
-      }
-    } else if (provider === "openai" || provider === "custom") {
-      const userKey = await getUserApiKey(supabase, userId, provider);
-      const platformKey = !userKey ? await getPlatformApiKey(supabase, provider) : null;
-      const apiKey = userKey ?? platformKey?.key;
-      if (!apiKey) return json(400, { error: `No ${provider} API key configured. Contact your administrator.` });
-      const baseUrl = platformKey?.baseUrl;
-      rawStream = await callOpenAIStream(apiKey, model, messages, maxTokens, baseUrl);
-    } else if (provider === "google") {
-      const userKey = await getUserApiKey(supabase, userId, "google");
-      const platformKey = !userKey ? await getPlatformApiKey(supabase, "google") : null;
-      const apiKey = userKey ?? platformKey?.key;
-      if (!apiKey) return json(400, { error: "No Google AI API key configured. Contact your administrator." });
-      rawStream = await callGeminiStream(apiKey, model, messages);
-    } else {
-      return json(400, { error: `Unsupported provider for chat: ${provider}` });
+@router.get("", summary="List model role catalog and assignments",
+            openapi_extra={"x-required-role": "platform_admin"})
+async def list_model_roles(su: AuthPrincipal = Depends(require_superuser)):
+    """Return all role definitions and their current assignments."""
+    sb = get_supabase_admin()
+    roles = sb.table("model_role_catalog").select("*").order("role_key").execute()
+    assignments = sb.table("model_role_assignments").select("*").order("role_key").order("priority").execute()
+    return {
+        "roles": roles.data or [],
+        "assignments": assignments.data or [],
     }
+
+
+@router.post("", summary="Create a model role assignment",
+             openapi_extra={"x-required-role": "platform_admin"})
+async def create_assignment(body: CreateAssignmentRequest,
+                            su: AuthPrincipal = Depends(require_superuser)):
+    """Add a new model role assignment."""
+    sb = get_supabase_admin()
+    result = sb.table("model_role_assignments").insert({
+        "role_key": body.role_key,
+        "provider": body.provider,
+        "model_id": body.model_id,
+        "priority": body.priority,
+        "config_jsonb": body.config_jsonb or {},
+        "is_active": True,
+        "updated_at": _now(),
+    }).execute()
+
+    if not result.data:
+        raise HTTPException(400, "Failed to create assignment")
+
+    return {"ok": True, "assignment": result.data[0]}
+
+
+@router.patch("/{assignment_id}", summary="Update a model role assignment",
+              openapi_extra={"x-required-role": "platform_admin"})
+async def patch_assignment(assignment_id: str, body: PatchAssignmentRequest,
+                           su: AuthPrincipal = Depends(require_superuser)):
+    """Partially update a model role assignment (e.g. toggle active, change priority)."""
+    updates: dict = {"updated_at": _now()}
+    if body.is_active is not None:
+        updates["is_active"] = body.is_active
+    if body.priority is not None:
+        updates["priority"] = body.priority
+
+    sb = get_supabase_admin()
+    result = sb.table("model_role_assignments").update(updates).eq("id", assignment_id).execute()
+
+    if not result.data:
+        raise HTTPException(404, "Assignment not found")
+
+    return {"ok": True}
+
+
+@router.delete("/{assignment_id}", summary="Delete a model role assignment",
+               openapi_extra={"x-required-role": "platform_admin"})
+async def delete_assignment(assignment_id: str,
+                            su: AuthPrincipal = Depends(require_superuser)):
+    """Remove a model role assignment."""
+    sb = get_supabase_admin()
+    sb.table("model_role_assignments").delete().eq("id", assignment_id).execute()
+    return {"ok": True}
 ```
 
-**Step 4: Verify**
+**Step 2: Register the router in main.py**
 
-Run: `cd supabase && deno check functions/assistant-chat/index.ts`
-Expected: No errors.
+In `services/platform-api/app/main.py`, add alongside the other admin route includes:
 
-**Step 5: Commit**
+```python
+    from app.api.routes.admin_model_roles import router as admin_model_roles_router
+    app.include_router(admin_model_roles_router)
+```
+
+**Step 3: Verify**
+
+Run: `cd services/platform-api && python -c "from app.main import create_app; app = create_app(); print('OK')"`
+Expected: `OK`
+
+**Step 4: Commit**
 
 ```bash
-git add supabase/functions/_shared/api_key_crypto.ts supabase/functions/assistant-chat/index.ts
-git commit -m "feat: assistant-chat falls back to platform API keys before erroring"
+git add services/platform-api/app/api/routes/admin_model_roles.py services/platform-api/app/main.py
+git commit -m "feat: add FastAPI admin route for model role CRUD"
 ```
 
 ---
 
 # Part C — Frontend
 
-### Task 4: Create Superuser AI Providers pages
+### Task 5: Create Superuser AI Providers overview page
 
 **Files:**
 - Create: `web/src/pages/superuser/SuperuserAiProviders.tsx`
-- Create: `web/src/pages/superuser/SuperuserProviderForm.tsx`
 
-The existing `SettingsAiOverview.tsx` (120 lines) and `SettingsProviderForm.tsx` (749 lines) are the reference. The superuser versions call the FastAPI admin route via `platformApiFetch` instead of the `user-api-keys` edge function.
-
-**Step 1: Create the provider overview page**
+**Step 1: Create the page**
 
 Create `web/src/pages/superuser/SuperuserAiProviders.tsx`. This page:
 
-- Fetches platform keys via `platformApiFetch('/admin/ai-providers')` (GET)
-- Displays a card grid: provider label, status badge (Connected / Not configured), key suffix, default model
+- Uses `useShellHeaderTitle({ title: 'AI Providers', breadcrumbs: ['Superuser', 'AI Providers'] })`
+- Fetches platform keys via `platformApiFetch('/admin/ai-providers')` (GET). Response: `{ keys: [{ provider, key_suffix, is_valid, default_model, base_url, updated_at }] }`
+- Displays a card grid matching `SettingsAiOverview.tsx` layout: provider icon, label, status badge (Connected / Not configured / Invalid), key suffix, default model
 - Each card links to `/app/superuser/ai-providers/:providerId`
-- Uses `useShellHeaderTitle` with breadcrumbs `['Superuser', 'AI Providers']`
+- Copy the `PROVIDERS` array from `SettingsProviderForm.tsx` lines 59-163 into this file and export it as `PROVIDERS` (with `ProviderDef` and `ProviderModelOption` types)
 - Exports `Component` function (lazy-import convention)
 
-The PROVIDERS array from `SettingsProviderForm.tsx` (lines 59-163) defines provider metadata (id, label, icon, models). Copy this array into the new file — it's the only consumer after the settings pages are removed from routing.
+Reference `SettingsAiOverview.tsx` for layout. Data source change: `platformApiFetch('/admin/ai-providers')` instead of `supabase.from(TABLES.userApiKeys)`.
 
-Reference `SettingsAiOverview.tsx` for the card layout. The data source changes from supabase client querying `user_api_keys` to `platformApiFetch` calling the FastAPI admin route.
-
-**Step 2: Create the provider detail form**
-
-Create `web/src/pages/superuser/SuperuserProviderForm.tsx`. This page:
-
-- Takes `providerId` from route params
-- Loads current state via `platformApiFetch('/admin/ai-providers')`, filters to current provider
-- Form sections:
-  - **API Key**: password input, Test button (calls `edgeFetch('test-api-key', { method: 'POST', body: { api_key, provider } })` — reuses existing edge function), status display
-  - **Default Model**: dropdown from PROVIDERS[provider].models
-  - **Base URL**: text input (custom provider only)
-- Save calls `platformApiFetch('/admin/ai-providers', { method: 'POST', body: { provider, api_key, default_model, base_url } })`
-- Delete calls `platformApiFetch('/admin/ai-providers', { method: 'DELETE', body: { provider } })`
-- Uses `useShellHeaderTitle` with breadcrumbs `['Superuser', 'AI Providers', providerLabel]`
-- Exports `Component` function
-
-Reference `SettingsProviderForm.tsx` for form layout and test-key flow. Key differences:
-1. Data source: `platformApiFetch` to FastAPI, not `edgeFetch` to `user-api-keys`
-2. No temperature/max_tokens controls — those are model-behavior settings managed via model role assignments
-3. Table: `platform_api_keys` (via FastAPI), not `user_api_keys`
-
-**Step 3: Verify build**
+**Step 2: Verify build**
 
 Run: `cd web && npx tsc --noEmit`
 Expected: PASS
 
-**Step 4: Commit**
+**Step 3: Commit**
 
 ```bash
-git add web/src/pages/superuser/SuperuserAiProviders.tsx web/src/pages/superuser/SuperuserProviderForm.tsx
-git commit -m "feat: add superuser AI provider management pages"
+git add web/src/pages/superuser/SuperuserAiProviders.tsx
+git commit -m "feat: add superuser AI providers overview page"
 ```
 
 ---
 
-### Task 5: Move Model Roles to superuser area
+### Task 6: Create Superuser Provider detail form
+
+**Files:**
+- Create: `web/src/pages/superuser/SuperuserProviderForm.tsx`
+
+**Step 1: Create the page**
+
+Create `web/src/pages/superuser/SuperuserProviderForm.tsx`. This page:
+
+- Uses `useShellHeaderTitle({ title: providerLabel, breadcrumbs: ['Superuser', 'AI Providers', providerLabel] })`
+- Takes `providerId` from route params
+- Loads current state via `platformApiFetch('/admin/ai-providers')`, filters to current provider
+- Imports `PROVIDERS` from `./SuperuserAiProviders`
+- Form sections:
+  - **API Key**: password input + Test button + status indicator
+    - Test calls `platformApiFetch('/admin/ai-providers/${provider}/test', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ api_key, base_url }) })`
+    - Response: `{ valid: boolean, error?: string }`
+  - **Default Model**: dropdown from provider's models array
+  - **Base URL**: text input (visible only when `provider.id === 'custom'`)
+- Save calls `platformApiFetch('/admin/ai-providers/${provider}', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ api_key, default_model, base_url }) })`
+- Delete calls `platformApiFetch('/admin/ai-providers/${provider}', { method: 'DELETE' })`
+- Back button navigates to `/app/superuser/ai-providers`
+- Exports `Component` function
+
+Reference `SettingsProviderForm.tsx` for form layout and test flow. Key differences:
+1. All calls use `platformApiFetch` to FastAPI — no `edgeFetch` or `edgeJson`
+2. No temperature/max_tokens controls (belong in model role config, not provider keys)
+3. Breadcrumbs: `['Superuser', 'AI Providers', label]`
+4. Back button: `/app/superuser/ai-providers`
+
+**Step 2: Verify build**
+
+Run: `cd web && npx tsc --noEmit`
+Expected: PASS
+
+**Step 3: Commit**
+
+```bash
+git add web/src/pages/superuser/SuperuserProviderForm.tsx
+git commit -m "feat: add superuser AI provider detail form"
+```
+
+---
+
+### Task 7: Create Superuser Model Roles page
 
 **Files:**
 - Create: `web/src/pages/superuser/SuperuserModelRoles.tsx`
 
-**Step 1: Create the superuser model roles page**
+**Step 1: Create the page**
 
-Create `web/src/pages/superuser/SuperuserModelRoles.tsx`. Same functionality as `SettingsModelRoles.tsx` (186 lines) with two changes:
+Create `web/src/pages/superuser/SuperuserModelRoles.tsx`. Same visual layout as `SettingsModelRoles.tsx` but all data operations go through FastAPI:
 
-1. `useShellHeaderTitle` breadcrumbs: `['Superuser', 'Model Roles']` instead of `['Settings', 'Model Roles']`
-2. Export as `Component` (lazy-import convention)
+- Uses `useShellHeaderTitle({ title: 'Model Roles', breadcrumbs: ['Superuser', 'Model Roles'] })`
+- Loads data via `platformApiFetch('/admin/model-roles')` (GET). Response: `{ roles: [...], assignments: [...] }`
+- Toggle active: `platformApiFetch('/admin/model-roles/${id}', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ is_active }) })`
+- Delete: `platformApiFetch('/admin/model-roles/${id}', { method: 'DELETE' })`
+- Import `SettingsPageFrame` and `SettingsSection` from `@/pages/settings/SettingsPageHeader`
+- Exports `Component` function
 
-The page reads directly from `model_role_catalog` and `model_role_assignments` via the supabase client. The data access pattern doesn't change — these tables allow authenticated SELECT.
-
-Reference `SettingsModelRoles.tsx` for the complete implementation.
+Reference `SettingsModelRoles.tsx` for the complete visual layout. Key difference: all writes go through `platformApiFetch` to FastAPI instead of `supabase.from('model_role_assignments').update()/.delete()`.
 
 **Step 2: Verify build**
 
@@ -438,21 +643,21 @@ Expected: PASS
 
 ```bash
 git add web/src/pages/superuser/SuperuserModelRoles.tsx
-git commit -m "feat: add superuser model roles management page"
+git commit -m "feat: add superuser model roles page with FastAPI backend"
 ```
 
 ---
 
-### Task 6: Update router, nav, and chat panel
+### Task 8: Update router, nav config, and chat panel
 
 **Files:**
-- Modify: `web/src/router.tsx`
-- Modify: `web/src/components/shell/nav-config.ts`
-- Modify: `web/src/components/shell/RightRailChatPanel.tsx`
+- Modify: `web/src/router.tsx` (lines 193-195 settings routes, lines 240-251 superuser routes)
+- Modify: `web/src/components/shell/nav-config.ts` (lines 135-136 settings, lines 160-166 superuser)
+- Modify: `web/src/components/shell/RightRailChatPanel.tsx` (line 88 settings button, line 175 model name)
 
 **Step 1: Add superuser routes**
 
-In `web/src/router.tsx`, inside the superuser children array (after line 244, before the closing `]`), add:
+In `web/src/router.tsx`, inside the superuser children array (after line 250 `api-endpoints` route, before the closing `]`), add:
 
 ```typescript
               { path: 'ai-providers', lazy: () => import('@/pages/superuser/SuperuserAiProviders') },
@@ -460,9 +665,9 @@ In `web/src/router.tsx`, inside the superuser children array (after line 244, be
               { path: 'model-roles', lazy: () => import('@/pages/superuser/SuperuserModelRoles') },
 ```
 
-**Step 2: Remove settings routes, add redirects**
+**Step 2: Replace settings routes with redirects**
 
-In `web/src/router.tsx`, replace lines 188-190:
+In `web/src/router.tsx`, replace lines 193-195:
 
 ```typescript
               { path: 'ai', element: <SettingsAiOverview /> },
@@ -470,7 +675,7 @@ In `web/src/router.tsx`, replace lines 188-190:
               { path: 'model-roles', element: <SettingsModelRoles /> },
 ```
 
-with redirects:
+with:
 
 ```typescript
               { path: 'ai', element: <Navigate to="/app/superuser/ai-providers" replace /> },
@@ -478,45 +683,43 @@ with redirects:
               { path: 'model-roles', element: <Navigate to="/app/superuser/model-roles" replace /> },
 ```
 
-Remove the now-unused imports for `SettingsAiOverview`, `SettingsProviderForm`, and `SettingsModelRoles` at the top of `router.tsx`.
+Remove the now-unused imports for `SettingsAiOverview`, `SettingsProviderForm`, and `SettingsModelRoles`.
 
 **Step 3: Update nav config**
 
 In `web/src/components/shell/nav-config.ts`:
 
-Remove from `SETTINGS_DRILL.sections[1].items` (Operations section, lines 134-135):
+Remove from `SETTINGS_DRILL.sections[1].items` (lines 135-136):
 ```typescript
         { label: 'AI Providers', icon: IconKey, path: '/app/settings/ai' },
         { label: 'Model Roles', icon: IconWand, path: '/app/settings/model-roles' },
 ```
 
-Add to `SUPERUSER_DRILL.sections[1].items` (admin section, after line 163):
+Add to `SUPERUSER_DRILL.sections[1].items` (after line 165 `API Endpoints`, before the closing `]`):
 ```typescript
         { label: 'AI Providers', icon: IconKey, path: '/app/superuser/ai-providers' },
         { label: 'Model Roles', icon: IconWand, path: '/app/superuser/model-roles' },
 ```
-
-Verify `IconKey` and `IconWand` are in the imports. `IconKey` is already imported (line 10). Add `IconWand` if missing.
 
 **Step 4: Remove settings gear and hardcoded model from chat panel**
 
 In `web/src/components/shell/RightRailChatPanel.tsx`:
 
 Remove the settings button (lines 88-90):
-```typescript
+```tsx
           <button type="button" className={iconBtn} aria-label="AI Settings" title="AI Settings" onClick={() => navigate('/app/settings/ai')}>
             <AppIcon icon={IconSettings} size="md" />
           </button>
 ```
 
 Remove the hardcoded model name (lines 174-176):
-```typescript
+```tsx
           <span className="text-[11px] font-medium text-muted-foreground">
             Sonnet 4.5
           </span>
 ```
 
-Clean up unused imports (`IconSettings`, `useNavigate`, `navigate` if no other usage remains).
+Clean up unused imports (`IconSettings`, and `navigate`/`useNavigate` if no other usage remains).
 
 **Step 5: Verify build**
 
@@ -534,24 +737,36 @@ git commit -m "feat: move AI providers and model roles to superuser area, clean 
 
 # Verification
 
-1. `npx supabase db reset` — PASS (verifies platform_api_keys migration)
-2. `cd services/platform-api && python -c "from app.main import create_app; app = create_app(); print('OK')"` — PASS (FastAPI imports clean)
-3. `cd supabase && deno check functions/assistant-chat/index.ts` — PASS (edge function compiles)
-4. `cd web && npx tsc --noEmit` — PASS (frontend compiles)
-5. Manual smoke test — superuser flow:
-   - Navigate to `/app/superuser/ai-providers` — see all providers with "Not configured" status
-   - Click Anthropic → enter API key → Test (calls `test-api-key` edge function) → Save (calls FastAPI admin route)
-   - Back to overview → Anthropic shows "Connected" with key suffix
-   - Navigate to `/app/superuser/model-roles` — see existing role assignments
-6. Manual smoke test — chat:
-   - As a regular user (not superuser), open the right-rail chat panel
-   - Type a message and send
-   - Expect: streaming response (no "No API key configured" error)
-   - Chat uses platform Anthropic key configured in step 5
-7. Manual smoke test — settings area:
-   - Navigate to `/app/settings` — AI Providers and Model Roles are gone from nav
+1. `cd supabase && npx supabase db reset` — PASS (platform_api_keys migration)
+2. `cd services/platform-api && python -c "from app.main import create_app; app = create_app(); print('OK')"` — PASS
+3. `cd web && npx tsc --noEmit` — PASS
+4. Manual smoke test — superuser flow:
+   - Navigate to `/app/superuser/ai-providers` — see all 7 providers with "Not configured"
+   - Click Anthropic → enter API key → Test (calls FastAPI `/admin/ai-providers/test`) → Save (calls FastAPI `/admin/ai-providers`)
+   - Back to overview → Anthropic shows "Connected" with key suffix and default model
+   - Navigate to `/app/superuser/model-roles` — see role assignments, toggle/remove via FastAPI
+5. Manual smoke test — bidirectional sync:
+   - Save a key via UI → verify row in `platform_api_keys` table
+   - Delete a key via UI → verify row removed
+   - Refresh page → UI reflects current table state
+6. Manual smoke test — settings area:
+   - Navigate to `/app/settings` — AI Providers and Model Roles gone from nav
    - Direct URL `/app/settings/ai` redirects to `/app/superuser/ai-providers`
-8. Verify `/admin/ai-providers` visible at `/app/superuser/api-endpoints` with `platform_admin` auth badge
+7. Chat panel: no settings gear, no "Sonnet 4.5" label
+
+---
+
+# Phase 2 — Chat Streaming Migration (separate plan)
+
+When this plan is complete, the next step is migrating `assistant-chat` to FastAPI:
+
+1. Add `sse-starlette` to `requirements.txt`
+2. Port `callAnthropicStream`, `callOpenAIStream`, `callGeminiStream`, `callVertexClaudeStream` to Python using `httpx` streaming
+3. Port `normalizeStreamForClient` SSE normalization to Python
+4. Create FastAPI `/chat` route with SSE streaming, platform key resolution (platform key → Vertex fallback → error)
+5. Update `platformApiFetch` or create `platformApiStream` for client-side SSE consumption
+6. Update `useAssistantChat.ts` to call FastAPI instead of `edgeFetch('assistant-chat')`
+7. Deprecate `assistant-chat` edge function
 
 ---
 
@@ -559,13 +774,10 @@ git commit -m "feat: move AI providers and model roles to superuser area, clean 
 
 | Decision | Rationale |
 |----------|-----------|
-| FastAPI for key management, not edge functions | Chat will evolve into an agent execution environment (MCP tool calls, vector/KG context, long-running Python scripts). Edge functions have ~150s timeout, no persistent state, can't run Python. Building key management on FastAPI means no rewrite when chat migrates. |
-| Separate `platform_api_keys` table, not a flag on `user_api_keys` | Clean separation. Different RLS (service_role only vs. user-scoped). Different encryption context. No risk of leaking platform keys through user-facing queries. |
-| Edge function chat stays for now | It works as a streaming proxy. The only change is one additional DB query for platform keys. Full migration to FastAPI is a separate plan when MCP/vector/KG scope is clear. |
-| Resolution chain: user key → platform key → Vertex fallback → error | Preserves backward compat for users who already saved personal keys. Platform keys serve as default. Vertex AI Claude remains last-resort for Anthropic. |
-| `"platform-api-keys-v1"` encryption context | Same AES-GCM algorithm, same secret, different context. Ciphertext from one table can't be decrypted with the other's context. Python encrypts, Deno decrypts — cross-runtime compat proven by load-activation plan design. |
-| `test-api-key` edge function reused | Same validation logic regardless of who's testing. Superusers are authenticated users — same auth flow. No duplication needed. |
-| Settings routes redirect (not 404) | Old bookmarks still work. SuperuserGuard denies non-admin users who follow the redirect. |
-| Model name removed from chat panel | Infrastructure detail managed by admins. Users just chat. Model selection UI is a separate feature if needed later. |
-| No temperature/max_tokens on platform keys | Model-behavior settings belong in `model_role_assignments.config_jsonb`, not provider-auth table. `assistant-chat` hardcodes `maxTokens = 4096`; making it configurable via role config is a follow-up. |
-| Depends on load-activation's `crypto.py` | Avoids duplicating AES-GCM implementation. If load-activation hasn't run yet, Task 2 includes a fallback to create it. Both plans use the same module. |
+| All backend in FastAPI | Follows execution plane direction. No new edge function work. |
+| Key validation in FastAPI | Same `httpx` probes as the edge function, but lives where all future AI execution will live. |
+| Model role CRUD via FastAPI | Browser shouldn't write directly to tables. Consistent with platform_api_keys pattern. |
+| `encrypt_for_deno` in Python | Key derivation differs between runtimes. Platform keys encrypted Deno-compatible for Phase 2. |
+| No edge function changes | Clean separation. This plan builds the new surface. Phase 2 migrates the old. |
+| Chat streaming deferred | Requires SSE infrastructure, 4 provider ports, client streaming support. Separate scope. |
+| Settings routes redirect | Old bookmarks work. SuperuserGuard denies non-admin users. |
