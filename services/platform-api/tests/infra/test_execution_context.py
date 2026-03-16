@@ -124,3 +124,86 @@ def test_cleanup_is_idempotent(ctx):
 def test_cleanup_without_work_dir(ctx):
     """cleanup() on a context that never created temp files is safe."""
     ctx.cleanup()
+
+
+# --- Template rendering (Jinja2) ---
+
+def test_render_simple_variable():
+    ctx = ExecutionContext(variables={"name": "Alice"})
+    assert ctx.render("Hello {{ name }}") == "Hello Alice"
+
+
+def test_render_nested_dict():
+    ctx = ExecutionContext(variables={"outputs": {"task1": {"value": 42}}})
+    assert ctx.render("Result: {{ outputs.task1.value }}") == "Result: 42"
+
+
+def test_render_preserves_undefined():
+    """Undefined variables are preserved as {{ name }}, not rendered as empty."""
+    ctx = ExecutionContext(variables={})
+    result = ctx.render("{{ unknown_var }}")
+    assert "unknown_var" in result
+
+
+def test_render_filter_upper():
+    ctx = ExecutionContext(variables={"name": "alice"})
+    assert ctx.render("{{ name | upper }}") == "ALICE"
+
+
+def test_render_filter_join():
+    ctx = ExecutionContext(variables={"items": ["a", "b", "c"]})
+    assert ctx.render("{{ items | join(',') }}") == "a,b,c"
+
+
+def test_render_filter_default():
+    ctx = ExecutionContext(variables={})
+    assert ctx.render("{{ missing | default('fallback') }}") == "fallback"
+
+
+def test_render_filter_length():
+    ctx = ExecutionContext(variables={"items": [1, 2, 3]})
+    assert ctx.render("{{ items | length }}") == "3"
+
+
+def test_render_condition_true():
+    ctx = ExecutionContext(variables={"active": True})
+    assert ctx.render("{% if active %}yes{% else %}no{% endif %}") == "yes"
+
+
+def test_render_condition_false():
+    ctx = ExecutionContext(variables={"active": False})
+    assert ctx.render("{% if active %}yes{% else %}no{% endif %}") == "no"
+
+
+def test_render_loop():
+    ctx = ExecutionContext(variables={"items": ["a", "b", "c"]})
+    result = ctx.render("{% for x in items %}{{ x }}{% endfor %}")
+    assert result == "abc"
+
+
+def test_render_plain_text():
+    """Strings without {{ or {% are returned as-is (fast path)."""
+    ctx = ExecutionContext()
+    assert ctx.render("just plain text") == "just plain text"
+
+
+def test_render_non_string():
+    """Non-string input is converted to string."""
+    ctx = ExecutionContext()
+    assert ctx.render(42) == "42"
+    assert ctx.render(True) == "True"
+
+
+def test_render_mixed_resolved_and_unresolved():
+    ctx = ExecutionContext(variables={"name": "Alice"})
+    result = ctx.render("Hello {{ name }}, your id is {{ user_id }}")
+    assert "Alice" in result
+    assert "user_id" in result
+
+
+def test_resolve_still_works():
+    """_resolve helper for programmatic access still works."""
+    ctx = ExecutionContext(variables={"a": {"b": {"c": "deep"}}})
+    assert ctx._resolve("a.b.c") == "deep"
+    assert ctx._resolve("a.b.missing") is None
+    assert ctx._resolve("nonexistent") is None

@@ -29,7 +29,7 @@ Jinja2>=3.1
 
 ---
 
-## Scope: 6 tasks
+## Scope: 7 tasks
 
 | Task | What it adds | Files touched |
 |------|-------------|---------------|
@@ -37,7 +37,8 @@ Jinja2>=3.1
 | 2 | `create_temp_file()`, `work_dir`, `cleanup()` via `tempfile.TemporaryDirectory` | `models.py`, test file |
 | 3 | `encode_jsonl()`, `decode_jsonl()`, `iter_jsonl()`, file-based variants, `chunked_write()` | new `serialization.py`, `requirements.txt`, new test file |
 | 4 | Jinja2 `render()` replacing regex | `models.py`, `requirements.txt`, test file |
-| 5 | Auth provider abstraction — 6 auth patterns shared across all providers | new `auth_providers.py`, test file |
+| 5a | Auth core + simple patterns (AuthResult, AuthProvider, resolve_auth, APIKey, Basic, ConnectionString) | new `auth_providers.py`, new test file |
+| 5b | Complex auth patterns (OAuth2ServiceAccount, OAuth2ClientCredentials, IAM) | `auth_providers.py`, test file |
 | 6 | Refactor GCS + ArangoDB plugins onto substrate | `gcs.py`, `arangodb.py`, `gcs_auth.py` (remove), existing tests |
 
 ---
