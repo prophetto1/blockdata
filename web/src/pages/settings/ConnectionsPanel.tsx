@@ -89,7 +89,12 @@ export default function ConnectionsPanel() {
       const credentials: Record<string, string> = {};
       const metadata: Record<string, string> = {};
       for (const field of ct.fields) {
-        credentials[field.name] = formData[field.name] ?? '';
+        let value = formData[field.name] ?? '';
+        // Normalize PEM keys pasted from JSON files: replace literal \n with real newlines
+        if (field.name === 'private_key' && value.includes('\\n')) {
+          value = value.replace(/\\n/g, '\n');
+        }
+        credentials[field.name] = value;
       }
       for (const key of ct.metadataFields) {
         if (credentials[key]) metadata[key] = credentials[key];

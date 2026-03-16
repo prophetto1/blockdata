@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { fetchAllProjectDocuments } from '@/lib/projectDocuments';
 import type { ProjectDocumentRow } from '@/lib/projectDetailHelpers';
@@ -8,21 +8,27 @@ export function useProjectDocuments(projectId: string | null) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const hasConvertingRef = useRef(false);
 
-  const loadDocs = useCallback(async (pid: string) => {
-    setLoading(true);
-    setError(null);
+  const loadDocs = useCallback(async (pid: string, silent = false) => {
+    if (!silent) {
+      setLoading(true);
+      setError(null);
+    }
     try {
       const all = await fetchAllProjectDocuments<ProjectDocumentRow>({
         projectId: pid,
         select: '*',
       });
       setDocs(all);
+      if (!silent) setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load documents');
-      setDocs([]);
+      if (!silent) {
+        setError(err instanceof Error ? err.message : 'Failed to load documents');
+        setDocs([]);
+      }
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, []);
 
@@ -36,7 +42,7 @@ export function useProjectDocuments(projectId: string | null) {
     void loadDocs(projectId);
   }, [projectId, loadDocs]);
 
-  // Realtime subscription for status updates
+  // Realtime subscription for status updates, deletes, and inserts
   useEffect(() => {
     if (!projectId) return;
     const channel = supabase
@@ -50,35 +56,82 @@ export function useProjectDocuments(projectId: string | null) {
           filter: `project_id=eq.${projectId}`,
         },
         (payload) => {
+          const updated = payload.new as any;
           setDocs((prev) =>
             prev.map((d) =>
-              d.source_uid === (payload.new as any).source_uid
-                ? { ...d, ...(payload.new as any) }
+              d.source_uid === updated.source_uid
+                ? { ...d, ...updated }
                 : d,
             ),
           );
+          // When a doc transitions to parsed, refetch to get joined view columns
+          // (conv_total_blocks, conv_uid, etc.) that aren't in the realtime payload.
+          if (updated.status === 'parsed') {
+            void loadDocs(projectId, true);
+          }
+        },
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'source_documents',
+          filter: `project_id=eq.${projectId}`,
+        },
+        (payload) => {
+          const deletedUid = (payload.old as any)?.source_uid;
+          if (deletedUid) {
+            setDocs((prev) => prev.filter((d) => d.source_uid !== deletedUid));
+            setSelected((prev) => {
+              if (!prev.has(deletedUid)) return prev;
+              const next = new Set(prev);
+              next.delete(deletedUid);
+              return next;
+            });
+          }
+        },
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'source_documents',
+          filter: `project_id=eq.${projectId}`,
+        },
+        () => {
+          // Refetch to get the full joined view row for the new document.
+          void loadDocs(projectId, true);
         },
       )
       .subscribe();
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [projectId]);
+  }, [projectId, loadDocs]);
+
+  // Keep ref in sync so the polling effect doesn't depend on docs directly.
+  useEffect(() => {
+    hasConvertingRef.current = docs.some((d) => d.status === 'converting');
+  }, [docs]);
 
   // Polling fallback: refetch docs while any are in a transitional state.
   // Realtime should handle updates, but polling ensures the UI reflects
   // status changes even if the Realtime connection drops.
+  // Uses a ref for the converting check to avoid resetting the interval
+  // every time docs change.
   useEffect(() => {
     if (!projectId) return;
-    const hasTransitional = docs.some((d) => d.status === 'converting');
-    if (!hasTransitional) return;
 
     const interval = setInterval(() => {
-      void loadDocs(projectId);
+      if (hasConvertingRef.current) {
+        void loadDocs(projectId, true);
+      }
     }, 5000);
 
     return () => clearInterval(interval);
-  }, [projectId, docs, loadDocs]);
+  }, [projectId, loadDocs]);
 
   const refreshDocs = useCallback(() => {
     if (projectId) void loadDocs(projectId);

@@ -161,6 +161,7 @@ export async function manageDocument(
 ): Promise<{ ok: boolean; partial?: boolean; error?: string }> {
   const resp = await edgeFetch('manage-document', {
     method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ action, source_uid: sourceUid }),
   });
   return resp.json();

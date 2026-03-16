@@ -1,0 +1,140 @@
+---
+title: Parse File List Tab Runtime Behavior Assessment
+description: Systematic debugging assessment of the Parse workbench file list tab — polling flicker, stuck converting state, and broken delete operations.
+---
+
+# Parse File List Tab - Runtime Behavior Assessment
+
+- Date reviewed: `2026-03-15`
+- Reviewer: `Codex`
+- Verdict: `Fail`
+
+## Executive Summary
+
+The Parse workbench file list tab has three user-reported runtime defects that trace to five compounding root causes plus three additional issues discovered during investigation. The core problem is that `ParseRowActions` (per-row delete, reset, parse buttons) exists as a component but is never wired into the `DocumentFileTable`, leaving users with only batch actions in a sidebar panel. Combined with silent error handling and a polling mechanism that flickers the UI, the Parse tab is functionally degraded.
+
+## Findings By Severity
+
+### Critical
+
+#### 1. Per-row actions are not rendered — delete and reset are invisible
+
+`useParseWorkbench.tsx:788-804`: The `DocumentFileTable` is rendered WITHOUT a `renderRowActions` prop. The `ParseRowActions` component (defined in `ParseTabPanel.tsx:197-258`) includes Delete, Reset, and Parse buttons per row, but it is never mounted.
+
+The only action path available to users is the batch buttons in `ParseConfigColumn`, which require checkbox selection — not the more intuitive row-click interaction. Users who click a row to highlight it (which sets `activeDocUid`) but don't check the checkbox will find all action buttons disabled.
+
+#### 2. Delete errors are silently swallowed — zero user feedback
+
+`useParseWorkbench.tsx:754-764`: `handleDelete` has no try/catch and no UI error state:
+
+```tsx
+const handleDelete = useCallback(async (uid: string) => {
+    const result = await manageDocument('delete', uid);
+    if (result.partial) {
+      console.warn('Arango cleanup pending for', uid);  // console only
+    } else if (!result.ok) {
+      console.error('Delete failed:', result.error);      // console only
+      return;
+    }
+    ...
+}, ...);
+```
+
+If the edge function fails (auth, network, RPC error), the error goes to `console.error` with zero user feedback. The batch delete path (`useParseWorkbench.tsx:821`) compounds this by using `void handleDelete(uid)` fire-and-forget, making `edgeFetch` throws become unhandled promise rejections.
+
+#### 3. Content-Type header not set for manage-document requests
+
+`edge.ts:162-166`: `manageDocument` sends `body: JSON.stringify(...)` but does not set `Content-Type: application/json`. While Deno's `req.json()` parses regardless of Content-Type, proxy layers or API gateways between the client and the edge function may reject or misroute the request.
+
+### High
+
+#### 4. Per-row Reset is explicitly disabled for converting files
+
+`ParseTabPanel.tsx:235`:
+
+```tsx
+if (!isConverting && onReset) {
+    menuItems.push({ label: 'Reset', ... });
+}
+```
+
+The row action menu EXCLUDES the Reset option when `isConverting === true`. This is the exact opposite of what's needed — converting is the state most likely to require a manual reset when the conversion callback never arrives.
+
+The batch Reset button in `ParseConfigColumn.tsx:87-94` DOES include `converting` in its resetable filter, so the workaround exists but is non-obvious.
+
+#### 5. No server-side timeout for stuck conversions
+
+The conversion service acknowledges within 8s (ACK timeout in `process-convert.ts`), but there is no mechanism to detect or recover from a callback that never arrives. If the Cloud Run service crashes after ACK, the document stays in `converting` forever. There is no cleanup cron, no stale-conversion sweep, and no client-side staleness indicator.
+
+#### 6. Stale selection persists after delete
+
+After a successful delete, `refreshDocs()` is called but the `selected` Set is never cleared. The deleted document's uid persists in the selection set. On the next batch delete attempt, `Array.from(selected)` includes the phantom uid, causing a delete RPC call for a non-existent document which may fail and block the refresh.
+
+### Medium
+
+#### 7. Polling causes UI flicker every 5 seconds during conversion
+
+`useProjectDocuments.ts:13`: `loadDocs()` sets `setLoading(true)` on EVERY call, including the 5-second polling calls. When any document has `status === 'converting'`:
+
+1. Polling effect (`useProjectDocuments.ts:71-81`) fires every 5s
+2. `loadDocs(projectId)` immediately sets `loading = true`
+3. `DocumentFileTable.tsx:135-144` renders a "Loading files…" spinner row, REPLACING the actual file rows
+4. Fetch completes 200-500ms later, `loading = false`, table re-renders with data
+5. User sees the entire table flash every 5 seconds
+
+Additionally, the polling effect has `docs` in its dependency array. Every time `loadDocs` completes and calls `setDocs(all)` (new array reference), the effect re-runs, clearing and recreating the interval. Realtime updates also trigger this, resetting the 5s timer unpredictably.
+
+#### 8. Realtime subscription only handles UPDATE — not DELETE or INSERT
+
+`useProjectDocuments.ts:46`: The subscription uses `event: 'UPDATE'`. After a successful delete, the realtime channel does not fire. The list only updates via the `refreshDocs()` call, which has the loading flicker problem. If `refreshDocs()` is not called (error path), the deleted document remains visible in the UI.
+
+### Low
+
+#### 9. Realtime vs View data mismatch after conversion completes
+
+`fetchAllProjectDocuments` reads from `view_documents` (a join of `source_documents` + `conversion_parsing` per `tables.ts:4`), but the realtime subscription listens on `source_documents`. After a conversion completes:
+
+- Realtime fires with `source_documents` columns only (status changes to `parsed`)
+- Joined columns (`conv_total_blocks`, `conv_uid`, `conv_parsing_tool`) are NOT in the payload
+- These only update on the next full fetch (polling or manual refresh)
+- Brief UI inconsistency: document shows "parsed" status but block count is stale until the next poll
+
+## Recommended Fixes (Priority Order)
+
+### P0 — Critical (delete is broken for users)
+
+1. **Wire `renderRowActions` into the parse workbench's `DocumentFileTable`** — pass `ParseRowActions` via the `renderRowActions` prop so per-row delete/reset/parse buttons appear
+2. **Add try/catch and user-visible error feedback to `handleDelete` and `handleReset`** — show toast or inline alert on failure instead of `console.error`
+3. **Add `Content-Type: application/json` header to `manageDocument`**
+
+### P1 — High (stuck files with no recourse)
+
+4. **Allow Reset on converting documents** — remove the `!isConverting` guard in `ParseRowActions`, or add a separate "Force Reset" menu item for converting state
+5. **Clear selection after successful batch delete** — call `clearSelection()` after all deletes complete
+
+### P2 — Medium (UX annoyance)
+
+6. **Fix polling flicker** — add a `silent` flag to `loadDocs` that skips `setLoading(true)` for background polls; use loading state only for initial load and user-initiated refresh
+7. **Subscribe to DELETE events in realtime** — use `event: '*'` or a separate DELETE handler that removes docs from the list immediately
+
+### P3 — Low (data consistency)
+
+8. **Trigger a full refetch after realtime status change to `parsed`** — ensures joined view columns (block count, conv_uid) are fresh
+9. **Remove `docs` from polling effect dependencies** — use a ref to track converting state instead, preventing interval resets on every doc update
+
+## Files to Modify
+
+| File | Changes |
+|------|---------|
+| `web/src/hooks/useProjectDocuments.ts` | Silent polling, DELETE event handling, deps fix |
+| `web/src/pages/useParseWorkbench.tsx` | Wire renderRowActions, error handling, clear selection |
+| `web/src/components/documents/ParseTabPanel.tsx` | Remove `!isConverting` guard on Reset |
+| `web/src/lib/edge.ts` | Add Content-Type header to manageDocument |
+
+## Verification
+
+1. Upload a file, trigger parse, observe NO flicker in file list during conversion
+2. Kill/timeout the conversion callback, verify user can Reset a stuck converting file from row menu
+3. Select files, click Delete, verify files are removed and selection is cleared
+4. Verify delete/reset errors show user-visible feedback (toast or inline error)
+5. Verify realtime updates reflect status changes without full-table reload

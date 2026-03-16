@@ -232,7 +232,7 @@ export function ParseRowActions({
       menuItems.push({ label: 'View DoclingJson', onClick: () => onDoclingJsonPreview(doc) });
     }
   }
-  if (!isConverting && onReset) {
+  if (onReset) {
     menuItems.push({ label: 'Reset', onClick: () => onReset(doc.source_uid) });
   }
   if (onDelete) {
