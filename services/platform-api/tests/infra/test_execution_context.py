@@ -78,3 +78,49 @@ async def test_delete_files(ctx):
         "https://example.supabase.co", "test-key",
         "pipeline", ["load-artifacts/run-1/a.jsonl"]
     )
+
+
+# --- Temp files ---
+
+def test_work_dir_is_lazy(ctx):
+    """Working directory is not created until accessed."""
+    assert ctx._work_dir is None
+    path = ctx.work_dir
+    assert path.exists()
+    assert ctx._work_dir is not None
+    ctx.cleanup()
+
+
+def test_create_temp_file(ctx):
+    """create_temp_file returns a path in the working directory."""
+    path = ctx.create_temp_file(suffix=".jsonl")
+    assert path.exists()
+    assert path.suffix == ".jsonl"
+    assert path.parent == ctx.work_dir
+    path.write_text('{"test": true}')
+    assert path.read_text() == '{"test": true}'
+    ctx.cleanup()
+    assert not path.exists()
+
+
+def test_multiple_temp_files_same_dir(ctx):
+    """Multiple temp files share the same working directory."""
+    p1 = ctx.create_temp_file(suffix=".csv")
+    p2 = ctx.create_temp_file(suffix=".jsonl")
+    p3 = ctx.create_temp_file(suffix=".parquet")
+    assert p1.parent == p2.parent == p3.parent
+    assert len({p1, p2, p3}) == 3
+    ctx.cleanup()
+
+
+def test_cleanup_is_idempotent(ctx):
+    """cleanup() can be called multiple times without error."""
+    ctx.create_temp_file()
+    ctx.cleanup()
+    ctx.cleanup()
+    ctx.cleanup()
+
+
+def test_cleanup_without_work_dir(ctx):
+    """cleanup() on a context that never created temp files is safe."""
+    ctx.cleanup()

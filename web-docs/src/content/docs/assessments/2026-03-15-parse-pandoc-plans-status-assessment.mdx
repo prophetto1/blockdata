@@ -1,0 +1,148 @@
+---
+title: Parse & Pandoc Plans Status Assessment
+description: Source-verified status of five plans in the pandoc-related and parse/extract-related subdirectories of docs/plans/.
+---
+
+# Parse & Pandoc Plans Status Assessment
+
+- Date reviewed: `2026-03-15`
+- Reviewer: `Codex`
+- Files assessed: 5
+
+---
+
+## 1. Pandoc Parsing Service
+
+**File:** `docs/plans/pandoc related/2026-03-14-pandoc-parsing-service.md`
+
+**Type:** Implementation plan — new Cloud Run service
+
+**Status: Not Implemented**
+
+| Deliverable | Status |
+|-------------|--------|
+| `services/pandoc-service/` directory | Does not exist |
+| `services/pandoc-service/Dockerfile` | Does not exist |
+| `services/pandoc-service/app/main.py` | Does not exist |
+| Pandoc track in `extension_track_routing` policy | Was seeded in migration 019, then **removed** in migration 081 (`docling_only_parsing`) |
+
+The pandoc track was briefly configured in policy but has since been removed — migration 081 routes everything through Docling only. The service itself was never built.
+
+**Recommendation:** Keep in plans. This becomes relevant when Docling-unsupported formats (RST, Org, EPUB, ODT, Typst) are prioritized.
+
+---
+
+## 2. Parse Runtime Verification + Structured Extraction (Merged)
+
+**File:** `docs/plans/parse, extract related/2026-03-14-extraction-and-parse-verification-merged.md`
+
+**Type:** Multi-phase implementation plan (Parse verification + Extraction)
+
+**Status: Partially Implemented — Phase 1 complete, Phases 2-5 incomplete**
+
+### Phase 1: Parse Runtime Foundation — COMPLETE
+
+| Deliverable | Status |
+|-------------|--------|
+| `requested_pipeline_config` column on `conversion_parsing` | Exists (migration 088) |
+| `applied_pipeline_config` column on `conversion_parsing` | Exists (migration 088) |
+| `parser_runtime_meta` column on `conversion_parsing` | Exists (migration 088) |
+| `trigger-parse` sends `requested_pipeline_config` | Yes (line 214) |
+| Parse Config column shows runtime audit details | Yes (`ParseConfigColumn.tsx` lines 194-216) |
+| `extract-readiness` edge function | Exists with tests |
+
+### Phases 2-5: Extraction — INCOMPLETE
+
+| Deliverable | Status |
+|-------------|--------|
+| `extraction_schemas` table | Exists (migration 091) |
+| `extraction_jobs` table | Exists (migration 091) |
+| `extraction_job_items` table | Exists (migration 091) |
+| `extraction_results` table | Exists (migration 091) |
+| `claim_extraction_items` RPC | Exists (migration 091) |
+| Extract workbench UI (`ExtractPage.tsx`, `useExtractWorkbench.tsx`) | Exists (UI shell) |
+| `run-extract` edge function | Does not exist |
+| `extract-worker` edge function | Does not exist |
+| Schema builder (visual/code/split modes) | Not verified as complete |
+
+The database schema and UI shell are in place, but the execution functions (`run-extract`, `extract-worker`) that actually perform LLM extraction have not been built.
+
+**Recommendation:** Keep in plans. The ongoing-issues doc correctly notes "Extract workbench is a UI shell." The next phase requires building `run-extract` and `extract-worker`.
+
+---
+
+## 3. Parser Routing Capability Workflow
+
+**File:** `docs/plans/parse, extract related/2026-03-14-parser-routing-capability-workflow.md`
+
+**Type:** Implementation plan — parser routing via runtime policy
+
+**Status: Fully Implemented**
+
+| Deliverable | Status |
+|-------------|--------|
+| `extension_track_routing` in runtime policy | Seeded in migration 019, updated in 077, 081 |
+| `track_capability_catalog` in runtime policy | Seeded in migration 019 |
+| `trigger-parse` resolves track from policy | Yes (lines 58-86) |
+| `ingest/routing.ts` resolves track from policy | Yes (`resolveIngestRoute()`) |
+| Track validation before dispatch | Yes (trigger-parse lines 84-86) |
+
+Parser routing is operational: the ingest and parse-trigger flows read `extension_track_routing` from the admin runtime policy, resolve the parser track, validate it's enabled, and pass it to the conversion service.
+
+**Recommendation:** Move to `plans/done/`. This plan is fully implemented and operational.
+
+---
+
+## 4. Parse Batch Runtime Hardening
+
+**File:** `docs/plans/parse, extract related/2026-03-15-parse-batch-runtime-hardening.md`
+
+**Type:** Implementation plan — server-side parse queue
+
+**Status: Not Implemented**
+
+| Deliverable | Status |
+|-------------|--------|
+| `parse_batches` table | Does not exist |
+| `parse_batch_items` table | Does not exist |
+| `parse-worker` edge function | Does not exist |
+| Claim RPC for parse batch items | Does not exist |
+| Shared parse dispatch module (refactored from trigger-parse) | Does not exist |
+| Runtime policy controls for batch size/retries | Does not exist |
+
+None of the plan's deliverables have been built. The interim fix (Plan E below) serves as the current solution.
+
+**Recommendation:** Keep in plans. This is the proper long-term replacement for the browser-driven batch parse. Depends on product prioritization.
+
+---
+
+## 5. Parse Dispatch Resilience (Interim Fix)
+
+**File:** `docs/plans/parse, extract related/2026-03-15-parse-dispatch-resilience.md`
+
+**Type:** Implementation plan — 3 quick fixes to existing code
+
+**Status: Fully Implemented (and enhanced)**
+
+| Deliverable | Status |
+|-------------|--------|
+| Polling fallback in `useProjectDocuments.ts` | Implemented (lines 119-134) — enhanced with silent polling, ref-based deps, DELETE/INSERT handling |
+| Inter-wave delay in `useBatchParse.ts` | Implemented (line 98) — 1.5s `setTimeout` between dispatches |
+| Retry logic for 502/503/429 in `useBatchParse.ts` | Implemented (lines 53-59) — 2 retries with exponential backoff (3s, 6s) |
+| "Retry Failed" button in `ParseConfigColumn.tsx` | Implemented (lines 261-266) |
+
+All three tasks from this plan are implemented. The polling fallback was further improved in a subsequent session (today) with silent background polling, DELETE/INSERT event handling, and ref-based dependency management to eliminate UI flicker.
+
+**Recommendation:** Move to `plans/done/`. All deliverables implemented and enhanced.
+
+---
+
+## Summary
+
+| Plan | Status | Action |
+|------|--------|--------|
+| **Pandoc Parsing Service** | Not implemented | Keep in plans |
+| **Extraction & Parse Verification** | Phase 1 done, Phases 2-5 incomplete | Keep in plans |
+| **Parser Routing Workflow** | Fully implemented | Move to `plans/done/` |
+| **Parse Batch Runtime Hardening** | Not implemented | Keep in plans |
+| **Parse Dispatch Resilience** | Fully implemented + enhanced | Move to `plans/done/` |

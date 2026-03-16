@@ -44,6 +44,7 @@ async def execute(
     context = ExecutionContext(
         execution_id=request.execution_id,
         task_run_id=request.task_run_id,
+        user_id=auth.user_id,
         variables=request.variables,
     )
 
