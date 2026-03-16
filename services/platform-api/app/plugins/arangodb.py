@@ -1,8 +1,7 @@
 """ArangoDB destination plugin — batch insert. BD-native (no Kestra equivalent).
 
-Refactored onto substrate: uses resolve_auth (BasicAuth auto-detected),
-context.download_file, decode_jsonl, chunked_write. No inline httpx auth,
-json parsing, or batch loops.
+Uses substrate: resolve_auth (BasicAuth auto-detected), context.download_file,
+decode_jsonl, chunked_write. Auth headers from resolve_auth used directly.
 """
 from typing import Any
 
@@ -41,19 +40,18 @@ class ArangoDBLoadPlugin(BasePlugin):
             return failed("No documents to load (provide documents or source_uri)")
 
         base = f"{endpoint}/_db/{database}"
-        http_auth = httpx.BasicAuth(creds["username"], creds["password"])
 
         async with httpx.AsyncClient() as client:
             if create_collection:
                 await client.post(
                     f"{base}/_api/collection", json={"name": collection},
-                    auth=http_auth, timeout=30,
+                    headers=auth.headers, timeout=30,
                 )
 
             async def write_batch(batch: list[dict[str, Any]]) -> tuple[int, int]:
                 resp = await client.post(
                     f"{base}/_api/document/{collection}", json=batch,
-                    auth=http_auth, timeout=60,
+                    headers=auth.headers, timeout=60,
                 )
                 if resp.status_code in (200, 201, 202):
                     results = resp.json()
@@ -74,11 +72,10 @@ class ArangoDBLoadPlugin(BasePlugin):
     async def test_connection(self, creds: dict[str, Any]) -> PluginOutput:
         """Test ArangoDB credentials by checking server version."""
         auth = await resolve_auth(creds)
-        http_auth = httpx.BasicAuth(creds["username"], creds["password"])
         async with httpx.AsyncClient() as client:
             resp = await client.get(
                 f"{creds['endpoint']}/_db/{creds['database']}/_api/version",
-                auth=http_auth, timeout=10,
+                headers=auth.headers, timeout=10,
             )
         if resp.status_code == 200:
             return success(data={"valid": True, "version": resp.json().get("version")})

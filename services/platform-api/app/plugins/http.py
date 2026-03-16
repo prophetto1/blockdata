@@ -1,12 +1,15 @@
-"""HTTP plugins — Request, Download."""
+"""HTTP plugins — Request, Download.
 
+Uses substrate: resolve_auth for authentication, context.render for templates,
+context.upload_file for storage. No legacy auth module.
+"""
 from typing import Any
 
 import httpx
 
 from app.domain.plugins.models import BasePlugin, PluginOutput
 from app.domain.plugins import models as out
-from app.infra.auth import resolve_credentials
+from app.infra.auth_providers import resolve_auth
 
 
 class HttpRequestPlugin(BasePlugin):
@@ -29,16 +32,26 @@ class HttpRequestPlugin(BasePlugin):
         # Render template expressions in headers
         rendered_headers = {k: context.render(str(v)) for k, v in headers.items()}
 
-        # Auth handling
-        auth = None
+        # Auth handling via substrate
         auth_config = params.get("auth")
         if auth_config:
-            creds = await resolve_credentials(auth_config, context)
-            auth_type = creds.get("type", "")
+            auth_type = auth_config.get("type", "").upper()
             if auth_type == "BASIC":
-                auth = httpx.BasicAuth(creds.get("username", ""), creds.get("password", ""))
+                auth_result = await resolve_auth(
+                    {"username": auth_config.get("username", ""),
+                     "password": auth_config.get("password", "")},
+                    auth_type="basic",
+                )
+                rendered_headers.update(auth_result.headers)
             elif auth_type == "BEARER":
-                rendered_headers["Authorization"] = f"Bearer {creds.get('token', '')}"
+                auth_result = await resolve_auth(
+                    {"api_key": auth_config.get("token", "")},
+                    auth_type="api_key",
+                )
+                rendered_headers.update(auth_result.headers)
+            elif auth_type == "API_KEY":
+                header_name = auth_config.get("header", "Authorization")
+                rendered_headers[header_name] = auth_config.get("value", "")
 
         # Build request kwargs
         kwargs: dict[str, Any] = {
@@ -56,9 +69,6 @@ class HttpRequestPlugin(BasePlugin):
 
         if form_data:
             kwargs["data"] = {k: context.render(str(v)) for k, v in form_data.items()}
-
-        if auth:
-            kwargs["auth"] = auth
 
         context.logger.info(f"HTTP {method} {uri}")
 
@@ -92,7 +102,7 @@ class HttpRequestPlugin(BasePlugin):
             {"name": "headers", "type": "object", "required": False, "description": "Request headers."},
             {"name": "body", "type": "string", "required": False, "description": "Request body for POST/PUT/PATCH."},
             {"name": "formData", "type": "object", "required": False, "description": "Form data (application/x-www-form-urlencoded)."},
-            {"name": "auth", "type": "object", "required": False, "description": "Auth config: {type: BASIC|BEARER, username, password, token}"},
+            {"name": "auth", "type": "object", "required": False, "description": "Auth config: {type: BASIC|BEARER|API_KEY, username, password, token, header, value}"},
             {"name": "timeout", "type": "integer", "required": False, "default": 30, "description": "Request timeout in seconds."},
         ]
 
@@ -119,7 +129,7 @@ class HttpDownloadPlugin(BasePlugin):
         content_type = resp.headers.get("content-type", "application/octet-stream")
         size = len(resp.content)
 
-        # If Supabase storage is configured, upload there
+        # Upload to storage if configured
         if context.supabase_url and context.supabase_key:
             filename = uri.split("/")[-1].split("?")[0] or "download"
             storage_path = f"downloads/{context.execution_id}/{filename}"

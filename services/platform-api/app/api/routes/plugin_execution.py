@@ -53,5 +53,7 @@ async def execute(
     except Exception as e:
         logger.error(f"Plugin {function_name} failed: {e}\n{traceback.format_exc()}")
         result = PluginOutput(state="FAILED", logs=[str(e)])
+    finally:
+        context.cleanup()
 
     return PluginResponse(function_name=function_name, output=result)

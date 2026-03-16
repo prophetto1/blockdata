@@ -179,7 +179,9 @@ class ExecutionContext:
         """
         if self._work_dir is None:
             prefix = f"bd-{self.execution_id[:8]}-" if self.execution_id else "bd-"
-            self._work_dir = tempfile.TemporaryDirectory(prefix=prefix)
+            self._work_dir = tempfile.TemporaryDirectory(
+                prefix=prefix, ignore_cleanup_errors=True
+            )
         return Path(self._work_dir.name)
 
     def create_temp_file(self, suffix: str = ".tmp") -> Path:
