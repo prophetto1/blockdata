@@ -1,0 +1,30 @@
+from __future__ import annotations
+
+# Source: E:\KESTRA\core\src\main\java\io\kestra\plugin\core\http\HttpInterface.java
+# WARNING: Unresolved types: CharSequence
+
+from typing import Any, Protocol
+
+from engine.core.http.client.configurations.http_configuration import HttpConfiguration
+from engine.core.models.property.property import Property
+from engine.core.http.client.configurations.ssl_options import SslOptions
+
+
+class HttpInterface(Protocol):
+    def get_uri(self) -> Property[str]: ...
+
+    def get_method(self) -> Property[str]: ...
+
+    def get_params(self) -> Property[dict[str, Any]]: ...
+
+    def get_body(self) -> Property[str]: ...
+
+    def get_form_data(self) -> Property[dict[str, Any]]: ...
+
+    def get_content_type(self) -> Property[str]: ...
+
+    def get_headers(self) -> Property[dict[CharSequence, CharSequence]]: ...
+
+    def get_options(self) -> HttpConfiguration: ...
+
+    def get_ssl_options(self) -> SslOptions: ...

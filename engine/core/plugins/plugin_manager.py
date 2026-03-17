@@ -1,0 +1,36 @@
+from __future__ import annotations
+
+# Source: E:\KESTRA\core\src\main\java\io\kestra\core\plugins\PluginManager.java
+# WARNING: Unresolved types: AutoCloseable, Exception
+
+from pathlib import Path
+from typing import Any, Protocol
+
+from engine.core.contexts.maven_plugin_repository_config import MavenPluginRepositoryConfig
+from engine.core.plugins.plugin_artifact import PluginArtifact
+from engine.core.plugins.plugin_artifact_metadata import PluginArtifactMetadata
+from engine.core.plugins.plugin_resolution_result import PluginResolutionResult
+
+
+class PluginManager(Protocol):
+    def start(self) -> None: ...
+
+    def is_ready(self) -> bool: ...
+
+    def list(self) -> list[PluginArtifactMetadata]: ...
+
+    def install(self, artifact: PluginArtifact, repository_configs: list[MavenPluginRepositoryConfig], install_for_registration: bool, local_repository_path: Path) -> PluginArtifact: ...
+
+    def install(self, file: Path, install_for_registration: bool, local_repository_path: Path, force_install_on_existing_versions: bool) -> PluginArtifact: ...
+
+    def install(self, artifacts: list[PluginArtifact], repository_configs: list[MavenPluginRepositoryConfig], install_for_registration: bool, local_repository_path: Path) -> list[PluginArtifact]: ...
+
+    def uninstall(self, artifacts: list[PluginArtifact], refresh_plugin_registry: bool, local_repository_path: Path) -> list[PluginArtifact]: ...
+
+    def resolve_versions(self, artifacts: list[PluginArtifact]) -> list[PluginResolutionResult]: ...
+
+    def close(self) -> None: ...
+
+    def get_local_managed_repository_path_or_default(path: str) -> Path: ...
+
+    def create_local_repository_if_not_exist(resolved: Path) -> Path: ...

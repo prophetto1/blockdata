@@ -1,0 +1,65 @@
+from __future__ import annotations
+
+# Source: E:\KESTRA\core\src\main\java\io\kestra\core\topologies\FlowTopologyService.java
+# WARNING: Unresolved types: Function, Preconditions, Stream, core, io, kestra, plugin, trigger
+
+from dataclasses import dataclass
+from typing import Any
+
+from engine.core.models.conditions.condition import Condition
+from engine.core.services.condition_service import ConditionService
+from engine.core.models.executions.execution import Execution
+from engine.core.models.flows.flow import Flow
+from engine.core.models.flows.flow_interface import FlowInterface
+from engine.core.models.topologies.flow_node import FlowNode
+from engine.core.models.topologies.flow_relation import FlowRelation
+from engine.core.repositories.flow_repository_interface import FlowRepositoryInterface
+from engine.core.models.topologies.flow_topology import FlowTopology
+from engine.core.models.topologies.flow_topology_graph import FlowTopologyGraph
+from engine.core.repositories.flow_topology_repository_interface import FlowTopologyRepositoryInterface
+from engine.core.models.flows.flow_with_source import FlowWithSource
+from engine.core.models.label import Label
+
+
+@dataclass(slots=True, kw_only=True)
+class FlowTopologyService:
+    s_i_m_u_l_a_t_e_d__e_x_e_c_u_t_i_o_n: Label = new Label(Label.SIMULATED_EXECUTION, "true")
+    condition_service: ConditionService | None = None
+    flow_repository: FlowRepositoryInterface | None = None
+    flow_topology_repository: FlowTopologyRepositoryInterface | None = None
+
+    def graph(self, flows: Stream[FlowTopology], anonymize: Function[FlowNode, FlowNode]) -> FlowTopologyGraph:
+        raise NotImplementedError  # TODO: translate from Java
+
+    def namespace_graph(self, tenant_id: str, namespace: str) -> FlowTopologyGraph:
+        raise NotImplementedError  # TODO: translate from Java
+
+    def topology(self, child: FlowWithSource, all_flows: list[FlowWithSource]) -> Stream[FlowTopology]:
+        raise NotImplementedError  # TODO: translate from Java
+
+    def map(self, parent: FlowWithSource, child: FlowWithSource) -> FlowTopology:
+        raise NotImplementedError  # TODO: translate from Java
+
+    def is_child(self, parent: Flow, child: Flow) -> FlowRelation:
+        raise NotImplementedError  # TODO: translate from Java
+
+    def is_flow_task_child(self, parent: Flow, child: Flow) -> bool:
+        raise NotImplementedError  # TODO: translate from Java
+
+    def is_trigger_child(self, parent: Flow, child: Flow) -> bool:
+        raise NotImplementedError  # TODO: translate from Java
+
+    def validate_condition(self, condition: Condition, child: FlowInterface, execution: Execution) -> bool:
+        raise NotImplementedError  # TODO: translate from Java
+
+    def validate_multiple_conditions(self, multiple_conditions: dict[str, Condition], child: FlowInterface, execution: Execution) -> bool:
+        raise NotImplementedError  # TODO: translate from Java
+
+    def is_mandatory_multiple_condition(self, condition: Condition) -> bool:
+        raise NotImplementedError  # TODO: translate from Java
+
+    def validate_preconditions(self, preconditions: io.kestra.plugin.core.trigger.Flow.Preconditions, child: FlowInterface, execution: Execution) -> bool:
+        raise NotImplementedError  # TODO: translate from Java
+
+    def is_filter_condition(self, condition: Condition) -> bool:
+        raise NotImplementedError  # TODO: translate from Java

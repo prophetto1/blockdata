@@ -1,0 +1,20 @@
+from __future__ import annotations
+
+# Source: E:\KESTRA\core\src\main\java\io\kestra\plugin\core\condition\Or.java
+
+from dataclasses import dataclass
+from typing import Any
+
+from engine.core.models.conditions.condition import Condition
+from engine.core.models.conditions.condition_context import ConditionContext
+from engine.core.exceptions.internal_exception import InternalException
+from engine.core.models.conditions.schedule_condition import ScheduleCondition
+
+
+@dataclass(slots=True, kw_only=True)
+class Or(Condition):
+    """Pass when any condition is true."""
+    conditions: list[Condition]
+
+    def test(self, condition_context: ConditionContext) -> bool:
+        raise NotImplementedError  # TODO: translate from Java

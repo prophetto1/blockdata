@@ -1,0 +1,13 @@
+from __future__ import annotations
+
+# Source: E:\KESTRA\core\src\main\java\io\kestra\core\models\SearchResult.java
+# WARNING: Unresolved types: T
+
+from dataclasses import dataclass
+from typing import Any
+
+
+@dataclass(slots=True, kw_only=True)
+class SearchResult:
+    model: T | None = None
+    fragments: list[str] | None = None

@@ -1,0 +1,50 @@
+from __future__ import annotations
+
+# Source: E:\KESTRA\tests\src\main\java\io\kestra\core\Helpers.java
+# WARNING: Unresolved types: ApplicationContext, BiConsumer, Consumer, EmbeddedServer, URISyntaxException
+
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
+
+
+@dataclass(slots=True, kw_only=True)
+class Helpers:
+    f_l_o_w_s__c_o_u_n_t: int = countFlows()
+    plugins: Path | None = None
+
+    @staticmethod
+    def load_external_plugins_from_classpath() -> None:
+        raise NotImplementedError  # TODO: translate from Java
+
+    @staticmethod
+    def count_flows() -> int:
+        raise NotImplementedError  # TODO: translate from Java
+
+    @staticmethod
+    def application_context() -> ApplicationContext:
+        raise NotImplementedError  # TODO: translate from Java
+
+    @staticmethod
+    def application_context(properties: dict[str, Any]) -> ApplicationContext:
+        raise NotImplementedError  # TODO: translate from Java
+
+    @staticmethod
+    def application_context(properties: dict[str, Any], envs: list[str]) -> ApplicationContext:
+        raise NotImplementedError  # TODO: translate from Java
+
+    @staticmethod
+    def run_application_context(consumer: Consumer[ApplicationContext]) -> None:
+        raise NotImplementedError  # TODO: translate from Java
+
+    @staticmethod
+    def run_application_context(consumer: BiConsumer[ApplicationContext, EmbeddedServer]) -> None:
+        raise NotImplementedError  # TODO: translate from Java
+
+    @staticmethod
+    def run_application_context(env: list[str], properties: dict[str, Any], consumer: BiConsumer[ApplicationContext, EmbeddedServer]) -> None:
+        raise NotImplementedError  # TODO: translate from Java
+
+    @staticmethod
+    def run_application_context(env: list[str], consumer: BiConsumer[ApplicationContext, EmbeddedServer]) -> None:
+        raise NotImplementedError  # TODO: translate from Java

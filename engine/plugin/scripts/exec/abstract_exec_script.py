@@ -1,0 +1,65 @@
+from __future__ import annotations
+
+# Source: E:\KESTRA\script\src\main\java\io\kestra\plugin\scripts\exec\AbstractExecScript.java
+
+from dataclasses import dataclass
+from typing import Any
+
+from engine.plugin.scripts.exec.scripts.runners.commands_wrapper import CommandsWrapper
+from engine.plugin.scripts.runner.docker.docker import Docker
+from engine.plugin.scripts.exec.scripts.models.docker_options import DockerOptions
+from engine.core.exceptions.illegal_variable_evaluation_exception import IllegalVariableEvaluationException
+from engine.core.models.tasks.input_files_interface import InputFilesInterface
+from engine.core.models.tasks.namespace_files import NamespaceFiles
+from engine.core.models.tasks.namespace_files_interface import NamespaceFilesInterface
+from engine.core.models.tasks.output_files_interface import OutputFilesInterface
+from engine.core.models.property.property import Property
+from engine.core.runners.run_context import RunContext
+from engine.plugin.scripts.exec.scripts.models.runner_type import RunnerType
+from engine.core.models.tasks.runners.target_o_s import TargetOS
+from engine.core.models.tasks.task import Task
+from engine.core.models.tasks.runners.task_runner import TaskRunner
+
+
+@dataclass(slots=True, kw_only=True)
+class AbstractExecScript(Task):
+    task_runner: TaskRunner[Any] = Docker.builder()
+        .type(Docker.class.getName())
+        .pullPolicy(Property.ofValue(PullPolicy.IF_NOT_PRESENT))
+        .build()
+    interpreter: Property[list[str]] = Property.ofValue(List.of("/bin/sh", "-c"))
+    fail_fast: Property[bool] = Property.ofValue(true)
+    target_o_s: Property[TargetOS] = Property.ofValue(TargetOS.AUTO)
+    runner: RunnerType | None = None
+    before_commands: Property[list[str]] | None = None
+    env: Property[dict[str, str]] | None = None
+    warning_on_std_err: Property[bool] | None = None
+    namespace_files: NamespaceFiles | None = None
+    input_files: Any | None = None
+    output_files: Property[list[str]] | None = None
+    output_directory: Property[bool] | None = None
+    docker: DockerOptions | None = None
+
+    def get_container_image(self) -> Property[str]:
+        raise NotImplementedError  # TODO: translate from Java
+
+    def inject_defaults(self, original: DockerOptions) -> DockerOptions:
+        raise NotImplementedError  # TODO: translate from Java
+
+    def inject_defaults(self, run_context: RunContext, original: DockerOptions) -> DockerOptions:
+        raise NotImplementedError  # TODO: translate from Java
+
+    def commands(self, run_context: RunContext) -> CommandsWrapper:
+        raise NotImplementedError  # TODO: translate from Java
+
+    def get_before_commands_with_options(self, run_context: RunContext) -> list[str]:
+        raise NotImplementedError  # TODO: translate from Java
+
+    def may_add_exit_on_error_commands(self, commands: list[str], run_context: RunContext) -> list[str]:
+        raise NotImplementedError  # TODO: translate from Java
+
+    def get_exit_on_error_commands(self, run_context: RunContext) -> list[str]:
+        raise NotImplementedError  # TODO: translate from Java
+
+    def kill(self) -> None:
+        raise NotImplementedError  # TODO: translate from Java

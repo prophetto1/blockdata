@@ -1,0 +1,9 @@
+from __future__ import annotations
+
+from typing import Any, Protocol
+
+
+class Serde(Protocol):
+    def configure(self, configs: dict[String, Object]) -> None: ...
+    def serialize(self, data: Any) -> byte: ...
+    def deserialize(self, data: byte) -> Any: ...
