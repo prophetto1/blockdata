@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { IconBraces, IconCode, IconDownload, IconFileCode, IconLoader2, IconFileText, IconLayoutList, IconSettings, IconX } from '@tabler/icons-react';
+import { IconDownload, IconFileCode, IconLoader2, IconFileText, IconLayoutList, IconSettings, IconX } from '@tabler/icons-react';
 import ReactMarkdown from 'react-markdown';
 import remarkFrontmatter from 'remark-frontmatter';
 import remarkGfm from 'remark-gfm';
@@ -40,7 +40,7 @@ import {
   type ParseArtifactBundle,
 } from './parseArtifacts';
 import type { DoclingNativeItem } from '@/lib/doclingNativeItems';
-import { filterDocsByTrack, getAppliedProfileName, getDocumentParseTrack, type ParseTrack } from '@/components/documents/parseProfileSupport';
+import { filterDocsByTrack, getAppliedProfileName, type ParseTrack } from '@/components/documents/parseProfileSupport';
 
 // ─── Data fetchers ───────────────────────────────────────────────────────────
 
