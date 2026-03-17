@@ -4,7 +4,7 @@ from __future__ import annotations
 # WARNING: Unresolved types: core, io, kestra, models, tasks
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Optional
 
 from engine.core.models.executions.execution import Execution
 from engine.core.models.tasks.flowable_task import FlowableTask

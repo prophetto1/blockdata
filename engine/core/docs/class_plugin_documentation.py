@@ -3,8 +3,8 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\docs\ClassPluginDocumentation.java
 # WARNING: Unresolved types: Class, ConcurrentHashMap, T
 
-from dataclasses import dataclass
-from typing import Any
+from dataclasses import dataclass, field
+from typing import Any, ClassVar
 
 from engine.core.docs.abstract_class_documentation import AbstractClassDocumentation
 from engine.core.docs.json_schema_generator import JsonSchemaGenerator
@@ -13,7 +13,7 @@ from engine.core.plugins.plugin_class_and_metadata import PluginClassAndMetadata
 
 @dataclass(slots=True, kw_only=True)
 class ClassPluginDocumentation(AbstractClassDocumentation):
-    c_a_c_h_e: dict[PluginDocIdentifier, ClassPluginDocumentation[Any]] = new ConcurrentHashMap<>()
+    c_a_c_h_e: ClassVar[dict[PluginDocIdentifier, ClassPluginDocumentation[Any]]] = new ConcurrentHashMap<>()
     outputs: dict[str, Any] = new TreeMap<>()
     icon: str | None = None
     group: str | None = None

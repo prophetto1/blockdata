@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-spark\src\main\java\io\kestra\plugin\spark\RSubmit.java
+# WARNING: Unresolved types: Exception, SparkLauncher
+
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.spark.abstract_submit import AbstractSubmit

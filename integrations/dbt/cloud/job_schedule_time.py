@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-dbt\src\main\java\io\kestra\plugin\dbt\cloud\JobScheduleTime.java
+
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.dbt.cloud.job_schedule_time_type import JobScheduleTimeType
@@ -10,4 +12,4 @@ from integrations.dbt.cloud.job_schedule_time_type import JobScheduleTimeType
 class JobScheduleTime:
     type: JobScheduleTimeType | None = None
     interval: int | None = None
-    hours: list[Integer] | None = None
+    hours: list[int] | None = None

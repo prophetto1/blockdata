@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-airflow\src\main\java\io\kestra\plugin\airflow\model\DagRunResponse.java
+# WARNING: Unresolved types: OffsetDateTime
+
+from dataclasses import dataclass
 from typing import Any
 
 

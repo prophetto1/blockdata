@@ -3,11 +3,11 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\exceptions\DeserializationException.java
 # WARNING: Unresolved types: Exception, RuntimeException
 
-from dataclasses import dataclass
-from typing import Any
+from dataclasses import dataclass, field
+from typing import Any, ClassVar
 
 
 @dataclass(slots=True, kw_only=True)
 class DeserializationException(RuntimeException):
-    serial_version_u_i_d: int = 1
+    serial_version_u_i_d: ClassVar[int] = 1
     record: str | None = None

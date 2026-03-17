@@ -3,6 +3,7 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\models\triggers\AbstractTrigger.java
 # WARNING: Unresolved types: Level
 
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any
 
@@ -18,7 +19,7 @@ from engine.core.models.tasks.worker_group import WorkerGroup
 
 
 @dataclass(slots=True, kw_only=True)
-class AbstractTrigger:
+class AbstractTrigger(ABC):
     disabled: bool = False
     log_to_file: bool = False
     fail_on_trigger_error: bool = False

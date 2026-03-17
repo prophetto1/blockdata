@@ -3,22 +3,22 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\serializers\JacksonMapper.java
 # WARNING: Unresolved types: Class, IonSystem, JsonNode, JsonProcessingException, LoaderOptions, ObjectMapper, Pair, T, TypeReference, ZoneId
 
-from dataclasses import dataclass
-from typing import Any
+from dataclasses import dataclass, field
+from typing import Any, ClassVar
 
 
 @dataclass(slots=True, kw_only=True)
 class JacksonMapper:
-    m_a_p__t_y_p_e__r_e_f_e_r_e_n_c_e: TypeReference[dict[str, Any]] = new TypeReference<>() {}
-    l_i_s_t__t_y_p_e__r_e_f_e_r_e_n_c_e: TypeReference[list[Any]] = new TypeReference<>() {}
-    o_b_j_e_c_t__t_y_p_e__r_e_f_e_r_e_n_c_e: TypeReference[Any] = new TypeReference<>() {}
-    m_a_p_p_e_r: ObjectMapper = JacksonMapper.configure(
+    m_a_p__t_y_p_e__r_e_f_e_r_e_n_c_e: ClassVar[TypeReference[dict[str, Any]]] = new TypeReference<>() {}
+    l_i_s_t__t_y_p_e__r_e_f_e_r_e_n_c_e: ClassVar[TypeReference[list[Any]]] = new TypeReference<>() {}
+    o_b_j_e_c_t__t_y_p_e__r_e_f_e_r_e_n_c_e: ClassVar[TypeReference[Any]] = new TypeReference<>() {}
+    m_a_p_p_e_r: ClassVar[ObjectMapper] = JacksonMapper.configure(
         new ObjectMapper()
     )
-    n_o_n__s_t_r_i_c_t__m_a_p_p_e_r: ObjectMapper = MAPPER
+    n_o_n__s_t_r_i_c_t__m_a_p_p_e_r: ClassVar[ObjectMapper] = MAPPER
         .copy()
         .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-    y_a_m_l__m_a_p_p_e_r: ObjectMapper = JacksonMapper.configure(
+    y_a_m_l__m_a_p_p_e_r: ClassVar[ObjectMapper] = JacksonMapper.configure(
         new ObjectMapper(
             YAMLFactory
                 .builder()
@@ -30,7 +30,7 @@ class JacksonMapper:
                 .build()
         )
     )
-    i_o_n__m_a_p_p_e_r: ObjectMapper = createIonObjectMapper()
+    i_o_n__m_a_p_p_e_r: ClassVar[ObjectMapper] = createIonObjectMapper()
 
     @staticmethod
     def of_json() -> ObjectMapper:

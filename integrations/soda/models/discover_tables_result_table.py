@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-soda\src\main\java\io\kestra\plugin\soda\models\DiscoverTablesResultTable.java
+
+from dataclasses import dataclass
 from typing import Any
 
 

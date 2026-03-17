@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-azure\src\main\java\io\kestra\plugin\azure\storage\adls\models\AdlsAccessControl.java
+# WARNING: Unresolved types: PathAccessControlEntry, PathPermissions
+
+from dataclasses import dataclass
 from typing import Any
 
 

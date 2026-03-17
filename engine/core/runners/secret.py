@@ -4,7 +4,7 @@ from __future__ import annotations
 # WARNING: Unresolved types: GeneralSecurityException, Logger, Supplier
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Optional
 
 
 @dataclass(slots=True, kw_only=True)

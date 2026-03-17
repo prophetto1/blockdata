@@ -1,13 +1,15 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-beam\src\main\java\io\kestra\plugin\beam\config\FlinkRunnerConfig.java
+
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.beam.config.runner_config import RunnerConfig
 
 
 @dataclass(slots=True, kw_only=True)
-class FlinkRunnerConfig(RunnerConfig):
+class FlinkRunnerConfig:
     """Flink runner configuration"""
     execution_mode: str | None = None
     flink_rest_url: str | None = None
@@ -17,5 +19,5 @@ class FlinkRunnerConfig(RunnerConfig):
     state_backend_storage_path: str | None = None
     jar_path: str | None = None
 
-    def to_pipeline_options(self) -> dict[String, Object]:
+    def to_pipeline_options(self) -> dict[str, Any]:
         raise NotImplementedError  # TODO: translate from Java

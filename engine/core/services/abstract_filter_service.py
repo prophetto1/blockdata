@@ -3,6 +3,7 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\services\AbstractFilterService.java
 # WARNING: Unresolved types: Enum, F, Q
 
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any
 
@@ -27,58 +28,75 @@ from engine.core.models.dashboards.filters.starts_with import StartsWith
 
 
 @dataclass(slots=True, kw_only=True)
-class AbstractFilterService:
+class AbstractFilterService(ABC):
 
     def add_filters(self, query: Q, fields_mapping: dict[F, str], filters: list[AbstractFilter[F]]) -> Q:
         raise NotImplementedError  # TODO: translate from Java
 
+    @abstractmethod
     def contains(self, query: Q, field: str, filter: Contains[F]) -> Q:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
+    @abstractmethod
     def ends_with(self, query: Q, field: str, filter: EndsWith[F]) -> Q:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
+    @abstractmethod
     def equal_to(self, query: Q, field: str, filter: EqualTo[F]) -> Q:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
+    @abstractmethod
     def greater_than(self, query: Q, field: str, filter: GreaterThan[F]) -> Q:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
+    @abstractmethod
     def greater_than_or_equal_to(self, query: Q, field: str, filter: GreaterThanOrEqualTo[F]) -> Q:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
+    @abstractmethod
     def in(self, query: Q, field: str, filter: In[F]) -> Q:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
+    @abstractmethod
     def is_false(self, query: Q, field: str, filter: IsFalse[F]) -> Q:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
+    @abstractmethod
     def is_not_null(self, query: Q, field: str, filter: IsNotNull[F]) -> Q:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
+    @abstractmethod
     def is_null(self, query: Q, field: str, filter: IsNull[F]) -> Q:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
+    @abstractmethod
     def is_true(self, query: Q, field: str, filter: IsTrue[F]) -> Q:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
+    @abstractmethod
     def less_than(self, query: Q, field: str, filter: LessThan[F]) -> Q:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
+    @abstractmethod
     def less_than_or_equal_to(self, query: Q, field: str, filter: LessThanOrEqualTo[F]) -> Q:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
+    @abstractmethod
     def not_equal_to(self, query: Q, field: str, filter: NotEqualTo[F]) -> Q:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
+    @abstractmethod
     def not_in(self, query: Q, field: str, filter: NotIn[F]) -> Q:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
+    @abstractmethod
     def or(self, query: Q, fields_mapping: dict[F, str], filter: Or[F]) -> Q:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
+    @abstractmethod
     def regex(self, query: Q, field: str, filter: Regex[F]) -> Q:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
+    @abstractmethod
     def starts_with(self, query: Q, field: str, filter: StartsWith[F]) -> Q:
-        raise NotImplementedError  # TODO: translate from Java
+        ...

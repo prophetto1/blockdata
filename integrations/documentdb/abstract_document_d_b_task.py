@@ -1,14 +1,17 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-documentdb\src\main\java\io\kestra\plugin\documentdb\AbstractDocumentDBTask.java
+
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from typing import Any
 
 from engine.core.models.property.property import Property
-from engine.core.models.tasks.task import Task
+from integrations.azure.batch.models.task import Task
 
 
 @dataclass(slots=True, kw_only=True)
-class AbstractDocumentDBTask(Task):
+class AbstractDocumentDBTask(ABC, Task):
     host: Property[str]
     database: Property[str]
     collection: Property[str]

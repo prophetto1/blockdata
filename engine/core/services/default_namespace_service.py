@@ -3,7 +3,7 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\services\DefaultNamespaceService.java
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Optional
 
 from engine.core.repositories.flow_repository_interface import FlowRepositoryInterface
 from engine.core.services.namespace_service import NamespaceService

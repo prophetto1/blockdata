@@ -1,19 +1,24 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-serdes\src\main\java\io\kestra\plugin\serdes\AbstractTextWriter.java
+# WARNING: Unresolved types: DateTimeFormatter, ZoneId
+
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from typing import Any
 
+from engine.core.exceptions.illegal_variable_evaluation_exception import IllegalVariableEvaluationException
 from engine.core.models.property.property import Property
 from engine.core.runners.run_context import RunContext
-from engine.core.models.tasks.task import Task
+from integrations.azure.batch.models.task import Task
 
 
 @dataclass(slots=True, kw_only=True)
-class AbstractTextWriter(Task):
+class AbstractTextWriter(ABC, Task):
     date_format: str = "yyyy-MM-dd"
     time_format: str = "HH:mm:ss[XXX]"
     date_time_format: str = "yyyy-MM-dd'T'HH:mm:ss.SSS[XXX]"
-    time_zone_id: Property[str] | None = None
+    time_zone_id: Property[str] = Property.ofValue(ZoneId.systemDefault().toString())
     date_formatter: DateTimeFormatter | None = None
     time_formatter: DateTimeFormatter | None = None
     date_time_formatter: DateTimeFormatter | None = None

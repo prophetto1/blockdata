@@ -4,7 +4,7 @@ from __future__ import annotations
 # WARNING: Unresolved types: IOException, Validator
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Optional
 
 from engine.core.http.client.http_client import HttpClient
 from engine.core.plugins.plugin_catalog_service import PluginCatalogService

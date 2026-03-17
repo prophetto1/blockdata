@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-ldap\src\main\java\io\kestra\plugin\ldap\Search.java
+# WARNING: Unresolved types: Exception, LDAPConnection, LDAPException, Logger, SearchRequest, SearchResultEntry, SearchScope, core, io, kestra, models, tasks
+
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.ldap.ldap_connection import LdapConnection
@@ -11,16 +14,16 @@ from engine.core.models.search_result import SearchResult
 
 
 @dataclass(slots=True, kw_only=True)
-class Search(LdapConnection, RunnableTask):
+class Search(LdapConnection):
     """Search LDAP entries and store results"""
-    filter: Property[str] | None = None
-    attributes: Property[list[String]] | None = None
-    base_dn: Property[str] | None = None
-    sub: SearchScope | None = None
+    filter: Property[str] = Property.ofValue("(objectclass=*)")
+    attributes: Property[list[str]] = Property.ofValue(Collections.singletonList(SearchRequest.ALL_USER_ATTRIBUTES))
+    base_dn: Property[str] = Property.ofValue("ou=system")
+    sub: SearchScope = SearchScope.SUB
     size_limit: Property[int] | None = None
     page_size: Property[int] | None = None
 
-    def run(self, run_context: RunContext) -> Search:
+    def run(self, run_context: RunContext) -> Search.Output:
         raise NotImplementedError  # TODO: translate from Java
 
     def execute_search_accepting_size_limit(self, connection: LDAPConnection, request: SearchRequest, logger: Logger, accept_size_limit_exceeded: bool) -> SearchResult:
@@ -30,10 +33,5 @@ class Search(LdapConnection, RunnableTask):
         raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)
-    class Output(io):
+    class Output:
         uri: str | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class Output(io):
-    uri: str | None = None

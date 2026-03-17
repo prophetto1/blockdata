@@ -1,20 +1,23 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-x\src\main\java\io\kestra\plugin\x\XExecution.java
+# WARNING: Unresolved types: Exception
+
+from dataclasses import dataclass
 from typing import Any
 
-from engine.core.plugins.notifications.execution_interface import ExecutionInterface
+from integrations.notifications.execution_interface import ExecutionInterface
 from engine.core.models.property.property import Property
 from engine.core.runners.run_context import RunContext
 from engine.core.models.tasks.void_output import VoidOutput
-from integrations.x.x_template import XTemplate
+from integrations.notifications.x.x_template import XTemplate
 
 
 @dataclass(slots=True, kw_only=True)
-class XExecution(XTemplate, ExecutionInterface):
+class XExecution(XTemplate):
     """Post execution summary to X"""
-    execution_id: Property[str] | None = None
-    custom_fields: Property[dict[String, Object]] | None = None
+    execution_id: Property[str] = Property.ofExpression("{{ execution.id }}")
+    custom_fields: Property[dict[str, Any]] | None = None
     custom_message: Property[str] | None = None
 
     def run(self, run_context: RunContext) -> VoidOutput:

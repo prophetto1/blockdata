@@ -3,8 +3,8 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\models\flows\Flow.java
 # WARNING: Unresolved types: AnnotatedMember, ConstraintViolationException, JacksonAnnotationIntrospector, ObjectMapper, Stream
 
-from dataclasses import dataclass
-from typing import Any
+from dataclasses import dataclass, field
+from typing import Any, ClassVar, Optional
 
 from engine.core.models.flows.abstract_flow import AbstractFlow
 from engine.core.models.tasks.retrys.abstract_retry import AbstractRetry
@@ -23,10 +23,10 @@ from engine.core.models.tasks.task import Task
 
 @dataclass(slots=True, kw_only=True)
 class Flow(AbstractFlow):
-    n_o_n__d_e_f_a_u_l_t__o_b_j_e_c_t__m_a_p_p_e_r: ObjectMapper = JacksonMapper.ofYaml()
+    n_o_n__d_e_f_a_u_l_t__o_b_j_e_c_t__m_a_p_p_e_r: ClassVar[ObjectMapper] = JacksonMapper.ofYaml()
         .copy()
         .setDefaultPropertyInclusion(JsonInclude.Include.NON_DEFAULT)
-    w_i_t_h_o_u_t__r_e_v_i_s_i_o_n__o_b_j_e_c_t__m_a_p_p_e_r: ObjectMapper = NON_DEFAULT_OBJECT_MAPPER.copy()
+    w_i_t_h_o_u_t__r_e_v_i_s_i_o_n__o_b_j_e_c_t__m_a_p_p_e_r: ClassVar[ObjectMapper] = NON_DEFAULT_OBJECT_MAPPER.copy()
         .configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true)
         .setAnnotationIntrospector(new JacksonAnnotationIntrospector() {
             @Override

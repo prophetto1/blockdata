@@ -1,21 +1,24 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-dropbox\src\main\java\io\kestra\plugin\dropbox\files\CreateFolder.java
+# WARNING: Unresolved types: DbxClientV2, Exception, core, io, kestra, models, tasks
+
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.dropbox.models.dropbox_file import DropboxFile
 from engine.core.models.property.property import Property
 from engine.core.runners.run_context import RunContext
 from engine.core.models.tasks.runnable_task import RunnableTask
-from engine.core.models.tasks.task import Task
+from integrations.azure.batch.models.task import Task
 
 
 @dataclass(slots=True, kw_only=True)
-class CreateFolder(Task, RunnableTask):
+class CreateFolder(Task):
     """Create folder in Dropbox"""
     access_token: Property[str]
     path: Any
-    autorename: Property[bool] | None = None
+    autorename: Property[bool] = Property.ofValue(false)
 
     def run(self, run_context: RunContext) -> Output:
         raise NotImplementedError  # TODO: translate from Java
@@ -27,10 +30,5 @@ class CreateFolder(Task, RunnableTask):
         raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)
-    class Output(io):
+    class Output:
         file: DropboxFile | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class Output(io):
-    file: DropboxFile | None = None

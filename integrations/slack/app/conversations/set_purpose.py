@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-slack\src\main\java\io\kestra\plugin\slack\app\conversations\SetPurpose.java
+# WARNING: Unresolved types: Exception
+
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.slack.abstract_slack_client_connection import AbstractSlackClientConnection
@@ -11,7 +14,7 @@ from engine.core.models.tasks.runnable_task import RunnableTask
 
 
 @dataclass(slots=True, kw_only=True)
-class SetPurpose(AbstractSlackClientConnection, RunnableTask):
+class SetPurpose(AbstractSlackClientConnection):
     """Set Slack channel purpose"""
     channel: Property[str]
     purpose: Property[str]

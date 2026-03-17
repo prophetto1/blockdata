@@ -3,15 +3,17 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\utils\ReadOnlyDelegatingMap.java
 # WARNING: Unresolved types: Entry, K, V
 
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any
 
 
 @dataclass(slots=True, kw_only=True)
-class ReadOnlyDelegatingMap:
+class ReadOnlyDelegatingMap(ABC):
 
+    @abstractmethod
     def get_delegate(self) -> dict[K, V]:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
     def size(self) -> int:
         raise NotImplementedError  # TODO: translate from Java

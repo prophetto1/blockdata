@@ -3,6 +3,7 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\models\triggers\TriggerContext.java
 # WARNING: Unresolved types: B, C
 
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
@@ -39,5 +40,5 @@ class TriggerContext:
         raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)
-    class TriggerContextBuilder:
+    class TriggerContextBuilder(ABC):
         pass

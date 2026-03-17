@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-dropbox\src\main\java\io\kestra\plugin\dropbox\models\DropboxFile.java
+# WARNING: Unresolved types: Date
+
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.kubernetes.models.metadata import Metadata
@@ -15,5 +18,6 @@ class DropboxFile:
     size: int | None = None
     client_modified: Date | None = None
 
-    def of(self, metadata: Metadata) -> DropboxFile:
+    @staticmethod
+    def of(metadata: Metadata) -> DropboxFile:
         raise NotImplementedError  # TODO: translate from Java

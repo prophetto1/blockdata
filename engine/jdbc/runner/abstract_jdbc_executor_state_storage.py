@@ -3,6 +3,7 @@ from __future__ import annotations
 # Source: E:\KESTRA\jdbc\src\main\java\io\kestra\jdbc\runner\AbstractJdbcExecutorStateStorage.java
 # WARNING: Unresolved types: DSLContext, io, jdbc, kestra
 
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any
 
@@ -12,7 +13,7 @@ from engine.core.runners.executor_state import ExecutorState
 
 
 @dataclass(slots=True, kw_only=True)
-class AbstractJdbcExecutorStateStorage:
+class AbstractJdbcExecutorStateStorage(ABC):
     jdbc_repository: io.kestra.jdbc.AbstractJdbcRepository[ExecutorState] | None = None
 
     def get(self, dsl_context: DSLContext, execution: Execution) -> ExecutorState:

@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-twilio\src\main\java\io\kestra\plugin\twilio\segment\reverseetl\models\ReverseEtlSyncRequest.java
+
+from dataclasses import dataclass
 from typing import Any
 
 

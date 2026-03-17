@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-aws\src\main\java\io\kestra\plugin\aws\lambda\LambdaInvokeException.java
+# WARNING: Unresolved types: IOException, LambdaException, RuntimeException
+
+from dataclasses import dataclass
 from typing import Any
 
 

@@ -1,11 +1,15 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any
+# Source: E:\KESTRA-IO\plugins\plugin-graalvm\src\main\java\io\kestra\plugin\graalvm\RunContextProxy.java
+# WARNING: Unresolved types: FlowInfo, GeneralSecurityException, Logger, T, TaskRunInfo
+
+from dataclasses import dataclass
+from typing import Any, Optional
 
 from engine.core.models.executions.abstract_metric_entry import AbstractMetricEntry
 from engine.core.runners.acl_checker import AclChecker
 from engine.core.runners.asset_emitter import AssetEmitter
+from engine.core.exceptions.illegal_variable_evaluation_exception import IllegalVariableEvaluationException
 from engine.core.runners.input_and_output import InputAndOutput
 from engine.core.storages.kv.k_v_store import KVStore
 from engine.core.runners.local_path import LocalPath
@@ -26,10 +30,10 @@ class RunContextProxy(RunContext):
     def get_trigger_execution_id(self) -> str:
         raise NotImplementedError  # TODO: translate from Java
 
-    def get_variables(self) -> dict[String, Object]:
+    def get_variables(self) -> dict[str, Any]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def get_secret_inputs(self) -> list[String]:
+    def get_secret_inputs(self) -> list[str]:
         raise NotImplementedError  # TODO: translate from Java
 
     def get_trace_parent(self) -> str:
@@ -41,34 +45,34 @@ class RunContextProxy(RunContext):
     def render_typed(self, inline: str) -> Any:
         raise NotImplementedError  # TODO: translate from Java
 
-    def render(self, inline: str, variables: dict[String, Object]) -> str:
+    def render(self, inline: str, variables: dict[str, Any]) -> str:
         raise NotImplementedError  # TODO: translate from Java
 
     def render(self, inline: Property[T]) -> RunContextProperty[T]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def render(self, inline: list[String]) -> list[String]:
+    def render(self, inline: list[str]) -> list[str]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def render(self, inline: list[String], variables: dict[String, Object]) -> list[String]:
+    def render(self, inline: list[str], variables: dict[str, Any]) -> list[str]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def render(self, inline: set[String]) -> set[String]:
+    def render(self, inline: set[str]) -> set[str]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def render(self, inline: set[String], variables: dict[String, Object]) -> set[String]:
+    def render(self, inline: set[str], variables: dict[str, Any]) -> set[str]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def render(self, inline: dict[String, Object]) -> dict[String, Object]:
+    def render(self, inline: dict[str, Any]) -> dict[str, Any]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def render(self, inline: dict[String, Object], variables: dict[String, Object]) -> dict[String, Object]:
+    def render(self, inline: dict[str, Any], variables: dict[str, Any]) -> dict[str, Any]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def render_map(self, inline: dict[String, String]) -> dict[String, String]:
+    def render_map(self, inline: dict[str, str]) -> dict[str, str]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def render_map(self, inline: dict[String, String], variables: dict[String, Object]) -> dict[String, String]:
+    def render_map(self, inline: dict[str, str], variables: dict[str, Any]) -> dict[str, str]:
         raise NotImplementedError  # TODO: translate from Java
 
     def validate(self, bean: T) -> None:
@@ -122,7 +126,7 @@ class RunContextProxy(RunContext):
     def plugin_configuration(self, name: str) -> Optional[T]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def plugin_configurations(self) -> dict[String, Object]:
+    def plugin_configurations(self) -> dict[str, Any]:
         raise NotImplementedError  # TODO: translate from Java
 
     def version(self) -> str:

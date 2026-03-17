@@ -3,8 +3,9 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\runners\pebble\functions\AbstractFileFunction.java
 # WARNING: Unresolved types: EvaluationContext, Function, IOException, Pattern, PebbleTemplate
 
-from dataclasses import dataclass
-from typing import Any
+from abc import ABC, abstractmethod
+from dataclasses import dataclass, field
+from typing import Any, ClassVar
 
 from engine.core.runners.local_path_factory import LocalPathFactory
 from engine.core.storages.namespace_factory import NamespaceFactory
@@ -13,16 +14,16 @@ from engine.core.storages.storage_interface import StorageInterface
 
 
 @dataclass(slots=True, kw_only=True)
-class AbstractFileFunction:
-    s_c_h_e_m_e__n_o_t__s_u_p_p_o_r_t_e_d__e_r_r_o_r: str = "Cannot process the URI %s: scheme not supported."
-    k_e_s_t_r_a__s_c_h_e_m_e: str = "kestra:///"
-    t_r_i_g_g_e_r: str = "trigger"
-    n_a_m_e_s_p_a_c_e: str = "namespace"
-    t_e_n_a_n_t__i_d: str = "tenantId"
-    i_d: str = "id"
-    p_a_t_h: str = "path"
-    u_r_i__p_a_t_t_e_r_n: Pattern = Pattern.compile("^[a-zA-Z][a-zA-Z0-9+.-]*:.*")
-    e_x_e_c_u_t_i_o_n__f_i_l_e: Pattern = Pattern.compile(".*/.*/executions/.*/tasks/.*/.*")
+class AbstractFileFunction(ABC):
+    s_c_h_e_m_e__n_o_t__s_u_p_p_o_r_t_e_d__e_r_r_o_r: ClassVar[str] = "Cannot process the URI %s: scheme not supported."
+    k_e_s_t_r_a__s_c_h_e_m_e: ClassVar[str] = "kestra:///"
+    t_r_i_g_g_e_r: ClassVar[str] = "trigger"
+    n_a_m_e_s_p_a_c_e: ClassVar[str] = "namespace"
+    t_e_n_a_n_t__i_d: ClassVar[str] = "tenantId"
+    i_d: ClassVar[str] = "id"
+    p_a_t_h: ClassVar[str] = "path"
+    u_r_i__p_a_t_t_e_r_n: ClassVar[Pattern] = Pattern.compile("^[a-zA-Z][a-zA-Z0-9+.-]*:.*")
+    e_x_e_c_u_t_i_o_n__f_i_l_e: ClassVar[Pattern] = Pattern.compile(".*/.*/executions/.*/tasks/.*/.*")
     namespace_service: NamespaceService | None = None
     storage_interface: StorageInterface | None = None
     local_path_factory: LocalPathFactory | None = None
@@ -35,11 +36,13 @@ class AbstractFileFunction:
     def get_argument_names(self) -> list[str]:
         raise NotImplementedError  # TODO: translate from Java
 
+    @abstractmethod
     def get_error_message(self) -> str:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
+    @abstractmethod
     def file_function(self, context: EvaluationContext, path: str, namespace: str, tenant_id: str, args: dict[str, Any]) -> Any:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
     def is_file_uri_valid(self, namespace: str, flow_id: str, execution_id: str, path: str) -> bool:
         raise NotImplementedError  # TODO: translate from Java

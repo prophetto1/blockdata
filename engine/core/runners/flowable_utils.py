@@ -3,8 +3,8 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\runners\FlowableUtils.java
 # WARNING: Unresolved types: BiFunction, DagTask, ObjectMapper, Stream, TypeReference
 
-from dataclasses import dataclass
-from typing import Any
+from dataclasses import dataclass, field
+from typing import Any, ClassVar, Optional
 
 from engine.plugin.core.flow.dag import Dag
 from engine.core.models.executions.execution import Execution
@@ -20,8 +20,8 @@ from engine.core.models.flows.type import Type
 
 @dataclass(slots=True, kw_only=True)
 class FlowableUtils:
-    t_y_p_e__r_e_f_e_r_e_n_c_e: TypeReference[list[Any]] = new TypeReference<>() {}
-    m_a_p_p_e_r: ObjectMapper = JacksonMapper.ofJson()
+    t_y_p_e__r_e_f_e_r_e_n_c_e: ClassVar[TypeReference[list[Any]]] = new TypeReference<>() {}
+    m_a_p_p_e_r: ClassVar[ObjectMapper] = JacksonMapper.ofJson()
 
     @staticmethod
     def resolve_sequential_nexts(execution: Execution, tasks: list[ResolvedTask]) -> list[NextTaskRun]:

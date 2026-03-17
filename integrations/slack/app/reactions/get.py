@@ -1,8 +1,11 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any
+# Source: E:\KESTRA-IO\plugins\plugin-slack\src\main\java\io\kestra\plugin\slack\app\reactions\Get.java
+# WARNING: Unresolved types: Exception, core, io, kestra, models, tasks
+
+from dataclasses import dataclass
 from datetime import datetime
+from typing import Any
 
 from integrations.slack.abstract_slack_client_connection import AbstractSlackClientConnection
 from engine.core.models.property.property import Property
@@ -11,7 +14,7 @@ from engine.core.models.tasks.runnable_task import RunnableTask
 
 
 @dataclass(slots=True, kw_only=True)
-class Get(AbstractSlackClientConnection, RunnableTask):
+class Get(AbstractSlackClientConnection):
     """Get Slack reactions for an item"""
     channel: Property[str]
     file: Property[str] | None = None
@@ -22,10 +25,5 @@ class Get(AbstractSlackClientConnection, RunnableTask):
         raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)
-    class Output(io):
+    class Output:
         uri: str | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class Output(io):
-    uri: str | None = None

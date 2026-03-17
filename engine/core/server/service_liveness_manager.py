@@ -3,10 +3,10 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\server\ServiceLivenessManager.java
 # WARNING: Unresolved types: ReentrantLock, ServiceState
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from datetime import timedelta
-from typing import Any
+from typing import Any, ClassVar, Optional, Protocol
 
 from engine.core.server.abstract_service_liveness_task import AbstractServiceLivenessTask
 from engine.core.server.local_service_state import LocalServiceState
@@ -22,7 +22,7 @@ from engine.core.server.service_state_change_event import ServiceStateChangeEven
 
 @dataclass(slots=True, kw_only=True)
 class ServiceLivenessManager(AbstractServiceLivenessTask):
-    t_a_s_k__n_a_m_e: str = "service-liveness-manager-task"
+    t_a_s_k__n_a_m_e: ClassVar[str] = "service-liveness-manager-task"
     state_lock: ReentrantLock = new ReentrantLock()
     local_service_state_factory: LocalServiceStateFactory | None = None
     service_liveness_updater: ServiceLivenessUpdater | None = None

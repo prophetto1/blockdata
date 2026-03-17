@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-hubspot\src\main\java\io\kestra\plugin\hubspot\HubspotSearchResponse.java
+
+from dataclasses import dataclass
 from typing import Any
 
 
@@ -13,27 +15,12 @@ class HubspotSearchResponse:
     @dataclass(slots=True)
     class Result:
         id: str | None = None
-        properties: dict[String, Object] | None = None
+        properties: dict[str, Any] | None = None
         created_at: str | None = None
         updated_at: str | None = None
         archived: bool | None = None
 
     @dataclass(slots=True)
     class Paging:
-        next: dict[String, Object] | None = None
-        prev: dict[String, Object] | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class Result:
-    id: str | None = None
-    properties: dict[String, Object] | None = None
-    created_at: str | None = None
-    updated_at: str | None = None
-    archived: bool | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class Paging:
-    next: dict[String, Object] | None = None
-    prev: dict[String, Object] | None = None
+        next: dict[str, Any] | None = None
+        prev: dict[str, Any] | None = None

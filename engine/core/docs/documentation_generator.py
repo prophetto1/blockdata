@@ -3,8 +3,8 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\docs\DocumentationGenerator.java
 # WARNING: Unresolved types: Class, Comparable, Exception, IOException, PebbleEngine, T
 
-from dataclasses import dataclass
-from typing import Any
+from dataclasses import dataclass, field
+from typing import Any, ClassVar
 
 from engine.core.docs.abstract_class_documentation import AbstractClassDocumentation
 from engine.core.docs.class_plugin_documentation import ClassPluginDocumentation
@@ -15,7 +15,7 @@ from engine.core.plugins.registered_plugin import RegisteredPlugin
 
 @dataclass(slots=True, kw_only=True)
 class DocumentationGenerator:
-    p_e_b_b_l_e__e_n_g_i_n_e: PebbleEngine | None = None
+    p_e_b_b_l_e__e_n_g_i_n_e: ClassVar[PebbleEngine]
     json_schema_generator: JsonSchemaGenerator | None = None
 
     def generate(self, registered_plugin: RegisteredPlugin) -> list[Document]:

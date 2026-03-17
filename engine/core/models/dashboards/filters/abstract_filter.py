@@ -3,7 +3,9 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\models\dashboards\filters\AbstractFilter.java
 # WARNING: Unresolved types: Enum, F
 
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from enum import Enum
 from typing import Any
 
 from engine.core.models.dashboards.filters.contains import Contains
@@ -26,12 +28,13 @@ from engine.core.models.dashboards.filters.starts_with import StartsWith
 
 
 @dataclass(slots=True, kw_only=True)
-class AbstractFilter:
+class AbstractFilter(ABC):
     field: F
     label_key: str | None = None
 
+    @abstractmethod
     def get_type(self) -> FilterType:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
     def equals(self, o: Any) -> bool:
         raise NotImplementedError  # TODO: translate from Java

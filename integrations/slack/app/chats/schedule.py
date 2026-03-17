@@ -1,8 +1,11 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any
+# Source: E:\KESTRA-IO\plugins\plugin-slack\src\main\java\io\kestra\plugin\slack\app\chats\Schedule.java
+# WARNING: Unresolved types: Exception, core, io, kestra, models, tasks
+
+from dataclasses import dataclass
 from datetime import datetime
+from typing import Any
 
 from integrations.slack.abstract_slack_client_connection import AbstractSlackClientConnection
 from integrations.slack.app.chats.chat_interface import ChatInterface
@@ -13,8 +16,9 @@ from engine.core.models.tasks.runnable_task import RunnableTask
 
 
 @dataclass(slots=True, kw_only=True)
-class Schedule(AbstractSlackClientConnection, RunnableTask, MessagePayloadInterface, ChatInterface):
+class Schedule(AbstractSlackClientConnection):
     """Schedule a Slack message"""
+    post_at: Property[datetime]
     payload: Property[str] | None = None
     message_text: Property[str] | None = None
     channel: Property[str] | None = None
@@ -22,18 +26,11 @@ class Schedule(AbstractSlackClientConnection, RunnableTask, MessagePayloadInterf
     username: Property[str] | None = None
     icon_url: Property[str] | None = None
     icon_emoji: Property[str] | None = None
-    post_at: Property[datetime]
 
     def run(self, run_context: RunContext) -> Output:
         raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)
-    class Output(io):
+    class Output:
         message_id: str
         post_at: int
-
-
-@dataclass(slots=True, kw_only=True)
-class Output(io):
-    message_id: str
-    post_at: int

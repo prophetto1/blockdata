@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-airtable\src\main\java\io\kestra\plugin\airtable\AirtableRecord.java
+
+from dataclasses import dataclass
 from typing import Any
 
 
@@ -8,7 +10,7 @@ from typing import Any
 class AirtableRecord:
     id: str | None = None
     created_time: str | None = None
-    fields: dict[String, Object] | None = None
+    fields: dict[str, Any] | None = None
 
     def is_deleted(self) -> bool:
         raise NotImplementedError  # TODO: translate from Java

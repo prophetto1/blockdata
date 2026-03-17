@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-slack\src\main\java\io\kestra\plugin\slack\app\files\Info.java
+# WARNING: Unresolved types: Exception
+
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.slack.abstract_slack_client_connection import AbstractSlackClientConnection
@@ -11,7 +14,7 @@ from engine.core.models.tasks.runnable_task import RunnableTask
 
 
 @dataclass(slots=True, kw_only=True)
-class Info(AbstractSlackClientConnection, RunnableTask):
+class Info(AbstractSlackClientConnection):
     """Get Slack file metadata"""
     file_id: Property[str]
 

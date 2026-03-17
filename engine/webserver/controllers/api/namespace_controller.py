@@ -3,8 +3,8 @@ from __future__ import annotations
 # Source: E:\KESTRA\webserver\src\main\java\io\kestra\webserver\controllers\api\NamespaceController.java
 # WARNING: Unresolved types: Comparator, HttpStatusException, N, Pageable
 
-from dataclasses import dataclass
-from typing import Any
+from dataclasses import dataclass, field
+from typing import Any, ClassVar
 
 from engine.webserver.models.api.api_autocomplete import ApiAutocomplete
 from engine.core.repositories.array_list_total import ArrayListTotal
@@ -19,7 +19,7 @@ from engine.core.tenant.tenant_service import TenantService
 
 @dataclass(slots=True, kw_only=True)
 class NamespaceController:
-    a_u_t_o_c_o_m_p_l_e_t_e__p_a_g_e_a_b_l_e: Pageable = PageableUtils.from(1, 50, null)
+    a_u_t_o_c_o_m_p_l_e_t_e__p_a_g_e_a_b_l_e: ClassVar[Pageable] = PageableUtils.from(1, 50, null)
     tenant_service: TenantService | None = None
     flow_repository: FlowRepositoryInterface | None = None
     flow_topology_service: FlowTopologyService | None = None

@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-pipedrive\src\main\java\io\kestra\plugin\pipedrive\models\Person.java
+
+from dataclasses import dataclass
 from typing import Any
 
 
@@ -17,7 +19,7 @@ class Person:
     visible_to: str | None = None
     add_time: str | None = None
     update_time: str | None = None
-    custom_fields: dict[String, Object] | None = None
+    custom_fields: dict[str, Any] | None = None
 
     @dataclass(slots=True)
     class EmailInfo:
@@ -30,17 +32,3 @@ class Person:
         value: str | None = None
         primary: bool | None = None
         label: str | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class EmailInfo:
-    value: str | None = None
-    primary: bool | None = None
-    label: str | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class PhoneInfo:
-    value: str | None = None
-    primary: bool | None = None
-    label: str | None = None

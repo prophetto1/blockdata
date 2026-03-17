@@ -3,10 +3,10 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\plugin\core\trigger\ScheduleOnDates.java
 # WARNING: Unresolved types: Exception, Predicate
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from datetime import timedelta
-from typing import Any
+from typing import Any, ClassVar, Optional
 
 from engine.core.models.triggers.abstract_trigger import AbstractTrigger
 from engine.core.models.conditions.condition_context import ConditionContext
@@ -25,7 +25,7 @@ from engine.core.models.tasks.void_output import VoidOutput
 class ScheduleOnDates(AbstractTrigger):
     """Schedule a Flow on specific dates."""
     dates: Property[list[datetime]]
-    p_l_u_g_i_n__p_r_o_p_e_r_t_y__r_e_c_o_v_e_r__m_i_s_s_e_d__s_c_h_e_d_u_l_e_s: str = "recoverMissedSchedules"
+    p_l_u_g_i_n__p_r_o_p_e_r_t_y__r_e_c_o_v_e_r__m_i_s_s_e_d__s_c_h_e_d_u_l_e_s: ClassVar[str] = "recoverMissedSchedules"
     interval: timedelta = None
     timezone: str = ZoneId.systemDefault().toString()
     inputs: dict[str, Any] | None = None

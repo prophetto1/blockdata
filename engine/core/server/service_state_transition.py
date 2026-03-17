@@ -4,6 +4,7 @@ from __future__ import annotations
 # WARNING: Unresolved types: ImmutablePair, ServiceState
 
 from dataclasses import dataclass
+from enum import Enum
 from typing import Any
 
 from engine.core.server.service import Service

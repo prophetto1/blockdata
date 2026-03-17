@@ -1,8 +1,10 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any
+# Source: E:\KESTRA-IO\plugins\plugin-hightouch\src\main\java\io\kestra\plugin\hightouch\models\SyncDetailsResponse.java
+
+from dataclasses import dataclass
 from datetime import datetime
+from typing import Any
 
 from integrations.hightouch.models.run_status import RunStatus
 
@@ -16,11 +18,11 @@ class SyncDetailsResponse:
     updated_at: datetime | None = None
     destination_id: int | None = None
     model_id: int | None = None
-    configuration: dict[String, Object] | None = None
-    schedule: dict[String, Object] | None = None
+    configuration: dict[str, Any] | None = None
+    schedule: dict[str, Any] | None = None
     status: RunStatus | None = None
     disabled: bool | None = None
     last_run_at: datetime | None = None
-    referenced_columns: list[String] | None = None
+    referenced_columns: list[str] | None = None
     primary_key: str | None = None
-    external_segment: dict[String, Object] | None = None
+    external_segment: dict[str, Any] | None = None

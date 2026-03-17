@@ -3,15 +3,15 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\utils\PathMatcherPredicate.java
 # WARNING: Unresolved types: PathMatcher, Predicate
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
 
 
 @dataclass(slots=True, kw_only=True)
 class PathMatcherPredicate:
-    s_y_n_t_a_x__g_l_o_b: str = "glob:"
-    s_y_n_t_a_x__r_e_g_e_x: str = "regex:"
+    s_y_n_t_a_x__g_l_o_b: ClassVar[str] = "glob:"
+    s_y_n_t_a_x__r_e_g_e_x: ClassVar[str] = "regex:"
     syntax_and_patterns: list[str] | None = None
     matchers: list[PathMatcher] | None = None
 

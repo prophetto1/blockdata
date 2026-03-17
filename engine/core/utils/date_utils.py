@@ -4,6 +4,7 @@ from __future__ import annotations
 # WARNING: Unresolved types: OffsetTime
 
 from dataclasses import dataclass
+from enum import Enum
 from datetime import date
 from datetime import datetime
 from datetime import timedelta

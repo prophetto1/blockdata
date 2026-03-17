@@ -1,8 +1,11 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any
+# Source: E:\KESTRA-IO\plugins\plugin-slack\src\main\java\io\kestra\plugin\slack\app\files\Upload.java
+# WARNING: Unresolved types: Exception, core, io, kestra, models, tasks
+
+from dataclasses import dataclass
 from datetime import datetime
+from typing import Any
 
 from integrations.slack.abstract_slack_client_connection import AbstractSlackClientConnection
 from engine.core.models.property.property import Property
@@ -11,11 +14,11 @@ from engine.core.models.tasks.runnable_task import RunnableTask
 
 
 @dataclass(slots=True, kw_only=True)
-class Upload(AbstractSlackClientConnection, RunnableTask):
+class Upload(AbstractSlackClientConnection):
     """Upload a file to Slack"""
     from: Property[str]
-    channels: Property[list[String]] | None = None
     filename: Property[str]
+    channels: Property[list[str]] | None = None
     title: Property[str] | None = None
     alt_txt: Property[str] | None = None
     snippet_type: Property[str] | None = None
@@ -25,20 +28,10 @@ class Upload(AbstractSlackClientConnection, RunnableTask):
         raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)
-    class Output(io):
+    class Output:
         id: str
         title: str | None = None
         name: str | None = None
         permalink: str | None = None
         permalink_public: str | None = None
         url_private: str | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class Output(io):
-    id: str
-    title: str | None = None
-    name: str | None = None
-    permalink: str | None = None
-    permalink_public: str | None = None
-    url_private: str | None = None

@@ -8,5 +8,5 @@ from typing import Any, Protocol
 from engine.core.models.annotations.plugin import Plugin
 
 
-class SecretPluginInterface(Protocol):
+class SecretPluginInterface(Plugin, Protocol):
     pass

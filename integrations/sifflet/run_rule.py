@@ -1,15 +1,18 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-sifflet\src\main\java\io\kestra\plugin\sifflet\RunRule.java
+# WARNING: Unresolved types: Exception, core, io, kestra, models, tasks
+
+from dataclasses import dataclass
 from typing import Any
 
 from engine.core.runners.run_context import RunContext
 from engine.core.models.tasks.runnable_task import RunnableTask
-from engine.core.models.tasks.task import Task
+from integrations.azure.batch.models.task import Task
 
 
 @dataclass(slots=True, kw_only=True)
-class RunRule(Task, RunnableTask):
+class RunRule(Task):
     """Trigger a Sifflet data quality rule"""
     api_key: str
     rule_id: str | None = None
@@ -20,16 +23,8 @@ class RunRule(Task, RunnableTask):
         raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)
-    class Output(io):
+    class Output:
         rule_id: str | None = None
         status: str | None = None
         status_code: int | None = None
         response: str | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class Output(io):
-    rule_id: str | None = None
-    status: str | None = None
-    status_code: int | None = None
-    response: str | None = None

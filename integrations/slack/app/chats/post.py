@@ -1,8 +1,11 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any
+# Source: E:\KESTRA-IO\plugins\plugin-slack\src\main\java\io\kestra\plugin\slack\app\chats\Post.java
+# WARNING: Unresolved types: Exception, core, io, kestra, models, tasks
+
+from dataclasses import dataclass
 from datetime import datetime
+from typing import Any
 
 from integrations.slack.abstract_slack_client_connection import AbstractSlackClientConnection
 from integrations.slack.app.chats.chat_interface import ChatInterface
@@ -13,7 +16,7 @@ from engine.core.models.tasks.runnable_task import RunnableTask
 
 
 @dataclass(slots=True, kw_only=True)
-class Post(AbstractSlackClientConnection, RunnableTask, MessagePayloadInterface, ChatInterface):
+class Post(AbstractSlackClientConnection):
     """Post a Slack message"""
     payload: Property[str] | None = None
     message_text: Property[str] | None = None
@@ -27,10 +30,5 @@ class Post(AbstractSlackClientConnection, RunnableTask, MessagePayloadInterface,
         raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)
-    class Output(io):
+    class Output:
         timestamp: str
-
-
-@dataclass(slots=True, kw_only=True)
-class Output(io):
-    timestamp: str

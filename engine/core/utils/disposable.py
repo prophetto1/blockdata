@@ -3,6 +3,7 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\utils\Disposable.java
 # WARNING: Unresolved types: AtomicBoolean, Runnable
 
+from dataclasses import dataclass
 from typing import Any, Protocol
 
 

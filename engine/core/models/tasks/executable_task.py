@@ -3,7 +3,9 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\models\tasks\ExecutableTask.java
 # WARNING: Unresolved types: T
 
-from typing import Any, Protocol
+from dataclasses import dataclass
+from enum import Enum
+from typing import Any, Optional, Protocol
 
 from engine.core.models.executions.execution import Execution
 from engine.core.models.flows.flow_interface import FlowInterface

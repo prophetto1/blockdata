@@ -12,7 +12,7 @@ from engine.core.models.plugin import Plugin
 from engine.core.storages.storage_object import StorageObject
 
 
-class StorageInterface(Protocol):
+class StorageInterface(AutoCloseable, Plugin, Protocol):
     def init(self) -> None: ...
 
     def close(self) -> None: ...

@@ -3,6 +3,7 @@ from __future__ import annotations
 # Source: E:\KESTRA\jdbc-postgres\src\main\java\io\kestra\repository\postgres\PostgresExecutionRepositoryService.java
 # WARNING: Unresolved types: Op
 
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any
 
@@ -16,7 +17,7 @@ from engine.core.models.flows.type import Type
 
 
 @dataclass(slots=True, kw_only=True)
-class PostgresExecutionRepositoryService:
+class PostgresExecutionRepositoryService(ABC):
 
     @staticmethod
     def find_condition(jdbc_repository: AbstractJdbcRepository[Execution], query: str, labels: dict[str, str]) -> Condition:

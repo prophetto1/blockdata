@@ -1,20 +1,16 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-linear\src\main\java\io\kestra\plugin\linear\model\LinearData.java
+
+from dataclasses import dataclass
 from typing import Any
 
 
 @dataclass(slots=True, kw_only=True)
 class LinearData:
-    nodes: LinearNode | None = None
+    nodes: list[LinearNode] | None = None
 
     @dataclass(slots=True)
     class LinearNode:
         id: str | None = None
         name: str | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class LinearNode:
-    id: str | None = None
-    name: str | None = None

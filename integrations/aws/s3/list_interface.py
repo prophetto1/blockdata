@@ -1,24 +1,28 @@
 from __future__ import annotations
 
+# Source: E:\KESTRA-IO\plugins\plugin-aws\src\main\java\io\kestra\plugin\aws\s3\ListInterface.java
+
 from enum import Enum
 from typing import Any, Protocol
 
 from engine.core.models.property.property import Property
 
 
-class Filter(str, Enum):
-    FILES = "FILES"
-    DIRECTORY = "DIRECTORY"
-    BOTH = "BOTH"
-
-
 class ListInterface(Protocol):
     def get_bucket(self) -> Property[str]: ...
+
     def get_prefix(self) -> Property[str]: ...
+
     def get_delimiter(self) -> Property[str]: ...
+
     def get_marker(self) -> Property[str]: ...
+
     def get_encoding_type(self) -> Property[str]: ...
+
     def get_max_keys(self) -> Property[int]: ...
+
     def get_expected_bucket_owner(self) -> Property[str]: ...
+
     def get_regexp(self) -> Property[str]: ...
+
     def get_filter(self) -> Property[Filter]: ...

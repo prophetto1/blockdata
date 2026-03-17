@@ -1,10 +1,13 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any
-from datetime import datetime
+# Source: E:\KESTRA-IO\plugins\plugin-aws\src\main\java\io\kestra\plugin\aws\s3\models\S3Object.java
+# WARNING: Unresolved types: amazon, awssdk, model, s3, services, software
 
-from integrations.minio.model.owner import Owner
+from dataclasses import dataclass
+from datetime import datetime
+from typing import Any
+
+from integrations.aws.s3.models.owner import Owner
 
 
 @dataclass(slots=True, kw_only=True)
@@ -16,5 +19,6 @@ class S3Object:
     last_modified: datetime | None = None
     owner: Owner | None = None
 
-    def of(self, object: software) -> S3Object:
+    @staticmethod
+    def of(object: software.amazon.awssdk.services.s3.model.S3Object) -> S3Object:
         raise NotImplementedError  # TODO: translate from Java

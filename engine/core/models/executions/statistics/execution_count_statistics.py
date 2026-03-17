@@ -3,8 +3,8 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\models\executions\statistics\ExecutionCountStatistics.java
 # WARNING: Unresolved types: Comparable
 
-from dataclasses import dataclass
-from typing import Any
+from dataclasses import dataclass, field
+from typing import Any, ClassVar
 
 from engine.core.models.flows.state import State
 from engine.core.models.flows.type import Type
@@ -12,7 +12,7 @@ from engine.core.models.flows.type import Type
 
 @dataclass(slots=True, kw_only=True)
 class ExecutionCountStatistics:
-    d_e_f_a_u_l_t__c_o_u_n_t_s: dict[State.Type, int] = Map.ofEntries(
+    d_e_f_a_u_l_t__c_o_u_n_t_s: ClassVar[dict[State.Type, int]] = Map.ofEntries(
         Map.entry(State.Type.CREATED, 0L),
         Map.entry(State.Type.RUNNING, 0L),
         Map.entry(State.Type.RESTARTED, 0L),

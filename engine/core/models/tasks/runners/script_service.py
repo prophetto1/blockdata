@@ -3,9 +3,9 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\models\tasks\runners\ScriptService.java
 # WARNING: Unresolved types: IOException, Pattern
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
 
 from engine.core.exceptions.illegal_variable_evaluation_exception import IllegalVariableEvaluationException
 from engine.core.models.property.property import Property
@@ -15,13 +15,13 @@ from engine.core.models.tasks.runners.target_o_s import TargetOS
 
 @dataclass(slots=True, kw_only=True)
 class ScriptService:
-    i_n_t_e_r_n_a_l__s_t_o_r_a_g_e__p_a_t_t_e_r_n: Pattern = Pattern.compile("(kestra:\\/\\/[-\\p{Alnum}._\\+~#=/]*)", Pattern.UNICODE_CHARACTER_CLASS)
-    v_a_r__w_o_r_k_i_n_g__d_i_r: str = "workingDir"
-    v_a_r__o_u_t_p_u_t__d_i_r: str = "outputDir"
-    v_a_r__b_u_c_k_e_t__p_a_t_h: str = "bucketPath"
-    e_n_v__w_o_r_k_i_n_g__d_i_r: str = "WORKING_DIR"
-    e_n_v__o_u_t_p_u_t__d_i_r: str = "OUTPUT_DIR"
-    e_n_v__b_u_c_k_e_t__p_a_t_h: str = "BUCKET_PATH"
+    i_n_t_e_r_n_a_l__s_t_o_r_a_g_e__p_a_t_t_e_r_n: ClassVar[Pattern] = Pattern.compile("(kestra:\\/\\/[-\\p{Alnum}._\\+~#=/]*)", Pattern.UNICODE_CHARACTER_CLASS)
+    v_a_r__w_o_r_k_i_n_g__d_i_r: ClassVar[str] = "workingDir"
+    v_a_r__o_u_t_p_u_t__d_i_r: ClassVar[str] = "outputDir"
+    v_a_r__b_u_c_k_e_t__p_a_t_h: ClassVar[str] = "bucketPath"
+    e_n_v__w_o_r_k_i_n_g__d_i_r: ClassVar[str] = "WORKING_DIR"
+    e_n_v__o_u_t_p_u_t__d_i_r: ClassVar[str] = "OUTPUT_DIR"
+    e_n_v__b_u_c_k_e_t__p_a_t_h: ClassVar[str] = "BUCKET_PATH"
 
     @staticmethod
     def replace_internal_storage(run_context: RunContext, command: str, replace_with_relative_path: bool) -> str:

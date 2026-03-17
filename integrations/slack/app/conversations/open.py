@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-slack\src\main\java\io\kestra\plugin\slack\app\conversations\Open.java
+# WARNING: Unresolved types: Exception
+
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.slack.abstract_slack_client_connection import AbstractSlackClientConnection
@@ -11,11 +14,11 @@ from engine.core.models.tasks.runnable_task import RunnableTask
 
 
 @dataclass(slots=True, kw_only=True)
-class Open(AbstractSlackClientConnection, RunnableTask):
+class Open(AbstractSlackClientConnection):
     """Open a DM or MPIM"""
-    users: Property[list[String]] | None = None
+    return_im: Property[bool] = Property.ofValue(false)
+    users: Property[list[str]] | None = None
     channel: Property[str] | None = None
-    return_im: Property[bool] | None = None
 
     def run(self, run_context: RunContext) -> ConversationOutput:
         raise NotImplementedError  # TODO: translate from Java

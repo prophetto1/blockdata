@@ -4,7 +4,7 @@ from __future__ import annotations
 # WARNING: Unresolved types: Configuration, ConstraintValidatorFactory, Environment, HibernateValidator, MessageInterpolator, ParameterNameProvider, TraversableResolver, ValidatorFactory, ValidatorFactoryProvider
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Optional
 
 from engine.core.models.property.property_value_extractor import PropertyValueExtractor
 

@@ -3,8 +3,8 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\plugin\core\http\SseRequest.java
 # WARNING: Unresolved types: Exception, Scope, core, io, kestra, models, tasks
 
-from dataclasses import dataclass
-from typing import Any
+from dataclasses import dataclass, field
+from typing import Any, ClassVar
 
 from engine.plugin.core.http.abstract_http import AbstractHttp
 from engine.core.http.http_sse_event import HttpSseEvent
@@ -17,7 +17,7 @@ from engine.core.models.tasks.runnable_task import RunnableTask
 class SseRequest(AbstractHttp):
     """Consume Server-Sent Events (SSE) from an HTTP endpoint."""
     failed_on_missing_jq: Property[bool] = Property.ofValue(true)
-    s_c_o_p_e: Scope | None = None
+    s_c_o_p_e: ClassVar[Scope]
     concat_jq_expression: Property[str] | None = None
 
     def run(self, run_context: RunContext) -> Output:

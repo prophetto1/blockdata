@@ -3,9 +3,9 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\plugin\core\flow\ForEachItem.java
 # WARNING: Unresolved types: Exception, RestartBehavior, SubflowId, core, io, kestra, models, tasks
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any
+from typing import Any, ClassVar, Optional
 
 from engine.plugin.core.flow.child_flow_interface import ChildFlowInterface
 from engine.core.models.tasks.executable_task import ExecutableTask
@@ -76,7 +76,7 @@ class ForEachItem(Task):
 
     @dataclass(slots=True)
     class ForEachItemSplit(Task):
-        s_u_f_f_i_x: str = "_split"
+        s_u_f_f_i_x: ClassVar[str] = "_split"
         items: str | None = None
         batch: Batch | None = None
 
@@ -89,7 +89,7 @@ class ForEachItem(Task):
 
     @dataclass(slots=True)
     class ForEachItemExecutable(Task):
-        s_u_f_f_i_x: str = "_items"
+        s_u_f_f_i_x: ClassVar[str] = "_items"
         inputs: dict[str, Any] | None = None
         inherit_labels: bool | None = None
         labels: list[Label] | None = None
@@ -113,7 +113,7 @@ class ForEachItem(Task):
 
     @dataclass(slots=True)
     class ForEachItemMergeOutputs(Task):
-        s_u_f_f_i_x: str = "_merge"
+        s_u_f_f_i_x: ClassVar[str] = "_merge"
 
         def run(self, run_context: RunContext) -> ForEachItemMergeOutputs.Output:
             raise NotImplementedError  # TODO: translate from Java

@@ -1,9 +1,13 @@
 from __future__ import annotations
 
+# Source: E:\KESTRA-IO\plugins\plugin-cloudquery\src\main\java\io\kestra\plugin\cloudquery\Sync.java
+# WARNING: Unresolved types: Exception, IOException, ObjectMapper, URISyntaxException
+
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, ClassVar
 
 from integrations.cloudquery.abstract_cloud_query_command import AbstractCloudQueryCommand
+from engine.core.exceptions.illegal_variable_evaluation_exception import IllegalVariableEvaluationException
 from engine.core.models.tasks.input_files_interface import InputFilesInterface
 from engine.core.models.tasks.namespace_files import NamespaceFiles
 from engine.core.models.tasks.namespace_files_interface import NamespaceFilesInterface
@@ -15,17 +19,17 @@ from engine.plugin.scripts.exec.scripts.models.script_output import ScriptOutput
 
 
 @dataclass(slots=True, kw_only=True)
-class Sync(AbstractCloudQueryCommand, RunnableTask, NamespaceFilesInterface, InputFilesInterface, OutputFilesInterface):
+class Sync(AbstractCloudQueryCommand):
     """Run a CloudQuery sync"""
-    o_b_j_e_c_t__m_a_p_p_e_r: ObjectMapper | None = None
-    d_b__f_i_l_e_n_a_m_e: str | None = None
-    c_l_o_u_d__q_u_e_r_y__s_t_a_t_e: str | None = None
-    configs: list[Object]
-    incremental: Property[bool] | None = None
+    configs: list[Any]
+    o_b_j_e_c_t__m_a_p_p_e_r: ClassVar[ObjectMapper] = JacksonMapper.ofYaml()
+    d_b__f_i_l_e_n_a_m_e: ClassVar[str] = "incrementaldb.sqlite"
+    c_l_o_u_d__q_u_e_r_y__s_t_a_t_e: ClassVar[str] = "CloudQueryState"
+    incremental: Property[bool] = Property.ofValue(false)
+    log_console: Property[bool] = Property.ofValue(true)
     namespace_files: NamespaceFiles | None = None
     input_files: Any | None = None
-    output_files: Property[list[String]] | None = None
-    log_console: Property[bool] | None = None
+    output_files: Property[list[str]] | None = None
 
     def compute_k_v_entry_name(self, run_context: RunContext, state_name: str, task_run_value: str) -> str:
         raise NotImplementedError  # TODO: translate from Java
@@ -33,11 +37,11 @@ class Sync(AbstractCloudQueryCommand, RunnableTask, NamespaceFilesInterface, Inp
     def run(self, run_context: RunContext) -> ScriptOutput:
         raise NotImplementedError  # TODO: translate from Java
 
-    def get_incremental_sqlite_destination(self) -> dict[String, Object]:
+    def get_incremental_sqlite_destination(self) -> dict[str, Any]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def get_backend_option_object(self) -> dict[String, Object]:
+    def get_backend_option_object(self) -> dict[str, Any]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def read_configs(self, run_context: RunContext, configurations: list[Object], backend_options_object: dict[String, Object]) -> list[Map[String, Object]]:
+    def read_configs(self, run_context: RunContext, configurations: list[Any], backend_options_object: dict[str, Any]) -> list[dict[str, Any]]:
         raise NotImplementedError  # TODO: translate from Java

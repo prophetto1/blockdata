@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import timedelta
-from typing import Any
+from typing import Any, Optional
 
 from engine.core.models.executions.execution import Execution
 from engine.core.models.flows.sla.execution_monitoring_s_l_a import ExecutionMonitoringSLA

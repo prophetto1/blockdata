@@ -3,10 +3,10 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\plugin\core\flow\LoopUntil.java
 # WARNING: Unresolved types: core, io, kestra, models, tasks
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from datetime import timedelta
-from typing import Any
+from typing import Any, ClassVar, Optional
 
 from engine.core.models.hierarchies.abstract_graph import AbstractGraph
 from engine.core.models.executions.execution import Execution
@@ -27,7 +27,7 @@ class LoopUntil(Task):
     """Repeat tasks until a condition becomes true."""
     tasks: list[Task]
     condition: Property[str]
-    i_n_i_t_i_a_l__l_o_o_p__v_a_l_u_e: int = 1
+    i_n_i_t_i_a_l__l_o_o_p__v_a_l_u_e: ClassVar[int] = 1
     fail_on_max_reached: Property[bool] = Property.ofValue(false)
     check_frequency: CheckFrequency = CheckFrequency.builder().build()
     errors: list[Task] | None = None

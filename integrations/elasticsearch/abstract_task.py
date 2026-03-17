@@ -1,14 +1,17 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-elasticsearch\src\main\java\io\kestra\plugin\elasticsearch\AbstractTask.java
+
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.elasticsearch.elasticsearch_connection import ElasticsearchConnection
 from engine.core.models.property.property import Property
-from engine.core.models.tasks.task import Task
+from integrations.azure.batch.models.task import Task
 
 
 @dataclass(slots=True, kw_only=True)
-class AbstractTask(Task):
+class AbstractTask(ABC, Task):
     connection: ElasticsearchConnection
     routing: Property[str] | None = None

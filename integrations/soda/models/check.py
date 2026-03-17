@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-soda\src\main\java\io\kestra\plugin\soda\models\Check.java
+
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.soda.models.check_outcome import CheckOutcome
@@ -15,5 +17,5 @@ class Check:
     data_source: str | None = None
     table: str | None = None
     column: str | None = None
-    metrics: list[String] | None = None
+    metrics: list[str] | None = None
     outcome: CheckOutcome | None = None

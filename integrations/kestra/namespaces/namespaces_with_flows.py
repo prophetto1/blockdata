@@ -1,27 +1,25 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-kestra\src\main\java\io\kestra\plugin\kestra\namespaces\NamespacesWithFlows.java
+# WARNING: Unresolved types: Exception, core, io, java, kestra, models, tasks, util
+
+from dataclasses import dataclass
 from typing import Any
 
-from integrations.kestra.abstract_kestra_task import AbstractKestraTask
+from integrations.git.abstract_kestra_task import AbstractKestraTask
 from engine.core.models.property.property import Property
 from engine.core.runners.run_context import RunContext
 from engine.core.models.tasks.runnable_task import RunnableTask
 
 
 @dataclass(slots=True, kw_only=True)
-class NamespacesWithFlows(AbstractKestraTask, RunnableTask):
+class NamespacesWithFlows(AbstractKestraTask):
     """List distinct namespaces"""
     prefix: Property[str] | None = None
 
-    def run(self, run_context: RunContext) -> NamespacesWithFlows:
+    def run(self, run_context: RunContext) -> NamespacesWithFlows.Output:
         raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)
-    class Output(io):
-        namespaces: java | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class Output(io):
-    namespaces: java | None = None
+    class Output:
+        namespaces: java.util.List[str] | None = None

@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-fs\src\main\java\io\kestra\plugin\fs\local\Download.java
+# WARNING: Unresolved types: Exception, core, io, kestra, models, tasks
+
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.fs.local.abstract_local_task import AbstractLocalTask
@@ -10,7 +13,7 @@ from engine.core.models.tasks.runnable_task import RunnableTask
 
 
 @dataclass(slots=True, kw_only=True)
-class Download(AbstractLocalTask, RunnableTask):
+class Download(AbstractLocalTask):
     """Download local file to internal storage"""
     from: Property[str]
 
@@ -18,12 +21,6 @@ class Download(AbstractLocalTask, RunnableTask):
         raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)
-    class Output(io):
+    class Output:
         uri: str | None = None
         size: int | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class Output(io):
-    uri: str | None = None
-    size: int | None = None

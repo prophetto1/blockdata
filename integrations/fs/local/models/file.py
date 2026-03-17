@@ -1,9 +1,12 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any
-from datetime import datetime
+# Source: E:\KESTRA-IO\plugins\plugin-fs\src\main\java\io\kestra\plugin\fs\local\models\File.java
+# WARNING: Unresolved types: BasicFileAttributes
+
+from dataclasses import dataclass
 from pathlib import Path
+from datetime import datetime
+from typing import Any
 
 
 @dataclass(slots=True, kw_only=True)
@@ -18,5 +21,6 @@ class File:
     accessed_date: datetime | None = None
     is_directory: bool | None = None
 
-    def from(self, path: Path, attrs: BasicFileAttributes) -> Path:
+    @staticmethod
+    def from(path: Path, attrs: BasicFileAttributes) -> Path:
         raise NotImplementedError  # TODO: translate from Java

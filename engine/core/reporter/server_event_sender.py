@@ -3,9 +3,9 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\reporter\ServerEventSender.java
 # WARNING: Unresolved types: Exception, MutableHttpRequest, ObjectMapper, ReactorHttpClient
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any
+from typing import Any, ClassVar
 
 from engine.core.services.instance_service import InstanceService
 from engine.core.models.collectors.result import Result
@@ -17,8 +17,8 @@ from engine.core.utils.version_provider import VersionProvider
 
 @dataclass(slots=True, kw_only=True)
 class ServerEventSender:
-    s_e_s_s_i_o_n__u_u_i_d: str = IdUtils.create()
-    o_b_j_e_c_t__m_a_p_p_e_r: ObjectMapper = JacksonMapper.ofJson()
+    s_e_s_s_i_o_n__u_u_i_d: ClassVar[str] = IdUtils.create()
+    o_b_j_e_c_t__m_a_p_p_e_r: ClassVar[ObjectMapper] = JacksonMapper.ofJson()
     client: ReactorHttpClient | None = None
     version_provider: VersionProvider | None = None
     instance_service: InstanceService | None = None

@@ -2,8 +2,8 @@ from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\runners\RunVariables.java
 
-from dataclasses import dataclass
-from typing import Any
+from dataclasses import dataclass, field
+from typing import Any, ClassVar, Optional, Protocol
 
 from engine.core.models.triggers.abstract_trigger import AbstractTrigger
 from engine.core.models.executions.execution import Execution
@@ -18,8 +18,8 @@ from engine.core.models.executions.task_run import TaskRun
 
 @dataclass(slots=True, kw_only=True)
 class RunVariables:
-    s_e_c_r_e_t__c_o_n_s_u_m_e_r__v_a_r_i_a_b_l_e__n_a_m_e: str = "addSecretConsumer"
-    f_i_x_t_u_r_e__f_i_l_e_s__k_e_y: str = "io.kestra.datatype:test_fixtures_files"
+    s_e_c_r_e_t__c_o_n_s_u_m_e_r__v_a_r_i_a_b_l_e__n_a_m_e: ClassVar[str] = "addSecretConsumer"
+    f_i_x_t_u_r_e__f_i_l_e_s__k_e_y: ClassVar[str] = "io.kestra.datatype:test_fixtures_files"
 
     @staticmethod
     def of(task: Task) -> dict[str, Any]:

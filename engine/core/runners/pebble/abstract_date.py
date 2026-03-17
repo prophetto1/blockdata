@@ -3,14 +3,15 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\runners\pebble\AbstractDate.java
 # WARNING: Unresolved types: DateTimeFormatter, EvaluationContext, FormatStyle, ZoneId
 
-from dataclasses import dataclass
+from abc import ABC, abstractmethod
+from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any
+from typing import Any, ClassVar
 
 
 @dataclass(slots=True, kw_only=True)
-class AbstractDate:
-    f_o_r_m_a_t_t_e_r_s: dict[str, DateTimeFormatter] = ImmutableMap.<String, DateTimeFormatter>builder()
+class AbstractDate(ABC):
+    f_o_r_m_a_t_t_e_r_s: ClassVar[dict[str, DateTimeFormatter]] = ImmutableMap.<String, DateTimeFormatter>builder()
         .put("iso", DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSSXXX"))
         .put("iso_milli", DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXX"))
         .put("iso_sec", DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssXXX"))
@@ -30,7 +31,7 @@ class AbstractDate:
         .put("iso_zoned_date_time", DateTimeFormatter.ISO_ZONED_DATE_TIME)
         .put("rfc_1123_date_time", DateTimeFormatter.RFC_1123_DATE_TIME)
         .build()
-    s_t_y_l_e_s: dict[str, FormatStyle] = ImmutableMap.of(
+    s_t_y_l_e_s: ClassVar[dict[str, FormatStyle]] = ImmutableMap.of(
         "full", FormatStyle.FULL,
         "long", FormatStyle.LONG,
         "medium", FormatStyle.MEDIUM,

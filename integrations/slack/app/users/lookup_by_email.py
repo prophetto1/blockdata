@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-slack\src\main\java\io\kestra\plugin\slack\app\users\LookupByEmail.java
+# WARNING: Unresolved types: Exception
+
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.slack.abstract_slack_client_connection import AbstractSlackClientConnection
@@ -11,7 +14,7 @@ from integrations.slack.app.models.user_output import UserOutput
 
 
 @dataclass(slots=True, kw_only=True)
-class LookupByEmail(AbstractSlackClientConnection, RunnableTask):
+class LookupByEmail(AbstractSlackClientConnection):
     """Find a Slack user by email"""
     email: Property[str]
 

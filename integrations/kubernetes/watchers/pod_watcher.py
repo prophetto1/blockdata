@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-kubernetes\src\main\java\io\kestra\plugin\kubernetes\watchers\PodWatcher.java
+# WARNING: Unresolved types: Logger, Pod
+
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.kubernetes.watchers.abstract_watch import AbstractWatch

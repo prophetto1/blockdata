@@ -3,7 +3,7 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\services\VersionService.java
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Optional
 
 from engine.core.repositories.setting_repository_interface import SettingRepositoryInterface
 from engine.core.utils.version_provider import VersionProvider

@@ -4,6 +4,7 @@ from __future__ import annotations
 # WARNING: Unresolved types: IOException, InputStream
 
 from dataclasses import dataclass
+from enum import Enum
 from typing import Any
 
 from engine.webserver.utils.filepreview.base64_render import Base64Render

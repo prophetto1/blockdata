@@ -1,18 +1,22 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any
+# Source: E:\KESTRA-IO\plugins\plugin-amqp\src\main\java\io\kestra\plugin\amqp\models\Message.java
+# WARNING: Unresolved types: BasicProperties, Exception, core, io, kestra, models, tasks
+
+from dataclasses import dataclass
 from datetime import datetime
 from datetime import timedelta
+from typing import Any
 
-from integrations.redis.models.serde_type import SerdeType
+from integrations.aws.glue.model.output import Output
+from integrations.amqp.models.serde_type import SerdeType
 
 
 @dataclass(slots=True, kw_only=True)
-class Message(io):
+class Message:
     content_type: str | None = None
     content_encoding: str | None = None
-    headers: dict[String, Object] | None = None
+    headers: dict[str, Any] | None = None
     delivery_mode: int | None = None
     priority: int | None = None
     message_id: str | None = None
@@ -25,5 +29,6 @@ class Message(io):
     app_id: str | None = None
     data: Any | None = None
 
-    def of(self, message: byte, serde_type: SerdeType, properties: BasicProperties) -> Message:
+    @staticmethod
+    def of(message: list[int], serde_type: SerdeType, properties: BasicProperties) -> Message:
         raise NotImplementedError  # TODO: translate from Java

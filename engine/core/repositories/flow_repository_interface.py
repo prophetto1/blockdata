@@ -3,7 +3,7 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\repositories\FlowRepositoryInterface.java
 # WARNING: Unresolved types: ConstraintViolationException, Fields, Flux, Pageable
 
-from typing import Any, Protocol
+from typing import Any, Optional, Protocol
 
 from engine.core.repositories.array_list_total import ArrayListTotal
 from engine.core.models.executions.execution import Execution
@@ -18,7 +18,7 @@ from engine.core.models.query_filter import QueryFilter
 from engine.core.models.search_result import SearchResult
 
 
-class FlowRepositoryInterface(Protocol):
+class FlowRepositoryInterface(QueryBuilderInterface, Protocol):
     def find_by_id(self, tenant_id: str, namespace: str, id: str, revision: Optional[int], allow_deleted: bool) -> Optional[Flow]: ...
 
     def find_by_id(self, tenant_id: str, namespace: str, id: str, revision: Optional[int]) -> Optional[Flow]: ...

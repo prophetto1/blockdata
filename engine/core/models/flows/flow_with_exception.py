@@ -4,7 +4,7 @@ from __future__ import annotations
 # WARNING: Unresolved types: Exception, JsonNode, Logger
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Optional
 
 from engine.core.models.executions.statistics.flow import Flow
 from engine.core.models.flows.flow_interface import FlowInterface

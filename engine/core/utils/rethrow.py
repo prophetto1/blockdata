@@ -4,7 +4,7 @@ from __future__ import annotations
 # WARNING: Unresolved types: A, B, BiConsumer, BiFunction, Consumer, E, Exception, Function, K, Predicate, R, Runnable, Supplier, T, V
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Protocol
 
 
 @dataclass(slots=True, kw_only=True)

@@ -3,9 +3,9 @@ from __future__ import annotations
 # Source: E:\KESTRA\webserver\src\main\java\io\kestra\webserver\controllers\api\DashboardController.java
 # WARNING: Unresolved types: ConstraintViolationException, IOException, Pageable, Pattern, Void
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any
+from typing import Any, ClassVar
 
 from engine.core.models.dashboards.charts.chart import Chart
 from engine.webserver.models.chart_filters_overrides import ChartFiltersOverrides
@@ -25,9 +25,9 @@ from engine.core.serializers.yaml_parser import YamlParser
 
 @dataclass(slots=True, kw_only=True)
 class DashboardController:
-    y_a_m_l__p_a_r_s_e_r: YamlParser = new YamlParser()
-    d_a_s_h_b_o_a_r_d__i_d__p_a_t_t_e_r_n: Pattern = Pattern.compile("^id:.*$", Pattern.MULTILINE)
-    o_s_s__d_a_s_h_b_o_a_r_d__s_e_t_t_i_n_g_s: str = "kestra.oss.dashboard-settings"
+    y_a_m_l__p_a_r_s_e_r: ClassVar[YamlParser] = new YamlParser()
+    d_a_s_h_b_o_a_r_d__i_d__p_a_t_t_e_r_n: ClassVar[Pattern] = Pattern.compile("^id:.*$", Pattern.MULTILINE)
+    o_s_s__d_a_s_h_b_o_a_r_d__s_e_t_t_i_n_g_s: ClassVar[str] = "kestra.oss.dashboard-settings"
     dashboard_repository: DashboardRepositoryInterface | None = None
     flow_repository: FlowRepositoryInterface | None = None
     tenant_service: TenantService | None = None

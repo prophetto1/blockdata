@@ -1,14 +1,18 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any
+# Source: E:\KESTRA-IO\plugins\plugin-slack\src\main\java\io\kestra\plugin\slack\app\models\ConversationOutput.java
+# WARNING: Unresolved types: Conversation, core, io, kestra, models, tasks
+
+from dataclasses import dataclass
 from datetime import datetime
+from typing import Any
 
 from integrations.slack.app.models.conversation_topic_output import ConversationTopicOutput
+from integrations.aws.glue.model.output import Output
 
 
 @dataclass(slots=True, kw_only=True)
-class ConversationOutput(io):
+class ConversationOutput:
     """Conversation details output"""
     id: str
     name: str | None = None
@@ -23,5 +27,6 @@ class ConversationOutput(io):
     topic: ConversationTopicOutput | None = None
     purpose: ConversationTopicOutput | None = None
 
-    def of(self, channel: Conversation) -> ConversationOutput:
+    @staticmethod
+    def of(channel: Conversation) -> ConversationOutput:
         raise NotImplementedError  # TODO: translate from Java

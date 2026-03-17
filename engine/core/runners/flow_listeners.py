@@ -4,7 +4,7 @@ from __future__ import annotations
 # WARNING: Unresolved types: AtomicBoolean, BiConsumer, Consumer
 
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Optional
 
 from engine.core.models.flows.flow_interface import FlowInterface
 from engine.core.services.flow_listeners_interface import FlowListenersInterface

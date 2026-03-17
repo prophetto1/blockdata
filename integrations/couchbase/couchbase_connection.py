@@ -1,15 +1,20 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-couchbase\src\main\java\io\kestra\plugin\couchbase\CouchbaseConnection.java
+# WARNING: Unresolved types: Cluster, ClusterOptions
+
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.couchbase.couchbase_connection_interface import CouchbaseConnectionInterface
+from engine.core.exceptions.illegal_variable_evaluation_exception import IllegalVariableEvaluationException
 from engine.core.runners.run_context import RunContext
-from engine.core.models.tasks.task import Task
+from integrations.azure.batch.models.task import Task
 
 
 @dataclass(slots=True, kw_only=True)
-class CouchbaseConnection(Task, CouchbaseConnectionInterface):
+class CouchbaseConnection(ABC, Task):
     connection_string: str
     username: str
     password: str

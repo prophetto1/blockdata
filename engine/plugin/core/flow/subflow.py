@@ -3,9 +3,9 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\plugin\core\flow\Subflow.java
 # WARNING: Unresolved types: Exception, RestartBehavior, SubflowId, core, io, kestra, models, tasks
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any
+from typing import Any, ClassVar, Optional
 
 from engine.plugin.core.flow.child_flow_interface import ChildFlowInterface
 from engine.core.models.tasks.executable_task import ExecutableTask
@@ -31,7 +31,7 @@ from engine.core.models.executions.variables import Variables
 class Subflow(Task):
     """Call another flow as a subflow."""
     flow_id: str
-    p_l_u_g_i_n__f_l_o_w__o_u_t_p_u_t_s__e_n_a_b_l_e_d: str = "outputs.enabled"
+    p_l_u_g_i_n__f_l_o_w__o_u_t_p_u_t_s__e_n_a_b_l_e_d: ClassVar[str] = "outputs.enabled"
     wait: bool = True
     transmit_failed: bool = True
     inherit_labels: Property[bool] = Property.ofValue(false)

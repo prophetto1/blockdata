@@ -3,6 +3,7 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\storages\Namespace.java
 # WARNING: Unresolved types: Exception, IOException, InputStream, Pageable, Pair, Predicate, URISyntaxException
 
+from enum import Enum
 from pathlib import Path
 from typing import Any, Protocol
 

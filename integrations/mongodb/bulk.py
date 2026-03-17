@@ -1,9 +1,12 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-mongodb\src\main\java\io\kestra\plugin\mongodb\Bulk.java
+# WARNING: Unresolved types: Bson, BsonDocument, BufferedReader, Collation, Consumer, Flux, FluxSink, IOException, ReplaceOptions, UpdateOptions, WriteModel
+
+from dataclasses import dataclass
 from typing import Any
 
-from integrations.opensearch.abstract_load import AbstractLoad
+from integrations.elasticsearch.abstract_load import AbstractLoad
 from engine.core.runners.run_context import RunContext
 
 

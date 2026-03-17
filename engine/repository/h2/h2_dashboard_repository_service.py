@@ -2,6 +2,7 @@ from __future__ import annotations
 
 # Source: E:\KESTRA\jdbc-h2\src\main\java\io\kestra\repository\h2\H2DashboardRepositoryService.java
 
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any
 
@@ -11,7 +12,7 @@ from engine.core.models.dashboards.dashboard import Dashboard
 
 
 @dataclass(slots=True, kw_only=True)
-class H2DashboardRepositoryService:
+class H2DashboardRepositoryService(ABC):
 
     @staticmethod
     def find_condition(jdbc_repository: AbstractJdbcRepository[Dashboard], query: str) -> Condition:

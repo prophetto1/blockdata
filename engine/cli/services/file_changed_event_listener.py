@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 from engine.cli.services.flow_files_manager import FlowFilesManager
 from engine.core.models.flows.flow_interface import FlowInterface

@@ -3,6 +3,7 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\models\flows\Input.java
 # WARNING: Unresolved types: ConstraintViolationException, T
 
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any
 
@@ -32,7 +33,7 @@ from engine.core.models.flows.input.yaml_input import YamlInput
 
 
 @dataclass(slots=True, kw_only=True)
-class Input:
+class Input(ABC):
     id: str
     type: Type
     required: bool = True
@@ -43,5 +44,6 @@ class Input:
     prefill: Property[T] | None = None
     display_name: str | None = None
 
+    @abstractmethod
     def validate(self, input: T) -> None:
-        raise NotImplementedError  # TODO: translate from Java
+        ...

@@ -3,8 +3,9 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\runners\RunContext.java
 # WARNING: Unresolved types: GeneralSecurityException, Logger, T
 
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Optional
 
 from engine.core.models.executions.abstract_metric_entry import AbstractMetricEntry
 from engine.core.runners.acl_checker import AclChecker
@@ -26,139 +27,182 @@ from engine.core.runners.working_dir import WorkingDir
 
 
 @dataclass(slots=True, kw_only=True)
-class RunContext:
+class RunContext(ABC):
 
+    @abstractmethod
     def get_trigger_execution_id(self) -> str:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
+    @abstractmethod
     def get_variables(self) -> dict[str, Any]:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
+    @abstractmethod
     def get_secret_inputs(self) -> list[str]:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
+    @abstractmethod
     def get_trace_parent(self) -> str:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
+    @abstractmethod
     def render(self, inline: str) -> str:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
+    @abstractmethod
     def render_typed(self, inline: str) -> Any:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
+    @abstractmethod
     def render(self, inline: str, variables: dict[str, Any]) -> str:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
+    @abstractmethod
     def render(self, inline: Property[T]) -> RunContextProperty[T]:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
+    @abstractmethod
     def render(self, inline: list[str]) -> list[str]:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
+    @abstractmethod
     def render(self, inline: list[str], variables: dict[str, Any]) -> list[str]:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
+    @abstractmethod
     def render(self, inline: set[str]) -> set[str]:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
+    @abstractmethod
     def render(self, inline: set[str], variables: dict[str, Any]) -> set[str]:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
+    @abstractmethod
     def render(self, inline: dict[str, Any]) -> dict[str, Any]:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
+    @abstractmethod
     def render(self, inline: dict[str, Any], variables: dict[str, Any]) -> dict[str, Any]:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
+    @abstractmethod
     def render_map(self, inline: dict[str, str]) -> dict[str, str]:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
+    @abstractmethod
     def render_map(self, inline: dict[str, str], variables: dict[str, Any]) -> dict[str, str]:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
+    @abstractmethod
     def validate(self, bean: T) -> None:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
+    @abstractmethod
     def decrypt(self, encrypted: str) -> str:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
+    @abstractmethod
     def encrypt(self, plaintext: str) -> str:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
+    @abstractmethod
     def logger(self) -> Logger:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
+    @abstractmethod
     def log_file_u_r_i(self) -> str:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
+    @abstractmethod
     def get_storage_output_prefix(self) -> str:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
+    @abstractmethod
     def storage(self) -> Storage:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
+    @abstractmethod
     def metrics(self) -> list[AbstractMetricEntry[Any]]:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
+    @abstractmethod
     def metric(self, metric_entry: AbstractMetricEntry[T]) -> RunContext:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
+    @abstractmethod
     def dynamic_worker_result(self, worker_task_results: list[WorkerTaskResult]) -> None:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
+    @abstractmethod
     def dynamic_worker_results(self) -> list[WorkerTaskResult]:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
+    @abstractmethod
     def working_dir(self) -> WorkingDir:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
+    @abstractmethod
     def cleanup(self) -> None:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
+    @abstractmethod
     def tenant_id(self) -> str:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
+    @abstractmethod
     def task_run_info(self) -> TaskRunInfo:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
+    @abstractmethod
     def flow_info(self) -> FlowInfo:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
+    @abstractmethod
     def plugin_configuration(self, name: str) -> Optional[T]:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
+    @abstractmethod
     def plugin_configurations(self) -> dict[str, Any]:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
+    @abstractmethod
     def version(self) -> str:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
+    @abstractmethod
     def namespace_kv(self, namespace: str) -> KVStore:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
     def state_store(self) -> StateStore:
         raise NotImplementedError  # TODO: translate from Java
 
+    @abstractmethod
     def local_path(self) -> LocalPath:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
+    @abstractmethod
     def is_initialized(self) -> bool:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
+    @abstractmethod
     def acl(self) -> AclChecker:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
+    @abstractmethod
     def assets(self) -> AssetEmitter:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
+    @abstractmethod
     def clone_for_plugin(self, plugin: Plugin) -> RunContext:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
+    @abstractmethod
     def input_and_output(self) -> InputAndOutput:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
+    @abstractmethod
     def sdk(self) -> SDK:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
     @dataclass(slots=True)
     class TaskRunInfo:

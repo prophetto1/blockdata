@@ -1,12 +1,15 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any
+# Source: E:\KESTRA-IO\plugins\plugin-aws\src\main\java\io\kestra\plugin\aws\glue\model\Output.java
+# WARNING: Unresolved types: core, io, kestra, models, tasks
+
+from dataclasses import dataclass
 from datetime import datetime
+from typing import Any
 
 
 @dataclass(slots=True, kw_only=True)
-class Output(io):
+class Output:
     job_name: str | None = None
     job_run_id: str | None = None
     state: str | None = None

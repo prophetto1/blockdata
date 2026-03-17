@@ -1,34 +1,38 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any
+# Source: E:\KESTRA-IO\plugins\plugin-singer\src\main\java\io\kestra\plugin\singer\taps\Slack.java
+
+from dataclasses import dataclass
 from datetime import date
+from typing import Any
 
 from integrations.singer.taps.abstract_python_tap import AbstractPythonTap
 from integrations.singer.models.feature import Feature
+from engine.core.exceptions.illegal_variable_evaluation_exception import IllegalVariableEvaluationException
+from integrations.aws.glue.model.output import Output
 from engine.core.models.property.property import Property
 from engine.core.runners.run_context import RunContext
 from engine.core.models.tasks.runnable_task import RunnableTask
 
 
 @dataclass(slots=True, kw_only=True)
-class Slack(AbstractPythonTap, RunnableTask):
+class Slack(AbstractPythonTap):
     """Fetch data from Slack with a Singer tap."""
     api_token: str
     start_date: date
-    private_channels: Property[bool] | None = None
-    public_channels: Property[bool] | None = None
-    archived_channels: Property[bool] | None = None
-    channels: Property[list[String]] | None = None
-    date_window_size: Property[int] | None = None
+    private_channels: Property[bool] = Property.ofValue(true)
+    public_channels: Property[bool] = Property.ofValue(false)
+    archived_channels: Property[bool] = Property.ofValue(false)
+    date_window_size: Property[int] = Property.ofValue(7)
+    channels: Property[list[str]] | None = None
 
     def features(self) -> list[Feature]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def configuration(self, run_context: RunContext) -> dict[String, Object]:
+    def configuration(self, run_context: RunContext) -> dict[str, Any]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def pip_packages(self) -> Property[list[String]]:
+    def pip_packages(self) -> Property[list[str]]:
         raise NotImplementedError  # TODO: translate from Java
 
     def command(self) -> Property[str]:

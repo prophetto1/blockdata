@@ -4,7 +4,7 @@ from __future__ import annotations
 # WARNING: Unresolved types: AnnotationValue, ConstraintValidator, ConstraintValidatorContext, Pattern
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Optional
 
 from engine.core.models.flows.flow import Flow
 from engine.core.services.flow_service import FlowService

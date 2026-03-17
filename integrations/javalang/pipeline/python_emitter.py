@@ -218,7 +218,9 @@ def _emit_method(spec: MethodSpec, indent: str) -> list[str]:
         lines.append(f'{indent}    """{spec.docstring}"""')
 
     # Body
-    if spec.body_lines:
+    if spec.is_abstract:
+        lines.append(f"{indent}    ...")
+    elif spec.body_lines:
         for bl in spec.body_lines:
             lines.append(f"{indent}    {bl}")
     else:

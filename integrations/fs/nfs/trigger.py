@@ -1,12 +1,15 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from enum import Enum
-from typing import Any
-from datetime import timedelta
-from pathlib import Path
+# Source: E:\KESTRA-IO\plugins\plugin-fs\src\main\java\io\kestra\plugin\fs\nfs\Trigger.java
+# WARNING: Unresolved types: Exception, IOException, On, core, fs, io, kestra, models, nfs, plugin, tasks
 
-from engine.core.models.triggers.abstract_trigger import AbstractTrigger
+from dataclasses import dataclass
+from enum import Enum
+from pathlib import Path
+from datetime import timedelta
+from typing import Any, Optional
+
+from integrations.airbyte.cloud.jobs.abstract_trigger import AbstractTrigger
 from engine.core.models.conditions.condition_context import ConditionContext
 from integrations.aws.eventbridge.model.entry import Entry
 from engine.core.models.executions.execution import Execution
@@ -18,23 +21,18 @@ from engine.core.models.triggers.trigger_context import TriggerContext
 from engine.core.models.triggers.trigger_output import TriggerOutput
 
 
-class ChangeType(str, Enum):
-    CREATE = "CREATE"
-    UPDATE = "UPDATE"
-
-
 @dataclass(slots=True, kw_only=True)
-class Trigger(AbstractTrigger, PollingTriggerInterface, TriggerOutput, StatefulTriggerInterface):
+class Trigger(AbstractTrigger):
     """Trigger on NFS file changes"""
-    nfs_service: NfsService | None = None
     from: Property[str]
-    reg_exp: Property[str] | None = None
+    nfs_service: NfsService = NfsService.getInstance()
     recursive: bool = False
-    interval: timedelta | None = None
-    on: Property[On] | None = None
+    interval: timedelta = Duration.ofSeconds(60)
+    on: Property[On] = Property.ofValue(On.CREATE_OR_UPDATE)
+    max_files: Property[int] = Property.ofValue(25)
+    reg_exp: Property[str] | None = None
     state_key: Property[str] | None = None
     state_ttl: Property[timedelta] | None = None
-    max_files: Property[int] | None = None
 
     def get_interval(self) -> timedelta:
         raise NotImplementedError  # TODO: translate from Java
@@ -42,7 +40,7 @@ class Trigger(AbstractTrigger, PollingTriggerInterface, TriggerOutput, StatefulT
     def evaluate(self, condition_context: ConditionContext, trigger_context: TriggerContext) -> Optional[Execution]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def map_to_file(self, path: Path) -> io:
+    def map_to_file(self, path: Path) -> io.kestra.plugin.fs.nfs.List.File:
         raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)
@@ -51,29 +49,15 @@ class Trigger(AbstractTrigger, PollingTriggerInterface, TriggerOutput, StatefulT
         candidate: Entry | None = None
         change_type: ChangeType | None = None
 
+    class ChangeType(str, Enum):
+        CREATE = "CREATE"
+        UPDATE = "UPDATE"
+
     @dataclass(slots=True)
     class TriggeredFile:
-        file: io | None = None
+        file: io.kestra.plugin.fs.nfs.List.File | None = None
         change_type: ChangeType | None = None
 
     @dataclass(slots=True)
-    class Output(io):
+    class Output:
         files: list[TriggeredFile] | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class PendingFile:
-    path: Path | None = None
-    candidate: Entry | None = None
-    change_type: ChangeType | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class TriggeredFile:
-    file: io | None = None
-    change_type: ChangeType | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class Output(io):
-    files: list[TriggeredFile] | None = None

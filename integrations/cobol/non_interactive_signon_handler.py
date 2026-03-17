@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-cobol\src\main\java\io\kestra\plugin\cobol\NonInteractiveSignonHandler.java
+# WARNING: Unresolved types: SignonEvent, SignonHandlerAdapter
+
+from dataclasses import dataclass
 from typing import Any
 
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 # Source: E:\KESTRA\scheduler\src\main\java\io\kestra\scheduler\SchedulerExecutionState.java
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Optional
 
 from engine.core.models.executions.execution import Execution
 from engine.core.repositories.execution_repository_interface import ExecutionRepositoryInterface

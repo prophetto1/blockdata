@@ -4,7 +4,7 @@ from __future__ import annotations
 # WARNING: Unresolved types: ApplicationContext, Exception, Logger, OpenTelemetry, Supplier
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Optional
 
 from engine.core.models.tasks.retrys.abstract_retry import AbstractRetry
 from engine.core.assets.asset_service import AssetService

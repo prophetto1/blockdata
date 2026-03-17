@@ -3,7 +3,7 @@ from __future__ import annotations
 # Source: E:\KESTRA\webserver\src\main\java\io\kestra\webserver\utils\Searcheable.java
 # WARNING: Unresolved types: Builder, Comparable, Function, T, U
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 from engine.core.repositories.array_list_total import ArrayListTotal

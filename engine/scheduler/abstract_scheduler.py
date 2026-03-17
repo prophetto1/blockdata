@@ -3,10 +3,11 @@ from __future__ import annotations
 # Source: E:\KESTRA\scheduler\src\main\java\io\kestra\scheduler\AbstractScheduler.java
 # WARNING: Unresolved types: ApplicationContext, ApplicationEventPublisher, AtomicBoolean, AtomicReference, BiConsumer, ConcurrentHashMap, Consumer, Exception, Runnable, ScheduledExecutorService, ScheduledFuture, ServiceState, Throwable
 
+from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import datetime
 from datetime import timedelta
-from typing import Any
+from typing import Any, Optional
 
 from engine.core.models.triggers.abstract_trigger import AbstractTrigger
 from engine.core.models.conditions.condition_context import ConditionContext
@@ -42,7 +43,7 @@ from engine.core.runners.worker_trigger_result import WorkerTriggerResult
 
 
 @dataclass(slots=True, kw_only=True)
-class AbstractScheduler:
+class AbstractScheduler(ABC):
     is_ready: bool = False
     schedule_executor: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor()
     execution_monitor_executor: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor()
@@ -118,8 +119,9 @@ class AbstractScheduler:
     def disable_invalid_trigger(self, f: FlowWithWorkerTrigger, e: Throwable) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
+    @abstractmethod
     def handle_next(self, flows: list[FlowWithSource], now: datetime, consumer: BiConsumer[list[Trigger], ScheduleContextInterface]) -> None:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
     def scheduler_triggers(self) -> list[FlowWithTriggers]:
         raise NotImplementedError  # TODO: translate from Java

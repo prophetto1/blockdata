@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-documentdb\src\main\java\io\kestra\plugin\documentdb\Update.java
+# WARNING: Unresolved types: Exception, core, io, kestra, models, tasks
+
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.documentdb.abstract_document_d_b_task import AbstractDocumentDBTask
@@ -10,24 +13,17 @@ from engine.core.models.tasks.runnable_task import RunnableTask
 
 
 @dataclass(slots=True, kw_only=True)
-class Update(AbstractDocumentDBTask, RunnableTask):
+class Update(AbstractDocumentDBTask):
     """Update documents in DocumentDB"""
-    filter: Property[dict[String, Object]] | None = None
-    update: Property[dict[String, Object]]
-    update_many: Property[bool] | None = None
+    update: Property[dict[str, Any]]
+    update_many: Property[bool] = Property.ofValue(false)
+    filter: Property[dict[str, Any]] | None = None
 
     def run(self, run_context: RunContext) -> Output:
         raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)
-    class Output(io):
+    class Output:
         matched_count: int | None = None
         modified_count: int | None = None
         upserted_id: str | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class Output(io):
-    matched_count: int | None = None
-    modified_count: int | None = None
-    upserted_id: str | None = None

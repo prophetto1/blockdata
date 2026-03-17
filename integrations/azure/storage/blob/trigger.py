@@ -1,20 +1,23 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-azure\src\main\java\io\kestra\plugin\azure\storage\blob\Trigger.java
+# WARNING: Unresolved types: Action, CopyObject, Exception, Filter, On, core, io, java, kestra, models, tasks, util
+
+from dataclasses import dataclass
 from enum import Enum
-from typing import Any
 from datetime import timedelta
+from typing import Any, Optional
 
 from integrations.azure.storage.blob.abstracts.abstract_blob_storage_container_interface import AbstractBlobStorageContainerInterface
-from integrations.azure.abstract_connection_interface import AbstractConnectionInterface
-from engine.core.models.triggers.abstract_trigger import AbstractTrigger
-from integrations.gcp.gcs.action_interface import ActionInterface
+from integrations.aws.abstract_connection_interface import AbstractConnectionInterface
+from integrations.airbyte.cloud.jobs.abstract_trigger import AbstractTrigger
+from integrations.aws.s3.action_interface import ActionInterface
 from integrations.azure.azure_client_with_sas_interface import AzureClientWithSasInterface
-from integrations.gcp.gcs.models.blob import Blob
+from integrations.azure.storage.blob.models.blob import Blob
 from engine.core.models.conditions.condition_context import ConditionContext
-from integrations.minio.copy import Copy
+from integrations.aws.s3.copy import Copy
 from engine.core.models.executions.execution import Execution
-from integrations.gcp.gcs.list_interface import ListInterface
+from integrations.aws.s3.list_interface import ListInterface
 from engine.core.models.triggers.polling_trigger_interface import PollingTriggerInterface
 from engine.core.models.property.property import Property
 from engine.core.models.triggers.stateful_trigger_interface import StatefulTriggerInterface
@@ -22,15 +25,13 @@ from engine.core.models.triggers.trigger_context import TriggerContext
 from engine.core.models.triggers.trigger_output import TriggerOutput
 
 
-class ChangeType(str, Enum):
-    CREATE = "CREATE"
-    UPDATE = "UPDATE"
-
-
 @dataclass(slots=True, kw_only=True)
-class Trigger(AbstractTrigger, PollingTriggerInterface, TriggerOutput, AbstractConnectionInterface, ListInterface, ActionInterface, AbstractBlobStorageContainerInterface, AzureClientWithSasInterface, StatefulTriggerInterface):
+class Trigger(AbstractTrigger):
     """Trigger a flow on a new file arrival in an Azure Blob Storage container."""
-    interval: timedelta | None = None
+    interval: timedelta = Duration.ofSeconds(60)
+    filter: Property[ListInterface.Filter] = Property.ofValue(Filter.FILES)
+    max_files: Property[int] = Property.ofValue(25)
+    on: Property[On] = Property.ofValue(On.CREATE_OR_UPDATE)
     endpoint: Property[str] | None = None
     connection_string: Property[str] | None = None
     shared_key_account_name: Property[str] | None = None
@@ -40,11 +41,8 @@ class Trigger(AbstractTrigger, PollingTriggerInterface, TriggerOutput, AbstractC
     prefix: Property[str] | None = None
     regexp: Property[str] | None = None
     delimiter: Property[str] | None = None
-    action: Property[ActionInterface] | None = None
-    move_to: Copy | None = None
-    filter: Property[ListInterface] | None = None
-    max_files: Property[int] | None = None
-    on: Property[On] | None = None
+    action: Property[ActionInterface.Action] | None = None
+    move_to: Copy.CopyObject | None = None
     state_key: Property[str] | None = None
     state_ttl: Property[timedelta] | None = None
 
@@ -52,21 +50,14 @@ class Trigger(AbstractTrigger, PollingTriggerInterface, TriggerOutput, AbstractC
         raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)
-    class Output(io):
-        blobs: java | None = None
+    class Output:
+        blobs: java.util.List[TriggeredBlob] | None = None
 
     @dataclass(slots=True)
     class TriggeredBlob:
         blob: Blob | None = None
-        change_type: Trigger | None = None
+        change_type: Trigger.ChangeType | None = None
 
-
-@dataclass(slots=True, kw_only=True)
-class Output(io):
-    blobs: java | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class TriggeredBlob:
-    blob: Blob | None = None
-    change_type: Trigger | None = None
+    class ChangeType(str, Enum):
+        CREATE = "CREATE"
+        UPDATE = "UPDATE"

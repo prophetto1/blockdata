@@ -2,7 +2,7 @@ from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\repositories\WorkerJobRunningRepositoryInterface.java
 
-from typing import Any, Protocol
+from typing import Any, Optional, Protocol
 
 from engine.core.runners.worker_job_running import WorkerJobRunning
 

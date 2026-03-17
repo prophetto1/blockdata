@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+# Source: E:\KESTRA-IO\plugins\plugin-amqp\src\main\java\io\kestra\plugin\amqp\AmqpConnectionInterface.java
+
 from typing import Any, Protocol
 
 from engine.core.models.property.property import Property
@@ -7,8 +9,13 @@ from engine.core.models.property.property import Property
 
 class AmqpConnectionInterface(Protocol):
     def get_url(self) -> Property[str]: ...
+
     def get_host(self) -> Property[str]: ...
+
     def get_port(self) -> Property[str]: ...
+
     def get_virtual_host(self) -> Property[str]: ...
+
     def get_username(self) -> Property[str]: ...
+
     def get_password(self) -> Property[str]: ...

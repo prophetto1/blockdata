@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-gcp\src\main\java\io\kestra\plugin\gcp\gcs\models\Logging.java
+# WARNING: Unresolved types: BucketInfo
+
+from dataclasses import dataclass
 from typing import Any
 
 
@@ -9,8 +12,9 @@ class Logging:
     log_bucket: str | None = None
     log_object_prefix: str | None = None
 
-    def of(self, item: BucketInfo) -> Logging:
+    @staticmethod
+    def of(item: BucketInfo.Logging) -> Logging:
         raise NotImplementedError  # TODO: translate from Java
 
-    def convert(self) -> BucketInfo:
+    def convert(self) -> BucketInfo.Logging:
         raise NotImplementedError  # TODO: translate from Java

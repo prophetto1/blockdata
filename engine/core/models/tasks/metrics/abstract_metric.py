@@ -2,6 +2,7 @@ from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\models\tasks\metrics\AbstractMetric.java
 
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any
 
@@ -15,14 +16,16 @@ from engine.core.models.tasks.metrics.timer_metric import TimerMetric
 
 
 @dataclass(slots=True, kw_only=True)
-class AbstractMetric:
+class AbstractMetric(ABC):
     name: Property[str]
     type: str
     description: Property[str] | None = None
     tags: Property[dict[str, str]] | None = None
 
+    @abstractmethod
     def get_type(self) -> str:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
+    @abstractmethod
     def to_metric(self, run_context: RunContext) -> AbstractMetricEntry[Any]:
-        raise NotImplementedError  # TODO: translate from Java
+        ...

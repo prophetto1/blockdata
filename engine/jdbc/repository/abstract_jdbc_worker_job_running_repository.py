@@ -3,8 +3,9 @@ from __future__ import annotations
 # Source: E:\KESTRA\jdbc\src\main\java\io\kestra\jdbc\repository\AbstractJdbcWorkerJobRunningRepository.java
 # WARNING: Unresolved types: DSLContext, io, jdbc, kestra
 
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Optional
 
 from engine.jdbc.abstract_jdbc_repository import AbstractJdbcRepository
 from engine.core.runners.worker_job_running import WorkerJobRunning
@@ -13,7 +14,7 @@ from engine.executor.worker_job_running_state_store import WorkerJobRunningState
 
 
 @dataclass(slots=True, kw_only=True)
-class AbstractJdbcWorkerJobRunningRepository(AbstractJdbcRepository):
+class AbstractJdbcWorkerJobRunningRepository(ABC, AbstractJdbcRepository):
     jdbc_repository: io.kestra.jdbc.AbstractJdbcRepository[WorkerJobRunning] | None = None
 
     def save(self, worker_job_running: WorkerJobRunning, context: DSLContext) -> WorkerJobRunning:

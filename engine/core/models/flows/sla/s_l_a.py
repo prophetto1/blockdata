@@ -2,8 +2,10 @@ from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\models\flows\sla\SLA.java
 
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any
+from enum import Enum
+from typing import Any, Optional
 
 from engine.core.models.executions.execution import Execution
 from engine.core.models.flows.sla.types.execution_assertion_s_l_a import ExecutionAssertionSLA
@@ -17,14 +19,15 @@ from engine.core.models.flows.sla.violation import Violation
 
 
 @dataclass(slots=True, kw_only=True)
-class SLA:
+class SLA(ABC):
     id: str
     type: SLA.Type
     behavior: Behavior
     labels: list[@NoSystemLabelValidation Label] | None = None
 
+    @abstractmethod
     def evaluate(self, run_context: RunContext, execution: Execution) -> Optional[Violation]:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
     class Type(str, Enum):
         MAX_DURATION = "MAX_DURATION"

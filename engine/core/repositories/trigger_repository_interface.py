@@ -3,7 +3,7 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\repositories\TriggerRepositoryInterface.java
 # WARNING: Unresolved types: Fields, Flux, Function, IllegalArgumentException, Pageable
 
-from typing import Any, Protocol
+from typing import Any, Optional, Protocol
 
 from engine.core.repositories.array_list_total import ArrayListTotal
 from engine.core.repositories.query_builder_interface import QueryBuilderInterface
@@ -13,7 +13,7 @@ from engine.core.models.triggers.trigger_context import TriggerContext
 from engine.plugin.core.dashboard.data.triggers import Triggers
 
 
-class TriggerRepositoryInterface(Protocol):
+class TriggerRepositoryInterface(QueryBuilderInterface, Protocol):
     def find_last(self, trigger: TriggerContext) -> Optional[Trigger]: ...
 
     def find_by_uid(self, uid: str) -> Optional[Trigger]: ...

@@ -3,6 +3,7 @@ from __future__ import annotations
 # Source: E:\KESTRA\cli\src\main\java\io\kestra\cli\AbstractApiCommand.java
 # WARNING: Unresolved types: CharSequence, DefaultHttpClient, HttpClientConfiguration, MutableHttpRequest, T, URISyntaxException
 
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any
 
@@ -11,7 +12,7 @@ from engine.core.http.http_request import HttpRequest
 
 
 @dataclass(slots=True, kw_only=True)
-class AbstractApiCommand(AbstractCommand):
+class AbstractApiCommand(ABC, AbstractCommand):
     server: str | None = None
     headers: dict[CharSequence, CharSequence] | None = None
     user: str | None = None

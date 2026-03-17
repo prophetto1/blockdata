@@ -4,7 +4,7 @@ from __future__ import annotations
 # WARNING: Unresolved types: ApplicationContext, Exception, ExtensionContext, ParameterContext, ParameterResolver
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Optional
 
 from engine.core.models.triggers.abstract_trigger import AbstractTrigger
 from engine.core.models.conditions.condition_context import ConditionContext

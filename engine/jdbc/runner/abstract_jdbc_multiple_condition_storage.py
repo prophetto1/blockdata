@@ -3,8 +3,9 @@ from __future__ import annotations
 # Source: E:\KESTRA\jdbc\src\main\java\io\kestra\jdbc\runner\AbstractJdbcMultipleConditionStorage.java
 # WARNING: Unresolved types: io, jdbc, kestra
 
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Optional
 
 from engine.jdbc.repository.abstract_jdbc_repository import AbstractJdbcRepository
 from engine.core.models.conditions.condition import Condition
@@ -14,7 +15,7 @@ from engine.core.models.triggers.multipleflows.multiple_condition_window import 
 
 
 @dataclass(slots=True, kw_only=True)
-class AbstractJdbcMultipleConditionStorage(AbstractJdbcRepository):
+class AbstractJdbcMultipleConditionStorage(ABC, AbstractJdbcRepository):
     jdbc_repository: io.kestra.jdbc.AbstractJdbcRepository[MultipleConditionWindow] | None = None
 
     def get(self, flow: FlowId, condition_id: str) -> Optional[MultipleConditionWindow]:

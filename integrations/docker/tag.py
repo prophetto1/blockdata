@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-docker\src\main\java\io\kestra\plugin\docker\Tag.java
+# WARNING: Unresolved types: Exception
+
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.docker.abstract_docker import AbstractDocker
@@ -11,7 +14,7 @@ from engine.core.models.tasks.void_output import VoidOutput
 
 
 @dataclass(slots=True, kw_only=True)
-class Tag(AbstractDocker, RunnableTask):
+class Tag(AbstractDocker):
     """Retag a Docker image"""
     source_image: Property[str]
     target_image: Property[str]

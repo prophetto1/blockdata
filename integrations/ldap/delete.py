@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+# Source: E:\KESTRA-IO\plugins\plugin-ldap\src\main\java\io\kestra\plugin\ldap\Delete.java
+# WARNING: Unresolved types: Exception, IOException, LDAPConnection, LDIFReader, Logger
+
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -10,13 +13,13 @@ from engine.core.models.tasks.void_output import VoidOutput
 
 
 @dataclass(slots=True, kw_only=True)
-class Delete(LdapConnection, RunnableTask):
+class Delete(LdapConnection):
     """Delete LDAP entries by DN"""
-    inputs: list[String]
-    deletions_done: int | None = None
-    deletion_requests: int | None = None
-    deletions_times: list[Long] | None = None
-    logger: Logger | None = None
+    inputs: list[str]
+    deletions_done: int = 0
+    deletion_requests: int = 0
+    deletions_times: list[int] = field(default_factory=list)
+    logger: Logger = None
 
     def run(self, run_context: RunContext) -> VoidOutput:
         raise NotImplementedError  # TODO: translate from Java

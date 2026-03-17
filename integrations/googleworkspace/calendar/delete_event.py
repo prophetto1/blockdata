@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-googleworkspace\src\main\java\io\kestra\plugin\googleworkspace\calendar\DeleteEvent.java
+# WARNING: Unresolved types: Exception
+
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.googleworkspace.calendar.abstract_calendar import AbstractCalendar
@@ -11,11 +14,11 @@ from engine.core.models.tasks.void_output import VoidOutput
 
 
 @dataclass(slots=True, kw_only=True)
-class DeleteEvent(AbstractCalendar, RunnableTask):
+class DeleteEvent(AbstractCalendar):
     """Delete a Google Calendar event"""
     calendar_id: Property[str]
     event_id: Property[str]
-    send_updates: Property[str] | None = None
+    send_updates: Property[str] = Property.ofValue("none")
 
     def run(self, run_context: RunContext) -> VoidOutput:
         raise NotImplementedError  # TODO: translate from Java

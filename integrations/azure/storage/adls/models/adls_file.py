@@ -1,8 +1,11 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any
+# Source: E:\KESTRA-IO\plugins\plugin-azure\src\main\java\io\kestra\plugin\azure\storage\adls\models\AdlsFile.java
+# WARNING: Unresolved types: ArchiveStatus, DataLakeFileClient, LeaseDurationType, LeaseStateType, LeaseStatusType
+
+from dataclasses import dataclass
 from datetime import datetime
+from typing import Any
 
 from integrations.azure.storage.blob.models.access_tier import AccessTier
 
@@ -30,7 +33,8 @@ class AdlsFile:
     owner: str | None = None
     group: str | None = None
     permissions: str | None = None
-    access_control_list: list[String] | None = None
+    access_control_list: list[str] | None = None
 
-    def of(self, data_lake_file_client: DataLakeFileClient) -> AdlsFile:
+    @staticmethod
+    def of(data_lake_file_client: DataLakeFileClient) -> AdlsFile:
         raise NotImplementedError  # TODO: translate from Java

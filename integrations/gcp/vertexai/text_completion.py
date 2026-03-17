@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-gcp\src\main\java\io\kestra\plugin\gcp\vertexai\TextCompletion.java
+# WARNING: Unresolved types: Exception, Prediction, core, io, kestra, models, tasks
+
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.gcp.vertexai.abstract_generative_ai import AbstractGenerativeAi
@@ -10,7 +13,7 @@ from engine.core.models.tasks.runnable_task import RunnableTask
 
 
 @dataclass(slots=True, kw_only=True)
-class TextCompletion(AbstractGenerativeAi, RunnableTask):
+class TextCompletion(AbstractGenerativeAi):
     """Generate text with Vertex AI"""
     prompt: Property[str]
 
@@ -18,10 +21,5 @@ class TextCompletion(AbstractGenerativeAi, RunnableTask):
         raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)
-    class Output(io):
+    class Output:
         predictions: list[Prediction] | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class Output(io):
-    predictions: list[Prediction] | None = None

@@ -3,7 +3,7 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\repositories\SettingRepositoryInterface.java
 # WARNING: Unresolved types: ConstraintViolationException
 
-from typing import Any, Protocol
+from typing import Any, Optional, Protocol
 
 from engine.core.models.setting import Setting
 

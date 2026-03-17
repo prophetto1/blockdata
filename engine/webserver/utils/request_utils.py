@@ -3,10 +3,10 @@ from __future__ import annotations
 # Source: E:\KESTRA\webserver\src\main\java\io\kestra\webserver\utils\RequestUtils.java
 # WARNING: Unresolved types: ChildFilter, Level
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from datetime import timedelta
-from typing import Any
+from typing import Any, ClassVar
 
 from engine.core.repositories.execution_repository_interface import ExecutionRepositoryInterface
 from engine.core.models.flows.flow_scope import FlowScope
@@ -17,7 +17,7 @@ from engine.core.models.flows.type import Type
 
 @dataclass(slots=True, kw_only=True)
 class RequestUtils:
-    q_u_e_r_y__s_t_r_i_n_g__s_e_p_a_r_a_t_o_r: str = ":"
+    q_u_e_r_y__s_t_r_i_n_g__s_e_p_a_r_a_t_o_r: ClassVar[str] = ":"
 
     @staticmethod
     def to_map(query_string: list[str]) -> dict[str, str]:

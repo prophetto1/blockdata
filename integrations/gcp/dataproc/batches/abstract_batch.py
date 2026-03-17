@@ -1,25 +1,32 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-gcp\src\main\java\io\kestra\plugin\gcp\dataproc\batches\AbstractBatch.java
+# WARNING: Unresolved types: Builder, Exception, cloud, com, core, dataproc, google, io, kestra, models, tasks, v1
+
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from typing import Any
 
-from integrations.opensearch.abstract_task import AbstractTask
-from integrations.neo4j.batch import Batch
+from integrations.compress.abstract_task import AbstractTask
+from integrations.azure.storage.cosmosdb.batch import Batch
+from engine.core.exceptions.illegal_variable_evaluation_exception import IllegalVariableEvaluationException
 from engine.core.models.property.property import Property
 from engine.core.runners.run_context import RunContext
 from engine.core.models.tasks.runnable_task import RunnableTask
+from engine.core.models.flows.state import State
 
 
 @dataclass(slots=True, kw_only=True)
-class AbstractBatch(AbstractTask, RunnableTask):
+class AbstractBatch(ABC, AbstractTask):
     region: Property[str]
     name: Property[str]
-    execution: AbstractBatch | None = None
-    peripherals: AbstractBatch | None = None
-    runtime: AbstractBatch | None = None
+    execution: AbstractBatch.ExecutionConfiguration | None = None
+    peripherals: AbstractBatch.PeripheralsConfiguration | None = None
+    runtime: AbstractBatch.RuntimeConfiguration | None = None
 
-    def build_batch(self, builder: Batch, run_context: RunContext) -> None:
-        raise NotImplementedError  # TODO: translate from Java
+    @abstractmethod
+    def build_batch(self, builder: Batch.Builder, run_context: RunContext) -> None:
+        ...
 
     def run(self, run_context: RunContext) -> Output:
         raise NotImplementedError  # TODO: translate from Java
@@ -28,7 +35,7 @@ class AbstractBatch(AbstractTask, RunnableTask):
     class ExecutionConfiguration:
         network_uri: Property[str] | None = None
         subnetwork_uri: Property[str] | None = None
-        network_tags: Property[list[String]] | None = None
+        network_tags: Property[list[str]] | None = None
         service_account_email: Property[str] | None = None
         kms_key: Property[str] | None = None
 
@@ -45,40 +52,8 @@ class AbstractBatch(AbstractTask, RunnableTask):
     class RuntimeConfiguration:
         container_image: Property[str] | None = None
         version: Property[str] | None = None
-        properties: Property[dict[String, String]] | None = None
+        properties: Property[dict[str, str]] | None = None
 
     @dataclass(slots=True)
-    class Output(io):
-        state: com | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class ExecutionConfiguration:
-    network_uri: Property[str] | None = None
-    subnetwork_uri: Property[str] | None = None
-    network_tags: Property[list[String]] | None = None
-    service_account_email: Property[str] | None = None
-    kms_key: Property[str] | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class PeripheralsConfiguration:
-    metastore_service: Property[str] | None = None
-    spark_history_server: SparkHistoryServerConfiguration | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class SparkHistoryServerConfiguration:
-    dataproc_cluster: Property[str] | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class RuntimeConfiguration:
-    container_image: Property[str] | None = None
-    version: Property[str] | None = None
-    properties: Property[dict[String, String]] | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class Output(io):
-    state: com | None = None
+    class Output:
+        state: com.google.cloud.dataproc.v1.Batch.State | None = None

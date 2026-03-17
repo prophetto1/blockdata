@@ -2,6 +2,7 @@ from __future__ import annotations
 
 # Source: E:\KESTRA\jdbc-mysql\src\main\java\io\kestra\repository\mysql\MysqlKvMetadataRepositoryService.java
 
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any
 
@@ -11,7 +12,7 @@ from engine.core.models.kv.persisted_kv_metadata import PersistedKvMetadata
 
 
 @dataclass(slots=True, kw_only=True)
-class MysqlKvMetadataRepositoryService:
+class MysqlKvMetadataRepositoryService(ABC):
 
     @staticmethod
     def find_condition(jdbc_repository: AbstractJdbcRepository[PersistedKvMetadata], query: str) -> Condition:

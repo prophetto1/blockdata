@@ -1,10 +1,13 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-graalvm\src\main\java\io\kestra\plugin\graalvm\python\FileTransform.java
+# WARNING: Unresolved types: Exception
+
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.graalvm.abstract_file_transform import AbstractFileTransform
-from engine.core.models.tasks.output import Output
+from integrations.aws.glue.model.output import Output
 from engine.core.models.property.property import Property
 from engine.core.runners.run_context import RunContext
 

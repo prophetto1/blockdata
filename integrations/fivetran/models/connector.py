@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+# Source: E:\KESTRA-IO\plugins\plugin-fivetran\src\main\java\io\kestra\plugin\fivetran\models\Connector.java
+
 from dataclasses import dataclass, field
-from typing import Any
 from datetime import datetime
+from typing import Any
 
 from integrations.fivetran.models.connector_status_response import ConnectorStatusResponse
 from integrations.fivetran.models.setup_test_result_response import SetupTestResultResponse
@@ -10,6 +12,7 @@ from integrations.fivetran.models.setup_test_result_response import SetupTestRes
 
 @dataclass(slots=True, kw_only=True)
 class Connector:
+    properties: dict[str, Any] = field(default_factory=dict)
     id: str | None = None
     name: str | None = None
     paused: bool | None = None
@@ -27,9 +30,8 @@ class Connector:
     created_at: datetime | None = None
     failed_at: datetime | None = None
     schedule_type: str | None = None
-    properties: dict[String, Object] | None = None
 
-    def get_properties(self) -> dict[String, Object]:
+    def get_properties(self) -> dict[str, Any]:
         raise NotImplementedError  # TODO: translate from Java
 
     def add_properties(self, property: str, value: Any) -> None:

@@ -3,8 +3,9 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\plugin\core\trigger\Flow.java
 # WARNING: Unresolved types: Logger, conditions, core, flows, io, kestra, models, tasks
 
-from dataclasses import dataclass
-from typing import Any
+from dataclasses import dataclass, field
+from enum import Enum
+from typing import Any, ClassVar, Optional
 
 from engine.core.models.triggers.abstract_trigger import AbstractTrigger
 from engine.core.models.conditions.condition import Condition
@@ -23,8 +24,8 @@ from engine.core.models.triggers.trigger_output import TriggerOutput
 @dataclass(slots=True, kw_only=True)
 class Flow(AbstractTrigger):
     """Trigger a Flow based on other Flows’ executions."""
-    t_r_i_g_g_e_r__v_a_r: str = "trigger"
-    o_u_t_p_u_t_s__v_a_r: str = "outputs"
+    t_r_i_g_g_e_r__v_a_r: ClassVar[str] = "trigger"
+    o_u_t_p_u_t_s__v_a_r: ClassVar[str] = "outputs"
     states: list[State.Type] = ListUtils.concat(State.Type.terminatedTypes(), List.of(PAUSED))
     inputs: dict[str, Any] | None = None
     preconditions: Preconditions | None = None

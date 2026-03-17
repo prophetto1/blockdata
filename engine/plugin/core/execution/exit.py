@@ -4,7 +4,8 @@ from __future__ import annotations
 # WARNING: Unresolved types: Exception
 
 from dataclasses import dataclass
-from typing import Any
+from enum import Enum
+from typing import Any, Optional
 
 from engine.core.models.executions.execution import Execution
 from engine.core.models.tasks.execution_updatable_task import ExecutionUpdatableTask

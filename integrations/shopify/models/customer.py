@@ -1,8 +1,10 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any
+# Source: E:\KESTRA-IO\plugins\plugin-shopify\src\main\java\io\kestra\plugin\shopify\models\Customer.java
+
+from dataclasses import dataclass
 from datetime import datetime
+from typing import Any
 
 
 @dataclass(slots=True, kw_only=True)
@@ -28,13 +30,14 @@ class Customer:
     currency: str | None = None
     accepts_marketing_updated_at: datetime | None = None
     marketing_opt_in_level: str | None = None
-    tax_exemptions: list[String] | None = None
+    tax_exemptions: list[str] | None = None
     admin_graphql_api_id: str | None = None
     default_address: CustomerAddress | None = None
     addresses: list[CustomerAddress] | None = None
-    metafields: dict[String, Object] | None = None
+    metafields: dict[str, Any] | None = None
 
-    def from_map(self, customer_data: dict[String, Object]) -> Customer:
+    @staticmethod
+    def from_map(customer_data: dict[str, Any]) -> Customer:
         raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)
@@ -56,24 +59,3 @@ class Customer:
         country_code: str | None = None
         country_name: str | None = None
         default_address: bool | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class CustomerAddress:
-    id: int | None = None
-    customer_id: int | None = None
-    first_name: str | None = None
-    last_name: str | None = None
-    company: str | None = None
-    address1: str | None = None
-    address2: str | None = None
-    city: str | None = None
-    province: str | None = None
-    country: str | None = None
-    zip: str | None = None
-    phone: str | None = None
-    name: str | None = None
-    province_code: str | None = None
-    country_code: str | None = None
-    country_name: str | None = None
-    default_address: bool | None = None

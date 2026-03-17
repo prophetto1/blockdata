@@ -3,8 +3,9 @@ from __future__ import annotations
 # Source: E:\KESTRA\jdbc\src\main\java\io\kestra\jdbc\repository\AbstractJdbcCrudRepository.java
 # WARNING: Unresolved types: DSLContext, F, Flux, OrderField, Pageable, T, io, jdbc, kestra
 
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Optional
 
 from engine.jdbc.abstract_jdbc_repository import AbstractJdbcRepository
 from engine.core.repositories.array_list_total import ArrayListTotal
@@ -12,7 +13,7 @@ from engine.core.models.conditions.condition import Condition
 
 
 @dataclass(slots=True, kw_only=True)
-class AbstractJdbcCrudRepository(AbstractJdbcRepository):
+class AbstractJdbcCrudRepository(ABC, AbstractJdbcRepository):
     jdbc_repository: io.kestra.jdbc.AbstractJdbcRepository[T] | None = None
 
     def create(self, item: T) -> T:

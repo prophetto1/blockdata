@@ -1,8 +1,12 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-kubernetes\src\main\java\io\kestra\plugin\kubernetes\models\Connection.java
+# WARNING: Unresolved types: Config
+
+from dataclasses import dataclass
 from typing import Any
 
+from engine.core.exceptions.illegal_variable_evaluation_exception import IllegalVariableEvaluationException
 from integrations.kubernetes.models.o_auth_token_provider import OAuthTokenProvider
 from engine.core.models.property.property import Property
 from engine.core.runners.run_context import RunContext
@@ -10,10 +14,11 @@ from engine.core.runners.run_context import RunContext
 
 @dataclass(slots=True, kw_only=True)
 class Connection:
+    master_url: Property[str] = Property.ofValue("https://kubernetes.default.svc")
+    api_version: Property[str] = Property.ofValue("v1")
+    client_key_algo: Property[str] = Property.ofValue("RSA")
     trust_certs: Property[bool] | None = None
     disable_hostname_verification: Property[bool] | None = None
-    master_url: Property[str] | None = None
-    api_version: Property[str] | None = None
     namespace: Property[str] | None = None
     ca_cert_file: Property[str] | None = None
     ca_cert_data: Property[str] | None = None
@@ -21,7 +26,6 @@ class Connection:
     client_cert_data: Property[str] | None = None
     client_key_file: Property[str] | None = None
     client_key_data: Property[str] | None = None
-    client_key_algo: Property[str] | None = None
     client_key_passphrase: Property[str] | None = None
     trust_store_file: Property[str] | None = None
     trust_store_passphrase: Property[str] | None = None

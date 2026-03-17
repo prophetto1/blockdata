@@ -3,9 +3,10 @@ from __future__ import annotations
 # Source: E:\KESTRA\tests\src\main\java\io\kestra\core\utils\TestsUtils.java
 # WARNING: Unresolved types: Class, Consumer, Entry, Flux, IOException, JsonProcessingException, ObjectMapper, Predicate, Runnable, StackTraceElement, T, ThreadLocal, URISyntaxException
 
-from dataclasses import dataclass
+from abc import ABC, abstractmethod
+from dataclasses import dataclass, field
 from datetime import timedelta
-from typing import Any
+from typing import Any, ClassVar
 
 from engine.core.models.triggers.abstract_trigger import AbstractTrigger
 from engine.core.models.conditions.condition_context import ConditionContext
@@ -26,9 +27,9 @@ from engine.core.models.triggers.trigger import Trigger
 
 
 @dataclass(slots=True, kw_only=True)
-class TestsUtils:
-    queue_consumers_cancellations: ThreadLocal[list[Runnable]] = ThreadLocal.withInitial(ArrayList::new)
-    mapper: ObjectMapper = JacksonMapper.ofYaml()
+class TestsUtils(ABC):
+    queue_consumers_cancellations: ClassVar[ThreadLocal[list[Runnable]]] = ThreadLocal.withInitial(ArrayList::new)
+    mapper: ClassVar[ObjectMapper] = JacksonMapper.ofYaml()
 
     @staticmethod
     def queue_consumers_cleanup() -> None:

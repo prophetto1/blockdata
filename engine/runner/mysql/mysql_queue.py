@@ -3,8 +3,8 @@ from __future__ import annotations
 # Source: E:\KESTRA\jdbc-mysql\src\main\java\io\kestra\runner\mysql\MysqlQueue.java
 # WARNING: Unresolved types: ApplicationContext, Class, DSLContext, Record, T
 
-from dataclasses import dataclass
-from typing import Any
+from dataclasses import dataclass, field
+from typing import Any, ClassVar
 
 from engine.core.models.conditions.condition import Condition
 from engine.jdbc.runner.jdbc_queue import JdbcQueue
@@ -13,7 +13,7 @@ from engine.core.models.collectors.result import Result
 
 @dataclass(slots=True, kw_only=True)
 class MysqlQueue(JdbcQueue):
-    q_u_e_u_e__c_o_n_s_u_m_e_r_s: MysqlQueueConsumers = new MysqlQueueConsumers()
+    q_u_e_u_e__c_o_n_s_u_m_e_r_s: ClassVar[MysqlQueueConsumers] = new MysqlQueueConsumers()
 
     def build_type_condition(self, type: str) -> Condition:
         raise NotImplementedError  # TODO: translate from Java
@@ -26,7 +26,7 @@ class MysqlQueue(JdbcQueue):
 
     @dataclass(slots=True)
     class MysqlQueueConsumers:
-        c_o_n_s_u_m_e_r_s: set[str] | None = None
+        c_o_n_s_u_m_e_r_s: ClassVar[set[str]]
 
         def all_for_consumer_not_in(self, consumer: str) -> set[str]:
             raise NotImplementedError  # TODO: translate from Java

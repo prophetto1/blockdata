@@ -11,5 +11,5 @@ from engine.core.queues.queue_interface import QueueInterface
 from engine.core.runners.worker_job import WorkerJob
 
 
-class WorkerJobQueueInterface(Protocol):
+class WorkerJobQueueInterface(QueueInterface, Protocol):
     def subscribe(self, worker_id: str, worker_group: str, consumer: Consumer[Either[WorkerJob, DeserializationException]]) -> Runnable: ...

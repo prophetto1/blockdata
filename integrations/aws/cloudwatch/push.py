@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-aws\src\main\java\io\kestra\plugin\aws\cloudwatch\Push.java
+# WARNING: Unresolved types: Exception, core, io, kestra, models, tasks
+
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.aws.cloudwatch.abstract_cloud_watch import AbstractCloudWatch
@@ -10,7 +13,7 @@ from engine.core.models.tasks.runnable_task import RunnableTask
 
 
 @dataclass(slots=True, kw_only=True)
-class Push(AbstractCloudWatch, RunnableTask):
+class Push(AbstractCloudWatch):
     """Push custom metrics to CloudWatch"""
     namespace: Property[str]
     metrics: Property[list[MetricValue]]
@@ -23,21 +26,8 @@ class Push(AbstractCloudWatch, RunnableTask):
         metric_name: Property[str]
         value: Property[float] | None = None
         unit: Property[str] | None = None
-        dimensions: Property[dict[String, Object]] | None = None
+        dimensions: Property[dict[str, Any]] | None = None
 
     @dataclass(slots=True)
-    class Output(io):
+    class Output:
         count: int | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class MetricValue:
-    metric_name: Property[str]
-    value: Property[float] | None = None
-    unit: Property[str] | None = None
-    dimensions: Property[dict[String, Object]] | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class Output(io):
-    count: int | None = None

@@ -3,7 +3,8 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\utils\EditionProvider.java
 
 from dataclasses import dataclass
-from typing import Any
+from enum import Enum
+from typing import Any, Optional
 
 from engine.core.repositories.setting_repository_interface import SettingRepositoryInterface
 

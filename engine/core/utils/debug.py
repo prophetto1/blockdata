@@ -3,14 +3,14 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\utils\Debug.java
 # WARNING: Unresolved types: JavaTimeModule, Logger, ObjectMapper, T
 
-from dataclasses import dataclass
-from typing import Any
+from dataclasses import dataclass, field
+from typing import Any, ClassVar
 
 
 @dataclass(slots=True, kw_only=True)
 class Debug:
-    n_a_m_e: str = Thread.currentThread().getStackTrace()[2].getClassName()
-    l_o_g_g_e_r: Logger = LoggerFactory.getLogger(NAME)
+    n_a_m_e: ClassVar[str] = Thread.currentThread().getStackTrace()[2].getClassName()
+    l_o_g_g_e_r: ClassVar[Logger] = LoggerFactory.getLogger(NAME)
     m_a_p_p_e_r: ObjectMapper = new ObjectMapper()
         .registerModule(new JavaTimeModule())
         .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)

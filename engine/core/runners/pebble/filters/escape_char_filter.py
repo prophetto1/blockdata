@@ -4,12 +4,13 @@ from __future__ import annotations
 # WARNING: Unresolved types: EvaluationContext, Filter, PebbleException, PebbleTemplate
 
 from dataclasses import dataclass, field
-from typing import Any
+from enum import Enum
+from typing import Any, ClassVar
 
 
 @dataclass(slots=True, kw_only=True)
 class EscapeCharFilter:
-    a_r_g__n_a_m_e: str = "type"
+    a_r_g__n_a_m_e: ClassVar[str] = "type"
     argument_names: list[str] = field(default_factory=list)
 
     def get_argument_names(self) -> list[str]:

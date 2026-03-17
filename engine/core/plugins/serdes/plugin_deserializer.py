@@ -3,8 +3,8 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\plugins\serdes\PluginDeserializer.java
 # WARNING: Unresolved types: Class, DeserializationContext, IOException, JsonDeserializer, JsonMappingException, JsonNode, JsonParser, T
 
-from dataclasses import dataclass
-from typing import Any
+from dataclasses import dataclass, field
+from typing import Any, ClassVar
 
 from engine.core.models.plugin import Plugin
 from engine.core.plugins.plugin_registry import PluginRegistry
@@ -12,8 +12,8 @@ from engine.core.plugins.plugin_registry import PluginRegistry
 
 @dataclass(slots=True, kw_only=True)
 class PluginDeserializer(JsonDeserializer):
-    t_y_p_e: str = "type"
-    v_e_r_s_i_o_n: str = "version"
+    t_y_p_e: ClassVar[str] = "type"
+    v_e_r_s_i_o_n: ClassVar[str] = "version"
     plugin_registry: PluginRegistry | None = None
 
     def deserialize(self, parser: JsonParser, context: DeserializationContext) -> T:

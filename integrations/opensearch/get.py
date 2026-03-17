@@ -1,16 +1,19 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-opensearch\src\main\java\io\kestra\plugin\opensearch\Get.java
+# WARNING: Unresolved types: Exception, core, io, kestra, models, tasks
+
+from dataclasses import dataclass
 from typing import Any
 
-from integrations.opensearch.abstract_task import AbstractTask
+from integrations.compress.abstract_task import AbstractTask
 from engine.core.models.property.property import Property
 from engine.core.runners.run_context import RunContext
 from engine.core.models.tasks.runnable_task import RunnableTask
 
 
 @dataclass(slots=True, kw_only=True)
-class Get(AbstractTask, RunnableTask):
+class Get(AbstractTask):
     """Retrieve a document from OpenSearch"""
     index: Property[str]
     key: Property[str]
@@ -20,10 +23,5 @@ class Get(AbstractTask, RunnableTask):
         raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)
-    class Output(io):
-        row: dict[String, Object] | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class Output(io):
-    row: dict[String, Object] | None = None
+    class Output:
+        row: dict[str, Any] | None = None

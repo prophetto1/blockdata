@@ -4,6 +4,7 @@ from __future__ import annotations
 # WARNING: Unresolved types: Exception, Flux, HttpStatusException, MutableHttpResponse, ObjectMapper
 
 from dataclasses import dataclass
+from enum import Enum
 from typing import Any
 
 from engine.core.models.triggers.abstract_trigger import AbstractTrigger

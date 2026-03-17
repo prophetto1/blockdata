@@ -3,16 +3,16 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\serializers\FileSerde.java
 # WARNING: Unresolved types: BufferedReader, Class, Consumer, Flux, FluxSink, IOException, JsonProcessingException, MappingIterator, Mono, ObjectMapper, OutputStream, Reader, SequenceWriter, T, TypeReference, Writer
 
-from dataclasses import dataclass
-from typing import Any
+from dataclasses import dataclass, field
+from typing import Any, ClassVar
 
 
 @dataclass(slots=True, kw_only=True)
 class FileSerde:
-    b_u_f_f_e_r__s_i_z_e: int = 32 * 1024
-    d_e_f_a_u_l_t__o_b_j_e_c_t__m_a_p_p_e_r: ObjectMapper = JacksonMapper.ofIon()
-    j_s_o_n__o_b_j_e_c_t__m_a_p_p_e_r: ObjectMapper = JacksonMapper.ofJson()
-    d_e_f_a_u_l_t__t_y_p_e__r_e_f_e_r_e_n_c_e: TypeReference[Any] = new TypeReference<>(){}
+    b_u_f_f_e_r__s_i_z_e: ClassVar[int] = 32 * 1024
+    d_e_f_a_u_l_t__o_b_j_e_c_t__m_a_p_p_e_r: ClassVar[ObjectMapper] = JacksonMapper.ofIon()
+    j_s_o_n__o_b_j_e_c_t__m_a_p_p_e_r: ClassVar[ObjectMapper] = JacksonMapper.ofJson()
+    d_e_f_a_u_l_t__t_y_p_e__r_e_f_e_r_e_n_c_e: ClassVar[TypeReference[Any]] = new TypeReference<>(){}
 
     @staticmethod
     def write(output: OutputStream, row: Any) -> None:

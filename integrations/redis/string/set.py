@@ -1,57 +1,44 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any
+# Source: E:\KESTRA-IO\plugins\plugin-redis\src\main\java\io\kestra\plugin\redis\string\Set.java
+# WARNING: Unresolved types: Exception, SetArgs, core, io, kestra, models, tasks
+
+from dataclasses import dataclass
 from datetime import datetime
 from datetime import timedelta
+from typing import Any
 
 from integrations.redis.abstract_redis_connection import AbstractRedisConnection
+from engine.core.exceptions.illegal_variable_evaluation_exception import IllegalVariableEvaluationException
 from engine.core.models.property.property import Property
 from engine.core.runners.run_context import RunContext
 from engine.core.models.tasks.runnable_task import RunnableTask
-from integrations.redis.models.serde_type import SerdeType
+from integrations.amqp.models.serde_type import SerdeType
 
 
 @dataclass(slots=True, kw_only=True)
-class Set(AbstractRedisConnection, RunnableTask):
+class Set(AbstractRedisConnection):
     """Write a string value to Redis"""
     key: Property[str]
     value: Property[Any]
-    options: Options | None = None
-    get: Property[bool] | None = None
-    serde_type: Property[SerdeType]
+    options: Options = Options.builder().build()
+    get: Property[bool] = Property.ofValue(false)
+    serde_type: Property[SerdeType] = Property.ofValue(SerdeType.STRING)
 
     def run(self, run_context: RunContext) -> Output:
         raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)
-    class Output(io):
+    class Output:
         old_value: str | None = None
 
     @dataclass(slots=True)
     class Options:
+        must_not_exist: Property[bool] = Property.ofValue(false)
+        must_exist: Property[bool] = Property.ofValue(false)
+        keep_ttl: Property[bool] = Property.ofValue(false)
         expiration_duration: Property[timedelta] | None = None
         expiration_date: Property[datetime] | None = None
-        must_not_exist: Property[bool] | None = None
-        must_exist: Property[bool] | None = None
-        keep_ttl: Property[bool] | None = None
 
         def as_redis_set(self, run_context: RunContext) -> SetArgs:
             raise NotImplementedError  # TODO: translate from Java
-
-
-@dataclass(slots=True, kw_only=True)
-class Output(io):
-    old_value: str | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class Options:
-    expiration_duration: Property[timedelta] | None = None
-    expiration_date: Property[datetime] | None = None
-    must_not_exist: Property[bool] | None = None
-    must_exist: Property[bool] | None = None
-    keep_ttl: Property[bool] | None = None
-
-    def as_redis_set(self, run_context: RunContext) -> SetArgs:
-        raise NotImplementedError  # TODO: translate from Java

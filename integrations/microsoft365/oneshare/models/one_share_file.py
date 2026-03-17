@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-microsoft365\src\main\java\io\kestra\plugin\microsoft365\oneshare\models\OneShareFile.java
+# WARNING: Unresolved types: DriveItem, OffsetDateTime
+
+from dataclasses import dataclass
 from typing import Any
 
 
@@ -15,5 +18,6 @@ class OneShareFile:
     size: int | None = None
     is_folder: bool | None = None
 
-    def of(self, drive_item: DriveItem) -> OneShareFile:
+    @staticmethod
+    def of(drive_item: DriveItem) -> OneShareFile:
         raise NotImplementedError  # TODO: translate from Java

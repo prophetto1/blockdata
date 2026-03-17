@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-gcp\src\main\java\io\kestra\plugin\gcp\bigquery\DeleteDataset.java
+# WARNING: Unresolved types: Exception, core, io, kestra, models, tasks
+
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.gcp.bigquery.abstract_bigquery import AbstractBigquery
@@ -10,7 +13,7 @@ from engine.core.models.tasks.runnable_task import RunnableTask
 
 
 @dataclass(slots=True, kw_only=True)
-class DeleteDataset(AbstractBigquery, RunnableTask):
+class DeleteDataset(AbstractBigquery):
     """Delete a BigQuery dataset"""
     name: Property[str]
     delete_contents: Property[bool] | None = None
@@ -19,10 +22,5 @@ class DeleteDataset(AbstractBigquery, RunnableTask):
         raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)
-    class Output(io):
+    class Output:
         dataset: str
-
-
-@dataclass(slots=True, kw_only=True)
-class Output(io):
-    dataset: str

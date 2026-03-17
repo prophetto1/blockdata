@@ -3,8 +3,8 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\utils\Logs.java
 # WARNING: Unresolved types: Level, Logger
 
-from dataclasses import dataclass
-from typing import Any
+from dataclasses import dataclass, field
+from typing import Any, ClassVar
 
 from engine.core.models.executions.execution import Execution
 from engine.core.models.flows.flow_id import FlowId
@@ -14,10 +14,10 @@ from engine.core.models.triggers.trigger_context import TriggerContext
 
 @dataclass(slots=True, kw_only=True)
 class Logs:
-    f_l_o_w__p_r_e_f_i_x__w_i_t_h__t_e_n_a_n_t: str = "[tenant: {}] [namespace: {}] [flow: {}] "
-    e_x_e_c_u_t_i_o_n__p_r_e_f_i_x__w_i_t_h__t_e_n_a_n_t: str = FLOW_PREFIX_WITH_TENANT + "[execution: {}] "
-    t_r_i_g_g_e_r__p_r_e_f_i_x__w_i_t_h__t_e_n_a_n_t: str = FLOW_PREFIX_WITH_TENANT + "[trigger: {}] "
-    t_a_s_k_r_u_n__p_r_e_f_i_x__w_i_t_h__t_e_n_a_n_t: str = FLOW_PREFIX_WITH_TENANT + "[task: {}] [execution: {}] [taskrun: {}] "
+    f_l_o_w__p_r_e_f_i_x__w_i_t_h__t_e_n_a_n_t: ClassVar[str] = "[tenant: {}] [namespace: {}] [flow: {}] "
+    e_x_e_c_u_t_i_o_n__p_r_e_f_i_x__w_i_t_h__t_e_n_a_n_t: ClassVar[str] = FLOW_PREFIX_WITH_TENANT + "[execution: {}] "
+    t_r_i_g_g_e_r__p_r_e_f_i_x__w_i_t_h__t_e_n_a_n_t: ClassVar[str] = FLOW_PREFIX_WITH_TENANT + "[trigger: {}] "
+    t_a_s_k_r_u_n__p_r_e_f_i_x__w_i_t_h__t_e_n_a_n_t: ClassVar[str] = FLOW_PREFIX_WITH_TENANT + "[task: {}] [execution: {}] [taskrun: {}] "
 
     @staticmethod
     def log_execution(flow: FlowId, logger: Logger, level: Level, message: str) -> None:

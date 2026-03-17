@@ -3,9 +3,9 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\runners\ExecutableUtils.java
 # WARNING: Unresolved types: T
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any
+from typing import Any, ClassVar, Optional
 
 from engine.core.models.tasks.executable_task import ExecutableTask
 from engine.core.models.executions.execution import Execution
@@ -27,9 +27,9 @@ from engine.core.models.flows.type import Type
 
 @dataclass(slots=True, kw_only=True)
 class ExecutableUtils:
-    t_a_s_k__v_a_r_i_a_b_l_e__i_t_e_r_a_t_i_o_n_s: str = "iterations"
-    t_a_s_k__v_a_r_i_a_b_l_e__n_u_m_b_e_r__o_f__b_a_t_c_h_e_s: str = "numberOfBatches"
-    t_a_s_k__v_a_r_i_a_b_l_e__s_u_b_f_l_o_w__o_u_t_p_u_t_s__b_a_s_e__u_r_i: str = "subflowOutputsBaseUri"
+    t_a_s_k__v_a_r_i_a_b_l_e__i_t_e_r_a_t_i_o_n_s: ClassVar[str] = "iterations"
+    t_a_s_k__v_a_r_i_a_b_l_e__n_u_m_b_e_r__o_f__b_a_t_c_h_e_s: ClassVar[str] = "numberOfBatches"
+    t_a_s_k__v_a_r_i_a_b_l_e__s_u_b_f_l_o_w__o_u_t_p_u_t_s__b_a_s_e__u_r_i: ClassVar[str] = "subflowOutputsBaseUri"
 
     @staticmethod
     def guess_state(execution: Execution, transmit_failed: bool, allowed_failure: bool, allow_warning: bool) -> State.Type:

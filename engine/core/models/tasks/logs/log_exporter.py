@@ -3,6 +3,7 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\models\tasks\logs\LogExporter.java
 # WARNING: Unresolved types: Exception, Flux, T, core, io, kestra, models
 
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any
 
@@ -13,9 +14,10 @@ from engine.core.runners.run_context import RunContext
 
 
 @dataclass(slots=True, kw_only=True)
-class LogExporter:
+class LogExporter(ABC):
     id: str
     type: str
 
+    @abstractmethod
     def send_logs(self, run_context: RunContext, log_records: Flux[LogRecord]) -> T:
-        raise NotImplementedError  # TODO: translate from Java
+        ...

@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+# Source: E:\KESTRA-IO\plugins\plugin-ldap\src\main\java\io\kestra\plugin\ldap\Modify.java
+# WARNING: Unresolved types: Exception, IOException, LDAPConnection, LDAPException, LDIFException, LDIFReader, Logger
+
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -10,13 +13,13 @@ from engine.core.models.tasks.void_output import VoidOutput
 
 
 @dataclass(slots=True, kw_only=True)
-class Modify(LdapConnection, RunnableTask):
+class Modify(LdapConnection):
     """Apply LDIF changes to LDAP"""
-    inputs: list[String]
-    logger: Logger | None = None
-    modifications_done: int | None = None
-    modification_requests: int | None = None
-    modifications_times: list[Long] | None = None
+    inputs: list[str]
+    logger: Logger = None
+    modifications_done: int = 0
+    modification_requests: int = 0
+    modifications_times: list[int] = field(default_factory=list)
 
     def run(self, run_context: RunContext) -> VoidOutput:
         raise NotImplementedError  # TODO: translate from Java

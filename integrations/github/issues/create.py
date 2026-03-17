@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-github\src\main\java\io\kestra\plugin\github\issues\Create.java
+# WARNING: Unresolved types: Exception, core, io, kestra, models, tasks
+
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.github.github_connector import GithubConnector
@@ -10,24 +13,18 @@ from engine.core.models.tasks.runnable_task import RunnableTask
 
 
 @dataclass(slots=True, kw_only=True)
-class Create(GithubConnector, RunnableTask):
+class Create(GithubConnector):
     """Create a GitHub issue"""
     repository: Property[str] | None = None
     title: Property[str] | None = None
     body: Property[str] | None = None
-    labels: Property[list[String]] | None = None
-    assignees: Property[list[String]] | None = None
+    labels: Property[list[str]] | None = None
+    assignees: Property[list[str]] | None = None
 
-    def run(self, run_context: RunContext) -> Create:
+    def run(self, run_context: RunContext) -> Create.Output:
         raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)
-    class Output(io):
-        issue_url: URL | None = None
+    class Output:
+        issue_url: str | None = None
         issue_number: int | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class Output(io):
-    issue_url: URL | None = None
-    issue_number: int | None = None

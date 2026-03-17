@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+# Source: E:\KESTRA-IO\plugins\plugin-neo4j\src\main\java\io\kestra\plugin\neo4j\models\StoreType.java
+
 from enum import Enum
 from typing import Any
 

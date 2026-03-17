@@ -1,24 +1,29 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-fs\src\main\java\io\kestra\plugin\fs\ftp\Download.java
+# WARNING: Unresolved types: FileSystemOptions, IOException, Options, Proxy, fs, io, kestra, plugin, vfs
+
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.fs.ftp.ftp_interface import FtpInterface
+from engine.core.exceptions.illegal_variable_evaluation_exception import IllegalVariableEvaluationException
 from engine.core.models.property.property import Property
 from engine.core.runners.run_context import RunContext
+from engine.core.models.flows.type import Type
 
 
 @dataclass(slots=True, kw_only=True)
-class Download(io, FtpInterface):
+class Download(Download):
     """Download a file from FTP"""
+    root_dir: Property[bool] = Property.ofValue(true)
+    port: Property[str] = Property.ofValue("21")
+    passive_mode: Property[bool] = Property.ofValue(true)
+    remote_ip_verification: Property[bool] = Property.ofValue(true)
+    options: Options = Options.builder().build()
     proxy_host: Property[str] | None = None
     proxy_port: Property[str] | None = None
-    proxy_type: Property[Proxy] | None = None
-    root_dir: Property[bool] | None = None
-    port: Property[str] | None = None
-    passive_mode: Property[bool] | None = None
-    remote_ip_verification: Property[bool] | None = None
-    options: Options | None = None
+    proxy_type: Property[Proxy.Type] | None = None
 
     def fs_options(self, run_context: RunContext) -> FileSystemOptions:
         raise NotImplementedError  # TODO: translate from Java

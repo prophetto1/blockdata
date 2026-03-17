@@ -3,6 +3,7 @@ from __future__ import annotations
 # Source: E:\KESTRA\jdbc-mysql\src\main\java\io\kestra\repository\mysql\MysqlFlowRepositoryService.java
 # WARNING: Unresolved types: Op
 
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any
 
@@ -13,7 +14,7 @@ from engine.core.models.query_filter import QueryFilter
 
 
 @dataclass(slots=True, kw_only=True)
-class MysqlFlowRepositoryService:
+class MysqlFlowRepositoryService(ABC):
 
     @staticmethod
     def find_condition(jdbc_repository: AbstractJdbcRepository[Any], query: str, labels: dict[str, str]) -> Condition:

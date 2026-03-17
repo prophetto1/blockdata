@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
 
 from engine.cli.abstract_api_command import AbstractApiCommand
 
@@ -13,7 +13,7 @@ from engine.cli.abstract_api_command import AbstractApiCommand
 @dataclass(slots=True, kw_only=True)
 class FlowTestCommand(AbstractApiCommand):
     inputs: list[str] = field(default_factory=list)
-    random: SecureRandom = new SecureRandom()
+    random: ClassVar[SecureRandom] = new SecureRandom()
     application_context: ApplicationContext | None = None
     file: Path | None = None
     spec: CommandLine.Model.CommandSpec | None = None

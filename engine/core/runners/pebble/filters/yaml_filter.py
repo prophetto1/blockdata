@@ -3,13 +3,13 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\runners\pebble\filters\YamlFilter.java
 # WARNING: Unresolved types: EvaluationContext, Filter, GuavaModule, JavaTimeModule, Jdk8Module, ObjectMapper, ParameterNamesModule, PebbleException, PebbleTemplate, YAMLFactory
 
-from dataclasses import dataclass
-from typing import Any
+from dataclasses import dataclass, field
+from typing import Any, ClassVar
 
 
 @dataclass(slots=True, kw_only=True)
 class YamlFilter:
-    m_a_p_p_e_r: ObjectMapper = new ObjectMapper(
+    m_a_p_p_e_r: ClassVar[ObjectMapper] = new ObjectMapper(
         new YAMLFactory()
             .configure(YAMLGenerator.Feature.MINIMIZE_QUOTES, true)
             .configure(YAMLGenerator.Feature.WRITE_DOC_START_MARKER, false)

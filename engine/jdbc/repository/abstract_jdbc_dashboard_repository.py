@@ -3,9 +3,10 @@ from __future__ import annotations
 # Source: E:\KESTRA\jdbc\src\main\java\io\kestra\jdbc\repository\AbstractJdbcDashboardRepository.java
 # WARNING: Unresolved types: ApplicationEventPublisher, Class, ConcurrentHashMap, ConstraintViolationException, Enum, F, IOException, Pageable, io, jdbc, kestra
 
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any
+from typing import Any, Optional
 
 from engine.jdbc.repository.abstract_jdbc_crud_repository import AbstractJdbcCrudRepository
 from engine.jdbc.abstract_jdbc_repository import AbstractJdbcRepository
@@ -23,7 +24,7 @@ from engine.core.repositories.query_builder_interface import QueryBuilderInterfa
 
 
 @dataclass(slots=True, kw_only=True)
-class AbstractJdbcDashboardRepository(AbstractJdbcCrudRepository):
+class AbstractJdbcDashboardRepository(ABC, AbstractJdbcCrudRepository):
     query_builder_by_handled_fields: dict[Class[Any], QueryBuilderInterface[Any]] = new ConcurrentHashMap<>()
     event_publisher: ApplicationEventPublisher[CrudEvent[Dashboard]] | None = None
     query_builders: list[QueryBuilderInterface[Any]] | None = None
@@ -31,8 +32,9 @@ class AbstractJdbcDashboardRepository(AbstractJdbcCrudRepository):
     def get(self, tenant_id: str, id: str) -> Optional[Dashboard]:
         raise NotImplementedError  # TODO: translate from Java
 
+    @abstractmethod
     def find_condition(self, query: str) -> Condition:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
     def list(self, pageable: Pageable, tenant_id: str, query: str) -> ArrayListTotal[Dashboard]:
         raise NotImplementedError  # TODO: translate from Java

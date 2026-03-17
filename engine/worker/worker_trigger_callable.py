@@ -4,7 +4,7 @@ from __future__ import annotations
 # WARNING: Unresolved types: Exception
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Optional
 
 from engine.worker.abstract_worker_trigger_callable import AbstractWorkerTriggerCallable
 from engine.core.models.executions.execution import Execution

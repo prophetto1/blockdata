@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-shopify\src\main\java\io\kestra\plugin\shopify\orders\Delete.java
+# WARNING: Unresolved types: Exception, core, io, kestra, models, tasks
+
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.shopify.abstract_shopify_task import AbstractShopifyTask
@@ -10,7 +13,7 @@ from engine.core.models.tasks.runnable_task import RunnableTask
 
 
 @dataclass(slots=True, kw_only=True)
-class Delete(AbstractShopifyTask, RunnableTask):
+class Delete(AbstractShopifyTask):
     """Delete Shopify order by ID"""
     order_id: Property[int]
 
@@ -18,12 +21,6 @@ class Delete(AbstractShopifyTask, RunnableTask):
         raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)
-    class Output(io):
+    class Output:
         order_id: int | None = None
         deleted: bool | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class Output(io):
-    order_id: int | None = None
-    deleted: bool | None = None

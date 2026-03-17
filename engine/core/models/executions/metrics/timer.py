@@ -2,9 +2,9 @@ from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\models\executions\metrics\Timer.java
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import timedelta
-from typing import Any
+from typing import Any, ClassVar
 
 from engine.core.models.executions.abstract_metric_entry import AbstractMetricEntry
 from engine.core.metrics.metric_registry import MetricRegistry
@@ -13,7 +13,7 @@ from engine.core.metrics.metric_registry import MetricRegistry
 @dataclass(slots=True, kw_only=True)
 class Timer(AbstractMetricEntry):
     value: timedelta
-    t_y_p_e: str = "timer"
+    t_y_p_e: ClassVar[str] = "timer"
     type: str = TYPE
 
     @staticmethod

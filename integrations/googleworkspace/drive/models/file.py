@@ -1,9 +1,12 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any
-from datetime import datetime
+# Source: E:\KESTRA-IO\plugins\plugin-googleworkspace\src\main\java\io\kestra\plugin\googleworkspace\drive\models\File.java
+# WARNING: Unresolved types: api, com, drive, google, model, services
+
+from dataclasses import dataclass
 from pathlib import Path
+from datetime import datetime
+from typing import Any
 
 
 @dataclass(slots=True, kw_only=True)
@@ -14,8 +17,9 @@ class File:
     version: int | None = None
     mime_type: str | None = None
     created_time: datetime | None = None
-    parents: list[String] | None = None
+    parents: list[str] | None = None
     trashed: bool | None = None
 
-    def of(self, file: com) -> Path:
+    @staticmethod
+    def of(file: com.google.api.services.drive.model.File) -> Path:
         raise NotImplementedError  # TODO: translate from Java

@@ -1,16 +1,21 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-gcp\src\main\java\io\kestra\plugin\gcp\pubsub\AbstractPubSub.java
+# WARNING: Unresolved types: IOException, ProjectSubscriptionName, Publisher
+
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from typing import Any
 
-from integrations.opensearch.abstract_task import AbstractTask
+from integrations.compress.abstract_task import AbstractTask
+from engine.core.exceptions.illegal_variable_evaluation_exception import IllegalVariableEvaluationException
 from engine.core.models.property.property import Property
 from integrations.gcp.pubsub.pub_sub_connection_interface import PubSubConnectionInterface
 from engine.core.runners.run_context import RunContext
 
 
 @dataclass(slots=True, kw_only=True)
-class AbstractPubSub(AbstractTask, PubSubConnectionInterface):
+class AbstractPubSub(ABC, AbstractTask):
     topic: Property[str]
 
     def create_publisher(self, options: PublisherOptions) -> Publisher:
@@ -21,11 +26,5 @@ class AbstractPubSub(AbstractTask, PubSubConnectionInterface):
 
     @dataclass(slots=True)
     class PublisherOptions:
-        run_context: RunContext | None = None
         enable_message_ordering: bool = False
-
-
-@dataclass(slots=True, kw_only=True)
-class PublisherOptions:
-    run_context: RunContext | None = None
-    enable_message_ordering: bool = False
+        run_context: RunContext | None = None

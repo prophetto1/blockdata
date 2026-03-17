@@ -1,26 +1,30 @@
 from __future__ import annotations
 
+# Source: E:\KESTRA-IO\plugins\plugin-apify\src\main\java\io\kestra\plugin\apify\dataset\Save.java
+# WARNING: Unresolved types: Exception, Logger, Predicate, core, io, kestra, models, tasks
+
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, ClassVar
 
 from integrations.apify.dataset.abstract_get_dataset import AbstractGetDataset
 from integrations.apify.data_set_format import DataSetFormat
+from engine.core.exceptions.illegal_variable_evaluation_exception import IllegalVariableEvaluationException
 from engine.core.models.property.property import Property
 from engine.core.runners.run_context import RunContext
 from engine.core.models.tasks.runnable_task import RunnableTask
 
 
 @dataclass(slots=True, kw_only=True)
-class Save(AbstractGetDataset, RunnableTask):
+class Save(AbstractGetDataset):
     """Save Apify dataset to temp file"""
-    log: Logger | None = None
-    format: Property[DataSetFormat] | None = None
-    delimiter: Property[str] | None = None
+    log: ClassVar[Logger] = LoggerFactory.getLogger(Save.class)
+    format: Property[DataSetFormat] = Property.ofValue(DataSetFormat.JSON)
+    delimiter: Property[str] = Property.ofValue(",")
+    xml_root: Property[str] = Property.ofValue("items")
+    xml_row: Property[str] = Property.ofValue("item")
+    skip_header_row: Property[bool] = Property.ofValue(false)
+    e_m_p_t_y__d_a_t_a_s_e_t__b_y_t_e_s: ClassVar[list[int]] = "[]".getBytes()
     bom: Property[bool] | None = None
-    xml_root: Property[str] | None = None
-    xml_row: Property[str] | None = None
-    skip_header_row: Property[bool] | None = None
-    e_m_p_t_y__d_a_t_a_s_e_t__b_y_t_e_s: byte | None = None
 
     def run(self, run_context: RunContext) -> Output:
         raise NotImplementedError  # TODO: translate from Java
@@ -28,14 +32,10 @@ class Save(AbstractGetDataset, RunnableTask):
     def build_u_r_l(self, run_context: RunContext) -> str:
         raise NotImplementedError  # TODO: translate from Java
 
-    def is_empty_dataset(self, run_context: RunContext) -> Predicate[URI]:
+    @staticmethod
+    def is_empty_dataset(run_context: RunContext) -> Predicate[str]:
         raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)
-    class Output(io):
+    class Output:
         path: str | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class Output(io):
-    path: str | None = None

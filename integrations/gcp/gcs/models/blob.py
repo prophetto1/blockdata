@@ -1,8 +1,11 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any
+# Source: E:\KESTRA-IO\plugins\plugin-gcp\src\main\java\io\kestra\plugin\gcp\gcs\models\Blob.java
+# WARNING: Unresolved types: cloud, com, google, storage
+
+from dataclasses import dataclass
 from datetime import datetime
+from typing import Any
 
 
 @dataclass(slots=True, kw_only=True)
@@ -19,7 +22,7 @@ class Blob:
     crc32c: str | None = None
     custom_time: datetime | None = None
     media_link: str | None = None
-    metadata: dict[String, String] | None = None
+    metadata: dict[str, str] | None = None
     meta_generation: int | None = None
     delete_time: datetime | None = None
     update_time: datetime | None = None
@@ -36,8 +39,10 @@ class Blob:
     temporary_hold: bool | None = None
     retention_expiration_time: int | None = None
 
-    def uri(self, blob: com) -> str:
+    @staticmethod
+    def uri(blob: com.google.cloud.storage.Blob) -> str:
         raise NotImplementedError  # TODO: translate from Java
 
-    def of(self, blob: com) -> Blob:
+    @staticmethod
+    def of(blob: com.google.cloud.storage.Blob) -> Blob:
         raise NotImplementedError  # TODO: translate from Java

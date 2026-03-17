@@ -3,6 +3,7 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\models\assets\Asset.java
 # WARNING: Unresolved types: T
 
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
@@ -13,7 +14,7 @@ from engine.core.models.soft_deletable import SoftDeletable
 
 
 @dataclass(slots=True, kw_only=True)
-class Asset:
+class Asset(ABC):
     id: str
     type: str
     tenant_id: str | None = None

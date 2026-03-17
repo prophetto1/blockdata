@@ -4,7 +4,7 @@ from __future__ import annotations
 # WARNING: Unresolved types: Class, Predicate
 
 from pathlib import Path
-from typing import Any, Protocol
+from typing import Any, Optional, Protocol
 
 from engine.core.models.plugin import Plugin
 from engine.core.plugins.plugin_class_and_metadata import PluginClassAndMetadata

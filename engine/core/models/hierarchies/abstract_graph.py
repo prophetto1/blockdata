@@ -2,12 +2,14 @@ from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\models\hierarchies\AbstractGraph.java
 
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from enum import Enum
 from typing import Any
 
 
 @dataclass(slots=True, kw_only=True)
-class AbstractGraph:
+class AbstractGraph(ABC):
     uid: str | None = None
     type: str | None = None
     branch_type: BranchType | None = None

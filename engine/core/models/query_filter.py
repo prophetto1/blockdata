@@ -4,6 +4,7 @@ from __future__ import annotations
 # WARNING: Unresolved types: Enum, T
 
 from dataclasses import dataclass
+from enum import Enum
 from typing import Any
 
 from engine.core.models.dashboards.filters.abstract_filter import AbstractFilter

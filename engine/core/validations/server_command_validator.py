@@ -3,13 +3,13 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\validations\ServerCommandValidator.java
 # WARNING: Unresolved types: Environment, RuntimeException
 
-from dataclasses import dataclass
-from typing import Any
+from dataclasses import dataclass, field
+from typing import Any, ClassVar
 
 
 @dataclass(slots=True, kw_only=True)
 class ServerCommandValidator:
-    v_a_l_i_d_a_t_e_d__p_r_o_p_e_r_t_i_e_s: dict[str, str] = Map.of(
+    v_a_l_i_d_a_t_e_d__p_r_o_p_e_r_t_i_e_s: ClassVar[dict[str, str]] = Map.of(
         "kestra.queue.type", "https://kestra.io/docs/configuration-guide/setup#queue-configuration",
         "kestra.repository.type", "https://kestra.io/docs/configuration-guide/setup#repository-configuration",
         "kestra.storage.type", "https://kestra.io/docs/configuration-guide/setup#internal-storage-configuration"
@@ -21,4 +21,4 @@ class ServerCommandValidator:
 
     @dataclass(slots=True)
     class ServerCommandException(RuntimeException):
-        serial_version_u_i_d: int = 1
+        serial_version_u_i_d: ClassVar[int] = 1

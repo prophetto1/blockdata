@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-microsoft365\src\main\java\io\kestra\plugin\microsoft365\outlook\domain\MessageDetail.java
+# WARNING: Unresolved types: OffsetDateTime
+
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.microsoft365.outlook.domain.attachment_info import AttachmentInfo
@@ -15,9 +18,9 @@ class MessageDetail:
     body_preview: str | None = None
     sender_mail: str | None = None
     from_mail: str | None = None
-    to_recipients: list[String] | None = None
-    cc_recipients: list[String] | None = None
-    bcc_recipients: list[String] | None = None
+    to_recipients: list[str] | None = None
+    cc_recipients: list[str] | None = None
+    bcc_recipients: list[str] | None = None
     received_date_time: OffsetDateTime | None = None
     sent_date_time: OffsetDateTime | None = None
     is_read: bool | None = None

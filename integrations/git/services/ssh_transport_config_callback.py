@@ -1,12 +1,15 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-git\src\main\java\io\kestra\plugin\git\services\SshTransportConfigCallback.java
+# WARNING: Unresolved types: Transport, TransportConfigCallback
+
+from dataclasses import dataclass
 from typing import Any
 
 
 @dataclass(slots=True, kw_only=True)
-class SshTransportConfigCallback(TransportConfigCallback):
-    private_key: byte | None = None
+class SshTransportConfigCallback:
+    private_key: list[int] | None = None
     passphrase: str | None = None
 
     def configure(self, transport: Transport) -> None:

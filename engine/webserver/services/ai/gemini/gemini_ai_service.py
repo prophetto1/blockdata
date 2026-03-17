@@ -3,8 +3,8 @@ from __future__ import annotations
 # Source: E:\KESTRA\webserver\src\main\java\io\kestra\webserver\services\ai\gemini\GeminiAiService.java
 # WARNING: Unresolved types: ChatModel, ChatModelListener
 
-from dataclasses import dataclass
-from typing import Any
+from dataclasses import dataclass, field
+from typing import Any, ClassVar
 
 from engine.webserver.services.ai.ai_service import AiService
 from engine.webserver.services.ai.gemini.gemini_configuration import GeminiConfiguration
@@ -18,7 +18,7 @@ from engine.core.utils.version_provider import VersionProvider
 
 @dataclass(slots=True, kw_only=True)
 class GeminiAiService(AiService):
-    t_y_p_e: str = "gemini"
+    t_y_p_e: ClassVar[str] = "gemini"
 
     def chat_model(self, listeners: list[ChatModelListener]) -> ChatModel:
         raise NotImplementedError  # TODO: translate from Java

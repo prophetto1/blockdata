@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import timedelta
-from typing import Any
+from typing import Any, ClassVar, Optional
 
 from engine.worker.abstract_worker_callable import AbstractWorkerCallable
 from engine.core.exceptions.deserialization_exception import DeserializationException
@@ -48,8 +48,8 @@ from engine.core.runners.worker_trigger_result import WorkerTriggerResult
 
 @dataclass(slots=True, kw_only=True)
 class DefaultWorker:
-    m_a_p_p_e_r: ObjectMapper = JacksonMapper.ofJson()
-    s_e_r_v_i_c_e__p_r_o_p_s__w_o_r_k_e_r__g_r_o_u_p: str = "worker.group"
+    m_a_p_p_e_r: ClassVar[ObjectMapper] = JacksonMapper.ofJson()
+    s_e_r_v_i_c_e__p_r_o_p_s__w_o_r_k_e_r__g_r_o_u_p: ClassVar[str] = "worker.group"
     killed_execution: set[str] = ConcurrentHashMap.newKeySet()
     metric_running_count: dict[int, AtomicInteger] = new ConcurrentHashMap<>()
     evaluate_trigger_running_count: dict[str, AtomicInteger] = new ConcurrentHashMap<>()

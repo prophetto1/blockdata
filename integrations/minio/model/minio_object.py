@@ -1,11 +1,13 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any
+# Source: E:\KESTRA-IO\plugins\plugin-minio\src\main\java\io\kestra\plugin\minio\model\MinioObject.java
+
+from dataclasses import dataclass
 from datetime import datetime
+from typing import Any
 
 from integrations.microsoft365.sharepoint.models.item import Item
-from integrations.minio.model.owner import Owner
+from integrations.aws.s3.models.owner import Owner
 
 
 @dataclass(slots=True, kw_only=True)
@@ -17,5 +19,6 @@ class MinioObject:
     last_modified: datetime | None = None
     owner: Owner | None = None
 
-    def of(self, object: Item) -> MinioObject:
+    @staticmethod
+    def of(object: Item) -> MinioObject:
         raise NotImplementedError  # TODO: translate from Java

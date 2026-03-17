@@ -3,9 +3,10 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\models\flows\State.java
 
 from dataclasses import dataclass
+from enum import Enum
 from datetime import datetime
 from datetime import timedelta
-from typing import Any
+from typing import Any, Optional
 
 from engine.core.models.tasks.task import Task
 

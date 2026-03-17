@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any
+from typing import Any, Optional
 
 from engine.core.debug.breakpoint import Breakpoint
 from engine.core.models.executions.execution_kind import ExecutionKind

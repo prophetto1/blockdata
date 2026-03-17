@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+# Source: E:\KESTRA-IO\plugins\plugin-kestra\src\main\java\io\kestra\plugin\kestra\triggers\ScheduleMonitor.java
+# WARNING: Unresolved types: Exception, core, io, kestra, models, tasks
+
 from dataclasses import dataclass, field
-from typing import Any
 from datetime import datetime
 from datetime import timedelta
+from typing import Any, ClassVar, Optional
 
 from integrations.kestra.abstract_kestra_trigger import AbstractKestraTrigger
 from engine.core.models.conditions.condition_context import ConditionContext
@@ -16,15 +19,15 @@ from engine.core.models.triggers.trigger_output import TriggerOutput
 
 
 @dataclass(slots=True, kw_only=True)
-class ScheduleMonitor(AbstractKestraTrigger, TriggerOutput, PollingTriggerInterface):
+class ScheduleMonitor(AbstractKestraTrigger):
     """Detect unhealthy schedule triggers"""
-    d_e_f_a_u_l_t__k_e_s_t_r_a__u_r_l: str | None = None
-    k_e_s_t_r_a__u_r_l__t_e_m_p_l_a_t_e: str | None = None
-    interval: timedelta | None = None
+    d_e_f_a_u_l_t__k_e_s_t_r_a__u_r_l: ClassVar[str] = "http://localhost:8080"
+    k_e_s_t_r_a__u_r_l__t_e_m_p_l_a_t_e: ClassVar[str] = "{{ kestra.url }}"
+    interval: timedelta = Duration.ofSeconds(60)
+    include_disabled: Property[bool] = Property.ofValue(false)
+    allowed_delay: Property[timedelta] = Property.ofValue(Duration.ofMinutes(1))
     namespace: Property[str] | None = None
     flow_id: Property[str] | None = None
-    include_disabled: Property[bool] | None = None
-    allowed_delay: Property[timedelta] | None = None
     max_execution_duration: Property[timedelta] | None = None
     max_execution_interval: Property[timedelta] | None = None
 
@@ -43,19 +46,5 @@ class ScheduleMonitor(AbstractKestraTrigger, TriggerOutput, PollingTriggerInterf
         expected_next: datetime | None = None
 
     @dataclass(slots=True)
-    class Output(io):
+    class Output:
         data: list[TriggerInfo] | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class TriggerInfo:
-    namespace: str | None = None
-    flow_id: str | None = None
-    trigger_id: str | None = None
-    last_execution: datetime | None = None
-    expected_next: datetime | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class Output(io):
-    data: list[TriggerInfo] | None = None

@@ -3,6 +3,7 @@ from __future__ import annotations
 # Source: E:\KESTRA\jdbc\src\main\java\io\kestra\jdbc\runner\AbstractJdbcExecutionQueuedStorage.java
 # WARNING: Unresolved types: BiConsumer, DSLContext, io, jdbc, kestra
 
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any
 
@@ -12,7 +13,7 @@ from engine.core.runners.execution_queued import ExecutionQueued
 
 
 @dataclass(slots=True, kw_only=True)
-class AbstractJdbcExecutionQueuedStorage(AbstractJdbcRepository):
+class AbstractJdbcExecutionQueuedStorage(ABC, AbstractJdbcRepository):
     jdbc_repository: io.kestra.jdbc.AbstractJdbcRepository[ExecutionQueued] | None = None
 
     def save(self, dsl_context: DSLContext, execution_queued: ExecutionQueued) -> None:

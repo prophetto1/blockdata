@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-slack\src\main\java\io\kestra\plugin\slack\app\chats\DeleteScheduled.java
+# WARNING: Unresolved types: Exception
+
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.slack.abstract_slack_client_connection import AbstractSlackClientConnection
@@ -11,7 +14,7 @@ from engine.core.models.tasks.void_output import VoidOutput
 
 
 @dataclass(slots=True, kw_only=True)
-class DeleteScheduled(AbstractSlackClientConnection, RunnableTask):
+class DeleteScheduled(AbstractSlackClientConnection):
     """Cancel a scheduled Slack message"""
     channel: Property[str]
     scheduled_message_id: Property[str]

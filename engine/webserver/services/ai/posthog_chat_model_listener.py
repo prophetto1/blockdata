@@ -4,7 +4,7 @@ from __future__ import annotations
 # WARNING: Unresolved types: ChatModelErrorContext, ChatModelListener, ChatModelResponseContext, ChatRequest
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Optional
 
 from engine.webserver.services.posthog.posthog_service import PosthogService
 

@@ -3,14 +3,14 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\utils\KestraIgnore.java
 # WARNING: Unresolved types: GitIgnore, IOException
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
 
 
 @dataclass(slots=True, kw_only=True)
 class KestraIgnore:
-    k_e_s_t_r_a__i_g_n_o_r_e__f_i_l_e__n_a_m_e: str = ".kestraignore"
+    k_e_s_t_r_a__i_g_n_o_r_e__f_i_l_e__n_a_m_e: ClassVar[str] = ".kestraignore"
     git_ignore: GitIgnore | None = None
     root_folder_path: Path | None = None
 

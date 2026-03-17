@@ -1,20 +1,24 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any
+# Source: E:\KESTRA-IO\plugins\plugin-gcp\src\main\java\io\kestra\plugin\gcp\bigquery\AbstractJob.java
+# WARNING: Unresolved types: CreateDisposition, WriteDisposition
+
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from datetime import timedelta
+from typing import Any
 
 from integrations.gcp.bigquery.abstract_bigquery import AbstractBigquery
 from integrations.gcp.bigquery.abstract_job_interface import AbstractJobInterface
-from integrations.jenkins.job_info import JobInfo
+from integrations.airbyte.models.job_info import JobInfo
 from engine.core.models.property.property import Property
 
 
 @dataclass(slots=True, kw_only=True)
-class AbstractJob(AbstractBigquery, AbstractJobInterface):
+class AbstractJob(ABC, AbstractBigquery):
+    dry_run: Property[bool] = Property.ofValue(false)
     destination_table: Property[str] | None = None
-    write_disposition: Property[JobInfo] | None = None
-    create_disposition: Property[JobInfo] | None = None
+    write_disposition: Property[JobInfo.WriteDisposition] | None = None
+    create_disposition: Property[JobInfo.CreateDisposition] | None = None
     job_timeout: Property[timedelta] | None = None
-    labels: Property[dict[String, String]] | None = None
-    dry_run: Property[bool] | None = None
+    labels: Property[dict[str, str]] | None = None

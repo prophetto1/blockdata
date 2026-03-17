@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-microsoft365\src\main\java\io\kestra\plugin\microsoft365\sharepoint\SharepointConnection.java
+# WARNING: Unresolved types: Exception, GraphServiceClient
+
+from dataclasses import dataclass
 from typing import Any
 
 from engine.core.models.property.property import Property

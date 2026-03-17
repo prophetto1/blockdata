@@ -3,8 +3,9 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\plugin\core\state\AbstractState.java
 # WARNING: Unresolved types: IOException, Pair, TypeReference
 
-from dataclasses import dataclass
-from typing import Any
+from abc import ABC, abstractmethod
+from dataclasses import dataclass, field
+from typing import Any, ClassVar
 
 from engine.core.exceptions.illegal_variable_evaluation_exception import IllegalVariableEvaluationException
 from engine.core.models.property.property import Property
@@ -14,9 +15,9 @@ from engine.core.models.tasks.task import Task
 
 
 @dataclass(slots=True, kw_only=True)
-class AbstractState(Task):
-    t_y_p_e__r_e_f_e_r_e_n_c_e: TypeReference[dict[str, Any]] = new TypeReference<>() {}
-    t_a_s_k_s__s_t_a_t_e_s: str = "tasks-states"
+class AbstractState(ABC, Task):
+    t_y_p_e__r_e_f_e_r_e_n_c_e: ClassVar[TypeReference[dict[str, Any]]] = new TypeReference<>() {}
+    t_a_s_k_s__s_t_a_t_e_s: ClassVar[str] = "tasks-states"
     name: Property[str] = Property.ofValue("default")
     namespace: Property[bool] = Property.ofValue(false)
     taskrun_value: Property[bool] = Property.ofValue(true)

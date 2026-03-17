@@ -8,5 +8,5 @@ from typing import Any, Protocol
 from engine.core.server.service import Service
 
 
-class Indexer(Protocol):
+class Indexer(Service, Runnable, Protocol):
     pass

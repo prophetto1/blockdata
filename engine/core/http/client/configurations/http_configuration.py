@@ -4,6 +4,7 @@ from __future__ import annotations
 # WARNING: Unresolved types: Charset, LogLevel, Proxy
 
 from dataclasses import dataclass
+from enum import Enum
 from datetime import timedelta
 from typing import Any
 

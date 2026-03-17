@@ -3,9 +3,10 @@ from __future__ import annotations
 # Source: E:\KESTRA\jdbc\src\main\java\io\kestra\jdbc\repository\AbstractJdbcTriggerRepository.java
 # WARNING: Unresolved types: Date, Field, Fields, Flux, Function, GroupType, IllegalArgumentException, Pageable, Temporal, io, jdbc, kestra
 
-from dataclasses import dataclass
+from abc import ABC, abstractmethod
+from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any
+from typing import Any, ClassVar, Optional
 
 from engine.jdbc.repository.abstract_jdbc_crud_repository import AbstractJdbcCrudRepository
 from engine.jdbc.abstract_jdbc_repository import AbstractJdbcRepository
@@ -30,8 +31,8 @@ from engine.plugin.core.dashboard.data.triggers import Triggers
 
 
 @dataclass(slots=True, kw_only=True)
-class AbstractJdbcTriggerRepository(AbstractJdbcCrudRepository):
-    n_a_m_e_s_p_a_c_e__f_i_e_l_d: Field[Any] = field("namespace")
+class AbstractJdbcTriggerRepository(ABC, AbstractJdbcCrudRepository):
+    n_a_m_e_s_p_a_c_e__f_i_e_l_d: ClassVar[Field[Any]] = field("namespace")
     fields_mapping: dict[Triggers.Fields, str] = Map.of(
         Triggers.Fields.ID, "key",
         Triggers.Fields.NAMESPACE, "namespace",
@@ -109,5 +110,6 @@ class AbstractJdbcTriggerRepository(AbstractJdbcCrudRepository):
     def fetch_value(self, tenant_id: str, data_filter: DataFilterKPI[ITriggers.Fields, Any], start_date: datetime, end_date: datetime, numerator_filter: bool) -> float:
         raise NotImplementedError  # TODO: translate from Java
 
+    @abstractmethod
     def format_date_field(self, date_field: str, group_type: DateUtils.GroupType) -> Field[Date]:
-        raise NotImplementedError  # TODO: translate from Java
+        ...

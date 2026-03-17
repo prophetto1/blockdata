@@ -3,13 +3,14 @@ from __future__ import annotations
 # Source: E:\KESTRA\cli\src\main\java\io\kestra\cli\commands\flows\IncludeHelperExpander.java
 # WARNING: Unresolved types: IOException
 
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 
 @dataclass(slots=True, kw_only=True)
-class IncludeHelperExpander:
+class IncludeHelperExpander(ABC):
 
     @staticmethod
     def expand(value: str, directory: Path) -> str:

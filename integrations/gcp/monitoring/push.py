@@ -1,28 +1,25 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-gcp\src\main\java\io\kestra\plugin\gcp\monitoring\Push.java
+# WARNING: Unresolved types: Exception, TimeInterval, core, io, kestra, models, tasks
+
+from dataclasses import dataclass
 from enum import Enum
-from typing import Any
 from datetime import datetime
 from datetime import timedelta
+from typing import Any
 
-from integrations.gcp.monitoring.abstract_monitoring_task import AbstractMonitoringTask
+from integrations.azure.monitoring.abstract_monitoring_task import AbstractMonitoringTask
 from engine.core.models.property.property import Property
 from engine.core.runners.run_context import RunContext
 from engine.core.models.tasks.runnable_task import RunnableTask
 
 
-class MetricKind(str, Enum):
-    GAUGE = "GAUGE"
-    CUMULATIVE = "CUMULATIVE"
-    DELTA = "DELTA"
-
-
 @dataclass(slots=True, kw_only=True)
-class Push(AbstractMonitoringTask, RunnableTask):
+class Push(AbstractMonitoringTask):
     """Push metrics to Cloud Monitoring"""
+    window: Property[timedelta] = Property.ofValue(Duration.ofMinutes(1))
     metrics: Property[list[MetricValue]] | None = None
-    window: Property[timedelta] | None = None
 
     def run(self, run_context: RunContext) -> Output:
         raise NotImplementedError  # TODO: translate from Java
@@ -32,24 +29,16 @@ class Push(AbstractMonitoringTask, RunnableTask):
 
     @dataclass(slots=True)
     class MetricValue:
+        metric_kind: Property[MetricKind] = Property.ofValue(MetricKind.GAUGE)
         metric_type: Property[str] | None = None
         value: Property[float] | None = None
-        metric_kind: Property[MetricKind] | None = None
-        labels: Property[dict[String, String]] | None = None
+        labels: Property[dict[str, str]] | None = None
+
+    class MetricKind(str, Enum):
+        GAUGE = "GAUGE"
+        CUMULATIVE = "CUMULATIVE"
+        DELTA = "DELTA"
 
     @dataclass(slots=True)
-    class Output(io):
+    class Output:
         count: int | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class MetricValue:
-    metric_type: Property[str] | None = None
-    value: Property[float] | None = None
-    metric_kind: Property[MetricKind] | None = None
-    labels: Property[dict[String, String]] | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class Output(io):
-    count: int | None = None

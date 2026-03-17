@@ -2,12 +2,14 @@ from __future__ import annotations
 
 # Source: E:\KESTRA\cli\src\main\java\io\kestra\cli\BaseCommand.java
 
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from enum import Enum
 from typing import Any
 
 
 @dataclass(slots=True, kw_only=True)
-class BaseCommand:
+class BaseCommand(ABC):
     verbose: list[bool] = new boolean[0]
     log_level: LogLevel = LogLevel.INFO
     internal_log: bool = False

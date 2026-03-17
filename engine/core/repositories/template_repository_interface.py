@@ -3,7 +3,7 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\repositories\TemplateRepositoryInterface.java
 # WARNING: Unresolved types: Pageable
 
-from typing import Any, Protocol
+from typing import Any, Optional, Protocol
 
 from engine.core.repositories.array_list_total import ArrayListTotal
 from engine.core.models.templates.template import Template

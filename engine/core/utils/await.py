@@ -3,14 +3,14 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\utils\Await.java
 # WARNING: Unresolved types: AtomicReference, BooleanSupplier, Supplier, T, TimeoutException
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import timedelta
-from typing import Any
+from typing import Any, ClassVar
 
 
 @dataclass(slots=True, kw_only=True)
 class Await:
-    default_sleep: timedelta = Duration.ofMillis(100)
+    default_sleep: ClassVar[timedelta] = Duration.ofMillis(100)
 
     @staticmethod
     def until(condition: BooleanSupplier) -> None:

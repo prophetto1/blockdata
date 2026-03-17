@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-grafana\src\main\java\io\kestra\plugin\grafana\loki\Query.java
+# WARNING: Unresolved types: Exception, core, io, kestra, models, tasks
+
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.grafana.loki.abstract_loki_connection import AbstractLokiConnection
@@ -10,7 +13,7 @@ from engine.core.models.tasks.runnable_task import RunnableTask
 
 
 @dataclass(slots=True, kw_only=True)
-class Query(AbstractLokiConnection, RunnableTask):
+class Query(AbstractLokiConnection):
     """Run instant LogQL query in Loki"""
     time: Property[str] | None = None
 
@@ -18,12 +21,6 @@ class Query(AbstractLokiConnection, RunnableTask):
         raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)
-    class Output(io):
-        logs: list[Map[String, Object]] | None = None
+    class Output:
+        logs: list[dict[str, Any]] | None = None
         result_type: str | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class Output(io):
-    logs: list[Map[String, Object]] | None = None
-    result_type: str | None = None

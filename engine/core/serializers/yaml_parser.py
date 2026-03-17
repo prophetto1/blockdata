@@ -3,17 +3,17 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\serializers\YamlParser.java
 # WARNING: Unresolved types: Class, ConstraintViolationException, JsonProcessingException, ObjectMapper, T
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
 
 
 @dataclass(slots=True, kw_only=True)
 class YamlParser:
-    s_t_r_i_c_t__m_a_p_p_e_r: ObjectMapper = JacksonMapper.ofYaml()
+    s_t_r_i_c_t__m_a_p_p_e_r: ClassVar[ObjectMapper] = JacksonMapper.ofYaml()
         .enable(JsonParser.Feature.STRICT_DUPLICATE_DETECTION)
         .disable(DeserializationFeature.ADJUST_DATES_TO_CONTEXT_TIME_ZONE)
-    n_o_n__s_t_r_i_c_t__m_a_p_p_e_r: ObjectMapper = STRICT_MAPPER.copy()
+    n_o_n__s_t_r_i_c_t__m_a_p_p_e_r: ClassVar[ObjectMapper] = STRICT_MAPPER.copy()
         .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
 
     @staticmethod

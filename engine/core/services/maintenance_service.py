@@ -2,6 +2,7 @@ from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\services\MaintenanceService.java
 
+from dataclasses import dataclass
 from typing import Any, Protocol
 
 from engine.core.utils.disposable import Disposable

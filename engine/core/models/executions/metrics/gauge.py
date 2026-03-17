@@ -2,8 +2,8 @@ from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\models\executions\metrics\Gauge.java
 
-from dataclasses import dataclass
-from typing import Any
+from dataclasses import dataclass, field
+from typing import Any, ClassVar
 
 from engine.core.models.executions.abstract_metric_entry import AbstractMetricEntry
 from engine.core.metrics.metric_registry import MetricRegistry
@@ -12,7 +12,7 @@ from engine.core.metrics.metric_registry import MetricRegistry
 @dataclass(slots=True, kw_only=True)
 class Gauge(AbstractMetricEntry):
     value: float
-    t_y_p_e: str = "gauge"
+    t_y_p_e: ClassVar[str] = "gauge"
     type: str = TYPE
 
     @staticmethod

@@ -3,9 +3,10 @@ from __future__ import annotations
 # Source: E:\KESTRA\jdbc\src\main\java\io\kestra\jdbc\repository\AbstractJdbcServiceInstanceRepository.java
 # WARNING: Unresolved types: Configuration, DSLContext, Field, Function, ImmutablePair, Pageable, Record, Response, ServiceState, T, TransactionalCallable, TransactionalRunnable, io, jdbc, kestra
 
-from dataclasses import dataclass
+from abc import ABC, abstractmethod
+from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any
+from typing import Any, ClassVar, Optional
 
 from engine.jdbc.abstract_jdbc_repository import AbstractJdbcRepository
 from engine.core.repositories.array_list_total import ArrayListTotal
@@ -20,12 +21,12 @@ from engine.plugin.core.dashboard.chart.table import Table
 
 
 @dataclass(slots=True, kw_only=True)
-class AbstractJdbcServiceInstanceRepository(AbstractJdbcRepository):
-    s_t_a_t_e: Field[Any] = field("state")
-    t_y_p_e: Field[Any] = field("service_type")
-    u_p_d_a_t_e_d__a_t: Field[datetime] = field("updated_at", Instant.class)
-    c_r_e_a_t_e_d__a_t: Field[datetime] = field("created_at", Instant.class)
-    s_e_r_v_i_c_e__i_d: Field[Any] = field("service_id")
+class AbstractJdbcServiceInstanceRepository(ABC, AbstractJdbcRepository):
+    s_t_a_t_e: ClassVar[Field[Any]] = field("state")
+    t_y_p_e: ClassVar[Field[Any]] = field("service_type")
+    u_p_d_a_t_e_d__a_t: ClassVar[Field[datetime]] = field("updated_at", Instant.class)
+    c_r_e_a_t_e_d__a_t: ClassVar[Field[datetime]] = field("created_at", Instant.class)
+    s_e_r_v_i_c_e__i_d: ClassVar[Field[Any]] = field("service_id")
     jdbc_repository: io.kestra.jdbc.AbstractJdbcRepository[ServiceInstance] | None = None
 
     def find_by_id(self, id: str) -> Optional[ServiceInstance]:

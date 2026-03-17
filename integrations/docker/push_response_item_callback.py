@@ -1,13 +1,16 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-docker\src\main\java\io\kestra\plugin\docker\PushResponseItemCallback.java
+# WARNING: Unresolved types: Adapter, Exception, PushResponseItem, ResultCallback, Throwable
+
+from dataclasses import dataclass
 from typing import Any
 
 from engine.core.runners.run_context import RunContext
 
 
 @dataclass(slots=True, kw_only=True)
-class PushResponseItemCallback(ResultCallback):
+class PushResponseItemCallback(Adapter):
     run_context: RunContext | None = None
     error: Exception | None = None
 

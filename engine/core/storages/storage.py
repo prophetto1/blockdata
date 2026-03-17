@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from datetime import timedelta
-from typing import Any, Protocol
+from typing import Any, Optional, Protocol
 
 from engine.core.storages.file_attributes import FileAttributes
 from engine.core.models.namespaces.namespace import Namespace

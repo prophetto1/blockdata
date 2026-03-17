@@ -3,7 +3,7 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\models\tasks\ExecutionUpdatableTask.java
 # WARNING: Unresolved types: Exception
 
-from typing import Any, Protocol
+from typing import Any, Optional, Protocol
 
 from engine.core.models.executions.execution import Execution
 from engine.core.exceptions.illegal_variable_evaluation_exception import IllegalVariableEvaluationException

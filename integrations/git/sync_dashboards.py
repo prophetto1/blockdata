@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+# Source: E:\KESTRA-IO\plugins\plugin-git\src\main\java\io\kestra\plugin\git\SyncDashboards.java
+# WARNING: Unresolved types: IOException, InputStream, Pattern
+
 from dataclasses import dataclass, field
-from typing import Any
 from datetime import datetime
+from typing import Any, ClassVar
 
 from integrations.git.abstract_sync_task import AbstractSyncTask
 from engine.core.models.dashboards.dashboard import Dashboard
@@ -14,10 +17,10 @@ from engine.core.runners.run_context import RunContext
 @dataclass(slots=True, kw_only=True)
 class SyncDashboards(AbstractSyncTask):
     """Sync dashboards from Git"""
-    n_a_m_e_s_p_a_c_e__f_i_n_d_e_r__p_a_t_t_e_r_n: Pattern | None = None
-    branch: Property[str] | None = None
-    git_directory: Property[str] | None = None
-    delete: Property[bool] | None = None
+    n_a_m_e_s_p_a_c_e__f_i_n_d_e_r__p_a_t_t_e_r_n: ClassVar[Pattern] = Pattern.compile("(?m)^namespace: (.*)$")
+    branch: Property[str] = Property.ofValue("main")
+    git_directory: Property[str] = Property.ofValue("_dashboards")
+    delete: Property[bool] = Property.ofValue(false)
 
     def repository(self, run_context: RunContext) -> DashboardRepositoryInterface:
         raise NotImplementedError  # TODO: translate from Java
@@ -50,27 +53,13 @@ class SyncDashboards(AbstractSyncTask):
         raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)
-    class Output(AbstractSyncTask):
+    class Output(Output):
         dashboards: str | None = None
 
         def diff_file_uri(self) -> str:
             raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)
-    class SyncResult(AbstractSyncTask):
+    class SyncResult(SyncResult):
         dashboard_id: str | None = None
         updated: datetime | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class Output(AbstractSyncTask):
-    dashboards: str | None = None
-
-    def diff_file_uri(self) -> str:
-        raise NotImplementedError  # TODO: translate from Java
-
-
-@dataclass(slots=True, kw_only=True)
-class SyncResult(AbstractSyncTask):
-    dashboard_id: str | None = None
-    updated: datetime | None = None

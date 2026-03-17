@@ -15,7 +15,7 @@ from engine.core.repositories.query_builder_interface import QueryBuilderInterfa
 from engine.core.repositories.save_repository_interface import SaveRepositoryInterface
 
 
-class MetricRepositoryInterface(Protocol):
+class MetricRepositoryInterface(SaveRepositoryInterface, QueryBuilderInterface, Protocol):
     def find_by_execution_id(self, tenant_id: str, id: str, pageable: Pageable) -> ArrayListTotal[MetricEntry]: ...
 
     def find_by_execution_id_and_task_id(self, tenant_id: str, execution_id: str, task_id: str, pageable: Pageable) -> ArrayListTotal[MetricEntry]: ...

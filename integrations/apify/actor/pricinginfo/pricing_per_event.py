@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-apify\src\main\java\io\kestra\plugin\apify\actor\pricinginfo\PricingPerEvent.java
+
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.apify.actor.pricinginfo.actor_charge_event import ActorChargeEvent
@@ -8,4 +10,4 @@ from integrations.apify.actor.pricinginfo.actor_charge_event import ActorChargeE
 
 @dataclass(slots=True, kw_only=True)
 class PricingPerEvent:
-    actor_charge_events: dict[String, ActorChargeEvent] | None = None
+    actor_charge_events: dict[str, ActorChargeEvent] | None = None

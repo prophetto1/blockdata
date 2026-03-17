@@ -1,20 +1,23 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-meta\src\main\java\io\kestra\plugin\meta\whatsapp\WhatsAppExecution.java
+# WARNING: Unresolved types: Exception
+
+from dataclasses import dataclass
 from typing import Any
 
-from engine.core.plugins.notifications.execution_interface import ExecutionInterface
+from integrations.notifications.execution_interface import ExecutionInterface
 from engine.core.models.property.property import Property
 from engine.core.runners.run_context import RunContext
 from engine.core.models.tasks.void_output import VoidOutput
-from integrations.notifications.whatsapp.whats_app_template import WhatsAppTemplate
+from integrations.meta.whatsapp.whats_app_template import WhatsAppTemplate
 
 
 @dataclass(slots=True, kw_only=True)
-class WhatsAppExecution(WhatsAppTemplate, ExecutionInterface):
+class WhatsAppExecution(WhatsAppTemplate):
     """Send execution summary via WhatsApp"""
-    execution_id: Property[str] | None = None
-    custom_fields: Property[dict[String, Object]] | None = None
+    execution_id: Property[str] = Property.ofExpression("{{ execution.id }}")
+    custom_fields: Property[dict[str, Any]] | None = None
     custom_message: Property[str] | None = None
 
     def run(self, run_context: RunContext) -> VoidOutput:

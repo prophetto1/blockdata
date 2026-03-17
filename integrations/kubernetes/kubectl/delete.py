@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-kubernetes\src\main\java\io\kestra\plugin\kubernetes\kubectl\Delete.java
+# WARNING: Unresolved types: Exception
+
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.kubernetes.abstract_pod import AbstractPod
@@ -11,10 +14,10 @@ from engine.core.models.tasks.void_output import VoidOutput
 
 
 @dataclass(slots=True, kw_only=True)
-class Delete(AbstractPod, RunnableTask):
+class Delete(AbstractPod):
     """Delete Kubernetes resources by kind and name"""
     resource_type: Property[str]
-    resources_names: Property[list[String]]
+    resources_names: Property[list[str]]
     api_group: Property[str] | None = None
     api_version: Property[str] | None = None
 

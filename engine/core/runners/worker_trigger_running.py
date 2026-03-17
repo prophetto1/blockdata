@@ -2,8 +2,8 @@ from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\runners\WorkerTriggerRunning.java
 
-from dataclasses import dataclass
-from typing import Any
+from dataclasses import dataclass, field
+from typing import Any, ClassVar
 
 from engine.core.models.triggers.abstract_trigger import AbstractTrigger
 from engine.core.models.conditions.condition_context import ConditionContext
@@ -18,7 +18,7 @@ class WorkerTriggerRunning(WorkerJobRunning):
     trigger: AbstractTrigger
     trigger_context: Trigger
     condition_context: ConditionContext
-    t_y_p_e: str = "trigger"
+    t_y_p_e: ClassVar[str] = "trigger"
     type: str = TYPE
 
     def uid(self) -> str:

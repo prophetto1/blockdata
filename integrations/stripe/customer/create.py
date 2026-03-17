@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-stripe\src\main\java\io\kestra\plugin\stripe\customer\Create.java
+# WARNING: Unresolved types: Exception, core, io, kestra, models, tasks
+
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.stripe.abstract_stripe import AbstractStripe
@@ -10,23 +13,17 @@ from engine.core.models.tasks.runnable_task import RunnableTask
 
 
 @dataclass(slots=True, kw_only=True)
-class Create(AbstractStripe, RunnableTask):
+class Create(AbstractStripe):
     """Create Stripe customer record"""
     name: Property[str]
     email: Property[str]
-    metadata: Property[dict[String, Object]] | None = None
-    include_full_customer_data: Property[bool] | None = None
+    include_full_customer_data: Property[bool] = Property.of(false)
+    metadata: Property[dict[str, Any]] | None = None
 
     def run(self, run_context: RunContext) -> Output:
         raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)
-    class Output(io):
+    class Output:
         customer_id: str | None = None
-        customer_data: dict[String, Object] | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class Output(io):
-    customer_id: str | None = None
-    customer_data: dict[String, Object] | None = None
+        customer_data: dict[str, Any] | None = None

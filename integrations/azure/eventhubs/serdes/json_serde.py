@@ -1,17 +1,20 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any
+# Source: E:\KESTRA-IO\plugins\plugin-azure\src\main\java\io\kestra\plugin\azure\eventhubs\serdes\JsonSerde.java
+# WARNING: Unresolved types: JsonNode, ObjectMapper
 
-from integrations.solace.serde.serde import Serde
+from dataclasses import dataclass, field
+from typing import Any, ClassVar
+
+from integrations.azure.eventhubs.serdes.serde import Serde
 
 
 @dataclass(slots=True, kw_only=True)
-class JsonSerde(Serde):
-    o_b_j_e_c_t__m_a_p_p_e_r: ObjectMapper | None = None
+class JsonSerde:
+    o_b_j_e_c_t__m_a_p_p_e_r: ClassVar[ObjectMapper] = JsonMapper.builder().build()
 
-    def serialize(self, data: Any) -> byte:
+    def serialize(self, data: Any) -> list[int]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def deserialize(self, data: byte) -> JsonNode:
+    def deserialize(self, data: list[int]) -> JsonNode:
         raise NotImplementedError  # TODO: translate from Java

@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-github\src\main\java\io\kestra\plugin\github\model\RepositoryDetails.java
+# WARNING: Unresolved types: Date, GHRepository, IOException
+
+from dataclasses import dataclass
 from typing import Any
 
 
@@ -8,7 +11,7 @@ from typing import Any
 class RepositoryDetails:
     name: str | None = None
     full_name: str | None = None
-    html_url: URL | None = None
+    html_url: str | None = None
     description: str | None = None
     owner: str | None = None
     forks_count: int | None = None

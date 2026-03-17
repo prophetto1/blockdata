@@ -3,8 +3,8 @@ from __future__ import annotations
 # Source: E:\KESTRA\jdbc\src\main\java\io\kestra\jdbc\JdbcWorkerTriggerResultQueueService.java
 # WARNING: Unresolved types: AtomicBoolean, AtomicReference, Class, Closeable, Consumer, ObjectMapper, Runnable
 
-from dataclasses import dataclass
-from typing import Any
+from dataclasses import dataclass, field
+from typing import Any, ClassVar
 
 from engine.core.exceptions.deserialization_exception import DeserializationException
 from engine.core.utils.either import Either
@@ -15,7 +15,7 @@ from engine.core.runners.worker_trigger_result import WorkerTriggerResult
 
 @dataclass(slots=True, kw_only=True)
 class JdbcWorkerTriggerResultQueueService:
-    m_a_p_p_e_r: ObjectMapper = JdbcMapper.of()
+    m_a_p_p_e_r: ClassVar[ObjectMapper] = JdbcMapper.of()
     disposable: AtomicReference[Runnable] = new AtomicReference<>()
     is_closed: AtomicBoolean = new AtomicBoolean(false)
     worker_job_running_state_store: WorkerJobRunningStateStore | None = None

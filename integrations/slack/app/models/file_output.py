@@ -1,12 +1,18 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any
+# Source: E:\KESTRA-IO\plugins\plugin-slack\src\main\java\io\kestra\plugin\slack\app\models\FileOutput.java
+# WARNING: Unresolved types: api, com, core, io, kestra, model, models, slack, tasks
+
+from dataclasses import dataclass
+from pathlib import Path
 from datetime import datetime
+from typing import Any
+
+from integrations.aws.glue.model.output import Output
 
 
 @dataclass(slots=True, kw_only=True)
-class FileOutput(io):
+class FileOutput:
     id: str | None = None
     created: datetime | None = None
     timestamp: datetime | None = None
@@ -32,11 +38,12 @@ class FileOutput(io):
     external_id: str | None = None
     external_url: str | None = None
     thumbnail: Thumbnail | None = None
-    channels: list[String] | None = None
-    groups: list[String] | None = None
-    ims: list[String] | None = None
+    channels: list[str] | None = None
+    groups: list[str] | None = None
+    ims: list[str] | None = None
 
-    def of(self, file: com) -> FileOutput:
+    @staticmethod
+    def of(file: com.slack.api.model.File) -> FileOutput:
         raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)
@@ -47,17 +54,6 @@ class FileOutput(io):
         thumb360: str | None = None
         thumb480: str | None = None
 
-        def of(self, file: com) -> Thumbnail:
+        @staticmethod
+        def of(file: com.slack.api.model.File) -> Thumbnail:
             raise NotImplementedError  # TODO: translate from Java
-
-
-@dataclass(slots=True, kw_only=True)
-class Thumbnail:
-    thumb64: str | None = None
-    thumb80: str | None = None
-    thumb160: str | None = None
-    thumb360: str | None = None
-    thumb480: str | None = None
-
-    def of(self, file: com) -> Thumbnail:
-        raise NotImplementedError  # TODO: translate from Java

@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from datetime import timedelta
-from typing import Any, Protocol
+from typing import Any, Optional, Protocol
 
 from engine.core.models.conditions.condition_context import ConditionContext
 from engine.core.models.executions.execution import Execution
@@ -14,7 +14,7 @@ from engine.core.models.triggers.trigger_context import TriggerContext
 from engine.core.models.triggers.worker_trigger_interface import WorkerTriggerInterface
 
 
-class PollingTriggerInterface(Protocol):
+class PollingTriggerInterface(WorkerTriggerInterface, Protocol):
     def get_interval(self) -> timedelta: ...
 
     def evaluate(self, condition_context: ConditionContext, context: TriggerContext) -> Optional[Execution]: ...

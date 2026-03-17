@@ -1,4 +1,23 @@
-# PARSE ERROR: 
-# Source: ContainerRegistry.java
-# Plugin: plugin-azure
-# Needs manual translation
+from __future__ import annotations
+
+# Source: E:\KESTRA-IO\plugins\plugin-azure\src\main\java\io\kestra\plugin\azure\batch\models\ContainerRegistry.java
+# WARNING: Unresolved types: azure, batch, com, microsoft, models, protocol
+
+from dataclasses import dataclass
+from typing import Any
+
+from integrations.azure.batch.models.compute_node_identity_reference import ComputeNodeIdentityReference
+from engine.core.exceptions.illegal_variable_evaluation_exception import IllegalVariableEvaluationException
+from engine.core.models.property.property import Property
+from engine.core.runners.run_context import RunContext
+
+
+@dataclass(slots=True, kw_only=True)
+class ContainerRegistry:
+    registry_server: Property[str] | None = None
+    user_name: Property[str] | None = None
+    password: Property[str] | None = None
+    identity_reference: ComputeNodeIdentityReference | None = None
+
+    def to(self, run_context: RunContext) -> com.microsoft.azure.batch.protocol.models.ContainerRegistry:
+        raise NotImplementedError  # TODO: translate from Java

@@ -3,10 +3,10 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\storages\InternalStorage.java
 # WARNING: Unresolved types: IOException, InputStream, Logger
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from datetime import timedelta
-from typing import Any
+from typing import Any, ClassVar, Optional
 
 from engine.core.storages.file_attributes import FileAttributes
 from engine.core.models.namespaces.namespace import Namespace
@@ -20,7 +20,7 @@ from engine.core.models.tasks.task import Task
 
 @dataclass(slots=True, kw_only=True)
 class InternalStorage:
-    p_a_t_h__s_e_p_a_r_a_t_o_r: str = "/"
+    p_a_t_h__s_e_p_a_r_a_t_o_r: ClassVar[str] = "/"
     logger: Logger | None = None
     context: StorageContext | None = None
     storage: StorageInterface | None = None

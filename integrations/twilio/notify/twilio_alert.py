@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-twilio\src\main\java\io\kestra\plugin\twilio\notify\TwilioAlert.java
+# WARNING: Unresolved types: Exception
+
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.twilio.abstract_twilio_connection import AbstractTwilioConnection
@@ -12,10 +15,10 @@ from engine.core.models.tasks.void_output import VoidOutput
 @dataclass(slots=True, kw_only=True)
 class TwilioAlert(AbstractTwilioConnection):
     """Send a Twilio Notify message"""
-    url: str | None = None
+    url: str
+    account_s_i_d: str
+    auth_token: str
     payload: Property[str] | None = None
-    account_s_i_d: str | None = None
-    auth_token: str | None = None
 
     def run(self, run_context: RunContext) -> VoidOutput:
         raise NotImplementedError  # TODO: translate from Java

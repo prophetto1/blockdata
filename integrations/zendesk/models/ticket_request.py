@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-zendesk\src\main\java\io\kestra\plugin\zendesk\models\TicketRequest.java
+
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.zendesk.models.ticket import Ticket

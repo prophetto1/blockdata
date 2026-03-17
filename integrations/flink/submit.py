@@ -1,27 +1,31 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-flink\src\main\java\io\kestra\plugin\flink\Submit.java
+# WARNING: Unresolved types: Exception, IOException, core, io, kestra, models, tasks
+
+from dataclasses import dataclass
 from typing import Any
 
+from engine.core.exceptions.illegal_variable_evaluation_exception import IllegalVariableEvaluationException
 from engine.core.models.property.property import Property
 from engine.core.runners.run_context import RunContext
 from engine.core.models.tasks.runnable_task import RunnableTask
-from engine.core.models.tasks.task import Task
+from integrations.azure.batch.models.task import Task
 
 
 @dataclass(slots=True, kw_only=True)
-class Submit(Task, RunnableTask):
+class Submit(Task):
     """Submit Flink job from JAR over REST"""
     rest_url: Property[str]
     jar_uri: Property[str]
     entry_class: Property[str]
-    args: Property[list[String]] | None = None
+    allow_non_restored_state: Property[bool] = Property.of(false)
+    args: Property[list[str]] | None = None
     parallelism: Property[int] | None = None
     restore_from_savepoint: Property[str] | None = None
-    allow_non_restored_state: Property[bool] | None = None
-    job_config: Property[dict[String, String]] | None = None
+    job_config: Property[dict[str, str]] | None = None
 
-    def run(self, run_context: RunContext) -> Submit:
+    def run(self, run_context: RunContext) -> Submit.Output:
         raise NotImplementedError  # TODO: translate from Java
 
     def download_jar(self, run_context: RunContext, jar_uri: str) -> str:
@@ -40,12 +44,6 @@ class Submit(Task, RunnableTask):
         raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)
-    class Output(io):
+    class Output:
         job_id: str | None = None
         jar_id: str | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class Output(io):
-    job_id: str | None = None
-    jar_id: str | None = None

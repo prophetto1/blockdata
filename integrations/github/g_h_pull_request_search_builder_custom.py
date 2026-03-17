@@ -1,13 +1,18 @@
 from __future__ import annotations
 
+# Source: E:\KESTRA-IO\plugins\plugin-github\src\main\java\io\kestra\plugin\github\GHPullRequestSearchBuilderCustom.java
+# WARNING: Unresolved types: GHDirection, GHPullRequest, GHPullRequestSearchBuilder, PagedSearchIterable, Sort
+
 from dataclasses import dataclass, field
 from typing import Any
+
+from integrations.singer.taps.git_hub import GitHub
 
 
 @dataclass(slots=True, kw_only=True)
 class GHPullRequestSearchBuilderCustom:
+    terms: list[str] = field(default_factory=list)
     search_builder: GHPullRequestSearchBuilder | None = None
-    terms: list[String] | None = None
 
     def q(self, qualifier: str, value: str) -> GHPullRequestSearchBuilderCustom:
         raise NotImplementedError  # TODO: translate from Java
@@ -66,7 +71,7 @@ class GHPullRequestSearchBuilderCustom:
     def label(self, label: str) -> GHPullRequestSearchBuilderCustom:
         raise NotImplementedError  # TODO: translate from Java
 
-    def in_labels(self, labels: Iterable[String]) -> GHPullRequestSearchBuilderCustom:
+    def in_labels(self, labels: list[str]) -> GHPullRequestSearchBuilderCustom:
         raise NotImplementedError  # TODO: translate from Java
 
     def title_like(self, title: str) -> GHPullRequestSearchBuilderCustom:
@@ -75,7 +80,7 @@ class GHPullRequestSearchBuilderCustom:
     def order(self, direction: GHDirection) -> GHPullRequestSearchBuilderCustom:
         raise NotImplementedError  # TODO: translate from Java
 
-    def sort(self, sort: GHPullRequestSearchBuilder) -> GHPullRequestSearchBuilderCustom:
+    def sort(self, sort: GHPullRequestSearchBuilder.Sort) -> GHPullRequestSearchBuilderCustom:
         raise NotImplementedError  # TODO: translate from Java
 
     def list(self) -> PagedSearchIterable[GHPullRequest]:

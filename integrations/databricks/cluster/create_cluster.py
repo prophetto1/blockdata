@@ -1,9 +1,12 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-databricks\src\main\java\io\kestra\plugin\databricks\cluster\CreateCluster.java
+# WARNING: Unresolved types: Exception, core, io, kestra, models, tasks
+
+from dataclasses import dataclass
 from typing import Any
 
-from integrations.opensearch.abstract_task import AbstractTask
+from integrations.compress.abstract_task import AbstractTask
 from engine.core.models.property.property import Property
 from engine.core.runners.run_context import RunContext
 from engine.core.models.tasks.runnable_task import RunnableTask
@@ -11,7 +14,7 @@ from engine.core.models.flows.state import State
 
 
 @dataclass(slots=True, kw_only=True)
-class CreateCluster(AbstractTask, RunnableTask):
+class CreateCluster(AbstractTask):
     """Create a Databricks cluster"""
     cluster_name: Property[str]
     spark_version: Property[str]
@@ -25,14 +28,7 @@ class CreateCluster(AbstractTask, RunnableTask):
         raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)
-    class Output(io):
+    class Output:
         cluster_id: str | None = None
         cluster_u_r_i: str | None = None
         cluster_state: State | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class Output(io):
-    cluster_id: str | None = None
-    cluster_u_r_i: str | None = None
-    cluster_state: State | None = None

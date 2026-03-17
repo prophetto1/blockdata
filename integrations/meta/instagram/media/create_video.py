@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-meta\src\main\java\io\kestra\plugin\meta\instagram\media\CreateVideo.java
+# WARNING: Unresolved types: Callable, Exception, core, io, kestra, models, tasks
+
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.meta.instagram.abstract_instagram_task import AbstractInstagramTask
@@ -13,8 +16,8 @@ from integrations.meta.instagram.enums.video_type import VideoType
 class CreateVideo(AbstractInstagramTask):
     """Publish an Instagram video post"""
     video_url: Property[str]
+    video_type: Property[VideoType] = Property.ofValue(VideoType.VIDEO)
     caption: Property[str] | None = None
-    video_type: Property[VideoType] | None = None
 
     def run(self, run_context: RunContext) -> Output:
         raise NotImplementedError  # TODO: translate from Java
@@ -25,19 +28,13 @@ class CreateVideo(AbstractInstagramTask):
     def wait_for_container_ready(self, run_context: RunContext, token: str, container_id: str) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
-    def check_container_status(self, run_context: RunContext, url: str, token: str, container_id: str) -> Callable[Boolean]:
+    def check_container_status(self, run_context: RunContext, url: str, token: str, container_id: str) -> Callable[bool]:
         raise NotImplementedError  # TODO: translate from Java
 
     def publish_media(self, run_context: RunContext, ig_id: str, token: str, container_id: str) -> str:
         raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)
-    class Output(io):
+    class Output:
         media_id: str | None = None
         container_id: str | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class Output(io):
-    media_id: str | None = None
-    container_id: str | None = None

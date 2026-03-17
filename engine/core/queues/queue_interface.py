@@ -11,7 +11,7 @@ from engine.core.models.pauseable import Pauseable
 from engine.core.queues.queue_exception import QueueException
 
 
-class QueueInterface(Protocol):
+class QueueInterface(Closeable, Pauseable, Protocol):
     def emit(self, message: T) -> None: ...
 
     def emit(self, consumer_group: str, message: T) -> None: ...

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 # Source: E:\KESTRA\jdbc-postgres\src\main\java\io\kestra\repository\postgres\PostgresNamespaceFileMetadataRepositoryService.java
 
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any
 
@@ -11,7 +12,7 @@ from engine.core.models.namespaces.files.namespace_file_metadata import Namespac
 
 
 @dataclass(slots=True, kw_only=True)
-class PostgresNamespaceFileMetadataRepositoryService:
+class PostgresNamespaceFileMetadataRepositoryService(ABC):
 
     @staticmethod
     def find_condition(jdbc_repository: AbstractJdbcRepository[NamespaceFileMetadata], query: str) -> Condition:

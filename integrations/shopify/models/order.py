@@ -1,8 +1,10 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any
+# Source: E:\KESTRA-IO\plugins\plugin-shopify\src\main\java\io\kestra\plugin\shopify\models\Order.java
+
+from dataclasses import dataclass
 from datetime import datetime
+from typing import Any
 
 from integrations.shopify.models.customer import Customer
 
@@ -51,7 +53,7 @@ class Order:
     order_number: int | None = None
     order_status_url: str | None = None
     original_total_duties_set: PriceSet | None = None
-    payment_gateway_names: list[String] | None = None
+    payment_gateway_names: list[str] | None = None
     phone: str | None = None
     presentment_currency: str | None = None
     processed_at: datetime | None = None
@@ -161,9 +163,9 @@ class Order:
         updated_at: datetime | None = None
         tracking_company: str | None = None
         tracking_number: str | None = None
-        tracking_numbers: list[String] | None = None
+        tracking_numbers: list[str] | None = None
         tracking_url: str | None = None
-        tracking_urls: list[String] | None = None
+        tracking_urls: list[str] | None = None
         receipt: Receipt | None = None
         line_items: list[LineItem] | None = None
 
@@ -186,7 +188,7 @@ class Order:
         price_set: PriceSet | None = None
         product_exists: bool | None = None
         product_id: int | None = None
-        properties: dict[String, Object] | None = None
+        properties: dict[str, Any] | None = None
         quantity: int | None = None
         requires_shipping: bool | None = None
         sku: str | None = None
@@ -199,7 +201,7 @@ class Order:
         variant_title: str | None = None
         vendor: str | None = None
         tax_lines: list[TaxLine] | None = None
-        duties: list[Map[String, Object]] | None = None
+        duties: list[dict[str, Any]] | None = None
         discount_allocations: list[DiscountAllocation] | None = None
 
     @dataclass(slots=True)
@@ -240,7 +242,7 @@ class Order:
         order_adjustments: list[OrderAdjustment] | None = None
         transactions: list[Transaction] | None = None
         refund_line_items: list[RefundLineItem] | None = None
-        duties: list[Map[String, Object]] | None = None
+        duties: list[dict[str, Any]] | None = None
 
     @dataclass(slots=True)
     class OrderAdjustment:
@@ -314,244 +316,3 @@ class Order:
         title: str | None = None
         tax_lines: list[TaxLine] | None = None
         discount_allocations: list[DiscountAllocation] | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class PriceSet:
-    shop_money: Money | None = None
-    presentment_money: Money | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class Money:
-    amount: str | None = None
-    currency_code: str | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class DiscountCode:
-    code: str | None = None
-    amount: str | None = None
-    type: str | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class NoteAttribute:
-    name: str | None = None
-    value: str | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class TaxLine:
-    price: str | None = None
-    rate: float | None = None
-    title: str | None = None
-    price_set: PriceSet | None = None
-    channel_liable: bool | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class Address:
-    first_name: str | None = None
-    address1: str | None = None
-    phone: str | None = None
-    city: str | None = None
-    zip: str | None = None
-    province: str | None = None
-    country: str | None = None
-    last_name: str | None = None
-    address2: str | None = None
-    company: str | None = None
-    latitude: float | None = None
-    longitude: float | None = None
-    name: str | None = None
-    country_code: str | None = None
-    province_code: str | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class DiscountApplication:
-    target_type: str | None = None
-    type: str | None = None
-    value: str | None = None
-    value_type: str | None = None
-    allocation_method: str | None = None
-    target_selection: str | None = None
-    title: str | None = None
-    description: str | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class Fulfillment:
-    id: int | None = None
-    order_id: int | None = None
-    status: str | None = None
-    created_at: datetime | None = None
-    service: str | None = None
-    updated_at: datetime | None = None
-    tracking_company: str | None = None
-    tracking_number: str | None = None
-    tracking_numbers: list[String] | None = None
-    tracking_url: str | None = None
-    tracking_urls: list[String] | None = None
-    receipt: Receipt | None = None
-    line_items: list[LineItem] | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class Receipt:
-    testcase: bool | None = None
-    authorization: str | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class LineItem:
-    id: int | None = None
-    admin_graphql_api_id: str | None = None
-    fulfillable_quantity: int | None = None
-    fulfillment_service: str | None = None
-    fulfillment_status: str | None = None
-    gift_card: bool | None = None
-    grams: int | None = None
-    name: str | None = None
-    price: str | None = None
-    price_set: PriceSet | None = None
-    product_exists: bool | None = None
-    product_id: int | None = None
-    properties: dict[String, Object] | None = None
-    quantity: int | None = None
-    requires_shipping: bool | None = None
-    sku: str | None = None
-    taxable: bool | None = None
-    title: str | None = None
-    total_discount: str | None = None
-    total_discount_set: PriceSet | None = None
-    variant_id: int | None = None
-    variant_inventory_management: str | None = None
-    variant_title: str | None = None
-    vendor: str | None = None
-    tax_lines: list[TaxLine] | None = None
-    duties: list[Map[String, Object]] | None = None
-    discount_allocations: list[DiscountAllocation] | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class DiscountAllocation:
-    amount: str | None = None
-    amount_set: PriceSet | None = None
-    discount_application_index: int | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class PaymentTerms:
-    amount: int | None = None
-    currency: str | None = None
-    payment_terms_name: str | None = None
-    payment_terms_type: str | None = None
-    due_in_days: int | None = None
-    payment_schedules: list[PaymentSchedule] | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class PaymentSchedule:
-    amount: int | None = None
-    currency: str | None = None
-    issued_at: datetime | None = None
-    due_at: datetime | None = None
-    completed_at: datetime | None = None
-    expected_payment_method: str | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class Refund:
-    id: int | None = None
-    admin_graphql_api_id: str | None = None
-    created_at: datetime | None = None
-    note: str | None = None
-    order_id: int | None = None
-    processed_at: datetime | None = None
-    restock: bool | None = None
-    total_duties_set: PriceSet | None = None
-    user_id: int | None = None
-    order_adjustments: list[OrderAdjustment] | None = None
-    transactions: list[Transaction] | None = None
-    refund_line_items: list[RefundLineItem] | None = None
-    duties: list[Map[String, Object]] | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class OrderAdjustment:
-    id: int | None = None
-    order_id: int | None = None
-    refund_id: int | None = None
-    amount: str | None = None
-    tax_amount: str | None = None
-    kind: str | None = None
-    reason: str | None = None
-    amount_set: PriceSet | None = None
-    tax_amount_set: PriceSet | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class Transaction:
-    id: int | None = None
-    admin_graphql_api_id: str | None = None
-    amount: str | None = None
-    authorization: str | None = None
-    created_at: datetime | None = None
-    currency: str | None = None
-    device_id: str | None = None
-    error_code: str | None = None
-    gateway: str | None = None
-    kind: str | None = None
-    location_id: int | None = None
-    message: str | None = None
-    order_id: int | None = None
-    parent_id: int | None = None
-    processed_at: datetime | None = None
-    receipt: Receipt | None = None
-    source_name: str | None = None
-    status: str | None = None
-    test: bool | None = None
-    user_id: int | None = None
-    currency_exchange_adjustment: CurrencyExchangeAdjustment | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class CurrencyExchangeAdjustment:
-    adjustment: str | None = None
-    original_amount: str | None = None
-    final_amount: str | None = None
-    currency: str | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class RefundLineItem:
-    id: int | None = None
-    line_item_id: int | None = None
-    location_id: int | None = None
-    quantity: int | None = None
-    restock_type: str | None = None
-    subtotal: str | None = None
-    subtotal_set: PriceSet | None = None
-    total_tax: str | None = None
-    total_tax_set: PriceSet | None = None
-    line_item: LineItem | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class ShippingLine:
-    id: int | None = None
-    carrier_identifier: str | None = None
-    code: str | None = None
-    delivery_category: str | None = None
-    discounted_price: str | None = None
-    discounted_price_set: PriceSet | None = None
-    phone: str | None = None
-    price: str | None = None
-    price_set: PriceSet | None = None
-    requested_fulfillment_service_id: str | None = None
-    source: str | None = None
-    title: str | None = None
-    tax_lines: list[TaxLine] | None = None
-    discount_allocations: list[DiscountAllocation] | None = None

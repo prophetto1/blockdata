@@ -3,9 +3,9 @@ from __future__ import annotations
 # Source: E:\KESTRA\tests\src\main\java\io\kestra\core\runners\TestRunnerUtils.java
 # WARNING: Unresolved types: BiFunction, InterruptedException, Predicate, TimeoutException
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import timedelta
-from typing import Any
+from typing import Any, ClassVar
 
 from engine.core.models.executions.execution import Execution
 from engine.core.models.executions.execution_killed import ExecutionKilled
@@ -22,7 +22,7 @@ from engine.core.queues.queue_interface import QueueInterface
 
 @dataclass(slots=True, kw_only=True)
 class TestRunnerUtils:
-    d_e_f_a_u_l_t__m_a_x__w_a_i_t__d_u_r_a_t_i_o_n: timedelta = Duration.ofSeconds(15)
+    d_e_f_a_u_l_t__m_a_x__w_a_i_t__d_u_r_a_t_i_o_n: ClassVar[timedelta] = Duration.ofSeconds(15)
     execution_queue: QueueInterface[Execution] | None = None
     kill_queue: QueueInterface[ExecutionKilled] | None = None
     flow_repository: FlowRepositoryInterface | None = None

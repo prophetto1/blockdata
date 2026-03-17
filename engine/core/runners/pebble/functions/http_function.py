@@ -3,15 +3,15 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\runners\pebble\functions\HttpFunction.java
 # WARNING: Unresolved types: ApplicationContext, DefaultMessageBodyHandlerRegistry, EvaluationContext, Function, MessageBodyWriter, PebbleTemplate, RequestBody, T
 
-from dataclasses import dataclass
-from typing import Any
+from dataclasses import dataclass, field
+from typing import Any, ClassVar
 
 from engine.core.http.http_request import HttpRequest
 
 
 @dataclass(slots=True, kw_only=True)
 class HttpFunction:
-    n_a_m_e: str = "http"
+    n_a_m_e: ClassVar[str] = "http"
     f_a_l_l_b_a_c_k__c_o_n_t_e_n_t__w_r_i_t_e_r: MessageBodyWriter[T] = (type, mediaType, object, outgoingHeaders, outputStream) -> {
         if (mediaType == MediaType.APPLICATION_YAML_TYPE || mediaType.equals(MediaType.of("application/yaml"))) {
             try {

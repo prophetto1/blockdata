@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-singer\src\main\java\io\kestra\plugin\singer\models\StreamsConfiguration.java
+# WARNING: Unresolved types: ReplicationMethod
+
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.singer.models.discover_metadata import DiscoverMetadata
@@ -8,8 +11,8 @@ from integrations.singer.models.discover_metadata import DiscoverMetadata
 
 @dataclass(slots=True, kw_only=True)
 class StreamsConfiguration:
-    stream: str | None = None
-    replication_method: DiscoverMetadata | None = None
-    replication_keys: str | None = None
-    properties_pattern: list[String] | None = None
     selected: bool = True
+    stream: str | None = None
+    replication_method: DiscoverMetadata.ReplicationMethod | None = None
+    replication_keys: str | None = None
+    properties_pattern: list[str] | None = None

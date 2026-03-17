@@ -4,13 +4,13 @@ from __future__ import annotations
 # WARNING: Unresolved types: EvaluationContext, Filter, PebbleException, PebbleTemplate, Scope
 
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, ClassVar
 
 
 @dataclass(slots=True, kw_only=True)
 class JqFilter:
     argument_names: list[str] = field(default_factory=list)
-    s_c_o_p_e: Scope | None = None
+    s_c_o_p_e: ClassVar[Scope]
 
     def get_argument_names(self) -> list[str]:
         raise NotImplementedError  # TODO: translate from Java

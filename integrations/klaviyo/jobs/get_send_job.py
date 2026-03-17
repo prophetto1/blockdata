@@ -1,19 +1,22 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-klaviyo\src\main\java\io\kestra\plugin\klaviyo\jobs\GetSendJob.java
+# WARNING: Unresolved types: Exception
+
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.klaviyo.abstract_klaviyo_task import AbstractKlaviyoTask
-from engine.core.models.tasks.output import Output
+from integrations.aws.glue.model.output import Output
 from engine.core.models.property.property import Property
 from engine.core.runners.run_context import RunContext
 from engine.core.models.tasks.runnable_task import RunnableTask
 
 
 @dataclass(slots=True, kw_only=True)
-class GetSendJob(AbstractKlaviyoTask, RunnableTask):
+class GetSendJob(AbstractKlaviyoTask):
     """Fetch campaign send jobs"""
-    job_ids: Property[list[String]]
+    job_ids: Property[list[str]]
 
     def run(self, run_context: RunContext) -> Output:
         raise NotImplementedError  # TODO: translate from Java

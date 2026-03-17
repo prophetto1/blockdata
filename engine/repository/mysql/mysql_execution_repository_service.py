@@ -3,6 +3,7 @@ from __future__ import annotations
 # Source: E:\KESTRA\jdbc-mysql\src\main\java\io\kestra\repository\mysql\MysqlExecutionRepositoryService.java
 # WARNING: Unresolved types: Op
 
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any
 
@@ -14,7 +15,7 @@ from engine.core.models.query_filter import QueryFilter
 
 
 @dataclass(slots=True, kw_only=True)
-class MysqlExecutionRepositoryService:
+class MysqlExecutionRepositoryService(ABC):
 
     @staticmethod
     def find_condition(jdbc_repository: AbstractJdbcRepository[Execution], query: str, labels: dict[str, str]) -> Condition:

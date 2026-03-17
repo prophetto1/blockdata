@@ -2,8 +2,8 @@ from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\models\collectors\FlowUsage.java
 
-from dataclasses import dataclass
-from typing import Any
+from dataclasses import dataclass, field
+from typing import Any, ClassVar
 
 from engine.core.models.flows.flow import Flow
 from engine.core.repositories.flow_repository_interface import FlowRepositoryInterface
@@ -11,7 +11,7 @@ from engine.core.repositories.flow_repository_interface import FlowRepositoryInt
 
 @dataclass(slots=True, kw_only=True)
 class FlowUsage:
-    t_u_t_o_r_i_a_l__n_a_m_e_s_p_a_c_e: str = "tutorial"
+    t_u_t_o_r_i_a_l__n_a_m_e_s_p_a_c_e: ClassVar[str] = "tutorial"
     count: int | None = None
     namespaces_count: int | None = None
     task_type_count: dict[str, int] | None = None

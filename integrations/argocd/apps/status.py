@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-argocd\src\main\java\io\kestra\plugin\argocd\apps\Status.java
+# WARNING: Unresolved types: Exception
+
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.argocd.apps.abstract_argo_c_d import AbstractArgoCD
@@ -11,9 +14,9 @@ from engine.plugin.scripts.exec.scripts.models.script_output import ScriptOutput
 
 
 @dataclass(slots=True, kw_only=True)
-class Status(AbstractArgoCD, RunnableTask):
+class Status(AbstractArgoCD):
     """Fetch ArgoCD application status"""
-    refresh: Property[bool] | None = None
+    refresh: Property[bool] = Property.ofValue(false)
 
     def run(self, run_context: RunContext) -> Output:
         raise NotImplementedError  # TODO: translate from Java
@@ -22,15 +25,6 @@ class Status(AbstractArgoCD, RunnableTask):
     class Output(ScriptOutput):
         sync_status: str | None = None
         health_status: str | None = None
-        conditions: list[Map[String, Object]] | None = None
-        resources: list[Map[String, Object]] | None = None
+        conditions: list[dict[str, Any]] | None = None
+        resources: list[dict[str, Any]] | None = None
         raw_output: str | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class Output(ScriptOutput):
-    sync_status: str | None = None
-    health_status: str | None = None
-    conditions: list[Map[String, Object]] | None = None
-    resources: list[Map[String, Object]] | None = None
-    raw_output: str | None = None

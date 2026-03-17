@@ -1,8 +1,11 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any
+# Source: E:\KESTRA-IO\plugins\plugin-fs\src\main\java\io\kestra\plugin\fs\local\Delete.java
+# WARNING: Unresolved types: Exception, core, io, kestra, models, tasks
+
+from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 from integrations.fs.local.abstract_local_task import AbstractLocalTask
 from engine.core.models.property.property import Property
@@ -11,11 +14,11 @@ from engine.core.models.tasks.runnable_task import RunnableTask
 
 
 @dataclass(slots=True, kw_only=True)
-class Delete(AbstractLocalTask, RunnableTask):
+class Delete(AbstractLocalTask):
     """Delete local file or directory"""
     from: Property[str]
-    error_on_missing: Property[bool] | None = None
-    recursive: Property[bool] | None = None
+    error_on_missing: Property[bool] = Property.ofValue(false)
+    recursive: Property[bool] = Property.ofValue(true)
 
     def run(self, run_context: RunContext) -> Output:
         raise NotImplementedError  # TODO: translate from Java
@@ -24,10 +27,5 @@ class Delete(AbstractLocalTask, RunnableTask):
         raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)
-    class Output(io):
+    class Output:
         deleted: bool | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class Output(io):
-    deleted: bool | None = None

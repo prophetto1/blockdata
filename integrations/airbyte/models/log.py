@@ -1,13 +1,15 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-airbyte\src\main\java\io\kestra\plugin\airbyte\models\Log.java
+
+from dataclasses import dataclass
 from typing import Any
 
-from engine.webserver.models.events.event import Event
+from integrations.airbyte.models.event import Event
 
 
 @dataclass(slots=True, kw_only=True)
 class Log:
-    log_lines: list[String] | None = None
+    log_lines: list[str] | None = None
     events: list[Event] | None = None
     version: str | None = None

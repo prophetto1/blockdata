@@ -4,7 +4,7 @@ from __future__ import annotations
 # WARNING: Unresolved types: ApplicationContext, StartupEvent, TriFunction, core, io, kestra, models, tasks, templates
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Optional, Protocol
 
 from engine.core.models.executions.execution import Execution
 from engine.core.models.flows.flow import Flow

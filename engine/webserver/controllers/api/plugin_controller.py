@@ -3,8 +3,8 @@ from __future__ import annotations
 # Source: E:\KESTRA\webserver\src\main\java\io\kestra\webserver\controllers\api\PluginController.java
 # WARNING: Unresolved types: ClassNotFoundException, IOException, MutableHttpResponse
 
-from dataclasses import dataclass
-from typing import Any
+from dataclasses import dataclass, field
+from typing import Any, ClassVar
 
 from engine.core.docs.class_input_documentation import ClassInputDocumentation
 from engine.core.docs.class_plugin_documentation import ClassPluginDocumentation
@@ -22,7 +22,7 @@ from engine.core.models.flows.type import Type
 
 @dataclass(slots=True, kw_only=True)
 class PluginController:
-    c_a_c_h_e__d_i_r_e_c_t_i_v_e: str = "public, max-age=3600"
+    c_a_c_h_e__d_i_r_e_c_t_i_v_e: ClassVar[str] = "public, max-age=3600"
     json_schema_generator: JsonSchemaGenerator | None = None
     plugin_registry: PluginRegistry | None = None
     json_schema_cache: JsonSchemaCache | None = None

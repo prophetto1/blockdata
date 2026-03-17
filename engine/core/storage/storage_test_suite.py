@@ -3,16 +3,17 @@ from __future__ import annotations
 # Source: E:\KESTRA\tests\src\main\java\io\kestra\core\storage\StorageTestSuite.java
 # WARNING: Unresolved types: Exception, IOException, URISyntaxException
 
-from dataclasses import dataclass
-from typing import Any
+from abc import ABC, abstractmethod
+from dataclasses import dataclass, field
+from typing import Any, ClassVar
 
 from engine.core.storages.file_attributes import FileAttributes
 from engine.core.storages.storage_interface import StorageInterface
 
 
 @dataclass(slots=True, kw_only=True)
-class StorageTestSuite:
-    c_o_n_t_e_n_t__s_t_r_i_n_g: str = "Content"
+class StorageTestSuite(ABC):
+    c_o_n_t_e_n_t__s_t_r_i_n_g: ClassVar[str] = "Content"
     storage_interface: StorageInterface | None = None
 
     def get_path(self) -> None:

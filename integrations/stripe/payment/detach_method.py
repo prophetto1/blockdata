@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-stripe\src\main\java\io\kestra\plugin\stripe\payment\DetachMethod.java
+# WARNING: Unresolved types: Exception, core, io, kestra, models, tasks
+
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.stripe.abstract_stripe import AbstractStripe
@@ -10,7 +13,7 @@ from engine.core.models.tasks.runnable_task import RunnableTask
 
 
 @dataclass(slots=True, kw_only=True)
-class DetachMethod(AbstractStripe, RunnableTask):
+class DetachMethod(AbstractStripe):
     """Detach PaymentMethod from customer"""
     payment_method_id: Property[str]
 
@@ -18,16 +21,8 @@ class DetachMethod(AbstractStripe, RunnableTask):
         raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)
-    class Output(io):
+    class Output:
         id: str | None = None
         customer: str | None = None
         type: str | None = None
-        raw_response: dict[String, Object] | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class Output(io):
-    id: str | None = None
-    customer: str | None = None
-    type: str | None = None
-    raw_response: dict[String, Object] | None = None
+        raw_response: dict[str, Any] | None = None

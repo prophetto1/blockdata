@@ -3,6 +3,7 @@ from __future__ import annotations
 # Source: E:\KESTRA\jdbc-h2\src\main\java\io\kestra\repository\h2\H2ExecutionRepositoryService.java
 # WARNING: Unresolved types: Op
 
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any
 
@@ -14,7 +15,7 @@ from engine.core.models.query_filter import QueryFilter
 
 
 @dataclass(slots=True, kw_only=True)
-class H2ExecutionRepositoryService:
+class H2ExecutionRepositoryService(ABC):
 
     @staticmethod
     def find_condition(jdbc_repository: AbstractJdbcRepository[Execution], query: str, labels: dict[str, str]) -> Condition:

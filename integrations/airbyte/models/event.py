@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-airbyte\src\main\java\io\kestra\plugin\airbyte\models\Event.java
+
+from dataclasses import dataclass
 from typing import Any
 
 
@@ -10,4 +12,4 @@ class Event:
     message: str | None = None
     level: str | None = None
     log_source: str | None = None
-    caller: dict[String, Object] | None = None
+    caller: dict[str, Any] | None = None

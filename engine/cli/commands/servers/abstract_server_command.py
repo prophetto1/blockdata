@@ -3,6 +3,7 @@ from __future__ import annotations
 # Source: E:\KESTRA\cli\src\main\java\io\kestra\cli\commands\servers\AbstractServerCommand.java
 # WARNING: Unresolved types: Exception
 
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any
 
@@ -11,7 +12,7 @@ from engine.cli.commands.servers.server_command_interface import ServerCommandIn
 
 
 @dataclass(slots=True, kw_only=True)
-class AbstractServerCommand(AbstractCommand):
+class AbstractServerCommand(ABC, AbstractCommand):
     server_port: int | None = None
 
     def call(self) -> int:

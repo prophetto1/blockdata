@@ -1,19 +1,26 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any
+# Source: E:\KESTRA-IO\plugins\plugin-slack\src\main\java\io\kestra\plugin\slack\app\models\ConversationTopicOutput.java
+# WARNING: Unresolved types: Purpose, Topic, core, io, kestra, models, tasks
+
+from dataclasses import dataclass
 from datetime import datetime
+from typing import Any
+
+from integrations.aws.glue.model.output import Output
 
 
 @dataclass(slots=True, kw_only=True)
-class ConversationTopicOutput(io):
+class ConversationTopicOutput:
     """Conversation topic/purpose output"""
     value: str
     creator: str | None = None
     last_set: datetime | None = None
 
-    def of(self, topic: Topic) -> ConversationTopicOutput:
+    @staticmethod
+    def of(topic: Topic) -> ConversationTopicOutput:
         raise NotImplementedError  # TODO: translate from Java
 
-    def of(self, purpose: Purpose) -> ConversationTopicOutput:
+    @staticmethod
+    def of(purpose: Purpose) -> ConversationTopicOutput:
         raise NotImplementedError  # TODO: translate from Java

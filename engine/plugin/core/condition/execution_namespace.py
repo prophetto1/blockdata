@@ -4,6 +4,7 @@ from __future__ import annotations
 # WARNING: Unresolved types: BiPredicate
 
 from dataclasses import dataclass
+from enum import Enum
 from typing import Any
 
 from engine.core.models.conditions.condition import Condition

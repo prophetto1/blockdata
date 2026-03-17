@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-slack\src\main\java\io\kestra\plugin\slack\notifications\SlackIncomingWebhook.java
+# WARNING: Unresolved types: Exception
+
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.slack.abstract_slack_webhook_connection import AbstractSlackWebhookConnection
@@ -13,7 +16,7 @@ from engine.plugin.core.trigger.webhook_response import WebhookResponse
 
 
 @dataclass(slots=True, kw_only=True)
-class SlackIncomingWebhook(AbstractSlackWebhookConnection, MessagePayloadInterface):
+class SlackIncomingWebhook(AbstractSlackWebhookConnection):
     """Send a Slack message using an Incoming Webhook."""
     payload: Property[str] | None = None
     message_text: Property[str] | None = None

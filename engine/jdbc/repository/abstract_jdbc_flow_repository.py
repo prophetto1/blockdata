@@ -3,9 +3,10 @@ from __future__ import annotations
 # Source: E:\KESTRA\jdbc\src\main\java\io\kestra\jdbc\repository\AbstractJdbcFlowRepository.java
 # WARNING: Unresolved types: ApplicationContext, ApplicationEventPublisher, ConstraintViolationException, DSLContext, E, Field, Fields, Flux, Name, ObjectMapper, Op, OrderField, Pageable, R, Record, Record3, Resource, SelectConditionStep, io, jdbc, kestra
 
-from dataclasses import dataclass
+from abc import ABC, abstractmethod
+from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any
+from typing import Any, ClassVar, Optional
 
 from engine.jdbc.abstract_jdbc_repository import AbstractJdbcRepository
 from engine.core.repositories.array_list_total import ArrayListTotal
@@ -36,11 +37,11 @@ from engine.core.models.triggers.trigger import Trigger
 
 
 @dataclass(slots=True, kw_only=True)
-class AbstractJdbcFlowRepository(AbstractJdbcRepository):
-    m_a_p_p_e_r: ObjectMapper = JdbcMapper.of()
-    n_a_m_e_s_p_a_c_e__f_i_e_l_d: Field[str] = field("namespace", String.class)
-    s_o_u_r_c_e__f_i_e_l_d: Field[str] = field("source_code", String.class)
-    r_e_v_i_s_i_o_n__f_i_e_l_d: Field[int] = field("revision", Integer.class)
+class AbstractJdbcFlowRepository(ABC, AbstractJdbcRepository):
+    m_a_p_p_e_r: ClassVar[ObjectMapper] = JdbcMapper.of()
+    n_a_m_e_s_p_a_c_e__f_i_e_l_d: ClassVar[Field[str]] = field("namespace", String.class)
+    s_o_u_r_c_e__f_i_e_l_d: ClassVar[Field[str]] = field("source_code", String.class)
+    r_e_v_i_s_i_o_n__f_i_e_l_d: ClassVar[Field[int]] = field("revision", Integer.class)
     fields_mapping: dict[Flows.Fields, str] = Map.of(
         Flows.Fields.ID, "key",
         Flows.Fields.NAMESPACE, "namespace",
@@ -129,14 +130,16 @@ class AbstractJdbcFlowRepository(AbstractJdbcRepository):
     def full_text_select(self, tenant_id: str, context: DSLContext, field: list[Field[Any]]) -> SelectConditionStep[R]:
         raise NotImplementedError  # TODO: translate from Java
 
+    @abstractmethod
     def find_condition(self, query: str, labels: dict[str, str]) -> Condition:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
     def find_query_condition(self, query: str) -> Condition:
         raise NotImplementedError  # TODO: translate from Java
 
+    @abstractmethod
     def find_condition(self, value: Any, operation: QueryFilter.Op) -> Condition:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
     def find_label_condition(self, value: Either[dict[Any, Any], str], operation: QueryFilter.Op) -> Condition:
         raise NotImplementedError  # TODO: translate from Java
@@ -153,8 +156,9 @@ class AbstractJdbcFlowRepository(AbstractJdbcRepository):
     def get_column_name(self, field: QueryFilter.Field) -> Name:
         raise NotImplementedError  # TODO: translate from Java
 
+    @abstractmethod
     def find_source_code_condition(self, query: str) -> Condition:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
     def find_source_code(self, pageable: Pageable, query: str, tenant_id: str, namespace: str) -> ArrayListTotal[SearchResult[Flow]]:
         raise NotImplementedError  # TODO: translate from Java

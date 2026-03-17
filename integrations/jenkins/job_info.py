@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-jenkins\src\main\java\io\kestra\plugin\jenkins\JobInfo.java
+# WARNING: Unresolved types: Exception, core, io, kestra, models, tasks
+
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.jenkins.abstract_jenkins import AbstractJenkins
@@ -9,7 +12,7 @@ from engine.core.models.tasks.runnable_task import RunnableTask
 
 
 @dataclass(slots=True, kw_only=True)
-class JobInfo(AbstractJenkins, RunnableTask):
+class JobInfo(AbstractJenkins):
     """Fetch Jenkins build details"""
     job_name: str
     build_number: int
@@ -18,19 +21,9 @@ class JobInfo(AbstractJenkins, RunnableTask):
         raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)
-    class Output(io):
-        info: dict[String, Object] | None = None
+    class Output:
+        info: dict[str, Any] | None = None
 
     @dataclass(slots=True)
     class GetResult:
-        response: dict[String, Object] | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class Output(io):
-    info: dict[String, Object] | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class GetResult:
-    response: dict[String, Object] | None = None
+        response: dict[str, Any] | None = None

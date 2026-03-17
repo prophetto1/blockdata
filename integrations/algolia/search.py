@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-algolia\src\main\java\io\kestra\plugin\algolia\Search.java
+# WARNING: Unresolved types: Exception, ObjectNode, core, io, kestra, models, tasks
+
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.algolia.abstract_algolia_task import AbstractAlgoliaTask
@@ -10,21 +13,15 @@ from engine.core.models.tasks.runnable_task import RunnableTask
 
 
 @dataclass(slots=True, kw_only=True)
-class Search(AbstractAlgoliaTask, RunnableTask):
+class Search(AbstractAlgoliaTask):
     """Query records in an Algolia index"""
     index_name: Property[str]
-    params: Property[dict[String, Object]] | None = None
+    params: Property[dict[str, Any]] | None = None
 
     def run(self, run_context: RunContext) -> Output:
         raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)
-    class Output(io):
+    class Output:
         nb_hits: int | None = None
         hits: list[ObjectNode] | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class Output(io):
-    nb_hits: int | None = None
-    hits: list[ObjectNode] | None = None

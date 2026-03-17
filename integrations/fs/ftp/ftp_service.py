@@ -1,17 +1,24 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-fs\src\main\java\io\kestra\plugin\fs\ftp\FtpService.java
+# WARNING: Unresolved types: FileSystemOptions, FtpFileSystemConfigBuilder, IOException
+
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.fs.ftp.ftp_interface import FtpInterface
+from engine.core.exceptions.illegal_variable_evaluation_exception import IllegalVariableEvaluationException
 from engine.core.runners.run_context import RunContext
 
 
 @dataclass(slots=True, kw_only=True)
-class FtpService:
+class FtpService(ABC):
 
-    def fs_options(self, run_context: RunContext, ftp_interface: FtpInterface) -> FileSystemOptions:
+    @staticmethod
+    def fs_options(run_context: RunContext, ftp_interface: FtpInterface) -> FileSystemOptions:
         raise NotImplementedError  # TODO: translate from Java
 
-    def fs_options(self, instance: FtpFileSystemConfigBuilder, run_context: RunContext, ftp_interface: FtpInterface) -> FileSystemOptions:
+    @staticmethod
+    def fs_options(instance: FtpFileSystemConfigBuilder, run_context: RunContext, ftp_interface: FtpInterface) -> FileSystemOptions:
         raise NotImplementedError  # TODO: translate from Java

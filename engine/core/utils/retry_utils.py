@@ -3,9 +3,9 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\utils\RetryUtils.java
 # WARNING: Unresolved types: BiPredicate, Class, E, Exception, ExecutionAttemptedEvent, FailsafeExecutor, FallbackBuilder, Function, Logger, Predicate, RetryPolicyBuilder, T, Throwable
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import timedelta
-from typing import Any
+from typing import Any, ClassVar, Protocol
 
 from engine.core.models.tasks.retrys.abstract_retry import AbstractRetry
 
@@ -73,6 +73,6 @@ class RetryUtils:
 
     @dataclass(slots=True)
     class RetryFailed(Exception):
-        serial_version_u_i_d: int = 1
+        serial_version_u_i_d: ClassVar[int] = 1
         attempt_count: int | None = None
         elapsed_time: timedelta | None = None

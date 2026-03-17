@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-slack\src\main\java\io\kestra\plugin\slack\app\conversations\Members.java
+# WARNING: Unresolved types: Exception, core, io, kestra, models, tasks
+
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.slack.abstract_slack_client_connection import AbstractSlackClientConnection
@@ -10,7 +13,7 @@ from engine.core.models.tasks.runnable_task import RunnableTask
 
 
 @dataclass(slots=True, kw_only=True)
-class Members(AbstractSlackClientConnection, RunnableTask):
+class Members(AbstractSlackClientConnection):
     """List members of a Slack channel"""
     channel: Property[str]
 
@@ -18,21 +21,10 @@ class Members(AbstractSlackClientConnection, RunnableTask):
         raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)
-    class Output(io):
+    class Output:
         uri: str | None = None
         size: int | None = None
 
     @dataclass(slots=True)
     class MemberOutput:
         member_id: str | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class Output(io):
-    uri: str | None = None
-    size: int | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class MemberOutput:
-    member_id: str | None = None

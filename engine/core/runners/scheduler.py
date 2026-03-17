@@ -8,5 +8,5 @@ from typing import Any, Protocol
 from engine.core.server.service import Service
 
 
-class Scheduler(Protocol):
+class Scheduler(Service, Runnable, Protocol):
     pass

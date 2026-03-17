@@ -3,6 +3,7 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\runners\ExecutionDelay.java
 
 from dataclasses import dataclass
+from enum import Enum
 from datetime import datetime
 from typing import Any
 

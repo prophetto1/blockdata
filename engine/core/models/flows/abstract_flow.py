@@ -2,6 +2,7 @@ from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\models\flows\AbstractFlow.java
 
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
@@ -16,7 +17,7 @@ from engine.core.models.tasks.worker_group import WorkerGroup
 
 
 @dataclass(slots=True, kw_only=True)
-class AbstractFlow:
+class AbstractFlow(ABC):
     id: str
     namespace: str
     disabled: bool = False

@@ -3,8 +3,8 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\storages\StorageInterfaceFactory.java
 # WARNING: Unresolved types: IOException, Stream, Validator
 
-from dataclasses import dataclass
-from typing import Any
+from dataclasses import dataclass, field
+from typing import Any, ClassVar
 
 from engine.core.plugins.plugin_registry import PluginRegistry
 from engine.core.storages.storage_configuration import StorageConfiguration
@@ -13,7 +13,7 @@ from engine.core.storages.storage_interface import StorageInterface
 
 @dataclass(slots=True, kw_only=True)
 class StorageInterfaceFactory:
-    k_e_s_t_r_a__s_t_o_r_a_g_e__t_y_p_e__c_o_n_f_i_g: str = "kestra.storage.type"
+    k_e_s_t_r_a__s_t_o_r_a_g_e__t_y_p_e__c_o_n_f_i_g: ClassVar[str] = "kestra.storage.type"
     plugin_registry: PluginRegistry | None = None
     validator: Validator | None = None
 

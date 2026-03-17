@@ -4,7 +4,7 @@ from __future__ import annotations
 # WARNING: Unresolved types: BiConsumer, BiFunction, DSLContext, Pair, core, executions, io, jdbc, kestra, models
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Optional
 
 from engine.jdbc.runner.abstract_jdbc_execution_queued_storage import AbstractJdbcExecutionQueuedStorage
 from engine.jdbc.repository.abstract_jdbc_repository import AbstractJdbcRepository

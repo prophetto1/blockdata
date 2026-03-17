@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+# Source: E:\KESTRA-IO\plugins\plugin-airbyte\src\main\java\io\kestra\plugin\airbyte\models\AttemptFailureOrigin.java
+
 from enum import Enum
 from typing import Any
 

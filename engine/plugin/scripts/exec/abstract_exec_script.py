@@ -2,6 +2,7 @@ from __future__ import annotations
 
 # Source: E:\KESTRA\script\src\main\java\io\kestra\plugin\scripts\exec\AbstractExecScript.java
 
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any
 
@@ -22,7 +23,7 @@ from engine.core.models.tasks.runners.task_runner import TaskRunner
 
 
 @dataclass(slots=True, kw_only=True)
-class AbstractExecScript(Task):
+class AbstractExecScript(ABC, Task):
     task_runner: TaskRunner[Any] = Docker.builder()
         .type(Docker.class.getName())
         .pullPolicy(Property.ofValue(PullPolicy.IF_NOT_PRESENT))
@@ -40,8 +41,9 @@ class AbstractExecScript(Task):
     output_directory: Property[bool] | None = None
     docker: DockerOptions | None = None
 
+    @abstractmethod
     def get_container_image(self) -> Property[str]:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
     def inject_defaults(self, original: DockerOptions) -> DockerOptions:
         raise NotImplementedError  # TODO: translate from Java

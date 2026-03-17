@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any
+from typing import Any, Optional
 
 from engine.core.models.tasks.retrys.abstract_retry import AbstractRetry
 from engine.core.services.concurrency_limit_service import ConcurrencyLimitService

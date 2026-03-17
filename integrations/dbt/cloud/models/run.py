@@ -1,15 +1,17 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any
+# Source: E:\KESTRA-IO\plugins\plugin-dbt\src\main\java\io\kestra\plugin\dbt\cloud\models\Run.java
+
+from dataclasses import dataclass
 from datetime import datetime
+from typing import Any
 
 from integrations.dbt.cloud.models.environment import Environment
-from integrations.dbt.cloud.models.job import Job
-from integrations.dbt.cloud.models.job_status import JobStatus
+from integrations.airbyte.models.job import Job
+from integrations.airbyte.models.job_status import JobStatus
 from integrations.dbt.cloud.models.job_status_humanized_enum import JobStatusHumanizedEnum
 from integrations.dbt.cloud.models.step import Step
-from engine.plugin.core.http.trigger import Trigger
+from integrations.amqp.trigger import Trigger
 
 
 @dataclass(slots=True, kw_only=True)

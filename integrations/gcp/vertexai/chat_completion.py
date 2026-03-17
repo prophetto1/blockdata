@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-gcp\src\main\java\io\kestra\plugin\gcp\vertexai\ChatCompletion.java
+# WARNING: Unresolved types: Exception, Prediction, core, io, kestra, models, tasks
+
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.gcp.vertexai.abstract_generative_ai import AbstractGenerativeAi
@@ -10,7 +13,7 @@ from engine.core.models.tasks.runnable_task import RunnableTask
 
 
 @dataclass(slots=True, kw_only=True)
-class ChatCompletion(AbstractGenerativeAi, RunnableTask):
+class ChatCompletion(AbstractGenerativeAi):
     """Generate chat completions with Vertex AI"""
     context: str | None = None
     examples: list[Example] | None = None
@@ -27,26 +30,9 @@ class ChatCompletion(AbstractGenerativeAi, RunnableTask):
 
     @dataclass(slots=True)
     class Message:
-        author: str | None = None
         content: Property[str]
+        author: str | None = None
 
     @dataclass(slots=True)
-    class Output(io):
+    class Output:
         predictions: list[Prediction] | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class Example:
-    input: str
-    output: str
-
-
-@dataclass(slots=True, kw_only=True)
-class Message:
-    author: str | None = None
-    content: Property[str]
-
-
-@dataclass(slots=True, kw_only=True)
-class Output(io):
-    predictions: list[Prediction] | None = None

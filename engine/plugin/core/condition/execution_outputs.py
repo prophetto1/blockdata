@@ -2,8 +2,8 @@ from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\plugin\core\condition\ExecutionOutputs.java
 
-from dataclasses import dataclass
-from typing import Any
+from dataclasses import dataclass, field
+from typing import Any, ClassVar
 
 from engine.core.models.conditions.condition import Condition
 from engine.core.models.conditions.condition_context import ConditionContext
@@ -16,8 +16,8 @@ from engine.core.models.property.property import Property
 class ExecutionOutputs(Condition):
     """Condition based on the outputs of an upstream execution."""
     expression: Property[bool]
-    t_r_i_g_g_e_r__v_a_r: str = "trigger"
-    o_u_t_p_u_t_s__v_a_r: str = "outputs"
+    t_r_i_g_g_e_r__v_a_r: ClassVar[str] = "trigger"
+    o_u_t_p_u_t_s__v_a_r: ClassVar[str] = "outputs"
 
     def test(self, condition_context: ConditionContext) -> bool:
         raise NotImplementedError  # TODO: translate from Java

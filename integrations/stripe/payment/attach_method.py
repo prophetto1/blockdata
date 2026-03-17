@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-stripe\src\main\java\io\kestra\plugin\stripe\payment\AttachMethod.java
+# WARNING: Unresolved types: Exception, core, io, kestra, models, tasks
+
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.stripe.abstract_stripe import AbstractStripe
@@ -10,7 +13,7 @@ from engine.core.models.tasks.runnable_task import RunnableTask
 
 
 @dataclass(slots=True, kw_only=True)
-class AttachMethod(AbstractStripe, RunnableTask):
+class AttachMethod(AbstractStripe):
     """Attach PaymentMethod to customer"""
     payment_method_id: Property[str]
     customer_id: Property[str]
@@ -19,16 +22,8 @@ class AttachMethod(AbstractStripe, RunnableTask):
         raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)
-    class Output(io):
+    class Output:
         payment_method_id: str | None = None
         customer_id: str | None = None
         type: str | None = None
-        payment_method_data: dict[String, Object] | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class Output(io):
-    payment_method_id: str | None = None
-    customer_id: str | None = None
-    type: str | None = None
-    payment_method_data: dict[String, Object] | None = None
+        payment_method_data: dict[str, Any] | None = None

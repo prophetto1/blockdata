@@ -1,6 +1,10 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-hubspot\src\main\java\io\kestra\plugin\hubspot\AbstractDeleteTask.java
+# WARNING: Unresolved types: Exception
+
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.hubspot.hubspot_connection import HubspotConnection
@@ -9,7 +13,7 @@ from engine.core.models.tasks.void_output import VoidOutput
 
 
 @dataclass(slots=True, kw_only=True)
-class AbstractDeleteTask(HubspotConnection):
+class AbstractDeleteTask(ABC, HubspotConnection):
 
     def run(self, run_context: RunContext, record_id: str) -> VoidOutput:
         raise NotImplementedError  # TODO: translate from Java

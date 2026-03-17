@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-todoist\src\main\java\io\kestra\plugin\todoist\CompleteTask.java
+# WARNING: Unresolved types: Exception
+
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.todoist.abstract_todoist_task import AbstractTodoistTask
@@ -11,7 +14,7 @@ from engine.core.models.tasks.void_output import VoidOutput
 
 
 @dataclass(slots=True, kw_only=True)
-class CompleteTask(AbstractTodoistTask, RunnableTask):
+class CompleteTask(AbstractTodoistTask):
     """Complete Todoist task"""
     task_id: Property[str]
 

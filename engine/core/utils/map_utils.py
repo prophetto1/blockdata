@@ -3,13 +3,13 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\utils\MapUtils.java
 # WARNING: Unresolved types: K, V
 
-from dataclasses import dataclass
-from typing import Any
+from dataclasses import dataclass, field
+from typing import Any, ClassVar
 
 
 @dataclass(slots=True, kw_only=True)
 class MapUtils:
-    c_o_n_f_l_i_c_t__a_t__k_e_y__m_s_g: str = "Conflict at key: '{}', ignoring it. Map keys are: {}"
+    c_o_n_f_l_i_c_t__a_t__k_e_y__m_s_g: ClassVar[str] = "Conflict at key: '{}', ignoring it. Map keys are: {}"
 
     @staticmethod
     def merge(a: dict[str, Any], b: dict[str, Any]) -> dict[str, Any]:

@@ -1,27 +1,30 @@
 from __future__ import annotations
 
+# Source: E:\KESTRA-IO\plugins\plugin-flink\src\main\java\io\kestra\plugin\flink\CancelJob.java
+# WARNING: Unresolved types: Exception, ObjectMapper, RuntimeException, core, io, kestra, models, tasks
+
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, ClassVar
 
 from engine.core.http.client.http_client import HttpClient
 from engine.core.models.property.property import Property
 from engine.core.runners.run_context import RunContext
 from engine.core.models.tasks.runnable_task import RunnableTask
-from engine.core.models.tasks.task import Task
+from integrations.azure.batch.models.task import Task
 
 
 @dataclass(slots=True, kw_only=True)
-class CancelJob(Task, RunnableTask):
+class CancelJob(Task):
     """Cancel a running Flink job"""
-    o_b_j_e_c_t__m_a_p_p_e_r: ObjectMapper | None = None
     rest_url: Property[str]
     job_id: Property[str]
-    with_savepoint: Property[bool] | None = None
+    o_b_j_e_c_t__m_a_p_p_e_r: ClassVar[ObjectMapper] = JacksonMapper.ofJson()
+    with_savepoint: Property[bool] = Property.of(false)
+    drain_job: Property[bool] = Property.of(false)
+    cancellation_timeout: Property[int] = Property.of(60)
     savepoint_dir: Property[str] | None = None
-    drain_job: Property[bool] | None = None
-    cancellation_timeout: Property[int] | None = None
 
-    def run(self, run_context: RunContext) -> CancelJob:
+    def run(self, run_context: RunContext) -> CancelJob.Output:
         raise NotImplementedError  # TODO: translate from Java
 
     def trigger_savepoint(self, run_context: RunContext, client: HttpClient, rest_url: str, job_id: str) -> str:
@@ -52,7 +55,7 @@ class CancelJob(Task, RunnableTask):
         raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)
-    class Output(io):
+    class Output:
         job_id: str | None = None
         savepoint_path: str | None = None
         cancellation_result: str | None = None
@@ -64,20 +67,3 @@ class CancelJob(Task, RunnableTask):
     @dataclass(slots=True)
     class NonRetriableSavepointException(RuntimeException):
         pass
-
-
-@dataclass(slots=True, kw_only=True)
-class Output(io):
-    job_id: str | None = None
-    savepoint_path: str | None = None
-    cancellation_result: str | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class NonRetriableCancellationException(RuntimeException):
-    pass
-
-
-@dataclass(slots=True, kw_only=True)
-class NonRetriableSavepointException(RuntimeException):
-    pass

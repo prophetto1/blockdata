@@ -4,8 +4,9 @@ from __future__ import annotations
 # WARNING: Unresolved types: Argument, T, URISyntaxException
 
 from dataclasses import dataclass
+from enum import Enum
 from datetime import datetime
-from typing import Any
+from typing import Any, Optional
 
 from engine.core.http.client.http_client import HttpClient
 from engine.core.http.http_request import HttpRequest

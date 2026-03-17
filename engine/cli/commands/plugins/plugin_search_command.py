@@ -3,8 +3,8 @@ from __future__ import annotations
 # Source: E:\KESTRA\cli\src\main\java\io\kestra\cli\commands\plugins\PluginSearchCommand.java
 # WARNING: Unresolved types: Exception, JsonNode, ObjectMapper, StringBuilder
 
-from dataclasses import dataclass
-from typing import Any
+from dataclasses import dataclass, field
+from typing import Any, ClassVar
 
 from engine.cli.abstract_command import AbstractCommand
 from engine.core.http.client.http_client import HttpClient
@@ -12,8 +12,8 @@ from engine.core.http.client.http_client import HttpClient
 
 @dataclass(slots=True, kw_only=True)
 class PluginSearchCommand(AbstractCommand):
-    m_a_p_p_e_r: ObjectMapper = new ObjectMapper()
-    s_p_a_c_e: str = ' '
+    m_a_p_p_e_r: ClassVar[ObjectMapper] = new ObjectMapper()
+    s_p_a_c_e: ClassVar[str] = ' '
     http_client: HttpClient | None = None
     search_term: str | None = None
 

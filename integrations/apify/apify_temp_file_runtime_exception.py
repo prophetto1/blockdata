@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-apify\src\main\java\io\kestra\plugin\apify\ApifyTempFileRuntimeException.java
+# WARNING: Unresolved types: RuntimeException, Throwable
+
+from dataclasses import dataclass
 from typing import Any
 
 

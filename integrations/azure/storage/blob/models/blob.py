@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-azure\src\main\java\io\kestra\plugin\azure\storage\blob\models\Blob.java
+# WARNING: Unresolved types: BlobClient, BlobItem, BlobProperties, OffsetDateTime
+
+from dataclasses import dataclass
 from typing import Any
 
 
@@ -13,11 +16,14 @@ class Blob:
     last_modified: OffsetDateTime | None = None
     e_tag: str | None = None
 
-    def of(self, blob_client: BlobClient) -> Blob:
+    @staticmethod
+    def of(blob_client: BlobClient) -> Blob:
         raise NotImplementedError  # TODO: translate from Java
 
-    def of(self, blob_client: BlobClient, blob_properties: BlobProperties) -> Blob:
+    @staticmethod
+    def of(blob_client: BlobClient, blob_properties: BlobProperties) -> Blob:
         raise NotImplementedError  # TODO: translate from Java
 
-    def of(self, container: str, blob_item: BlobItem) -> Blob:
+    @staticmethod
+    def of(container: str, blob_item: BlobItem) -> Blob:
         raise NotImplementedError  # TODO: translate from Java

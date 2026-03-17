@@ -1,42 +1,36 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-mongodb\src\main\java\io\kestra\plugin\mongodb\Update.java
+# WARNING: Unresolved types: Exception, core, io, kestra, models, tasks
+
+from dataclasses import dataclass
 from enum import Enum
 from typing import Any
 
-from integrations.opensearch.abstract_task import AbstractTask
+from integrations.compress.abstract_task import AbstractTask
 from engine.core.models.property.property import Property
 from engine.core.runners.run_context import RunContext
 from engine.core.models.tasks.runnable_task import RunnableTask
 
 
-class Operation(str, Enum):
-    REPLACE_ONE = "REPLACE_ONE"
-    UPDATE_ONE = "UPDATE_ONE"
-    UPDATE_MANY = "UPDATE_MANY"
-
-
 @dataclass(slots=True, kw_only=True)
-class Update(AbstractTask, RunnableTask):
+class Update(AbstractTask):
     """Update or replace MongoDB documents"""
     document: Any
     filter: Any
-    operation: Property[Operation] | None = None
+    operation: Property[Operation] = Property.ofValue(Operation.UPDATE_ONE)
 
-    def run(self, run_context: RunContext) -> Update:
+    def run(self, run_context: RunContext) -> Update.Output:
         raise NotImplementedError  # TODO: translate from Java
 
+    class Operation(str, Enum):
+        REPLACE_ONE = "REPLACE_ONE"
+        UPDATE_ONE = "UPDATE_ONE"
+        UPDATE_MANY = "UPDATE_MANY"
+
     @dataclass(slots=True)
-    class Output(io):
+    class Output:
         upserted_id: str | None = None
         was_acknowledged: bool | None = None
         matched_count: int | None = None
         modified_count: int | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class Output(io):
-    upserted_id: str | None = None
-    was_acknowledged: bool | None = None
-    matched_count: int | None = None
-    modified_count: int | None = None

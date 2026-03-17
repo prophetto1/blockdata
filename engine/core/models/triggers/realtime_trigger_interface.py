@@ -11,5 +11,5 @@ from engine.core.models.triggers.trigger_context import TriggerContext
 from engine.core.models.triggers.worker_trigger_interface import WorkerTriggerInterface
 
 
-class RealtimeTriggerInterface(Protocol):
+class RealtimeTriggerInterface(WorkerTriggerInterface, Protocol):
     def evaluate(self, condition_context: ConditionContext, context: TriggerContext) -> Publisher[Execution]: ...

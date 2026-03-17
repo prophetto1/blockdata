@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+# Source: E:\KESTRA-IO\plugins\plugin-spark\src\main\java\io\kestra\plugin\spark\SparkCLI.java
+# WARNING: Unresolved types: Exception
+
 from dataclasses import dataclass, field
-from typing import Any
-from datetime import datetime
+from typing import Any, ClassVar
 
 from engine.plugin.scripts.exec.abstract_exec_script import AbstractExecScript
 from engine.core.models.property.property import Property
@@ -12,11 +14,11 @@ from engine.plugin.scripts.exec.scripts.models.script_output import ScriptOutput
 
 
 @dataclass(slots=True, kw_only=True)
-class SparkCLI(AbstractExecScript, RunnableTask):
+class SparkCLI(AbstractExecScript):
     """Run Spark CLI commands"""
-    d_e_f_a_u_l_t__i_m_a_g_e: str | None = None
-    commands: Property[list[String]]
-    container_image: Property[str] | None = None
+    commands: Property[list[str]]
+    d_e_f_a_u_l_t__i_m_a_g_e: ClassVar[str] = "apache/spark:4.0.1-java21-r"
+    container_image: Property[str] = Property.ofValue(DEFAULT_IMAGE)
 
     def run(self, run_context: RunContext) -> ScriptOutput:
         raise NotImplementedError  # TODO: translate from Java

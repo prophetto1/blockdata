@@ -8,5 +8,5 @@ from typing import Any, Protocol
 from engine.core.server.service import Service
 
 
-class Worker(Protocol):
+class Worker(Service, Runnable, Protocol):
     pass

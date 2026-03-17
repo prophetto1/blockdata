@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-linear\src\main\java\io\kestra\plugin\linear\issues\Create.java
+# WARNING: Unresolved types: Exception, JsonProcessingException, core, io, kestra, models, tasks
+
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.linear.linear_connection import LinearConnection
@@ -10,32 +13,26 @@ from engine.core.models.tasks.runnable_task import RunnableTask
 
 
 @dataclass(slots=True, kw_only=True)
-class Create(LinearConnection, RunnableTask):
+class Create(LinearConnection):
     """Create an issue in Linear"""
     team: Property[str] | None = None
     title: Property[str] | None = None
     description: str | None = None
-    labels: Property[list[String]] | None = None
+    labels: Property[list[str]] | None = None
 
-    def run(self, run_context: RunContext) -> Create:
+    def run(self, run_context: RunContext) -> Create.Output:
         raise NotImplementedError  # TODO: translate from Java
 
-    def get_labels_ids(self, run_context: RunContext) -> list[String]:
+    def get_labels_ids(self, run_context: RunContext) -> list[str]:
         raise NotImplementedError  # TODO: translate from Java
 
     def get_team_id(self, run_context: RunContext) -> str:
         raise NotImplementedError  # TODO: translate from Java
 
-    def build_input_query(self, team_id: str, title: str, description: str, labels: list[String]) -> str:
+    def build_input_query(self, team_id: str, title: str, description: str, labels: list[str]) -> str:
         raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)
-    class Output(io):
+    class Output:
         is_success: bool | None = None
         issue_id: str | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class Output(io):
-    is_success: bool | None = None
-    issue_id: str | None = None

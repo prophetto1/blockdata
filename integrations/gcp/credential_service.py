@@ -1,14 +1,19 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-gcp\src\main\java\io\kestra\plugin\gcp\CredentialService.java
+# WARNING: Unresolved types: GoogleCredentials, IOException
+
+from dataclasses import dataclass
 from typing import Any
 
-from integrations.googleworkspace.gcp_interface import GcpInterface
+from integrations.gcp.gcp_interface import GcpInterface
+from engine.core.exceptions.illegal_variable_evaluation_exception import IllegalVariableEvaluationException
 from engine.core.runners.run_context import RunContext
 
 
 @dataclass(slots=True, kw_only=True)
 class CredentialService:
 
-    def credentials(self, run_context: RunContext, gcp_interface: GcpInterface) -> GoogleCredentials:
+    @staticmethod
+    def credentials(run_context: RunContext, gcp_interface: GcpInterface) -> GoogleCredentials:
         raise NotImplementedError  # TODO: translate from Java

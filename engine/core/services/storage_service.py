@@ -3,6 +3,7 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\services\StorageService.java
 # WARNING: Unresolved types: BiFunction, BufferedReader, IOException
 
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -13,7 +14,7 @@ from engine.core.storages.storage_split_interface import StorageSplitInterface
 
 
 @dataclass(slots=True, kw_only=True)
-class StorageService:
+class StorageService(ABC):
 
     @staticmethod
     def split(run_context: RunContext, storage_split_interface: StorageSplitInterface, from: str) -> list[str]:

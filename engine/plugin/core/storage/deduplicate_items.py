@@ -3,8 +3,8 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\plugin\core\storage\DeduplicateItems.java
 # WARNING: Unresolved types: BufferedReader, Exception, IOException, ObjectMapper, ThrowingFunction, core, io, kestra, models, tasks
 
-from dataclasses import dataclass
-from typing import Any
+from dataclasses import dataclass, field
+from typing import Any, ClassVar
 
 from engine.core.models.property.property import Property
 from engine.core.runners.run_context import RunContext
@@ -36,7 +36,7 @@ class DeduplicateItems(Task):
 
     @dataclass(slots=True)
     class PebbleFieldExtractor:
-        m_a_p_p_e_r: ObjectMapper = JacksonMapper.ofIon()
+        m_a_p_p_e_r: ClassVar[ObjectMapper] = JacksonMapper.ofIon()
         run_context: RunContext | None = None
         expression: str | None = None
 

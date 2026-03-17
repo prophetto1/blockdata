@@ -8,7 +8,7 @@ from engine.core.models.plugin import Plugin
 from engine.core.models.plugin_versioning import PluginVersioning
 
 
-class TaskInterface(Protocol):
+class TaskInterface(Plugin, PluginVersioning, Protocol):
     def get_id(self) -> str: ...
 
     def get_type(self) -> str: ...

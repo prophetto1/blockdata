@@ -12,7 +12,7 @@ from engine.core.models.triggers.recover_missed_schedules import RecoverMissedSc
 from engine.core.runners.run_context import RunContext
 
 
-class Schedulable(Protocol):
+class Schedulable(PollingTriggerInterface, Protocol):
     def get_inputs(self) -> dict[str, Any]: ...
 
     def get_recover_missed_schedules(self) -> RecoverMissedSchedules: ...

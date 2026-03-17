@@ -4,7 +4,7 @@ from __future__ import annotations
 # WARNING: Unresolved types: ApplicationContext, Function
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Optional
 
 from engine.core.models.triggers.abstract_trigger import AbstractTrigger
 from engine.core.runners.default_run_context import DefaultRunContext

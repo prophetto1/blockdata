@@ -3,7 +3,7 @@ from __future__ import annotations
 # Source: E:\KESTRA\model\src\main\java\io\kestra\core\models\Plugin.java
 # WARNING: Unresolved types: Class
 
-from typing import Any, Protocol
+from typing import Any, Optional, Protocol
 
 
 class Plugin(Protocol):

@@ -3,16 +3,16 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\storages\NamespaceFile.java
 # WARNING: Unresolved types: Pattern
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
 
 from engine.core.models.namespaces.files.namespace_file_metadata import NamespaceFileMetadata
 
 
 @dataclass(slots=True, kw_only=True)
 class NamespaceFile:
-    capture_path_without_version: Pattern = Pattern.compile("(.*)(?:\\.v\\d+)?$")
+    capture_path_without_version: ClassVar[Pattern] = Pattern.compile("(.*)(?:\\.v\\d+)?$")
     path: str | None = None
     uri: str | None = None
     namespace: str | None = None

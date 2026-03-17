@@ -3,9 +3,10 @@ from __future__ import annotations
 # Source: E:\KESTRA\jdbc\src\main\java\io\kestra\jdbc\AbstractJdbcRepository.java
 # WARNING: Unresolved types: Class, DSLContext, E, Field, Function, InsertOnDuplicateSetMoreStep, ObjectMapper, Pageable, R, Record, RecordMapper, Select, SelectConditionStep, T, Timestamp
 
-from dataclasses import dataclass
+from abc import ABC, abstractmethod
+from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any
+from typing import Any, ClassVar, Optional
 
 from engine.core.repositories.array_list_total import ArrayListTotal
 from engine.core.models.conditions.condition import Condition
@@ -16,15 +17,16 @@ from engine.plugin.core.dashboard.chart.table import Table
 
 
 @dataclass(slots=True, kw_only=True)
-class AbstractJdbcRepository:
-    m_a_p_p_e_r: ObjectMapper = JdbcMapper.of()
+class AbstractJdbcRepository(ABC):
+    m_a_p_p_e_r: ClassVar[ObjectMapper] = JdbcMapper.of()
     cls: Class[T] | None = None
     deserializer: Function[Record, T] | None = None
     dsl_context_wrapper: JooqDSLContextWrapper | None = None
     table: Table[Record] | None = None
 
+    @abstractmethod
     def full_text_condition(self, fields: list[str], query: str) -> Condition:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
     def key(self, entity: T) -> str:
         raise NotImplementedError  # TODO: translate from Java
@@ -80,8 +82,9 @@ class AbstractJdbcRepository:
     def fetch_metric_stat(self, select: Select[Record], group_by_type: str) -> list[MetricAggregation]:
         raise NotImplementedError  # TODO: translate from Java
 
+    @abstractmethod
     def fetch_page(self, context: DSLContext, select: SelectConditionStep[R], pageable: Pageable, mapper: RecordMapper[R, E]) -> ArrayListTotal[E]:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
     def fetch_page(self, context: DSLContext, select: SelectConditionStep[R], pageable: Pageable) -> ArrayListTotal[T]:
         raise NotImplementedError  # TODO: translate from Java

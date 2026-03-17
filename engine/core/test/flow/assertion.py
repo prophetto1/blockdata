@@ -3,7 +3,8 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\test\flow\Assertion.java
 
 from dataclasses import dataclass
-from typing import Any
+from enum import Enum
+from typing import Any, Optional
 
 from engine.core.test.flow.assertion_result import AssertionResult
 from engine.core.test.flow.assertion_run_error import AssertionRunError

@@ -12,7 +12,7 @@ from engine.core.plugins.plugin_artifact_metadata import PluginArtifactMetadata
 from engine.core.plugins.plugin_resolution_result import PluginResolutionResult
 
 
-class PluginManager(Protocol):
+class PluginManager(AutoCloseable, Protocol):
     def start(self) -> None: ...
 
     def is_ready(self) -> bool: ...

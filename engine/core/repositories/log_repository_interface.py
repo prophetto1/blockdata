@@ -15,7 +15,7 @@ from engine.core.models.query_filter import QueryFilter
 from engine.core.repositories.save_repository_interface import SaveRepositoryInterface
 
 
-class LogRepositoryInterface(Protocol):
+class LogRepositoryInterface(SaveRepositoryInterface, QueryBuilderInterface, Protocol):
     def find_by_execution_id(self, tenant_id: str, execution_id: str, min_level: Level) -> list[LogEntry]: ...
 
     def find_by_execution_id_without_acl(self, tenant_id: str, execution_id: str, min_level: Level) -> list[LogEntry]: ...

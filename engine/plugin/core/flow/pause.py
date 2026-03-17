@@ -4,9 +4,10 @@ from __future__ import annotations
 # WARNING: Unresolved types: core, io, kestra, models, tasks
 
 from dataclasses import dataclass
+from enum import Enum
 from datetime import datetime
 from datetime import timedelta
-from typing import Any
+from typing import Any, Optional
 
 from engine.core.models.hierarchies.abstract_graph import AbstractGraph
 from engine.core.models.executions.execution import Execution

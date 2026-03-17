@@ -3,9 +3,10 @@ from __future__ import annotations
 # Source: E:\KESTRA\jdbc\src\main\java\io\kestra\jdbc\repository\AbstractJdbcExecutionRepository.java
 # WARNING: Unresolved types: ApplicationContext, ApplicationEventPublisher, ChildFilter, ChronoUnit, DSLContext, Date, Enum, F, Field, Fields, FlowFilter, Flux, Function, GroupType, IllegalArgumentException, Op, Pageable, Pair, Record, Record1, Results, SelectConditionStep, T, io, jdbc, kestra
 
-from dataclasses import dataclass
+from abc import ABC, abstractmethod
+from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any
+from typing import Any, ClassVar, Optional
 
 from engine.core.models.dashboards.filters.abstract_filter import AbstractFilter
 from engine.jdbc.repository.abstract_jdbc_crud_repository import AbstractJdbcCrudRepository
@@ -40,12 +41,12 @@ from engine.core.models.flows.type import Type
 
 
 @dataclass(slots=True, kw_only=True)
-class AbstractJdbcExecutionRepository(AbstractJdbcCrudRepository):
-    f_e_t_c_h__s_i_z_e: int = 100
-    s_t_a_t_e__c_u_r_r_e_n_t__f_i_e_l_d: Field[str] = field("state_current", String.class)
-    n_a_m_e_s_p_a_c_e__f_i_e_l_d: Field[str] = field("namespace", String.class)
-    s_t_a_r_t__d_a_t_e__f_i_e_l_d: Field[Any] = field("start_date")
-    n_o_r_m_a_l__k_i_n_d__c_o_n_d_i_t_i_o_n: Condition = field("kind").isNull().or(field("kind").eq(ExecutionKind.NORMAL.name()))
+class AbstractJdbcExecutionRepository(ABC, AbstractJdbcCrudRepository):
+    f_e_t_c_h__s_i_z_e: ClassVar[int] = 100
+    s_t_a_t_e__c_u_r_r_e_n_t__f_i_e_l_d: ClassVar[Field[str]] = field("state_current", String.class)
+    n_a_m_e_s_p_a_c_e__f_i_e_l_d: ClassVar[Field[str]] = field("namespace", String.class)
+    s_t_a_r_t__d_a_t_e__f_i_e_l_d: ClassVar[Field[Any]] = field("start_date")
+    n_o_r_m_a_l__k_i_n_d__c_o_n_d_i_t_i_o_n: ClassVar[Condition] = field("kind").isNull().or(field("kind").eq(ExecutionKind.NORMAL.name()))
     fields_mapping: dict[Executions.Fields, str] = Map.of(
         Executions.Fields.ID, "key",
         Executions.Fields.NAMESPACE, "namespace",
@@ -88,14 +89,16 @@ class AbstractJdbcExecutionRepository(AbstractJdbcCrudRepository):
     def find_by_id(self, tenant_id: str, id: str, allow_deleted: bool, with_access_control: bool) -> Optional[Execution]:
         raise NotImplementedError  # TODO: translate from Java
 
+    @abstractmethod
     def find_condition(self, query: str, labels: dict[str, str]) -> Condition:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
     def find_query_condition(self, query: str) -> Condition:
         raise NotImplementedError  # TODO: translate from Java
 
+    @abstractmethod
     def find_label_condition(self, value: Either[dict[Any, Any], str], operation: QueryFilter.Op) -> Condition:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
     def states_filter(self, state: list[State.Type]) -> Condition:
         raise NotImplementedError  # TODO: translate from Java
@@ -186,5 +189,6 @@ class AbstractJdbcExecutionRepository(AbstractJdbcCrudRepository):
     def apply_state_filters(self, filters: list[AbstractFilter[F]], select_condition_step: SelectConditionStep[Record]) -> SelectConditionStep[Record]:
         raise NotImplementedError  # TODO: translate from Java
 
+    @abstractmethod
     def format_date_field(self, date_field: str, group_type: DateUtils.GroupType) -> Field[Date]:
-        raise NotImplementedError  # TODO: translate from Java
+        ...

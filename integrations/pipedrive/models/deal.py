@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-pipedrive\src\main\java\io\kestra\plugin\pipedrive\models\Deal.java
+
+from dataclasses import dataclass
 from typing import Any
 
 
@@ -8,7 +10,7 @@ from typing import Any
 class Deal:
     id: int | None = None
     title: str | None = None
-    value: BigDecimal | None = None
+    value: float | None = None
     currency: str | None = None
     user_id: int | None = None
     person_id: int | None = None
@@ -25,9 +27,9 @@ class Deal:
     origin_id: str | None = None
     channel: int | None = None
     channel_id: str | None = None
-    acv: BigDecimal | None = None
-    arr: BigDecimal | None = None
-    mrr: BigDecimal | None = None
+    acv: float | None = None
+    arr: float | None = None
+    mrr: float | None = None
     close_time: str | None = None
     won_time: str | None = None
     lost_time: str | None = None
@@ -35,4 +37,4 @@ class Deal:
     visible_to: str | None = None
     add_time: str | None = None
     update_time: str | None = None
-    custom_fields: dict[String, Object] | None = None
+    custom_fields: dict[str, Any] | None = None

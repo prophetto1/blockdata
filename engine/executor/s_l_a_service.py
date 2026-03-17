@@ -3,7 +3,7 @@ from __future__ import annotations
 # Source: E:\KESTRA\executor\src\main\java\io\kestra\executor\SLAService.java
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Optional
 
 from engine.core.models.executions.execution import Execution
 from engine.core.models.flows.flow_interface import FlowInterface

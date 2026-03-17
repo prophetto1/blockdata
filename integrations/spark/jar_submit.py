@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-spark\src\main\java\io\kestra\plugin\spark\JarSubmit.java
+# WARNING: Unresolved types: Exception, SparkLauncher
+
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.spark.abstract_submit import AbstractSubmit
@@ -13,7 +16,7 @@ class JarSubmit(AbstractSubmit):
     """Submit Spark job with JAR"""
     main_resource: Property[str]
     main_class: Property[str]
-    jars: Property[dict[String, String]] | None = None
+    jars: Property[dict[str, str]] | None = None
 
     def configure(self, run_context: RunContext, spark: SparkLauncher) -> None:
         raise NotImplementedError  # TODO: translate from Java

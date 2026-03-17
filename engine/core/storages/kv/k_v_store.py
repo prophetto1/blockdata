@@ -3,7 +3,7 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\storages\kv\KVStore.java
 # WARNING: Unresolved types: IOException, Pageable, Pattern, UncheckedIOException
 
-from typing import Any, Protocol
+from typing import Any, Optional, Protocol
 
 from engine.core.repositories.array_list_total import ArrayListTotal
 from engine.core.models.fetch_version import FetchVersion

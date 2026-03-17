@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-fivetran\src\main\java\io\kestra\plugin\fivetran\models\ConnectorResponse.java
+
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.fivetran.models.connector import Connector

@@ -3,18 +3,19 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\models\tasks\runners\PluginUtilsService.java
 # WARNING: Unresolved types: Exception, IOException, JsonProcessingException, Logger, TypeReference
 
-from dataclasses import dataclass
+from abc import ABC, abstractmethod
+from dataclasses import dataclass, field
 from pathlib import Path
 from datetime import datetime
-from typing import Any
+from typing import Any, ClassVar
 
 from engine.core.exceptions.illegal_variable_evaluation_exception import IllegalVariableEvaluationException
 from engine.core.runners.run_context import RunContext
 
 
 @dataclass(slots=True, kw_only=True)
-class PluginUtilsService:
-    m_a_p__t_y_p_e__r_e_f_e_r_e_n_c_e: TypeReference[dict[str, str]] = new TypeReference<>() {}
+class PluginUtilsService(ABC):
+    m_a_p__t_y_p_e__r_e_f_e_r_e_n_c_e: ClassVar[TypeReference[dict[str, str]]] = new TypeReference<>() {}
 
     @staticmethod
     def create_output_files(temp_directory: Path, output_files: list[str], additional_vars: dict[str, Any]) -> dict[str, str]:

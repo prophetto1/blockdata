@@ -4,7 +4,7 @@ from __future__ import annotations
 # WARNING: Unresolved types: Class, ConversionContext, TypeConverter
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Optional
 
 from engine.core.models.flows.plugin_default import PluginDefault
 

@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-aws\src\main\java\io\kestra\plugin\aws\cloudformation\Delete.java
+# WARNING: Unresolved types: Exception
+
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.aws.cloudformation.abstract_cloud_formation import AbstractCloudFormation
@@ -10,7 +13,7 @@ from engine.core.models.tasks.void_output import VoidOutput
 
 
 @dataclass(slots=True, kw_only=True)
-class Delete(AbstractCloudFormation, RunnableTask):
+class Delete(AbstractCloudFormation):
     """Delete a CloudFormation stack"""
 
     def run(self, run_context: RunContext) -> VoidOutput:

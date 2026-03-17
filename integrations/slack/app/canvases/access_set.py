@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-slack\src\main\java\io\kestra\plugin\slack\app\canvases\AccessSet.java
+# WARNING: Unresolved types: Exception
+
+from dataclasses import dataclass
 from enum import Enum
 from typing import Any
 
@@ -11,18 +14,17 @@ from engine.core.models.tasks.runnable_task import RunnableTask
 from engine.core.models.tasks.void_output import VoidOutput
 
 
-class AccessLevel(str, Enum):
-    READ = "READ"
-    WRITE = "WRITE"
-
-
 @dataclass(slots=True, kw_only=True)
-class AccessSet(AbstractSlackClientConnection, RunnableTask):
+class AccessSet(AbstractSlackClientConnection):
     """Set canvas access controls"""
     canvas_id: Property[str]
     access_level: Property[AccessLevel]
-    channel_ids: Property[list[String]] | None = None
-    user_ids: Property[list[String]] | None = None
+    channel_ids: Property[list[str]] | None = None
+    user_ids: Property[list[str]] | None = None
 
     def run(self, run_context: RunContext) -> VoidOutput:
         raise NotImplementedError  # TODO: translate from Java
+
+    class AccessLevel(str, Enum):
+        READ = "READ"
+        WRITE = "WRITE"

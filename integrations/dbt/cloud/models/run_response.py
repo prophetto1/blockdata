@@ -1,10 +1,12 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-dbt\src\main\java\io\kestra\plugin\dbt\cloud\models\RunResponse.java
+
+from dataclasses import dataclass
 from typing import Any
 
-from integrations.hightouch.models.run import Run
-from integrations.twilio.segment.reverseetl.status import Status
+from integrations.apify.actor.run import Run
+from integrations.argocd.apps.status import Status
 
 
 @dataclass(slots=True, kw_only=True)

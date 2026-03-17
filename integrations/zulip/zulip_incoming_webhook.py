@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-zulip\src\main\java\io\kestra\plugin\zulip\ZulipIncomingWebhook.java
+# WARNING: Unresolved types: Exception
+
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.zulip.abstract_zulip_connection import AbstractZulipConnection

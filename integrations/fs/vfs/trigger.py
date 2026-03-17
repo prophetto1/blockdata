@@ -1,17 +1,22 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from enum import Enum
-from typing import Any
-from datetime import timedelta
-from pathlib import Path
+# Source: E:\KESTRA-IO\plugins\plugin-fs\src\main\java\io\kestra\plugin\fs\vfs\Trigger.java
+# WARNING: Unresolved types: Action, Exception, FileSystemOptions, IOException, On, URISyntaxException, core, io, java, kestra, models, tasks, util
 
-from engine.core.models.triggers.abstract_trigger import AbstractTrigger
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
+from enum import Enum
+from pathlib import Path
+from datetime import timedelta
+from typing import Any, Optional
+
+from integrations.airbyte.cloud.jobs.abstract_trigger import AbstractTrigger
 from integrations.fs.vfs.abstract_vfs_interface import AbstractVfsInterface
 from engine.core.models.conditions.condition_context import ConditionContext
-from integrations.minio.downloads import Downloads
+from integrations.aws.s3.downloads import Downloads
 from integrations.aws.eventbridge.model.entry import Entry
 from engine.core.models.executions.execution import Execution
+from engine.core.exceptions.illegal_variable_evaluation_exception import IllegalVariableEvaluationException
 from engine.core.models.triggers.polling_trigger_interface import PollingTriggerInterface
 from engine.core.models.property.property import Property
 from engine.core.runners.run_context import RunContext
@@ -20,33 +25,30 @@ from engine.core.models.triggers.trigger_context import TriggerContext
 from engine.core.models.triggers.trigger_output import TriggerOutput
 
 
-class ChangeType(str, Enum):
-    CREATE = "CREATE"
-    UPDATE = "UPDATE"
-
-
 @dataclass(slots=True, kw_only=True)
-class Trigger(AbstractTrigger, PollingTriggerInterface, AbstractVfsInterface, TriggerOutput, StatefulTriggerInterface):
-    interval: timedelta | None = None
+class Trigger(ABC, AbstractTrigger):
+    from: Property[str]
+    action: Property[Downloads.Action]
+    interval: timedelta = Duration.ofSeconds(60)
+    recursive: Property[bool] = Property.ofValue(false)
+    enable_ssh_rsa1: Property[bool] = Property.ofValue(false)
+    on: Property[On] = Property.ofValue(On.CREATE_OR_UPDATE)
+    max_files: Property[int] = Property.ofValue(25)
     host: Property[str] | None = None
     username: Property[str] | None = None
     password: Property[str] | None = None
-    from: Property[str]
-    action: Property[Downloads]
     move_directory: Property[str] | None = None
     reg_exp: Property[str] | None = None
-    recursive: Property[bool] | None = None
-    enable_ssh_rsa1: Property[bool]
-    on: Property[On] | None = None
     state_key: Property[str] | None = None
     state_ttl: Property[timedelta] | None = None
-    max_files: Property[int] | None = None
 
+    @abstractmethod
     def fs_options(self, run_context: RunContext) -> FileSystemOptions:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
+    @abstractmethod
     def scheme(self) -> str:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
     def evaluate(self, condition_context: ConditionContext, context: TriggerContext) -> Optional[Execution]:
         raise NotImplementedError  # TODO: translate from Java
@@ -60,29 +62,15 @@ class Trigger(AbstractTrigger, PollingTriggerInterface, AbstractVfsInterface, Tr
         candidate: Entry | None = None
         change_type: ChangeType | None = None
 
+    class ChangeType(str, Enum):
+        CREATE = "CREATE"
+        UPDATE = "UPDATE"
+
     @dataclass(slots=True)
     class TriggeredFile:
         file: Path | None = None
         change_type: ChangeType | None = None
 
     @dataclass(slots=True)
-    class Output(io):
-        files: java | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class PendingFile:
-    file: Path | None = None
-    candidate: Entry | None = None
-    change_type: ChangeType | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class TriggeredFile:
-    file: Path | None = None
-    change_type: ChangeType | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class Output(io):
-    files: java | None = None
+    class Output:
+        files: java.util.List[TriggeredFile] | None = None

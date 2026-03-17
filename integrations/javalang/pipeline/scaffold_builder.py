@@ -192,9 +192,19 @@ def _build_param(pi: ParamInfo) -> ParamSpec:
 def _build_method(mi: MethodInfo) -> MethodSpec:
     """Convert a tree-sitter MethodInfo to a scaffold MethodSpec."""
     kind = "static" if mi.is_static else "instance"
+    is_abstract = mi.is_abstract
     decorators = []
     if mi.is_static:
         decorators.append(DecoratorSpec(expr="@staticmethod"))
+    if is_abstract:
+        decorators.append(DecoratorSpec(expr="@abstractmethod"))
+
+    if is_abstract:
+        body_lines = []
+        raises = False
+    else:
+        body_lines = ["raise NotImplementedError  # TODO: translate from Java"]
+        raises = True
 
     return MethodSpec(
         name=_to_snake(mi.name),
@@ -202,10 +212,10 @@ def _build_method(mi: MethodInfo) -> MethodSpec:
         return_type=_map_type(mi.return_type),
         params=[_build_param(p) for p in mi.parameters],
         kind=kind,
-        is_abstract=False,
-        raises_not_implemented=True,
+        is_abstract=is_abstract,
+        raises_not_implemented=raises,
         decorators=decorators,
-        body_lines=["raise NotImplementedError  # TODO: translate from Java"],
+        body_lines=body_lines,
     )
 
 
@@ -219,6 +229,11 @@ def _build_class(ti: TypeInfo) -> ClassSpec:
     else:
         style = "dataclass"
 
+    # Modifiers
+    is_abstract = "abstract" in ti.modifiers
+    is_final = "final" in ti.modifiers
+    has_abstract_methods = any(m.is_abstract for m in ti.methods)
+
     # Decorators
     decorators = []
     if style == "dataclass":
@@ -226,21 +241,27 @@ def _build_class(ti: TypeInfo) -> ClassSpec:
 
     # Bases
     bases = list(ti.extends)
-    if ti.kind == "interface" and not ti.extends:
-        bases = ["Protocol"]
-    if ti.kind != "interface":
+    if ti.kind == "interface":
+        # Always include Protocol for interfaces, even when extends exist
+        bases.append("Protocol")
+    else:
         bases.extend(ti.implements)
+        # Add ABC for abstract classes
+        if is_abstract or has_abstract_methods:
+            bases.insert(0, "ABC")
 
-    # Fields
-    fields = [_build_field(f) for f in ti.fields]
+    # Fields — separate static from instance
+    fields = []
+    for f in ti.fields:
+        is_static = f.is_static and f.is_final
+        fields.append(_build_field(f, is_static=is_static))
 
-    # Methods (skip setters — already filtered in ts_extract)
+    # Methods
     methods = [_build_method(m) for m in ti.methods]
 
     # Inner classes
     inner = [_build_class(it) for it in ti.inner_types]
     for ic in inner:
-        # Inner classes use simpler decorator
         if ic.style == "dataclass":
             ic.decorators = [DecoratorSpec(expr="@dataclass(slots=True)")]
 
@@ -250,6 +271,12 @@ def _build_class(ti: TypeInfo) -> ClassSpec:
         source_meta["java_kind"] = "record"
     if ti.kind == "annotation":
         source_meta["java_kind"] = "annotation"
+    if ti.annotations:
+        source_meta["annotations"] = ti.annotations
+    if ti.modifiers:
+        source_meta["modifiers"] = ti.modifiers
+    if ti.permits:
+        source_meta["permits"] = ti.permits
 
     return ClassSpec(
         name=ti.name,
@@ -257,8 +284,8 @@ def _build_class(ti: TypeInfo) -> ClassSpec:
         kind=ti.kind,
         style=style,
         bases=bases,
-        is_abstract=False,
-        is_final=False,
+        is_abstract=is_abstract,
+        is_final=is_final,
         decorators=decorators,
         docstring=ti.schema_title,
         fields=fields,
@@ -267,6 +294,61 @@ def _build_class(ti: TypeInfo) -> ClassSpec:
         inner_classes=inner,
         source_meta=source_meta,
     )
+
+
+def _apply_aliases(types: list[ClassSpec], alias_map: dict[str, str]):
+    """Rewrite type references to use aliases where needed."""
+    for cls in types:
+        cls.bases = [alias_map.get(b, b) for b in cls.bases]
+        for f in cls.fields:
+            for orig, alias in alias_map.items():
+                f.type_str = re.sub(r'\b' + re.escape(orig) + r'\b', alias, f.type_str)
+        for m in cls.methods:
+            for orig, alias in alias_map.items():
+                m.return_type = re.sub(r'\b' + re.escape(orig) + r'\b', alias, m.return_type)
+                for p in m.params:
+                    p.type_str = re.sub(r'\b' + re.escape(orig) + r'\b', alias, p.type_str)
+        _apply_aliases(cls.inner_classes, alias_map)
+
+
+def _collect_structural_needs(types: list[ClassSpec]) -> dict[str, bool]:
+    """Walk full type tree (including inner classes) for structural import needs."""
+    needs = {"dataclass": False, "field": False, "enum": False, "protocol": False, "abc": False}
+    for cls in types:
+        if cls.style == "dataclass":
+            needs["dataclass"] = True
+        if cls.style == "enum":
+            needs["enum"] = True
+        if cls.style == "protocol":
+            needs["protocol"] = True
+        if cls.is_abstract or any(m.is_abstract for m in cls.methods):
+            needs["abc"] = True
+        for f in cls.fields:
+            if f.default_factory is not None or not f.is_init:
+                needs["field"] = True
+        sub = _collect_structural_needs(cls.inner_classes)
+        for k in needs:
+            needs[k] = needs[k] or sub[k]
+    return needs
+
+
+def _collect_typing_needs(types: list[ClassSpec]) -> set[str]:
+    """Walk full type tree for typing module import needs."""
+    needed: set[str] = set()
+    for cls in types:
+        for f in cls.fields:
+            if f.is_class_var:
+                needed.add("ClassVar")
+            if "Optional" in f.type_str:
+                needed.add("Optional")
+        for m in cls.methods:
+            if "Optional" in m.return_type:
+                needed.add("Optional")
+            for p in m.params:
+                if "Optional" in p.type_str:
+                    needed.add("Optional")
+        needed |= _collect_typing_needs(cls.inner_classes)
+    return needed
 
 
 def build_module(
@@ -322,37 +404,53 @@ def build_module(
     for py_type in sorted(stdlib_needed):
         imports.append(STDLIB_TYPE_IMPORTS[py_type])
 
-    # Resolve cross-file imports
+    # Resolve cross-file imports — track used names for alias detection
+    used_names: set[str] = set(local_names)
+    alias_map: dict[str, str] = {}
     for name in sorted(referenced):
-        resolved = registry.resolve(name, file_info.imports)
+        resolved, alias = registry.resolve_with_alias(name, file_info.imports, used_names)
         if resolved and resolved != module_path:
             imports.append(ImportSpec(
                 module=resolved,
                 name=name,
                 kind="cross_file",
+                alias=alias,
             ))
+            used_names.add(alias or name)
+            if alias:
+                alias_map[name] = alias
         elif resolved is None and name not in JAVA_TO_PYTHON_TYPES:
             unresolved_types.append(name)
 
-    # Determine structural imports
-    needs_dataclass = any(t.style == "dataclass" for t in types)
-    needs_field = any(
-        f.default_factory is not None
-        for t in types for f in t.fields
-    )
-    needs_enum = any(t.style == "enum" for t in types)
-    needs_protocol = any(t.style == "protocol" for t in types)
+    # Rewrite type references to use aliases
+    if alias_map:
+        _apply_aliases(types, alias_map)
+
+    # Collect all import needs from full type tree (including inner classes)
+    structural = _collect_structural_needs(types)
+    typing_needs = _collect_typing_needs(types)
+    typing_needs.add("Any")  # Always needed
+    if structural["protocol"]:
+        typing_needs.add("Protocol")
 
     typing_imports: list[ImportSpec] = []
-    if needs_dataclass:
-        names = "dataclass, field" if needs_field else "dataclass"
+
+    # abc imports
+    if structural["abc"]:
+        typing_imports.append(ImportSpec(module="abc", name="ABC, abstractmethod", kind="stdlib"))
+
+    # dataclass imports
+    if structural["dataclass"]:
+        names = "dataclass, field" if structural["field"] else "dataclass"
         typing_imports.append(ImportSpec(module="dataclasses", name=names, kind="stdlib"))
-    if needs_enum:
+
+    # enum imports
+    if structural["enum"]:
         typing_imports.append(ImportSpec(module="enum", name="Enum", kind="stdlib"))
-    if needs_protocol:
-        typing_imports.append(ImportSpec(module="typing", name="Any, Protocol", kind="typing"))
-    else:
-        typing_imports.append(ImportSpec(module="typing", name="Any", kind="typing"))
+
+    # typing imports
+    typing_names = sorted(typing_needs)
+    typing_imports.append(ImportSpec(module="typing", name=", ".join(typing_names), kind="typing"))
 
     # Combine: stdlib first, then typing, then cross-file
     all_imports = typing_imports + [i for i in imports if i.kind == "stdlib"] + \

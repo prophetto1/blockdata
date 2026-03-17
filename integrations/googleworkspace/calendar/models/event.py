@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-googleworkspace\src\main\java\io\kestra\plugin\googleworkspace\calendar\models\Event.java
+# WARNING: Unresolved types: api, calendar, com, google, model, services
+
+from dataclasses import dataclass
 from typing import Any
 
 
@@ -12,5 +15,6 @@ class Event:
     description: str | None = None
     location: str | None = None
 
-    def of(self, event: com) -> Event:
+    @staticmethod
+    def of(event: com.google.api.services.calendar.model.Event) -> Event:
         raise NotImplementedError  # TODO: translate from Java

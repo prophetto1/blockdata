@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-airtable\src\main\java\io\kestra\plugin\airtable\AirtableListResponse.java
+
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.airtable.airtable_record import AirtableRecord

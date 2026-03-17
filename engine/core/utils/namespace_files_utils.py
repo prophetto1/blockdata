@@ -3,8 +3,8 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\utils\NamespaceFilesUtils.java
 # WARNING: Unresolved types: Exception, LinkedBlockingQueue, ThreadFactoryBuilder, ThreadPoolExecutor
 
-from dataclasses import dataclass
-from typing import Any
+from dataclasses import dataclass, field
+from typing import Any, ClassVar
 
 from engine.executor.executor_service import ExecutorService
 from engine.core.models.tasks.namespace_files import NamespaceFiles
@@ -13,8 +13,8 @@ from engine.core.runners.run_context import RunContext
 
 @dataclass(slots=True, kw_only=True)
 class NamespaceFilesUtils:
-    max_threads: int = Math.max(Runtime.getRuntime().availableProcessors() * 4, 32)
-    e_x_e_c_u_t_o_r__s_e_r_v_i_c_e: ExecutorService = new ThreadPoolExecutor(
+    max_threads: ClassVar[int] = Math.max(Runtime.getRuntime().availableProcessors() * 4, 32)
+    e_x_e_c_u_t_o_r__s_e_r_v_i_c_e: ClassVar[ExecutorService] = new ThreadPoolExecutor(
         0,
         maxThreads,
         60L,

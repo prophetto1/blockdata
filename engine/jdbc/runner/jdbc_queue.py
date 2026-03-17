@@ -3,9 +3,10 @@ from __future__ import annotations
 # Source: E:\KESTRA\jdbc\src\main\java\io\kestra\jdbc\runner\JdbcQueue.java
 # WARNING: Unresolved types: ApplicationContext, AtomicBoolean, BiConsumer, Class, Comparable, Consumer, DSLContext, Field, IOException, ObjectMapper, Record, Runnable, Step, Supplier, T
 
-from dataclasses import dataclass
+from abc import ABC, abstractmethod
+from dataclasses import dataclass, field
 from datetime import timedelta
-from typing import Any
+from typing import Any, ClassVar
 
 from engine.core.models.conditions.condition import Condition
 from engine.core.models.executions.metrics.counter import Counter
@@ -24,13 +25,13 @@ from engine.plugin.core.dashboard.chart.table import Table
 
 
 @dataclass(slots=True, kw_only=True)
-class JdbcQueue:
-    m_a_p_p_e_r: ObjectMapper = JdbcMapper.of()
-    m_a_x__a_s_y_n_c__t_h_r_e_a_d_s: int = Runtime.getRuntime().availableProcessors()
-    k_e_y__f_i_e_l_d: Field[Any] = AbstractJdbcRepository.field("key")
-    o_f_f_s_e_t__f_i_e_l_d: Field[Any] = AbstractJdbcRepository.field("offset")
-    c_o_n_s_u_m_e_r__g_r_o_u_p__f_i_e_l_d: Field[Any] = AbstractJdbcRepository.field("consumer_group")
-    t_y_p_e__f_i_e_l_d: Field[Any] = AbstractJdbcRepository.field("type")
+class JdbcQueue(ABC):
+    m_a_p_p_e_r: ClassVar[ObjectMapper] = JdbcMapper.of()
+    m_a_x__a_s_y_n_c__t_h_r_e_a_d_s: ClassVar[int] = Runtime.getRuntime().availableProcessors()
+    k_e_y__f_i_e_l_d: ClassVar[Field[Any]] = AbstractJdbcRepository.field("key")
+    o_f_f_s_e_t__f_i_e_l_d: ClassVar[Field[Any]] = AbstractJdbcRepository.field("offset")
+    c_o_n_s_u_m_e_r__g_r_o_u_p__f_i_e_l_d: ClassVar[Field[Any]] = AbstractJdbcRepository.field("consumer_group")
+    t_y_p_e__f_i_e_l_d: ClassVar[Field[Any]] = AbstractJdbcRepository.field("type")
     is_closed: AtomicBoolean = new AtomicBoolean(false)
     is_paused: AtomicBoolean = new AtomicBoolean(false)
     pool_executor: ExecutorService | None = None
@@ -85,14 +86,17 @@ class JdbcQueue:
     def update_group_offsets(self, ctx: DSLContext, consumer_group: str, queue_type: str, offsets: list[int]) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
+    @abstractmethod
     def receive_fetch(self, ctx: DSLContext, consumer_group: str, queue_type: str, for_update: bool) -> Result[Record]:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
+    @abstractmethod
     def do_update_group_offsets(self, ctx: DSLContext, consumer_group: str, queue_type: str, offsets: list[int]) -> None:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
+    @abstractmethod
     def build_type_condition(self, type: str) -> Condition:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
     def receive(self, consumer_group: str, consumer: Consumer[Either[T, DeserializationException]], for_update: bool) -> Runnable:
         raise NotImplementedError  # TODO: translate from Java

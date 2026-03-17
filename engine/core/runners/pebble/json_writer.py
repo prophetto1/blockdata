@@ -3,15 +3,15 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\runners\pebble\JsonWriter.java
 # WARNING: Unresolved types: IOException, ObjectMapper, SpecializedWriter, StringWriter
 
-from dataclasses import dataclass
-from typing import Any
+from dataclasses import dataclass, field
+from typing import Any, ClassVar
 
 from engine.core.runners.pebble.output_writer import OutputWriter
 
 
 @dataclass(slots=True, kw_only=True)
 class JsonWriter(OutputWriter):
-    m_a_p_p_e_r: ObjectMapper = JacksonMapper.ofJson()
+    m_a_p_p_e_r: ClassVar[ObjectMapper] = JacksonMapper.ofJson()
     string_writer: StringWriter = new StringWriter()
 
     def write_specialized(self, i: int) -> None:

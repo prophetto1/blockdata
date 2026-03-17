@@ -1,9 +1,12 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-aws\src\main\java\io\kestra\plugin\aws\s3\CreateBucket.java
+# WARNING: Unresolved types: Exception, core, io, kestra, models, tasks
+
+from dataclasses import dataclass
 from typing import Any
 
-from integrations.kubernetes.abstract_connection import AbstractConnection
+from integrations.aws.abstract_connection import AbstractConnection
 from integrations.aws.s3.abstract_s3 import AbstractS3
 from engine.core.models.property.property import Property
 from engine.core.runners.run_context import RunContext
@@ -11,7 +14,7 @@ from engine.core.models.tasks.runnable_task import RunnableTask
 
 
 @dataclass(slots=True, kw_only=True)
-class CreateBucket(AbstractConnection, AbstractS3, RunnableTask):
+class CreateBucket(AbstractConnection):
     """Create an S3 bucket"""
     bucket: Property[str]
     grant_full_control: Property[str] | None = None
@@ -26,12 +29,6 @@ class CreateBucket(AbstractConnection, AbstractS3, RunnableTask):
         raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)
-    class Output(io):
+    class Output:
         bucket: str | None = None
         region: str | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class Output(io):
-    bucket: str | None = None
-    region: str | None = None

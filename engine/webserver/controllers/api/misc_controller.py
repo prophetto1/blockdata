@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any
+from typing import Any, Optional
 
 from engine.webserver.services.basic_auth_credentials import BasicAuthCredentials
 from engine.webserver.services.basic_auth_service import BasicAuthService

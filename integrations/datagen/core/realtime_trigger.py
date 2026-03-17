@@ -1,12 +1,15 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any
-from datetime import timedelta
+# Source: E:\KESTRA-IO\plugins\plugin-datagen\src\main\java\io\kestra\plugin\datagen\core\RealtimeTrigger.java
+# WARNING: Unresolved types: AtomicBoolean, CountDownLatch, Exception, Publisher
 
-from engine.core.models.triggers.abstract_trigger import AbstractTrigger
+from dataclasses import dataclass
+from datetime import timedelta
+from typing import Any
+
+from integrations.airbyte.cloud.jobs.abstract_trigger import AbstractTrigger
 from engine.core.models.conditions.condition_context import ConditionContext
-from engine.core.models.property.data import Data
+from integrations.datagen.data import Data
 from integrations.datagen.services.data_emitter import DataEmitter
 from integrations.datagen.model.data_generator import DataGenerator
 from engine.core.models.executions.execution import Execution
@@ -18,14 +21,14 @@ from engine.core.models.triggers.trigger_output import TriggerOutput
 
 
 @dataclass(slots=True, kw_only=True)
-class RealtimeTrigger(AbstractTrigger, RealtimeTriggerInterface, TriggerOutput, GenerateInterface):
+class RealtimeTrigger(AbstractTrigger):
     """Stream generated data in real time"""
-    max_records: Property[int] | None = None
-    throughput: Property[int] | None = None
-    reporting_interval: Property[timedelta] | None = None
     generator: DataGenerator[Any]
-    is_active: AtomicBoolean | None = None
-    wait_for_termination: CountDownLatch | None = None
+    max_records: Property[int] = Property.ofValue(Long.MAX_VALUE)
+    throughput: Property[int] = Property.ofValue(1)
+    reporting_interval: Property[timedelta] = Property.ofValue(Duration.ofSeconds(15))
+    is_active: AtomicBoolean = new AtomicBoolean(true)
+    wait_for_termination: CountDownLatch = new CountDownLatch(1)
     data_emitter: DataEmitter | None = None
 
     def evaluate(self, condition_context: ConditionContext, context: TriggerContext) -> Publisher[Execution]:

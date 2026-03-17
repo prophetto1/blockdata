@@ -2,6 +2,7 @@ from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\models\triggers\TriggerService.java
 
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any
 
@@ -14,7 +15,7 @@ from engine.core.models.triggers.trigger_context import TriggerContext
 
 
 @dataclass(slots=True, kw_only=True)
-class TriggerService:
+class TriggerService(ABC):
 
     @staticmethod
     def generate_execution(trigger: AbstractTrigger, condition_context: ConditionContext, context: TriggerContext, variables: dict[str, Any]) -> Execution:

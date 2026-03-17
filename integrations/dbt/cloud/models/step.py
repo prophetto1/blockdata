@@ -1,10 +1,12 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any
-from datetime import datetime
+# Source: E:\KESTRA-IO\plugins\plugin-dbt\src\main\java\io\kestra\plugin\dbt\cloud\models\Step.java
 
-from integrations.dbt.cloud.models.job_status import JobStatus
+from dataclasses import dataclass
+from datetime import datetime
+from typing import Any
+
+from integrations.airbyte.models.job_status import JobStatus
 from integrations.dbt.cloud.models.log_archive_type import LogArchiveType
 from integrations.dbt.cloud.models.log_location import LogLocation
 

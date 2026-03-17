@@ -3,6 +3,7 @@ from __future__ import annotations
 # Source: E:\KESTRA\jdbc\src\main\java\io\kestra\jdbc\repository\JdbcFlowRepositoryService.java
 # WARNING: Unresolved types: Record
 
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any
 
@@ -14,7 +15,7 @@ from engine.plugin.core.dashboard.chart.table import Table
 
 
 @dataclass(slots=True, kw_only=True)
-class JdbcFlowRepositoryService:
+class JdbcFlowRepositoryService(ABC):
 
     @staticmethod
     def last_revision(jdbc_repository: AbstractJdbcRepository[Any], asterisk: bool) -> Table[Record]:

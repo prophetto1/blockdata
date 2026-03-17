@@ -3,10 +3,10 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\plugins\PluginCatalogService.java
 # WARNING: Unresolved types: AtomicBoolean, CompletableFuture
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from datetime import timedelta
-from typing import Any
+from typing import Any, ClassVar
 
 from engine.core.http.client.http_client import HttpClient
 from engine.core.plugins.plugin_artifact import PluginArtifact
@@ -16,7 +16,7 @@ from engine.core.utils.version import Version
 
 @dataclass(slots=True, kw_only=True)
 class PluginCatalogService:
-    m_a_x__c_a_c_h_e__d_u_r_a_t_i_o_n: timedelta = Duration.ofHours(1)
+    m_a_x__c_a_c_h_e__d_u_r_a_t_i_o_n: ClassVar[timedelta] = Duration.ofHours(1)
     loaded: list[PluginManifest] = List.of()
     cache_last_loaded: datetime = Instant.now()
     is_loaded: AtomicBoolean = new AtomicBoolean(false)

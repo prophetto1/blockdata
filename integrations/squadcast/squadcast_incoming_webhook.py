@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-squadcast\src\main\java\io\kestra\plugin\squadcast\SquadcastIncomingWebhook.java
+# WARNING: Unresolved types: Exception
+
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.squadcast.abstract_squadcast_connection import AbstractSquadcastConnection

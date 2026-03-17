@@ -3,8 +3,10 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\repositories\ExecutionRepositoryInterface.java
 # WARNING: Unresolved types: Fields, Flux, Function, GroupType, IllegalArgumentException, Pageable
 
+from dataclasses import dataclass
+from enum import Enum
 from datetime import datetime
-from typing import Any, Protocol
+from typing import Any, Optional, Protocol
 
 from engine.core.repositories.array_list_total import ArrayListTotal
 from engine.core.models.executions.statistics.daily_execution_statistics import DailyExecutionStatistics
@@ -21,7 +23,7 @@ from engine.core.models.flows.state import State
 from engine.core.models.flows.type import Type
 
 
-class ExecutionRepositoryInterface(Protocol):
+class ExecutionRepositoryInterface(SaveRepositoryInterface, QueryBuilderInterface, Protocol):
     def find_by_id(self, tenant_id: str, id: str) -> Optional[Execution]: ...
 
     def find_by_id(self, tenant_id: str, id: str, allow_deleted: bool) -> Optional[Execution]: ...

@@ -1,35 +1,47 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any
-from datetime import timedelta
+# Source: E:\KESTRA-IO\plugins\plugin-aws\src\main\java\io\kestra\plugin\aws\ConnectionUtils.java
+# WARNING: Unresolved types: AwsAsyncClientBuilder, AwsClient, AwsClientBuilder, AwsClientConfig, AwsCredentialsProvider, AwsSyncClientBuilder, B, C, StaticCredentialsProvider, StsAssumeRoleCredentialsProvider, StsClient
 
-from integrations.kubernetes.abstract_connection import AbstractConnection
+from dataclasses import dataclass
+from datetime import timedelta
+from typing import Any
+
+from integrations.aws.abstract_connection import AbstractConnection
+from engine.core.exceptions.illegal_variable_evaluation_exception import IllegalVariableEvaluationException
 
 
 @dataclass(slots=True, kw_only=True)
 class ConnectionUtils:
 
-    def credentials_provider(self, aws_client_config: AbstractConnection) -> AwsCredentialsProvider:
+    @staticmethod
+    def credentials_provider(aws_client_config: AbstractConnection.AwsClientConfig) -> AwsCredentialsProvider:
         raise NotImplementedError  # TODO: translate from Java
 
-    def static_credentials_provider(self, aws_client_config: AbstractConnection) -> StaticCredentialsProvider:
+    @staticmethod
+    def static_credentials_provider(aws_client_config: AbstractConnection.AwsClientConfig) -> StaticCredentialsProvider:
         raise NotImplementedError  # TODO: translate from Java
 
-    def sts_assume_role_credentials_provider(self, aws_client_config: AbstractConnection) -> StsAssumeRoleCredentialsProvider:
+    @staticmethod
+    def sts_assume_role_credentials_provider(aws_client_config: AbstractConnection.AwsClientConfig) -> StsAssumeRoleCredentialsProvider:
         raise NotImplementedError  # TODO: translate from Java
 
-    def sts_client(self, aws_client_config: AbstractConnection) -> StsClient:
+    @staticmethod
+    def sts_client(aws_client_config: AbstractConnection.AwsClientConfig) -> StsClient:
         raise NotImplementedError  # TODO: translate from Java
 
-    def configure_sync_client(self, client_config: AbstractConnection, builder: B) -> B:
+    @staticmethod
+    def configure_sync_client(client_config: AbstractConnection.AwsClientConfig, builder: B) -> B:
         raise NotImplementedError  # TODO: translate from Java
 
-    def configure_async_client(self, client_config: AbstractConnection, builder: B) -> B:
+    @staticmethod
+    def configure_async_client(client_config: AbstractConnection.AwsClientConfig, builder: B) -> B:
         raise NotImplementedError  # TODO: translate from Java
 
-    def configure_async_client(self, max_concurrency: int, connection_acquisition_timeout: timedelta, client_config: AbstractConnection, builder: B) -> B:
+    @staticmethod
+    def configure_async_client(max_concurrency: int, connection_acquisition_timeout: timedelta, client_config: AbstractConnection.AwsClientConfig, builder: B) -> B:
         raise NotImplementedError  # TODO: translate from Java
 
-    def configure_client(self, client_config: AbstractConnection, builder: B) -> B:
+    @staticmethod
+    def configure_client(client_config: AbstractConnection.AwsClientConfig, builder: B) -> B:
         raise NotImplementedError  # TODO: translate from Java

@@ -3,10 +3,11 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\server\AbstractServiceLivenessCoordinator.java
 # WARNING: Unresolved types: Exception, ServiceState
 
-from dataclasses import dataclass
+from abc import ABC, abstractmethod
+from dataclasses import dataclass, field
 from datetime import datetime
 from datetime import timedelta
-from typing import Any
+from typing import Any, ClassVar
 
 from engine.core.server.abstract_service_liveness_task import AbstractServiceLivenessTask
 from engine.core.server.server_config import ServerConfig
@@ -17,13 +18,13 @@ from engine.core.server.service_registry import ServiceRegistry
 
 
 @dataclass(slots=True, kw_only=True)
-class AbstractServiceLivenessCoordinator(AbstractServiceLivenessTask):
-    d_e_f_a_u_l_t__s_c_h_e_d_u_l_e__j_i_t_t_e_r__m_a_x__m_s: int = 500
+class AbstractServiceLivenessCoordinator(ABC, AbstractServiceLivenessTask):
+    d_e_f_a_u_l_t__s_c_h_e_d_u_l_e__j_i_t_t_e_r__m_a_x__m_s: ClassVar[int] = 500
     d_e_f_a_u_l_t__r_e_a_s_o_n__f_o_r__d_i_s_c_o_n_n_e_c_t_e_d: str = "The service was detected as non-responsive after the session timeout. " +
         "Service transitioned to the 'DISCONNECTED' state."
     d_e_f_a_u_l_t__r_e_a_s_o_n__f_o_r__n_o_t__r_u_n_n_i_n_g: str = "The service was detected as non-responsive or terminated after termination grace period. " +
         "Service transitioned to the 'NOT_RUNNING' state."
-    t_a_s_k__n_a_m_e: str = "service-liveness-coordinator-task"
+    t_a_s_k__n_a_m_e: ClassVar[str] = "service-liveness-coordinator-task"
     server_id: str = ServerInstance.INSTANCE_ID
     store: ServiceLivenessStore | None = None
     service_registry: ServiceRegistry | None = None
@@ -31,14 +32,17 @@ class AbstractServiceLivenessCoordinator(AbstractServiceLivenessTask):
     def on_schedule(self, now: datetime) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
+    @abstractmethod
     def handle_all_non_responding_services(self, now: datetime) -> None:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
+    @abstractmethod
     def handle_all_workers_for_unclean_shutdown(self, now: datetime) -> None:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
+    @abstractmethod
     def update(self, instance: ServiceInstance, state: Service.ServiceState, reason: str) -> None:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
     def get_schedule_interval(self) -> timedelta:
         raise NotImplementedError  # TODO: translate from Java

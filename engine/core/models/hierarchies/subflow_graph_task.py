@@ -4,7 +4,7 @@ from __future__ import annotations
 # WARNING: Unresolved types: RestartBehavior, SubflowId, T
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Optional
 
 from engine.core.models.hierarchies.abstract_graph_task import AbstractGraphTask
 from engine.core.models.tasks.executable_task import ExecutableTask

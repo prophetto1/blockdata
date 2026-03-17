@@ -3,10 +3,11 @@ from __future__ import annotations
 # Source: E:\KESTRA\jdbc\src\main\java\io\kestra\jdbc\repository\AbstractJdbcRepository.java
 # WARNING: Unresolved types: Class, DSLContext, Date, Enum, F, Field, GroupType, Level, Name, OffsetDateTime, Op, Pageable, Record, Resource, SelectConditionStep, SelectHavingStep, SelectSeekStepN, T, Timestamp
 
-from dataclasses import dataclass
+from abc import ABC, abstractmethod
+from dataclasses import dataclass, field
 from datetime import datetime
 from datetime import timedelta
-from typing import Any
+from typing import Any, ClassVar
 
 from engine.core.models.dashboards.filters.abstract_filter import AbstractFilter
 from engine.core.repositories.array_list_total import ArrayListTotal
@@ -24,12 +25,12 @@ from engine.core.models.flows.type import Type
 
 
 @dataclass(slots=True, kw_only=True)
-class AbstractJdbcRepository:
-    d_e_l_e_t_e_d__f_i_e_l_d: Field[bool] = field("deleted", Boolean.class)
-    t_e_n_a_n_t__i_d__f_i_e_l_d: Field[str] = field("tenant_id", String.class)
-    k_e_y__f_i_e_l_d: Field[str] = field("key", String.class)
-    v_a_l_u_e__f_i_e_l_d: Field[Any] = field("value", Object.class)
-    f_e_t_c_h__s_i_z_e: int = 100
+class AbstractJdbcRepository(ABC):
+    d_e_l_e_t_e_d__f_i_e_l_d: ClassVar[Field[bool]] = field("deleted", Boolean.class)
+    t_e_n_a_n_t__i_d__f_i_e_l_d: ClassVar[Field[str]] = field("tenant_id", String.class)
+    k_e_y__f_i_e_l_d: ClassVar[Field[str]] = field("key", String.class)
+    v_a_l_u_e__f_i_e_l_d: ClassVar[Field[Any]] = field("value", Object.class)
+    f_e_t_c_h__s_i_z_e: ClassVar[int] = 100
     kestra_config: KestraConfig | None = None
 
     def default_filter(self) -> Condition:

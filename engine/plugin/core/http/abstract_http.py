@@ -3,6 +3,7 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\plugin\core\http\AbstractHttp.java
 # WARNING: Unresolved types: CharSequence, IOException, MalformedURLException, URISyntaxException
 
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any
 
@@ -18,7 +19,7 @@ from engine.core.models.tasks.task import Task
 
 
 @dataclass(slots=True, kw_only=True)
-class AbstractHttp(Task):
+class AbstractHttp(ABC, Task):
     uri: Property[str]
     method: Property[str] = Property.ofValue("GET")
     content_type: Property[str] = Property.ofValue("application/json")

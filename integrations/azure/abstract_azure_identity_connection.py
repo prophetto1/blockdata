@@ -1,16 +1,21 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-azure\src\main\java\io\kestra\plugin\azure\AbstractAzureIdentityConnection.java
+# WARNING: Unresolved types: ClientCertificateCredential, ClientSecretCredential, TokenCredential
+
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.azure.azure_identity_connection_interface import AzureIdentityConnectionInterface
+from engine.core.exceptions.illegal_variable_evaluation_exception import IllegalVariableEvaluationException
 from engine.core.models.property.property import Property
 from engine.core.runners.run_context import RunContext
-from engine.core.models.tasks.task import Task
+from integrations.azure.batch.models.task import Task
 
 
 @dataclass(slots=True, kw_only=True)
-class AbstractAzureIdentityConnection(Task, AzureIdentityConnectionInterface):
+class AbstractAzureIdentityConnection(ABC, Task):
     tenant_id: Property[str]
     client_id: Property[str] | None = None
     client_secret: Property[str] | None = None

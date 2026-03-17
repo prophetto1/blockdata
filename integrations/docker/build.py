@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-docker\src\main\java\io\kestra\plugin\docker\Build.java
+# WARNING: Unresolved types: BuildResponseItem, Exception, api, com, command, core, dockerjava, github, io, kestra, models, tasks
+
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.docker.abstract_docker import AbstractDocker
@@ -13,15 +16,15 @@ from engine.core.models.tasks.runnable_task import RunnableTask
 
 
 @dataclass(slots=True, kw_only=True)
-class Build(AbstractDocker, RunnableTask, NamespaceFilesInterface, InputFilesInterface):
+class Build(AbstractDocker):
     """Build and optionally push a Docker image"""
+    tags: Property[list[str]]
+    push: Property[bool] = Property.ofValue(false)
+    pull: Property[bool] = Property.ofValue(true)
     dockerfile: Property[str] | None = None
-    platforms: Property[list[String]] | None = None
-    push: Property[bool] | None = None
-    pull: Property[bool] | None = None
-    tags: Property[list[String]]
-    build_args: Property[dict[String, String]] | None = None
-    labels: Property[dict[String, String]] | None = None
+    platforms: Property[list[str]] | None = None
+    build_args: Property[dict[str, str]] | None = None
+    labels: Property[dict[str, str]] | None = None
     namespace_files: NamespaceFiles | None = None
     input_files: Any | None = None
 
@@ -32,25 +35,12 @@ class Build(AbstractDocker, RunnableTask, NamespaceFilesInterface, InputFilesInt
         raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)
-    class Output(io):
+    class Output:
         image_id: str | None = None
 
     @dataclass(slots=True)
-    class BuildImageResultCallback(com):
+    class BuildImageResultCallback(BuildImageResultCallback):
         run_context: RunContext | None = None
 
         def on_next(self, item: BuildResponseItem) -> None:
             raise NotImplementedError  # TODO: translate from Java
-
-
-@dataclass(slots=True, kw_only=True)
-class Output(io):
-    image_id: str | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class BuildImageResultCallback(com):
-    run_context: RunContext | None = None
-
-    def on_next(self, item: BuildResponseItem) -> None:
-        raise NotImplementedError  # TODO: translate from Java

@@ -12,7 +12,7 @@ from engine.core.utils.rethrow import Rethrow
 from engine.core.models.triggers.time_window import TimeWindow
 
 
-class MultipleCondition(Protocol):
+class MultipleCondition(PredicateChecked, Protocol):
     def get_id(self) -> str: ...
 
     def get_time_window(self) -> TimeWindow: ...

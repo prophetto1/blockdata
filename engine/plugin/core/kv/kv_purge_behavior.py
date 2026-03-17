@@ -3,6 +3,7 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\plugin\core\kv\KvPurgeBehavior.java
 # WARNING: Unresolved types: IOException
 
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any
 
@@ -13,10 +14,12 @@ from engine.core.utils.version import Version
 
 
 @dataclass(slots=True, kw_only=True)
-class KvPurgeBehavior:
+class KvPurgeBehavior(ABC):
 
+    @abstractmethod
     def get_type(self) -> str:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
+    @abstractmethod
     def entries_to_purge(self, kv_store: KVStore) -> list[KVEntry]:
-        raise NotImplementedError  # TODO: translate from Java
+        ...

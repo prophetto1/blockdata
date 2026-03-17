@@ -1,10 +1,13 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any
-from datetime import timedelta
+# Source: E:\KESTRA-IO\plugins\plugin-kvm\src\main\java\io\kestra\plugin\kvm\VmEventTrigger.java
+# WARNING: Unresolved types: Exception, core, io, kestra, models, tasks
 
-from engine.core.models.triggers.abstract_trigger import AbstractTrigger
+from dataclasses import dataclass
+from datetime import timedelta
+from typing import Any, Optional
+
+from integrations.airbyte.cloud.jobs.abstract_trigger import AbstractTrigger
 from engine.core.models.conditions.condition_context import ConditionContext
 from engine.core.models.executions.execution import Execution
 from engine.core.models.triggers.polling_trigger_interface import PollingTriggerInterface
@@ -14,22 +17,16 @@ from engine.core.models.triggers.trigger_output import TriggerOutput
 
 
 @dataclass(slots=True, kw_only=True)
-class VmEventTrigger(AbstractTrigger, PollingTriggerInterface, TriggerOutput):
+class VmEventTrigger(AbstractTrigger):
     """Poll KVM domain state"""
-    interval: timedelta | None = None
-    uri: Property[str] | None = None
     name: Property[str]
+    interval: timedelta = Duration.ofMinutes(1)
+    uri: Property[str] | None = None
 
     def evaluate(self, condition_context: ConditionContext, context: TriggerContext) -> Optional[Execution]:
         raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)
-    class Output(io):
+    class Output:
         name: str | None = None
         state: str | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class Output(io):
-    name: str | None = None
-    state: str | None = None

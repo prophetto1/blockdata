@@ -3,13 +3,13 @@ from __future__ import annotations
 # Source: E:\KESTRA\jdbc-h2\src\main\java\io\kestra\runner\h2\H2Functions.java
 # WARNING: Unresolved types: Function, JsonNode, Scope, T
 
-from dataclasses import dataclass
-from typing import Any
+from dataclasses import dataclass, field
+from typing import Any, ClassVar
 
 
 @dataclass(slots=True, kw_only=True)
 class H2Functions:
-    scope: Scope = Scope.newEmptyScope()
+    scope: ClassVar[Scope] = Scope.newEmptyScope()
 
     @staticmethod
     def jq_boolean(value: str, expression: str) -> bool:

@@ -1,8 +1,11 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any
+# Source: E:\KESTRA-IO\plugins\plugin-kvm\src\main\java\io\kestra\plugin\kvm\StopVm.java
+# WARNING: Unresolved types: Exception, core, io, kestra, models, tasks
+
+from dataclasses import dataclass
 from datetime import timedelta
+from typing import Any
 
 from integrations.kvm.abstract_kvm_task import AbstractKvmTask
 from engine.core.models.property.property import Property
@@ -11,23 +14,17 @@ from engine.core.models.tasks.runnable_task import RunnableTask
 
 
 @dataclass(slots=True, kw_only=True)
-class StopVm(AbstractKvmTask, RunnableTask):
+class StopVm(AbstractKvmTask):
     """Stop or shutdown KVM domain"""
     name: Property[str]
-    force: Property[bool] | None = None
-    wait_for_stopped: Property[bool] | None = None
-    time_to_wait: Property[timedelta] | None = None
+    force: Property[bool] = Property.ofValue(false)
+    wait_for_stopped: Property[bool] = Property.ofValue(false)
+    time_to_wait: Property[timedelta] = Property.ofValue(Duration.ofSeconds(60))
 
     def run(self, run_context: RunContext) -> Output:
         raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)
-    class Output(io):
+    class Output:
         name: str | None = None
         state: str | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class Output(io):
-    name: str | None = None
-    state: str | None = None

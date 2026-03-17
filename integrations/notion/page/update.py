@@ -1,11 +1,14 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-notion\src\main\java\io\kestra\plugin\notion\page\Update.java
+# WARNING: Unresolved types: ArrayNode, Exception
+
+from dataclasses import dataclass
 from typing import Any
 
-from integrations.opensearch.abstract_task import AbstractTask
+from integrations.compress.abstract_task import AbstractTask
 from integrations.notion.notion_response import NotionResponse
-from engine.core.models.tasks.output import Output
+from integrations.aws.glue.model.output import Output
 from engine.core.models.property.property import Property
 from engine.core.runners.run_context import RunContext
 

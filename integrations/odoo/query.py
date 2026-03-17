@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-odoo\src\main\java\io\kestra\plugin\odoo\Query.java
+# WARNING: Unresolved types: Exception, IOException, core, io, kestra, models, tasks
+
+from dataclasses import dataclass
 from typing import Any
 
 from engine.core.models.tasks.common.fetch_type import FetchType
@@ -9,11 +12,11 @@ from integrations.odoo.operation import Operation
 from engine.core.models.property.property import Property
 from engine.core.runners.run_context import RunContext
 from engine.core.models.tasks.runnable_task import RunnableTask
-from engine.core.models.tasks.task import Task
+from integrations.azure.batch.models.task import Task
 
 
 @dataclass(slots=True, kw_only=True)
-class Query(Task, RunnableTask):
+class Query(Task):
     """Run Odoo XML-RPC operations"""
     url: Property[str]
     db: Property[str]
@@ -21,13 +24,13 @@ class Query(Task, RunnableTask):
     password: Property[str]
     model: Property[str]
     operation: Property[Operation]
+    fetch_type: Property[FetchType] = Property.ofValue(FetchType.NONE)
     filters: Property[list[Any]] | None = None
-    fields: Property[list[String]] | None = None
-    values: Property[dict[String, Object]] | None = None
-    ids: Property[list[Integer]] | None = None
+    fields: Property[list[str]] | None = None
+    values: Property[dict[str, Any]] | None = None
+    ids: Property[list[int]] | None = None
     limit: Property[int] | None = None
     offset: Property[int] | None = None
-    fetch_type: Property[FetchType]
 
     def run(self, run_context: RunContext) -> Output:
         raise NotImplementedError  # TODO: translate from Java
@@ -71,30 +74,9 @@ class Query(Task, RunnableTask):
             raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)
-    class Output(io):
-        row: dict[String, Object] | None = None
-        rows: list[Map[String, Object]] | None = None
+    class Output:
+        row: dict[str, Any] | None = None
+        rows: list[dict[str, Any]] | None = None
         uri: str | None = None
         size: int | None = None
-        ids: list[Integer] | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class StoredResult:
-    uri: str | None = None
-    count: int | None = None
-
-    def get_uri(self) -> str:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def get_count(self) -> int:
-        raise NotImplementedError  # TODO: translate from Java
-
-
-@dataclass(slots=True, kw_only=True)
-class Output(io):
-    row: dict[String, Object] | None = None
-    rows: list[Map[String, Object]] | None = None
-    uri: str | None = None
-    size: int | None = None
-    ids: list[Integer] | None = None
+        ids: list[int] | None = None

@@ -3,9 +3,10 @@ from __future__ import annotations
 # Source: E:\KESTRA\script\src\main\java\io\kestra\plugin\scripts\runner\docker\Docker.java
 # WARNING: Unresolved types: CreateContainerCmd, DockerClient, Exception, IOException, Logger, Pattern, ReadableBytesTypeConverter
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from enum import Enum
 from datetime import timedelta
-from typing import Any
+from typing import Any, ClassVar
 
 from engine.plugin.scripts.runner.docker.cpu import Cpu
 from engine.plugin.scripts.runner.docker.credentials import Credentials
@@ -25,10 +26,10 @@ from engine.core.models.tasks.runners.task_runner_result import TaskRunnerResult
 @dataclass(slots=True, kw_only=True)
 class Docker(TaskRunner):
     """Run a task in a Docker container."""
-    r_e_a_d_a_b_l_e__b_y_t_e_s__t_y_p_e__c_o_n_v_e_r_t_e_r: ReadableBytesTypeConverter = new ReadableBytesTypeConverter()
-    n_e_w_l_i_n_e__p_a_t_t_e_r_n: Pattern = Pattern.compile("([^\\r\\n]+)[\\r\\n]+")
-    l_e_g_a_c_y__v_o_l_u_m_e__e_n_a_b_l_e_d__c_o_n_f_i_g: str = "kestra.tasks.scripts.docker.volume-enabled"
-    v_o_l_u_m_e__e_n_a_b_l_e_d__c_o_n_f_i_g: str = "volume-enabled"
+    r_e_a_d_a_b_l_e__b_y_t_e_s__t_y_p_e__c_o_n_v_e_r_t_e_r: ClassVar[ReadableBytesTypeConverter] = new ReadableBytesTypeConverter()
+    n_e_w_l_i_n_e__p_a_t_t_e_r_n: ClassVar[Pattern] = Pattern.compile("([^\\r\\n]+)[\\r\\n]+")
+    l_e_g_a_c_y__v_o_l_u_m_e__e_n_a_b_l_e_d__c_o_n_f_i_g: ClassVar[str] = "kestra.tasks.scripts.docker.volume-enabled"
+    v_o_l_u_m_e__e_n_a_b_l_e_d__c_o_n_f_i_g: ClassVar[str] = "volume-enabled"
     entry_point: list[str] = List.of("")
     pull_policy: Property[PullPolicy] = Property.ofValue(PullPolicy.IF_NOT_PRESENT)
     file_handling_strategy: Property[FileHandlingStrategy] = Property.ofValue(FileHandlingStrategy.VOLUME)

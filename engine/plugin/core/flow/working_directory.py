@@ -3,9 +3,9 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\plugin\core\flow\WorkingDirectory.java
 # WARNING: Unresolved types: Exception, IOException
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import timedelta
-from typing import Any
+from typing import Any, ClassVar
 
 from engine.core.models.executions.execution import Execution
 from engine.core.exceptions.illegal_variable_evaluation_exception import IllegalVariableEvaluationException
@@ -26,7 +26,7 @@ from engine.core.runners.worker_task import WorkerTask
 @dataclass(slots=True, kw_only=True)
 class WorkingDirectory(Sequential):
     """Reuse a single working directory across tasks."""
-    o_u_t_p_u_t_s__f_i_l_e: str = "outputs.ion"
+    o_u_t_p_u_t_s__f_i_l_e: ClassVar[str] = "outputs.ion"
     cache_downloaded_time: int = 0
     cache: Cache | None = None
     namespace_files: NamespaceFiles | None = None

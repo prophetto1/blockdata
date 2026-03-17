@@ -1,21 +1,27 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-singer\src\main\java\io\kestra\plugin\singer\services\SelectedService.java
+
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.singer.models.discover_stream import DiscoverStream
 from integrations.singer.models.discover_streams import DiscoverStreams
+from integrations.kubernetes.models.metadata import Metadata
 from integrations.singer.models.streams_configuration import StreamsConfiguration
 
 
 @dataclass(slots=True, kw_only=True)
 class SelectedService:
 
-    def fill(self, discover_streams: DiscoverStreams, stream_configs: list[StreamsConfiguration]) -> DiscoverStreams:
+    @staticmethod
+    def fill(discover_streams: DiscoverStreams, stream_configs: list[StreamsConfiguration]) -> DiscoverStreams:
         raise NotImplementedError  # TODO: translate from Java
 
-    def match_properties(self, metadata: DiscoverStream, properties_pattern: list[String]) -> bool:
+    @staticmethod
+    def match_properties(metadata: DiscoverStream.Metadata, properties_pattern: list[str]) -> bool:
         raise NotImplementedError  # TODO: translate from Java
 
-    def select_stream(self, discover_stream: DiscoverStream, streams_configuration: StreamsConfiguration) -> DiscoverStream:
+    @staticmethod
+    def select_stream(discover_stream: DiscoverStream, streams_configuration: StreamsConfiguration) -> DiscoverStream:
         raise NotImplementedError  # TODO: translate from Java

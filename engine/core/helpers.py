@@ -3,15 +3,15 @@ from __future__ import annotations
 # Source: E:\KESTRA\tests\src\main\java\io\kestra\core\Helpers.java
 # WARNING: Unresolved types: ApplicationContext, BiConsumer, Consumer, EmbeddedServer, URISyntaxException
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
 
 
 @dataclass(slots=True, kw_only=True)
 class Helpers:
-    f_l_o_w_s__c_o_u_n_t: int = countFlows()
-    plugins: Path | None = None
+    f_l_o_w_s__c_o_u_n_t: ClassVar[int] = countFlows()
+    plugins: ClassVar[Path]
 
     @staticmethod
     def load_external_plugins_from_classpath() -> None:

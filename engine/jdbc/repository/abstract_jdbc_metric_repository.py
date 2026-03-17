@@ -3,9 +3,10 @@ from __future__ import annotations
 # Source: E:\KESTRA\jdbc\src\main\java\io\kestra\jdbc\repository\AbstractJdbcMetricRepository.java
 # WARNING: Unresolved types: ChronoUnit, Date, Field, Fields, Function, GroupType, IllegalArgumentException, Pageable, io, jdbc, kestra
 
-from dataclasses import dataclass
+from abc import ABC, abstractmethod
+from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any
+from typing import Any, ClassVar
 
 from engine.jdbc.repository.abstract_jdbc_crud_repository import AbstractJdbcCrudRepository
 from engine.jdbc.abstract_jdbc_repository import AbstractJdbcRepository
@@ -25,8 +26,8 @@ from engine.plugin.core.dashboard.data.metrics import Metrics
 
 
 @dataclass(slots=True, kw_only=True)
-class AbstractJdbcMetricRepository(AbstractJdbcCrudRepository):
-    n_o_r_m_a_l__k_i_n_d__c_o_n_d_i_t_i_o_n: Condition = field("execution_kind").isNull().or(field("execution_kind").eq(ExecutionKind.NORMAL.name()))
+class AbstractJdbcMetricRepository(ABC, AbstractJdbcCrudRepository):
+    n_o_r_m_a_l__k_i_n_d__c_o_n_d_i_t_i_o_n: ClassVar[Condition] = field("execution_kind").isNull().or(field("execution_kind").eq(ExecutionKind.NORMAL.name()))
     fields_mapping: dict[Metrics.Fields, str] = Map.of(
         Metrics.Fields.NAMESPACE, "namespace",
         Metrics.Fields.FLOW_ID, "flow_id",
@@ -102,5 +103,6 @@ class AbstractJdbcMetricRepository(AbstractJdbcCrudRepository):
     def fetch_data(self, tenant_id: str, descriptors: DataFilter[Metrics.Fields, Any], start_date: datetime, end_date: datetime, pageable: Pageable) -> ArrayListTotal[dict[str, Any]]:
         raise NotImplementedError  # TODO: translate from Java
 
+    @abstractmethod
     def format_date_field(self, date_field: str, group_type: DateUtils.GroupType) -> Field[Date]:
-        raise NotImplementedError  # TODO: translate from Java
+        ...

@@ -4,7 +4,7 @@ from __future__ import annotations
 # WARNING: Unresolved types: Function, Pageable, ServiceState
 
 from datetime import datetime
-from typing import Any, Protocol
+from typing import Any, Optional, Protocol
 
 from engine.core.repositories.array_list_total import ArrayListTotal
 from engine.core.server.service import Service

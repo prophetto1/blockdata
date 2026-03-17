@@ -2,6 +2,7 @@ from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\runners\WorkerJob.java
 
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any
 
@@ -11,7 +12,8 @@ from engine.core.runners.worker_trigger import WorkerTrigger
 
 
 @dataclass(slots=True, kw_only=True)
-class WorkerJob:
+class WorkerJob(ABC):
 
+    @abstractmethod
     def get_type(self) -> str:
-        raise NotImplementedError  # TODO: translate from Java
+        ...

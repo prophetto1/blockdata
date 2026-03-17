@@ -3,15 +3,15 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\models\flows\input\FileInput.java
 # WARNING: Unresolved types: ConstraintViolationException
 
-from dataclasses import dataclass
-from typing import Any
+from dataclasses import dataclass, field
+from typing import Any, ClassVar
 
 from engine.core.models.flows.input import Input
 
 
 @dataclass(slots=True, kw_only=True)
 class FileInput(Input):
-    d_e_f_a_u_l_t__e_x_t_e_n_s_i_o_n: str = ".upl"
+    d_e_f_a_u_l_t__e_x_t_e_n_s_i_o_n: ClassVar[str] = ".upl"
     extension: str | None = None
     allowed_file_extensions: list[str] | None = None
 

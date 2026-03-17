@@ -3,7 +3,7 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\runners\DefaultFlowMetaStore.java
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Optional
 
 from engine.core.models.flows.flow_interface import FlowInterface
 from engine.core.services.flow_listeners_interface import FlowListenersInterface

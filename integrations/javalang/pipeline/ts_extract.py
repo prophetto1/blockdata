@@ -29,6 +29,9 @@ class FieldInfo:
     is_required: bool = False
     has_default: bool = False
     default_value: str | None = None
+    is_static: bool = False
+    is_final: bool = False
+    annotations: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -43,6 +46,8 @@ class MethodInfo:
     return_type: str
     parameters: list[ParamInfo] = field(default_factory=list)
     is_static: bool = False
+    is_abstract: bool = False
+    annotations: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -56,6 +61,9 @@ class TypeInfo:
     inner_types: list[TypeInfo] = field(default_factory=list)
     enum_constants: list[str] = field(default_factory=list)
     schema_title: str | None = None
+    modifiers: list[str] = field(default_factory=list)
+    annotations: list[str] = field(default_factory=list)
+    permits: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -188,6 +196,43 @@ def _has_modifier(node: Node, modifier: str) -> bool:
     return False
 
 
+def _collect_annotations(node: Node) -> list[str]:
+    """Collect annotation names from a node's modifiers.
+
+    Handles both simple (@NotNull) and fully-qualified (@jakarta.validation.NotNull)
+    annotations. For scoped annotations, captures the last identifier (e.g., "NotNull").
+    """
+    mods = _first_child_of_type(node, "modifiers")
+    if not mods:
+        return []
+    names = []
+    for ann in _children_of_type(mods, "annotation", "marker_annotation"):
+        # Try simple identifier first
+        ann_name = _first_child_of_type(ann, "identifier")
+        if ann_name:
+            names.append(_node_text(ann_name))
+            continue
+        # Try scoped identifier (e.g., jakarta.validation.NotNull)
+        scoped = _first_child_of_type(ann, "scoped_identifier")
+        if scoped:
+            # Use the last identifier in the chain
+            text = _node_text(scoped)
+            names.append(text.rsplit(".", 1)[-1])
+    return names
+
+
+def _collect_modifiers(node: Node) -> list[str]:
+    """Collect modifier keywords (public, static, abstract, sealed, etc.)."""
+    mods = _first_child_of_type(node, "modifiers")
+    if not mods:
+        return []
+    keywords = []
+    for c in mods.children:
+        if c.type not in ("annotation", "marker_annotation") and _node_text(c).isalpha():
+            keywords.append(_node_text(c))
+    return keywords
+
+
 # --- Field extraction ---
 
 def _extract_field(node: Node) -> list[FieldInfo]:
@@ -198,6 +243,9 @@ def _extract_field(node: Node) -> list[FieldInfo]:
 
     is_required = _has_annotation(node, "NotNull") or _has_annotation(node, "NotBlank")
     has_default = _has_annotation(node, "Builder.Default")
+    is_static = _has_modifier(node, "static")
+    is_final = _has_modifier(node, "final")
+    annotations = _collect_annotations(node)
 
     for decl in _children_of_type(node, "variable_declarator"):
         name_node = decl.child_by_field_name("name")
@@ -221,6 +269,9 @@ def _extract_field(node: Node) -> list[FieldInfo]:
                 is_required=is_required,
                 has_default=has_default or value_node is not None,
                 default_value=default_value if (has_default or value_node) else None,
+                is_static=is_static,
+                is_final=is_final,
+                annotations=annotations,
             ))
     return fields
 
@@ -262,12 +313,16 @@ def _extract_method(node: Node) -> MethodInfo | None:
     parameters = _extract_params(params_node)
 
     is_static = _has_modifier(node, "static")
+    is_abstract = _has_modifier(node, "abstract")
+    annotations = _collect_annotations(node)
 
     return MethodInfo(
         name=name,
         return_type=return_type,
         parameters=parameters,
         is_static=is_static,
+        is_abstract=is_abstract,
+        annotations=annotations,
     )
 
 
@@ -330,10 +385,22 @@ def _extract_type(node: Node) -> TypeInfo | None:
             if c.type in ("type_identifier", "generic_type", "scoped_type_identifier"):
                 info.implements.append(_simple_type_name(c) or _type_name(c))
 
-    # For interfaces, extends is in 'extends_interfaces' field
-    extends_if = node.child_by_field_name("extends_interfaces")
-    if extends_if is None:
-        # Try finding type_list after "extends" keyword for interfaces
+    # For interfaces, extends is in an 'extends_interfaces' child node
+    extends_if = _first_child_of_type(node, "extends_interfaces")
+    if extends_if is not None:
+        # extends_interfaces contains: extends keyword + type_list
+        type_list = _first_child_of_type(extends_if, "type_list")
+        if type_list:
+            for c in type_list.children:
+                if c.type in ("type_identifier", "generic_type", "scoped_type_identifier"):
+                    info.extends.append(_simple_type_name(c) or _type_name(c))
+        else:
+            # Single type without type_list wrapper
+            for c in extends_if.children:
+                if c.type in ("type_identifier", "generic_type", "scoped_type_identifier"):
+                    info.extends.append(_simple_type_name(c) or _type_name(c))
+    elif kind == "interface":
+        # Fallback: manually scan children for extends keyword
         saw_extends = False
         for c in node.children:
             if _node_text(c) == "extends":
@@ -345,7 +412,25 @@ def _extract_type(node: Node) -> TypeInfo | None:
                         info.extends.append(_simple_type_name(tc) or _type_name(tc))
                 break
             if saw_extends and c.type in ("type_identifier", "generic_type", "scoped_type_identifier"):
-                info.extends.append(_simple_type_name(tc) or _type_name(c))
+                info.extends.append(_simple_type_name(c) or _type_name(c))
+                break
+
+    # Modifiers and annotations
+    info.modifiers = _collect_modifiers(node)
+    info.annotations = _collect_annotations(node)
+
+    # Permits clause (sealed classes)
+    permits_node = _first_child_of_type(node, "permits")
+    if permits_node is not None:
+        type_list = _first_child_of_type(permits_node, "type_list")
+        if type_list:
+            for c in type_list.children:
+                if c.type in ("type_identifier", "generic_type", "scoped_type_identifier"):
+                    info.permits.append(_simple_type_name(c) or _type_name(c))
+        else:
+            for c in permits_node.children:
+                if c.type in ("type_identifier", "generic_type", "scoped_type_identifier"):
+                    info.permits.append(_simple_type_name(c) or _type_name(c))
 
     # Record parameters → fields
     if kind == "record":

@@ -1,11 +1,13 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any
+# Source: E:\KESTRA-IO\plugins\plugin-airbyte\src\main\java\io\kestra\plugin\airbyte\models\Job.java
+
+from dataclasses import dataclass
 from datetime import datetime
+from typing import Any
 
 from integrations.airbyte.models.job_config_type import JobConfigType
-from integrations.dbt.cloud.models.job_status import JobStatus
+from integrations.airbyte.models.job_status import JobStatus
 from integrations.airbyte.models.reset_config import ResetConfig
 
 

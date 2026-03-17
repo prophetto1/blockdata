@@ -3,8 +3,8 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\storages\kv\InternalKVStore.java
 # WARNING: Unresolved types: IOException, Pageable, Pattern
 
-from dataclasses import dataclass
-from typing import Any
+from dataclasses import dataclass, field
+from typing import Any, ClassVar, Optional
 
 from engine.core.repositories.array_list_total import ArrayListTotal
 from engine.core.models.fetch_version import FetchVersion
@@ -20,7 +20,7 @@ from engine.core.storages.storage_interface import StorageInterface
 
 @dataclass(slots=True, kw_only=True)
 class InternalKVStore:
-    d_u_r_a_t_i_o_n__p_a_t_t_e_r_n: Pattern = Pattern.compile("^P(?=[^T]|T.)(?:\\d*D)?(?:T(?=.)(?:\\d*H)?(?:\\d*M)?(?:\\d*S)?)?$")
+    d_u_r_a_t_i_o_n__p_a_t_t_e_r_n: ClassVar[Pattern] = Pattern.compile("^P(?=[^T]|T.)(?:\\d*D)?(?:T(?=.)(?:\\d*H)?(?:\\d*M)?(?:\\d*S)?)?$")
     namespace: str | None = None
     tenant: str | None = None
     storage: StorageInterface | None = None

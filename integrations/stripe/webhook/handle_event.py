@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-stripe\src\main\java\io\kestra\plugin\stripe\webhook\HandleEvent.java
+# WARNING: Unresolved types: Exception, core, io, kestra, models, tasks
+
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.stripe.abstract_stripe import AbstractStripe
@@ -10,7 +13,7 @@ from engine.core.models.tasks.runnable_task import RunnableTask
 
 
 @dataclass(slots=True, kw_only=True)
-class HandleEvent(AbstractStripe, RunnableTask):
+class HandleEvent(AbstractStripe):
     """Validate and parse Stripe webhooks"""
     payload: Property[str]
     signature_header: Property[str]
@@ -20,16 +23,8 @@ class HandleEvent(AbstractStripe, RunnableTask):
         raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)
-    class Output(io):
+    class Output:
         id: str | None = None
         type: str | None = None
-        data: dict[String, Object] | None = None
+        data: dict[str, Any] | None = None
         raw: str | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class Output(io):
-    id: str | None = None
-    type: str | None = None
-    data: dict[String, Object] | None = None
-    raw: str | None = None

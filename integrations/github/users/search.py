@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-github\src\main\java\io\kestra\plugin\github\users\Search.java
+# WARNING: Unresolved types: Exception, GHDirection, GHUserSearchBuilder
+
+from dataclasses import dataclass
 from enum import Enum
 from typing import Any
 
@@ -12,25 +15,11 @@ from engine.core.runners.run_context import RunContext
 from engine.core.models.tasks.runnable_task import RunnableTask
 
 
-class Order(str, Enum):
-    ASC = "ASC"
-    DESC = "DESC"
-
-
-class Sort(str, Enum):
-    JOINED = "JOINED"
-    REPOSITORIES = "REPOSITORIES"
-    FOLLOWERS = "FOLLOWERS"
-
-
-class Type(str, Enum):
-    USER = "USER"
-    ORGANIZATION = "ORGANIZATION"
-
-
 @dataclass(slots=True, kw_only=True)
-class Search(GithubSearchTask, RunnableTask):
+class Search(GithubSearchTask):
     """Search GitHub users"""
+    order: Property[Order] = Property.ofValue(Order.ASC)
+    sort: Property[Sort] = Property.ofValue(Sort.JOINED)
     query: Property[str] | None = None
     language: Property[str] | None = None
     created: Property[str] | None = None
@@ -39,8 +28,19 @@ class Search(GithubSearchTask, RunnableTask):
     location: Property[str] | None = None
     followers: Property[str] | None = None
     account_type: Property[Type] | None = None
-    order: Property[Order] | None = None
-    sort: Property[Sort] | None = None
 
     def run(self, run_context: RunContext) -> FileOutput:
         raise NotImplementedError  # TODO: translate from Java
+
+    class Order(str, Enum):
+        ASC = "ASC"
+        DESC = "DESC"
+
+    class Sort(str, Enum):
+        JOINED = "JOINED"
+        REPOSITORIES = "REPOSITORIES"
+        FOLLOWERS = "FOLLOWERS"
+
+    class Type(str, Enum):
+        USER = "USER"
+        ORGANIZATION = "ORGANIZATION"

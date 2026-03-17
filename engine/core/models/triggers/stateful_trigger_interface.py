@@ -2,6 +2,7 @@ from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\models\triggers\StatefulTriggerInterface.java
 
+from enum import Enum
 from datetime import timedelta
 from typing import Any, Protocol
 

@@ -1,9 +1,13 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-datagen\src\main\java\io\kestra\plugin\datagen\generators\StringValueGenerator.java
+# WARNING: Unresolved types: Faker
+
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.datagen.model.data_generator import DataGenerator
+from engine.core.exceptions.illegal_variable_evaluation_exception import IllegalVariableEvaluationException
 from engine.core.models.property.property import Property
 from engine.core.runners.run_context import RunContext
 
@@ -12,7 +16,7 @@ from engine.core.runners.run_context import RunContext
 class StringValueGenerator(DataGenerator):
     """Generate strings from templates"""
     value: str
-    locale: Property[list[String]] | None = None
+    locale: Property[list[str]] | None = None
     faker: Faker | None = None
 
     def init(self, run_context: RunContext) -> None:

@@ -4,7 +4,7 @@ from __future__ import annotations
 # WARNING: Unresolved types: ApplicationEventPublisher, AtomicBoolean, AtomicReference, Configuration, Exception, FailedExecutionWithLog, ObjectMapper, Runnable, ScheduledExecutorService, ScheduledFuture, ServiceState, TemplateExecutorInterface, concurrent, java, util
 
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, ClassVar, Optional
 
 from engine.jdbc.runner.abstract_jdbc_concurrency_limit_storage import AbstractJdbcConcurrencyLimitStorage
 from engine.jdbc.runner.abstract_jdbc_execution_delay_storage import AbstractJdbcExecutionDelayStorage
@@ -65,10 +65,10 @@ from engine.core.runners.worker_task_result import WorkerTaskResult
 
 @dataclass(slots=True, kw_only=True)
 class JdbcExecutor:
-    m_a_p_p_e_r: ObjectMapper = JdbcMapper.of()
-    i_g_n_o_r_i_n_g__e_x_e_c_u_t_i_o_n__m_s_g: str = "Ignoring execution {} because there is a kill switch on it"
-    c_a_n_c_e_l_l_i_n_g__e_x_e_c_u_t_i_o_n__m_s_g: str = "Cancelling execution {} because there is a kill switch on it"
-    k_i_l_l_i_n_g__e_x_e_c_u_t_i_o_n__m_s_g: str = "Killing execution {} because there is a kill switch on it"
+    m_a_p_p_e_r: ClassVar[ObjectMapper] = JdbcMapper.of()
+    i_g_n_o_r_i_n_g__e_x_e_c_u_t_i_o_n__m_s_g: ClassVar[str] = "Ignoring execution {} because there is a kill switch on it"
+    c_a_n_c_e_l_l_i_n_g__e_x_e_c_u_t_i_o_n__m_s_g: ClassVar[str] = "Cancelling execution {} because there is a kill switch on it"
+    k_i_l_l_i_n_g__e_x_e_c_u_t_i_o_n__m_s_g: ClassVar[str] = "Killing execution {} because there is a kill switch on it"
     scheduled_delay: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor()
     id: str = IdUtils.create()
     shutdown: AtomicBoolean = new AtomicBoolean(false)

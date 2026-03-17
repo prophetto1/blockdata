@@ -3,9 +3,10 @@ from __future__ import annotations
 # Source: E:\KESTRA\jdbc\src\main\java\io\kestra\jdbc\repository\AbstractJdbcLogRepository.java
 # WARNING: Unresolved types: Date, Field, Fields, Flux, GroupType, Level, Pageable, io, jdbc, kestra
 
-from dataclasses import dataclass
+from abc import ABC, abstractmethod
+from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any
+from typing import Any, ClassVar
 
 from engine.jdbc.repository.abstract_jdbc_crud_repository import AbstractJdbcCrudRepository
 from engine.jdbc.abstract_jdbc_repository import AbstractJdbcRepository
@@ -24,13 +25,14 @@ from engine.core.models.query_filter import QueryFilter
 
 
 @dataclass(slots=True, kw_only=True)
-class AbstractJdbcLogRepository(AbstractJdbcCrudRepository):
-    n_o_r_m_a_l__k_i_n_d__c_o_n_d_i_t_i_o_n: Condition = field("execution_kind").isNull().or(field("execution_kind").eq(ExecutionKind.NORMAL.name()))
-    d_a_t_e__c_o_l_u_m_n: str = "timestamp"
+class AbstractJdbcLogRepository(ABC, AbstractJdbcCrudRepository):
+    n_o_r_m_a_l__k_i_n_d__c_o_n_d_i_t_i_o_n: ClassVar[Condition] = field("execution_kind").isNull().or(field("execution_kind").eq(ExecutionKind.NORMAL.name()))
+    d_a_t_e__c_o_l_u_m_n: ClassVar[str] = "timestamp"
     filter_service: JdbcFilterService | None = None
 
+    @abstractmethod
     def find_condition(self, query: str) -> Condition:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
     def find_query_condition(self, query: str) -> Condition:
         raise NotImplementedError  # TODO: translate from Java
@@ -149,5 +151,6 @@ class AbstractJdbcLogRepository(AbstractJdbcCrudRepository):
     def default_filter(self) -> Condition:
         raise NotImplementedError  # TODO: translate from Java
 
+    @abstractmethod
     def format_date_field(self, date_field: str, group_type: DateUtils.GroupType) -> Field[Date]:
-        raise NotImplementedError  # TODO: translate from Java
+        ...

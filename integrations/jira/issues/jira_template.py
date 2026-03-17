@@ -1,6 +1,10 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-jira\src\main\java\io\kestra\plugin\jira\issues\JiraTemplate.java
+# WARNING: Unresolved types: Exception
+
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.jira.issues.jira_client import JiraClient
@@ -10,12 +14,12 @@ from engine.core.models.tasks.void_output import VoidOutput
 
 
 @dataclass(slots=True, kw_only=True)
-class JiraTemplate(JiraClient):
+class JiraTemplate(ABC, JiraClient):
+    project_key: str
     template_uri: Property[str] | None = None
-    project_key: str | None = None
     summary: Property[str] | None = None
     description: str | None = None
-    labels: Property[list[String]] | None = None
+    labels: Property[list[str]] | None = None
     issue_type_id: Property[str] | None = None
 
     def run(self, run_context: RunContext) -> VoidOutput:

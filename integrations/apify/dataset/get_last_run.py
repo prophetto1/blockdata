@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-apify\src\main\java\io\kestra\plugin\apify\dataset\GetLastRun.java
+# WARNING: Unresolved types: Exception
+
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.apify.actor.actor_run import ActorRun
@@ -11,7 +14,7 @@ from engine.core.models.tasks.runnable_task import RunnableTask
 
 
 @dataclass(slots=True, kw_only=True)
-class GetLastRun(ApifyConnection, RunnableTask):
+class GetLastRun(ApifyConnection):
     """Fetch latest actor run"""
     actor_id: Property[str]
 

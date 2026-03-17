@@ -3,9 +3,9 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\storages\kv\KVEntry.java
 # WARNING: Unresolved types: IOException, Pattern
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any
+from typing import Any, ClassVar
 
 from engine.core.storages.file_attributes import FileAttributes
 from engine.core.models.kv.persisted_kv_metadata import PersistedKvMetadata
@@ -13,7 +13,7 @@ from engine.core.models.kv.persisted_kv_metadata import PersistedKvMetadata
 
 @dataclass(slots=True, kw_only=True)
 class KVEntry:
-    capture_key_and_version: Pattern = Pattern.compile("(.*)\\.ion(?:\\.v(\\d+))?$")
+    capture_key_and_version: ClassVar[Pattern] = Pattern.compile("(.*)\\.ion(?:\\.v(\\d+))?$")
     namespace: str | None = None
     key: str | None = None
     version: int | None = None

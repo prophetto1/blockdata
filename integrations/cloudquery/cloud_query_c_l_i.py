@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-cloudquery\src\main\java\io\kestra\plugin\cloudquery\CloudQueryCLI.java
+# WARNING: Unresolved types: Exception
+
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.cloudquery.abstract_cloud_query_command import AbstractCloudQueryCommand
@@ -16,12 +19,12 @@ from engine.plugin.scripts.exec.scripts.models.script_output import ScriptOutput
 
 
 @dataclass(slots=True, kw_only=True)
-class CloudQueryCLI(AbstractCloudQueryCommand, RunnableTask, NamespaceFilesInterface, InputFilesInterface, OutputFilesInterface):
+class CloudQueryCLI(AbstractCloudQueryCommand):
     """Run CloudQuery CLI commands"""
-    commands: Property[list[String]]
+    commands: Property[list[str]]
     namespace_files: NamespaceFiles | None = None
     input_files: Any | None = None
-    output_files: Property[list[String]] | None = None
+    output_files: Property[list[str]] | None = None
 
     def run(self, run_context: RunContext) -> ScriptOutput:
         raise NotImplementedError  # TODO: translate from Java

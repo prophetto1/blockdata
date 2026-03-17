@@ -1,14 +1,17 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any
+# Source: E:\KESTRA-IO\plugins\plugin-apify\src\main\java\io\kestra\plugin\apify\actor\ActorRunListItem.java
+
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
+from typing import Any, Optional
 
 from integrations.apify.actor.actor_job_status import ActorJobStatus
 from integrations.apify.actor.actor_run_meta import ActorRunMeta
 
 
 @dataclass(slots=True, kw_only=True)
-class ActorRunListItem:
+class ActorRunListItem(ABC):
     id: str | None = None
     act_id: str | None = None
     actor_task_id: str | None = None
@@ -23,8 +26,8 @@ class ActorRunListItem:
     default_request_queue_id: str | None = None
     usage_total_usd: str | None = None
 
-    def get_actor_task_id(self) -> Optional[String]:
+    def get_actor_task_id(self) -> Optional[str]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def get_build_id(self) -> Optional[String]:
+    def get_build_id(self) -> Optional[str]:
         raise NotImplementedError  # TODO: translate from Java

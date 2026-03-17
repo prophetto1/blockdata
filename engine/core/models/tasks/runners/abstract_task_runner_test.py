@@ -3,6 +3,7 @@ from __future__ import annotations
 # Source: E:\KESTRA\tests\src\main\java\io\kestra\core\models\tasks\runners\AbstractTaskRunnerTest.java
 # WARNING: Unresolved types: Exception, IOException
 
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any
 
@@ -15,7 +16,7 @@ from engine.core.context.test_run_context_factory import TestRunContextFactory
 
 
 @dataclass(slots=True, kw_only=True)
-class AbstractTaskRunnerTest:
+class AbstractTaskRunnerTest(ABC):
     run_context_factory: TestRunContextFactory | None = None
     storage: StorageInterface | None = None
 
@@ -46,8 +47,9 @@ class AbstractTaskRunnerTest:
     def run_context(self, run_context_factory: RunContextFactory, additional_vars: dict[str, Any], task_run_id: str) -> RunContext:
         raise NotImplementedError  # TODO: translate from Java
 
+    @abstractmethod
     def task_runner(self) -> TaskRunner[Any]:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
     def default_image(self) -> str:
         raise NotImplementedError  # TODO: translate from Java

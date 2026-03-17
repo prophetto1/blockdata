@@ -1,15 +1,20 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-gcp\src\main\java\io\kestra\plugin\gcp\dataform\AbstractDataForm.java
+# WARNING: Unresolved types: DataformClient, Exception, IOException
+
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from typing import Any
 
-from integrations.opensearch.abstract_task import AbstractTask
+from integrations.compress.abstract_task import AbstractTask
+from engine.core.exceptions.illegal_variable_evaluation_exception import IllegalVariableEvaluationException
 from engine.core.models.property.property import Property
 from engine.core.runners.run_context import RunContext
 
 
 @dataclass(slots=True, kw_only=True)
-class AbstractDataForm(AbstractTask):
+class AbstractDataForm(ABC, AbstractTask):
     location: Property[str]
     repository_id: Property[str]
 

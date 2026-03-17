@@ -3,15 +3,15 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\cache\NoopCache.java
 # WARNING: Unresolved types: CacheStats, ConcurrentHashMap, ConcurrentMap, Function, K, Policy, V
 
-from dataclasses import dataclass
-from typing import Any
+from dataclasses import dataclass, field
+from typing import Any, ClassVar
 
 from engine.core.models.tasks.cache import Cache
 
 
 @dataclass(slots=True, kw_only=True)
 class NoopCache:
-    e_m_p_t_y__m_a_p: ConcurrentMap[Any, Any] = new ConcurrentHashMap<>(0)
+    e_m_p_t_y__m_a_p: ClassVar[ConcurrentMap[Any, Any]] = new ConcurrentHashMap<>(0)
 
     def get_if_present(self, key: K) -> V:
         raise NotImplementedError  # TODO: translate from Java

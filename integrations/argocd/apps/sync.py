@@ -1,8 +1,11 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any
+# Source: E:\KESTRA-IO\plugins\plugin-argocd\src\main\java\io\kestra\plugin\argocd\apps\Sync.java
+# WARNING: Unresolved types: Exception
+
+from dataclasses import dataclass
 from datetime import timedelta
+from typing import Any
 
 from integrations.argocd.apps.abstract_argo_c_d import AbstractArgoCD
 from engine.core.models.property.property import Property
@@ -12,12 +15,12 @@ from engine.plugin.scripts.exec.scripts.models.script_output import ScriptOutput
 
 
 @dataclass(slots=True, kw_only=True)
-class Sync(AbstractArgoCD, RunnableTask):
+class Sync(AbstractArgoCD):
     """Synchronize an ArgoCD application"""
+    prune: Property[bool] = Property.ofValue(false)
+    dry_run: Property[bool] = Property.ofValue(false)
+    force: Property[bool] = Property.ofValue(false)
     revision: Property[str] | None = None
-    prune: Property[bool] | None = None
-    dry_run: Property[bool] | None = None
-    force: Property[bool] | None = None
     timeout: Property[timedelta] | None = None
 
     def run(self, run_context: RunContext) -> Output:
@@ -28,14 +31,5 @@ class Sync(AbstractArgoCD, RunnableTask):
         sync_status: str | None = None
         health_status: str | None = None
         revision: str | None = None
-        resources: list[Map[String, Object]] | None = None
+        resources: list[dict[str, Any]] | None = None
         raw_output: str | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class Output(ScriptOutput):
-    sync_status: str | None = None
-    health_status: str | None = None
-    revision: str | None = None
-    resources: list[Map[String, Object]] | None = None
-    raw_output: str | None = None

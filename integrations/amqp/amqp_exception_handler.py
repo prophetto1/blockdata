@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-amqp\src\main\java\io\kestra\plugin\amqp\AmqpExceptionHandler.java
+# WARNING: Unresolved types: Logger, StrictExceptionHandler, Throwable
+
+from dataclasses import dataclass
 from typing import Any
 
 

@@ -3,8 +3,8 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\models\property\Property.java
 # WARNING: Unresolved types: Class, DeserializationContext, I, IOException, JavaType, JsonGenerator, JsonParser, K, ObjectMapper, SerializerProvider, StdDeserializer, StdSerializer, T, V
 
-from dataclasses import dataclass
-from typing import Any
+from dataclasses import dataclass, field
+from typing import Any, ClassVar
 
 from engine.core.exceptions.illegal_variable_evaluation_exception import IllegalVariableEvaluationException
 from engine.core.models.property.property_context import PropertyContext
@@ -13,7 +13,7 @@ from engine.core.runners.run_context import RunContext
 
 @dataclass(slots=True, kw_only=True)
 class Property:
-    m_a_p_p_e_r: ObjectMapper = JacksonMapper.ofJson()
+    m_a_p_p_e_r: ClassVar[ObjectMapper] = JacksonMapper.ofJson()
         .copy()
         .configure(SerializationFeature.WRITE_DURATIONS_AS_TIMESTAMPS, false)
     skip_cache: bool | None = None
@@ -84,14 +84,14 @@ class Property:
 
     @dataclass(slots=True)
     class PropertyDeserializer(StdDeserializer):
-        serial_version_u_i_d: int = 1
+        serial_version_u_i_d: ClassVar[int] = 1
 
         def deserialize(self, p: JsonParser, ctxt: DeserializationContext) -> Property[Any]:
             raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)
     class PropertySerializer(StdSerializer):
-        serial_version_u_i_d: int = 1
+        serial_version_u_i_d: ClassVar[int] = 1
 
         def serialize(self, value: Property, gen: JsonGenerator, provider: SerializerProvider) -> None:
             raise NotImplementedError  # TODO: translate from Java

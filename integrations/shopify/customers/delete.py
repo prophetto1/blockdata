@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-shopify\src\main\java\io\kestra\plugin\shopify\customers\Delete.java
+# WARNING: Unresolved types: Exception
+
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.shopify.abstract_shopify_task import AbstractShopifyTask
@@ -11,7 +14,7 @@ from engine.core.models.tasks.void_output import VoidOutput
 
 
 @dataclass(slots=True, kw_only=True)
-class Delete(AbstractShopifyTask, RunnableTask):
+class Delete(AbstractShopifyTask):
     """Delete Shopify customer by ID"""
     customer_id: Property[int]
 

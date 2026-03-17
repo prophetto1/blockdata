@@ -2,7 +2,9 @@ from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\models\executions\ExecutionKilled.java
 
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from enum import Enum
 from typing import Any
 
 from engine.core.models.executions.execution_killed_execution import ExecutionKilledExecution
@@ -12,12 +14,13 @@ from engine.core.models.tenant_interface import TenantInterface
 
 
 @dataclass(slots=True, kw_only=True)
-class ExecutionKilled:
+class ExecutionKilled(ABC):
     state: State | None = None
     tenant_id: str | None = None
 
+    @abstractmethod
     def get_type(self) -> str:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
     class State(str, Enum):
         REQUESTED = "REQUESTED"

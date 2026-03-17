@@ -1,8 +1,10 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any
+# Source: E:\KESTRA-IO\plugins\plugin-airbyte\src\main\java\io\kestra\plugin\airbyte\models\Attempt.java
+
+from dataclasses import dataclass
 from datetime import datetime
+from typing import Any
 
 from integrations.airbyte.models.attempt_failure_summary import AttemptFailureSummary
 from integrations.airbyte.models.attempt_stats import AttemptStats

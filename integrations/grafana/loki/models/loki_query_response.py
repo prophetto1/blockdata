@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-grafana\src\main\java\io\kestra\plugin\grafana\loki\models\LokiQueryResponse.java
+
+from dataclasses import dataclass
 from typing import Any
 
 
@@ -9,7 +11,7 @@ class LokiQueryResponse:
     status: str | None = None
     data: Data | None = None
 
-    def to_log_entries(self) -> list[Map[String, Object]]:
+    def to_log_entries(self) -> list[dict[str, Any]]:
         raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)
@@ -19,21 +21,7 @@ class LokiQueryResponse:
 
     @dataclass(slots=True)
     class Result:
-        stream: dict[String, String] | None = None
-        metric: dict[String, String] | None = None
-        values: list[List[String]] | None = None
-        value: list[String] | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class Data:
-    result_type: str | None = None
-    result: list[Result] | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class Result:
-    stream: dict[String, String] | None = None
-    metric: dict[String, String] | None = None
-    values: list[List[String]] | None = None
-    value: list[String] | None = None
+        stream: dict[str, str] | None = None
+        metric: dict[str, str] | None = None
+        values: list[list[str]] | None = None
+        value: list[str] | None = None

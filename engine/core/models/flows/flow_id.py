@@ -2,7 +2,8 @@ from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\models\flows\FlowId.java
 
-from typing import Any, Protocol
+from dataclasses import dataclass
+from typing import Any, Optional, Protocol
 
 from engine.core.models.executions.execution import Execution
 from engine.core.models.triggers.trigger import Trigger

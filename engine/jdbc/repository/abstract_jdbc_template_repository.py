@@ -3,8 +3,9 @@ from __future__ import annotations
 # Source: E:\KESTRA\jdbc\src\main\java\io\kestra\jdbc\repository\AbstractJdbcTemplateRepository.java
 # WARNING: Unresolved types: ApplicationContext, ApplicationEventPublisher, ConstraintViolationException, Pageable, io, jdbc, kestra
 
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Optional
 
 from engine.jdbc.repository.abstract_jdbc_crud_repository import AbstractJdbcCrudRepository
 from engine.jdbc.abstract_jdbc_repository import AbstractJdbcRepository
@@ -17,7 +18,7 @@ from engine.core.repositories.template_repository_interface import TemplateRepos
 
 
 @dataclass(slots=True, kw_only=True)
-class AbstractJdbcTemplateRepository(AbstractJdbcCrudRepository):
+class AbstractJdbcTemplateRepository(ABC, AbstractJdbcCrudRepository):
     template_queue: QueueInterface[Template] | None = None
     event_publisher: ApplicationEventPublisher[CrudEvent[Template]] | None = None
 
@@ -27,8 +28,9 @@ class AbstractJdbcTemplateRepository(AbstractJdbcCrudRepository):
     def find_all_with_no_acl(self, tenant_id: str) -> list[Template]:
         raise NotImplementedError  # TODO: translate from Java
 
+    @abstractmethod
     def find_condition(self, query: str) -> Condition:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
     def find(self, pageable: Pageable, query: str, tenant_id: str, namespace: str) -> ArrayListTotal[Template]:
         raise NotImplementedError  # TODO: translate from Java

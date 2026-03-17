@@ -3,6 +3,7 @@ from __future__ import annotations
 # Source: E:\KESTRA\jdbc\src\main\java\io\kestra\jdbc\repository\AbstractJdbcFlowTopologyRepository.java
 # WARNING: Unresolved types: DMLQuery, DSLContext, Record, io, jdbc, kestra
 
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any
 
@@ -15,7 +16,7 @@ from engine.jdbc.runner.jdbc_queue_indexer_interface import JdbcQueueIndexerInte
 
 
 @dataclass(slots=True, kw_only=True)
-class AbstractJdbcFlowTopologyRepository(AbstractJdbcRepository):
+class AbstractJdbcFlowTopologyRepository(ABC, AbstractJdbcRepository):
     jdbc_repository: io.kestra.jdbc.AbstractJdbcRepository[FlowTopology] | None = None
 
     def find_by_flow(self, tenant_id: str, namespace: str, flow_id: str, destination_only: bool) -> list[FlowTopology]:

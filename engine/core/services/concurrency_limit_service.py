@@ -2,7 +2,7 @@ from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\services\ConcurrencyLimitService.java
 
-from typing import Any, Protocol
+from typing import Any, Optional, Protocol
 
 from engine.core.runners.concurrency_limit import ConcurrencyLimit
 from engine.core.models.executions.execution import Execution

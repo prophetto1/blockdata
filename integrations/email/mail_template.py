@@ -1,19 +1,23 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-email\src\main\java\io\kestra\plugin\email\MailTemplate.java
+# WARNING: Unresolved types: Exception
+
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from typing import Any
 
-from integrations.notifications.mail.mail_send import MailSend
+from integrations.email.mail_send import MailSend
 from engine.core.models.property.property import Property
 from engine.core.runners.run_context import RunContext
 from engine.core.models.tasks.void_output import VoidOutput
 
 
 @dataclass(slots=True, kw_only=True)
-class MailTemplate(MailSend):
+class MailTemplate(ABC, MailSend):
     template_uri: Property[str] | None = None
     text_template_uri: Property[str] | None = None
-    template_render_map: Property[dict[String, Object]] | None = None
+    template_render_map: Property[dict[str, Any]] | None = None
 
     def run(self, run_context: RunContext) -> VoidOutput:
         raise NotImplementedError  # TODO: translate from Java

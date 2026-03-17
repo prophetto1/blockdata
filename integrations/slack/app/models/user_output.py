@@ -1,12 +1,17 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any
+# Source: E:\KESTRA-IO\plugins\plugin-slack\src\main\java\io\kestra\plugin\slack\app\models\UserOutput.java
+# WARNING: Unresolved types: Profile, User, api, com, core, io, kestra, model, models, slack, tasks
+
+from dataclasses import dataclass
 from datetime import datetime
+from typing import Any
+
+from integrations.aws.glue.model.output import Output
 
 
 @dataclass(slots=True, kw_only=True)
-class UserOutput(io):
+class UserOutput:
     id: str | None = None
     team_id: str | None = None
     name: str | None = None
@@ -27,7 +32,8 @@ class UserOutput(io):
     updated: datetime | None = None
     has2fa: bool | None = None
 
-    def of(self, user: com) -> UserOutput:
+    @staticmethod
+    def of(user: com.slack.api.model.User) -> UserOutput:
         raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)
@@ -52,31 +58,6 @@ class UserOutput(io):
         image512: str | None = None
         team: str | None = None
 
-        def of(self, profile: com) -> UserProfile:
+        @staticmethod
+        def of(profile: com.slack.api.model.User.Profile) -> UserProfile:
             raise NotImplementedError  # TODO: translate from Java
-
-
-@dataclass(slots=True, kw_only=True)
-class UserProfile:
-    title: str | None = None
-    phone: str | None = None
-    skype: str | None = None
-    real_name: str | None = None
-    real_name_normalized: str | None = None
-    display_name: str | None = None
-    display_name_normalized: str | None = None
-    status_text: str | None = None
-    status_emoji: str | None = None
-    status_expiration: datetime | None = None
-    avatar_hash: str | None = None
-    email: str | None = None
-    image24: str | None = None
-    image32: str | None = None
-    image48: str | None = None
-    image72: str | None = None
-    image192: str | None = None
-    image512: str | None = None
-    team: str | None = None
-
-    def of(self, profile: com) -> UserProfile:
-        raise NotImplementedError  # TODO: translate from Java

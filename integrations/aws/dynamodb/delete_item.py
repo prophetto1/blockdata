@@ -1,4 +1,22 @@
-# PARSE ERROR: 
-# Source: DeleteItem.java
-# Plugin: plugin-aws
-# Needs manual translation
+from __future__ import annotations
+
+# Source: E:\KESTRA-IO\plugins\plugin-aws\src\main\java\io\kestra\plugin\aws\dynamodb\DeleteItem.java
+# WARNING: Unresolved types: Exception
+
+from dataclasses import dataclass
+from typing import Any
+
+from integrations.aws.dynamodb.abstract_dynamo_db import AbstractDynamoDb
+from engine.core.models.property.property import Property
+from engine.core.runners.run_context import RunContext
+from engine.core.models.tasks.runnable_task import RunnableTask
+from engine.core.models.tasks.void_output import VoidOutput
+
+
+@dataclass(slots=True, kw_only=True)
+class DeleteItem(AbstractDynamoDb):
+    """Delete a DynamoDB item by key"""
+    key: Property[dict[str, Any]] | None = None
+
+    def run(self, run_context: RunContext) -> VoidOutput:
+        raise NotImplementedError  # TODO: translate from Java

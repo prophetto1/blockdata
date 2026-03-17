@@ -1,8 +1,11 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any
+# Source: E:\KESTRA-IO\plugins\plugin-kubernetes\src\main\java\io\kestra\plugin\kubernetes\models\PodStatus.java
+# WARNING: Unresolved types: ContainerStatus, PodCondition, PodIP, api, fabric8, io, kubernetes, model
+
+from dataclasses import dataclass
 from datetime import datetime
+from typing import Any
 
 
 @dataclass(slots=True, kw_only=True)
@@ -20,7 +23,8 @@ class PodStatus:
     qos_class: str | None = None
     reason: str | None = None
     start_time: datetime | None = None
-    additional_properties: dict[String, Object] | None = None
+    additional_properties: dict[str, Any] | None = None
 
-    def from(self, pod_status: io) -> PodStatus:
+    @staticmethod
+    def from(pod_status: io.fabric8.kubernetes.api.model.PodStatus) -> PodStatus:
         raise NotImplementedError  # TODO: translate from Java

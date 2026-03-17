@@ -1,8 +1,10 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any
+# Source: E:\KESTRA-IO\plugins\plugin-hightouch\src\main\java\io\kestra\plugin\hightouch\models\RunDetails.java
+
+from dataclasses import dataclass
 from datetime import datetime
+from typing import Any
 
 from integrations.hightouch.models.modified_rows import ModifiedRows
 from integrations.hightouch.models.run_status import RunStatus

@@ -1,8 +1,11 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any
+# Source: E:\KESTRA-IO\plugins\plugin-slack\src\main\java\io\kestra\plugin\slack\app\reactions\Remove.java
+# WARNING: Unresolved types: Exception
+
+from dataclasses import dataclass
 from datetime import datetime
+from typing import Any
 
 from integrations.slack.abstract_slack_client_connection import AbstractSlackClientConnection
 from engine.core.models.property.property import Property
@@ -12,7 +15,7 @@ from engine.core.models.tasks.void_output import VoidOutput
 
 
 @dataclass(slots=True, kw_only=True)
-class Remove(AbstractSlackClientConnection, RunnableTask):
+class Remove(AbstractSlackClientConnection):
     """Remove a Slack reaction"""
     channel: Property[str]
     name: Property[str]

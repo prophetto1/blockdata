@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-compress\src\main\java\io\kestra\plugin\compress\FileDecompress.java
+# WARNING: Unresolved types: Exception, core, io, kestra, models, tasks
+
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.compress.abstract_file import AbstractFile
@@ -10,7 +13,7 @@ from engine.core.models.tasks.runnable_task import RunnableTask
 
 
 @dataclass(slots=True, kw_only=True)
-class FileDecompress(AbstractFile, RunnableTask):
+class FileDecompress(AbstractFile):
     """Decompress a single file"""
     from: Property[str]
 
@@ -18,10 +21,5 @@ class FileDecompress(AbstractFile, RunnableTask):
         raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)
-    class Output(io):
+    class Output:
         uri: str | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class Output(io):
-    uri: str | None = None

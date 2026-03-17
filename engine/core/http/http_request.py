@@ -3,6 +3,7 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\http\HttpRequest.java
 # WARNING: Unresolved types: Charset, ContentType, HttpEntity, HttpHeaders, HttpUriRequest, IOException, InetSocketAddress, InputStream, apache, core5, hc, http, org
 
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any
 
@@ -47,19 +48,23 @@ class HttpRequest:
             raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)
-    class RequestBody:
+    class RequestBody(ABC):
 
+        @abstractmethod
         def to(self) -> HttpEntity:
-            raise NotImplementedError  # TODO: translate from Java
+            ...
 
+        @abstractmethod
         def get_content(self) -> Any:
-            raise NotImplementedError  # TODO: translate from Java
+            ...
 
+        @abstractmethod
         def get_charset(self) -> Charset:
-            raise NotImplementedError  # TODO: translate from Java
+            ...
 
+        @abstractmethod
         def get_content_type(self) -> str:
-            raise NotImplementedError  # TODO: translate from Java
+            ...
 
         def entity_content_type(self) -> ContentType:
             raise NotImplementedError  # TODO: translate from Java

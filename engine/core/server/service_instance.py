@@ -3,9 +3,9 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\server\ServiceInstance.java
 # WARNING: Unresolved types: ServiceState
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any
+from typing import Any, ClassVar
 
 from engine.core.models.has_u_i_d import HasUID
 from engine.core.server.metric import Metric
@@ -16,7 +16,7 @@ from engine.core.server.service_type import ServiceType
 
 @dataclass(slots=True, kw_only=True)
 class ServiceInstance:
-    s_e_r_v_i_c_e__s_t_a_t_e__u_p_d_a_t_e_d__e_v_e_n_t__t_y_p_e: str = "service.state.updated"
+    s_e_r_v_i_c_e__s_t_a_t_e__u_p_d_a_t_e_d__e_v_e_n_t__t_y_p_e: ClassVar[str] = "service.state.updated"
     uid: str | None = None
     type: ServiceType | None = None
     state: ServiceState | None = None

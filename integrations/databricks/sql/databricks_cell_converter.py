@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-databricks\src\main\java\io\kestra\plugin\databricks\sql\DatabricksCellConverter.java
+# WARNING: Unresolved types: ResultSet, SQLException, ZoneId
+
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.databricks.sql.abstract_cell_converter import AbstractCellConverter

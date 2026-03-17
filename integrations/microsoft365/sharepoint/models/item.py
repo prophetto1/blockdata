@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-microsoft365\src\main\java\io\kestra\plugin\microsoft365\sharepoint\models\Item.java
+# WARNING: Unresolved types: DriveItem, OffsetDateTime
+
+from dataclasses import dataclass
 from typing import Any
 
 
@@ -15,5 +18,6 @@ class Item:
     is_folder: bool | None = None
     is_file: bool | None = None
 
-    def from_drive_item(self, drive_item: DriveItem) -> Item:
+    @staticmethod
+    def from_drive_item(drive_item: DriveItem) -> Item:
         raise NotImplementedError  # TODO: translate from Java

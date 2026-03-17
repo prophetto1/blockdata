@@ -3,6 +3,7 @@ from __future__ import annotations
 # Source: E:\KESTRA\worker\src\main\java\io\kestra\worker\AbstractWorkerCallable.java
 # WARNING: Unresolved types: Callable, ClassLoader, CountDownLatch, Exception, Logger, Thread, Throwable
 
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import timedelta
 from typing import Any
@@ -13,7 +14,7 @@ from engine.core.models.flows.type import Type
 
 
 @dataclass(slots=True, kw_only=True)
-class AbstractWorkerCallable:
+class AbstractWorkerCallable(ABC):
     killed: bool = False
     shutdown_latch: CountDownLatch = new CountDownLatch(1)
     logger: Logger | None = None
@@ -30,11 +31,13 @@ class AbstractWorkerCallable:
     def call(self) -> State.Type:
         raise NotImplementedError  # TODO: translate from Java
 
+    @abstractmethod
     def do_call(self) -> State.Type:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
+    @abstractmethod
     def signal_stop(self) -> None:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
     def await_stop(self, timeout: timedelta) -> bool:
         raise NotImplementedError  # TODO: translate from Java

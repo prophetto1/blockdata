@@ -4,7 +4,7 @@ from __future__ import annotations
 # WARNING: Unresolved types: NoSuchElementException
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Optional
 
 from engine.core.models.executions.execution import Execution
 from engine.core.plugins.notifications.execution_interface import ExecutionInterface

@@ -3,8 +3,8 @@ from __future__ import annotations
 # Source: E:\KESTRA\webserver\src\main\java\io\kestra\webserver\filter\AuthenticationFilter.java
 # WARNING: Unresolved types: HttpServerFilter, MutableHttpResponse, Publisher, ServerFilterChain
 
-from dataclasses import dataclass
-from typing import Any
+from dataclasses import dataclass, field
+from typing import Any, ClassVar, Optional
 
 from engine.webserver.services.basic_auth_service import BasicAuthService
 from engine.core.http.http_request import HttpRequest
@@ -12,9 +12,9 @@ from engine.core.http.http_request import HttpRequest
 
 @dataclass(slots=True, kw_only=True)
 class AuthenticationFilter:
-    p_r_e_f_i_x: str = "Basic"
-    o_r_d_e_r: int = ServerFilterPhase.SECURITY.order()
-    b_a_s_i_c__a_u_t_h__c_o_o_k_i_e__n_a_m_e: str = "BASIC_AUTH"
+    p_r_e_f_i_x: ClassVar[str] = "Basic"
+    o_r_d_e_r: ClassVar[int] = ServerFilterPhase.SECURITY.order()
+    b_a_s_i_c__a_u_t_h__c_o_o_k_i_e__n_a_m_e: ClassVar[str] = "BASIC_AUTH"
     basic_auth_service: BasicAuthService | None = None
 
     def get_order(self) -> int:

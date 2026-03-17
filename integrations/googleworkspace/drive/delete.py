@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-googleworkspace\src\main\java\io\kestra\plugin\googleworkspace\drive\Delete.java
+# WARNING: Unresolved types: Exception, core, io, kestra, models, tasks
+
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.googleworkspace.drive.abstract_drive import AbstractDrive
@@ -10,7 +13,7 @@ from engine.core.models.tasks.runnable_task import RunnableTask
 
 
 @dataclass(slots=True, kw_only=True)
-class Delete(AbstractDrive, RunnableTask):
+class Delete(AbstractDrive):
     """Delete a Drive file by ID"""
     file_id: Property[str] | None = None
 
@@ -18,10 +21,5 @@ class Delete(AbstractDrive, RunnableTask):
         raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)
-    class Output(io):
+    class Output:
         file_id: str | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class Output(io):
-    file_id: str | None = None

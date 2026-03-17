@@ -3,16 +3,16 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\runners\pebble\functions\FileURIFunction.java
 # WARNING: Unresolved types: EvaluationContext, IOException
 
-from dataclasses import dataclass
-from typing import Any
+from dataclasses import dataclass, field
+from typing import Any, ClassVar
 
 from engine.core.runners.pebble.functions.abstract_file_function import AbstractFileFunction
 
 
 @dataclass(slots=True, kw_only=True)
 class FileURIFunction(AbstractFileFunction):
-    v_e_r_s_i_o_n: str = "version"
-    e_r_r_o_r__m_e_s_s_a_g_e: str = "The 'fileURI' function expects an argument 'path' that is a path to a namespace file."
+    v_e_r_s_i_o_n: ClassVar[str] = "version"
+    e_r_r_o_r__m_e_s_s_a_g_e: ClassVar[str] = "The 'fileURI' function expects an argument 'path' that is a path to a namespace file."
 
     def get_argument_names(self) -> list[str]:
         raise NotImplementedError  # TODO: translate from Java

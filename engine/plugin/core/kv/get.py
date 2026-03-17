@@ -4,7 +4,7 @@ from __future__ import annotations
 # WARNING: Unresolved types: Exception, IOException, core, io, kestra, models, tasks
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Optional
 
 from engine.core.storages.kv.k_v_value import KVValue
 from engine.core.models.property.property import Property

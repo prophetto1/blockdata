@@ -2,6 +2,7 @@ from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\models\hierarchies\AbstractGraphTrigger.java
 
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any
 
@@ -12,7 +13,7 @@ from engine.core.models.triggers.trigger_interface import TriggerInterface
 
 
 @dataclass(slots=True, kw_only=True)
-class AbstractGraphTrigger(AbstractGraph):
+class AbstractGraphTrigger(ABC, AbstractGraph):
     trigger_declaration: TriggerInterface | None = None
     trigger: Trigger | None = None
 

@@ -1,23 +1,28 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any
+# Source: E:\KESTRA-IO\plugins\plugin-airflow\src\main\java\io\kestra\plugin\airflow\dags\TriggerDagRun.java
+# WARNING: Unresolved types: Exception, JsonProcessingException, core, io, kestra, models, tasks
+
+from dataclasses import dataclass
+from datetime import datetime
 from datetime import timedelta
+from typing import Any
 
 from integrations.airflow.airflow_connection import AirflowConnection
+from engine.core.exceptions.illegal_variable_evaluation_exception import IllegalVariableEvaluationException
 from engine.core.models.property.property import Property
 from engine.core.runners.run_context import RunContext
 from engine.core.models.tasks.runnable_task import RunnableTask
 
 
 @dataclass(slots=True, kw_only=True)
-class TriggerDagRun(AirflowConnection, RunnableTask):
+class TriggerDagRun(AirflowConnection):
     """Trigger an Airflow DAG run"""
     dag_id: Property[str]
-    max_duration: Property[timedelta] | None = None
-    poll_frequency: Property[timedelta] | None = None
-    wait: Property[bool] | None = None
-    body: Property[dict[String, Object]] | None = None
+    max_duration: Property[timedelta] = Property.ofValue(Duration.ofMinutes(60))
+    poll_frequency: Property[timedelta] = Property.ofValue(Duration.ofSeconds(1))
+    wait: Property[bool] = Property.ofValue(Boolean.FALSE)
+    body: Property[dict[str, Any]] | None = None
 
     def run(self, run_context: RunContext) -> Output:
         raise NotImplementedError  # TODO: translate from Java
@@ -26,18 +31,9 @@ class TriggerDagRun(AirflowConnection, RunnableTask):
         raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)
-    class Output(io):
+    class Output:
         dag_id: str | None = None
         dag_run_id: str | None = None
         state: str | None = None
-        started: LocalDateTime | None = None
-        ended: LocalDateTime | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class Output(io):
-    dag_id: str | None = None
-    dag_run_id: str | None = None
-    state: str | None = None
-    started: LocalDateTime | None = None
-    ended: LocalDateTime | None = None
+        started: datetime | None = None
+        ended: datetime | None = None

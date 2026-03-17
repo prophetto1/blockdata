@@ -8,5 +8,5 @@ from typing import Any, Protocol
 from engine.core.models.annotations.plugin import Plugin
 
 
-class AppBlockInterface(Protocol):
+class AppBlockInterface(Plugin, Protocol):
     def get_type(self) -> str: ...

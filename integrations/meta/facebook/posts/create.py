@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-meta\src\main\java\io\kestra\plugin\meta\facebook\posts\Create.java
+# WARNING: Unresolved types: Exception, core, io, kestra, models, tasks
+
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.meta.facebook.abstract_facebook_task import AbstractFacebookTask
@@ -18,10 +21,5 @@ class Create(AbstractFacebookTask):
         raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)
-    class Output(io):
+    class Output:
         post_id: str | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class Output(io):
-    post_id: str | None = None

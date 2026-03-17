@@ -1,10 +1,14 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-cassandra\src\main\java\io\kestra\plugin\cassandra\standard\Query.java
+# WARNING: Unresolved types: CqlSession
+
+from dataclasses import dataclass
 from typing import Any
 
-from integrations.influxdb.abstract_query import AbstractQuery
+from integrations.cassandra.abstract_query import AbstractQuery
 from integrations.cassandra.standard.cassandra_db_session import CassandraDbSession
+from engine.core.exceptions.illegal_variable_evaluation_exception import IllegalVariableEvaluationException
 from engine.core.runners.run_context import RunContext
 
 

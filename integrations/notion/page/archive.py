@@ -1,10 +1,13 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-notion\src\main\java\io\kestra\plugin\notion\page\Archive.java
+# WARNING: Unresolved types: Exception
+
+from dataclasses import dataclass
 from typing import Any
 
-from integrations.opensearch.abstract_task import AbstractTask
-from engine.core.models.tasks.output import Output
+from integrations.compress.abstract_task import AbstractTask
+from integrations.aws.glue.model.output import Output
 from engine.core.runners.run_context import RunContext
 
 

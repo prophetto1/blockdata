@@ -4,7 +4,7 @@ from __future__ import annotations
 # WARNING: Unresolved types: ApplicationContext, Builder, Function
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Optional
 
 from engine.core.models.triggers.abstract_trigger import AbstractTrigger
 from engine.core.assets.asset_manager_factory import AssetManagerFactory

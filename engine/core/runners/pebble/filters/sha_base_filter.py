@@ -3,12 +3,13 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\runners\pebble\filters\ShaBaseFilter.java
 # WARNING: Unresolved types: EvaluationContext, Filter, PebbleException, PebbleTemplate
 
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any
 
 
 @dataclass(slots=True, kw_only=True)
-class ShaBaseFilter:
+class ShaBaseFilter(ABC):
     algorithm: str | None = None
 
     def get_argument_names(self) -> list[str]:

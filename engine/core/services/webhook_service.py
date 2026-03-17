@@ -4,7 +4,7 @@ from __future__ import annotations
 # WARNING: Unresolved types: ApplicationEventPublisher, Flux, OpenTelemetry, core, io, kestra, models, tasks
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Optional
 
 from engine.core.models.triggers.abstract_trigger import AbstractTrigger
 from engine.plugin.core.trigger.abstract_webhook_trigger import AbstractWebhookTrigger

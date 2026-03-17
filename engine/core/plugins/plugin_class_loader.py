@@ -3,13 +3,13 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\plugins\PluginClassLoader.java
 # WARNING: Unresolved types: Class, ClassLoader, ClassNotFoundException, Enumeration, IOException, Pattern, URLClassLoader
 
-from dataclasses import dataclass
-from typing import Any
+from dataclasses import dataclass, field
+from typing import Any, ClassVar
 
 
 @dataclass(slots=True, kw_only=True)
 class PluginClassLoader(URLClassLoader):
-    e_x_c_l_u_d_e_s: Pattern = Pattern.compile("^(?:"
+    e_x_c_l_u_d_e_s: ClassVar[Pattern] = Pattern.compile("^(?:"
         + "java"
         + "|javax"
         + "|jakarta"

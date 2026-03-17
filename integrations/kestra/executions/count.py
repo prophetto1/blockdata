@@ -1,18 +1,21 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-kestra\src\main\java\io\kestra\plugin\kestra\executions\Count.java
+# WARNING: Unresolved types: Exception, StateType, core, io, kestra, models, tasks
+
+from dataclasses import dataclass
 from typing import Any
 
-from integrations.kestra.abstract_kestra_task import AbstractKestraTask
+from integrations.git.abstract_kestra_task import AbstractKestraTask
 from engine.core.models.property.property import Property
 from engine.core.runners.run_context import RunContext
 from engine.core.models.tasks.runnable_task import RunnableTask
 
 
 @dataclass(slots=True, kw_only=True)
-class Count(AbstractKestraTask, RunnableTask):
+class Count(AbstractKestraTask):
     """Count executions by filters"""
-    namespaces: Property[list[String]] | None = None
+    namespaces: Property[list[str]] | None = None
     flow_id: Property[str] | None = None
     states: Property[list[StateType]] | None = None
     start_date: Property[str] | None = None
@@ -23,10 +26,5 @@ class Count(AbstractKestraTask, RunnableTask):
         raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)
-    class Output(io):
+    class Output:
         count: int | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class Output(io):
-    count: int | None = None

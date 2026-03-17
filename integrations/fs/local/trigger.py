@@ -1,14 +1,17 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from enum import Enum
-from typing import Any
-from datetime import timedelta
-from pathlib import Path
+# Source: E:\KESTRA-IO\plugins\plugin-fs\src\main\java\io\kestra\plugin\fs\local\Trigger.java
+# WARNING: Unresolved types: Action, Exception, On, core, io, java, kestra, models, tasks, util
 
-from engine.core.models.triggers.abstract_trigger import AbstractTrigger
+from dataclasses import dataclass
+from enum import Enum
+from pathlib import Path
+from datetime import timedelta
+from typing import Any, Optional
+
+from integrations.airbyte.cloud.jobs.abstract_trigger import AbstractTrigger
 from engine.core.models.conditions.condition_context import ConditionContext
-from integrations.minio.downloads import Downloads
+from integrations.aws.s3.downloads import Downloads
 from engine.core.models.executions.execution import Execution
 from engine.core.models.triggers.polling_trigger_interface import PollingTriggerInterface
 from engine.core.models.property.property import Property
@@ -17,27 +20,26 @@ from engine.core.models.triggers.trigger_context import TriggerContext
 from engine.core.models.triggers.trigger_output import TriggerOutput
 
 
-class ChangeType(str, Enum):
-    CREATE = "CREATE"
-    UPDATE = "UPDATE"
-
-
 @dataclass(slots=True, kw_only=True)
-class Trigger(AbstractTrigger, PollingTriggerInterface, TriggerOutput, StatefulTriggerInterface):
+class Trigger(AbstractTrigger):
     """Trigger on new local files"""
-    interval: timedelta | None = None
     from: Property[str]
+    interval: timedelta = Duration.ofSeconds(60)
+    recursive: Property[bool] = Property.ofValue(false)
+    action: Property[Downloads.Action] = Property.ofValue(Downloads.Action.NONE)
+    on: Property[On] = Property.ofValue(On.CREATE_OR_UPDATE)
+    max_files: Property[int] = Property.ofValue(25)
     move_directory: Property[str] | None = None
     reg_exp: Property[str] | None = None
-    recursive: Property[bool] | None = None
-    action: Property[Downloads] | None = None
-    on: Property[On] | None = None
     state_key: Property[str] | None = None
     state_ttl: Property[timedelta] | None = None
-    max_files: Property[int] | None = None
 
     def evaluate(self, condition_context: ConditionContext, trigger_context: TriggerContext) -> Optional[Execution]:
         raise NotImplementedError  # TODO: translate from Java
+
+    class ChangeType(str, Enum):
+        CREATE = "CREATE"
+        UPDATE = "UPDATE"
 
     @dataclass(slots=True)
     class TriggeredFile:
@@ -45,16 +47,5 @@ class Trigger(AbstractTrigger, PollingTriggerInterface, TriggerOutput, StatefulT
         change_type: ChangeType | None = None
 
     @dataclass(slots=True)
-    class Output(io):
-        files: java | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class TriggeredFile:
-    file: Path | None = None
-    change_type: ChangeType | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class Output(io):
-    files: java | None = None
+    class Output:
+        files: java.util.List[TriggeredFile] | None = None

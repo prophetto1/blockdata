@@ -3,8 +3,9 @@ from __future__ import annotations
 # Source: E:\KESTRA\webserver\src\main\java\io\kestra\webserver\controllers\api\FlowController.java
 # WARNING: Unresolved types: Class, CompletedFileUpload, ConstraintViolationException, Flux, HttpStatusException, IOException, MutableHttpResponse, ObjectMapper, Publisher, T, Void
 
-from dataclasses import dataclass
-from typing import Any
+from dataclasses import dataclass, field
+from enum import Enum
+from typing import Any, ClassVar, Optional
 
 from engine.webserver.responses.bulk_response import BulkResponse
 from engine.core.models.executions.statistics.flow import Flow
@@ -35,7 +36,7 @@ from engine.core.models.validations.validate_constraint_violation import Validat
 
 @dataclass(slots=True, kw_only=True)
 class FlowController:
-    w_a_r_n_i_n_g__j_s_o_n__f_l_o_w__e_n_d_p_o_i_n_t: str = "This endpoint is deprecated. Handling flows as 'application/json' is no longer supported and will be removed in a future release. Please use the same endpoint with an 'application/x-yaml' content type."
+    w_a_r_n_i_n_g__j_s_o_n__f_l_o_w__e_n_d_p_o_i_n_t: ClassVar[str] = "This endpoint is deprecated. Handling flows as 'application/json' is no longer supported and will be removed in a future release. Please use the same endpoint with an 'application/x-yaml' content type."
     flow_repository: FlowRepositoryInterface | None = None
     plugin_default_service: PluginDefaultService | None = None
     model_validator: ModelValidator | None = None

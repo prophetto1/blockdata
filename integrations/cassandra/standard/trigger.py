@@ -1,21 +1,26 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-cassandra\src\main\java\io\kestra\plugin\cassandra\standard\Trigger.java
+# WARNING: Unresolved types: CqlSession, Exception
+
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.cassandra.abstract_c_q_l_trigger import AbstractCQLTrigger
-from integrations.influxdb.abstract_query import AbstractQuery
+from integrations.cassandra.abstract_query import AbstractQuery
 from integrations.cassandra.standard.cassandra_db_session import CassandraDbSession
-from integrations.surrealdb.query_interface import QueryInterface
+from engine.core.exceptions.illegal_variable_evaluation_exception import IllegalVariableEvaluationException
+from integrations.aws.glue.model.output import Output
+from integrations.cassandra.query_interface import QueryInterface
 from engine.core.runners.run_context import RunContext
 
 
 @dataclass(slots=True, kw_only=True)
-class Trigger(AbstractCQLTrigger, QueryInterface):
+class Trigger(AbstractCQLTrigger):
     """Trigger flow when Cassandra query returns data"""
     session: CassandraDbSession
 
-    def run_query(self, run_context: RunContext) -> AbstractQuery:
+    def run_query(self, run_context: RunContext) -> AbstractQuery.Output:
         raise NotImplementedError  # TODO: translate from Java
 
     def cql_session(self, run_context: RunContext) -> CqlSession:

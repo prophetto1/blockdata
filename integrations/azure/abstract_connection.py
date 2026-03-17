@@ -1,13 +1,16 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-azure\src\main\java\io\kestra\plugin\azure\AbstractConnection.java
+
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from typing import Any
 
-from integrations.azure.abstract_connection_interface import AbstractConnectionInterface
+from integrations.aws.abstract_connection_interface import AbstractConnectionInterface
 from engine.core.models.property.property import Property
-from engine.core.models.tasks.task import Task
+from integrations.azure.batch.models.task import Task
 
 
 @dataclass(slots=True, kw_only=True)
-class AbstractConnection(Task, AbstractConnectionInterface):
+class AbstractConnection(ABC, Task):
     endpoint: Property[str]

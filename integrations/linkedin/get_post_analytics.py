@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-linkedin\src\main\java\io\kestra\plugin\linkedin\GetPostAnalytics.java
+# WARNING: Unresolved types: Exception, JsonNode, core, io, kestra, models, tasks
+
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.linkedin.abstract_linkedin_task import AbstractLinkedinTask
@@ -10,9 +13,9 @@ from engine.core.models.tasks.runnable_task import RunnableTask
 
 
 @dataclass(slots=True, kw_only=True)
-class GetPostAnalytics(AbstractLinkedinTask, RunnableTask):
+class GetPostAnalytics(AbstractLinkedinTask):
     """Fetch LinkedIn post reactions"""
-    activity_urns: Property[list[String]]
+    activity_urns: Property[list[str]]
 
     def run(self, run_context: RunContext) -> Output:
         raise NotImplementedError  # TODO: translate from Java
@@ -24,7 +27,7 @@ class GetPostAnalytics(AbstractLinkedinTask, RunnableTask):
         raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)
-    class Output(io):
+    class Output:
         posts: list[PostReactionsData] | None = None
         total_posts: int | None = None
         total_reactions: int | None = None
@@ -34,7 +37,7 @@ class GetPostAnalytics(AbstractLinkedinTask, RunnableTask):
         activity_urn: str | None = None
         total_reactions: int | None = None
         reactions: list[ReactionData] | None = None
-        reactions_summary: dict[String, Integer] | None = None
+        reactions_summary: dict[str, int] | None = None
         error: str | None = None
 
     @dataclass(slots=True)
@@ -46,30 +49,3 @@ class GetPostAnalytics(AbstractLinkedinTask, RunnableTask):
         created_time: int | None = None
         last_modified_time: int | None = None
         impersonator_urn: str | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class Output(io):
-    posts: list[PostReactionsData] | None = None
-    total_posts: int | None = None
-    total_reactions: int | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class PostReactionsData:
-    activity_urn: str | None = None
-    total_reactions: int | None = None
-    reactions: list[ReactionData] | None = None
-    reactions_summary: dict[String, Integer] | None = None
-    error: str | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class ReactionData:
-    reaction_id: str | None = None
-    reaction_type: str | None = None
-    actor_urn: str | None = None
-    root_urn: str | None = None
-    created_time: int | None = None
-    last_modified_time: int | None = None
-    impersonator_urn: str | None = None

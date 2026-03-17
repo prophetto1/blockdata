@@ -1,7 +1,9 @@
 from __future__ import annotations
 
-from typing import Any, Protocol
+# Source: E:\KESTRA-IO\plugins\plugin-pulsar\src\main\java\io\kestra\plugin\pulsar\PollingInterface.java
+
 from datetime import timedelta
+from typing import Any, Protocol
 
 from engine.core.models.property.property import Property
 

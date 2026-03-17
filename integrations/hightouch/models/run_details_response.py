@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-hightouch\src\main\java\io\kestra\plugin\hightouch\models\RunDetailsResponse.java
+
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.hightouch.models.run_details import RunDetails

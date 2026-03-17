@@ -1,17 +1,22 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-nats\src\main\java\io\kestra\plugin\nats\core\NatsConnection.java
+# WARNING: Unresolved types: IOException, InterruptedException, NoSuchAlgorithmException
+
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.kubernetes.models.connection import Connection
+from engine.core.exceptions.illegal_variable_evaluation_exception import IllegalVariableEvaluationException
 from integrations.nats.core.nats_connection_interface import NatsConnectionInterface
 from engine.core.models.property.property import Property
 from engine.core.runners.run_context import RunContext
-from engine.core.models.tasks.task import Task
+from integrations.azure.batch.models.task import Task
 
 
 @dataclass(slots=True, kw_only=True)
-class NatsConnection(Task, NatsConnectionInterface):
+class NatsConnection(ABC, Task):
     url: str | None = None
     username: Property[str] | None = None
     password: Property[str] | None = None

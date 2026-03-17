@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-documentdb\src\main\java\io\kestra\plugin\documentdb\Delete.java
+# WARNING: Unresolved types: Exception, core, io, kestra, models, tasks
+
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.documentdb.abstract_document_d_b_task import AbstractDocumentDBTask
@@ -10,19 +13,14 @@ from engine.core.models.tasks.runnable_task import RunnableTask
 
 
 @dataclass(slots=True, kw_only=True)
-class Delete(AbstractDocumentDBTask, RunnableTask):
+class Delete(AbstractDocumentDBTask):
     """Delete documents from DocumentDB"""
-    filter: Property[dict[String, Object]] | None = None
-    delete_many: Property[bool] | None = None
+    delete_many: Property[bool] = Property.ofValue(false)
+    filter: Property[dict[str, Any]] | None = None
 
     def run(self, run_context: RunContext) -> Output:
         raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)
-    class Output(io):
+    class Output:
         deleted_count: int | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class Output(io):
-    deleted_count: int | None = None

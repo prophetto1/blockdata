@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any
+from typing import Any, Optional
 
 from engine.jdbc.repository.abstract_jdbc_trigger_repository import AbstractJdbcTriggerRepository
 from engine.core.models.triggers.abstract_trigger import AbstractTrigger

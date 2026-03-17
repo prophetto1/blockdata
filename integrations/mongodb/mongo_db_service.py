@@ -1,16 +1,23 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-mongodb\src\main\java\io\kestra\plugin\mongodb\MongoDbService.java
+# WARNING: Unresolved types: BsonDocument, BsonValue, IOException
+
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from typing import Any
 
+from engine.core.exceptions.illegal_variable_evaluation_exception import IllegalVariableEvaluationException
 from engine.core.runners.run_context import RunContext
 
 
 @dataclass(slots=True, kw_only=True)
-class MongoDbService:
+class MongoDbService(ABC):
 
-    def to_document(self, run_context: RunContext, value: Any) -> BsonDocument:
+    @staticmethod
+    def to_document(run_context: RunContext, value: Any) -> BsonDocument:
         raise NotImplementedError  # TODO: translate from Java
 
-    def map(self, doc: BsonValue) -> Any:
+    @staticmethod
+    def map(doc: BsonValue) -> Any:
         raise NotImplementedError  # TODO: translate from Java

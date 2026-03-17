@@ -7,7 +7,7 @@ from typing import Any, Protocol
 from engine.core.models.has_u_i_d import HasUID
 
 
-class NamespaceInterface(Protocol):
+class NamespaceInterface(HasUID, Protocol):
     def get_id(self) -> str: ...
 
     def as_tree(namespace: str) -> list[str]: ...

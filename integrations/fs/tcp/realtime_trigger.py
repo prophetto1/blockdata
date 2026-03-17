@@ -1,10 +1,13 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any
-from datetime import datetime
+# Source: E:\KESTRA-IO\plugins\plugin-fs\src\main\java\io\kestra\plugin\fs\tcp\RealtimeTrigger.java
+# WARNING: Unresolved types: AtomicBoolean, Exception, Logger, Publisher, ServerSocket, core, io, kestra, models, tasks
 
-from engine.core.models.triggers.abstract_trigger import AbstractTrigger
+from dataclasses import dataclass
+from datetime import datetime
+from typing import Any
+
+from integrations.airbyte.cloud.jobs.abstract_trigger import AbstractTrigger
 from engine.core.models.conditions.condition_context import ConditionContext
 from engine.core.models.executions.execution import Execution
 from engine.core.models.property.property import Property
@@ -15,13 +18,13 @@ from engine.core.models.triggers.trigger_output import TriggerOutput
 
 
 @dataclass(slots=True, kw_only=True)
-class RealtimeTrigger(AbstractTrigger, RealtimeTriggerInterface, TriggerOutput):
+class RealtimeTrigger(AbstractTrigger):
     """Trigger on incoming TCP messages"""
-    tcp_service: TcpService | None = None
-    host: Property[str] | None = None
     port: Property[int]
-    encoding: Property[str] | None = None
-    active: AtomicBoolean | None = None
+    tcp_service: TcpService = TcpService.getInstance()
+    host: Property[str] = Property.ofValue("0.0.0.0")
+    encoding: Property[str] = Property.ofValue(StandardCharsets.UTF_8.name())
+    active: AtomicBoolean = new AtomicBoolean(false)
     server_socket: ServerSocket | None = None
 
     def evaluate(self, condition_context: ConditionContext, context: TriggerContext) -> Publisher[Execution]:
@@ -37,16 +40,8 @@ class RealtimeTrigger(AbstractTrigger, RealtimeTriggerInterface, TriggerOutput):
         raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)
-    class Output(io):
+    class Output:
         payload: str | None = None
         timestamp: datetime | None = None
         source_ip: str | None = None
         source_port: int | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class Output(io):
-    payload: str | None = None
-    timestamp: datetime | None = None
-    source_ip: str | None = None
-    source_port: int | None = None

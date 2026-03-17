@@ -3,6 +3,7 @@ from __future__ import annotations
 # Source: E:\KESTRA\cli\src\main\java\io\kestra\cli\AbstractValidateCommand.java
 # WARNING: Unresolved types: Class, ConstraintViolationException, Exception, Function
 
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -15,7 +16,7 @@ from engine.core.models.validations.validate_constraint_violation import Validat
 
 
 @dataclass(slots=True, kw_only=True)
-class AbstractValidateCommand(AbstractApiCommand):
+class AbstractValidateCommand(ABC, AbstractApiCommand):
     directory: Path | None = None
     local: bool | None = None
     tenant_service: TenantIdSelectorService | None = None

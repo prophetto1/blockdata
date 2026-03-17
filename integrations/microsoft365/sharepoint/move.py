@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-microsoft365\src\main\java\io\kestra\plugin\microsoft365\sharepoint\Move.java
+# WARNING: Unresolved types: Exception, core, io, kestra, models, tasks
+
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.microsoft365.sharepoint.abstract_sharepoint_task import AbstractSharepointTask
@@ -10,7 +13,7 @@ from engine.core.models.tasks.runnable_task import RunnableTask
 
 
 @dataclass(slots=True, kw_only=True)
-class Move(AbstractSharepointTask, RunnableTask):
+class Move(AbstractSharepointTask):
     """Move SharePoint file or folder"""
     item_id: Property[str]
     destination_parent_id: Property[str]
@@ -20,16 +23,8 @@ class Move(AbstractSharepointTask, RunnableTask):
         raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)
-    class Output(io):
+    class Output:
         item_id: str | None = None
         item_name: str | None = None
         parent_id: str | None = None
         web_url: str | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class Output(io):
-    item_id: str | None = None
-    item_name: str | None = None
-    parent_id: str | None = None
-    web_url: str | None = None

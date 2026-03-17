@@ -3,9 +3,10 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\models\tasks\Task.java
 # WARNING: Unresolved types: Level
 
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import timedelta
-from typing import Any
+from typing import Any, Optional
 
 from engine.core.models.tasks.retrys.abstract_retry import AbstractRetry
 from engine.core.models.assets.assets_declaration import AssetsDeclaration
@@ -19,7 +20,7 @@ from engine.core.models.tasks.worker_group import WorkerGroup
 
 
 @dataclass(slots=True, kw_only=True)
-class Task:
+class Task(ABC):
     disabled: bool = False
     allow_failure: bool = False
     log_to_file: bool = False

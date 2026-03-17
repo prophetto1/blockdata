@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-stripe\src\main\java\io\kestra\plugin\stripe\customer\Delete.java
+# WARNING: Unresolved types: Exception, core, io, kestra, models, tasks
+
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.stripe.abstract_stripe import AbstractStripe
@@ -10,7 +13,7 @@ from engine.core.models.tasks.runnable_task import RunnableTask
 
 
 @dataclass(slots=True, kw_only=True)
-class Delete(AbstractStripe, RunnableTask):
+class Delete(AbstractStripe):
     """Delete a Stripe customer"""
     customer_id: Property[str]
 
@@ -18,14 +21,7 @@ class Delete(AbstractStripe, RunnableTask):
         raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)
-    class Output(io):
+    class Output:
         customer_id: str | None = None
         deleted: bool | None = None
-        customer_data: dict[String, Object] | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class Output(io):
-    customer_id: str | None = None
-    deleted: bool | None = None
-    customer_data: dict[String, Object] | None = None
+        customer_data: dict[str, Any] | None = None

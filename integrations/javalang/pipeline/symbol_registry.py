@@ -78,13 +78,29 @@ class SymbolRegistry:
         return entries[0].module_path
 
     def resolve_with_alias(
-        self, class_name: str, java_imports: list[str] | None = None
+        self,
+        class_name: str,
+        java_imports: list[str] | None = None,
+        local_names: set[str] | None = None,
     ) -> tuple[str | None, str | None]:
-        """Resolve and return (module_path, alias_or_None)."""
+        """Resolve and return (module_path, alias_or_None).
+
+        If class_name is already in local_names, generate a deterministic alias
+        derived from the module path to avoid shadowing.
+        """
         module_path = self.resolve(class_name, java_imports)
         if module_path is None:
             return None, None
-        # No alias needed unless there's a conflict with a local name
+
+        if local_names and class_name in local_names:
+            parts = module_path.split(".")
+            if len(parts) >= 2:
+                prefix = parts[-2].replace("_", " ").title().replace(" ", "")
+                alias = f"{prefix}{class_name}"
+            else:
+                alias = f"_{class_name}"
+            return module_path, alias
+
         return module_path, None
 
     def to_json(self, path: Path):

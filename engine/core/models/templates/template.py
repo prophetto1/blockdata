@@ -3,8 +3,8 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\models\templates\Template.java
 # WARNING: Unresolved types: AnnotatedMember, ConstraintViolationException, JacksonAnnotationIntrospector, ObjectMapper
 
-from dataclasses import dataclass
-from typing import Any
+from dataclasses import dataclass, field
+from typing import Any, ClassVar, Optional
 
 from engine.core.models.has_u_i_d import HasUID
 from engine.core.models.soft_deletable import SoftDeletable
@@ -16,7 +16,7 @@ from engine.core.models.tenant_interface import TenantInterface
 class Template:
     id: str
     namespace: str
-    y_a_m_l__m_a_p_p_e_r: ObjectMapper = JacksonMapper.ofYaml().copy()
+    y_a_m_l__m_a_p_p_e_r: ClassVar[ObjectMapper] = JacksonMapper.ofYaml().copy()
         .setAnnotationIntrospector(new JacksonAnnotationIntrospector() {
             @Override
             public boolean hasIgnoreMarker(final AnnotatedMember m) {

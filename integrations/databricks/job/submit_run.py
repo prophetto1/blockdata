@@ -1,10 +1,13 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any
-from datetime import timedelta
+# Source: E:\KESTRA-IO\plugins\plugin-databricks\src\main\java\io\kestra\plugin\databricks\job\SubmitRun.java
+# WARNING: Unresolved types: Exception, core, io, kestra, models, tasks
 
-from integrations.opensearch.abstract_task import AbstractTask
+from dataclasses import dataclass
+from datetime import timedelta
+from typing import Any
+
+from integrations.compress.abstract_task import AbstractTask
 from integrations.databricks.job.task.library_setting import LibrarySetting
 from integrations.databricks.job.task.notebook_task_setting import NotebookTaskSetting
 from integrations.databricks.job.task.pipeline_task_setting import PipelineTaskSetting
@@ -19,11 +22,11 @@ from integrations.databricks.job.task.spark_submit_task_setting import SparkSubm
 
 
 @dataclass(slots=True, kw_only=True)
-class SubmitRun(AbstractTask, RunnableTask):
+class SubmitRun(AbstractTask):
     """Submit a Databricks run"""
+    run_tasks: list[RunSubmitTaskSetting]
     run_name: Property[str] | None = None
     wait_for_completion: Property[timedelta] | None = None
-    run_tasks: list[RunSubmitTaskSetting]
 
     def run(self, run_context: RunContext) -> Output:
         raise NotImplementedError  # TODO: translate from Java
@@ -40,32 +43,10 @@ class SubmitRun(AbstractTask, RunnableTask):
         python_wheel_task: PythonWheelTaskSetting | None = None
         pipeline_task: PipelineTaskSetting | None = None
         run_job_task: RunJobTaskSetting | None = None
-        depends_on: list[String] | None = None
+        depends_on: list[str] | None = None
         libraries: list[LibrarySetting] | None = None
 
     @dataclass(slots=True)
-    class Output(io):
+    class Output:
         run_id: int | None = None
         run_u_r_i: str | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class RunSubmitTaskSetting:
-    existing_cluster_id: str | None = None
-    task_key: str | None = None
-    timeout_seconds: int | None = None
-    notebook_task: NotebookTaskSetting | None = None
-    spark_submit_task: SparkSubmitTaskSetting | None = None
-    spark_jar_task: SparkJarTaskSetting | None = None
-    spark_python_task: SparkPythonTaskSetting | None = None
-    python_wheel_task: PythonWheelTaskSetting | None = None
-    pipeline_task: PipelineTaskSetting | None = None
-    run_job_task: RunJobTaskSetting | None = None
-    depends_on: list[String] | None = None
-    libraries: list[LibrarySetting] | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class Output(io):
-    run_id: int | None = None
-    run_u_r_i: str | None = None

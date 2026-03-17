@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-gcp\src\main\java\io\kestra\plugin\gcp\gcs\models\Bucket.java
+# WARNING: Unresolved types: cloud, com, google, storage
+
+from dataclasses import dataclass
 from typing import Any
 
 
@@ -12,5 +15,6 @@ class Bucket:
     index_page: str | None = None
     not_found_page: str | None = None
 
-    def of(self, bucket: com) -> Bucket:
+    @staticmethod
+    def of(bucket: com.google.cloud.storage.Bucket) -> Bucket:
         raise NotImplementedError  # TODO: translate from Java

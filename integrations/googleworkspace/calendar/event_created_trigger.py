@@ -1,14 +1,17 @@
 from __future__ import annotations
 
+# Source: E:\KESTRA-IO\plugins\plugin-googleworkspace\src\main\java\io\kestra\plugin\googleworkspace\calendar\EventCreatedTrigger.java
+# WARNING: Unresolved types: Calendar, DateTime, Exception, Logger, api, calendar, com, core, google, io, kestra, model, models, services, tasks
+
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any
 from datetime import datetime
 from datetime import timedelta
+from typing import Any, ClassVar, Optional
 
 from integrations.googleworkspace.calendar.abstract_calendar_trigger import AbstractCalendarTrigger
 from engine.core.models.conditions.condition_context import ConditionContext
-from engine.webserver.models.events.event import Event
+from integrations.airbyte.models.event import Event
 from engine.core.models.executions.execution import Execution
 from engine.core.models.triggers.polling_trigger_interface import PollingTriggerInterface
 from engine.core.models.property.property import Property
@@ -17,22 +20,16 @@ from engine.core.models.triggers.trigger_context import TriggerContext
 from engine.core.models.triggers.trigger_output import TriggerOutput
 
 
-class EventStatus(str, Enum):
-    CONFIRMED = "CONFIRMED"
-    TENTATIVE = "TENTATIVE"
-    CANCELLED = "CANCELLED"
-
-
 @dataclass(slots=True, kw_only=True)
-class EventCreatedTrigger(AbstractCalendarTrigger, PollingTriggerInterface, TriggerOutput):
+class EventCreatedTrigger(AbstractCalendarTrigger):
     """Poll Google Calendar for new events"""
-    m_a_x__e_v_e_n_t_s__p_e_r__p_o_l_l: int | None = None
-    calendar_ids: Property[list[String]]
+    calendar_ids: Property[list[str]]
+    m_a_x__e_v_e_n_t_s__p_e_r__p_o_l_l: ClassVar[int] = 2500
+    interval: timedelta = Duration.ofMinutes(5)
+    max_events_per_poll: Property[int] = Property.ofValue(100)
     search_query: Property[str] | None = None
     organizer_email: Property[str] | None = None
     event_status: Property[EventStatus] | None = None
-    interval: timedelta | None = None
-    max_events_per_poll: Property[int] | None = None
 
     def get_interval(self) -> timedelta:
         raise NotImplementedError  # TODO: translate from Java
@@ -40,7 +37,7 @@ class EventCreatedTrigger(AbstractCalendarTrigger, PollingTriggerInterface, Trig
     def get_read_timeout(self) -> Property[int]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def get_scopes(self) -> Property[list[String]]:
+    def get_scopes(self) -> Property[list[str]]:
         raise NotImplementedError  # TODO: translate from Java
 
     def evaluate(self, condition_context: ConditionContext, context: TriggerContext) -> Optional[Execution]:
@@ -61,18 +58,23 @@ class EventCreatedTrigger(AbstractCalendarTrigger, PollingTriggerInterface, Trig
     def parse_date_time(self, date_time: DateTime) -> datetime:
         raise NotImplementedError  # TODO: translate from Java
 
-    def convert_event_date_time(self, event_date_time: com) -> EventCreatedTrigger:
+    def convert_event_date_time(self, event_date_time: com.google.api.services.calendar.model.EventDateTime) -> EventCreatedTrigger.EventDateTime:
         raise NotImplementedError  # TODO: translate from Java
 
-    def convert_organizer(self, organizer: com) -> EventCreatedTrigger:
+    def convert_organizer(self, organizer: com.google.api.services.calendar.model.Event.Organizer) -> EventCreatedTrigger.Organizer:
         raise NotImplementedError  # TODO: translate from Java
+
+    class EventStatus(str, Enum):
+        CONFIRMED = "CONFIRMED"
+        TENTATIVE = "TENTATIVE"
+        CANCELLED = "CANCELLED"
 
     @dataclass(slots=True)
-    class Output(io):
+    class Output:
         events: list[EventMetadata] | None = None
 
     @dataclass(slots=True)
-    class EventMetadata(io):
+    class EventMetadata:
         id: str | None = None
         summary: str | None = None
         description: str | None = None
@@ -81,9 +83,9 @@ class EventCreatedTrigger(AbstractCalendarTrigger, PollingTriggerInterface, Trig
         html_link: str | None = None
         created: datetime | None = None
         updated: datetime | None = None
-        start: EventCreatedTrigger | None = None
-        end: EventCreatedTrigger | None = None
-        organizer: EventCreatedTrigger | None = None
+        start: EventCreatedTrigger.EventDateTime | None = None
+        end: EventCreatedTrigger.EventDateTime | None = None
+        organizer: EventCreatedTrigger.Organizer | None = None
         visibility: str | None = None
         event_type: str | None = None
 
@@ -98,39 +100,3 @@ class EventCreatedTrigger(AbstractCalendarTrigger, PollingTriggerInterface, Trig
         email: str | None = None
         display_name: str | None = None
         self: bool | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class Output(io):
-    events: list[EventMetadata] | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class EventMetadata(io):
-    id: str | None = None
-    summary: str | None = None
-    description: str | None = None
-    location: str | None = None
-    status: str | None = None
-    html_link: str | None = None
-    created: datetime | None = None
-    updated: datetime | None = None
-    start: EventCreatedTrigger | None = None
-    end: EventCreatedTrigger | None = None
-    organizer: EventCreatedTrigger | None = None
-    visibility: str | None = None
-    event_type: str | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class EventDateTime:
-    date_time: datetime | None = None
-    date: str | None = None
-    time_zone: str | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class Organizer:
-    email: str | None = None
-    display_name: str | None = None
-    self: bool | None = None

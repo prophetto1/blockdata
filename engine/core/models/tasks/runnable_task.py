@@ -11,5 +11,5 @@ from engine.core.runners.run_context import RunContext
 from engine.core.models.worker_job_lifecycle import WorkerJobLifecycle
 
 
-class RunnableTask(Protocol):
+class RunnableTask(Plugin, WorkerJobLifecycle, Protocol):
     def run(self, run_context: RunContext) -> T: ...

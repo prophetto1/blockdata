@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any
+from typing import Any, Optional
 
 from engine.core.reporter.abstract_reportable import AbstractReportable
 from engine.webserver.models.events.event import Event

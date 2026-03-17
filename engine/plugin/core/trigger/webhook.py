@@ -3,8 +3,8 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\plugin\core\trigger\Webhook.java
 # WARNING: Unresolved types: Exception, Mono, ObjectMapper, Status, core, io, kestra, models, tasks
 
-from dataclasses import dataclass
-from typing import Any
+from dataclasses import dataclass, field
+from typing import Any, ClassVar, Optional
 
 from engine.plugin.core.trigger.abstract_webhook_trigger import AbstractWebhookTrigger
 from engine.core.http.http_response import HttpResponse
@@ -16,7 +16,7 @@ from engine.plugin.core.trigger.webhook_context import WebhookContext
 @dataclass(slots=True, kw_only=True)
 class Webhook(AbstractWebhookTrigger):
     """Trigger a Flow via an authenticated webhook URL."""
-    m_a_p_p_e_r: ObjectMapper = JacksonMapper.ofJson().copy()
+    m_a_p_p_e_r: ClassVar[ObjectMapper] = JacksonMapper.ofJson().copy()
         .setDefaultPropertyInclusion(JsonInclude.Include.USE_DEFAULTS)
     wait: bool = False
     return_outputs: bool = False

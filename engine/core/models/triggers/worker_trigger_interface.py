@@ -7,5 +7,5 @@ from typing import Any, Protocol
 from engine.core.models.worker_job_lifecycle import WorkerJobLifecycle
 
 
-class WorkerTriggerInterface(Protocol):
+class WorkerTriggerInterface(WorkerJobLifecycle, Protocol):
     pass

@@ -4,14 +4,14 @@ from __future__ import annotations
 # WARNING: Unresolved types: AbstractProcessor, Annotation, AnnotationMirror, Class, Element, Elements, ProcessingEnvironment, RoundEnvironment, SourceVersion, TypeElement, core, io, javax, kestra, lang, model, models, util
 
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, ClassVar
 
 from engine.core.models.annotations.plugin import Plugin
 
 
 @dataclass(slots=True, kw_only=True)
 class PluginProcessor(AbstractProcessor):
-    p_l_u_g_i_n__r_e_s_o_u_r_c_e__f_i_l_e: str = ServicesFiles.getPath(io.kestra.core.models.Plugin.class.getCanonicalName())
+    p_l_u_g_i_n__r_e_s_o_u_r_c_e__f_i_l_e: ClassVar[str] = ServicesFiles.getPath(io.kestra.core.models.Plugin.class.getCanonicalName())
     exception_stacks: list[str] = Collections.synchronizedList(new ArrayList<>())
     plugins: set[str] = field(default_factory=set)
     element_utils: javax.lang.model.util.Elements | None = None

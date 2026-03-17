@@ -4,7 +4,7 @@ from __future__ import annotations
 # WARNING: Unresolved types: Class, OpenTelemetry, api, io, opentelemetry, trace
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Optional
 
 from engine.core.trace.trace_level import TraceLevel
 from engine.core.trace.tracer import Tracer

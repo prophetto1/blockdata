@@ -3,7 +3,7 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\runners\LocalWorkingDir.java
 # WARNING: Unresolved types: BasicFileAttributes, FileVisitResult, IOException, InputStream, Predicate, SimpleFileVisitor
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 

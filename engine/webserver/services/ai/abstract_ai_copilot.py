@@ -3,8 +3,9 @@ from __future__ import annotations
 # Source: E:\KESTRA\webserver\src\main\java\io\kestra\webserver\services\ai\AbstractAiCopilot.java
 # WARNING: Unresolved types: Class, JsonNode
 
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Protocol
 
 from engine.core.docs.json_schema_generator import JsonSchemaGenerator
 from engine.webserver.services.ai.plugin_finder import PluginFinder
@@ -12,7 +13,7 @@ from engine.core.plugins.plugin_registry import PluginRegistry
 
 
 @dataclass(slots=True, kw_only=True)
-class AbstractAiCopilot:
+class AbstractAiCopilot(ABC):
     json_schema_generator: JsonSchemaGenerator | None = None
     plugin_registry: PluginRegistry | None = None
     fallback_plugin_version: str | None = None
@@ -27,20 +28,25 @@ class AbstractAiCopilot:
     def generate_yaml(self, builder_fn: YamlBuilderFn, model_class: Class[Any], most_relevant_plugin_types: list[str], generation_error: str, possible_error_messages: list[str], user_prompt: str, original_yaml: str, already_valid_message: str) -> str:
         raise NotImplementedError  # TODO: translate from Java
 
+    @abstractmethod
     def already_valid_message(self) -> str:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
+    @abstractmethod
     def non_request_message(self) -> str:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
+    @abstractmethod
     def unable_to_generate_message(self) -> str:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
+    @abstractmethod
     def possible_error_messages(self) -> list[str]:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
+    @abstractmethod
     def excluded_plugin_types(self) -> list[str]:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
     class YamlBuilderFn(Protocol):
         def build(self, schema_json: str, generation_error: str, user_prompt: str) -> str: ...

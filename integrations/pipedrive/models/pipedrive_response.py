@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-pipedrive\src\main\java\io\kestra\plugin\pipedrive\models\PipedriveResponse.java
+# WARNING: Unresolved types: T
+
+from dataclasses import dataclass
 from typing import Any
 
 

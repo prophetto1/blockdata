@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-microsoft365\src\main\java\io\kestra\plugin\microsoft365\oneshare\Delete.java
+# WARNING: Unresolved types: Exception
+
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.microsoft365.oneshare.abstract_one_share_task import AbstractOneShareTask
@@ -11,7 +14,7 @@ from engine.core.models.tasks.void_output import VoidOutput
 
 
 @dataclass(slots=True, kw_only=True)
-class Delete(AbstractOneShareTask, RunnableTask):
+class Delete(AbstractOneShareTask):
     """Delete OneDrive/SharePoint item"""
     item_id: Property[str]
 

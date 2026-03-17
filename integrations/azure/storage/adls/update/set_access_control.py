@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-azure\src\main\java\io\kestra\plugin\azure\storage\adls\update\SetAccessControl.java
+# WARNING: Unresolved types: Exception
+
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.azure.storage.adls.abstracts.abstract_data_lake_with_file import AbstractDataLakeWithFile
@@ -11,7 +14,7 @@ from engine.core.models.tasks.void_output import VoidOutput
 
 
 @dataclass(slots=True, kw_only=True)
-class SetAccessControl(AbstractDataLakeWithFile, RunnableTask):
+class SetAccessControl(AbstractDataLakeWithFile):
     """Set access controls to a file in Azure Data Lake Storage."""
     group_permissions: Permission | None = None
     owner_permissions: Permission | None = None
@@ -25,10 +28,3 @@ class SetAccessControl(AbstractDataLakeWithFile, RunnableTask):
         read_permission: Property[bool] | None = None
         write_permission: Property[bool] | None = None
         execute_permission: Property[bool] | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class Permission:
-    read_permission: Property[bool] | None = None
-    write_permission: Property[bool] | None = None
-    execute_permission: Property[bool] | None = None

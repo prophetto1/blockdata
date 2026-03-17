@@ -1,10 +1,13 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-azure\src\main\java\io\kestra\plugin\azure\eventhubs\service\EventDataObjectConverter.java
+# WARNING: Unresolved types: EventData
+
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.azure.eventhubs.model.event_data_object import EventDataObject
-from integrations.solace.serde.serde import Serde
+from integrations.azure.eventhubs.serdes.serde import Serde
 
 
 @dataclass(slots=True, kw_only=True)

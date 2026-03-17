@@ -4,7 +4,7 @@ from __future__ import annotations
 # WARNING: Unresolved types: ConstraintViolationException, Exception
 
 from datetime import datetime
-from typing import Any, Protocol
+from typing import Any, Optional, Protocol
 
 from engine.core.models.triggers.abstract_trigger import AbstractTrigger
 from engine.core.models.conditions.condition_context import ConditionContext

@@ -1,8 +1,11 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any
+# Source: E:\KESTRA-IO\plugins\plugin-slack\src\main\java\io\kestra\plugin\slack\app\chats\Delete.java
+# WARNING: Unresolved types: Exception, core, io, kestra, models, tasks
+
+from dataclasses import dataclass
 from datetime import datetime
+from typing import Any
 
 from integrations.slack.abstract_slack_client_connection import AbstractSlackClientConnection
 from engine.core.models.property.property import Property
@@ -11,7 +14,7 @@ from engine.core.models.tasks.runnable_task import RunnableTask
 
 
 @dataclass(slots=True, kw_only=True)
-class Delete(AbstractSlackClientConnection, RunnableTask):
+class Delete(AbstractSlackClientConnection):
     """Delete a Slack channel message"""
     channel: Property[str]
     timestamp: Property[datetime]
@@ -20,10 +23,5 @@ class Delete(AbstractSlackClientConnection, RunnableTask):
         raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)
-    class Output(io):
+    class Output:
         timestamp: str
-
-
-@dataclass(slots=True, kw_only=True)
-class Output(io):
-    timestamp: str

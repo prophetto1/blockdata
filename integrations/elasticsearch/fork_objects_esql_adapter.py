@@ -1,19 +1,24 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-elasticsearch\src\main\java\io\kestra\plugin\elasticsearch\ForkObjectsEsqlAdapter.java
+# WARNING: Unresolved types: ApiClient, BinaryResponse, Class, ElasticsearchTransport, EsqlAdapter, EsqlColumn, IOException, JsonParser, JsonpMapper, QueryRequest, T, _helpers, clients, co, elastic, elasticsearch, esql
+
+from dataclasses import dataclass
 from typing import Any
 
-from engine.core.reporter.type import Type
+from engine.core.models.flows.type import Type
 
 
 @dataclass(slots=True, kw_only=True)
-class ForkObjectsEsqlAdapter(EsqlAdapter):
+class ForkObjectsEsqlAdapter:
     type: Type | None = None
 
-    def of(self, clazz: Class[T]) -> ForkObjectsEsqlAdapter[T]:
+    @staticmethod
+    def of(clazz: Class[T]) -> ForkObjectsEsqlAdapter[T]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def of(self, type: Type) -> ForkObjectsEsqlAdapter[T]:
+    @staticmethod
+    def of(type: Type) -> ForkObjectsEsqlAdapter[T]:
         raise NotImplementedError  # TODO: translate from Java
 
     def format(self) -> str:
@@ -22,20 +27,16 @@ class ForkObjectsEsqlAdapter(EsqlAdapter):
     def columnar(self) -> bool:
         raise NotImplementedError  # TODO: translate from Java
 
-    def deserialize(self, client: ApiClient[ElasticsearchTransport, Any], request: QueryRequest, response: BinaryResponse) -> Iterable[T]:
+    def deserialize(self, client: ApiClient[ElasticsearchTransport, Any], request: QueryRequest, response: BinaryResponse) -> list[T]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def parse_row(self, columns: list[EsqlMetadata], parser: JsonParser, mapper: JsonpMapper) -> T:
+    def parse_row(self, columns: list[EsqlMetadata.EsqlColumn], parser: JsonParser, mapper: JsonpMapper) -> T:
         raise NotImplementedError  # TODO: translate from Java
 
-    def read_header(self, parser: JsonParser, mapper: JsonpMapper) -> EsqlMetadata:
+    @staticmethod
+    def read_header(parser: JsonParser, mapper: JsonpMapper) -> EsqlMetadata:
         raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)
-    class EsqlMetadata(co):
+    class EsqlMetadata(EsqlMetadata):
         took: int | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class EsqlMetadata(co):
-    took: int | None = None

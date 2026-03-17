@@ -3,6 +3,7 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\models\conditions\Condition.java
 # WARNING: Unresolved types: PredicateChecked
 
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any
 
@@ -13,5 +14,5 @@ from engine.core.utils.rethrow import Rethrow
 
 
 @dataclass(slots=True, kw_only=True)
-class Condition:
+class Condition(ABC):
     type: str

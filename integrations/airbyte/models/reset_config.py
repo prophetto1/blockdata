@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-airbyte\src\main\java\io\kestra\plugin\airbyte\models\ResetConfig.java
+
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.airbyte.models.stream_descriptor import StreamDescriptor

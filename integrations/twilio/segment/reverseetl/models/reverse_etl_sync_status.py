@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-twilio\src\main\java\io\kestra\plugin\twilio\segment\reverseetl\models\ReverseEtlSyncStatus.java
+
+from dataclasses import dataclass
 from typing import Any
 
 
@@ -35,17 +37,3 @@ class ReverseEtlSyncStatus:
     class LoadPhase:
         deliver_success_count: str | None = None
         deliver_failure_count: str | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class ExtractPhase:
-    added_count: str | None = None
-    updated_count: str | None = None
-    deleted_count: str | None = None
-    extract_count: str | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class LoadPhase:
-    deliver_success_count: str | None = None
-    deliver_failure_count: str | None = None

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\models\triggers\multipleflows\MultipleConditionStorageInterface.java
 
-from typing import Any, Protocol
+from typing import Any, Optional, Protocol
 
 from engine.core.models.flows.flow_id import FlowId
 from engine.core.models.triggers.multipleflows.multiple_condition import MultipleCondition

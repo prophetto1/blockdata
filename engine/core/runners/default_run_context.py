@@ -4,7 +4,7 @@ from __future__ import annotations
 # WARNING: Unresolved types: ApplicationContext, AtomicBoolean, FlowInfo, GeneralSecurityException, Logger, T, TaskRunInfo, Validator
 
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Optional
 
 from engine.core.models.executions.abstract_metric_entry import AbstractMetricEntry
 from engine.core.models.triggers.abstract_trigger import AbstractTrigger

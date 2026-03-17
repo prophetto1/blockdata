@@ -3,7 +3,7 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\services\WorkerGroupService.java
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Optional
 
 from engine.core.models.flows.flow_interface import FlowInterface
 from engine.core.models.tasks.worker_group import WorkerGroup

@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar, Optional
 
 from engine.core.models.plugin import Plugin
 from engine.core.plugins.plugin_class_and_metadata import PluginClassAndMetadata
@@ -97,7 +97,7 @@ class DefaultPluginRegistry:
 
     @dataclass(slots=True)
     class LazyHolder:
-        i_n_s_t_a_n_c_e: DefaultPluginRegistry = new DefaultPluginRegistry()
+        i_n_s_t_a_n_c_e: ClassVar[DefaultPluginRegistry] = new DefaultPluginRegistry()
 
     @dataclass(slots=True)
     class PluginBundleIdentifier:

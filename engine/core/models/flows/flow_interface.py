@@ -3,7 +3,8 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\models\flows\FlowInterface.java
 # WARNING: Unresolved types: ObjectMapper, Pattern
 
-from typing import Any, Protocol
+from dataclasses import dataclass, field
+from typing import Any, ClassVar, Protocol
 
 from engine.core.models.flows.concurrency import Concurrency
 from engine.core.models.flows.flow_id import FlowId
@@ -19,7 +20,7 @@ from engine.core.models.tenant_interface import TenantInterface
 from engine.core.models.tasks.worker_group import WorkerGroup
 
 
-class FlowInterface(Protocol):
+class FlowInterface(FlowId, SoftDeletable, TenantInterface, HasUID, HasSource, Protocol):
     def get_description(self) -> str: ...
 
     def is_disabled(self) -> bool: ...

@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-slack\src\main\java\io\kestra\plugin\slack\app\chats\StopStream.java
+# WARNING: Unresolved types: Exception, core, io, kestra, models, tasks
+
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.slack.abstract_slack_client_connection import AbstractSlackClientConnection
@@ -10,7 +13,7 @@ from engine.core.models.tasks.runnable_task import RunnableTask
 
 
 @dataclass(slots=True, kw_only=True)
-class StopStream(AbstractSlackClientConnection, RunnableTask):
+class StopStream(AbstractSlackClientConnection):
     """Stop a Slack stream"""
     channel: Property[str]
     timestamp: Property[str]
@@ -22,12 +25,6 @@ class StopStream(AbstractSlackClientConnection, RunnableTask):
         raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)
-    class Output(io):
+    class Output:
         timestamp: str | None = None
         channel: str | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class Output(io):
-    timestamp: str | None = None
-    channel: str | None = None

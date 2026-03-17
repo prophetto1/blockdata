@@ -3,13 +3,13 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\models\validations\KestraConstraintViolationException.java
 # WARNING: Unresolved types: ConstraintViolation, ConstraintViolationException
 
-from dataclasses import dataclass
-from typing import Any
+from dataclasses import dataclass, field
+from typing import Any, ClassVar
 
 
 @dataclass(slots=True, kw_only=True)
 class KestraConstraintViolationException(ConstraintViolationException):
-    serial_version_u_i_d: int = 1
+    serial_version_u_i_d: ClassVar[int] = 1
 
     def get_message(self) -> str:
         raise NotImplementedError  # TODO: translate from Java

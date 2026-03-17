@@ -1,23 +1,26 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any
+# Source: E:\KESTRA-IO\plugins\plugin-aws\src\main\java\io\kestra\plugin\aws\glue\StopJobRun.java
+# WARNING: Unresolved types: AtomicReference, Exception, GetJobRunRequest, GlueClient, JobRun
+
+from dataclasses import dataclass
 from datetime import timedelta
+from typing import Any
 
 from integrations.aws.glue.abstract_glue_task import AbstractGlueTask
-from engine.core.models.tasks.output import Output
+from integrations.aws.glue.model.output import Output
 from engine.core.models.property.property import Property
 from engine.core.runners.run_context import RunContext
 from engine.core.models.tasks.runnable_task import RunnableTask
 
 
 @dataclass(slots=True, kw_only=True)
-class StopJobRun(AbstractGlueTask, RunnableTask):
+class StopJobRun(AbstractGlueTask):
     """Stop a Glue job run"""
     job_name: Property[str]
     job_run_id: Property[str]
-    wait: Property[bool] | None = None
-    interval: Property[timedelta] | None = None
+    wait: Property[bool] = Property.ofValue(true)
+    interval: Property[timedelta] = Property.ofValue(Duration.ofSeconds(1))
 
     def run(self, run_context: RunContext) -> Output:
         raise NotImplementedError  # TODO: translate from Java

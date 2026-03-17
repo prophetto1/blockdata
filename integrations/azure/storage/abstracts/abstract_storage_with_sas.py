@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-azure\src\main\java\io\kestra\plugin\azure\storage\abstracts\AbstractStorageWithSas.java
+
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.azure.storage.abstracts.abstract_storage import AbstractStorage
@@ -9,5 +12,5 @@ from engine.core.models.property.property import Property
 
 
 @dataclass(slots=True, kw_only=True)
-class AbstractStorageWithSas(AbstractStorage, AzureClientWithSasInterface):
+class AbstractStorageWithSas(ABC, AbstractStorage):
     sas_token: Property[str] | None = None

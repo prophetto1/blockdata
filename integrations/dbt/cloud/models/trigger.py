@@ -1,8 +1,10 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any
+# Source: E:\KESTRA-IO\plugins\plugin-dbt\src\main\java\io\kestra\plugin\dbt\cloud\models\Trigger.java
+
+from dataclasses import dataclass
 from datetime import datetime
+from typing import Any
 
 
 @dataclass(slots=True, kw_only=True)
@@ -19,5 +21,5 @@ class Trigger:
     target_name_override: str | None = None
     generate_docs_override: bool | None = None
     timeout_seconds_override: int | None = None
-    steps_override: list[String] | None = None
+    steps_override: list[str] | None = None
     created_at: datetime | None = None

@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-datagen\src\main\java\io\kestra\plugin\datagen\generators\RandomBytesGenerator.java
+# WARNING: Unresolved types: SecureRandom
+
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.datagen.model.data_generator import DataGenerator
@@ -10,7 +13,7 @@ from integrations.datagen.model.data_generator import DataGenerator
 class RandomBytesGenerator(DataGenerator):
     """Generate random byte arrays"""
     size: int
-    random: SecureRandom | None = None
+    random: SecureRandom = new SecureRandom()
 
-    def produce(self) -> byte:
+    def produce(self) -> list[int]:
         raise NotImplementedError  # TODO: translate from Java

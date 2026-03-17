@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-googleworkspace\src\main\java\io\kestra\plugin\googleworkspace\sheets\DeleteSpreadsheet.java
+# WARNING: Unresolved types: Exception, core, io, kestra, models, tasks
+
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.googleworkspace.sheets.abstract_sheet import AbstractSheet
@@ -10,7 +13,7 @@ from engine.core.models.tasks.runnable_task import RunnableTask
 
 
 @dataclass(slots=True, kw_only=True)
-class DeleteSpreadsheet(AbstractSheet, RunnableTask):
+class DeleteSpreadsheet(AbstractSheet):
     """Delete a Google Spreadsheet"""
     spreadsheet_id: Property[str]
 
@@ -18,10 +21,5 @@ class DeleteSpreadsheet(AbstractSheet, RunnableTask):
         raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)
-    class Output(io):
+    class Output:
         spreadsheet_id: str | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class Output(io):
-    spreadsheet_id: str | None = None

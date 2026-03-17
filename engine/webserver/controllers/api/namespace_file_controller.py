@@ -3,8 +3,8 @@ from __future__ import annotations
 # Source: E:\KESTRA\webserver\src\main\java\io\kestra\webserver\controllers\api\NamespaceFileController.java
 # WARNING: Unresolved types: BufferedInputStream, CompletedFileUpload, Exception, IOException, Pair, Pattern, StreamedFile, URISyntaxException
 
-from dataclasses import dataclass
-from typing import Any
+from dataclasses import dataclass, field
+from typing import Any, ClassVar
 
 from engine.core.storages.file_attributes import FileAttributes
 from engine.core.exceptions.flow_processing_exception import FlowProcessingException
@@ -20,7 +20,7 @@ from engine.core.tenant.tenant_service import TenantService
 
 @dataclass(slots=True, kw_only=True)
 class NamespaceFileController:
-    f_l_o_w_s__f_o_l_d_e_r: str = "_flows"
+    f_l_o_w_s__f_o_l_d_e_r: ClassVar[str] = "_flows"
     forbidden_path_patterns: list[Pattern] = List.of(
         Pattern.compile("/" + FLOWS_FOLDER + "(/.*)?$")
     )

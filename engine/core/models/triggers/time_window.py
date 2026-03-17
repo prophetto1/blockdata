@@ -3,6 +3,7 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\models\triggers\TimeWindow.java
 
 from dataclasses import dataclass
+from enum import Enum
 from datetime import time
 from datetime import timedelta
 from typing import Any

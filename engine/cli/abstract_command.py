@@ -3,6 +3,7 @@ from __future__ import annotations
 # Source: E:\KESTRA\cli\src\main\java\io\kestra\cli\AbstractCommand.java
 # WARNING: Unresolved types: ApplicationContext, Callable, EndpointDefaultConfiguration, Exception, Provider, RunnableChecked, core, io, kestra, utils
 
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -16,7 +17,7 @@ from engine.cli.version_provider import VersionProvider
 
 
 @dataclass(slots=True, kw_only=True)
-class AbstractCommand(BaseCommand):
+class AbstractCommand(ABC, BaseCommand):
     config: Path = Paths.get(System.getProperty("user.home"), ".kestra/config.yml")
     plugins_path: Path = Optional.ofNullable(System.getenv("KESTRA_PLUGINS_PATH")).map(Paths::get).orElse(null)
     application_context: ApplicationContext | None = None

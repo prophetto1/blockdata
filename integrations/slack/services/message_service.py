@@ -1,8 +1,11 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any
+# Source: E:\KESTRA-IO\plugins\plugin-slack\src\main\java\io\kestra\plugin\slack\services\MessageService.java
+# WARNING: Unresolved types: Exception
+
+from dataclasses import dataclass
 from datetime import datetime
+from typing import Any
 
 from engine.core.models.property.property import Property
 from engine.core.runners.run_context import RunContext
@@ -11,20 +14,26 @@ from engine.core.runners.run_context import RunContext
 @dataclass(slots=True, kw_only=True)
 class MessageService:
 
-    def prepare_message_as_json(self, run_context: RunContext, payload: Property[str], message_text: Property[str]) -> str:
+    @staticmethod
+    def prepare_message_as_json(run_context: RunContext, payload: Property[str], message_text: Property[str]) -> str:
         raise NotImplementedError  # TODO: translate from Java
 
-    def to_slack_mrkdwn(self, text: str) -> str:
+    @staticmethod
+    def to_slack_mrkdwn(text: str) -> str:
         raise NotImplementedError  # TODO: translate from Java
 
-    def from_slack_timestamp(self, slack_ts: str) -> datetime:
+    @staticmethod
+    def from_slack_timestamp(slack_ts: str) -> datetime:
         raise NotImplementedError  # TODO: translate from Java
 
-    def from_slack_timestamp(self, slack_ts: int) -> datetime:
+    @staticmethod
+    def from_slack_timestamp(slack_ts: int) -> datetime:
         raise NotImplementedError  # TODO: translate from Java
 
-    def from_slack_timestamp(self, slack_ts: int) -> datetime:
+    @staticmethod
+    def from_slack_timestamp(slack_ts: int) -> datetime:
         raise NotImplementedError  # TODO: translate from Java
 
-    def to_slack_timestamp(self, instant: datetime) -> str:
+    @staticmethod
+    def to_slack_timestamp(instant: datetime) -> str:
         raise NotImplementedError  # TODO: translate from Java

@@ -3,6 +3,7 @@ from __future__ import annotations
 # Source: E:\KESTRA\webserver\src\main\java\io\kestra\webserver\services\ai\AiService.java
 # WARNING: Unresolved types: B, ChatModel, ChatModelListener, Class, ConcurrentHashMap, T
 
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any
 
@@ -24,7 +25,7 @@ from engine.core.utils.version_provider import VersionProvider
 
 
 @dataclass(slots=True, kw_only=True)
-class AiService:
+class AiService(ABC):
     metadata_by_conversation_id: dict[str, ConversationMetadata] = new ConcurrentHashMap<>()
     post_hog_service: PosthogService | None = None
     ai_configuration: T | None = None
@@ -36,8 +37,9 @@ class AiService:
     display_name: str | None = None
     listeners: list[ChatModelListener] | None = None
 
+    @abstractmethod
     def chat_model(self, listeners: list[ChatModelListener]) -> ChatModel:
-        raise NotImplementedError  # TODO: translate from Java
+        ...
 
     def listeners(self, span_name: str, conversation_id: str) -> list[ChatModelListener]:
         raise NotImplementedError  # TODO: translate from Java

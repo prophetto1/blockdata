@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-gcp\src\main\java\io\kestra\plugin\gcp\bigquery\DeleteTable.java
+# WARNING: Unresolved types: Exception, TableId, core, io, kestra, models, tasks
+
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.gcp.bigquery.abstract_table import AbstractTable
@@ -9,27 +12,18 @@ from engine.core.models.tasks.runnable_task import RunnableTask
 
 
 @dataclass(slots=True, kw_only=True)
-class DeleteTable(AbstractTable, RunnableTask):
+class DeleteTable(AbstractTable):
     """Delete a BigQuery table or partition"""
 
-    def run(self, run_context: RunContext) -> DeleteTable:
+    def run(self, run_context: RunContext) -> DeleteTable.Output:
         raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)
-    class Output(io):
+    class Output:
         project_id: str | None = None
         dataset_id: str | None = None
         table: str | None = None
 
-        def of(self, table: TableId) -> Output:
+        @staticmethod
+        def of(table: TableId) -> Output:
             raise NotImplementedError  # TODO: translate from Java
-
-
-@dataclass(slots=True, kw_only=True)
-class Output(io):
-    project_id: str | None = None
-    dataset_id: str | None = None
-    table: str | None = None
-
-    def of(self, table: TableId) -> Output:
-        raise NotImplementedError  # TODO: translate from Java

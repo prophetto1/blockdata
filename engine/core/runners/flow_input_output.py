@@ -3,8 +3,8 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\runners\FlowInputOutput.java
 # WARNING: Unresolved types: AbstractMap, Class, CompletedPart, Exception, Mono, ObjectMapper, Publisher, SimpleEntry, Supplier, T
 
-from dataclasses import dataclass
-from typing import Any
+from dataclasses import dataclass, field
+from typing import Any, ClassVar, Optional
 
 from engine.core.models.flows.data import Data
 from engine.core.models.executions.execution import Execution
@@ -22,7 +22,7 @@ from engine.core.models.flows.type import Type
 
 @dataclass(slots=True, kw_only=True)
 class FlowInputOutput:
-    y_a_m_l__m_a_p_p_e_r: ObjectMapper = JacksonMapper.ofYaml()
+    y_a_m_l__m_a_p_p_e_r: ClassVar[ObjectMapper] = JacksonMapper.ofYaml()
     storage_interface: StorageInterface | None = None
     secret_key: Optional[str] | None = None
     run_context_factory: RunContextFactory | None = None

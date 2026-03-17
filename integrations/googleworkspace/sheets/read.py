@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-googleworkspace\src\main\java\io\kestra\plugin\googleworkspace\sheets\Read.java
+# WARNING: Unresolved types: Exception, core, io, kestra, models, tasks
+
+from dataclasses import dataclass
 from typing import Any
 
 from integrations.googleworkspace.sheets.abstract_read import AbstractRead
@@ -10,22 +13,15 @@ from engine.core.models.tasks.runnable_task import RunnableTask
 
 
 @dataclass(slots=True, kw_only=True)
-class Read(AbstractRead, RunnableTask):
+class Read(AbstractRead):
     """Read all sheets from a spreadsheet"""
-    selected_sheets_title: Property[list[String]] | None = None
+    selected_sheets_title: Property[list[str]] | None = None
 
-    def run(self, run_context: RunContext) -> Read:
+    def run(self, run_context: RunContext) -> Read.Output:
         raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)
-    class Output(io):
-        rows: dict[String, List[Object]] | None = None
+    class Output:
+        rows: dict[str, list[Any]] | None = None
         size: int | None = None
-        uris: dict[String, URI] | None = None
-
-
-@dataclass(slots=True, kw_only=True)
-class Output(io):
-    rows: dict[String, List[Object]] | None = None
-    size: int | None = None
-    uris: dict[String, URI] | None = None
+        uris: dict[str, str] | None = None

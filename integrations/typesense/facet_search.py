@@ -1,11 +1,15 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-typesense\src\main\java\io\kestra\plugin\typesense\FacetSearch.java
+# WARNING: Unresolved types: SearchParameters
+
+from dataclasses import dataclass
 from typing import Any
 
+from engine.core.exceptions.illegal_variable_evaluation_exception import IllegalVariableEvaluationException
 from engine.core.models.property.property import Property
 from engine.core.runners.run_context import RunContext
-from integrations.typesense.search import Search
+from integrations.algolia.search import Search
 
 
 @dataclass(slots=True, kw_only=True)

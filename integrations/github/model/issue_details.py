@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Source: E:\KESTRA-IO\plugins\plugin-github\src\main\java\io\kestra\plugin\github\model\IssueDetails.java
+# WARNING: Unresolved types: Date, GHIssue, IOException
+
+from dataclasses import dataclass
 from typing import Any
 
 
@@ -12,12 +15,12 @@ class IssueDetails:
     state_reason: str | None = None
     owner: str | None = None
     assignee: str | None = None
-    assignees: Any | None = None
+    assignees: list[Any] | None = None
     created_at: Date | None = None
     closed_at: Date | None = None
     closed_by: str | None = None
     comments: int | None = None
-    labels: Any | None = None
+    labels: list[Any] | None = None
     repository_name: str | None = None
-    repository_url: URL | None = None
-    url: URL | None = None
+    repository_url: str | None = None
+    url: str | None = None

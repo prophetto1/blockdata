@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+# Source: E:\KESTRA-IO\plugins\plugin-meta\src\main\java\io\kestra\plugin\meta\instagram\enums\InsightMetric.java
+
 from enum import Enum
 from typing import Any
 

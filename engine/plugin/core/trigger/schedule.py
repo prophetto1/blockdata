@@ -3,10 +3,10 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\plugin\core\trigger\Schedule.java
 # WARNING: Unresolved types: Cron, CronDefinitionBuilder, CronParser, Exception, ExecutionTime, core, io, kestra, models, tasks
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from datetime import timedelta
-from typing import Any
+from typing import Any, ClassVar, Optional
 
 from engine.core.models.triggers.abstract_trigger import AbstractTrigger
 from engine.core.models.conditions.condition import Condition
@@ -24,7 +24,7 @@ from engine.core.models.triggers.trigger_output import TriggerOutput
 class Schedule(AbstractTrigger):
     """Schedule a Flow with a CRON expression."""
     cron: str
-    c_r_o_n__d_e_f_i_n_i_t_i_o_n__b_u_i_l_d_e_r: CronDefinitionBuilder = CronDefinitionBuilder.defineCron()
+    c_r_o_n__d_e_f_i_n_i_t_i_o_n__b_u_i_l_d_e_r: ClassVar[CronDefinitionBuilder] = CronDefinitionBuilder.defineCron()
         .withMinutes().withValidRange(0, 59).withStrictRange().and()
         .withHours().withValidRange(0, 23).withStrictRange().and()
         .withDayOfMonth().withValidRange(1, 31).withStrictRange().and()
@@ -37,8 +37,8 @@ class Schedule(AbstractTrigger):
         .withSupportedNicknameDaily()
         .withSupportedNicknameMidnight()
         .withSupportedNicknameHourly()
-    c_r_o_n__p_a_r_s_e_r: CronParser = new CronParser(CRON_DEFINITION_BUILDER.instance())
-    c_r_o_n__p_a_r_s_e_r__w_i_t_h__s_e_c_o_n_d_s: CronParser = new CronParser(CRON_DEFINITION_BUILDER.withSeconds().withValidRange(0, 59).withStrictRange().and().instance())
+    c_r_o_n__p_a_r_s_e_r: ClassVar[CronParser] = new CronParser(CRON_DEFINITION_BUILDER.instance())
+    c_r_o_n__p_a_r_s_e_r__w_i_t_h__s_e_c_o_n_d_s: ClassVar[CronParser] = new CronParser(CRON_DEFINITION_BUILDER.withSeconds().withValidRange(0, 59).withStrictRange().and().instance())
     with_seconds: bool = False
     timezone: str = ZoneId.systemDefault().toString()
     interval: timedelta = None
