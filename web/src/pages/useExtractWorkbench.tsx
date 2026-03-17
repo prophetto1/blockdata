@@ -1,41 +1,22 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import MonacoEditor, { type OnMount } from '@monaco-editor/react';
-import { Select, createListCollection } from '@ark-ui/react/select';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  IconAsterisk,
-  IconBrackets,
   IconBraces,
-  IconCheck,
-  IconChevronDown,
-  IconCode,
-  IconEye,
   IconFileCode,
   IconFileText,
   IconLayoutList,
   IconSettings,
-  IconTrash,
 } from '@tabler/icons-react';
 import type { WorkbenchTab } from '@/components/workbench/Workbench';
 import { normalizePaneWidths, type Pane } from '@/components/workbench/workbenchState';
 import { useProjectDocuments } from '@/hooks/useProjectDocuments';
 import { useProjectFocus } from '@/hooks/useProjectFocus';
+import { useExtractionSchemas } from '@/hooks/useExtractionSchemas';
 import { useShellHeaderTitle } from '@/components/common/useShellHeaderTitle';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { DocumentFileTable, type ExtraColumn } from '@/components/documents/DocumentFileTable';
 import { DocumentPreviewFrame, DocumentPreviewMessage } from '@/components/documents/DocumentPreviewShell';
 import { formatBytes, getDocumentFormat, type ProjectDocumentRow } from '@/lib/projectDetailHelpers';
 import { cn } from '@/lib/utils';
-import {
-  type SchemaField,
-  type SchemaFieldType,
-  SCHEMA_TYPE_OPTIONS,
-  createSchemaField,
-  buildObjectSchema,
-  parseObjectSchemaToFields,
-  useMonacoTheme,
-} from '@/lib/extractionSchemaHelpers';
 
 // ---------------------------------------------------------------------------
 // Shared layout primitives
@@ -120,398 +101,63 @@ function ExtractConfigTab({ doc }: { doc: ProjectDocumentRow | null }) {
 // Schema builder tab (visual / code toggle)
 // ---------------------------------------------------------------------------
 
-type MonacoEditorInstance = Parameters<OnMount>[0];
-type SchemaEditorView = 'visual' | 'code';
-type SchemaWorkspaceStage = 'start' | 'editing';
-
-export const EXTRACT_SCHEMA_LIBRARY_TITLE = 'Saved Schemas';
-export const EXTRACT_SCHEMA_EDITOR_TITLE = 'Schema Editor';
-export const EXTRACT_SCHEMA_DETAILS_TITLE = 'Details';
-export const EXTRACT_SCHEMA_START_TITLE = 'Create Schema';
-export const EXTRACT_SCHEMA_START_DESCRIPTION = 'Start manually or bootstrap with a generated example.';
-export const EXTRACT_SCHEMA_START_ACTIONS = ['Auto-Generate', 'Create Manually'] as const;
-
-function createStarterSchemaFields(mode: 'auto' | 'manual'): SchemaField[] {
-  if (mode === 'auto') {
-    return [
-      createSchemaField({
-        name: 'title',
-        type: 'string',
-        description: 'Generated example title field',
-      }),
-      createSchemaField({
-        name: 'summary',
-        type: 'string',
-        description: 'Generated example summary field',
-      }),
-    ];
-  }
-
-  return [createSchemaField({ type: 'string' })];
-}
-
-function ExtractSchemaTab({ doc: _doc }: { doc: ProjectDocumentRow | null }) {
-  const monacoTheme = useMonacoTheme();
-  const [workspaceStage, setWorkspaceStage] = useState<SchemaWorkspaceStage>('start');
-  const [editorView, setEditorView] = useState<SchemaEditorView>('visual');
-  const [fields, setFields] = useState<SchemaField[]>(() => createStarterSchemaFields('manual'));
-  const editorRef = useRef<MonacoEditorInstance | null>(null);
-  const codeHasFocusRef = useRef(false);
-
-  const schemaTypeCollection = useMemo(
-    () => createListCollection({ items: SCHEMA_TYPE_OPTIONS }),
-    [],
-  );
-
-  const schemaJson = useMemo(
-    () => JSON.stringify(buildObjectSchema(fields), null, 2),
-    [fields],
-  );
-
-  // Sync visual → code when code pane isn't focused
-  useEffect(() => {
-    const editor = editorRef.current;
-    if (editor && !codeHasFocusRef.current) {
-      const current = editor.getValue();
-      if (current !== schemaJson) {
-        editor.setValue(schemaJson);
-      }
-    }
-  }, [schemaJson]);
-
-  const updateField = useCallback((targetId: string, updater: (field: SchemaField) => SchemaField) => {
-    setFields((prev) => {
-      const visit = (input: SchemaField[]): SchemaField[] =>
-        input.map((field) => {
-          if (field.id === targetId) return updater(field);
-          if (field.children.length === 0) return field;
-          return { ...field, children: visit(field.children) };
-        });
-      return visit(prev);
-    });
-  }, []);
-
-  const removeField = useCallback((targetId: string) => {
-    setFields((prev) => {
-      const removeFrom = (input: SchemaField[]): SchemaField[] =>
-        input.flatMap((field) => {
-          if (field.id === targetId) return [];
-          if (field.children.length === 0) return [field];
-          return [{ ...field, children: removeFrom(field.children) }];
-        });
-      return removeFrom(prev);
-    });
-  }, []);
-
-  const iconBtnClass = 'inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md';
-  const iconActiveClass = 'bg-accent text-foreground';
-  const iconInactiveClass = 'text-muted-foreground hover:text-foreground';
-
-  const viewBtnClass = (active: boolean) =>
-    active
-      ? 'border-border bg-background text-foreground'
-      : 'border-transparent text-muted-foreground hover:bg-background hover:text-foreground';
-
-  function renderFieldRows(fieldList: SchemaField[], depth = 0): React.ReactNode {
-    return fieldList.map((field) => (
-      <div key={field.id} style={{ marginLeft: `${depth * 14}px` }}>
-        <span className="text-xs font-medium text-muted-foreground">Property</span>
-        <div className="mt-1 flex items-center gap-2">
-          <Input
-            value={field.name}
-            placeholder=""
-            className="h-9 min-w-0 flex-1 text-sm"
-            onChange={(e) => {
-              const nextName = e.currentTarget.value;
-              updateField(field.id, (cur) => ({ ...cur, name: nextName }));
-            }}
-          />
-
-          <Select.Root
-            collection={schemaTypeCollection}
-            value={[field.type]}
-            onValueChange={(details) => {
-              const nextType = details.value[0] as SchemaFieldType | undefined;
-              if (!nextType) return;
-              updateField(field.id, (cur) => {
-                if (nextType === 'object') return { ...cur, type: nextType, enumValues: [] };
-                if (nextType === 'enum') {
-                  return { ...cur, type: nextType, children: [], enumValues: cur.enumValues.length > 0 ? cur.enumValues : [''] };
-                }
-                return { ...cur, type: nextType, children: [], enumValues: [] };
-              });
-            }}
-            positioning={{ placement: 'bottom-start', offset: { mainAxis: 4 }, strategy: 'fixed' }}
-          >
-            <Select.Control>
-              <Select.Trigger className="flex h-9 w-28 items-center justify-between rounded-md border border-input bg-background px-2 text-sm">
-                <Select.ValueText placeholder="type" className="truncate" />
-                <Select.Indicator className="ml-1 shrink-0 text-muted-foreground">
-                  <IconChevronDown size={14} />
-                </Select.Indicator>
-              </Select.Trigger>
-            </Select.Control>
-            <Select.Positioner className="z-50">
-              <Select.Content className="min-w-36 max-h-72 overflow-y-auto rounded-md border border-border bg-popover p-1 shadow-md">
-                {SCHEMA_TYPE_OPTIONS.map((item) => (
-                  <Select.Item
-                    key={item.value}
-                    item={item}
-                    className={cn(
-                      'flex cursor-pointer items-center justify-between rounded px-2 py-1.5 text-sm',
-                      'data-[state=checked]:bg-accent data-[state=checked]:font-medium',
-                      'data-highlighted:bg-accent data-highlighted:outline-none',
-                    )}
-                  >
-                    <Select.ItemText>{item.label}</Select.ItemText>
-                    <Select.ItemIndicator><IconCheck size={14} /></Select.ItemIndicator>
-                  </Select.Item>
-                ))}
-              </Select.Content>
-            </Select.Positioner>
-            <Select.HiddenSelect name={`schema-field-type-${field.id}`} />
-          </Select.Root>
-
-          <button
-            type="button"
-            className={cn(iconBtnClass, field.isArray ? iconActiveClass : iconInactiveClass)}
-            title={field.isArray ? 'Array enabled' : 'Mark as array'}
-            onClick={() => updateField(field.id, (cur) => ({ ...cur, isArray: !cur.isArray }))}
-          >
-            <IconBrackets size={18} />
-          </button>
-
-          <button
-            type="button"
-            className={cn(iconBtnClass, field.required ? iconActiveClass : iconInactiveClass)}
-            title={field.required ? 'Required' : 'Optional'}
-            onClick={() => updateField(field.id, (cur) => ({ ...cur, required: !cur.required }))}
-          >
-            <IconAsterisk size={18} />
-          </button>
-
-          <button
-            type="button"
-            className={cn(iconBtnClass, iconInactiveClass)}
-            title="Delete property"
-            onClick={() => removeField(field.id)}
-          >
-            <IconTrash size={18} />
-          </button>
-        </div>
-
-        {/* Description field for extraction hint */}
-        <div className="mt-1.5">
-          <Input
-            value={field.description}
-            placeholder="Field description (extraction hint)"
-            className="h-8 text-xs text-muted-foreground"
-            onChange={(e) => {
-              const desc = e.currentTarget.value;
-              updateField(field.id, (cur) => ({ ...cur, description: desc }));
-            }}
-          />
-        </div>
-
-        {field.type === 'enum' && (
-          <div className="mt-1.5 ml-0.5 space-y-1 border-l-2 border-border/40 pl-3">
-            {field.enumValues.map((value, index) => (
-              <div key={`${field.id}-enum-${index}`} className="flex items-center gap-2">
-                <Input
-                  value={value}
-                  placeholder="Enum value"
-                  className="h-9 text-sm"
-                  onChange={(e) => {
-                    const nextValue = e.currentTarget.value;
-                    updateField(field.id, (cur) => ({
-                      ...cur,
-                      enumValues: cur.enumValues.map((item, i) => (i === index ? nextValue : item)),
-                    }));
-                  }}
-                />
-                <button
-                  type="button"
-                  className={cn(iconBtnClass, iconInactiveClass)}
-                  aria-label="Remove enum value"
-                  onClick={() => {
-                    updateField(field.id, (cur) => ({
-                      ...cur,
-                      enumValues: cur.enumValues.filter((_, i) => i !== index),
-                    }));
-                  }}
-                >
-                  <IconTrash size={16} />
-                </button>
-              </div>
-            ))}
-            <button
-              type="button"
-              className="text-xs font-medium text-muted-foreground hover:text-foreground"
-              onClick={() => updateField(field.id, (cur) => ({ ...cur, enumValues: [...cur.enumValues, ''] }))}
-            >
-              Add enum value
-            </button>
-          </div>
-        )}
-
-        {field.type === 'object' && (
-          <div className="mt-1.5 ml-0.5 space-y-0 border-l-2 border-border/40 pl-3">
-            {field.children.length > 0 ? (
-              renderFieldRows(field.children, depth + 1)
-            ) : (
-              <p className="text-xs text-muted-foreground py-1">No nested properties yet.</p>
-            )}
-            <button
-              type="button"
-              className="text-xs font-medium text-muted-foreground hover:text-foreground py-1"
-              onClick={() => updateField(field.id, (cur) => ({
-                ...cur,
-                children: [...cur.children, createSchemaField({ type: 'string' })],
-              }))}
-            >
-              Add nested property
-            </button>
-          </div>
-        )}
-      </div>
-    ));
-  }
+function ExtractSchemaTab({ projectId }: { projectId: string | null }) {
+  const { schemas, loading } = useExtractionSchemas(projectId);
 
   return (
-    <div className="flex h-full min-h-0 gap-1 p-1">
-      <div className="flex min-h-0 w-[15rem] shrink-0 flex-col overflow-hidden rounded-md border border-border bg-card">
-        <div className="flex items-center justify-between border-b border-border px-3 py-2.5">
-          <div>
-            <div className="text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
-              {EXTRACT_SCHEMA_LIBRARY_TITLE}
-            </div>
-            <div className="text-xs text-foreground/75">User schema presets</div>
+    <div className="flex h-full min-h-0 flex-col p-1">
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-md border border-border bg-card">
+        <div className="border-b border-border px-3 py-2.5">
+          <div className="text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+            Saved Schemas
           </div>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="h-7 px-2 text-[11px]"
-            onClick={() => setWorkspaceStage('start')}
-          >
-            New
-          </Button>
+          <div className="text-xs text-foreground/75">User schema presets</div>
         </div>
-        <div className="min-h-0 flex-1 px-3 py-3">
-          <div className="rounded-lg border border-dashed border-border/80 bg-muted/20 px-3 py-4 text-sm text-muted-foreground">
-            Saved schemas will appear here in a file-list style view.
-          </div>
-        </div>
-      </div>
-
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-md border border-border bg-card">
-        {workspaceStage === 'editing' && (
-          <>
-            <div className="flex items-center gap-1 border-b border-border bg-card px-2 py-1.5">
-              <button
-                type="button"
-                aria-pressed={editorView === 'visual'}
-                onClick={() => setEditorView('visual')}
-                className={`inline-flex h-8 items-center gap-1.5 rounded-md border px-2 text-xs font-semibold ${viewBtnClass(editorView === 'visual')}`}
-              >
-                <IconEye size={14} />
-                Visual
-              </button>
-              <button
-                type="button"
-                aria-pressed={editorView === 'code'}
-                onClick={() => setEditorView('code')}
-                className={`inline-flex h-8 items-center gap-1.5 rounded-md border px-2 text-xs font-semibold ${viewBtnClass(editorView === 'code')}`}
-              >
-                <IconCode size={14} />
-                Code
-              </button>
-
-              <div className="ml-auto">
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="ghost"
-                  className="h-8 text-xs"
-                  onClick={() => {
-                    // TODO: persist schema to extraction_schemas table
-                    console.log('Save schema:', schemaJson);
-                  }}
-                >
-                  Save
-                </Button>
-              </div>
+        <div className="min-h-0 flex-1 overflow-auto">
+          {!projectId ? (
+            <div className="px-3 py-10 text-center text-sm text-muted-foreground">
+              Select a project to view schemas.
             </div>
-
-            {/* Visual view */}
-            {editorView === 'visual' && (
-              <div className="min-h-0 flex-1 overflow-auto p-3">
-                {fields.length > 0 ? (
-                  <div className="space-y-3">
-                    {renderFieldRows(fields)}
-                    <button
-                      type="button"
-                      className="text-xs font-medium text-muted-foreground hover:text-foreground"
-                      onClick={() => setFields((prev) => [...prev, createSchemaField({ type: 'string' })])}
+          ) : loading ? (
+            <div className="px-3 py-10 text-center text-sm text-muted-foreground">Loading…</div>
+          ) : schemas.length === 0 ? (
+            <div className="px-3 py-10 text-center text-sm text-muted-foreground">
+              No schemas saved yet. Create one in the Schemas page.
+            </div>
+          ) : (
+            <table className="w-full table-fixed text-left text-[12px] leading-5">
+              <thead className="sticky top-0 z-10 border-b border-border bg-card text-muted-foreground">
+                <tr>
+                  <th className="w-[45%] px-2.5 py-1.5 text-[10px] font-medium uppercase tracking-[0.08em]">Name</th>
+                  <th className="px-2.5 py-1.5 text-[10px] font-medium uppercase tracking-[0.08em]">Fields</th>
+                  <th className="px-2.5 py-1.5 text-[10px] font-medium uppercase tracking-[0.08em]">Updated</th>
+                </tr>
+              </thead>
+              <tbody>
+                {schemas.map((s) => {
+                  const fieldCount = Object.keys(
+                    (s.schema_body as Record<string, unknown>)?.properties ?? {},
+                  ).length;
+                  return (
+                    <tr
+                      key={s.schema_id}
+                      className="cursor-pointer border-b border-border transition-colors hover:bg-accent/50"
                     >
-                      Add property
-                    </button>
-                  </div>
-                ) : (
-                  <div className="flex h-full min-h-[160px] flex-col items-center justify-center gap-2 text-sm text-muted-foreground">
-                    <span>No properties yet.</span>
-                    <button
-                      type="button"
-                      className="text-xs font-medium text-foreground hover:underline"
-                      onClick={() => setFields((prev) => [...prev, createSchemaField({ type: 'string' })])}
-                    >
-                      Add your first property
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Code view */}
-            {editorView === 'code' && (
-              <div className="min-h-0 flex-1 p-2">
-                <div className="h-full overflow-hidden rounded-md border border-border/70 bg-background">
-                  <MonacoEditor
-                    language="json"
-                    theme={monacoTheme}
-                    defaultValue={schemaJson}
-                    onMount={(editor) => {
-                      editorRef.current = editor;
-                      editor.onDidFocusEditorText(() => { codeHasFocusRef.current = true; });
-                      editor.onDidBlurEditorText(() => {
-                        codeHasFocusRef.current = false;
-                        try {
-                          const parsed = JSON.parse(editor.getValue());
-                          if (parsed?.type === 'object') {
-                            setFields(parseObjectSchemaToFields(parsed));
-                          }
-                        } catch { /* invalid JSON — user still editing */ }
-                      });
-                    }}
-                    options={{
-                      minimap: { enabled: false },
-                      fontSize: 12,
-                      lineHeight: 1.5,
-                      scrollBeyondLastLine: false,
-                      wordWrap: 'on',
-                      automaticLayout: true,
-                      scrollbar: {
-                        verticalScrollbarSize: 6,
-                        horizontalScrollbarSize: 6,
-                        useShadows: false,
-                      },
-                    }}
-                  />
-                </div>
-              </div>
-            )}
-          </>
-        )}
+                      <td className="truncate px-2.5 py-1.5 font-medium text-foreground">{s.schema_name}</td>
+                      <td className="px-2.5 py-1.5 text-muted-foreground">{fieldCount}</td>
+                      <td className="px-2.5 py-1.5 text-muted-foreground">
+                        {new Date(s.updated_at).toLocaleDateString()}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
+        </div>
+        <div className="border-t border-border px-3 py-2 text-xs text-muted-foreground">
+          {schemas.length} saved schema{schemas.length === 1 ? '' : 's'}
+        </div>
       </div>
     </div>
   );
@@ -657,7 +303,7 @@ export function useExtractWorkbench(options?: { title?: string }) {
     }
 
     if (tabId === 'extract-schema') {
-      return <ExtractSchemaTab doc={activeDoc} />;
+      return <ExtractSchemaTab projectId={resolvedProjectId} />;
     }
 
     if (tabId === 'extract-results') {
