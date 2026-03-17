@@ -53,15 +53,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         setSession(data.session);
         if (data.session?.user?.id) {
-          await loadProfile(data.session.user.id);
+          try {
+            await loadProfile(data.session.user.id);
+          } catch (profileErr) {
+            // Profile failure must NOT wipe a valid session
+            if (isActive) setProfile(null);
+            console.warn('[auth] profile load failed (session preserved):', profileErr instanceof Error ? profileErr.message : String(profileErr));
+          }
         } else {
           setProfile(null);
         }
       } catch (error) {
         if (!isActive) return;
-        setSession(null);
-        setProfile(null);
-        console.error('[auth] session bootstrap failed:', error instanceof Error ? error.message : String(error));
+        // Only clear session for actual auth failures, not AbortError
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          console.warn('[auth] bootstrap aborted, preserving state');
+        } else {
+          setSession(null);
+          setProfile(null);
+          console.error('[auth] session bootstrap failed:', error instanceof Error ? error.message : String(error));
+        }
       } finally {
         if (isActive) setLoading(false);
       }
