@@ -125,7 +125,7 @@ export function TopCommandBar({
           aria-label="Toggle navigation"
           title="Toggle navigation"
           onClick={onToggleNav}
-          className="inline-flex h-10 w-10 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:hidden"
+          className="inline-flex h-10 w-10 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:hidden"
         >
           <HugeiconsIcon icon={Menu02Icon} size={24} strokeWidth={1.8} />
         </button>

@@ -178,6 +178,7 @@
 
 @media (max-width: 767px) {
   :root {
+    --app-shell-header-height: 44px;
     --app-shell-page-gap: 0.75rem;
     --app-shell-page-bottom-padding: 1rem;
   }

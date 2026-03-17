@@ -1,20 +1,20 @@
 # Component Inventory
 
-Generated: 2026-03-15T01:26:28.087Z
+Generated: 2026-03-17T00:08:16.287Z
 Scope: auth
 
-Pages scanned: 45
-Unique component usages: 428
+Pages scanned: 49
+Unique component usages: 444
 
 ## Category Totals
 
 | Category | Count |
 | --- | ---: |
 | ark-ui | 158 |
-| external-package | 17 |
+| external-package | 20 |
 | in-file component | 18 |
-| local-components | 139 |
-| relative-local | 17 |
+| local-components | 150 |
+| relative-local | 19 |
 | tabler-icons | 79 |
 
 ## src/pages/AgentOnboarding.tsx
@@ -188,6 +188,32 @@ Component usages: 1
 | --- | --- | --- | --- |
 | `KestraPageShell` | `./KestraPageShell` | relative-local | KestraPageShell comes from ./KestraPageShell (default import of default) |
 
+## src/pages/LoadPage.tsx
+
+Component usages: 0
+
+| Used As | Source | Category | Definition |
+| --- | --- | --- | --- |
+
+## src/pages/marketplace/FunctionCatalogPage.tsx
+
+Component usages: 12
+
+| Used As | Source | Category | Definition |
+| --- | --- | --- | --- |
+| `HugeiconsIcon` | `@hugeicons/react` | external-package | HugeiconsIcon comes from @hugeicons/react (named import of HugeiconsIcon) |
+| `Link` | `react-router-dom` | external-package | Link comes from react-router-dom (named import of Link) |
+| `MenuContent` | `@/components/ui/menu` | local-components | MenuContent comes from @/components/ui/menu (named import of MenuContent) |
+| `MenuIndicator` | `@/components/ui/menu` | local-components | MenuIndicator comes from @/components/ui/menu (named import of MenuIndicator) |
+| `MenuItem` | `@/components/ui/menu` | local-components | MenuItem comes from @/components/ui/menu (named import of MenuItem) |
+| `MenuPortal` | `@/components/ui/menu` | local-components | MenuPortal comes from @/components/ui/menu (named import of MenuPortal) |
+| `MenuPositioner` | `@/components/ui/menu` | local-components | MenuPositioner comes from @/components/ui/menu (named import of MenuPositioner) |
+| `MenuRoot` | `@/components/ui/menu` | local-components | MenuRoot comes from @/components/ui/menu (named import of MenuRoot) |
+| `MenuSeparator` | `@/components/ui/menu` | local-components | MenuSeparator comes from @/components/ui/menu (named import of MenuSeparator) |
+| `MenuTrigger` | `@/components/ui/menu` | local-components | MenuTrigger comes from @/components/ui/menu (named import of MenuTrigger) |
+| `PageHeader` | `@/components/common/PageHeader` | local-components | PageHeader comes from @/components/common/PageHeader (named import of PageHeader) |
+| `ScrollArea` | `@/components/ui/scroll-area` | local-components | ScrollArea comes from @/components/ui/scroll-area (named import of ScrollArea) |
+
 ## src/pages/marketplace/IntegrationsCatalog.tsx
 
 Component usages: 3
@@ -200,7 +226,7 @@ Component usages: 3
 
 ## src/pages/marketplace/ServiceDetailPage.tsx
 
-Component usages: 11
+Component usages: 12
 
 | Used As | Source | Category | Definition |
 | --- | --- | --- | --- |
@@ -211,6 +237,7 @@ Component usages: 11
 | `HugeiconsIcon` | `@hugeicons/react` | external-package | HugeiconsIcon comes from @hugeicons/react (named import of HugeiconsIcon) |
 | `IconChevronRight` | `@tabler/icons-react` | tabler-icons | IconChevronRight comes from @tabler/icons-react (named import of IconChevronRight) |
 | `JsonBlock` | `@/components/services/function-reference` | local-components | JsonBlock comes from @/components/services/function-reference (named import of JsonBlock) |
+| `Link` | `react-router-dom` | external-package | Link comes from react-router-dom (named import of Link) |
 | `PageHeader` | `@/components/common/PageHeader` | local-components | PageHeader comes from @/components/common/PageHeader (named import of PageHeader) |
 | `Pill` | `@/components/services/function-reference` | local-components | Pill comes from @/components/services/function-reference (named import of Pill) |
 | `ScrollArea` | `@/components/ui/scroll-area` | local-components | ScrollArea comes from @/components/ui/scroll-area (named import of ScrollArea) |
@@ -406,6 +433,15 @@ Component usages: 30
 | `Splitter.ResizeTriggerIndicator` | `@ark-ui/react/splitter` | ark-ui | Splitter.ResizeTriggerIndicator comes from @ark-ui/react/splitter (named import of Splitter) |
 | `Splitter.Root` | `@ark-ui/react/splitter` | ark-ui | Splitter.Root comes from @ark-ui/react/splitter (named import of Splitter) |
 | `Workbench` | `@/components/workbench/Workbench` | local-components | Workbench comes from @/components/workbench/Workbench (named import of Workbench) |
+
+## src/pages/settings/ConnectionsPanel.tsx
+
+Component usages: 2
+
+| Used As | Source | Category | Definition |
+| --- | --- | --- | --- |
+| `SettingsPageFrame` | `./SettingsPageHeader` | relative-local | SettingsPageFrame comes from ./SettingsPageHeader (named import of SettingsPageFrame) |
+| `SettingsSection` | `./SettingsPageHeader` | relative-local | SettingsSection comes from ./SettingsPageHeader (named import of SettingsSection) |
 
 ## src/pages/settings/DoclingConfigPanel.tsx
 
@@ -736,6 +772,14 @@ Component usages: 2
 | --- | --- | --- | --- |
 | `Navigate` | `react-router-dom` | external-package | Navigate comes from react-router-dom (named import of Navigate) |
 | `Outlet` | `react-router-dom` | external-package | Outlet comes from react-router-dom (named import of Outlet) |
+
+## src/pages/TransformPage.tsx
+
+Component usages: 1
+
+| Used As | Source | Category | Definition |
+| --- | --- | --- | --- |
+| `Workbench` | `@/components/workbench/Workbench` | local-components | Workbench comes from @/components/workbench/Workbench (named import of Workbench) |
 
 ## src/pages/UppyLibraryDemo.tsx
 

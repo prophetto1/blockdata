@@ -237,22 +237,37 @@ function AppShellInner() {
     };
   }, [lockMainScroll]);
 
+  const headerHeight = isMobile
+    ? styleTokens.shell.headerHeightMobile
+    : styleTokens.shell.headerHeight;
+
   const shellVars = {
     '--app-shell-navbar-offset': '0px',
-    '--app-shell-header-height': `${styleTokens.shell.headerHeight}px`,
+    '--app-shell-header-height': `${headerHeight}px`,
   } as CSSProperties;
 
-  const mobilePad = isMobile && !isFullBleedRoute;
-  const shellMainStyle: CSSProperties = {
-    position: 'absolute',
-    inset: 0,
-    paddingTop: `${styleTokens.shell.headerHeight}px`,
-    paddingInlineStart: mobilePad ? '16px' : `${mainInsetStart}px`,
-    paddingInlineEnd: mobilePad ? '16px' : `${mainInsetEnd}px`,
-    overflow: lockMainScroll ? 'hidden' : 'auto',
-    overscrollBehavior: lockMainScroll ? 'none' : 'auto',
-    backgroundColor: 'var(--background)',
-  };
+  const shellMainStyle: CSSProperties = isMobile
+    ? {
+        flex: '1 1 0%',
+        minHeight: 0,
+        paddingTop: `${headerHeight}px`,
+        paddingInlineStart: `${mainInsetStart}px`,
+        paddingInlineEnd: `${mainInsetEnd}px`,
+        overflow: lockMainScroll ? 'hidden' : 'auto',
+        overscrollBehavior: lockMainScroll ? 'none' : 'auto',
+        WebkitOverflowScrolling: 'touch',
+        backgroundColor: 'var(--background)',
+      }
+    : {
+        position: 'absolute',
+        inset: 0,
+        paddingTop: `${headerHeight}px`,
+        paddingInlineStart: `${mainInsetStart}px`,
+        paddingInlineEnd: `${mainInsetEnd}px`,
+        overflow: lockMainScroll ? 'hidden' : 'auto',
+        overscrollBehavior: lockMainScroll ? 'none' : 'auto',
+        backgroundColor: 'var(--background)',
+      };
   const canPortal = typeof document !== 'undefined';
 
   useEffect(() => {
@@ -264,7 +279,7 @@ function AppShellInner() {
     <>
       <div
         style={shellVars}
-        className="relative h-dvh overflow-hidden"
+        className={`relative h-dvh overflow-hidden${isMobile ? ' flex flex-col' : ''}`}
       >
         <header
           style={{
@@ -272,7 +287,7 @@ function AppShellInner() {
             insetInlineStart: `${mainInsetStart}px`,
             insetInlineEnd: 0,
             top: 0,
-            height: `${styleTokens.shell.headerHeight}px`,
+            height: `${headerHeight}px`,
             zIndex: 110,
             backgroundColor: 'var(--chrome, var(--background))',
             borderBottom: 'none',
@@ -434,7 +449,7 @@ function AppShellInner() {
             style={{
               position: 'fixed',
               insetInlineEnd: 0,
-              top: `${styleTokens.shell.headerHeight}px`,
+              top: `${headerHeight}px`,
               bottom: 0,
               width: `${styleTokens.shell.rightRailWidth}px`,
               zIndex: 104,

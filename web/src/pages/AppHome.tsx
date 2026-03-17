@@ -43,7 +43,7 @@ export default function AppHome() {
   useRightRail(rightRailContent);
 
   return (
-    <div className="flex h-full min-h-0 flex-col p-6">
+    <div className="flex h-full min-h-0 flex-col p-3 sm:p-6">
       <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6">
         <section className="rounded-xl border border-border bg-card px-6 py-8 shadow-sm">
           <div className="max-w-2xl">

@@ -216,7 +216,6 @@ export function ParseRowActions({
     doc.status === 'uploaded' ||
     doc.status === 'conversion_failed' ||
     doc.status === 'parse_failed';
-  const isConverting = doc.status === 'converting';
   const isParsed = doc.status === 'parsed';
 
   const menuItems: { label: string; onClick: () => void; danger?: boolean }[] = [];
