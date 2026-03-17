@@ -49,6 +49,24 @@ describe('nav-config side rail', () => {
     expect(paths).not.toContain('/app/docs');
   });
 
+
+  it('places Workspace below Schema and above Integrations in its own rail section', () => {
+    const schemaIndex = TOP_LEVEL_NAV.findIndex(
+      (entry) => entry !== 'divider' && entry.path === '/app/schemas',
+    );
+    const workspaceIndex = TOP_LEVEL_NAV.findIndex(
+      (entry) => entry !== 'divider' && entry.path === '/app/workspace',
+    );
+    const integrationsIndex = TOP_LEVEL_NAV.findIndex(
+      (entry) => entry !== 'divider' && entry.path === '/app/marketplace/integrations',
+    );
+
+    expect(schemaIndex).toBeGreaterThanOrEqual(0);
+    expect(workspaceIndex).toBe(schemaIndex + 2);
+    expect(TOP_LEVEL_NAV[workspaceIndex - 1]).toBe('divider');
+    expect(TOP_LEVEL_NAV[workspaceIndex + 1]).toBe('divider');
+    expect(integrationsIndex).toBe(workspaceIndex + 2);
+  });
   it('places Transform between Extract and RAG in the top-level nav', () => {
     const labels = ALL_TOP_LEVEL_ITEMS.map((item) => item.label);
 
@@ -111,5 +129,7 @@ describe('drill configs', () => {
     expect(resolveFlowDrillPath('overview', 'abc')).toBe('/app/flows/abc/overview');
   });
 });
+
+
 
 

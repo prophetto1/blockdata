@@ -95,6 +95,13 @@ describe('AppLayout route shells', () => {
     expect(screen.queryByTestId('app-page-shell')).not.toBeInTheDocument();
   });
 
+  it('renders the workspace route without AppPageShell so the workspace can fill the full height', () => {
+    renderAt('/app/workspace');
+
+    expect(screen.getByTestId('route-content')).toBeInTheDocument();
+    expect(screen.queryByTestId('app-page-shell')).not.toBeInTheDocument();
+  });
+
   it('keeps generic app routes inside AppPageShell', () => {
     renderAt('/app');
 

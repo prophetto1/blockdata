@@ -73,12 +73,13 @@ export const TOP_LEVEL_NAV: Array<NavItem | 'divider'> = [
   { label: 'Load', icon: IconPlayerPlay, path: '/app/load' },
   { label: 'Schema', icon: IconSchema, path: '/app/schemas' },
   'divider',
+  { label: 'Workspace', icon: IconFileCode, path: '/app/workspace' },
+  'divider',
   { label: 'Integrations', icon: IconApps, path: '/app/marketplace/integrations' },
   { label: 'Services', icon: IconServer, path: '/app/marketplace/services' },
   { label: 'API', icon: IconTerminal2, path: '/app/api-editor' },
   'divider',
   { label: 'Tests', icon: IconTestPipe, path: '/app/tests' },
-  { label: 'Test-Integrations', icon: IconPlugConnected, path: '/app/superuser/test-integrations' },
   'divider',
   { label: 'Settings', icon: IconSettings, path: '/app/settings', drillId: 'settings' },
 ];
@@ -163,7 +164,6 @@ const SUPERUSER_DRILL: NavDrillConfig = {
         { label: 'Worker Config', icon: IconServer, path: '/app/superuser/worker-config' },
         { label: 'Audit History', icon: IconClipboardList, path: '/app/superuser/audit' },
         { label: 'API Endpoints', icon: IconCode, path: '/app/superuser/api-endpoints' },
-        { label: 'Test-Integrations', icon: IconPlugConnected, path: '/app/superuser/test-integrations' },
       ],
     },
   ],
@@ -214,6 +214,7 @@ export const NAV_GROUPS: NavGroup[] = [
     label: 'Editor',
     items: [
       { label: 'Schema', icon: IconSchema, path: '/app/schemas' },
+      { label: 'Workspace', icon: IconFileCode, path: '/app/workspace' },
       { label: 'API', icon: IconTerminal2, path: '/app/api-editor' },
     ],
   },
@@ -231,4 +232,7 @@ export const NAV_GROUPS: NavGroup[] = [
     ],
   },
 ];
+
+
+
 

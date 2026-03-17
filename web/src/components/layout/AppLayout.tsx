@@ -200,6 +200,7 @@ function AppShellInner() {
   const isParseRoute = location.pathname === '/app/parse';
   const isExtractRoute = location.pathname === '/app/extract';
   const isSchemasRoute = /^\/app\/schemas(?:\/|$)/.test(location.pathname);
+  const isWorkspaceRoute = /^\/app\/workspace(?:\/|$)/.test(location.pathname);
   const isFullBleedRoute = (
     isFlowsRoute
     || isMarketplaceRoute
@@ -208,6 +209,7 @@ function AppShellInner() {
     || isParseRoute
     || isExtractRoute
     || isSchemasRoute
+    || isWorkspaceRoute
     || isTestIntegrationsRoute
   );
   const lockMainScroll = (
@@ -476,4 +478,5 @@ function AppShellInner() {
     </>
   );
 }
+
 

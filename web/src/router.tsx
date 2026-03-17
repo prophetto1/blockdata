@@ -32,6 +32,7 @@ import DocumentTest from '@/pages/DocumentTest';
 import DatabasePlaceholder from '@/pages/DatabasePlaceholder';
 import ProjectAssetsPage from '@/pages/ProjectAssetsPage';
 import ParsePage from '@/pages/ParsePage';
+import { Component as Workspace } from '@/pages/Workspace';
 import ExtractPage from '@/pages/ExtractPage';
 import TransformPage from '@/pages/TransformPage';
 import LoadPage from '@/pages/LoadPage';
@@ -140,6 +141,7 @@ export const router = createBrowserRouter([
           { path: '/app/database', element: <DatabasePlaceholder /> },
           { path: '/app/assets', element: <ProjectAssetsPage /> },
           { path: '/app/parse', element: <ParsePage /> },
+          { path: '/app/workspace', element: <Workspace /> },
           { path: '/app/extract', element: <ExtractPage /> },
           { path: '/app/tests', element: <TestsPage /> },
           { path: '/app/test-integrations', element: <Navigate to="/app/superuser/test-integrations" replace /> },
@@ -267,4 +269,5 @@ export const router = createBrowserRouter([
   // Catch-all 404 for routes outside /app
   { path: '*', element: <NotFound /> },
 ]);
+
 
