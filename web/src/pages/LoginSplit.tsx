@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Navigate, useNavigate, Link } from 'react-router-dom';
 import { Field } from '@ark-ui/react/field';
 import { PasswordInput } from '@ark-ui/react/password-input';
 import { IconEye, IconEyeOff } from '@tabler/icons-react';
@@ -12,7 +12,7 @@ export default function LoginSplit() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
-  const { signIn, resendSignupConfirmation } = useAuth();
+  const { signIn, resendSignupConfirmation, session, loading: authLoading } = useAuth();
   const navigate = useNavigate();
 
   const inputClass =
@@ -51,6 +51,18 @@ export default function LoginSplit() {
     !!email &&
     !!error &&
     /confirm|confirmed|verification|verify/i.test(error);
+
+  if (authLoading) {
+    return (
+      <div className="flex flex-1 items-center justify-center p-6">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
+      </div>
+    );
+  }
+
+  if (session) {
+    return <Navigate to="/app" replace />;
+  }
 
   return (
     <div className="flex flex-1 items-center justify-center p-6">

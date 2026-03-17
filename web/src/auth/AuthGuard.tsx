@@ -1,8 +1,8 @@
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from './AuthContext';
 
-// Temporary bypass: disable auth-gated routing until auth is rewired.
-const AUTH_BYPASS_ENABLED = true;
+// Auth bypass for local development. Set VITE_AUTH_BYPASS=true in .env.local to enable.
+const AUTH_BYPASS_ENABLED = import.meta.env.VITE_AUTH_BYPASS === 'true';
 
 export function AuthGuard() {
   const { session, loading } = useAuth();

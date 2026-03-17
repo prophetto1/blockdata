@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { IconBraces, IconDownload, IconFileCode, IconLoader2, IconFileText, IconLayoutList, IconSettings, IconX } from '@tabler/icons-react';
+import { IconBraces, IconCode, IconDownload, IconFileCode, IconLoader2, IconFileText, IconLayoutList, IconSettings, IconX } from '@tabler/icons-react';
 import ReactMarkdown from 'react-markdown';
 import remarkFrontmatter from 'remark-frontmatter';
 import remarkGfm from 'remark-gfm';
@@ -25,6 +25,7 @@ import {
   DocumentPreviewShell,
 } from '@/components/documents/DocumentPreviewShell';
 import { ParseConfigColumn } from '@/components/documents/ParseConfigColumn';
+import { TreeSitterAstPreview } from '@/components/documents/TreeSitterAstPreview';
 import { ParseSettingsColumn } from '@/components/documents/ParseSettingsColumn';
 import { ParseRowActions, ParseTabPanel, useParseTab } from '@/components/documents/ParseTabPanel';
 import { cn } from '@/lib/utils';
@@ -678,6 +679,152 @@ function ParseFileNavigator({
   );
 }
 
+// ─── Tree-sitter tab components ──────────────────────────────────────────────
+
+function TreeSitterAstTab({ doc, artifacts }: { doc: ProjectDocumentRow | null; artifacts: ParseArtifactBundle | null }) {
+  if (!doc) {
+    return (
+      <DocumentPreviewFrame>
+        <DocumentPreviewMessage message="Select a parsed code file to view its AST." />
+      </DocumentPreviewFrame>
+    );
+  }
+
+  const state = artifacts?.treeSitterAst;
+  if (!state || state.loading) {
+    return (
+      <DocumentPreviewShell doc={doc}>
+        <DocumentPreviewMessage message={<IconLoader2 size={20} className="animate-spin text-muted-foreground" />} />
+      </DocumentPreviewShell>
+    );
+  }
+
+  if (state.error || !state.rawText) {
+    return (
+      <DocumentPreviewShell doc={doc}>
+        <DocumentPreviewMessage message={state.error ?? 'No AST artifact available. Parse this file with a tree-sitter profile.'} />
+      </DocumentPreviewShell>
+    );
+  }
+
+  return (
+    <DocumentPreviewShell doc={doc}>
+      <TreeSitterAstPreview jsonText={state.rawText} />
+    </DocumentPreviewShell>
+  );
+}
+
+function TreeSitterSymbolsTab({ doc, artifacts }: { doc: ProjectDocumentRow | null; artifacts: ParseArtifactBundle | null }) {
+  if (!doc) {
+    return (
+      <DocumentPreviewFrame>
+        <DocumentPreviewMessage message="Select a parsed code file to view its symbol outline." />
+      </DocumentPreviewFrame>
+    );
+  }
+
+  const state = artifacts?.treeSitterSymbols;
+  if (!state || state.loading) {
+    return (
+      <DocumentPreviewShell doc={doc}>
+        <DocumentPreviewMessage message={<IconLoader2 size={20} className="animate-spin text-muted-foreground" />} />
+      </DocumentPreviewShell>
+    );
+  }
+
+  if (state.error || !state.rawText) {
+    return (
+      <DocumentPreviewShell doc={doc}>
+        <DocumentPreviewMessage message={state.error ?? 'No symbols artifact available. Parse this file with a tree-sitter profile.'} />
+      </DocumentPreviewShell>
+    );
+  }
+
+  const symbols = JSON.parse(state.rawText) as Array<{ kind: string; name: string; start_line: number; end_line: number; parent: string | null }>;
+
+  return (
+    <DocumentPreviewShell doc={doc}>
+      <div className="overflow-auto p-3">
+        <table className="w-full text-xs font-mono">
+          <thead>
+            <tr className="border-b text-left text-muted-foreground">
+              <th className="pb-1 pr-3">Kind</th>
+              <th className="pb-1 pr-3">Name</th>
+              <th className="pb-1 pr-3">Lines</th>
+              <th className="pb-1">Parent</th>
+            </tr>
+          </thead>
+          <tbody>
+            {symbols.map((s, i) => (
+              <tr key={i} className="border-b border-border/50 last:border-0">
+                <td className="py-0.5 pr-3">
+                  <Badge size="sm" variant="outline">{s.kind}</Badge>
+                </td>
+                <td className="py-0.5 pr-3 font-semibold">{s.name}</td>
+                <td className="py-0.5 pr-3 text-muted-foreground">L{s.start_line + 1}–{s.end_line + 1}</td>
+                <td className="py-0.5 text-muted-foreground">{s.parent ?? '—'}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </DocumentPreviewShell>
+  );
+}
+
+function TreeSitterDownloadsTab({ doc, artifacts }: { doc: ProjectDocumentRow | null; artifacts: ParseArtifactBundle | null }) {
+  if (!doc) {
+    return (
+      <DocumentPreviewFrame>
+        <DocumentPreviewMessage message="Select a parsed code file to download its artifacts." />
+      </DocumentPreviewFrame>
+    );
+  }
+
+  const ast = artifacts?.treeSitterAst;
+  const symbols = artifacts?.treeSitterSymbols;
+
+  if (!ast || !symbols || ast.loading || symbols.loading) {
+    return (
+      <DocumentPreviewShell doc={doc}>
+        <DocumentPreviewMessage message={<IconLoader2 size={20} className="animate-spin text-muted-foreground" />} />
+      </DocumentPreviewShell>
+    );
+  }
+
+  const items = [
+    { label: 'AST JSON', url: ast.downloadUrl, filename: ast.downloadFilename, error: ast.error },
+    { label: 'Symbols JSON', url: symbols.downloadUrl, filename: symbols.downloadFilename, error: symbols.error },
+  ];
+
+  return (
+    <DocumentPreviewShell doc={doc}>
+      <div className="space-y-2 p-4">
+        {items.map((item) => (
+          <div key={item.label} className="flex items-center justify-between rounded-lg border border-border px-3 py-2">
+            <div>
+              <div className="text-sm font-medium">{item.label}</div>
+              {item.error && <div className="text-xs text-destructive">{item.error}</div>}
+              {item.filename && !item.error && <div className="text-xs text-muted-foreground">{item.filename}</div>}
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              disabled={!item.url}
+              onClick={() => {
+                if (item.url) downloadFromSignedUrl(item.url, item.filename ?? item.label);
+              }}
+            >
+              <IconDownload size={16} />
+            </Button>
+          </div>
+        ))}
+      </div>
+    </DocumentPreviewShell>
+  );
+}
+
 // ─── Tabs & panes ────────────────────────────────────────────────────────────
 
 export const PARSE_TABS: WorkbenchTab[] = [
@@ -689,10 +836,25 @@ export const PARSE_TABS: WorkbenchTab[] = [
   { id: 'docling-json', label: 'Downloads', icon: IconBraces },
 ];
 
+export const TREE_SITTER_TABS: WorkbenchTab[] = [
+  { id: 'parse-compact', label: 'File List', icon: IconFileCode },
+  { id: 'config', label: 'Parse Config', icon: IconSettings },
+  { id: 'parse-settings', label: 'Parse Settings', icon: IconSettings },
+  { id: 'ts-ast', label: 'AST', icon: IconCode },
+  { id: 'ts-symbols', label: 'Symbols', icon: IconLayoutList },
+  { id: 'ts-downloads', label: 'Downloads', icon: IconDownload },
+];
+
 export const PARSE_DEFAULT_PANES: Pane[] = normalizePaneWidths([
   { id: 'pane-parse', tabs: ['parse-compact'], activeTab: 'parse-compact', width: 32 },
   { id: 'pane-config', tabs: ['config', 'parse-settings'], activeTab: 'config', width: 24 },
   { id: 'pane-preview', tabs: ['docling-md', 'blocks', 'docling-json'], activeTab: 'docling-md', width: 44 },
+]);
+
+export const TREE_SITTER_DEFAULT_PANES: Pane[] = normalizePaneWidths([
+  { id: 'pane-parse', tabs: ['parse-compact'], activeTab: 'parse-compact', width: 32 },
+  { id: 'pane-config', tabs: ['config', 'parse-settings'], activeTab: 'config', width: 24 },
+  { id: 'pane-preview', tabs: ['ts-ast', 'ts-symbols', 'ts-downloads'], activeTab: 'ts-ast', width: 44 },
 ]);
 
 // ─── Hook ────────────────────────────────────────────────────────────────────
@@ -903,6 +1065,18 @@ export function useParseWorkbench() {
 
     if (tabId === 'docling-json') {
       return <DownloadsTab doc={activeDoc} artifacts={activeArtifacts} />;
+    }
+
+    if (tabId === 'ts-ast') {
+      return <TreeSitterAstTab doc={activeDoc} artifacts={activeArtifacts} />;
+    }
+
+    if (tabId === 'ts-symbols') {
+      return <TreeSitterSymbolsTab doc={activeDoc} artifacts={activeArtifacts} />;
+    }
+
+    if (tabId === 'ts-downloads') {
+      return <TreeSitterDownloadsTab doc={activeDoc} artifacts={activeArtifacts} />;
     }
 
     return null;

@@ -80,6 +80,10 @@ def create_app() -> FastAPI:
     from app.api.routes.load_runs import router as load_runs_router
     app.include_router(load_runs_router)
 
+    # 5d. Parse orchestration (user-scoped, before plugin catch-all)
+    from app.api.routes.parse import router as parse_router
+    app.include_router(parse_router)
+
     # 6. Plugin catch-all MUST be last
     from app.api.routes.plugin_execution import router as plugin_router
     app.include_router(plugin_router)

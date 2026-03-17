@@ -89,9 +89,15 @@ export function useParseTab() {
     }
   }, [configText]);
 
+  const selectedParser = useMemo(() => {
+    const profile = profiles.find((p) => p.id === selectedProfileId);
+    return profile?.parser ?? 'docling';
+  }, [profiles, selectedProfileId]);
+
   const batch = useBatchParse({
     profileId: selectedProfileId,
     pipelineConfig: parsedConfig,
+    parser: selectedParser,
   });
 
   useEffect(() => {
@@ -99,7 +105,6 @@ export function useParseTab() {
       const { data } = await supabase
         .from('parsing_profiles')
         .select('id, parser, config')
-        .eq('parser', 'docling')
         .order('id');
       const rows = (data ?? []) as ParsingProfile[];
       setProfiles(rows);
@@ -148,6 +153,7 @@ export function useParseTab() {
   return {
     profiles,
     selectedProfileId,
+    selectedParser,
     handleProfileChange,
     batch,
     jsonModal,

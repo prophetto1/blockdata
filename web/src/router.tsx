@@ -8,6 +8,7 @@ import { LegacyRunRedirect } from '@/components/common/LegacyRedirect';
 
 import MarketingIntegrations from '@/pages/MarketingIntegrations';
 import AuthCallback from '@/pages/AuthCallback';
+import LoginSplit from '@/pages/LoginSplit';
 import Projects from '@/pages/Projects';
 import FlowDetail from '@/pages/FlowDetail';
 import FlowsList from '@/pages/FlowsList';
@@ -111,7 +112,7 @@ export const router = createBrowserRouter([
   {
     element: <PublicFullBleedLayout />,
     children: [
-      { path: '/login', element: <Navigate to="/app" replace /> },
+      { path: '/login', element: <LoginSplit /> },
       { path: '/register', element: <Navigate to="/early-access" replace /> },
       { path: '/early-access', element: <EarlyAccess /> },
     ],

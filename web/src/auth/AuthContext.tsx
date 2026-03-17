@@ -17,7 +17,7 @@ type AuthState = {
 
 const AuthContext = createContext<AuthState | null>(null);
 
-const DEV_AUTO_LOGIN_ENABLED = import.meta.env.VITE_DEV_AUTO_LOGIN_ENABLED !== 'false';
+const DEV_AUTO_LOGIN_ENABLED = import.meta.env.VITE_DEV_AUTO_LOGIN_ENABLED === 'true';
 const DEV_AUTO_LOGIN_EMAIL = (
   import.meta.env.VITE_DEV_AUTO_LOGIN_EMAIL as string | undefined
 )?.trim() || 'jondev717@gmail.com';
@@ -32,6 +32,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const autoLoginAttemptedRef = useRef(false);
 
   useEffect(() => {
+    let isActive = true;
+
     const loadProfile = async (userId: string) => {
       const { data, error } = await supabase
         .from(TABLES.profiles)
@@ -39,18 +41,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .eq('user_id', userId)
         .maybeSingle();
       if (error) throw error;
+      if (!isActive) return;
       setProfile((data ?? null) as ProfileRow | null);
     };
 
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
-      if (data.session?.user?.id) {
-        loadProfile(data.session.user.id).catch(() => setProfile(null));
-      } else {
+    const bootstrapSession = async () => {
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        if (error) throw error;
+        if (!isActive) return;
+
+        setSession(data.session);
+        if (data.session?.user?.id) {
+          await loadProfile(data.session.user.id);
+        } else {
+          setProfile(null);
+        }
+      } catch (error) {
+        if (!isActive) return;
+        setSession(null);
         setProfile(null);
+        console.error('[auth] session bootstrap failed:', error instanceof Error ? error.message : String(error));
+      } finally {
+        if (isActive) setLoading(false);
       }
-      setLoading(false);
-    });
+    };
+
+    void bootstrapSession();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => {
       setSession(s);
@@ -61,7 +78,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      isActive = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   useEffect(() => {
