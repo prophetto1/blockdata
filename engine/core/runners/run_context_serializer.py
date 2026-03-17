@@ -11,7 +11,7 @@ from engine.core.runners.run_context import RunContext
 
 @dataclass(slots=True, kw_only=True)
 class RunContextSerializer(StdSerializer):
-    serial_version_u_i_d: ClassVar[int] = 1
+    serial_version_uid: ClassVar[int] = 1
 
     def serialize(self, value: RunContext, gen: JsonGenerator, provider: SerializerProvider) -> None:
         raise NotImplementedError  # TODO: translate from Java

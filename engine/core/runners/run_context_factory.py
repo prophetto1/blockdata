@@ -11,7 +11,7 @@ from engine.core.assets.asset_manager_factory import AssetManagerFactory
 from engine.core.runners.default_run_context import DefaultRunContext
 from engine.core.models.executions.execution import Execution
 from engine.core.models.flows.flow_interface import FlowInterface
-from engine.core.services.k_v_store_service import KVStoreService
+from engine.core.services.kv_store_service import KVStoreService
 from engine.core.metrics.metric_registry import MetricRegistry
 from engine.core.storages.namespace_factory import NamespaceFactory
 from engine.core.services.namespace_service import NamespaceService

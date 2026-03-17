@@ -10,7 +10,7 @@ from engine.jdbc.abstract_jdbc_repository import AbstractJdbcRepository
 from engine.core.repositories.array_list_total import ArrayListTotal
 from engine.core.models.conditions.condition import Condition
 from engine.jdbc.jdbc_table_config import JdbcTableConfig
-from engine.jdbc.jooq_d_s_l_context_wrapper import JooqDSLContextWrapper
+from engine.jdbc.jooq_dsl_context_wrapper import JooqDSLContextWrapper
 from engine.core.queues.queue_service import QueueService
 
 

@@ -23,8 +23,8 @@ from engine.core.models.tasks.void_output import VoidOutput
 @dataclass(slots=True, kw_only=True)
 class EachParallel(Parallel):
     """Fan out tasks in parallel for each value (deprecated)."""
+    concurrent: Property[int]
     value: Any
-    concurrent: Property[int] = Property.ofValue(0)
 
     def tasks_tree(self, execution: Execution, task_run: TaskRun, parent_values: list[str]) -> GraphCluster:
         raise NotImplementedError  # TODO: translate from Java

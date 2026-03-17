@@ -23,7 +23,7 @@ from engine.core.models.tasks.void_output import VoidOutput
 @dataclass(slots=True, kw_only=True)
 class Dag(Task):
     """Define tasks as a DAG with explicit dependencies."""
-    concurrent: Property[int] = Property.ofValue(0)
+    concurrent: Property[int]
     tasks: list[DagTask] | None = None
     errors: list[Task] | None = None
     _finally: list[Task] | None = None

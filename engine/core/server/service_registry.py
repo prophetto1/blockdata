@@ -14,7 +14,7 @@ from engine.core.server.service_type import ServiceType
 
 @dataclass(slots=True, kw_only=True)
 class ServiceRegistry:
-    services: ConcurrentHashMap[ServiceType, LocalServiceState] = new ConcurrentHashMap<>()
+    services: ConcurrentHashMap[ServiceType, LocalServiceState]
 
     def register(self, service: LocalServiceState) -> None:
         raise NotImplementedError  # TODO: translate from Java

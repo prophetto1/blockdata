@@ -16,7 +16,7 @@ from engine.core.models.tenant_interface import TenantInterface
 from engine.core.models.triggers.trigger_context import TriggerContext
 
 
-@dataclass(slots=True, kw_only=True)
+@dataclass(frozen=True, slots=True, kw_only=True)
 class LogEntry:
     namespace: str
     flow_id: str

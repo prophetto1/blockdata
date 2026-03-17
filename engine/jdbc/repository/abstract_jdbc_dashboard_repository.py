@@ -4,9 +4,10 @@ from __future__ import annotations
 # WARNING: Unresolved types: ApplicationEventPublisher, Class, ConcurrentHashMap, ConstraintViolationException, Enum, F, IOException, Pageable, io, jdbc, kestra
 
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from logging import logging
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any, ClassVar, Optional
 
 from engine.jdbc.repository.abstract_jdbc_crud_repository import AbstractJdbcCrudRepository
 from engine.jdbc.abstract_jdbc_repository import AbstractJdbcRepository
@@ -17,15 +18,16 @@ from engine.core.events.crud_event import CrudEvent
 from engine.core.models.dashboards.dashboard import Dashboard
 from engine.core.repositories.dashboard_repository_interface import DashboardRepositoryInterface
 from engine.core.models.dashboards.charts.data_chart import DataChart
-from engine.core.models.dashboards.charts.data_chart_k_p_i import DataChartKPI
+from engine.core.models.dashboards.charts.data_chart_kpi import DataChartKPI
 from engine.core.models.dashboards.data_filter import DataFilter
-from engine.core.models.dashboards.data_filter_k_p_i import DataFilterKPI
+from engine.core.models.dashboards.data_filter_kpi import DataFilterKPI
 from engine.core.repositories.query_builder_interface import QueryBuilderInterface
 
 
 @dataclass(slots=True, kw_only=True)
 class AbstractJdbcDashboardRepository(ABC, AbstractJdbcCrudRepository):
-    query_builder_by_handled_fields: dict[Class[Any], QueryBuilderInterface[Any]] = new ConcurrentHashMap<>()
+    query_builder_by_handled_fields: dict[Class[Any], QueryBuilderInterface[Any]]
+    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
     event_publisher: ApplicationEventPublisher[CrudEvent[Dashboard]] | None = None
     query_builders: list[QueryBuilderInterface[Any]] | None = None
 
@@ -51,7 +53,7 @@ class AbstractJdbcDashboardRepository(ABC, AbstractJdbcCrudRepository):
     def generate(self, tenant_id: str, data_chart: DataChart[Any, DataFilter[F, Any]], start_date: datetime, end_date: datetime, pageable: Pageable) -> ArrayListTotal[dict[str, Any]]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def generate_k_p_i(self, tenant_id: str, data_chart: DataChartKPI[Any, DataFilterKPI[F, Any]], start_date: datetime, end_date: datetime) -> list[dict[str, Any]]:
+    def generate_kpi(self, tenant_id: str, data_chart: DataChartKPI[Any, DataFilterKPI[F, Any]], start_date: datetime, end_date: datetime) -> list[dict[str, Any]]:
         raise NotImplementedError  # TODO: translate from Java
 
     def is_enabled(self) -> bool:

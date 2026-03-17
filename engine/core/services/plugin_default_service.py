@@ -4,6 +4,7 @@ from __future__ import annotations
 # WARNING: Unresolved types: AtomicBoolean, Class, ConstraintViolationException, JsonProcessingException, Logger, ObjectMapper, TypeReference
 
 from dataclasses import dataclass, field
+from logging import logging
 from typing import Any, ClassVar
 
 from engine.core.models.executions.execution import Execution
@@ -22,15 +23,12 @@ from engine.core.services.task_global_default_configuration import TaskGlobalDef
 
 @dataclass(slots=True, kw_only=True)
 class PluginDefaultService:
-    n_o_n__d_e_f_a_u_l_t__o_b_j_e_c_t__m_a_p_p_e_r: ClassVar[ObjectMapper] = JacksonMapper.ofYaml()
-        .copy()
-        .setDefaultPropertyInclusion(JsonInclude.Include.NON_DEFAULT)
-    o_b_j_e_c_t__m_a_p_p_e_r: ClassVar[ObjectMapper] = JacksonMapper.ofYaml().copy()
-        .setDefaultPropertyInclusion(JsonInclude.Include.NON_NULL)
-    p_l_u_g_i_n__d_e_f_a_u_l_t_s__f_i_e_l_d: ClassVar[str] = "pluginDefaults"
-    p_l_u_g_i_n__d_e_f_a_u_l_t_s__t_y_p_e__r_e_f: ClassVar[TypeReference[list[PluginDefault]]] = new TypeReference<>() {
-    }
-    warn_once: AtomicBoolean = new AtomicBoolean(false)
+    non_default_object_mapper: ClassVar[ObjectMapper]
+    object_mapper: ClassVar[ObjectMapper]
+    plugin_defaults_type_ref: ClassVar[TypeReference[list[PluginDefault]]]
+    warn_once: AtomicBoolean
+    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    plugin_defaults_field: ClassVar[str] = "pluginDefaults"
     task_global_default: TaskGlobalDefaultConfiguration | None = None
     plugin_global_default: PluginGlobalDefaultConfiguration | None = None
     log_queue: QueueInterface[LogEntry] | None = None

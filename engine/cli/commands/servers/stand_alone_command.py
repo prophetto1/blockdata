@@ -15,15 +15,15 @@ from engine.core.services.start_executor_service import StartExecutorService
 
 @dataclass(slots=True, kw_only=True)
 class StandAloneCommand(AbstractServerCommand):
-    worker_thread: int = defaultWorkerThread()
-    ignore_executions: list[str] = Collections.emptyList()
-    ignore_flows: list[str] = Collections.emptyList()
-    ignore_namespaces: list[str] = Collections.emptyList()
-    ignore_tenants: list[str] = Collections.emptyList()
-    ignore_indexer_records: list[str] = Collections.emptyList()
+    worker_thread: int
+    ignore_executions: list[str]
+    ignore_flows: list[str]
+    ignore_namespaces: list[str]
+    ignore_tenants: list[str]
+    ignore_indexer_records: list[str]
+    start_executors: list[str]
+    not_start_executors: list[str]
     tutorials_disabled: bool = False
-    start_executors: list[str] = Collections.emptyList()
-    not_start_executors: list[str] = Collections.emptyList()
     indexer_disabled: bool = False
     spec: CommandLine.Model.CommandSpec | None = None
     application_context: ApplicationContext | None = None

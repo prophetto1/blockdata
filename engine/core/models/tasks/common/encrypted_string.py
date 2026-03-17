@@ -11,7 +11,7 @@ from engine.core.runners.run_context import RunContext
 
 @dataclass(slots=True, kw_only=True)
 class EncryptedString:
-    t_y_p_e: ClassVar[str] = "io.kestra.datatype:aes_encrypted"
+    type: ClassVar[str] = "io.kestra.datatype:aes_encrypted"
     type: str = TYPE
     value: str | None = None
 

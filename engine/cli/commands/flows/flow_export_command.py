@@ -4,6 +4,7 @@ from __future__ import annotations
 # WARNING: Unresolved types: Exception
 
 from dataclasses import dataclass, field
+from logging import logging
 from pathlib import Path
 from typing import Any, ClassVar
 
@@ -13,7 +14,8 @@ from engine.cli.services.tenant_id_selector_service import TenantIdSelectorServi
 
 @dataclass(slots=True, kw_only=True)
 class FlowExportCommand(AbstractApiCommand):
-    d_e_f_a_u_l_t__f_i_l_e__n_a_m_e: ClassVar[str] = "flows.zip"
+    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    default_file_name: ClassVar[str] = "flows.zip"
     tenant_service: TenantIdSelectorService | None = None
     namespace: str | None = None
     directory: Path | None = None

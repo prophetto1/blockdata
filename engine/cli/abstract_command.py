@@ -4,9 +4,10 @@ from __future__ import annotations
 # WARNING: Unresolved types: ApplicationContext, Callable, EndpointDefaultConfiguration, Exception, Provider, RunnableChecked, core, io, kestra, utils
 
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from logging import logging
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
 
 from engine.cli.base_command import BaseCommand
 from engine.core.plugins.plugin_manager import PluginManager
@@ -18,8 +19,9 @@ from engine.cli.version_provider import VersionProvider
 
 @dataclass(slots=True, kw_only=True)
 class AbstractCommand(ABC, BaseCommand):
-    config: Path = Paths.get(System.getProperty("user.home"), ".kestra/config.yml")
-    plugins_path: Path = Optional.ofNullable(System.getenv("KESTRA_PLUGINS_PATH")).map(Paths::get).orElse(null)
+    config: Path
+    plugins_path: Path
+    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
     application_context: ApplicationContext | None = None
     endpoint_configuration: EndpointDefaultConfiguration | None = None
     startup_hook: StartupHookInterface | None = None

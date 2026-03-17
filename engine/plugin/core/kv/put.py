@@ -18,8 +18,8 @@ class Put(Task):
     """Update an existing Key-Value entry"""
     key: Property[str]
     value: Property[Any]
-    namespace: Property[str] = Property.ofExpression("{{ flow.namespace }}")
-    error_on_missing: Property[bool] = Property.ofValue(false)
+    namespace: Property[str]
+    error_on_missing: Property[bool]
 
     def run(self, run_context: RunContext) -> VoidOutput:
         raise NotImplementedError  # TODO: translate from Java

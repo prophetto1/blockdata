@@ -15,7 +15,7 @@ from engine.core.models.assets.asset_exporter import AssetExporter
 from engine.core.models.dashboards.charts.chart import Chart
 from engine.core.models.conditions.condition import Condition
 from engine.core.models.dashboards.data_filter import DataFilter
-from engine.core.models.dashboards.data_filter_k_p_i import DataFilterKPI
+from engine.core.models.dashboards.data_filter_kpi import DataFilterKPI
 from engine.core.plugins.external_plugin import ExternalPlugin
 from engine.core.models.tasks.logs.log_exporter import LogExporter
 from engine.core.secret.secret_plugin_interface import SecretPluginInterface
@@ -26,21 +26,21 @@ from engine.core.models.tasks.runners.task_runner import TaskRunner
 
 @dataclass(slots=True, kw_only=True)
 class RegisteredPlugin:
-    t_a_s_k_s__g_r_o_u_p__n_a_m_e: ClassVar[str] = "tasks"
-    t_r_i_g_g_e_r_s__g_r_o_u_p__n_a_m_e: ClassVar[str] = "triggers"
-    c_o_n_d_i_t_i_o_n_s__g_r_o_u_p__n_a_m_e: ClassVar[str] = "conditions"
-    s_t_o_r_a_g_e_s__g_r_o_u_p__n_a_m_e: ClassVar[str] = "storages"
-    s_e_c_r_e_t_s__g_r_o_u_p__n_a_m_e: ClassVar[str] = "secrets"
-    t_a_s_k__r_u_n_n_e_r_s__g_r_o_u_p__n_a_m_e: ClassVar[str] = "task-runners"
-    a_s_s_e_t_s__g_r_o_u_p__n_a_m_e: ClassVar[str] = "assets"
-    a_s_s_e_t_s__e_x_p_o_r_t_e_r_s__g_r_o_u_p__n_a_m_e: ClassVar[str] = "asset-exporters"
-    a_p_p_s__g_r_o_u_p__n_a_m_e: ClassVar[str] = "apps"
-    a_p_p__b_l_o_c_k_s__g_r_o_u_p__n_a_m_e: ClassVar[str] = "app-blocks"
-    c_h_a_r_t_s__g_r_o_u_p__n_a_m_e: ClassVar[str] = "charts"
-    d_a_t_a__f_i_l_t_e_r_s__g_r_o_u_p__n_a_m_e: ClassVar[str] = "data-filters"
-    d_a_t_a__f_i_l_t_e_r_s__k_p_i__g_r_o_u_p__n_a_m_e: ClassVar[str] = "data-filters-kpi"
-    l_o_g__e_x_p_o_r_t_e_r_s__g_r_o_u_p__n_a_m_e: ClassVar[str] = "log-exporters"
-    a_d_d_i_t_i_o_n_a_l__p_l_u_g_i_n_s__g_r_o_u_p__n_a_m_e: ClassVar[str] = "additional-plugins"
+    tasks_group_name: ClassVar[str] = "tasks"
+    triggers_group_name: ClassVar[str] = "triggers"
+    conditions_group_name: ClassVar[str] = "conditions"
+    storages_group_name: ClassVar[str] = "storages"
+    secrets_group_name: ClassVar[str] = "secrets"
+    task_runners_group_name: ClassVar[str] = "task-runners"
+    assets_group_name: ClassVar[str] = "assets"
+    assets_exporters_group_name: ClassVar[str] = "asset-exporters"
+    apps_group_name: ClassVar[str] = "apps"
+    app_blocks_group_name: ClassVar[str] = "app-blocks"
+    charts_group_name: ClassVar[str] = "charts"
+    data_filters_group_name: ClassVar[str] = "data-filters"
+    data_filters_kpi_group_name: ClassVar[str] = "data-filters-kpi"
+    log_exporters_group_name: ClassVar[str] = "log-exporters"
+    additional_plugins_group_name: ClassVar[str] = "additional-plugins"
     external_plugin: ExternalPlugin | None = None
     manifest: Manifest | None = None
     class_loader: ClassLoader | None = None
@@ -56,7 +56,7 @@ class RegisteredPlugin:
     app_blocks: list[Class[Any]] | None = None
     charts: list[Class[Any]] | None = None
     data_filters: list[Class[Any]] | None = None
-    data_filters_k_p_i: list[Class[Any]] | None = None
+    data_filters_kpi: list[Class[Any]] | None = None
     log_exporters: list[Class[Any]] | None = None
     additional_plugins: list[Class[Any]] | None = None
     guides: list[str] | None = None

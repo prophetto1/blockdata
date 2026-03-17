@@ -7,7 +7,7 @@ from enum import Enum
 from datetime import datetime
 from typing import Any
 
-from engine.core.models.has_u_i_d import HasUID
+from engine.core.models.has_uid import HasUID
 
 
 @dataclass(slots=True, kw_only=True)

@@ -21,7 +21,7 @@ from engine.core.models.executions.task_run import TaskRun
 
 @dataclass(slots=True, kw_only=True)
 class GraphCluster(AbstractGraph):
-    graph: Graph[AbstractGraph, Relation] = new Graph<>()
+    graph: Graph[AbstractGraph, Relation]
     relation_type: RelationType | None = None
     root: GraphClusterRoot | None = None
     _finally: GraphClusterFinally | None = None

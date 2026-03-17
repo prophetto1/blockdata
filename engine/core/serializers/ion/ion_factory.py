@@ -11,7 +11,7 @@ from engine.core.serializers.ion.ion_generator import IonGenerator
 
 @dataclass(slots=True, kw_only=True)
 class IonFactory(IonFactory):
-    serial_version_u_i_d: ClassVar[int] = 1
+    serial_version_uid: ClassVar[int] = 1
 
     def _create_parser(self, r: Reader, ctxt: IOContext) -> JsonParser:
         raise NotImplementedError  # TODO: translate from Java

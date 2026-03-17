@@ -4,7 +4,8 @@ from __future__ import annotations
 # WARNING: Unresolved types: ApplicationContext, Class, DSLContext, T
 
 from dataclasses import dataclass, field
-from typing import Any
+from logging import logging
+from typing import Any, ClassVar
 
 from engine.jdbc.runner.jdbc_queue_indexer_interface import JdbcQueueIndexerInterface
 from engine.core.metrics.metric_registry import MetricRegistry
@@ -12,6 +13,7 @@ from engine.core.metrics.metric_registry import MetricRegistry
 
 @dataclass(slots=True, kw_only=True)
 class JdbcQueueIndexer:
+    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
     repositories: dict[Class[Any], JdbcQueueIndexerInterface[Any]] = field(default_factory=dict)
     metric_registry: MetricRegistry | None = None
 

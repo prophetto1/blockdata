@@ -16,10 +16,7 @@ from engine.core.runners.run_context import RunContext
 @dataclass(slots=True, kw_only=True)
 class TimerMetric(AbstractMetric):
     value: Property[timedelta]
-    t_y_p_e: ClassVar[str] = "timer"
+    type: ClassVar[str] = "timer"
 
     def to_metric(self, run_context: RunContext) -> AbstractMetricEntry[Any]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def get_type(self) -> str:
         raise NotImplementedError  # TODO: translate from Java

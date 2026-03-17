@@ -9,9 +9,9 @@ from typing import Any, ClassVar
 
 @dataclass(slots=True, kw_only=True)
 class StartsWithFilter:
-    f_i_l_t_e_r__n_a_m_e: ClassVar[str] = "startsWith"
-    a_r_g_u_m_e_n_t__v_a_l_u_e: ClassVar[str] = "value"
-    a_r_g_s: ClassVar[list[str]] = List.of(ARGUMENT_VALUE)
+    args: ClassVar[list[str]]
+    filter_name: ClassVar[str] = "startsWith"
+    argument_value: ClassVar[str] = "value"
 
     def get_argument_names(self) -> list[str]:
         raise NotImplementedError  # TODO: translate from Java

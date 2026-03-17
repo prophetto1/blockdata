@@ -11,19 +11,8 @@ from engine.core.http.http_request import HttpRequest
 
 @dataclass(slots=True, kw_only=True)
 class HttpFunction:
-    n_a_m_e: ClassVar[str] = "http"
-    f_a_l_l_b_a_c_k__c_o_n_t_e_n_t__w_r_i_t_e_r: MessageBodyWriter[T] = (type, mediaType, object, outgoingHeaders, outputStream) -> {
-        if (mediaType == MediaType.APPLICATION_YAML_TYPE || mediaType.equals(MediaType.of("application/yaml"))) {
-            try {
-                outputStream.write(JacksonMapper.ofYaml().writeValueAsString(object).getBytes(StandardCharsets.UTF_8));
-                return;
-            } catch (IOException e) {
-                throw new PebbleException(e, "Couldn't write the request body as YAML");
-            }
-        }
-
-        throw new PebbleException(new IllegalArgumentException("Unsupported content type: " + mediaType), "Unsupported content type ");
-    }
+    fallback_content_writer: MessageBodyWriter[T]
+    name: ClassVar[str] = "http"
     application_context: ApplicationContext | None = None
     default_message_body_handler_registry: DefaultMessageBodyHandlerRegistry | None = None
 

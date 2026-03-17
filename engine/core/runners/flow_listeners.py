@@ -4,7 +4,8 @@ from __future__ import annotations
 # WARNING: Unresolved types: AtomicBoolean, BiConsumer, Consumer
 
 from dataclasses import dataclass, field
-from typing import Any, Optional
+from logging import logging
+from typing import Any, ClassVar, Optional
 
 from engine.core.models.flows.flow_interface import FlowInterface
 from engine.core.services.flow_listeners_interface import FlowListenersInterface
@@ -16,7 +17,8 @@ from engine.core.queues.queue_interface import QueueInterface
 
 @dataclass(slots=True, kw_only=True)
 class FlowListeners:
-    is_started: AtomicBoolean = new AtomicBoolean(false)
+    is_started: AtomicBoolean
+    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
     consumers: list[Consumer[list[FlowWithSource]]] = field(default_factory=list)
     consumers_each: list[BiConsumer[FlowWithSource, FlowWithSource]] = field(default_factory=list)
     flow_queue: QueueInterface[FlowInterface] | None = None

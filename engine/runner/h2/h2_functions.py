@@ -9,7 +9,7 @@ from typing import Any, ClassVar
 
 @dataclass(slots=True, kw_only=True)
 class H2Functions:
-    scope: ClassVar[Scope] = Scope.newEmptyScope()
+    scope: ClassVar[Scope]
 
     @staticmethod
     def jq_boolean(value: str, expression: str) -> bool:

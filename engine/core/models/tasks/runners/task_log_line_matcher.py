@@ -14,8 +14,8 @@ from engine.core.runners.run_context import RunContext
 
 @dataclass(slots=True, kw_only=True)
 class TaskLogLineMatcher:
-    l_o_g__d_a_t_a__s_y_n_t_a_x: ClassVar[Pattern] = Pattern.compile("^::(\\{.*})::$")
-    m_a_p_p_e_r: ClassVar[ObjectMapper] = JacksonMapper.ofJson(false)
+    log_data_syntax: ClassVar[Pattern]
+    mapper: ClassVar[ObjectMapper]
 
     def matches(self, log_line: str, logger: Logger, run_context: RunContext, instant: datetime) -> Optional[TaskLogMatch]:
         raise NotImplementedError  # TODO: translate from Java

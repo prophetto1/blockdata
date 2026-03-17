@@ -5,6 +5,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
+from logging import logging
 from datetime import datetime
 from typing import Any, ClassVar, Optional
 
@@ -15,7 +16,7 @@ from engine.core.models.conditions.condition import Condition
 from engine.core.events.crud_event import CrudEvent
 from engine.core.events.crud_event_type import CrudEventType
 from engine.core.models.dashboards.data_filter import DataFilter
-from engine.core.models.dashboards.data_filter_k_p_i import DataFilterKPI
+from engine.core.models.dashboards.data_filter_kpi import DataFilterKPI
 from engine.core.utils.either import Either
 from engine.core.models.executions.statistics.flow import Flow
 from engine.core.models.flows.flow_for_execution import FlowForExecution
@@ -38,15 +39,12 @@ from engine.core.models.triggers.trigger import Trigger
 
 @dataclass(slots=True, kw_only=True)
 class AbstractJdbcFlowRepository(ABC, AbstractJdbcRepository):
-    m_a_p_p_e_r: ClassVar[ObjectMapper] = JdbcMapper.of()
-    n_a_m_e_s_p_a_c_e__f_i_e_l_d: ClassVar[Field[str]] = field("namespace", String.class)
-    s_o_u_r_c_e__f_i_e_l_d: ClassVar[Field[str]] = field("source_code", String.class)
-    r_e_v_i_s_i_o_n__f_i_e_l_d: ClassVar[Field[int]] = field("revision", Integer.class)
-    fields_mapping: dict[Flows.Fields, str] = Map.of(
-        Flows.Fields.ID, "key",
-        Flows.Fields.NAMESPACE, "namespace",
-        Flows.Fields.REVISION, "revision"
-    )
+    mapper: ClassVar[ObjectMapper]
+    namespace_field: ClassVar[Field[str]]
+    source_field: ClassVar[Field[str]]
+    revision_field: ClassVar[Field[int]]
+    fields_mapping: dict[Flows.Fields, str]
+    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
     flow_queue: QueueInterface[FlowInterface] | None = None
     trigger_queue: QueueInterface[Trigger] | None = None
     event_publisher: ApplicationEventPublisher[CrudEvent[FlowInterface]] | None = None

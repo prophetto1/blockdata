@@ -14,12 +14,12 @@ from engine.core.services.start_executor_service import StartExecutorService
 
 @dataclass(slots=True, kw_only=True)
 class ExecutorCommand(AbstractServerCommand):
-    ignore_executions: list[str] = Collections.emptyList()
-    ignore_flows: list[str] = Collections.emptyList()
-    ignore_namespaces: list[str] = Collections.emptyList()
-    ignore_tenants: list[str] = Collections.emptyList()
-    start_executors: list[str] = Collections.emptyList()
-    not_start_executors: list[str] = Collections.emptyList()
+    ignore_executions: list[str]
+    ignore_flows: list[str]
+    ignore_namespaces: list[str]
+    ignore_tenants: list[str]
+    start_executors: list[str]
+    not_start_executors: list[str]
     spec: CommandLine.Model.CommandSpec | None = None
     application_context: ApplicationContext | None = None
     ignore_execution_service: IgnoreExecutionService | None = None

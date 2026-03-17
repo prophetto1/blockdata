@@ -16,6 +16,3 @@ class GenericTrigger:
     id: str | None = None
     type: str | None = None
     worker_group: WorkerGroup | None = None
-
-    def get_additional_properties(self) -> dict[str, Any]:
-        raise NotImplementedError  # TODO: translate from Java

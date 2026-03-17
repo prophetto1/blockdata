@@ -9,7 +9,7 @@ from typing import Any, ClassVar
 
 @dataclass(slots=True, kw_only=True)
 class ToJsonFilter:
-    m_a_p_p_e_r: ClassVar[ObjectMapper] = JacksonMapper.ofJson()
+    mapper: ClassVar[ObjectMapper]
 
     def get_argument_names(self) -> list[str]:
         raise NotImplementedError  # TODO: translate from Java

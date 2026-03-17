@@ -11,7 +11,7 @@ from engine.core.exceptions.illegal_variable_evaluation_exception import Illegal
 from engine.core.models.hierarchies.relation import Relation
 
 
-@dataclass(slots=True, kw_only=True)
+@dataclass(frozen=True, slots=True, kw_only=True)
 class FlowGraph:
     nodes: list[AbstractGraph] | None = None
     edges: list[Edge] | None = None

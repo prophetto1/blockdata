@@ -15,8 +15,8 @@ from engine.core.models.flows.type import Type
 
 @dataclass(slots=True, kw_only=True)
 class AbstractWorkerCallable(ABC):
+    shutdown_latch: CountDownLatch
     killed: bool = False
-    shutdown_latch: CountDownLatch = new CountDownLatch(1)
     logger: Logger | None = None
     run_context: RunContext | None = None
     type: str | None = None

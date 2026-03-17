@@ -11,7 +11,7 @@ from engine.core.models.tasks.runners.abstract_log_consumer import AbstractLogCo
 
 @dataclass(slots=True, kw_only=True)
 class TaskException(Exception):
-    serial_version_u_i_d: ClassVar[int] = 1
+    serial_version_uid: ClassVar[int] = 1
     exit_code: int | None = None
     std_out_count: int | None = None
     std_err_count: int | None = None

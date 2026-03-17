@@ -13,7 +13,7 @@ from engine.webserver.converters.query_filter_format import QueryFilterFormat
 
 @dataclass(slots=True, kw_only=True)
 class QueryFilterFormatBinder:
-    f_i_l_t_e_r__p_a_t_t_e_r_n: ClassVar[Pattern] = Pattern.compile("filters\\[(.*?)]\\[(.*?)](?:\\[(.+)])?")
+    filter_pattern: ClassVar[Pattern]
 
     @staticmethod
     def get_query_filters(query_params: dict[str, list[str]]) -> list[QueryFilter]:

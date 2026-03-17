@@ -4,6 +4,7 @@ from __future__ import annotations
 # WARNING: Unresolved types: Function, Preconditions, Stream, core, io, kestra, plugin, trigger
 
 from dataclasses import dataclass, field
+from logging import logging
 from typing import Any, ClassVar
 
 from engine.core.models.conditions.condition import Condition
@@ -23,7 +24,8 @@ from engine.core.models.label import Label
 
 @dataclass(slots=True, kw_only=True)
 class FlowTopologyService:
-    s_i_m_u_l_a_t_e_d__e_x_e_c_u_t_i_o_n: ClassVar[Label] = new Label(Label.SIMULATED_EXECUTION, "true")
+    simulated_execution: ClassVar[Label]
+    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
     condition_service: ConditionService | None = None
     flow_repository: FlowRepositoryInterface | None = None
     flow_topology_repository: FlowTopologyRepositoryInterface | None = None

@@ -11,5 +11,5 @@ from engine.core.models.property.property import Property
 
 @dataclass(slots=True, kw_only=True)
 class TimeoutConfiguration:
-    read_idle_timeout: Property[timedelta] = Property.ofValue(Duration.ofMinutes(5))
+    read_idle_timeout: Property[timedelta]
     connect_timeout: Property[timedelta] | None = None

@@ -15,7 +15,7 @@ from engine.core.models.tasks.runnable_task import RunnableTask
 @dataclass(slots=True, kw_only=True)
 class Delete(AbstractState):
     """Delete state from the legacy state store (deprecated)."""
-    error_on_missing: Property[bool] = Property.ofValue(false)
+    error_on_missing: Property[bool]
 
     def run(self, run_context: RunContext) -> Output:
         raise NotImplementedError  # TODO: translate from Java

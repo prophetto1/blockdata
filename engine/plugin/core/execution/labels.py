@@ -16,9 +16,9 @@ from engine.core.models.tasks.task import Task
 @dataclass(slots=True, kw_only=True)
 class Labels(Task):
     """Add or overwrite labels on the current execution."""
+    map_type_reference: ClassVar[TypeReference[dict[str, str]]]
+    mapper: ClassVar[ObjectMapper]
     labels: Any
-    m_a_p__t_y_p_e__r_e_f_e_r_e_n_c_e: ClassVar[TypeReference[dict[str, str]]] = new TypeReference<>() {}
-    m_a_p_p_e_r: ClassVar[ObjectMapper] = JacksonMapper.ofJson()
 
     def update(self, execution: Execution, run_context: RunContext) -> Execution:
         raise NotImplementedError  # TODO: translate from Java

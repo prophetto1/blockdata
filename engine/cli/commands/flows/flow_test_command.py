@@ -4,6 +4,7 @@ from __future__ import annotations
 # WARNING: Unresolved types: ApplicationContext, CommandLine, CommandSpec, Exception, Model, SecureRandom
 
 from dataclasses import dataclass, field
+from logging import logging
 from pathlib import Path
 from typing import Any, ClassVar
 
@@ -12,8 +13,9 @@ from engine.cli.abstract_api_command import AbstractApiCommand
 
 @dataclass(slots=True, kw_only=True)
 class FlowTestCommand(AbstractApiCommand):
+    random: ClassVar[SecureRandom]
+    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
     inputs: list[str] = field(default_factory=list)
-    random: ClassVar[SecureRandom] = new SecureRandom()
     application_context: ApplicationContext | None = None
     file: Path | None = None
     spec: CommandLine.Model.CommandSpec | None = None

@@ -16,7 +16,7 @@ from engine.core.models.dashboards.column_descriptor import ColumnDescriptor
 from engine.core.models.conditions.condition import Condition
 from engine.core.models.conditions.condition_context import ConditionContext
 from engine.core.models.dashboards.data_filter import DataFilter
-from engine.core.models.dashboards.data_filter_k_p_i import DataFilterKPI
+from engine.core.models.dashboards.data_filter_kpi import DataFilterKPI
 from engine.core.utils.date_utils import DateUtils
 from engine.core.models.flows.flow import Flow
 from engine.plugin.core.dashboard.data.i_triggers import ITriggers
@@ -32,16 +32,8 @@ from engine.plugin.core.dashboard.data.triggers import Triggers
 
 @dataclass(slots=True, kw_only=True)
 class AbstractJdbcTriggerRepository(ABC, AbstractJdbcCrudRepository):
-    n_a_m_e_s_p_a_c_e__f_i_e_l_d: ClassVar[Field[Any]] = field("namespace")
-    fields_mapping: dict[Triggers.Fields, str] = Map.of(
-        Triggers.Fields.ID, "key",
-        Triggers.Fields.NAMESPACE, "namespace",
-        Triggers.Fields.FLOW_ID, "flow_id",
-        Triggers.Fields.TRIGGER_ID, "trigger_id",
-        Triggers.Fields.EXECUTION_ID, "execution_id",
-        Triggers.Fields.NEXT_EXECUTION_DATE, "next_execution_date",
-        Triggers.Fields.WORKER_ID, "worker_id"
-    )
+    namespace_field: ClassVar[Field[Any]]
+    fields_mapping: dict[Triggers.Fields, str]
     filter_service: JdbcFilterService | None = None
 
     def date_fields(self) -> set[Triggers.Fields]:

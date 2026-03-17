@@ -5,17 +5,18 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
+from logging import logging
 from typing import Any, ClassVar
 
-from engine.jdbc.jooq_d_s_l_context_wrapper import JooqDSLContextWrapper
+from engine.jdbc.jooq_dsl_context_wrapper import JooqDSLContextWrapper
 from engine.plugin.core.dashboard.chart.table import Table
 from engine.core.repositories.tenant_migration_interface import TenantMigrationInterface
 
 
 @dataclass(slots=True, kw_only=True)
 class AbstractJdbcTenantMigration(ABC):
-    k_e_y__t_a_b_l_e_s: ClassVar[list[str]] = List.of("dashboards", "flows", "multipleconditions",
-        "namespaces", "testsuites", "triggers", "templates")
+    key_tables: ClassVar[list[str]]
+    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
     dsl_context_wrapper: JooqDSLContextWrapper | None = None
 
     def migrate_tenant(self, tenant_id: str, dry_run: bool) -> None:

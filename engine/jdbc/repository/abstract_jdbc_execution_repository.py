@@ -18,7 +18,7 @@ from engine.core.models.conditions.condition import Condition
 from engine.core.events.crud_event import CrudEvent
 from engine.core.models.executions.statistics.daily_execution_statistics import DailyExecutionStatistics
 from engine.core.models.dashboards.data_filter import DataFilter
-from engine.core.models.dashboards.data_filter_k_p_i import DataFilterKPI
+from engine.core.models.dashboards.data_filter_kpi import DataFilterKPI
 from engine.core.utils.date_utils import DateUtils
 from engine.core.utils.either import Either
 from engine.core.models.executions.execution import Execution
@@ -42,22 +42,12 @@ from engine.core.models.flows.type import Type
 
 @dataclass(slots=True, kw_only=True)
 class AbstractJdbcExecutionRepository(ABC, AbstractJdbcCrudRepository):
-    f_e_t_c_h__s_i_z_e: ClassVar[int] = 100
-    s_t_a_t_e__c_u_r_r_e_n_t__f_i_e_l_d: ClassVar[Field[str]] = field("state_current", String.class)
-    n_a_m_e_s_p_a_c_e__f_i_e_l_d: ClassVar[Field[str]] = field("namespace", String.class)
-    s_t_a_r_t__d_a_t_e__f_i_e_l_d: ClassVar[Field[Any]] = field("start_date")
-    n_o_r_m_a_l__k_i_n_d__c_o_n_d_i_t_i_o_n: ClassVar[Condition] = field("kind").isNull().or(field("kind").eq(ExecutionKind.NORMAL.name()))
-    fields_mapping: dict[Executions.Fields, str] = Map.of(
-        Executions.Fields.ID, "key",
-        Executions.Fields.NAMESPACE, "namespace",
-        Executions.Fields.FLOW_ID, "flow_id",
-        Executions.Fields.STATE, "state_current",
-        Executions.Fields.DURATION, "state_duration",
-        Executions.Fields.LABELS, "labels",
-        Executions.Fields.START_DATE, "start_date",
-        Executions.Fields.END_DATE, "end_date",
-        Executions.Fields.TRIGGER_EXECUTION_ID, "trigger_execution_id"
-    )
+    state_current_field: ClassVar[Field[str]]
+    namespace_field: ClassVar[Field[str]]
+    start_date_field: ClassVar[Field[Any]]
+    normal_kind_condition: ClassVar[Condition]
+    fields_mapping: dict[Executions.Fields, str]
+    fetch_size: ClassVar[int] = 100
     event_publisher: ApplicationEventPublisher[CrudEvent[Execution]] | None = None
     application_context: ApplicationContext | None = None
     executor_state_storage: AbstractJdbcExecutorStateStorage | None = None

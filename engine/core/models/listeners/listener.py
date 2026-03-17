@@ -9,7 +9,7 @@ from engine.core.models.conditions.condition import Condition
 from engine.core.models.tasks.task import Task
 
 
-@dataclass(slots=True, kw_only=True)
+@dataclass(frozen=True, slots=True, kw_only=True)
 class Listener:
     description: str | None = None
     conditions: list[Condition] | None = None

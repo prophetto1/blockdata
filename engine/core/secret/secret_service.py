@@ -4,6 +4,7 @@ from __future__ import annotations
 # WARNING: Unresolved types: IOException, META, Pageable
 
 from dataclasses import dataclass, field
+from logging import logging
 from typing import Any, ClassVar
 
 from engine.core.repositories.array_list_total import ArrayListTotal
@@ -13,7 +14,8 @@ from engine.core.secret.secret_not_found_exception import SecretNotFoundExceptio
 
 @dataclass(slots=True, kw_only=True)
 class SecretService:
-    s_e_c_r_e_t__p_r_e_f_i_x: ClassVar[str] = "SECRET_"
+    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    secret_prefix: ClassVar[str] = "SECRET_"
     decoded_secrets: dict[str, str] | None = None
 
     def post_construct(self) -> None:

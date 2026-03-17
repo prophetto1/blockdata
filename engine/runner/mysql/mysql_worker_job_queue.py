@@ -3,8 +3,9 @@ from __future__ import annotations
 # Source: E:\KESTRA\jdbc-mysql\src\main\java\io\kestra\runner\mysql\MysqlWorkerJobQueue.java
 # WARNING: Unresolved types: ApplicationContext, Consumer, IOException, Runnable
 
-from dataclasses import dataclass
-from typing import Any
+from dataclasses import dataclass, field
+from logging import logging
+from typing import Any, ClassVar
 
 from engine.core.exceptions.deserialization_exception import DeserializationException
 from engine.core.utils.either import Either
@@ -16,6 +17,7 @@ from engine.core.queues.worker_job_queue_interface import WorkerJobQueueInterfac
 
 @dataclass(slots=True, kw_only=True)
 class MysqlWorkerJobQueue(MysqlQueue):
+    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
     jdbc_worker_job_queue_service: JdbcWorkerJobQueueService | None = None
 
     def close(self) -> None:

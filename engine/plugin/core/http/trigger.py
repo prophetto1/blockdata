@@ -24,12 +24,12 @@ from engine.core.models.triggers.trigger_output import TriggerOutput
 @dataclass(slots=True, kw_only=True)
 class Trigger(AbstractTrigger):
     """Poll an HTTP endpoint and trigger when a condition matches."""
+    interval: timedelta
+    response_condition: Property[str]
     uri: Property[str]
-    interval: timedelta = Duration.ofSeconds(60)
-    response_condition: Property[str] = Property.ofExpression("{{ response.statusCode < 400 }}")
-    method: Property[str] = Property.ofValue("GET")
-    content_type: Property[str] = Property.ofValue(MediaType.APPLICATION_JSON)
-    encrypt_body: Property[bool] = Property.ofValue(false)
+    method: Property[str]
+    content_type: Property[str]
+    encrypt_body: Property[bool]
     body: Property[str] | None = None
     params: Property[dict[str, Any]] | None = None
     form_data: Property[dict[str, Any]] | None = None

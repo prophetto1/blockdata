@@ -12,7 +12,7 @@ from engine.core.models.executions.task_run import TaskRun
 from engine.core.models.tenant_interface import TenantInterface
 
 
-@dataclass(slots=True, kw_only=True)
+@dataclass(frozen=True, slots=True, kw_only=True)
 class MetricEntry:
     namespace: str
     flow_id: str

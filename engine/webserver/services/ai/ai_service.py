@@ -26,7 +26,7 @@ from engine.core.utils.version_provider import VersionProvider
 
 @dataclass(slots=True, kw_only=True)
 class AiService(ABC):
-    metadata_by_conversation_id: dict[str, ConversationMetadata] = new ConcurrentHashMap<>()
+    metadata_by_conversation_id: dict[str, ConversationMetadata]
     post_hog_service: PosthogService | None = None
     ai_configuration: T | None = None
     flow_ai_copilot: FlowAiCopilot | None = None

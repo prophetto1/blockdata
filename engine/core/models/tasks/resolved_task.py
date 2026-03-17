@@ -10,7 +10,7 @@ from engine.core.models.executions.next_task_run import NextTaskRun
 from engine.core.models.tasks.task import Task
 
 
-@dataclass(slots=True, kw_only=True)
+@dataclass(frozen=True, slots=True, kw_only=True)
 class ResolvedTask:
     task: Task
     value: str | None = None

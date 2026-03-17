@@ -12,19 +12,7 @@ from engine.core.models.flows.type import Type
 
 @dataclass(slots=True, kw_only=True)
 class ExecutionCountStatistics:
-    d_e_f_a_u_l_t__c_o_u_n_t_s: ClassVar[dict[State.Type, int]] = Map.ofEntries(
-        Map.entry(State.Type.CREATED, 0L),
-        Map.entry(State.Type.RUNNING, 0L),
-        Map.entry(State.Type.RESTARTED, 0L),
-        Map.entry(State.Type.KILLING, 0L),
-        Map.entry(State.Type.SUCCESS, 0L),
-        Map.entry(State.Type.WARNING, 0L),
-        Map.entry(State.Type.FAILED, 0L),
-        Map.entry(State.Type.KILLED, 0L),
-        Map.entry(State.Type.PAUSED, 0L),
-        Map.entry(State.Type.QUEUED, 0L),
-        Map.entry(State.Type.CANCELLED, 0L)
-    )
+    default_counts: ClassVar[dict[State.Type, int]]
     counts: dict[State.Type, int] | None = None
     total: int | None = None
 

@@ -4,33 +4,14 @@ from __future__ import annotations
 # WARNING: Unresolved types: Class, ClassLoader, ClassNotFoundException, Enumeration, IOException, Pattern, URLClassLoader
 
 from dataclasses import dataclass, field
+from logging import logging
 from typing import Any, ClassVar
 
 
 @dataclass(slots=True, kw_only=True)
 class PluginClassLoader(URLClassLoader):
-    e_x_c_l_u_d_e_s: ClassVar[Pattern] = Pattern.compile("^(?:"
-        + "java"
-        + "|javax"
-        + "|jakarta"
-        + "|io.kestra.core"
-        + "|io.kestra.plugin.core"
-        + "|org.slf4j"
-        + "|ch.qos.logback"
-        + "|io.swagger"
-        + "|com.fasterxml.jackson.core"
-        + "|com.fasterxml.jackson.annotation"
-        + "|com.fasterxml.jackson.module"
-        + "|com.fasterxml.jackson.databind"
-        + "|com.fasterxml.jackson.dataformat.ion"
-        + "|com.fasterxml.jackson.dataformat.yaml"
-        + "|com.fasterxml.jackson.dataformat.xml"
-        + "|org.reactivestreams"
-        + "|dev.failsafe"
-        + "|reactor"
-        + "|io.opentelemetry"
-        + "|io.netty"
-        + ")\\..*$")
+    excludes: ClassVar[Pattern]
+    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
     parent: ClassLoader | None = None
     plugin_location: str | None = None
 

@@ -31,9 +31,6 @@ class If(Task):
     def get_finally(self) -> list[Task]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def get_errors(self) -> list[Task]:
-        raise NotImplementedError  # TODO: translate from Java
-
     def tasks_tree(self, execution: Execution, task_run: TaskRun, parent_values: list[str]) -> GraphCluster:
         raise NotImplementedError  # TODO: translate from Java
 

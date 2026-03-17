@@ -9,5 +9,5 @@ from typing import Any
 
 @dataclass(slots=True, kw_only=True)
 class TimeWindow:
-    default_duration: timedelta = Duration.ofDays(30)
-    max: timedelta = Duration.ofDays(366)
+    default_duration: timedelta
+    max: timedelta

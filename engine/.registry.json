@@ -330,7 +330,7 @@
   "AbstractJdbcSLAMonitorStorage": [
     {
       "class_name": "AbstractJdbcSLAMonitorStorage",
-      "module_path": "engine.jdbc.runner.abstract_jdbc_s_l_a_monitor_storage",
+      "module_path": "engine.jdbc.runner.abstract_jdbc_sla_monitor_storage",
       "source_file": "E:\\KESTRA\\jdbc\\src\\main\\java\\io\\kestra\\jdbc\\runner\\AbstractJdbcSLAMonitorStorage.java",
       "source_module": "jdbc",
       "kind": "class",
@@ -1230,7 +1230,7 @@
   "CSVUtils": [
     {
       "class_name": "CSVUtils",
-      "module_path": "engine.webserver.utils.c_s_v_utils",
+      "module_path": "engine.webserver.utils.csv_utils",
       "source_file": "E:\\KESTRA\\webserver\\src\\main\\java\\io\\kestra\\webserver\\utils\\CSVUtils.java",
       "source_module": "webserver",
       "kind": "class",
@@ -1806,7 +1806,7 @@
   "DataChartKPI": [
     {
       "class_name": "DataChartKPI",
-      "module_path": "engine.core.models.dashboards.charts.data_chart_k_p_i",
+      "module_path": "engine.core.models.dashboards.charts.data_chart_kpi",
       "source_file": "E:\\KESTRA\\core\\src\\main\\java\\io\\kestra\\core\\models\\dashboards\\charts\\DataChartKPI.java",
       "source_module": "core",
       "kind": "class",
@@ -1816,7 +1816,7 @@
   "DataChartKPIValidation": [
     {
       "class_name": "DataChartKPIValidation",
-      "module_path": "engine.core.validations.data_chart_k_p_i_validation",
+      "module_path": "engine.core.validations.data_chart_kpi_validation",
       "source_file": "E:\\KESTRA\\core\\src\\main\\java\\io\\kestra\\core\\validations\\DataChartKPIValidation.java",
       "source_module": "core",
       "kind": "class",
@@ -1826,7 +1826,7 @@
   "DataChartKPIValidator": [
     {
       "class_name": "DataChartKPIValidator",
-      "module_path": "engine.core.validations.validator.data_chart_k_p_i_validator",
+      "module_path": "engine.core.validations.validator.data_chart_kpi_validator",
       "source_file": "E:\\KESTRA\\core\\src\\main\\java\\io\\kestra\\core\\validations\\validator\\DataChartKPIValidator.java",
       "source_module": "core",
       "kind": "class",
@@ -1866,7 +1866,7 @@
   "DataFilterKPI": [
     {
       "class_name": "DataFilterKPI",
-      "module_path": "engine.core.models.dashboards.data_filter_k_p_i",
+      "module_path": "engine.core.models.dashboards.data_filter_kpi",
       "source_file": "E:\\KESTRA\\core\\src\\main\\java\\io\\kestra\\core\\models\\dashboards\\DataFilterKPI.java",
       "source_module": "core",
       "kind": "class",
@@ -2652,7 +2652,7 @@
   "ExecutionAssertionSLA": [
     {
       "class_name": "ExecutionAssertionSLA",
-      "module_path": "engine.core.models.flows.sla.types.execution_assertion_s_l_a",
+      "module_path": "engine.core.models.flows.sla.types.execution_assertion_sla",
       "source_file": "E:\\KESTRA\\core\\src\\main\\java\\io\\kestra\\core\\models\\flows\\sla\\types\\ExecutionAssertionSLA.java",
       "source_module": "core",
       "kind": "class",
@@ -2662,7 +2662,7 @@
   "ExecutionChangedSLA": [
     {
       "class_name": "ExecutionChangedSLA",
-      "module_path": "engine.core.models.flows.sla.execution_changed_s_l_a",
+      "module_path": "engine.core.models.flows.sla.execution_changed_sla",
       "source_file": "E:\\KESTRA\\core\\src\\main\\java\\io\\kestra\\core\\models\\flows\\sla\\ExecutionChangedSLA.java",
       "source_module": "core",
       "kind": "class",
@@ -2812,7 +2812,7 @@
   "ExecutionMonitoringSLA": [
     {
       "class_name": "ExecutionMonitoringSLA",
-      "module_path": "engine.core.models.flows.sla.execution_monitoring_s_l_a",
+      "module_path": "engine.core.models.flows.sla.execution_monitoring_sla",
       "source_file": "E:\\KESTRA\\core\\src\\main\\java\\io\\kestra\\core\\models\\flows\\sla\\ExecutionMonitoringSLA.java",
       "source_module": "core",
       "kind": "class",
@@ -3000,7 +3000,7 @@
   "ExecutionsDataFilterKPIValidation": [
     {
       "class_name": "ExecutionsDataFilterKPIValidation",
-      "module_path": "engine.core.validations.executions_data_filter_k_p_i_validation",
+      "module_path": "engine.core.validations.executions_data_filter_kpi_validation",
       "source_file": "E:\\KESTRA\\core\\src\\main\\java\\io\\kestra\\core\\validations\\ExecutionsDataFilterKPIValidation.java",
       "source_module": "core",
       "kind": "class",
@@ -3010,7 +3010,7 @@
   "ExecutionsDataFilterKPIValidator": [
     {
       "class_name": "ExecutionsDataFilterKPIValidator",
-      "module_path": "engine.core.validations.validator.executions_data_filter_k_p_i_validator",
+      "module_path": "engine.core.validations.validator.executions_data_filter_kpi_validator",
       "source_file": "E:\\KESTRA\\core\\src\\main\\java\\io\\kestra\\core\\validations\\validator\\ExecutionsDataFilterKPIValidator.java",
       "source_module": "core",
       "kind": "class",
@@ -3040,7 +3040,7 @@
   "ExecutionsKPI": [
     {
       "class_name": "ExecutionsKPI",
-      "module_path": "engine.plugin.core.dashboard.data.executions_k_p_i",
+      "module_path": "engine.plugin.core.dashboard.data.executions_kpi",
       "source_file": "E:\\KESTRA\\core\\src\\main\\java\\io\\kestra\\plugin\\core\\dashboard\\data\\ExecutionsKPI.java",
       "source_module": "core",
       "kind": "class",
@@ -3410,7 +3410,7 @@
   "FileURIFunction": [
     {
       "class_name": "FileURIFunction",
-      "module_path": "engine.core.runners.pebble.functions.file_u_r_i_function",
+      "module_path": "engine.core.runners.pebble.functions.file_uri_function",
       "source_file": "E:\\KESTRA\\core\\src\\main\\java\\io\\kestra\\core\\runners\\pebble\\functions\\FileURIFunction.java",
       "source_module": "core",
       "kind": "class",
@@ -4086,7 +4086,7 @@
   "FlowsKPI": [
     {
       "class_name": "FlowsKPI",
-      "module_path": "engine.plugin.core.dashboard.data.flows_k_p_i",
+      "module_path": "engine.plugin.core.dashboard.data.flows_kpi",
       "source_file": "E:\\KESTRA\\core\\src\\main\\java\\io\\kestra\\plugin\\core\\dashboard\\data\\FlowsKPI.java",
       "source_module": "core",
       "kind": "class",
@@ -4664,7 +4664,7 @@
   "H2SLAMonitorStorage": [
     {
       "class_name": "H2SLAMonitorStorage",
-      "module_path": "engine.runner.h2.h2_s_l_a_monitor_storage",
+      "module_path": "engine.runner.h2.h2_sla_monitor_storage",
       "source_file": "E:\\KESTRA\\jdbc-h2\\src\\main\\java\\io\\kestra\\runner\\h2\\H2SLAMonitorStorage.java",
       "source_module": "jdbc-h2",
       "kind": "class",
@@ -4774,7 +4774,7 @@
   "HasUID": [
     {
       "class_name": "HasUID",
-      "module_path": "engine.core.models.has_u_i_d",
+      "module_path": "engine.core.models.has_uid",
       "source_file": "E:\\KESTRA\\core\\src\\main\\java\\io\\kestra\\core\\models\\HasUID.java",
       "source_module": "core",
       "kind": "class",
@@ -4944,7 +4944,7 @@
   "IDFunction": [
     {
       "class_name": "IDFunction",
-      "module_path": "engine.core.runners.pebble.functions.i_d_function",
+      "module_path": "engine.core.runners.pebble.functions.id_function",
       "source_file": "E:\\KESTRA\\core\\src\\main\\java\\io\\kestra\\core\\runners\\pebble\\functions\\IDFunction.java",
       "source_module": "core",
       "kind": "class",
@@ -5284,7 +5284,7 @@
   "InternalKVStore": [
     {
       "class_name": "InternalKVStore",
-      "module_path": "engine.core.storages.kv.internal_k_v_store",
+      "module_path": "engine.core.storages.kv.internal_kv_store",
       "source_file": "E:\\KESTRA\\core\\src\\main\\java\\io\\kestra\\core\\storages\\kv\\InternalKVStore.java",
       "source_module": "core",
       "kind": "class",
@@ -5684,7 +5684,7 @@
   "JooqDSLContextWrapper": [
     {
       "class_name": "JooqDSLContextWrapper",
-      "module_path": "engine.jdbc.jooq_d_s_l_context_wrapper",
+      "module_path": "engine.jdbc.jooq_dsl_context_wrapper",
       "source_file": "E:\\KESTRA\\jdbc\\src\\main\\java\\io\\kestra\\jdbc\\JooqDSLContextWrapper.java",
       "source_module": "jdbc",
       "kind": "class",
@@ -5814,7 +5814,7 @@
   "KPI": [
     {
       "class_name": "KPI",
-      "module_path": "engine.plugin.core.dashboard.chart.k_p_i",
+      "module_path": "engine.plugin.core.dashboard.chart.kpi",
       "source_file": "E:\\KESTRA\\core\\src\\main\\java\\io\\kestra\\plugin\\core\\dashboard\\chart\\KPI.java",
       "source_module": "core",
       "kind": "class",
@@ -5824,7 +5824,7 @@
   "KSUIDFunction": [
     {
       "class_name": "KSUIDFunction",
-      "module_path": "engine.core.runners.pebble.functions.k_s_u_i_d_function",
+      "module_path": "engine.core.runners.pebble.functions.ksuid_function",
       "source_file": "E:\\KESTRA\\core\\src\\main\\java\\io\\kestra\\core\\runners\\pebble\\functions\\KSUIDFunction.java",
       "source_module": "core",
       "kind": "class",
@@ -5834,7 +5834,7 @@
   "KVController": [
     {
       "class_name": "KVController",
-      "module_path": "engine.webserver.controllers.api.k_v_controller",
+      "module_path": "engine.webserver.controllers.api.kv_controller",
       "source_file": "E:\\KESTRA\\webserver\\src\\main\\java\\io\\kestra\\webserver\\controllers\\api\\KVController.java",
       "source_module": "webserver",
       "kind": "class",
@@ -5844,7 +5844,7 @@
   "KVEntry": [
     {
       "class_name": "KVEntry",
-      "module_path": "engine.core.storages.kv.k_v_entry",
+      "module_path": "engine.core.storages.kv.kv_entry",
       "source_file": "E:\\KESTRA\\core\\src\\main\\java\\io\\kestra\\core\\storages\\kv\\KVEntry.java",
       "source_module": "core",
       "kind": "class",
@@ -5854,7 +5854,7 @@
   "KVMetadata": [
     {
       "class_name": "KVMetadata",
-      "module_path": "engine.core.storages.kv.k_v_metadata",
+      "module_path": "engine.core.storages.kv.kv_metadata",
       "source_file": "E:\\KESTRA\\core\\src\\main\\java\\io\\kestra\\core\\storages\\kv\\KVMetadata.java",
       "source_module": "core",
       "kind": "class",
@@ -5864,7 +5864,7 @@
   "KVPurgeCleaner": [
     {
       "class_name": "KVPurgeCleaner",
-      "module_path": "engine.core.storages.kv.k_v_purge_cleaner",
+      "module_path": "engine.core.storages.kv.kv_purge_cleaner",
       "source_file": "E:\\KESTRA\\core\\src\\main\\java\\io\\kestra\\core\\storages\\kv\\KVPurgeCleaner.java",
       "source_module": "core",
       "kind": "class",
@@ -5874,7 +5874,7 @@
   "KVStore": [
     {
       "class_name": "KVStore",
-      "module_path": "engine.core.storages.kv.k_v_store",
+      "module_path": "engine.core.storages.kv.kv_store",
       "source_file": "E:\\KESTRA\\core\\src\\main\\java\\io\\kestra\\core\\storages\\kv\\KVStore.java",
       "source_module": "core",
       "kind": "class",
@@ -5884,7 +5884,7 @@
   "KVStoreException": [
     {
       "class_name": "KVStoreException",
-      "module_path": "engine.core.storages.kv.k_v_store_exception",
+      "module_path": "engine.core.storages.kv.kv_store_exception",
       "source_file": "E:\\KESTRA\\core\\src\\main\\java\\io\\kestra\\core\\storages\\kv\\KVStoreException.java",
       "source_module": "core",
       "kind": "class",
@@ -5894,7 +5894,7 @@
   "KVStoreService": [
     {
       "class_name": "KVStoreService",
-      "module_path": "engine.core.services.k_v_store_service",
+      "module_path": "engine.core.services.kv_store_service",
       "source_file": "E:\\KESTRA\\core\\src\\main\\java\\io\\kestra\\core\\services\\KVStoreService.java",
       "source_module": "core",
       "kind": "class",
@@ -5904,7 +5904,7 @@
   "KVType": [
     {
       "class_name": "KVType",
-      "module_path": "engine.core.models.kv.k_v_type",
+      "module_path": "engine.core.models.kv.kv_type",
       "source_file": "E:\\KESTRA\\core\\src\\main\\java\\io\\kestra\\core\\models\\kv\\KVType.java",
       "source_module": "core",
       "kind": "class",
@@ -5914,7 +5914,7 @@
   "KVValue": [
     {
       "class_name": "KVValue",
-      "module_path": "engine.core.storages.kv.k_v_value",
+      "module_path": "engine.core.storages.kv.kv_value",
       "source_file": "E:\\KESTRA\\core\\src\\main\\java\\io\\kestra\\core\\storages\\kv\\KVValue.java",
       "source_module": "core",
       "kind": "class",
@@ -5924,7 +5924,7 @@
   "KVValueAndMetadata": [
     {
       "class_name": "KVValueAndMetadata",
-      "module_path": "engine.core.storages.kv.k_v_value_and_metadata",
+      "module_path": "engine.core.storages.kv.kv_value_and_metadata",
       "source_file": "E:\\KESTRA\\core\\src\\main\\java\\io\\kestra\\core\\storages\\kv\\KVValueAndMetadata.java",
       "source_module": "core",
       "kind": "class",
@@ -6532,7 +6532,7 @@
   "LogsKPI": [
     {
       "class_name": "LogsKPI",
-      "module_path": "engine.plugin.core.dashboard.data.logs_k_p_i",
+      "module_path": "engine.plugin.core.dashboard.data.logs_kpi",
       "source_file": "E:\\KESTRA\\core\\src\\main\\java\\io\\kestra\\plugin\\core\\dashboard\\data\\LogsKPI.java",
       "source_module": "core",
       "kind": "class",
@@ -6652,7 +6652,7 @@
   "MaxDurationSLA": [
     {
       "class_name": "MaxDurationSLA",
-      "module_path": "engine.core.models.flows.sla.types.max_duration_s_l_a",
+      "module_path": "engine.core.models.flows.sla.types.max_duration_sla",
       "source_file": "E:\\KESTRA\\core\\src\\main\\java\\io\\kestra\\core\\models\\flows\\sla\\types\\MaxDurationSLA.java",
       "source_module": "core",
       "kind": "class",
@@ -6858,7 +6858,7 @@
   "MetricsKPI": [
     {
       "class_name": "MetricsKPI",
-      "module_path": "engine.plugin.core.dashboard.data.metrics_k_p_i",
+      "module_path": "engine.plugin.core.dashboard.data.metrics_kpi",
       "source_file": "E:\\KESTRA\\core\\src\\main\\java\\io\\kestra\\plugin\\core\\dashboard\\data\\MetricsKPI.java",
       "source_module": "core",
       "kind": "class",
@@ -7256,7 +7256,7 @@
   "MysqlSLAMonitorStorage": [
     {
       "class_name": "MysqlSLAMonitorStorage",
-      "module_path": "engine.runner.mysql.mysql_s_l_a_monitor_storage",
+      "module_path": "engine.runner.mysql.mysql_sla_monitor_storage",
       "source_file": "E:\\KESTRA\\jdbc-mysql\\src\\main\\java\\io\\kestra\\runner\\mysql\\MysqlSLAMonitorStorage.java",
       "source_module": "jdbc-mysql",
       "kind": "class",
@@ -7544,7 +7544,7 @@
   "NanoIDFunction": [
     {
       "class_name": "NanoIDFunction",
-      "module_path": "engine.core.runners.pebble.functions.nano_i_d_function",
+      "module_path": "engine.core.runners.pebble.functions.nano_id_function",
       "source_file": "E:\\KESTRA\\core\\src\\main\\java\\io\\kestra\\core\\runners\\pebble\\functions\\NanoIDFunction.java",
       "source_module": "core",
       "kind": "class",
@@ -8676,7 +8676,7 @@
   "PostgresSLAMonitorStorage": [
     {
       "class_name": "PostgresSLAMonitorStorage",
-      "module_path": "engine.runner.postgres.postgres_s_l_a_monitor_storage",
+      "module_path": "engine.runner.postgres.postgres_sla_monitor_storage",
       "source_file": "E:\\KESTRA\\jdbc-postgres\\src\\main\\java\\io\\kestra\\runner\\postgres\\PostgresSLAMonitorStorage.java",
       "source_module": "jdbc-postgres",
       "kind": "class",
@@ -8926,7 +8926,7 @@
   "PurgeKV": [
     {
       "class_name": "PurgeKV",
-      "module_path": "engine.plugin.core.kv.purge_k_v",
+      "module_path": "engine.plugin.core.kv.purge_kv",
       "source_file": "E:\\KESTRA\\core\\src\\main\\java\\io\\kestra\\plugin\\core\\kv\\PurgeKV.java",
       "source_module": "core",
       "kind": "class",
@@ -9554,7 +9554,7 @@
   "RunContextSDKFactory": [
     {
       "class_name": "RunContextSDKFactory",
-      "module_path": "engine.core.runners.run_context_s_d_k_factory",
+      "module_path": "engine.core.runners.run_context_sdk_factory",
       "source_file": "E:\\KESTRA\\core\\src\\main\\java\\io\\kestra\\core\\runners\\RunContextSDKFactory.java",
       "source_module": "core",
       "kind": "class",
@@ -9644,7 +9644,7 @@
   "SDK": [
     {
       "class_name": "SDK",
-      "module_path": "engine.core.runners.s_d_k",
+      "module_path": "engine.core.runners.sdk",
       "source_file": "E:\\KESTRA\\core\\src\\main\\java\\io\\kestra\\core\\runners\\SDK.java",
       "source_module": "core",
       "kind": "class",
@@ -9654,7 +9654,7 @@
   "SLA": [
     {
       "class_name": "SLA",
-      "module_path": "engine.core.models.flows.sla.s_l_a",
+      "module_path": "engine.core.models.flows.sla.sla",
       "source_file": "E:\\KESTRA\\core\\src\\main\\java\\io\\kestra\\core\\models\\flows\\sla\\SLA.java",
       "source_module": "core",
       "kind": "class",
@@ -9664,7 +9664,7 @@
   "SLAMonitor": [
     {
       "class_name": "SLAMonitor",
-      "module_path": "engine.core.models.flows.sla.s_l_a_monitor",
+      "module_path": "engine.core.models.flows.sla.sla_monitor",
       "source_file": "E:\\KESTRA\\core\\src\\main\\java\\io\\kestra\\core\\models\\flows\\sla\\SLAMonitor.java",
       "source_module": "core",
       "kind": "class",
@@ -9674,7 +9674,7 @@
   "SLAMonitorStorage": [
     {
       "class_name": "SLAMonitorStorage",
-      "module_path": "engine.core.models.flows.sla.s_l_a_monitor_storage",
+      "module_path": "engine.core.models.flows.sla.sla_monitor_storage",
       "source_file": "E:\\KESTRA\\core\\src\\main\\java\\io\\kestra\\core\\models\\flows\\sla\\SLAMonitorStorage.java",
       "source_module": "core",
       "kind": "class",
@@ -9684,7 +9684,7 @@
   "SLAService": [
     {
       "class_name": "SLAService",
-      "module_path": "engine.executor.s_l_a_service",
+      "module_path": "engine.executor.sla_service",
       "source_file": "E:\\KESTRA\\executor\\src\\main\\java\\io\\kestra\\executor\\SLAService.java",
       "source_module": "executor",
       "kind": "class",
@@ -10912,7 +10912,7 @@
   "TargetOS": [
     {
       "class_name": "TargetOS",
-      "module_path": "engine.core.models.tasks.runners.target_o_s",
+      "module_path": "engine.core.models.tasks.runners.target_os",
       "source_file": "E:\\KESTRA\\core\\src\\main\\java\\io\\kestra\\core\\models\\tasks\\runners\\TargetOS.java",
       "source_module": "core",
       "kind": "class",
@@ -11954,7 +11954,7 @@
   "URIFetcher": [
     {
       "class_name": "URIFetcher",
-      "module_path": "engine.core.models.property.u_r_i_fetcher",
+      "module_path": "engine.core.models.property.uri_fetcher",
       "source_file": "E:\\KESTRA\\core\\src\\main\\java\\io\\kestra\\core\\models\\property\\URIFetcher.java",
       "source_module": "core",
       "kind": "class",
@@ -11964,7 +11964,7 @@
   "URIInput": [
     {
       "class_name": "URIInput",
-      "module_path": "engine.core.models.flows.input.u_r_i_input",
+      "module_path": "engine.core.models.flows.input.uri_input",
       "source_file": "E:\\KESTRA\\core\\src\\main\\java\\io\\kestra\\core\\models\\flows\\input\\URIInput.java",
       "source_module": "core",
       "kind": "class",
@@ -11974,7 +11974,7 @@
   "UUIDFunction": [
     {
       "class_name": "UUIDFunction",
-      "module_path": "engine.core.runners.pebble.functions.u_u_i_d_function",
+      "module_path": "engine.core.runners.pebble.functions.uuid_function",
       "source_file": "E:\\KESTRA\\core\\src\\main\\java\\io\\kestra\\core\\runners\\pebble\\functions\\UUIDFunction.java",
       "source_module": "core",
       "kind": "class",

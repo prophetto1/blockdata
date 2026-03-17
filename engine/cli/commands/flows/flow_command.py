@@ -3,8 +3,9 @@ from __future__ import annotations
 # Source: E:\KESTRA\cli\src\main\java\io\kestra\cli\commands\flows\FlowCommand.java
 # WARNING: Unresolved types: Exception
 
-from dataclasses import dataclass
-from typing import Any
+from dataclasses import dataclass, field
+from logging import logging
+from typing import Any, ClassVar
 
 from engine.cli.abstract_command import AbstractCommand
 from engine.cli.commands.flows.flow_dot_command import FlowDotCommand
@@ -19,6 +20,7 @@ from engine.cli.commands.flows.flows_sync_from_source_command import FlowsSyncFr
 
 @dataclass(slots=True, kw_only=True)
 class FlowCommand(AbstractCommand):
+    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
 
     def call(self) -> int:
         raise NotImplementedError  # TODO: translate from Java

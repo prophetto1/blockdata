@@ -10,7 +10,7 @@ from typing import Any, ClassVar
 
 @dataclass(slots=True, kw_only=True)
 class KestraIgnore:
-    k_e_s_t_r_a__i_g_n_o_r_e__f_i_l_e__n_a_m_e: ClassVar[str] = ".kestraignore"
+    kestra_ignore_file_name: ClassVar[str] = ".kestraignore"
     git_ignore: GitIgnore | None = None
     root_folder_path: Path | None = None
 

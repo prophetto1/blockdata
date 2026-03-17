@@ -3,8 +3,9 @@ from __future__ import annotations
 # Source: E:\KESTRA\jdbc-postgres\src\main\java\io\kestra\runner\postgres\PostgresWorkerTriggerResultQueue.java
 # WARNING: Unresolved types: ApplicationContext, Class, Consumer, IOException, Runnable
 
-from dataclasses import dataclass
-from typing import Any
+from dataclasses import dataclass, field
+from logging import logging
+from typing import Any, ClassVar
 
 from engine.core.exceptions.deserialization_exception import DeserializationException
 from engine.core.utils.either import Either
@@ -15,6 +16,7 @@ from engine.core.runners.worker_trigger_result import WorkerTriggerResult
 
 @dataclass(slots=True, kw_only=True)
 class PostgresWorkerTriggerResultQueue(PostgresQueue):
+    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
     jdbc_worker_trigger_result_queue_service: JdbcWorkerTriggerResultQueueService | None = None
 
     def receive(self, consumer_group: str, queue_type: Class[Any], consumer: Consumer[Either[WorkerTriggerResult, DeserializationException]]) -> Runnable:

@@ -5,6 +5,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
+from logging import logging
 from typing import Any, ClassVar, Optional
 
 from engine.core.plugins.plugin_registry import PluginRegistry
@@ -14,10 +15,11 @@ from engine.core.storages.storage_interface import StorageInterface
 
 @dataclass(slots=True, kw_only=True)
 class KestraContext(ABC):
-    i_n_s_t_a_n_c_e: ClassVar[AtomicReference[KestraContext]] = new AtomicReference<>()
-    k_e_s_t_r_a__s_e_r_v_e_r__t_y_p_e: ClassVar[str] = "kestra.server-type"
-    k_e_s_t_r_a__w_o_r_k_e_r__m_a_x__n_u_m__t_h_r_e_a_d_s: ClassVar[str] = "kestra.worker.max-num-threads"
-    k_e_s_t_r_a__w_o_r_k_e_r__g_r_o_u_p__k_e_y: ClassVar[str] = "kestra.worker.group-key"
+    instance: ClassVar[AtomicReference[KestraContext]]
+    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    kestra_server_type: ClassVar[str] = "kestra.server-type"
+    kestra_worker_max_num_threads: ClassVar[str] = "kestra.worker.max-num-threads"
+    kestra_worker_group_key: ClassVar[str] = "kestra.worker.group-key"
 
     @staticmethod
     def get_context() -> KestraContext:
@@ -60,7 +62,7 @@ class KestraContext(ABC):
 
     @dataclass(slots=True)
     class Initializer(KestraContext):
-        is_shutdown: AtomicBoolean = new AtomicBoolean(false)
+        is_shutdown: AtomicBoolean
         application_context: ApplicationContext | None = None
         environment: Environment | None = None
         version: Supplier[str] | None = None
@@ -78,9 +80,6 @@ class KestraContext(ABC):
             raise NotImplementedError  # TODO: translate from Java
 
         def shutdown(self) -> None:
-            raise NotImplementedError  # TODO: translate from Java
-
-        def get_version(self) -> str:
             raise NotImplementedError  # TODO: translate from Java
 
         def get_plugin_registry(self) -> PluginRegistry:

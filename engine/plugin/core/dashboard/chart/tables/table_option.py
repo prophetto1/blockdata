@@ -10,8 +10,8 @@ from engine.core.models.dashboards.chart_option import ChartOption
 
 @dataclass(slots=True, kw_only=True)
 class TableOption(ChartOption):
-    header: HeaderOption = HeaderOption.builder().build()
-    pagination: PaginationOption = PaginationOption.builder().build()
+    header: HeaderOption
+    pagination: PaginationOption
 
     @dataclass(slots=True)
     class HeaderOption:

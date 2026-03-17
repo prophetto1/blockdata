@@ -16,8 +16,8 @@ from engine.core.models.property.property import Property
 class ExecutionOutputs(Condition):
     """Condition based on the outputs of an upstream execution."""
     expression: Property[bool]
-    t_r_i_g_g_e_r__v_a_r: ClassVar[str] = "trigger"
-    o_u_t_p_u_t_s__v_a_r: ClassVar[str] = "outputs"
+    trigger_var: ClassVar[str] = "trigger"
+    outputs_var: ClassVar[str] = "outputs"
 
     def test(self, condition_context: ConditionContext) -> bool:
         raise NotImplementedError  # TODO: translate from Java

@@ -14,7 +14,7 @@ from engine.core.models.conditions.condition_context import ConditionContext
 from engine.core.models.executions.execution import Execution
 from engine.core.models.flows.flow import Flow
 from engine.core.models.flows.flow_interface import FlowInterface
-from engine.core.models.has_u_i_d import HasUID
+from engine.core.models.has_uid import HasUID
 from engine.core.models.flows.state import State
 from engine.core.models.triggers.trigger_context import TriggerContext
 from engine.core.models.flows.type import Type

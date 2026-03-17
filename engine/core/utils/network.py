@@ -8,7 +8,7 @@ from typing import Any, ClassVar
 
 @dataclass(slots=True, kw_only=True)
 class Network:
-    h_o_s_t_n_a_m_e: ClassVar[str]
+    hostname: ClassVar[str]
 
     @staticmethod
     def local_hostname() -> str:

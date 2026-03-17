@@ -16,8 +16,8 @@ from engine.core.models.tasks.task import Task
 @dataclass(slots=True, kw_only=True)
 class TemplatedTask(Task):
     """Render and run a task from a templated spec."""
+    object_mapper: ClassVar[ObjectMapper]
     spec: Property[str]
-    o_b_j_e_c_t__m_a_p_p_e_r: ClassVar[ObjectMapper] = JacksonMapper.ofYaml()
 
     def run(self, run_context: RunContext) -> Output:
         raise NotImplementedError  # TODO: translate from Java

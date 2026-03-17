@@ -14,7 +14,7 @@ from engine.core.repositories.array_list_total import ArrayListTotal
 from engine.core.models.dashboards.column_descriptor import ColumnDescriptor
 from engine.core.models.conditions.condition import Condition
 from engine.core.models.dashboards.data_filter import DataFilter
-from engine.core.models.dashboards.data_filter_k_p_i import DataFilterKPI
+from engine.core.models.dashboards.data_filter_kpi import DataFilterKPI
 from engine.core.utils.date_utils import DateUtils
 from engine.core.models.executions.execution import Execution
 from engine.jdbc.services.jdbc_filter_service import JdbcFilterService
@@ -27,17 +27,8 @@ from engine.plugin.core.dashboard.data.metrics import Metrics
 
 @dataclass(slots=True, kw_only=True)
 class AbstractJdbcMetricRepository(ABC, AbstractJdbcCrudRepository):
-    n_o_r_m_a_l__k_i_n_d__c_o_n_d_i_t_i_o_n: ClassVar[Condition] = field("execution_kind").isNull().or(field("execution_kind").eq(ExecutionKind.NORMAL.name()))
-    fields_mapping: dict[Metrics.Fields, str] = Map.of(
-        Metrics.Fields.NAMESPACE, "namespace",
-        Metrics.Fields.FLOW_ID, "flow_id",
-        Metrics.Fields.TASK_ID, "task_id",
-        Metrics.Fields.EXECUTION_ID, "execution_id",
-        Metrics.Fields.TASK_RUN_ID, "taskrun_id",
-        Metrics.Fields.NAME, "metric_name",
-        Metrics.Fields.VALUE, "metric_value",
-        Metrics.Fields.DATE, "timestamp"
-    )
+    normal_kind_condition: ClassVar[Condition]
+    fields_mapping: dict[Metrics.Fields, str]
     filter_service: JdbcFilterService | None = None
 
     def date_fields(self) -> set[Metrics.Fields]:

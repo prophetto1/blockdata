@@ -2,8 +2,9 @@ from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\services\IgnoreExecutionService.java
 
-from dataclasses import dataclass
-from typing import Any
+from dataclasses import dataclass, field
+from logging import logging
+from typing import Any, ClassVar
 
 from engine.core.models.executions.execution import Execution
 from engine.core.models.flows.flow_id import FlowId
@@ -12,11 +13,12 @@ from engine.core.models.executions.task_run import TaskRun
 
 @dataclass(slots=True, kw_only=True)
 class IgnoreExecutionService:
-    ignored_executions: list[str] = Collections.emptyList()
-    ignored_flows: list[FlowId] = Collections.emptyList()
-    ignored_namespaces: list[NamespaceId] = Collections.emptyList()
-    ignored_tenants: list[str] = Collections.emptyList()
-    ignored_indexer_records: list[str] = Collections.emptyList()
+    ignored_executions: list[str]
+    ignored_flows: list[FlowId]
+    ignored_namespaces: list[NamespaceId]
+    ignored_tenants: list[str]
+    ignored_indexer_records: list[str]
+    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
 
     def ignore_execution(self, execution_id: str) -> bool:
         raise NotImplementedError  # TODO: translate from Java

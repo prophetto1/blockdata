@@ -11,4 +11,4 @@ from engine.core.exceptions.kestra_exception import KestraException
 
 @dataclass(slots=True, kw_only=True)
 class FlowProcessingException(KestraException):
-    serial_version_u_i_d: ClassVar[int] = 1
+    serial_version_uid: ClassVar[int] = 1

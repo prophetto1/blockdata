@@ -2,12 +2,13 @@ from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\models\namespaces\files\NamespaceFileMetadata.java
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from logging import logging
 from datetime import datetime
-from typing import Any
+from typing import Any, ClassVar
 
 from engine.core.storages.file_attributes import FileAttributes
-from engine.core.models.has_u_i_d import HasUID
+from engine.core.models.has_uid import HasUID
 from engine.core.storages.namespace_file import NamespaceFile
 from engine.core.models.soft_deletable import SoftDeletable
 from engine.core.models.tenant_interface import TenantInterface
@@ -19,8 +20,9 @@ class NamespaceFileMetadata:
     path: str
     version: int
     size: int
+    created: datetime
+    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
     last: bool = True
-    created: datetime = Instant.now()
     tenant_id: str | None = None
     parent_path: str | None = None
     updated: datetime | None = None

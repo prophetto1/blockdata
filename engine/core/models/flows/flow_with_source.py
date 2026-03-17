@@ -15,9 +15,6 @@ class FlowWithSource(Flow):
     def to_flow(self) -> Flow:
         raise NotImplementedError  # TODO: translate from Java
 
-    def get_source(self) -> str:
-        raise NotImplementedError  # TODO: translate from Java
-
     def to_deleted(self) -> FlowWithSource:
         raise NotImplementedError  # TODO: translate from Java
 

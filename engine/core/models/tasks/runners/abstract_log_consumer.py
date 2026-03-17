@@ -11,16 +11,10 @@ from typing import Any
 
 @dataclass(slots=True, kw_only=True)
 class AbstractLogConsumer(ABC):
-    std_out_count: AtomicInteger = new AtomicInteger()
-    std_err_count: AtomicInteger = new AtomicInteger()
+    std_out_count: AtomicInteger
+    std_err_count: AtomicInteger
     outputs: dict[str, Any] = field(default_factory=dict)
 
     @abstractmethod
     def accept(self, line: str, is_std_err: bool, instant: datetime) -> None:
         ...
-
-    def get_std_out_count(self) -> int:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def get_std_err_count(self) -> int:
-        raise NotImplementedError  # TODO: translate from Java

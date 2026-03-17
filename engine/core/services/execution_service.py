@@ -3,9 +3,10 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\services\ExecutionService.java
 # WARNING: Unresolved types: ApplicationEventPublisher, CompletedPart, Exception, Flux, IOException, Mono, Predicate, Publisher, Resumed
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from logging import logging
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any, ClassVar, Optional
 
 from engine.core.models.tasks.retrys.abstract_retry import AbstractRetry
 from engine.core.services.concurrency_limit_service import ConcurrencyLimitService
@@ -38,6 +39,7 @@ from engine.core.services.variables_service import VariablesService
 
 @dataclass(slots=True, kw_only=True)
 class ExecutionService:
+    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
     flow_repository_interface: FlowRepositoryInterface | None = None
     storage_interface: StorageInterface | None = None
     execution_repository: ExecutionRepositoryInterface | None = None
@@ -51,10 +53,10 @@ class ExecutionService:
     plugin_default_service: PluginDefaultService | None = None
     variables_service: VariablesService | None = None
 
-    def get_execution_if_pause(self, tenant: str, execution_id: str, with_a_c_l: bool) -> Execution:
+    def get_execution_if_pause(self, tenant: str, execution_id: str, with_acl: bool) -> Execution:
         raise NotImplementedError  # TODO: translate from Java
 
-    def get_execution(self, tenant: str, execution_id: str, with_a_c_l: bool) -> Execution:
+    def get_execution(self, tenant: str, execution_id: str, with_acl: bool) -> Execution:
         raise NotImplementedError  # TODO: translate from Java
 
     def retry_task(self, execution: Execution, flow: Flow, task_run_id: str) -> Execution:

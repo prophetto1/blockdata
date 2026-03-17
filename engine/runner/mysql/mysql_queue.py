@@ -13,7 +13,7 @@ from engine.core.models.collectors.result import Result
 
 @dataclass(slots=True, kw_only=True)
 class MysqlQueue(JdbcQueue):
-    q_u_e_u_e__c_o_n_s_u_m_e_r_s: ClassVar[MysqlQueueConsumers] = new MysqlQueueConsumers()
+    queue_consumers: ClassVar[MysqlQueueConsumers]
 
     def build_type_condition(self, type: str) -> Condition:
         raise NotImplementedError  # TODO: translate from Java
@@ -26,7 +26,7 @@ class MysqlQueue(JdbcQueue):
 
     @dataclass(slots=True)
     class MysqlQueueConsumers:
-        c_o_n_s_u_m_e_r_s: ClassVar[set[str]]
+        consumers: ClassVar[set[str]]
 
         def all_for_consumer_not_in(self, consumer: str) -> set[str]:
             raise NotImplementedError  # TODO: translate from Java

@@ -53,7 +53,7 @@ class BlueprintController:
 
     @dataclass(slots=True)
     class ApiBlueprintItem:
-        published_at: datetime = Instant.now()
+        published_at: datetime
         id: str | None = None
         title: str | None = None
         description: str | None = None
@@ -62,7 +62,7 @@ class BlueprintController:
 
     @dataclass(slots=True)
     class ApiBlueprintTagItem:
-        published_at: datetime = Instant.now()
+        published_at: datetime
         id: str | None = None
         name: str | None = None
 

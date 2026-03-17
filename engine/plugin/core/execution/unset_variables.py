@@ -17,7 +17,7 @@ from engine.core.models.tasks.task import Task
 class UnsetVariables(Task):
     """Remove execution variables."""
     variables: Property[list[str]]
-    ignore_missing: Property[bool] = Property.ofValue(false)
+    ignore_missing: Property[bool]
 
     def update(self, execution: Execution, run_context: RunContext) -> Execution:
         raise NotImplementedError  # TODO: translate from Java

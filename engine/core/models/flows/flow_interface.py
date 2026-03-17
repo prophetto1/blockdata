@@ -10,11 +10,11 @@ from engine.core.models.flows.concurrency import Concurrency
 from engine.core.models.flows.flow_id import FlowId
 from engine.core.models.flows.generic_flow import GenericFlow
 from engine.core.models.has_source import HasSource
-from engine.core.models.has_u_i_d import HasUID
+from engine.core.models.has_uid import HasUID
 from engine.core.models.flows.input import Input
 from engine.core.models.label import Label
 from engine.core.models.flows.output import Output
-from engine.core.models.flows.sla.s_l_a import SLA
+from engine.core.models.flows.sla.sla import SLA
 from engine.core.models.soft_deletable import SoftDeletable
 from engine.core.models.tenant_interface import TenantInterface
 from engine.core.models.tasks.worker_group import WorkerGroup

@@ -12,7 +12,7 @@ from engine.core.services.ignore_execution_service import IgnoreExecutionService
 
 @dataclass(slots=True, kw_only=True)
 class IndexerCommand(AbstractServerCommand):
-    ignore_indexer_records: list[str] = Collections.emptyList()
+    ignore_indexer_records: list[str]
     application_context: ApplicationContext | None = None
     ignore_execution_service: IgnoreExecutionService | None = None
     skip_indexer_records: list[str] | None = None

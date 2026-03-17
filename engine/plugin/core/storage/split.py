@@ -17,7 +17,7 @@ from engine.core.models.tasks.task import Task
 class Split(Task):
     """Split a file from Kestra internal storage."""
     from: Property[str]
-    separator: Property[str] = Property.ofValue("\n")
+    separator: Property[str]
     bytes: Property[str] | None = None
     partitions: Property[int] | None = None
     rows: Property[int] | None = None

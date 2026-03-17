@@ -17,7 +17,7 @@ from engine.core.models.tasks.void_output import VoidOutput
 class Log(Task):
     """Emit log entries from a flow."""
     message: Any
-    level: Property[Level] = Property.ofValue(Level.INFO)
+    level: Property[Level]
 
     def run(self, run_context: RunContext) -> VoidOutput:
         raise NotImplementedError  # TODO: translate from Java

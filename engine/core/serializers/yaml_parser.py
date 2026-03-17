@@ -10,11 +10,8 @@ from typing import Any, ClassVar
 
 @dataclass(slots=True, kw_only=True)
 class YamlParser:
-    s_t_r_i_c_t__m_a_p_p_e_r: ClassVar[ObjectMapper] = JacksonMapper.ofYaml()
-        .enable(JsonParser.Feature.STRICT_DUPLICATE_DETECTION)
-        .disable(DeserializationFeature.ADJUST_DATES_TO_CONTEXT_TIME_ZONE)
-    n_o_n__s_t_r_i_c_t__m_a_p_p_e_r: ClassVar[ObjectMapper] = STRICT_MAPPER.copy()
-        .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+    strict_mapper: ClassVar[ObjectMapper]
+    non_strict_mapper: ClassVar[ObjectMapper]
 
     @staticmethod
     def is_valid_extension(path: Path) -> bool:

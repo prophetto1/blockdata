@@ -16,7 +16,7 @@ from engine.core.models.tasks.void_output import VoidOutput
 @dataclass(slots=True, kw_only=True)
 class Fail(Task):
     """Intentionally fail the execution."""
-    error_message: Property[str] = Property.ofValue("Task failure")
+    error_message: Property[str]
     condition: Property[str] | None = None
 
     def run(self, run_context: RunContext) -> VoidOutput:

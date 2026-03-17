@@ -26,6 +26,3 @@ class VersionProvider:
 
     def load_time(self, git_properties: Optional[PropertySource]) -> datetime:
         raise NotImplementedError  # TODO: translate from Java
-
-    def get_version(self, object: Any) -> Optional[str]:
-        raise NotImplementedError  # TODO: translate from Java

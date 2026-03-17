@@ -17,7 +17,7 @@ from engine.core.models.property.property import Property
 class ExecutionNamespace(Condition):
     """Match executions by namespace."""
     namespace: Property[str]
-    prefix: Property[bool] = Property.ofValue(false)
+    prefix: Property[bool]
     comparison: Property[Comparison] | None = None
 
     def test(self, condition_context: ConditionContext) -> bool:

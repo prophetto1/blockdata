@@ -4,6 +4,7 @@ from __future__ import annotations
 # WARNING: Unresolved types: Class, DeserializationContext, IOException, JsonDeserializer, JsonMappingException, JsonNode, JsonParser, T
 
 from dataclasses import dataclass, field
+from logging import logging
 from typing import Any, ClassVar
 
 from engine.core.models.plugin import Plugin
@@ -12,8 +13,9 @@ from engine.core.plugins.plugin_registry import PluginRegistry
 
 @dataclass(slots=True, kw_only=True)
 class PluginDeserializer(JsonDeserializer):
-    t_y_p_e: ClassVar[str] = "type"
-    v_e_r_s_i_o_n: ClassVar[str] = "version"
+    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    type: ClassVar[str] = "type"
+    version: ClassVar[str] = "version"
     plugin_registry: PluginRegistry | None = None
 
     def deserialize(self, parser: JsonParser, context: DeserializationContext) -> T:

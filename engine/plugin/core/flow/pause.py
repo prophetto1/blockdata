@@ -27,7 +27,7 @@ from engine.core.models.flows.type import Type
 @dataclass(slots=True, kw_only=True)
 class Pause(Task):
     """Pause the flow until it is resumed."""
-    behavior: Property[Behavior] = Property.ofValue(Behavior.RESUME)
+    behavior: Property[Behavior]
     delay: Property[timedelta] | None = None
     pause_duration: Property[timedelta] | None = None
     on_pause: Task | None = None

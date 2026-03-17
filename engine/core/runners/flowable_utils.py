@@ -20,8 +20,8 @@ from engine.core.models.flows.type import Type
 
 @dataclass(slots=True, kw_only=True)
 class FlowableUtils:
-    t_y_p_e__r_e_f_e_r_e_n_c_e: ClassVar[TypeReference[list[Any]]] = new TypeReference<>() {}
-    m_a_p_p_e_r: ClassVar[ObjectMapper] = JacksonMapper.ofJson()
+    type_reference: ClassVar[TypeReference[list[Any]]]
+    mapper: ClassVar[ObjectMapper]
 
     @staticmethod
     def resolve_sequential_nexts(execution: Execution, tasks: list[ResolvedTask]) -> list[NextTaskRun]:

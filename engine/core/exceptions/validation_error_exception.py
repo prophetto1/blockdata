@@ -10,8 +10,8 @@ from engine.core.exceptions.kestra_runtime_exception import KestraRuntimeExcepti
 
 @dataclass(slots=True, kw_only=True)
 class ValidationErrorException(KestraRuntimeException):
-    serial_version_u_i_d: ClassVar[int] = 1
-    v_a_l_i_d_a_t_i_o_n__e_r_r_o_r__m_e_s_s_a_g_e: ClassVar[str] = "Resource fails validation"
+    serial_version_uid: ClassVar[int] = 1
+    validation_error_message: ClassVar[str] = "Resource fails validation"
     invalids: list[str] | None = None
 
     def formated_invalid_objects(self) -> str:

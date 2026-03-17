@@ -9,10 +9,10 @@ from typing import Any, ClassVar
 
 @dataclass(slots=True, kw_only=True)
 class ReplaceFilter:
-    f_i_l_t_e_r__n_a_m_e: ClassVar[str] = "replace"
-    a_r_g_u_m_e_n_t__p_a_i_r_s: ClassVar[str] = "replace_pairs"
-    a_r_g_u_m_e_n_t__r_e_g_e_x_p: ClassVar[str] = "regexp"
-    a_r_g_s: ClassVar[list[str]] = List.of(ARGUMENT_PAIRS, ARGUMENT_REGEXP)
+    args: ClassVar[list[str]]
+    filter_name: ClassVar[str] = "replace"
+    argument_pairs: ClassVar[str] = "replace_pairs"
+    argument_regexp: ClassVar[str] = "regexp"
 
     def get_argument_names(self) -> list[str]:
         raise NotImplementedError  # TODO: translate from Java

@@ -6,7 +6,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any
 
-from engine.core.models.has_u_i_d import HasUID
+from engine.core.models.has_uid import HasUID
 from engine.core.runners.worker_instance import WorkerInstance
 from engine.core.runners.worker_task_running import WorkerTaskRunning
 from engine.core.runners.worker_trigger_running import WorkerTriggerRunning

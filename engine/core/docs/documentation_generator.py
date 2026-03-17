@@ -15,7 +15,7 @@ from engine.core.plugins.registered_plugin import RegisteredPlugin
 
 @dataclass(slots=True, kw_only=True)
 class DocumentationGenerator:
-    p_e_b_b_l_e__e_n_g_i_n_e: ClassVar[PebbleEngine]
+    pebble_engine: ClassVar[PebbleEngine]
     json_schema_generator: JsonSchemaGenerator | None = None
 
     def generate(self, registered_plugin: RegisteredPlugin) -> list[Document]:

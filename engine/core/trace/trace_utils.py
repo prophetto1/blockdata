@@ -12,12 +12,12 @@ from engine.core.runners.run_context import RunContext
 
 @dataclass(slots=True, kw_only=True)
 class TraceUtils:
-    a_t_t_r__u_i_d: ClassVar[AttributeKey[str]] = AttributeKey.stringKey("kestra.uid")
-    a_t_t_r__t_e_n_a_n_t__i_d: ClassVar[AttributeKey[str]] = AttributeKey.stringKey("kestra.tenantId")
-    a_t_t_r__n_a_m_e_s_p_a_c_e: ClassVar[AttributeKey[str]] = AttributeKey.stringKey("kestra.namespace")
-    a_t_t_r__f_l_o_w__i_d: ClassVar[AttributeKey[str]] = AttributeKey.stringKey("kestra.flowId")
-    a_t_t_r__e_x_e_c_u_t_i_o_n__i_d: ClassVar[AttributeKey[str]] = AttributeKey.stringKey("kestra.executionId")
-    a_t_t_r__s_o_u_r_c_e: ClassVar[AttributeKey[str]] = AttributeKey.stringKey("kestra.source")
+    attr_uid: ClassVar[AttributeKey[str]]
+    attr_tenant_id: ClassVar[AttributeKey[str]]
+    attr_namespace: ClassVar[AttributeKey[str]]
+    attr_flow_id: ClassVar[AttributeKey[str]]
+    attr_execution_id: ClassVar[AttributeKey[str]]
+    attr_source: ClassVar[AttributeKey[str]]
 
     @staticmethod
     def attributes_from(execution: Execution) -> Attributes:

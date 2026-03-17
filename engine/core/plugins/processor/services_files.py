@@ -9,7 +9,7 @@ from typing import Any, ClassVar
 
 @dataclass(slots=True, kw_only=True)
 class ServicesFiles:
-    s_e_r_v_i_c_e_s__p_a_t_h: ClassVar[str] = "META-INF/services"
+    services_path: ClassVar[str] = "META-INF/services"
 
     @staticmethod
     def get_path(service_name: str) -> str:

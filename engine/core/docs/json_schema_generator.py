@@ -4,6 +4,7 @@ from __future__ import annotations
 # WARNING: Unresolved types: Class, FieldScope, JsonNode, ObjectMapper, ObjectNode, ResolvedType, SchemaGeneratorConfigBuilder, T, TypeContext
 
 from dataclasses import dataclass, field
+from logging import logging
 from typing import Any, ClassVar, Optional
 
 from engine.core.models.triggers.abstract_trigger import AbstractTrigger
@@ -14,11 +15,10 @@ from engine.core.models.tasks.task import Task
 
 @dataclass(slots=True, kw_only=True)
 class JsonSchemaGenerator:
-    s_u_b_t_y_p_e__r_e_s_o_l_u_t_i_o_n__e_x_c_l_u_s_i_o_n__f_o_r__p_l_u_g_i_n__s_c_h_e_m_a: ClassVar[list[Class[Any]]] = List.of(Task.class, AbstractTrigger.class)
-    m_a_p_p_e_r: ClassVar[ObjectMapper] = JacksonMapper.ofJson().copy()
-        .configure(SerializationFeature.WRITE_DURATIONS_AS_TIMESTAMPS, false)
-    y_a_m_l__m_a_p_p_e_r: ClassVar[ObjectMapper] = JacksonMapper.ofYaml().copy()
-        .configure(SerializationFeature.WRITE_DURATIONS_AS_TIMESTAMPS, false)
+    subtype_resolution_exclusion_for_plugin_schema: ClassVar[list[Class[Any]]]
+    mapper: ClassVar[ObjectMapper]
+    yaml_mapper: ClassVar[ObjectMapper]
+    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
     default_instances: dict[Class[Any], Any] = field(default_factory=dict)
     plugin_registry: PluginRegistry | None = None
 

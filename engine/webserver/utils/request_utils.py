@@ -17,7 +17,7 @@ from engine.core.models.flows.type import Type
 
 @dataclass(slots=True, kw_only=True)
 class RequestUtils:
-    q_u_e_r_y__s_t_r_i_n_g__s_e_p_a_r_a_t_o_r: ClassVar[str] = ":"
+    query_string_separator: ClassVar[str] = ":"
 
     @staticmethod
     def to_map(query_string: list[str]) -> dict[str, str]:

@@ -31,12 +31,8 @@ class RetryUtils:
 
     @dataclass(slots=True)
     class Instance:
-        policy: AbstractRetry = Exponential.builder()
-            .delayFactor(2.0)
-            .interval(Duration.ofSeconds(1))
-            .maxInterval(Duration.ofSeconds(10))
-            .maxAttempts(3)
-            .build()
+        policy: AbstractRetry
+        logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
         logger: Logger = log
         failure_function: Function[RetryFailed, E] | None = None
 
@@ -73,6 +69,6 @@ class RetryUtils:
 
     @dataclass(slots=True)
     class RetryFailed(Exception):
-        serial_version_u_i_d: ClassVar[int] = 1
+        serial_version_uid: ClassVar[int] = 1
         attempt_count: int | None = None
         elapsed_time: timedelta | None = None

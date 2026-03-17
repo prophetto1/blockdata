@@ -10,8 +10,8 @@ from typing import Any, ClassVar
 
 @dataclass(slots=True, kw_only=True)
 class PathMatcherPredicate:
-    s_y_n_t_a_x__g_l_o_b: ClassVar[str] = "glob:"
-    s_y_n_t_a_x__r_e_g_e_x: ClassVar[str] = "regex:"
+    syntax_glob: ClassVar[str] = "glob:"
+    syntax_regex: ClassVar[str] = "regex:"
     syntax_and_patterns: list[str] | None = None
     matchers: list[PathMatcher] | None = None
 
@@ -47,8 +47,8 @@ class PathMatcherPredicate:
 
     @dataclass(slots=True)
     class Builder:
-        includes: list[str] = List.of()
-        excludes: list[str] = List.of()
+        includes: list[str]
+        excludes: list[str]
 
         def includes(self, includes: list[str]) -> Builder:
             raise NotImplementedError  # TODO: translate from Java

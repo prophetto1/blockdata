@@ -11,7 +11,7 @@ from engine.webserver.utils.filepreview.file_render import FileRender
 
 @dataclass(slots=True, kw_only=True)
 class FileRenderBuilder:
-    d_e_f_a_u_l_t__f_i_l_e__c_h_a_r_s_e_t: ClassVar[Charset] = StandardCharsets.UTF_8
+    default_file_charset: ClassVar[Charset] = StandardCharsets.UTF_8
 
     @staticmethod
     def of(extension: str, filestream: InputStream, charset: Optional[Charset], max_line: int) -> FileRender:

@@ -3,9 +3,10 @@ from __future__ import annotations
 # Source: E:\KESTRA\cli\src\main\java\io\kestra\cli\services\FileChangedEventListener.java
 # WARNING: Unresolved types: CopyOnWriteArrayList, FileWatchConfiguration, IOException, InterruptedException, WatchService
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from logging import logging
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, ClassVar, Optional
 
 from engine.cli.services.flow_files_manager import FlowFilesManager
 from engine.core.models.flows.flow_interface import FlowInterface
@@ -19,7 +20,8 @@ from engine.core.services.plugin_default_service import PluginDefaultService
 
 @dataclass(slots=True, kw_only=True)
 class FileChangedEventListener:
-    flows: list[FlowWithPath] = new CopyOnWriteArrayList<>()
+    flows: list[FlowWithPath]
+    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
     is_started: bool = False
     file_watch_configuration: FileWatchConfiguration | None = None
     watch_service: WatchService | None = None

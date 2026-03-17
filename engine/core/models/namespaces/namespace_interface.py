@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Protocol
 
-from engine.core.models.has_u_i_d import HasUID
+from engine.core.models.has_uid import HasUID
 
 
 class NamespaceInterface(HasUID, Protocol):

@@ -10,7 +10,7 @@ from typing import Any
 from engine.core.storages.file_attributes import FileAttributes
 
 
-@dataclass(slots=True, kw_only=True)
+@dataclass(frozen=True, slots=True, kw_only=True)
 class LocalFileAttributes:
     file_path: Path | None = None
     basic_file_attributes: BasicFileAttributes | None = None

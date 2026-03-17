@@ -15,10 +15,7 @@ from engine.core.runners.run_context import RunContext
 @dataclass(slots=True, kw_only=True)
 class CounterMetric(AbstractMetric):
     value: Property[float]
-    t_y_p_e: ClassVar[str] = "counter"
+    type: ClassVar[str] = "counter"
 
     def to_metric(self, run_context: RunContext) -> AbstractMetricEntry[Any]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def get_type(self) -> str:
         raise NotImplementedError  # TODO: translate from Java

@@ -10,7 +10,7 @@ from engine.core.models.flows.state import State
 from engine.core.models.flows.type import Type
 
 
-@dataclass(slots=True, kw_only=True)
+@dataclass(frozen=True, slots=True, kw_only=True)
 class TaskRunAttempt:
     state: State
     worker_id: str | None = None

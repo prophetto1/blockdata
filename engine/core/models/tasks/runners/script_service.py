@@ -10,18 +10,18 @@ from typing import Any, ClassVar
 from engine.core.exceptions.illegal_variable_evaluation_exception import IllegalVariableEvaluationException
 from engine.core.models.property.property import Property
 from engine.core.runners.run_context import RunContext
-from engine.core.models.tasks.runners.target_o_s import TargetOS
+from engine.core.models.tasks.runners.target_os import TargetOS
 
 
 @dataclass(slots=True, kw_only=True)
 class ScriptService:
-    i_n_t_e_r_n_a_l__s_t_o_r_a_g_e__p_a_t_t_e_r_n: ClassVar[Pattern] = Pattern.compile("(kestra:\\/\\/[-\\p{Alnum}._\\+~#=/]*)", Pattern.UNICODE_CHARACTER_CLASS)
-    v_a_r__w_o_r_k_i_n_g__d_i_r: ClassVar[str] = "workingDir"
-    v_a_r__o_u_t_p_u_t__d_i_r: ClassVar[str] = "outputDir"
-    v_a_r__b_u_c_k_e_t__p_a_t_h: ClassVar[str] = "bucketPath"
-    e_n_v__w_o_r_k_i_n_g__d_i_r: ClassVar[str] = "WORKING_DIR"
-    e_n_v__o_u_t_p_u_t__d_i_r: ClassVar[str] = "OUTPUT_DIR"
-    e_n_v__b_u_c_k_e_t__p_a_t_h: ClassVar[str] = "BUCKET_PATH"
+    internal_storage_pattern: ClassVar[Pattern]
+    var_working_dir: ClassVar[str] = "workingDir"
+    var_output_dir: ClassVar[str] = "outputDir"
+    var_bucket_path: ClassVar[str] = "bucketPath"
+    env_working_dir: ClassVar[str] = "WORKING_DIR"
+    env_output_dir: ClassVar[str] = "OUTPUT_DIR"
+    env_bucket_path: ClassVar[str] = "BUCKET_PATH"
 
     @staticmethod
     def replace_internal_storage(run_context: RunContext, command: str, replace_with_relative_path: bool) -> str:
@@ -60,11 +60,11 @@ class ScriptService:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
-    def script_commands(interpreter: list[str], before_commands: list[str], command: str, target_o_s: TargetOS) -> list[str]:
+    def script_commands(interpreter: list[str], before_commands: list[str], command: str, target_os: TargetOS) -> list[str]:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
-    def script_commands(interpreter: list[str], before_commands: list[str], commands: list[str], target_o_s: TargetOS) -> list[str]:
+    def script_commands(interpreter: list[str], before_commands: list[str], commands: list[str], target_os: TargetOS) -> list[str]:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod

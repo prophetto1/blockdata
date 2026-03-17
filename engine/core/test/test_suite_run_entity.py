@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
 
-from engine.core.models.has_u_i_d import HasUID
+from engine.core.models.has_uid import HasUID
 from engine.core.models.soft_deletable import SoftDeletable
 from engine.core.models.tenant_interface import TenantInterface
 from engine.core.test.test_state import TestState
@@ -37,13 +37,7 @@ class TestSuiteRunEntity:
     def migrate_to_tenant(self, new_tenant_id: str) -> TestSuiteRunEntity:
         raise NotImplementedError  # TODO: translate from Java
 
-    def is_deleted(self) -> bool:
-        raise NotImplementedError  # TODO: translate from Java
-
     def to_deleted(self) -> TestSuiteRunEntity:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def get_tenant_id(self) -> str:
         raise NotImplementedError  # TODO: translate from Java
 
     def to_model(self) -> TestSuiteRunResult:

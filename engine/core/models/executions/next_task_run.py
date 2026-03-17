@@ -9,7 +9,7 @@ from engine.core.models.tasks.task import Task
 from engine.core.models.executions.task_run import TaskRun
 
 
-@dataclass(slots=True, kw_only=True)
+@dataclass(frozen=True, slots=True, kw_only=True)
 class NextTaskRun:
     task_run: TaskRun
     task: Task

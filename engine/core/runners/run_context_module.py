@@ -11,8 +11,8 @@ from engine.core.runners.run_context import RunContext
 
 @dataclass(slots=True, kw_only=True)
 class RunContextModule(SimpleModule):
-    serial_version_u_i_d: ClassVar[int] = 1
-    n_a_m_e: ClassVar[str] = "kestra-context"
+    serial_version_uid: ClassVar[int] = 1
+    name: ClassVar[str] = "kestra-context"
 
     @dataclass(slots=True)
     class RunContextDeserializer(JsonDeserializer):

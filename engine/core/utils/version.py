@@ -9,7 +9,7 @@ from typing import Any, ClassVar
 
 @dataclass(slots=True, kw_only=True)
 class Version:
-    z_e_r_o: ClassVar[Version] = new Version(0, 0, 0, null)
+    zero: ClassVar[Version]
     major_version: int | None = None
     minor_version: int | None = None
     patch_version: int | None = None
@@ -95,7 +95,7 @@ class Version:
 
     @dataclass(slots=True)
     class Qualifier:
-        d_e_f_a_u_l_t__q_u_a_l_i_f_i_e_r__n_a_m_e: ClassVar[list[str]]
+        default_qualifier_name: ClassVar[list[str]]
         qualifier: str | None = None
         label: str | None = None
         priority: int | None = None

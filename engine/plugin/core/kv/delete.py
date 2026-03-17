@@ -16,8 +16,8 @@ from engine.core.models.tasks.task import Task
 class Delete(Task):
     """Delete a key-value entry."""
     key: Property[str]
-    namespace: Property[str] = Property.ofExpression("{{ flow.namespace }}")
-    error_on_missing: Property[bool] = Property.ofValue(false)
+    namespace: Property[str]
+    error_on_missing: Property[bool]
 
     def run(self, run_context: RunContext) -> Output:
         raise NotImplementedError  # TODO: translate from Java

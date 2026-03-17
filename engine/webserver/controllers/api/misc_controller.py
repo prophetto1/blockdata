@@ -3,9 +3,10 @@ from __future__ import annotations
 # Source: E:\KESTRA\webserver\src\main\java\io\kestra\webserver\controllers\api\MiscController.java
 # WARNING: Unresolved types: ApplicationContext, Edition, JsonProcessingException, Void
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from logging import logging
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any, ClassVar, Optional
 
 from engine.webserver.services.basic_auth_credentials import BasicAuthCredentials
 from engine.webserver.services.basic_auth_service import BasicAuthService
@@ -25,7 +26,8 @@ from engine.core.utils.version_provider import VersionProvider
 
 @dataclass(slots=True, kw_only=True)
 class MiscController:
-    basic_auth_service: Optional[BasicAuthService] = Optional.empty()
+    basic_auth_service: Optional[BasicAuthService]
+    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
     application_context: ApplicationContext | None = None
     version_provider: VersionProvider | None = None
     dashboard_repository: DashboardRepositoryInterface | None = None

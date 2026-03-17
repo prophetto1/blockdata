@@ -7,10 +7,10 @@ from typing import Any
 
 from engine.core.models.topologies.flow_node import FlowNode
 from engine.core.models.topologies.flow_relation import FlowRelation
-from engine.core.models.has_u_i_d import HasUID
+from engine.core.models.has_uid import HasUID
 
 
-@dataclass(slots=True, kw_only=True)
+@dataclass(frozen=True, slots=True, kw_only=True)
 class FlowTopology:
     source: FlowNode
     relation: FlowRelation

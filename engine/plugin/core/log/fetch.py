@@ -15,7 +15,7 @@ from engine.core.models.tasks.task import Task
 @dataclass(slots=True, kw_only=True)
 class Fetch(Task):
     """Fetch execution logs to a file (deprecated)."""
-    level: Property[Level] = Property.ofValue(Level.INFO)
+    level: Property[Level]
     namespace: Property[str] | None = None
     flow_id: Property[str] | None = None
     execution_id: Property[str] | None = None

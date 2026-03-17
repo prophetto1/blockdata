@@ -5,6 +5,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
+from logging import logging
 from datetime import datetime
 from typing import Any, ClassVar, Optional
 
@@ -22,11 +23,12 @@ from engine.plugin.core.dashboard.chart.table import Table
 
 @dataclass(slots=True, kw_only=True)
 class AbstractJdbcServiceInstanceRepository(ABC, AbstractJdbcRepository):
-    s_t_a_t_e: ClassVar[Field[Any]] = field("state")
-    t_y_p_e: ClassVar[Field[Any]] = field("service_type")
-    u_p_d_a_t_e_d__a_t: ClassVar[Field[datetime]] = field("updated_at", Instant.class)
-    c_r_e_a_t_e_d__a_t: ClassVar[Field[datetime]] = field("created_at", Instant.class)
-    s_e_r_v_i_c_e__i_d: ClassVar[Field[Any]] = field("service_id")
+    state: ClassVar[Field[Any]]
+    type: ClassVar[Field[Any]]
+    updated_at: ClassVar[Field[datetime]]
+    created_at: ClassVar[Field[datetime]]
+    service_id: ClassVar[Field[Any]]
+    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
     jdbc_repository: io.kestra.jdbc.AbstractJdbcRepository[ServiceInstance] | None = None
 
     def find_by_id(self, id: str) -> Optional[ServiceInstance]:

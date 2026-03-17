@@ -4,6 +4,7 @@ from __future__ import annotations
 # WARNING: Unresolved types: ChatModel, ChatModelListener
 
 from dataclasses import dataclass, field
+from logging import logging
 from typing import Any, ClassVar
 
 from engine.webserver.services.ai.ai_service import AiService
@@ -18,7 +19,8 @@ from engine.core.utils.version_provider import VersionProvider
 
 @dataclass(slots=True, kw_only=True)
 class GeminiAiService(AiService):
-    t_y_p_e: ClassVar[str] = "gemini"
+    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    type: ClassVar[str] = "gemini"
 
     def chat_model(self, listeners: list[ChatModelListener]) -> ChatModel:
         raise NotImplementedError  # TODO: translate from Java

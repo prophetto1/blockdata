@@ -9,7 +9,7 @@ from typing import Any, ClassVar
 
 @dataclass(slots=True, kw_only=True)
 class PluginConfiguration:
-    c_o_m_p_a_r_a_t_o_r: ClassVar[Comparator[PluginConfiguration]] = Comparator.comparing(PluginConfiguration::order)
+    comparator: ClassVar[Comparator[PluginConfiguration]]
     order: int | None = None
     type: str | None = None
     values: dict[str, Any] | None = None

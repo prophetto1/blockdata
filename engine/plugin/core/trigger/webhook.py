@@ -16,8 +16,7 @@ from engine.plugin.core.trigger.webhook_context import WebhookContext
 @dataclass(slots=True, kw_only=True)
 class Webhook(AbstractWebhookTrigger):
     """Trigger a Flow via an authenticated webhook URL."""
-    m_a_p_p_e_r: ClassVar[ObjectMapper] = JacksonMapper.ofJson().copy()
-        .setDefaultPropertyInclusion(JsonInclude.Include.USE_DEFAULTS)
+    mapper: ClassVar[ObjectMapper]
     wait: bool = False
     return_outputs: bool = False
     response_content_type: str | None = None

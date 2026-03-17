@@ -23,8 +23,8 @@ from engine.core.models.tasks.void_output import VoidOutput
 @dataclass(slots=True, kw_only=True)
 class Parallel(Task):
     """Run child tasks in parallel."""
+    concurrent: Property[int]
     tasks: list[@NotNull Task]
-    concurrent: Property[int] = Property.ofValue(0)
     errors: list[Task] | None = None
     _finally: list[Task] | None = None
 

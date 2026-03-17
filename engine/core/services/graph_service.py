@@ -2,8 +2,9 @@ from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\services\GraphService.java
 
-from dataclasses import dataclass
-from typing import Any
+from dataclasses import dataclass, field
+from logging import logging
+from typing import Any, ClassVar
 
 from engine.core.models.hierarchies.abstract_graph import AbstractGraph
 from engine.core.models.executions.execution import Execution
@@ -20,6 +21,7 @@ from engine.core.repositories.trigger_repository_interface import TriggerReposit
 
 @dataclass(slots=True, kw_only=True)
 class GraphService:
+    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
     flow_repository: FlowRepositoryInterface | None = None
     trigger_repository: TriggerRepositoryInterface | None = None
     plugin_default_service: PluginDefaultService | None = None

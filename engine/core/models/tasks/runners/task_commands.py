@@ -9,7 +9,7 @@ from typing import Any, Protocol
 
 from engine.core.models.tasks.runners.abstract_log_consumer import AbstractLogConsumer
 from engine.core.models.property.property import Property
-from engine.core.models.tasks.runners.target_o_s import TargetOS
+from engine.core.models.tasks.runners.target_os import TargetOS
 
 
 class TaskCommands(Protocol):
@@ -39,7 +39,7 @@ class TaskCommands(Protocol):
 
     def get_timeout(self) -> timedelta: ...
 
-    def get_target_o_s(self) -> TargetOS: ...
+    def get_target_os(self) -> TargetOS: ...
 
     def relative_working_directory_files_paths(self) -> list[Path]: ...
 

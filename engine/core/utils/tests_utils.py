@@ -5,6 +5,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
+from logging import logging
 from datetime import timedelta
 from typing import Any, ClassVar
 
@@ -28,8 +29,9 @@ from engine.core.models.triggers.trigger import Trigger
 
 @dataclass(slots=True, kw_only=True)
 class TestsUtils(ABC):
-    queue_consumers_cancellations: ClassVar[ThreadLocal[list[Runnable]]] = ThreadLocal.withInitial(ArrayList::new)
-    mapper: ClassVar[ObjectMapper] = JacksonMapper.ofYaml()
+    queue_consumers_cancellations: ClassVar[ThreadLocal[list[Runnable]]]
+    mapper: ClassVar[ObjectMapper]
+    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
 
     @staticmethod
     def queue_consumers_cleanup() -> None:

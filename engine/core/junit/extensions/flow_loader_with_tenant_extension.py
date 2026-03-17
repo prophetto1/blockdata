@@ -12,7 +12,7 @@ from engine.core.junit.annotations.load_flows_with_tenant import LoadFlowsWithTe
 
 @dataclass(slots=True, kw_only=True)
 class FlowLoaderWithTenantExtension(AbstractFlowLoaderExtension):
-    tenant_id: str = TestsUtils.randomTenant()
+    tenant_id: str
 
     def supports_parameter(self, parameter_context: ParameterContext, extension_context: ExtensionContext) -> bool:
         raise NotImplementedError  # TODO: translate from Java

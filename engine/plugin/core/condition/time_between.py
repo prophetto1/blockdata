@@ -16,7 +16,7 @@ from engine.core.models.conditions.schedule_condition import ScheduleCondition
 @dataclass(slots=True, kw_only=True)
 class TimeBetween(Condition):
     """Allow events between two times of day."""
-    date: Property[str] = Property.ofExpression("{{ trigger.date }}")
+    date: Property[str]
     after: Property[OffsetTime] | None = None
     before: Property[OffsetTime] | None = None
 

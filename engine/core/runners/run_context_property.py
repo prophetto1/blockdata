@@ -3,8 +3,9 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\runners\RunContextProperty.java
 # WARNING: Unresolved types: Class, I, K, T, V
 
-from dataclasses import dataclass
-from typing import Any, Optional
+from dataclasses import dataclass, field
+from logging import logging
+from typing import Any, ClassVar, Optional
 
 from engine.core.models.triggers.abstract_trigger import AbstractTrigger
 from engine.core.exceptions.illegal_variable_evaluation_exception import IllegalVariableEvaluationException
@@ -15,6 +16,7 @@ from engine.core.models.tasks.task import Task
 
 @dataclass(slots=True, kw_only=True)
 class RunContextProperty:
+    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
     property: Property[T] | None = None
     run_context: RunContext | None = None
     task: Task | None = None
@@ -43,7 +45,4 @@ class RunContextProperty:
         raise NotImplementedError  # TODO: translate from Java
 
     def as_map(self, key_class: Class[K], value_class: Class[V], variables: dict[str, Any]) -> T:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def get_property(self) -> Property[T]:
         raise NotImplementedError  # TODO: translate from Java

@@ -12,7 +12,7 @@ from engine.core.models.executions.execution_killed_execution import ExecutionKi
 from engine.core.runners.execution_resumed import ExecutionResumed
 from engine.core.runners.execution_running import ExecutionRunning
 from engine.core.models.flows.flow_with_source import FlowWithSource
-from engine.core.models.has_u_i_d import HasUID
+from engine.core.models.has_uid import HasUID
 from engine.core.models.flows.state import State
 from engine.core.runners.subflow_execution import SubflowExecution
 from engine.core.runners.subflow_execution_end import SubflowExecutionEnd

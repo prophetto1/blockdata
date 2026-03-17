@@ -12,7 +12,7 @@ from engine.core.models.namespaces.files.namespace_file_metadata import Namespac
 
 @dataclass(slots=True, kw_only=True)
 class NamespaceFile:
-    capture_path_without_version: ClassVar[Pattern] = Pattern.compile("(.*)(?:\\.v\\d+)?$")
+    capture_path_without_version: ClassVar[Pattern]
     path: str | None = None
     uri: str | None = None
     namespace: str | None = None

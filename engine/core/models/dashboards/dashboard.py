@@ -7,7 +7,7 @@ from datetime import datetime
 from typing import Any
 
 from engine.core.models.dashboards.charts.chart import Chart
-from engine.core.models.has_u_i_d import HasUID
+from engine.core.models.has_uid import HasUID
 from engine.core.models.soft_deletable import SoftDeletable
 from engine.core.models.dashboards.time_window import TimeWindow
 
@@ -16,7 +16,7 @@ from engine.core.models.dashboards.time_window import TimeWindow
 class Dashboard:
     id: str
     title: str
-    time_window: TimeWindow = TimeWindow.builder().build()
+    time_window: TimeWindow
     deleted: bool = False
     tenant_id: str | None = None
     description: str | None = None

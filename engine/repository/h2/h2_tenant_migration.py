@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from engine.jdbc.repository.abstract_jdbc_tenant_migration import AbstractJdbcTenantMigration
-from engine.jdbc.jooq_d_s_l_context_wrapper import JooqDSLContextWrapper
+from engine.jdbc.jooq_dsl_context_wrapper import JooqDSLContextWrapper
 from engine.plugin.core.dashboard.chart.table import Table
 
 

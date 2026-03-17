@@ -7,10 +7,10 @@ from enum import Enum
 from typing import Any
 
 from engine.core.models.executions.execution import Execution
-from engine.core.models.has_u_i_d import HasUID
+from engine.core.models.has_uid import HasUID
 
 
-@dataclass(slots=True, kw_only=True)
+@dataclass(frozen=True, slots=True, kw_only=True)
 class ExecutionRunning:
     namespace: str
     flow_id: str

@@ -10,4 +10,4 @@ from engine.core.secret.secret_exception import SecretException
 
 @dataclass(slots=True, kw_only=True)
 class SecretNotFoundException(SecretException):
-    serial_version_u_i_d: ClassVar[int] = 1
+    serial_version_uid: ClassVar[int] = 1

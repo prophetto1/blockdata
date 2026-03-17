@@ -12,7 +12,7 @@ from engine.cli.abstract_command import AbstractCommand
 
 @dataclass(slots=True, kw_only=True)
 class PluginDocCommand(AbstractCommand):
-    output: Path = Paths.get(System.getProperty("user.dir"), "docs")
+    output: Path
     core: bool = False
     icons: bool = False
     schema: bool = False

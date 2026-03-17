@@ -21,9 +21,6 @@ class PluginUsageReport(AbstractReportable):
     def report(self, now: datetime, period: TimeInterval) -> PluginUsageEvent:
         raise NotImplementedError  # TODO: translate from Java
 
-    def is_enabled(self) -> bool:
-        raise NotImplementedError  # TODO: translate from Java
-
     @dataclass(slots=True)
     class PluginUsageEvent:
         plugins: list[PluginUsage] | None = None

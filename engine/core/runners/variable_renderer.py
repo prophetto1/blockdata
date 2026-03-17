@@ -12,8 +12,8 @@ from engine.core.runners.pebble.pebble_engine_factory import PebbleEngineFactory
 
 @dataclass(slots=True, kw_only=True)
 class VariableRenderer:
-    r_a_w__p_a_t_t_e_r_n: ClassVar[Pattern] = Pattern.compile("(\\{%-*\\s*raw\\s*-*%}(.*?)\\{%-*\\s*endraw\\s*-*%})")
-    m_a_x__r_e_n_d_e_r_i_n_g__a_m_o_u_n_t: ClassVar[int] = 100
+    raw_pattern: ClassVar[Pattern]
+    max_rendering_amount: ClassVar[int] = 100
     pebble_engine: PebbleEngine | None = None
     variable_configuration: VariableConfiguration | None = None
 

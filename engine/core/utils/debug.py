@@ -9,11 +9,9 @@ from typing import Any, ClassVar
 
 @dataclass(slots=True, kw_only=True)
 class Debug:
-    n_a_m_e: ClassVar[str] = Thread.currentThread().getStackTrace()[2].getClassName()
-    l_o_g_g_e_r: ClassVar[Logger] = LoggerFactory.getLogger(NAME)
-    m_a_p_p_e_r: ObjectMapper = new ObjectMapper()
-        .registerModule(new JavaTimeModule())
-        .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
+    name: ClassVar[str]
+    logger: ClassVar[Logger]
+    mapper: ObjectMapper
 
     @staticmethod
     def caller() -> str:

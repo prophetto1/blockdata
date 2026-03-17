@@ -15,7 +15,7 @@ from engine.core.models.conditions.schedule_condition import ScheduleCondition
 @dataclass(slots=True, kw_only=True)
 class Weekend(Condition):
     """Allow events on weekends."""
-    date: Property[str] = Property.ofExpression("{{ trigger.date }}")
+    date: Property[str]
 
     def test(self, condition_context: ConditionContext) -> bool:
         raise NotImplementedError  # TODO: translate from Java

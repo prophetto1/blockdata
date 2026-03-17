@@ -4,7 +4,8 @@ from __future__ import annotations
 # WARNING: Unresolved types: ApplicationEventPublisher, AtomicBoolean, AtomicReference, IOException, Runnable, ServiceState, T
 
 from dataclasses import dataclass, field
-from typing import Any
+from logging import logging
+from typing import Any, ClassVar
 
 from engine.core.services.ignore_execution_service import IgnoreExecutionService
 from engine.core.runners.indexer import Indexer
@@ -23,10 +24,11 @@ from engine.core.server.service_type import ServiceType
 
 @dataclass(slots=True, kw_only=True)
 class JdbcIndexer:
+    id: str
+    state: AtomicReference[ServiceState]
+    closed: AtomicBoolean
+    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
     receive_cancellations: list[Runnable] = field(default_factory=list)
-    id: str = IdUtils.create()
-    state: AtomicReference[ServiceState] = new AtomicReference<>()
-    closed: AtomicBoolean = new AtomicBoolean(false)
     log_repository: LogRepositoryInterface | None = None
     log_queue: JdbcQueue[LogEntry] | None = None
     metric_repository: MetricRepositoryInterface | None = None
@@ -45,13 +47,7 @@ class JdbcIndexer:
     def send_batch(self, queue_interface: JdbcQueue[T], save_repository_interface: SaveRepositoryInterface[T]) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
-    def get_id(self) -> str:
-        raise NotImplementedError  # TODO: translate from Java
-
     def get_type(self) -> ServiceType:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def get_state(self) -> ServiceState:
         raise NotImplementedError  # TODO: translate from Java
 
     def close(self) -> None:

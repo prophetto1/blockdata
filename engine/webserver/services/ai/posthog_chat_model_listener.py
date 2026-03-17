@@ -3,14 +3,16 @@ from __future__ import annotations
 # Source: E:\KESTRA\webserver\src\main\java\io\kestra\webserver\services\ai\PosthogChatModelListener.java
 # WARNING: Unresolved types: ChatModelErrorContext, ChatModelListener, ChatModelResponseContext, ChatRequest
 
-from dataclasses import dataclass
-from typing import Any, Optional
+from dataclasses import dataclass, field
+from logging import logging
+from typing import Any, ClassVar, Optional
 
 from engine.webserver.services.posthog.posthog_service import PosthogService
 
 
 @dataclass(slots=True, kw_only=True)
 class PosthogChatModelListener:
+    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
     posthog_service: PosthogService | None = None
 
     def on_response(self, response_context: ChatModelResponseContext) -> None:

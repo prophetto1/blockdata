@@ -9,7 +9,7 @@ from typing import Any
 from engine.core.runners.pebble.functions.error_logs_function import ErrorLogsFunction
 from engine.core.runners.pebble.functions.file_exists_function import FileExistsFunction
 from engine.core.runners.pebble.functions.file_size_function import FileSizeFunction
-from engine.core.runners.pebble.functions.file_u_r_i_function import FileURIFunction
+from engine.core.runners.pebble.functions.file_uri_function import FileURIFunction
 from engine.core.runners.pebble.functions.http_function import HttpFunction
 from engine.core.runners.pebble.functions.is_file_empty_function import IsFileEmptyFunction
 from engine.core.runners.pebble.functions.kv_function import KvFunction
@@ -24,7 +24,7 @@ class Extension(AbstractExtension):
     secret_function: SecretFunction | None = None
     kv_function: KvFunction | None = None
     read_file_function: ReadFileFunction | None = None
-    file_u_r_i_function: FileURIFunction | None = None
+    file_uri_function: FileURIFunction | None = None
     render_function: RenderFunction | None = None
     render_once_function: RenderOnceFunction | None = None
     file_size_function: FileSizeFunction | None = None

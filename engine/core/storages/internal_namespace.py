@@ -3,9 +3,10 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\storages\InternalNamespace.java
 # WARNING: Unresolved types: Conflicts, Exception, FileNotFoundException, IOException, InputStream, Logger, Pageable, Pair, Predicate, URISyntaxException
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from logging import logging
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, ClassVar, Optional
 
 from engine.core.repositories.array_list_total import ArrayListTotal
 from engine.core.models.fetch_version import FetchVersion
@@ -20,6 +21,7 @@ from engine.core.storages.storage_interface import StorageInterface
 
 @dataclass(slots=True, kw_only=True)
 class InternalNamespace:
+    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
     namespace: str | None = None
     tenant: str | None = None
     storage: StorageInterface | None = None

@@ -9,9 +9,9 @@ from typing import Any, ClassVar
 
 @dataclass(slots=True, kw_only=True)
 class StackdriverJsonLayout(JsonLayout):
-    s_e_v_e_r_i_t_y__a_t_t_r_i_b_u_t_e: ClassVar[str] = "severity"
-    t_i_m_e_s_t_a_m_p__s_e_c_o_n_d_s__a_t_t_r_i_b_u_t_e: ClassVar[str] = "timestampSeconds"
-    t_i_m_e_s_t_a_m_p__n_a_n_o_s__a_t_t_r_i_b_u_t_e: ClassVar[str] = "timestampNanos"
+    severity_attribute: ClassVar[str] = "severity"
+    timestamp_seconds_attribute: ClassVar[str] = "timestampSeconds"
+    timestamp_nanos_attribute: ClassVar[str] = "timestampNanos"
     include_exception_in_message: bool | None = None
     custom_json: dict[str, Any] | None = None
 

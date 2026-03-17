@@ -4,20 +4,19 @@ from __future__ import annotations
 # WARNING: Unresolved types: Class, T
 
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
-from typing import Any
+from dataclasses import dataclass, field
+from logging import logging
+from typing import Any, ClassVar
 
 from engine.core.docs.json_schema_generator import JsonSchemaGenerator
 
 
 @dataclass(slots=True, kw_only=True)
 class AbstractClassDocumentation(ABC):
-    defs: dict[str, Any] = new TreeMap<>()
-    inputs: dict[str, Any] = new TreeMap<>()
-    defs_exclusions: list[str] = List.of(
-        "io.kestra.core.models.conditions.Condition",
-        "io.kestra.core.models.conditions.ScheduleCondition"
-    )
+    defs: dict[str, Any]
+    inputs: dict[str, Any]
+    defs_exclusions: list[str]
+    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
     deprecated: bool | None = None
     beta: bool | None = None
     cls: str | None = None

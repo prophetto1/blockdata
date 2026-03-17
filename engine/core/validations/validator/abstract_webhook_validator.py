@@ -12,10 +12,7 @@ from engine.core.validations.abstract_webhook_validation import AbstractWebhookV
 
 @dataclass(slots=True, kw_only=True)
 class AbstractWebhookValidator:
-    a_l_l_o_w_e_d__c_o_n_t_e_n_t__t_y_p_e_s: ClassVar[set[str]] = Set.of(
-        MediaType.APPLICATION_JSON,
-        MediaType.TEXT_PLAIN
-    )
+    allowed_content_types: ClassVar[set[str]]
 
     def is_valid(self, value: AbstractWebhookTrigger, annotation_metadata: AnnotationValue[AbstractWebhookValidation], context: ConstraintValidatorContext) -> bool:
         raise NotImplementedError  # TODO: translate from Java

@@ -11,7 +11,7 @@ from engine.core.repositories.flow_repository_interface import FlowRepositoryInt
 
 @dataclass(slots=True, kw_only=True)
 class FlowUsage:
-    t_u_t_o_r_i_a_l__n_a_m_e_s_p_a_c_e: ClassVar[str] = "tutorial"
+    tutorial_namespace: ClassVar[str] = "tutorial"
     count: int | None = None
     namespaces_count: int | None = None
     task_type_count: dict[str, int] | None = None

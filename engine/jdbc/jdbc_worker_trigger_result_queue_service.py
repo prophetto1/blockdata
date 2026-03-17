@@ -4,6 +4,7 @@ from __future__ import annotations
 # WARNING: Unresolved types: AtomicBoolean, AtomicReference, Class, Closeable, Consumer, ObjectMapper, Runnable
 
 from dataclasses import dataclass, field
+from logging import logging
 from typing import Any, ClassVar
 
 from engine.core.exceptions.deserialization_exception import DeserializationException
@@ -15,9 +16,10 @@ from engine.core.runners.worker_trigger_result import WorkerTriggerResult
 
 @dataclass(slots=True, kw_only=True)
 class JdbcWorkerTriggerResultQueueService:
-    m_a_p_p_e_r: ClassVar[ObjectMapper] = JdbcMapper.of()
-    disposable: AtomicReference[Runnable] = new AtomicReference<>()
-    is_closed: AtomicBoolean = new AtomicBoolean(false)
+    mapper: ClassVar[ObjectMapper]
+    disposable: AtomicReference[Runnable]
+    is_closed: AtomicBoolean
+    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
     worker_job_running_state_store: WorkerJobRunningStateStore | None = None
 
     def receive(self, worker_trigger_result_queue: JdbcQueue[WorkerTriggerResult], consumer_group: str, queue_type: Class[Any], consumer: Consumer[Either[WorkerTriggerResult, DeserializationException]]) -> Runnable:

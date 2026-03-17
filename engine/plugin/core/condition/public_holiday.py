@@ -15,7 +15,7 @@ from engine.core.models.conditions.schedule_condition import ScheduleCondition
 @dataclass(slots=True, kw_only=True)
 class PublicHoliday(Condition):
     """Allow events on public holidays."""
-    date: Property[str] = Property.ofExpression("{{ trigger.date}}")
+    date: Property[str]
     country: Property[str] | None = None
     sub_division: Property[str] | None = None
 

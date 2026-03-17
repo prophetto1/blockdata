@@ -37,7 +37,7 @@ from engine.core.models.tasks.void_output import VoidOutput
 @dataclass(slots=True, kw_only=True)
 class ForEachItem(Task):
     """Spawn a subflow for each batch of items."""
-    batch: ForEachItem.Batch = Batch.builder().build()
+    batch: ForEachItem.Batch
     wait: bool = True
     transmit_failed: bool = True
     inherit_labels: bool = False
@@ -76,7 +76,7 @@ class ForEachItem(Task):
 
     @dataclass(slots=True)
     class ForEachItemSplit(Task):
-        s_u_f_f_i_x: ClassVar[str] = "_split"
+        suffix: ClassVar[str] = "_split"
         items: str | None = None
         batch: Batch | None = None
 
@@ -89,7 +89,7 @@ class ForEachItem(Task):
 
     @dataclass(slots=True)
     class ForEachItemExecutable(Task):
-        s_u_f_f_i_x: ClassVar[str] = "_items"
+        suffix: ClassVar[str] = "_items"
         inputs: dict[str, Any] | None = None
         inherit_labels: bool | None = None
         labels: list[Label] | None = None
@@ -113,7 +113,7 @@ class ForEachItem(Task):
 
     @dataclass(slots=True)
     class ForEachItemMergeOutputs(Task):
-        s_u_f_f_i_x: ClassVar[str] = "_merge"
+        suffix: ClassVar[str] = "_merge"
 
         def run(self, run_context: RunContext) -> ForEachItemMergeOutputs.Output:
             raise NotImplementedError  # TODO: translate from Java
@@ -124,8 +124,8 @@ class ForEachItem(Task):
 
     @dataclass(slots=True)
     class Batch:
-        rows: Property[int] = Property.ofValue(1)
-        separator: Property[str] = Property.ofValue("\n")
+        rows: Property[int]
+        separator: Property[str]
         bytes: Property[str] | None = None
         partitions: Property[int] | None = None
         regex_pattern: Property[str] | None = None

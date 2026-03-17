@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from engine.core.models.label import Label
-from engine.core.models.flows.sla.s_l_a import SLA
+from engine.core.models.flows.sla.sla import SLA
 
 
 @dataclass(slots=True, kw_only=True)

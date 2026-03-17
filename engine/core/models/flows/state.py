@@ -2,18 +2,20 @@ from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\models\flows\State.java
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
+from logging import logging
 from datetime import datetime
 from datetime import timedelta
-from typing import Any, Optional
+from typing import Any, ClassVar, Optional
 
 from engine.core.models.tasks.task import Task
 
 
-@dataclass(slots=True, kw_only=True)
+@dataclass(frozen=True, slots=True, kw_only=True)
 class State:
     current: Type
+    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
     histories: list[History] | None = None
 
     @staticmethod

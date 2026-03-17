@@ -19,7 +19,7 @@ class DeleteFiles(Task):
     """Delete files from Namespace storage."""
     namespace: Property[str]
     files: Any
-    delete_parent_folder: Property[bool] = Property.ofValue(false)
+    delete_parent_folder: Property[bool]
 
     def run(self, run_context: RunContext) -> Output:
         raise NotImplementedError  # TODO: translate from Java

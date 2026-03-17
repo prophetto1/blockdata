@@ -11,8 +11,8 @@ from engine.core.exceptions.deserialization_exception import DeserializationExce
 from engine.core.models.flows.flow_interface import FlowInterface
 from engine.core.models.tasks.generic_task import GenericTask
 from engine.core.models.triggers.generic_trigger import GenericTrigger
-from engine.core.models.has_u_i_d import HasUID
-from engine.core.models.flows.sla.s_l_a import SLA
+from engine.core.models.has_uid import HasUID
+from engine.core.models.flows.sla.sla import SLA
 
 
 @dataclass(slots=True, kw_only=True)
@@ -30,15 +30,6 @@ class GenericFlow(AbstractFlow):
 
     @staticmethod
     def from_yaml(tenant_id: str, source: str) -> GenericFlow:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def get_additional_properties(self) -> dict[str, Any]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def get_tasks(self) -> list[GenericTask]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def get_triggers(self) -> list[GenericTrigger]:
         raise NotImplementedError  # TODO: translate from Java
 
     def to_deleted(self) -> FlowInterface:

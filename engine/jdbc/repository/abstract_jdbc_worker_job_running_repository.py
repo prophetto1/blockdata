@@ -4,8 +4,9 @@ from __future__ import annotations
 # WARNING: Unresolved types: DSLContext, io, jdbc, kestra
 
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
-from typing import Any, Optional
+from dataclasses import dataclass, field
+from logging import logging
+from typing import Any, ClassVar, Optional
 
 from engine.jdbc.abstract_jdbc_repository import AbstractJdbcRepository
 from engine.core.runners.worker_job_running import WorkerJobRunning
@@ -15,6 +16,7 @@ from engine.executor.worker_job_running_state_store import WorkerJobRunningState
 
 @dataclass(slots=True, kw_only=True)
 class AbstractJdbcWorkerJobRunningRepository(ABC, AbstractJdbcRepository):
+    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
     jdbc_repository: io.kestra.jdbc.AbstractJdbcRepository[WorkerJobRunning] | None = None
 
     def save(self, worker_job_running: WorkerJobRunning, context: DSLContext) -> WorkerJobRunning:

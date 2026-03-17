@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from engine.core.models.has_source import HasSource
-from engine.core.models.has_u_i_d import HasUID
+from engine.core.models.has_uid import HasUID
 from engine.core.models.soft_deletable import SoftDeletable
 from engine.core.models.tenant_interface import TenantInterface
 from engine.core.test.flow.unit_test import UnitTest

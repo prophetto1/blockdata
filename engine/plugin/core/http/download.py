@@ -15,7 +15,7 @@ from engine.core.models.tasks.runnable_task import RunnableTask
 @dataclass(slots=True, kw_only=True)
 class Download(AbstractHttp):
     """Download a file over HTTP(S) to Kestra storage."""
-    fail_on_empty_response: Property[bool] = Property.ofValue(true)
+    fail_on_empty_response: Property[bool]
     save_as: Property[str] | None = None
 
     def run(self, run_context: RunContext) -> Output:
@@ -24,7 +24,7 @@ class Download(AbstractHttp):
     def filename_from_header(self, run_context: RunContext, content_disposition: str) -> str:
         raise NotImplementedError  # TODO: translate from Java
 
-    def filename_from_u_r_i(self, uri: str) -> str:
+    def filename_from_uri(self, uri: str) -> str:
         raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)

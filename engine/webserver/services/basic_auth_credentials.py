@@ -11,12 +11,3 @@ class BasicAuthCredentials:
     uid: str | None = None
     username: str | None = None
     password: str | None = None
-
-    def get_username(self) -> str:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def get_password(self) -> str:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def get_uid(self) -> str:
-        raise NotImplementedError  # TODO: translate from Java

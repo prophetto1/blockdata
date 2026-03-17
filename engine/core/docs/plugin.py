@@ -33,7 +33,7 @@ class Plugin:
     app_blocks: list[PluginElementMetadata] | None = None
     charts: list[PluginElementMetadata] | None = None
     data_filters: list[PluginElementMetadata] | None = None
-    data_filters_k_p_i: list[PluginElementMetadata] | None = None
+    data_filters_kpi: list[PluginElementMetadata] | None = None
     log_exporters: list[PluginElementMetadata] | None = None
     additional_plugins: list[PluginElementMetadata] | None = None
     categories: list[PluginSubGroup.PluginCategory] | None = None

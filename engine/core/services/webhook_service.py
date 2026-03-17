@@ -3,8 +3,9 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\services\WebhookService.java
 # WARNING: Unresolved types: ApplicationEventPublisher, Flux, OpenTelemetry, core, io, kestra, models, tasks
 
-from dataclasses import dataclass
-from typing import Any, Optional
+from dataclasses import dataclass, field
+from logging import logging
+from typing import Any, ClassVar, Optional
 
 from engine.core.models.triggers.abstract_trigger import AbstractTrigger
 from engine.plugin.core.trigger.abstract_webhook_trigger import AbstractWebhookTrigger
@@ -27,6 +28,7 @@ from engine.plugin.core.trigger.webhook_response import WebhookResponse
 
 @dataclass(slots=True, kw_only=True)
 class WebhookService:
+    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
     run_context_factory: RunContextFactory | None = None
     condition_service: ConditionService | None = None
     flow_input_output: FlowInputOutput | None = None

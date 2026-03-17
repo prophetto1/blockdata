@@ -13,8 +13,8 @@ from engine.core.runners.asset_emitter import AssetEmitter
 from engine.core.assets.asset_manager_factory import AssetManagerFactory
 from engine.core.exceptions.illegal_variable_evaluation_exception import IllegalVariableEvaluationException
 from engine.core.runners.input_and_output import InputAndOutput
-from engine.core.storages.kv.k_v_store import KVStore
-from engine.core.services.k_v_store_service import KVStoreService
+from engine.core.storages.kv.kv_store import KVStore
+from engine.core.services.kv_store_service import KVStoreService
 from engine.core.runners.local_path import LocalPath
 from engine.core.metrics.metric_registry import MetricRegistry
 from engine.core.models.plugin import Plugin
@@ -22,7 +22,7 @@ from engine.core.models.property.property import Property
 from engine.core.runners.run_context import RunContext
 from engine.core.runners.run_context_logger import RunContextLogger
 from engine.core.runners.run_context_property import RunContextProperty
-from engine.core.runners.s_d_k import SDK
+from engine.core.runners.sdk import SDK
 from engine.core.storages.storage import Storage
 from engine.core.storages.storage_interface import StorageInterface
 from engine.core.models.tasks.task import Task
@@ -34,9 +34,9 @@ from engine.core.runners.working_dir import WorkingDir
 
 @dataclass(slots=True, kw_only=True)
 class DefaultRunContext(RunContext):
+    is_initialized: AtomicBoolean
     metrics: list[AbstractMetricEntry[Any]] = field(default_factory=list)
     dynamic_worker_task_result: list[WorkerTaskResult] = field(default_factory=list)
-    is_initialized: AtomicBoolean = new AtomicBoolean(false)
     application_context: ApplicationContext | None = None
     variable_renderer: VariableRenderer | None = None
     meter_registry: MetricRegistry | None = None
@@ -58,27 +58,6 @@ class DefaultRunContext(RunContext):
     task: Task | None = None
     trigger: AbstractTrigger | None = None
     asset_emitter: AssetEmitter | None = None
-
-    def get_trigger_execution_id(self) -> str:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def get_variables(self) -> dict[str, Any]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def get_secret_inputs(self) -> list[str]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def get_trace_parent(self) -> str:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def get_application_context(self) -> ApplicationContext:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def get_task(self) -> Task:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def get_trigger(self) -> AbstractTrigger:
-        raise NotImplementedError  # TODO: translate from Java
 
     def init(self, application_context: ApplicationContext) -> None:
         raise NotImplementedError  # TODO: translate from Java
@@ -140,7 +119,7 @@ class DefaultRunContext(RunContext):
     def logger(self) -> Logger:
         raise NotImplementedError  # TODO: translate from Java
 
-    def log_file_u_r_i(self) -> str:
+    def log_file_uri(self) -> str:
         raise NotImplementedError  # TODO: translate from Java
 
     def get_storage_output_prefix(self) -> str:
@@ -217,7 +196,7 @@ class DefaultRunContext(RunContext):
 
     @dataclass(slots=True)
     class Builder:
-        secret_key: Optional[str] = Optional.empty()
+        secret_key: Optional[str]
         application_context: ApplicationContext | None = None
         variable_renderer: VariableRenderer | None = None
         storage_interface: StorageInterface | None = None

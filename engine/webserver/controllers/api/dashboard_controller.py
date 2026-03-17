@@ -4,6 +4,7 @@ from __future__ import annotations
 # WARNING: Unresolved types: ConstraintViolationException, IOException, Pageable, Pattern, Void
 
 from dataclasses import dataclass, field
+from logging import logging
 from datetime import datetime
 from typing import Any, ClassVar
 
@@ -25,9 +26,10 @@ from engine.core.serializers.yaml_parser import YamlParser
 
 @dataclass(slots=True, kw_only=True)
 class DashboardController:
-    y_a_m_l__p_a_r_s_e_r: ClassVar[YamlParser] = new YamlParser()
-    d_a_s_h_b_o_a_r_d__i_d__p_a_t_t_e_r_n: ClassVar[Pattern] = Pattern.compile("^id:.*$", Pattern.MULTILINE)
-    o_s_s__d_a_s_h_b_o_a_r_d__s_e_t_t_i_n_g_s: ClassVar[str] = "kestra.oss.dashboard-settings"
+    yaml_parser: ClassVar[YamlParser]
+    dashboard_id_pattern: ClassVar[Pattern]
+    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    oss_dashboard_settings: ClassVar[str] = "kestra.oss.dashboard-settings"
     dashboard_repository: DashboardRepositoryInterface | None = None
     flow_repository: FlowRepositoryInterface | None = None
     tenant_service: TenantService | None = None
@@ -85,7 +87,7 @@ class DashboardController:
     def validate_chart(self, chart: str) -> ValidateConstraintViolation:
         raise NotImplementedError  # TODO: translate from Java
 
-    def export_dashboard_chart_data_to_c_s_v(self, id: str, chart_id: str, global_filter: ChartFiltersOverrides) -> HttpResponse[list[int]]:
+    def export_dashboard_chart_data_to_csv(self, id: str, chart_id: str, global_filter: ChartFiltersOverrides) -> HttpResponse[list[int]]:
         raise NotImplementedError  # TODO: translate from Java
 
     def export_chart_to_csv(self, preview_request: PreviewRequest) -> HttpResponse[list[int]]:

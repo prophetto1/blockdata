@@ -11,7 +11,7 @@ from engine.core.models.flows.input import Input
 
 @dataclass(slots=True, kw_only=True)
 class FileInput(Input):
-    d_e_f_a_u_l_t__e_x_t_e_n_s_i_o_n: ClassVar[str] = ".upl"
+    default_extension: ClassVar[str] = ".upl"
     extension: str | None = None
     allowed_file_extensions: list[str] | None = None
 

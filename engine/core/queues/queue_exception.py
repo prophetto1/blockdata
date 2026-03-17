@@ -9,4 +9,4 @@ from typing import Any, ClassVar
 
 @dataclass(slots=True, kw_only=True)
 class QueueException(Exception):
-    serial_version_u_i_d: ClassVar[int] = 2
+    serial_version_uid: ClassVar[int] = 2

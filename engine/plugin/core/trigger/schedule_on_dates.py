@@ -4,6 +4,7 @@ from __future__ import annotations
 # WARNING: Unresolved types: Exception, Predicate
 
 from dataclasses import dataclass, field
+from logging import logging
 from datetime import datetime
 from datetime import timedelta
 from typing import Any, ClassVar, Optional
@@ -24,10 +25,11 @@ from engine.core.models.tasks.void_output import VoidOutput
 @dataclass(slots=True, kw_only=True)
 class ScheduleOnDates(AbstractTrigger):
     """Schedule a Flow on specific dates."""
+    timezone: str
     dates: Property[list[datetime]]
-    p_l_u_g_i_n__p_r_o_p_e_r_t_y__r_e_c_o_v_e_r__m_i_s_s_e_d__s_c_h_e_d_u_l_e_s: ClassVar[str] = "recoverMissedSchedules"
+    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    plugin_property_recover_missed_schedules: ClassVar[str] = "recoverMissedSchedules"
     interval: timedelta = None
-    timezone: str = ZoneId.systemDefault().toString()
     inputs: dict[str, Any] | None = None
     recover_missed_schedules: RecoverMissedSchedules | None = None
 

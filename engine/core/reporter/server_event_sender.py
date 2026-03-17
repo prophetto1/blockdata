@@ -4,6 +4,7 @@ from __future__ import annotations
 # WARNING: Unresolved types: Exception, MutableHttpRequest, ObjectMapper, ReactorHttpClient
 
 from dataclasses import dataclass, field
+from logging import logging
 from datetime import datetime
 from typing import Any, ClassVar
 
@@ -17,8 +18,9 @@ from engine.core.utils.version_provider import VersionProvider
 
 @dataclass(slots=True, kw_only=True)
 class ServerEventSender:
-    s_e_s_s_i_o_n__u_u_i_d: ClassVar[str] = IdUtils.create()
-    o_b_j_e_c_t__m_a_p_p_e_r: ClassVar[ObjectMapper] = JacksonMapper.ofJson()
+    session_uuid: ClassVar[str]
+    object_mapper: ClassVar[ObjectMapper]
+    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
     client: ReactorHttpClient | None = None
     version_provider: VersionProvider | None = None
     instance_service: InstanceService | None = None

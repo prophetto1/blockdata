@@ -11,10 +11,10 @@ from engine.core.models.property.property_value_extractor import PropertyValueEx
 
 @dataclass(slots=True, kw_only=True)
 class CustomValidatorFactoryProvider:
-    message_interpolator: Optional[MessageInterpolator] = Optional.empty()
-    traversable_resolver: Optional[TraversableResolver] = Optional.empty()
-    constraint_validator_factory: Optional[ConstraintValidatorFactory] = Optional.empty()
-    parameter_name_provider: Optional[ParameterNameProvider] = Optional.empty()
+    message_interpolator: Optional[MessageInterpolator]
+    traversable_resolver: Optional[TraversableResolver]
+    constraint_validator_factory: Optional[ConstraintValidatorFactory]
+    parameter_name_provider: Optional[ParameterNameProvider]
     ignore_xml_configuration: bool = True
     property_value_extractor: PropertyValueExtractor | None = None
 

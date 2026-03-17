@@ -12,7 +12,7 @@ from engine.core.metrics.metric_registry import MetricRegistry
 @dataclass(slots=True, kw_only=True)
 class Gauge(AbstractMetricEntry):
     value: float
-    t_y_p_e: ClassVar[str] = "gauge"
+    type: ClassVar[str] = "gauge"
     type: str = TYPE
 
     @staticmethod

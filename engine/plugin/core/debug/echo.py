@@ -16,7 +16,7 @@ from engine.core.models.tasks.void_output import VoidOutput
 @dataclass(slots=True, kw_only=True)
 class Echo(Task):
     """Log a templated message (deprecated)."""
-    level: Property[Level] = Property.ofValue(Level.INFO)
+    level: Property[Level]
     format: Property[str] | None = None
 
     def run(self, run_context: RunContext) -> VoidOutput:

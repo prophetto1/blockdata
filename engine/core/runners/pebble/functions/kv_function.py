@@ -4,18 +4,20 @@ from __future__ import annotations
 # WARNING: Unresolved types: EvaluationContext, Function, IOException, PebbleTemplate
 
 from dataclasses import dataclass, field
+from logging import logging
 from typing import Any, ClassVar, Optional
 
-from engine.core.services.k_v_store_service import KVStoreService
-from engine.core.storages.kv.k_v_value import KVValue
+from engine.core.services.kv_store_service import KVStoreService
+from engine.core.storages.kv.kv_value import KVValue
 from engine.core.exceptions.resource_expired_exception import ResourceExpiredException
 
 
 @dataclass(slots=True, kw_only=True)
 class KvFunction:
-    k_e_y__a_r_g_s: ClassVar[str] = "key"
-    e_r_r_o_r__o_n__m_i_s_s_i_n_g__a_r_g: ClassVar[str] = "errorOnMissing"
-    n_a_m_e_s_p_a_c_e__a_r_g: ClassVar[str] = "namespace"
+    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    key_args: ClassVar[str] = "key"
+    error_on_missing_arg: ClassVar[str] = "errorOnMissing"
+    namespace_arg: ClassVar[str] = "namespace"
     kv_store_service: KVStoreService | None = None
 
     def get_argument_names(self) -> list[str]:

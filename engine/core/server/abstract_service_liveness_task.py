@@ -4,17 +4,19 @@ from __future__ import annotations
 # WARNING: Unresolved types: AtomicBoolean, AutoCloseable, Exception, Runnable, ScheduledExecutorService, ScheduledFuture
 
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from logging import logging
 from datetime import datetime
 from datetime import timedelta
-from typing import Any
+from typing import Any, ClassVar
 
 from engine.core.server.server_config import ServerConfig
 
 
 @dataclass(slots=True, kw_only=True)
 class AbstractServiceLivenessTask(ABC):
-    is_stopped: AtomicBoolean = new AtomicBoolean(false)
+    is_stopped: AtomicBoolean
+    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
     name: str | None = None
     server_config: ServerConfig | None = None
     scheduled_executor_service: ScheduledExecutorService | None = None

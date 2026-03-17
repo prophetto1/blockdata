@@ -9,7 +9,7 @@ from engine.core.models.flows.state import State
 from engine.core.models.flows.type import Type
 
 
-@dataclass(slots=True, kw_only=True)
+@dataclass(frozen=True, slots=True, kw_only=True)
 class ExecutionResumed:
     task_run_id: str
     execution_id: str

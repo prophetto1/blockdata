@@ -18,8 +18,8 @@ from engine.core.models.executions.task_run import TaskRun
 
 @dataclass(slots=True, kw_only=True)
 class RunVariables:
-    s_e_c_r_e_t__c_o_n_s_u_m_e_r__v_a_r_i_a_b_l_e__n_a_m_e: ClassVar[str] = "addSecretConsumer"
-    f_i_x_t_u_r_e__f_i_l_e_s__k_e_y: ClassVar[str] = "io.kestra.datatype:test_fixtures_files"
+    secret_consumer_variable_name: ClassVar[str] = "addSecretConsumer"
+    fixture_files_key: ClassVar[str] = "io.kestra.datatype:test_fixtures_files"
 
     @staticmethod
     def of(task: Task) -> dict[str, Any]:

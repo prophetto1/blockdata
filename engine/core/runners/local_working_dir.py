@@ -4,8 +4,9 @@ from __future__ import annotations
 # WARNING: Unresolved types: BasicFileAttributes, FileVisitResult, IOException, InputStream, Predicate, SimpleFileVisitor
 
 from dataclasses import dataclass, field
+from logging import logging
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
 
 from engine.core.models.tasks.file_exist_comportment import FileExistComportment
 from engine.core.runners.working_dir import WorkingDir
@@ -13,6 +14,7 @@ from engine.core.runners.working_dir import WorkingDir
 
 @dataclass(slots=True, kw_only=True)
 class LocalWorkingDir:
+    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
     working_dir_path: Path | None = None
     working_dir_id: str | None = None
 
@@ -71,7 +73,4 @@ class LocalWorkingDir:
         predicate: Predicate[Path] | None = None
 
         def visit_file(self, path: Path, basic_file_attributes: BasicFileAttributes) -> FileVisitResult:
-            raise NotImplementedError  # TODO: translate from Java
-
-        def get_matched_files(self) -> list[Path]:
             raise NotImplementedError  # TODO: translate from Java

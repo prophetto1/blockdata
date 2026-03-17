@@ -7,11 +7,11 @@ from typing import Any, Optional
 
 from engine.core.models.triggers.abstract_trigger import AbstractTrigger
 from engine.core.models.executions.execution import Execution
-from engine.core.models.has_u_i_d import HasUID
+from engine.core.models.has_uid import HasUID
 from engine.core.models.triggers.trigger_context import TriggerContext
 
 
-@dataclass(slots=True, kw_only=True)
+@dataclass(frozen=True, slots=True, kw_only=True)
 class WorkerTriggerResult:
     trigger_context: TriggerContext
     trigger: AbstractTrigger

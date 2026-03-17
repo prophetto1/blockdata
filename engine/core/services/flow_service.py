@@ -3,8 +3,9 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\services\FlowService.java
 # WARNING: Unresolved types: Class, IllegalStateException, Method, Provider, Stream
 
-from dataclasses import dataclass
-from typing import Any, Optional
+from dataclasses import dataclass, field
+from logging import logging
+from typing import Any, ClassVar, Optional
 
 from engine.core.models.triggers.abstract_trigger import AbstractTrigger
 from engine.core.models.flows.check.check import Check
@@ -27,6 +28,7 @@ from engine.core.models.validations.validate_constraint_violation import Validat
 
 @dataclass(slots=True, kw_only=True)
 class FlowService:
+    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
     flow_repository: Optional[FlowRepositoryInterface] | None = None
     plugin_default_service: PluginDefaultService | None = None
     plugin_registry: PluginRegistry | None = None

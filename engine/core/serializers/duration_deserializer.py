@@ -10,7 +10,7 @@ from typing import Any, ClassVar
 
 @dataclass(slots=True, kw_only=True)
 class DurationDeserializer(DurationDeserializer):
-    serial_version_u_i_d: ClassVar[int] = 1
+    serial_version_uid: ClassVar[int] = 1
 
     def _from_string(self, parser: JsonParser, ctxt: DeserializationContext, value0: str) -> timedelta:
         raise NotImplementedError  # TODO: translate from Java

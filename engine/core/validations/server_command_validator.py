@@ -4,16 +4,14 @@ from __future__ import annotations
 # WARNING: Unresolved types: Environment, RuntimeException
 
 from dataclasses import dataclass, field
+from logging import logging
 from typing import Any, ClassVar
 
 
 @dataclass(slots=True, kw_only=True)
 class ServerCommandValidator:
-    v_a_l_i_d_a_t_e_d__p_r_o_p_e_r_t_i_e_s: ClassVar[dict[str, str]] = Map.of(
-        "kestra.queue.type", "https://kestra.io/docs/configuration-guide/setup#queue-configuration",
-        "kestra.repository.type", "https://kestra.io/docs/configuration-guide/setup#repository-configuration",
-        "kestra.storage.type", "https://kestra.io/docs/configuration-guide/setup#internal-storage-configuration"
-    )
+    validated_properties: ClassVar[dict[str, str]]
+    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
     environment: Environment | None = None
 
     def validate(self) -> None:
@@ -21,4 +19,4 @@ class ServerCommandValidator:
 
     @dataclass(slots=True)
     class ServerCommandException(RuntimeException):
-        serial_version_u_i_d: ClassVar[int] = 1
+        serial_version_uid: ClassVar[int] = 1

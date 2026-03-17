@@ -18,7 +18,7 @@ class FileUtils:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
-    def get_u_r_i(path: str) -> Optional[str]:
+    def get_uri(path: str) -> Optional[str]:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod

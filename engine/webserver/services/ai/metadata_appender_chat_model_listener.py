@@ -11,13 +11,13 @@ from engine.webserver.services.ai.ai_service import AiService
 
 @dataclass(slots=True, kw_only=True)
 class MetadataAppenderChatModelListener:
-    s_p_a_n__n_a_m_e: ClassVar[str] = "spanName"
-    p_a_r_e_n_t__i_d: ClassVar[str] = "parentId"
-    s_t_a_r_t__t_i_m_e__k_e_y__n_a_m_e: ClassVar[str] = "startTime"
-    c_o_n_v_e_r_s_a_t_i_o_n__i_d: ClassVar[str] = "conversationId"
-    i_p: ClassVar[str] = "ip"
-    i_n_s_t_a_n_c_e__u_i_d: ClassVar[str] = "instanceUid"
-    p_r_o_v_i_d_e_r: ClassVar[str] = "provider"
+    span_name: ClassVar[str] = "spanName"
+    parent_id: ClassVar[str] = "parentId"
+    start_time_key_name: ClassVar[str] = "startTime"
+    conversation_id: ClassVar[str] = "conversationId"
+    ip: ClassVar[str] = "ip"
+    instance_uid: ClassVar[str] = "instanceUid"
+    provider: ClassVar[str] = "provider"
     instance_uid: str | None = None
     provider: str | None = None
     span_name: str | None = None

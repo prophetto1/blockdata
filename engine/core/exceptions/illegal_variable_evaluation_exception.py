@@ -11,4 +11,4 @@ from engine.core.exceptions.internal_exception import InternalException
 
 @dataclass(slots=True, kw_only=True)
 class IllegalVariableEvaluationException(InternalException):
-    serial_version_u_i_d: ClassVar[int] = 1
+    serial_version_uid: ClassVar[int] = 1

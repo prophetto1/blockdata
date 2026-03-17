@@ -11,8 +11,8 @@ from engine.core.models.annotations.plugin import Plugin
 
 @dataclass(slots=True, kw_only=True)
 class PluginProcessor(AbstractProcessor):
-    p_l_u_g_i_n__r_e_s_o_u_r_c_e__f_i_l_e: ClassVar[str] = ServicesFiles.getPath(io.kestra.core.models.Plugin.class.getCanonicalName())
-    exception_stacks: list[str] = Collections.synchronizedList(new ArrayList<>())
+    plugin_resource_file: ClassVar[str]
+    exception_stacks: list[str]
     plugins: set[str] = field(default_factory=set)
     element_utils: javax.lang.model.util.Elements | None = None
 

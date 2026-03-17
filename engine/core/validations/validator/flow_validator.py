@@ -15,18 +15,7 @@ from engine.core.models.tasks.task import Task
 
 @dataclass(slots=True, kw_only=True)
 class FlowValidator:
-    r_e_s_e_r_v_e_d__f_l_o_w__i_d_s: list[str] = List.of(
-        "pause",
-        "resume",
-        "force-run",
-        "change-status",
-        "kill",
-        "executions",
-        "search",
-        "source",
-        "disable",
-        "enable"
-    )
+    reserved_flow_ids: list[str]
     flow_service: FlowService | None = None
     namespace_service: NamespaceService | None = None
 

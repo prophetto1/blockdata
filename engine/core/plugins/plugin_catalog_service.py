@@ -4,6 +4,7 @@ from __future__ import annotations
 # WARNING: Unresolved types: AtomicBoolean, CompletableFuture
 
 from dataclasses import dataclass, field
+from logging import logging
 from datetime import datetime
 from datetime import timedelta
 from typing import Any, ClassVar
@@ -16,10 +17,11 @@ from engine.core.utils.version import Version
 
 @dataclass(slots=True, kw_only=True)
 class PluginCatalogService:
-    m_a_x__c_a_c_h_e__d_u_r_a_t_i_o_n: ClassVar[timedelta] = Duration.ofHours(1)
-    loaded: list[PluginManifest] = List.of()
-    cache_last_loaded: datetime = Instant.now()
-    is_loaded: AtomicBoolean = new AtomicBoolean(false)
+    max_cache_duration: ClassVar[timedelta]
+    loaded: list[PluginManifest]
+    cache_last_loaded: datetime
+    is_loaded: AtomicBoolean
+    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
     http_client: HttpClient | None = None
     plugins: CompletableFuture[list[PluginManifest]] | None = None
     icons: bool | None = None

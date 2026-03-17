@@ -10,4 +10,4 @@ from engine.core.exceptions.kestra_runtime_exception import KestraRuntimeExcepti
 
 @dataclass(slots=True, kw_only=True)
 class SecretException(KestraRuntimeException):
-    serial_version_u_i_d: ClassVar[int] = 1
+    serial_version_uid: ClassVar[int] = 1

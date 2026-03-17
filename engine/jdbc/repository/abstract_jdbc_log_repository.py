@@ -14,7 +14,7 @@ from engine.core.repositories.array_list_total import ArrayListTotal
 from engine.core.models.dashboards.column_descriptor import ColumnDescriptor
 from engine.core.models.conditions.condition import Condition
 from engine.core.models.dashboards.data_filter import DataFilter
-from engine.core.models.dashboards.data_filter_k_p_i import DataFilterKPI
+from engine.core.models.dashboards.data_filter_kpi import DataFilterKPI
 from engine.core.utils.date_utils import DateUtils
 from engine.core.models.executions.execution import Execution
 from engine.jdbc.services.jdbc_filter_service import JdbcFilterService
@@ -26,8 +26,8 @@ from engine.core.models.query_filter import QueryFilter
 
 @dataclass(slots=True, kw_only=True)
 class AbstractJdbcLogRepository(ABC, AbstractJdbcCrudRepository):
-    n_o_r_m_a_l__k_i_n_d__c_o_n_d_i_t_i_o_n: ClassVar[Condition] = field("execution_kind").isNull().or(field("execution_kind").eq(ExecutionKind.NORMAL.name()))
-    d_a_t_e__c_o_l_u_m_n: ClassVar[str] = "timestamp"
+    normal_kind_condition: ClassVar[Condition]
+    date_column: ClassVar[str] = "timestamp"
     filter_service: JdbcFilterService | None = None
 
     @abstractmethod

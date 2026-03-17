@@ -13,7 +13,7 @@ from engine.core.storages.storage_interface import StorageInterface
 
 @dataclass(slots=True, kw_only=True)
 class StorageInterfaceFactory:
-    k_e_s_t_r_a__s_t_o_r_a_g_e__t_y_p_e__c_o_n_f_i_g: ClassVar[str] = "kestra.storage.type"
+    kestra_storage_type_config: ClassVar[str] = "kestra.storage.type"
     plugin_registry: PluginRegistry | None = None
     validator: Validator | None = None
 

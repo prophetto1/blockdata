@@ -10,11 +10,8 @@ from typing import Any, ClassVar
 
 @dataclass(slots=True, kw_only=True)
 class EscapeCharFilter:
-    a_r_g__n_a_m_e: ClassVar[str] = "type"
+    arg_name: ClassVar[str] = "type"
     argument_names: list[str] = field(default_factory=list)
-
-    def get_argument_names(self) -> list[str]:
-        raise NotImplementedError  # TODO: translate from Java
 
     def apply(self, input: Any, args: dict[str, Any], self: PebbleTemplate, context: EvaluationContext, line_number: int) -> Any:
         raise NotImplementedError  # TODO: translate from Java

@@ -15,7 +15,7 @@ from engine.core.runners.run_context import RunContext
 
 @dataclass(slots=True, kw_only=True)
 class PluginUtilsService(ABC):
-    m_a_p__t_y_p_e__r_e_f_e_r_e_n_c_e: ClassVar[TypeReference[dict[str, str]]] = new TypeReference<>() {}
+    map_type_reference: ClassVar[TypeReference[dict[str, str]]]
 
     @staticmethod
     def create_output_files(temp_directory: Path, output_files: list[str], additional_vars: dict[str, Any]) -> dict[str, str]:

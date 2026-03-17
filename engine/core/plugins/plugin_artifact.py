@@ -10,14 +10,10 @@ from typing import Any, ClassVar
 
 @dataclass(slots=True, kw_only=True)
 class PluginArtifact:
-    a_r_t_i_f_a_c_t__p_a_t_t_e_r_n: ClassVar[Pattern] = Pattern.compile(
-        "([^: ]+):([^: ]+)(:([^: ]*)(:([^: ]+))?)?:([^: ]+)"
-    )
-    f_i_l_e_n_a_m_e__p_a_t_t_e_r_n: ClassVar[Pattern] = Pattern.compile(
-        "^(?<groupId>[\\w_]+)__(?<artifactId>[\\w-_]+)(?:__(?<classifier>[\\w-_]+))?__(?<version>\\d+_\\d+_\\d+(-[a-zA-Z0-9-]+)?|([a-zA-Z0-9]+))\\.jar$"
-    )
-    j_a_r__e_x_t_e_n_s_i_o_n: ClassVar[str] = "jar"
-    k_e_s_t_r_a__g_r_o_u_p__i_d: ClassVar[str] = "io.kestra"
+    artifact_pattern: ClassVar[Pattern]
+    filename_pattern: ClassVar[Pattern]
+    jar_extension: ClassVar[str] = "jar"
+    kestra_group_id: ClassVar[str] = "io.kestra"
     group_id: str | None = None
     artifact_id: str | None = None
     extension: str | None = None

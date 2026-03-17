@@ -4,8 +4,9 @@ from __future__ import annotations
 # WARNING: Unresolved types: Class, JsonNode
 
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
-from typing import Any, Protocol
+from dataclasses import dataclass, field
+from logging import logging
+from typing import Any, ClassVar, Protocol
 
 from engine.core.docs.json_schema_generator import JsonSchemaGenerator
 from engine.webserver.services.ai.plugin_finder import PluginFinder
@@ -14,6 +15,7 @@ from engine.core.plugins.plugin_registry import PluginRegistry
 
 @dataclass(slots=True, kw_only=True)
 class AbstractAiCopilot(ABC):
+    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
     json_schema_generator: JsonSchemaGenerator | None = None
     plugin_registry: PluginRegistry | None = None
     fallback_plugin_version: str | None = None

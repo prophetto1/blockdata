@@ -5,6 +5,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
+from logging import logging
 from datetime import timedelta
 from typing import Any, ClassVar
 
@@ -14,7 +15,7 @@ from engine.core.exceptions.deserialization_exception import DeserializationExce
 from engine.core.utils.either import Either
 from engine.executor.executor_service import ExecutorService
 from engine.jdbc.runner.jdbc_queue_indexer import JdbcQueueIndexer
-from engine.jdbc.jooq_d_s_l_context_wrapper import JooqDSLContextWrapper
+from engine.jdbc.jooq_dsl_context_wrapper import JooqDSLContextWrapper
 from engine.jdbc.runner.message_protection_configuration import MessageProtectionConfiguration
 from engine.core.metrics.metric_registry import MetricRegistry
 from engine.core.queues.queue_exception import QueueException
@@ -26,14 +27,15 @@ from engine.plugin.core.dashboard.chart.table import Table
 
 @dataclass(slots=True, kw_only=True)
 class JdbcQueue(ABC):
-    m_a_p_p_e_r: ClassVar[ObjectMapper] = JdbcMapper.of()
-    m_a_x__a_s_y_n_c__t_h_r_e_a_d_s: ClassVar[int] = Runtime.getRuntime().availableProcessors()
-    k_e_y__f_i_e_l_d: ClassVar[Field[Any]] = AbstractJdbcRepository.field("key")
-    o_f_f_s_e_t__f_i_e_l_d: ClassVar[Field[Any]] = AbstractJdbcRepository.field("offset")
-    c_o_n_s_u_m_e_r__g_r_o_u_p__f_i_e_l_d: ClassVar[Field[Any]] = AbstractJdbcRepository.field("consumer_group")
-    t_y_p_e__f_i_e_l_d: ClassVar[Field[Any]] = AbstractJdbcRepository.field("type")
-    is_closed: AtomicBoolean = new AtomicBoolean(false)
-    is_paused: AtomicBoolean = new AtomicBoolean(false)
+    mapper: ClassVar[ObjectMapper]
+    max_async_threads: ClassVar[int]
+    key_field: ClassVar[Field[Any]]
+    offset_field: ClassVar[Field[Any]]
+    consumer_group_field: ClassVar[Field[Any]]
+    type_field: ClassVar[Field[Any]]
+    is_closed: AtomicBoolean
+    is_paused: AtomicBoolean
+    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
     pool_executor: ExecutorService | None = None
     async_pool_executor: ExecutorService | None = None
     queue_service: QueueService | None = None
@@ -142,9 +144,9 @@ class JdbcQueue(ABC):
 
     @dataclass(slots=True)
     class Configuration:
-        min_poll_interval: timedelta = Duration.ofMillis(25)
-        max_poll_interval: timedelta = Duration.ofMillis(500)
-        poll_switch_interval: timedelta = Duration.ofSeconds(60)
+        min_poll_interval: timedelta
+        max_poll_interval: timedelta
+        poll_switch_interval: timedelta
         poll_size: int = 100
         switch_steps: int = 5
 

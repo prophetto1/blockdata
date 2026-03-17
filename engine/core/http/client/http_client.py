@@ -3,9 +3,10 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\http\client\HttpClient.java
 # WARNING: Unresolved types: ApacheHttpClientContext, BasicCredentialsProvider, Class, Closeable, CloseableHttpClient, Consumer, DefaultApacheHttpClientObservationConvention, HttpClientContext, HttpClientResponseHandler, HttpEntity, IOException, InputStream, KeyValues, ObservationRegistry, ParseException, SSLConnectionSocketFactory, StringBuilder, T, Void, apache, core5, hc, http, org
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from logging import logging
 from datetime import timedelta
-from typing import Any
+from typing import Any, ClassVar
 
 from engine.core.http.client.http_client_exception import HttpClientException
 from engine.core.http.client.configurations.http_configuration import HttpConfiguration
@@ -18,6 +19,7 @@ from engine.core.runners.run_context import RunContext
 
 @dataclass(slots=True, kw_only=True)
 class HttpClient:
+    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
     client: CloseableHttpClient | None = None
     default_credentials_provider: BasicCredentialsProvider | None = None
     run_context: RunContext | None = None

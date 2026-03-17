@@ -3,10 +3,11 @@ from __future__ import annotations
 # Source: E:\KESTRA\webserver\src\main\java\io\kestra\webserver\controllers\api\ExecutionController.java
 # WARNING: Unresolved types: ApiCheckFailure, ApiInputAndValue, ApiInputError, ApplicationEventPublisher, Behavior, ChildFilter, Exception, FlowFilter, Flux, IOException, Mono, MultipartBody, MutableHttpResponse, ObjectMapper, OpenTelemetry, Publisher, Resumed, StreamedFile, Style, T, TimeoutException, URISyntaxException, Void
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from logging import logging
 from datetime import datetime
 from datetime import timedelta
-from typing import Any, Optional
+from typing import Any, ClassVar, Optional
 
 from engine.core.debug.breakpoint import Breakpoint
 from engine.webserver.responses.bulk_error_response import BulkErrorResponse
@@ -66,6 +67,7 @@ from engine.core.services.webhook_service import WebhookService
 
 @dataclass(slots=True, kw_only=True)
 class ExecutionController:
+    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
     base_path: str | None = None
     flow_repository: FlowRepositoryInterface | None = None
     flow_service: FlowService | None = None
@@ -162,7 +164,7 @@ class ExecutionController:
     def download_file_from_execution(self, execution_id: str, path: str) -> HttpResponse[StreamedFile]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def ns_file_to_internal_storage_u_r_i(self, path: str, execution: Execution) -> str:
+    def ns_file_to_internal_storage_uri(self, path: str, execution: Execution) -> str:
         raise NotImplementedError  # TODO: translate from Java
 
     def get_file_metadatas_from_execution(self, execution_id: str, path: str) -> HttpResponse[FileMetas]:
@@ -300,7 +302,7 @@ class ExecutionController:
     def export_executions(self, filters: list[QueryFilter]) -> MutableHttpResponse[Flux]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def validate_execution_a_c_l(self, execution: Execution) -> bool:
+    def validate_execution_acl(self, execution: Execution) -> bool:
         raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)

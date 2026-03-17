@@ -26,17 +26,17 @@ from engine.core.models.tasks.runners.task_runner_result import TaskRunnerResult
 @dataclass(slots=True, kw_only=True)
 class Docker(TaskRunner):
     """Run a task in a Docker container."""
-    r_e_a_d_a_b_l_e__b_y_t_e_s__t_y_p_e__c_o_n_v_e_r_t_e_r: ClassVar[ReadableBytesTypeConverter] = new ReadableBytesTypeConverter()
-    n_e_w_l_i_n_e__p_a_t_t_e_r_n: ClassVar[Pattern] = Pattern.compile("([^\\r\\n]+)[\\r\\n]+")
-    l_e_g_a_c_y__v_o_l_u_m_e__e_n_a_b_l_e_d__c_o_n_f_i_g: ClassVar[str] = "kestra.tasks.scripts.docker.volume-enabled"
-    v_o_l_u_m_e__e_n_a_b_l_e_d__c_o_n_f_i_g: ClassVar[str] = "volume-enabled"
-    entry_point: list[str] = List.of("")
-    pull_policy: Property[PullPolicy] = Property.ofValue(PullPolicy.IF_NOT_PRESENT)
-    file_handling_strategy: Property[FileHandlingStrategy] = Property.ofValue(FileHandlingStrategy.VOLUME)
-    delete: Property[bool] = Property.ofValue(true)
-    wait: Property[bool] = Property.ofValue(true)
+    readable_bytes_type_converter: ClassVar[ReadableBytesTypeConverter]
+    newline_pattern: ClassVar[Pattern]
+    entry_point: list[str]
+    pull_policy: Property[PullPolicy]
+    file_handling_strategy: Property[FileHandlingStrategy]
+    delete: Property[bool]
+    wait: Property[bool]
+    resume: Property[bool]
+    legacy_volume_enabled_config: ClassVar[str] = "kestra.tasks.scripts.docker.volume-enabled"
+    volume_enabled_config: ClassVar[str] = "volume-enabled"
     kill_grace_period: timedelta = Duration.ZERO
-    resume: Property[bool] = Property.ofValue(true)
     host: str | None = None
     config: Any | None = None
     credentials: Credentials | None = None

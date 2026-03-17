@@ -4,6 +4,7 @@ from __future__ import annotations
 # WARNING: Unresolved types: T
 
 from dataclasses import dataclass, field
+from logging import logging
 from datetime import datetime
 from typing import Any, ClassVar, Optional
 
@@ -27,9 +28,10 @@ from engine.core.models.flows.type import Type
 
 @dataclass(slots=True, kw_only=True)
 class ExecutableUtils:
-    t_a_s_k__v_a_r_i_a_b_l_e__i_t_e_r_a_t_i_o_n_s: ClassVar[str] = "iterations"
-    t_a_s_k__v_a_r_i_a_b_l_e__n_u_m_b_e_r__o_f__b_a_t_c_h_e_s: ClassVar[str] = "numberOfBatches"
-    t_a_s_k__v_a_r_i_a_b_l_e__s_u_b_f_l_o_w__o_u_t_p_u_t_s__b_a_s_e__u_r_i: ClassVar[str] = "subflowOutputsBaseUri"
+    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    task_variable_iterations: ClassVar[str] = "iterations"
+    task_variable_number_of_batches: ClassVar[str] = "numberOfBatches"
+    task_variable_subflow_outputs_base_uri: ClassVar[str] = "subflowOutputsBaseUri"
 
     @staticmethod
     def guess_state(execution: Execution, transmit_failed: bool, allowed_failure: bool, allow_warning: bool) -> State.Type:

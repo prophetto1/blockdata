@@ -10,7 +10,7 @@ from typing import Any
 
 @dataclass(slots=True, kw_only=True)
 class FileRender(ABC):
-    m_a_x__l_i_n_e_s: int = 100
+    max_lines: int = 100
     truncated: bool = False
     extension: str | None = None
     type: Type | None = None

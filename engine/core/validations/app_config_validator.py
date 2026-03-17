@@ -4,12 +4,14 @@ from __future__ import annotations
 # WARNING: Unresolved types: Environment, RuntimeException
 
 from dataclasses import dataclass, field
+from logging import logging
 from typing import Any, ClassVar
 
 
 @dataclass(slots=True, kw_only=True)
 class AppConfigValidator:
-    k_e_s_t_r_a__u_r_l__k_e_y: ClassVar[str] = "kestra.url"
+    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    kestra_url_key: ClassVar[str] = "kestra.url"
     environment: Environment | None = None
 
     def validate(self) -> None:
@@ -20,4 +22,4 @@ class AppConfigValidator:
 
     @dataclass(slots=True)
     class AppConfigException(RuntimeException):
-        serial_version_u_i_d: ClassVar[int] = 1
+        serial_version_uid: ClassVar[int] = 1

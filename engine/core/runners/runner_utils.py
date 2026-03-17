@@ -19,7 +19,7 @@ from engine.core.queues.queue_interface import QueueInterface
 
 @dataclass(slots=True, kw_only=True)
 class RunnerUtils:
-    d_e_f_a_u_l_t__m_a_x__w_a_i_t__d_u_r_a_t_i_o_n: ClassVar[timedelta] = Duration.ofSeconds(15)
+    default_max_wait_duration: ClassVar[timedelta]
     execution_queue: QueueInterface[Execution] | None = None
     flow_repository: FlowRepositoryInterface | None = None
     execution_service: ExecutionService | None = None

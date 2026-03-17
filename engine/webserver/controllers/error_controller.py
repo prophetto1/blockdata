@@ -3,8 +3,9 @@ from __future__ import annotations
 # Source: E:\KESTRA\webserver\src\main\java\io\kestra\webserver\controllers\ErrorController.java
 # WARNING: Unresolved types: ConstraintViolationException, ConversionErrorException, FileNotFoundException, HttpStatus, HttpStatusException, IllegalAccessException, IllegalArgumentException, IllegalStateException, InvalidFormatException, JsonError, JsonMappingException, JsonParseException, NoSuchElementException, NoSuchFieldException, Throwable, UnsatisfiedBodyRouteException, UnsatisfiedQueryValueRouteException
 
-from dataclasses import dataclass
-from typing import Any
+from dataclasses import dataclass, field
+from logging import logging
+from typing import Any, ClassVar
 
 from engine.core.exceptions.ai_exception import AiException
 from engine.core.exceptions.conflict_exception import ConflictException
@@ -22,6 +23,7 @@ from engine.core.exceptions.validation_error_exception import ValidationErrorExc
 
 @dataclass(slots=True, kw_only=True)
 class ErrorController:
+    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
 
     def error(self, request: HttpRequest[Any], e: JsonParseException) -> HttpResponse[JsonError]:
         raise NotImplementedError  # TODO: translate from Java

@@ -2,12 +2,13 @@ from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\models\kv\PersistedKvMetadata.java
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from logging import logging
 from datetime import datetime
-from typing import Any
+from typing import Any, ClassVar
 
-from engine.core.models.has_u_i_d import HasUID
-from engine.core.storages.kv.k_v_entry import KVEntry
+from engine.core.models.has_uid import HasUID
+from engine.core.storages.kv.kv_entry import KVEntry
 from engine.core.models.soft_deletable import SoftDeletable
 from engine.core.models.tenant_interface import TenantInterface
 
@@ -17,6 +18,7 @@ class PersistedKvMetadata:
     namespace: str
     name: str
     version: int
+    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
     last: bool = True
     tenant_id: str | None = None
     description: str | None = None

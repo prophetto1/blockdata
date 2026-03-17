@@ -13,6 +13,3 @@ from engine.core.models.dashboards.graph_style import GraphStyle
 @dataclass(slots=True, kw_only=True)
 class TimeSeriesColumnDescriptor(ColumnDescriptor):
     graph_style: GraphStyle | None = None
-
-    def get_graph_style(self) -> GraphStyle:
-        raise NotImplementedError  # TODO: translate from Java

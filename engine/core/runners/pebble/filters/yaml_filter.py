@@ -9,21 +9,7 @@ from typing import Any, ClassVar
 
 @dataclass(slots=True, kw_only=True)
 class YamlFilter:
-    m_a_p_p_e_r: ClassVar[ObjectMapper] = new ObjectMapper(
-        new YAMLFactory()
-            .configure(YAMLGenerator.Feature.MINIMIZE_QUOTES, true)
-            .configure(YAMLGenerator.Feature.WRITE_DOC_START_MARKER, false)
-            .configure(YAMLGenerator.Feature.USE_NATIVE_TYPE_ID, false)
-            .configure(YAMLGenerator.Feature.SPLIT_LINES, false)
-            .configure(YAMLGenerator.Feature.INDENT_ARRAYS, true)
-            .configure(YAMLGenerator.Feature.USE_PLATFORM_LINE_BREAKS, true)
-            .configure(YAMLGenerator.Feature.ALWAYS_QUOTE_NUMBERS_AS_STRINGS, false)
-        )
-        .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
-        .registerModule(new JavaTimeModule())
-        .registerModule(new Jdk8Module())
-        .registerModule(new ParameterNamesModule())
-        .registerModules(new GuavaModule())
+    mapper: ClassVar[ObjectMapper]
 
     def get_argument_names(self) -> list[str]:
         raise NotImplementedError  # TODO: translate from Java

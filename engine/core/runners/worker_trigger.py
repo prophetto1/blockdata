@@ -16,7 +16,7 @@ class WorkerTrigger(WorkerJob):
     trigger: AbstractTrigger
     trigger_context: Trigger
     condition_context: ConditionContext
-    t_y_p_e: ClassVar[str] = "trigger"
+    type: ClassVar[str] = "trigger"
     type: str = TYPE
 
     def uid(self) -> str:

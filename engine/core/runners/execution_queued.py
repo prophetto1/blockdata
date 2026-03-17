@@ -8,10 +8,10 @@ from typing import Any
 
 from engine.core.models.executions.execution import Execution
 from engine.core.runners.execution_running import ExecutionRunning
-from engine.core.models.has_u_i_d import HasUID
+from engine.core.models.has_uid import HasUID
 
 
-@dataclass(slots=True, kw_only=True)
+@dataclass(frozen=True, slots=True, kw_only=True)
 class ExecutionQueued:
     namespace: str
     flow_id: str

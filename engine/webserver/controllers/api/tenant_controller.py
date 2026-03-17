@@ -3,6 +3,7 @@ from __future__ import annotations
 # Source: E:\KESTRA\webserver\src\main\java\io\kestra\webserver\controllers\api\TenantController.java
 
 from dataclasses import dataclass, field
+from logging import logging
 from typing import Any, ClassVar
 
 from engine.core.repositories.dashboard_repository_interface import DashboardRepositoryInterface
@@ -14,7 +15,8 @@ from engine.core.tenant.tenant_service import TenantService
 
 @dataclass(slots=True, kw_only=True)
 class TenantController:
-    o_s_s__d_a_s_h_b_o_a_r_d__s_e_t_t_i_n_g_s: ClassVar[str] = "kestra.oss.dashboard-settings"
+    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    oss_dashboard_settings: ClassVar[str] = "kestra.oss.dashboard-settings"
     tenant_service: TenantService | None = None
     dashboard_repository: DashboardRepositoryInterface | None = None
     setting_repository: SettingRepositoryInterface | None = None

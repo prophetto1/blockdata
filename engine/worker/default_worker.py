@@ -4,6 +4,7 @@ from __future__ import annotations
 # WARNING: Unresolved types: ApplicationEventPublisher, AtomicBoolean, AtomicInteger, AtomicReference, ConcurrentHashMap, ObjectMapper, Runnable, ServiceState, Throwable, core, flows, io, kestra, models
 
 from dataclasses import dataclass, field
+from logging import logging
 from datetime import timedelta
 from typing import Any, ClassVar, Optional
 
@@ -48,19 +49,20 @@ from engine.core.runners.worker_trigger_result import WorkerTriggerResult
 
 @dataclass(slots=True, kw_only=True)
 class DefaultWorker:
-    m_a_p_p_e_r: ClassVar[ObjectMapper] = JacksonMapper.ofJson()
-    s_e_r_v_i_c_e__p_r_o_p_s__w_o_r_k_e_r__g_r_o_u_p: ClassVar[str] = "worker.group"
-    killed_execution: set[str] = ConcurrentHashMap.newKeySet()
-    metric_running_count: dict[int, AtomicInteger] = new ConcurrentHashMap<>()
-    evaluate_trigger_running_count: dict[str, AtomicInteger] = new ConcurrentHashMap<>()
+    mapper: ClassVar[ObjectMapper]
+    killed_execution: set[str]
+    metric_running_count: dict[int, AtomicInteger]
+    evaluate_trigger_running_count: dict[str, AtomicInteger]
+    skip_graceful_termination: AtomicBoolean
+    shutdown: AtomicBoolean
+    init: AtomicBoolean
+    state: AtomicReference[ServiceState]
+    pending_job_count: AtomicInteger
+    running_job_count: AtomicInteger
+    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    service_props_worker_group: ClassVar[str] = "worker.group"
     worker_callable_references: list[AbstractWorkerCallable] = field(default_factory=list)
-    skip_graceful_termination: AtomicBoolean = new AtomicBoolean(false)
-    shutdown: AtomicBoolean = new AtomicBoolean(false)
-    init: AtomicBoolean = new AtomicBoolean(false)
-    state: AtomicReference[ServiceState] = new AtomicReference<>()
     receive_cancellations: list[Runnable] = field(default_factory=list)
-    pending_job_count: AtomicInteger = new AtomicInteger(0)
-    running_job_count: AtomicInteger = new AtomicInteger(0)
     worker_job_queue: WorkerJobQueueInterface | None = None
     worker_task_result_queue: QueueInterface[WorkerTaskResult] | None = None
     worker_trigger_result_queue: QueueInterface[WorkerTriggerResult] | None = None
@@ -141,9 +143,6 @@ class DefaultWorker:
     def add_attempt(self, worker_task: WorkerTask, task_run_attempt: TaskRunAttempt) -> list[TaskRunAttempt]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def get_metric_running_count(self, worker_task: WorkerTask) -> AtomicInteger:
-        raise NotImplementedError  # TODO: translate from Java
-
     def close(self) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
@@ -168,11 +167,5 @@ class DefaultWorker:
     def skip_graceful_termination(self, skip_graceful_termination: bool) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
-    def get_id(self) -> str:
-        raise NotImplementedError  # TODO: translate from Java
-
     def get_type(self) -> ServiceType:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def get_state(self) -> ServiceState:
         raise NotImplementedError  # TODO: translate from Java

@@ -13,18 +13,12 @@ from engine.core.server.service_type import ServiceType
 
 @dataclass(slots=True, kw_only=True)
 class WebserverService:
-    shutdown: AtomicBoolean = new AtomicBoolean(false)
-    id: str = IdUtils.create()
-    state: AtomicReference[ServiceState] = new AtomicReference<>()
+    shutdown: AtomicBoolean
+    id: str
+    state: AtomicReference[ServiceState]
     event_publisher: ApplicationEventPublisher[ServiceStateChangeEvent] | None = None
 
-    def get_id(self) -> str:
-        raise NotImplementedError  # TODO: translate from Java
-
     def get_type(self) -> ServiceType:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def get_state(self) -> ServiceState:
         raise NotImplementedError  # TODO: translate from Java
 
     def post_construct(self) -> None:

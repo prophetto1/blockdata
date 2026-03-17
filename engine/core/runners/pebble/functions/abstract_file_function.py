@@ -15,15 +15,15 @@ from engine.core.storages.storage_interface import StorageInterface
 
 @dataclass(slots=True, kw_only=True)
 class AbstractFileFunction(ABC):
-    s_c_h_e_m_e__n_o_t__s_u_p_p_o_r_t_e_d__e_r_r_o_r: ClassVar[str] = "Cannot process the URI %s: scheme not supported."
-    k_e_s_t_r_a__s_c_h_e_m_e: ClassVar[str] = "kestra:///"
-    t_r_i_g_g_e_r: ClassVar[str] = "trigger"
-    n_a_m_e_s_p_a_c_e: ClassVar[str] = "namespace"
-    t_e_n_a_n_t__i_d: ClassVar[str] = "tenantId"
-    i_d: ClassVar[str] = "id"
-    p_a_t_h: ClassVar[str] = "path"
-    u_r_i__p_a_t_t_e_r_n: ClassVar[Pattern] = Pattern.compile("^[a-zA-Z][a-zA-Z0-9+.-]*:.*")
-    e_x_e_c_u_t_i_o_n__f_i_l_e: ClassVar[Pattern] = Pattern.compile(".*/.*/executions/.*/tasks/.*/.*")
+    uri_pattern: ClassVar[Pattern]
+    execution_file: ClassVar[Pattern]
+    scheme_not_supported_error: ClassVar[str] = "Cannot process the URI %s: scheme not supported."
+    kestra_scheme: ClassVar[str] = "kestra:///"
+    trigger: ClassVar[str] = "trigger"
+    namespace: ClassVar[str] = "namespace"
+    tenant_id: ClassVar[str] = "tenantId"
+    id: ClassVar[str] = "id"
+    path: ClassVar[str] = "path"
     namespace_service: NamespaceService | None = None
     storage_interface: StorageInterface | None = None
     local_path_factory: LocalPathFactory | None = None

@@ -11,7 +11,7 @@ from engine.core.server.metric import Metric
 
 @dataclass(slots=True, kw_only=True)
 class ServerInstance:
-    i_n_s_t_a_n_c_e__i_d: ClassVar[str] = IdUtils.create()
+    instance_id: ClassVar[str]
     id: str | None = None
     type: Type | None = None
     version: str | None = None

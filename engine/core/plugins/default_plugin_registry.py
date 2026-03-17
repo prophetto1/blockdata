@@ -4,6 +4,7 @@ from __future__ import annotations
 # WARNING: Unresolved types: AtomicBoolean, Class, ConcurrentHashMap, Predicate, ReentrantLock
 
 from dataclasses import dataclass, field
+from logging import logging
 from pathlib import Path
 from typing import Any, ClassVar, Optional
 
@@ -17,18 +18,16 @@ from engine.core.plugins.registered_plugin import RegisteredPlugin
 
 @dataclass(slots=True, kw_only=True)
 class DefaultPluginRegistry:
-    plugin_class_by_identifier: dict[PluginIdentifier, PluginClassAndMetadata[Any]] = new ConcurrentHashMap<>()
-    plugins: dict[PluginBundleIdentifier, RegisteredPlugin] = new ConcurrentHashMap<>()
-    scanner: PluginScanner = new PluginScanner(DefaultPluginRegistry.class.getClassLoader())
-    initialized: AtomicBoolean = new AtomicBoolean(false)
+    plugin_class_by_identifier: dict[PluginIdentifier, PluginClassAndMetadata[Any]]
+    plugins: dict[PluginBundleIdentifier, RegisteredPlugin]
+    scanner: PluginScanner
+    initialized: AtomicBoolean
+    lock: ReentrantLock
+    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
     scanned_plugin_paths: set[Path] = field(default_factory=set)
-    lock: ReentrantLock = new ReentrantLock()
 
     @staticmethod
     def get_or_create() -> DefaultPluginRegistry:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def is_initialized(self) -> bool:
         raise NotImplementedError  # TODO: translate from Java
 
     def init(self) -> None:
@@ -97,11 +96,11 @@ class DefaultPluginRegistry:
 
     @dataclass(slots=True)
     class LazyHolder:
-        i_n_s_t_a_n_c_e: ClassVar[DefaultPluginRegistry] = new DefaultPluginRegistry()
+        instance: ClassVar[DefaultPluginRegistry]
 
     @dataclass(slots=True)
     class PluginBundleIdentifier:
-        c_o_r_e: PluginBundleIdentifier = new PluginBundleIdentifier(null)
+        core: PluginBundleIdentifier
         location: str | None = None
 
         @staticmethod

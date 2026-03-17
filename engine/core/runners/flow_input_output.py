@@ -22,7 +22,7 @@ from engine.core.models.flows.type import Type
 
 @dataclass(slots=True, kw_only=True)
 class FlowInputOutput:
-    y_a_m_l__m_a_p_p_e_r: ClassVar[ObjectMapper] = JacksonMapper.ofYaml()
+    yaml_mapper: ClassVar[ObjectMapper]
     storage_interface: StorageInterface | None = None
     secret_key: Optional[str] | None = None
     run_context_factory: RunContextFactory | None = None

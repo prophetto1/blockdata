@@ -10,8 +10,8 @@ from typing import Any, ClassVar
 
 @dataclass(slots=True, kw_only=True)
 class IdUtils(ABC):
-    h_a_s_h__f_u_n_c_t_i_o_n: ClassVar[HashFunction] = Hashing.md5()
-    i_d__s_e_p_a_r_a_t_o_r: ClassVar[str] = '_'
+    hash_function: ClassVar[HashFunction]
+    id_separator: ClassVar[str] = '_'
 
     @staticmethod
     def create() -> str:

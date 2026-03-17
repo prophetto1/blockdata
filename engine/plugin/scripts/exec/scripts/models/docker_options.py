@@ -16,7 +16,7 @@ from engine.plugin.scripts.runner.docker.pull_policy import PullPolicy
 @dataclass(slots=True, kw_only=True)
 class DockerOptions:
     image: str
-    pull_policy: Property[PullPolicy] = Property.ofValue(PullPolicy.IF_NOT_PRESENT)
+    pull_policy: Property[PullPolicy]
     host: str | None = None
     config: Any | None = None
     credentials: Credentials | None = None

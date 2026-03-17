@@ -10,7 +10,7 @@ from engine.core.models.topologies.flow_relation import FlowRelation
 from engine.core.models.hierarchies.graph import Graph
 
 
-@dataclass(slots=True, kw_only=True)
+@dataclass(frozen=True, slots=True, kw_only=True)
 class FlowTopologyGraph:
     nodes: set[FlowNode] | None = None
     edges: set[Edge] | None = None

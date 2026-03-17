@@ -12,7 +12,7 @@ from engine.core.metrics.metric_registry import MetricRegistry
 @dataclass(slots=True, kw_only=True)
 class Counter(AbstractMetricEntry):
     value: float
-    t_y_p_e: ClassVar[str] = "counter"
+    type: ClassVar[str] = "counter"
     type: str = TYPE
 
     @staticmethod

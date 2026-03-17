@@ -18,7 +18,7 @@ class PebbleSafeTemplateFactory:
 
     @dataclass(slots=True)
     class PebbleSafeTemplate:
-        v_a_r_i_a_b_l_e__p_a_t_t_e_r_n: ClassVar[Pattern] = Pattern.compile("\\{_\\{\\s*(.+?)\\s*}_}")
+        variable_pattern: ClassVar[Pattern]
         template: str | None = None
 
         @staticmethod

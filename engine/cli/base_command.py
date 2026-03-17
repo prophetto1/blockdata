@@ -10,7 +10,7 @@ from typing import Any
 
 @dataclass(slots=True, kw_only=True)
 class BaseCommand(ABC):
-    verbose: list[bool] = new boolean[0]
+    verbose: list[bool]
     log_level: LogLevel = LogLevel.INFO
     internal_log: bool = False
 

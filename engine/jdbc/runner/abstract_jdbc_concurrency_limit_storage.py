@@ -3,8 +3,9 @@ from __future__ import annotations
 # Source: E:\KESTRA\jdbc\src\main\java\io\kestra\jdbc\runner\AbstractJdbcConcurrencyLimitStorage.java
 # WARNING: Unresolved types: BiConsumer, BiFunction, DSLContext, Pair, core, executions, io, jdbc, kestra, models
 
-from dataclasses import dataclass
-from typing import Any, Optional
+from dataclasses import dataclass, field
+from logging import logging
+from typing import Any, ClassVar, Optional
 
 from engine.jdbc.runner.abstract_jdbc_execution_queued_storage import AbstractJdbcExecutionQueuedStorage
 from engine.jdbc.repository.abstract_jdbc_repository import AbstractJdbcRepository
@@ -16,6 +17,7 @@ from engine.core.models.flows.flow_interface import FlowInterface
 
 @dataclass(slots=True, kw_only=True)
 class AbstractJdbcConcurrencyLimitStorage(AbstractJdbcRepository):
+    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
     jdbc_repository: io.kestra.jdbc.AbstractJdbcRepository[ConcurrencyLimit] | None = None
 
     def count_then_process(self, flow: FlowInterface, consumer: BiFunction[DSLContext, ConcurrencyLimit, Pair[ExecutionRunning, ConcurrencyLimit]]) -> ExecutionRunning:

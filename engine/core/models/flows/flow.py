@@ -12,29 +12,19 @@ from engine.core.models.triggers.abstract_trigger import AbstractTrigger
 from engine.core.models.flows.check.check import Check
 from engine.core.models.flows.concurrency import Concurrency
 from engine.core.models.flows.flow_interface import FlowInterface
-from engine.core.models.has_u_i_d import HasUID
+from engine.core.models.has_uid import HasUID
 from engine.core.exceptions.internal_exception import InternalException
 from engine.core.models.listeners.listener import Listener
 from engine.core.models.flows.output import Output
 from engine.core.models.flows.plugin_default import PluginDefault
-from engine.core.models.flows.sla.s_l_a import SLA
+from engine.core.models.flows.sla.sla import SLA
 from engine.core.models.tasks.task import Task
 
 
 @dataclass(slots=True, kw_only=True)
 class Flow(AbstractFlow):
-    n_o_n__d_e_f_a_u_l_t__o_b_j_e_c_t__m_a_p_p_e_r: ClassVar[ObjectMapper] = JacksonMapper.ofYaml()
-        .copy()
-        .setDefaultPropertyInclusion(JsonInclude.Include.NON_DEFAULT)
-    w_i_t_h_o_u_t__r_e_v_i_s_i_o_n__o_b_j_e_c_t__m_a_p_p_e_r: ClassVar[ObjectMapper] = NON_DEFAULT_OBJECT_MAPPER.copy()
-        .configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true)
-        .setAnnotationIntrospector(new JacksonAnnotationIntrospector() {
-            @Override
-            public boolean hasIgnoreMarker(final AnnotatedMember m) {
-                List<String> exclusions = Arrays.asList("revision", "deleted", "source", "updated");
-                return exclusions.contains(m.getName()) || super.hasIgnoreMarker(m);
-            }
-        })
+    non_default_object_mapper: ClassVar[ObjectMapper]
+    without_revision_object_mapper: ClassVar[ObjectMapper]
     variables: dict[str, Any] | None = None
     tasks: list[Task] | None = None
     errors: list[Task] | None = None
@@ -51,9 +41,6 @@ class Flow(AbstractFlow):
     checks: list[Check] | None = None
 
     def get_finally(self) -> list[Task]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def get_task_defaults(self) -> list[PluginDefault]:
         raise NotImplementedError  # TODO: translate from Java
 
     def all_types(self) -> Stream[str]:

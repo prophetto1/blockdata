@@ -10,7 +10,7 @@ from typing import Any, ClassVar
 
 @dataclass(slots=True, kw_only=True)
 class Await:
-    default_sleep: ClassVar[timedelta] = Duration.ofMillis(100)
+    default_sleep: ClassVar[timedelta]
 
     @staticmethod
     def until(condition: BooleanSupplier) -> None:

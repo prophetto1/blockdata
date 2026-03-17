@@ -10,7 +10,7 @@ from typing import Any, ClassVar
 
 @dataclass(slots=True, kw_only=True)
 class Helpers:
-    f_l_o_w_s__c_o_u_n_t: ClassVar[int] = countFlows()
+    flows_count: ClassVar[int]
     plugins: ClassVar[Path]
 
     @staticmethod

@@ -11,14 +11,14 @@ from typing import Any, ClassVar, Optional
 from engine.core.repositories.array_list_total import ArrayListTotal
 from engine.core.models.conditions.condition import Condition
 from engine.jdbc.jdbc_table_config import JdbcTableConfig
-from engine.jdbc.jooq_d_s_l_context_wrapper import JooqDSLContextWrapper
+from engine.jdbc.jooq_dsl_context_wrapper import JooqDSLContextWrapper
 from engine.core.models.executions.metrics.metric_aggregation import MetricAggregation
 from engine.plugin.core.dashboard.chart.table import Table
 
 
 @dataclass(slots=True, kw_only=True)
 class AbstractJdbcRepository(ABC):
-    m_a_p_p_e_r: ClassVar[ObjectMapper] = JdbcMapper.of()
+    mapper: ClassVar[ObjectMapper]
     cls: Class[T] | None = None
     deserializer: Function[Record, T] | None = None
     dsl_context_wrapper: JooqDSLContextWrapper | None = None

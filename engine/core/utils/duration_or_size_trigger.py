@@ -15,9 +15,6 @@ class DurationOrSizeTrigger:
     batch_duration: timedelta | None = None
     next: datetime | None = None
 
-    def get_next(self) -> datetime:
-        raise NotImplementedError  # TODO: translate from Java
-
     def test(self, buffer: list[V]) -> bool:
         raise NotImplementedError  # TODO: translate from Java
 

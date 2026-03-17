@@ -4,6 +4,7 @@ from __future__ import annotations
 # WARNING: Unresolved types: Cron, CronDefinitionBuilder, CronParser, Exception, ExecutionTime, core, io, kestra, models, tasks
 
 from dataclasses import dataclass, field
+from logging import logging
 from datetime import datetime
 from datetime import timedelta
 from typing import Any, ClassVar, Optional
@@ -23,24 +24,13 @@ from engine.core.models.triggers.trigger_output import TriggerOutput
 @dataclass(slots=True, kw_only=True)
 class Schedule(AbstractTrigger):
     """Schedule a Flow with a CRON expression."""
+    cron_definition_builder: ClassVar[CronDefinitionBuilder]
+    cron_parser: ClassVar[CronParser]
+    cron_parser_with_seconds: ClassVar[CronParser]
     cron: str
-    c_r_o_n__d_e_f_i_n_i_t_i_o_n__b_u_i_l_d_e_r: ClassVar[CronDefinitionBuilder] = CronDefinitionBuilder.defineCron()
-        .withMinutes().withValidRange(0, 59).withStrictRange().and()
-        .withHours().withValidRange(0, 23).withStrictRange().and()
-        .withDayOfMonth().withValidRange(1, 31).withStrictRange().and()
-        .withMonth().withValidRange(1, 12).withStrictRange().and()
-        .withDayOfWeek().withValidRange(0, 7).withMondayDoWValue(1).withIntMapping(7, 0).withStrictRange().and()
-        .withSupportedNicknameYearly()
-        .withSupportedNicknameAnnually()
-        .withSupportedNicknameMonthly()
-        .withSupportedNicknameWeekly()
-        .withSupportedNicknameDaily()
-        .withSupportedNicknameMidnight()
-        .withSupportedNicknameHourly()
-    c_r_o_n__p_a_r_s_e_r: ClassVar[CronParser] = new CronParser(CRON_DEFINITION_BUILDER.instance())
-    c_r_o_n__p_a_r_s_e_r__w_i_t_h__s_e_c_o_n_d_s: ClassVar[CronParser] = new CronParser(CRON_DEFINITION_BUILDER.withSeconds().withValidRange(0, 59).withStrictRange().and().instance())
+    timezone: str
+    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
     with_seconds: bool = False
-    timezone: str = ZoneId.systemDefault().toString()
     interval: timedelta = None
     schedule_conditions: list[ScheduleCondition] | None = None
     inputs: dict[str, Any] | None = None

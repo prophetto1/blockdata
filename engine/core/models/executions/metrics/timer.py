@@ -13,7 +13,7 @@ from engine.core.metrics.metric_registry import MetricRegistry
 @dataclass(slots=True, kw_only=True)
 class Timer(AbstractMetricEntry):
     value: timedelta
-    t_y_p_e: ClassVar[str] = "timer"
+    type: ClassVar[str] = "timer"
     type: str = TYPE
 
     @staticmethod

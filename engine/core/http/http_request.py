@@ -10,7 +10,7 @@ from typing import Any
 from engine.core.runners.run_context import RunContext
 
 
-@dataclass(slots=True, kw_only=True)
+@dataclass(frozen=True, slots=True, kw_only=True)
 class HttpRequest:
     method: str = "GET"
     uri: str | None = None
@@ -75,7 +75,7 @@ class HttpRequest:
 
     @dataclass(slots=True)
     class InputStreamRequestBody(RequestBody):
-        content_type: str = ContentType.APPLICATION_OCTET_STREAM.getMimeType()
+        content_type: str
         charset: Charset | None = None
         content: InputStream | None = None
 
@@ -88,7 +88,7 @@ class HttpRequest:
 
     @dataclass(slots=True)
     class StringRequestBody(RequestBody):
-        content_type: str = ContentType.TEXT_PLAIN.getMimeType()
+        content_type: str
         charset: Charset | None = None
         content: str | None = None
 
@@ -101,7 +101,7 @@ class HttpRequest:
 
     @dataclass(slots=True)
     class ByteArrayRequestBody(RequestBody):
-        content_type: str = ContentType.APPLICATION_OCTET_STREAM.getMimeType()
+        content_type: str
         charset: Charset | None = None
         content: list[int] | None = None
 

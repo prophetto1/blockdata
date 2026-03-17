@@ -9,5 +9,5 @@ from typing import Any, ClassVar
 
 @dataclass(slots=True, kw_only=True)
 class PluginModule(SimpleModule):
-    serial_version_u_i_d: ClassVar[int] = 1
-    n_a_m_e: ClassVar[str] = "kestra-plugin"
+    serial_version_uid: ClassVar[int] = 1
+    name: ClassVar[str] = "kestra-plugin"

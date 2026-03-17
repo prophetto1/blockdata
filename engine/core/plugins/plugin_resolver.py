@@ -3,15 +3,17 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\plugins\PluginResolver.java
 # WARNING: Unresolved types: IOException
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from logging import logging
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
 
 from engine.core.plugins.external_plugin import ExternalPlugin
 
 
 @dataclass(slots=True, kw_only=True)
 class PluginResolver:
+    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
     plugin_path: Path | None = None
 
     @staticmethod

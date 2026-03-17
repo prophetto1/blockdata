@@ -19,7 +19,7 @@ from engine.core.tenant.tenant_service import TenantService
 
 @dataclass(slots=True, kw_only=True)
 class NamespaceController:
-    a_u_t_o_c_o_m_p_l_e_t_e__p_a_g_e_a_b_l_e: ClassVar[Pageable] = PageableUtils.from(1, 50, null)
+    autocomplete_pageable: ClassVar[Pageable]
     tenant_service: TenantService | None = None
     flow_repository: FlowRepositoryInterface | None = None
     flow_topology_service: FlowTopologyService | None = None

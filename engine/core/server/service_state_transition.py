@@ -3,9 +3,10 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\server\ServiceStateTransition.java
 # WARNING: Unresolved types: ImmutablePair, ServiceState
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any
+from logging import logging
+from typing import Any, ClassVar
 
 from engine.core.server.service import Service
 from engine.core.server.service_instance import ServiceInstance
@@ -13,6 +14,7 @@ from engine.core.server.service_instance import ServiceInstance
 
 @dataclass(slots=True, kw_only=True)
 class ServiceStateTransition:
+    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
 
     @staticmethod
     def maybe_transition_service_state(from: ServiceInstance, to: ServiceInstance, new_state: Service.ServiceState, reason: str) -> Response:

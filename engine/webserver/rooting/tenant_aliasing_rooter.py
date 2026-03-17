@@ -11,10 +11,7 @@ from engine.core.http.http_request import HttpRequest
 
 @dataclass(slots=True, kw_only=True)
 class TenantAliasingRooter(DefaultRouter):
-    e_x_c_l_u_d_e_d__r_o_u_t_e_s: ClassVar[list[Pattern]] = List.of(
-        Pattern.compile("/api/v1/main/.*"),
-        Pattern.compile("/api/v1/configs")
-    )
+    excluded_routes: ClassVar[list[Pattern]]
 
     def find_closest(self, request: HttpRequest[Any]) -> UriRouteMatch[T, R]:
         raise NotImplementedError  # TODO: translate from Java

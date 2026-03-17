@@ -4,7 +4,8 @@ from __future__ import annotations
 # WARNING: Unresolved types: ChatModelListener, PropertyResolver, chat, core, dev, docs, io, kestra, langchain4j, listener, model, plugins
 
 from dataclasses import dataclass, field
-from typing import Any
+from logging import logging
+from typing import Any, ClassVar
 
 from engine.webserver.services.ai.ai_provider_configuration import AiProviderConfiguration
 from engine.webserver.services.ai.ai_providers_configuration import AiProvidersConfiguration
@@ -19,6 +20,7 @@ from engine.core.utils.version_provider import VersionProvider
 
 @dataclass(slots=True, kw_only=True)
 class AiServiceManager:
+    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
     ai_services: dict[str, AiServiceInterface] = field(default_factory=dict)
     providers_configuration: AiProvidersConfiguration | None = None
     default_provider_id: str | None = None
@@ -34,7 +36,4 @@ class AiServiceManager:
         raise NotImplementedError  # TODO: translate from Java
 
     def get_default_ai_service(self) -> AiServiceInterface:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def get_default_provider_id(self) -> str:
         raise NotImplementedError  # TODO: translate from Java

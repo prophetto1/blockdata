@@ -3,8 +3,9 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\plugin\core\namespace\PurgeFiles.java
 # WARNING: Unresolved types: Exception, core, io, kestra, models, tasks
 
-from dataclasses import dataclass
-from typing import Any
+from dataclasses import dataclass, field
+from logging import logging
+from typing import Any, ClassVar
 
 from engine.plugin.core.namespace.files_purge_behavior import FilesPurgeBehavior
 from engine.core.storages.namespace_file import NamespaceFile
@@ -18,8 +19,9 @@ from engine.core.models.tasks.task import Task
 @dataclass(slots=True, kw_only=True)
 class PurgeFiles(Task):
     """Purge Namespace files (and versions)."""
-    behavior: Property[FilesPurgeBehavior] = Property.ofValue(Version.builder().keepAmount(1).build())
-    include_child_namespaces: Property[bool] = Property.ofValue(true)
+    behavior: Property[FilesPurgeBehavior]
+    include_child_namespaces: Property[bool]
+    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
     file_pattern: Property[str] | None = None
     namespaces: Property[list[str]] | None = None
     namespace_pattern: Property[str] | None = None

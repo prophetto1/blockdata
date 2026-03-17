@@ -12,8 +12,8 @@ from engine.core.docs.schema_type import SchemaType
 
 @dataclass(slots=True, kw_only=True)
 class JsonSchemaCache:
-    schema_cache: ConcurrentMap[CacheKey, dict[str, Any]] = new ConcurrentHashMap<>()
-    properties_cache: ConcurrentMap[SchemaType, dict[str, Any]] = new ConcurrentHashMap<>()
+    schema_cache: ConcurrentMap[CacheKey, dict[str, Any]]
+    properties_cache: ConcurrentMap[SchemaType, dict[str, Any]]
     classes_by_schema_type: dict[SchemaType, Class[Any]] = field(default_factory=dict)
     json_schema_generator: JsonSchemaGenerator | None = None
 

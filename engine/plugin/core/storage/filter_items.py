@@ -18,8 +18,8 @@ class FilterItems(Task):
     """Filter line-oriented files with a Pebble expression."""
     from: Property[str]
     filter_condition: str
-    filter_type: Property[FilterType] = Property.ofValue(FilterType.INCLUDE)
-    error_or_null_behavior: Property[ErrorOrNullBehavior] = Property.ofValue(ErrorOrNullBehavior.FAIL)
+    filter_type: Property[FilterType]
+    error_or_null_behavior: Property[ErrorOrNullBehavior]
 
     def run(self, run_context: RunContext) -> Output:
         raise NotImplementedError  # TODO: translate from Java
@@ -27,7 +27,7 @@ class FilterItems(Task):
     def get_expression_predication(self, run_context: RunContext) -> PebbleExpressionPredicate:
         raise NotImplementedError  # TODO: translate from Java
 
-    def new_buffered_reader(self, run_context: RunContext, object_u_r_i: str) -> BufferedReader:
+    def new_buffered_reader(self, run_context: RunContext, object_uri: str) -> BufferedReader:
         raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)
@@ -38,7 +38,7 @@ class FilterItems(Task):
 
     @dataclass(slots=True)
     class PebbleExpressionPredicate:
-        m_a_p_p_e_r: ClassVar[ObjectMapper] = JacksonMapper.ofIon()
+        mapper: ClassVar[ObjectMapper]
         run_context: RunContext | None = None
         expression: str | None = None
 

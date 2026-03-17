@@ -26,7 +26,7 @@ from engine.core.runners.worker_task import WorkerTask
 @dataclass(slots=True, kw_only=True)
 class WorkingDirectory(Sequential):
     """Reuse a single working directory across tasks."""
-    o_u_t_p_u_t_s__f_i_l_e: ClassVar[str] = "outputs.ion"
+    outputs_file: ClassVar[str] = "outputs.ion"
     cache_downloaded_time: int = 0
     cache: Cache | None = None
     namespace_files: NamespaceFiles | None = None

@@ -10,10 +10,7 @@ from typing import Any, ClassVar
 @dataclass(slots=True, kw_only=True)
 class JqFilter:
     argument_names: list[str] = field(default_factory=list)
-    s_c_o_p_e: ClassVar[Scope]
-
-    def get_argument_names(self) -> list[str]:
-        raise NotImplementedError  # TODO: translate from Java
+    scope: ClassVar[Scope]
 
     def apply(self, input: Any, args: dict[str, Any], self: PebbleTemplate, context: EvaluationContext, line_number: int) -> Any:
         raise NotImplementedError  # TODO: translate from Java

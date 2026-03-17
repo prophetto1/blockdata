@@ -14,7 +14,7 @@ from engine.core.runners.worker_trigger import WorkerTrigger
 
 @dataclass(slots=True, kw_only=True)
 class AbstractWorkerTriggerCallable(ABC, AbstractWorkerCallable):
-    a_w_a_i_t__o_n__k_i_l_l: ClassVar[timedelta] = Duration.ofMillis(50)
+    await_on_kill: ClassVar[timedelta]
     worker_trigger: WorkerTrigger | None = None
 
     def signal_stop(self) -> None:

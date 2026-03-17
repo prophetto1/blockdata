@@ -3,9 +3,10 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\models\executions\Execution.java
 # WARNING: Unresolved types: BiFunction, Exception, ILoggingEvent, Throwable
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from logging import logging
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any, ClassVar, Optional
 
 from engine.core.debug.breakpoint import Breakpoint
 from engine.core.models.executions.execution_kind import ExecutionKind
@@ -13,7 +14,7 @@ from engine.core.models.executions.execution_metadata import ExecutionMetadata
 from engine.core.models.executions.execution_trigger import ExecutionTrigger
 from engine.core.models.flows.flow import Flow
 from engine.core.models.flows.flow_interface import FlowInterface
-from engine.core.models.has_u_i_d import HasUID
+from engine.core.models.has_uid import HasUID
 from engine.core.exceptions.internal_exception import InternalException
 from engine.core.models.label import Label
 from engine.core.serializers.list_or_map_of_label_deserializer import ListOrMapOfLabelDeserializer
@@ -36,6 +37,7 @@ class Execution:
     flow_id: str
     flow_revision: int
     state: State
+    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
     deleted: bool = False
     tenant_id: str | None = None
     task_run_list: list[TaskRun] | None = None
@@ -58,9 +60,6 @@ class Execution:
 
     @staticmethod
     def new_execution(flow: FlowInterface, labels: list[Label]) -> Execution:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def get_labels(self) -> list[Label]:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod

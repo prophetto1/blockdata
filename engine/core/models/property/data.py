@@ -12,10 +12,8 @@ from engine.core.runners.run_context import RunContext
 
 @dataclass(slots=True, kw_only=True)
 class Data:
-    m_a_p__o_f__s_t_r_i_n_g__o_b_j_e_c_t: ClassVar[Class[dict[str, Any]]] = (Class<Map<String, Object>>) Map.of().getClass()
-    j_s_o_n__m_a_p_p_e_r: ClassVar[ObjectMapper] = JacksonMapper.ofJson()
-        .copy()
-        .configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true)
+    map_of_string_object: ClassVar[Class[dict[str, Any]]]
+    json_mapper: ClassVar[ObjectMapper]
     from: Any | None = None
 
     @staticmethod

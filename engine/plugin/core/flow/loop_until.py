@@ -27,9 +27,9 @@ class LoopUntil(Task):
     """Repeat tasks until a condition becomes true."""
     tasks: list[Task]
     condition: Property[str]
-    i_n_i_t_i_a_l__l_o_o_p__v_a_l_u_e: ClassVar[int] = 1
-    fail_on_max_reached: Property[bool] = Property.ofValue(false)
-    check_frequency: CheckFrequency = CheckFrequency.builder().build()
+    fail_on_max_reached: Property[bool]
+    check_frequency: CheckFrequency
+    initial_loop_value: ClassVar[int] = 1
     errors: list[Task] | None = None
     _finally: list[Task] | None = None
 
@@ -72,6 +72,6 @@ class LoopUntil(Task):
 
     @dataclass(slots=True)
     class CheckFrequency:
-        interval: Property[timedelta] = Property.ofValue(Duration.ofMinutes(1))
+        interval: Property[timedelta]
         max_iterations: Property[int] | None = None
         max_duration: Property[timedelta] | None = None

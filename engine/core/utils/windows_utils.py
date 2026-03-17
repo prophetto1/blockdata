@@ -18,5 +18,5 @@ class WindowsUtils:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
-    def windows_to_unix_u_r_i(uri: str) -> str:
+    def windows_to_unix_uri(uri: str) -> str:
         raise NotImplementedError  # TODO: translate from Java

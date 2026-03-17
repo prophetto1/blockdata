@@ -9,7 +9,7 @@ from typing import Any, ClassVar
 
 @dataclass(slots=True, kw_only=True)
 class TenantSerializer(BeanSerializerModifier):
-    serial_version_u_i_d: ClassVar[int] = 1
+    serial_version_uid: ClassVar[int] = 1
 
     def change_properties(self, config: SerializationConfig, bean_desc: BeanDescription, bean_properties: list[BeanPropertyWriter]) -> list[BeanPropertyWriter]:
         raise NotImplementedError  # TODO: translate from Java

@@ -6,7 +6,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, ClassVar, Optional
 
-from engine.core.models.has_u_i_d import HasUID
+from engine.core.models.has_uid import HasUID
 from engine.core.models.soft_deletable import SoftDeletable
 from engine.core.models.tasks.task import Task
 from engine.core.models.tenant_interface import TenantInterface
@@ -14,17 +14,9 @@ from engine.core.models.tenant_interface import TenantInterface
 
 @dataclass(slots=True, kw_only=True)
 class Template:
+    yaml_mapper: ClassVar[ObjectMapper]
     id: str
     namespace: str
-    y_a_m_l__m_a_p_p_e_r: ClassVar[ObjectMapper] = JacksonMapper.ofYaml().copy()
-        .setAnnotationIntrospector(new JacksonAnnotationIntrospector() {
-            @Override
-            public boolean hasIgnoreMarker(final AnnotatedMember m) {
-                List<String> exclusions = Arrays.asList("revision", "deleted", "source");
-                return exclusions.contains(m.getName()) || super.hasIgnoreMarker(m);
-            }
-        })
-        .setDefaultPropertyInclusion(JsonInclude.Include.NON_DEFAULT)
     deleted: bool = False
     tenant_id: str | None = None
     description: str | None = None

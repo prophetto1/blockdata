@@ -9,7 +9,7 @@ from engine.core.models.triggers.abstract_trigger import AbstractTrigger
 from engine.core.models.tasks.output import Output
 
 
-@dataclass(slots=True, kw_only=True)
+@dataclass(frozen=True, slots=True, kw_only=True)
 class ExecutionTrigger:
     id: str
     type: str

@@ -8,7 +8,7 @@ from typing import Any
 
 from engine.core.models.tasks.executable_task import ExecutableTask
 from engine.core.models.executions.execution import Execution
-from engine.core.models.has_u_i_d import HasUID
+from engine.core.models.has_uid import HasUID
 from engine.core.models.tasks.task import Task
 from engine.core.models.executions.task_run import TaskRun
 

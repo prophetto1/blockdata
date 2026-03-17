@@ -16,8 +16,8 @@ from engine.core.models.tasks.runnable_task import RunnableTask
 @dataclass(slots=True, kw_only=True)
 class SseRequest(AbstractHttp):
     """Consume Server-Sent Events (SSE) from an HTTP endpoint."""
-    failed_on_missing_jq: Property[bool] = Property.ofValue(true)
-    s_c_o_p_e: ClassVar[Scope]
+    failed_on_missing_jq: Property[bool]
+    scope: ClassVar[Scope]
     concat_jq_expression: Property[str] | None = None
 
     def run(self, run_context: RunContext) -> Output:

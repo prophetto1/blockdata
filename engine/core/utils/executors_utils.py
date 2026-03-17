@@ -3,15 +3,17 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\utils\ExecutorsUtils.java
 # WARNING: Unresolved types: MeterRegistry, ScheduledExecutorService, ScheduledFuture
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from logging import logging
 from datetime import timedelta
-from typing import Any
+from typing import Any, ClassVar
 
 from engine.executor.executor_service import ExecutorService
 
 
 @dataclass(slots=True, kw_only=True)
 class ExecutorsUtils:
+    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
     meter_registry: MeterRegistry | None = None
 
     def cached_thread_pool(self, name: str) -> ExecutorService:

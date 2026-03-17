@@ -4,8 +4,9 @@ from __future__ import annotations
 # WARNING: Unresolved types: Exception
 
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
-from typing import Any
+from dataclasses import dataclass, field
+from logging import logging
+from typing import Any, ClassVar
 
 from engine.cli.abstract_command import AbstractCommand
 from engine.cli.commands.servers.server_command_interface import ServerCommandInterface
@@ -13,12 +14,13 @@ from engine.cli.commands.servers.server_command_interface import ServerCommandIn
 
 @dataclass(slots=True, kw_only=True)
 class AbstractServerCommand(ABC, AbstractCommand):
+    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
     server_port: int | None = None
 
     def call(self) -> int:
         raise NotImplementedError  # TODO: translate from Java
 
-    def max_memory_in_m_b(self) -> int:
+    def max_memory_in_mb(self) -> int:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod

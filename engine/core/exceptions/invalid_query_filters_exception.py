@@ -10,5 +10,5 @@ from engine.core.exceptions.kestra_runtime_exception import KestraRuntimeExcepti
 
 @dataclass(slots=True, kw_only=True)
 class InvalidQueryFiltersException(KestraRuntimeException):
-    serial_version_u_i_d: ClassVar[int] = 1
-    i_n_v_a_l_i_d__q_u_e_r_y__f_i_l_t_e_r__m_e_s_s_a_g_e: ClassVar[str] = "Provided query filters are invalid: %s"
+    serial_version_uid: ClassVar[int] = 1
+    invalid_query_filter_message: ClassVar[str] = "Provided query filters are invalid: %s"

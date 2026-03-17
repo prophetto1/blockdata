@@ -14,7 +14,7 @@ from engine.core.http.http_request import HttpRequest
 class HttpService(ABC):
 
     @staticmethod
-    def safe_u_r_i(request: HttpRequest) -> str:
+    def safe_uri(request: HttpRequest) -> str:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod

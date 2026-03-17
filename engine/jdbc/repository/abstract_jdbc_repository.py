@@ -26,11 +26,11 @@ from engine.core.models.flows.type import Type
 
 @dataclass(slots=True, kw_only=True)
 class AbstractJdbcRepository(ABC):
-    d_e_l_e_t_e_d__f_i_e_l_d: ClassVar[Field[bool]] = field("deleted", Boolean.class)
-    t_e_n_a_n_t__i_d__f_i_e_l_d: ClassVar[Field[str]] = field("tenant_id", String.class)
-    k_e_y__f_i_e_l_d: ClassVar[Field[str]] = field("key", String.class)
-    v_a_l_u_e__f_i_e_l_d: ClassVar[Field[Any]] = field("value", Object.class)
-    f_e_t_c_h__s_i_z_e: ClassVar[int] = 100
+    deleted_field: ClassVar[Field[bool]]
+    tenant_id_field: ClassVar[Field[str]]
+    key_field: ClassVar[Field[str]]
+    value_field: ClassVar[Field[Any]]
+    fetch_size: ClassVar[int] = 100
     kestra_config: KestraConfig | None = None
 
     def default_filter(self) -> Condition:
@@ -45,10 +45,10 @@ class AbstractJdbcRepository(ABC):
     def default_filter(self, tenant_id: str, allow_deleted: bool) -> Condition:
         raise NotImplementedError  # TODO: translate from Java
 
-    def default_filter_with_no_a_c_l(self, tenant_id: str) -> Condition:
+    def default_filter_with_no_acl(self, tenant_id: str) -> Condition:
         raise NotImplementedError  # TODO: translate from Java
 
-    def default_filter_with_no_a_c_l(self, tenant_id: str, deleted: bool) -> Condition:
+    def default_filter_with_no_acl(self, tenant_id: str, deleted: bool) -> Condition:
         raise NotImplementedError  # TODO: translate from Java
 
     def build_tenant_condition(self, tenant_id: str) -> Condition:

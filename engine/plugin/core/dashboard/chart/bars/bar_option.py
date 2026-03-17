@@ -14,9 +14,9 @@ from engine.core.models.dashboards.with_tooltip import WithTooltip
 
 @dataclass(slots=True, kw_only=True)
 class BarOption(ChartOption):
+    legend: LegendOption
     column: str
     tooltip: TooltipBehaviour = TooltipBehaviour.ALL
-    legend: LegendOption = LegendOption.builder().build()
 
     def needed_columns(self) -> list[str]:
         raise NotImplementedError  # TODO: translate from Java

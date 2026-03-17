@@ -11,10 +11,9 @@ from engine.core.models.property.property import Property
 
 @dataclass(slots=True, kw_only=True)
 class NamespaceFiles:
-    enabled: Property[bool] = Property.ofValue(true)
-    namespaces: Property[list[str]] = Property.ofExpression("""
-        ["{{flow.namespace}}"]""")
-    if_exists: Property[FileExistComportment] = Property.ofValue(FileExistComportment.OVERWRITE)
-    folder_per_namespace: Property[bool] = Property.ofValue(false)
+    enabled: Property[bool]
+    namespaces: Property[list[str]]
+    if_exists: Property[FileExistComportment]
+    folder_per_namespace: Property[bool]
     include: Property[list[str]] | None = None
     exclude: Property[list[str]] | None = None

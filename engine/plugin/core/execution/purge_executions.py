@@ -18,11 +18,11 @@ from engine.core.models.flows.type import Type
 class PurgeExecutions(Task):
     """Purge executions, logs, metrics, and storage files."""
     end_date: Property[str]
-    purge_execution: Property[bool] = Property.ofValue(true)
-    purge_log: Property[bool] = Property.ofValue(true)
-    purge_metric: Property[bool] = Property.ofValue(true)
-    purge_storage: Property[bool] = Property.ofValue(true)
-    batch_size: Property[int] = Property.ofValue(100)
+    purge_execution: Property[bool]
+    purge_log: Property[bool]
+    purge_metric: Property[bool]
+    purge_storage: Property[bool]
+    batch_size: Property[int]
     namespace: Property[str] | None = None
     flow_id: Property[str] | None = None
     start_date: Property[str] | None = None

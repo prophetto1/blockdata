@@ -4,6 +4,7 @@ from __future__ import annotations
 # WARNING: Unresolved types: BufferedInputStream, CompletedFileUpload, Exception, IOException, Pair, Pattern, StreamedFile, URISyntaxException
 
 from dataclasses import dataclass, field
+from logging import logging
 from typing import Any, ClassVar
 
 from engine.core.storages.file_attributes import FileAttributes
@@ -20,10 +21,9 @@ from engine.core.tenant.tenant_service import TenantService
 
 @dataclass(slots=True, kw_only=True)
 class NamespaceFileController:
-    f_l_o_w_s__f_o_l_d_e_r: ClassVar[str] = "_flows"
-    forbidden_path_patterns: list[Pattern] = List.of(
-        Pattern.compile("/" + FLOWS_FOLDER + "(/.*)?$")
-    )
+    forbidden_path_patterns: list[Pattern]
+    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    flows_folder: ClassVar[str] = "_flows"
     storage_interface: StorageInterface | None = None
     tenant_service: TenantService | None = None
     flow_service: FlowService | None = None

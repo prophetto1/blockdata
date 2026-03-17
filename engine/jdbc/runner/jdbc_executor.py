@@ -4,6 +4,7 @@ from __future__ import annotations
 # WARNING: Unresolved types: ApplicationEventPublisher, AtomicBoolean, AtomicReference, Configuration, Exception, FailedExecutionWithLog, ObjectMapper, Runnable, ScheduledExecutorService, ScheduledFuture, ServiceState, TemplateExecutorInterface, concurrent, java, util
 
 from dataclasses import dataclass, field
+from logging import logging
 from typing import Any, ClassVar, Optional
 
 from engine.jdbc.runner.abstract_jdbc_concurrency_limit_storage import AbstractJdbcConcurrencyLimitStorage
@@ -43,8 +44,8 @@ from engine.core.services.plugin_default_service import PluginDefaultService
 from engine.core.queues.queue_exception import QueueException
 from engine.core.queues.queue_interface import QueueInterface
 from engine.core.runners.run_context_factory import RunContextFactory
-from engine.core.models.flows.sla.s_l_a_monitor_storage import SLAMonitorStorage
-from engine.executor.s_l_a_service import SLAService
+from engine.core.models.flows.sla.sla_monitor_storage import SLAMonitorStorage
+from engine.executor.sla_service import SLAService
 from engine.core.runners.scheduler_trigger_state_interface import SchedulerTriggerStateInterface
 from engine.core.server.service_state_change_event import ServiceStateChangeEvent
 from engine.core.server.service_type import ServiceType
@@ -65,18 +66,19 @@ from engine.core.runners.worker_task_result import WorkerTaskResult
 
 @dataclass(slots=True, kw_only=True)
 class JdbcExecutor:
-    m_a_p_p_e_r: ClassVar[ObjectMapper] = JdbcMapper.of()
-    i_g_n_o_r_i_n_g__e_x_e_c_u_t_i_o_n__m_s_g: ClassVar[str] = "Ignoring execution {} because there is a kill switch on it"
-    c_a_n_c_e_l_l_i_n_g__e_x_e_c_u_t_i_o_n__m_s_g: ClassVar[str] = "Cancelling execution {} because there is a kill switch on it"
-    k_i_l_l_i_n_g__e_x_e_c_u_t_i_o_n__m_s_g: ClassVar[str] = "Killing execution {} because there is a kill switch on it"
-    scheduled_delay: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor()
-    id: str = IdUtils.create()
-    shutdown: AtomicBoolean = new AtomicBoolean(false)
-    is_paused: AtomicBoolean = new AtomicBoolean(false)
-    state: AtomicReference[ServiceState] = new AtomicReference<>()
+    mapper: ClassVar[ObjectMapper]
+    scheduled_delay: ScheduledExecutorService
+    id: str
+    shutdown: AtomicBoolean
+    is_paused: AtomicBoolean
+    state: AtomicReference[ServiceState]
+    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    ignoring_execution_msg: ClassVar[str] = "Ignoring execution {} because there is a kill switch on it"
+    cancelling_execution_msg: ClassVar[str] = "Cancelling execution {} because there is a kill switch on it"
+    killing_execution_msg: ClassVar[str] = "Killing execution {} because there is a kill switch on it"
     receive_cancellations: list[Runnable] = field(default_factory=list)
     execution_delay_future: ScheduledFuture[Any] | None = None
-    monitor_s_l_a_future: ScheduledFuture[Any] | None = None
+    monitor_sla_future: ScheduledFuture[Any] | None = None
     execution_repository: AbstractJdbcExecutionRepository | None = None
     execution_queue: QueueInterface[Execution] | None = None
     worker_job_queue: QueueInterface[WorkerJob] | None = None
@@ -182,7 +184,7 @@ class JdbcExecutor:
     def execution_delay_send(self) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
-    def execution_s_l_a_monitor(self) -> None:
+    def execution_sla_monitor(self) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
     def deduplicate_nexts(self, execution: Execution, executor_state: ExecutorState, task_runs: list[TaskRun]) -> bool:
@@ -224,11 +226,5 @@ class JdbcExecutor:
     def close(self) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
-    def get_id(self) -> str:
-        raise NotImplementedError  # TODO: translate from Java
-
     def get_type(self) -> ServiceType:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def get_state(self) -> ServiceState:
         raise NotImplementedError  # TODO: translate from Java

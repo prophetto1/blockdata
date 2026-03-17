@@ -14,11 +14,11 @@ from engine.core.repositories.setting_repository_interface import SettingReposit
 
 @dataclass(slots=True, kw_only=True)
 class BasicAuthService:
-    b_a_s_i_c__a_u_t_h__s_e_t_t_i_n_g_s__k_e_y: ClassVar[str] = "kestra.server.basic-auth"
-    b_a_s_i_c__a_u_t_h__e_r_r_o_r__c_o_n_f_i_g: ClassVar[str] = "kestra.server.authentication-configuration-error"
-    e_m_a_i_l__p_a_t_t_e_r_n: ClassVar[Pattern] = Pattern.compile("^[a-zA-Z0-9_!#$%&’*+/=?`{|}~^.-]+@[a-zA-Z0-9.-]+$")
-    p_a_s_s_w_o_r_d__p_a_t_t_e_r_n: ClassVar[Pattern] = Pattern.compile("(?=.{8,})(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9]).*")
-    e_m_a_i_l__p_a_s_s_w_o_r_d__m_a_x__l_e_n: ClassVar[int] = 256
+    email_pattern: ClassVar[Pattern]
+    password_pattern: ClassVar[Pattern]
+    basic_auth_settings_key: ClassVar[str] = "kestra.server.basic-auth"
+    basic_auth_error_config: ClassVar[str] = "kestra.server.authentication-configuration-error"
+    email_password_max_len: ClassVar[int] = 256
     setting_repository: SettingRepositoryInterface | None = None
     basic_auth_configuration: BasicAuthConfiguration | None = None
     instance_service: InstanceService | None = None

@@ -10,9 +10,9 @@ from engine.core.repositories.array_list_total import ArrayListTotal
 from engine.core.models.dashboards.column_descriptor import ColumnDescriptor
 from engine.core.models.dashboards.dashboard import Dashboard
 from engine.core.models.dashboards.charts.data_chart import DataChart
-from engine.core.models.dashboards.charts.data_chart_k_p_i import DataChartKPI
+from engine.core.models.dashboards.charts.data_chart_kpi import DataChartKPI
 from engine.core.models.dashboards.data_filter import DataFilter
-from engine.core.models.dashboards.data_filter_k_p_i import DataFilterKPI
+from engine.core.models.dashboards.data_filter_kpi import DataFilterKPI
 
 
 class DashboardRepositoryInterface(Protocol):
@@ -36,4 +36,4 @@ class DashboardRepositoryInterface(Protocol):
 
     def generate(self, tenant_id: str, data_chart: DataChart[Any, DataFilter[F, Any]], start_date: datetime, end_date: datetime, pageable: Pageable) -> ArrayListTotal[dict[str, Any]]: ...
 
-    def generate_k_p_i(self, tenant_id: str, data_chart: DataChartKPI[Any, DataFilterKPI[F, Any]], start_date: datetime, end_date: datetime) -> list[dict[str, Any]]: ...
+    def generate_kpi(self, tenant_id: str, data_chart: DataChartKPI[Any, DataFilterKPI[F, Any]], start_date: datetime, end_date: datetime) -> list[dict[str, Any]]: ...

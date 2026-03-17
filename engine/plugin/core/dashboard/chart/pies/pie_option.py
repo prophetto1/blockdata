@@ -15,8 +15,8 @@ from engine.core.models.dashboards.with_tooltip import WithTooltip
 
 @dataclass(slots=True, kw_only=True)
 class PieOption(ChartOption):
+    legend: LegendOption
     tooltip: TooltipBehaviour = TooltipBehaviour.ALL
-    legend: LegendOption = LegendOption.builder().build()
     graph_style: PieGraphStyle = PieGraphStyle.DONUT
     color_by_column: str | None = None
 

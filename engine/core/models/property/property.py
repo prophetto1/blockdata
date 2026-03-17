@@ -13,15 +13,10 @@ from engine.core.runners.run_context import RunContext
 
 @dataclass(slots=True, kw_only=True)
 class Property:
-    m_a_p_p_e_r: ClassVar[ObjectMapper] = JacksonMapper.ofJson()
-        .copy()
-        .configure(SerializationFeature.WRITE_DURATIONS_AS_TIMESTAMPS, false)
+    mapper: ClassVar[ObjectMapper]
     skip_cache: bool | None = None
     expression: str | None = None
     value: T | None = None
-
-    def get_expression(self) -> str:
-        raise NotImplementedError  # TODO: translate from Java
 
     def skip_cache(self) -> Property[T]:
         raise NotImplementedError  # TODO: translate from Java
@@ -79,19 +74,16 @@ class Property:
     def hash_code(self) -> int:
         raise NotImplementedError  # TODO: translate from Java
 
-    def get_value(self) -> T:
-        raise NotImplementedError  # TODO: translate from Java
-
     @dataclass(slots=True)
     class PropertyDeserializer(StdDeserializer):
-        serial_version_u_i_d: ClassVar[int] = 1
+        serial_version_uid: ClassVar[int] = 1
 
         def deserialize(self, p: JsonParser, ctxt: DeserializationContext) -> Property[Any]:
             raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)
     class PropertySerializer(StdSerializer):
-        serial_version_u_i_d: ClassVar[int] = 1
+        serial_version_uid: ClassVar[int] = 1
 
         def serialize(self, value: Property, gen: JsonGenerator, provider: SerializerProvider) -> None:
             raise NotImplementedError  # TODO: translate from Java

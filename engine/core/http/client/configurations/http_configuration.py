@@ -18,9 +18,9 @@ from engine.core.models.flows.type import Type
 
 @dataclass(slots=True, kw_only=True)
 class HttpConfiguration:
-    follow_redirects: Property[bool] = Property.ofValue(true)
-    allow_failed: Property[bool] = Property.ofValue(false)
-    default_charset: Property[Charset] = Property.ofValue(StandardCharsets.UTF_8)
+    follow_redirects: Property[bool]
+    allow_failed: Property[bool]
+    default_charset: Property[Charset]
     timeout: TimeoutConfiguration | None = None
     proxy: ProxyConfiguration | None = None
     auth: AbstractAuthConfiguration | None = None

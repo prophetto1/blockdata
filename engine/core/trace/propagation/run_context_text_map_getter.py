@@ -11,7 +11,7 @@ from engine.core.runners.run_context import RunContext
 
 @dataclass(slots=True, kw_only=True)
 class RunContextTextMapGetter:
-    i_n_s_t_a_n_c_e: ClassVar[RunContextTextMapGetter] = new RunContextTextMapGetter()
+    instance: ClassVar[RunContextTextMapGetter]
 
     def keys(self, carrier: RunContext) -> list[str]:
         raise NotImplementedError  # TODO: translate from Java

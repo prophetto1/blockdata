@@ -3,8 +3,9 @@ from __future__ import annotations
 # Source: E:\KESTRA\executor\src\main\java\io\kestra\executor\ExecutorService.java
 # WARNING: Unresolved types: ApplicationContext, Exception, Logger, OpenTelemetry, Supplier
 
-from dataclasses import dataclass
-from typing import Any, Optional
+from dataclasses import dataclass, field
+from logging import logging
+from typing import Any, ClassVar, Optional
 
 from engine.core.models.tasks.retrys.abstract_retry import AbstractRetry
 from engine.core.assets.asset_service import AssetService
@@ -28,7 +29,7 @@ from engine.core.queues.queue_interface import QueueInterface
 from engine.core.runners.run_context import RunContext
 from engine.core.runners.run_context_factory import RunContextFactory
 from engine.core.runners.run_context_initializer import RunContextInitializer
-from engine.executor.s_l_a_service import SLAService
+from engine.executor.sla_service import SLAService
 from engine.core.models.flows.state import State
 from engine.core.runners.subflow_execution_end import SubflowExecutionEnd
 from engine.core.runners.subflow_execution_result import SubflowExecutionResult
@@ -45,6 +46,7 @@ from engine.core.runners.worker_task_result import WorkerTaskResult
 
 @dataclass(slots=True, kw_only=True)
 class ExecutorService:
+    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
     application_context: ApplicationContext | None = None
     run_context_factory: RunContextFactory | None = None
     metric_registry: MetricRegistry | None = None
@@ -164,7 +166,7 @@ class ExecutorService:
     def log(self, log: Logger, in: bool, value: ExecutionKilledExecution) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
-    def handle_execution_changed_s_l_a(self, executor: Executor) -> Executor:
+    def handle_execution_changed_sla(self, executor: Executor) -> Executor:
         raise NotImplementedError  # TODO: translate from Java
 
     def process_violation(self, run_context: RunContext, executor: Executor, violation: Violation) -> Executor:

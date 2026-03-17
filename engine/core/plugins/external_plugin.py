@@ -13,9 +13,6 @@ class ExternalPlugin:
     resources: list[str] | None = None
     crc32: int | None = None
 
-    def get_crc32(self) -> int:
-        raise NotImplementedError  # TODO: translate from Java
-
     @staticmethod
     def compute_jar_crc32(location: str) -> int:
         raise NotImplementedError  # TODO: translate from Java

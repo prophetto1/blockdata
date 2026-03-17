@@ -16,8 +16,8 @@ from engine.core.models.tasks.task import Task
 class Reverse(Task):
     """Reverse a file (last line first) in Kestra internal storage."""
     from: Property[str]
-    separator: Property[str] = Property.ofValue("\n")
-    charset: Property[str] = Property.ofValue(StandardCharsets.UTF_8.name())
+    separator: Property[str]
+    charset: Property[str]
 
     def run(self, run_context: RunContext) -> Reverse.Output:
         raise NotImplementedError  # TODO: translate from Java

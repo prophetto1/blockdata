@@ -27,9 +27,6 @@ class FeatureUsageReport(AbstractReportable):
     def report(self, now: datetime, interval: TimeInterval) -> UsageEvent:
         raise NotImplementedError  # TODO: translate from Java
 
-    def is_enabled(self) -> bool:
-        raise NotImplementedError  # TODO: translate from Java
-
     def report(self, now: datetime, interval: TimeInterval, tenant: str) -> UsageEvent:
         raise NotImplementedError  # TODO: translate from Java
 

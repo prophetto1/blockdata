@@ -5,9 +5,10 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
+from logging import logging
 from datetime import datetime
 from datetime import timedelta
-from typing import Any, Optional
+from typing import Any, ClassVar, Optional
 
 from engine.core.models.triggers.abstract_trigger import AbstractTrigger
 from engine.core.models.conditions.condition_context import ConditionContext
@@ -44,15 +45,16 @@ from engine.core.runners.worker_trigger_result import WorkerTriggerResult
 
 @dataclass(slots=True, kw_only=True)
 class AbstractScheduler(ABC):
+    schedule_executor: ScheduledExecutorService
+    execution_monitor_executor: ScheduledExecutorService
+    schedulable_next_date: dict[str, FlowWithWorkerTriggerNextDate]
+    id: str
+    shutdown: AtomicBoolean
+    is_paused: AtomicBoolean
+    state: AtomicReference[ServiceState]
+    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
     is_ready: bool = False
-    schedule_executor: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor()
-    execution_monitor_executor: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor()
     schedulable: list[FlowWithTriggers] = field(default_factory=list)
-    schedulable_next_date: dict[str, FlowWithWorkerTriggerNextDate] = new ConcurrentHashMap<>()
-    id: str = IdUtils.create()
-    shutdown: AtomicBoolean = new AtomicBoolean(false)
-    is_paused: AtomicBoolean = new AtomicBoolean(false)
-    state: AtomicReference[ServiceState] = new AtomicReference<>()
     receive_cancellations: list[Runnable] = field(default_factory=list)
     application_context: ApplicationContext | None = None
     execution_queue: QueueInterface[Execution] | None = None
@@ -181,13 +183,7 @@ class AbstractScheduler(ABC):
     def close(self, on_close: Runnable) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
-    def get_id(self) -> str:
-        raise NotImplementedError  # TODO: translate from Java
-
     def get_type(self) -> ServiceType:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def get_state(self) -> ServiceState:
         raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)

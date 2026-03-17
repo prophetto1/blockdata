@@ -14,9 +14,9 @@ from engine.core.models.dashboards.with_tooltip import WithTooltip
 
 @dataclass(slots=True, kw_only=True)
 class TimeSeriesOption(ChartOption):
+    legend: LegendOption
     column: str
     tooltip: TooltipBehaviour = TooltipBehaviour.ALL
-    legend: LegendOption = LegendOption.builder().enabled(true).build()
     color_by_column: str | None = None
 
     def needed_columns(self) -> list[str]:

@@ -7,12 +7,12 @@ from enum import Enum
 from datetime import datetime
 from typing import Any
 
-from engine.core.models.has_u_i_d import HasUID
+from engine.core.models.has_uid import HasUID
 from engine.core.models.flows.state import State
 from engine.core.models.flows.type import Type
 
 
-@dataclass(slots=True, kw_only=True)
+@dataclass(frozen=True, slots=True, kw_only=True)
 class ExecutionDelay:
     task_run_id: str
     execution_id: str
@@ -21,9 +21,6 @@ class ExecutionDelay:
     delay_type: DelayType
 
     def uid(self) -> str:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def get_delay_type(self) -> DelayType:
         raise NotImplementedError  # TODO: translate from Java
 
     class DelayType(str, Enum):

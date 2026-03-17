@@ -36,9 +36,6 @@ class TriggerContext:
     def uid(trigger: TriggerContext) -> str:
         raise NotImplementedError  # TODO: translate from Java
 
-    def get_disabled(self) -> bool:
-        raise NotImplementedError  # TODO: translate from Java
-
     @dataclass(slots=True)
     class TriggerContextBuilder(ABC):
         pass

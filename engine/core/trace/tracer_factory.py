@@ -17,8 +17,5 @@ class TracerFactory:
     tracer: Optional[io.opentelemetry.api.trace.Tracer] | None = None
     traces_configuration: TracesConfiguration | None = None
 
-    def get_tracer(self, clazz: Class[Any], span_name_prefix: str) -> Tracer:
-        raise NotImplementedError  # TODO: translate from Java
-
     def level_from_configuration(self, name: str) -> TraceLevel:
         raise NotImplementedError  # TODO: translate from Java

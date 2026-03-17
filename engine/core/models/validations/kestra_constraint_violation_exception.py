@@ -9,7 +9,7 @@ from typing import Any, ClassVar
 
 @dataclass(slots=True, kw_only=True)
 class KestraConstraintViolationException(ConstraintViolationException):
-    serial_version_u_i_d: ClassVar[int] = 1
+    serial_version_uid: ClassVar[int] = 1
 
     def get_message(self) -> str:
         raise NotImplementedError  # TODO: translate from Java

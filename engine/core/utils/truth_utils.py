@@ -9,7 +9,7 @@ from typing import Any, ClassVar
 
 @dataclass(slots=True, kw_only=True)
 class TruthUtils(ABC):
-    f_a_l_s_e__v_a_l_u_e_s: ClassVar[list[str]] = List.of("false", "0", "-0", "")
+    false_values: ClassVar[list[str]]
 
     @staticmethod
     def is_truthy(condition: str) -> bool:

@@ -16,7 +16,7 @@ from engine.core.models.executions.metrics.timer import Timer
 @dataclass(slots=True, kw_only=True)
 class AbstractMetricEntry(ABC):
     name: str
-    timestamp: datetime = Instant.now()
+    timestamp: datetime
     description: str | None = None
     tags: dict[str, str] | None = None
 

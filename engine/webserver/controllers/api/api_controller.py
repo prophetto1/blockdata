@@ -12,9 +12,6 @@ from engine.core.http.http_response import HttpResponse
 class ApiController:
     base_path: str | None = None
 
-    def get_base_path(self) -> str:
-        raise NotImplementedError  # TODO: translate from Java
-
     def get_swagger_filename(self) -> str:
         raise NotImplementedError  # TODO: translate from Java
 

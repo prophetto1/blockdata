@@ -20,6 +20,3 @@ class DigestAuthConfiguration(AbstractAuthConfiguration):
 
     def configure(self, builder: HttpClientBuilder, run_context: RunContext) -> None:
         raise NotImplementedError  # TODO: translate from Java
-
-    def get_type(self) -> AuthType:
-        raise NotImplementedError  # TODO: translate from Java

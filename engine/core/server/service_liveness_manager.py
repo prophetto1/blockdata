@@ -4,6 +4,7 @@ from __future__ import annotations
 # WARNING: Unresolved types: ReentrantLock, ServiceState
 
 from dataclasses import dataclass, field
+from logging import logging
 from datetime import datetime
 from datetime import timedelta
 from typing import Any, ClassVar, Optional, Protocol
@@ -22,8 +23,9 @@ from engine.core.server.service_state_change_event import ServiceStateChangeEven
 
 @dataclass(slots=True, kw_only=True)
 class ServiceLivenessManager(AbstractServiceLivenessTask):
-    t_a_s_k__n_a_m_e: ClassVar[str] = "service-liveness-manager-task"
-    state_lock: ReentrantLock = new ReentrantLock()
+    state_lock: ReentrantLock
+    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    task_name: ClassVar[str] = "service-liveness-manager-task"
     local_service_state_factory: LocalServiceStateFactory | None = None
     service_liveness_updater: ServiceLivenessUpdater | None = None
     on_state_transition_failure_callback: OnStateTransitionFailureCallback | None = None

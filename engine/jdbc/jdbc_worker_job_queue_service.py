@@ -3,8 +3,9 @@ from __future__ import annotations
 # Source: E:\KESTRA\jdbc\src\main\java\io\kestra\jdbc\JdbcWorkerJobQueueService.java
 # WARNING: Unresolved types: ApplicationContext, AtomicBoolean, AtomicReference, Closeable, Consumer, Runnable
 
-from dataclasses import dataclass
-from typing import Any
+from dataclasses import dataclass, field
+from logging import logging
+from typing import Any, ClassVar
 
 from engine.jdbc.repository.abstract_jdbc_worker_job_running_repository import AbstractJdbcWorkerJobRunningRepository
 from engine.core.exceptions.deserialization_exception import DeserializationException
@@ -15,8 +16,9 @@ from engine.core.runners.worker_job import WorkerJob
 
 @dataclass(slots=True, kw_only=True)
 class JdbcWorkerJobQueueService:
-    disposable: AtomicReference[Runnable] = new AtomicReference<>()
-    is_stopped: AtomicBoolean = new AtomicBoolean(false)
+    disposable: AtomicReference[Runnable]
+    is_stopped: AtomicBoolean
+    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
     jdbc_worker_job_running_repository: AbstractJdbcWorkerJobRunningRepository | None = None
 
     def subscribe(self, worker_job_queue: JdbcQueue[WorkerJob], worker_id: str, worker_group: str, consumer: Consumer[Either[WorkerJob, DeserializationException]]) -> Runnable:

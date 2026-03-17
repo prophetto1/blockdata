@@ -5,6 +5,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum
+from logging import logging
 from typing import Any, ClassVar, Optional
 
 from engine.webserver.responses.bulk_response import BulkResponse
@@ -36,7 +37,8 @@ from engine.core.models.validations.validate_constraint_violation import Validat
 
 @dataclass(slots=True, kw_only=True)
 class FlowController:
-    w_a_r_n_i_n_g__j_s_o_n__f_l_o_w__e_n_d_p_o_i_n_t: ClassVar[str] = "This endpoint is deprecated. Handling flows as 'application/json' is no longer supported and will be removed in a future release. Please use the same endpoint with an 'application/x-yaml' content type."
+    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    warning_json_flow_endpoint: ClassVar[str] = "This endpoint is deprecated. Handling flows as 'application/json' is no longer supported and will be removed in a future release. Please use the same endpoint with an 'application/x-yaml' content type."
     flow_repository: FlowRepositoryInterface | None = None
     plugin_default_service: PluginDefaultService | None = None
     model_validator: ModelValidator | None = None

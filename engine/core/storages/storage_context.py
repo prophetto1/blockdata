@@ -12,18 +12,18 @@ from engine.core.models.executions.task_run import TaskRun
 
 @dataclass(slots=True, kw_only=True)
 class StorageContext:
-    k_e_s_t_r_a__s_c_h_e_m_e: ClassVar[str] = "kestra"
-    k_e_s_t_r_a__p_r_o_t_o_c_o_l: ClassVar[str] = KESTRA_SCHEME + "://"
-    p_r_e_f_i_x__m_e_s_s_a_g_e_s: ClassVar[str] = "/_messages"
-    p_r_e_f_i_x__f_o_r_m_a_t__n_a_m_e_s_p_a_c_e__f_i_l_e: ClassVar[str] = "/%s/_files"
-    p_r_e_f_i_x__f_o_r_m_a_t__k_v: ClassVar[str] = "/%s/_kv"
-    p_r_e_f_i_x__f_o_r_m_a_t__f_l_o_w_s: ClassVar[str] = "/%s/%s"
-    p_r_e_f_i_x__f_o_r_m_a_t__e_x_e_c_u_t_i_o_n_s: ClassVar[str] = "/%s/%s/executions/%s"
-    p_r_e_f_i_x__f_o_r_m_a_t__t_a_s_k: ClassVar[str] = "/%s/%s/executions/%s/tasks/%s/%s"
-    p_r_e_f_i_x__f_o_r_m_a_t__t_r_i_g_g_e_r: ClassVar[str] = "/%s/%s/executions/%s/trigger/%s"
-    p_r_e_f_i_x__f_o_r_m_a_t__i_n_p_u_t_s: ClassVar[str] = "/%s/%s/executions/%s/inputs/%s/%s"
-    p_r_e_f_i_x__f_o_r_m_a_t__c_a_c_h_e__o_b_j_e_c_t: ClassVar[str] = "/%s/%s/%s/cache/%s/cache.zip"
-    p_r_e_f_i_x__f_o_r_m_a_t__c_a_c_h_e: ClassVar[str] = "/%s/%s/%s/cache/cache.zip"
+    kestra_scheme: ClassVar[str] = "kestra"
+    kestra_protocol: ClassVar[str] = KESTRA_SCHEME + "://"
+    prefix_messages: ClassVar[str] = "/_messages"
+    prefix_format_namespace_file: ClassVar[str] = "/%s/_files"
+    prefix_format_kv: ClassVar[str] = "/%s/_kv"
+    prefix_format_flows: ClassVar[str] = "/%s/%s"
+    prefix_format_executions: ClassVar[str] = "/%s/%s/executions/%s"
+    prefix_format_task: ClassVar[str] = "/%s/%s/executions/%s/tasks/%s/%s"
+    prefix_format_trigger: ClassVar[str] = "/%s/%s/executions/%s/trigger/%s"
+    prefix_format_inputs: ClassVar[str] = "/%s/%s/executions/%s/inputs/%s/%s"
+    prefix_format_cache_object: ClassVar[str] = "/%s/%s/%s/cache/%s/cache.zip"
+    prefix_format_cache: ClassVar[str] = "/%s/%s/%s/cache/cache.zip"
     tenant_id: str | None = None
     namespace: str | None = None
     flow_id: str | None = None
@@ -61,7 +61,7 @@ class StorageContext:
     def extract_execution_id(path: str) -> Optional[str]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def get_cache_u_r_i(self, cache_id: str, object_id: str) -> str:
+    def get_cache_uri(self, cache_id: str, object_id: str) -> str:
         raise NotImplementedError  # TODO: translate from Java
 
     def get_namespace_as_path(self) -> str:
@@ -70,16 +70,16 @@ class StorageContext:
     def get_state_store_prefix(self, id: str, is_namespace: bool, value: str) -> str:
         raise NotImplementedError  # TODO: translate from Java
 
-    def get_flow_storage_u_r_i(self) -> str:
+    def get_flow_storage_uri(self) -> str:
         raise NotImplementedError  # TODO: translate from Java
 
-    def get_execution_storage_u_r_i(self) -> str:
+    def get_execution_storage_uri(self) -> str:
         raise NotImplementedError  # TODO: translate from Java
 
-    def get_execution_storage_u_r_i(self, scheme: str) -> str:
+    def get_execution_storage_uri(self, scheme: str) -> str:
         raise NotImplementedError  # TODO: translate from Java
 
-    def get_context_storage_u_r_i(self) -> str:
+    def get_context_storage_uri(self) -> str:
         raise NotImplementedError  # TODO: translate from Java
 
     def to_string(self) -> str:
@@ -99,7 +99,7 @@ class StorageContext:
         task_run_id: str | None = None
         task_run_value: str | None = None
 
-        def get_context_storage_u_r_i(self) -> str:
+        def get_context_storage_uri(self) -> str:
             raise NotImplementedError  # TODO: translate from Java
 
         def to_string(self) -> str:
@@ -109,7 +109,7 @@ class StorageContext:
     class Trigger(StorageContext):
         trigger_id: str | None = None
 
-        def get_context_storage_u_r_i(self) -> str:
+        def get_context_storage_uri(self) -> str:
             raise NotImplementedError  # TODO: translate from Java
 
         def to_string(self) -> str:
@@ -120,7 +120,7 @@ class StorageContext:
         input_name: str | None = None
         file_name: str | None = None
 
-        def get_context_storage_u_r_i(self) -> str:
+        def get_context_storage_uri(self) -> str:
             raise NotImplementedError  # TODO: translate from Java
 
         def to_string(self) -> str:

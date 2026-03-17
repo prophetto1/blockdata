@@ -13,8 +13,8 @@ from engine.core.plugins.plugin_class_and_metadata import PluginClassAndMetadata
 
 @dataclass(slots=True, kw_only=True)
 class ClassPluginDocumentation(AbstractClassDocumentation):
-    c_a_c_h_e: ClassVar[dict[PluginDocIdentifier, ClassPluginDocumentation[Any]]] = new ConcurrentHashMap<>()
-    outputs: dict[str, Any] = new TreeMap<>()
+    cache: ClassVar[dict[PluginDocIdentifier, ClassPluginDocumentation[Any]]]
+    outputs: dict[str, Any]
     icon: str | None = None
     group: str | None = None
     doc_license: str | None = None

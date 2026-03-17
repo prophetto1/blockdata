@@ -24,7 +24,7 @@ from engine.core.models.flows.input.secret_input import SecretInput
 from engine.core.models.flows.input.select_input import SelectInput
 from engine.core.models.flows.input.string_input import StringInput
 from engine.core.models.flows.input.time_input import TimeInput
-from engine.core.models.flows.input.u_r_i_input import URIInput
+from engine.core.models.flows.input.uri_input import URIInput
 from engine.core.models.flows.input.yaml_input import YamlInput
 
 

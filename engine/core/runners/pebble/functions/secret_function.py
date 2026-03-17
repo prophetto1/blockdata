@@ -4,6 +4,7 @@ from __future__ import annotations
 # WARNING: Unresolved types: EvaluationContext, Function, ObjectMapper, PebbleTemplate
 
 from dataclasses import dataclass, field
+from logging import logging
 from typing import Any, ClassVar
 
 from engine.core.services.namespace_service import NamespaceService
@@ -12,11 +13,12 @@ from engine.core.secret.secret_service import SecretService
 
 @dataclass(slots=True, kw_only=True)
 class SecretFunction:
-    n_a_m_e: ClassVar[str] = "secret"
-    o_b_j_e_c_t__m_a_p_p_e_r: ClassVar[ObjectMapper] = JacksonMapper.ofJson()
-    s_u_b_k_e_y__a_r_g: ClassVar[str] = "subkey"
-    n_a_m_e_s_p_a_c_e__a_r_g: ClassVar[str] = "namespace"
-    k_e_y__a_r_g: ClassVar[str] = "key"
+    object_mapper: ClassVar[ObjectMapper]
+    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    name: ClassVar[str] = "secret"
+    subkey_arg: ClassVar[str] = "subkey"
+    namespace_arg: ClassVar[str] = "namespace"
+    key_arg: ClassVar[str] = "key"
     secret_service: SecretService | None = None
     namespace_service: NamespaceService | None = None
 

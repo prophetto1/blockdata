@@ -9,7 +9,7 @@ from typing import Any
 
 from engine.core.models.executions.execution_killed_execution import ExecutionKilledExecution
 from engine.core.models.executions.execution_killed_trigger import ExecutionKilledTrigger
-from engine.core.models.has_u_i_d import HasUID
+from engine.core.models.has_uid import HasUID
 from engine.core.models.tenant_interface import TenantInterface
 
 

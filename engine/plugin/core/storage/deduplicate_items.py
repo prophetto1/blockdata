@@ -24,7 +24,7 @@ class DeduplicateItems(Task):
     def get_key_extractor(self, run_context: RunContext) -> PebbleFieldExtractor:
         raise NotImplementedError  # TODO: translate from Java
 
-    def new_buffered_reader(self, run_context: RunContext, object_u_r_i: str) -> BufferedReader:
+    def new_buffered_reader(self, run_context: RunContext, object_uri: str) -> BufferedReader:
         raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)
@@ -36,7 +36,7 @@ class DeduplicateItems(Task):
 
     @dataclass(slots=True)
     class PebbleFieldExtractor:
-        m_a_p_p_e_r: ClassVar[ObjectMapper] = JacksonMapper.ofIon()
+        mapper: ClassVar[ObjectMapper]
         run_context: RunContext | None = None
         expression: str | None = None
 

@@ -6,6 +6,6 @@ from dataclasses import dataclass
 from typing import Any
 
 
-@dataclass(slots=True, kw_only=True)
+@dataclass(frozen=True, slots=True, kw_only=True)
 class FileMetas:
     size: int

@@ -4,6 +4,7 @@ from __future__ import annotations
 # WARNING: Unresolved types: IOException, InputStream
 
 from dataclasses import dataclass, field
+from logging import logging
 from pathlib import Path
 from typing import Any, ClassVar
 
@@ -16,7 +17,8 @@ from engine.core.storages.storage_object import StorageObject
 @dataclass(slots=True, kw_only=True)
 class LocalStorage:
     base_path: Path
-    m_a_x__o_b_j_e_c_t__n_a_m_e__l_e_n_g_t_h: ClassVar[int] = 255
+    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    max_object_name_length: ClassVar[int] = 255
 
     def init(self) -> None:
         raise NotImplementedError  # TODO: translate from Java

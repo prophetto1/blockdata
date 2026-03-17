@@ -11,7 +11,7 @@ from engine.core.models.executions.execution import Execution
 
 @dataclass(slots=True, kw_only=True)
 class ExecutionTextMapGetter:
-    i_n_s_t_a_n_c_e: ClassVar[ExecutionTextMapGetter] = new ExecutionTextMapGetter()
+    instance: ClassVar[ExecutionTextMapGetter]
 
     def keys(self, carrier: Execution) -> list[str]:
         raise NotImplementedError  # TODO: translate from Java

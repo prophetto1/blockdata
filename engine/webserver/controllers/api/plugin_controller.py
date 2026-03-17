@@ -22,7 +22,7 @@ from engine.core.models.flows.type import Type
 
 @dataclass(slots=True, kw_only=True)
 class PluginController:
-    c_a_c_h_e__d_i_r_e_c_t_i_v_e: ClassVar[str] = "public, max-age=3600"
+    cache_directive: ClassVar[str] = "public, max-age=3600"
     json_schema_generator: JsonSchemaGenerator | None = None
     plugin_registry: PluginRegistry | None = None
     json_schema_cache: JsonSchemaCache | None = None

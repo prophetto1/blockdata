@@ -12,7 +12,7 @@ from engine.core.models.flows.type import Type
 
 @dataclass(slots=True, kw_only=True)
 class ProxyConfiguration:
-    type: Property[java.net.Proxy.Type] = Property.ofValue(Proxy.Type.DIRECT)
+    type: Property[java.net.Proxy.Type]
     address: Property[str] | None = None
     port: Property[int] | None = None
     username: Property[str] | None = None

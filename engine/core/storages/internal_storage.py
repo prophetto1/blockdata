@@ -4,6 +4,7 @@ from __future__ import annotations
 # WARNING: Unresolved types: IOException, InputStream, Logger
 
 from dataclasses import dataclass, field
+from logging import logging
 from pathlib import Path
 from datetime import timedelta
 from typing import Any, ClassVar, Optional
@@ -20,7 +21,8 @@ from engine.core.models.tasks.task import Task
 
 @dataclass(slots=True, kw_only=True)
 class InternalStorage:
-    p_a_t_h__s_e_p_a_r_a_t_o_r: ClassVar[str] = "/"
+    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    path_separator: ClassVar[str] = "/"
     logger: Logger | None = None
     context: StorageContext | None = None
     storage: StorageInterface | None = None
@@ -52,7 +54,7 @@ class InternalStorage:
     def delete_execution_files(self) -> list[str]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def get_context_base_u_r_i(self) -> str:
+    def get_context_base_uri(self) -> str:
         raise NotImplementedError  # TODO: translate from Java
 
     def put_file(self, input_stream: InputStream, name: str) -> str:

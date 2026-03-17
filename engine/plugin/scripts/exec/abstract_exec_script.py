@@ -17,20 +17,17 @@ from engine.core.models.tasks.output_files_interface import OutputFilesInterface
 from engine.core.models.property.property import Property
 from engine.core.runners.run_context import RunContext
 from engine.plugin.scripts.exec.scripts.models.runner_type import RunnerType
-from engine.core.models.tasks.runners.target_o_s import TargetOS
+from engine.core.models.tasks.runners.target_os import TargetOS
 from engine.core.models.tasks.task import Task
 from engine.core.models.tasks.runners.task_runner import TaskRunner
 
 
 @dataclass(slots=True, kw_only=True)
 class AbstractExecScript(ABC, Task):
-    task_runner: TaskRunner[Any] = Docker.builder()
-        .type(Docker.class.getName())
-        .pullPolicy(Property.ofValue(PullPolicy.IF_NOT_PRESENT))
-        .build()
-    interpreter: Property[list[str]] = Property.ofValue(List.of("/bin/sh", "-c"))
-    fail_fast: Property[bool] = Property.ofValue(true)
-    target_o_s: Property[TargetOS] = Property.ofValue(TargetOS.AUTO)
+    task_runner: TaskRunner[Any]
+    interpreter: Property[list[str]]
+    fail_fast: Property[bool]
+    target_os: Property[TargetOS]
     runner: RunnerType | None = None
     before_commands: Property[list[str]] | None = None
     env: Property[dict[str, str]] | None = None

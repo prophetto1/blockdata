@@ -23,9 +23,5 @@ class AbstractMetric(ABC):
     tags: Property[dict[str, str]] | None = None
 
     @abstractmethod
-    def get_type(self) -> str:
-        ...
-
-    @abstractmethod
     def to_metric(self, run_context: RunContext) -> AbstractMetricEntry[Any]:
         ...

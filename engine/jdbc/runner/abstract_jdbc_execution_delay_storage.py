@@ -13,7 +13,7 @@ from engine.core.runners.execution_delay import ExecutionDelay
 
 @dataclass(slots=True, kw_only=True)
 class AbstractJdbcExecutionDelayStorage(ABC, AbstractJdbcRepository):
-    d_a_t_e__f_i_e_l_d: ClassVar[Field[Any]] = DSL.field(DSL.quotedName("date"))
+    date_field: ClassVar[Field[Any]]
     jdbc_repository: io.kestra.jdbc.AbstractJdbcRepository[ExecutionDelay] | None = None
 
     def get(self, consumer: Consumer[ExecutionDelay]) -> None:

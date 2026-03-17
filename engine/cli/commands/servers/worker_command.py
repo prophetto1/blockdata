@@ -11,7 +11,7 @@ from engine.cli.commands.servers.abstract_server_command import AbstractServerCo
 
 @dataclass(slots=True, kw_only=True)
 class WorkerCommand(AbstractServerCommand):
-    thread: int = defaultWorkerThread()
+    thread: int
     worker_group_key: str = None
     application_context: ApplicationContext | None = None
 

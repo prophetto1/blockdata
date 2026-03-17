@@ -4,8 +4,9 @@ from __future__ import annotations
 # WARNING: Unresolved types: CharSequence, IOException, MalformedURLException, URISyntaxException
 
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
-from typing import Any
+from dataclasses import dataclass, field
+from logging import logging
+from typing import Any, ClassVar
 
 from engine.core.http.client.http_client import HttpClient
 from engine.core.http.client.configurations.http_configuration import HttpConfiguration
@@ -21,9 +22,10 @@ from engine.core.models.tasks.task import Task
 @dataclass(slots=True, kw_only=True)
 class AbstractHttp(ABC, Task):
     uri: Property[str]
-    method: Property[str] = Property.ofValue("GET")
-    content_type: Property[str] = Property.ofValue("application/json")
-    options: HttpConfiguration = HttpConfiguration.builder().build()
+    method: Property[str]
+    content_type: Property[str]
+    options: HttpConfiguration
+    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
     body: Property[str] | None = None
     form_data: Property[dict[str, Any]] | None = None
     params: Property[dict[str, Any]] | None = None

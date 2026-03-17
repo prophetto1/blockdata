@@ -3,8 +3,9 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\plugin\core\kv\GetKeys.java
 # WARNING: Unresolved types: Exception, core, io, kestra, models, tasks
 
-from dataclasses import dataclass
-from typing import Any
+from dataclasses import dataclass, field
+from logging import logging
+from typing import Any, ClassVar
 
 from engine.core.models.property.property import Property
 from engine.core.runners.run_context import RunContext
@@ -15,7 +16,8 @@ from engine.core.models.tasks.task import Task
 @dataclass(slots=True, kw_only=True)
 class GetKeys(Task):
     """List keys in the KV store by prefix."""
-    namespace: Property[str] = Property.ofExpression("{{ flow.namespace }}")
+    namespace: Property[str]
+    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
     prefix: Property[str] | None = None
 
     def run(self, run_context: RunContext) -> Output:

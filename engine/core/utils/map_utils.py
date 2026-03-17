@@ -4,12 +4,14 @@ from __future__ import annotations
 # WARNING: Unresolved types: K, V
 
 from dataclasses import dataclass, field
+from logging import logging
 from typing import Any, ClassVar
 
 
 @dataclass(slots=True, kw_only=True)
 class MapUtils:
-    c_o_n_f_l_i_c_t__a_t__k_e_y__m_s_g: ClassVar[str] = "Conflict at key: '{}', ignoring it. Map keys are: {}"
+    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    conflict_at_key_msg: ClassVar[str] = "Conflict at key: '{}', ignoring it. Map keys are: {}"
 
     @staticmethod
     def merge(a: dict[str, Any], b: dict[str, Any]) -> dict[str, Any]:

@@ -16,7 +16,7 @@ from engine.core.models.tasks.task import Task
 class Concat(Task):
     """Concatenate files from Kestra internal storage."""
     files: Any
-    extension: Property[str] = Property.ofValue(".tmp")
+    extension: Property[str]
     separator: Property[str] | None = None
 
     def run(self, run_context: RunContext) -> Concat.Output:

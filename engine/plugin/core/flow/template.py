@@ -3,8 +3,9 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\plugin\core\flow\Template.java
 # WARNING: Unresolved types: ApplicationContext, StartupEvent, TriFunction, core, io, kestra, models, tasks, templates
 
-from dataclasses import dataclass
-from typing import Any, Optional, Protocol
+from dataclasses import dataclass, field
+from logging import logging
+from typing import Any, ClassVar, Optional, Protocol
 
 from engine.core.models.executions.execution import Execution
 from engine.core.models.flows.flow import Flow
@@ -26,6 +27,7 @@ class Template(Task):
     """Insert a reusable flow template (deprecated)."""
     namespace: str
     template_id: str
+    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
     errors: list[Task] | None = None
     _finally: list[Task] | None = None
     tenant_id: str | None = None

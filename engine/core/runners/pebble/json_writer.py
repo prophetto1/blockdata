@@ -11,8 +11,8 @@ from engine.core.runners.pebble.output_writer import OutputWriter
 
 @dataclass(slots=True, kw_only=True)
 class JsonWriter(OutputWriter):
-    m_a_p_p_e_r: ClassVar[ObjectMapper] = JacksonMapper.ofJson()
-    string_writer: StringWriter = new StringWriter()
+    mapper: ClassVar[ObjectMapper]
+    string_writer: StringWriter
 
     def write_specialized(self, i: int) -> None:
         raise NotImplementedError  # TODO: translate from Java

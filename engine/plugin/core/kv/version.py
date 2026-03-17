@@ -6,8 +6,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-from engine.core.storages.kv.k_v_entry import KVEntry
-from engine.core.storages.kv.k_v_store import KVStore
+from engine.core.storages.kv.kv_entry import KVEntry
+from engine.core.storages.kv.kv_store import KVStore
 from engine.plugin.core.kv.kv_purge_behavior import KvPurgeBehavior
 
 

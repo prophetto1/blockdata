@@ -3,9 +3,10 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\plugins\LocalPluginManager.java
 # WARNING: Unresolved types: Provider
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from logging import logging
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
 
 from engine.core.plugins.maven_plugin_downloader import MavenPluginDownloader
 from engine.core.contexts.maven_plugin_repository_config import MavenPluginRepositoryConfig
@@ -18,6 +19,7 @@ from engine.core.plugins.plugin_resolution_result import PluginResolutionResult
 
 @dataclass(slots=True, kw_only=True)
 class LocalPluginManager:
+    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
     plugin_registry_provider: Provider[PluginRegistry] | None = None
     maven_plugin_downloader: MavenPluginDownloader | None = None
     local_repository_path: Path | None = None

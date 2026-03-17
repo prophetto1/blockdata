@@ -9,28 +9,13 @@ from typing import Any, ClassVar
 
 @dataclass(slots=True, kw_only=True)
 class JacksonMapper:
-    m_a_p__t_y_p_e__r_e_f_e_r_e_n_c_e: ClassVar[TypeReference[dict[str, Any]]] = new TypeReference<>() {}
-    l_i_s_t__t_y_p_e__r_e_f_e_r_e_n_c_e: ClassVar[TypeReference[list[Any]]] = new TypeReference<>() {}
-    o_b_j_e_c_t__t_y_p_e__r_e_f_e_r_e_n_c_e: ClassVar[TypeReference[Any]] = new TypeReference<>() {}
-    m_a_p_p_e_r: ClassVar[ObjectMapper] = JacksonMapper.configure(
-        new ObjectMapper()
-    )
-    n_o_n__s_t_r_i_c_t__m_a_p_p_e_r: ClassVar[ObjectMapper] = MAPPER
-        .copy()
-        .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-    y_a_m_l__m_a_p_p_e_r: ClassVar[ObjectMapper] = JacksonMapper.configure(
-        new ObjectMapper(
-            YAMLFactory
-                .builder()
-                .loaderOptions(new LoaderOptions())
-                .configure(YAMLGenerator.Feature.MINIMIZE_QUOTES, true)
-                .configure(YAMLGenerator.Feature.WRITE_DOC_START_MARKER, false)
-                .configure(YAMLGenerator.Feature.USE_NATIVE_TYPE_ID, false)
-                .configure(YAMLGenerator.Feature.SPLIT_LINES, false)
-                .build()
-        )
-    )
-    i_o_n__m_a_p_p_e_r: ClassVar[ObjectMapper] = createIonObjectMapper()
+    map_type_reference: ClassVar[TypeReference[dict[str, Any]]]
+    list_type_reference: ClassVar[TypeReference[list[Any]]]
+    object_type_reference: ClassVar[TypeReference[Any]]
+    mapper: ClassVar[ObjectMapper]
+    non_strict_mapper: ClassVar[ObjectMapper]
+    yaml_mapper: ClassVar[ObjectMapper]
+    ion_mapper: ClassVar[ObjectMapper]
 
     @staticmethod
     def of_json() -> ObjectMapper:

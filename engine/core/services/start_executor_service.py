@@ -9,8 +9,8 @@ from typing import Any
 
 @dataclass(slots=True, kw_only=True)
 class StartExecutorService:
-    start_executors: list[str] = Collections.emptyList()
-    not_start_executors: list[str] = Collections.emptyList()
+    start_executors: list[str]
+    not_start_executors: list[str]
     application_context: ApplicationContext | None = None
 
     def apply_options(self, start_executors: list[str], not_start_executors: list[str]) -> None:

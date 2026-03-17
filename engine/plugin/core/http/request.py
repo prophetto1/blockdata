@@ -19,8 +19,8 @@ from engine.core.models.tasks.runnable_task import RunnableTask
 @dataclass(slots=True, kw_only=True)
 class Request(AbstractHttp):
     """Send an HTTP request and capture the response."""
-    m_a_x__o_u_t_p_u_t__b_o_d_y__b_y_t_e_s: ClassVar[int] = 19 * 1024 * 1024
-    encrypt_body: Property[bool] = Property.ofValue(false)
+    encrypt_body: Property[bool]
+    max_output_body_bytes: ClassVar[int] = 19 * 1024 * 1024
 
     def run(self, run_context: RunContext) -> Output:
         raise NotImplementedError  # TODO: translate from Java

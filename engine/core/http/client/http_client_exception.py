@@ -10,4 +10,4 @@ from typing import Any, ClassVar
 
 @dataclass(slots=True, kw_only=True)
 class HttpClientException(ABC, HttpException):
-    serial_version_u_i_d: ClassVar[int] = 1
+    serial_version_uid: ClassVar[int] = 1

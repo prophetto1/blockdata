@@ -13,7 +13,7 @@ from engine.core.storages.storage_interface import StorageInterface
 
 @dataclass(slots=True, kw_only=True)
 class StorageTestSuite(ABC):
-    c_o_n_t_e_n_t__s_t_r_i_n_g: ClassVar[str] = "Content"
+    content_string: ClassVar[str] = "Content"
     storage_interface: StorageInterface | None = None
 
     def get_path(self) -> None:
@@ -153,7 +153,7 @@ class StorageTestSuite(ABC):
     def put(self) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
-    def put__path_with_tenant_string_in_it(self) -> None:
+    def put_path_with_tenant_string_in_it(self) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
     def put_from_another_file(self) -> None:
@@ -225,7 +225,7 @@ class StorageTestSuite(ABC):
     def delete_by_prefix(self) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
-    def delete_by_prefix__path_with_tenant_string_in_it(self) -> None:
+    def delete_by_prefix_path_with_tenant_string_in_it(self) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
     def delete_by_prefix_not_found(self) -> None:

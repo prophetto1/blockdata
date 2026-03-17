@@ -35,9 +35,9 @@ class Searcheable:
 
         @dataclass(slots=True)
         class Builder:
+            sort: list[str]
             page: int = 1
             size: int = 100
-            sort: list[str] = List.of()
             searchable_extractors: dict[str, Function[Any, Any]] = field(default_factory=dict)
             sortable_extractors: dict[str, Function[Any, Comparable[Any]]] = field(default_factory=dict)
             query: str | None = None

@@ -17,7 +17,7 @@ from engine.core.models.tasks.task import Task
 class SetVariables(Task):
     """Set execution-scoped variables."""
     variables: Property[dict[str, Any]]
-    overwrite: Property[bool] = Property.ofValue(true)
+    overwrite: Property[bool]
 
     def update(self, execution: Execution, run_context: RunContext) -> Execution:
         raise NotImplementedError  # TODO: translate from Java

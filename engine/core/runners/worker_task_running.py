@@ -18,7 +18,7 @@ class WorkerTaskRunning(WorkerJobRunning):
     task_run: TaskRun
     task: Task
     run_context: RunContext
-    t_y_p_e: ClassVar[str] = "task"
+    type: ClassVar[str] = "task"
     type: str = TYPE
 
     def uid(self) -> str:

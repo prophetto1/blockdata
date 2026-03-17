@@ -18,8 +18,8 @@ from engine.core.models.tasks.task import Task
 class UploadFiles(Task):
     """Upload files into a Namespace."""
     namespace: Property[str]
-    destination: Property[str] = Property.ofValue("/")
-    conflict: Property[Namespace.Conflicts] = Property.ofValue(Namespace.Conflicts.OVERWRITE)
+    destination: Property[str]
+    conflict: Property[Namespace.Conflicts]
     files: Property[list[str]] | None = None
     files_map: Any | None = None
 

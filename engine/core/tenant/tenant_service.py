@@ -8,7 +8,7 @@ from typing import Any, ClassVar
 
 @dataclass(slots=True, kw_only=True)
 class TenantService:
-    m_a_i_n__t_e_n_a_n_t: ClassVar[str] = "main"
+    main_tenant: ClassVar[str] = "main"
 
     def resolve_tenant(self) -> str:
         raise NotImplementedError  # TODO: translate from Java

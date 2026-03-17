@@ -12,8 +12,8 @@ from engine.core.http.client.http_client import HttpClient
 
 @dataclass(slots=True, kw_only=True)
 class PluginSearchCommand(AbstractCommand):
-    m_a_p_p_e_r: ClassVar[ObjectMapper] = new ObjectMapper()
-    s_p_a_c_e: ClassVar[str] = ' '
+    mapper: ClassVar[ObjectMapper]
+    space: ClassVar[str] = ' '
     http_client: HttpClient | None = None
     search_term: str | None = None
 

@@ -12,5 +12,5 @@ from engine.core.http.http_request import HttpRequest
 
 @dataclass(slots=True, kw_only=True)
 class HttpClientRequestException(HttpClientException):
-    serial_version_u_i_d: ClassVar[int] = 1
+    serial_version_uid: ClassVar[int] = 1
     request: HttpRequest | None = None

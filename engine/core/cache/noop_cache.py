@@ -11,7 +11,7 @@ from engine.core.models.tasks.cache import Cache
 
 @dataclass(slots=True, kw_only=True)
 class NoopCache:
-    e_m_p_t_y__m_a_p: ClassVar[ConcurrentMap[Any, Any]] = new ConcurrentHashMap<>(0)
+    empty_map: ClassVar[ConcurrentMap[Any, Any]]
 
     def get_if_present(self, key: K) -> V:
         raise NotImplementedError  # TODO: translate from Java

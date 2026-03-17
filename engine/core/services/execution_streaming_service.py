@@ -3,8 +3,9 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\services\ExecutionStreamingService.java
 # WARNING: Unresolved types: ConcurrentHashMap, FluxSink, Pair, Runnable
 
-from dataclasses import dataclass
-from typing import Any
+from dataclasses import dataclass, field
+from logging import logging
+from typing import Any, ClassVar
 
 from engine.webserver.models.events.event import Event
 from engine.core.models.executions.execution import Execution
@@ -15,8 +16,9 @@ from engine.core.queues.queue_interface import QueueInterface
 
 @dataclass(slots=True, kw_only=True)
 class ExecutionStreamingService:
-    subscribers: dict[str, dict[str, Pair[FluxSink[Event[Execution]], Flow]]] = new ConcurrentHashMap<>()
-    subscriber_lock: Any = new Object()
+    subscribers: dict[str, dict[str, Pair[FluxSink[Event[Execution]], Flow]]]
+    subscriber_lock: Any
+    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
     execution_queue: QueueInterface[Execution] | None = None
     execution_service: ExecutionService | None = None
     queue_consumer: Runnable | None = None

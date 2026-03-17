@@ -16,7 +16,7 @@ from engine.core.models.tasks.task import Task
 class Delete(Task):
     """Delete a file from Kestra internal storage."""
     uri: Property[str]
-    error_on_missing: Property[bool] = Property.ofValue(false)
+    error_on_missing: Property[bool]
 
     def run(self, run_context: RunContext) -> Delete.Output:
         raise NotImplementedError  # TODO: translate from Java

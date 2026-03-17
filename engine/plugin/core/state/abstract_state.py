@@ -16,11 +16,11 @@ from engine.core.models.tasks.task import Task
 
 @dataclass(slots=True, kw_only=True)
 class AbstractState(ABC, Task):
-    t_y_p_e__r_e_f_e_r_e_n_c_e: ClassVar[TypeReference[dict[str, Any]]] = new TypeReference<>() {}
-    t_a_s_k_s__s_t_a_t_e_s: ClassVar[str] = "tasks-states"
-    name: Property[str] = Property.ofValue("default")
-    namespace: Property[bool] = Property.ofValue(false)
-    taskrun_value: Property[bool] = Property.ofValue(true)
+    type_reference: ClassVar[TypeReference[dict[str, Any]]]
+    name: Property[str]
+    namespace: Property[bool]
+    taskrun_value: Property[bool]
+    tasks_states: ClassVar[str] = "tasks-states"
 
     def get(self, run_context: RunContext) -> dict[str, Any]:
         raise NotImplementedError  # TODO: translate from Java

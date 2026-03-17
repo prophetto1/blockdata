@@ -4,6 +4,7 @@ from __future__ import annotations
 # WARNING: Unresolved types: Closeable, IOException, RemoteRepository, RepositorySystem, RepositorySystemSession
 
 from dataclasses import dataclass, field
+from logging import logging
 from typing import Any, ClassVar
 
 from engine.core.contexts.maven_plugin_repository_config import MavenPluginRepositoryConfig
@@ -13,13 +14,14 @@ from engine.core.plugins.plugin_resolution_result import PluginResolutionResult
 
 @dataclass(slots=True, kw_only=True)
 class MavenPluginDownloader:
-    d_e_f_a_u_l_t__l_o_c_a_l__r_e_p_o_s_i_t_o_r_y__p_r_e_f_i_x: ClassVar[str] = "kestra-plugins-m2-repository"
-    d_e_f_a_u_l_t__r_e_p_o_s_i_t_o_r_y__t_y_p_e: ClassVar[str] = "default"
-    h_t_t_p__p_r_o_x_y__h_o_s_t: ClassVar[str] = System.getProperty("http.proxyHost")
-    h_t_t_p__p_r_o_x_y__p_o_r_t: ClassVar[str] = System.getProperty("http.proxyPort")
-    h_t_t_p_s__p_r_o_x_y__h_o_s_t: ClassVar[str] = System.getProperty("https.proxyHost")
-    h_t_t_p_s__p_r_o_x_y__p_o_r_t: ClassVar[str] = System.getProperty("https.proxyPort")
-    l_a_t_e_s_t: ClassVar[str] = "latest"
+    http_proxy_host: ClassVar[str]
+    http_proxy_port: ClassVar[str]
+    https_proxy_host: ClassVar[str]
+    https_proxy_port: ClassVar[str]
+    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    default_local_repository_prefix: ClassVar[str] = "kestra-plugins-m2-repository"
+    default_repository_type: ClassVar[str] = "default"
+    latest: ClassVar[str] = "latest"
     repository_configs: list[MavenPluginRepositoryConfig] | None = None
     system: RepositorySystem | None = None
     session: RepositorySystemSession | None = None

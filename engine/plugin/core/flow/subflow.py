@@ -31,10 +31,10 @@ from engine.core.models.executions.variables import Variables
 class Subflow(Task):
     """Call another flow as a subflow."""
     flow_id: str
-    p_l_u_g_i_n__f_l_o_w__o_u_t_p_u_t_s__e_n_a_b_l_e_d: ClassVar[str] = "outputs.enabled"
+    inherit_labels: Property[bool]
+    plugin_flow_outputs_enabled: ClassVar[str] = "outputs.enabled"
     wait: bool = True
     transmit_failed: bool = True
-    inherit_labels: Property[bool] = Property.ofValue(false)
     restart_behavior: RestartBehavior = RestartBehavior.RETRY_FAILED
     namespace: str | None = None
     revision: int | None = None
