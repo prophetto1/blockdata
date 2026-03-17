@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react';
 import { Combobox, createListCollection } from '@ark-ui/react/combobox';
-import { Menu02Icon, SparklesIcon, Moon02Icon, Sun03Icon } from '@hugeicons/core-free-icons';
+import { Menu02Icon, SparklesIcon, Moon02Icon, Sun03Icon, Search01Icon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { useHeaderCenter } from '@/components/shell/HeaderCenterContext';
 import { ProjectSwitcher } from '@/components/shell/ProjectSwitcher';
 import { useTheme } from '@/hooks/useTheme';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 import {
   ICON_CONTEXT_SIZE,
@@ -48,7 +49,9 @@ export function TopCommandBar({
 }: TopCommandBarProps) {
   const { center, shellTopSlots } = useHeaderCenter();
   const { isDark, toggle: toggleColorScheme } = useTheme();
+  const isMobile = useIsMobile();
   const [searchValue, setSearchValue] = useState('');
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const searchCollection = useMemo(
     () => createListCollection({ items: TOP_SEARCH_OPTIONS }),
     [],
@@ -61,7 +64,7 @@ export function TopCommandBar({
   const utilityIconSize = ICON_SIZES[ICON_CONTEXT_SIZE[ICON_STANDARD.utilityTopRight.context]];
   const utilityIconStroke = ICON_STROKES[ICON_STANDARD.utilityTopRight.stroke];
 
-  const searchNode = !shellGuides && !hideSearch ? (
+  const searchCombobox = (
     <Combobox.Root
       className="top-command-bar-search-wrap"
       collection={searchCollection}
@@ -85,6 +88,8 @@ export function TopCommandBar({
           className="top-command-bar-search-input"
           placeholder="Search"
           aria-label="Search"
+          autoFocus={mobileSearchOpen}
+          onBlur={() => { if (isMobile) setMobileSearchOpen(false); }}
         />
       </Combobox.Control>
       <Combobox.Positioner className="top-command-bar-search-positioner">
@@ -107,7 +112,24 @@ export function TopCommandBar({
         </Combobox.Content>
       </Combobox.Positioner>
     </Combobox.Root>
-  ) : null;
+  );
+
+  const searchNode = !shellGuides && !hideSearch
+    ? isMobile
+      ? mobileSearchOpen
+        ? searchCombobox
+        : (
+          <button
+            type="button"
+            aria-label="Search"
+            onClick={() => setMobileSearchOpen(true)}
+            className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+          >
+            <HugeiconsIcon icon={Search01Icon} size={18} strokeWidth={1.8} />
+          </button>
+        )
+      : searchCombobox
+    : null;
 
   const className = `top-command-bar${shellGuides ? ' top-command-bar--shell-guides' : ' top-command-bar--minimal'}`;
   const leftNode = shellTopSlots?.left ?? null;
@@ -132,9 +154,11 @@ export function TopCommandBar({
         {shellGuides ? leftNode : null}
         {!hideProjectSwitcher && <ProjectSwitcher />}
       </div>
-      <div className="top-command-bar-center">
-        {resolvedMiddleNode}
-      </div>
+      {!isMobile && (
+        <div className="top-command-bar-center">
+          {resolvedMiddleNode}
+        </div>
+      )}
       {searchNode ? (
         <div className="top-command-bar-search">
           {searchNode}

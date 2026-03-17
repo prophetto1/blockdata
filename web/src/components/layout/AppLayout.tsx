@@ -246,15 +246,16 @@ function AppShellInner() {
     '--app-shell-header-height': `${headerHeight}px`,
   } as CSSProperties;
 
-  const shellMainStyle: CSSProperties = isMobile
+  const useMobileFlex = isMobile && !lockMainScroll;
+  const shellMainStyle: CSSProperties = useMobileFlex
     ? {
         flex: '1 1 0%',
         minHeight: 0,
         paddingTop: `${headerHeight}px`,
         paddingInlineStart: `${mainInsetStart}px`,
         paddingInlineEnd: `${mainInsetEnd}px`,
-        overflow: lockMainScroll ? 'hidden' : 'auto',
-        overscrollBehavior: lockMainScroll ? 'none' : 'auto',
+        overflow: 'auto',
+        overscrollBehavior: 'auto',
         WebkitOverflowScrolling: 'touch',
         backgroundColor: 'var(--background)',
       }
@@ -279,7 +280,7 @@ function AppShellInner() {
     <>
       <div
         style={shellVars}
-        className={`relative h-dvh overflow-hidden${isMobile ? ' flex flex-col' : ''}`}
+        className={`relative h-dvh overflow-hidden${useMobileFlex ? ' flex flex-col' : ''}`}
       >
         <header
           style={{

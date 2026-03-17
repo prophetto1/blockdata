@@ -13,6 +13,7 @@ import {
   MenuRoot,
   MenuTrigger,
 } from '@/components/ui/menu';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 import {
   activateTabInPane,
@@ -178,6 +179,7 @@ function readPersistedPanes(saveKey: string, isValidTab: (tabId: string) => bool
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export const Workbench = forwardRef<WorkbenchHandle, WorkbenchProps>(function Workbench({ tabs, defaultPanes, saveKey, renderContent, className, toolbarActions, hideToolbar = false, dynamicTabLabel, onPanesChange, transformPanes, maxColumns, minColumns, maxTabsPerPane, disableDrag = false, lockLayout = false }, ref) {
+  const isMobile = useIsMobile();
   const fallbackTab = tabs[0]?.id ?? '';
 
   const staticTabIds = useMemo(() => new Set(tabs.map((tab) => tab.id)), [tabs]);
@@ -593,6 +595,38 @@ export const Workbench = forwardRef<WorkbenchHandle, WorkbenchProps>(function Wo
     () => panes.find((pane) => pane.id === focusedPaneId) ?? panes[0] ?? null,
     [focusedPaneId, panes],
   );
+
+  // ── Mobile: single-pane tab switcher ───────────────────────────────────
+
+  const [mobileTab, setMobileTab] = useState(fallbackTab);
+  const resolvedMobileTab = tabs.some((t) => t.id === mobileTab) ? mobileTab : fallbackTab;
+
+  if (isMobile) {
+    return (
+      <div className={['workbench-shell flex flex-col', className].filter(Boolean).join(' ')}>
+        <div className="flex shrink-0 border-b border-border bg-card">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              className={`flex-1 px-2 py-2 text-xs font-medium transition-colors ${
+                resolvedMobileTab === tab.id
+                  ? 'border-b-2 border-primary text-foreground'
+                  : 'text-muted-foreground'
+              }`}
+              onClick={() => setMobileTab(tab.id)}
+            >
+              <span className="mx-auto mb-0.5 inline-flex"><tab.icon size={14} /></span>
+              {tab.label}
+            </button>
+          ))}
+        </div>
+        <div className="min-h-0 flex-1 overflow-auto">
+          {renderContent(resolvedMobileTab)}
+        </div>
+      </div>
+    );
+  }
 
   // ── Render ──────────────────────────────────────────────────────────────
 
