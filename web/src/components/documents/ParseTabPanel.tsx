@@ -11,8 +11,8 @@ import type { ProjectDocumentRow } from '@/lib/projectDetailHelpers';
 import { cn } from '@/lib/utils';
 import {
   findAppliedProfile,
-  getCompatibleProfiles,
-  getDocumentParseTrack,
+  isParseSupported,
+  type ParseTrack,
   type ParsingProfileOption,
 } from './parseProfileSupport';
 
@@ -75,7 +75,7 @@ function ActionMenu({ items }: { items: { label: string; onClick: () => void; da
 // ─── useParseTab ─────────────────────────────────────────────────────────────
 
 /** Hook that manages all parse-tab state. Used by both the toolbar and row actions. */
-export function useParseTab(selectedDoc: ProjectDocumentRow | null) {
+export function useParseTab(activeTrack: ParseTrack, selectedDoc: ProjectDocumentRow | null) {
   const [allProfiles, setAllProfiles] = useState<ParsingProfileOption[]>([]);
   const [selectedProfileId, setSelectedProfileId] = useState<string>('');
   const [configText, setConfigText] = useState('{}');
@@ -90,14 +90,14 @@ export function useParseTab(selectedDoc: ProjectDocumentRow | null) {
   }, [configText]);
 
   const profiles = useMemo(
-    () => getCompatibleProfiles(allProfiles, selectedDoc),
-    [allProfiles, selectedDoc],
+    () => allProfiles.filter((p) => p.parser === activeTrack),
+    [allProfiles, activeTrack],
   );
 
   const selectedParser = useMemo(() => {
     const profile = allProfiles.find((p) => p.id === selectedProfileId);
-    return profile?.parser ?? getDocumentParseTrack(selectedDoc);
-  }, [allProfiles, selectedDoc, selectedProfileId]);
+    return profile?.parser ?? activeTrack;
+  }, [allProfiles, activeTrack, selectedProfileId]);
 
   const batch = useBatchParse({
     profileId: selectedProfileId,
@@ -182,7 +182,7 @@ export function useParseTab(selectedDoc: ProjectDocumentRow | null) {
     profiles,
     selectedProfileId,
     selectedParser,
-    currentTrack: getDocumentParseTrack(selectedDoc),
+    activeTrack,
     handleProfileChange,
     batch,
     jsonModal,
@@ -247,10 +247,12 @@ export function ParseRowActions({
   onDoclingJsonPreview?: (doc: ProjectDocumentRow) => void;
 }) {
   const { batch } = parseTab;
-  const canParse =
+  const parseable = isParseSupported(doc);
+  const canParse = parseable && (
     doc.status === 'uploaded' ||
     doc.status === 'conversion_failed' ||
-    doc.status === 'parse_failed';
+    doc.status === 'parse_failed'
+  );
   const isParsed = doc.status === 'parsed';
 
   const menuItems: { label: string; onClick: () => void; danger?: boolean }[] = [];
@@ -285,6 +287,14 @@ export function ParseRowActions({
         >
           <IconPlayerPlay size={12} />
         </button>
+      )}
+      {!parseable && doc.status === 'uploaded' && (
+        <span
+          className="flex h-5 w-5 items-center justify-center text-muted-foreground/40"
+          title="No parser available for this file type"
+        >
+          <IconPlayerPlay size={12} />
+        </span>
       )}
       {menuItems.length > 0 && <ActionMenu items={menuItems} />}
     </div>

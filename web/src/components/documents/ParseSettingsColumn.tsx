@@ -43,7 +43,6 @@ export function ParseSettingsColumn({
         <div className="grid min-h-10 grid-cols-[1fr_auto] items-center border-b border-border bg-card px-2">
           <div className="flex min-w-0 items-center gap-2">
             <span className="truncate text-sm font-semibold text-foreground">Settings</span>
-            <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Docling</span>
           </div>
         </div>
 

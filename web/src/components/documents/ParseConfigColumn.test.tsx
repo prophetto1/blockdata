@@ -68,6 +68,7 @@ describe('ParseConfigColumn', () => {
     render(
       <ParseConfigColumn
         docs={[baseDoc]}
+        trackDocs={[baseDoc]}
         selected={new Set()}
         selectedDoc={baseDoc}
         parseTab={parseTab as never}
@@ -108,6 +109,7 @@ describe('ParseConfigColumn', () => {
     render(
       <ParseConfigColumn
         docs={[parsedDoc]}
+        trackDocs={[parsedDoc]}
         selected={new Set()}
         selectedDoc={parsedDoc}
         parseTab={parseTab as never}

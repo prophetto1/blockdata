@@ -10,7 +10,7 @@ export default function ParsePage() {
           ref={workbenchRef}
           tabs={tabs}
           defaultPanes={defaultPanes}
-          saveKey="parse-documents-v3"
+          saveKey="parse-documents-v4"
           renderContent={renderContent}
           className="parse-workbench"
           hideToolbar

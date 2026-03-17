@@ -40,7 +40,7 @@ import {
   type ParseArtifactBundle,
 } from './parseArtifacts';
 import type { DoclingNativeItem } from '@/lib/doclingNativeItems';
-import { getAppliedProfileName, getDocumentParseTrack } from '@/components/documents/parseProfileSupport';
+import { filterDocsByTrack, getAppliedProfileName, getDocumentParseTrack, type ParseTrack } from '@/components/documents/parseProfileSupport';
 
 // ─── Data fetchers ───────────────────────────────────────────────────────────
 
@@ -831,39 +831,58 @@ export const PARSE_TABS: WorkbenchTab[] = [
   { id: 'parse-compact', label: 'File List', icon: IconFileCode },
   { id: 'config', label: 'Parse Config', icon: IconSettings },
   { id: 'parse-settings', label: 'Parse Settings', icon: IconSettings },
-  { id: 'docling-md', label: 'Parsed Markdown', icon: IconFileText },
-  { id: 'blocks', label: 'Parsed Blocks', icon: IconLayoutList },
-  { id: 'docling-json', label: 'Downloads', icon: IconBraces },
-];
-
-export const TREE_SITTER_TABS: WorkbenchTab[] = [
-  { id: 'parse-compact', label: 'File List', icon: IconFileCode },
-  { id: 'config', label: 'Parse Config', icon: IconSettings },
-  { id: 'parse-settings', label: 'Parse Settings', icon: IconSettings },
-  { id: 'ts-ast', label: 'AST', icon: IconCode },
-  { id: 'ts-symbols', label: 'Symbols', icon: IconLayoutList },
-  { id: 'ts-downloads', label: 'Downloads', icon: IconDownload },
+  { id: 'preview-main', label: 'Preview', icon: IconFileText },
+  { id: 'preview-detail', label: 'Detail', icon: IconLayoutList },
+  { id: 'preview-downloads', label: 'Downloads', icon: IconDownload },
 ];
 
 export const PARSE_DEFAULT_PANES: Pane[] = normalizePaneWidths([
   { id: 'pane-parse', tabs: ['parse-compact'], activeTab: 'parse-compact', width: 32 },
   { id: 'pane-config', tabs: ['config', 'parse-settings'], activeTab: 'config', width: 24 },
-  { id: 'pane-preview', tabs: ['docling-md', 'blocks', 'docling-json'], activeTab: 'docling-md', width: 44 },
+  { id: 'pane-preview', tabs: ['preview-main', 'preview-detail', 'preview-downloads'], activeTab: 'preview-main', width: 44 },
 ]);
 
-export const TREE_SITTER_DEFAULT_PANES: Pane[] = normalizePaneWidths([
-  { id: 'pane-parse', tabs: ['parse-compact'], activeTab: 'parse-compact', width: 32 },
-  { id: 'pane-config', tabs: ['config', 'parse-settings'], activeTab: 'config', width: 24 },
-  { id: 'pane-preview', tabs: ['ts-ast', 'ts-symbols', 'ts-downloads'], activeTab: 'ts-ast', width: 44 },
-]);
+// ─── Track switcher ──────────────────────────────────────────────────────────
 
-export function getParseWorkbenchLayout(activeDoc: ProjectDocumentRow | null): {
-  tabs: WorkbenchTab[];
-  defaultPanes: Pane[];
-} {
-  return getDocumentParseTrack(activeDoc) === 'tree_sitter'
-    ? { tabs: TREE_SITTER_TABS, defaultPanes: TREE_SITTER_DEFAULT_PANES }
-    : { tabs: PARSE_TABS, defaultPanes: PARSE_DEFAULT_PANES };
+function TrackSwitcher({
+  activeTrack,
+  onTrackChange,
+  doclingCount,
+  codeCount,
+}: {
+  activeTrack: ParseTrack;
+  onTrackChange: (track: ParseTrack) => void;
+  doclingCount: number;
+  codeCount: number;
+}) {
+  return (
+    <div className="flex items-center gap-1 border-b border-border px-2 py-1.5">
+      <button
+        type="button"
+        onClick={() => onTrackChange('docling')}
+        className={cn(
+          'rounded-md px-3 py-1 text-xs font-medium transition-colors',
+          activeTrack === 'docling'
+            ? 'bg-primary text-primary-foreground'
+            : 'text-muted-foreground hover:bg-accent hover:text-foreground',
+        )}
+      >
+        Documents ({doclingCount})
+      </button>
+      <button
+        type="button"
+        onClick={() => onTrackChange('tree_sitter')}
+        className={cn(
+          'rounded-md px-3 py-1 text-xs font-medium transition-colors',
+          activeTrack === 'tree_sitter'
+            ? 'bg-primary text-primary-foreground'
+            : 'text-muted-foreground hover:bg-accent hover:text-foreground',
+        )}
+      >
+        Code ({codeCount})
+      </button>
+    </div>
+  );
 }
 
 // ─── Hook ────────────────────────────────────────────────────────────────────
@@ -879,15 +898,28 @@ export function useParseWorkbench() {
   const docState = useProjectDocuments(resolvedProjectId);
   const { docs, loading, error, selected, toggleSelect, toggleSelectAll, clearSelection, allSelected, someSelected, refreshDocs } = docState;
 
+  const [activeTrack, setActiveTrack] = useState<ParseTrack>('docling');
   const [activeDocUid, setActiveDocUid] = useState<string | null>(null);
   const [activeArtifacts, setActiveArtifacts] = useState<ParseArtifactBundle | null>(null);
   const [mobileSheet, setMobileSheet] = useState<'docling-md' | 'blocks' | 'downloads' | null>(null);
+
+  const trackDocs = useMemo(() => filterDocsByTrack(docs, activeTrack), [docs, activeTrack]);
+  const doclingDocs = useMemo(() => filterDocsByTrack(docs, 'docling'), [docs]);
+  const codeDocs = useMemo(() => filterDocsByTrack(docs, 'tree_sitter'), [docs]);
+
+  // Clear activeDoc when switching tracks if the selected doc isn't in the new track
+  useEffect(() => {
+    if (activeDocUid) {
+      const stillValid = trackDocs.some((d) => d.source_uid === activeDocUid);
+      if (!stillValid) setActiveDocUid(null);
+    }
+  }, [activeTrack, trackDocs, activeDocUid]);
+
   const activeDoc = useMemo(
     () => docs.find((d) => d.source_uid === activeDocUid) ?? null,
     [docs, activeDocUid],
   );
-  const parseTab = useParseTab(activeDoc);
-  const layout = useMemo(() => getParseWorkbenchLayout(activeDoc), [activeDoc]);
+  const parseTab = useParseTab(activeTrack, activeDoc);
 
   useEffect(() => {
     if (!activeDoc) {
@@ -994,8 +1026,15 @@ export function useParseWorkbench() {
                   onDocClick={handleDocClick}
                 />
               ) : (
+                <>
+                <TrackSwitcher
+                  activeTrack={activeTrack}
+                  onTrackChange={setActiveTrack}
+                  doclingCount={doclingDocs.length}
+                  codeCount={codeDocs.length}
+                />
                 <DocumentFileTable
-                  docs={docs}
+                  docs={trackDocs}
                   loading={loading}
                   error={error}
                   selected={selected}
@@ -1031,6 +1070,7 @@ export function useParseWorkbench() {
                     tabId === 'parse-compact' && 'parse-documents-table-compact',
                   )}
                 />
+                </>
               )}
             </div>
           </div>
@@ -1043,6 +1083,7 @@ export function useParseWorkbench() {
       return (
         <ParseConfigColumn
           docs={docs}
+          trackDocs={trackDocs}
           selected={selected}
           selectedDoc={activeDoc}
           parseTab={parseTab}
@@ -1064,32 +1105,33 @@ export function useParseWorkbench() {
       );
     }
 
-    if (tabId === 'docling-md') {
-      return <DoclingMdTab doc={activeDoc} artifacts={activeArtifacts} />;
+    if (tabId === 'preview-main') {
+      return activeTrack === 'tree_sitter'
+        ? <TreeSitterAstTab doc={activeDoc} artifacts={activeArtifacts} />
+        : <DoclingMdTab doc={activeDoc} artifacts={activeArtifacts} />;
     }
 
-    if (tabId === 'blocks') {
-      return <BlocksTab doc={activeDoc} artifacts={activeArtifacts} />;
+    if (tabId === 'preview-detail') {
+      return activeTrack === 'tree_sitter'
+        ? <TreeSitterSymbolsTab doc={activeDoc} artifacts={activeArtifacts} />
+        : <BlocksTab doc={activeDoc} artifacts={activeArtifacts} />;
     }
 
-    if (tabId === 'docling-json') {
-      return <DownloadsTab doc={activeDoc} artifacts={activeArtifacts} />;
-    }
-
-    if (tabId === 'ts-ast') {
-      return <TreeSitterAstTab doc={activeDoc} artifacts={activeArtifacts} />;
-    }
-
-    if (tabId === 'ts-symbols') {
-      return <TreeSitterSymbolsTab doc={activeDoc} artifacts={activeArtifacts} />;
-    }
-
-    if (tabId === 'ts-downloads') {
-      return <TreeSitterDownloadsTab doc={activeDoc} artifacts={activeArtifacts} />;
+    if (tabId === 'preview-downloads') {
+      return activeTrack === 'tree_sitter'
+        ? <TreeSitterDownloadsTab doc={activeDoc} artifacts={activeArtifacts} />
+        : <DownloadsTab doc={activeDoc} artifacts={activeArtifacts} />;
     }
 
     return null;
   }, [docs, loading, error, selected, toggleSelect, toggleSelectAll, clearSelection, allSelected, someSelected, activeDocUid, activeDoc, activeArtifacts, handleDocClick, parseTab, parseExtraColumns, handleReset, handleDelete]);
+
+  const dynamicTabLabel = useCallback((tabId: string): string | null => {
+    if (tabId === 'preview-main') return activeTrack === 'tree_sitter' ? 'AST' : 'Parsed Markdown';
+    if (tabId === 'preview-detail') return activeTrack === 'tree_sitter' ? 'Symbols' : 'Parsed Blocks';
+    if (tabId === 'preview-downloads') return 'Downloads';
+    return null;
+  }, [activeTrack]);
 
   const mobilePreviewPanel = isMobile && mobileSheet ? (
     <div className="fixed inset-x-0 bottom-0 z-[105] flex flex-col bg-background" style={{ top: 'var(--app-shell-header-height)' }}>
@@ -1105,7 +1147,7 @@ export function useParseWorkbench() {
     renderContent,
     workbenchRef,
     mobilePreviewPanel,
-    tabs: layout.tabs,
-    defaultPanes: layout.defaultPanes,
+    tabs: PARSE_TABS,
+    defaultPanes: PARSE_DEFAULT_PANES,
   };
 }

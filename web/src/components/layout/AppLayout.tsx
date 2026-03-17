@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { Layout03Icon } from '@hugeicons/core-free-icons';
-import { HugeiconsIcon } from '@hugeicons/react';
 import { IconLayoutSidebarRightExpand, IconLayoutSidebarRightCollapse } from '@tabler/icons-react';
 import { useAuth } from '@/auth/AuthContext';
 import { TopCommandBar } from '@/components/shell/TopCommandBar';
@@ -202,6 +200,7 @@ function AppShellInner() {
   const isAssetsRoute = location.pathname === '/app/assets';
   const isParseRoute = location.pathname === '/app/parse';
   const isExtractRoute = location.pathname === '/app/extract';
+  const isConvertRoute = location.pathname === '/app/convert';
   const isSchemasRoute = /^\/app\/schemas(?:\/|$)/.test(location.pathname);
   const isWorkspaceRoute = /^\/app\/workspace(?:\/|$)/.test(location.pathname);
   const workspaceShellMode = isWorkspaceRoute && !workspaceRestored;
@@ -223,6 +222,7 @@ function AppShellInner() {
     || isAssetsRoute
     || isParseRoute
     || isExtractRoute
+    || isConvertRoute
     || isSchemasRoute
     || isWorkspaceRoute
     || isTestIntegrationsRoute

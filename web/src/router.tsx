@@ -35,6 +35,7 @@ import ProjectAssetsPage from '@/pages/ProjectAssetsPage';
 import ParsePage from '@/pages/ParsePage';
 import { Component as Workspace } from '@/pages/Workspace';
 import ExtractPage from '@/pages/ExtractPage';
+import ConvertPage from '@/pages/ConvertPage';
 import TransformPage from '@/pages/TransformPage';
 import LoadPage from '@/pages/LoadPage';
 import AppHome from '@/pages/AppHome';
@@ -144,6 +145,7 @@ export const router = createBrowserRouter([
           { path: '/app/parse', element: <ParsePage /> },
           { path: '/app/workspace', element: <Workspace /> },
           { path: '/app/extract', element: <ExtractPage /> },
+          { path: '/app/convert', element: <ConvertPage /> },
           { path: '/app/tests', element: <TestsPage /> },
           { path: '/app/test-integrations', element: <Navigate to="/app/superuser/test-integrations" replace /> },
           { path: '/app/marketplace/integrations', element: <IntegrationsCatalog /> },

@@ -36,6 +36,22 @@ function getConfigCandidates(doc: ProjectDocumentRow): Array<Record<string, unkn
   ];
 }
 
+const DOCLING_SOURCE_TYPES = new Set([
+  'md', 'docx', 'pdf', 'pptx', 'xlsx', 'html', 'csv', 'txt',
+  'rst', 'latex', 'odt', 'epub', 'rtf', 'org', 'asciidoc', 'vtt',
+]);
+
+export function filterDocsByTrack(
+  docs: ProjectDocumentRow[],
+  track: ParseTrack,
+): ProjectDocumentRow[] {
+  return docs.filter((doc) => getDocumentParseTrack(doc) === track);
+}
+
+export function isParseSupported(doc: Pick<ProjectDocumentRow, 'source_type'>): boolean {
+  return CODE_SOURCE_TYPES.has(doc.source_type) || DOCLING_SOURCE_TYPES.has(doc.source_type);
+}
+
 export function getDocumentParseTrack(doc: Pick<ProjectDocumentRow, 'source_type' | 'conv_parsing_tool'> | null | undefined): ParseTrack {
   if (doc?.conv_parsing_tool === 'tree_sitter') return 'tree_sitter';
   if (doc?.conv_parsing_tool === 'docling') return 'docling';

@@ -5,10 +5,11 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import type { ProjectDocumentRow } from '@/lib/projectDetailHelpers';
 import { cn } from '@/lib/utils';
 import { useParseTab } from './ParseTabPanel';
-import { getAppliedProfileName, getCompatibleProfiles, getDocumentParseTrack } from './parseProfileSupport';
+import { getAppliedProfileName, getDocumentParseTrack } from './parseProfileSupport';
 
 type ParseConfigColumnProps = {
   docs: ProjectDocumentRow[];
+  trackDocs: ProjectDocumentRow[];
   selected: Set<string>;
   selectedDoc: ProjectDocumentRow | null;
   parseTab: ReturnType<typeof useParseTab>;
@@ -64,20 +65,20 @@ function ActionButton({
 
 export function ParseConfigColumn({
   docs,
+  trackDocs,
   selected,
   selectedDoc,
   parseTab,
   onReset,
   onDelete,
 }: ParseConfigColumnProps) {
-  const { profiles, selectedProfileId, selectedParser, handleProfileChange, batch } = parseTab;
+  const { profiles, selectedProfileId, selectedParser, activeTrack, handleProfileChange, batch } = parseTab;
 
   const isParsedSelection = selectedDoc?.status === 'parsed';
   const appliedProfileName = getAppliedProfileName(selectedDoc);
-  const visibleTrack = getDocumentParseTrack(selectedDoc);
-  const visibleProfiles = getCompatibleProfiles(profiles, selectedDoc);
+  const visibleTrack = activeTrack;
 
-  const selectedProfile = visibleProfiles.find((profile) => profile.id === selectedProfileId) ?? null;
+  const selectedProfile = profiles.find((profile) => profile.id === selectedProfileId) ?? null;
   const selectedProfileConfig = (selectedProfile?.config ?? {}) as Record<string, unknown>;
   const selectedProfileDescription = getProfileDescription(selectedProfileConfig);
   const pipelineLabel = getPipelineLabel(selectedProfileConfig);
@@ -108,9 +109,9 @@ export function ParseConfigColumn({
     .filter((doc) => doc.status === 'parsed' || doc.status === 'conversion_failed' || doc.status === 'parse_failed')
     .map((doc) => doc.source_uid);
 
-  const parsedCount = docs.filter((doc) => doc.status === 'parsed').length;
-  const convertingCount = docs.filter((doc) => doc.status === 'converting').length;
-  const parseProgress = docs.length > 0 ? (parsedCount / docs.length) * 100 : 0;
+  const parsedCount = trackDocs.filter((doc) => doc.status === 'parsed').length;
+  const convertingCount = trackDocs.filter((doc) => doc.status === 'converting').length;
+  const parseProgress = trackDocs.length > 0 ? (parsedCount / trackDocs.length) * 100 : 0;
 
   return (
     <div className="h-full w-full min-h-0 p-1">
@@ -135,7 +136,7 @@ export function ParseConfigColumn({
             <div className="mb-2 flex items-center justify-between gap-2">
               <div className="text-sm font-bold text-foreground">Progress</div>
               <div className="text-xs text-muted-foreground">
-                {parsedCount}/{docs.length} parsed
+                {parsedCount}/{trackDocs.length} parsed
               </div>
             </div>
             <div className="mb-2 h-1.5 overflow-hidden rounded-full bg-muted">
@@ -189,7 +190,7 @@ export function ParseConfigColumn({
                     onChange={(event) => handleProfileChange(event.target.value)}
                     className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm text-foreground"
                   >
-                    {visibleProfiles.map((profile) => (
+                    {profiles.map((profile) => (
                       <option key={profile.id} value={profile.id}>
                         {getProfileName(profile.config as Record<string, unknown>)}
                       </option>
