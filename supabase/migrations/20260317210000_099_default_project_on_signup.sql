@@ -20,7 +20,7 @@ BEGIN
         display_name = COALESCE(EXCLUDED.display_name, public.profiles.display_name);
 
   -- 2. Create a Default Project so the user is never in a project-less state
-  INSERT INTO public.projects (owner_id, project_name, description)
+  INSERT INTO public.user_projects (owner_id, project_name, description)
   VALUES (NEW.id, 'Default Project', 'Auto-created on signup')
   ON CONFLICT (owner_id, project_name) DO NOTHING;
 
@@ -29,10 +29,10 @@ END;
 $$;
 
 -- Backfill: create Default Project for any existing users who have none
-INSERT INTO public.projects (owner_id, project_name, description)
+INSERT INTO public.user_projects (owner_id, project_name, description)
 SELECT u.id, 'Default Project', 'Auto-created — backfill'
 FROM auth.users u
 WHERE NOT EXISTS (
-  SELECT 1 FROM public.projects p WHERE p.owner_id = u.id
+  SELECT 1 FROM public.user_projects p WHERE p.owner_id = u.id
 )
 ON CONFLICT (owner_id, project_name) DO NOTHING;

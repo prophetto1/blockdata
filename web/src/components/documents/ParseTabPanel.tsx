@@ -9,15 +9,15 @@ import { useBatchParse } from '@/hooks/useBatchParse';
 import { supabase } from '@/lib/supabase';
 import type { ProjectDocumentRow } from '@/lib/projectDetailHelpers';
 import { cn } from '@/lib/utils';
+import {
+  findAppliedProfile,
+  getCompatibleProfiles,
+  getDocumentParseTrack,
+  type ParsingProfileOption,
+} from './parseProfileSupport';
 
 const DOCUMENTS_BUCKET =
   (import.meta.env.VITE_DOCUMENTS_BUCKET as string | undefined) ?? 'documents';
-
-type ParsingProfile = {
-  id: string;
-  parser: string;
-  config: Record<string, unknown>;
-};
 
 function getBaseName(locator: string | null | undefined): string | null {
   if (!locator) return null;
@@ -75,8 +75,8 @@ function ActionMenu({ items }: { items: { label: string; onClick: () => void; da
 // ─── useParseTab ─────────────────────────────────────────────────────────────
 
 /** Hook that manages all parse-tab state. Used by both the toolbar and row actions. */
-export function useParseTab() {
-  const [profiles, setProfiles] = useState<ParsingProfile[]>([]);
+export function useParseTab(selectedDoc: ProjectDocumentRow | null) {
+  const [allProfiles, setAllProfiles] = useState<ParsingProfileOption[]>([]);
   const [selectedProfileId, setSelectedProfileId] = useState<string>('');
   const [configText, setConfigText] = useState('{}');
   const [jsonModal, setJsonModal] = useState<{ title: string; content: string } | null>(null);
@@ -89,10 +89,15 @@ export function useParseTab() {
     }
   }, [configText]);
 
+  const profiles = useMemo(
+    () => getCompatibleProfiles(allProfiles, selectedDoc),
+    [allProfiles, selectedDoc],
+  );
+
   const selectedParser = useMemo(() => {
-    const profile = profiles.find((p) => p.id === selectedProfileId);
-    return profile?.parser ?? 'docling';
-  }, [profiles, selectedProfileId]);
+    const profile = allProfiles.find((p) => p.id === selectedProfileId);
+    return profile?.parser ?? getDocumentParseTrack(selectedDoc);
+  }, [allProfiles, selectedDoc, selectedProfileId]);
 
   const batch = useBatchParse({
     profileId: selectedProfileId,
@@ -106,8 +111,8 @@ export function useParseTab() {
         .from('parsing_profiles')
         .select('id, parser, config')
         .order('id');
-      const rows = (data ?? []) as ParsingProfile[];
-      setProfiles(rows);
+      const rows = (data ?? []) as ParsingProfileOption[];
+      setAllProfiles(rows);
       const defaultProfile = rows.find((p) => (p.config as any)?.is_default) ?? rows[0];
       if (defaultProfile) {
         setSelectedProfileId(defaultProfile.id);
@@ -116,9 +121,32 @@ export function useParseTab() {
     })();
   }, []);
 
+  useEffect(() => {
+    if (profiles.length === 0) return;
+
+    const appliedProfile = selectedDoc?.status === 'parsed'
+      ? findAppliedProfile(profiles, selectedDoc)
+      : null;
+
+    const nextProfile = appliedProfile
+      ?? profiles.find((profile) => profile.id === selectedProfileId)
+      ?? profiles[0];
+
+    if (!nextProfile) return;
+
+    if (nextProfile.id !== selectedProfileId) {
+      setSelectedProfileId(nextProfile.id);
+    }
+
+    const nextConfigText = JSON.stringify(nextProfile.config, null, 2);
+    if (nextConfigText !== configText) {
+      setConfigText(nextConfigText);
+    }
+  }, [configText, profiles, selectedDoc, selectedProfileId]);
+
   const handleProfileChange = (id: string) => {
     setSelectedProfileId(id);
-    const profile = profiles.find((p) => p.id === id);
+    const profile = allProfiles.find((p) => p.id === id);
     if (profile) setConfigText(JSON.stringify(profile.config, null, 2));
   };
 
@@ -154,6 +182,7 @@ export function useParseTab() {
     profiles,
     selectedProfileId,
     selectedParser,
+    currentTrack: getDocumentParseTrack(selectedDoc),
     handleProfileChange,
     batch,
     jsonModal,

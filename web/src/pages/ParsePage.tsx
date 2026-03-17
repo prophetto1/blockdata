@@ -1,15 +1,15 @@
 import { Workbench } from '@/components/workbench/Workbench';
-import { useParseWorkbench, PARSE_TABS, PARSE_DEFAULT_PANES } from './useParseWorkbench';
+import { useParseWorkbench } from './useParseWorkbench';
 
 export default function ParsePage() {
-  const { renderContent, workbenchRef, mobilePreviewPanel } = useParseWorkbench();
+  const { renderContent, workbenchRef, mobilePreviewPanel, tabs, defaultPanes } = useParseWorkbench();
   return (
     <div className="h-full w-full min-h-0 p-2">
       <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-md border border-border bg-card">
         <Workbench
           ref={workbenchRef}
-          tabs={PARSE_TABS}
-          defaultPanes={PARSE_DEFAULT_PANES}
+          tabs={tabs}
+          defaultPanes={defaultPanes}
           saveKey="parse-documents-v3"
           renderContent={renderContent}
           className="parse-workbench"

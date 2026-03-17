@@ -40,6 +40,7 @@ import {
   type ParseArtifactBundle,
 } from './parseArtifacts';
 import type { DoclingNativeItem } from '@/lib/doclingNativeItems';
+import { getAppliedProfileName, getDocumentParseTrack } from '@/components/documents/parseProfileSupport';
 
 // ─── Data fetchers ───────────────────────────────────────────────────────────
 
@@ -509,8 +510,7 @@ type ParseFileListPaneProps = {
 };
 
 function getParseProfileName(doc: ProjectDocumentRow): string | null {
-  const name = (doc.pipeline_config as Record<string, unknown> | null)?.name;
-  return typeof name === 'string' && name.trim().length > 0 ? name : null;
+  return getAppliedProfileName(doc);
 }
 
 function formatParseStatus(status: ProjectDocumentRow['status']): string {
@@ -857,6 +857,15 @@ export const TREE_SITTER_DEFAULT_PANES: Pane[] = normalizePaneWidths([
   { id: 'pane-preview', tabs: ['ts-ast', 'ts-symbols', 'ts-downloads'], activeTab: 'ts-ast', width: 44 },
 ]);
 
+export function getParseWorkbenchLayout(activeDoc: ProjectDocumentRow | null): {
+  tabs: WorkbenchTab[];
+  defaultPanes: Pane[];
+} {
+  return getDocumentParseTrack(activeDoc) === 'tree_sitter'
+    ? { tabs: TREE_SITTER_TABS, defaultPanes: TREE_SITTER_DEFAULT_PANES }
+    : { tabs: PARSE_TABS, defaultPanes: PARSE_DEFAULT_PANES };
+}
+
 // ─── Hook ────────────────────────────────────────────────────────────────────
 
 export function useParseWorkbench() {
@@ -870,8 +879,6 @@ export function useParseWorkbench() {
   const docState = useProjectDocuments(resolvedProjectId);
   const { docs, loading, error, selected, toggleSelect, toggleSelectAll, clearSelection, allSelected, someSelected, refreshDocs } = docState;
 
-  const parseTab = useParseTab();
-
   const [activeDocUid, setActiveDocUid] = useState<string | null>(null);
   const [activeArtifacts, setActiveArtifacts] = useState<ParseArtifactBundle | null>(null);
   const [mobileSheet, setMobileSheet] = useState<'docling-md' | 'blocks' | 'downloads' | null>(null);
@@ -879,6 +886,8 @@ export function useParseWorkbench() {
     () => docs.find((d) => d.source_uid === activeDocUid) ?? null,
     [docs, activeDocUid],
   );
+  const parseTab = useParseTab(activeDoc);
+  const layout = useMemo(() => getParseWorkbenchLayout(activeDoc), [activeDoc]);
 
   useEffect(() => {
     if (!activeDoc) {
@@ -1092,5 +1101,11 @@ export function useParseWorkbench() {
     </div>
   ) : null;
 
-  return { renderContent, workbenchRef, mobilePreviewPanel };
+  return {
+    renderContent,
+    workbenchRef,
+    mobilePreviewPanel,
+    tabs: layout.tabs,
+    defaultPanes: layout.defaultPanes,
+  };
 }

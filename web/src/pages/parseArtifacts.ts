@@ -8,6 +8,7 @@ import {
 import { supabase } from '@/lib/supabase';
 import { TABLES } from '@/lib/tables';
 import type { BlockRow } from '@/lib/types';
+import { getDocumentParseTrack } from '@/components/documents/parseProfileSupport';
 import {
   DEFAULT_DOCUMENT_VIEW_MODE,
   loadDocumentViewMode,
@@ -149,14 +150,62 @@ export async function primeParseArtifactsForDocument(
   doc: ProjectDocumentRow,
   deps: ParseArtifactsDeps = defaultDeps,
 ): Promise<ParseArtifactBundle> {
+  const track = getDocumentParseTrack(doc);
   const [mode, markdown, json, html, blocks, treeSitterAst, treeSitterSymbols] = await Promise.all([
     deps.loadDocumentViewMode().catch(() => DEFAULT_DOCUMENT_VIEW_MODE),
-    loadMarkdownArtifact(doc, deps),
-    loadJsonArtifact(doc, deps),
-    loadHtmlArtifact(doc, deps),
-    loadBlocksArtifact(doc, deps),
-    loadTreeSitterArtifact(doc, 'tree_sitter_ast_json', 'ast.json', deps),
-    loadTreeSitterArtifact(doc, 'tree_sitter_symbols_json', 'symbols.json', deps),
+    track === 'docling'
+      ? loadMarkdownArtifact(doc, deps)
+      : Promise.resolve({
+          markdown: '',
+          loading: false,
+          error: 'No Docling markdown artifact is available for this document.',
+          downloadUrl: null,
+          downloadFilename: null,
+        } satisfies ParseMarkdownState),
+    track === 'docling'
+      ? loadJsonArtifact(doc, deps)
+      : Promise.resolve({
+          content: null,
+          rawText: null,
+          loading: false,
+          error: 'No DoclingDocument JSON available. Reset and re-parse with Docling.',
+          downloadUrl: null,
+          downloadFilename: null,
+        } satisfies ParseJsonState),
+    track === 'docling'
+      ? loadHtmlArtifact(doc, deps)
+      : Promise.resolve({
+          loading: false,
+          error: 'No Docling HTML artifact is available for this document.',
+          downloadUrl: null,
+          downloadFilename: null,
+        } satisfies ParseHtmlState),
+    track === 'docling'
+      ? loadBlocksArtifact(doc, deps)
+      : Promise.resolve({
+          blocks: [],
+          rawItems: [],
+          loading: false,
+          error: null,
+        } satisfies ParseBlocksState),
+    track === 'tree_sitter'
+      ? loadTreeSitterArtifact(doc, 'tree_sitter_ast_json', 'ast.json', deps)
+      : Promise.resolve({
+          rawText: null,
+          loading: false,
+          error: null,
+          downloadUrl: null,
+          downloadFilename: null,
+        } satisfies ParseTreeSitterState),
+    track === 'tree_sitter'
+      ? loadTreeSitterArtifact(doc, 'tree_sitter_symbols_json', 'symbols.json', deps)
+      : Promise.resolve({
+          rawText: null,
+          loading: false,
+          error: null,
+          downloadUrl: null,
+          downloadFilename: null,
+        } satisfies ParseTreeSitterState),
   ]);
 
   const rawItems = json.rawText
