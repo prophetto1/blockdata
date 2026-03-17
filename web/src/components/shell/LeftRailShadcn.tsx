@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { Avatar } from '@ark-ui/react/avatar';
+import { Layout03Icon } from '@hugeicons/core-free-icons';
+import { HugeiconsIcon } from '@hugeicons/react';
 import { ToggleGroup } from '@ark-ui/react/toggle-group';
 import {
   IconChevronLeft,
@@ -232,7 +234,7 @@ export function LeftRailShadcn({
   userLabel,
   onSignOut,
   desktopCompact = false,
-  onToggleDesktopCompact: _onToggleDesktopCompact,
+  onToggleDesktopCompact,
 }: LeftRailShadcnProps) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -549,15 +551,18 @@ export function LeftRailShadcn({
                   : 'px-1.5 py-1',
               )}
               onClick={() => {
+                if (desktopCompact) {
+                  onToggleDesktopCompact?.();
+                  return;
+                }
                 navigate('/app');
                 onNavigate?.();
               }}
-              aria-label="Go to home"
+              aria-label={desktopCompact ? 'Expand side navigation' : 'Go to home'}
+              title={desktopCompact ? 'Expand side navigation' : undefined}
             >
               {desktopCompact ? (
-                <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary text-xs font-bold text-primary-foreground">
-                  B
-                </span>
+                <HugeiconsIcon icon={Layout03Icon} size={18} strokeWidth={2.1} />
               ) : (
                 <span className="inline-flex items-baseline text-sm font-semibold uppercase tracking-[0.2em]">
                   <span className="text-sidebar-foreground">Block</span>
@@ -565,6 +570,17 @@ export function LeftRailShadcn({
                 </span>
               )}
             </button>
+            {!desktopCompact && onToggleDesktopCompact && (
+              <button
+                type="button"
+                onClick={onToggleDesktopCompact}
+                aria-label="Collapse side navigation"
+                title="Collapse side navigation"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-md text-sidebar-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+              >
+                <HugeiconsIcon icon={Layout03Icon} size={18} strokeWidth={2.1} />
+              </button>
+            )}
           </div>
           {!desktopCompact && <div className="h-px w-full bg-sidebar-border" />}
         </SidebarHeader>
@@ -648,3 +664,10 @@ export function LeftRailShadcn({
     </SidebarProvider>
   );
 }
+
+
+
+
+
+
+

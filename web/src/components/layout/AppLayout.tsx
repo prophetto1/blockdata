@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Layout03Icon } from '@hugeicons/core-free-icons';
@@ -113,6 +113,9 @@ function AppShellInner() {
   const closeNav = () => setNavOpened(false);
   const toggleDesktopNav = () => setDesktopNavOpened(!desktopNavOpened);
 
+  // Workspace shell mode — no header, rail snapped to compact
+  const [workspaceRestored, setWorkspaceRestored] = useState(false);
+
   // Close floating chat
   const closeChatDetached = () => {
     rightRail.setChatDetached(false);
@@ -201,6 +204,18 @@ function AppShellInner() {
   const isExtractRoute = location.pathname === '/app/extract';
   const isSchemasRoute = /^\/app\/schemas(?:\/|$)/.test(location.pathname);
   const isWorkspaceRoute = /^\/app\/workspace(?:\/|$)/.test(location.pathname);
+  const workspaceShellMode = isWorkspaceRoute && !workspaceRestored;
+
+  // Reset restored state when leaving workspace
+  useEffect(() => {
+    if (!isWorkspaceRoute) setWorkspaceRestored(false);
+  }, [isWorkspaceRoute]);
+
+  // Snap rail to compact when entering workspace shell mode
+  useEffect(() => {
+    if (workspaceShellMode) setDesktopNavOpened(false);
+  }, [workspaceShellMode]);
+
   const isFullBleedRoute = (
     isFlowsRoute
     || isMarketplaceRoute
@@ -239,8 +254,8 @@ function AppShellInner() {
     };
   }, [lockMainScroll]);
 
-  const headerHeight = isMobile
-    ? styleTokens.shell.headerHeightMobile
+  const headerHeight = workspaceShellMode ? 0
+    : isMobile ? styleTokens.shell.headerHeightMobile
     : styleTokens.shell.headerHeight;
 
   const shellVars = {
@@ -278,60 +293,51 @@ function AppShellInner() {
     window.localStorage.setItem(DESKTOP_NAV_OPEN_KEY, String(desktopNavOpened));
   }, [desktopNavOpened]);
 
+  const workspaceContext = useMemo(() => ({
+    isWorkspaceShellMode: workspaceShellMode,
+    restoreShell: () => setWorkspaceRestored(true),
+    enterWorkspaceMode: () => setWorkspaceRestored(false),
+  }), [workspaceShellMode]);
+
   return (
     <>
       <div
         style={shellVars}
         className={`relative h-dvh overflow-hidden${useMobileFlex ? ' flex flex-col' : ''}`}
       >
-        <header
-          style={{
-            position: 'fixed',
-            insetInlineStart: `${mainInsetStart}px`,
-            insetInlineEnd: 0,
-            top: 0,
-            height: `${headerHeight}px`,
-            zIndex: 110,
-            backgroundColor: 'var(--chrome, var(--background))',
-            borderBottom: 'none',
-          }}
-        >
-          <TopCommandBar
-            onToggleNav={toggleNav}
-            shellGuides={isEditorLayoutRoute}
-            hideProjectSwitcher={isSuperuserRoute}
-            hideSearch={isSuperuserRoute}
-          />
-          {!isMobile && (
-            <button
-              type="button"
-              onClick={toggleDesktopNav}
-              aria-label={desktopNavOpened ? 'Collapse side navigation' : 'Expand side navigation'}
-              title={desktopNavOpened ? 'Collapse side navigation' : 'Expand side navigation'}
-              className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-transparent text-muted-foreground transition-colors hover:bg-accent/60 hover:text-accent-foreground"
+        {!workspaceShellMode && (
+          <header
+            style={{
+              position: 'fixed',
+              insetInlineStart: `${mainInsetStart}px`,
+              insetInlineEnd: 0,
+              top: 0,
+              height: `${headerHeight}px`,
+              zIndex: 110,
+              backgroundColor: 'var(--chrome, var(--background))',
+              borderBottom: 'none',
+            }}
+          >
+            <TopCommandBar
+              onToggleNav={toggleNav}
+              shellGuides={isEditorLayoutRoute}
+              hideProjectSwitcher={isSuperuserRoute}
+              hideSearch={isSuperuserRoute}
+            />
+            <div
+              data-testid="app-shell-top-divider"
+              aria-hidden
               style={{
                 position: 'absolute',
-                top: '16px',
-                left: '10px',
-                zIndex: 111,
+                insetInlineStart: 0,
+                insetInlineEnd: 0,
+                bottom: 0,
+                height: '1px',
+                backgroundColor: 'var(--sidebar-border)',
               }}
-            >
-              <HugeiconsIcon icon={Layout03Icon} size={16} strokeWidth={2.1} />
-            </button>
-          )}
-          <div
-            data-testid="app-shell-top-divider"
-            aria-hidden
-            style={{
-              position: 'absolute',
-              insetInlineStart: 0,
-              insetInlineEnd: 0,
-              bottom: 0,
-              height: '1px',
-              backgroundColor: 'var(--sidebar-border)',
-            }}
-          />
-        </header>
+            />
+          </header>
+        )}
 
         {!isMobile && (
           <aside
@@ -415,10 +421,10 @@ function AppShellInner() {
 
         <main style={shellMainStyle}>
           {isFullBleedRoute ? (
-            <Outlet />
+            <Outlet context={workspaceContext} />
           ) : (
             <AppPageShell mode="fluid">
-              <Outlet />
+              <Outlet context={workspaceContext} />
             </AppPageShell>
           )}
         </main>
@@ -478,5 +484,7 @@ function AppShellInner() {
     </>
   );
 }
+
+
 
 

@@ -65,22 +65,29 @@ vi.mock('@/components/documents/DocumentFileTable', () => ({
 }));
 
 vi.mock('@/components/workbench/Workbench', () => ({
-  Workbench: (props: {
-    tabs: Array<{ id: string }>;
-    defaultPanes: Array<{ id: string; activeTab: string; tabs: string[] }>;
-    renderContent: (tabId: string) => React.ReactNode;
-  }) => {
-    workbenchMock(props);
-    return (
-      <div>
-        {props.defaultPanes.map((pane) => (
-          <section key={pane.id} data-testid={pane.id}>
-            {props.renderContent(pane.activeTab)}
+  Workbench: Object.assign(
+    (props: {
+      tabs: Array<{ id: string }>;
+      defaultPanes: Array<{ id: string; activeTab: string; tabs: string[] }>;
+      renderContent: (tabId: string) => React.ReactNode;
+    }) => {
+      workbenchMock(props);
+      return (
+        <div>
+          {props.defaultPanes.map((pane) => (
+            <section key={pane.id} data-testid={pane.id}>
+              {props.renderContent(pane.activeTab)}
+            </section>
+          ))}
+          {/* Render files content so the file table test can find it */}
+          <section data-testid="files-content">
+            {props.renderContent('files')}
           </section>
-        ))}
-      </div>
-    );
-  },
+        </div>
+      );
+    },
+    { displayName: 'Workbench' },
+  ),
 }));
 
 describe('ProjectAssetsPage', () => {
@@ -93,7 +100,7 @@ describe('ProjectAssetsPage', () => {
     expect(props?.className).toContain('parse-documents-table-compact');
   });
 
-  it('registers a single preview tab in the third pane', () => {
+  it('uses a two-pane layout with preview in the second pane', () => {
     render(<ProjectAssetsPage />);
 
     const props = workbenchMock.mock.calls[0]?.[0] as {
@@ -101,7 +108,8 @@ describe('ProjectAssetsPage', () => {
       defaultPanes: Array<{ id: string; tabs: string[] }>;
     } | undefined;
 
-    expect(props?.tabs.map((tab) => tab.id)).not.toContain('preview-2');
-    expect(props?.defaultPanes[2]?.tabs).toEqual(['preview']);
+    expect(props?.defaultPanes).toHaveLength(2);
+    expect(props?.defaultPanes[0]?.tabs).toEqual(['upload']);
+    expect(props?.defaultPanes[1]?.tabs).toEqual(['preview']);
   });
 });

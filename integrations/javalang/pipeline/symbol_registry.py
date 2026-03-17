@@ -12,11 +12,15 @@ import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
-CAMEL_RE = re.compile(r"(?<!^)(?=[A-Z])")
+UPPER_SNAKE_RE = re.compile(r'^[A-Z][A-Z0-9_]*$')
 
 
 def _to_snake(name: str) -> str:
-    return CAMEL_RE.sub("_", name).lower()
+    if UPPER_SNAKE_RE.match(name):
+        return name.lower()
+    s = re.sub(r'([a-z0-9])([A-Z])', r'\1_\2', name)
+    s = re.sub(r'([A-Z]+)([A-Z][a-z])', r'\1_\2', s)
+    return s.lower()
 
 
 @dataclass

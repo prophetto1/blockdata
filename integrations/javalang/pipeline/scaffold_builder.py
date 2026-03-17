@@ -17,7 +17,7 @@ from integrations.javalang.pipeline.scaffold_model import (
 )
 from integrations.javalang.pipeline.symbol_registry import SymbolRegistry
 
-CAMEL_RE = re.compile(r"(?<!^)(?=[A-Z])")
+UPPER_SNAKE_RE = re.compile(r'^[A-Z][A-Z0-9_]*$')
 
 # --- Type mapping ---
 
@@ -66,7 +66,17 @@ JAVA_STDLIB_TRIGGERS: dict[str, str] = {
 
 
 def _to_snake(name: str) -> str:
-    return CAMEL_RE.sub("_", name).lower()
+    """Convert Java name to Python snake_case.
+
+    Handles camelCase, UPPER_SNAKE_CASE, and abbreviations like URL, SLA.
+    """
+    if UPPER_SNAKE_RE.match(name):
+        return name.lower()
+    # Insert _ between: lowercase/digit and uppercase, or abbreviation and next word
+    # e.g. getURL -> get_URL, HTMLParser -> HTML_Parser, flowId -> flow_Id
+    s = re.sub(r'([a-z0-9])([A-Z])', r'\1_\2', name)
+    s = re.sub(r'([A-Z]+)([A-Z][a-z])', r'\1_\2', s)
+    return s.lower()
 
 
 def _map_type(java_type: str) -> str:
@@ -120,24 +130,39 @@ def _split_generic_args(s: str) -> list[str]:
     return parts
 
 
+# Pattern for Java expressions that cannot be valid Python
+_JAVA_EXPR_RE = re.compile(
+    r'new\s+'           # new keyword
+    r'|\.class\b'       # .class reflection
+    r'|@\w+'            # annotations
+    r'|\)\s*\{'         # anonymous class body
+    r'|\(\)\s*\.'       # method chain: foo().bar()
+)
+
+# Simple enum-style references: Type.VALUE (no parens, no chains)
+_SIMPLE_REF_RE = re.compile(r'^[A-Za-z_]\w*\.[A-Z_][A-Z0-9_]*$')
+
+
 def _map_default(value: str | None, type_str: str) -> tuple[str | None, str | None]:
     """Map a Java default value to (default_expr, default_factory).
 
     Returns (expr, None) for simple defaults, (None, factory) for collection defaults.
+    Drops untranslatable Java expressions (method chains, new, reflection).
     """
     if value is None:
         return None, None
 
     # Boolean
-    if value == "true" or value == "True":
+    if value in ("true", "True"):
         return "True", None
-    if value == "false" or value == "False":
+    if value in ("false", "False"):
         return "False", None
-    if value == "null" or value == "None":
+    if value in ("null", "None"):
         return "None", None
 
-    # Collection constructors
     stripped = value.strip()
+
+    # Collection constructors
     if stripped.startswith("new ArrayList") or stripped.startswith("new LinkedList"):
         return None, "list"
     if stripped.startswith("new HashMap") or stripped.startswith("new LinkedHashMap"):
@@ -153,7 +178,19 @@ def _map_default(value: str | None, type_str: str) -> tuple[str | None, str | No
     if stripped.startswith('"') and stripped.endswith('"'):
         return stripped, None
 
-    # Enum references, method calls, etc. — keep as-is
+    # Simple enum references: Type.VALUE
+    if _SIMPLE_REF_RE.match(stripped):
+        return stripped, None
+
+    # Drop anything that looks like untranslatable Java
+    if _JAVA_EXPR_RE.search(stripped):
+        return None, None
+
+    # Drop method calls we can't translate
+    if '(' in stripped:
+        return None, None
+
+    # Simple identifier or literal — keep
     return stripped, None
 
 
@@ -256,8 +293,21 @@ def _build_class(ti: TypeInfo) -> ClassSpec:
         is_static = f.is_static and f.is_final
         fields.append(_build_field(f, is_static=is_static))
 
-    # Methods
-    methods = [_build_method(m) for m in ti.methods]
+    # Methods — prune redundant get*/is* stubs that duplicate a field
+    field_names = {f.name for f in ti.fields}
+    field_names_snake = {_to_snake(f.name) for f in ti.fields}
+
+    def _is_redundant_getter(mi: MethodInfo) -> bool:
+        name = mi.name
+        if name.startswith("get") and len(name) > 3:
+            inferred = name[3].lower() + name[4:]
+            return inferred in field_names or _to_snake(inferred) in field_names_snake
+        if name.startswith("is") and len(name) > 2:
+            inferred = name[2].lower() + name[3:]
+            return inferred in field_names or _to_snake(inferred) in field_names_snake
+        return False
+
+    methods = [_build_method(m) for m in ti.methods if not _is_redundant_getter(m)]
 
     # Inner classes
     inner = [_build_class(it) for it in ti.inner_types]
@@ -278,7 +328,7 @@ def _build_class(ti: TypeInfo) -> ClassSpec:
     if ti.permits:
         source_meta["permits"] = ti.permits
 
-    return ClassSpec(
+    result = ClassSpec(
         name=ti.name,
         source_name=ti.name,
         kind=ti.kind,
@@ -294,6 +344,43 @@ def _build_class(ti: TypeInfo) -> ClassSpec:
         inner_classes=inner,
         source_meta=source_meta,
     )
+    _apply_lombok(result)
+    return result
+
+
+def _apply_lombok(cls: ClassSpec) -> None:
+    """Interpret Lombok annotations from source_meta and apply Python equivalents.
+
+    Mutates cls in place. Handles:
+    - @Value → frozen=True dataclass (immutable)
+    - @Slf4j → ClassVar logger field + logging import signal
+    - @Data → no change (already a dataclass)
+    - @Builder / @SuperBuilder → no change (kw_only=True already set)
+    - @Getter / @Setter → no change (dataclass fields are accessible)
+    """
+    annotations = set(cls.source_meta.get("annotations", []))
+    if not annotations:
+        return
+
+    # @Value → frozen immutable dataclass
+    if "Value" in annotations:
+        cls.decorators = [
+            DecoratorSpec(expr="@dataclass(frozen=True, slots=True, kw_only=True)")
+            if "@dataclass" in d.expr else d
+            for d in cls.decorators
+        ]
+
+    # @Slf4j → add logger as class-level field
+    if "Slf4j" in annotations:
+        logger_field = FieldSpec(
+            name="logger",
+            type_str="logging.Logger",
+            original_name="log",
+            default_expr="logging.getLogger(__name__)",
+            is_class_var=True,
+            is_init=False,
+        )
+        cls.fields.insert(0, logger_field)
 
 
 def _apply_aliases(types: list[ClassSpec], alias_map: dict[str, str]):
@@ -447,6 +534,14 @@ def build_module(
     # enum imports
     if structural["enum"]:
         typing_imports.append(ImportSpec(module="enum", name="Enum", kind="stdlib"))
+
+    # logging import (from @Slf4j Lombok annotation)
+    needs_logging = any(
+        any(f.name == "logger" and "logging" in (f.type_str or "") for f in cls.fields)
+        for cls in types
+    )
+    if needs_logging:
+        typing_imports.append(ImportSpec(module="logging", name="logging", kind="stdlib"))
 
     # typing imports
     typing_names = sorted(typing_needs)

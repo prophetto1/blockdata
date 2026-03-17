@@ -60,17 +60,50 @@ def _strip_type_annotations_in_generics(source: str) -> str:
 
     List<@NonNull String> -> List<String>
     Property<@Min(0) Integer> -> Property<Integer>
-    Map<K, @NonNull V> -> Map<K, V>
+    Map<String, List<@NonNull String>> -> Map<String, List<String>>
+
+    Uses a character-level scanner that tracks <> depth to handle nesting.
     """
-    prev = None
-    while prev != source:
-        prev = source
-        source = re.sub(
-            r'(<[^>]*?)@\w+(?:\([^)]*\))?\s+([^>]*?>)',
-            r'\1\2',
-            source,
-        )
-    return source
+    result = []
+    i = 0
+    depth = 0
+    n = len(source)
+
+    while i < n:
+        ch = source[i]
+
+        if ch == '<':
+            depth += 1
+            result.append(ch)
+            i += 1
+        elif ch == '>':
+            depth = max(0, depth - 1)
+            result.append(ch)
+            i += 1
+        elif ch == '@' and depth > 0:
+            # Inside generics — consume the annotation
+            i += 1  # skip @
+            # Consume annotation name: word chars and dots
+            while i < n and (source[i].isalnum() or source[i] in ('_', '.')):
+                i += 1
+            # Consume optional parenthesized args: @Min(0)
+            if i < n and source[i] == '(':
+                paren_depth = 1
+                i += 1
+                while i < n and paren_depth > 0:
+                    if source[i] == '(':
+                        paren_depth += 1
+                    elif source[i] == ')':
+                        paren_depth -= 1
+                    i += 1
+            # Consume trailing whitespace
+            while i < n and source[i] == ' ':
+                i += 1
+        else:
+            result.append(ch)
+            i += 1
+
+    return ''.join(result)
 
 
 def _strip_var_keyword(source: str) -> str:
@@ -78,8 +111,38 @@ def _strip_var_keyword(source: str) -> str:
 
     var x = foo() -> Object x = foo()
     for (var item : list) -> for (Object item : list)
+
+    Only matches var at statement positions — not inside strings or comments.
     """
-    return re.sub(r'\bvar\s+(\w)', r'Object \1', source)
+    lines = source.split('\n')
+    result = []
+    for line in lines:
+        stripped = line.lstrip()
+        # Skip comment lines
+        if stripped.startswith('//') or stripped.startswith('*') or stripped.startswith('/*'):
+            result.append(line)
+            continue
+        # Only replace var before the first string literal on the line
+        string_start = _find_first_string(line)
+        if string_start == -1:
+            result.append(re.sub(r'\bvar\s+(\w)', r'Object \1', line))
+        else:
+            prefix = line[:string_start]
+            suffix = line[string_start:]
+            result.append(re.sub(r'\bvar\s+(\w)', r'Object \1', prefix) + suffix)
+    return '\n'.join(result)
+
+
+def _find_first_string(line: str) -> int:
+    """Find index of first unescaped quote in a line, or -1."""
+    i = 0
+    while i < len(line):
+        if line[i] == '"' and (i == 0 or line[i-1] != '\\'):
+            return i
+        if line[i] == "'" and (i == 0 or line[i-1] != '\\'):
+            return i
+        i += 1
+    return -1
 
 
 def _strip_switch_arrows(source: str) -> str:

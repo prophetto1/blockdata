@@ -1,6 +1,6 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { LeftRailShadcn } from './LeftRailShadcn';
 
@@ -31,6 +31,10 @@ vi.mock('@/hooks/useTheme', () => ({
     setTheme: vi.fn(),
   }),
 }));
+
+afterEach(() => {
+  cleanup();
+});
 
 describe('LeftRailShadcn', () => {
   beforeAll(() => {
@@ -72,7 +76,7 @@ describe('LeftRailShadcn', () => {
 
   it('renders the brand logo and top-level nav items', async () => {
     render(
-      <MemoryRouter initialEntries={['/app/elt']}>
+      <MemoryRouter initialEntries={['/app/database']}>
         <LeftRailShadcn />
       </MemoryRouter>,
     );
@@ -98,7 +102,7 @@ describe('LeftRailShadcn', () => {
 
   it('renders compact mode with icon-only buttons', () => {
     const { container } = render(
-      <MemoryRouter initialEntries={['/app/elt']}>
+      <MemoryRouter initialEntries={['/app/database']}>
         <LeftRailShadcn desktopCompact />
       </MemoryRouter>,
     );
@@ -107,11 +111,25 @@ describe('LeftRailShadcn', () => {
     expect(navButtons.length).toBeGreaterThanOrEqual(5);
   });
 
+
+  it('uses the expanded header button to collapse the side rail', () => {
+    const onToggleDesktopCompact = vi.fn();
+
+    render(
+      <MemoryRouter initialEntries={['/app/database']}>
+        <LeftRailShadcn onToggleDesktopCompact={onToggleDesktopCompact} />
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Collapse side navigation' }));
+
+    expect(onToggleDesktopCompact).toHaveBeenCalledTimes(1);
+  });
   it('uses the compact header button to expand the side rail', async () => {
     const onToggleDesktopCompact = vi.fn();
 
     render(
-      <MemoryRouter initialEntries={['/app/elt']}>
+      <MemoryRouter initialEntries={['/app/database']}>
         <LeftRailShadcn desktopCompact onToggleDesktopCompact={onToggleDesktopCompact} />
       </MemoryRouter>,
     );
@@ -124,3 +142,6 @@ describe('LeftRailShadcn', () => {
     expect(onToggleDesktopCompact).toHaveBeenCalledTimes(1);
   });
 });
+
+
+
