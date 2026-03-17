@@ -78,7 +78,7 @@ export const TOP_LEVEL_NAV: Array<NavItem | 'divider'> = [
   { label: 'API', icon: IconTerminal2, path: '/app/api-editor' },
   'divider',
   { label: 'Tests', icon: IconTestPipe, path: '/app/tests' },
-  { label: 'Test-Integrations', icon: IconPlugConnected, path: '/app/test-integrations' },
+  { label: 'Test-Integrations', icon: IconPlugConnected, path: '/app/superuser/test-integrations' },
   'divider',
   { label: 'Settings', icon: IconSettings, path: '/app/settings', drillId: 'settings' },
 ];
@@ -163,6 +163,7 @@ const SUPERUSER_DRILL: NavDrillConfig = {
         { label: 'Worker Config', icon: IconServer, path: '/app/superuser/worker-config' },
         { label: 'Audit History', icon: IconClipboardList, path: '/app/superuser/audit' },
         { label: 'API Endpoints', icon: IconCode, path: '/app/superuser/api-endpoints' },
+        { label: 'Test-Integrations', icon: IconPlugConnected, path: '/app/superuser/test-integrations' },
       ],
     },
   ],

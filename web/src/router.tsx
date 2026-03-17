@@ -142,7 +142,7 @@ export const router = createBrowserRouter([
           { path: '/app/parse', element: <ParsePage /> },
           { path: '/app/extract', element: <ExtractPage /> },
           { path: '/app/tests', element: <TestsPage /> },
-          { path: '/app/test-integrations', lazy: () => import('@/pages/TestIntegrations') },
+          { path: '/app/test-integrations', element: <Navigate to="/app/superuser/test-integrations" replace /> },
           { path: '/app/marketplace/integrations', element: <IntegrationsCatalog /> },
           { path: '/app/marketplace/services', element: <ServicesCatalog /> },
           { path: '/app/marketplace/services/:serviceId', element: <ServiceDetailPage /> },
@@ -251,6 +251,7 @@ export const router = createBrowserRouter([
               { path: 'worker-config', lazy: () => import('@/pages/superuser/SuperuserWorkerConfig') },
               { path: 'audit', lazy: () => import('@/pages/superuser/SuperuserAuditHistory') },
               { path: 'api-endpoints', lazy: () => import('@/pages/superuser/SuperuserApiEndpoints') },
+              { path: 'test-integrations', lazy: () => import('@/pages/superuser/TestIntegrations') },
             ],
           },
 

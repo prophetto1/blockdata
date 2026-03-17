@@ -82,6 +82,11 @@ export default defineConfig(({ mode }) => {
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/platform-api/, ''),
       },
+      '/blockdata-api': {
+        target: env.VITE_BLOCKDATA_API_URL || 'http://localhost:8100',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/blockdata-api/, ''),
+      },
     },
   },
   build: {

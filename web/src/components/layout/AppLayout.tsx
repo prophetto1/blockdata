@@ -195,7 +195,7 @@ function AppShellInner() {
   const isApiEditorRoute = /^\/app\/api-editor(?:\/|$)/.test(location.pathname);
   const isMarketplaceRoute = /^\/app\/marketplace(?:\/|$)/.test(location.pathname);
   const isSuperuserRoute = /^\/app\/superuser(?:\/|$)/.test(location.pathname);
-  const isTestIntegrationsRoute = location.pathname === '/app/test-integrations';
+  const isTestIntegrationsRoute = location.pathname === '/app/superuser/test-integrations';
   const isAssetsRoute = location.pathname === '/app/assets';
   const isParseRoute = location.pathname === '/app/parse';
   const isExtractRoute = location.pathname === '/app/extract';

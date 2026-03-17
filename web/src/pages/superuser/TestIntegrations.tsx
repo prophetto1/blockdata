@@ -1,5 +1,5 @@
 import { Workbench } from '@/components/workbench/Workbench';
-import { useWorkspaceEditor, WORKSPACE_TABS, WORKSPACE_DEFAULT_PANES } from './superuser/useWorkspaceEditor';
+import { useWorkspaceEditor, WORKSPACE_TABS, WORKSPACE_DEFAULT_PANES } from './useWorkspaceEditor';
 
 export function Component() {
   const { renderContent } = useWorkspaceEditor('test-integrations-dir');
