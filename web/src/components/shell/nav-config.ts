@@ -87,9 +87,7 @@ export const ALL_TOP_LEVEL_ITEMS: NavItem[] = TOP_LEVEL_NAV.filter(
   (entry): entry is NavItem => entry !== 'divider',
 );
 
-export const BOTTOM_RAIL_NAV: NavItem[] = [
-  { label: 'ELT', icon: IconCode, path: '/app/elt' },
-];
+export const BOTTOM_RAIL_NAV: NavItem[] = [];
 
 const FLOWS_DRILL: NavDrillConfig = {
   id: 'flows',
@@ -159,6 +157,7 @@ const SUPERUSER_DRILL: NavDrillConfig = {
     },
     {
       items: [
+        { label: 'ELT', icon: IconCode, path: '/app/elt' },
         { label: 'Docling', icon: IconSettings, path: '/app/superuser/parsers-docling' },
         { label: 'Instance Config', icon: IconServer, path: '/app/superuser/instance-config' },
         { label: 'Worker Config', icon: IconServer, path: '/app/superuser/worker-config' },
@@ -186,6 +185,14 @@ export function findDrillByRoute(pathname: string): NavDrillConfig | null {
     }
     if (!config.pathTemplate && pathname === config.parentPath) {
       return config;
+    }
+    // Check if any item in this drill owns the current route
+    for (const section of config.sections) {
+      for (const item of section.items) {
+        if (pathname === item.path || pathname.startsWith(item.path + '/')) {
+          return config;
+        }
+      }
     }
   }
   return null;

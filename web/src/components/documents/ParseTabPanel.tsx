@@ -222,13 +222,13 @@ export function ParseRowActions({
 
   if (isParsed) {
     if (onDoclingMdPreview) {
-      menuItems.push({ label: 'View Docling MD', onClick: () => onDoclingMdPreview(doc) });
+      menuItems.push({ label: 'View Parsed Markdown', onClick: () => onDoclingMdPreview(doc) });
     }
     if (onBlocksPreview) {
-      menuItems.push({ label: 'View Blocks', onClick: () => onBlocksPreview(doc) });
+      menuItems.push({ label: 'View Parsed Blocks', onClick: () => onBlocksPreview(doc) });
     }
     if (onDoclingJsonPreview) {
-      menuItems.push({ label: 'View DoclingJson', onClick: () => onDoclingJsonPreview(doc) });
+      menuItems.push({ label: 'Download', onClick: () => onDoclingJsonPreview(doc) });
     }
   }
   if (onReset) {

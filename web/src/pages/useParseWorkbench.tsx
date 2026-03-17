@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { IconBraces, IconDownload, IconFileCode, IconLoader2, IconFileText, IconLayoutList, IconSettings } from '@tabler/icons-react';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { IconBraces, IconDownload, IconFileCode, IconLoader2, IconFileText, IconLayoutList, IconSettings, IconX } from '@tabler/icons-react';
 import ReactMarkdown from 'react-markdown';
 import remarkFrontmatter from 'remark-frontmatter';
 import remarkGfm from 'remark-gfm';
@@ -164,7 +165,7 @@ function getParsedBlockMetadata(block: BlockRow): ParsedBlockMetadata {
   };
 }
 
-function DownloadsTab({ doc, artifacts }: { doc: ProjectDocumentRow | null; artifacts: ParseArtifactBundle | null }) {
+function DownloadsTab({ doc, artifacts, onClose }: { doc: ProjectDocumentRow | null; artifacts: ParseArtifactBundle | null; onClose?: () => void }) {
   const [downloadingId, setDownloadingId] = useState<ParseDownloadItem['id'] | null>(null);
 
   if (!doc) {
@@ -186,7 +187,14 @@ function DownloadsTab({ doc, artifacts }: { doc: ProjectDocumentRow | null; arti
   const downloads = getParseDownloadItems(artifacts);
 
   return (
-    <DocumentPreviewShell doc={doc}>
+    <DocumentPreviewShell
+      doc={doc}
+      headerActions={onClose ? (
+        <button type="button" aria-label="Close" onClick={onClose} className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">
+          <IconX size={16} />
+        </button>
+      ) : undefined}
+    >
       <div className="space-y-4 px-4 py-4">
         <div className="rounded-xl border border-border bg-muted/20 px-4 py-3">
           <div className="text-sm font-medium text-foreground">Download parse artifacts</div>
@@ -259,7 +267,7 @@ function DownloadsTab({ doc, artifacts }: { doc: ProjectDocumentRow | null; arti
 
 // ─── Tab components ──────────────────────────────────────────────────────────
 
-function DoclingMdTab({ doc, artifacts }: { doc: ProjectDocumentRow | null; artifacts: ParseArtifactBundle | null }) {
+function DoclingMdTab({ doc, artifacts, onClose }: { doc: ProjectDocumentRow | null; artifacts: ParseArtifactBundle | null; onClose?: () => void }) {
   if (!doc) {
     return (
       <DocumentPreviewFrame>
@@ -291,8 +299,13 @@ function DoclingMdTab({ doc, artifacts }: { doc: ProjectDocumentRow | null; arti
   return (
     <DocumentPreviewShell
       doc={doc}
-      downloadUrl={artifacts.markdown.downloadUrl}
-      downloadFilename={artifacts.markdown.downloadFilename}
+      downloadUrl={onClose ? undefined : artifacts.markdown.downloadUrl}
+      downloadFilename={onClose ? undefined : artifacts.markdown.downloadFilename}
+      headerActions={onClose ? (
+        <button type="button" aria-label="Close" onClick={onClose} className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">
+          <IconX size={16} />
+        </button>
+      ) : undefined}
     >
       <div className="px-6 py-4">
         <div className="docling-md-preview">
@@ -308,7 +321,7 @@ function DoclingMdTab({ doc, artifacts }: { doc: ProjectDocumentRow | null; arti
   );
 }
 
-function BlocksTab({ doc, artifacts }: { doc: ProjectDocumentRow | null; artifacts: ParseArtifactBundle | null }) {
+function BlocksTab({ doc, artifacts, onClose }: { doc: ProjectDocumentRow | null; artifacts: ParseArtifactBundle | null; onClose?: () => void }) {
   const { registry } = useBlockTypeRegistry();
   const badgeColorMap = useMemo(
     () => ({ ...(registry?.badgeColor ?? {}), ...(registry?.labelBadgeColor ?? {}) }),
@@ -359,8 +372,14 @@ function BlocksTab({ doc, artifacts }: { doc: ProjectDocumentRow | null; artifac
     );
   }
 
+  const closeAction = onClose ? (
+    <button type="button" aria-label="Close" onClick={onClose} className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">
+      <IconX size={16} />
+    </button>
+  ) : undefined;
+
   return (
-    <DocumentPreviewShell doc={doc}>
+    <DocumentPreviewShell doc={doc} headerActions={closeAction}>
       <div className="space-y-3 px-4 py-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="text-xs font-semibold tracking-[0.04em] text-muted-foreground">
@@ -682,6 +701,7 @@ export function useParseWorkbench() {
   useShellHeaderTitle({ title: 'Parse Documents' });
   const { resolvedProjectId } = useProjectFocus();
   const workbenchRef = useRef<WorkbenchHandle>(null);
+  const isMobile = useIsMobile();
   const artifactsCacheRef = useRef(new Map<string, ParseArtifactBundle>());
   const artifactsRequestRef = useRef(new Map<string, Promise<ParseArtifactBundle>>());
 
@@ -692,6 +712,7 @@ export function useParseWorkbench() {
 
   const [activeDocUid, setActiveDocUid] = useState<string | null>(null);
   const [activeArtifacts, setActiveArtifacts] = useState<ParseArtifactBundle | null>(null);
+  const [mobileSheet, setMobileSheet] = useState<'docling-md' | 'blocks' | 'downloads' | null>(null);
   const activeDoc = useMemo(
     () => docs.find((d) => d.source_uid === activeDocUid) ?? null,
     [docs, activeDocUid],
@@ -820,6 +841,18 @@ export function useParseWorkbench() {
                       parseTab={parseTab}
                       onReset={handleReset}
                       onDelete={handleDelete}
+                      onDoclingMdPreview={isMobile ? (d) => {
+                        handleDocClick(d);
+                        setMobileSheet('docling-md');
+                      } : undefined}
+                      onBlocksPreview={isMobile ? (d) => {
+                        handleDocClick(d);
+                        setMobileSheet('blocks');
+                      } : undefined}
+                      onDoclingJsonPreview={isMobile ? (d) => {
+                        handleDocClick(d);
+                        setMobileSheet('downloads');
+                      } : undefined}
                     />
                   )}
                   className={cn(
@@ -875,5 +908,15 @@ export function useParseWorkbench() {
     return null;
   }, [docs, loading, error, selected, toggleSelect, toggleSelectAll, clearSelection, allSelected, someSelected, activeDocUid, activeDoc, activeArtifacts, handleDocClick, parseTab, parseExtraColumns, handleReset, handleDelete]);
 
-  return { renderContent, workbenchRef };
+  const mobilePreviewPanel = isMobile && mobileSheet ? (
+    <div className="fixed inset-x-0 bottom-0 z-[105] flex flex-col bg-background" style={{ top: 'var(--app-shell-header-height)' }}>
+      <div className="min-h-0 flex-1 overflow-auto">
+        {mobileSheet === 'docling-md' && <DoclingMdTab doc={activeDoc} artifacts={activeArtifacts} onClose={() => setMobileSheet(null)} />}
+        {mobileSheet === 'blocks' && <BlocksTab doc={activeDoc} artifacts={activeArtifacts} onClose={() => setMobileSheet(null)} />}
+        {mobileSheet === 'downloads' && <DownloadsTab doc={activeDoc} artifacts={activeArtifacts} onClose={() => setMobileSheet(null)} />}
+      </div>
+    </div>
+  ) : null;
+
+  return { renderContent, workbenchRef, mobilePreviewPanel };
 }

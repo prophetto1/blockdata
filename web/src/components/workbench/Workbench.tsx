@@ -65,6 +65,9 @@ export type WorkbenchProps = {
   disableDrag?: boolean;
   /** Lock pane chrome so tabs and panes cannot be closed, split, or rearranged from the UI. */
   lockLayout?: boolean;
+  /** On mobile, which tabs to show in the switcher. If omitted, all tabs are shown.
+   *  Use this to limit mobile to a subset (e.g. only ['upload','files','preview']). */
+  mobileTabs?: string[];
 };
 
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -178,7 +181,7 @@ function readPersistedPanes(saveKey: string, isValidTab: (tabId: string) => bool
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
-export const Workbench = forwardRef<WorkbenchHandle, WorkbenchProps>(function Workbench({ tabs, defaultPanes, saveKey, renderContent, className, toolbarActions, hideToolbar = false, dynamicTabLabel, onPanesChange, transformPanes, maxColumns, minColumns, maxTabsPerPane, disableDrag = false, lockLayout = false }, ref) {
+export const Workbench = forwardRef<WorkbenchHandle, WorkbenchProps>(function Workbench({ tabs, defaultPanes, saveKey, renderContent, className, toolbarActions, hideToolbar = false, dynamicTabLabel, onPanesChange, transformPanes, maxColumns, minColumns, maxTabsPerPane, disableDrag = false, lockLayout = false, mobileTabs }, ref) {
   const isMobile = useIsMobile();
   const fallbackTab = tabs[0]?.id ?? '';
 
@@ -598,29 +601,34 @@ export const Workbench = forwardRef<WorkbenchHandle, WorkbenchProps>(function Wo
 
   // ── Mobile: single-pane tab switcher ───────────────────────────────────
 
+  const mobileVisibleTabs = useMemo(
+    () => mobileTabs ? tabs.filter((t) => mobileTabs.includes(t.id)) : tabs,
+    [tabs, mobileTabs],
+  );
   const [mobileTab, setMobileTab] = useState(fallbackTab);
   const resolvedMobileTab = tabs.some((t) => t.id === mobileTab) ? mobileTab : fallbackTab;
 
   if (isMobile) {
     return (
       <div className={['workbench-shell flex flex-col', className].filter(Boolean).join(' ')}>
-        <div className="flex shrink-0 border-b border-border bg-card">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              className={`flex-1 px-2 py-2 text-xs font-medium transition-colors ${
-                resolvedMobileTab === tab.id
-                  ? 'border-b-2 border-primary text-foreground'
-                  : 'text-muted-foreground'
-              }`}
-              onClick={() => setMobileTab(tab.id)}
-            >
-              <span className="mx-auto mb-0.5 inline-flex"><tab.icon size={14} /></span>
-              {tab.label}
-            </button>
-          ))}
-        </div>
+        {mobileVisibleTabs.length > 1 && (
+          <div className="flex shrink-0 border-b border-border bg-card">
+            {mobileVisibleTabs.map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                className={`flex-1 px-3 py-2 text-xs font-medium whitespace-nowrap transition-colors ${
+                  resolvedMobileTab === tab.id
+                    ? 'border-b-2 border-primary text-foreground'
+                    : 'text-muted-foreground'
+                }`}
+                onClick={() => setMobileTab(tab.id)}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        )}
         <div className="min-h-0 flex-1 overflow-auto">
           {renderContent(resolvedMobileTab)}
         </div>
