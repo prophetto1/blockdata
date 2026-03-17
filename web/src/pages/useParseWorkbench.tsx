@@ -1124,7 +1124,7 @@ export function useParseWorkbench() {
     }
 
     return null;
-  }, [docs, loading, error, selected, toggleSelect, toggleSelectAll, clearSelection, allSelected, someSelected, activeDocUid, activeDoc, activeArtifacts, handleDocClick, parseTab, parseExtraColumns, handleReset, handleDelete]);
+  }, [docs, loading, error, selected, toggleSelect, toggleSelectAll, clearSelection, allSelected, someSelected, activeDocUid, activeDoc, activeArtifacts, activeTrack, trackDocs, doclingDocs, codeDocs, handleDocClick, parseTab, parseExtraColumns, handleReset, handleDelete]);
 
   const dynamicTabLabel = useCallback((tabId: string): string | null => {
     if (tabId === 'preview-main') return activeTrack === 'tree_sitter' ? 'AST' : 'Parsed Markdown';
@@ -1145,6 +1145,7 @@ export function useParseWorkbench() {
 
   return {
     renderContent,
+    dynamicTabLabel,
     workbenchRef,
     mobilePreviewPanel,
     tabs: PARSE_TABS,
