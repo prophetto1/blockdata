@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\http\HttpSseEvent.java
-# WARNING: Unresolved types: R, T
 
 from dataclasses import dataclass
 from datetime import timedelta

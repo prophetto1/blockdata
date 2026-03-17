@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\plugins\PluginManager.java
-# WARNING: Unresolved types: AutoCloseable, Exception
 
 from pathlib import Path
 from typing import Any, Protocol
@@ -20,10 +19,6 @@ class PluginManager(AutoCloseable, Protocol):
     def list(self) -> list[PluginArtifactMetadata]: ...
 
     def install(self, artifact: PluginArtifact, repository_configs: list[MavenPluginRepositoryConfig], install_for_registration: bool, local_repository_path: Path) -> PluginArtifact: ...
-
-    def install(self, file: Path, install_for_registration: bool, local_repository_path: Path, force_install_on_existing_versions: bool) -> PluginArtifact: ...
-
-    def install(self, artifacts: list[PluginArtifact], repository_configs: list[MavenPluginRepositoryConfig], install_for_registration: bool, local_repository_path: Path) -> list[PluginArtifact]: ...
 
     def uninstall(self, artifacts: list[PluginArtifact], refresh_plugin_registry: bool, local_repository_path: Path) -> list[PluginArtifact]: ...
 

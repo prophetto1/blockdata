@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\utils\NamespaceFilesUtils.java
-# WARNING: Unresolved types: Exception, LinkedBlockingQueue, ThreadFactoryBuilder, ThreadPoolExecutor
+# WARNING: Unresolved types: LinkedBlockingQueue, ThreadFactoryBuilder, ThreadPoolExecutor
 
 from dataclasses import dataclass, field
 from typing import Any, ClassVar

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\runners\pebble\functions\AbstractFileFunction.java
-# WARNING: Unresolved types: EvaluationContext, Function, IOException, Pattern, PebbleTemplate
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
@@ -15,8 +14,8 @@ from engine.core.storages.storage_interface import StorageInterface
 
 @dataclass(slots=True, kw_only=True)
 class AbstractFileFunction(ABC):
-    uri_pattern: ClassVar[Pattern]
-    execution_file: ClassVar[Pattern]
+    uri_pattern: ClassVar[re.Pattern]
+    execution_file: ClassVar[re.Pattern]
     scheme_not_supported_error: ClassVar[str] = "Cannot process the URI %s: scheme not supported."
     kestra_scheme: ClassVar[str] = "kestra:///"
     trigger: ClassVar[str] = "trigger"

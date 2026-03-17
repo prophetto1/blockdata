@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\storages\kv\InternalKVStore.java
-# WARNING: Unresolved types: IOException, Pageable, Pattern
 
 from dataclasses import dataclass, field
-from logging import logging
+from logging import Logger, getLogger
 from typing import Any, ClassVar, Optional
 
 from engine.core.repositories.array_list_total import ArrayListTotal
@@ -21,8 +20,8 @@ from engine.core.storages.storage_interface import StorageInterface
 
 @dataclass(slots=True, kw_only=True)
 class InternalKVStore:
-    duration_pattern: ClassVar[Pattern]
-    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    duration_pattern: ClassVar[re.Pattern]
+    logger: ClassVar[Logger] = getLogger(__name__)
     namespace: str | None = None
     tenant: str | None = None
     storage: StorageInterface | None = None

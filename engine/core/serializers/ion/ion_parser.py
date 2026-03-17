@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\serializers\ion\IonParser.java
-# WARNING: Unresolved types: IOContext, IOException, IonReader, IonType, JsonToken, com, dataformat, fasterxml, ion, jackson
+# WARNING: Unresolved types: IOContext, IonReader, IonType, JsonToken, com, dataformat, fasterxml, ion, jackson
 
 from dataclasses import dataclass
 from typing import Any

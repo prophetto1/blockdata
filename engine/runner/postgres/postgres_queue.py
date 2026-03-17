@@ -1,17 +1,14 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\jdbc-postgres\src\main\java\io\kestra\runner\postgres\PostgresQueue.java
-# WARNING: Unresolved types: ApplicationContext, Class, DSLContext, Field, Record, T
 
 from dataclasses import dataclass
 from typing import Any
 
-from engine.core.models.conditions.condition import Condition
 from engine.core.exceptions.deserialization_exception import DeserializationException
 from engine.core.utils.either import Either
 from engine.jdbc.runner.jdbc_queue import JdbcQueue
 from engine.core.queues.queue_exception import QueueException
-from engine.core.models.collectors.result import Result
 
 
 @dataclass(slots=True, kw_only=True)

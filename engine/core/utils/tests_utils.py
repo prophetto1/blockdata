@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\tests\src\main\java\io\kestra\core\utils\TestsUtils.java
-# WARNING: Unresolved types: Class, Consumer, Entry, Flux, IOException, JsonProcessingException, ObjectMapper, Predicate, Runnable, StackTraceElement, T, ThreadLocal, URISyntaxException
+# WARNING: Unresolved types: Entry, JsonProcessingException, StackTraceElement, ThreadLocal, URISyntaxException
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from logging import logging
+from logging import Logger, getLogger
 from datetime import timedelta
-from typing import Any, ClassVar
+from typing import Any, Callable, ClassVar
 
 from engine.core.models.triggers.abstract_trigger import AbstractTrigger
 from engine.core.models.conditions.condition_context import ConditionContext
@@ -18,7 +18,6 @@ from engine.core.models.flows.flow import Flow
 from engine.core.models.flows.flow_interface import FlowInterface
 from engine.core.repositories.local_flow_repository_loader import LocalFlowRepositoryLoader
 from engine.core.models.executions.log_entry import LogEntry
-from engine.core.models.property.property import Property
 from engine.core.queues.queue_interface import QueueInterface
 from engine.core.runners.run_context import RunContext
 from engine.core.runners.run_context_factory import RunContextFactory
@@ -29,9 +28,9 @@ from engine.core.models.triggers.trigger import Trigger
 
 @dataclass(slots=True, kw_only=True)
 class TestsUtils(ABC):
-    queue_consumers_cancellations: ClassVar[ThreadLocal[list[Runnable]]]
+    queue_consumers_cancellations: ClassVar[ThreadLocal[list[Callable]]]
     mapper: ClassVar[ObjectMapper]
-    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    logger: ClassVar[Logger] = getLogger(__name__)
 
     @staticmethod
     def queue_consumers_cleanup() -> None:
@@ -54,15 +53,11 @@ class TestsUtils(ABC):
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
-    def map(path: str, cls: Class[T]) -> T:
+    def map(path: str, cls: type[T]) -> T:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
-    def loads(tenant_id: str, repository_loader: LocalFlowRepositoryLoader) -> None:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def loads(tenant_id: str, repository_loader: LocalFlowRepositoryLoader, url: str) -> None:
+    def loads(tenant_id: str, repository_loader: LocalFlowRepositoryLoader, url: str | None = None) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
@@ -70,39 +65,19 @@ class TestsUtils(ABC):
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
-    def await_log(logs: list[LogEntry], log_matcher: Predicate[LogEntry]) -> LogEntry:
+    def await_log(logs: list[LogEntry], log_matcher: Callable[LogEntry]) -> LogEntry:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
-    def await_logs(logs: list[LogEntry], exact_count: int) -> list[LogEntry]:
+    def await_logs(logs: list[LogEntry], log_matcher: Callable[LogEntry], exact_count: int | None = None) -> list[LogEntry]:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
-    def await_logs(logs: list[LogEntry], log_matcher: Predicate[LogEntry], exact_count: int) -> list[LogEntry]:
+    def mock_flow(tenant: str | None = None, caller: StackTraceElement | None = None) -> Flow:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
-    def await_logs(logs: list[LogEntry], log_matcher: Predicate[LogEntry], count_matcher: Predicate[int]) -> list[LogEntry]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def mock_flow() -> Flow:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def mock_flow(caller: StackTraceElement) -> Flow:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def mock_flow(tenant: str, caller: StackTraceElement) -> Flow:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def mock_execution(flow: FlowInterface, inputs: dict[str, Any]) -> Execution:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def mock_execution(flow: FlowInterface, inputs: dict[str, Any], outputs: dict[str, Any]) -> Execution:
+    def mock_execution(flow: FlowInterface, inputs: dict[str, Any], outputs: dict[str, Any] | None = None) -> Execution:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
@@ -114,35 +89,11 @@ class TestsUtils(ABC):
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
-    def mock_run_context(run_context_factory: RunContextFactory, task: Task, inputs: dict[str, Any]) -> RunContext:
+    def mock_run_context(tenant: str, run_context_factory: RunContextFactory, task: Task, inputs: dict[str, Any] | None = None) -> RunContext:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
-    def mock_run_context(tenant: str, run_context_factory: RunContextFactory, task: Task, inputs: dict[str, Any]) -> RunContext:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def receive(queue: QueueInterface[T]) -> Flux[T]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def receive(queue: QueueInterface[T], consumer: Consumer[Either[T, DeserializationException]]) -> Flux[T]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def receive(queue: QueueInterface[T], queue_type: Class[Any], consumer: Consumer[Either[T, DeserializationException]]) -> Flux[T]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def receive(queue: QueueInterface[T], consumer_group: str, queue_type: Class[Any], consumer: Consumer[Either[T, DeserializationException]]) -> Flux[T]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def receive(queue: QueueInterface[T], consumer_group: str, consumer: Consumer[Either[T, DeserializationException]]) -> Flux[T]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def receive(queue: QueueInterface[T], consumer_group: str, queue_type: Class[Any], consumer: Consumer[Either[T, DeserializationException]], timeout: timedelta) -> Flux[T]:
+    def receive(queue: QueueInterface[T], consumer_group: str | None = None, queue_type: type[Any] | None = None, consumer: Callable[Either[T, DeserializationException]] | None = None, timeout: timedelta | None = None) -> Flux[T]:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod

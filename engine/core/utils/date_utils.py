@@ -34,11 +34,7 @@ class DateUtils:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
-    def validate_timeline(start_date: datetime, end_date: datetime) -> None:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def validate_timeline(filters: list[QueryFilter]) -> None:
+    def validate_timeline(start_date: datetime, end_date: datetime | None = None) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod

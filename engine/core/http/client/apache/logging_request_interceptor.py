@@ -1,19 +1,18 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\http\client\apache\LoggingRequestInterceptor.java
-# WARNING: Unresolved types: EntityDetails, HttpContext, HttpException, HttpRequestInterceptor, IOException, Logger, LoggingType
+# WARNING: Unresolved types: EntityDetails, HttpContext, HttpException, HttpRequestInterceptor, LoggingType
 
 from dataclasses import dataclass
 from typing import Any
 
 from engine.core.http.client.apache.abstract_logging_interceptor import AbstractLoggingInterceptor
 from engine.core.http.client.configurations.http_configuration import HttpConfiguration
-from engine.core.http.http_request import HttpRequest
 
 
 @dataclass(slots=True, kw_only=True)
 class LoggingRequestInterceptor(AbstractLoggingInterceptor):
-    logger: Logger | None = None
+    logger: Any | None = None
     logs: list[HttpConfiguration.LoggingType] | None = None
 
     def process(self, request: HttpRequest, entity: EntityDetails, context: HttpContext) -> None:

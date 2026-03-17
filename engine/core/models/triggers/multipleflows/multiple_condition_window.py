@@ -21,11 +21,8 @@ class MultipleConditionWindow:
     results: dict[str, bool] | None = None
     outputs: dict[str, Any] | None = None
 
-    def uid(self) -> str:
-        raise NotImplementedError  # TODO: translate from Java
-
     @staticmethod
-    def uid(flow: FlowId, condition_id: str) -> str:
+    def uid(flow: FlowId | None = None, condition_id: str | None = None) -> str:
         raise NotImplementedError  # TODO: translate from Java
 
     def is_valid(self, now: datetime) -> bool:

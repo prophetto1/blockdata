@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\webserver\src\main\java\io\kestra\webserver\controllers\api\TriggerController.java
-# WARNING: Unresolved types: Exception, Flux, HttpStatusException, MutableHttpResponse, ObjectMapper
+# WARNING: Unresolved types: MutableHttpResponse
 
 from dataclasses import dataclass, field
 from enum import Enum
-from logging import logging
+from logging import Logger, getLogger
 from typing import Any, ClassVar
 
 from engine.core.models.triggers.abstract_trigger import AbstractTrigger
@@ -14,7 +14,6 @@ from engine.core.services.condition_service import ConditionService
 from engine.core.models.executions.execution_killed import ExecutionKilled
 from engine.core.models.flows.flow import Flow
 from engine.core.repositories.flow_repository_interface import FlowRepositoryInterface
-from engine.core.http.http_response import HttpResponse
 from engine.webserver.responses.paged_results import PagedResults
 from engine.core.models.query_filter import QueryFilter
 from engine.core.queues.queue_exception import QueueException
@@ -27,7 +26,7 @@ from engine.core.repositories.trigger_repository_interface import TriggerReposit
 
 @dataclass(slots=True, kw_only=True)
 class TriggerController:
-    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    logger: ClassVar[Logger] = getLogger(__name__)
     trigger_repository: TriggerRepositoryInterface | None = None
     trigger_queue: QueueInterface[Trigger] | None = None
     execution_killed_queue: QueueInterface[ExecutionKilled] | None = None

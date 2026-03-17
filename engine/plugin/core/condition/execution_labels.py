@@ -5,7 +5,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-from engine.core.models.conditions.condition import Condition
 from engine.core.models.conditions.condition_context import ConditionContext
 from engine.core.exceptions.internal_exception import InternalException
 from engine.core.models.label import Label

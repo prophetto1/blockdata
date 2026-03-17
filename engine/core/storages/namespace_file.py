@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\storages\NamespaceFile.java
-# WARNING: Unresolved types: Pattern
 
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -12,38 +11,18 @@ from engine.core.models.namespaces.files.namespace_file_metadata import Namespac
 
 @dataclass(slots=True, kw_only=True)
 class NamespaceFile:
-    capture_path_without_version: ClassVar[Pattern]
+    capture_path_without_version: ClassVar[re.Pattern]
     path: str | None = None
     uri: str | None = None
     namespace: str | None = None
     version: int | None = None
 
     @staticmethod
-    def of(namespace: str) -> NamespaceFile:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def of(namespace: str, uri: str) -> NamespaceFile:
+    def of(namespace: str, uri: str | None = None, version: int | None = None) -> NamespaceFile:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
     def from_metadata(metadata: NamespaceFileMetadata) -> NamespaceFile:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def of(namespace: str, uri: str, version: int) -> NamespaceFile:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def of(namespace: str, path: Path) -> NamespaceFile:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def of(namespace: str, path: Path, version: int) -> NamespaceFile:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def of(namespace: str, path: str, version: int) -> NamespaceFile:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
@@ -57,10 +36,7 @@ class NamespaceFile:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
-    def is_directory(path: str) -> bool:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def is_directory(self) -> bool:
+    def is_directory(path: str | None = None) -> bool:
         raise NotImplementedError  # TODO: translate from Java
 
     def is_root_directory(self) -> bool:
@@ -68,8 +44,4 @@ class NamespaceFile:
 
     @staticmethod
     def to_logical_path(path: Path) -> str:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def to_logical_path(path: str) -> str:
         raise NotImplementedError  # TODO: translate from Java

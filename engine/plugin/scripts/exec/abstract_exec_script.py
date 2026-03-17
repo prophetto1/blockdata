@@ -14,7 +14,6 @@ from engine.core.models.tasks.input_files_interface import InputFilesInterface
 from engine.core.models.tasks.namespace_files import NamespaceFiles
 from engine.core.models.tasks.namespace_files_interface import NamespaceFilesInterface
 from engine.core.models.tasks.output_files_interface import OutputFilesInterface
-from engine.core.models.property.property import Property
 from engine.core.runners.run_context import RunContext
 from engine.plugin.scripts.exec.scripts.models.runner_type import RunnerType
 from engine.core.models.tasks.runners.target_os import TargetOS
@@ -42,10 +41,7 @@ class AbstractExecScript(ABC, Task):
     def get_container_image(self) -> Property[str]:
         ...
 
-    def inject_defaults(self, original: DockerOptions) -> DockerOptions:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def inject_defaults(self, run_context: RunContext, original: DockerOptions) -> DockerOptions:
+    def inject_defaults(self, run_context: RunContext, original: DockerOptions | None = None) -> DockerOptions:
         raise NotImplementedError  # TODO: translate from Java
 
     def commands(self, run_context: RunContext) -> CommandsWrapper:

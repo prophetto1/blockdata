@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\trace\TracerFactory.java
-# WARNING: Unresolved types: Class, OpenTelemetry, api, io, opentelemetry, trace
+# WARNING: Unresolved types: OpenTelemetry, opentelemetry, trace
 
 from dataclasses import dataclass
 from typing import Any, Optional

@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\cache\NoopCache.java
-# WARNING: Unresolved types: CacheStats, ConcurrentHashMap, ConcurrentMap, Function, K, Policy, V
+# WARNING: Unresolved types: CacheStats, ConcurrentHashMap, ConcurrentMap, Policy
 
 from dataclasses import dataclass, field
-from typing import Any, ClassVar
+from typing import Any, Callable, ClassVar, Iterable
 
 from engine.core.models.tasks.cache import Cache
 
@@ -16,13 +16,13 @@ class NoopCache:
     def get_if_present(self, key: K) -> V:
         raise NotImplementedError  # TODO: translate from Java
 
-    def get(self, key: K, mapping_function: Function[Any, Any]) -> V:
+    def get(self, key: K, mapping_function: Callable[Any, Any]) -> V:
         raise NotImplementedError  # TODO: translate from Java
 
-    def get_all_present(self, keys: list[Any]) -> dict[K, @NonNull V]:
+    def get_all_present(self, keys: Iterable[Any]) -> dict[K, @NonNull V]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def get_all(self, keys: list[Any], mapping_function: Function[Any, Any]) -> dict[K, @NonNull V]:
+    def get_all(self, keys: Iterable[Any], mapping_function: Callable[Any, Any]) -> dict[K, @NonNull V]:
         raise NotImplementedError  # TODO: translate from Java
 
     def put(self, key: K, value: V) -> None:
@@ -34,10 +34,7 @@ class NoopCache:
     def invalidate(self, key: K) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
-    def invalidate_all(self, keys: list[Any]) -> None:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def invalidate_all(self) -> None:
+    def invalidate_all(self, keys: Iterable[Any] | None = None) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
     def estimated_size(self) -> int:

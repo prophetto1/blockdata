@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\models\flows\Flow.java
-# WARNING: Unresolved types: AnnotatedMember, ConstraintViolationException, JacksonAnnotationIntrospector, ObjectMapper, Stream
+# WARNING: Unresolved types: AnnotatedMember
 
 from dataclasses import dataclass, field
-from typing import Any, ClassVar, Optional
+from typing import Any, ClassVar, Iterator, Optional
 
 from engine.core.models.flows.abstract_flow import AbstractFlow
 from engine.core.models.tasks.retrys.abstract_retry import AbstractRetry
@@ -43,16 +43,13 @@ class Flow(AbstractFlow):
     def get_finally(self) -> list[Task]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def all_types(self) -> Stream[str]:
+    def all_types(self) -> Iterator[str]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def all_tasks(self) -> Stream[Task]:
+    def all_tasks(self) -> Iterator[Task]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def all_tasks_with_childs(self) -> list[Task]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def all_tasks_with_childs(self, task: Task) -> Stream[Task]:
+    def all_tasks_with_childs(self, task: Task | None = None) -> Iterator[Task]:
         raise NotImplementedError  # TODO: translate from Java
 
     def all_trigger_ids(self) -> list[str]:
@@ -92,7 +89,7 @@ class Flow(AbstractFlow):
     def equals_without_revision(self, o: FlowInterface) -> bool:
         raise NotImplementedError  # TODO: translate from Java
 
-    def validate_update(self, updated: Flow) -> Optional[ConstraintViolationException]:
+    def validate_update(self, updated: Flow) -> Optional[ValueError]:
         raise NotImplementedError  # TODO: translate from Java
 
     def to_deleted(self) -> Flow:

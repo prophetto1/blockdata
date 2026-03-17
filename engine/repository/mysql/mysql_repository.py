@@ -1,14 +1,13 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\jdbc-mysql\src\main\java\io\kestra\repository\mysql\MysqlRepository.java
-# WARNING: Unresolved types: DSLContext, E, Field, Pageable, R, Record, RecordMapper, Select, SelectConditionStep, T, Timestamp
+# WARNING: Unresolved types: RecordMapper, Select, Timestamp
 
 from dataclasses import dataclass
 from typing import Any
 
 from engine.jdbc.abstract_jdbc_repository import AbstractJdbcRepository
 from engine.core.repositories.array_list_total import ArrayListTotal
-from engine.core.models.conditions.condition import Condition
 from engine.jdbc.jdbc_table_config import JdbcTableConfig
 from engine.jdbc.jooq_dsl_context_wrapper import JooqDSLContextWrapper
 from engine.core.queues.queue_service import QueueService

@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\webserver\src\main\java\io\kestra\webserver\utils\Searcheable.java
-# WARNING: Unresolved types: Builder, Comparable, Function, T, U
+# WARNING: Unresolved types: Builder
 
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Callable
 
 from engine.core.repositories.array_list_total import ArrayListTotal
 
@@ -26,8 +26,8 @@ class Searcheable:
         size: int | None = None
         sort: list[str] | None = None
         query: str | None = None
-        searchable_extractors: dict[str, Function[Any, Any]] | None = None
-        sortable_extractors: dict[str, Function[Any, Comparable[Any]]] | None = None
+        searchable_extractors: dict[str, Callable[Any, Any]] | None = None
+        sortable_extractors: dict[str, Callable[Any, Any[Any]]] | None = None
 
         @staticmethod
         def builder() -> Builder[T]:
@@ -38,8 +38,8 @@ class Searcheable:
             sort: list[str]
             page: int = 1
             size: int = 100
-            searchable_extractors: dict[str, Function[Any, Any]] = field(default_factory=dict)
-            sortable_extractors: dict[str, Function[Any, Comparable[Any]]] = field(default_factory=dict)
+            searchable_extractors: dict[str, Callable[Any, Any]] = field(default_factory=dict)
+            sortable_extractors: dict[str, Callable[Any, Any[Any]]] = field(default_factory=dict)
             query: str | None = None
 
             def page(self, page: int) -> Builder[T]:
@@ -54,10 +54,10 @@ class Searcheable:
             def query(self, query: str) -> Builder[T]:
                 raise NotImplementedError  # TODO: translate from Java
 
-            def searchable_extractor(self, key: str, key_extractor: Function[Any, Any]) -> Builder[T]:
+            def searchable_extractor(self, key: str, key_extractor: Callable[Any, Any]) -> Builder[T]:
                 raise NotImplementedError  # TODO: translate from Java
 
-            def sortable_extractor(self, key: str, key_extractor: Function[Any, Any]) -> Builder[T]:
+            def sortable_extractor(self, key: str, key_extractor: Callable[Any, Any]) -> Builder[T]:
                 raise NotImplementedError  # TODO: translate from Java
 
             def build(self) -> Searched[T]:

@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\runners\FlowableUtils.java
-# WARNING: Unresolved types: BiFunction, DagTask, ObjectMapper, Stream, TypeReference
+# WARNING: Unresolved types: DagTask, TypeReference
 
 from dataclasses import dataclass, field
-from typing import Any, ClassVar, Optional
+from typing import Any, Callable, ClassVar, Iterator, Optional
 
 from engine.plugin.core.flow.dag import Dag
 from engine.core.models.executions.execution import Execution
@@ -24,19 +24,7 @@ class FlowableUtils:
     mapper: ClassVar[ObjectMapper]
 
     @staticmethod
-    def resolve_sequential_nexts(execution: Execution, tasks: list[ResolvedTask]) -> list[NextTaskRun]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def resolve_sequential_nexts(execution: Execution, tasks: list[ResolvedTask], errors: list[ResolvedTask], _finally: list[ResolvedTask]) -> list[NextTaskRun]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def resolve_sequential_nexts(execution: Execution, tasks: list[ResolvedTask], errors: list[ResolvedTask], _finally: list[ResolvedTask], parent_task_run: TaskRun) -> list[NextTaskRun]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def resolve_sequential_nexts(execution: Execution, tasks: list[ResolvedTask], errors: list[ResolvedTask], _finally: list[ResolvedTask], parent_task_run: TaskRun, terminal_state: State.Type) -> list[NextTaskRun]:
+    def resolve_sequential_nexts(execution: Execution, tasks: list[ResolvedTask], errors: list[ResolvedTask] | None = None, _finally: list[ResolvedTask] | None = None, parent_task_run: TaskRun | None = None, terminal_state: State.Type | None = None) -> list[NextTaskRun]:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
@@ -52,11 +40,7 @@ class FlowableUtils:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
-    def resolve_state(execution: Execution, tasks: list[ResolvedTask], errors: list[ResolvedTask], _finally: list[ResolvedTask], parent_task_run: TaskRun, run_context: RunContext, allow_failure: bool, allow_warning: bool) -> Optional[State.Type]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def resolve_state(execution: Execution, tasks: list[ResolvedTask], errors: list[ResolvedTask], _finally: list[ResolvedTask], parent_task_run: TaskRun, run_context: RunContext, allow_failure: bool, allow_warning: bool, terminal_state: State.Type) -> Optional[State.Type]:
+    def resolve_state(execution: Execution, tasks: list[ResolvedTask], errors: list[ResolvedTask], _finally: list[ResolvedTask], parent_task_run: TaskRun, run_context: RunContext, allow_failure: bool, allow_warning: bool, terminal_state: State.Type | None = None) -> Optional[State.Type]:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
@@ -64,7 +48,7 @@ class FlowableUtils:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
-    def resolve_parallel_nexts(execution: Execution, tasks: list[ResolvedTask], errors: list[ResolvedTask], _finally: list[ResolvedTask], parent_task_run: TaskRun, concurrency: int) -> list[NextTaskRun]:
+    def resolve_parallel_nexts(execution: Execution, tasks: list[ResolvedTask], errors: list[ResolvedTask], _finally: list[ResolvedTask], parent_task_run: TaskRun, concurrency: int, next_task_run_function: Callable[Iterator[NextTaskRun], list[TaskRun], Iterator[NextTaskRun]] | None = None) -> list[NextTaskRun]:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
@@ -73,10 +57,6 @@ class FlowableUtils:
 
     @staticmethod
     def resolve_dag_nexts(execution: Execution, tasks: list[ResolvedTask], errors: list[ResolvedTask], _finally: list[ResolvedTask], parent_task_run: TaskRun, concurrency: int, task_dependencies: list[Dag.DagTask]) -> list[NextTaskRun]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def resolve_parallel_nexts(execution: Execution, tasks: list[ResolvedTask], errors: list[ResolvedTask], _finally: list[ResolvedTask], parent_task_run: TaskRun, concurrency: int, next_task_run_function: BiFunction[Stream[NextTaskRun], list[TaskRun], Stream[NextTaskRun]]) -> list[NextTaskRun]:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod

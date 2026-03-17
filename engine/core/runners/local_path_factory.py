@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\runners\LocalPathFactory.java
-# WARNING: Unresolved types: BasicFileAttributes, IOException, InputStream
+# WARNING: Unresolved types: BasicFileAttributes
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
@@ -16,16 +16,13 @@ from engine.core.runners.run_context import RunContext
 class LocalPathFactory:
     global_allowed_paths: list[str] | None = None
 
-    def create_local_path(self, run_context: RunContext) -> LocalPath:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def create_local_path(self) -> LocalPath:
+    def create_local_path(self, run_context: RunContext | None = None) -> LocalPath:
         raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)
     class AbstractLocalPath(ABC):
 
-        def get(self, uri: str) -> InputStream:
+        def get(self, uri: str) -> Any:
             raise NotImplementedError  # TODO: translate from Java
 
         def exists(self, uri: str) -> bool:

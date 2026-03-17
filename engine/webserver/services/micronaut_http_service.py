@@ -1,14 +1,11 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\webserver\src\main\java\io\kestra\webserver\services\MicronautHttpService.java
-# WARNING: Unresolved types: T, http, io, micronaut
+# WARNING: Unresolved types: micronaut
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any
-
-from engine.core.http.http_request import HttpRequest
-from engine.core.http.http_response import HttpResponse
 
 
 @dataclass(slots=True, kw_only=True)

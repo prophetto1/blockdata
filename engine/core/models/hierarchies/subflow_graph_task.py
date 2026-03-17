@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\models\hierarchies\SubflowGraphTask.java
-# WARNING: Unresolved types: RestartBehavior, SubflowId, T
+# WARNING: Unresolved types: RestartBehavior, SubflowId
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Any, Optional
 
 from engine.core.models.hierarchies.abstract_graph_task import AbstractGraphTask
@@ -28,7 +28,7 @@ class SubflowGraphTask(AbstractGraphTask):
         raise NotImplementedError  # TODO: translate from Java
 
     def with_rendered_subflow_id(self, run_context: RunContext) -> SubflowGraphTask:
-        raise NotImplementedError  # TODO: translate from Java
+        return replace(self, rendered_subflow_id=run_context)
 
     @dataclass(slots=True)
     class SubflowTaskWrapper:

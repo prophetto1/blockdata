@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\runners\VariableRenderer.java
-# WARNING: Unresolved types: ApplicationContext, Exception, Matcher, Pattern, PebbleEngine, PebbleException
+# WARNING: Unresolved types: PebbleEngine
 
 from dataclasses import dataclass, field
 from typing import Any, ClassVar, Optional
@@ -12,7 +12,7 @@ from engine.core.runners.pebble.pebble_engine_factory import PebbleEngineFactory
 
 @dataclass(slots=True, kw_only=True)
 class VariableRenderer:
-    raw_pattern: ClassVar[Pattern]
+    raw_pattern: ClassVar[re.Pattern]
     max_rendering_amount: ClassVar[int] = 100
     pebble_engine: PebbleEngine | None = None
     variable_configuration: VariableConfiguration | None = None
@@ -21,16 +21,10 @@ class VariableRenderer:
     def proper_pebble_exception(initial_extension: PebbleException) -> IllegalVariableEvaluationException:
         raise NotImplementedError  # TODO: translate from Java
 
-    def render(self, inline: str, variables: dict[str, Any]) -> str:
+    def render(self, inline: Any, variables: dict[str, Any], recursive: bool | None = None, stringify: bool | None = None) -> Any:
         raise NotImplementedError  # TODO: translate from Java
 
     def render_typed(self, inline: str, variables: dict[str, Any]) -> Any:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def render(self, inline: str, variables: dict[str, Any], recursive: bool) -> str:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def render(self, inline: Any, variables: dict[str, Any], recursive: bool, stringify: bool) -> Any:
         raise NotImplementedError  # TODO: translate from Java
 
     def render_once(self, inline: Any, variables: dict[str, Any], stringify: bool) -> Any:
@@ -44,43 +38,16 @@ class VariableRenderer:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
-    def replace_raw_tags(raw_matcher: Matcher, replacers: dict[str, str]) -> str:
+    def replace_raw_tags(raw_matcher: re.Match, replacers: dict[str, str]) -> str:
         raise NotImplementedError  # TODO: translate from Java
 
-    def render_recursively(self, inline: Any, variables: dict[str, Any], stringify: bool) -> Any:
+    def render_recursively(self, rendering_count: int, inline: Any, variables: dict[str, Any], stringify: bool | None = None) -> Any:
         raise NotImplementedError  # TODO: translate from Java
 
-    def render_recursively(self, rendering_count: int, inline: Any, variables: dict[str, Any], stringify: bool) -> Any:
+    def render_object(self, object: Any, variables: dict[str, Any], recursive: bool | None = None) -> Optional[Any]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def render(self, in: dict[str, Any], variables: dict[str, Any]) -> dict[str, Any]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def render(self, in: dict[str, Any], variables: dict[str, Any], recursive: bool) -> dict[str, Any]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def render_object(self, object: Any, variables: dict[str, Any]) -> Optional[Any]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def render_object(self, object: Any, variables: dict[str, Any], recursive: bool) -> Optional[Any]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def render_list(self, list: list[Any], variables: dict[str, Any]) -> list[Any]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def render_list(self, list: list[Any], variables: dict[str, Any], recursive: bool) -> list[Any]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def render(self, list: list[str], variables: dict[str, Any]) -> list[str]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def render(self, list: list[str], variables: dict[str, Any], recursive: bool) -> list[str]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def render(self, set: set[str], variables: dict[str, Any]) -> set[str]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def render(self, list: set[str], variables: dict[str, Any], recursive: bool) -> set[str]:
+    def render_list(self, list: list[Any], variables: dict[str, Any], recursive: bool | None = None) -> list[Any]:
         raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)

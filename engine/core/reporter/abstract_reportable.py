@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\reporter\AbstractReportable.java
-# WARNING: Unresolved types: ReportingSchedule, T
+# WARNING: Unresolved types: ReportingSchedule
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass

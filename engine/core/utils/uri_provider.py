@@ -26,8 +26,5 @@ class UriProvider:
     def flow_url(self, execution: Execution) -> str:
         raise NotImplementedError  # TODO: translate from Java
 
-    def flow_url(self, flow: FlowInterface) -> str:
-        raise NotImplementedError  # TODO: translate from Java
-
     def webhook_url(self, flow: FlowInterface, trigger: AbstractWebhookTrigger) -> str:
         raise NotImplementedError  # TODO: translate from Java

@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\runners\pebble\ExtensionCustomizer.java
-# WARNING: Unresolved types: AttributeResolver, BinaryOperator, Filter, Function, NodeVisitorFactory, Test, TokenParser, UnaryOperator, extension, io, pebble, pebbletemplates
+# WARNING: Unresolved types: AttributeResolver, NodeVisitorFactory, Test, TokenParser, extension, pebble, pebbletemplates
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Callable
 
 from engine.core.runners.pebble.extension import Extension
 
@@ -18,16 +18,16 @@ class ExtensionCustomizer(ExtensionCustomizer):
     def get_tests(self) -> dict[str, Test]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def get_functions(self) -> dict[str, Function]:
+    def get_functions(self) -> dict[str, Callable]:
         raise NotImplementedError  # TODO: translate from Java
 
     def get_token_parsers(self) -> list[TokenParser]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def get_binary_operators(self) -> list[BinaryOperator]:
+    def get_binary_operators(self) -> list[Callable]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def get_unary_operators(self) -> list[UnaryOperator]:
+    def get_unary_operators(self) -> list[Callable]:
         raise NotImplementedError  # TODO: translate from Java
 
     def get_global_variables(self) -> dict[str, Any]:

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\jdbc-mysql\src\main\java\io\kestra\repository\mysql\MysqlFlowTopologyRepository.java
-# WARNING: Unresolved types: DMLQuery, DSLContext, Record
+# WARNING: Unresolved types: DMLQuery
 
 from dataclasses import dataclass
 from typing import Any

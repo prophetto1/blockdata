@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\models\dashboards\DataFilterKPI.java
-# WARNING: Unresolved types: C, Class, Enum, F, core, io, kestra, models
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
@@ -33,5 +32,5 @@ class DataFilterKPI(ABC):
         raise NotImplementedError  # TODO: translate from Java
 
     @abstractmethod
-    def repository_class(self) -> Class[Any]:
+    def repository_class(self) -> type[Any]:
         ...

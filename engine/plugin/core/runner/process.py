@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\plugin\core\runner\Process.java
-# WARNING: Unresolved types: Exception, InputStream, Logger, ProcessHandle, Runnable
+# WARNING: Unresolved types: ProcessHandle
 
 from dataclasses import dataclass
 from typing import Any
@@ -28,12 +28,12 @@ class Process(TaskRunner):
     def runner_additional_vars(self, run_context: RunContext, task_commands: TaskCommands) -> dict[str, Any]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def kill_descendants_of(self, process: ProcessHandle, logger: Logger) -> None:
+    def kill_descendants_of(self, process: ProcessHandle, logger: Any) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)
     class LogRunnable:
-        input_stream: InputStream | None = None
+        input_stream: Any | None = None
         log_consumer_interface: AbstractLogConsumer | None = None
         is_std_err: bool | None = None
 

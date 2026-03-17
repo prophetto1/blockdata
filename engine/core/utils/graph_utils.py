@@ -25,23 +25,11 @@ from engine.core.models.triggers.trigger import Trigger
 class GraphUtils:
 
     @staticmethod
-    def flow_graph(flow: Flow, execution: Execution) -> FlowGraph:
+    def flow_graph(flow: Flow, execution: Execution, triggers: list[Trigger] | None = None) -> FlowGraph:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
-    def flow_graph(flow: Flow, execution: Execution, triggers: list[Trigger]) -> FlowGraph:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def of(graph: GraphCluster, flow: Flow, execution: Execution, triggers: list[Trigger]) -> GraphCluster:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def of(flow: Flow, execution: Execution) -> GraphCluster:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def of(flow: Flow, execution: Execution, triggers: list[Trigger]) -> GraphCluster:
+    def of(graph: GraphCluster, flow: Flow, execution: Execution | None = None, triggers: list[Trigger] | None = None) -> GraphCluster:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
@@ -73,11 +61,7 @@ class GraphUtils:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
-    def sequential(graph: GraphCluster, tasks: list[Task], errors: list[Task], _finally: list[Task], parent: TaskRun, execution: Execution) -> None:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def sequential(graph: GraphCluster, tasks: list[Task], errors: list[Task], _finally: list[Task], after_execution: list[Task], parent: TaskRun, execution: Execution) -> None:
+    def sequential(graph: GraphCluster, tasks: list[Task], errors: list[Task], _finally: list[Task], after_execution: list[Task], parent: TaskRun, execution: Execution | None = None) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
@@ -97,11 +81,7 @@ class GraphUtils:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
-    def iterate(graph: GraphCluster, tasks: list[Task], errors: list[Task], _finally: list[Task], parent: TaskRun, execution: Execution, relation_type: RelationType) -> None:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def iterate(graph: GraphCluster, tasks: list[Task], errors: list[Task], _finally: list[Task], after_execution: list[Task], parent: TaskRun, execution: Execution, relation_type: RelationType) -> None:
+    def iterate(graph: GraphCluster, tasks: list[Task], errors: list[Task], _finally: list[Task], after_execution: list[Task], parent: TaskRun, execution: Execution, relation_type: RelationType | None = None) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod

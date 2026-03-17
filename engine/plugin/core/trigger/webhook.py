@@ -1,14 +1,12 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\plugin\core\trigger\Webhook.java
-# WARNING: Unresolved types: Exception, Mono, ObjectMapper, Status, core, io, kestra, models, tasks
+# WARNING: Unresolved types: Status
 
 from dataclasses import dataclass, field
 from typing import Any, ClassVar, Optional
 
 from engine.plugin.core.trigger.abstract_webhook_trigger import AbstractWebhookTrigger
-from engine.core.http.http_response import HttpResponse
-from engine.core.models.property.property import Property
 from engine.core.models.triggers.trigger_output import TriggerOutput
 from engine.plugin.core.trigger.webhook_context import WebhookContext
 

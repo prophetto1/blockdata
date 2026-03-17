@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\docs\AbstractClassDocumentation.java
-# WARNING: Unresolved types: Class, T
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from logging import logging
+from logging import Logger, getLogger
 from typing import Any, ClassVar
 
 from engine.core.docs.json_schema_generator import JsonSchemaGenerator
@@ -16,7 +15,7 @@ class AbstractClassDocumentation(ABC):
     defs: dict[str, Any]
     inputs: dict[str, Any]
     defs_exclusions: list[str]
-    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    logger: ClassVar[Logger] = getLogger(__name__)
     deprecated: bool | None = None
     beta: bool | None = None
     cls: str | None = None

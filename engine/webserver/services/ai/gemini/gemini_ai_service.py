@@ -4,7 +4,7 @@ from __future__ import annotations
 # WARNING: Unresolved types: ChatModel, ChatModelListener
 
 from dataclasses import dataclass, field
-from logging import logging
+from logging import Logger, getLogger
 from typing import Any, ClassVar
 
 from engine.webserver.services.ai.ai_service import AiService
@@ -19,7 +19,7 @@ from engine.core.utils.version_provider import VersionProvider
 
 @dataclass(slots=True, kw_only=True)
 class GeminiAiService(AiService):
-    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    logger: ClassVar[Logger] = getLogger(__name__)
     type: ClassVar[str] = "gemini"
 
     def chat_model(self, listeners: list[ChatModelListener]) -> ChatModel:

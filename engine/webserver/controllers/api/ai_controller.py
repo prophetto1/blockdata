@@ -4,19 +4,18 @@ from __future__ import annotations
 # WARNING: Unresolved types: HttpClientAddressResolver
 
 from dataclasses import dataclass, field
-from logging import logging
+from logging import Logger, getLogger
 from typing import Any, ClassVar
 
 from engine.webserver.services.ai.ai_service_manager import AiServiceManager
 from engine.webserver.models.ai.dashboard_generation_prompt import DashboardGenerationPrompt
 from engine.webserver.models.ai.flow_generation_prompt import FlowGenerationPrompt
-from engine.core.http.http_request import HttpRequest
 from engine.core.tenant.tenant_service import TenantService
 
 
 @dataclass(slots=True, kw_only=True)
 class AiController:
-    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    logger: ClassVar[Logger] = getLogger(__name__)
     ai_service_manager: AiServiceManager | None = None
     http_client_address_resolver: HttpClientAddressResolver | None = None
     tenant_service: TenantService | None = None

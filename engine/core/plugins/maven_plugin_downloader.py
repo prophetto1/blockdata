@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\plugins\MavenPluginDownloader.java
-# WARNING: Unresolved types: Closeable, IOException, RemoteRepository, RepositorySystem, RepositorySystemSession
+# WARNING: Unresolved types: RemoteRepository, RepositorySystem, RepositorySystemSession
 
 from dataclasses import dataclass, field
-from logging import logging
+from logging import Logger, getLogger
 from typing import Any, ClassVar
 
 from engine.core.contexts.maven_plugin_repository_config import MavenPluginRepositoryConfig
@@ -18,7 +18,7 @@ class MavenPluginDownloader:
     http_proxy_port: ClassVar[str]
     https_proxy_host: ClassVar[str]
     https_proxy_port: ClassVar[str]
-    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    logger: ClassVar[Logger] = getLogger(__name__)
     default_local_repository_prefix: ClassVar[str] = "kestra-plugins-m2-repository"
     default_repository_type: ClassVar[str] = "default"
     latest: ClassVar[str] = "latest"
@@ -26,13 +26,10 @@ class MavenPluginDownloader:
     system: RepositorySystem | None = None
     session: RepositorySystemSession | None = None
 
-    def resolve(self, dependency: str) -> PluginArtifact:
+    def resolve(self, dependency: str, repositories: list[MavenPluginRepositoryConfig] | None = None) -> PluginArtifact:
         raise NotImplementedError  # TODO: translate from Java
 
     def list_all_versions(self, dependency: str) -> list[str]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def resolve(self, dependency: str, repositories: list[MavenPluginRepositoryConfig]) -> PluginArtifact:
         raise NotImplementedError  # TODO: translate from Java
 
     def do_resolve(self, repositories: list[RemoteRepository], dependency: str) -> PluginArtifact:

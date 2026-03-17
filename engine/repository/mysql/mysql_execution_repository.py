@@ -1,14 +1,13 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\jdbc-mysql\src\main\java\io\kestra\repository\mysql\MysqlExecutionRepository.java
-# WARNING: Unresolved types: ApplicationContext, Date, Field, GroupType, Op, Timestamp
+# WARNING: Unresolved types: Op, Timestamp
 
 from dataclasses import dataclass
 from typing import Any
 
 from engine.jdbc.repository.abstract_jdbc_execution_repository import AbstractJdbcExecutionRepository
 from engine.jdbc.runner.abstract_jdbc_executor_state_storage import AbstractJdbcExecutorStateStorage
-from engine.core.models.conditions.condition import Condition
 from engine.core.utils.date_utils import DateUtils
 from engine.core.utils.either import Either
 from engine.core.models.executions.execution import Execution

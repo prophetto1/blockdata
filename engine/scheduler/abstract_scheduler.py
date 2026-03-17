@@ -1,14 +1,14 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\scheduler\src\main\java\io\kestra\scheduler\AbstractScheduler.java
-# WARNING: Unresolved types: ApplicationContext, ApplicationEventPublisher, AtomicBoolean, AtomicReference, BiConsumer, ConcurrentHashMap, Consumer, Exception, Runnable, ScheduledExecutorService, ScheduledFuture, ServiceState, Throwable
+# WARNING: Unresolved types: AtomicReference, ConcurrentHashMap, ScheduledExecutorService, ScheduledFuture, ServiceState
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from logging import logging
+from logging import Logger, getLogger
 from datetime import datetime
 from datetime import timedelta
-from typing import Any, ClassVar, Optional
+from typing import Any, Callable, ClassVar, Optional
 
 from engine.core.models.triggers.abstract_trigger import AbstractTrigger
 from engine.core.models.conditions.condition_context import ConditionContext
@@ -49,13 +49,13 @@ class AbstractScheduler(ABC):
     execution_monitor_executor: ScheduledExecutorService
     schedulable_next_date: dict[str, FlowWithWorkerTriggerNextDate]
     id: str
-    shutdown: AtomicBoolean
-    is_paused: AtomicBoolean
+    shutdown: bool
+    is_paused: bool
     state: AtomicReference[ServiceState]
-    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    logger: ClassVar[Logger] = getLogger(__name__)
     is_ready: bool = False
     schedulable: list[FlowWithTriggers] = field(default_factory=list)
-    receive_cancellations: list[Runnable] = field(default_factory=list)
+    receive_cancellations: list[Callable] = field(default_factory=list)
     application_context: ApplicationContext | None = None
     execution_queue: QueueInterface[Execution] | None = None
     trigger_queue: QueueInterface[Trigger] | None = None
@@ -100,10 +100,7 @@ class AbstractScheduler(ABC):
     def pause_additional_queues(self) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
-    def next_evaluation_date(self, abstract_trigger: AbstractTrigger) -> datetime:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def next_evaluation_date(self, abstract_trigger: AbstractTrigger, condition_context: ConditionContext, last: Optional[Any]) -> datetime:
+    def next_evaluation_date(self, abstract_trigger: AbstractTrigger, condition_context: ConditionContext | None = None, last: Optional[Any] | None = None) -> datetime:
         raise NotImplementedError  # TODO: translate from Java
 
     def interval(self, abstract_trigger: AbstractTrigger) -> timedelta:
@@ -112,17 +109,11 @@ class AbstractScheduler(ABC):
     def compute_schedulable(self, flows: list[FlowWithSource], trigger_contexts_to_evaluate: list[Trigger], schedule_context: ScheduleContextInterface) -> list[FlowWithTriggers]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def disable_invalid_trigger(self, trigger_context: TriggerContext, e: Throwable) -> None:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def disable_invalid_trigger(self, flow: FlowWithSource, trigger: AbstractTrigger, e: Throwable) -> None:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def disable_invalid_trigger(self, f: FlowWithWorkerTrigger, e: Throwable) -> None:
+    def disable_invalid_trigger(self, flow: FlowWithSource, trigger: AbstractTrigger, e: BaseException | None = None) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
     @abstractmethod
-    def handle_next(self, flows: list[FlowWithSource], now: datetime, consumer: BiConsumer[list[Trigger], ScheduleContextInterface]) -> None:
+    def handle_next(self, flows: list[FlowWithSource], now: datetime, consumer: Callable[list[Trigger], ScheduleContextInterface]) -> None:
         ...
 
     def scheduler_triggers(self) -> list[FlowWithTriggers]:
@@ -140,7 +131,7 @@ class AbstractScheduler(ABC):
     def handle_evaluate_scheduling_trigger_result(self, schedule: Schedulable, result: SchedulerExecutionWithTrigger, condition_context: ConditionContext, schedule_context: ScheduleContextInterface) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
-    def save_last_trigger_and_emit_execution(self, execution: Execution, trigger: Trigger, save_action: Consumer[Trigger]) -> None:
+    def save_last_trigger_and_emit_execution(self, execution: Execution, trigger: Trigger, save_action: Callable[Trigger]) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
     def emit_execution(self, execution: Execution, trigger: TriggerContext) -> None:
@@ -162,25 +153,19 @@ class AbstractScheduler(ABC):
     def evaluate_schedule_trigger(self, flow_with_trigger: FlowWithWorkerTrigger) -> Optional[SchedulerExecutionWithTrigger]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def create_failed_execution(self, flow_with_trigger: FlowWithWorkerTrigger, e: Throwable) -> Execution:
+    def create_failed_execution(self, flow_with_trigger: FlowWithWorkerTrigger, e: BaseException) -> Execution:
         raise NotImplementedError  # TODO: translate from Java
 
-    def handle_failed_evaluated_trigger(self, flow_with_trigger: FlowWithWorkerTrigger, schedule_context: ScheduleContextInterface, e: Throwable) -> None:
+    def handle_failed_evaluated_trigger(self, flow_with_trigger: FlowWithWorkerTrigger, schedule_context: ScheduleContextInterface, e: BaseException) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
-    def log_error(self, flow_with_worker_trigger_next_date: FlowWithWorkerTrigger, e: Throwable) -> None:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def log_error(self, condition_context: ConditionContext, flow: FlowWithSource, trigger: AbstractTrigger, e: Throwable) -> None:
+    def log_error(self, condition_context: ConditionContext, flow: FlowWithSource, trigger: AbstractTrigger | None = None, e: BaseException | None = None) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
     def send_worker_trigger_to_worker(self, flow_with_trigger: FlowWithWorkerTrigger) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
-    def close(self) -> None:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def close(self, on_close: Runnable) -> None:
+    def close(self, on_close: Callable | None = None) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
     def get_type(self) -> ServiceType:

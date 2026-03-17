@@ -5,7 +5,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-from engine.core.models.conditions.condition import Condition
 from engine.core.models.tasks.task import Task
 
 

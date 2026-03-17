@@ -1,17 +1,14 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\plugin\core\http\Request.java
-# WARNING: Unresolved types: Exception, GeneralSecurityException, IOException, URISyntaxException, core, io, kestra, models, tasks
+# WARNING: Unresolved types: GeneralSecurityException, URISyntaxException
 
 from dataclasses import dataclass, field
 from typing import Any, ClassVar
 
 from engine.plugin.core.http.abstract_http import AbstractHttp
 from engine.core.models.tasks.common.encrypted_string import EncryptedString
-from engine.core.http.http_request import HttpRequest
-from engine.core.http.http_response import HttpResponse
 from engine.core.exceptions.illegal_variable_evaluation_exception import IllegalVariableEvaluationException
-from engine.core.models.property.property import Property
 from engine.core.runners.run_context import RunContext
 from engine.core.models.tasks.runnable_task import RunnableTask
 

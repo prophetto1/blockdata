@@ -15,6 +15,3 @@ class VariablesService:
 
     def of(self, context: StorageContext, outputs: Output) -> Variables:
         raise NotImplementedError  # TODO: translate from Java
-
-    def of(self, context: StorageContext, outputs: dict[str, Any]) -> Variables:
-        raise NotImplementedError  # TODO: translate from Java

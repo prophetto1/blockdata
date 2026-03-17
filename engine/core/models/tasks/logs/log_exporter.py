@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\models\tasks\logs\LogExporter.java
-# WARNING: Unresolved types: Exception, Flux, T, core, io, kestra, models
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass

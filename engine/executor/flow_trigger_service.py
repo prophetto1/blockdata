@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\executor\src\main\java\io\kestra\executor\FlowTriggerService.java
-# WARNING: Unresolved types: Stream, core, io, kestra, plugin, trigger
+# WARNING: Unresolved types: trigger
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Iterator
 
 from engine.core.services.condition_service import ConditionService
 from engine.core.models.executions.execution import Execution
@@ -23,10 +23,10 @@ class FlowTriggerService:
     run_context_factory: RunContextFactory | None = None
     flow_service: FlowService | None = None
 
-    def with_flow_triggers_only(self, all_flows: Stream[FlowWithSource]) -> Stream[FlowWithFlowTrigger]:
+    def with_flow_triggers_only(self, all_flows: Iterator[FlowWithSource]) -> Iterator[FlowWithFlowTrigger]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def flow_triggers(self, flow: Flow) -> Stream[io.kestra.plugin.core.trigger.Flow]:
+    def flow_triggers(self, flow: Flow) -> Iterator[io.kestra.plugin.core.trigger.Flow]:
         raise NotImplementedError  # TODO: translate from Java
 
     def compute_executions_from_flow_trigger_conditions(self, execution: Execution, flow: Flow) -> list[Execution]:
@@ -38,7 +38,7 @@ class FlowTriggerService:
     def compute_flow_triggers(self, execution: Execution, flow: Flow) -> list[FlowWithFlowTrigger]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def flow_trigger_multiple_conditions(self, flow_with_flow_trigger: FlowWithFlowTrigger) -> Stream[MultipleCondition]:
+    def flow_trigger_multiple_conditions(self, flow_with_flow_trigger: FlowWithFlowTrigger) -> Iterator[MultipleCondition]:
         raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)

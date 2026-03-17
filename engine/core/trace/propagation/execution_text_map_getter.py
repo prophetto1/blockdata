@@ -4,7 +4,7 @@ from __future__ import annotations
 # WARNING: Unresolved types: TextMapGetter
 
 from dataclasses import dataclass, field
-from typing import Any, ClassVar
+from typing import Any, ClassVar, Iterable
 
 from engine.core.models.executions.execution import Execution
 
@@ -13,7 +13,7 @@ from engine.core.models.executions.execution import Execution
 class ExecutionTextMapGetter:
     instance: ClassVar[ExecutionTextMapGetter]
 
-    def keys(self, carrier: Execution) -> list[str]:
+    def keys(self, carrier: Execution) -> Iterable[str]:
         raise NotImplementedError  # TODO: translate from Java
 
     def get(self, carrier: Execution, key: str) -> str:

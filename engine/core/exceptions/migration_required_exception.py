@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\exceptions\MigrationRequiredException.java
-# WARNING: Unresolved types: RuntimeException
 
 from dataclasses import dataclass, field
 from typing import Any, ClassVar

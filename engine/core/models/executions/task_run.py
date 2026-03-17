@@ -2,7 +2,7 @@ from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\models\executions\TaskRun.java
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime
 from typing import Any
 
@@ -36,10 +36,10 @@ class TaskRun:
     force_execution: bool | None = None
 
     def with_state(self, state: State.Type) -> TaskRun:
-        raise NotImplementedError  # TODO: translate from Java
+        return replace(self, state=state)
 
     def with_state_and_attempt(self, state: State.Type) -> TaskRun:
-        raise NotImplementedError  # TODO: translate from Java
+        return replace(self, state_and_attempt=state)
 
     def fail(self) -> TaskRun:
         raise NotImplementedError  # TODO: translate from Java
@@ -69,10 +69,7 @@ class TaskRun:
     def to_string_state(self) -> str:
         raise NotImplementedError  # TODO: translate from Java
 
-    def next_retry_date(self, retry: AbstractRetry, execution: Execution) -> datetime:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def next_retry_date(self, retry: AbstractRetry) -> datetime:
+    def next_retry_date(self, retry: AbstractRetry, execution: Execution | None = None) -> datetime:
         raise NotImplementedError  # TODO: translate from Java
 
     def should_be_retried(self, retry: AbstractRetry) -> bool:

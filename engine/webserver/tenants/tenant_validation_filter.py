@@ -6,8 +6,6 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, ClassVar
 
-from engine.core.http.http_request import HttpRequest
-
 
 @dataclass(slots=True, kw_only=True)
 class TenantValidationFilter:

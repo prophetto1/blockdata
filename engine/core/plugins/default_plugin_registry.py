@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\plugins\DefaultPluginRegistry.java
-# WARNING: Unresolved types: AtomicBoolean, Class, ConcurrentHashMap, Predicate, ReentrantLock
+# WARNING: Unresolved types: ConcurrentHashMap, ReentrantLock
 
 from dataclasses import dataclass, field
-from logging import logging
+from logging import Logger, getLogger
 from pathlib import Path
-from typing import Any, ClassVar, Optional
+from typing import Any, Callable, ClassVar, Optional
 
 from engine.core.models.plugin import Plugin
 from engine.core.plugins.plugin_class_and_metadata import PluginClassAndMetadata
@@ -21,9 +21,9 @@ class DefaultPluginRegistry:
     plugin_class_by_identifier: dict[PluginIdentifier, PluginClassAndMetadata[Any]]
     plugins: dict[PluginBundleIdentifier, RegisteredPlugin]
     scanner: PluginScanner
-    initialized: AtomicBoolean
+    initialized: bool
     lock: ReentrantLock
-    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    logger: ClassVar[Logger] = getLogger(__name__)
     scanned_plugin_paths: set[Path] = field(default_factory=set)
 
     @staticmethod
@@ -55,9 +55,6 @@ class DefaultPluginRegistry:
     def is_plugin_path_valid(plugin_path: Path) -> bool:
         raise NotImplementedError  # TODO: translate from Java
 
-    def register(self, plugin: RegisteredPlugin) -> None:
-        raise NotImplementedError  # TODO: translate from Java
-
     def register_all(self, plugins: dict[PluginIdentifier, PluginClassAndMetadata[Any]]) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
@@ -67,25 +64,16 @@ class DefaultPluginRegistry:
     def contains_plugin_bundle(self, identifier: PluginBundleIdentifier) -> bool:
         raise NotImplementedError  # TODO: translate from Java
 
-    def plugins(self) -> list[RegisteredPlugin]:
+    def plugins(self, predicate: Callable[RegisteredPlugin] | None = None) -> list[RegisteredPlugin]:
         raise NotImplementedError  # TODO: translate from Java
 
     def external_plugins(self) -> list[RegisteredPlugin]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def plugins(self, predicate: Predicate[RegisteredPlugin]) -> list[RegisteredPlugin]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def find_class_by_identifier(self, identifier: PluginIdentifier) -> Class[Any]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def find_class_by_identifier(self, identifier: str) -> Class[Any]:
+    def find_class_by_identifier(self, identifier: PluginIdentifier) -> type[Any]:
         raise NotImplementedError  # TODO: translate from Java
 
     def find_metadata_by_identifier(self, identifier: str) -> Optional[PluginClassAndMetadata[Any]]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def find_metadata_by_identifier(self, identifier: PluginIdentifier) -> Optional[PluginClassAndMetadata[Any]]:
         raise NotImplementedError  # TODO: translate from Java
 
     def clear(self) -> None:

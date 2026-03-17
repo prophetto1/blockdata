@@ -2,7 +2,7 @@ from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\runners\RunVariables.java
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import Any, ClassVar, Optional, Protocol
 
 from engine.core.models.triggers.abstract_trigger import AbstractTrigger
@@ -27,18 +27,6 @@ class RunVariables:
 
     @staticmethod
     def execution_formatted_output_map(task_run: TaskRun) -> dict[str, Any]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def of(task_run: TaskRun) -> dict[str, Any]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def of(flow: FlowInterface) -> dict[str, Any]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def of(trigger: AbstractTrigger) -> dict[str, Any]:
         raise NotImplementedError  # TODO: translate from Java
 
     class Builder(Protocol):
@@ -101,7 +89,4 @@ class RunVariables:
         variables: dict[str, Any] | None = None
 
         def render(self, inline: str, variables: dict[str, Any]) -> str:
-            raise NotImplementedError  # TODO: translate from Java
-
-        def render(self, inline: dict[str, Any], variables: dict[str, Any]) -> dict[str, Any]:
             raise NotImplementedError  # TODO: translate from Java

@@ -4,8 +4,6 @@ from __future__ import annotations
 
 from typing import Any, Protocol
 
-from engine.core.models.conditions.condition import Condition
-
 
 class JdbcCleanerService(Protocol):
     def build_type_condition(self, type: str) -> Condition: ...

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\serializers\YamlParser.java
-# WARNING: Unresolved types: Class, ConstraintViolationException, JsonProcessingException, ObjectMapper, T
+# WARNING: Unresolved types: JsonProcessingException
 
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -18,31 +18,19 @@ class YamlParser:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
-    def parse(input: str, cls: Class[T]) -> T:
+    def parse(input: str, cls: type[T], strict: bool | None = None) -> T:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
-    def parse(input: str, cls: Class[T], strict: bool) -> T:
+    def type(cls: type[T]) -> str:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
-    def parse(input: dict[str, Any], cls: Class[T], strict: bool) -> T:
+    def read(input: str, object_class: type[T], resource: str) -> T:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
-    def type(cls: Class[T]) -> str:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def parse(file: Path, cls: Class[T]) -> T:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def read(input: str, object_class: Class[T], resource: str) -> T:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def read_non_strict(input: str, object_class: Class[T], resource: str) -> T:
+    def read_non_strict(input: str, object_class: type[T], resource: str) -> T:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
@@ -50,5 +38,5 @@ class YamlParser:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
-    def to_constraint_violation_exception(target: T, resource: str, e: JsonProcessingException) -> ConstraintViolationException:
+    def to_constraint_violation_exception(target: T, resource: str, e: JsonProcessingException) -> ValueError:
         raise NotImplementedError  # TODO: translate from Java

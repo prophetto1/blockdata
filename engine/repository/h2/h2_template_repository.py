@@ -1,13 +1,11 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\jdbc-h2\src\main\java\io\kestra\repository\h2\H2TemplateRepository.java
-# WARNING: Unresolved types: ApplicationContext
 
 from dataclasses import dataclass
 from typing import Any
 
 from engine.jdbc.repository.abstract_jdbc_template_repository import AbstractJdbcTemplateRepository
-from engine.core.models.conditions.condition import Condition
 from engine.repository.h2.h2_repository import H2Repository
 from engine.core.models.templates.template import Template
 

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\jdbc-mysql\src\main\java\io\kestra\repository\mysql\MysqlMetricRepository.java
-# WARNING: Unresolved types: Date, Field, GroupType, Timestamp
+# WARNING: Unresolved types: Timestamp
 
 from dataclasses import dataclass
 from typing import Any

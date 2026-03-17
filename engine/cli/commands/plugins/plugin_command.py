@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\cli\src\main\java\io\kestra\cli\commands\plugins\PluginCommand.java
-# WARNING: Unresolved types: Exception
 
 from dataclasses import dataclass
 from typing import Any

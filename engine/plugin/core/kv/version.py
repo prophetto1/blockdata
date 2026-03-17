@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\plugin\core\kv\Version.java
-# WARNING: Unresolved types: IOException
 
 from dataclasses import dataclass
 from typing import Any

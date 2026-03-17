@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\http\client\HttpClientException.java
-# WARNING: Unresolved types: HttpException, Throwable
+# WARNING: Unresolved types: HttpException
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field

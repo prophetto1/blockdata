@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\services\FlowService.java
-# WARNING: Unresolved types: Class, IllegalStateException, Method, Provider, Stream
+# WARNING: Unresolved types: Method, Provider
 
 from dataclasses import dataclass, field
-from logging import logging
-from typing import Any, ClassVar, Optional
+from logging import Logger, getLogger
+from typing import Any, ClassVar, Iterator, Optional
 
 from engine.core.models.triggers.abstract_trigger import AbstractTrigger
 from engine.core.models.flows.check.check import Check
@@ -28,7 +28,7 @@ from engine.core.models.validations.validate_constraint_violation import Validat
 
 @dataclass(slots=True, kw_only=True)
 class FlowService:
-    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    logger: ClassVar[Logger] = getLogger(__name__)
     flow_repository: Optional[FlowRepositoryInterface] | None = None
     plugin_default_service: PluginDefaultService | None = None
     plugin_registry: PluginRegistry | None = None
@@ -52,10 +52,7 @@ class FlowService:
     def validate(self, tenant_id: str, flow_sources: list[FlowSource]) -> list[ValidateConstraintViolation]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def import_flow(self, tenant_id: str, source: str) -> FlowWithSource:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def import_flow(self, tenant_id: str, source: str, dry_run: bool) -> FlowWithSource:
+    def import_flow(self, tenant_id: str, source: str, dry_run: bool | None = None) -> FlowWithSource:
         raise NotImplementedError  # TODO: translate from Java
 
     def find_by_namespace_with_source(self, tenant_id: str, namespace: str) -> list[FlowWithSource]:
@@ -70,7 +67,7 @@ class FlowService:
     def find_by_id(self, tenant_id: str, namespace: str, flow_id: str) -> Optional[Flow]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def keep_last_version(self, stream: Stream[FlowInterface]) -> Stream[FlowInterface]:
+    def keep_last_version(self, stream: Iterator[FlowInterface]) -> Iterator[FlowInterface]:
         raise NotImplementedError  # TODO: translate from Java
 
     def deprecation_paths(self, flow: Flow) -> list[str]:
@@ -79,25 +76,19 @@ class FlowService:
     def warnings(self, flow: Flow, tenant_id: str) -> list[str]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def relocations(self, flow_source: str) -> list[Relocation]:
+    def relocations(self, aliases: dict[str, type[Any]], string_object_map: dict[str, Any] | None = None) -> list[Relocation]:
         raise NotImplementedError  # TODO: translate from Java
 
     def check_valid_subflows(self, flow: Flow, tenant_id: str) -> list[str]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def relocations(self, aliases: dict[str, Class[Any]], string_object_map: dict[str, Any]) -> list[Relocation]:
+    def deprecation_traversal(self, prefix: str, object: Any) -> Iterator[str]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def deprecation_traversal(self, prefix: str, object: Any) -> Stream[str]:
+    def all_getters(self, clazz: type[Any]) -> Iterator[Method]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def all_getters(self, clazz: Class[Any]) -> Stream[Method]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def keep_last_version(self, flows: list[FlowInterface]) -> list[FlowInterface]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def keep_last_version_collector(self, stream: Stream[FlowInterface]) -> Stream[FlowInterface]:
+    def keep_last_version_collector(self, stream: Iterator[FlowInterface]) -> Iterator[FlowInterface]:
         raise NotImplementedError  # TODO: translate from Java
 
     def remove_unwanted(self, f: Flow, execution: Execution) -> bool:
@@ -128,13 +119,13 @@ class FlowService:
     def get_flow_if_executable_or_throw(self, tenant: str, namespace: str, id: str, revision: Optional[int]) -> Flow:
         raise NotImplementedError  # TODO: translate from Java
 
-    def find_dependencies(self, tenant: str, namespace: str, id: str, destination_only: bool, expand_all: bool) -> Stream[FlowTopology]:
+    def find_dependencies(self, tenant: str, namespace: str, id: str, destination_only: bool, expand_all: bool) -> Iterator[FlowTopology]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def recursive_flow_topology(self, visited_topologies: list[str], tenant_id: str, namespace: str, id: str, destination_only: bool) -> Stream[FlowTopology]:
+    def recursive_flow_topology(self, visited_topologies: list[str], tenant_id: str, namespace: str, id: str, destination_only: bool) -> Iterator[FlowTopology]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def no_repository_exception(self) -> IllegalStateException:
+    def no_repository_exception(self) -> RuntimeError:
         raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)

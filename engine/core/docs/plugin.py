@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\docs\Plugin.java
-# WARNING: Unresolved types: Class, PluginCategory, Predicate
+# WARNING: Unresolved types: PluginCategory
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Callable
 
 from engine.core.models.annotations.plugin_sub_group import PluginSubGroup
 from engine.core.plugins.registered_plugin import RegisteredPlugin
@@ -44,7 +44,7 @@ class Plugin:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
-    def filter_and_get_type_with_metadata(list: list[Any], clazz_filter: Predicate[Class[Any]]) -> list[PluginElementMetadata]:
+    def filter_and_get_type_with_metadata(list: list[Any], clazz_filter: Callable[type[Any]]) -> list[PluginElementMetadata]:
         raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)

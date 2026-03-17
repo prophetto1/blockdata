@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\services\ExecutionService.java
-# WARNING: Unresolved types: ApplicationEventPublisher, CompletedPart, Exception, Flux, IOException, Mono, Predicate, Publisher, Resumed
+# WARNING: Unresolved types: CompletedPart, Publisher, Resumed
 
 from dataclasses import dataclass, field
-from logging import logging
+from logging import Logger, getLogger
 from datetime import datetime
-from typing import Any, ClassVar, Optional
+from typing import Any, Callable, ClassVar, Optional
 
 from engine.core.models.tasks.retrys.abstract_retry import AbstractRetry
 from engine.core.services.concurrency_limit_service import ConcurrencyLimitService
@@ -39,7 +39,7 @@ from engine.core.services.variables_service import VariablesService
 
 @dataclass(slots=True, kw_only=True)
 class ExecutionService:
-    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    logger: ClassVar[Logger] = getLogger(__name__)
     flow_repository_interface: FlowRepositoryInterface | None = None
     storage_interface: StorageInterface | None = None
     execution_repository: ExecutionRepositoryInterface | None = None
@@ -71,7 +71,7 @@ class ExecutionService:
     def restart(self, execution: Execution, revision: int) -> Execution:
         raise NotImplementedError  # TODO: translate from Java
 
-    def task_run_to_restart(self, execution: Execution, predicate: Predicate[TaskRun]) -> set[str]:
+    def task_run_to_restart(self, execution: Execution, predicate: Callable[TaskRun]) -> set[str]:
         raise NotImplementedError  # TODO: translate from Java
 
     def replay(self, execution: Execution, task_run_id: str, revision: int) -> Execution:
@@ -80,10 +80,7 @@ class ExecutionService:
     def change_task_run_state(self, execution: Execution, flow: Flow, task_run_id: str, new_state: State.Type) -> Execution:
         raise NotImplementedError  # TODO: translate from Java
 
-    def mark_as(self, execution: Execution, flow: FlowInterface, task_run_id: str, new_state: State.Type) -> Execution:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def mark_as(self, execution: Execution, flow: FlowInterface, task_run_id: str, new_state: State.Type, on_resume_inputs: dict[str, Any], resumed: Pause.Resumed) -> Execution:
+    def mark_as(self, execution: Execution, flow: FlowInterface, task_run_id: str, new_state: State.Type, on_resume_inputs: dict[str, Any] | None = None, resumed: Pause.Resumed | None = None) -> Execution:
         raise NotImplementedError  # TODO: translate from Java
 
     def mark_with_task_run_as(self, execution: Execution, task_run_id: str, new_state: State.Type, mark_parents: bool) -> Execution:
@@ -95,22 +92,13 @@ class ExecutionService:
     def delete(self, execution: Execution, delete_logs: bool, delete_metrics: bool, delete_storage: bool) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
-    def resume(self, execution: Execution, flow: FlowInterface, new_state: State.Type, resumed: Pause.Resumed) -> Execution:
+    def resume(self, execution: Execution, flow: FlowInterface, new_state: State.Type, inputs: Publisher[CompletedPart], resumed: Pause.Resumed | None = None) -> Mono[Execution]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def validate_for_resume(self, execution: Execution, flow: FlowInterface) -> Mono[list[InputAndValue]]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def validate_for_resume(self, execution: Execution, flow: Flow, inputs: Publisher[CompletedPart]) -> Mono[list[InputAndValue]]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def resume(self, execution: Execution, flow: FlowInterface, new_state: State.Type, inputs: Publisher[CompletedPart], resumed: Pause.Resumed) -> Mono[Execution]:
+    def validate_for_resume(self, execution: Execution, flow: Flow, inputs: Publisher[CompletedPart] | None = None) -> Mono[list[InputAndValue]]:
         raise NotImplementedError  # TODO: translate from Java
 
     def get_first_paused_task_or(self, execution: Execution, flow: FlowInterface) -> Mono[Optional[Task]]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def resume(self, execution: Execution, flow: FlowInterface, new_state: State.Type, inputs: dict[str, Any], resumed: Pause.Resumed) -> Execution:
         raise NotImplementedError  # TODO: translate from Java
 
     def pause(self, execution: Execution) -> Execution:
@@ -119,10 +107,7 @@ class ExecutionService:
     def kill_subflow_executions(self, tenant_id: str, execution_id: str) -> Flux[ExecutionKilledExecution]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def kill(self, execution: Execution, flow: FlowInterface, after_kill_state: Optional[State.Type]) -> Execution:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def kill(self, execution: Execution, flow: FlowInterface) -> Execution:
+    def kill(self, execution: Execution, flow: FlowInterface, after_kill_state: Optional[State.Type] | None = None) -> Execution:
         raise NotImplementedError  # TODO: translate from Java
 
     def kill_parent_taskruns(self, task_run: TaskRun, execution: Execution) -> Execution:

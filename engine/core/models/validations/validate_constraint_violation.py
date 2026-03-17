@@ -3,14 +3,14 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\models\validations\ValidateConstraintViolation.java
 
 from dataclasses import dataclass, field
-from logging import logging
+from logging import Logger, getLogger
 from typing import Any, ClassVar
 
 
 @dataclass(slots=True, kw_only=True)
 class ValidateConstraintViolation:
     index: int
-    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    logger: ClassVar[Logger] = getLogger(__name__)
     filename: str | None = None
     namespace: str | None = None
     flow: str | None = None

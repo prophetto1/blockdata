@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\models\triggers\PollingTriggerInterface.java
-# WARNING: Unresolved types: Exception
 
 from datetime import datetime
 from datetime import timedelta
@@ -19,8 +18,6 @@ class PollingTriggerInterface(WorkerTriggerInterface, Protocol):
 
     def evaluate(self, condition_context: ConditionContext, context: TriggerContext) -> Optional[Execution]: ...
 
-    def next_evaluation_date(self, condition_context: ConditionContext, last: Optional[Any]) -> datetime: ...
-
-    def next_evaluation_date(self) -> datetime: ...
+    def next_evaluation_date(self, condition_context: ConditionContext | None = None, last: Optional[Any] | None = None) -> datetime: ...
 
     def compute_next_evaluation_date(self) -> datetime: ...

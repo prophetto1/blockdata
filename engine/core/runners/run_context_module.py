@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\runners\RunContextModule.java
-# WARNING: Unresolved types: DeserializationContext, IOException, JacksonException, JsonDeserializer, JsonParser, SimpleModule
+# WARNING: Unresolved types: DeserializationContext, JacksonException, JsonParser, SimpleModule
 
 from dataclasses import dataclass, field
 from typing import Any, ClassVar

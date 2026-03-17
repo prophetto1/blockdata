@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\docs\ClassPluginDocumentation.java
-# WARNING: Unresolved types: Class, ConcurrentHashMap, T
+# WARNING: Unresolved types: ConcurrentHashMap
 
 from dataclasses import dataclass, field
 from typing import Any, ClassVar

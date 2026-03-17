@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\jdbc-mysql\src\main\java\io\kestra\runner\mysql\MysqlQueueFactory.java
-# WARNING: Unresolved types: ApplicationContext
 
 from dataclasses import dataclass
 from typing import Any

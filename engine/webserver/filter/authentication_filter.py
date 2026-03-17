@@ -7,7 +7,6 @@ from dataclasses import dataclass, field
 from typing import Any, ClassVar, Optional
 
 from engine.webserver.services.basic_auth_service import BasicAuthService
-from engine.core.http.http_request import HttpRequest
 
 
 @dataclass(slots=True, kw_only=True)

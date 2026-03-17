@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\jdbc\src\main\java\io\kestra\jdbc\JdbcMapper.java
-# WARNING: Unresolved types: DateTimeFormatter, ObjectMapper
+# WARNING: Unresolved types: DateTimeFormatter
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field

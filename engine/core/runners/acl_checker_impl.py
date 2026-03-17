@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\runners\AclCheckerImpl.java
-# WARNING: Unresolved types: AllowedResources, ApplicationContext, FlowInfo
+# WARNING: Unresolved types: AllowedResources, FlowInfo
 
 from dataclasses import dataclass
 from typing import Any

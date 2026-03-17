@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\services\StorageService.java
-# WARNING: Unresolved types: BiFunction, BufferedReader, IOException
+# WARNING: Unresolved types: BufferedReader
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 from engine.core.exceptions.illegal_variable_evaluation_exception import IllegalVariableEvaluationException
 from engine.core.runners.run_context import RunContext
@@ -17,11 +17,7 @@ from engine.core.storages.storage_split_interface import StorageSplitInterface
 class StorageService(ABC):
 
     @staticmethod
-    def split(run_context: RunContext, storage_split_interface: StorageSplitInterface, from: str) -> list[str]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def split(run_context: RunContext, extension: str, separator: str, buffered_reader: BufferedReader, predicate: BiFunction[int, int, bool]) -> list[Path]:
+    def split(run_context: RunContext, extension: str, separator: str, buffered_reader: BufferedReader | None = None, predicate: Callable[int, int, bool] | None = None) -> list[Path]:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod

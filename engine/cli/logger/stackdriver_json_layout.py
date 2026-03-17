@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\cli\src\main\java\io\kestra\cli\logger\StackdriverJsonLayout.java
-# WARNING: Unresolved types: ILoggingEvent, JsonLayout
+# WARNING: Unresolved types: JsonLayout
 
 from dataclasses import dataclass, field
 from typing import Any, ClassVar

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\webserver\src\main\java\io\kestra\webserver\utils\CSVUtils.java
-# WARNING: Unresolved types: Flux, Writer
+# WARNING: Unresolved types: Writer
 
 from dataclasses import dataclass
 from typing import Any

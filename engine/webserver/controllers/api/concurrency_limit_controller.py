@@ -7,7 +7,6 @@ from typing import Any
 
 from engine.core.runners.concurrency_limit import ConcurrencyLimit
 from engine.core.services.concurrency_limit_service import ConcurrencyLimitService
-from engine.core.http.http_response import HttpResponse
 from engine.webserver.responses.paged_results import PagedResults
 from engine.core.tenant.tenant_service import TenantService
 

@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\services\WebhookService.java
-# WARNING: Unresolved types: ApplicationEventPublisher, Flux, OpenTelemetry, core, io, kestra, models, tasks
+# WARNING: Unresolved types: OpenTelemetry
 
 from dataclasses import dataclass, field
-from logging import logging
+from logging import Logger, getLogger
 from typing import Any, ClassVar, Optional
 
 from engine.core.models.triggers.abstract_trigger import AbstractTrigger
@@ -28,7 +28,7 @@ from engine.plugin.core.trigger.webhook_response import WebhookResponse
 
 @dataclass(slots=True, kw_only=True)
 class WebhookService:
-    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    logger: ClassVar[Logger] = getLogger(__name__)
     run_context_factory: RunContextFactory | None = None
     condition_service: ConditionService | None = None
     flow_input_output: FlowInputOutput | None = None
@@ -54,9 +54,6 @@ class WebhookService:
         raise NotImplementedError  # TODO: translate from Java
 
     def run_context(self, flow: Flow, trigger: AbstractTrigger) -> RunContext:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def run_context(self, flow: Flow, execution: Execution) -> RunContext:
         raise NotImplementedError  # TODO: translate from Java
 
     def read_execution_inputs(self, flow: Flow, execution: Execution, rendered_inputs: dict[str, Any]) -> dict[str, Any]:

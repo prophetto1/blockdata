@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\jdbc-postgres\src\main\java\io\kestra\repository\postgres\PostgresRepositoryUtils.java
-# WARNING: Unresolved types: Date, Field, GroupType
 
 from dataclasses import dataclass
 from typing import Any

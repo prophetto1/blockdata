@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\serializers\JacksonMapper.java
-# WARNING: Unresolved types: Class, IonSystem, JsonNode, JsonProcessingException, LoaderOptions, ObjectMapper, Pair, T, TypeReference, ZoneId
+# WARNING: Unresolved types: IonSystem, JsonProcessingException, LoaderOptions, Pair, TypeReference, ZoneId
 
 from dataclasses import dataclass, field
 from typing import Any, ClassVar
@@ -18,11 +18,7 @@ class JacksonMapper:
     ion_mapper: ClassVar[ObjectMapper]
 
     @staticmethod
-    def of_json() -> ObjectMapper:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def of_json(strict: bool) -> ObjectMapper:
+    def of_json(strict: bool | None = None) -> ObjectMapper:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
@@ -30,19 +26,7 @@ class JacksonMapper:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
-    def to_map(object: Any, zone_id: ZoneId) -> dict[str, Any]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def to_map(object: Any) -> dict[str, Any]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def to_map(map: Any, cls: Class[T]) -> T:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def to_map(json: str) -> dict[str, Any]:
+    def to_map(object: Any, zone_id: ZoneId | None = None) -> dict[str, Any]:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
@@ -50,15 +34,11 @@ class JacksonMapper:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
-    def to_list(object: Any) -> list[str]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
     def to_object(json: str) -> Any:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
-    def cast(object: Any, cls: Class[T]) -> T:
+    def cast(object: Any, cls: type[T]) -> T:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod

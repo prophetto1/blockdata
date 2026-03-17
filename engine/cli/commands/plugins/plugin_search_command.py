@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\cli\src\main\java\io\kestra\cli\commands\plugins\PluginSearchCommand.java
-# WARNING: Unresolved types: Exception, JsonNode, ObjectMapper, StringBuilder
 
 from dataclasses import dataclass, field
 from typing import Any, ClassVar
@@ -35,10 +34,10 @@ class PluginSearchCommand(AbstractCommand):
     def print_plugins_table(self, plugins: list[PluginInfo]) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
-    def print_row(self, name_pad: StringBuilder, title_pad: StringBuilder, group_pad: StringBuilder, name: str, title: str, group: str, version: str, max_name: int, max_title: int, max_group: int) -> None:
+    def print_row(self, name_pad: str, title_pad: str, group_pad: str, name: str, title: str, group: str, version: str, max_name: int, max_title: int, max_group: int) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
-    def pad(self, sb: StringBuilder, str: str, length: int) -> str:
+    def pad(self, sb: str, str: str, length: int) -> str:
         raise NotImplementedError  # TODO: translate from Java
 
     def load_external_plugins(self) -> bool:

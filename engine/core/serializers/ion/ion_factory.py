@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\serializers\ion\IonFactory.java
-# WARNING: Unresolved types: Closeable, IOContext, IOException, IonSystem, IonWriter, JsonParser, Reader, com, dataformat, fasterxml, ion, jackson
+# WARNING: Unresolved types: IOContext, IonSystem, IonWriter, JsonParser, Reader, com, dataformat, fasterxml, ion, jackson
 
 from dataclasses import dataclass, field
 from typing import Any, ClassVar
@@ -16,5 +16,5 @@ class IonFactory(IonFactory):
     def _create_parser(self, r: Reader, ctxt: IOContext) -> JsonParser:
         raise NotImplementedError  # TODO: translate from Java
 
-    def _create_generator(self, ion: IonWriter, ion_writer_is_managed: bool, ctxt: IOContext, dst: Closeable) -> com.fasterxml.jackson.dataformat.ion.IonGenerator:
+    def _create_generator(self, ion: IonWriter, ion_writer_is_managed: bool, ctxt: IOContext, dst: Any) -> com.fasterxml.jackson.dataformat.ion.IonGenerator:
         raise NotImplementedError  # TODO: translate from Java

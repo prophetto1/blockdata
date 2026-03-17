@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\plugins\PluginConfigurations.java
-# WARNING: Unresolved types: Class
 
 from dataclasses import dataclass
 from typing import Any
@@ -17,5 +16,5 @@ class PluginConfigurations:
     def get_configuration_by_plugin_type(self, plugin_type: str) -> dict[str, Any]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def get_configuration_by_plugin_type_or_aliases(self, plugin_type: str, plugin: Class[Any]) -> dict[str, Any]:
+    def get_configuration_by_plugin_type_or_aliases(self, plugin_type: str, plugin: type[Any]) -> dict[str, Any]:
         raise NotImplementedError  # TODO: translate from Java

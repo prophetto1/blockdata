@@ -3,7 +3,7 @@ from __future__ import annotations
 # Source: E:\KESTRA\webserver\src\main\java\io\kestra\webserver\services\ai\DashboardAiCopilot.java
 
 from dataclasses import dataclass, field
-from logging import logging
+from logging import Logger, getLogger
 from typing import Any, ClassVar
 
 from engine.webserver.services.ai.abstract_ai_copilot import AbstractAiCopilot
@@ -18,7 +18,7 @@ from engine.core.plugins.plugin_registry import PluginRegistry
 class DashboardAiCopilot(AbstractAiCopilot):
     possible_error_messages: ClassVar[list[str]]
     excluded_plugin_types: ClassVar[list[str]]
-    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    logger: ClassVar[Logger] = getLogger(__name__)
     already_valid_message: ClassVar[str] = "This dashboard already performs the requested action. Please provide additional instructions if you would like to request modifications."
     non_request_error: ClassVar[str] = "I can only assist with creating Kestra dashboards."
     unable_to_generate_error: ClassVar[str] = "The prompt did not provide enough information to generate a valid dashboard. Please clarify your request."

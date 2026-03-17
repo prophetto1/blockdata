@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\jdbc\src\main\java\io\kestra\jdbc\repository\AbstractJdbcNamespaceFileMetadataRepository.java
-# WARNING: Unresolved types: DSLContext, Pageable, Record1, SelectConditionStep, io, jdbc, kestra
+# WARNING: Unresolved types: Record1
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
@@ -9,7 +9,6 @@ from typing import Any, Optional
 
 from engine.jdbc.abstract_jdbc_repository import AbstractJdbcRepository
 from engine.core.repositories.array_list_total import ArrayListTotal
-from engine.core.models.conditions.condition import Condition
 from engine.core.models.fetch_version import FetchVersion
 from engine.core.models.namespaces.files.namespace_file_metadata import NamespaceFileMetadata
 from engine.core.repositories.namespace_file_metadata_repository_interface import NamespaceFileMetadataRepositoryInterface
@@ -21,11 +20,7 @@ class AbstractJdbcNamespaceFileMetadataRepository(ABC, AbstractJdbcRepository):
     jdbc_repository: io.kestra.jdbc.AbstractJdbcRepository[NamespaceFileMetadata] | None = None
 
     @staticmethod
-    def last_condition(is_last: bool) -> Condition:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def last_condition() -> Condition:
+    def last_condition(is_last: bool | None = None) -> Condition:
         raise NotImplementedError  # TODO: translate from Java
 
     @abstractmethod

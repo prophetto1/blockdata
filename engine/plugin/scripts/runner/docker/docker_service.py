@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\script\src\main\java\io\kestra\plugin\scripts\runner\docker\DockerService.java
-# WARNING: Unresolved types: DockerClient, DockerClientConfig, IOException
+# WARNING: Unresolved types: DockerClient, DockerClientConfig
 
 from dataclasses import dataclass
 from pathlib import Path
@@ -16,15 +16,11 @@ from engine.core.runners.run_context import RunContext
 class DockerService:
 
     @staticmethod
-    def client(docker_client_config: DockerClientConfig) -> DockerClient:
+    def client(run_context: RunContext, host: str | None = None, config: Any | None = None, credentials: Credentials | None = None, image: str | None = None) -> DockerClient:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
     def find_host(run_context: RunContext, host: str) -> str:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def client(run_context: RunContext, host: str, config: Any, credentials: Credentials, image: str) -> DockerClient:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod

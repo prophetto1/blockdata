@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\models\assets\Asset.java
-# WARNING: Unresolved types: T
 
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime
 from typing import Any
 
@@ -32,12 +31,9 @@ class Asset(ABC):
     def to_deleted(self) -> Asset:
         raise NotImplementedError  # TODO: translate from Java
 
-    def uid(self) -> str:
-        raise NotImplementedError  # TODO: translate from Java
-
     @staticmethod
-    def uid(tenant_id: str, id: str) -> str:
+    def uid(tenant_id: str | None = None, id: str | None = None) -> str:
         raise NotImplementedError  # TODO: translate from Java
 
     def with_tenant_id(self, tenant_id: str) -> Asset:
-        raise NotImplementedError  # TODO: translate from Java
+        return replace(self, tenant_id=tenant_id)

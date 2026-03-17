@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\jdbc\src\main\java\io\kestra\jdbc\repository\AbstractJdbcLogRepository.java
-# WARNING: Unresolved types: Date, Field, Fields, Flux, GroupType, Level, Pageable, io, jdbc, kestra
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
@@ -12,7 +11,6 @@ from engine.jdbc.repository.abstract_jdbc_crud_repository import AbstractJdbcCru
 from engine.jdbc.abstract_jdbc_repository import AbstractJdbcRepository
 from engine.core.repositories.array_list_total import ArrayListTotal
 from engine.core.models.dashboards.column_descriptor import ColumnDescriptor
-from engine.core.models.conditions.condition import Condition
 from engine.core.models.dashboards.data_filter import DataFilter
 from engine.core.models.dashboards.data_filter_kpi import DataFilterKPI
 from engine.core.utils.date_utils import DateUtils
@@ -55,88 +53,46 @@ class AbstractJdbcLogRepository(ABC, AbstractJdbcCrudRepository):
     def find_async(self, tenant_id: str, filters: list[QueryFilter]) -> Flux[LogEntry]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def find_by_execution_id(self, tenant_id: str, execution_id: str, min_level: Level) -> list[LogEntry]:
+    def find_by_execution_id(self, tenant_id: str, namespace: str, flow_id: str, execution_id: str | None = None, min_level: int | None = None) -> list[LogEntry]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def find_by_execution_id_without_acl(self, tenant_id: str, execution_id: str, min_level: Level) -> list[LogEntry]:
+    def find_by_execution_id_without_acl(self, tenant_id: str, execution_id: str, min_level: int) -> list[LogEntry]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def find_by_execution_id(self, tenant_id: str, execution_id: str, min_level: Level, with_access_control: bool) -> list[LogEntry]:
+    def find_by_execution_id_and_task_id(self, tenant_id: str, namespace: str, flow_id: str, execution_id: str, task_id: str | None = None, min_level: int | None = None) -> list[LogEntry]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def find_by_execution_id(self, tenant_id: str, execution_id: str, min_level: Level, pageable: Pageable) -> ArrayListTotal[LogEntry]:
+    def find_by_execution_id_and_task_id_without_acl(self, tenant_id: str, execution_id: str, task_id: str, min_level: int) -> list[LogEntry]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def find_by_execution_id(self, tenant_id: str, namespace: str, flow_id: str, execution_id: str, min_level: Level) -> list[LogEntry]:
+    def find_by_execution_id_and_task_run_id(self, tenant_id: str, execution_id: str, task_run_id: str, min_level: int, with_access_control: bool | None = None) -> list[LogEntry]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def find_by_execution_id_and_task_id(self, tenant_id: str, execution_id: str, task_id: str, min_level: Level) -> list[LogEntry]:
+    def find_by_execution_id_and_task_run_id_without_acl(self, tenant_id: str, execution_id: str, task_run_id: str, min_level: int) -> list[LogEntry]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def find_by_execution_id_and_task_id_without_acl(self, tenant_id: str, execution_id: str, task_id: str, min_level: Level) -> list[LogEntry]:
+    def find_by_execution_id_and_task_run_id_and_attempt(self, tenant_id: str, execution_id: str, task_run_id: str, min_level: int, attempt: int, with_access_control: bool | None = None) -> list[LogEntry]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def find_by_execution_id_and_task_id(self, tenant_id: str, execution_id: str, task_id: str, min_level: Level, with_access_control: bool) -> list[LogEntry]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def find_by_execution_id_and_task_id(self, tenant_id: str, execution_id: str, task_id: str, min_level: Level, pageable: Pageable) -> ArrayListTotal[LogEntry]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def find_by_execution_id_and_task_id(self, tenant_id: str, namespace: str, flow_id: str, execution_id: str, task_id: str, min_level: Level) -> list[LogEntry]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def find_by_execution_id_and_task_run_id(self, tenant_id: str, execution_id: str, task_run_id: str, min_level: Level) -> list[LogEntry]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def find_by_execution_id_and_task_run_id_without_acl(self, tenant_id: str, execution_id: str, task_run_id: str, min_level: Level) -> list[LogEntry]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def find_by_execution_id_and_task_run_id(self, tenant_id: str, execution_id: str, task_run_id: str, min_level: Level, with_access_control: bool) -> list[LogEntry]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def find_by_execution_id_and_task_run_id(self, tenant_id: str, execution_id: str, task_run_id: str, min_level: Level, pageable: Pageable) -> ArrayListTotal[LogEntry]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def find_by_execution_id_and_task_run_id_and_attempt(self, tenant_id: str, execution_id: str, task_run_id: str, min_level: Level, attempt: int) -> list[LogEntry]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def find_by_execution_id_and_task_run_id_and_attempt_without_acl(self, tenant_id: str, execution_id: str, task_run_id: str, min_level: Level, attempt: int) -> list[LogEntry]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def find_by_execution_id_and_task_run_id_and_attempt(self, tenant_id: str, execution_id: str, task_run_id: str, min_level: Level, attempt: int, with_access_control: bool) -> list[LogEntry]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def find_by_execution_id_and_task_run_id_and_attempt(self, tenant_id: str, execution_id: str, task_run_id: str, min_level: Level, attempt: int, pageable: Pageable) -> ArrayListTotal[LogEntry]:
+    def find_by_execution_id_and_task_run_id_and_attempt_without_acl(self, tenant_id: str, execution_id: str, task_run_id: str, min_level: int, attempt: int) -> list[LogEntry]:
         raise NotImplementedError  # TODO: translate from Java
 
     def purge(self, execution: Execution) -> int:
         raise NotImplementedError  # TODO: translate from Java
 
-    def purge(self, executions: list[Execution]) -> int:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def delete_by_query(self, tenant_id: str, execution_id: str, task_id: str, task_run_id: str, min_level: Level, attempt: int) -> None:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def delete_by_query(self, tenant_id: str, namespace: str, flow_id: str, trigger_id: str) -> None:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def delete_by_query(self, tenant_id: str, namespace: str, flow_id: str, execution_id: str, log_levels: list[Level], start_date: datetime, end_date: datetime) -> int:
+    def delete_by_query(self, tenant_id: str, namespace: str, flow_id: str, execution_id: str, log_levels: list[int] | None = None, start_date: datetime | None = None, end_date: datetime | None = None) -> int:
         raise NotImplementedError  # TODO: translate from Java
 
     def delete_by_filters(self, tenant_id: str, filters: list[QueryFilter]) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
-    def query(self, tenant_id: str, condition: Condition, min_level: Level, pageable: Pageable) -> ArrayListTotal[LogEntry]:
+    def query(self, tenant_id: str, condition: Condition, min_level: int, pageable: Pageable) -> ArrayListTotal[LogEntry]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def query(self, tenant_id: str, condition: Condition, min_level: Level, with_access_control: bool) -> list[LogEntry]:
+    def min_level(self, min_level: int) -> Condition:
         raise NotImplementedError  # TODO: translate from Java
 
-    def min_level(self, min_level: Level) -> Condition:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def levels_condition(self, levels: list[Level]) -> Condition:
+    def levels_condition(self, levels: list[int]) -> Condition:
         raise NotImplementedError  # TODO: translate from Java
 
     def fetch_value(self, tenant_id: str, data_filter: DataFilterKPI[Logs.Fields, Any], start_date: datetime, end_date: datetime, numerator_filter: bool) -> float:
@@ -145,10 +101,7 @@ class AbstractJdbcLogRepository(ABC, AbstractJdbcCrudRepository):
     def fetch_data(self, tenant_id: str, descriptors: DataFilter[Logs.Fields, Any], start_date: datetime, end_date: datetime, pageable: Pageable) -> ArrayListTotal[dict[str, Any]]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def default_filter(self, tenant_id: str) -> Condition:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def default_filter(self) -> Condition:
+    def default_filter(self, tenant_id: str | None = None) -> Condition:
         raise NotImplementedError  # TODO: translate from Java
 
     @abstractmethod

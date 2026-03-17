@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\runners\RunContextFactory.java
-# WARNING: Unresolved types: ApplicationContext, Builder, Function
+# WARNING: Unresolved types: Builder
 
 from dataclasses import dataclass
 from typing import Any, Optional
@@ -51,40 +51,7 @@ class RunContextFactory:
     def initializer(self) -> RunContextInitializer:
         raise NotImplementedError  # TODO: translate from Java
 
-    def of(self, flow: FlowInterface, execution: Execution) -> RunContext:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def of(self, flow: FlowInterface, execution: Execution, decrypt_variable: bool) -> RunContext:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def of(self, flow: FlowInterface, execution: Execution, run_variable_modifier: Function[RunVariables.Builder, RunVariables.Builder]) -> RunContext:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def of(self, flow: FlowInterface, execution: Execution, run_variable_modifier: Function[RunVariables.Builder, RunVariables.Builder], decrypt_variables: bool) -> RunContext:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def of(self, flow: FlowInterface, task: Task, execution: Execution, task_run: TaskRun) -> RunContext:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def of(self, flow: FlowInterface, task: Task, execution: Execution, task_run: TaskRun, decrypt_variables: bool) -> RunContext:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def of(self, flow: FlowInterface, task: Task, execution: Execution, task_run: TaskRun, decrypt_variables: bool, variable_renderer: VariableRenderer) -> RunContext:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def of(self, flow: FlowInterface, trigger: AbstractTrigger) -> RunContext:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def of(self, flow: FlowInterface, variables: dict[str, Any]) -> RunContext:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def of(self, variables: dict[str, Any]) -> RunContext:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def of(self, task: Task, variables: dict[str, Any]) -> RunContext:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def of(self) -> RunContext:
+    def of(self, flow: FlowInterface | None = None, task: Task | None = None, execution: Execution | None = None, task_run: TaskRun | None = None, decrypt_variables: bool | None = None, variable_renderer: VariableRenderer | None = None) -> RunContext:
         raise NotImplementedError  # TODO: translate from Java
 
     def secret_inputs_from_flow(self, flow: FlowInterface) -> list[str]:

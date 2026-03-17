@@ -17,11 +17,7 @@ class Timer(AbstractMetricEntry):
     type: str = TYPE
 
     @staticmethod
-    def of(name: str, value: timedelta) -> Timer:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def of(name: str, description: str, value: timedelta) -> Timer:
+    def of(name: str, description: str, value: timedelta | None = None) -> Timer:
         raise NotImplementedError  # TODO: translate from Java
 
     def register(self, meter_registry: MetricRegistry, name: str, description: str, tags: dict[str, str]) -> None:

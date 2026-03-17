@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\models\tasks\runners\TaskLogLineMatcher.java
-# WARNING: Unresolved types: IOException, Level, Logger, ObjectMapper, Pattern
 
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -14,16 +13,13 @@ from engine.core.runners.run_context import RunContext
 
 @dataclass(slots=True, kw_only=True)
 class TaskLogLineMatcher:
-    log_data_syntax: ClassVar[Pattern]
+    log_data_syntax: ClassVar[re.Pattern]
     mapper: ClassVar[ObjectMapper]
 
-    def matches(self, log_line: str, logger: Logger, run_context: RunContext, instant: datetime) -> Optional[TaskLogMatch]:
+    def matches(self, log_line: str, logger: Any | None = None, run_context: RunContext | None = None, instant: datetime | None = None) -> Optional[TaskLogMatch]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def handle(self, logger: Logger, run_context: RunContext, instant: datetime, match: TaskLogMatch, data: str) -> TaskLogMatch:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def matches(self, log_line: str) -> Optional[str]:
+    def handle(self, logger: Any, run_context: RunContext, instant: datetime, match: TaskLogMatch, data: str) -> TaskLogMatch:
         raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)
@@ -38,5 +34,5 @@ class TaskLogLineMatcher:
 
     @dataclass(slots=True)
     class LogLine:
-        level: Level | None = None
+        level: int | None = None
         message: str | None = None

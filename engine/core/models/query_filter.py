@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\models\QueryFilter.java
-# WARNING: Unresolved types: Enum, T
 
 from dataclasses import dataclass
 from enum import Enum

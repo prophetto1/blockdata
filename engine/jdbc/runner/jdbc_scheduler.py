@@ -1,12 +1,11 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\jdbc\src\main\java\io\kestra\jdbc\runner\JdbcScheduler.java
-# WARNING: Unresolved types: ApplicationContext, BiConsumer
 
 from dataclasses import dataclass, field
-from logging import logging
+from logging import Logger, getLogger
 from datetime import datetime
-from typing import Any, ClassVar
+from typing import Any, Callable, ClassVar
 
 from engine.scheduler.abstract_scheduler import AbstractScheduler
 from engine.core.services.flow_listeners_interface import FlowListenersInterface
@@ -19,12 +18,12 @@ from engine.core.repositories.trigger_repository_interface import TriggerReposit
 
 @dataclass(slots=True, kw_only=True)
 class JdbcScheduler(AbstractScheduler):
-    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    logger: ClassVar[Logger] = getLogger(__name__)
     trigger_repository: TriggerRepositoryInterface | None = None
     dsl_context_wrapper: JooqDSLContextWrapper | None = None
 
     def run(self) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
-    def handle_next(self, flows: list[FlowWithSource], now: datetime, consumer: BiConsumer[list[Trigger], ScheduleContextInterface]) -> None:
+    def handle_next(self, flows: list[FlowWithSource], now: datetime, consumer: Callable[list[Trigger], ScheduleContextInterface]) -> None:
         raise NotImplementedError  # TODO: translate from Java

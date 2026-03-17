@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\utils\Slugify.java
-# WARNING: Unresolved types: Pattern
 
 from dataclasses import dataclass, field
 from typing import Any, ClassVar
@@ -9,9 +8,9 @@ from typing import Any, ClassVar
 
 @dataclass(slots=True, kw_only=True)
 class Slugify:
-    nonlatin: ClassVar[Pattern]
-    whitespace: ClassVar[Pattern]
-    dash_pattern: ClassVar[Pattern]
+    nonlatin: ClassVar[re.Pattern]
+    whitespace: ClassVar[re.Pattern]
+    dash_pattern: ClassVar[re.Pattern]
 
     @staticmethod
     def of(input: str) -> str:

@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\models\tasks\runners\TaskRunner.java
-# WARNING: Unresolved types: AtomicBoolean, AtomicReference, Exception, Runnable, T
+# WARNING: Unresolved types: AtomicReference
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Callable
 
 from engine.core.exceptions.illegal_variable_evaluation_exception import IllegalVariableEvaluationException
 from engine.core.models.plugin import Plugin
@@ -21,8 +21,8 @@ from engine.core.models.worker_job_lifecycle import WorkerJobLifecycle
 @dataclass(slots=True, kw_only=True)
 class TaskRunner(ABC):
     type: str
-    killable: AtomicReference[Runnable]
-    is_killed: AtomicBoolean
+    killable: AtomicReference[Callable]
+    is_killed: bool
     version: str | None = None
     additional_vars: dict[str, Any] | None = None
     env: dict[str, str] | None = None
@@ -49,11 +49,8 @@ class TaskRunner(ABC):
     def kill(self) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
-    def on_kill(self, runnable: Runnable) -> None:
+    def on_kill(self, runnable: Callable) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
-    def check_killed(self) -> None:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def check_killed(self, message: str) -> None:
+    def check_killed(self, message: str | None = None) -> None:
         raise NotImplementedError  # TODO: translate from Java

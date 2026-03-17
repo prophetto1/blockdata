@@ -7,7 +7,6 @@ from dataclasses import dataclass
 from typing import Any
 
 from engine.jdbc.abstract_jdbc_repository import AbstractJdbcRepository
-from engine.core.models.conditions.condition import Condition
 from engine.core.models.namespaces.files.namespace_file_metadata import NamespaceFileMetadata
 
 

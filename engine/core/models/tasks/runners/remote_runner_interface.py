@@ -4,8 +4,6 @@ from __future__ import annotations
 
 from typing import Any, Protocol
 
-from engine.core.models.property.property import Property
-
 
 class RemoteRunnerInterface(Protocol):
     def get_sync_working_directory(self) -> Property[bool]: ...

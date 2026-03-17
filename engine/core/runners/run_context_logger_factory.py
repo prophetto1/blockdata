@@ -22,17 +22,5 @@ from engine.core.runners.worker_task import WorkerTask
 class RunContextLoggerFactory:
     log_queue: QueueInterface[LogEntry] | None = None
 
-    def create(self, worker_task: WorkerTask) -> RunContextLogger:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def create(self, task_run: TaskRun, task: Task, execution_kind: ExecutionKind) -> RunContextLogger:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def create(self, execution: Execution) -> RunContextLogger:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def create(self, trigger_context: TriggerContext, trigger: AbstractTrigger) -> RunContextLogger:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def create(self, flow: FlowInterface, trigger: AbstractTrigger) -> RunContextLogger:
+    def create(self, task_run: TaskRun, task: Task | None = None, execution_kind: ExecutionKind | None = None) -> RunContextLogger:
         raise NotImplementedError  # TODO: translate from Java

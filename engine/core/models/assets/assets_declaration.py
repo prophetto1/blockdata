@@ -7,7 +7,6 @@ from typing import Any
 
 from engine.core.models.assets.asset import Asset
 from engine.core.models.assets.asset_identifier import AssetIdentifier
-from engine.core.models.property.property import Property
 
 
 @dataclass(slots=True, kw_only=True)

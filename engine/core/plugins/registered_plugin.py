@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\plugins\RegisteredPlugin.java
-# WARNING: Unresolved types: Class, ClassLoader, Entry, IOException, Manifest
+# WARNING: Unresolved types: ClassLoader, Entry, Manifest
 
 from dataclasses import dataclass, field
 from typing import Any, ClassVar, Optional
@@ -13,7 +13,6 @@ from engine.core.app.app_plugin_interface import AppPluginInterface
 from engine.core.models.assets.asset import Asset
 from engine.core.models.assets.asset_exporter import AssetExporter
 from engine.core.models.dashboards.charts.chart import Chart
-from engine.core.models.conditions.condition import Condition
 from engine.core.models.dashboards.data_filter import DataFilter
 from engine.core.models.dashboards.data_filter_kpi import DataFilterKPI
 from engine.core.plugins.external_plugin import ExternalPlugin
@@ -44,23 +43,23 @@ class RegisteredPlugin:
     external_plugin: ExternalPlugin | None = None
     manifest: Manifest | None = None
     class_loader: ClassLoader | None = None
-    tasks: list[Class[Any]] | None = None
-    triggers: list[Class[Any]] | None = None
-    conditions: list[Class[Any]] | None = None
-    storages: list[Class[Any]] | None = None
-    secrets: list[Class[Any]] | None = None
-    task_runners: list[Class[Any]] | None = None
-    assets: list[Class[Any]] | None = None
-    asset_exporters: list[Class[Any]] | None = None
-    apps: list[Class[Any]] | None = None
-    app_blocks: list[Class[Any]] | None = None
-    charts: list[Class[Any]] | None = None
-    data_filters: list[Class[Any]] | None = None
-    data_filters_kpi: list[Class[Any]] | None = None
-    log_exporters: list[Class[Any]] | None = None
-    additional_plugins: list[Class[Any]] | None = None
+    tasks: list[type[Any]] | None = None
+    triggers: list[type[Any]] | None = None
+    conditions: list[type[Any]] | None = None
+    storages: list[type[Any]] | None = None
+    secrets: list[type[Any]] | None = None
+    task_runners: list[type[Any]] | None = None
+    assets: list[type[Any]] | None = None
+    asset_exporters: list[type[Any]] | None = None
+    apps: list[type[Any]] | None = None
+    app_blocks: list[type[Any]] | None = None
+    charts: list[type[Any]] | None = None
+    data_filters: list[type[Any]] | None = None
+    data_filters_kpi: list[type[Any]] | None = None
+    log_exporters: list[type[Any]] | None = None
+    additional_plugins: list[type[Any]] | None = None
     guides: list[str] | None = None
-    aliases: dict[str, Map.Entry[str, Class[Any]]] | None = None
+    aliases: dict[str, Map.Entry[str, type[Any]]] | None = None
 
     def is_valid(self) -> bool:
         raise NotImplementedError  # TODO: translate from Java
@@ -68,16 +67,16 @@ class RegisteredPlugin:
     def has_class(self, cls: str) -> bool:
         raise NotImplementedError  # TODO: translate from Java
 
-    def find_class(self, cls: str) -> Optional[Class]:
+    def find_class(self, cls: str) -> Optional[type]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def base_class(self, cls: str) -> Class:
+    def base_class(self, cls: str) -> type:
         raise NotImplementedError  # TODO: translate from Java
 
-    def all_class(self) -> list[Class]:
+    def all_class(self) -> list[type]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def all_class_grouped(self) -> dict[str, list[Class]]:
+    def all_class_grouped(self) -> dict[str, list[type]]:
         raise NotImplementedError  # TODO: translate from Java
 
     def sub_group_names(self) -> set[str]:
@@ -110,13 +109,7 @@ class RegisteredPlugin:
     def version(self) -> str:
         raise NotImplementedError  # TODO: translate from Java
 
-    def icon(self, cls: Class[Any]) -> str:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def icon(self) -> str:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def icon(self, icon_name: str) -> str:
+    def icon(self, cls: type[Any] | None = None) -> str:
         raise NotImplementedError  # TODO: translate from Java
 
     def crc32(self) -> int:

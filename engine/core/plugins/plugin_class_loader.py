@@ -1,17 +1,17 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\plugins\PluginClassLoader.java
-# WARNING: Unresolved types: Class, ClassLoader, ClassNotFoundException, Enumeration, IOException, Pattern, URLClassLoader
+# WARNING: Unresolved types: ClassLoader, ClassNotFoundException, Enumeration, URLClassLoader
 
 from dataclasses import dataclass, field
-from logging import logging
+from logging import Logger, getLogger
 from typing import Any, ClassVar
 
 
 @dataclass(slots=True, kw_only=True)
 class PluginClassLoader(URLClassLoader):
-    excludes: ClassVar[Pattern]
-    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    excludes: ClassVar[re.Pattern]
+    logger: ClassVar[Logger] = getLogger(__name__)
     parent: ClassLoader | None = None
     plugin_location: str | None = None
 
@@ -22,10 +22,7 @@ class PluginClassLoader(URLClassLoader):
     def location(self) -> str:
         raise NotImplementedError  # TODO: translate from Java
 
-    def load_class(self, name: str) -> Class[Any]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def load_class(self, name: str, resolve: bool) -> Class[Any]:
+    def load_class(self, name: str, resolve: bool | None = None) -> type[Any]:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod

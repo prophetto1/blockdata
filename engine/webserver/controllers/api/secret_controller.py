@@ -1,14 +1,13 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\webserver\src\main\java\io\kestra\webserver\controllers\api\SecretController.java
-# WARNING: Unresolved types: IOException, IllegalArgumentException, META
+# WARNING: Unresolved types: META
 
 from dataclasses import dataclass
 from typing import Any
 
 from engine.webserver.models.api.secret.api_secret_list_response import ApiSecretListResponse
 from engine.webserver.models.api.secret.api_secret_meta import ApiSecretMeta
-from engine.core.http.http_response import HttpResponse
 from engine.core.models.query_filter import QueryFilter
 from engine.core.secret.secret_service import SecretService
 from engine.core.tenant.tenant_service import TenantService

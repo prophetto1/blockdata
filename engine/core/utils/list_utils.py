@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\utils\ListUtils.java
-# WARNING: Unresolved types: T
 
 from dataclasses import dataclass
 from typing import Any
@@ -16,10 +15,6 @@ class ListUtils:
 
     @staticmethod
     def is_empty(list: list[T]) -> bool:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def concat(list1: list[T], list2: list[T]) -> list[T]:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod

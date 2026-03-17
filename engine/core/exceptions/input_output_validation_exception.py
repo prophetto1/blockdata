@@ -14,15 +14,7 @@ from engine.core.models.flows.output import Output
 class InputOutputValidationException(KestraRuntimeException):
 
     @staticmethod
-    def of(message: str, input: Input[Any]) -> InputOutputValidationException:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def of(message: str, output: Output) -> InputOutputValidationException:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def of(message: str) -> InputOutputValidationException:
+    def of(message: str, input: Input[Any] | None = None) -> InputOutputValidationException:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod

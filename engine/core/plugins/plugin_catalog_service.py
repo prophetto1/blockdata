@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\plugins\PluginCatalogService.java
-# WARNING: Unresolved types: AtomicBoolean, CompletableFuture
 
 from dataclasses import dataclass, field
-from logging import logging
+from logging import Logger, getLogger
 from datetime import datetime
 from datetime import timedelta
 from typing import Any, ClassVar
@@ -20,10 +19,10 @@ class PluginCatalogService:
     max_cache_duration: ClassVar[timedelta]
     loaded: list[PluginManifest]
     cache_last_loaded: datetime
-    is_loaded: AtomicBoolean
-    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    is_loaded: bool
+    logger: ClassVar[Logger] = getLogger(__name__)
     http_client: HttpClient | None = None
-    plugins: CompletableFuture[list[PluginManifest]] | None = None
+    plugins: Any[list[PluginManifest]] | None = None
     icons: bool | None = None
     oss: bool | None = None
     current_stable_version: Version | None = None

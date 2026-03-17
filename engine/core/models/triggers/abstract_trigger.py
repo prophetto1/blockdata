@@ -1,14 +1,12 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\models\triggers\AbstractTrigger.java
-# WARNING: Unresolved types: Level
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any
 
 from engine.core.models.assets.assets_declaration import AssetsDeclaration
-from engine.core.models.conditions.condition import Condition
 from engine.core.models.label import Label
 from engine.core.serializers.list_or_map_of_label_deserializer import ListOrMapOfLabelDeserializer
 from engine.core.serializers.list_or_map_of_label_serializer import ListOrMapOfLabelSerializer
@@ -30,7 +28,7 @@ class AbstractTrigger(ABC):
     description: str | None = None
     conditions: list[@Valid @NotNull Condition] | None = None
     worker_group: WorkerGroup | None = None
-    log_level: Level | None = None
+    log_level: int | None = None
     labels: list[@NoSystemLabelValidation Label] | None = None
     stop_after: list[State.Type] | None = None
     assets: AssetsDeclaration | None = None

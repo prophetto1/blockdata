@@ -2,7 +2,7 @@ from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\models\assets\AssetIdentifier.java
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Any
 
 from engine.core.models.assets.asset import Asset
@@ -16,7 +16,7 @@ class AssetIdentifier:
     type: str | None = None
 
     def with_tenant_id(self, tenant_id: str) -> AssetIdentifier:
-        raise NotImplementedError  # TODO: translate from Java
+        return replace(self, tenant_id=tenant_id)
 
     def uid(self) -> str:
         raise NotImplementedError  # TODO: translate from Java

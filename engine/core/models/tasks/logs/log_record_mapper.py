@@ -14,11 +14,7 @@ from engine.core.models.tasks.logs.log_record import LogRecord
 class LogRecordMapper:
 
     @staticmethod
-    def map_to_log_record(log: LogEntry) -> LogRecord:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def map_to_log_record(log: LogEntry, max_message_size: int) -> LogRecord:
+    def map_to_log_record(log: LogEntry, max_message_size: int | None = None) -> LogRecord:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod

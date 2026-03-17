@@ -16,35 +16,7 @@ class Gauge(AbstractMetricEntry):
     type: str = TYPE
 
     @staticmethod
-    def of(name: str, value: float) -> Gauge:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def of(name: str, description: str, value: float) -> Gauge:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def of(name: str, value: int) -> Gauge:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def of(name: str, description: str, value: int) -> Gauge:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def of(name: str, value: int) -> Gauge:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def of(name: str, description: str, value: int) -> Gauge:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def of(name: str, value: float) -> Gauge:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def of(name: str, description: str, value: float) -> Gauge:
+    def of(name: str, description: str, value: float | None = None) -> Gauge:
         raise NotImplementedError  # TODO: translate from Java
 
     def register(self, meter_registry: MetricRegistry, name: str, description: str, tags: dict[str, str]) -> None:

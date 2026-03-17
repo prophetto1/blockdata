@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\webserver\src\main\java\io\kestra\webserver\controllers\api\DashboardController.java
-# WARNING: Unresolved types: ConstraintViolationException, IOException, Pageable, Pattern, Void
+# WARNING: Unresolved types: Void
 
 from dataclasses import dataclass, field
-from logging import logging
+from logging import Logger, getLogger
 from datetime import datetime
 from typing import Any, ClassVar
 
@@ -14,7 +14,6 @@ from engine.core.models.dashboards.dashboard import Dashboard
 from engine.core.repositories.dashboard_repository_interface import DashboardRepositoryInterface
 from engine.core.models.settings.dashboard_settings import DashboardSettings
 from engine.core.repositories.flow_repository_interface import FlowRepositoryInterface
-from engine.core.http.http_response import HttpResponse
 from engine.core.models.validations.model_validator import ModelValidator
 from engine.webserver.responses.paged_results import PagedResults
 from engine.core.models.query_filter import QueryFilter
@@ -27,8 +26,8 @@ from engine.core.serializers.yaml_parser import YamlParser
 @dataclass(slots=True, kw_only=True)
 class DashboardController:
     yaml_parser: ClassVar[YamlParser]
-    dashboard_id_pattern: ClassVar[Pattern]
-    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    dashboard_id_pattern: ClassVar[re.Pattern]
+    logger: ClassVar[Logger] = getLogger(__name__)
     oss_dashboard_settings: ClassVar[str] = "kestra.oss.dashboard-settings"
     dashboard_repository: DashboardRepositoryInterface | None = None
     flow_repository: FlowRepositoryInterface | None = None

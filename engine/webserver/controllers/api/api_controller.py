@@ -5,8 +5,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-from engine.core.http.http_response import HttpResponse
-
 
 @dataclass(slots=True, kw_only=True)
 class ApiController:

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\plugin\core\flow\Subflow.java
-# WARNING: Unresolved types: Exception, RestartBehavior, SubflowId, core, io, kestra, models, tasks
+# WARNING: Unresolved types: RestartBehavior, SubflowId
 
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -16,7 +16,6 @@ from engine.core.exceptions.internal_exception import InternalException
 from engine.core.models.label import Label
 from engine.core.serializers.list_or_map_of_label_deserializer import ListOrMapOfLabelDeserializer
 from engine.core.serializers.list_or_map_of_label_serializer import ListOrMapOfLabelSerializer
-from engine.core.models.property.property import Property
 from engine.core.runners.run_context import RunContext
 from engine.core.models.flows.state import State
 from engine.core.runners.subflow_execution import SubflowExecution

@@ -15,9 +15,5 @@ class ExecutionUsage:
     daily_executions_count: list[DailyExecutionStatistics] | None = None
 
     @staticmethod
-    def of(tenant_id: str, execution_repository: ExecutionRepositoryInterface, from: datetime, to: datetime) -> ExecutionUsage:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def of(repository: ExecutionRepositoryInterface, from: datetime, to: datetime) -> ExecutionUsage:
+    def of(tenant_id: str, execution_repository: ExecutionRepositoryInterface, from: datetime, to: datetime | None = None) -> ExecutionUsage:
         raise NotImplementedError  # TODO: translate from Java

@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\cli\src\main\java\io\kestra\cli\commands\migrations\metadata\MetadataMigrationService.java
-# WARNING: Unresolved types: Exception, Function, IOException
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Callable
 
 from engine.core.storages.file_attributes import FileAttributes
 from engine.core.repositories.flow_repository_interface import FlowRepositoryInterface
@@ -37,7 +36,7 @@ class MetadataMigrationService:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
-    def list_all_from_storage(storage: StorageInterface, prefix_function: Function[str, str], tenant: str, namespace: str) -> list[PathAndAttributes]:
+    def list_all_from_storage(storage: StorageInterface, prefix_function: Callable[str, str], tenant: str, namespace: str) -> list[PathAndAttributes]:
         raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)

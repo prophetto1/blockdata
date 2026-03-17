@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\script\src\main\java\io\kestra\plugin\scripts\runner\docker\Docker.java
-# WARNING: Unresolved types: CreateContainerCmd, DockerClient, Exception, IOException, Logger, Pattern, ReadableBytesTypeConverter
+# WARNING: Unresolved types: CreateContainerCmd, DockerClient, ReadableBytesTypeConverter
 
 from dataclasses import dataclass, field
 from enum import Enum
@@ -14,7 +14,6 @@ from engine.plugin.scripts.runner.docker.device_request import DeviceRequest
 from engine.plugin.scripts.exec.scripts.models.docker_options import DockerOptions
 from engine.core.exceptions.illegal_variable_evaluation_exception import IllegalVariableEvaluationException
 from engine.plugin.scripts.runner.docker.memory import Memory
-from engine.core.models.property.property import Property
 from engine.plugin.scripts.runner.docker.pull_policy import PullPolicy
 from engine.core.runners.run_context import RunContext
 from engine.core.models.tasks.runners.task_commands import TaskCommands
@@ -27,7 +26,7 @@ from engine.core.models.tasks.runners.task_runner_result import TaskRunnerResult
 class Docker(TaskRunner):
     """Run a task in a Docker container."""
     readable_bytes_type_converter: ClassVar[ReadableBytesTypeConverter]
-    newline_pattern: ClassVar[Pattern]
+    newline_pattern: ClassVar[re.Pattern]
     entry_point: list[str]
     pull_policy: Property[PullPolicy]
     file_handling_strategy: Property[FileHandlingStrategy]
@@ -66,7 +65,7 @@ class Docker(TaskRunner):
     def download_output_files(self, exec_id: str, docker_client: DockerClient, run_context: RunContext, task_commands: TaskCommands) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
-    def kill(self, docker_client: DockerClient, container_id: str, logger: Logger) -> None:
+    def kill(self, docker_client: DockerClient, container_id: str, logger: Any) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
     def runner_additional_vars(self, run_context: RunContext, task_commands: TaskCommands) -> dict[str, Any]:
@@ -85,7 +84,7 @@ class Docker(TaskRunner):
     def get_image_name_without_tag(self, full_image_name: str) -> str:
         raise NotImplementedError  # TODO: translate from Java
 
-    def pull_image(self, docker_client: DockerClient, image: str, policy: PullPolicy, logger: Logger) -> None:
+    def pull_image(self, docker_client: DockerClient, image: str, policy: PullPolicy, logger: Any) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)

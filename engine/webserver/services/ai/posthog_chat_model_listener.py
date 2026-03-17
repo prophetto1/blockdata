@@ -4,7 +4,7 @@ from __future__ import annotations
 # WARNING: Unresolved types: ChatModelErrorContext, ChatModelListener, ChatModelResponseContext, ChatRequest
 
 from dataclasses import dataclass, field
-from logging import logging
+from logging import Logger, getLogger
 from typing import Any, ClassVar, Optional
 
 from engine.webserver.services.posthog.posthog_service import PosthogService
@@ -12,7 +12,7 @@ from engine.webserver.services.posthog.posthog_service import PosthogService
 
 @dataclass(slots=True, kw_only=True)
 class PosthogChatModelListener:
-    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    logger: ClassVar[Logger] = getLogger(__name__)
     posthog_service: PosthogService | None = None
 
     def on_response(self, response_context: ChatModelResponseContext) -> None:

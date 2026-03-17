@@ -16,9 +16,5 @@ class EncryptedString:
     value: str | None = None
 
     @staticmethod
-    def from(encrypted: str) -> EncryptedString:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def from(plain_text: str, run_context: RunContext) -> EncryptedString:
+    def from(plain_text: str, run_context: RunContext | None = None) -> EncryptedString:
         raise NotImplementedError  # TODO: translate from Java

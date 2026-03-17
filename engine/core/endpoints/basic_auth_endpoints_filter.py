@@ -7,7 +7,6 @@ from dataclasses import dataclass
 from typing import Any
 
 from engine.core.endpoints.endpoint_basic_auth_configuration import EndpointBasicAuthConfiguration
-from engine.core.http.http_request import HttpRequest
 
 
 @dataclass(slots=True, kw_only=True)

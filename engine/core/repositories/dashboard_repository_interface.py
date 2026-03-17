@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\repositories\DashboardRepositoryInterface.java
-# WARNING: Unresolved types: Enum, F, IOException, Pageable
 
 from datetime import datetime
 from typing import Any, Optional, Protocol
@@ -28,9 +27,7 @@ class DashboardRepositoryInterface(Protocol):
 
     def find_all_with_no_acl(self, tenant_id: str) -> list[Dashboard]: ...
 
-    def save(self, dashboard: Dashboard, source: str) -> Dashboard: ...
-
-    def save(self, previous_dashboard: Dashboard, dashboard: Dashboard, source: str) -> Dashboard: ...
+    def save(self, previous_dashboard: Dashboard, dashboard: Dashboard, source: str | None = None) -> Dashboard: ...
 
     def delete(self, tenant_id: str, id: str) -> Dashboard: ...
 

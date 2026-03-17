@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\utils\Disposable.java
-# WARNING: Unresolved types: AtomicBoolean, Runnable
 
 from dataclasses import dataclass
-from typing import Any, Protocol
+from typing import Any, Callable, Protocol
 
 
 class Disposable(Protocol):
@@ -13,5 +12,3 @@ class Disposable(Protocol):
     def is_disposed(self) -> bool: ...
 
     def of(disposables: list[Disposable]) -> Disposable: ...
-
-    def of(action: Runnable) -> Disposable: ...

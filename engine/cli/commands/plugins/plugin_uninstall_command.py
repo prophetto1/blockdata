@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\cli\src\main\java\io\kestra\cli\commands\plugins\PluginUninstallCommand.java
-# WARNING: Unresolved types: CommandLine, CommandSpec, Exception, Model, Provider
+# WARNING: Unresolved types: CommandLine, CommandSpec, Model, Provider
 
 from dataclasses import dataclass, field
 from typing import Any

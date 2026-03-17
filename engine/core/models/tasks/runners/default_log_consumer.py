@@ -14,8 +14,5 @@ from engine.core.runners.run_context import RunContext
 class DefaultLogConsumer(AbstractLogConsumer):
     run_context: RunContext | None = None
 
-    def accept(self, line: str, is_std_err: bool) -> None:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def accept(self, line: str, is_std_err: bool, instant: datetime) -> None:
+    def accept(self, line: str, is_std_err: bool, instant: datetime | None = None) -> None:
         raise NotImplementedError  # TODO: translate from Java

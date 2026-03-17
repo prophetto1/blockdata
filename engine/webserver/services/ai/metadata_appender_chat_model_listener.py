@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\webserver\src\main\java\io\kestra\webserver\services\ai\MetadataAppenderChatModelListener.java
-# WARNING: Unresolved types: ChatModelListener, ChatModelRequestContext, ConversationMetadata, Supplier
+# WARNING: Unresolved types: ChatModelListener, ChatModelRequestContext, ConversationMetadata
 
 from dataclasses import dataclass, field
-from typing import Any, ClassVar
+from typing import Any, Callable, ClassVar
 
 from engine.webserver.services.ai.ai_service import AiService
 
@@ -21,7 +21,7 @@ class MetadataAppenderChatModelListener:
     instance_uid: str | None = None
     provider: str | None = None
     span_name: str | None = None
-    conversation_metadata_getter: Supplier[AiService.ConversationMetadata] | None = None
+    conversation_metadata_getter: Callable[AiService.ConversationMetadata] | None = None
 
     def on_request(self, request_context: ChatModelRequestContext) -> None:
         raise NotImplementedError  # TODO: translate from Java

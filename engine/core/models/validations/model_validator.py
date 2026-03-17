@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\models\validations\ModelValidator.java
-# WARNING: Unresolved types: ConstraintViolationException, T, Validator
+# WARNING: Unresolved types: Validator
 
 from dataclasses import dataclass
 from typing import Any, Optional
@@ -14,5 +14,5 @@ class ModelValidator:
     def validate(self, model: T) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
-    def is_valid(self, model: T) -> Optional[ConstraintViolationException]:
+    def is_valid(self, model: T) -> Optional[ValueError]:
         raise NotImplementedError  # TODO: translate from Java

@@ -6,7 +6,6 @@ from dataclasses import dataclass
 from typing import Any
 
 from engine.core.models.assets.asset import Asset
-from engine.core.models.property.property import Property
 from engine.core.models.flows.state import State
 from engine.core.models.flows.type import Type
 

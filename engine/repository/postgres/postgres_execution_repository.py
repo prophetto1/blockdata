@@ -1,14 +1,13 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\jdbc-postgres\src\main\java\io\kestra\repository\postgres\PostgresExecutionRepository.java
-# WARNING: Unresolved types: ApplicationContext, Date, Field, GroupType, Op
+# WARNING: Unresolved types: Op
 
 from dataclasses import dataclass
 from typing import Any
 
 from engine.jdbc.repository.abstract_jdbc_execution_repository import AbstractJdbcExecutionRepository
 from engine.jdbc.runner.abstract_jdbc_executor_state_storage import AbstractJdbcExecutorStateStorage
-from engine.core.models.conditions.condition import Condition
 from engine.core.utils.date_utils import DateUtils
 from engine.core.utils.either import Either
 from engine.core.models.executions.execution import Execution

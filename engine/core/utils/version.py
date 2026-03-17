@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\utils\Version.java
-# WARNING: Unresolved types: Comparable
 
 from dataclasses import dataclass, field
 from typing import Any, ClassVar
@@ -21,10 +20,6 @@ class Version:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
-    def is_equal(v1: Version, v2: str) -> bool:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
     def of(version: Any) -> Version:
         raise NotImplementedError  # TODO: translate from Java
 
@@ -33,19 +28,11 @@ class Version:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
-    def get_latest() -> Version:
+    def get_latest(versions: list[Version] | None = None) -> Version:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
-    def get_latest(versions: list[Version]) -> Version:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def get_oldest() -> Version:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def get_oldest(versions: list[Version]) -> Version:
+    def get_oldest(versions: list[Version] | None = None) -> Version:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod

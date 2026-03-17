@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\models\collectors\ConfigurationUsage.java
-# WARNING: Unresolved types: ApplicationContext
 
 from dataclasses import dataclass
 from typing import Any
@@ -16,9 +15,5 @@ class ConfigurationUsage:
     java_security_enabled: bool | None = None
 
     @staticmethod
-    def of(tenant_id: str, application_context: ApplicationContext) -> ConfigurationUsage:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def of(application_context: ApplicationContext) -> ConfigurationUsage:
+    def of(tenant_id: str, application_context: ApplicationContext | None = None) -> ConfigurationUsage:
         raise NotImplementedError  # TODO: translate from Java

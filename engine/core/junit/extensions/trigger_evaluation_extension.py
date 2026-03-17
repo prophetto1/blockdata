@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\tests\src\main\java\io\kestra\core\junit\extensions\TriggerEvaluationExtension.java
-# WARNING: Unresolved types: ApplicationContext, Exception, ExtensionContext, ParameterContext, ParameterResolver
+# WARNING: Unresolved types: ExtensionContext, ParameterContext, ParameterResolver
 
 from dataclasses import dataclass
 from typing import Any, Optional

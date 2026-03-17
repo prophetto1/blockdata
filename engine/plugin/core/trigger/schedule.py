@@ -1,16 +1,15 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\plugin\core\trigger\Schedule.java
-# WARNING: Unresolved types: Cron, CronDefinitionBuilder, CronParser, Exception, ExecutionTime, core, io, kestra, models, tasks
+# WARNING: Unresolved types: Cron, CronDefinitionBuilder, CronParser, ExecutionTime
 
 from dataclasses import dataclass, field
-from logging import logging
+from logging import Logger, getLogger
 from datetime import datetime
 from datetime import timedelta
 from typing import Any, ClassVar, Optional
 
 from engine.core.models.triggers.abstract_trigger import AbstractTrigger
-from engine.core.models.conditions.condition import Condition
 from engine.core.models.conditions.condition_context import ConditionContext
 from engine.core.models.executions.execution import Execution
 from engine.core.exceptions.internal_exception import InternalException
@@ -29,7 +28,7 @@ class Schedule(AbstractTrigger):
     cron_parser_with_seconds: ClassVar[CronParser]
     cron: str
     timezone: str
-    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    logger: ClassVar[Logger] = getLogger(__name__)
     with_seconds: bool = False
     interval: timedelta = None
     schedule_conditions: list[ScheduleCondition] | None = None
@@ -42,10 +41,7 @@ class Schedule(AbstractTrigger):
     def get_conditions(self) -> list[Condition]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def next_evaluation_date(self, condition_context: ConditionContext, last: Optional[Any]) -> datetime:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def next_evaluation_date(self) -> datetime:
+    def next_evaluation_date(self, condition_context: ConditionContext | None = None, last: Optional[Any] | None = None) -> datetime:
         raise NotImplementedError  # TODO: translate from Java
 
     def previous_evaluation_date(self, condition_context: ConditionContext) -> datetime:

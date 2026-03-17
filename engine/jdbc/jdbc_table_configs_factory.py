@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\jdbc\src\main\java\io\kestra\jdbc\JdbcTableConfigsFactory.java
-# WARNING: Unresolved types: Class
 
 from dataclasses import dataclass
 from typing import Any

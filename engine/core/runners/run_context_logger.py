@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\runners\RunContextLogger.java
-# WARNING: Unresolved types: AppenderBase, ILoggingEvent, IOException, Level, Logger, OutputStream, PatternLayout, Supplier, Throwable, ch, classic, event, logback, org, qos, slf4j
+# WARNING: Unresolved types: AppenderBase, PatternLayout, ch, classic, event, logback, org, qos, slf4j
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
@@ -18,13 +18,13 @@ class RunContextLogger:
     original_timestamp_key: ClassVar[str] = "originalTimestamp"
     use_secrets: list[str] = field(default_factory=list)
     logger_name: str | None = None
-    logger: Logger | None = None
+    logger: Any | None = None
     log_queue: QueueInterface[LogEntry] | None = None
     log_entry: LogEntry | None = None
-    loglevel: Level | None = None
+    loglevel: int | None = None
     log_to_file: bool | None = None
     log_file: Path | None = None
-    log_file_os: OutputStream | None = None
+    log_file_os: Any | None = None
 
     def base_logger_name(self, log_entry: LogEntry) -> str:
         raise NotImplementedError  # TODO: translate from Java
@@ -38,7 +38,7 @@ class RunContextLogger:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
-    def throwable(event: ILoggingEvent) -> Throwable:
+    def throwable(event: ILoggingEvent) -> BaseException:
         raise NotImplementedError  # TODO: translate from Java
 
     def used_secret(self, secret: str) -> None:
@@ -47,7 +47,7 @@ class RunContextLogger:
     def logger(self) -> org.slf4j.Logger:
         raise NotImplementedError  # TODO: translate from Java
 
-    def initialize_logger(self) -> Logger:
+    def initialize_logger(self) -> Any:
         raise NotImplementedError  # TODO: translate from Java
 
     def reset_mdc(self) -> None:
@@ -61,9 +61,9 @@ class RunContextLogger:
 
     @dataclass(slots=True)
     class BaseAppender(ABC, AppenderBase):
-        logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+        logger: ClassVar[Logger] = getLogger(__name__)
         run_context_logger: RunContextLogger | None = None
-        logger: Logger | None = None
+        logger: Any | None = None
 
         def replace_secret(self, data: str) -> str:
             raise NotImplementedError  # TODO: translate from Java
@@ -71,15 +71,12 @@ class RunContextLogger:
         def recursive(self, object: Any) -> Any:
             raise NotImplementedError  # TODO: translate from Java
 
-        def replace_secret(self, data: list[Any]) -> list[Any]:
-            raise NotImplementedError  # TODO: translate from Java
-
         def transform(self, event: ILoggingEvent) -> ILoggingEvent:
             raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)
     class ContextAppender(BaseAppender):
-        logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+        logger: ClassVar[Logger] = getLogger(__name__)
         log_queue: QueueInterface[LogEntry] | None = None
         log_entry: LogEntry | None = None
 
@@ -90,7 +87,7 @@ class RunContextLogger:
     class FileAppender(BaseAppender):
         logger: ClassVar[ch.qos.logback.classic.Logger]
         pattern_layout: ClassVar[PatternLayout]
-        file_os: OutputStream | None = None
+        file_os: Any | None = None
 
         def append(self, e: ILoggingEvent) -> None:
             raise NotImplementedError  # TODO: translate from Java

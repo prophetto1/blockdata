@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\encryption\EncryptionService.java
-# WARNING: Unresolved types: GeneralSecurityException, IllegalArgumentException, SecureRandom
+# WARNING: Unresolved types: GeneralSecurityException, SecureRandom
 
 from dataclasses import dataclass, field
 from typing import Any, ClassVar
@@ -20,15 +20,7 @@ class EncryptionService:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
-    def encrypt(key: str, plain_text: list[int]) -> list[int]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
     def decrypt(key: str, cipher_text: str) -> str:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def decrypt(key: str, cipher_text: list[int]) -> list[int]:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod

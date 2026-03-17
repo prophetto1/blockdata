@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\runners\pebble\PebbleLruCache.java
-# WARNING: Unresolved types: Function, MeterRegistry, PebbleCache, PebbleTemplate
+# WARNING: Unresolved types: MeterRegistry, PebbleCache
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Callable
 
 from engine.core.models.tasks.cache import Cache
 
@@ -13,7 +13,7 @@ from engine.core.models.tasks.cache import Cache
 class PebbleLruCache:
     cache: Cache[Any, PebbleTemplate] | None = None
 
-    def compute_if_absent(self, key: Any, mapping_function: Function[Any, Any]) -> PebbleTemplate:
+    def compute_if_absent(self, key: Any, mapping_function: Callable[Any, Any]) -> PebbleTemplate:
         raise NotImplementedError  # TODO: translate from Java
 
     def invalidate_all(self) -> None:

@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\runners\RunContextInitializer.java
-# WARNING: Unresolved types: ApplicationContext, Function
 
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Any, Callable, Optional
 
 from engine.core.models.triggers.abstract_trigger import AbstractTrigger
 from engine.core.runners.default_run_context import DefaultRunContext
@@ -36,23 +35,14 @@ class RunContextInitializer:
     def for_executor(self, run_context: DefaultRunContext) -> DefaultRunContext:
         raise NotImplementedError  # TODO: translate from Java
 
-    def for_worker(self, run_context: DefaultRunContext, worker_task: WorkerTask) -> DefaultRunContext:
+    def for_worker(self, run_context: DefaultRunContext, worker_task: WorkerTask, variables_modifier: Callable[dict[str, Any], dict[str, Any]] | None = None) -> DefaultRunContext:
         raise NotImplementedError  # TODO: translate from Java
 
     def for_working_directory(self, run_context: DefaultRunContext, worker_task: WorkerTask) -> DefaultRunContext:
         raise NotImplementedError  # TODO: translate from Java
 
-    def for_worker(self, run_context: DefaultRunContext, worker_task: WorkerTask, variables_modifier: Function[dict[str, Any], dict[str, Any]]) -> DefaultRunContext:
-        raise NotImplementedError  # TODO: translate from Java
-
     def rehydrate_outputs(self, outputs: dict[str, Any]) -> dict[str, Any]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def for_worker(self, run_context: DefaultRunContext, worker_task_result: WorkerTaskResult, parent: TaskRun) -> DefaultRunContext:
-        raise NotImplementedError  # TODO: translate from Java
-
     def for_scheduler(self, run_context: DefaultRunContext, trigger_context: TriggerContext, trigger: AbstractTrigger) -> DefaultRunContext:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def for_worker(self, run_context: DefaultRunContext, worker_trigger: WorkerTrigger) -> RunContext:
         raise NotImplementedError  # TODO: translate from Java

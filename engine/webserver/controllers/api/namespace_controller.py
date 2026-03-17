@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\webserver\src\main\java\io\kestra\webserver\controllers\api\NamespaceController.java
-# WARNING: Unresolved types: Comparator, HttpStatusException, N, Pageable
+# WARNING: Unresolved types: Comparator
 
 from dataclasses import dataclass, field
 from typing import Any, ClassVar

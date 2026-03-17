@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\runners\pebble\filters\JqFilter.java
-# WARNING: Unresolved types: EvaluationContext, Filter, PebbleException, PebbleTemplate, Scope
+# WARNING: Unresolved types: Scope
 
 from dataclasses import dataclass, field
 from typing import Any, ClassVar

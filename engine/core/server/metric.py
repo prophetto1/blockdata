@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\server\Metric.java
-# WARNING: Unresolved types: Meter, core, instrument, io, micrometer
+# WARNING: Unresolved types: Meter, instrument, micrometer
 
 from dataclasses import dataclass
 from typing import Any

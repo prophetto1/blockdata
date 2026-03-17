@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\jdbc\src\main\java\io\kestra\jdbc\repository\AbstractJdbcExecutionRepository.java
-# WARNING: Unresolved types: ApplicationContext, ApplicationEventPublisher, ChildFilter, ChronoUnit, DSLContext, Date, Enum, F, Field, Fields, FlowFilter, Flux, Function, GroupType, IllegalArgumentException, Op, Pageable, Pair, Record, Record1, Results, SelectConditionStep, T, io, jdbc, kestra
+# WARNING: Unresolved types: ChildFilter, ChronoUnit, FlowFilter, Op, Pair, Record1, Results
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, ClassVar, Optional
+from typing import Any, Callable, ClassVar, Optional
 
 from engine.core.models.dashboards.filters.abstract_filter import AbstractFilter
 from engine.jdbc.repository.abstract_jdbc_crud_repository import AbstractJdbcCrudRepository
@@ -14,7 +14,6 @@ from engine.jdbc.runner.abstract_jdbc_executor_state_storage import AbstractJdbc
 from engine.jdbc.abstract_jdbc_repository import AbstractJdbcRepository
 from engine.core.repositories.array_list_total import ArrayListTotal
 from engine.core.models.dashboards.column_descriptor import ColumnDescriptor
-from engine.core.models.conditions.condition import Condition
 from engine.core.events.crud_event import CrudEvent
 from engine.core.models.executions.statistics.daily_execution_statistics import DailyExecutionStatistics
 from engine.core.models.dashboards.data_filter import DataFilter
@@ -35,7 +34,6 @@ from engine.jdbc.runner.jdbc_queue_indexer_interface import JdbcQueueIndexerInte
 from engine.core.contexts.kestra_config import KestraConfig
 from engine.core.models.query_filter import QueryFilter
 from engine.core.queues.queue_interface import QueueInterface
-from engine.core.models.collectors.result import Result
 from engine.core.models.flows.state import State
 from engine.core.models.flows.type import Type
 
@@ -70,13 +68,10 @@ class AbstractJdbcExecutionRepository(ABC, AbstractJdbcCrudRepository):
     def find_latest_for_states(self, tenant_id: str, namespace: str, flow_id: str, states: list[State.Type]) -> Optional[Execution]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def find_by_id(self, tenant_id: str, id: str, allow_deleted: bool) -> Optional[Execution]:
+    def find_by_id(self, tenant_id: str, id: str, allow_deleted: bool, with_access_control: bool | None = None) -> Optional[Execution]:
         raise NotImplementedError  # TODO: translate from Java
 
     def find_by_id_without_acl(self, tenant_id: str, id: str) -> Optional[Execution]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def find_by_id(self, tenant_id: str, id: str, allow_deleted: bool, with_access_control: bool) -> Optional[Execution]:
         raise NotImplementedError  # TODO: translate from Java
 
     @abstractmethod
@@ -93,10 +88,7 @@ class AbstractJdbcExecutionRepository(ABC, AbstractJdbcCrudRepository):
     def states_filter(self, state: list[State.Type]) -> Condition:
         raise NotImplementedError  # TODO: translate from Java
 
-    def find(self, pageable: Pageable, tenant_id: str, filters: list[QueryFilter]) -> ArrayListTotal[Execution]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def find(self, query: str, tenant_id: str, scope: list[FlowScope], namespace: str, flow_id: str, start_date: datetime, end_date: datetime, state: list[State.Type], labels: dict[str, str], trigger_execution_id: str, child_filter: ChildFilter, deleted: bool) -> Flux[Execution]:
+    def find(self, query: str, tenant_id: str, scope: list[FlowScope], namespace: str | None = None, flow_id: str | None = None, start_date: datetime | None = None, end_date: datetime | None = None, state: list[State.Type] | None = None, labels: dict[str, str] | None = None, trigger_execution_id: str | None = None, child_filter: ChildFilter | None = None, deleted: bool | None = None) -> Flux[Execution]:
         raise NotImplementedError  # TODO: translate from Java
 
     def compute_find_condition(self, filters: list[QueryFilter]) -> Condition:
@@ -126,18 +118,11 @@ class AbstractJdbcExecutionRepository(ABC, AbstractJdbcCrudRepository):
     def daily_statistics_query(self, fields: list[Field[Any]], query: str, tenant_id: str, scope: list[FlowScope], namespace: str, flow_id: str, flows: list[FlowFilter], start_date: datetime, end_date: datetime, group_by: DateUtils.GroupType, state: list[State.Type]) -> Results:
         raise NotImplementedError  # TODO: translate from Java
 
-    def daily_statistics_query(self, default_filter: Condition, fields: list[Field[Any]], query: str, scope: list[FlowScope], namespace: str, flow_id: str, flows: list[FlowFilter], start_date: datetime, end_date: datetime, group_by: DateUtils.GroupType, state: list[State.Type]) -> Results:
-        raise NotImplementedError  # TODO: translate from Java
-
     def filtering_query(self, select: SelectConditionStep[T], scope: list[FlowScope], namespace: str, flow_id: str, flows: list[FlowFilter], query: str, labels: dict[str, str], trigger_execution_id: str, child_filter: ChildFilter) -> SelectConditionStep[T]:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
-    def fill_date(results: list[DailyExecutionStatistics], start_date: datetime, end_date: datetime) -> list[DailyExecutionStatistics]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def fill_date(results: list[DailyExecutionStatistics], start_date: datetime, end_date: datetime, unit: ChronoUnit, format: str, group_by_type: str) -> list[DailyExecutionStatistics]:
+    def fill_date(results: list[DailyExecutionStatistics], start_date: datetime, end_date: datetime, unit: ChronoUnit | None = None, format: str | None = None, group_by_type: str | None = None) -> list[DailyExecutionStatistics]:
         raise NotImplementedError  # TODO: translate from Java
 
     def daily_execution_statistics_map(self, date: datetime, result: list[ExecutionStatistics], group_by_type: str) -> DailyExecutionStatistics:
@@ -155,13 +140,10 @@ class AbstractJdbcExecutionRepository(ABC, AbstractJdbcCrudRepository):
     def purge(self, execution: Execution) -> int:
         raise NotImplementedError  # TODO: translate from Java
 
-    def purge(self, executions: list[Execution]) -> int:
+    def lock(self, execution_id: str, function: Callable[Pair[Execution, ExecutorState], Pair[Executor, ExecutorState]]) -> Executor:
         raise NotImplementedError  # TODO: translate from Java
 
-    def lock(self, execution_id: str, function: Function[Pair[Execution, ExecutorState], Pair[Executor, ExecutorState]]) -> Executor:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def sort_mapping(self) -> Function[str, str]:
+    def sort_mapping(self) -> Callable[str, str]:
         raise NotImplementedError  # TODO: translate from Java
 
     def fetch_data(self, tenant_id: str, descriptors: DataFilter[Executions.Fields, Any], start_date: datetime, end_date: datetime, pageable: Pageable) -> ArrayListTotal[dict[str, Any]]:

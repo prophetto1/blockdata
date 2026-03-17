@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\jdbc\src\main\java\io\kestra\jdbc\JdbcWorkerJobQueueService.java
-# WARNING: Unresolved types: ApplicationContext, AtomicBoolean, AtomicReference, Closeable, Consumer, Runnable
+# WARNING: Unresolved types: AtomicReference
 
 from dataclasses import dataclass, field
-from logging import logging
-from typing import Any, ClassVar
+from logging import Logger, getLogger
+from typing import Any, Callable, ClassVar
 
 from engine.jdbc.repository.abstract_jdbc_worker_job_running_repository import AbstractJdbcWorkerJobRunningRepository
 from engine.core.exceptions.deserialization_exception import DeserializationException
@@ -16,12 +16,12 @@ from engine.core.runners.worker_job import WorkerJob
 
 @dataclass(slots=True, kw_only=True)
 class JdbcWorkerJobQueueService:
-    disposable: AtomicReference[Runnable]
-    is_stopped: AtomicBoolean
-    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    disposable: AtomicReference[Callable]
+    is_stopped: bool
+    logger: ClassVar[Logger] = getLogger(__name__)
     jdbc_worker_job_running_repository: AbstractJdbcWorkerJobRunningRepository | None = None
 
-    def subscribe(self, worker_job_queue: JdbcQueue[WorkerJob], worker_id: str, worker_group: str, consumer: Consumer[Either[WorkerJob, DeserializationException]]) -> Runnable:
+    def subscribe(self, worker_job_queue: JdbcQueue[WorkerJob], worker_id: str, worker_group: str, consumer: Callable[Either[WorkerJob, DeserializationException]]) -> Callable:
         raise NotImplementedError  # TODO: translate from Java
 
     def close(self) -> None:

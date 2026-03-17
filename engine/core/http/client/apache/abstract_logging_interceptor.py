@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\http\client\apache\AbstractLoggingInterceptor.java
-# WARNING: Unresolved types: Header, HttpEntityContainer, IOException
+# WARNING: Unresolved types: Header, HttpEntityContainer
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass

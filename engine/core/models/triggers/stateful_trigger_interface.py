@@ -6,8 +6,6 @@ from enum import Enum
 from datetime import timedelta
 from typing import Any, Protocol
 
-from engine.core.models.property.property import Property
-
 
 class StatefulTriggerInterface(Protocol):
     def get_on(self) -> Property[On]: ...

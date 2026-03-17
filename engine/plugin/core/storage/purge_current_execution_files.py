@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\plugin\core\storage\PurgeCurrentExecutionFiles.java
-# WARNING: Unresolved types: Exception, core, io, kestra, models, tasks
 
 from dataclasses import dataclass
 from typing import Any

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\runners\FilesService.java
-# WARNING: Unresolved types: Exception
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
@@ -15,11 +14,7 @@ from engine.core.runners.run_context import RunContext
 class FilesService(ABC):
 
     @staticmethod
-    def input_files(run_context: RunContext, inputs: Any) -> dict[str, str]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def input_files(run_context: RunContext, additional_vars: dict[str, Any], inputs: Any) -> dict[str, str]:
+    def input_files(run_context: RunContext, additional_vars: dict[str, Any], inputs: Any | None = None) -> dict[str, str]:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod

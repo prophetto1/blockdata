@@ -1,22 +1,20 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\runners\RunContextProperty.java
-# WARNING: Unresolved types: Class, I, K, T, V
 
 from dataclasses import dataclass, field
-from logging import logging
+from logging import Logger, getLogger
 from typing import Any, ClassVar, Optional
 
 from engine.core.models.triggers.abstract_trigger import AbstractTrigger
 from engine.core.exceptions.illegal_variable_evaluation_exception import IllegalVariableEvaluationException
-from engine.core.models.property.property import Property
 from engine.core.runners.run_context import RunContext
 from engine.core.models.tasks.task import Task
 
 
 @dataclass(slots=True, kw_only=True)
 class RunContextProperty:
-    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    logger: ClassVar[Logger] = getLogger(__name__)
     property: Property[T] | None = None
     run_context: RunContext | None = None
     task: Task | None = None
@@ -29,20 +27,11 @@ class RunContextProperty:
     def skip_cache(self) -> RunContextProperty[T]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def as(self, clazz: Class[T]) -> Optional[T]:
+    def as(self, clazz: type[T], variables: dict[str, Any] | None = None) -> Optional[T]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def as(self, clazz: Class[T], variables: dict[str, Any]) -> Optional[T]:
+    def as_list(self, item_clazz: type[I], variables: dict[str, Any] | None = None) -> T:
         raise NotImplementedError  # TODO: translate from Java
 
-    def as_list(self, item_clazz: Class[I]) -> T:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def as_list(self, item_clazz: Class[I], variables: dict[str, Any]) -> T:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def as_map(self, key_class: Class[K], value_class: Class[V]) -> T:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def as_map(self, key_class: Class[K], value_class: Class[V], variables: dict[str, Any]) -> T:
+    def as_map(self, key_class: type[K], value_class: type[V], variables: dict[str, Any] | None = None) -> T:
         raise NotImplementedError  # TODO: translate from Java

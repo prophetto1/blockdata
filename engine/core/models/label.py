@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\models\Label.java
-# WARNING: Unresolved types: Entry, Predicate
+# WARNING: Unresolved types: Entry
 
 from dataclasses import dataclass, field
-from typing import Any, ClassVar
+from typing import Any, Callable, ClassVar
 
 
 @dataclass(slots=True, kw_only=True)
@@ -41,9 +41,5 @@ class Label:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
-    def from(label: str) -> dict[str, str]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def get_entry_not_empty_predicate() -> Predicate[Map.Entry[str, str]]:
+    def get_entry_not_empty_predicate() -> Callable[Map.Entry[str, str]]:
         raise NotImplementedError  # TODO: translate from Java

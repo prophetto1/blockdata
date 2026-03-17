@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\runners\pebble\functions\SecretFunction.java
-# WARNING: Unresolved types: EvaluationContext, Function, ObjectMapper, PebbleTemplate
 
 from dataclasses import dataclass, field
-from logging import logging
+from logging import Logger, getLogger
 from typing import Any, ClassVar
 
 from engine.core.services.namespace_service import NamespaceService
@@ -14,7 +13,7 @@ from engine.core.secret.secret_service import SecretService
 @dataclass(slots=True, kw_only=True)
 class SecretFunction:
     object_mapper: ClassVar[ObjectMapper]
-    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    logger: ClassVar[Logger] = getLogger(__name__)
     name: ClassVar[str] = "secret"
     subkey_arg: ClassVar[str] = "subkey"
     namespace_arg: ClassVar[str] = "namespace"

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\repositories\TemplateRepositoryInterface.java
-# WARNING: Unresolved types: Pageable
 
 from typing import Any, Optional, Protocol
 
@@ -18,9 +17,7 @@ class TemplateRepositoryInterface(Protocol):
 
     def find_all_for_all_tenants(self) -> list[Template]: ...
 
-    def find(self, pageable: Pageable, query: str, tenant_id: str, namespace: str) -> ArrayListTotal[Template]: ...
-
-    def find(self, query: str, tenant_id: str, namespace: str) -> list[Template]: ...
+    def find(self, pageable: Pageable, query: str, tenant_id: str, namespace: str | None = None) -> ArrayListTotal[Template]: ...
 
     def find_by_namespace(self, tenant_id: str, namespace: str) -> list[Template]: ...
 

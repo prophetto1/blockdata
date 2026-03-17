@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\models\flows\FlowWithException.java
-# WARNING: Unresolved types: Exception, JsonNode, Logger
 
 from dataclasses import dataclass
 from typing import Any, Optional
@@ -16,15 +15,7 @@ class FlowWithException(FlowWithSource):
     exception: str | None = None
 
     @staticmethod
-    def from(flow: FlowInterface, exception: Exception) -> FlowWithException:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def from(source: str, exception: Exception, log: Logger) -> Optional[FlowWithException]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def from(json_node: JsonNode, exception: Exception) -> Optional[FlowWithException]:
+    def from(source: str, exception: Exception, log: Any | None = None) -> Optional[FlowWithException]:
         raise NotImplementedError  # TODO: translate from Java
 
     def to_flow(self) -> Flow:

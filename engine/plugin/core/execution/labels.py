@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\plugin\core\execution\Labels.java
-# WARNING: Unresolved types: Exception, ObjectMapper, TypeReference
+# WARNING: Unresolved types: TypeReference
 
 from dataclasses import dataclass, field
 from typing import Any, ClassVar

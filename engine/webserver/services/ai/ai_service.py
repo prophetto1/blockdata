@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\webserver\src\main\java\io\kestra\webserver\services\ai\AiService.java
-# WARNING: Unresolved types: B, ChatModel, ChatModelListener, Class, ConcurrentHashMap, T
+# WARNING: Unresolved types: ChatModel, ChatModelListener, ConcurrentHashMap
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
@@ -65,7 +65,7 @@ class AiService(ABC):
     def plugin_finder_for_conversation(self, conversation_id: str) -> PluginFinder:
         raise NotImplementedError  # TODO: translate from Java
 
-    def build_ai_service(self, service_class: Class[B], span_name: str, conversation_id: str) -> B:
+    def build_ai_service(self, service_class: type[B], span_name: str, conversation_id: str) -> B:
         raise NotImplementedError  # TODO: translate from Java
 
     def before_generation(self, ip: str, conversation_id: str, span_name: str, input_state: dict[str, str]) -> GenerationContext:

@@ -1,22 +1,20 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\plugin\core\trigger\AbstractWebhookTrigger.java
-# WARNING: Unresolved types: Exception, Mono
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from logging import logging
+from logging import Logger, getLogger
 from typing import Any, ClassVar
 
 from engine.core.models.triggers.abstract_trigger import AbstractTrigger
-from engine.core.http.http_response import HttpResponse
 from engine.plugin.core.trigger.webhook_context import WebhookContext
 
 
 @dataclass(slots=True, kw_only=True)
 class AbstractWebhookTrigger(ABC, AbstractTrigger):
     key: str
-    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    logger: ClassVar[Logger] = getLogger(__name__)
     inputs: dict[str, Any] | None = None
 
     @abstractmethod

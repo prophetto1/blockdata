@@ -18,15 +18,7 @@ class ServiceUsage:
     daily_statistics: list[DailyServiceStatistics] | None = None
 
     @staticmethod
-    def of(from: datetime, to: datetime, repository: ServiceInstanceRepositoryInterface, interval: timedelta) -> ServiceUsage:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def of(from: datetime, to: datetime, repository: ServiceInstanceRepositoryInterface, service_type: ServiceType, interval: timedelta) -> DailyServiceStatistics:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def of(service_type: ServiceType, interval: timedelta, instances: list[ServiceInstance]) -> DailyServiceStatistics:
+    def of(from: datetime, to: datetime, repository: ServiceInstanceRepositoryInterface, service_type: ServiceType | None = None, interval: timedelta | None = None) -> DailyServiceStatistics:
         raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)

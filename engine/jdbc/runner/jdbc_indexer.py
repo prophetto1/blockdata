@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\jdbc\src\main\java\io\kestra\jdbc\runner\JdbcIndexer.java
-# WARNING: Unresolved types: ApplicationEventPublisher, AtomicBoolean, AtomicReference, IOException, Runnable, ServiceState, T
+# WARNING: Unresolved types: AtomicReference, ServiceState
 
 from dataclasses import dataclass, field
-from logging import logging
-from typing import Any, ClassVar
+from logging import Logger, getLogger
+from typing import Any, Callable, ClassVar
 
 from engine.core.services.ignore_execution_service import IgnoreExecutionService
 from engine.core.runners.indexer import Indexer
@@ -26,9 +26,9 @@ from engine.core.server.service_type import ServiceType
 class JdbcIndexer:
     id: str
     state: AtomicReference[ServiceState]
-    closed: AtomicBoolean
-    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
-    receive_cancellations: list[Runnable] = field(default_factory=list)
+    closed: bool
+    logger: ClassVar[Logger] = getLogger(__name__)
+    receive_cancellations: list[Callable] = field(default_factory=list)
     log_repository: LogRepositoryInterface | None = None
     log_queue: JdbcQueue[LogEntry] | None = None
     metric_repository: MetricRepositoryInterface | None = None

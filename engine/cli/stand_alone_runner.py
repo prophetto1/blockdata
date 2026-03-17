@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\cli\src\main\java\io\kestra\cli\StandAloneRunner.java
-# WARNING: Unresolved types: ApplicationContext, AtomicBoolean, AutoCloseable, Exception, Runnable
 
 from dataclasses import dataclass, field
-from logging import logging
+from logging import Logger, getLogger
 from datetime import timedelta
 from typing import Any, ClassVar
 
@@ -16,8 +15,8 @@ from engine.core.server.service import Service
 @dataclass(slots=True, kw_only=True)
 class StandAloneRunner:
     worker_thread: int
-    running: AtomicBoolean
-    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    running: bool
+    logger: ClassVar[Logger] = getLogger(__name__)
     scheduler_enabled: bool = True
     worker_enabled: bool = True
     indexer_enabled: bool = True

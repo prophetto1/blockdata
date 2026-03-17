@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\models\tasks\runners\PluginUtilsService.java
-# WARNING: Unresolved types: Exception, IOException, JsonProcessingException, Logger, TypeReference
+# WARNING: Unresolved types: JsonProcessingException, TypeReference
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
@@ -18,11 +18,7 @@ class PluginUtilsService(ABC):
     map_type_reference: ClassVar[TypeReference[dict[str, str]]]
 
     @staticmethod
-    def create_output_files(temp_directory: Path, output_files: list[str], additional_vars: dict[str, Any]) -> dict[str, str]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def create_output_files(temp_directory: Path, output_files: list[str], additional_vars: dict[str, Any], is_dir: bool) -> dict[str, str]:
+    def create_output_files(temp_directory: Path, output_files: list[str], additional_vars: dict[str, Any], is_dir: bool | None = None) -> dict[str, str]:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
@@ -30,15 +26,11 @@ class PluginUtilsService(ABC):
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
-    def transform_input_files(run_context: RunContext, input_files: Any) -> dict[str, str]:
+    def transform_input_files(run_context: RunContext, additional_vars: dict[str, Any], input_files: Any | None = None) -> dict[str, str]:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
-    def transform_input_files(run_context: RunContext, additional_vars: dict[str, Any], input_files: Any) -> dict[str, str]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def parse_out(line: str, logger: Logger, run_context: RunContext, is_std_err: bool, custom_instant: datetime) -> dict[str, Any]:
+    def parse_out(line: str, logger: Any, run_context: RunContext, is_std_err: bool, custom_instant: datetime) -> dict[str, Any]:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod

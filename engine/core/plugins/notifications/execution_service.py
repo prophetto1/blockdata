@@ -9,7 +9,6 @@ from typing import Any, Optional
 from engine.core.models.executions.execution import Execution
 from engine.core.plugins.notifications.execution_interface import ExecutionInterface
 from engine.core.exceptions.illegal_variable_evaluation_exception import IllegalVariableEvaluationException
-from engine.core.models.property.property import Property
 from engine.core.runners.run_context import RunContext
 
 

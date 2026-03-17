@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\models\triggers\TriggerContext.java
-# WARNING: Unresolved types: B, C
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
@@ -29,11 +28,8 @@ class TriggerContext:
     def builder() -> TriggerContextBuilder[Any, Any]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def uid(self) -> str:
-        raise NotImplementedError  # TODO: translate from Java
-
     @staticmethod
-    def uid(trigger: TriggerContext) -> str:
+    def uid(trigger: TriggerContext | None = None) -> str:
         raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)

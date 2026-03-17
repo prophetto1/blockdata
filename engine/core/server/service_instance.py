@@ -36,19 +36,13 @@ class ServiceInstance:
     def is(self, type: ServiceType) -> bool:
         raise NotImplementedError  # TODO: translate from Java
 
-    def is(self, state: ServiceState) -> bool:
-        raise NotImplementedError  # TODO: translate from Java
-
     def server(self, server: ServerInstance) -> ServiceInstance:
         raise NotImplementedError  # TODO: translate from Java
 
     def metrics(self, metrics: set[Metric]) -> ServiceInstance:
         raise NotImplementedError  # TODO: translate from Java
 
-    def state(self, new_state: ServiceState, updated_at: datetime) -> ServiceInstance:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def state(self, new_state: ServiceState, updated_at: datetime, reason: str) -> ServiceInstance:
+    def state(self, new_state: ServiceState, updated_at: datetime, reason: str | None = None) -> ServiceInstance:
         raise NotImplementedError  # TODO: translate from Java
 
     def is_session_timeout_elapsed(self, now: datetime) -> bool:

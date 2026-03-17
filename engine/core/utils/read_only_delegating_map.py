@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\utils\ReadOnlyDelegatingMap.java
-# WARNING: Unresolved types: Entry, K, V
+# WARNING: Unresolved types: Entry
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\runners\FlowInputOutput.java
-# WARNING: Unresolved types: AbstractMap, Class, CompletedPart, Exception, Mono, ObjectMapper, Publisher, SimpleEntry, Supplier, T
+# WARNING: Unresolved types: AbstractMap, CompletedPart, Publisher, SimpleEntry
 
 from dataclasses import dataclass, field
 from typing import Any, ClassVar, Optional
@@ -30,25 +30,13 @@ class FlowInputOutput:
     def validate_execution_inputs(self, inputs: list[Input[Any]], flow: FlowInterface, execution: Execution, data: Publisher[CompletedPart]) -> Mono[list[InputAndValue]]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def read_execution_inputs(self, flow: FlowInterface, execution: Execution, data: Publisher[CompletedPart]) -> Mono[dict[str, Any]]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def read_execution_inputs(self, inputs: list[Input[Any]], flow: FlowInterface, execution: Execution, data: Publisher[CompletedPart]) -> Mono[dict[str, Any]]:
+    def read_execution_inputs(self, inputs: list[Input[Any]], flow: FlowInterface, execution: Execution, data: Publisher[CompletedPart] | None = None) -> Mono[dict[str, Any]]:
         raise NotImplementedError  # TODO: translate from Java
 
     def read_data(self, inputs: list[Input[Any]], execution: Execution, data: Publisher[CompletedPart], upload_files: bool) -> Mono[dict[str, Any]]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def read_execution_inputs(self, flow: FlowInterface, execution: Execution, data: dict[str, Any]) -> dict[str, Any]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def read_execution_inputs(self, inputs: list[Input[Any]], flow: FlowInterface, execution: Execution, data: dict[str, Any]) -> dict[str, Any]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def resolve_inputs(self, inputs: list[Input[Any]], flow: FlowInterface, execution: Execution, data: dict[str, Any]) -> list[InputAndValue]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def resolve_inputs(self, inputs: list[Input[Any]], flow: FlowInterface, execution: Execution, data: dict[str, Any], decrypt_secrets: bool) -> list[InputAndValue]:
+    def resolve_inputs(self, inputs: list[Input[Any]], flow: FlowInterface, execution: Execution, data: dict[str, Any], decrypt_secrets: bool | None = None) -> list[InputAndValue]:
         raise NotImplementedError  # TODO: translate from Java
 
     def resolve_input_value(self, resolvable: ResolvableInput, flow: FlowInterface, execution: Execution, inputs: dict[str, ResolvableInput], decrypt_secrets: bool) -> InputAndValue:
@@ -59,11 +47,11 @@ class FlowInputOutput:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
-    def resolve_default_property_as(input: Input[Any], renderer: PropertyContext, clazz: Class[T]) -> Any:
+    def resolve_default_property_as(input: Input[Any], renderer: PropertyContext, clazz: type[T]) -> Any:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
-    def resolve_default_property_as_list(input: Input[Any], renderer: PropertyContext, clazz: Class[T]) -> Any:
+    def resolve_default_property_as_list(input: Input[Any], renderer: PropertyContext, clazz: type[T]) -> Any:
         raise NotImplementedError  # TODO: translate from Java
 
     def build_run_context_for_execution_and_inputs(self, flow: FlowInterface, execution: Execution, dependencies: dict[str, InputAndValue], decrypt_secrets: bool) -> RunContext:
@@ -103,9 +91,6 @@ class FlowInputOutput:
             raise NotImplementedError  # TODO: translate from Java
 
         def resolve_with_error(self, exception: set[InputOutputValidationException]) -> None:
-            raise NotImplementedError  # TODO: translate from Java
-
-        def resolve_with_error(self, exception: InputOutputValidationException) -> None:
             raise NotImplementedError  # TODO: translate from Java
 
         def mark_as_resolved(self) -> None:

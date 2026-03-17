@@ -1,13 +1,11 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\models\flows\input\SelectInput.java
-# WARNING: Unresolved types: ConstraintViolationException, Function
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Callable
 
 from engine.core.models.flows.input import Input
-from engine.core.models.property.property import Property
 from engine.core.models.flows.renderable_input import RenderableInput
 
 
@@ -25,8 +23,8 @@ class SelectInput(Input):
     def validate(self, input: str) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
-    def render(self, renderer: Function[str, Any]) -> Input[Any]:
+    def render(self, renderer: Callable[str, Any]) -> Input[Any]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def render_expression_values(self, renderer: Function[str, Any]) -> list[str]:
+    def render_expression_values(self, renderer: Callable[str, Any]) -> list[str]:
         raise NotImplementedError  # TODO: translate from Java

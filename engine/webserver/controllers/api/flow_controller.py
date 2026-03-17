@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\webserver\src\main\java\io\kestra\webserver\controllers\api\FlowController.java
-# WARNING: Unresolved types: Class, CompletedFileUpload, ConstraintViolationException, Flux, HttpStatusException, IOException, MutableHttpResponse, ObjectMapper, Publisher, T, Void
+# WARNING: Unresolved types: MutableHttpResponse, Publisher, Void
 
 from dataclasses import dataclass, field
 from enum import Enum
-from logging import logging
+from logging import Logger, getLogger
 from typing import Any, ClassVar, Optional
 
 from engine.webserver.responses.bulk_response import BulkResponse
@@ -21,8 +21,6 @@ from engine.core.topologies.flow_topology_service import FlowTopologyService
 from engine.core.models.flows.flow_with_source import FlowWithSource
 from engine.core.models.flows.generic_flow import GenericFlow
 from engine.core.services.graph_service import GraphService
-from engine.core.http.http_request import HttpRequest
-from engine.core.http.http_response import HttpResponse
 from engine.webserver.controllers.domain.id_with_namespace import IdWithNamespace
 from engine.core.exceptions.illegal_variable_evaluation_exception import IllegalVariableEvaluationException
 from engine.core.models.validations.model_validator import ModelValidator
@@ -37,7 +35,7 @@ from engine.core.models.validations.validate_constraint_violation import Validat
 
 @dataclass(slots=True, kw_only=True)
 class FlowController:
-    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    logger: ClassVar[Logger] = getLogger(__name__)
     warning_json_flow_endpoint: ClassVar[str] = "This endpoint is deprecated. Handling flows as 'application/json' is no longer supported and will be removed in a future release. Please use the same endpoint with an 'application/x-yaml' content type."
     flow_repository: FlowRepositoryInterface | None = None
     plugin_default_service: PluginDefaultService | None = None
@@ -81,10 +79,7 @@ class FlowController:
     def do_create(self, flow: GenericFlow) -> FlowWithSource:
         raise NotImplementedError  # TODO: translate from Java
 
-    def update_flows_in_namespace(self, namespace: str, flows: str, delete: bool) -> list[FlowInterface]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def update_flows_in_namespace(self, namespace: str, flows_publisher: Publisher[CompletedFileUpload], override: bool, delete: bool) -> list[FlowInterface]:
+    def update_flows_in_namespace(self, namespace: str, flows_publisher: Publisher[CompletedFileUpload], override: bool, delete: bool | None = None) -> list[FlowInterface]:
         raise NotImplementedError  # TODO: translate from Java
 
     def update_flows_in_namespace_from_json(self, namespace: str, flows: list[Flow], delete: bool) -> list[Flow]:
@@ -93,13 +88,10 @@ class FlowController:
     def bulk_update_or_create(self, namespace: str, flows: list[GenericFlow], delete: bool, allow_namespace_child: bool) -> list[FlowInterface]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def update_flow(self, namespace: str, id: str, source: str) -> HttpResponse[FlowWithSource]:
+    def update_flow(self, namespace: str, id: str, source: str | None = None) -> HttpResponse[FlowWithSource]:
         raise NotImplementedError  # TODO: translate from Java
 
     def update_flow_from_json(self, namespace: str, id: str, flow: Flow) -> HttpResponse[Flow]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def update_flow(self, current: GenericFlow, previous: FlowInterface) -> FlowWithSource:
         raise NotImplementedError  # TODO: translate from Java
 
     def bulk_update_flows(self, flows: str, delete: bool, namespace: str, allow_namespace_child: bool) -> list[FlowInterface]:
@@ -123,13 +115,10 @@ class FlowController:
     def validate_flows(self, body: str, flows_publisher: Publisher[CompletedFileUpload], request: HttpRequest[Any]) -> list[ValidateConstraintViolation]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def validate_task(self, task: str) -> ValidateConstraintViolation:
+    def validate_task(self, task: str, section: TaskValidationType | None = None) -> ValidateConstraintViolation:
         raise NotImplementedError  # TODO: translate from Java
 
     def validate_trigger(self, trigger: str) -> ValidateConstraintViolation:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def validate_task(self, task: str, section: TaskValidationType) -> ValidateConstraintViolation:
         raise NotImplementedError  # TODO: translate from Java
 
     def export_flows_by_query(self, filters: list[QueryFilter], query: str, scope: list[FlowScope], namespace: str, labels: list[str]) -> HttpResponse[list[int]]:
@@ -172,7 +161,7 @@ class FlowController:
     def import_flow(self, tenant_id: str, source: str) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
-    def parse_task_trigger(self, input: str, cls: Class[T]) -> T:
+    def parse_task_trigger(self, input: str, cls: type[T]) -> T:
         raise NotImplementedError  # TODO: translate from Java
 
     class TaskValidationType(str, Enum):

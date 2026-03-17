@@ -4,13 +4,13 @@ from __future__ import annotations
 # WARNING: Unresolved types: ChatModelErrorContext, ChatModelListener, ChatModelResponseContext, MeterRegistry
 
 from dataclasses import dataclass, field
-from logging import logging
+from logging import Logger, getLogger
 from typing import Any, ClassVar
 
 
 @dataclass(slots=True, kw_only=True)
 class MetricChatModelListener:
-    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    logger: ClassVar[Logger] = getLogger(__name__)
     meter_registry: MeterRegistry | None = None
 
     def on_response(self, response_context: ChatModelResponseContext) -> None:

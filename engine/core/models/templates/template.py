@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\models\templates\Template.java
-# WARNING: Unresolved types: AnnotatedMember, ConstraintViolationException, JacksonAnnotationIntrospector, ObjectMapper
+# WARNING: Unresolved types: AnnotatedMember
 
 from dataclasses import dataclass, field
 from typing import Any, ClassVar, Optional
@@ -27,14 +27,11 @@ class Template:
     def get_finally(self) -> list[Task]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def uid(self) -> str:
-        raise NotImplementedError  # TODO: translate from Java
-
     @staticmethod
-    def uid(tenant_id: str, namespace: str, id: str) -> str:
+    def uid(tenant_id: str | None = None, namespace: str | None = None, id: str | None = None) -> str:
         raise NotImplementedError  # TODO: translate from Java
 
-    def validate_update(self, updated: Template) -> Optional[ConstraintViolationException]:
+    def validate_update(self, updated: Template) -> Optional[ValueError]:
         raise NotImplementedError  # TODO: translate from Java
 
     def generate_source(self) -> str:

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\webserver\src\main\java\io\kestra\webserver\services\BasicAuthService.java
-# WARNING: Unresolved types: ApplicationEventPublisher, Pattern
 
 from dataclasses import dataclass, field
 from typing import Any, ClassVar
@@ -14,8 +13,8 @@ from engine.core.repositories.setting_repository_interface import SettingReposit
 
 @dataclass(slots=True, kw_only=True)
 class BasicAuthService:
-    email_pattern: ClassVar[Pattern]
-    password_pattern: ClassVar[Pattern]
+    email_pattern: ClassVar[re.Pattern]
+    password_pattern: ClassVar[re.Pattern]
     basic_auth_settings_key: ClassVar[str] = "kestra.server.basic-auth"
     basic_auth_error_config: ClassVar[str] = "kestra.server.authentication-configuration-error"
     email_password_max_len: ClassVar[int] = 256

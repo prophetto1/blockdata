@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\webserver\src\main\java\io\kestra\webserver\controllers\api\BlueprintController.java
-# WARNING: Unresolved types: Argument, T, URISyntaxException
+# WARNING: Unresolved types: Argument, URISyntaxException
 
 from dataclasses import dataclass
 from enum import Enum
@@ -9,7 +9,6 @@ from datetime import datetime
 from typing import Any, Optional
 
 from engine.core.http.client.http_client import HttpClient
-from engine.core.http.http_request import HttpRequest
 from engine.webserver.responses.paged_results import PagedResults
 from engine.core.utils.version_provider import VersionProvider
 
@@ -34,16 +33,10 @@ class BlueprintController:
     def list_blueprint_tags(self, kind: Kind, q: Optional[str], http_request: HttpRequest[Any]) -> list[ApiBlueprintTagItem]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def get_api_base_path(self, kind: Kind) -> str:
+    def get_api_base_path(self, id: str, kind: Kind | None = None) -> str:
         raise NotImplementedError  # TODO: translate from Java
 
-    def get_api_base_path(self, id: str, kind: Kind) -> str:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def fast_forward_to_kestra_api(self, original_request: HttpRequest[Any], new_path: str, return_type: Argument[T]) -> T:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def fast_forward_to_kestra_api(self, original_request: HttpRequest[Any], new_path: str, additional_query_params: dict[str, Any], return_type: Argument[T]) -> T:
+    def fast_forward_to_kestra_api(self, original_request: HttpRequest[Any], new_path: str, additional_query_params: dict[str, Any], return_type: Argument[T] | None = None) -> T:
         raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\jdbc\src\main\java\io\kestra\jdbc\repository\AbstractJdbcTemplateRepository.java
-# WARNING: Unresolved types: ApplicationContext, ApplicationEventPublisher, ConstraintViolationException, Pageable, io, jdbc, kestra
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
@@ -10,7 +9,6 @@ from typing import Any, Optional
 from engine.jdbc.repository.abstract_jdbc_crud_repository import AbstractJdbcCrudRepository
 from engine.jdbc.abstract_jdbc_repository import AbstractJdbcRepository
 from engine.core.repositories.array_list_total import ArrayListTotal
-from engine.core.models.conditions.condition import Condition
 from engine.core.events.crud_event import CrudEvent
 from engine.core.queues.queue_interface import QueueInterface
 from engine.core.models.templates.template import Template
@@ -32,10 +30,7 @@ class AbstractJdbcTemplateRepository(ABC, AbstractJdbcCrudRepository):
     def find_condition(self, query: str) -> Condition:
         ...
 
-    def find(self, pageable: Pageable, query: str, tenant_id: str, namespace: str) -> ArrayListTotal[Template]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def find(self, query: str, tenant_id: str, namespace: str) -> list[Template]:
+    def find(self, pageable: Pageable, query: str, tenant_id: str, namespace: str | None = None) -> ArrayListTotal[Template]:
         raise NotImplementedError  # TODO: translate from Java
 
     def compute_condition(self, query: str, namespace: str) -> Condition:

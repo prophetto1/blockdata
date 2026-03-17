@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\jdbc\src\main\java\io\kestra\jdbc\runner\JdbcExecutor.java
-# WARNING: Unresolved types: ApplicationEventPublisher, AtomicBoolean, AtomicReference, Configuration, Exception, FailedExecutionWithLog, ObjectMapper, Runnable, ScheduledExecutorService, ScheduledFuture, ServiceState, TemplateExecutorInterface, concurrent, java, util
+# WARNING: Unresolved types: AtomicReference, Configuration, FailedExecutionWithLog, ScheduledExecutorService, ScheduledFuture, ServiceState, TemplateExecutorInterface, concurrent, java, util
 
 from dataclasses import dataclass, field
-from logging import logging
-from typing import Any, ClassVar, Optional
+from logging import Logger, getLogger
+from typing import Any, Callable, ClassVar, Optional
 
 from engine.jdbc.runner.abstract_jdbc_concurrency_limit_storage import AbstractJdbcConcurrencyLimitStorage
 from engine.jdbc.runner.abstract_jdbc_execution_delay_storage import AbstractJdbcExecutionDelayStorage
@@ -69,14 +69,14 @@ class JdbcExecutor:
     mapper: ClassVar[ObjectMapper]
     scheduled_delay: ScheduledExecutorService
     id: str
-    shutdown: AtomicBoolean
-    is_paused: AtomicBoolean
+    shutdown: bool
+    is_paused: bool
     state: AtomicReference[ServiceState]
-    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    logger: ClassVar[Logger] = getLogger(__name__)
     ignoring_execution_msg: ClassVar[str] = "Ignoring execution {} because there is a kill switch on it"
     cancelling_execution_msg: ClassVar[str] = "Cancelling execution {} because there is a kill switch on it"
     killing_execution_msg: ClassVar[str] = "Killing execution {} because there is a kill switch on it"
-    receive_cancellations: list[Runnable] = field(default_factory=list)
+    receive_cancellations: list[Callable] = field(default_factory=list)
     execution_delay_future: ScheduledFuture[Any] | None = None
     monitor_sla_future: ScheduledFuture[Any] | None = None
     execution_repository: AbstractJdbcExecutionRepository | None = None
@@ -166,10 +166,7 @@ class JdbcExecutor:
     def killing_or_after_kill_state(self, execution_id: str, after_kill_state: Optional[State.Type]) -> Executor:
         raise NotImplementedError  # TODO: translate from Java
 
-    def to_execution(self, executor: Executor) -> None:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def to_execution(self, executor: Executor, ignore_failure: bool) -> None:
+    def to_execution(self, executor: Executor, ignore_failure: bool | None = None) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
     def process_flow_triggers(self, execution: Execution) -> None:
@@ -205,16 +202,10 @@ class JdbcExecutor:
     def handle_failed_execution_from_executor(self, executor: Executor, e: Exception) -> Executor:
         raise NotImplementedError  # TODO: translate from Java
 
-    def handle_failed_execution_from_executor(self, executor: Executor, failed_execution_with_log: FailedExecutionWithLog) -> Executor:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def handle_kill_switched_execution(self, evaluation_type: EvaluationType, message: Execution) -> None:
+    def handle_kill_switched_execution(self, evaluation_type: EvaluationType, tenant_id: str, execution_id: str | None = None) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
     def handle_kill_switched_worker_task_result(self, evaluation_type: EvaluationType, message: WorkerTaskResult) -> None:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def handle_kill_switched_execution(self, evaluation_type: EvaluationType, tenant_id: str, execution_id: str) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
     def kill_execution(self, tenant_id: str, execution_id: str) -> None:

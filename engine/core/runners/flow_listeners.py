@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\runners\FlowListeners.java
-# WARNING: Unresolved types: AtomicBoolean, BiConsumer, Consumer
 
 from dataclasses import dataclass, field
-from logging import logging
-from typing import Any, ClassVar, Optional
+from logging import Logger, getLogger
+from typing import Any, Callable, ClassVar, Optional
 
 from engine.core.models.flows.flow_interface import FlowInterface
 from engine.core.services.flow_listeners_interface import FlowListenersInterface
@@ -17,10 +16,10 @@ from engine.core.queues.queue_interface import QueueInterface
 
 @dataclass(slots=True, kw_only=True)
 class FlowListeners:
-    is_started: AtomicBoolean
-    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
-    consumers: list[Consumer[list[FlowWithSource]]] = field(default_factory=list)
-    consumers_each: list[BiConsumer[FlowWithSource, FlowWithSource]] = field(default_factory=list)
+    is_started: bool
+    logger: ClassVar[Logger] = getLogger(__name__)
+    consumers: list[Callable[list[FlowWithSource]]] = field(default_factory=list)
+    consumers_each: list[Callable[FlowWithSource, FlowWithSource]] = field(default_factory=list)
     flow_queue: QueueInterface[FlowInterface] | None = None
     flows: list[FlowWithSource] | None = None
     plugin_default_service: PluginDefaultService | None = None
@@ -43,10 +42,7 @@ class FlowListeners:
     def notify_consumers_each(self, flow: FlowWithSource, previous: FlowWithSource) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
-    def listen(self, consumer: Consumer[list[FlowWithSource]]) -> None:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def listen(self, consumer: BiConsumer[FlowWithSource, FlowWithSource]) -> None:
+    def listen(self, consumer: Callable[list[FlowWithSource]]) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
     def flows(self) -> list[FlowWithSource]:

@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\cli\src\main\java\io\kestra\cli\commands\namespaces\kv\KvUpdateCommand.java
-# WARNING: Unresolved types: Exception
 
 from dataclasses import dataclass, field
 from enum import Enum
-from logging import logging
+from logging import Logger, getLogger
 from pathlib import Path
 from typing import Any, ClassVar
 
@@ -15,7 +14,7 @@ from engine.cli.services.tenant_id_selector_service import TenantIdSelectorServi
 
 @dataclass(slots=True, kw_only=True)
 class KvUpdateCommand(AbstractApiCommand):
-    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    logger: ClassVar[Logger] = getLogger(__name__)
     namespace: str | None = None
     key: str | None = None
     value: str | None = None

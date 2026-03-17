@@ -4,7 +4,7 @@ from __future__ import annotations
 # WARNING: Unresolved types: Provider
 
 from dataclasses import dataclass, field
-from logging import logging
+from logging import Logger, getLogger
 from pathlib import Path
 from typing import Any, ClassVar
 
@@ -19,7 +19,7 @@ from engine.core.plugins.plugin_resolution_result import PluginResolutionResult
 
 @dataclass(slots=True, kw_only=True)
 class LocalPluginManager:
-    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    logger: ClassVar[Logger] = getLogger(__name__)
     plugin_registry_provider: Provider[PluginRegistry] | None = None
     maven_plugin_downloader: MavenPluginDownloader | None = None
     local_repository_path: Path | None = None
@@ -33,16 +33,7 @@ class LocalPluginManager:
     def list(self) -> list[PluginArtifactMetadata]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def install(self, artifact: PluginArtifact, repository_configs: list[MavenPluginRepositoryConfig], install_for_registration: bool, local_repository_path: Path) -> PluginArtifact:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def install(self, artifact: PluginArtifact, install_for_registration: bool, local_repository_path: Path) -> PluginArtifact:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def install(self, file: Path, install_for_registration: bool, local_repository_path: Path, force_install_on_existing_versions: bool) -> PluginArtifact:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def install(self, artifacts: list[PluginArtifact], repository_configs: list[MavenPluginRepositoryConfig], refresh_plugin_registry: bool, local_repository_path: Path) -> list[PluginArtifact]:
+    def install(self, artifact: PluginArtifact, repository_configs: list[MavenPluginRepositoryConfig], install_for_registration: bool, local_repository_path: Path | None = None) -> PluginArtifact:
         raise NotImplementedError  # TODO: translate from Java
 
     def get_local_plugin_path(self, local_repository_path: Path, artifact: PluginArtifact) -> Path:

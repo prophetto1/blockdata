@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\storages\InternalNamespace.java
-# WARNING: Unresolved types: Conflicts, Exception, FileNotFoundException, IOException, InputStream, Logger, Pageable, Pair, Predicate, URISyntaxException
+# WARNING: Unresolved types: Conflicts, FileNotFoundException, Pair, URISyntaxException
 
 from dataclasses import dataclass, field
-from logging import logging
+from logging import Logger, getLogger
 from pathlib import Path
-from typing import Any, ClassVar, Optional
+from typing import Any, Callable, ClassVar, Optional
 
 from engine.core.repositories.array_list_total import ArrayListTotal
 from engine.core.models.fetch_version import FetchVersion
@@ -21,12 +21,12 @@ from engine.core.storages.storage_interface import StorageInterface
 
 @dataclass(slots=True, kw_only=True)
 class InternalNamespace:
-    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    logger: ClassVar[Logger] = getLogger(__name__)
     namespace: str | None = None
     tenant: str | None = None
     storage: StorageInterface | None = None
     namespace_file_metadata_repository: NamespaceFileMetadataRepositoryInterface | None = None
-    logger: Logger | None = None
+    logger: Any | None = None
 
     def find(self, pageable: Pageable, filters: list[QueryFilter], allow_deleted: bool, fetch_version: FetchVersion) -> ArrayListTotal[NamespaceFile]:
         raise NotImplementedError  # TODO: translate from Java
@@ -37,10 +37,7 @@ class InternalNamespace:
     def tenant_id(self) -> str:
         raise NotImplementedError  # TODO: translate from Java
 
-    def all(self) -> list[NamespaceFile]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def all(self, containing: str, include_directories: bool) -> list[NamespaceFile]:
+    def all(self, containing: str | None = None, include_directories: bool | None = None) -> list[NamespaceFile]:
         raise NotImplementedError  # TODO: translate from Java
 
     def children(self, parent_path: str, recursive: bool) -> list[NamespaceFileMetadata]:
@@ -55,10 +52,10 @@ class InternalNamespace:
     def relativize(self, uri: str) -> Path:
         raise NotImplementedError  # TODO: translate from Java
 
-    def find_all_files_matching(self, predicate: Predicate[Path]) -> list[NamespaceFile]:
+    def find_all_files_matching(self, predicate: Callable[Path]) -> list[NamespaceFile]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def get_file_content(self, path: Path, version: int) -> InputStream:
+    def get_file_content(self, path: Path, version: int) -> Any:
         raise NotImplementedError  # TODO: translate from Java
 
     def get_file_metadata(self, path: Path) -> FileAttributes:
@@ -67,22 +64,13 @@ class InternalNamespace:
     def file_not_found(self, path: Path, version: int) -> FileNotFoundException:
         raise NotImplementedError  # TODO: translate from Java
 
-    def find_by_path(self, path: Path, allow_deleted: bool, version: int) -> Optional[NamespaceFileMetadata]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def find_by_path(self, path: Path, allow_deleted: bool) -> Optional[NamespaceFileMetadata]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def find_by_path(self, path: Path, version: int) -> Optional[NamespaceFileMetadata]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def find_by_path(self, path: Path) -> Optional[NamespaceFileMetadata]:
+    def find_by_path(self, path: Path, allow_deleted: bool | None = None, version: int | None = None) -> Optional[NamespaceFileMetadata]:
         raise NotImplementedError  # TODO: translate from Java
 
     def exists(self, path: Path) -> bool:
         raise NotImplementedError  # TODO: translate from Java
 
-    def put_file(self, path: Path, content: InputStream, on_already_exist: Conflicts) -> list[NamespaceFile]:
+    def put_file(self, path: Path, content: Any, on_already_exist: Conflicts) -> list[NamespaceFile]:
         raise NotImplementedError  # TODO: translate from Java
 
     def mk_dirs(self, path: str) -> list[NamespaceFile]:
@@ -95,7 +83,4 @@ class InternalNamespace:
         raise NotImplementedError  # TODO: translate from Java
 
     def purge(self, namespace_file: NamespaceFile) -> bool:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def purge(self, namespace_files: list[NamespaceFile]) -> int:
         raise NotImplementedError  # TODO: translate from Java

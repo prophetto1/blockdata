@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\log\KestraLogFilter.java
-# WARNING: Unresolved types: EvaluationException, EventEvaluatorBase, ILoggingEvent, NullPointerException
+# WARNING: Unresolved types: EvaluationException, EventEvaluatorBase
 
 from dataclasses import dataclass
 from typing import Any

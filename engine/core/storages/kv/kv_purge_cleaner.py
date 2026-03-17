@@ -3,7 +3,7 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\storages\kv\KVPurgeCleaner.java
 
 from dataclasses import dataclass, field
-from logging import logging
+from logging import Logger, getLogger
 from typing import Any, ClassVar
 
 from engine.core.repositories.flow_repository_interface import FlowRepositoryInterface
@@ -13,7 +13,7 @@ from engine.core.repositories.kv_metadata_repository_interface import KvMetadata
 
 @dataclass(slots=True, kw_only=True)
 class KVPurgeCleaner:
-    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    logger: ClassVar[Logger] = getLogger(__name__)
     kv_store_service: KVStoreService | None = None
     flow_repository: FlowRepositoryInterface | None = None
     kv_metadata_repository: KvMetadataRepositoryInterface | None = None

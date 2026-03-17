@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\webserver\src\main\java\io\kestra\webserver\utils\RequestUtils.java
-# WARNING: Unresolved types: ChildFilter, Level
+# WARNING: Unresolved types: ChildFilter
 
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -24,19 +24,11 @@ class RequestUtils:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
-    def get_filters_or_default_to_legacy_mapping(filters: list[QueryFilter], query: str) -> list[QueryFilter]:
+    def get_filters_or_default_to_legacy_mapping(filters: list[QueryFilter], query: str, namespace: str | None = None, flow_id: str | None = None, trigger_id: str | None = None, min_level: int | None = None, start_date: datetime | None = None, end_date: datetime | None = None, scope: list[FlowScope] | None = None, labels: list[str] | None = None, time_range: timedelta | None = None, child_filter: ExecutionRepositoryInterface.ChildFilter | None = None, state: list[State.Type] | None = None, worker_id: str | None = None, trigger_execution_id: str | None = None) -> list[QueryFilter]:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
-    def get_filters_or_default_to_legacy_mapping(filters: list[QueryFilter], query: str, namespace: str, flow_id: str, trigger_id: str, min_level: Level, scope: list[FlowScope], labels: list[str], child_filter: ExecutionRepositoryInterface.ChildFilter, state: list[State.Type], worker_id: str, trigger_execution_id: str) -> list[QueryFilter]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def get_filters_or_default_to_legacy_mapping(filters: list[QueryFilter], query: str, namespace: str, flow_id: str, trigger_id: str, min_level: Level, start_date: datetime, end_date: datetime, scope: list[FlowScope], labels: list[str], time_range: timedelta, child_filter: ExecutionRepositoryInterface.ChildFilter, state: list[State.Type], worker_id: str, trigger_execution_id: str) -> list[QueryFilter]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def map_legacy_params_to_filters(query: str, namespace: str, flow_id: str, trigger_id: str, min_level: Level, start_date: datetime, end_date: datetime, scope: list[FlowScope], labels: list[str], time_range: timedelta, child_filter: ExecutionRepositoryInterface.ChildFilter, state: list[State.Type], worker_id: str, trigger_execution_id: str) -> list[QueryFilter]:
+    def map_legacy_params_to_filters(query: str, namespace: str, flow_id: str, trigger_id: str, min_level: int, start_date: datetime, end_date: datetime, scope: list[FlowScope], labels: list[str], time_range: timedelta, child_filter: ExecutionRepositoryInterface.ChildFilter, state: list[State.Type], worker_id: str, trigger_execution_id: str) -> list[QueryFilter]:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod

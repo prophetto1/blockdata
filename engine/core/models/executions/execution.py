@@ -1,12 +1,11 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\models\executions\Execution.java
-# WARNING: Unresolved types: BiFunction, Exception, ILoggingEvent, Throwable
 
-from dataclasses import dataclass, field
-from logging import logging
+from dataclasses import dataclass, field, replace
+from logging import Logger, getLogger
 from datetime import datetime
-from typing import Any, ClassVar, Optional
+from typing import Any, Callable, ClassVar, Optional
 
 from engine.core.debug.breakpoint import Breakpoint
 from engine.core.models.executions.execution_kind import ExecutionKind
@@ -37,7 +36,7 @@ class Execution:
     flow_id: str
     flow_revision: int
     state: State
-    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    logger: ClassVar[Logger] = getLogger(__name__)
     deleted: bool = False
     tenant_id: str | None = None
     task_run_list: list[TaskRun] | None = None
@@ -59,15 +58,7 @@ class Execution:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
-    def new_execution(flow: FlowInterface, labels: list[Label]) -> Execution:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def new_execution(flow: FlowInterface, inputs: BiFunction[FlowInterface, Execution, dict[str, Any]], labels: list[Label], schedule_date: Optional[datetime]) -> Execution:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def new_execution(flow: FlowInterface, inputs: BiFunction[FlowInterface, Execution, dict[str, Any]], labels: list[Label], schedule_date: Optional[datetime], kind: ExecutionKind) -> Execution:
+    def new_execution(flow: FlowInterface, inputs: Callable[FlowInterface, Execution, dict[str, Any]], labels: list[Label] | None = None, schedule_date: Optional[datetime] | None = None, kind: ExecutionKind | None = None) -> Execution:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
@@ -75,16 +66,16 @@ class Execution:
         raise NotImplementedError  # TODO: translate from Java
 
     def with_state(self, state: State.Type) -> Execution:
-        raise NotImplementedError  # TODO: translate from Java
+        return replace(self, state=state)
 
     def with_labels(self, labels: list[Label]) -> Execution:
-        raise NotImplementedError  # TODO: translate from Java
+        return replace(self, labels=labels)
 
     def with_task_run(self, task_run: TaskRun) -> Execution:
-        raise NotImplementedError  # TODO: translate from Java
+        return replace(self, task_run=task_run)
 
     def with_breakpoints(self, new_breakpoints: list[Breakpoint]) -> Execution:
-        raise NotImplementedError  # TODO: translate from Java
+        return replace(self, breakpoints=new_breakpoints)
 
     def add_label(self, label: Label) -> Execution:
         raise NotImplementedError  # TODO: translate from Java
@@ -101,13 +92,7 @@ class Execution:
     def find_task_run_by_task_id_and_value(self, id: str, values: list[str]) -> TaskRun:
         raise NotImplementedError  # TODO: translate from Java
 
-    def find_task_depending_flow_state(self, resolved_tasks: list[ResolvedTask], resolved_errors: list[ResolvedTask], resolved_finally: list[ResolvedTask]) -> list[ResolvedTask]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def find_task_depending_flow_state(self, resolved_tasks: list[ResolvedTask], resolved_errors: list[ResolvedTask], resolved_finally: list[ResolvedTask], parent_task_run: TaskRun) -> list[ResolvedTask]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def find_task_depending_flow_state(self, resolved_tasks: list[ResolvedTask], resolved_errors: list[ResolvedTask], resolved_finally: list[ResolvedTask], parent_task_run: TaskRun, terminal_state: State.Type) -> list[ResolvedTask]:
+    def find_task_depending_flow_state(self, resolved_tasks: list[ResolvedTask], resolved_errors: list[ResolvedTask], resolved_finally: list[ResolvedTask], parent_task_run: TaskRun | None = None, terminal_state: State.Type | None = None) -> list[ResolvedTask]:
         raise NotImplementedError  # TODO: translate from Java
 
     def remove_disabled(self, tasks: list[ResolvedTask]) -> list[ResolvedTask]:
@@ -140,28 +125,13 @@ class Execution:
     def find_last_terminated(self, task_runs: list[TaskRun]) -> Optional[TaskRun]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def is_terminated(self, resolved_tasks: list[ResolvedTask]) -> bool:
+    def is_terminated(self, resolved_tasks: list[ResolvedTask], parent_task_run: TaskRun | None = None) -> bool:
         raise NotImplementedError  # TODO: translate from Java
 
-    def is_terminated(self, resolved_tasks: list[ResolvedTask], parent_task_run: TaskRun) -> bool:
+    def has_warning(self, resolved_tasks: list[ResolvedTask] | None = None, parent_task_run: TaskRun | None = None) -> bool:
         raise NotImplementedError  # TODO: translate from Java
 
-    def has_warning(self) -> bool:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def has_warning(self, resolved_tasks: list[ResolvedTask]) -> bool:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def has_warning(self, resolved_tasks: list[ResolvedTask], parent_task_run: TaskRun) -> bool:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def has_failed(self) -> bool:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def has_failed(self, resolved_tasks: list[ResolvedTask]) -> bool:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def has_failed(self, resolved_tasks: list[ResolvedTask], parent_task_run: TaskRun) -> bool:
+    def has_failed(self, resolved_tasks: list[ResolvedTask] | None = None, parent_task_run: TaskRun | None = None) -> bool:
         raise NotImplementedError  # TODO: translate from Java
 
     def has_failed_no_retry(self, resolved_tasks: list[ResolvedTask], parent_task_run: TaskRun) -> bool:
@@ -171,28 +141,13 @@ class Execution:
     def should_not_be_retried(resolved_tasks: list[ResolvedTask], parent_task_run: TaskRun, task_run: TaskRun) -> bool:
         raise NotImplementedError  # TODO: translate from Java
 
-    def has_created(self) -> bool:
+    def has_created(self, resolved_tasks: list[ResolvedTask] | None = None, parent_task_run: TaskRun | None = None) -> bool:
         raise NotImplementedError  # TODO: translate from Java
 
-    def has_created(self, resolved_tasks: list[ResolvedTask]) -> bool:
+    def has_running(self, resolved_tasks: list[ResolvedTask], parent_task_run: TaskRun | None = None) -> bool:
         raise NotImplementedError  # TODO: translate from Java
 
-    def has_created(self, resolved_tasks: list[ResolvedTask], parent_task_run: TaskRun) -> bool:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def has_running(self, resolved_tasks: list[ResolvedTask]) -> bool:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def has_running(self, resolved_tasks: list[ResolvedTask], parent_task_run: TaskRun) -> bool:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def guess_final_state(self, flow: Flow) -> State.Type:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def guess_final_state(self, current_tasks: list[ResolvedTask], parent_task_run: TaskRun, allow_failure: bool, allow_warning: bool) -> State.Type:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def guess_final_state(self, current_tasks: list[ResolvedTask], parent_task_run: TaskRun, allow_failure: bool, allow_warning: bool, terminal_state: State.Type) -> State.Type:
+    def guess_final_state(self, current_tasks: list[ResolvedTask], parent_task_run: TaskRun | None = None, allow_failure: bool | None = None, allow_warning: bool | None = None, terminal_state: State.Type | None = None) -> State.Type:
         raise NotImplementedError  # TODO: translate from Java
 
     def has_task_run_joinable(self, task_run: TaskRun) -> bool:
@@ -211,22 +166,16 @@ class Execution:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
-    def logging_event_from_exception(e: Throwable) -> ILoggingEvent:
+    def logging_event_from_exception(e: BaseException) -> ILoggingEvent:
         raise NotImplementedError  # TODO: translate from Java
 
-    def outputs(self) -> dict[str, Any]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def outputs(self, task_run: TaskRun, by_ids: dict[str, TaskRun]) -> dict[str, Any]:
+    def outputs(self, task_run: TaskRun | None = None, by_ids: dict[str, TaskRun] | None = None) -> dict[str, Any]:
         raise NotImplementedError  # TODO: translate from Java
 
     def parents(self, task_run: TaskRun) -> list[dict[str, Any]]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def find_parents(self, task_run: TaskRun) -> list[TaskRun]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def find_parents(self, task_run: TaskRun, task_run_by_id: dict[str, TaskRun]) -> list[TaskRun]:
+    def find_parents(self, task_run: TaskRun, task_run_by_id: dict[str, TaskRun] | None = None) -> list[TaskRun]:
         raise NotImplementedError  # TODO: translate from Java
 
     def find_children(self, parent_task_run: TaskRun) -> list[TaskRun]:

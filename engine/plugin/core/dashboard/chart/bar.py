@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\plugin\core\dashboard\chart\Bar.java
-# WARNING: Unresolved types: D, Enum, F
 
 from dataclasses import dataclass
 from typing import Any

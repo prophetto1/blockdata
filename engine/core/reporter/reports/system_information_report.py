@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\reporter\reports\SystemInformationReport.java
-# WARNING: Unresolved types: ApplicationContext, Environment, TimeInterval
+# WARNING: Unresolved types: Environment, TimeInterval
 
 from dataclasses import dataclass
 from datetime import datetime

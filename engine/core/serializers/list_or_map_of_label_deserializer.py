@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\serializers\ListOrMapOfLabelDeserializer.java
-# WARNING: Unresolved types: DeserializationContext, Entry, IOException, JsonDeserializer, JsonMappingException, JsonParser, ResolvableDeserializer
+# WARNING: Unresolved types: DeserializationContext, Entry, JsonMappingException, JsonParser, ResolvableDeserializer
 
 from dataclasses import dataclass
 from typing import Any

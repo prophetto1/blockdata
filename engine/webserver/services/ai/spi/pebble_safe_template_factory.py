@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\webserver\src\main\java\io\kestra\webserver\services\ai\spi\PebbleSafeTemplateFactory.java
-# WARNING: Unresolved types: Pattern, PromptTemplateFactory
+# WARNING: Unresolved types: PromptTemplateFactory
 
 from dataclasses import dataclass, field
 from typing import Any, ClassVar
@@ -18,7 +18,7 @@ class PebbleSafeTemplateFactory:
 
     @dataclass(slots=True)
     class PebbleSafeTemplate:
-        variable_pattern: ClassVar[Pattern]
+        variable_pattern: ClassVar[re.Pattern]
         template: str | None = None
 
         @staticmethod

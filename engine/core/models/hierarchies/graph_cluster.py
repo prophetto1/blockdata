@@ -32,10 +32,7 @@ class GraphCluster(AbstractGraph):
     def get_finally(self) -> GraphClusterFinally:
         raise NotImplementedError  # TODO: translate from Java
 
-    def add_node(self, node: AbstractGraph) -> None:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def add_node(self, node: AbstractGraph, with_cluster_uid_prefix: bool) -> None:
+    def add_node(self, node: AbstractGraph, with_cluster_uid_prefix: bool | None = None) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
     def add_edge(self, source: AbstractGraph, target: AbstractGraph, relation: Relation) -> None:

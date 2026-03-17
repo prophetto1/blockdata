@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\jdbc-postgres\src\main\java\io\kestra\runner\postgres\PostgresQueueFactory.java
-# WARNING: Unresolved types: ApplicationContext
 
 from dataclasses import dataclass
 from typing import Any

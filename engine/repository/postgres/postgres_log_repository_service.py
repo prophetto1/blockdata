@@ -1,13 +1,12 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\jdbc-postgres\src\main\java\io\kestra\repository\postgres\PostgresLogRepositoryService.java
-# WARNING: Unresolved types: Enum, F, Level, Record, SelectConditionStep, jooq, org
+# WARNING: Unresolved types: jooq, org
 
 from dataclasses import dataclass
 from typing import Any
 
 from engine.core.models.dashboards.filters.abstract_filter import AbstractFilter
-from engine.core.models.conditions.condition import Condition
 from engine.jdbc.services.jdbc_filter_service import JdbcFilterService
 
 
@@ -15,7 +14,7 @@ from engine.jdbc.services.jdbc_filter_service import JdbcFilterService
 class PostgresLogRepositoryService:
 
     @staticmethod
-    def levels_condition(levels: list[Level]) -> Condition:
+    def levels_condition(levels: list[int]) -> Condition:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
@@ -23,5 +22,5 @@ class PostgresLogRepositoryService:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
-    def level_filter(state: list[Level]) -> Condition:
+    def level_filter(state: list[int]) -> Condition:
         raise NotImplementedError  # TODO: translate from Java

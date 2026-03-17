@@ -6,7 +6,6 @@ from dataclasses import dataclass
 from typing import Any
 
 from engine.jdbc.repository.abstract_jdbc_kv_metadata_repository import AbstractJdbcKvMetadataRepository
-from engine.core.models.conditions.condition import Condition
 from engine.repository.mysql.mysql_repository import MysqlRepository
 from engine.core.models.kv.persisted_kv_metadata import PersistedKvMetadata
 

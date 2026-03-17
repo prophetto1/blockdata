@@ -26,7 +26,3 @@ class ResolvedTask:
     @staticmethod
     def of(task: Task) -> ResolvedTask:
         raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def of(tasks: list[Task]) -> list[ResolvedTask]:
-        raise NotImplementedError  # TODO: translate from Java

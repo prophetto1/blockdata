@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\tests\src\main\java\io\kestra\core\runners\TestRunnerUtils.java
-# WARNING: Unresolved types: BiFunction, InterruptedException, Predicate, TimeoutException
 
 from dataclasses import dataclass, field
 from datetime import timedelta
-from typing import Any, ClassVar
+from typing import Any, Callable, ClassVar
 
 from engine.core.models.executions.execution import Execution
 from engine.core.models.executions.execution_killed import ExecutionKilled
@@ -29,100 +28,31 @@ class TestRunnerUtils:
     execution_repository: ExecutionRepositoryInterface | None = None
     execution_service: ExecutionService | None = None
 
-    def run_one(self, tenant_id: str, namespace: str, flow_id: str) -> Execution:
+    def run_one(self, tenant_id: str, namespace: str, flow_id: str | None = None, revision: int | None = None, inputs: Callable[FlowInterface, Execution, dict[str, Any]] | None = None, duration: timedelta | None = None, labels: list[Label] | None = None, execution_kind: ExecutionKind | None = None) -> Execution:
         raise NotImplementedError  # TODO: translate from Java
 
-    def run_one(self, tenant_id: str, namespace: str, flow_id: str, revision: int) -> Execution:
+    def run_one_until_paused(self, tenant_id: str, namespace: str, flow_id: str, revision: int | None = None, inputs: Callable[FlowInterface, Execution, dict[str, Any]] | None = None, duration: timedelta | None = None) -> Execution:
         raise NotImplementedError  # TODO: translate from Java
 
-    def run_one(self, tenant_id: str, namespace: str, flow_id: str, revision: int, inputs: BiFunction[FlowInterface, Execution, dict[str, Any]]) -> Execution:
+    def run_one_until_running(self, tenant_id: str, namespace: str, flow_id: str, revision: int | None = None, inputs: Callable[FlowInterface, Execution, dict[str, Any]] | None = None, duration: timedelta | None = None) -> Execution:
         raise NotImplementedError  # TODO: translate from Java
 
-    def run_one(self, tenant_id: str, namespace: str, flow_id: str, duration: timedelta, execution_kind: ExecutionKind) -> Execution:
+    def run_one_until(self, tenant_id: str, namespace: str, flow_id: str, revision: int, inputs: Callable[FlowInterface, Execution, dict[str, Any]] | None = None, duration: timedelta | None = None, predicate: Callable[Execution] | None = None) -> Execution:
         raise NotImplementedError  # TODO: translate from Java
 
-    def run_one(self, tenant_id: str, namespace: str, flow_id: str, duration: timedelta) -> Execution:
+    def emit_and_await_execution(self, predicate: Callable[Execution], execution: Execution, duration: timedelta | None = None) -> Execution:
         raise NotImplementedError  # TODO: translate from Java
 
-    def run_one(self, tenant_id: str, namespace: str, flow_id: str, revision: int, inputs: BiFunction[FlowInterface, Execution, dict[str, Any]], duration: timedelta) -> Execution:
+    def restart_execution(self, predicate: Callable[Execution], execution: Execution, duration: timedelta | None = None) -> Execution:
         raise NotImplementedError  # TODO: translate from Java
 
-    def run_one(self, tenant_id: str, namespace: str, flow_id: str, revision: int, inputs: BiFunction[FlowInterface, Execution, dict[str, Any]], duration: timedelta, labels: list[Label]) -> Execution:
+    def await_execution(self, predicate: Callable[Execution], execution: Execution, duration: timedelta | None = None) -> Execution:
         raise NotImplementedError  # TODO: translate from Java
 
-    def run_one(self, tenant_id: str, namespace: str, flow_id: str, revision: int, inputs: BiFunction[FlowInterface, Execution, dict[str, Any]], duration: timedelta, labels: list[Label], execution_kind: ExecutionKind) -> Execution:
+    def await_flow_execution(self, predicate: Callable[Execution], tenant_id: str, namespace: str, flow_id: str, duration: timedelta | None = None) -> Execution:
         raise NotImplementedError  # TODO: translate from Java
 
-    def run_one(self, flow: Flow, inputs: BiFunction[FlowInterface, Execution, dict[str, Any]]) -> Execution:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def run_one(self, flow: Flow, inputs: BiFunction[FlowInterface, Execution, dict[str, Any]], duration: timedelta) -> Execution:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def run_one(self, flow: Flow, inputs: BiFunction[FlowInterface, Execution, dict[str, Any]], duration: timedelta, labels: list[Label], execution_kind: ExecutionKind) -> Execution:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def run_one(self, flow: Flow, inputs: BiFunction[FlowInterface, Execution, dict[str, Any]], duration: timedelta, labels: list[Label]) -> Execution:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def run_one(self, execution: Execution, flow: Flow, duration: timedelta) -> Execution:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def run_one_until_paused(self, tenant_id: str, namespace: str, flow_id: str) -> Execution:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def run_one_until_paused(self, tenant_id: str, namespace: str, flow_id: str, revision: int, inputs: BiFunction[FlowInterface, Execution, dict[str, Any]], duration: timedelta) -> Execution:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def run_one_until_paused(self, flow: Flow, inputs: BiFunction[FlowInterface, Execution, dict[str, Any]], duration: timedelta) -> Execution:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def run_one_until_running(self, tenant_id: str, namespace: str, flow_id: str) -> Execution:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def run_one_until_running(self, tenant_id: str, namespace: str, flow_id: str, revision: int, inputs: BiFunction[FlowInterface, Execution, dict[str, Any]], duration: timedelta) -> Execution:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def run_one_until_running(self, flow: Flow, inputs: BiFunction[FlowInterface, Execution, dict[str, Any]], duration: timedelta) -> Execution:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def run_one_until(self, tenant_id: str, namespace: str, flow_id: str, predicate: Predicate[Execution]) -> Execution:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def run_one_until(self, tenant_id: str, namespace: str, flow_id: str, revision: int, inputs: BiFunction[FlowInterface, Execution, dict[str, Any]], duration: timedelta, predicate: Predicate[Execution]) -> Execution:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def run_one_until(self, flow: Flow, inputs: BiFunction[FlowInterface, Execution, dict[str, Any]], duration: timedelta, predicate: Predicate[Execution]) -> Execution:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def emit_and_await_execution(self, predicate: Predicate[Execution], execution: Execution) -> Execution:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def restart_execution(self, predicate: Predicate[Execution], execution: Execution) -> Execution:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def restart_execution(self, predicate: Predicate[Execution], execution: Execution, duration: timedelta) -> Execution:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def emit_and_await_execution(self, predicate: Predicate[Execution], execution: Execution, duration: timedelta) -> Execution:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def await_execution(self, predicate: Predicate[Execution], execution: Execution) -> Execution:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def await_execution(self, predicate: Predicate[Execution], execution: Execution, duration: timedelta) -> Execution:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def await_flow_execution(self, predicate: Predicate[Execution], tenant_id: str, namespace: str, flow_id: str) -> Execution:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def await_flow_execution(self, predicate: Predicate[Execution], tenant_id: str, namespace: str, flow_id: str, duration: timedelta) -> Execution:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def await_flow_execution_number(self, number: int, tenant_id: str, namespace: str, flow_id: str) -> list[Execution]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def await_flow_execution_number(self, number: int, tenant_id: str, namespace: str, flow_id: str, duration: timedelta) -> list[Execution]:
+    def await_flow_execution_number(self, number: int, tenant_id: str, namespace: str, flow_id: str, duration: timedelta | None = None) -> list[Execution]:
         raise NotImplementedError  # TODO: translate from Java
 
     def kill_execution(self, execution: Execution) -> Execution:
@@ -131,14 +61,14 @@ class TestRunnerUtils:
     def await_child_execution(self, flow: Flow, parent_execution: Execution, execution: Execution, duration: timedelta) -> Execution:
         raise NotImplementedError  # TODO: translate from Java
 
-    def is_terminated_execution(self, execution: Execution, flow: Flow) -> Predicate[Execution]:
+    def is_terminated_execution(self, execution: Execution, flow: Flow) -> Callable[Execution]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def is_paused_execution(self, execution: Execution) -> Predicate[Execution]:
+    def is_paused_execution(self, execution: Execution) -> Callable[Execution]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def is_running_execution(self, execution: Execution) -> Predicate[Execution]:
+    def is_running_execution(self, execution: Execution) -> Callable[Execution]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def is_terminated_child_execution(self, parent_execution: Execution, flow: Flow) -> Predicate[Execution]:
+    def is_terminated_child_execution(self, parent_execution: Execution, flow: Flow) -> Callable[Execution]:
         raise NotImplementedError  # TODO: translate from Java

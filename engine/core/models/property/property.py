@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\models\property\Property.java
-# WARNING: Unresolved types: Class, DeserializationContext, I, IOException, JavaType, JsonGenerator, JsonParser, K, ObjectMapper, SerializerProvider, StdDeserializer, StdSerializer, T, V
+# WARNING: Unresolved types: DeserializationContext, JavaType, JsonParser, SerializerProvider, StdDeserializer, StdSerializer
 
 from dataclasses import dataclass, field
 from typing import Any, ClassVar
@@ -34,35 +34,19 @@ class Property:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
-    def as(property: Property[T], context: PropertyContext, clazz: Class[T]) -> T:
+    def as(property: Property[T], context: PropertyContext, clazz: type[T], variables: dict[str, Any] | None = None) -> T:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
-    def as(property: Property[T], context: PropertyContext, clazz: Class[T], variables: dict[str, Any]) -> T:
+    def deserialize(rendered: Any, clazz: type[T]) -> T:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
-    def deserialize(rendered: Any, clazz: Class[T]) -> T:
+    def as_list(property: Property[T], context: PropertyContext, item_clazz: type[I], variables: dict[str, Any] | None = None) -> T:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
-    def deserialize(rendered: Any, type: JavaType) -> T:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def as_list(property: Property[T], context: PropertyContext, item_clazz: Class[I]) -> T:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def as_list(property: Property[T], context: PropertyContext, item_clazz: Class[I], variables: dict[str, Any]) -> T:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def as_map(property: Property[T], run_context: RunContext, key_class: Class[K], value_class: Class[V]) -> T:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def as_map(property: Property[T], run_context: RunContext, key_class: Class[K], value_class: Class[V], variables: dict[str, Any]) -> T:
+    def as_map(property: Property[T], run_context: RunContext, key_class: type[K], value_class: type[V], variables: dict[str, Any] | None = None) -> T:
         raise NotImplementedError  # TODO: translate from Java
 
     def to_string(self) -> str:

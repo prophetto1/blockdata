@@ -6,8 +6,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-from engine.core.models.property.property import Property
-
 
 @dataclass(slots=True, kw_only=True)
 class PropertyValueExtractor:

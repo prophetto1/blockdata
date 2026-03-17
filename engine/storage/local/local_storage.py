@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\storage-local\src\main\java\io\kestra\storage\local\LocalStorage.java
-# WARNING: Unresolved types: IOException, InputStream
 
 from dataclasses import dataclass, field
-from logging import logging
+from logging import Logger, getLogger
 from pathlib import Path
 from typing import Any, ClassVar
 
@@ -17,7 +16,7 @@ from engine.core.storages.storage_object import StorageObject
 @dataclass(slots=True, kw_only=True)
 class LocalStorage:
     base_path: Path
-    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    logger: ClassVar[Logger] = getLogger(__name__)
     max_object_name_length: ClassVar[int] = 255
 
     def init(self) -> None:
@@ -32,10 +31,10 @@ class LocalStorage:
     def get_path(self, uri: str, base_path: Path) -> Path:
         raise NotImplementedError  # TODO: translate from Java
 
-    def get(self, tenant_id: str, namespace: str, uri: str) -> InputStream:
+    def get(self, tenant_id: str, namespace: str, uri: str) -> Any:
         raise NotImplementedError  # TODO: translate from Java
 
-    def get_instance_resource(self, namespace: str, uri: str) -> InputStream:
+    def get_instance_resource(self, namespace: str, uri: str) -> Any:
         raise NotImplementedError  # TODO: translate from Java
 
     def get_with_metadata(self, tenant_id: str, namespace: str, uri: str) -> StorageObject:

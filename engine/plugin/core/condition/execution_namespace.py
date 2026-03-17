@@ -1,16 +1,13 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\plugin\core\condition\ExecutionNamespace.java
-# WARNING: Unresolved types: BiPredicate
 
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any
 
-from engine.core.models.conditions.condition import Condition
 from engine.core.models.conditions.condition_context import ConditionContext
 from engine.core.exceptions.internal_exception import InternalException
-from engine.core.models.property.property import Property
 
 
 @dataclass(slots=True, kw_only=True)

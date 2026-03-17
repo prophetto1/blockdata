@@ -30,7 +30,7 @@ class StorageContext:
     execution_id: str | None = None
 
     @staticmethod
-    def for_task(task_run: TaskRun) -> StorageContext:
+    def for_task(tenant_id: str, namespace: str | None = None, flow_id: str | None = None, execution_id: str | None = None, task_id: str | None = None, task_run_id: str | None = None, task_run_value: str | None = None) -> StorageContext.Task:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
@@ -38,19 +38,11 @@ class StorageContext:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
-    def for_execution(execution: Execution) -> StorageContext:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def for_execution(tenant_id: str, namespace: str, flow_id: str, execution_id: str) -> StorageContext:
+    def for_execution(tenant_id: str, namespace: str | None = None, flow_id: str | None = None, execution_id: str | None = None) -> StorageContext:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
     def for_input(execution: Execution, input_name: str, file_name: str) -> StorageContext.Input:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def for_task(tenant_id: str, namespace: str, flow_id: str, execution_id: str, task_id: str, task_run_id: str, task_run_value: str) -> StorageContext.Task:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
@@ -73,10 +65,7 @@ class StorageContext:
     def get_flow_storage_uri(self) -> str:
         raise NotImplementedError  # TODO: translate from Java
 
-    def get_execution_storage_uri(self) -> str:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def get_execution_storage_uri(self, scheme: str) -> str:
+    def get_execution_storage_uri(self, scheme: str | None = None) -> str:
         raise NotImplementedError  # TODO: translate from Java
 
     def get_context_storage_uri(self) -> str:

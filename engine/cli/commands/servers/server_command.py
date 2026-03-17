@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\cli\src\main\java\io\kestra\cli\commands\servers\ServerCommand.java
-# WARNING: Unresolved types: Exception
 
 from dataclasses import dataclass, field
-from logging import logging
+from logging import Logger, getLogger
 from typing import Any, ClassVar
 
 from engine.cli.abstract_command import AbstractCommand
@@ -19,7 +18,7 @@ from engine.cli.commands.servers.worker_command import WorkerCommand
 
 @dataclass(slots=True, kw_only=True)
 class ServerCommand(AbstractCommand):
-    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    logger: ClassVar[Logger] = getLogger(__name__)
 
     def call(self) -> int:
         raise NotImplementedError  # TODO: translate from Java

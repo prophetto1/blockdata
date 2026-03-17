@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\models\validations\KestraConstraintViolationException.java
-# WARNING: Unresolved types: ConstraintViolation, ConstraintViolationException
+# WARNING: Unresolved types: ConstraintViolation
 
 from dataclasses import dataclass, field
 from typing import Any, ClassVar

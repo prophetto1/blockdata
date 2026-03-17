@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\server\LocalServiceState.java
-# WARNING: Unresolved types: AtomicBoolean
 
 from dataclasses import dataclass
 from typing import Any
@@ -14,7 +13,7 @@ from engine.core.server.service_instance import ServiceInstance
 class LocalServiceState:
     service: Service | None = None
     instance: ServiceInstance | None = None
-    is_state_updatable: AtomicBoolean | None = None
+    is_state_updatable: bool | None = None
 
     def with(self, instance: ServiceInstance) -> LocalServiceState:
         raise NotImplementedError  # TODO: translate from Java

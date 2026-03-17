@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\tests\src\main\java\io\kestra\core\models\tasks\runners\AbstractTaskRunnerTest.java
-# WARNING: Unresolved types: Exception, IOException
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
@@ -38,13 +37,7 @@ class AbstractTaskRunnerTest(ABC):
     def can_work_multiple_time_in_same_wdir(self) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
-    def run_context(self, run_context_factory: RunContextFactory) -> RunContext:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def run_context(self, run_context_factory: RunContextFactory, additional_vars: dict[str, Any]) -> RunContext:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def run_context(self, run_context_factory: RunContextFactory, additional_vars: dict[str, Any], task_run_id: str) -> RunContext:
+    def run_context(self, run_context_factory: RunContextFactory, additional_vars: dict[str, Any] | None = None, task_run_id: str | None = None) -> RunContext:
         raise NotImplementedError  # TODO: translate from Java
 
     @abstractmethod

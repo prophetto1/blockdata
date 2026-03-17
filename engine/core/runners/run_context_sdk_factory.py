@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\runners\RunContextSDKFactory.java
-# WARNING: Unresolved types: ApplicationContext, Auth
+# WARNING: Unresolved types: Auth
 
 from dataclasses import dataclass, field
 from typing import Any, ClassVar, Optional

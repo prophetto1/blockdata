@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\serializers\DurationDeserializer.java
-# WARNING: Unresolved types: DeserializationContext, IOException, JsonParser, com, datatype, deser, fasterxml, jackson, jsr310
+# WARNING: Unresolved types: DeserializationContext, JsonParser, com, datatype, deser, fasterxml, jackson, jsr310
 
 from dataclasses import dataclass, field
 from datetime import timedelta

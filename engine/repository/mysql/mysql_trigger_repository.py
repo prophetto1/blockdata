@@ -1,14 +1,13 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\jdbc-mysql\src\main\java\io\kestra\repository\mysql\MysqlTriggerRepository.java
-# WARNING: Unresolved types: Date, Field, GroupType, Temporal
+# WARNING: Unresolved types: Temporal
 
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
 
 from engine.jdbc.repository.abstract_jdbc_trigger_repository import AbstractJdbcTriggerRepository
-from engine.core.models.conditions.condition import Condition
 from engine.core.utils.date_utils import DateUtils
 from engine.jdbc.services.jdbc_filter_service import JdbcFilterService
 from engine.repository.mysql.mysql_repository import MysqlRepository

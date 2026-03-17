@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\storages\InternalStorage.java
-# WARNING: Unresolved types: IOException, InputStream, Logger
 
 from dataclasses import dataclass, field
-from logging import logging
+from logging import Logger, getLogger
 from pathlib import Path
 from datetime import timedelta
 from typing import Any, ClassVar, Optional
@@ -21,24 +20,21 @@ from engine.core.models.tasks.task import Task
 
 @dataclass(slots=True, kw_only=True)
 class InternalStorage:
-    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    logger: ClassVar[Logger] = getLogger(__name__)
     path_separator: ClassVar[str] = "/"
-    logger: Logger | None = None
+    logger: Any | None = None
     context: StorageContext | None = None
     storage: StorageInterface | None = None
     namespace_factory: NamespaceFactory | None = None
     namespace_service: NamespaceService | None = None
 
-    def namespace(self) -> Namespace:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def namespace(self, namespace: str) -> Namespace:
+    def namespace(self, namespace: str | None = None) -> Namespace:
         raise NotImplementedError  # TODO: translate from Java
 
     def is_file_exist(self, uri: str) -> bool:
         raise NotImplementedError  # TODO: translate from Java
 
-    def get_file(self, uri: str) -> InputStream:
+    def get_file(self, uri: str) -> Any:
         raise NotImplementedError  # TODO: translate from Java
 
     def get_attributes(self, uri: str) -> FileAttributes:
@@ -57,19 +53,10 @@ class InternalStorage:
     def get_context_base_uri(self) -> str:
         raise NotImplementedError  # TODO: translate from Java
 
-    def put_file(self, input_stream: InputStream, name: str) -> str:
+    def put_file(self, input_stream: Any, prefix: str | None = None, name: str | None = None) -> str:
         raise NotImplementedError  # TODO: translate from Java
 
-    def put_file(self, input_stream: InputStream, uri: str) -> str:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def put_file(self, file: Path) -> str:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def put_file(self, file: Path, name: str) -> str:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def get_cache_file(self, cache_id: str, object_id: str, ttl: timedelta) -> Optional[InputStream]:
+    def get_cache_file(self, cache_id: str, object_id: str, ttl: timedelta) -> Optional[Any]:
         raise NotImplementedError  # TODO: translate from Java
 
     def get_cache_file_last_modified_time(self, cache_id: str, object_id: str) -> Optional[int]:
@@ -81,13 +68,7 @@ class InternalStorage:
     def delete_cache_file(self, cache_id: str, object_id: str) -> Optional[bool]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def put_file_and_delete(self, file: Path, uri: str) -> str:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def put_file_and_delete(self, file: Path, prefix: str, name: str) -> str:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def put_file(self, input_stream: InputStream, prefix: str, name: str) -> str:
+    def put_file_and_delete(self, file: Path, prefix: str, name: str | None = None) -> str:
         raise NotImplementedError  # TODO: translate from Java
 
     def get_task_storage_context(self) -> Optional[StorageContext.Task]:

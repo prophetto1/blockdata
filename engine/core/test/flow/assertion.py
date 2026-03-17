@@ -9,7 +9,6 @@ from typing import Any, Optional
 from engine.core.test.flow.assertion_result import AssertionResult
 from engine.core.test.flow.assertion_run_error import AssertionRunError
 from engine.core.exceptions.illegal_variable_evaluation_exception import IllegalVariableEvaluationException
-from engine.core.models.property.property import Property
 from engine.core.runners.run_context import RunContext
 
 

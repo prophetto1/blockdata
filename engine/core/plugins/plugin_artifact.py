@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\plugins\PluginArtifact.java
-# WARNING: Unresolved types: Comparable, IOException, Pattern
 
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -10,8 +9,8 @@ from typing import Any, ClassVar
 
 @dataclass(slots=True, kw_only=True)
 class PluginArtifact:
-    artifact_pattern: ClassVar[Pattern]
-    filename_pattern: ClassVar[Pattern]
+    artifact_pattern: ClassVar[re.Pattern]
+    filename_pattern: ClassVar[re.Pattern]
     jar_extension: ClassVar[str] = "jar"
     kestra_group_id: ClassVar[str] = "io.kestra"
     group_id: str | None = None

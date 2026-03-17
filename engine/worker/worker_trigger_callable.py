@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\worker\src\main\java\io\kestra\worker\WorkerTriggerCallable.java
-# WARNING: Unresolved types: Exception
 
 from dataclasses import dataclass
 from typing import Any, Optional

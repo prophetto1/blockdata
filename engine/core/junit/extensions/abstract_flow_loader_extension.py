@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\tests\src\main\java\io\kestra\core\junit\extensions\AbstractFlowLoaderExtension.java
-# WARNING: Unresolved types: ApplicationContext, ExtensionContext, IOException, URISyntaxException
+# WARNING: Unresolved types: ExtensionContext, URISyntaxException
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass

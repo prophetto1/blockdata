@@ -17,9 +17,3 @@ class KillSwitchService:
 
     def evaluate(self, execution_id: str) -> EvaluationType:
         raise NotImplementedError  # TODO: translate from Java
-
-    def evaluate(self, execution: Execution) -> EvaluationType:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def evaluate(self, task_run: TaskRun) -> EvaluationType:
-        raise NotImplementedError  # TODO: translate from Java

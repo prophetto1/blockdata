@@ -1,19 +1,18 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\jdbc\src\main\java\io\kestra\jdbc\repository\AbstractJdbcTriggerRepository.java
-# WARNING: Unresolved types: Date, Field, Fields, Flux, Function, GroupType, IllegalArgumentException, Pageable, Temporal, io, jdbc, kestra
+# WARNING: Unresolved types: Temporal
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, ClassVar, Optional
+from typing import Any, Callable, ClassVar, Optional
 
 from engine.jdbc.repository.abstract_jdbc_crud_repository import AbstractJdbcCrudRepository
 from engine.jdbc.abstract_jdbc_repository import AbstractJdbcRepository
 from engine.core.models.triggers.abstract_trigger import AbstractTrigger
 from engine.core.repositories.array_list_total import ArrayListTotal
 from engine.core.models.dashboards.column_descriptor import ColumnDescriptor
-from engine.core.models.conditions.condition import Condition
 from engine.core.models.conditions.condition_context import ConditionContext
 from engine.core.models.dashboards.data_filter import DataFilter
 from engine.core.models.dashboards.data_filter_kpi import DataFilterKPI
@@ -69,13 +68,10 @@ class AbstractJdbcTriggerRepository(ABC, AbstractJdbcCrudRepository):
     def update(self, flow: Flow, abstract_trigger: AbstractTrigger, condition_context: ConditionContext) -> Trigger:
         raise NotImplementedError  # TODO: translate from Java
 
-    def lock(self, trigger_uid: str, function: Function[Trigger, Trigger]) -> Trigger:
+    def lock(self, trigger_uid: str, function: Callable[Trigger, Trigger]) -> Trigger:
         raise NotImplementedError  # TODO: translate from Java
 
-    def find(self, pageable: Pageable, tenant_id: str, filters: list[QueryFilter]) -> ArrayListTotal[Trigger]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def find(self, pageable: Pageable, query: str, tenant_id: str, namespace: str, flow_id: str, worker_id: str) -> ArrayListTotal[Trigger]:
+    def find(self, pageable: Pageable, query: str, tenant_id: str, namespace: str | None = None, flow_id: str | None = None, worker_id: str | None = None) -> ArrayListTotal[Trigger]:
         raise NotImplementedError  # TODO: translate from Java
 
     def find_async(self, tenant_id: str, filters: list[QueryFilter]) -> Flux[Trigger]:
@@ -87,13 +83,10 @@ class AbstractJdbcTriggerRepository(ABC, AbstractJdbcCrudRepository):
     def find_query_condition(self, query: str) -> Condition:
         raise NotImplementedError  # TODO: translate from Java
 
-    def default_filter(self, tenant_id: str, allow_deleted: bool) -> Condition:
+    def default_filter(self, tenant_id: str | None = None, allow_deleted: bool | None = None) -> Condition:
         raise NotImplementedError  # TODO: translate from Java
 
-    def default_filter(self) -> Condition:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def sort_mapping(self) -> Function[str, str]:
+    def sort_mapping(self) -> Callable[str, str]:
         raise NotImplementedError  # TODO: translate from Java
 
     def fetch_data(self, tenant_id: str, descriptors: DataFilter[Triggers.Fields, Any], start_date: datetime, end_date: datetime, pageable: Pageable) -> ArrayListTotal[dict[str, Any]]:

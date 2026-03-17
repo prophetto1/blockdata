@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\webserver\src\main\java\io\kestra\webserver\services\ai\AiServiceManager.java
-# WARNING: Unresolved types: ChatModelListener, PropertyResolver, chat, core, dev, docs, io, kestra, langchain4j, listener, model, plugins
+# WARNING: Unresolved types: ChatModelListener, PropertyResolver, chat, dev, langchain4j, listener, model, plugins
 
 from dataclasses import dataclass, field
-from logging import logging
+from logging import Logger, getLogger
 from typing import Any, ClassVar
 
 from engine.webserver.services.ai.ai_provider_configuration import AiProviderConfiguration
@@ -20,7 +20,7 @@ from engine.core.utils.version_provider import VersionProvider
 
 @dataclass(slots=True, kw_only=True)
 class AiServiceManager:
-    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    logger: ClassVar[Logger] = getLogger(__name__)
     ai_services: dict[str, AiServiceInterface] = field(default_factory=dict)
     providers_configuration: AiProvidersConfiguration | None = None
     default_provider_id: str | None = None

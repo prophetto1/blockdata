@@ -1,15 +1,14 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\reporter\ServerEventSender.java
-# WARNING: Unresolved types: Exception, MutableHttpRequest, ObjectMapper, ReactorHttpClient
+# WARNING: Unresolved types: MutableHttpRequest, ReactorHttpClient
 
 from dataclasses import dataclass, field
-from logging import logging
+from logging import Logger, getLogger
 from datetime import datetime
 from typing import Any, ClassVar
 
 from engine.core.services.instance_service import InstanceService
-from engine.core.models.collectors.result import Result
 from engine.core.reporter.server_event import ServerEvent
 from engine.core.models.server_type import ServerType
 from engine.core.models.flows.type import Type
@@ -20,7 +19,7 @@ from engine.core.utils.version_provider import VersionProvider
 class ServerEventSender:
     session_uuid: ClassVar[str]
     object_mapper: ClassVar[ObjectMapper]
-    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    logger: ClassVar[Logger] = getLogger(__name__)
     client: ReactorHttpClient | None = None
     version_provider: VersionProvider | None = None
     instance_service: InstanceService | None = None

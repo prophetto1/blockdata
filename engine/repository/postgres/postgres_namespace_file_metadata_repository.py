@@ -6,7 +6,6 @@ from dataclasses import dataclass
 from typing import Any
 
 from engine.jdbc.repository.abstract_jdbc_namespace_file_metadata_repository import AbstractJdbcNamespaceFileMetadataRepository
-from engine.core.models.conditions.condition import Condition
 from engine.core.models.namespaces.files.namespace_file_metadata import NamespaceFileMetadata
 from engine.repository.postgres.postgres_repository import PostgresRepository
 

@@ -4,7 +4,7 @@ from __future__ import annotations
 # WARNING: Unresolved types: TextMapGetter
 
 from dataclasses import dataclass, field
-from typing import Any, ClassVar
+from typing import Any, ClassVar, Iterable
 
 from engine.core.runners.run_context import RunContext
 
@@ -13,7 +13,7 @@ from engine.core.runners.run_context import RunContext
 class RunContextTextMapGetter:
     instance: ClassVar[RunContextTextMapGetter]
 
-    def keys(self, carrier: RunContext) -> list[str]:
+    def keys(self, carrier: RunContext) -> Iterable[str]:
         raise NotImplementedError  # TODO: translate from Java
 
     def get(self, carrier: RunContext, key: str) -> str:

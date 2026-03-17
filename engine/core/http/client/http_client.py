@@ -1,17 +1,15 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\http\client\HttpClient.java
-# WARNING: Unresolved types: ApacheHttpClientContext, BasicCredentialsProvider, Class, Closeable, CloseableHttpClient, Consumer, DefaultApacheHttpClientObservationConvention, HttpClientContext, HttpClientResponseHandler, HttpEntity, IOException, InputStream, KeyValues, ObservationRegistry, ParseException, SSLConnectionSocketFactory, StringBuilder, T, Void, apache, core5, hc, http, org
+# WARNING: Unresolved types: ApacheHttpClientContext, BasicCredentialsProvider, CloseableHttpClient, DefaultApacheHttpClientObservationConvention, HttpClientContext, HttpClientResponseHandler, HttpEntity, KeyValues, ObservationRegistry, ParseException, SSLConnectionSocketFactory, Void, apache, core5, hc, org
 
 from dataclasses import dataclass, field
-from logging import logging
+from logging import Logger, getLogger
 from datetime import timedelta
-from typing import Any, ClassVar
+from typing import Any, Callable, ClassVar
 
 from engine.core.http.client.http_client_exception import HttpClientException
 from engine.core.http.client.configurations.http_configuration import HttpConfiguration
-from engine.core.http.http_request import HttpRequest
-from engine.core.http.http_response import HttpResponse
 from engine.core.http.http_sse_event import HttpSseEvent
 from engine.core.exceptions.illegal_variable_evaluation_exception import IllegalVariableEvaluationException
 from engine.core.runners.run_context import RunContext
@@ -19,7 +17,7 @@ from engine.core.runners.run_context import RunContext
 
 @dataclass(slots=True, kw_only=True)
 class HttpClient:
-    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    logger: ClassVar[Logger] = getLogger(__name__)
     client: CloseableHttpClient | None = None
     default_credentials_provider: BasicCredentialsProvider | None = None
     run_context: RunContext | None = None
@@ -32,26 +30,20 @@ class HttpClient:
     def self_signed_connection_socket_factory(self) -> SSLConnectionSocketFactory:
         raise NotImplementedError  # TODO: translate from Java
 
-    def request(self, request: HttpRequest, cls: Class[T]) -> HttpResponse[T]:
+    def request(self, request: HttpRequest, http_client_context: HttpClientContext | None = None, response_handler: HttpClientResponseHandler[HttpResponse[T]] | None = None) -> HttpResponse[T]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def request(self, request: HttpRequest, consumer: Consumer[HttpResponse[InputStream]]) -> HttpResponse[Void]:
+    def sse_request(self, request: HttpRequest, cls: type[T], event_consumer: Callable[HttpSseEvent[T]]) -> HttpResponse[Void]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def request(self, request: HttpRequest) -> HttpResponse[T]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def sse_request(self, request: HttpRequest, cls: Class[T], event_consumer: Consumer[HttpSseEvent[T]]) -> HttpResponse[Void]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def parse_sse(self, input_stream: InputStream, cls: Class[T], event_consumer: Consumer[HttpSseEvent[T]]) -> None:
+    def parse_sse(self, input_stream: Any, cls: type[T], event_consumer: Callable[HttpSseEvent[T]]) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
     def strip_leading_space(value: str) -> str:
         raise NotImplementedError  # TODO: translate from Java
 
-    def send_sse_data(self, cls: Class[T], event_consumer: Consumer[HttpSseEvent[T]], data_buffer: StringBuilder, event_id: str, event_name: str, comment: str, retry: timedelta) -> None:
+    def send_sse_data(self, cls: type[T], event_consumer: Callable[HttpSseEvent[T]], data_buffer: str, event_id: str, event_name: str, comment: str, retry: timedelta) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
     def client_context(self, request: HttpRequest) -> HttpClientContext:
@@ -64,10 +56,7 @@ class HttpClient:
     def is_allowed_status_code(status_code: int, allow_failed: bool, allowed_response_codes: list[int]) -> bool:
         raise NotImplementedError  # TODO: translate from Java
 
-    def request(self, request: HttpRequest, http_client_context: HttpClientContext, response_handler: HttpClientResponseHandler[HttpResponse[T]]) -> HttpResponse[T]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def body_handler(self, cls: Class[Any], entity: HttpEntity) -> T:
+    def body_handler(self, cls: type[Any], entity: HttpEntity) -> T:
         raise NotImplementedError  # TODO: translate from Java
 
     def close(self) -> None:

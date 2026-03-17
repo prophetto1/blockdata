@@ -1,18 +1,17 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\jdbc\src\main\java\io\kestra\jdbc\repository\AbstractJdbcFlowRepository.java
-# WARNING: Unresolved types: ApplicationContext, ApplicationEventPublisher, ConstraintViolationException, DSLContext, E, Field, Fields, Flux, Name, ObjectMapper, Op, OrderField, Pageable, R, Record, Record3, Resource, SelectConditionStep, io, jdbc, kestra
+# WARNING: Unresolved types: Name, Op, OrderField, Record3, Resource
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from logging import logging
+from logging import Logger, getLogger
 from datetime import datetime
 from typing import Any, ClassVar, Optional
 
 from engine.jdbc.abstract_jdbc_repository import AbstractJdbcRepository
 from engine.core.repositories.array_list_total import ArrayListTotal
 from engine.core.models.dashboards.column_descriptor import ColumnDescriptor
-from engine.core.models.conditions.condition import Condition
 from engine.core.events.crud_event import CrudEvent
 from engine.core.events.crud_event_type import CrudEventType
 from engine.core.models.dashboards.data_filter import DataFilter
@@ -33,7 +32,6 @@ from engine.core.models.query_filter import QueryFilter
 from engine.core.queues.queue_exception import QueueException
 from engine.core.queues.queue_interface import QueueInterface
 from engine.core.models.search_result import SearchResult
-from engine.plugin.core.dashboard.chart.table import Table
 from engine.core.models.triggers.trigger import Trigger
 
 
@@ -44,7 +42,7 @@ class AbstractJdbcFlowRepository(ABC, AbstractJdbcRepository):
     source_field: ClassVar[Field[str]]
     revision_field: ClassVar[Field[int]]
     fields_mapping: dict[Flows.Fields, str]
-    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    logger: ClassVar[Logger] = getLogger(__name__)
     flow_queue: QueueInterface[FlowInterface] | None = None
     trigger_queue: QueueInterface[Trigger] | None = None
     event_publisher: ApplicationEventPublisher[CrudEvent[FlowInterface]] | None = None
@@ -80,10 +78,7 @@ class AbstractJdbcFlowRepository(ABC, AbstractJdbcRepository):
     def find_by_id_with_source_without_acl(self, tenant_id: str, namespace: str, id: str, revision: Optional[int]) -> Optional[FlowWithSource]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def find_revisions(self, tenant_id: str, namespace: str, id: str, allow_deleted: bool) -> list[FlowWithSource]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def find_revisions(self, tenant_id: str, namespace: str, id: str, allow_deleted: bool, revisions: list[int]) -> list[FlowWithSource]:
+    def find_revisions(self, tenant_id: str, namespace: str, id: str, allow_deleted: bool, revisions: list[int] | None = None) -> list[FlowWithSource]:
         raise NotImplementedError  # TODO: translate from Java
 
     def count(self, tenant_id: str) -> int:
@@ -135,10 +130,6 @@ class AbstractJdbcFlowRepository(ABC, AbstractJdbcRepository):
     def find_query_condition(self, query: str) -> Condition:
         raise NotImplementedError  # TODO: translate from Java
 
-    @abstractmethod
-    def find_condition(self, value: Any, operation: QueryFilter.Op) -> Condition:
-        ...
-
     def find_label_condition(self, value: Either[dict[Any, Any], str], operation: QueryFilter.Op) -> Condition:
         raise NotImplementedError  # TODO: translate from Java
 
@@ -185,13 +176,7 @@ class AbstractJdbcFlowRepository(ABC, AbstractJdbcRepository):
     def find_distinct_namespace_executable(self, tenant_id: str) -> list[str]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def find_async(self, tenant_id: str, filters: list[QueryFilter]) -> Flux[Flow]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def find_async(self, tenant_id: str, filters: list[QueryFilter], resource: QueryFilter.Resource) -> Flux[Flow]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def find_async(self, default_filter: Condition, condition: Condition) -> Flux[Flow]:
+    def find_async(self, tenant_id: str, filters: list[QueryFilter], resource: QueryFilter.Resource | None = None) -> Flux[Flow]:
         raise NotImplementedError  # TODO: translate from Java
 
     def last_revision(self, tenant_id: str, namespace: str, id: str) -> int:

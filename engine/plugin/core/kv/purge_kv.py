@@ -1,15 +1,13 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\plugin\core\kv\PurgeKV.java
-# WARNING: Unresolved types: Exception, core, io, kestra, models, tasks
 
 from dataclasses import dataclass, field
-from logging import logging
+from logging import Logger, getLogger
 from typing import Any, ClassVar
 
 from engine.core.storages.kv.kv_entry import KVEntry
 from engine.plugin.core.kv.kv_purge_behavior import KvPurgeBehavior
-from engine.core.models.property.property import Property
 from engine.plugin.core.purge.purge_task import PurgeTask
 from engine.core.runners.run_context import RunContext
 from engine.core.models.tasks.runnable_task import RunnableTask
@@ -21,7 +19,7 @@ class PurgeKV(Task):
     """Purge keys from the KV store."""
     behavior: Property[KvPurgeBehavior]
     include_child_namespaces: Property[bool]
-    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    logger: ClassVar[Logger] = getLogger(__name__)
     key_pattern: Property[str] | None = None
     namespaces: Property[list[str]] | None = None
     namespace_pattern: Property[str] | None = None

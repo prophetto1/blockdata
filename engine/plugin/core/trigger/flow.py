@@ -1,15 +1,14 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\plugin\core\trigger\Flow.java
-# WARNING: Unresolved types: Logger, conditions, core, flows, io, kestra, models, tasks
+# WARNING: Unresolved types: conditions
 
 from dataclasses import dataclass, field
 from enum import Enum
-from logging import logging
+from logging import Logger, getLogger
 from typing import Any, ClassVar, Optional
 
 from engine.core.models.triggers.abstract_trigger import AbstractTrigger
-from engine.core.models.conditions.condition import Condition
 from engine.core.models.conditions.condition_context import ConditionContext
 from engine.core.models.executions.execution import Execution
 from engine.core.exceptions.illegal_variable_evaluation_exception import IllegalVariableEvaluationException
@@ -26,7 +25,7 @@ from engine.core.models.triggers.trigger_output import TriggerOutput
 class Flow(AbstractTrigger):
     """Trigger a Flow based on other Flows’ executions."""
     states: list[State.Type]
-    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    logger: ClassVar[Logger] = getLogger(__name__)
     trigger_var: ClassVar[str] = "trigger"
     outputs_var: ClassVar[str] = "outputs"
     inputs: dict[str, Any] | None = None
@@ -52,7 +51,7 @@ class Flow(AbstractTrigger):
         def get_where_conditions(self) -> dict[str, Condition]:
             raise NotImplementedError  # TODO: translate from Java
 
-        def logger(self) -> Logger:
+        def logger(self) -> Any:
             raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)

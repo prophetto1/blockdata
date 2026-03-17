@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\runners\Executor.java
-# WARNING: Unresolved types: Exception
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import Any
 
 from engine.core.models.executions.execution import Execution
@@ -55,7 +54,7 @@ class Executor:
         raise NotImplementedError  # TODO: translate from Java
 
     def with_flow(self, flow: FlowWithSource) -> Executor:
-        raise NotImplementedError  # TODO: translate from Java
+        return replace(self, flow=flow)
 
     def with_execution(self, execution: Execution, from: str) -> Executor:
         raise NotImplementedError  # TODO: translate from Java
@@ -82,16 +81,16 @@ class Executor:
         raise NotImplementedError  # TODO: translate from Java
 
     def with_execution_running(self, execution_running: ExecutionRunning) -> Executor:
-        raise NotImplementedError  # TODO: translate from Java
+        return replace(self, execution_running=execution_running)
 
     def with_execution_resumed(self, execution_resumed: ExecutionResumed) -> Executor:
-        raise NotImplementedError  # TODO: translate from Java
+        return replace(self, execution_resumed=execution_resumed)
 
     def with_execution_killed(self, execution_killed: list[ExecutionKilledExecution]) -> Executor:
-        raise NotImplementedError  # TODO: translate from Java
+        return replace(self, execution_killed=execution_killed)
 
     def with_subflow_execution_end(self, subflow_execution_end: SubflowExecutionEnd) -> Executor:
-        raise NotImplementedError  # TODO: translate from Java
+        return replace(self, subflow_execution_end=subflow_execution_end)
 
     def serialize(self) -> Executor:
         raise NotImplementedError  # TODO: translate from Java

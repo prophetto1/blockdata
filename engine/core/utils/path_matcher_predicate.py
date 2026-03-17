@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\utils\PathMatcherPredicate.java
-# WARNING: Unresolved types: PathMatcher, Predicate
+# WARNING: Unresolved types: PathMatcher
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, ClassVar
+from typing import Any, Callable, ClassVar
 
 
 @dataclass(slots=True, kw_only=True)
@@ -16,11 +16,7 @@ class PathMatcherPredicate:
     matchers: list[PathMatcher] | None = None
 
     @staticmethod
-    def matches(patterns: list[str]) -> PathMatcherPredicate:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def matches(base_path: Path, patterns: list[str]) -> PathMatcherPredicate:
+    def matches(base_path: Path, patterns: list[str] | None = None) -> PathMatcherPredicate:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
@@ -56,5 +52,5 @@ class PathMatcherPredicate:
         def excludes(self, excludes: list[str]) -> Builder:
             raise NotImplementedError  # TODO: translate from Java
 
-        def build(self) -> Predicate[Path]:
+        def build(self) -> Callable[Path]:
             raise NotImplementedError  # TODO: translate from Java

@@ -2,9 +2,9 @@ from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\models\flows\State.java
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from enum import Enum
-from logging import logging
+from logging import Logger, getLogger
 from datetime import datetime
 from datetime import timedelta
 from typing import Any, ClassVar, Optional
@@ -15,7 +15,7 @@ from engine.core.models.tasks.task import Task
 @dataclass(frozen=True, slots=True, kw_only=True)
 class State:
     current: Type
-    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    logger: ClassVar[Logger] = getLogger(__name__)
     histories: list[History] | None = None
 
     @staticmethod
@@ -23,7 +23,7 @@ class State:
         raise NotImplementedError  # TODO: translate from Java
 
     def with_state(self, state: Type) -> State:
-        raise NotImplementedError  # TODO: translate from Java
+        return replace(self, state=state)
 
     def reset(self) -> State:
         raise NotImplementedError  # TODO: translate from Java

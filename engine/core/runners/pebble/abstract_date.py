@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\runners\pebble\AbstractDate.java
-# WARNING: Unresolved types: DateTimeFormatter, EvaluationContext, FormatStyle, ZoneId
+# WARNING: Unresolved types: DateTimeFormatter, FormatStyle, ZoneId
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field

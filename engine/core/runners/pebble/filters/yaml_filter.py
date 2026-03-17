@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\runners\pebble\filters\YamlFilter.java
-# WARNING: Unresolved types: EvaluationContext, Filter, GuavaModule, JavaTimeModule, Jdk8Module, ObjectMapper, ParameterNamesModule, PebbleException, PebbleTemplate, YAMLFactory
+# WARNING: Unresolved types: GuavaModule, JavaTimeModule, Jdk8Module, ParameterNamesModule, YAMLFactory
 
 from dataclasses import dataclass, field
 from typing import Any, ClassVar

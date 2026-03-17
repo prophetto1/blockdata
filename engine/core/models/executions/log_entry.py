@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\models\executions\LogEntry.java
-# WARNING: Unresolved types: Level
 
 from dataclasses import dataclass
 from datetime import datetime
@@ -27,37 +26,21 @@ class LogEntry:
     attempt_number: int | None = None
     trigger_id: str | None = None
     timestamp: datetime | None = None
-    level: Level | None = None
+    level: int | None = None
     thread: str | None = None
     message: str | None = None
     execution_kind: ExecutionKind | None = None
 
     @staticmethod
-    def find_levels_by_min(min_level: Level) -> list[Level]:
+    def find_levels_by_min(min_level: int) -> list[int]:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
-    def of(execution: Execution) -> LogEntry:
+    def of(task_run: TaskRun, execution_kind: ExecutionKind | None = None) -> LogEntry:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
-    def of(task_run: TaskRun, execution_kind: ExecutionKind) -> LogEntry:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def of(flow: FlowInterface, abstract_trigger: AbstractTrigger) -> LogEntry:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def of(trigger_context: TriggerContext, abstract_trigger: AbstractTrigger) -> LogEntry:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def to_pretty_string(log_entry: LogEntry) -> str:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def to_pretty_string(log_entry: LogEntry, max_message_size: int) -> str:
+    def to_pretty_string(log_entry: LogEntry, max_message_size: int | None = None) -> str:
         raise NotImplementedError  # TODO: translate from Java
 
     def to_map(self) -> dict[str, str]:

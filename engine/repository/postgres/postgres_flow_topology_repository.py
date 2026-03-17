@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\jdbc-postgres\src\main\java\io\kestra\repository\postgres\PostgresFlowTopologyRepository.java
-# WARNING: Unresolved types: DMLQuery, DSLContext, Record
+# WARNING: Unresolved types: DMLQuery
 
 from dataclasses import dataclass
 from typing import Any

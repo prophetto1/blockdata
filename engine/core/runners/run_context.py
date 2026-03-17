@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\runners\RunContext.java
-# WARNING: Unresolved types: GeneralSecurityException, Logger, T
+# WARNING: Unresolved types: GeneralSecurityException
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
@@ -15,7 +15,6 @@ from engine.core.runners.input_and_output import InputAndOutput
 from engine.core.storages.kv.kv_store import KVStore
 from engine.core.runners.local_path import LocalPath
 from engine.core.models.plugin import Plugin
-from engine.core.models.property.property import Property
 from engine.core.models.property.property_context import PropertyContext
 from engine.core.runners.run_context_property import RunContextProperty
 from engine.core.runners.run_context_serializer import RunContextSerializer
@@ -46,7 +45,7 @@ class RunContext(ABC):
         ...
 
     @abstractmethod
-    def render(self, inline: str) -> str:
+    def render(self, inline: str, variables: dict[str, Any] | None = None) -> str:
         ...
 
     @abstractmethod
@@ -54,43 +53,7 @@ class RunContext(ABC):
         ...
 
     @abstractmethod
-    def render(self, inline: str, variables: dict[str, Any]) -> str:
-        ...
-
-    @abstractmethod
-    def render(self, inline: Property[T]) -> RunContextProperty[T]:
-        ...
-
-    @abstractmethod
-    def render(self, inline: list[str]) -> list[str]:
-        ...
-
-    @abstractmethod
-    def render(self, inline: list[str], variables: dict[str, Any]) -> list[str]:
-        ...
-
-    @abstractmethod
-    def render(self, inline: set[str]) -> set[str]:
-        ...
-
-    @abstractmethod
-    def render(self, inline: set[str], variables: dict[str, Any]) -> set[str]:
-        ...
-
-    @abstractmethod
-    def render(self, inline: dict[str, Any]) -> dict[str, Any]:
-        ...
-
-    @abstractmethod
-    def render(self, inline: dict[str, Any], variables: dict[str, Any]) -> dict[str, Any]:
-        ...
-
-    @abstractmethod
-    def render_map(self, inline: dict[str, str]) -> dict[str, str]:
-        ...
-
-    @abstractmethod
-    def render_map(self, inline: dict[str, str], variables: dict[str, Any]) -> dict[str, str]:
+    def render_map(self, inline: dict[str, str], variables: dict[str, Any] | None = None) -> dict[str, str]:
         ...
 
     @abstractmethod
@@ -106,7 +69,7 @@ class RunContext(ABC):
         ...
 
     @abstractmethod
-    def logger(self) -> Logger:
+    def logger(self) -> Any:
         ...
 
     @abstractmethod

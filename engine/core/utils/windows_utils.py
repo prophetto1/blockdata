@@ -10,11 +10,7 @@ from typing import Any
 class WindowsUtils:
 
     @staticmethod
-    def windows_to_unix_path(path: str, start_with_slash: bool) -> str:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def windows_to_unix_path(path: str) -> str:
+    def windows_to_unix_path(path: str, start_with_slash: bool | None = None) -> str:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod

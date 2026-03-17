@@ -6,7 +6,6 @@ from dataclasses import dataclass
 from typing import Any
 
 from engine.jdbc.runner.abstract_jdbc_multiple_condition_storage import AbstractJdbcMultipleConditionStorage
-from engine.core.models.conditions.condition import Condition
 from engine.core.models.triggers.multipleflows.multiple_condition_window import MultipleConditionWindow
 from engine.repository.mysql.mysql_repository import MysqlRepository
 

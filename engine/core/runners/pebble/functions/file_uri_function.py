@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\runners\pebble\functions\FileURIFunction.java
-# WARNING: Unresolved types: EvaluationContext, IOException
 
 from dataclasses import dataclass, field
 from typing import Any, ClassVar

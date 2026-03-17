@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\plugin\core\flow\WorkingDirectory.java
-# WARNING: Unresolved types: Exception, IOException
 
 from dataclasses import dataclass, field
 from datetime import timedelta
@@ -14,7 +13,6 @@ from engine.core.models.tasks.namespace_files import NamespaceFiles
 from engine.core.models.tasks.namespace_files_interface import NamespaceFilesInterface
 from engine.core.models.executions.next_task_run import NextTaskRun
 from engine.core.models.tasks.output_files_interface import OutputFilesInterface
-from engine.core.models.property.property import Property
 from engine.core.runners.run_context import RunContext
 from engine.plugin.core.flow.sequential import Sequential
 from engine.core.models.tasks.task import Task

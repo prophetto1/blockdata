@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\models\flows\Input.java
-# WARNING: Unresolved types: ConstraintViolationException, T
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
@@ -22,7 +21,6 @@ from engine.core.models.flows.input.float_input import FloatInput
 from engine.core.models.flows.input.int_input import IntInput
 from engine.core.models.flows.input.json_input import JsonInput
 from engine.core.models.flows.input.multiselect_input import MultiselectInput
-from engine.core.models.property.property import Property
 from engine.core.models.flows.input.secret_input import SecretInput
 from engine.core.models.flows.input.select_input import SelectInput
 from engine.core.models.flows.input.string_input import StringInput

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\jdbc\src\main\java\io\kestra\jdbc\services\JdbcFilterService.java
-# WARNING: Unresolved types: AggregateFunction, Enum, F, Field, Provider, Record, SelectConditionStep, jooq, org
+# WARNING: Unresolved types: AggregateFunction, Provider, jooq, org
 
 from dataclasses import dataclass
 from typing import Any
@@ -11,7 +11,6 @@ from engine.core.services.abstract_filter_service import AbstractFilterService
 from engine.jdbc.repository.abstract_jdbc_dashboard_repository import AbstractJdbcDashboardRepository
 from engine.jdbc.repository.abstract_jdbc_execution_repository import AbstractJdbcExecutionRepository
 from engine.core.models.dashboards.aggregation_type import AggregationType
-from engine.core.models.conditions.condition import Condition
 from engine.core.models.dashboards.filters.contains import Contains
 from engine.core.models.dashboards.filters.ends_with import EndsWith
 from engine.core.models.dashboards.filters.equal_to import EqualTo

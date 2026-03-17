@@ -1,17 +1,15 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\webserver\src\main\java\io\kestra\webserver\rooting\TenantAliasingRooter.java
-# WARNING: Unresolved types: DefaultRouter, Pattern, R, RouteBuilder, T, UriRouteMatch
+# WARNING: Unresolved types: DefaultRouter, RouteBuilder, UriRouteMatch
 
 from dataclasses import dataclass, field
 from typing import Any, ClassVar
 
-from engine.core.http.http_request import HttpRequest
-
 
 @dataclass(slots=True, kw_only=True)
 class TenantAliasingRooter(DefaultRouter):
-    excluded_routes: ClassVar[list[Pattern]]
+    excluded_routes: ClassVar[list[re.Pattern]]
 
     def find_closest(self, request: HttpRequest[Any]) -> UriRouteMatch[T, R]:
         raise NotImplementedError  # TODO: translate from Java

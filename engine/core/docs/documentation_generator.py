@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\docs\DocumentationGenerator.java
-# WARNING: Unresolved types: Class, Comparable, Exception, IOException, PebbleEngine, T
+# WARNING: Unresolved types: PebbleEngine
 
 from dataclasses import dataclass, field
 from typing import Any, ClassVar
@@ -18,7 +18,7 @@ class DocumentationGenerator:
     pebble_engine: ClassVar[PebbleEngine]
     json_schema_generator: JsonSchemaGenerator | None = None
 
-    def generate(self, registered_plugin: RegisteredPlugin) -> list[Document]:
+    def generate(self, registered_plugin: RegisteredPlugin, cls: list[type[Any]] | None = None, base_cls: type[T] | None = None, type: str | None = None) -> list[Document]:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
@@ -33,27 +33,12 @@ class DocumentationGenerator:
     def guides(plugin: RegisteredPlugin) -> list[Document]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def generate(self, registered_plugin: RegisteredPlugin, cls: list[Class[Any]], base_cls: Class[T], type: str) -> list[Document]:
+    @staticmethod
+    def doc_path(registered_plugin: RegisteredPlugin, type: str | None = None, class_plugin_documentation: ClassPluginDocumentation[T] | None = None) -> str:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
-    def doc_path(registered_plugin: RegisteredPlugin) -> str:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def doc_path(registered_plugin: RegisteredPlugin, type: str, class_plugin_documentation: ClassPluginDocumentation[T]) -> str:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def render(class_plugin_documentation: ClassPluginDocumentation[Any]) -> str:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def render(class_input_documentation: AbstractClassDocumentation) -> str:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def render(template_name: str, vars: dict[str, Any]) -> str:
+    def render(template_name: str, vars: dict[str, Any] | None = None) -> str:
         raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)

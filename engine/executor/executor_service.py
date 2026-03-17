@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\executor\src\main\java\io\kestra\executor\ExecutorService.java
-# WARNING: Unresolved types: ApplicationContext, Exception, Logger, OpenTelemetry, Supplier
+# WARNING: Unresolved types: OpenTelemetry
 
 from dataclasses import dataclass, field
-from logging import logging
-from typing import Any, ClassVar, Optional
+from logging import Logger, getLogger
+from typing import Any, Callable, ClassVar, Optional
 
 from engine.core.models.tasks.retrys.abstract_retry import AbstractRetry
 from engine.core.assets.asset_service import AssetService
@@ -46,7 +46,7 @@ from engine.core.runners.worker_task_result import WorkerTaskResult
 
 @dataclass(slots=True, kw_only=True)
 class ExecutorService:
-    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    logger: ClassVar[Logger] = getLogger(__name__)
     application_context: ApplicationContext | None = None
     run_context_factory: RunContextFactory | None = None
     metric_registry: MetricRegistry | None = None
@@ -136,34 +136,16 @@ class ExecutorService:
     def add_worker_task_results(self, executor: Executor, worker_task_results: list[WorkerTaskResult]) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
-    def add_worker_task_result(self, executor: Executor, flow: Supplier[FlowWithSource], worker_task_result: WorkerTaskResult) -> None:
+    def add_worker_task_result(self, executor: Executor, flow: Callable[FlowWithSource], worker_task_result: WorkerTaskResult) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
-    def add_dynamic_task_run(self, execution: Execution, flow: Supplier[FlowWithSource], worker_task_result: WorkerTaskResult) -> Execution:
+    def add_dynamic_task_run(self, execution: Execution, flow: Callable[FlowWithSource], worker_task_result: WorkerTaskResult) -> Execution:
         raise NotImplementedError  # TODO: translate from Java
 
     def can_be_purged(self, executor: Executor) -> bool:
         raise NotImplementedError  # TODO: translate from Java
 
-    def log(self, log: Logger, in: bool, value: WorkerJob) -> None:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def log(self, log: Logger, in: bool, value: WorkerTaskResult) -> None:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def log(self, log: Logger, in: bool, value: SubflowExecutionResult) -> None:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def log(self, log: Logger, in: bool, value: SubflowExecutionEnd) -> None:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def log(self, log: Logger, in: bool, value: Execution) -> None:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def log(self, log: Logger, in: bool, value: Executor) -> None:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def log(self, log: Logger, in: bool, value: ExecutionKilledExecution) -> None:
+    def log(self, log: Any, in: bool, value: WorkerJob) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
     def handle_execution_changed_sla(self, executor: Executor) -> Executor:

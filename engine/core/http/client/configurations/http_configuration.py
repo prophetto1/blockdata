@@ -9,7 +9,6 @@ from datetime import timedelta
 from typing import Any
 
 from engine.core.http.client.configurations.abstract_auth_configuration import AbstractAuthConfiguration
-from engine.core.models.property.property import Property
 from engine.core.http.client.configurations.proxy_configuration import ProxyConfiguration
 from engine.core.http.client.configurations.ssl_options import SslOptions
 from engine.core.http.client.configurations.timeout_configuration import TimeoutConfiguration

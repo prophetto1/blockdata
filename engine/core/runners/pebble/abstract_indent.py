@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\runners\pebble\AbstractIndent.java
-# WARNING: Unresolved types: EvaluationContext, PebbleException, PebbleTemplate
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass

@@ -17,17 +17,5 @@ class ExecutionTrigger:
     log_file: str | None = None
 
     @staticmethod
-    def of(abstract_trigger: AbstractTrigger, output: Output) -> ExecutionTrigger:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def of(abstract_trigger: AbstractTrigger, output: Output, log_file: str) -> ExecutionTrigger:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def of(abstract_trigger: AbstractTrigger, variables: dict[str, Any]) -> ExecutionTrigger:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def of(abstract_trigger: AbstractTrigger, variables: dict[str, Any], log_file: str) -> ExecutionTrigger:
+    def of(abstract_trigger: AbstractTrigger, output: Output, log_file: str | None = None) -> ExecutionTrigger:
         raise NotImplementedError  # TODO: translate from Java

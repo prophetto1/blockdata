@@ -1,13 +1,11 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\http\HttpService.java
-# WARNING: Unresolved types: Header, HttpEntity, HttpHeaders, IOException
+# WARNING: Unresolved types: Header, HttpEntity, HttpHeaders
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any
-
-from engine.core.http.http_request import HttpRequest
 
 
 @dataclass(slots=True, kw_only=True)

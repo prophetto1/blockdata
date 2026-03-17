@@ -1,14 +1,12 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\models\tasks\runners\TaskCommands.java
-# WARNING: Unresolved types: IOException
 
 from pathlib import Path
 from datetime import timedelta
 from typing import Any, Protocol
 
 from engine.core.models.tasks.runners.abstract_log_consumer import AbstractLogConsumer
-from engine.core.models.property.property import Property
 from engine.core.models.tasks.runners.target_os import TargetOS
 
 
@@ -41,6 +39,4 @@ class TaskCommands(Protocol):
 
     def get_target_os(self) -> TargetOS: ...
 
-    def relative_working_directory_files_paths(self) -> list[Path]: ...
-
-    def relative_working_directory_files_paths(self, include_directories: bool) -> list[Path]: ...
+    def relative_working_directory_files_paths(self, include_directories: bool | None = None) -> list[Path]: ...

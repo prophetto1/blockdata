@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\contexts\KestraBeansFactory.java
-# WARNING: Unresolved types: IOException, Validator
+# WARNING: Unresolved types: Validator
 
 from dataclasses import dataclass
 from typing import Any, Optional

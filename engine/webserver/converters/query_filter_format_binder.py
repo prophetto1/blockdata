@@ -1,32 +1,31 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\webserver\src\main\java\io\kestra\webserver\converters\QueryFilterFormatBinder.java
-# WARNING: Unresolved types: AnnotatedRequestArgumentBinder, ArgumentConversionContext, BindingResult, Class, Field, Matcher, Op, Pattern
+# WARNING: Unresolved types: AnnotatedRequestArgumentBinder, ArgumentConversionContext, BindingResult, Op
 
 from dataclasses import dataclass, field
 from typing import Any, ClassVar
 
-from engine.core.http.http_request import HttpRequest
 from engine.core.models.query_filter import QueryFilter
 from engine.webserver.converters.query_filter_format import QueryFilterFormat
 
 
 @dataclass(slots=True, kw_only=True)
 class QueryFilterFormatBinder:
-    filter_pattern: ClassVar[Pattern]
+    filter_pattern: ClassVar[re.Pattern]
 
     @staticmethod
     def get_query_filters(query_params: dict[str, list[str]]) -> list[QueryFilter]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def get_annotation_type(self) -> Class[QueryFilterFormat]:
+    def get_annotation_type(self) -> type[QueryFilterFormat]:
         raise NotImplementedError  # TODO: translate from Java
 
     def bind(self, context: ArgumentConversionContext[list[QueryFilter]], source: HttpRequest[Any]) -> BindingResult[list[QueryFilter]]:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
-    def parse_filters(values: list[str], matcher: Matcher, filters: list[QueryFilter], labels_by_operation: dict[QueryFilter.Op, dict[str, str]]) -> None:
+    def parse_filters(values: list[str], matcher: re.Match, filters: list[QueryFilter], labels_by_operation: dict[QueryFilter.Op, dict[str, str]]) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod

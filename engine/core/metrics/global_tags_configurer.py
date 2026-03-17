@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\metrics\GlobalTagsConfigurer.java
-# WARNING: Unresolved types: Class, MeterRegistryConfigurer, SimpleMeterRegistry
+# WARNING: Unresolved types: MeterRegistryConfigurer, SimpleMeterRegistry
 
 from dataclasses import dataclass
 from typing import Any
@@ -21,5 +21,5 @@ class GlobalTagsConfigurer:
     def supports(self, meter_registry: SimpleMeterRegistry) -> bool:
         raise NotImplementedError  # TODO: translate from Java
 
-    def get_type(self) -> Class[SimpleMeterRegistry]:
+    def get_type(self) -> type[SimpleMeterRegistry]:
         raise NotImplementedError  # TODO: translate from Java

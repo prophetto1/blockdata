@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\contexts\KestraContext.java
-# WARNING: Unresolved types: ApplicationContext, AtomicBoolean, AtomicReference, Environment, Supplier
+# WARNING: Unresolved types: AtomicReference, Environment
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from logging import logging
-from typing import Any, ClassVar, Optional
+from logging import Logger, getLogger
+from typing import Any, Callable, ClassVar, Optional
 
 from engine.core.plugins.plugin_registry import PluginRegistry
 from engine.core.models.server_type import ServerType
@@ -16,7 +16,7 @@ from engine.core.storages.storage_interface import StorageInterface
 @dataclass(slots=True, kw_only=True)
 class KestraContext(ABC):
     instance: ClassVar[AtomicReference[KestraContext]]
-    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    logger: ClassVar[Logger] = getLogger(__name__)
     kestra_server_type: ClassVar[str] = "kestra.server-type"
     kestra_worker_max_num_threads: ClassVar[str] = "kestra.worker.max-num-threads"
     kestra_worker_group_key: ClassVar[str] = "kestra.worker.group-key"
@@ -62,10 +62,10 @@ class KestraContext(ABC):
 
     @dataclass(slots=True)
     class Initializer(KestraContext):
-        is_shutdown: AtomicBoolean
+        is_shutdown: bool
         application_context: ApplicationContext | None = None
         environment: Environment | None = None
-        version: Supplier[str] | None = None
+        version: Callable[str] | None = None
 
         def get_server_type(self) -> ServerType:
             raise NotImplementedError  # TODO: translate from Java

@@ -22,26 +22,65 @@ UPPER_SNAKE_RE = re.compile(r'^[A-Z][A-Z0-9_]*$')
 # --- Type mapping ---
 
 JAVA_TO_PYTHON_TYPES = {
+    # Primitives and wrappers
     "String": "str", "Integer": "int", "int": "int",
     "Long": "int", "long": "int", "Short": "int", "short": "int",
-    "Byte": "int", "byte": "int", "Character": "char", "char": "str",
+    "Byte": "int", "byte": "int", "Character": "str", "char": "str",
     "Double": "float", "double": "float",
     "Float": "float", "float": "float",
     "Boolean": "bool", "boolean": "bool",
     "void": "None", "Object": "Any",
+    # Collections
     "List": "list", "ArrayList": "list", "LinkedList": "list",
     "Map": "dict", "HashMap": "dict", "LinkedHashMap": "dict", "TreeMap": "dict",
-    "Set": "set", "HashSet": "set", "TreeSet": "set",
-    "Collection": "list", "Iterable": "list",
+    "Set": "set", "HashSet": "set", "TreeSet": "set", "LinkedHashSet": "set",
+    "Collection": "list", "Iterable": "Iterable", "Iterator": "Iterator",
+    "Queue": "list", "Deque": "list", "ArrayDeque": "list",
     "Optional": "Optional",
-    "URI": "str", "URL": "str",
+    # Strings and identifiers
+    "URI": "str", "URL": "str", "UUID": "str",
+    "StringBuilder": "str", "StringBuffer": "str", "CharSequence": "str",
+    # Date/time
     "Duration": "timedelta",
     "Instant": "datetime", "ZonedDateTime": "datetime",
     "LocalDate": "date", "LocalTime": "time", "LocalDateTime": "datetime",
+    # IO
     "Path": "Path", "File": "Path",
     "byte[]": "bytes",
+    "InputStream": "Any", "OutputStream": "Any",
+    # Numeric
     "BigDecimal": "float", "BigInteger": "int",
-    "UUID": "str",
+    "Number": "float", "AtomicInteger": "int", "AtomicLong": "int",
+    "AtomicBoolean": "bool",
+    # Functional interfaces
+    "Runnable": "Callable", "Callable": "Callable",
+    "Supplier": "Callable", "Consumer": "Callable",
+    "Function": "Callable", "BiFunction": "Callable",
+    "Predicate": "Callable", "BiConsumer": "Callable",
+    "BiPredicate": "Callable", "UnaryOperator": "Callable",
+    "BinaryOperator": "Callable",
+    # Streams and concurrency
+    "Stream": "Iterator", "Collector": "Any", "Collectors": "Any",
+    "CompletableFuture": "Any", "Future": "Any",
+    # Exceptions
+    "Exception": "Exception", "RuntimeException": "RuntimeError",
+    "IOException": "IOError", "IllegalStateException": "RuntimeError",
+    "IllegalArgumentException": "ValueError",
+    "NullPointerException": "TypeError",
+    "UnsupportedOperationException": "NotImplementedError",
+    "ConstraintViolationException": "ValueError",
+    "InterruptedException": "KeyboardInterrupt",
+    "TimeoutException": "TimeoutError",
+    "Throwable": "BaseException",
+    # Reflection and class
+    "Class": "type", "Enum": "type",
+    # Logging
+    "Logger": "Any", "Level": "int",
+    # Patterns
+    "Pattern": "re.Pattern", "Matcher": "re.Match",
+    # Serialization
+    "Serializable": "Any", "Closeable": "Any", "AutoCloseable": "Any",
+    "Comparable": "Any", "Cloneable": "Any",
 }
 
 STDLIB_TYPE_IMPORTS: dict[str, ImportSpec] = {
@@ -62,6 +101,45 @@ JAVA_STDLIB_TRIGGERS: dict[str, str] = {
     "LocalDateTime": "datetime",
     "Path": "Path",
     "File": "Path",
+}
+
+# Package name fragments that leak from scoped type identifiers (not real types)
+_PACKAGE_FRAGMENTS = {
+    "io", "kestra", "core", "models", "tasks", "jdbc", "plugin", "runners",
+    "webserver", "services", "controllers", "api", "flows", "executions",
+    "utils", "events", "secret", "storage", "storages", "http", "client",
+    "configurations", "annotations", "validations", "serializers", "docs",
+    "triggers", "listeners", "dashboards", "filters", "charts", "condition",
+    "scripts", "runner", "worker", "executor", "scheduler", "repository",
+}
+
+# External framework types with no Python equivalent — suppress to avoid warnings
+_EXTERNAL_FRAMEWORK_TYPES = {
+    # Micronaut
+    "ApplicationContext", "ApplicationEventPublisher", "BeanContext",
+    "Inject", "Singleton", "Value", "Property",
+    # Jackson / JSON
+    "ObjectMapper", "JsonNode", "JsonInclude", "JsonGenerator",
+    "JsonSerializer", "JsonDeserializer", "ObjectNode", "ArrayNode",
+    "JacksonAnnotationIntrospector", "SerializationFeature",
+    # Jakarta validation
+    "ConstraintValidator", "ConstraintValidatorContext", "AnnotationValue",
+    # HTTP / web
+    "HttpResponse", "HttpRequest", "HttpStatus", "HttpStatusException",
+    "CompletedFileUpload", "Flux", "Mono", "Pageable",
+    # Pebble templating
+    "PebbleTemplate", "PebbleException", "EvaluationContext",
+    # JOOQ / SQL
+    "DSLContext", "Field", "Fields", "Record", "Condition", "Table",
+    "SelectConditionStep", "SelectJoinStep", "Result",
+    # Logback
+    "ILoggingEvent", "LoggingEvent", "ThrowableProxy",
+    # Swagger
+    "Schema", "Hidden",
+    # Guava
+    "ImmutableMap", "ImmutableList", "ImmutableSet",
+    # Misc framework
+    "Payload", "Filter", "GroupType", "Date",
 }
 
 
@@ -256,6 +334,68 @@ def _build_method(mi: MethodInfo) -> MethodSpec:
     )
 
 
+def _infer_with_bodies(methods: list[MethodSpec], class_name: str) -> None:
+    """Infer method bodies for Lombok @With patterns.
+
+    A method named `with_foo` that returns the same class and takes one param
+    is a Lombok @With — creates an immutable copy with one field changed.
+    Translates to: return dataclasses.replace(self, foo=value)
+    """
+    for m in methods:
+        if not m.name.startswith("with_"):
+            continue
+        if m.return_type != class_name:
+            continue
+        if len(m.params) != 1:
+            continue
+        if m.kind != "instance":
+            continue
+
+        field_name = m.name[5:]  # strip "with_"
+        param_name = m.params[0].name
+        m.body_lines = [f"return replace(self, {field_name}={param_name})"]
+        m.raises_not_implemented = False
+
+
+def _resolve_overloads(methods: list[MethodSpec]) -> list[MethodSpec]:
+    """Merge Java method overloads into single Python methods.
+
+    Java allows multiple methods with the same name but different parameter counts.
+    Python doesn't — later defs silently overwrite earlier ones.
+
+    Strategy: for each name group, keep the version with the most parameters
+    and make the extra params optional (default None). This preserves all
+    call signatures through one method.
+    """
+    from collections import OrderedDict
+    groups: OrderedDict[str, list[MethodSpec]] = OrderedDict()
+    for m in methods:
+        groups.setdefault(m.name, []).append(m)
+
+    result = []
+    for name, group in groups.items():
+        if len(group) == 1:
+            result.append(group[0])
+            continue
+
+        # Keep the method with the most parameters
+        group.sort(key=lambda m: len(m.params), reverse=True)
+        winner = group[0]
+
+        # Find the minimum param count across all overloads
+        min_params = min(len(m.params) for m in group)
+
+        # Make params beyond min_params optional (default None)
+        for i, p in enumerate(winner.params):
+            if i >= min_params and p.default_expr is None:
+                p.type_str = f"{p.type_str} | None"
+                p.default_expr = "None"
+
+        result.append(winner)
+
+    return result
+
+
 def _build_class(ti: TypeInfo) -> ClassSpec:
     """Convert a tree-sitter TypeInfo to a scaffold ClassSpec."""
     # Determine style
@@ -308,6 +448,12 @@ def _build_class(ti: TypeInfo) -> ClassSpec:
         return False
 
     methods = [_build_method(m) for m in ti.methods if not _is_redundant_getter(m)]
+
+    # Resolve Java method overloading — merge same-name methods into one
+    methods = _resolve_overloads(methods)
+
+    # Infer with* method bodies (Lombok @With → dataclasses.replace)
+    _infer_with_bodies(methods, ti.name)
 
     # Inner classes
     inner = [_build_class(it) for it in ti.inner_types]
@@ -374,9 +520,9 @@ def _apply_lombok(cls: ClassSpec) -> None:
     if "Slf4j" in annotations:
         logger_field = FieldSpec(
             name="logger",
-            type_str="logging.Logger",
+            type_str="Logger",
             original_name="log",
-            default_expr="logging.getLogger(__name__)",
+            default_expr="getLogger(__name__)",
             is_class_var=True,
             is_init=False,
         )
@@ -400,7 +546,8 @@ def _apply_aliases(types: list[ClassSpec], alias_map: dict[str, str]):
 
 def _collect_structural_needs(types: list[ClassSpec]) -> dict[str, bool]:
     """Walk full type tree (including inner classes) for structural import needs."""
-    needs = {"dataclass": False, "field": False, "enum": False, "protocol": False, "abc": False}
+    needs = {"dataclass": False, "field": False, "replace": False,
+             "enum": False, "protocol": False, "abc": False}
     for cls in types:
         if cls.style == "dataclass":
             needs["dataclass"] = True
@@ -413,27 +560,37 @@ def _collect_structural_needs(types: list[ClassSpec]) -> dict[str, bool]:
         for f in cls.fields:
             if f.default_factory is not None or not f.is_init:
                 needs["field"] = True
+        for m in cls.methods:
+            if any("replace(self" in bl for bl in m.body_lines):
+                needs["replace"] = True
         sub = _collect_structural_needs(cls.inner_classes)
         for k in needs:
             needs[k] = needs[k] or sub[k]
     return needs
 
 
+# Types that need a `from typing import X` when they appear in type strings
+_TYPING_TYPES = {"Optional", "Callable", "Iterator", "Iterable", "ClassVar"}
+
+
 def _collect_typing_needs(types: list[ClassSpec]) -> set[str]:
     """Walk full type tree for typing module import needs."""
     needed: set[str] = set()
+
+    def _scan_type_str(ts: str):
+        for t in _TYPING_TYPES:
+            if t in ts:
+                needed.add(t)
+
     for cls in types:
         for f in cls.fields:
             if f.is_class_var:
                 needed.add("ClassVar")
-            if "Optional" in f.type_str:
-                needed.add("Optional")
+            _scan_type_str(f.type_str)
         for m in cls.methods:
-            if "Optional" in m.return_type:
-                needed.add("Optional")
+            _scan_type_str(m.return_type)
             for p in m.params:
-                if "Optional" in p.type_str:
-                    needed.add("Optional")
+                _scan_type_str(p.type_str)
         needed |= _collect_typing_needs(cls.inner_classes)
     return needed
 
@@ -474,6 +631,15 @@ def build_module(
 
     # Remove Java builtins
     referenced -= set(JAVA_TO_PYTHON_TYPES.keys())
+
+    # Remove package name fragments (leak from scoped type identifiers)
+    referenced -= _PACKAGE_FRAGMENTS
+
+    # Remove known external framework types (no Python equivalent)
+    referenced -= _EXTERNAL_FRAMEWORK_TYPES
+
+    # Remove single-letter generic type params
+    referenced -= {n for n in referenced if len(n) == 1 and n.isupper()}
 
     # Determine what imports are needed
     imports: list[ImportSpec] = []
@@ -528,8 +694,12 @@ def build_module(
 
     # dataclass imports
     if structural["dataclass"]:
-        names = "dataclass, field" if structural["field"] else "dataclass"
-        typing_imports.append(ImportSpec(module="dataclasses", name=names, kind="stdlib"))
+        parts = ["dataclass"]
+        if structural["field"]:
+            parts.append("field")
+        if structural["replace"]:
+            parts.append("replace")
+        typing_imports.append(ImportSpec(module="dataclasses", name=", ".join(parts), kind="stdlib"))
 
     # enum imports
     if structural["enum"]:
@@ -537,11 +707,11 @@ def build_module(
 
     # logging import (from @Slf4j Lombok annotation)
     needs_logging = any(
-        any(f.name == "logger" and "logging" in (f.type_str or "") for f in cls.fields)
+        any(f.name == "logger" and f.type_str == "Logger" for f in cls.fields)
         for cls in types
     )
     if needs_logging:
-        typing_imports.append(ImportSpec(module="logging", name="logging", kind="stdlib"))
+        typing_imports.append(ImportSpec(module="logging", name="Logger, getLogger", kind="stdlib"))
 
     # typing imports
     typing_names = sorted(typing_needs)

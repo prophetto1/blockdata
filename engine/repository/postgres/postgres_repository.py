@@ -1,14 +1,13 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\jdbc-postgres\src\main\java\io\kestra\repository\postgres\PostgresRepository.java
-# WARNING: Unresolved types: DSLContext, E, Field, InsertOnDuplicateSetMoreStep, Pageable, R, Record, RecordMapper, SelectConditionStep, T, io, jdbc, kestra
+# WARNING: Unresolved types: InsertOnDuplicateSetMoreStep, RecordMapper
 
 from dataclasses import dataclass
 from typing import Any
 
 from engine.jdbc.abstract_jdbc_repository import AbstractJdbcRepository
 from engine.core.repositories.array_list_total import ArrayListTotal
-from engine.core.models.conditions.condition import Condition
 from engine.jdbc.jdbc_table_config import JdbcTableConfig
 from engine.jdbc.jooq_dsl_context_wrapper import JooqDSLContextWrapper
 

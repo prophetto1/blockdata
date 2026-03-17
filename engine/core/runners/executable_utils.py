@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\runners\ExecutableUtils.java
-# WARNING: Unresolved types: T
 
 from dataclasses import dataclass, field
-from logging import logging
+from logging import Logger, getLogger
 from datetime import datetime
 from typing import Any, ClassVar, Optional
 
@@ -15,7 +14,6 @@ from engine.core.runners.flow_meta_store_interface import FlowMetaStoreInterface
 from engine.core.exceptions.illegal_variable_evaluation_exception import IllegalVariableEvaluationException
 from engine.core.exceptions.internal_exception import InternalException
 from engine.core.models.label import Label
-from engine.core.models.property.property import Property
 from engine.core.runners.run_context import RunContext
 from engine.core.models.flows.state import State
 from engine.core.storages.storage import Storage
@@ -28,7 +26,7 @@ from engine.core.models.flows.type import Type
 
 @dataclass(slots=True, kw_only=True)
 class ExecutableUtils:
-    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    logger: ClassVar[Logger] = getLogger(__name__)
     task_variable_iterations: ClassVar[str] = "iterations"
     task_variable_number_of_batches: ClassVar[str] = "numberOfBatches"
     task_variable_subflow_outputs_base_uri: ClassVar[str] = "subflowOutputsBaseUri"

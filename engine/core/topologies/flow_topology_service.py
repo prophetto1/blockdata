@@ -1,13 +1,12 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\topologies\FlowTopologyService.java
-# WARNING: Unresolved types: Function, Preconditions, Stream, core, io, kestra, plugin, trigger
+# WARNING: Unresolved types: Preconditions, trigger
 
 from dataclasses import dataclass, field
-from logging import logging
-from typing import Any, ClassVar
+from logging import Logger, getLogger
+from typing import Any, Callable, ClassVar, Iterator
 
-from engine.core.models.conditions.condition import Condition
 from engine.core.services.condition_service import ConditionService
 from engine.core.models.executions.execution import Execution
 from engine.core.models.flows.flow import Flow
@@ -25,18 +24,18 @@ from engine.core.models.label import Label
 @dataclass(slots=True, kw_only=True)
 class FlowTopologyService:
     simulated_execution: ClassVar[Label]
-    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    logger: ClassVar[Logger] = getLogger(__name__)
     condition_service: ConditionService | None = None
     flow_repository: FlowRepositoryInterface | None = None
     flow_topology_repository: FlowTopologyRepositoryInterface | None = None
 
-    def graph(self, flows: Stream[FlowTopology], anonymize: Function[FlowNode, FlowNode]) -> FlowTopologyGraph:
+    def graph(self, flows: Iterator[FlowTopology], anonymize: Callable[FlowNode, FlowNode]) -> FlowTopologyGraph:
         raise NotImplementedError  # TODO: translate from Java
 
     def namespace_graph(self, tenant_id: str, namespace: str) -> FlowTopologyGraph:
         raise NotImplementedError  # TODO: translate from Java
 
-    def topology(self, child: FlowWithSource, all_flows: list[FlowWithSource]) -> Stream[FlowTopology]:
+    def topology(self, child: FlowWithSource, all_flows: list[FlowWithSource]) -> Iterator[FlowTopology]:
         raise NotImplementedError  # TODO: translate from Java
 
     def map(self, parent: FlowWithSource, child: FlowWithSource) -> FlowTopology:

@@ -19,15 +19,7 @@ class FlowUsage:
     task_runner_type_count: dict[str, int] | None = None
 
     @staticmethod
-    def of(tenant_id: str, flow_repository: FlowRepositoryInterface) -> FlowUsage:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def of(flow_repository: FlowRepositoryInterface) -> FlowUsage:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def of(flows: list[Flow]) -> FlowUsage:
+    def of(tenant_id: str, flow_repository: FlowRepositoryInterface | None = None) -> FlowUsage:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod

@@ -1,14 +1,13 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\plugin\core\state\AbstractState.java
-# WARNING: Unresolved types: IOException, Pair, TypeReference
+# WARNING: Unresolved types: Pair, TypeReference
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Any, ClassVar
 
 from engine.core.exceptions.illegal_variable_evaluation_exception import IllegalVariableEvaluationException
-from engine.core.models.property.property import Property
 from engine.core.exceptions.resource_expired_exception import ResourceExpiredException
 from engine.core.runners.run_context import RunContext
 from engine.core.models.tasks.task import Task

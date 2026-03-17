@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\tests\src\main\java\io\kestra\core\storage\StorageTestSuite.java
-# WARNING: Unresolved types: Exception, IOException, URISyntaxException
+# WARNING: Unresolved types: URISyntaxException
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
@@ -19,16 +19,13 @@ class StorageTestSuite(ABC):
     def get_path(self) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
-    def get(self) -> None:
+    def get(self, tenant_id: str | None = None, prefix: str | None = None) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
     def get_no_cross_tenant(self) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
     def get_with_scheme(self) -> None:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def get(self, tenant_id: str, prefix: str) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
     def get_no_traversal(self) -> None:
@@ -46,7 +43,7 @@ class StorageTestSuite(ABC):
     def objects_by_prefix(self) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
-    def list(self) -> None:
+    def list(self, prefix: str | None = None, tenant_id: str | None = None) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
     def list_no_traversal(self) -> None:
@@ -61,16 +58,10 @@ class StorageTestSuite(ABC):
     def list_with_scheme(self) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
-    def list(self, prefix: str, tenant_id: str) -> None:
-        raise NotImplementedError  # TODO: translate from Java
-
     def list_instance_resouces(self) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
-    def exists(self) -> None:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def exists(self, prefix: str, tenant_id: str) -> None:
+    def exists(self, prefix: str | None = None, tenant_id: str | None = None) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
     def exists_no_traversal(self) -> None:
@@ -85,10 +76,7 @@ class StorageTestSuite(ABC):
     def exists_instance_resource(self) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
-    def size(self) -> None:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def size(self, prefix: str, tenant_id: str) -> None:
+    def size(self, prefix: str | None = None, tenant_id: str | None = None) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
     def size_no_traversal(self) -> None:
@@ -103,10 +91,7 @@ class StorageTestSuite(ABC):
     def size_with_scheme(self) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
-    def last_modified_time(self) -> None:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def last_modified_time(self, prefix: str, tenant_id: str) -> None:
+    def last_modified_time(self, prefix: str | None = None, tenant_id: str | None = None) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
     def last_modified_time_no_traversal(self) -> None:
@@ -121,10 +106,7 @@ class StorageTestSuite(ABC):
     def last_modified_time_with_scheme(self) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
-    def get_attributes(self) -> None:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def get_attributes(self, prefix: str, tenant_id: str) -> None:
+    def get_attributes(self, prefix: str | None = None, tenant_id: str | None = None) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
     def get_attributes_no_traversal(self) -> None:
@@ -150,7 +132,7 @@ class StorageTestSuite(ABC):
     def compare_file_attribute(attr: FileAttributes) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
-    def put(self) -> None:
+    def put(self, tenant_id: str | None = None, prefix: str | None = None) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
     def put_path_with_tenant_string_in_it(self) -> None:
@@ -165,13 +147,10 @@ class StorageTestSuite(ABC):
     def put_no_traversal(self) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
-    def put(self, tenant_id: str, prefix: str) -> None:
-        raise NotImplementedError  # TODO: translate from Java
-
     def put_instance_resource(self) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
-    def delete(self) -> None:
+    def delete(self, prefix: str | None = None, tenant_id: str | None = None) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
     def delete_no_traversal(self) -> None:
@@ -180,22 +159,16 @@ class StorageTestSuite(ABC):
     def delete_not_found(self) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
-    def delete(self, prefix: str, tenant_id: str) -> None:
-        raise NotImplementedError  # TODO: translate from Java
-
     def delete_with_scheme(self) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
     def delete_instance_resource(self) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
-    def create_directory(self) -> None:
+    def create_directory(self, prefix: str | None = None, tenant_id: str | None = None) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
     def create_directory_no_traversal(self) -> None:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def create_directory(self, prefix: str, tenant_id: str) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
     def create_directory_with_scheme(self) -> None:
@@ -207,7 +180,7 @@ class StorageTestSuite(ABC):
     def create_instance_directory(self) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
-    def move(self) -> None:
+    def move(self, prefix: str | None = None, tenant_id: str | None = None) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
     def move_not_found(self) -> None:
@@ -216,13 +189,10 @@ class StorageTestSuite(ABC):
     def move_no_traversal(self) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
-    def move(self, prefix: str, tenant_id: str) -> None:
-        raise NotImplementedError  # TODO: translate from Java
-
     def move_with_scheme(self) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
-    def delete_by_prefix(self) -> None:
+    def delete_by_prefix(self, prefix: str | None = None, tenant_id: str | None = None) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
     def delete_by_prefix_path_with_tenant_string_in_it(self) -> None:
@@ -234,9 +204,6 @@ class StorageTestSuite(ABC):
     def delete_by_prefix_no_traversal(self) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
-    def delete_by_prefix(self, prefix: str, tenant_id: str) -> None:
-        raise NotImplementedError  # TODO: translate from Java
-
     def delete_by_prefix_with_scheme(self) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
@@ -246,14 +213,8 @@ class StorageTestSuite(ABC):
     def limit_should_preserve_special_charts(self) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
-    def put_file(self, tenant_id: str, path: str) -> str:
+    def put_file(self, tenant_id: str, path: str, metadata: dict[str, str] | None = None) -> str:
         raise NotImplementedError  # TODO: translate from Java
 
-    def put_file(self, tenant_id: str, path: str, metadata: dict[str, str]) -> str:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def put_instance_file(self, path: str) -> str:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def put_instance_file(self, path: str, metadata: dict[str, str]) -> str:
+    def put_instance_file(self, path: str, metadata: dict[str, str] | None = None) -> str:
         raise NotImplementedError  # TODO: translate from Java

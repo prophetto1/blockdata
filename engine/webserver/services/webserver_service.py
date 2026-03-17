@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\webserver\src\main\java\io\kestra\webserver\services\WebserverService.java
-# WARNING: Unresolved types: ApplicationEventPublisher, AtomicBoolean, AtomicReference, ServerShutdownEvent, ServerStartupEvent, ServiceState
+# WARNING: Unresolved types: AtomicReference, ServerShutdownEvent, ServerStartupEvent, ServiceState
 
 from dataclasses import dataclass
 from typing import Any
@@ -13,7 +13,7 @@ from engine.core.server.service_type import ServiceType
 
 @dataclass(slots=True, kw_only=True)
 class WebserverService:
-    shutdown: AtomicBoolean
+    shutdown: bool
     id: str
     state: AtomicReference[ServiceState]
     event_publisher: ApplicationEventPublisher[ServiceStateChangeEvent] | None = None

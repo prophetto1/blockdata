@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\jdbc-mysql\src\main\java\io\kestra\repository\mysql\MysqlRepositoryUtils.java
-# WARNING: Unresolved types: Date, Field, GroupType
 
 from dataclasses import dataclass
 from typing import Any

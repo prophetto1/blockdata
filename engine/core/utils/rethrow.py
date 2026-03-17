@@ -1,41 +1,40 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\utils\Rethrow.java
-# WARNING: Unresolved types: A, B, BiConsumer, BiFunction, Consumer, E, Exception, Function, K, Predicate, R, Runnable, Supplier, T, V
 
 from dataclasses import dataclass
-from typing import Any, Protocol
+from typing import Any, Callable, Protocol
 
 
 @dataclass(slots=True, kw_only=True)
 class Rethrow:
 
     @staticmethod
-    def throw_consumer(consumer: ConsumerChecked[T, E]) -> Consumer[T]:
+    def throw_consumer(consumer: ConsumerChecked[T, E]) -> Callable[T]:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
-    def throw_bi_consumer(consumer: BiConsumerChecked[K, V, E]) -> BiConsumer[K, V]:
+    def throw_bi_consumer(consumer: BiConsumerChecked[K, V, E]) -> Callable[K, V]:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
-    def throw_supplier(supplier: SupplierChecked[T, E]) -> Supplier[T]:
+    def throw_supplier(supplier: SupplierChecked[T, E]) -> Callable[T]:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
-    def throw_predicate(consumer: PredicateChecked[T, E]) -> Predicate[T]:
+    def throw_predicate(consumer: PredicateChecked[T, E]) -> Callable[T]:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
-    def throw_function(function: FunctionChecked[T, R, E]) -> Function[T, R]:
+    def throw_function(function: FunctionChecked[T, R, E]) -> Callable[T, R]:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
-    def throw_bi_function(function: BiFunctionChecked[A, B, R, E]) -> BiFunction[A, B, R]:
+    def throw_bi_function(function: BiFunctionChecked[A, B, R, E]) -> Callable[A, B, R]:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
-    def throw_runnable(runnable: RunnableChecked[E]) -> Runnable:
+    def throw_runnable(runnable: RunnableChecked[E]) -> Callable:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod

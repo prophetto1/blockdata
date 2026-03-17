@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\webserver\src\main\java\io\kestra\webserver\controllers\api\PluginController.java
-# WARNING: Unresolved types: ClassNotFoundException, IOException, MutableHttpResponse
+# WARNING: Unresolved types: ClassNotFoundException, MutableHttpResponse
 
 from dataclasses import dataclass, field
 from typing import Any, ClassVar
@@ -9,7 +9,6 @@ from typing import Any, ClassVar
 from engine.core.docs.class_input_documentation import ClassInputDocumentation
 from engine.core.docs.class_plugin_documentation import ClassPluginDocumentation
 from engine.core.docs.documentation_with_schema import DocumentationWithSchema
-from engine.core.http.http_response import HttpResponse
 from engine.core.docs.input_type import InputType
 from engine.core.docs.json_schema_cache import JsonSchemaCache
 from engine.core.docs.json_schema_generator import JsonSchemaGenerator

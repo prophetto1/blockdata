@@ -1,22 +1,22 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\utils\Either.java
-# WARNING: Unresolved types: Function, L, LL, R, RR, T
+# WARNING: Unresolved types: LL, RR
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Any, Callable, Optional
 
 
 @dataclass(slots=True, kw_only=True)
 class Either(ABC):
 
     @staticmethod
-    def left(value: L) -> Either[L, R]:
+    def left(value: L | None = None) -> Either[L, R]:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
-    def right(value: R) -> Either[L, R]:
+    def right(value: R | None = None) -> Either[L, R]:
         raise NotImplementedError  # TODO: translate from Java
 
     @abstractmethod
@@ -35,13 +35,7 @@ class Either(ABC):
     def get_right(self) -> R:
         ...
 
-    def left(self) -> LeftProjection[L, R]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def right(self) -> RightProjection[L, R]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def fold(self, fl: Function[L, T], fr: Function[R, T]) -> T:
+    def fold(self, fl: Callable[L, T], fr: Callable[R, T]) -> T:
         raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)
@@ -86,10 +80,10 @@ class Either(ABC):
         def get(self) -> L:
             raise NotImplementedError  # TODO: translate from Java
 
-        def map(self, fn: Function[Any, Any]) -> Either[LL, R]:
+        def map(self, fn: Callable[Any, Any]) -> Either[LL, R]:
             raise NotImplementedError  # TODO: translate from Java
 
-        def flat_map(self, fn: Function[Any, Either[LL, R]]) -> Either[LL, R]:
+        def flat_map(self, fn: Callable[Any, Either[LL, R]]) -> Either[LL, R]:
             raise NotImplementedError  # TODO: translate from Java
 
         def to_optional(self) -> Optional[L]:
@@ -105,10 +99,10 @@ class Either(ABC):
         def get(self) -> R:
             raise NotImplementedError  # TODO: translate from Java
 
-        def map(self, fn: Function[Any, Any]) -> Either[L, RR]:
+        def map(self, fn: Callable[Any, Any]) -> Either[L, RR]:
             raise NotImplementedError  # TODO: translate from Java
 
-        def flat_map(self, fn: Function[Any, Either[L, RR]]) -> Either[L, RR]:
+        def flat_map(self, fn: Callable[Any, Either[L, RR]]) -> Either[L, RR]:
             raise NotImplementedError  # TODO: translate from Java
 
         def to_optional(self) -> Optional[R]:

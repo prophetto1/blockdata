@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\cli\src\main\java\io\kestra\cli\commands\servers\WorkerCommand.java
-# WARNING: Unresolved types: ApplicationContext, Exception
 
 from dataclasses import dataclass
 from typing import Any

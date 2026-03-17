@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\tests\src\main\java\io\kestra\core\junit\extensions\FlowLoaderExtension.java
-# WARNING: Unresolved types: AfterEachCallback, BeforeEachCallback, Exception, ExtensionContext, URISyntaxException
+# WARNING: Unresolved types: AfterEachCallback, BeforeEachCallback, ExtensionContext, URISyntaxException
 
 from dataclasses import dataclass
 from typing import Any

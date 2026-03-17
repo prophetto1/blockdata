@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\models\triggers\RealtimeTriggerInterface.java
-# WARNING: Unresolved types: Exception, Publisher
+# WARNING: Unresolved types: Publisher
 
 from typing import Any, Protocol
 

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\runners\pebble\functions\YamlFunction.java
-# WARNING: Unresolved types: EvaluationContext, Function, ObjectMapper, PebbleTemplate, TypeReference, YAMLFactory
+# WARNING: Unresolved types: TypeReference, YAMLFactory
 
 from dataclasses import dataclass, field
 from typing import Any, ClassVar

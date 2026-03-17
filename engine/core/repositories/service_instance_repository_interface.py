@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\repositories\ServiceInstanceRepositoryInterface.java
-# WARNING: Unresolved types: Function, Pageable, ServiceState
+# WARNING: Unresolved types: ServiceState
 
 from datetime import datetime
-from typing import Any, Optional, Protocol
+from typing import Any, Callable, Optional, Protocol
 
 from engine.core.repositories.array_list_total import ArrayListTotal
 from engine.core.server.service import Service
@@ -31,4 +31,4 @@ class ServiceInstanceRepositoryInterface(Protocol):
 
     def purge_empty_instances(self, until: datetime) -> int: ...
 
-    def sort_mapping(self) -> Function[str, str]: ...
+    def sort_mapping(self) -> Callable[str, str]: ...

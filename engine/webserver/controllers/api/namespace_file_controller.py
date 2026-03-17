@@ -1,16 +1,15 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\webserver\src\main\java\io\kestra\webserver\controllers\api\NamespaceFileController.java
-# WARNING: Unresolved types: BufferedInputStream, CompletedFileUpload, Exception, IOException, Pair, Pattern, StreamedFile, URISyntaxException
+# WARNING: Unresolved types: BufferedInputStream, Pair, StreamedFile, URISyntaxException
 
 from dataclasses import dataclass, field
-from logging import logging
+from logging import Logger, getLogger
 from typing import Any, ClassVar
 
 from engine.core.storages.file_attributes import FileAttributes
 from engine.core.exceptions.flow_processing_exception import FlowProcessingException
 from engine.core.services.flow_service import FlowService
-from engine.core.http.http_response import HttpResponse
 from engine.core.storages.namespace_factory import NamespaceFactory
 from engine.core.storages.namespace_file import NamespaceFile
 from engine.core.repositories.namespace_file_metadata_repository_interface import NamespaceFileMetadataRepositoryInterface
@@ -21,8 +20,8 @@ from engine.core.tenant.tenant_service import TenantService
 
 @dataclass(slots=True, kw_only=True)
 class NamespaceFileController:
-    forbidden_path_patterns: list[Pattern]
-    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    forbidden_path_patterns: list[re.Pattern]
+    logger: ClassVar[Logger] = getLogger(__name__)
     flows_folder: ClassVar[str] = "_flows"
     storage_interface: StorageInterface | None = None
     tenant_service: TenantService | None = None

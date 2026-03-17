@@ -5,11 +5,9 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, ClassVar
 
-from engine.core.models.conditions.condition import Condition
 from engine.core.models.conditions.condition_context import ConditionContext
 from engine.core.models.executions.execution import Execution
 from engine.core.exceptions.internal_exception import InternalException
-from engine.core.models.property.property import Property
 
 
 @dataclass(slots=True, kw_only=True)

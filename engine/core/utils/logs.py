@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\utils\Logs.java
-# WARNING: Unresolved types: Level, Logger
 
 from dataclasses import dataclass, field
 from typing import Any, ClassVar
@@ -20,37 +19,17 @@ class Logs:
     taskrun_prefix_with_tenant: ClassVar[str] = FLOW_PREFIX_WITH_TENANT + "[task: {}] [execution: {}] [taskrun: {}] "
 
     @staticmethod
-    def log_execution(flow: FlowId, logger: Logger, level: Level, message: str) -> None:
+    def log_execution(flow: FlowId, logger: Any, level: int, message: str | None = None) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
-    def log_execution(execution: Execution, level: Level, message: str) -> None:
+    def log_trigger(trigger_context: TriggerContext, logger: Any, level: int, message: str | None = None) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
-    def log_execution(execution: Execution, logger: Logger, level: Level, message: str) -> None:
+    def log_task_run(task_run: TaskRun, level: int, message: str) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
-    def log_trigger(trigger_context: TriggerContext, level: Level, message: str) -> None:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def log_trigger(trigger_context: TriggerContext, logger: Logger, level: Level, message: str) -> None:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def log_task_run(task_run: TaskRun, level: Level, message: str) -> None:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def logger(task_run: TaskRun) -> Logger:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def logger(trigger_context: TriggerContext) -> Logger:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def logger(execution: Execution) -> Logger:
+    def logger(task_run: TaskRun) -> Any:
         raise NotImplementedError  # TODO: translate from Java

@@ -1,13 +1,12 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\plugin\core\storage\FilterItems.java
-# WARNING: Unresolved types: BufferedReader, Exception, IOException, JsonNode, ObjectMapper, ThrowingFunction, core, io, kestra, models, tasks
+# WARNING: Unresolved types: BufferedReader, ThrowingFunction
 
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, ClassVar
 
-from engine.core.models.property.property import Property
 from engine.core.runners.run_context import RunContext
 from engine.core.models.tasks.runnable_task import RunnableTask
 from engine.core.models.tasks.task import Task

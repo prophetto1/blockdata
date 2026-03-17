@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\utils\Debug.java
-# WARNING: Unresolved types: JavaTimeModule, Logger, ObjectMapper, T
+# WARNING: Unresolved types: JavaTimeModule
 
 from dataclasses import dataclass, field
 from typing import Any, ClassVar
@@ -10,7 +10,7 @@ from typing import Any, ClassVar
 @dataclass(slots=True, kw_only=True)
 class Debug:
     name: ClassVar[str]
-    logger: ClassVar[Logger]
+    logger: ClassVar[Any]
     mapper: ObjectMapper
 
     @staticmethod

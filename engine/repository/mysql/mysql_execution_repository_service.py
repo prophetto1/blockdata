@@ -8,7 +8,6 @@ from dataclasses import dataclass
 from typing import Any
 
 from engine.jdbc.abstract_jdbc_repository import AbstractJdbcRepository
-from engine.core.models.conditions.condition import Condition
 from engine.core.utils.either import Either
 from engine.core.models.executions.execution import Execution
 from engine.core.models.query_filter import QueryFilter

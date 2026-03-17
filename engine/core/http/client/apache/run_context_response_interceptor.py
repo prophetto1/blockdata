@@ -1,13 +1,11 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\http\client\apache\RunContextResponseInterceptor.java
-# WARNING: Unresolved types: ClassicHttpResponse, EntityDetails, HttpContext, HttpException, HttpResponseInterceptor, IOException
+# WARNING: Unresolved types: ClassicHttpResponse, EntityDetails, HttpContext, HttpException, HttpResponseInterceptor
 
 from dataclasses import dataclass
 from typing import Any
 
-from engine.core.http.http_request import HttpRequest
-from engine.core.http.http_response import HttpResponse
 from engine.core.runners.run_context import RunContext
 
 

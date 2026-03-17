@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\validations\validator\FlowValidator.java
-# WARNING: Unresolved types: AnnotationValue, ConstraintValidator, ConstraintValidatorContext, Pattern
 
 from dataclasses import dataclass
 from typing import Any, Optional
@@ -26,7 +25,7 @@ class FlowValidator:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
-    def check_object_fields_with_patterns(object: Any, patterns: list[Pattern]) -> bool:
+    def check_object_fields_with_patterns(object: Any, patterns: list[re.Pattern]) -> bool:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
@@ -41,9 +40,5 @@ class FlowValidator:
     class CycleDependency:
 
         @staticmethod
-        def find_cycle(id: str, graph: dict[str, list[str]]) -> Optional[list[str]]:
-            raise NotImplementedError  # TODO: translate from Java
-
-        @staticmethod
-        def find_cycle(id: str, graph: dict[str, list[str]], visiting: set[str], visited: set[str], path: list[str]) -> Optional[list[str]]:
+        def find_cycle(id: str, graph: dict[str, list[str]], visiting: set[str] | None = None, visited: set[str] | None = None, path: list[str] | None = None) -> Optional[list[str]]:
             raise NotImplementedError  # TODO: translate from Java

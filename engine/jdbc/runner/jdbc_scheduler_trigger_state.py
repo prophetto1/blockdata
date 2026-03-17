@@ -30,22 +30,13 @@ class JdbcSchedulerTriggerState:
     def find_all_for_all_tenants(self) -> list[Trigger]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def save(self, trigger: Trigger, schedule_context_interface: ScheduleContextInterface) -> Trigger:
+    def save(self, trigger: Trigger, schedule_context_interface: ScheduleContextInterface, header_content: str | None = None) -> Trigger:
         raise NotImplementedError  # TODO: translate from Java
 
-    def create(self, trigger: Trigger, header_content: str) -> Trigger:
+    def create(self, trigger: Trigger, header_content: str | None = None) -> Trigger:
         raise NotImplementedError  # TODO: translate from Java
 
-    def save(self, trigger: Trigger, schedule_context_interface: ScheduleContextInterface, header_content: str) -> Trigger:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def create(self, trigger: Trigger) -> Trigger:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def update(self, trigger: Trigger) -> Trigger:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def update(self, flow: FlowWithSource, abstract_trigger: AbstractTrigger, condition_context: ConditionContext) -> Trigger:
+    def update(self, flow: FlowWithSource, abstract_trigger: AbstractTrigger | None = None, condition_context: ConditionContext | None = None) -> Trigger:
         raise NotImplementedError  # TODO: translate from Java
 
     def delete(self, trigger: Trigger) -> None:

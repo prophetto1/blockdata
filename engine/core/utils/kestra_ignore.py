@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\utils\KestraIgnore.java
-# WARNING: Unresolved types: GitIgnore, IOException
+# WARNING: Unresolved types: GitIgnore
 
 from dataclasses import dataclass, field
 from pathlib import Path

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\runners\RunContextSerializer.java
-# WARNING: Unresolved types: IOException, JsonGenerator, SerializerProvider, StdSerializer
+# WARNING: Unresolved types: SerializerProvider, StdSerializer
 
 from dataclasses import dataclass, field
 from typing import Any, ClassVar

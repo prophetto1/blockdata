@@ -1,17 +1,17 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\validations\ServerCommandValidator.java
-# WARNING: Unresolved types: Environment, RuntimeException
+# WARNING: Unresolved types: Environment
 
 from dataclasses import dataclass, field
-from logging import logging
+from logging import Logger, getLogger
 from typing import Any, ClassVar
 
 
 @dataclass(slots=True, kw_only=True)
 class ServerCommandValidator:
     validated_properties: ClassVar[dict[str, str]]
-    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    logger: ClassVar[Logger] = getLogger(__name__)
     environment: Environment | None = None
 
     def validate(self) -> None:

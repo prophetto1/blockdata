@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\webserver\src\main\java\io\kestra\webserver\services\FlowAutoLoaderService.java
-# WARNING: Unresolved types: Pattern
 
 from dataclasses import dataclass, field
-from logging import logging
+from logging import Logger, getLogger
 from typing import Any, ClassVar
 
 from engine.core.repositories.flow_repository_interface import FlowRepositoryInterface
@@ -16,8 +15,8 @@ from engine.core.utils.version_provider import VersionProvider
 
 @dataclass(slots=True, kw_only=True)
 class FlowAutoLoaderService:
-    namespace_from_flow_source_pattern: ClassVar[Pattern]
-    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    namespace_from_flow_source_pattern: ClassVar[re.Pattern]
+    logger: ClassVar[Logger] = getLogger(__name__)
     purge_system_flow_blueprint_id: ClassVar[str] = "234"
     repository: FlowRepositoryInterface | None = None
     http_client: HttpClient | None = None

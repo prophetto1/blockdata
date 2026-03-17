@@ -1,13 +1,11 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\events\CrudEvent.java
-# WARNING: Unresolved types: T
 
 from dataclasses import dataclass
 from typing import Any
 
 from engine.core.events.crud_event_type import CrudEventType
-from engine.core.http.http_request import HttpRequest
 
 
 @dataclass(slots=True, kw_only=True)

@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\models\triggers\Trigger.java
-# WARNING: Unresolved types: B, C, Exception, TriggerContextBuilder
+# WARNING: Unresolved types: TriggerContextBuilder
 
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime
 from typing import Any, Optional
 
@@ -31,66 +31,29 @@ class Trigger(TriggerContext):
     def builder() -> TriggerBuilder[Any, Any]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def uid(self) -> str:
-        raise NotImplementedError  # TODO: translate from Java
-
     @staticmethod
-    def uid(trigger: Trigger) -> str:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def uid(execution: Execution) -> str:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def uid(flow: FlowInterface, abstract_trigger: AbstractTrigger) -> str:
+    def uid(flow: FlowInterface | None = None, abstract_trigger: AbstractTrigger | None = None) -> str:
         raise NotImplementedError  # TODO: translate from Java
 
     def flow_uid(self) -> str:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
-    def of(flow: FlowInterface, abstract_trigger: AbstractTrigger) -> Trigger:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def of(trigger_context: TriggerContext, next_execution_date: datetime) -> Trigger:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def of(trigger_context: TriggerContext, execution: Execution, next_execution_date: datetime) -> Trigger:
+    def of(flow: FlowInterface, abstract_trigger: AbstractTrigger, condition_context: ConditionContext | None = None, last_trigger: Optional[Trigger] | None = None) -> Trigger:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
     def from_evaluate_failed(trigger_context: TriggerContext, next_execution_date: datetime) -> Trigger:
         raise NotImplementedError  # TODO: translate from Java
 
-    @staticmethod
-    def of(execution: Execution, trigger: Trigger) -> Trigger:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def of(trigger: Trigger, evaluate_running_date: datetime) -> Trigger:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def of(flow: FlowInterface, abstract_trigger: AbstractTrigger, condition_context: ConditionContext, last_trigger: Optional[Trigger]) -> Trigger:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def reset_execution(self, flow: Flow, execution: Execution, condition_context: ConditionContext) -> Trigger:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def reset_execution(self, execution_end_state: State.Type) -> Trigger:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def reset_execution(self, execution_end_state: State.Type, next_execution_date: datetime) -> Trigger:
+    def reset_execution(self, flow: Flow, execution: Execution | None = None, condition_context: ConditionContext | None = None) -> Trigger:
         raise NotImplementedError  # TODO: translate from Java
 
     def unlock(self) -> Trigger:
         raise NotImplementedError  # TODO: translate from Java
 
     def with_backfill(self, backfill: Backfill) -> Trigger:
-        raise NotImplementedError  # TODO: translate from Java
+        return replace(self, backfill=backfill)
 
     def check_backfill(self) -> Trigger:
         raise NotImplementedError  # TODO: translate from Java

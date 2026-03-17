@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\cli\src\main\java\io\kestra\cli\App.java
-# WARNING: Unresolved types: ApplicationContext, Callable, Class, CommandLine, Exception, T
+# WARNING: Unresolved types: CommandLine
 
 from dataclasses import dataclass
 from typing import Any
@@ -25,30 +25,22 @@ class App:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
-    def run_cli(args: list[str]) -> int:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def run_cli(cls: Class[Any], args: list[str]) -> int:
+    def run_cli(cls: type[Any], args: list[str] | None = None) -> int:
         raise NotImplementedError  # TODO: translate from Java
 
     def call(self) -> int:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
-    def execute(cls: Class[Any], environments: list[str]) -> int:
+    def execute(cls: type[Any], environments: list[str]) -> int:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
-    def get_command_line(cls: Class[Any], args: list[str]) -> CommandLine:
+    def get_command_line(cls: type[Any], args: list[str]) -> CommandLine:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
-    def application_context(main_class: Class[Any], environments: list[str]) -> ApplicationContext:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def application_context(main_class: Class[Any], command_line: CommandLine, environments: list[str]) -> ApplicationContext:
+    def application_context(main_class: type[Any], command_line: CommandLine, environments: list[str] | None = None) -> ApplicationContext:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
@@ -56,7 +48,7 @@ class App:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
-    def get_properties_from_method(cls: Class[Any], method_name: str, instance: Any) -> T:
+    def get_properties_from_method(cls: type[Any], method_name: str, instance: Any) -> T:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod

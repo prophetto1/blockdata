@@ -1,26 +1,24 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\jdbc\src\main\java\io\kestra\jdbc\AbstractJdbcRepository.java
-# WARNING: Unresolved types: Class, DSLContext, E, Field, Function, InsertOnDuplicateSetMoreStep, ObjectMapper, Pageable, R, Record, RecordMapper, Select, SelectConditionStep, T, Timestamp
+# WARNING: Unresolved types: InsertOnDuplicateSetMoreStep, RecordMapper, Select, Timestamp
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, ClassVar, Optional
+from typing import Any, Callable, ClassVar, Optional
 
 from engine.core.repositories.array_list_total import ArrayListTotal
-from engine.core.models.conditions.condition import Condition
 from engine.jdbc.jdbc_table_config import JdbcTableConfig
 from engine.jdbc.jooq_dsl_context_wrapper import JooqDSLContextWrapper
 from engine.core.models.executions.metrics.metric_aggregation import MetricAggregation
-from engine.plugin.core.dashboard.chart.table import Table
 
 
 @dataclass(slots=True, kw_only=True)
 class AbstractJdbcRepository(ABC):
     mapper: ClassVar[ObjectMapper]
-    cls: Class[T] | None = None
-    deserializer: Function[Record, T] | None = None
+    cls: type[T] | None = None
+    deserializer: Callable[Record, T] | None = None
     dsl_context_wrapper: JooqDSLContextWrapper | None = None
     table: Table[Record] | None = None
 
@@ -37,28 +35,16 @@ class AbstractJdbcRepository(ABC):
     def count(self, condition: Condition) -> int:
         raise NotImplementedError  # TODO: translate from Java
 
-    def persist(self, entity: T) -> None:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def persist(self, entity: T, fields: dict[Field[Any], Any]) -> None:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def persist(self, entity: T, dsl_context: DSLContext, fields: dict[Field[Any], Any]) -> None:
+    def persist(self, entity: T, dsl_context: DSLContext | None = None, fields: dict[Field[Any], Any] | None = None) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
     def persist_batch(self, items: list[T]) -> int:
         raise NotImplementedError  # TODO: translate from Java
 
-    def persist_batch(self, item_with_fields: dict[T, dict[Field[Any], Any]]) -> int:
-        raise NotImplementedError  # TODO: translate from Java
-
     def build_insert_request(self, entity: T, fields: dict[Field[Any], Any], dsl_context: DSLContext) -> InsertOnDuplicateSetMoreStep[Record]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def delete(self, entity: T) -> int:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def delete(self, dsl_context: DSLContext, entity: T) -> int:
+    def delete(self, dsl_context: DSLContext, entity: T | None = None) -> int:
         raise NotImplementedError  # TODO: translate from Java
 
     def map(self, record: R) -> T:
@@ -83,11 +69,8 @@ class AbstractJdbcRepository(ABC):
         raise NotImplementedError  # TODO: translate from Java
 
     @abstractmethod
-    def fetch_page(self, context: DSLContext, select: SelectConditionStep[R], pageable: Pageable, mapper: RecordMapper[R, E]) -> ArrayListTotal[E]:
+    def fetch_page(self, context: DSLContext, select: SelectConditionStep[R], pageable: Pageable, mapper: RecordMapper[R, E] | None = None) -> ArrayListTotal[E]:
         ...
-
-    def fetch_page(self, context: DSLContext, select: SelectConditionStep[R], pageable: Pageable) -> ArrayListTotal[T]:
-        raise NotImplementedError  # TODO: translate from Java
 
     def build_query(self, context: DSLContext, select: SelectConditionStep[R], order_field: str) -> Select[R]:
         raise NotImplementedError  # TODO: translate from Java

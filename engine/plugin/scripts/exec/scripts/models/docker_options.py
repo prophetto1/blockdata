@@ -9,7 +9,6 @@ from engine.plugin.scripts.runner.docker.cpu import Cpu
 from engine.plugin.scripts.runner.docker.credentials import Credentials
 from engine.plugin.scripts.runner.docker.device_request import DeviceRequest
 from engine.plugin.scripts.runner.docker.memory import Memory
-from engine.core.models.property.property import Property
 from engine.plugin.scripts.runner.docker.pull_policy import PullPolicy
 
 

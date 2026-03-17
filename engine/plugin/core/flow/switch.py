@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\plugin\core\flow\Switch.java
-# WARNING: Unresolved types: core, io, kestra, models, tasks
 
 from dataclasses import dataclass
 from typing import Any, Optional
@@ -11,7 +10,6 @@ from engine.core.models.tasks.flowable_task import FlowableTask
 from engine.core.models.hierarchies.graph_cluster import GraphCluster
 from engine.core.exceptions.illegal_variable_evaluation_exception import IllegalVariableEvaluationException
 from engine.core.models.executions.next_task_run import NextTaskRun
-from engine.core.models.property.property import Property
 from engine.core.models.tasks.resolved_task import ResolvedTask
 from engine.core.runners.run_context import RunContext
 from engine.core.models.flows.state import State

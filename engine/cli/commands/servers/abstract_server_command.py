@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\cli\src\main\java\io\kestra\cli\commands\servers\AbstractServerCommand.java
-# WARNING: Unresolved types: Exception
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from logging import logging
+from logging import Logger, getLogger
 from typing import Any, ClassVar
 
 from engine.cli.abstract_command import AbstractCommand
@@ -14,7 +13,7 @@ from engine.cli.commands.servers.server_command_interface import ServerCommandIn
 
 @dataclass(slots=True, kw_only=True)
 class AbstractServerCommand(ABC, AbstractCommand):
-    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    logger: ClassVar[Logger] = getLogger(__name__)
     server_port: int | None = None
 
     def call(self) -> int:

@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\metrics\MetricRegistry.java
-# WARNING: Unresolved types: DistributionSummary, MeterBinder, MeterRegistry, Number, Search, T, Tags
+# WARNING: Unresolved types: DistributionSummary, MeterBinder, MeterRegistry, Search, Tags
 
 from dataclasses import dataclass, field
-from logging import logging
+from logging import Logger, getLogger
 from typing import Any, ClassVar
 
 from engine.core.models.triggers.abstract_trigger import AbstractTrigger
@@ -25,7 +25,7 @@ from engine.core.runners.worker_trigger import WorkerTrigger
 
 @dataclass(slots=True, kw_only=True)
 class MetricRegistry:
-    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    logger: ClassVar[Logger] = getLogger(__name__)
     metric_worker_job_pending_count: ClassVar[str] = "worker.job.pending"
     metric_worker_job_pending_count_description: ClassVar[str] = "The number of jobs (tasks or triggers) pending to be run by the Worker"
     metric_worker_job_running_count: ClassVar[str] = "worker.job.running"
@@ -182,34 +182,7 @@ class MetricRegistry:
     def metric_name(self, name: str) -> str:
         raise NotImplementedError  # TODO: translate from Java
 
-    def tags(self, worker_task: WorkerTask, worker_group: str) -> list[str]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def tags(self, worker_trigger: WorkerTrigger, worker_group: str) -> list[str]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def tags(self, worker_task_result: WorkerTaskResult) -> list[str]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def tags(self, subflow_execution_result: SubflowExecutionResult) -> list[str]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def tags(self, task: Task) -> list[str]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def tags(self, trigger: AbstractTrigger) -> list[str]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def tags(self, execution: Execution) -> list[str]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def tags(self, trigger_context: TriggerContext) -> list[str]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def tags(self, execution_killed: ExecutionKilled) -> list[str]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def tags(self) -> Tags:
+    def tags(self, worker_task: WorkerTask | None = None, worker_group: str | None = None) -> list[str]:
         raise NotImplementedError  # TODO: translate from Java
 
     def bind(self, meter_binder: MeterBinder) -> None:

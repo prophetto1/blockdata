@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\utils\Enums.java
-# WARNING: Unresolved types: Class, Enum, T
 
 from dataclasses import dataclass
 from typing import Any
@@ -11,19 +10,11 @@ from typing import Any
 class Enums:
 
     @staticmethod
-    def get_for_name_ignore_case(value: str, enum_type: Class[T], default_value: T) -> T:
+    def get_for_name_ignore_case(value: str, enum_type: type[T], default_value: T | None = None) -> T:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
-    def get_for_name_ignore_case(value: str, enum_type: Class[T]) -> T:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def get_for_name_ignore_case(value: str, enum_type: Class[T], fallback: dict[str, T]) -> T:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def all_except(enum_type: Class[T], to_exclude: set[T]) -> set[T]:
+    def all_except(enum_type: type[T], to_exclude: set[T]) -> set[T]:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
@@ -31,5 +22,5 @@ class Enums:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
-    def from_list(value: Any, enum_class: Class[T]) -> list[T]:
+    def from_list(value: Any, enum_class: type[T]) -> list[T]:
         raise NotImplementedError  # TODO: translate from Java

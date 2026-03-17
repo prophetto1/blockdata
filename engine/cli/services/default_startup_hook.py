@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\cli\src\main\java\io\kestra\cli\services\DefaultStartupHook.java
-# WARNING: Unresolved types: ApplicationContext
 
 from dataclasses import dataclass
 from typing import Any

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\processor\src\main\java\io\kestra\core\plugins\processor\PluginProcessor.java
-# WARNING: Unresolved types: AbstractProcessor, Annotation, AnnotationMirror, Class, Element, Elements, ProcessingEnvironment, RoundEnvironment, SourceVersion, TypeElement, core, io, javax, kestra, lang, model, models, util
+# WARNING: Unresolved types: AbstractProcessor, Annotation, AnnotationMirror, Element, Elements, ProcessingEnvironment, RoundEnvironment, SourceVersion, TypeElement, javax, lang, model, util
 
 from dataclasses import dataclass, field
 from typing import Any, ClassVar
@@ -50,7 +50,7 @@ class PluginProcessor(AbstractProcessor):
     def has_no_arg_constructor(self, type_element: TypeElement) -> bool:
         raise NotImplementedError  # TODO: translate from Java
 
-    def has_annotation(self, type_element: TypeElement, annotation_class: Class[Any]) -> bool:
+    def has_annotation(self, type_element: TypeElement, annotation_class: type[Any]) -> bool:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod

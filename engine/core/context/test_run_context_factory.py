@@ -12,20 +12,5 @@ from engine.core.runners.run_context_factory import RunContextFactory
 @dataclass(slots=True, kw_only=True)
 class TestRunContextFactory(RunContextFactory):
 
-    def of(self) -> RunContext:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def of(self, namespace: str) -> RunContext:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def of(self, id: str, namespace: str) -> RunContext:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def of(self, id: str, namespace: str, tenant_id: str) -> RunContext:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def of(self, namespace: str, inputs: dict[str, Any]) -> RunContext:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def of(self, namespace: str, tenant_id: str, inputs: dict[str, Any]) -> RunContext:
+    def of(self, id: str | None = None, namespace: str | None = None, tenant_id: str | None = None) -> RunContext:
         raise NotImplementedError  # TODO: translate from Java

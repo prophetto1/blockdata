@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\webserver\src\main\java\io\kestra\webserver\controllers\api\ExecutionController.java
-# WARNING: Unresolved types: ApiCheckFailure, ApiInputAndValue, ApiInputError, ApplicationEventPublisher, Behavior, ChildFilter, Exception, FlowFilter, Flux, IOException, Mono, MultipartBody, MutableHttpResponse, ObjectMapper, OpenTelemetry, Publisher, Resumed, StreamedFile, Style, T, TimeoutException, URISyntaxException, Void
+# WARNING: Unresolved types: ApiCheckFailure, ApiInputAndValue, ApiInputError, Behavior, ChildFilter, FlowFilter, MultipartBody, MutableHttpResponse, OpenTelemetry, Publisher, Resumed, StreamedFile, Style, URISyntaxException, Void
 
 from dataclasses import dataclass, field
-from logging import logging
+from logging import Logger, getLogger
 from datetime import datetime
 from datetime import timedelta
 from typing import Any, ClassVar, Optional
@@ -37,8 +37,6 @@ from engine.core.models.flows.flow_scope import FlowScope
 from engine.core.services.flow_service import FlowService
 from engine.core.topologies.flow_topology_service import FlowTopologyService
 from engine.core.services.graph_service import GraphService
-from engine.core.http.http_request import HttpRequest
-from engine.core.http.http_response import HttpResponse
 from engine.core.exceptions.illegal_variable_evaluation_exception import IllegalVariableEvaluationException
 from engine.core.models.flows.input import Input
 from engine.core.models.flows.input.input_and_value import InputAndValue
@@ -67,7 +65,7 @@ from engine.core.services.webhook_service import WebhookService
 
 @dataclass(slots=True, kw_only=True)
 class ExecutionController:
-    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    logger: ClassVar[Logger] = getLogger(__name__)
     base_path: str | None = None
     flow_repository: FlowRepositoryInterface | None = None
     flow_service: FlowService | None = None
@@ -137,10 +135,7 @@ class ExecutionController:
     def trigger_execution_by_put_webhook(self, namespace: str, id: str, key: str, path: str, request: HttpRequest[str]) -> Mono[HttpResponse[Any]]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def webhook(self, namespace: str, id: str, key: str, path: str, request: HttpRequest[str]) -> Mono[HttpResponse[Any]]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def webhook(self, maybe_flow: Optional[Flow], key: str, path: str, request: HttpRequest[str]) -> Mono[HttpResponse[Any]]:
+    def webhook(self, namespace: str, id: str, key: str, path: str, request: HttpRequest[str] | None = None) -> Mono[HttpResponse[Any]]:
         raise NotImplementedError  # TODO: translate from Java
 
     def trigger_execution(self, namespace: str, id: str, inputs: MultipartBody, labels: list[str], wait: bool, revision: Optional[int]) -> Publisher[ExecutionResponse]:
@@ -204,9 +199,6 @@ class ExecutionController:
         raise NotImplementedError  # TODO: translate from Java
 
     def kill_execution(self, execution_id: str, is_on_kill_cascade: bool) -> HttpResponse[Any]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def kill_execution(self, execution: Execution, is_on_kill_cascade: bool) -> MutableHttpResponse[Any]:
         raise NotImplementedError  # TODO: translate from Java
 
     def kill_executions_by_ids(self, executions_id: list[str]) -> MutableHttpResponse[Any]:

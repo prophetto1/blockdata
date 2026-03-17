@@ -1,12 +1,10 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\http\HttpResponse.java
-# WARNING: Unresolved types: ClassicHttpResponse, EndpointDetails, HttpContext, HttpHeaders, IOException, SocketAddress, T, apache, core5, hc, http, org
+# WARNING: Unresolved types: ClassicHttpResponse, EndpointDetails, HttpContext, HttpHeaders, SocketAddress, apache, core5, hc, org
 
 from dataclasses import dataclass
 from typing import Any
-
-from engine.core.http.http_request import HttpRequest
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -18,27 +16,11 @@ class HttpResponse:
     request: HttpRequest | None = None
 
     @staticmethod
-    def from(response: org.apache.hc.core5.http.HttpResponse, context: HttpContext) -> HttpResponse[list[int]]:
+    def from(http_response: ClassicHttpResponse, body: T, request: HttpRequest | None = None, context: HttpContext | None = None) -> HttpResponse[T]:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
-    def from(http_response: ClassicHttpResponse, body: T, request: HttpRequest, context: HttpContext) -> HttpResponse[T]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def of(status: Status) -> HttpResponse[Any]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def of(body: T) -> HttpResponse[T]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def of(status: Status, body: T) -> HttpResponse[T]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def of(status: Status, body: T, content_type: str) -> HttpResponse[T]:
+    def of(status: Status, body: T | None = None, content_type: str | None = None) -> HttpResponse[T]:
         raise NotImplementedError  # TODO: translate from Java
 
     def content_type(self) -> str:

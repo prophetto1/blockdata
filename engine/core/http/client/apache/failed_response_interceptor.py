@@ -1,13 +1,12 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\http\client\apache\FailedResponseInterceptor.java
-# WARNING: Unresolved types: EntityDetails, HttpContext, HttpException, HttpResponseInterceptor, IOException, apache, core5, hc, http, org
+# WARNING: Unresolved types: EntityDetails, HttpContext, HttpException, HttpResponseInterceptor, apache, core5, hc, org
 
 from dataclasses import dataclass
 from typing import Any
 
 from engine.core.http.client.http_client_response_exception import HttpClientResponseException
-from engine.core.http.http_response import HttpResponse
 
 
 @dataclass(slots=True, kw_only=True)

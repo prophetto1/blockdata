@@ -24,10 +24,7 @@ class FeatureUsageReport(AbstractReportable):
     dashboard_repository: DashboardRepositoryInterface | None = None
     enabled: bool | None = None
 
-    def report(self, now: datetime, interval: TimeInterval) -> UsageEvent:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def report(self, now: datetime, interval: TimeInterval, tenant: str) -> UsageEvent:
+    def report(self, now: datetime, interval: TimeInterval, tenant: str | None = None) -> UsageEvent:
         raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)

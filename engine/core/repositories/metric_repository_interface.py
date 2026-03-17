@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\repositories\MetricRepositoryInterface.java
-# WARNING: Unresolved types: Fields, Flux, Function, IllegalArgumentException, Pageable
 
 from datetime import datetime
-from typing import Any, Protocol
+from typing import Any, Callable, Protocol
 
 from engine.core.repositories.array_list_total import ArrayListTotal
 from engine.core.models.executions.execution import Execution
@@ -32,8 +31,6 @@ class MetricRepositoryInterface(SaveRepositoryInterface, QueryBuilderInterface, 
 
     def purge(self, execution: Execution) -> int: ...
 
-    def purge(self, executions: list[Execution]) -> int: ...
-
     def find_all_async(self, tenant_id: str) -> Flux[MetricEntry]: ...
 
-    def sort_mapping(self) -> Function[str, str]: ...
+    def sort_mapping(self) -> Callable[str, str]: ...

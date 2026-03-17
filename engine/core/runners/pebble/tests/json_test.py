@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\runners\pebble\tests\JsonTest.java
-# WARNING: Unresolved types: EvaluationContext, PebbleException, PebbleTemplate, Test
+# WARNING: Unresolved types: Test
 
 from dataclasses import dataclass
 from typing import Any

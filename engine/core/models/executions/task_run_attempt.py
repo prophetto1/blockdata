@@ -2,7 +2,7 @@ from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\models\executions\TaskRunAttempt.java
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Any
 
 from engine.core.models.executions.abstract_metric_entry import AbstractMetricEntry
@@ -17,4 +17,4 @@ class TaskRunAttempt:
     log_file: str | None = None
 
     def with_state(self, state: State.Type) -> TaskRunAttempt:
-        raise NotImplementedError  # TODO: translate from Java
+        return replace(self, state=state)

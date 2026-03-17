@@ -8,7 +8,6 @@ from typing import Any
 
 from engine.core.http.client.configurations.abstract_auth_configuration import AbstractAuthConfiguration
 from engine.core.exceptions.illegal_variable_evaluation_exception import IllegalVariableEvaluationException
-from engine.core.models.property.property import Property
 from engine.core.runners.run_context import RunContext
 
 

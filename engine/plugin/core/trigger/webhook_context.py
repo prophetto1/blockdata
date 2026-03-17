@@ -7,7 +7,6 @@ from typing import Any
 
 from engine.plugin.core.trigger.abstract_webhook_trigger import AbstractWebhookTrigger
 from engine.core.models.flows.flow import Flow
-from engine.core.http.http_request import HttpRequest
 from engine.core.services.webhook_service import WebhookService
 
 

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\models\property\URIFetcher.java
-# WARNING: Unresolved types: IOException, InputStream
 
 from dataclasses import dataclass, field
 from typing import Any, ClassVar
@@ -19,16 +18,8 @@ class URIFetcher:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
-    def of(uri: str) -> URIFetcher:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
     def supports(uri: str) -> bool:
         raise NotImplementedError  # TODO: translate from Java
 
-    @staticmethod
-    def supports(uri: str) -> bool:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def fetch(self, run_context: RunContext) -> InputStream:
+    def fetch(self, run_context: RunContext) -> Any:
         raise NotImplementedError  # TODO: translate from Java

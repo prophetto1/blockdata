@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\models\hierarchies\Graph.java
-# WARNING: Unresolved types: MutableValueGraph, T, V
+# WARNING: Unresolved types: MutableValueGraph
 
 from dataclasses import dataclass
 from typing import Any

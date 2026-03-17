@@ -1,15 +1,14 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\jdbc\src\main\java\io\kestra\jdbc\runner\JdbcQueue.java
-# WARNING: Unresolved types: ApplicationContext, AtomicBoolean, BiConsumer, Class, Comparable, Consumer, DSLContext, Field, IOException, ObjectMapper, Record, Runnable, Step, Supplier, T
+# WARNING: Unresolved types: Step
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from logging import logging
+from logging import Logger, getLogger
 from datetime import timedelta
-from typing import Any, ClassVar
+from typing import Any, Callable, ClassVar
 
-from engine.core.models.conditions.condition import Condition
 from engine.core.models.executions.metrics.counter import Counter
 from engine.core.exceptions.deserialization_exception import DeserializationException
 from engine.core.utils.either import Either
@@ -21,8 +20,6 @@ from engine.core.metrics.metric_registry import MetricRegistry
 from engine.core.queues.queue_exception import QueueException
 from engine.core.queues.queue_interface import QueueInterface
 from engine.core.queues.queue_service import QueueService
-from engine.core.models.collectors.result import Result
-from engine.plugin.core.dashboard.chart.table import Table
 
 
 @dataclass(slots=True, kw_only=True)
@@ -33,13 +30,13 @@ class JdbcQueue(ABC):
     offset_field: ClassVar[Field[Any]]
     consumer_group_field: ClassVar[Field[Any]]
     type_field: ClassVar[Field[Any]]
-    is_closed: AtomicBoolean
-    is_paused: AtomicBoolean
-    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    is_closed: bool
+    is_paused: bool
+    logger: ClassVar[Logger] = getLogger(__name__)
     pool_executor: ExecutorService | None = None
     async_pool_executor: ExecutorService | None = None
     queue_service: QueueService | None = None
-    cls: Class[T] | None = None
+    cls: type[T] | None = None
     dsl_context_wrapper: JooqDSLContextWrapper | None = None
     configuration: Configuration | None = None
     message_protection_configuration: MessageProtectionConfiguration | None = None
@@ -76,21 +73,11 @@ class JdbcQueue(ABC):
     def delete_by_keys(self, keys: list[str]) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
-    def receive_fetch(self, ctx: DSLContext, consumer_group: str, offset: int) -> Result[Record]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def receive_fetch(self, ctx: DSLContext, consumer_group: str, offset: int, for_update: bool) -> Result[Record]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def receive_fetch(self, ctx: DSLContext, consumer_group: str, queue_type: str) -> Result[Record]:
+    def receive_fetch(self, ctx: DSLContext, consumer_group: str, offset: int, for_update: bool | None = None) -> Result[Record]:
         raise NotImplementedError  # TODO: translate from Java
 
     def update_group_offsets(self, ctx: DSLContext, consumer_group: str, queue_type: str, offsets: list[int]) -> None:
         raise NotImplementedError  # TODO: translate from Java
-
-    @abstractmethod
-    def receive_fetch(self, ctx: DSLContext, consumer_group: str, queue_type: str, for_update: bool) -> Result[Record]:
-        ...
 
     @abstractmethod
     def do_update_group_offsets(self, ctx: DSLContext, consumer_group: str, queue_type: str, offsets: list[int]) -> None:
@@ -100,37 +87,28 @@ class JdbcQueue(ABC):
     def build_type_condition(self, type: str) -> Condition:
         ...
 
-    def receive(self, consumer_group: str, consumer: Consumer[Either[T, DeserializationException]], for_update: bool) -> Runnable:
+    def receive(self, consumer_group: str, queue_type: type[Any], consumer: Callable[Either[T, DeserializationException]], for_update: bool | None = None) -> Callable:
         raise NotImplementedError  # TODO: translate from Java
 
-    def receive(self, consumer_group: str, queue_type: Class[Any], consumer: Consumer[Either[T, DeserializationException]], for_update: bool) -> Runnable:
+    def receive_batch(self, consumer_group: str, queue_type: type[Any], consumer: Callable[list[Either[T, DeserializationException]]] | None = None, for_update: bool | None = None) -> Callable:
         raise NotImplementedError  # TODO: translate from Java
 
-    def receive_batch(self, queue_type: Class[Any], consumer: Consumer[list[Either[T, DeserializationException]]]) -> Runnable:
+    def receive_transaction(self, consumer_group: str, queue_type: type[Any], consumer: Callable[DSLContext, list[Either[T, DeserializationException]]]) -> Callable:
         raise NotImplementedError  # TODO: translate from Java
 
-    def receive_batch(self, consumer_group: str, queue_type: Class[Any], consumer: Consumer[list[Either[T, DeserializationException]]]) -> Runnable:
+    def receive_impl(self, consumer_group: str, queue_type: type[Any], consumer: Callable[DSLContext, list[Either[T, DeserializationException]]], in_transaction: bool, for_update: bool) -> Callable:
         raise NotImplementedError  # TODO: translate from Java
 
-    def receive_batch(self, consumer_group: str, queue_type: Class[Any], consumer: Consumer[list[Either[T, DeserializationException]]], for_update: bool) -> Runnable:
+    def queue_name(self, queue_type: type[Any]) -> str:
         raise NotImplementedError  # TODO: translate from Java
 
-    def receive_transaction(self, consumer_group: str, queue_type: Class[Any], consumer: BiConsumer[DSLContext, list[Either[T, DeserializationException]]]) -> Runnable:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def receive_impl(self, consumer_group: str, queue_type: Class[Any], consumer: BiConsumer[DSLContext, list[Either[T, DeserializationException]]], in_transaction: bool, for_update: bool) -> Runnable:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def queue_name(self, queue_type: Class[Any]) -> str:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def poll(self, runnable: Supplier[int]) -> Runnable:
+    def poll(self, runnable: Callable[int]) -> Callable:
         raise NotImplementedError  # TODO: translate from Java
 
     def map(self, fetch: Result[Record]) -> list[Either[T, DeserializationException]]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def send(self, fetch: Result[Record], consumer: Consumer[Either[T, DeserializationException]]) -> None:
+    def send(self, fetch: Result[Record], consumer: Callable[Either[T, DeserializationException]]) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
     def pause(self) -> None:

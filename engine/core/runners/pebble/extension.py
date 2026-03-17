@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\runners\pebble\Extension.java
-# WARNING: Unresolved types: AbstractExtension, BinaryOperator, Filter, Function, NodeVisitorFactory, Test, TokenParser, UnaryOperator
+# WARNING: Unresolved types: AbstractExtension, NodeVisitorFactory, Test, TokenParser
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Callable
 
 from engine.core.runners.pebble.functions.error_logs_function import ErrorLogsFunction
 from engine.core.runners.pebble.functions.file_exists_function import FileExistsFunction
@@ -36,10 +36,10 @@ class Extension(AbstractExtension):
     def get_token_parsers(self) -> list[TokenParser]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def get_unary_operators(self) -> list[UnaryOperator]:
+    def get_unary_operators(self) -> list[Callable]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def get_binary_operators(self) -> list[BinaryOperator]:
+    def get_binary_operators(self) -> list[Callable]:
         raise NotImplementedError  # TODO: translate from Java
 
     def get_filters(self) -> dict[str, Filter]:
@@ -48,7 +48,7 @@ class Extension(AbstractExtension):
     def get_tests(self) -> dict[str, Test]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def get_functions(self) -> dict[str, Function]:
+    def get_functions(self) -> dict[str, Callable]:
         raise NotImplementedError  # TODO: translate from Java
 
     def get_global_variables(self) -> dict[str, Any]:

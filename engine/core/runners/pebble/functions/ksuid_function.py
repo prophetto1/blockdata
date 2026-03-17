@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\runners\pebble\functions\KSUIDFunction.java
-# WARNING: Unresolved types: EvaluationContext, Function, KsuidGenerator, PebbleTemplate, SecureRandom
+# WARNING: Unresolved types: KsuidGenerator, SecureRandom
 
 from dataclasses import dataclass, field
 from typing import Any, ClassVar

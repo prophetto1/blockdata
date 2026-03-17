@@ -3,7 +3,7 @@ from __future__ import annotations
 # Source: E:\KESTRA\worker\src\main\java\io\kestra\worker\WorkerSecurityService.java
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Callable
 
 from engine.worker.abstract_worker_callable import AbstractWorkerCallable
 from engine.core.models.flows.state import State

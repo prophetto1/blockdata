@@ -3,7 +3,7 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\models\namespaces\files\NamespaceFileMetadata.java
 
 from dataclasses import dataclass, field
-from logging import logging
+from logging import Logger, getLogger
 from datetime import datetime
 from typing import Any, ClassVar
 
@@ -21,7 +21,7 @@ class NamespaceFileMetadata:
     version: int
     size: int
     created: datetime
-    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    logger: ClassVar[Logger] = getLogger(__name__)
     last: bool = True
     tenant_id: str | None = None
     parent_path: str | None = None
@@ -29,10 +29,7 @@ class NamespaceFileMetadata:
     deleted: bool | None = None
 
     @staticmethod
-    def path(path: str, trailing_slash: bool) -> str:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def path(self, trailing_slash: bool) -> str:
+    def path(path: str, trailing_slash: bool | None = None) -> str:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
@@ -40,11 +37,7 @@ class NamespaceFileMetadata:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
-    def of(tenant_id: str, namespace_file: NamespaceFile) -> NamespaceFileMetadata:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def of(tenant_id: str, namespace: str, path: str, file_attributes: FileAttributes) -> NamespaceFileMetadata:
+    def of(tenant_id: str, namespace: str, path: str | None = None, file_attributes: FileAttributes | None = None) -> NamespaceFileMetadata:
         raise NotImplementedError  # TODO: translate from Java
 
     def as_last(self) -> NamespaceFileMetadata:

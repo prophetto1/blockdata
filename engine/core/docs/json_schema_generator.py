@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\docs\JsonSchemaGenerator.java
-# WARNING: Unresolved types: Class, FieldScope, JsonNode, ObjectMapper, ObjectNode, ResolvedType, SchemaGeneratorConfigBuilder, T, TypeContext
+# WARNING: Unresolved types: FieldScope, ResolvedType, SchemaGeneratorConfigBuilder, TypeContext
 
 from dataclasses import dataclass, field
-from logging import logging
+from logging import Logger, getLogger
 from typing import Any, ClassVar, Optional
 
 from engine.core.models.triggers.abstract_trigger import AbstractTrigger
@@ -15,26 +15,17 @@ from engine.core.models.tasks.task import Task
 
 @dataclass(slots=True, kw_only=True)
 class JsonSchemaGenerator:
-    subtype_resolution_exclusion_for_plugin_schema: ClassVar[list[Class[Any]]]
+    subtype_resolution_exclusion_for_plugin_schema: ClassVar[list[type[Any]]]
     mapper: ClassVar[ObjectMapper]
     yaml_mapper: ClassVar[ObjectMapper]
-    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
-    default_instances: dict[Class[Any], Any] = field(default_factory=dict)
+    logger: ClassVar[Logger] = getLogger(__name__)
+    default_instances: dict[type[Any], Any] = field(default_factory=dict)
     plugin_registry: PluginRegistry | None = None
 
-    def schemas(self, cls: Class[Any]) -> dict[str, Any]:
+    def schemas(self, cls: type[Any], array_of: bool | None = None, allowed_plugin_types: list[str] | None = None, with_outputs: bool | None = None) -> dict[str, Any]:
         raise NotImplementedError  # TODO: translate from Java
 
     def replace_one_of_with_any_of(self, object_node: ObjectNode) -> None:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def schemas(self, cls: Class[Any], array_of: bool) -> dict[str, Any]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def schemas(self, cls: Class[Any], array_of: bool, allowed_plugin_types: list[str]) -> dict[str, Any]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def schemas(self, cls: Class[Any], array_of: bool, allowed_plugin_types: list[str], with_outputs: bool) -> dict[str, Any]:
         raise NotImplementedError  # TODO: translate from Java
 
     def remove_required_on_props_with_defaults(self, object_node: ObjectNode) -> None:
@@ -46,19 +37,13 @@ class JsonSchemaGenerator:
     def mutate_description(self, collected_type_attributes: ObjectNode) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
-    def properties(self, base: Class[T], cls: Class[Any]) -> dict[str, Any]:
+    def properties(self, base: type[T], cls: type[Any]) -> dict[str, Any]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def outputs(self, base: Class[T], cls: Class[Any]) -> dict[str, Any]:
+    def outputs(self, base: type[T], cls: type[Any]) -> dict[str, Any]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def build(self, builder: SchemaGeneratorConfigBuilder, draft7: bool) -> None:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def build(self, builder: SchemaGeneratorConfigBuilder, draft7: bool, allowed_plugin_types: list[str]) -> None:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def build(self, builder: SchemaGeneratorConfigBuilder, draft7: bool, allowed_plugin_types: list[str], with_outputs: bool) -> None:
+    def build(self, builder: SchemaGeneratorConfigBuilder, draft7: bool, allowed_plugin_types: list[str] | None = None, with_outputs: bool | None = None) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
     def type_defining_properties_to_const(self, builder: SchemaGeneratorConfigBuilder) -> None:
@@ -68,7 +53,7 @@ class JsonSchemaGenerator:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
-    def safely_resolve_subtype(declared_type: ResolvedType, clz: Class[Any], type_context: TypeContext) -> Optional[ResolvedType]:
+    def safely_resolve_subtype(declared_type: ResolvedType, clz: type[Any], type_context: TypeContext) -> Optional[ResolvedType]:
         raise NotImplementedError  # TODO: translate from Java
 
     def get_registered_plugins(self) -> list[RegisteredPlugin]:
@@ -77,10 +62,7 @@ class JsonSchemaGenerator:
     def default_in_all_of(self, property: JsonNode) -> bool:
         raise NotImplementedError  # TODO: translate from Java
 
-    def generate(self, cls: Class[Any], base: Class[T]) -> dict[str, Any]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def generate(self, cls: Class[Any], base: Class[T], allowed_plugin_types: list[str]) -> dict[str, Any]:
+    def generate(self, cls: type[Any], base: type[T], allowed_plugin_types: list[str] | None = None) -> dict[str, Any]:
         raise NotImplementedError  # TODO: translate from Java
 
     def defaults(self, target: FieldScope) -> Any:
@@ -92,8 +74,8 @@ class JsonSchemaGenerator:
     def add_main_ref_properties(self, main_class_def: JsonNode, object_node: ObjectNode) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
-    def build_default_instance(self, cls: Class[Any]) -> Any:
+    def build_default_instance(self, cls: type[Any]) -> Any:
         raise NotImplementedError  # TODO: translate from Java
 
-    def default_value(self, instance: Any, cls: Class[Any], field_name: str) -> Any:
+    def default_value(self, instance: Any, cls: type[Any], field_name: str) -> Any:
         raise NotImplementedError  # TODO: translate from Java

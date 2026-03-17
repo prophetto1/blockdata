@@ -4,7 +4,7 @@ from __future__ import annotations
 # WARNING: Unresolved types: ConcurrentHashMap
 
 from dataclasses import dataclass, field
-from logging import logging
+from logging import Logger, getLogger
 from typing import Any, ClassVar
 
 from engine.core.reporter.reportable import Reportable
@@ -14,7 +14,7 @@ from engine.core.models.flows.type import Type
 @dataclass(slots=True, kw_only=True)
 class ReportableRegistry:
     reportables: dict[Type, Reportable[Any]]
-    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    logger: ClassVar[Logger] = getLogger(__name__)
 
     def register(self, reportable: Reportable[Any]) -> None:
         raise NotImplementedError  # TODO: translate from Java

@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\worker\src\main\java\io\kestra\worker\DefaultWorker.java
-# WARNING: Unresolved types: ApplicationEventPublisher, AtomicBoolean, AtomicInteger, AtomicReference, ConcurrentHashMap, ObjectMapper, Runnable, ServiceState, Throwable, core, flows, io, kestra, models
+# WARNING: Unresolved types: AtomicReference, ConcurrentHashMap, ServiceState
 
 from dataclasses import dataclass, field
-from logging import logging
+from logging import Logger, getLogger
 from datetime import timedelta
-from typing import Any, ClassVar, Optional
+from typing import Any, Callable, ClassVar, Optional
 
 from engine.worker.abstract_worker_callable import AbstractWorkerCallable
 from engine.core.exceptions.deserialization_exception import DeserializationException
@@ -51,18 +51,18 @@ from engine.core.runners.worker_trigger_result import WorkerTriggerResult
 class DefaultWorker:
     mapper: ClassVar[ObjectMapper]
     killed_execution: set[str]
-    metric_running_count: dict[int, AtomicInteger]
-    evaluate_trigger_running_count: dict[str, AtomicInteger]
-    skip_graceful_termination: AtomicBoolean
-    shutdown: AtomicBoolean
-    init: AtomicBoolean
+    metric_running_count: dict[int, int]
+    evaluate_trigger_running_count: dict[str, int]
+    skip_graceful_termination: bool
+    shutdown: bool
+    init: bool
     state: AtomicReference[ServiceState]
-    pending_job_count: AtomicInteger
-    running_job_count: AtomicInteger
-    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    pending_job_count: int
+    running_job_count: int
+    logger: ClassVar[Logger] = getLogger(__name__)
     service_props_worker_group: ClassVar[str] = "worker.group"
     worker_callable_references: list[AbstractWorkerCallable] = field(default_factory=list)
-    receive_cancellations: list[Runnable] = field(default_factory=list)
+    receive_cancellations: list[Callable] = field(default_factory=list)
     worker_job_queue: WorkerJobQueueInterface | None = None
     worker_task_result_queue: QueueInterface[WorkerTaskResult] | None = None
     worker_trigger_result_queue: QueueInterface[WorkerTriggerResult] | None = None
@@ -92,7 +92,7 @@ class DefaultWorker:
     def get_metrics(self) -> set[Metric]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def run(self) -> None:
+    def run(self, worker_task: WorkerTask | None = None, clean_up: bool | None = None) -> WorkerTaskResult:
         raise NotImplementedError  # TODO: translate from Java
 
     def enter_maintenance(self) -> None:
@@ -110,16 +110,13 @@ class DefaultWorker:
     def publish_trigger_execution(self, worker_trigger: WorkerTrigger, evaluate: Optional[Execution]) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
-    def handle_trigger_error(self, worker_trigger: WorkerTrigger, e: Throwable) -> None:
+    def handle_trigger_error(self, worker_trigger: WorkerTrigger, e: BaseException) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
-    def handle_realtime_trigger_error(self, worker_trigger: WorkerTrigger, e: Throwable) -> None:
+    def handle_realtime_trigger_error(self, worker_trigger: WorkerTrigger, e: BaseException) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
     def handle_trigger(self, worker_trigger: WorkerTrigger) -> None:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def run(self, worker_task: WorkerTask, clean_up: bool) -> WorkerTaskResult:
         raise NotImplementedError  # TODO: translate from Java
 
     def hash_task(self, run_context: RunContext, task: Task) -> Optional[str]:
@@ -131,7 +128,7 @@ class DefaultWorker:
     def log_terminated(self, worker_task: WorkerTask) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
-    def log_error(self, worker_trigger: WorkerTrigger, e: Throwable) -> None:
+    def log_error(self, worker_trigger: WorkerTrigger, e: BaseException) -> None:
         raise NotImplementedError  # TODO: translate from Java
 
     def run_attempt(self, run_context: RunContext, worker_task: WorkerTask) -> WorkerTask:

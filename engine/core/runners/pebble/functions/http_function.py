@@ -1,12 +1,10 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\runners\pebble\functions\HttpFunction.java
-# WARNING: Unresolved types: ApplicationContext, DefaultMessageBodyHandlerRegistry, EvaluationContext, Function, MessageBodyWriter, PebbleTemplate, RequestBody, T
+# WARNING: Unresolved types: DefaultMessageBodyHandlerRegistry, MessageBodyWriter, RequestBody
 
 from dataclasses import dataclass, field
 from typing import Any, ClassVar
-
-from engine.core.http.http_request import HttpRequest
 
 
 @dataclass(slots=True, kw_only=True)

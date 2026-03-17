@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\runners\pebble\functions\KvFunction.java
-# WARNING: Unresolved types: EvaluationContext, Function, IOException, PebbleTemplate
 
 from dataclasses import dataclass, field
-from logging import logging
+from logging import Logger, getLogger
 from typing import Any, ClassVar, Optional
 
 from engine.core.services.kv_store_service import KVStoreService
@@ -14,7 +13,7 @@ from engine.core.exceptions.resource_expired_exception import ResourceExpiredExc
 
 @dataclass(slots=True, kw_only=True)
 class KvFunction:
-    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    logger: ClassVar[Logger] = getLogger(__name__)
     key_args: ClassVar[str] = "key"
     error_on_missing_arg: ClassVar[str] = "errorOnMissing"
     namespace_arg: ClassVar[str] = "namespace"

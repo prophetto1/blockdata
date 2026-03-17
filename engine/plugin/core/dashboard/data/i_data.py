@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\plugin\core\dashboard\data\IData.java
-# WARNING: Unresolved types: Enum, F
 
 from datetime import datetime
 from typing import Any, Protocol

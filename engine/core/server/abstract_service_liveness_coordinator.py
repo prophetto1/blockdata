@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\server\AbstractServiceLivenessCoordinator.java
-# WARNING: Unresolved types: Exception, ServiceState
+# WARNING: Unresolved types: ServiceState
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from logging import logging
+from logging import Logger, getLogger
 from datetime import datetime
 from datetime import timedelta
 from typing import Any, ClassVar
@@ -20,7 +20,7 @@ from engine.core.server.service_registry import ServiceRegistry
 
 @dataclass(slots=True, kw_only=True)
 class AbstractServiceLivenessCoordinator(ABC, AbstractServiceLivenessTask):
-    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    logger: ClassVar[Logger] = getLogger(__name__)
     default_schedule_jitter_max_ms: ClassVar[int] = 500
     default_reason_for_disconnected: str = "The service was detected as non-responsive after the session timeout. " +
         "Service transitioned to the 'DISCONNECTED' state."

@@ -18,17 +18,9 @@ from engine.core.models.triggers.trigger_context import TriggerContext
 class TriggerService(ABC):
 
     @staticmethod
-    def generate_execution(trigger: AbstractTrigger, condition_context: ConditionContext, context: TriggerContext, variables: dict[str, Any]) -> Execution:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def generate_execution(trigger: AbstractTrigger, condition_context: ConditionContext, context: TriggerContext, output: Output) -> Execution:
+    def generate_execution(id: str, trigger: AbstractTrigger, context: TriggerContext, execution_trigger: ExecutionTrigger, condition_context: ConditionContext | None = None) -> Execution:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
     def generate_realtime_execution(trigger: AbstractTrigger, condition_context: ConditionContext, context: TriggerContext, output: Output) -> Execution:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def generate_execution(id: str, trigger: AbstractTrigger, context: TriggerContext, execution_trigger: ExecutionTrigger, condition_context: ConditionContext) -> Execution:
         raise NotImplementedError  # TODO: translate from Java

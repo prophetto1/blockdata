@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\storages\StorageInterfaceFactory.java
-# WARNING: Unresolved types: IOException, Stream, Validator
+# WARNING: Unresolved types: Validator
 
 from dataclasses import dataclass, field
-from typing import Any, ClassVar
+from typing import Any, ClassVar, Iterator
 
 from engine.core.plugins.plugin_registry import PluginRegistry
 from engine.core.storages.storage_configuration import StorageConfiguration
@@ -27,11 +27,11 @@ class StorageInterfaceFactory:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
-    def all_storage_classes(plugin_registry: PluginRegistry) -> Stream[TypeAndId]:
+    def all_storage_classes(plugin_registry: PluginRegistry) -> Iterator[TypeAndId]:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
-    def all_ids_for(classes: Stream[TypeAndId]) -> str:
+    def all_ids_for(classes: Iterator[TypeAndId]) -> str:
         raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)

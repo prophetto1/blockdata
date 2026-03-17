@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\cli\src\main\java\io\kestra\cli\commands\flows\FlowUpdateCommand.java
-# WARNING: Unresolved types: Exception
 
 from dataclasses import dataclass, field
-from logging import logging
+from logging import Logger, getLogger
 from pathlib import Path
 from typing import Any, ClassVar
 
@@ -14,7 +13,7 @@ from engine.cli.services.tenant_id_selector_service import TenantIdSelectorServi
 
 @dataclass(slots=True, kw_only=True)
 class FlowUpdateCommand(AbstractApiCommand):
-    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    logger: ClassVar[Logger] = getLogger(__name__)
     flow_file: Path | None = None
     namespace: str | None = None
     id: str | None = None

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\plugin\core\flow\Pause.java
-# WARNING: Unresolved types: core, io, kestra, models, tasks
 
 from dataclasses import dataclass
 from enum import Enum
@@ -15,7 +14,6 @@ from engine.core.models.tasks.flowable_task import FlowableTask
 from engine.core.exceptions.illegal_variable_evaluation_exception import IllegalVariableEvaluationException
 from engine.core.models.flows.input import Input
 from engine.core.models.executions.next_task_run import NextTaskRun
-from engine.core.models.property.property import Property
 from engine.core.models.tasks.resolved_task import ResolvedTask
 from engine.core.runners.run_context import RunContext
 from engine.core.models.flows.state import State
@@ -76,19 +74,7 @@ class Pause(Task):
         to: State.Type | None = None
 
         @staticmethod
-        def now() -> Resumed:
-            raise NotImplementedError  # TODO: translate from Java
-
-        @staticmethod
-        def now(to: State.Type) -> Resumed:
-            raise NotImplementedError  # TODO: translate from Java
-
-        @staticmethod
-        def now(by: str) -> Resumed:
-            raise NotImplementedError  # TODO: translate from Java
-
-        @staticmethod
-        def now(by: str, to: State.Type) -> Resumed:
+        def now(by: str | None = None, to: State.Type | None = None) -> Resumed:
             raise NotImplementedError  # TODO: translate from Java
 
     class Behavior(str, Enum):

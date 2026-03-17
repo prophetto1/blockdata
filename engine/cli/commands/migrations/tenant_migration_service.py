@@ -3,7 +3,7 @@ from __future__ import annotations
 # Source: E:\KESTRA\cli\src\main\java\io\kestra\cli\commands\migrations\TenantMigrationService.java
 
 from dataclasses import dataclass, field
-from logging import logging
+from logging import Logger, getLogger
 from typing import Any, ClassVar
 
 from engine.core.models.flows.flow_interface import FlowInterface
@@ -14,7 +14,7 @@ from engine.core.repositories.tenant_migration_interface import TenantMigrationI
 
 @dataclass(slots=True, kw_only=True)
 class TenantMigrationService:
-    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    logger: ClassVar[Logger] = getLogger(__name__)
     tenant_migration_interface: TenantMigrationInterface | None = None
     flow_repository: FlowRepositoryInterface | None = None
     flow_queue: QueueInterface[FlowInterface] | None = None

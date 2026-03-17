@@ -3,7 +3,7 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\services\InstanceService.java
 
 from dataclasses import dataclass, field
-from logging import logging
+from logging import Logger, getLogger
 from typing import Any, ClassVar
 
 from engine.core.models.setting import Setting
@@ -12,7 +12,7 @@ from engine.core.repositories.setting_repository_interface import SettingReposit
 
 @dataclass(slots=True, kw_only=True)
 class InstanceService:
-    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    logger: ClassVar[Logger] = getLogger(__name__)
     setting_repository: SettingRepositoryInterface | None = None
     instance_id_setting: Setting | None = None
 

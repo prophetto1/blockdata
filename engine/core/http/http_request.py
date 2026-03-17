@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\http\HttpRequest.java
-# WARNING: Unresolved types: Charset, ContentType, HttpEntity, HttpHeaders, HttpUriRequest, IOException, InetSocketAddress, InputStream, apache, core5, hc, http, org
+# WARNING: Unresolved types: Charset, ContentType, HttpEntity, HttpHeaders, HttpUriRequest, InetSocketAddress, apache, core5, hc, org
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
@@ -23,19 +23,7 @@ class HttpRequest:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod
-    def of(uri: str) -> HttpRequest:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def of(uri: str, headers: dict[str, list[str]]) -> HttpRequest:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def of(uri: str, method: str, body: RequestBody) -> HttpRequest:
-        raise NotImplementedError  # TODO: translate from Java
-
-    @staticmethod
-    def of(uri: str, method: str, body: RequestBody, headers: dict[str, list[str]]) -> HttpRequest:
+    def of(uri: str, method: str | None = None, body: RequestBody | None = None, headers: dict[str, list[str]] | None = None) -> HttpRequest:
         raise NotImplementedError  # TODO: translate from Java
 
     def to(self, run_context: RunContext) -> HttpUriRequest:
@@ -77,13 +65,13 @@ class HttpRequest:
     class InputStreamRequestBody(RequestBody):
         content_type: str
         charset: Charset | None = None
-        content: InputStream | None = None
+        content: Any | None = None
 
         def to(self) -> HttpEntity:
             raise NotImplementedError  # TODO: translate from Java
 
         @staticmethod
-        def of(data: InputStream) -> InputStreamRequestBody:
+        def of(data: Any) -> InputStreamRequestBody:
             raise NotImplementedError  # TODO: translate from Java
 
     @dataclass(slots=True)

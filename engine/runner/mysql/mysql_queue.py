@@ -1,14 +1,11 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\jdbc-mysql\src\main\java\io\kestra\runner\mysql\MysqlQueue.java
-# WARNING: Unresolved types: ApplicationContext, Class, DSLContext, Record, T
 
 from dataclasses import dataclass, field
 from typing import Any, ClassVar
 
-from engine.core.models.conditions.condition import Condition
 from engine.jdbc.runner.jdbc_queue import JdbcQueue
-from engine.core.models.collectors.result import Result
 
 
 @dataclass(slots=True, kw_only=True)

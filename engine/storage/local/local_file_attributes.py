@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\storage-local\src\main\java\io\kestra\storage\local\LocalFileAttributes.java
-# WARNING: Unresolved types: BasicFileAttributes, FileType, IOException
+# WARNING: Unresolved types: BasicFileAttributes, FileType
 
 from dataclasses import dataclass
 from pathlib import Path
@@ -30,9 +30,6 @@ class LocalFileAttributes:
     def get_size(self) -> int:
         raise NotImplementedError  # TODO: translate from Java
 
-    def get_metadata(self) -> dict[str, str]:
-        raise NotImplementedError  # TODO: translate from Java
-
     @staticmethod
-    def get_metadata(file_path: Path) -> dict[str, str]:
+    def get_metadata(file_path: Path | None = None) -> dict[str, str]:
         raise NotImplementedError  # TODO: translate from Java

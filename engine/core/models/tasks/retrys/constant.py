@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\models\tasks\retrys\Constant.java
-# WARNING: Unresolved types: RetryPolicyBuilder, T
+# WARNING: Unresolved types: RetryPolicyBuilder
 
 from dataclasses import dataclass
 from datetime import datetime

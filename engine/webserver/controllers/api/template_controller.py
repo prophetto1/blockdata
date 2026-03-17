@@ -1,13 +1,12 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\webserver\src\main\java\io\kestra\webserver\controllers\api\TemplateController.java
-# WARNING: Unresolved types: CompletedFileUpload, ConstraintViolationException, HttpStatusException, IOException, Void
+# WARNING: Unresolved types: Void
 
 from dataclasses import dataclass
 from typing import Any
 
 from engine.webserver.responses.bulk_response import BulkResponse
-from engine.core.http.http_response import HttpResponse
 from engine.webserver.controllers.domain.id_with_namespace import IdWithNamespace
 from engine.core.models.validations.model_validator import ModelValidator
 from engine.webserver.responses.paged_results import PagedResults

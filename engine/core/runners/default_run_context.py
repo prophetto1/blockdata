@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\runners\DefaultRunContext.java
-# WARNING: Unresolved types: ApplicationContext, AtomicBoolean, FlowInfo, GeneralSecurityException, Logger, T, TaskRunInfo, Validator
+# WARNING: Unresolved types: FlowInfo, GeneralSecurityException, TaskRunInfo, Validator
 
 from dataclasses import dataclass, field
 from typing import Any, Optional
@@ -18,7 +18,6 @@ from engine.core.services.kv_store_service import KVStoreService
 from engine.core.runners.local_path import LocalPath
 from engine.core.metrics.metric_registry import MetricRegistry
 from engine.core.models.plugin import Plugin
-from engine.core.models.property.property import Property
 from engine.core.runners.run_context import RunContext
 from engine.core.runners.run_context_logger import RunContextLogger
 from engine.core.runners.run_context_property import RunContextProperty
@@ -34,7 +33,7 @@ from engine.core.runners.working_dir import WorkingDir
 
 @dataclass(slots=True, kw_only=True)
 class DefaultRunContext(RunContext):
-    is_initialized: AtomicBoolean
+    is_initialized: bool
     metrics: list[AbstractMetricEntry[Any]] = field(default_factory=list)
     dynamic_worker_task_result: list[WorkerTaskResult] = field(default_factory=list)
     application_context: ApplicationContext | None = None
@@ -71,40 +70,13 @@ class DefaultRunContext(RunContext):
     def clone_for_plugin(self, plugin: Plugin) -> RunContext:
         raise NotImplementedError  # TODO: translate from Java
 
-    def render(self, inline: str) -> str:
+    def render(self, inline: str, variables: dict[str, Any] | None = None) -> str:
         raise NotImplementedError  # TODO: translate from Java
 
     def render_typed(self, inline: str) -> Any:
         raise NotImplementedError  # TODO: translate from Java
 
-    def render(self, inline: Property[T]) -> RunContextProperty[T]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def render(self, inline: str, variables: dict[str, Any]) -> str:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def render(self, inline: list[str]) -> list[str]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def render(self, inline: list[str], variables: dict[str, Any]) -> list[str]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def render(self, inline: set[str]) -> set[str]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def render(self, inline: set[str], variables: dict[str, Any]) -> set[str]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def render(self, inline: dict[str, Any]) -> dict[str, Any]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def render(self, inline: dict[str, Any], variables: dict[str, Any]) -> dict[str, Any]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def render_map(self, inline: dict[str, str]) -> dict[str, str]:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def render_map(self, inline: dict[str, str], variables: dict[str, Any]) -> dict[str, str]:
+    def render_map(self, inline: dict[str, str], variables: dict[str, Any] | None = None) -> dict[str, str]:
         raise NotImplementedError  # TODO: translate from Java
 
     def validate(self, bean: T) -> None:
@@ -116,7 +88,7 @@ class DefaultRunContext(RunContext):
     def encrypt(self, plaintext: str) -> str:
         raise NotImplementedError  # TODO: translate from Java
 
-    def logger(self) -> Logger:
+    def logger(self) -> Any:
         raise NotImplementedError  # TODO: translate from Java
 
     def log_file_uri(self) -> str:

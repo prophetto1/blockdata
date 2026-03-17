@@ -10,7 +10,6 @@ from engine.core.models.executions.abstract_metric_entry import AbstractMetricEn
 from engine.core.models.tasks.metrics.counter_metric import CounterMetric
 from engine.core.models.tasks.metrics.gauge_metric import GaugeMetric
 from engine.core.exceptions.illegal_variable_evaluation_exception import IllegalVariableEvaluationException
-from engine.core.models.property.property import Property
 from engine.core.runners.run_context import RunContext
 from engine.core.models.tasks.metrics.timer_metric import TimerMetric
 

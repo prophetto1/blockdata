@@ -1,13 +1,11 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\jdbc-mysql\src\main\java\io\kestra\repository\mysql\MysqlTemplateRepository.java
-# WARNING: Unresolved types: ApplicationContext
 
 from dataclasses import dataclass
 from typing import Any
 
 from engine.jdbc.repository.abstract_jdbc_template_repository import AbstractJdbcTemplateRepository
-from engine.core.models.conditions.condition import Condition
 from engine.repository.mysql.mysql_repository import MysqlRepository
 from engine.core.models.templates.template import Template
 

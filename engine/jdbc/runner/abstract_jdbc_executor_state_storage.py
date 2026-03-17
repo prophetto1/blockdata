@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\jdbc\src\main\java\io\kestra\jdbc\runner\AbstractJdbcExecutorStateStorage.java
-# WARNING: Unresolved types: DSLContext, io, jdbc, kestra
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass

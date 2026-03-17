@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\repositories\ArrayListTotal.java
-# WARNING: Unresolved types: Function, Pageable, R, T
 
 from dataclasses import dataclass, field
-from typing import Any, ClassVar
+from typing import Any, Callable, ClassVar
 
 
 @dataclass(slots=True, kw_only=True)
@@ -16,5 +15,5 @@ class ArrayListTotal(ArrayList):
     def of(pageable: Pageable, list: list[T]) -> ArrayListTotal[T]:
         raise NotImplementedError  # TODO: translate from Java
 
-    def map(self, map: Function[T, R]) -> ArrayListTotal[R]:
+    def map(self, map: Callable[T, R]) -> ArrayListTotal[R]:
         raise NotImplementedError  # TODO: translate from Java

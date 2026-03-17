@@ -3,7 +3,7 @@ from __future__ import annotations
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\services\IgnoreExecutionService.java
 
 from dataclasses import dataclass, field
-from logging import logging
+from logging import Logger, getLogger
 from typing import Any, ClassVar
 
 from engine.core.models.executions.execution import Execution
@@ -18,21 +18,12 @@ class IgnoreExecutionService:
     ignored_namespaces: list[NamespaceId]
     ignored_tenants: list[str]
     ignored_indexer_records: list[str]
-    logger: ClassVar[logging.Logger] = logging.getLogger(__name__)
+    logger: ClassVar[Logger] = getLogger(__name__)
 
-    def ignore_execution(self, execution_id: str) -> bool:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def ignore_execution(self, execution: Execution) -> bool:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def ignore_execution(self, task_run: TaskRun) -> bool:
+    def ignore_execution(self, tenant: str, namespace: str | None = None, flow: str | None = None, execution_id: str | None = None) -> bool:
         raise NotImplementedError  # TODO: translate from Java
 
     def ignore_indexer_record(self, key: str) -> bool:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def ignore_execution(self, tenant: str, namespace: str, flow: str, execution_id: str) -> bool:
         raise NotImplementedError  # TODO: translate from Java
 
     @staticmethod

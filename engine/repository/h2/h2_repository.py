@@ -1,14 +1,13 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\jdbc-h2\src\main\java\io\kestra\repository\h2\H2Repository.java
-# WARNING: Unresolved types: DSLContext, E, Field, Pageable, R, Record, RecordMapper, SelectConditionStep, T, io, jdbc, kestra
+# WARNING: Unresolved types: RecordMapper
 
 from dataclasses import dataclass
 from typing import Any
 
 from engine.jdbc.repository.abstract_jdbc_repository import AbstractJdbcRepository
 from engine.core.repositories.array_list_total import ArrayListTotal
-from engine.core.models.conditions.condition import Condition
 from engine.jdbc.jdbc_table_config import JdbcTableConfig
 from engine.jdbc.jooq_dsl_context_wrapper import JooqDSLContextWrapper
 
@@ -23,9 +22,6 @@ class H2Repository(AbstractJdbcRepository):
         raise NotImplementedError  # TODO: translate from Java
 
     def persist_batch(self, items: list[T]) -> int:
-        raise NotImplementedError  # TODO: translate from Java
-
-    def persist_batch(self, item_with_fields: dict[T, dict[Field[Any], Any]]) -> int:
         raise NotImplementedError  # TODO: translate from Java
 
     def full_text_condition(self, fields: list[str], query: str) -> Condition:

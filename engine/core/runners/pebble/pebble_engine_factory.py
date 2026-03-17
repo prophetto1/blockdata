@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\core\runners\pebble\PebbleEngineFactory.java
-# WARNING: Unresolved types: ApplicationContext, Builder, Class, Function, MeterRegistry, PebbleEngine, Syntax, VariableConfiguration
+# WARNING: Unresolved types: Builder, MeterRegistry, PebbleEngine, Syntax, VariableConfiguration
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Callable
 
 from engine.core.runners.pebble.extension import Extension
 from engine.core.runners.variable_renderer import VariableRenderer
@@ -19,7 +19,7 @@ class PebbleEngineFactory:
     def create(self) -> PebbleEngine:
         raise NotImplementedError  # TODO: translate from Java
 
-    def create_with_custom_syntax(self, syntax: Syntax, extension: Class[Any]) -> PebbleEngine:
+    def create_with_custom_syntax(self, syntax: Syntax, extension: type[Any]) -> PebbleEngine:
         raise NotImplementedError  # TODO: translate from Java
 
     def create_with_masked_functions(self, renderer: VariableRenderer, functions_to_mask: list[str]) -> PebbleEngine:
@@ -31,8 +31,8 @@ class PebbleEngineFactory:
     def extension_with_masked_functions(self, renderer: VariableRenderer, initial_extension: Extension, masked_functions: list[str]) -> Extension:
         raise NotImplementedError  # TODO: translate from Java
 
-    def variable_renderer_proxy(self, renderer: VariableRenderer, initial_function: Function) -> Function:
+    def variable_renderer_proxy(self, renderer: VariableRenderer, initial_function: Callable) -> Callable:
         raise NotImplementedError  # TODO: translate from Java
 
-    def masked_function_proxy(self, initial_function: Function) -> Function:
+    def masked_function_proxy(self, initial_function: Callable) -> Callable:
         raise NotImplementedError  # TODO: translate from Java

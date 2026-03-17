@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 # Source: E:\KESTRA\core\src\main\java\io\kestra\plugin\core\namespace\FilesPurgeBehavior.java
-# WARNING: Unresolved types: IOException
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
