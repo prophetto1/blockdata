@@ -23,6 +23,16 @@ const SOURCE_TYPE_BY_EXTENSION: Record<string, string> = {
   rtf: "rtf",
   org: "org",
   vtt: "vtt",
+  // Code extensions — stored as-is so tree-sitter can identify them
+  java: "java",
+  py: "py",
+  js: "js",
+  jsx: "jsx",
+  ts: "ts",
+  tsx: "tsx",
+  go: "go",
+  rs: "rs",
+  cs: "cs",
   jpg: "image",
   jpeg: "image",
   png: "image",
@@ -60,6 +70,16 @@ const MIME_FOR_SOURCE_TYPE: Record<string, string> = {
   image: "application/octet-stream",
   audio: "application/octet-stream",
   binary: "application/octet-stream",
+  // Code
+  java: "text/x-java-source",
+  py: "text/x-python",
+  js: "text/javascript",
+  jsx: "text/javascript",
+  ts: "text/typescript",
+  tsx: "text/typescript",
+  go: "text/x-go",
+  rs: "text/x-rust",
+  cs: "text/x-csharp",
 };
 
 export function normalizeExtension(value: string): string {
