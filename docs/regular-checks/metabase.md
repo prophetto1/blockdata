@@ -37,7 +37,7 @@ The Data Studio separation is the key architectural insight. It groups all data 
 
 **Three dedicated surfaces, each with its own AI.** Inspired by Metabase's three-area separation but fundamentally different. Each surface has a dedicated AI agent with full access to the knowledge graph, vector database, and MCP tools. The AI in each surface plays a role specific to that context.
 
-**AI does the work, not the user.** Instead of users browsing thousands of function catalogs (our 1,000+ planned functions, Python libraries, transforms), the AI discovers and executes functions on their behalf. User describes intent. AI selects the function, clicks it in, shows the transform chain, and asks for confirmation. The user never needs to know the function catalog exists.
+**Focus on building out ways for AI does the work, not the user.** Instead of users browsing thousands of function catalogs (our 1,000+ planned functions, Python libraries, transforms), the AI discovers and executes functions on their behalf. User describes intent. AI selects the function, clicks it in, shows the transform chain, and asks for confirmation. The user never needs to know the function catalog exists.
 
 **Doc-style query builder.** Queries feel like writing a Google Doc, not operating a spreadsheet. Top-to-bottom flowing, readable, natural language-adjacent. Each clause is an interactive editable block in a sentence-like flow.
 
