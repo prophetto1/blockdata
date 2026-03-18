@@ -1,0 +1,209 @@
+---
+title: KT New Pulls Assessment
+description: Quality gate assessment for the March 16, 2026 kt runtime pull and its alignment with the nearby Kestra repositories.
+---
+
+# KT New Pulls Assessment
+
+- Source path: `kt/`
+- Pulled commit reviewed: `437767c` on branch `ubuntu`, incorporating `ee46012`
+- Nearby comparison repos: `kestra@4ea9d77f0`, `kestra.io@9029ae3b`
+- Date reviewed: `2026-03-16`
+- Reviewer: `Codex`
+- Verdict: `Fail`
+
+## Executive Summary
+
+The new pull materially improves `kt`. It adds the worker-shaped files that were previously missing from the runtime story:
+
+- `blockdata/core/runners/run_context_initializer.py`
+- `blockdata/queues/queue.py`
+- `blockdata/worker/worker_task.py`
+- `blockdata/worker/worker_task_result.py`
+- `blockdata/worker/abstract_worker_callable.py`
+- `blockdata/worker/worker_task_callable.py`
+- `blockdata/worker/runner.py`
+
+That is real progress. The runtime is now closer to the Kestra-shaped direction described in `kt/docs`.
+
+It is still not quality-gate ready as an execution-ready runtime slice. The core package import path still hard-couples even non-Mongo imports to `pymongo`, the declared dependencies do not cover the actual runtime entrypoint, and the pull brought checked-in generated artifacts into source control. The nearby `kestra` and `kestra.io` repos also show a different reality than some of the local `kt/docs` notes imply: the local Kestra checkout contains core engine code and examples, while the nearby docs repo contains website and docs content, not the MongoDB plugin source tree that some notes cite.
+
+## Findings By Severity
+
+### Critical
+
+#### 1. Core imports still fail because package init eagerly imports the MongoDB runtime stack
+
+`blockdata/__init__.py` imports `blockdata.runtime.execution` at import time, and `blockdata.runtime.execution` imports `MongoDbConnection`, which imports `pymongo`.
+
+References:
+
+- `kt/blockdata/__init__.py:1`
+- `kt/blockdata/runtime/execution.py:11-15`
+- `kt/blockdata/connectors/mongodb/mongodb_connection.py:6`
+
+Observed verification:
+
+- `python3` import of `blockdata.core.models.property` fails with `ModuleNotFoundError: No module named 'pymongo'`
+- `pytest -q tests/test_blockdata_core_runtime.py` fails during collection for the same reason
+
+Why this matters:
+
+- Core-only runtime tests cannot run unless MongoDB runtime dependencies are installed.
+- The new worker/runtime abstraction cannot be validated independently from the MongoDB connector.
+- This blocks the repo from behaving like a reusable runtime/core substrate.
+
+Required change:
+
+- Remove eager runtime imports from `blockdata/__init__.py`, or isolate MongoDB-specific imports behind connector-loading boundaries.
+
+### Major
+
+#### 2. The project manifest still does not declare the dependencies required by the runtime entrypoint
+
+`pyproject.toml` declares only `pymongo` and `mongomock`, but `main.py` and `runtime/routes.py` require `fastapi`, `uvicorn`, and `pydantic`.
+
+References:
+
+- `kt/pyproject.toml:5-8`
+- `kt/main.py:23-27`
+- `kt/blockdata/runtime/routes.py:14-18`
+
+Why this matters:
+
+- A clean install from the project manifest does not provide the packages needed to start the API runtime.
+- The inline bootstrap comment in `main.py` is compensating for a broken package declaration instead of documenting a working one.
+
+Required change:
+
+- Make the manifest match the actual runtime entrypoint, or explicitly split the package into core-only and API extras.
+
+#### 3. The pull brought generated runtime artifacts and Python bytecode into source control
+
+The merge includes checked-in `.pyc` files under `__pycache__/` and runtime output files under `kt/.runtime/...`.
+
+Observed in pulled commit:
+
+- `kt/.runtime/exec-1-*/storage/*-load.jsonl`
+- multiple `kt/**/__pycache__/*.pyc` files
+
+Why this matters:
+
+- These files are machine-specific, noisy in diffs, and not part of the runtime design.
+- They make it harder to review real source changes and suggest `.gitignore` is not enforcing the intended boundary.
+
+Required change:
+
+- Remove generated artifacts from version control and ensure `.gitignore` covers `.runtime/` and `__pycache__/`.
+
+#### 4. The nearby Kestra repos do not fully support the local trace claims as written
+
+The local `kt/docs` notes correctly reason about the need for worker, executor, and trigger layers, but some repository-path claims do not match the nearby checkouts. In the nearby repos:
+
+- `/home/jon/kestra-repos/kestra` is the core platform repo
+- `/home/jon/kestra-repos/kestra.io` is the docs and website repo
+- the local `kestra` checkout does not contain a nearby `plugin-mongodb` source tree
+
+Observed evidence:
+
+- searching the nearby `kestra` repo finds MongoDB examples and references, not the plugin source tree
+- the nearby `kestra.io` repo contains docs, blogs, blueprints, and website content
+
+Relevant local notes:
+
+- `kt/docs/2026-03-16-kestra-mongodb-runtime-trace-and-kt-gap-analysis.md`
+- `kt/docs/kestra-repo-structure-vs-kt-blockdata.md`
+
+Why this matters:
+
+- The architectural conclusion may still be directionally right, but the provenance is overstated unless those notes name the exact external checkout or source snapshot used.
+- Future planning should distinguish “inferred from nearby repos” from “verified against a separate plugin repo checkout.”
+
+Required change:
+
+- Tighten the source-path notes in `kt/docs` so each claim matches a real local repo path or explicitly says it came from a different checkout.
+
+### Minor
+
+#### 5. The new worker path improves structure, but it is still a synchronous in-process bridge rather than a real executor boundary
+
+`runtime/execution.py` now emits a `WorkerTask`, pushes it through an `InMemoryQueue`, and immediately drains it into `run_worker_task()`.
+
+References:
+
+- `kt/blockdata/runtime/execution.py:64-81`
+- `kt/blockdata/queues/queue.py:10-22`
+- `kt/blockdata/worker/runner.py:12-67`
+
+Why this matters:
+
+- This is a valid prototype step.
+- It should not be described as executor/worker parity with Kestra yet.
+
+Suggested change:
+
+- Keep calling this a structural bridge or compression layer until a real executor boundary, retry policy, and result-join lifecycle exist.
+
+## Specific Gaps, Contradictions, and Ambiguity
+
+### Gaps
+
+- No clean import boundary between runtime core and MongoDB connector dependencies
+- No manifest-level support for the FastAPI runtime entrypoint
+- No source-control hygiene guard for generated runtime files
+
+### Contradictions
+
+- The new pull fixes the worker-file absence, but the package import path still prevents core runtime tests from collecting in a clean environment.
+- Local `kt/docs` argue for a split between runtime core and plugins, while the top-level Python package still imports runtime and connector code eagerly.
+
+### Ambiguity
+
+- It is unclear whether `kt` is meant to be installable as a runtime/core package, a MongoDB-specific runtime, or a combined prototype. The current code and packaging point in different directions.
+
+## Verification Expectations and Acceptance Criteria Check
+
+Current assessment against the quality gate:
+
+| Criterion | Status | Notes |
+|---|---|---|
+| Alignment with architecture direction | Partial | The new worker pull moves in the right direction. |
+| Clear scope boundaries | Partial | Runtime/core vs connector/package boundaries are still blurred. |
+| API/data contract clarity | Partial | Function execution shape exists, but package boundaries are not clean. |
+| Dependency and sequencing correctness | Fail | Import and manifest dependencies still break clean verification. |
+| Risk handling and rollback strategy | Fail | No cleanup of generated artifacts or packaging guardrails. |
+| Security/auth implications | Partial | No new auth regressions found in this pull, but no new controls either. |
+| Operational readiness | Fail | Runtime entrypoint dependencies are incomplete. |
+| Test/verification clarity | Fail | Core tests still fail at collection in a clean environment. |
+
+Minimum acceptance criteria for the next pass:
+
+1. `pytest -q tests/test_blockdata_core_runtime.py` collects and runs without requiring MongoDB connector imports for core-only tests.
+2. `pyproject.toml` fully declares the packages needed for the advertised runtime entrypoint, or clearly splits optional extras.
+3. `.runtime/` and `__pycache__/` are removed from tracked source and ignored going forward.
+4. `kt/docs` source-path notes are corrected so repo references match the actual nearby checkouts or explicitly point to a separate source tree.
+
+## Required Changes Before Implementation
+
+1. Decouple `blockdata/__init__.py` from eager runtime and MongoDB imports.
+2. Fix the package manifest so the declared install path matches `main.py` and `runtime/routes.py`.
+3. Remove checked-in generated artifacts and add or verify ignore rules.
+4. Update the `kt/docs` provenance notes to match the actual repos being cited.
+5. Re-run core runtime tests after the import-boundary cleanup.
+
+## Go / No-Go Recommendation
+
+`No-go` for calling the pulled `kt` runtime slice ready.
+
+`Go` for continuing the direction. The new pull closes a real structural gap by adding worker-shaped runtime files. That makes the prototype more coherent than it was before. But the import boundary, manifest completeness, and repo-hygiene issues need to be fixed before this should be treated as a stable runtime/core foundation.
+
+## Where The Nearby Kestra Repos Are Headed
+
+This is an inference from the current local heads and recent commit streams:
+
+- `kestra@4ea9d77f0` is moving on platform and product polish: AI copilot log handling, security filters, dependency-graph export, UI work, and localization.
+- `kestra.io@9029ae3b` is moving on documentation and market-facing content: blogs, blueprints, SDK credentials docs, plugin defaults docs, and API/doc-site updates.
+
+That means the nearby upstream signal is not “translate MongoDB runtime internals next.” It is “improve platform capability, operator UX, and docs surface.” `kt` can still borrow Kestra’s runtime shape, but it should not assume the nearby repos are currently optimized around the same immediate objective.
+
+This assessment is published under `web-docs/src/content/docs/assessments/`. No sidebar code change was needed because the docs site already includes `assessments` in `web-docs/src/lib/docs/sidebar-order.mjs`.

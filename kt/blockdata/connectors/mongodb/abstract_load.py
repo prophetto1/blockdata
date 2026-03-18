@@ -20,6 +20,45 @@ from blockdata.connectors.mongodb.write_models import (
 )
 
 
+def _to_pymongo_operation(op: WriteModel):
+    """Convert a BD WriteModel dataclass to the corresponding pymongo operation."""
+    from pymongo import operations as pymongo_ops
+
+    if isinstance(op, InsertOneModel):
+        return pymongo_ops.InsertOne(op.document)
+    if isinstance(op, ReplaceOneModel):
+        return pymongo_ops.ReplaceOne(
+            op.filter, op.replacement,
+            upsert=op.options.get("upsert", False),
+            collation=op.options.get("collation"),
+        )
+    if isinstance(op, UpdateOneModel):
+        return pymongo_ops.UpdateOne(
+            op.filter, op.update,
+            upsert=op.options.get("upsert", False),
+            array_filters=op.options.get("arrayFilters"),
+            collation=op.options.get("collation"),
+        )
+    if isinstance(op, UpdateManyModel):
+        return pymongo_ops.UpdateMany(
+            op.filter, op.update,
+            upsert=op.options.get("upsert", False),
+            array_filters=op.options.get("arrayFilters"),
+            collation=op.options.get("collation"),
+        )
+    if isinstance(op, DeleteOneModel):
+        return pymongo_ops.DeleteOne(
+            op.filter,
+            collation=op.options.get("collation"),
+        )
+    if isinstance(op, DeleteManyModel):
+        return pymongo_ops.DeleteMany(
+            op.filter,
+            collation=op.options.get("collation"),
+        )
+    raise TypeError(f"Unsupported write model {type(op)!r}")
+
+
 @dataclass(slots=True)
 class AbstractLoadOutput:
     size: int
@@ -84,57 +123,17 @@ class AbstractLoad(AbstractTask):
         )
 
     def _apply_bulk(self, collection, operations: list[WriteModel]) -> BulkWriteSummary:
-        summary = BulkWriteSummary()
+        if not operations:
+            return BulkWriteSummary()
 
-        for operation in operations:
-            if isinstance(operation, InsertOneModel):
-                collection.insert_one(operation.document)
-                summary.inserted_count += 1
-                continue
-
-            if isinstance(operation, ReplaceOneModel):
-                result = collection.replace_one(
-                    operation.filter,
-                    operation.replacement,
-                    upsert=operation.options.get("upsert", False),
-                )
-                summary.matched_count += int(getattr(result, "matched_count", 0))
-                summary.modified_count += int(getattr(result, "modified_count", 0))
-                continue
-
-            if isinstance(operation, UpdateOneModel):
-                result = collection.update_one(
-                    operation.filter,
-                    operation.update,
-                    upsert=operation.options.get("upsert", False),
-                )
-                summary.matched_count += int(getattr(result, "matched_count", 0))
-                summary.modified_count += int(getattr(result, "modified_count", 0))
-                continue
-
-            if isinstance(operation, UpdateManyModel):
-                result = collection.update_many(
-                    operation.filter,
-                    operation.update,
-                    upsert=operation.options.get("upsert", False),
-                )
-                summary.matched_count += int(getattr(result, "matched_count", 0))
-                summary.modified_count += int(getattr(result, "modified_count", 0))
-                continue
-
-            if isinstance(operation, DeleteOneModel):
-                result = collection.delete_one(operation.filter)
-                summary.deleted_count += int(getattr(result, "deleted_count", 0))
-                continue
-
-            if isinstance(operation, DeleteManyModel):
-                result = collection.delete_many(operation.filter)
-                summary.deleted_count += int(getattr(result, "deleted_count", 0))
-                continue
-
-            raise TypeError(f"Unsupported write model {type(operation)!r}")
-
-        return summary
+        pymongo_requests = [_to_pymongo_operation(op) for op in operations]
+        result = collection.bulk_write(pymongo_requests, ordered=True)
+        return BulkWriteSummary(
+            inserted_count=getattr(result, "inserted_count", 0),
+            matched_count=getattr(result, "matched_count", 0),
+            modified_count=getattr(result, "modified_count", 0),
+            deleted_count=getattr(result, "deleted_count", 0),
+        )
 
     @staticmethod
     def _merge_summary(target: BulkWriteSummary, delta: BulkWriteSummary) -> None:

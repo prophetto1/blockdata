@@ -51,15 +51,29 @@ class Bulk(AbstractLoad):
                     options=self._operation_options(operation_value),
                 )
             elif operation_name == "deleteOne":
-                yield DeleteOneModel(filter=operation_value["filter"])
+                yield DeleteOneModel(
+                    filter=operation_value["filter"],
+                    options=self._delete_options(operation_value),
+                )
             elif operation_name == "deleteMany":
-                yield DeleteManyModel(filter=operation_value["filter"])
+                yield DeleteManyModel(
+                    filter=operation_value["filter"],
+                    options=self._delete_options(operation_value),
+                )
             else:
                 raise ValueError(f"Invalid bulk request type in row {row!r}")
 
     @staticmethod
     def _operation_options(operation_value: dict[str, object]) -> dict[str, object]:
         options: dict[str, object] = {}
-        if "upsert" in operation_value:
-            options["upsert"] = operation_value["upsert"]
+        for key in ("upsert", "bypassDocumentValidation", "collation", "arrayFilters"):
+            if key in operation_value:
+                options[key] = operation_value[key]
+        return options
+
+    @staticmethod
+    def _delete_options(operation_value: dict[str, object]) -> dict[str, object]:
+        options: dict[str, object] = {}
+        if "collation" in operation_value:
+            options["collation"] = operation_value["collation"]
         return options

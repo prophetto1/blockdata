@@ -38,11 +38,13 @@ class UpdateManyModel(WriteModel):
 @dataclass(slots=True)
 class DeleteOneModel(WriteModel):
     filter: dict[str, Any]
+    options: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass(slots=True)
 class DeleteManyModel(WriteModel):
     filter: dict[str, Any]
+    options: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass(slots=True)
