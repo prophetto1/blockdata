@@ -67,6 +67,8 @@ def test_parse_rejects_unknown_source():
 
 def test_parse_tree_sitter_java():
     """Full flow: lookup doc -> download -> parse -> upload -> DB write -> 200."""
+    captured: dict[str, dict] = {}
+
     def table_side_effect(name):
         t = MagicMock()
         if name == "source_documents":
@@ -84,7 +86,10 @@ def test_parse_tree_sitter_java():
         else:
             write_chain = MagicMock()
             write_chain.execute.return_value = MagicMock(data=[])
-            t.upsert.return_value = write_chain
+            def capture_upsert(row, *args, **kwargs):
+                captured[name] = row
+                return write_chain
+            t.upsert.side_effect = capture_upsert
             t.update.return_value.eq.return_value = write_chain
         return t
 
@@ -93,7 +98,7 @@ def test_parse_tree_sitter_java():
     with patch("app.api.routes.parse.get_supabase_admin", return_value=sb), \
          patch("app.domain.conversion.repository.get_supabase_admin", return_value=sb), \
          patch("app.api.routes.parse.download_from_storage", new_callable=AsyncMock) as mock_download, \
-         patch("app.api.routes.parse.upload_to_storage", new_callable=AsyncMock) as mock_upload:
+         patch("app.api.routes.parse.upsert_to_storage", new_callable=AsyncMock) as mock_upload:
 
         mock_download.return_value = b"package demo; public class Foo { public String getName() { return null; } }"
         mock_upload.return_value = "https://storage/path"
@@ -105,6 +110,8 @@ def test_parse_tree_sitter_java():
     assert body.get("ok") is True
     assert body.get("track") == "tree_sitter"
     assert mock_upload.call_count == 2
+    assert len(captured["conversion_parsing"]["conv_uid"]) == 64
+    assert captured["conversion_parsing"]["conv_locator"] == "converted/uid-1/uid-1.ast.json"
 
 
 def test_parse_rejects_docling_source_type():

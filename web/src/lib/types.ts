@@ -33,6 +33,14 @@ export type DocumentRow = {
   parser_runtime_meta?: Record<string, unknown> | null;
   conv_total_blocks?: number | null;
   conv_parsing_tool?: string | null;
+  conv_status?: string | null;
+  conv_representation_type?: string | null;
+  conv_block_type_freq?: Record<string, number> | null;
+  conv_total_characters?: number | null;
+  conv_locator?: string | null;
+  source_locator?: string | null;
+  updated_at?: string | null;
+  conversion_job_id?: string | null;
 };
 
 export type ExtractionSchemaRow = {

@@ -66,5 +66,24 @@ def test_upsert_conversion_parsing(mock_supabase):
     mock_supabase.table.assert_called_with("conversion_parsing")
     call_args = mock_supabase.table.return_value.upsert.call_args
     row = call_args[0][0]
+    assert len(row["conv_uid"]) == 64
     assert row["conv_parsing_tool"] == "tree_sitter"
     assert row["conv_status"] == "success"
+
+
+def test_upsert_conversion_parsing_preserves_explicit_conv_fields(mock_supabase):
+    conv_uid = hashlib.sha256(b"tree_sitter\nsrc-1\nast").hexdigest()
+    upsert_conversion_parsing(
+        source_uid="src-1",
+        conv_parsing_tool="tree_sitter",
+        conv_uid=conv_uid,
+        conv_locator="converted/src-1/src-1.ast.json",
+        conv_total_blocks=0,
+        conv_total_characters=128,
+    )
+    call_args = mock_supabase.table.return_value.upsert.call_args
+    row = call_args[0][0]
+    assert row["conv_uid"] == conv_uid
+    assert row["conv_locator"] == "converted/src-1/src-1.ast.json"
+    assert row["conv_total_blocks"] == 0
+    assert row["conv_total_characters"] == 128

@@ -8,7 +8,6 @@ import { detectSourceTypeForUpload, uploadToStorage } from "../ingest/storage.ts
 import { resolveIngestRoute } from "../ingest/routing.ts";
 import { validateProjectOwnership, checkIdempotency } from "../ingest/validate.ts";
 import { processUploadOnly } from "../ingest/process-upload-only.ts";
-import { processMarkdown } from "../ingest/process-md.ts";
 import { processConversion } from "../ingest/process-convert.ts";
 import type { IngestContext } from "../ingest/types.ts";
 
@@ -231,8 +230,6 @@ Deno.serve(async (req) => {
 
         if (ingestMode === "upload_only" || !route) {
           await processUploadOnly(ctx);
-        } else if (source_type === "md") {
-          await processMarkdown(ctx);
         } else {
           await processConversion(ctx);
         }

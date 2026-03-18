@@ -95,9 +95,9 @@ export function useParseTab(activeTrack: ParseTrack, selectedDoc: ProjectDocumen
   );
 
   const selectedParser = useMemo(() => {
-    const profile = allProfiles.find((p) => p.id === selectedProfileId);
+    const profile = profiles.find((p) => p.id === selectedProfileId);
     return profile?.parser ?? activeTrack;
-  }, [allProfiles, activeTrack, selectedProfileId]);
+  }, [profiles, activeTrack, selectedProfileId]);
 
   const batch = useBatchParse({
     profileId: selectedProfileId,
@@ -151,9 +151,13 @@ export function useParseTab(activeTrack: ParseTrack, selectedDoc: ProjectDocumen
   };
 
   const handleViewJson = async (doc: ProjectDocumentRow) => {
+    // Use conv_locator (from view_documents) which holds the actual artifact path,
+    // regardless of parser. Falls back to legacy .docling.json for older rows.
+    const locator = doc.conv_locator;
     const baseName = getBaseName(doc.source_locator);
-    if (!baseName) return;
-    const key = `converted/${doc.source_uid}/${baseName}.docling.json`;
+    const key = locator
+      || (baseName ? `converted/${doc.source_uid}/${baseName}.docling.json` : null);
+    if (!key) return;
     const { data, error: urlError } = await supabase.storage
       .from(DOCUMENTS_BUCKET)
       .createSignedUrl(key, 60 * 20);
@@ -169,9 +173,11 @@ export function useParseTab(activeTrack: ParseTrack, selectedDoc: ProjectDocumen
   };
 
   const handleDownloadJson = async (doc: ProjectDocumentRow) => {
+    const locator = doc.conv_locator;
     const baseName = getBaseName(doc.source_locator);
-    if (!baseName) return;
-    const key = `converted/${doc.source_uid}/${baseName}.docling.json`;
+    const key = locator
+      || (baseName ? `converted/${doc.source_uid}/${baseName}.docling.json` : null);
+    if (!key) return;
     const { data } = await supabase.storage
       .from(DOCUMENTS_BUCKET)
       .createSignedUrl(key, 60 * 20);
@@ -204,7 +210,7 @@ export function ParseTabPanel({ parseTab }: { parseTab: ReturnType<typeof usePar
           <div className="relative flex max-h-[80vh] w-full max-w-3xl flex-col rounded-lg border border-border bg-card shadow-xl">
             <div className="flex items-center justify-between border-b border-border px-4 py-3">
               <h3 className="text-sm font-medium text-foreground truncate">
-                {jsonModal.title} — DoclingDocument
+                {jsonModal.title} — Parse Output
               </h3>
               <button
                 type="button"

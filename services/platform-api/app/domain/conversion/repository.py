@@ -70,16 +70,33 @@ def upsert_conversion_parsing(
     conv_status: str = "success",
     pipeline_config: Optional[dict[str, Any]] = None,
     parser_runtime_meta: Optional[dict[str, Any]] = None,
+    *,
+    conv_uid: Optional[str] = None,
+    conv_locator: Optional[str] = None,
+    conv_total_blocks: Optional[int] = None,
+    conv_total_characters: Optional[int] = None,
 ) -> None:
     """Upsert a conversion_parsing row for the source document."""
     sb = get_supabase_admin()
+    # conv_uid is NOT NULL — generate a deterministic hash if not provided.
+    effective_conv_uid = conv_uid or _sha256_hex(
+        f"{conv_parsing_tool}\n{source_uid}".encode()
+    )
+    row: dict[str, Any] = {
+        "source_uid": source_uid,
+        "conv_uid": effective_conv_uid,
+        "conv_parsing_tool": conv_parsing_tool,
+        "conv_status": conv_status,
+        "pipeline_config": pipeline_config or {},
+        "parser_runtime_meta": parser_runtime_meta or {},
+    }
+    if conv_locator is not None:
+        row["conv_locator"] = conv_locator
+    if conv_total_blocks is not None:
+        row["conv_total_blocks"] = conv_total_blocks
+    if conv_total_characters is not None:
+        row["conv_total_characters"] = conv_total_characters
     sb.table("conversion_parsing").upsert(
-        {
-            "source_uid": source_uid,
-            "conv_parsing_tool": conv_parsing_tool,
-            "conv_status": conv_status,
-            "pipeline_config": pipeline_config or {},
-            "parser_runtime_meta": parser_runtime_meta or {},
-        },
+        row,
         on_conflict="source_uid",
     ).execute()

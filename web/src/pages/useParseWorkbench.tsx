@@ -907,6 +907,31 @@ export function useParseWorkbench() {
   const doclingDocs = useMemo(() => filterDocsByTrack(docs, 'docling'), [docs]);
   const codeDocs = useMemo(() => filterDocsByTrack(docs, 'tree_sitter'), [docs]);
 
+  // Track-aware selection: select-all/deselect-all only affects the current track's files
+  const trackUids = useMemo(() => new Set(trackDocs.map((d) => d.source_uid)), [trackDocs]);
+  const trackSelected = useMemo(() => {
+    const s = new Set<string>();
+    for (const uid of selected) {
+      if (trackUids.has(uid)) s.add(uid);
+    }
+    return s;
+  }, [selected, trackUids]);
+  const trackAllSelected = trackDocs.length > 0 && trackSelected.size === trackDocs.length;
+  const trackSomeSelected = trackSelected.size > 0 && trackSelected.size < trackDocs.length;
+  const toggleTrackSelectAll = useCallback(() => {
+    if (trackAllSelected) {
+      // Deselect only this track's files
+      for (const uid of trackUids) {
+        if (selected.has(uid)) toggleSelect(uid);
+      }
+    } else {
+      // Select all this track's files (keep other track's selection intact)
+      for (const uid of trackUids) {
+        if (!selected.has(uid)) toggleSelect(uid);
+      }
+    }
+  }, [trackAllSelected, trackUids, selected, toggleSelect]);
+
   // Clear activeDoc when switching tracks if the selected doc isn't in the new track
   useEffect(() => {
     if (activeDocUid) {
@@ -1014,14 +1039,14 @@ export function useParseWorkbench() {
             <div className="mx-auto flex h-full min-h-0 w-full max-w-[58rem] flex-col overflow-hidden rounded-md border border-border bg-card">
               {tabId === 'parse-navigator' ? (
                 <ParseFileNavigator
-                  docs={docs}
+                  docs={trackDocs}
                   loading={loading}
                   error={error}
-                  selected={selected}
+                  selected={trackSelected}
                   toggleSelect={toggleSelect}
-                  toggleSelectAll={toggleSelectAll}
-                  allSelected={allSelected}
-                  someSelected={someSelected}
+                  toggleSelectAll={toggleTrackSelectAll}
+                  allSelected={trackAllSelected}
+                  someSelected={trackSomeSelected}
                   activeDocUid={activeDocUid}
                   onDocClick={handleDocClick}
                 />
@@ -1037,11 +1062,11 @@ export function useParseWorkbench() {
                   docs={trackDocs}
                   loading={loading}
                   error={error}
-                  selected={selected}
+                  selected={trackSelected}
                   toggleSelect={toggleSelect}
-                  toggleSelectAll={toggleSelectAll}
-                  allSelected={allSelected}
-                  someSelected={someSelected}
+                  toggleSelectAll={toggleTrackSelectAll}
+                  allSelected={trackAllSelected}
+                  someSelected={trackSomeSelected}
                   activeDoc={activeDocUid}
                   onDocClick={handleDocClick}
                   extraColumns={parseExtraColumns}
@@ -1084,7 +1109,7 @@ export function useParseWorkbench() {
         <ParseConfigColumn
           docs={docs}
           trackDocs={trackDocs}
-          selected={selected}
+          selected={trackSelected}
           selectedDoc={activeDoc}
           parseTab={parseTab}
           onReset={(uids) => { for (const uid of uids) void handleReset(uid); }}
@@ -1124,7 +1149,7 @@ export function useParseWorkbench() {
     }
 
     return null;
-  }, [docs, loading, error, selected, toggleSelect, toggleSelectAll, clearSelection, allSelected, someSelected, activeDocUid, activeDoc, activeArtifacts, activeTrack, trackDocs, doclingDocs, codeDocs, handleDocClick, parseTab, parseExtraColumns, handleReset, handleDelete]);
+  }, [docs, loading, error, selected, trackSelected, toggleSelect, toggleTrackSelectAll, clearSelection, trackAllSelected, trackSomeSelected, activeDocUid, activeDoc, activeArtifacts, activeTrack, trackDocs, doclingDocs, codeDocs, handleDocClick, parseTab, parseExtraColumns, handleReset, handleDelete]);
 
   const dynamicTabLabel = useCallback((tabId: string): string | null => {
     if (tabId === 'preview-main') return activeTrack === 'tree_sitter' ? 'AST' : 'Parsed Markdown';

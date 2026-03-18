@@ -8,6 +8,7 @@ import { LegacyRunRedirect } from '@/components/common/LegacyRedirect';
 
 import MarketingIntegrations from '@/pages/MarketingIntegrations';
 import AuthCallback from '@/pages/AuthCallback';
+import AuthWelcome from '@/pages/AuthWelcome';
 import LoginSplit from '@/pages/LoginSplit';
 import Projects from '@/pages/Projects';
 import FlowDetail from '@/pages/FlowDetail';
@@ -123,6 +124,7 @@ export const router = createBrowserRouter([
     element: <PublicLayout />,
     children: [
       { path: '/auth/callback', element: <AuthCallback /> },
+      { path: '/auth/welcome', element: <AuthWelcome /> },
     ],
   },
 

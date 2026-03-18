@@ -13,6 +13,7 @@ type AuthState = {
   signUp: (params: { email: string; password: string; displayName?: string }) => Promise<{ needsEmailConfirmation: boolean }>;
   resendSignupConfirmation: (email: string) => Promise<void>;
   signOut: () => Promise<void>;
+  signInWithOAuth: (provider: 'google' | 'github') => Promise<void>;
 };
 
 const AuthContext = createContext<AuthState | null>(null);
@@ -144,6 +145,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error) throw error;
   };
 
+  const signInWithOAuth = async (provider: 'google' | 'github') => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
+    if (error) throw error;
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -155,6 +166,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signUp,
         resendSignupConfirmation,
         signOut,
+        signInWithOAuth,
       }}
     >
       {children}

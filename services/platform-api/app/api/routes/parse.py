@@ -95,9 +95,12 @@ async def parse_route(
         )
         result = parse_source(source_bytes, source_type)
 
+        # Pre-compute artifact locators so they're available for the parsing record.
+        ast_locator = f"converted/{body.source_uid}/{body.source_uid}.ast.json" if "ast_json" in profile_artifacts else None
+        symbols_locator = f"converted/{body.source_uid}/{body.source_uid}.symbols.json" if "symbols_json" in profile_artifacts else None
+
         # Upload AST artifact (if profile includes it)
-        if "ast_json" in profile_artifacts:
-            ast_locator = f"converted/{body.source_uid}/{body.source_uid}.ast.json"
+        if ast_locator:
             await upsert_to_storage(
                 supabase_url, supabase_key, DOCUMENTS_BUCKET,
                 ast_locator, result.ast_json, "application/json; charset=utf-8",
@@ -112,8 +115,7 @@ async def parse_route(
             )
 
         # Upload symbols artifact (if profile includes it)
-        if "symbols_json" in profile_artifacts:
-            symbols_locator = f"converted/{body.source_uid}/{body.source_uid}.symbols.json"
+        if symbols_locator:
             await upsert_to_storage(
                 supabase_url, supabase_key, DOCUMENTS_BUCKET,
                 symbols_locator, result.symbols_json, "application/json; charset=utf-8",
@@ -127,7 +129,9 @@ async def parse_route(
                 artifact_meta={"language": result.language},
             )
 
-        # Persist parsing record + mark complete
+        # Persist parsing record + mark complete.
+        # Use the primary artifact locator as conv_locator for view_documents.
+        primary_locator = ast_locator or symbols_locator
         upsert_conversion_parsing(
             source_uid=body.source_uid,
             conv_parsing_tool="tree_sitter",
@@ -137,6 +141,7 @@ async def parse_route(
                 "node_count": result.node_count,
                 "source_type": result.source_type,
             },
+            conv_locator=primary_locator,
         )
         mark_source_status(body.source_uid, "parsed")
 

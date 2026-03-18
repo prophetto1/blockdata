@@ -5,6 +5,7 @@ import { PasswordInput } from '@ark-ui/react/password-input';
 import { IconEye, IconEyeOff } from '@tabler/icons-react';
 import { useAuth } from '@/auth/AuthContext';
 import { Button } from '@/components/ui/button';
+import { OAuthButtons } from '@/components/auth/OAuthButtons';
 
 export default function LoginSplit() {
   const [email, setEmail] = useState('');
@@ -80,6 +81,17 @@ export default function LoginSplit() {
             {info}
           </div>
         )}
+
+        <OAuthButtons />
+
+        <div className="relative my-6">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-border" />
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-background px-2 text-muted-foreground">or</span>
+          </div>
+        </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <Field.Root required>
