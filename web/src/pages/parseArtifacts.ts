@@ -8,13 +8,16 @@ import {
 import { supabase } from '@/lib/supabase';
 import { TABLES } from '@/lib/tables';
 import type { BlockRow } from '@/lib/types';
+import { getDocumentParseTrack } from '@/components/documents/parseProfileSupport';
 import {
   DEFAULT_DOCUMENT_VIEW_MODE,
   loadDocumentViewMode,
   type DocumentViewMode,
 } from '@/pages/superuser/documentViews';
 
-type RepresentationType = 'doclingdocument_json' | 'markdown_bytes' | 'html_bytes';
+type RepresentationType =
+  | 'doclingdocument_json' | 'markdown_bytes' | 'html_bytes'
+  | 'tree_sitter_ast_json' | 'tree_sitter_symbols_json';
 
 export type ParseMarkdownState = {
   markdown: string;
@@ -47,6 +50,14 @@ export type ParseBlocksState = {
   error: string | null;
 };
 
+export type ParseTreeSitterState = {
+  rawText: string | null;
+  loading: boolean;
+  error: string | null;
+  downloadUrl: string | null;
+  downloadFilename: string | null;
+};
+
 export type ParseArtifactBundle = {
   cacheKey: string;
   mode: DocumentViewMode;
@@ -54,6 +65,8 @@ export type ParseArtifactBundle = {
   json: ParseJsonState;
   html: ParseHtmlState;
   blocks: ParseBlocksState;
+  treeSitterAst: ParseTreeSitterState;
+  treeSitterSymbols: ParseTreeSitterState;
 };
 
 export type ParseArtifactsDeps = {
@@ -116,6 +129,20 @@ export function createLoadingParseArtifactBundle(doc: ProjectDocumentRow): Parse
       loading: true,
       error: null,
     },
+    treeSitterAst: {
+      rawText: null,
+      loading: true,
+      error: null,
+      downloadUrl: null,
+      downloadFilename: null,
+    },
+    treeSitterSymbols: {
+      rawText: null,
+      loading: true,
+      error: null,
+      downloadUrl: null,
+      downloadFilename: null,
+    },
   };
 }
 
@@ -123,12 +150,62 @@ export async function primeParseArtifactsForDocument(
   doc: ProjectDocumentRow,
   deps: ParseArtifactsDeps = defaultDeps,
 ): Promise<ParseArtifactBundle> {
-  const [mode, markdown, json, html, blocks] = await Promise.all([
+  const track = getDocumentParseTrack(doc);
+  const [mode, markdown, json, html, blocks, treeSitterAst, treeSitterSymbols] = await Promise.all([
     deps.loadDocumentViewMode().catch(() => DEFAULT_DOCUMENT_VIEW_MODE),
-    loadMarkdownArtifact(doc, deps),
-    loadJsonArtifact(doc, deps),
-    loadHtmlArtifact(doc, deps),
-    loadBlocksArtifact(doc, deps),
+    track === 'docling'
+      ? loadMarkdownArtifact(doc, deps)
+      : Promise.resolve({
+          markdown: '',
+          loading: false,
+          error: 'No Docling markdown artifact is available for this document.',
+          downloadUrl: null,
+          downloadFilename: null,
+        } satisfies ParseMarkdownState),
+    track === 'docling'
+      ? loadJsonArtifact(doc, deps)
+      : Promise.resolve({
+          content: null,
+          rawText: null,
+          loading: false,
+          error: 'No DoclingDocument JSON available. Reset and re-parse with Docling.',
+          downloadUrl: null,
+          downloadFilename: null,
+        } satisfies ParseJsonState),
+    track === 'docling'
+      ? loadHtmlArtifact(doc, deps)
+      : Promise.resolve({
+          loading: false,
+          error: 'No Docling HTML artifact is available for this document.',
+          downloadUrl: null,
+          downloadFilename: null,
+        } satisfies ParseHtmlState),
+    track === 'docling'
+      ? loadBlocksArtifact(doc, deps)
+      : Promise.resolve({
+          blocks: [],
+          rawItems: [],
+          loading: false,
+          error: null,
+        } satisfies ParseBlocksState),
+    track === 'tree_sitter'
+      ? loadTreeSitterArtifact(doc, 'tree_sitter_ast_json', 'ast.json', deps)
+      : Promise.resolve({
+          rawText: null,
+          loading: false,
+          error: null,
+          downloadUrl: null,
+          downloadFilename: null,
+        } satisfies ParseTreeSitterState),
+    track === 'tree_sitter'
+      ? loadTreeSitterArtifact(doc, 'tree_sitter_symbols_json', 'symbols.json', deps)
+      : Promise.resolve({
+          rawText: null,
+          loading: false,
+          error: null,
+          downloadUrl: null,
+          downloadFilename: null,
+        } satisfies ParseTreeSitterState),
   ]);
 
   const rawItems = json.rawText
@@ -145,6 +222,8 @@ export async function primeParseArtifactsForDocument(
       ...blocks,
       rawItems,
     },
+    treeSitterAst,
+    treeSitterSymbols,
   };
 }
 
@@ -169,6 +248,31 @@ function attachBlockIdentityToRawItems(
     block_uid: blockUidByPointer.get(item.pointer) ?? null,
     source_uid: sourceUid,
   }));
+}
+
+async function loadTreeSitterArtifact(
+  doc: ProjectDocumentRow,
+  reprType: RepresentationType,
+  suffix: string,
+  deps: ParseArtifactsDeps,
+): Promise<ParseTreeSitterState> {
+  const locator = await deps.getArtifactLocator(doc.source_uid, reprType);
+  if (!locator) {
+    return { rawText: null, loading: false, error: null, downloadUrl: null, downloadFilename: null };
+  }
+
+  const downloadFilename = getFilenameFromLocator(locator) ?? `${doc.doc_title || 'document'}.${suffix}`;
+  const { url: signedUrl, error } = await deps.resolveSignedUrlForLocators([locator]);
+  if (!signedUrl) {
+    return { rawText: null, loading: false, error: error ?? 'Could not generate download URL.', downloadUrl: null, downloadFilename };
+  }
+
+  try {
+    const rawText = await deps.fetchText(signedUrl);
+    return { rawText, loading: false, error: null, downloadUrl: signedUrl, downloadFilename };
+  } catch (err) {
+    return { rawText: null, loading: false, error: err instanceof Error ? err.message : 'Failed to load artifact.', downloadUrl: signedUrl, downloadFilename };
+  }
 }
 
 async function loadMarkdownArtifact(doc: ProjectDocumentRow, deps: ParseArtifactsDeps): Promise<ParseMarkdownState> {

@@ -24,7 +24,7 @@
 }
 
 .top-command-bar--minimal {
-  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  grid-template-columns: minmax(auto, 200px) minmax(0, 1fr) auto auto;
 }
 
 .top-command-bar-search {
@@ -43,10 +43,9 @@
 }
 
 .top-command-bar--minimal .project-switcher-trigger {
-  width: 196px;
-  flex: 0 0 196px;
+  flex: 1 1 auto;
   justify-content: space-between;
-  margin-inline-start: -28px;
+  margin-inline-start: calc(-1 * var(--top-command-bar-leading-offset, 100px));
 }
 
 .top-command-bar--minimal .top-command-bar-left {

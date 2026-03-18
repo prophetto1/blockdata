@@ -77,7 +77,15 @@ Deno.serve(async (req) => {
       });
     }
 
-    const track = runtimePolicy.upload.extension_track_routing[source_type];
+    // Try source_type first, then fall back to file extension from locator.
+    // The routing table keys are extensions (e.g., "tex") while source_type
+    // may differ (e.g., "latex"). Match by both to stay resilient.
+    const sourceLocator = doc.source_locator as string | null;
+    const fileExtension = sourceLocator
+      ? sourceLocator.split("/").pop()?.split(".").pop()?.toLowerCase() ?? null
+      : null;
+    const track = runtimePolicy.upload.extension_track_routing[source_type]
+      ?? (fileExtension ? runtimePolicy.upload.extension_track_routing[fileExtension] : undefined);
     if (!track) {
       return json(400, { error: `No track routing for source_type: ${source_type}` });
     }
@@ -203,12 +211,20 @@ Deno.serve(async (req) => {
     // visible in the UI immediately.  conversion-complete will upsert over
     // this row with the full parsing results.
     if (Object.keys(pipeline_config).length > 0) {
+      // Generate a valid placeholder conv_uid (SHA-256 hex) so the row satisfies
+      // the CHECK constraint. conversion-complete will upsert over this with the
+      // real conv_uid from the conversion service.
+      const placeholderBytes = new TextEncoder().encode(`placeholder:${source_uid}`);
+      const hashBuffer = await crypto.subtle.digest("SHA-256", placeholderBytes);
+      const placeholder_conv_uid = Array.from(new Uint8Array(hashBuffer))
+        .map((b) => b.toString(16).padStart(2, "0"))
+        .join("");
+
       const { error: preInsertErr } = await supabaseAdmin
         .from("conversion_parsing")
         .insert({
           source_uid,
-          conv_uid: `pending:${source_uid}`,
-          conv_status: "pending",
+          conv_uid: placeholder_conv_uid,
           conv_parsing_tool: "docling",
           conv_representation_type: "doclingdocument_json",
           conv_total_blocks: 0,
@@ -219,7 +235,9 @@ Deno.serve(async (req) => {
           requested_pipeline_config: pipeline_config,
         });
       if (preInsertErr) {
-        throw new Error(`DB pre-insert conversion_parsing failed: ${preInsertErr.message}`);
+        // Non-fatal for constraint violations — conversion-complete will create the row.
+        // Log at error level so monitoring catches real DB failures.
+        console.error("trigger-parse: pre-insert conversion_parsing failed:", preInsertErr.message);
       }
     }
 

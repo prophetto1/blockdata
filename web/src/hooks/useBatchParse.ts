@@ -1,11 +1,13 @@
 import { useCallback, useRef, useState } from 'react';
 import { edgeFetch } from '@/lib/edge';
+import { platformApiFetch } from '@/lib/platformApi';
 
 export type FileDispatchStatus = 'idle' | 'queued' | 'dispatching' | 'dispatched' | 'dispatch_error';
 
 interface UseBatchParseOptions {
   profileId: string;
   pipelineConfig: Record<string, unknown>;
+  parser: string; // 'docling' | 'tree_sitter'
   concurrency?: number;
 }
 
@@ -18,7 +20,7 @@ interface BatchParseProgress {
 }
 
 export function useBatchParse(options: UseBatchParseOptions) {
-  const { profileId, pipelineConfig, concurrency = 3 } = options;
+  const { profileId, pipelineConfig, parser, concurrency = 3 } = options;
 
   const [dispatchStatus, setDispatchStatus] = useState<Map<string, FileDispatchStatus>>(new Map());
   const [errors, setErrors] = useState<Map<string, string>>(new Map());
@@ -39,15 +41,22 @@ export function useBatchParse(options: UseBatchParseOptions) {
     if (cancelledRef.current) return;
     updateStatus(sourceUid, 'dispatching');
     try {
-      const resp = await edgeFetch('trigger-parse', {
+      const payload = JSON.stringify({
+        source_uid: sourceUid,
+        profile_id: profileId,
+        pipeline_config: pipelineConfig,
+      });
+      const fetchOpts: RequestInit = {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          source_uid: sourceUid,
-          profile_id: profileId,
-          pipeline_config: pipelineConfig,
-        }),
-      });
+        body: payload,
+      };
+
+      // Tree-sitter goes through platform-api /parse; Docling through trigger-parse edge fn
+      const resp = parser === 'tree_sitter'
+        ? await platformApiFetch('/parse', fetchOpts)
+        : await edgeFetch('trigger-parse', fetchOpts);
+
       if (!resp.ok) {
         const text = await resp.text().catch(() => '');
         // Retry on 502/503/429 (service overloaded) up to 2 times
@@ -105,7 +114,7 @@ export function useBatchParse(options: UseBatchParseOptions) {
 
       next();
     },
-    [profileId, pipelineConfig, concurrency],
+    [profileId, pipelineConfig, parser, concurrency],
   );
 
   const cancel = useCallback(() => {

@@ -58,8 +58,8 @@ export function UploadSourceCards({ value, onValueChange }: UploadSourceCardsPro
           key={source.value}
           value={source.value}
           className={cn(
-            'group flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors',
-            'hover:border-primary/40 hover:bg-primary/5',
+            'group flex cursor-pointer items-start gap-3 rounded-lg border border-transparent p-3 transition-colors',
+            'hover:border-border hover:bg-primary/5',
             'data-[state=checked]:border-primary data-[state=checked]:bg-primary/5',
           )}
         >

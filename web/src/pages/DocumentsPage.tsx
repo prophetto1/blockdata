@@ -31,7 +31,7 @@ export default function DocumentsPage() {
   const [activeTab, setActiveTab] = useState<Tab>('upload');
   const [editDocUid, setEditDocUid] = useState<string | null>(null);
 
-  const parseTab = useParseTab();
+  const parseTab = useParseTab('docling', null);
 
   const editDoc = useMemo(
     () => docState.docs.find((d) => d.source_uid === editDocUid) ?? null,
@@ -134,6 +134,7 @@ export default function DocumentsPage() {
             <>
               <ParseConfigColumn
                 docs={docState.docs}
+                trackDocs={docState.docs}
                 selected={docState.selected}
                 selectedDoc={parseSelectedDoc}
                 parseTab={parseTab}

@@ -1,6 +1,6 @@
-import { render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { LeftRailShadcn } from './LeftRailShadcn';
 
@@ -16,6 +16,25 @@ vi.mock('@/lib/supabase', () => ({
     })),
   },
 }));
+
+vi.mock('@/hooks/useSuperuserProbe', () => ({
+  useSuperuserProbe: () => false,
+}));
+
+vi.mock('@/hooks/useProjectFocus', () => ({
+  useProjectFocus: () => ({ resolvedProjectId: null }),
+}));
+
+vi.mock('@/hooks/useTheme', () => ({
+  useTheme: () => ({
+    choice: 'system',
+    setTheme: vi.fn(),
+  }),
+}));
+
+afterEach(() => {
+  cleanup();
+});
 
 describe('LeftRailShadcn', () => {
   beforeAll(() => {
@@ -57,16 +76,15 @@ describe('LeftRailShadcn', () => {
 
   it('renders the brand logo and top-level nav items', async () => {
     render(
-      <MemoryRouter initialEntries={['/app/elt']}>
+      <MemoryRouter initialEntries={['/app/database']}>
         <LeftRailShadcn />
       </MemoryRouter>,
     );
 
     expect(await screen.findByRole('button', { name: 'Go to home' })).toBeInTheDocument();
     expect(screen.getByText('Flows')).toBeInTheDocument();
-    expect(screen.getByText('ELT')).toBeInTheDocument();
+    expect(screen.getByText('Workspace')).toBeInTheDocument();
     expect(screen.getByText('Database')).toBeInTheDocument();
-    // "Settings" appears in nav items and also in account menu
     expect(screen.getAllByText('Settings').length).toBeGreaterThanOrEqual(1);
   });
 
@@ -77,7 +95,6 @@ describe('LeftRailShadcn', () => {
       </MemoryRouter>,
     );
 
-    // Drill view shows settings sub-items
     expect(await screen.findByText('Account')).toBeInTheDocument();
     expect(screen.getByText('Themes')).toBeInTheDocument();
     expect(screen.getByText('AI Providers')).toBeInTheDocument();
@@ -85,13 +102,46 @@ describe('LeftRailShadcn', () => {
 
   it('renders compact mode with icon-only buttons', () => {
     const { container } = render(
-      <MemoryRouter initialEntries={['/app/elt']}>
+      <MemoryRouter initialEntries={['/app/database']}>
         <LeftRailShadcn desktopCompact />
       </MemoryRouter>,
     );
 
-    // In compact mode, nav items render as icon-only buttons with title/aria-label
     const navButtons = container.querySelectorAll('button[title]');
     expect(navButtons.length).toBeGreaterThanOrEqual(5);
   });
+
+
+  it('uses the expanded header button to collapse the side rail', () => {
+    const onToggleDesktopCompact = vi.fn();
+
+    render(
+      <MemoryRouter initialEntries={['/app/database']}>
+        <LeftRailShadcn onToggleDesktopCompact={onToggleDesktopCompact} />
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Collapse side navigation' }));
+
+    expect(onToggleDesktopCompact).toHaveBeenCalledTimes(1);
+  });
+  it('uses the compact header button to expand the side rail', async () => {
+    const onToggleDesktopCompact = vi.fn();
+
+    render(
+      <MemoryRouter initialEntries={['/app/database']}>
+        <LeftRailShadcn desktopCompact onToggleDesktopCompact={onToggleDesktopCompact} />
+      </MemoryRouter>,
+    );
+
+    expect(screen.queryByRole('button', { name: 'Go to home' })).not.toBeInTheDocument();
+
+    const expandButton = await screen.findByRole('button', { name: 'Expand side navigation' });
+    fireEvent.click(expandButton);
+
+    expect(onToggleDesktopCompact).toHaveBeenCalledTimes(1);
+  });
 });
+
+
+

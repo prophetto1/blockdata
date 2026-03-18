@@ -1,0 +1,26 @@
+from __future__ import annotations
+
+# Source: E:\KESTRA\core\src\main\java\io\kestra\core\runners\WorkingDir.java
+
+from pathlib import Path
+from typing import Any, Protocol
+
+from engine.core.models.tasks.file_exist_comportment import FileExistComportment
+
+
+class WorkingDir(Protocol):
+    def path(self, create: bool | None = None) -> Path: ...
+
+    def id(self) -> str: ...
+
+    def resolve(self, path: Path) -> Path: ...
+
+    def create_temp_file(self, content: list[int] | None = None, extension: str | None = None) -> Path: ...
+
+    def create_file(self, filename: str, content: list[int] | None = None) -> Path: ...
+
+    def put_file(self, path: Path, content: Any, comportment: FileExistComportment | None = None) -> Path: ...
+
+    def find_all_files_matching(self, patterns: list[str]) -> list[Path]: ...
+
+    def cleanup(self) -> None: ...

@@ -1,0 +1,24 @@
+{
+  "source": "E:\\KESTRA-IO\\plugins",
+  "output": "E:\\writing-system\\integrations",
+  "prefix": "integrations",
+  "files_scanned": 1645,
+  "files_parsed": 1645,
+  "parse_errors": 0,
+  "modules_built": 1645,
+  "build_errors": 0,
+  "files_emitted": 1645,
+  "emit_errors": 0,
+  "types": {
+    "classes": 1460,
+    "interfaces": 90,
+    "enums": 79,
+    "records": 12
+  },
+  "members": {
+    "fields": 7034,
+    "methods": 3497
+  },
+  "conflicts": 184,
+  "warnings": 1324
+}

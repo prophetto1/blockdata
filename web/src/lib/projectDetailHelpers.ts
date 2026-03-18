@@ -5,12 +5,9 @@ import type { DocumentRow } from '@/lib/types';
 // Types
 // ---------------------------------------------------------------------------
 
-export type ProjectDocumentRow = DocumentRow & {
-  source_locator?: string | null;
-  conv_locator?: string | null;
-};
+export type ProjectDocumentRow = DocumentRow;
 
-export type PreviewKind = 'none' | 'pdf' | 'image' | 'text' | 'json' | 'markdown' | 'docx' | 'xlsx' | 'pptx' | 'file';
+export type PreviewKind = 'none' | 'pdf' | 'image' | 'text' | 'json' | 'markdown' | 'code' | 'docx' | 'xlsx' | 'pptx' | 'file';
 
 export type TestBlockCardRow = {
   blockUid: string;
@@ -74,6 +71,28 @@ const TEXT_EXTENSIONS = new Set([
   'tex',
   'org',
   'vtt',
+]);
+
+/** Formats for CodePreview — only those NOT already handled by other renderers. */
+const CODE_PREVIEW_SOURCE_TYPES = new Set([
+  // Code
+  'py', 'python', 'js', 'javascript', 'jsx', 'ts', 'typescript', 'tsx',
+  'go', 'rs', 'rust', 'cs', 'csharp', 'java',
+  'css', 'vue', 'svelte',
+  // Data formats not already covered by isJsonDocument/isTextDocument
+  'yaml', 'yml', 'toml',
+]);
+
+const CODE_PREVIEW_EXTENSIONS = new Set([
+  // Code — with language packs
+  'py', 'js', 'jsx', 'ts', 'tsx', 'go', 'rs', 'css', 'vue', 'svelte',
+  // Code — no language pack (still gets line numbers + monospace)
+  'java', 'cs', 'c', 'cpp', 'h', 'hpp', 'rb', 'php', 'sh', 'bash', 'zsh',
+  'sql', 'r', 'swift', 'kt', 'scala', 'lua', 'pl', 'ex', 'exs', 'zig',
+  // Data
+  'yaml', 'yml', 'toml', 'ini', 'env', 'conf', 'cfg',
+  // Plain text not in TEXT_EXTENSIONS that should still preview
+  'log', 'tsv',
 ]);
 
 // ---------------------------------------------------------------------------
@@ -278,6 +297,26 @@ export function isXlsxDocument(doc: ProjectDocumentRow): boolean {
   const sourceType = doc.source_type.toLowerCase();
   if (XLSX_SOURCE_TYPES.has(sourceType)) return true;
   return XLSX_EXTENSIONS.has(getSourceLocatorExtension(doc));
+}
+
+export function isCodePreviewDocument(doc: ProjectDocumentRow): boolean {
+  const sourceType = doc.source_type.toLowerCase();
+  if (CODE_PREVIEW_SOURCE_TYPES.has(sourceType)) return true;
+  return CODE_PREVIEW_EXTENSIONS.has(getSourceLocatorExtension(doc));
+}
+
+/** Returns the dot-prefixed extension for CodeMirror language lookup, e.g. '.py' */
+export function getCodeFileExtension(doc: ProjectDocumentRow): string {
+  const locatorExt = getSourceLocatorExtension(doc);
+  if (locatorExt) return `.${locatorExt}`;
+  const titleExt = getDocumentTitleExtension(doc);
+  if (titleExt) return `.${titleExt}`;
+  const sourceType = doc.source_type.toLowerCase();
+  const typeToExt: Record<string, string> = {
+    python: '.py', javascript: '.js', typescript: '.ts',
+    rust: '.rs', csharp: '.cs', golang: '.go',
+  };
+  return typeToExt[sourceType] ?? `.${sourceType}`;
 }
 
 export function getDocumentFormat(doc: ProjectDocumentRow): string {

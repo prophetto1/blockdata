@@ -1,0 +1,19 @@
+from __future__ import annotations
+
+# Source: E:\KESTRA\model\src\main\java\io\kestra\core\models\Plugin.java
+
+from typing import Any, Optional, Protocol
+
+
+class Plugin(Protocol):
+    def get_type(self) -> str: ...
+
+    def get_aliases(plugin: type[Any]) -> set[str]: ...
+
+    def is_internal(plugin: type[Any]) -> bool: ...
+
+    def is_deprecated(plugin: type[Any]) -> bool: ...
+
+    def is_primary(plugin: type[Any]) -> bool: ...
+
+    def get_id(plugin: type[Any]) -> Optional[str]: ...

@@ -1,1 +1,0 @@
-This page needs investigation. The artifact files here are stubs. Follow `kestra-ct/onboarding/page-investigation-procedure.md` step by step to fill them. Check `kestra-ct/page-registry.yaml` for this page's priority and current status before starting.

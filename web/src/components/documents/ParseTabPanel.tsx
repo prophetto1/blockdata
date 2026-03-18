@@ -9,15 +9,15 @@ import { useBatchParse } from '@/hooks/useBatchParse';
 import { supabase } from '@/lib/supabase';
 import type { ProjectDocumentRow } from '@/lib/projectDetailHelpers';
 import { cn } from '@/lib/utils';
+import {
+  findAppliedProfile,
+  isParseSupported,
+  type ParseTrack,
+  type ParsingProfileOption,
+} from './parseProfileSupport';
 
 const DOCUMENTS_BUCKET =
   (import.meta.env.VITE_DOCUMENTS_BUCKET as string | undefined) ?? 'documents';
-
-type ParsingProfile = {
-  id: string;
-  parser: string;
-  config: Record<string, unknown>;
-};
 
 function getBaseName(locator: string | null | undefined): string | null {
   if (!locator) return null;
@@ -75,8 +75,8 @@ function ActionMenu({ items }: { items: { label: string; onClick: () => void; da
 // ─── useParseTab ─────────────────────────────────────────────────────────────
 
 /** Hook that manages all parse-tab state. Used by both the toolbar and row actions. */
-export function useParseTab() {
-  const [profiles, setProfiles] = useState<ParsingProfile[]>([]);
+export function useParseTab(activeTrack: ParseTrack, selectedDoc: ProjectDocumentRow | null) {
+  const [allProfiles, setAllProfiles] = useState<ParsingProfileOption[]>([]);
   const [selectedProfileId, setSelectedProfileId] = useState<string>('');
   const [configText, setConfigText] = useState('{}');
   const [jsonModal, setJsonModal] = useState<{ title: string; content: string } | null>(null);
@@ -89,9 +89,20 @@ export function useParseTab() {
     }
   }, [configText]);
 
+  const profiles = useMemo(
+    () => allProfiles.filter((p) => p.parser === activeTrack),
+    [allProfiles, activeTrack],
+  );
+
+  const selectedParser = useMemo(() => {
+    const profile = profiles.find((p) => p.id === selectedProfileId);
+    return profile?.parser ?? activeTrack;
+  }, [profiles, activeTrack, selectedProfileId]);
+
   const batch = useBatchParse({
     profileId: selectedProfileId,
     pipelineConfig: parsedConfig,
+    parser: selectedParser,
   });
 
   useEffect(() => {
@@ -99,10 +110,9 @@ export function useParseTab() {
       const { data } = await supabase
         .from('parsing_profiles')
         .select('id, parser, config')
-        .eq('parser', 'docling')
         .order('id');
-      const rows = (data ?? []) as ParsingProfile[];
-      setProfiles(rows);
+      const rows = (data ?? []) as ParsingProfileOption[];
+      setAllProfiles(rows);
       const defaultProfile = rows.find((p) => (p.config as any)?.is_default) ?? rows[0];
       if (defaultProfile) {
         setSelectedProfileId(defaultProfile.id);
@@ -111,16 +121,43 @@ export function useParseTab() {
     })();
   }, []);
 
+  useEffect(() => {
+    if (profiles.length === 0) return;
+
+    const appliedProfile = selectedDoc?.status === 'parsed'
+      ? findAppliedProfile(profiles, selectedDoc)
+      : null;
+
+    const nextProfile = appliedProfile
+      ?? profiles.find((profile) => profile.id === selectedProfileId)
+      ?? profiles[0];
+
+    if (!nextProfile) return;
+
+    if (nextProfile.id !== selectedProfileId) {
+      setSelectedProfileId(nextProfile.id);
+    }
+
+    const nextConfigText = JSON.stringify(nextProfile.config, null, 2);
+    if (nextConfigText !== configText) {
+      setConfigText(nextConfigText);
+    }
+  }, [configText, profiles, selectedDoc, selectedProfileId]);
+
   const handleProfileChange = (id: string) => {
     setSelectedProfileId(id);
-    const profile = profiles.find((p) => p.id === id);
+    const profile = allProfiles.find((p) => p.id === id);
     if (profile) setConfigText(JSON.stringify(profile.config, null, 2));
   };
 
   const handleViewJson = async (doc: ProjectDocumentRow) => {
+    // Use conv_locator (from view_documents) which holds the actual artifact path,
+    // regardless of parser. Falls back to legacy .docling.json for older rows.
+    const locator = doc.conv_locator;
     const baseName = getBaseName(doc.source_locator);
-    if (!baseName) return;
-    const key = `converted/${doc.source_uid}/${baseName}.docling.json`;
+    const key = locator
+      || (baseName ? `converted/${doc.source_uid}/${baseName}.docling.json` : null);
+    if (!key) return;
     const { data, error: urlError } = await supabase.storage
       .from(DOCUMENTS_BUCKET)
       .createSignedUrl(key, 60 * 20);
@@ -136,9 +173,11 @@ export function useParseTab() {
   };
 
   const handleDownloadJson = async (doc: ProjectDocumentRow) => {
+    const locator = doc.conv_locator;
     const baseName = getBaseName(doc.source_locator);
-    if (!baseName) return;
-    const key = `converted/${doc.source_uid}/${baseName}.docling.json`;
+    const key = locator
+      || (baseName ? `converted/${doc.source_uid}/${baseName}.docling.json` : null);
+    if (!key) return;
     const { data } = await supabase.storage
       .from(DOCUMENTS_BUCKET)
       .createSignedUrl(key, 60 * 20);
@@ -148,6 +187,8 @@ export function useParseTab() {
   return {
     profiles,
     selectedProfileId,
+    selectedParser,
+    activeTrack,
     handleProfileChange,
     batch,
     jsonModal,
@@ -169,7 +210,7 @@ export function ParseTabPanel({ parseTab }: { parseTab: ReturnType<typeof usePar
           <div className="relative flex max-h-[80vh] w-full max-w-3xl flex-col rounded-lg border border-border bg-card shadow-xl">
             <div className="flex items-center justify-between border-b border-border px-4 py-3">
               <h3 className="text-sm font-medium text-foreground truncate">
-                {jsonModal.title} — DoclingDocument
+                {jsonModal.title} — Parse Output
               </h3>
               <button
                 type="button"
@@ -212,24 +253,25 @@ export function ParseRowActions({
   onDoclingJsonPreview?: (doc: ProjectDocumentRow) => void;
 }) {
   const { batch } = parseTab;
-  const canParse =
+  const parseable = isParseSupported(doc);
+  const canParse = parseable && (
     doc.status === 'uploaded' ||
     doc.status === 'conversion_failed' ||
-    doc.status === 'parse_failed';
-  const isConverting = doc.status === 'converting';
+    doc.status === 'parse_failed'
+  );
   const isParsed = doc.status === 'parsed';
 
   const menuItems: { label: string; onClick: () => void; danger?: boolean }[] = [];
 
   if (isParsed) {
     if (onDoclingMdPreview) {
-      menuItems.push({ label: 'View Docling MD', onClick: () => onDoclingMdPreview(doc) });
+      menuItems.push({ label: 'View Parsed Markdown', onClick: () => onDoclingMdPreview(doc) });
     }
     if (onBlocksPreview) {
-      menuItems.push({ label: 'View Blocks', onClick: () => onBlocksPreview(doc) });
+      menuItems.push({ label: 'View Parsed Blocks', onClick: () => onBlocksPreview(doc) });
     }
     if (onDoclingJsonPreview) {
-      menuItems.push({ label: 'View DoclingJson', onClick: () => onDoclingJsonPreview(doc) });
+      menuItems.push({ label: 'Download', onClick: () => onDoclingJsonPreview(doc) });
     }
   }
   if (onReset) {
@@ -251,6 +293,14 @@ export function ParseRowActions({
         >
           <IconPlayerPlay size={12} />
         </button>
+      )}
+      {!parseable && doc.status === 'uploaded' && (
+        <span
+          className="flex h-5 w-5 items-center justify-center text-muted-foreground/40"
+          title="No parser available for this file type"
+        >
+          <IconPlayerPlay size={12} />
+        </span>
       )}
       {menuItems.length > 0 && <ActionMenu items={menuItems} />}
     </div>

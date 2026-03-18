@@ -1,0 +1,19 @@
+from __future__ import annotations
+
+# Source: E:\KESTRA\core\src\main\java\io\kestra\core\services\NamespaceService.java
+
+from typing import Any, Protocol
+
+
+class NamespaceService(Protocol):
+    def is_namespace_exists(self, tenant: str, namespace: str) -> bool: ...
+
+    def require_existing_namespace(self, tenant: str, namespace: str) -> bool: ...
+
+    def is_allowed_namespace(self, tenant: str, namespace: str, from_tenant: str, from_namespace: str) -> bool: ...
+
+    def check_allowed_namespace(self, tenant: str, namespace: str, from_tenant: str, from_namespace: str) -> None: ...
+
+    def are_allowed_all_namespaces(self, tenant: str, from_tenant: str, from_namespace: str) -> bool: ...
+
+    def check_allowed_all_namespaces(self, tenant: str, from_tenant: str, from_namespace: str) -> None: ...

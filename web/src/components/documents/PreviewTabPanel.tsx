@@ -14,8 +14,11 @@ import {
   DocumentPreviewShell,
   DocumentPreviewStandardContent,
 } from '@/components/documents/DocumentPreviewShell';
+import { CodePreview } from '@/components/documents/CodePreview';
 import {
   dedupeLocators,
+  getCodeFileExtension,
+  isCodePreviewDocument,
   isDocxDocument,
   isImageDocument,
   isJsonDocument,
@@ -166,6 +169,28 @@ export function PreviewTabPanel({
         setPreviewUrl(signedUrl);
         setPreviewLoading(false);
         return;
+      }
+
+      if (isCodePreviewDocument(doc)) {
+        try {
+          const response = await fetch(signedUrl);
+          const text = await response.text();
+          if (cancelled) return;
+          const truncated = text.length > 200_000
+            ? `${text.slice(0, 200_000)}\n\n// [Preview truncated]`
+            : text;
+          setPreviewKind('code');
+          setPreviewText(truncated.length > 0 ? truncated : '// [Empty file]');
+          setPreviewUrl(signedUrl);
+          setPreviewLoading(false);
+          return;
+        } catch {
+          if (cancelled) return;
+          setPreviewKind('file');
+          setPreviewUrl(signedUrl);
+          setPreviewLoading(false);
+          return;
+        }
       }
 
       setPreviewKind('file');
@@ -373,6 +398,16 @@ export function PreviewTabPanel({
       {
         downloadUrl: showHeaderDownload ? previewUrl : null,
       },
+    );
+  }
+
+  if (previewKind === 'code' && previewText) {
+    return renderStandardContentPreview(
+      <CodePreview
+        content={previewText}
+        extension={getCodeFileExtension(doc)}
+      />,
+      { downloadUrl: showHeaderDownload ? previewUrl : null, contentClassName: 'overflow-hidden' },
     );
   }
 

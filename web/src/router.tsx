@@ -8,6 +8,8 @@ import { LegacyRunRedirect } from '@/components/common/LegacyRedirect';
 
 import MarketingIntegrations from '@/pages/MarketingIntegrations';
 import AuthCallback from '@/pages/AuthCallback';
+import AuthWelcome from '@/pages/AuthWelcome';
+import LoginSplit from '@/pages/LoginSplit';
 import Projects from '@/pages/Projects';
 import FlowDetail from '@/pages/FlowDetail';
 import FlowsList from '@/pages/FlowsList';
@@ -32,7 +34,9 @@ import DocumentTest from '@/pages/DocumentTest';
 import DatabasePlaceholder from '@/pages/DatabasePlaceholder';
 import ProjectAssetsPage from '@/pages/ProjectAssetsPage';
 import ParsePage from '@/pages/ParsePage';
+import { Component as Workspace } from '@/pages/Workspace';
 import ExtractPage from '@/pages/ExtractPage';
+import ConvertPage from '@/pages/ConvertPage';
 import TransformPage from '@/pages/TransformPage';
 import LoadPage from '@/pages/LoadPage';
 import AppHome from '@/pages/AppHome';
@@ -41,6 +45,7 @@ import ProjectsHome from '@/pages/ProjectsHome';
 import IntegrationsCatalog from '@/pages/marketplace/IntegrationsCatalog';
 import ServicesCatalog from '@/pages/marketplace/ServicesCatalog';
 import ServiceDetailPage from '@/pages/marketplace/ServiceDetailPage';
+import FunctionCatalogPage from '@/pages/marketplace/FunctionCatalogPage';
 import TestsPage from '@/pages/kestra/TestsPage';
 import { FlowsRouteShell } from '@/components/layout/FlowsRouteShell';
 import { featureFlags } from '@/lib/featureFlags';
@@ -109,7 +114,7 @@ export const router = createBrowserRouter([
   {
     element: <PublicFullBleedLayout />,
     children: [
-      { path: '/login', element: <Navigate to="/app" replace /> },
+      { path: '/login', element: <LoginSplit /> },
       { path: '/register', element: <Navigate to="/early-access" replace /> },
       { path: '/early-access', element: <EarlyAccess /> },
     ],
@@ -119,6 +124,7 @@ export const router = createBrowserRouter([
     element: <PublicLayout />,
     children: [
       { path: '/auth/callback', element: <AuthCallback /> },
+      { path: '/auth/welcome', element: <AuthWelcome /> },
     ],
   },
 
@@ -131,7 +137,7 @@ export const router = createBrowserRouter([
           // App landing + projects
           { path: '/app', element: <AppHome /> },
 
-          { path: '/app/elt', element: <ProjectsHome /> },
+          { path: '/app/elt', element: <ProjectsHome title="ELT" basePath="/app/elt" appendProjectId /> },
           { path: '/app/elt/:projectId', element: <DocumentTest /> },
           { path: '/app/elt/:projectId/upload-uppy-demo', element: <UppyLibraryDemo /> },
           { path: '/app/elt/:projectId/runs/:runId', element: <RunDetail /> },
@@ -139,11 +145,15 @@ export const router = createBrowserRouter([
           { path: '/app/database', element: <DatabasePlaceholder /> },
           { path: '/app/assets', element: <ProjectAssetsPage /> },
           { path: '/app/parse', element: <ParsePage /> },
+          { path: '/app/workspace', element: <Workspace /> },
           { path: '/app/extract', element: <ExtractPage /> },
+          { path: '/app/convert', element: <ConvertPage /> },
           { path: '/app/tests', element: <TestsPage /> },
+          { path: '/app/test-integrations', element: <Navigate to="/app/superuser/test-integrations" replace /> },
           { path: '/app/marketplace/integrations', element: <IntegrationsCatalog /> },
           { path: '/app/marketplace/services', element: <ServicesCatalog /> },
           { path: '/app/marketplace/services/:serviceId', element: <ServiceDetailPage /> },
+          { path: '/app/marketplace/functions', element: <FunctionCatalogPage /> },
           {
             path: '/app/flows',
             element: <FlowsRouteShell />,
@@ -248,6 +258,7 @@ export const router = createBrowserRouter([
               { path: 'worker-config', lazy: () => import('@/pages/superuser/SuperuserWorkerConfig') },
               { path: 'audit', lazy: () => import('@/pages/superuser/SuperuserAuditHistory') },
               { path: 'api-endpoints', lazy: () => import('@/pages/superuser/SuperuserApiEndpoints') },
+              { path: 'test-integrations', lazy: () => import('@/pages/superuser/TestIntegrations') },
             ],
           },
 
@@ -263,4 +274,5 @@ export const router = createBrowserRouter([
   // Catch-all 404 for routes outside /app
   { path: '*', element: <NotFound /> },
 ]);
+
 

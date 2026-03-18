@@ -5,9 +5,11 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import type { ProjectDocumentRow } from '@/lib/projectDetailHelpers';
 import { cn } from '@/lib/utils';
 import { useParseTab } from './ParseTabPanel';
+import { getAppliedProfileName, getDocumentParseTrack } from './parseProfileSupport';
 
 type ParseConfigColumnProps = {
   docs: ProjectDocumentRow[];
+  trackDocs: ProjectDocumentRow[];
   selected: Set<string>;
   selectedDoc: ProjectDocumentRow | null;
   parseTab: ReturnType<typeof useParseTab>;
@@ -63,25 +65,35 @@ function ActionButton({
 
 export function ParseConfigColumn({
   docs,
+  trackDocs,
   selected,
   selectedDoc,
   parseTab,
   onReset,
   onDelete,
 }: ParseConfigColumnProps) {
-  const { profiles, selectedProfileId, handleProfileChange, batch } = parseTab;
+  const { profiles, selectedProfileId, selectedParser, activeTrack, handleProfileChange, batch } = parseTab;
+
+  const isParsedSelection = selectedDoc?.status === 'parsed';
+  const appliedProfileName = getAppliedProfileName(selectedDoc);
+  const visibleTrack = activeTrack;
 
   const selectedProfile = profiles.find((profile) => profile.id === selectedProfileId) ?? null;
   const selectedProfileConfig = (selectedProfile?.config ?? {}) as Record<string, unknown>;
   const selectedProfileDescription = getProfileDescription(selectedProfileConfig);
   const pipelineLabel = getPipelineLabel(selectedProfileConfig);
+  const batchParser = selectedProfile?.parser ?? selectedParser;
 
   const unparsedUids = docs
-    .filter((doc) => doc.status === 'uploaded' || doc.status === 'conversion_failed' || doc.status === 'parse_failed')
+    .filter((doc) => (
+      doc.status === 'uploaded'
+      || doc.status === 'conversion_failed'
+      || doc.status === 'parse_failed'
+    ) && getDocumentParseTrack(doc) === batchParser)
     .map((doc) => doc.source_uid);
 
   const selectedUids = docs
-    .filter((doc) => selected.has(doc.source_uid))
+    .filter((doc) => selected.has(doc.source_uid) && getDocumentParseTrack(doc) === batchParser)
     .map((doc) => doc.source_uid);
 
   const selectedResetableUids = docs
@@ -97,9 +109,9 @@ export function ParseConfigColumn({
     .filter((doc) => doc.status === 'parsed' || doc.status === 'conversion_failed' || doc.status === 'parse_failed')
     .map((doc) => doc.source_uid);
 
-  const parsedCount = docs.filter((doc) => doc.status === 'parsed').length;
-  const convertingCount = docs.filter((doc) => doc.status === 'converting').length;
-  const parseProgress = docs.length > 0 ? (parsedCount / docs.length) * 100 : 0;
+  const parsedCount = trackDocs.filter((doc) => doc.status === 'parsed').length;
+  const convertingCount = trackDocs.filter((doc) => doc.status === 'converting').length;
+  const parseProgress = trackDocs.length > 0 ? (parsedCount / trackDocs.length) * 100 : 0;
 
   return (
     <div className="h-full w-full min-h-0 p-1">
@@ -107,7 +119,9 @@ export function ParseConfigColumn({
         <div className="grid min-h-10 grid-cols-[1fr_auto] items-center border-b border-border bg-card px-2">
           <div className="flex min-w-0 items-center gap-2">
             <span className="truncate text-sm font-semibold text-foreground">Config</span>
-            <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Docling</span>
+            <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+              {visibleTrack === 'tree_sitter' ? 'Tree-sitter' : 'Docling'}
+            </span>
           </div>
           {batch.isRunning ? (
             <span className="inline-flex items-center gap-1 rounded-md border border-orange-500/30 bg-orange-500/10 px-2 py-1 text-[11px] font-medium text-orange-700 dark:text-orange-300">
@@ -122,7 +136,7 @@ export function ParseConfigColumn({
             <div className="mb-2 flex items-center justify-between gap-2">
               <div className="text-sm font-bold text-foreground">Progress</div>
               <div className="text-xs text-muted-foreground">
-                {parsedCount}/{docs.length} parsed
+                {parsedCount}/{trackDocs.length} parsed
               </div>
             </div>
             <div className="mb-2 h-1.5 overflow-hidden rounded-full bg-muted">
@@ -160,19 +174,31 @@ export function ParseConfigColumn({
           <div className="space-y-3">
             <div className="px-1 py-1">
               <div className="mb-2 text-sm font-bold text-foreground">Profile</div>
-              <label className="mb-1 block text-xs font-medium text-foreground">Active profile</label>
-              <select
-                value={selectedProfileId}
-                onChange={(event) => handleProfileChange(event.target.value)}
-                className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm text-foreground"
-              >
-                {profiles.map((profile) => (
-                  <option key={profile.id} value={profile.id}>
-                    {getProfileName(profile.config as Record<string, unknown>)}
-                  </option>
-                ))}
-              </select>
-              {selectedProfile && (
+              {isParsedSelection && appliedProfileName ? (
+                <div className="rounded-md border border-border bg-background p-3">
+                  <div className="mb-1 text-xs font-medium text-foreground">Parsed with</div>
+                  <div className="text-sm font-semibold text-foreground">{appliedProfileName}</div>
+                  <div className="mt-1 text-xs text-muted-foreground">
+                    This document is already parsed, so the profile shown here reflects the run that produced the current artifacts.
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <label className="mb-1 block text-xs font-medium text-foreground">Active profile</label>
+                  <select
+                    value={selectedProfileId}
+                    onChange={(event) => handleProfileChange(event.target.value)}
+                    className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm text-foreground"
+                  >
+                    {profiles.map((profile) => (
+                      <option key={profile.id} value={profile.id}>
+                        {getProfileName(profile.config as Record<string, unknown>)}
+                      </option>
+                    ))}
+                  </select>
+                </>
+              )}
+              {selectedProfile && !isParsedSelection && (
                 <div className="mt-3 border-t border-border/70 pt-3">
                   <div className="text-sm font-semibold text-foreground">
                     {getProfileName(selectedProfileConfig)}
@@ -218,6 +244,15 @@ export function ParseConfigColumn({
 
             <div className="px-1 py-1">
               <div className="mb-2 text-sm font-bold text-foreground">Batch actions</div>
+              {batch.progress.errors > 0 && (
+                <div className="mb-3 rounded-md border border-destructive/30 bg-destructive/5 p-3 text-xs text-destructive">
+                  {Array.from(batch.errors.entries()).slice(0, 3).map(([uid, message]) => (
+                    <div key={uid}>
+                      {uid}: {message}
+                    </div>
+                  ))}
+                </div>
+              )}
               <div className="grid gap-2 sm:grid-cols-2">
                 <ActionButton
                   variant="primary"

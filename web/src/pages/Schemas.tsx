@@ -20,9 +20,20 @@ import {
 import { useShellHeaderTitle } from '@/components/common/useShellHeaderTitle';
 import { Workbench, type WorkbenchTab } from '@/components/workbench/Workbench';
 import { normalizePaneWidths, type Pane } from '@/components/workbench/workbenchState';
+import {
+  DialogRoot,
+  DialogContent,
+  DialogTitle,
+  DialogCloseTrigger,
+  DialogBody,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
+import { useProjectFocus } from '@/hooks/useProjectFocus';
+import { useExtractionSchemas } from '@/hooks/useExtractionSchemas';
+import type { ExtractionSchemaRow } from '@/lib/types';
 
 type SchemaFieldType = 'string' | 'number' | 'integer' | 'boolean' | 'object' | 'enum';
 
@@ -224,8 +235,21 @@ export default function Schemas() {
   useShellHeaderTitle({
     title: 'Schema',
   });
+  const { resolvedProjectId } = useProjectFocus();
+  const {
+    schemas,
+    loading: schemasLoading,
+    createSchema: createSchemaRow,
+    updateSchema: updateSchemaRow,
+    deleteSchema: deleteSchemaRow,
+  } = useExtractionSchemas(resolvedProjectId);
+
   const monacoTheme = useMonacoTheme();
   const [workspaceStage, setWorkspaceStage] = useState<SchemaWorkspaceStage>('start');
+  const [schemaName, setSchemaName] = useState('');
+  const [editingSchemaId, setEditingSchemaId] = useState<string | null>(null);
+  const [saveBusy, setSaveBusy] = useState(false);
+  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const [extractSchemaFields, setExtractSchemaFields] = useState<SchemaField[]>(() => [{
     id: `field-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     name: '',
@@ -237,6 +261,7 @@ export default function Schemas() {
   }]);
   const [editorView, setEditorView] = useState<SchemaEditorView>('split');
   const [splitSize, setSplitSize] = useState<number[]>([50, 50]);
+  const [codeError, setCodeError] = useState<string | null>(null);
   const editorRef = useRef<MonacoEditorInstance | null>(null);
   const codeHasFocusRef = useRef(false);
 
@@ -259,6 +284,71 @@ export default function Schemas() {
       children: seed?.children ?? [],
     }
   ), []);
+
+  const syncCodeToVisual = useCallback(() => {
+    const editor = editorRef.current;
+    if (!editor) return;
+    try {
+      const parsed = JSON.parse(editor.getValue());
+      if (parsed?.type === 'object') {
+        setExtractSchemaFields(parseObjectSchemaToFields(parsed));
+        setCodeError(null);
+      }
+    } catch {
+      // keep current fields on invalid JSON
+    }
+  }, []);
+
+  const switchEditorView = useCallback((next: SchemaEditorView) => {
+    if (editorView !== 'visual' && editorRef.current) {
+      syncCodeToVisual();
+    }
+    setEditorView(next);
+  }, [editorView, syncCodeToVisual]);
+
+  const handleSave = useCallback(async (): Promise<boolean> => {
+    const name = schemaName.trim();
+    if (!name || !resolvedProjectId) return false;
+    setSaveBusy(true);
+    try {
+      syncCodeToVisual();
+      const body = buildObjectSchema(extractSchemaFields);
+      if (editingSchemaId) {
+        await updateSchemaRow(editingSchemaId, { schema_name: name, schema_body: body });
+      } else {
+        const created = await createSchemaRow(name, body);
+        setEditingSchemaId(created.schema_id);
+      }
+      return true;
+    } catch (e) {
+      console.error('Save failed:', e);
+      return false;
+    } finally {
+      setSaveBusy(false);
+    }
+  }, [schemaName, resolvedProjectId, extractSchemaFields, editingSchemaId, createSchemaRow, updateSchemaRow, syncCodeToVisual]);
+
+  const handleLoadSchema = useCallback((schema: ExtractionSchemaRow) => {
+    setEditingSchemaId(schema.schema_id);
+    setSchemaName(schema.schema_name);
+    setExtractSchemaFields(parseObjectSchemaToFields(schema.schema_body));
+    setWorkspaceStage('editing');
+    setCodeError(null);
+  }, []);
+
+  const handleDeleteSchema = useCallback(async (schemaId: string) => {
+    try {
+      await deleteSchemaRow(schemaId);
+      if (editingSchemaId === schemaId) {
+        setEditingSchemaId(null);
+        setSchemaName('');
+        setWorkspaceStage('start');
+        setExtractSchemaFields([]);
+      }
+    } catch (e) {
+      console.error('Delete failed:', e);
+    }
+  }, [deleteSchemaRow, editingSchemaId]);
 
   const updateField = useCallback((targetId: string, updater: (field: SchemaField) => SchemaField) => {
     setExtractSchemaFields((prev) => {
@@ -340,14 +430,14 @@ export default function Schemas() {
     return fields.map((field) => (
       <div
         key={field.id}
-        style={{ marginLeft: `${depth * 14}px` }}
+        style={{ marginLeft: `${depth * 12}px` }}
       >
         <span className="text-xs font-medium text-muted-foreground">Property</span>
-        <div className="mt-1 flex items-center gap-2">
+        <div className="mt-0.5 flex items-center gap-1.5">
           <Input
             value={field.name}
-            placeholder=""
-            className="h-9 min-w-0 flex-1 text-sm"
+            placeholder="field_name"
+            className="h-8 min-w-0 flex-1 text-sm"
             onChange={(event) => {
               const nextName = event.currentTarget.value;
               updateField(field.id, (current) => ({ ...current, name: nextName }));
@@ -378,7 +468,7 @@ export default function Schemas() {
             positioning={{ placement: 'bottom-start', offset: { mainAxis: 4 }, strategy: 'fixed' }}
           >
             <Select.Control>
-              <Select.Trigger className="flex h-9 w-32 items-center justify-between rounded-md border border-input bg-background px-3 text-sm">
+              <Select.Trigger className="flex h-8 w-28 items-center justify-between rounded-md border border-input bg-background px-2.5 text-sm">
                 <Select.ValueText placeholder="type" className="truncate" />
                 <Select.Indicator className="ml-2 shrink-0 text-muted-foreground">
                   <IconChevronDown size={14} />
@@ -435,13 +525,13 @@ export default function Schemas() {
         </div>
 
         {field.type === 'enum' && (
-          <div className="mt-1.5 ml-0.5 space-y-1 border-l-2 border-border/40 pl-3">
+          <div className="mt-1 ml-0.5 space-y-0.5 border-l-2 border-border/40 pl-2.5">
             {field.enumValues.map((value, index) => (
-              <div key={`${field.id}-enum-${index}`} className="flex items-center gap-2">
+              <div key={`${field.id}-enum-${index}`} className="flex items-center gap-1.5">
                 <Input
                   value={value}
                   placeholder="Enum value"
-                  className="h-9 text-sm"
+                  className="h-7 text-xs"
                   onChange={(event) => {
                     const nextValue = event.currentTarget.value;
                     updateField(field.id, (current) => ({
@@ -480,7 +570,7 @@ export default function Schemas() {
         )}
 
         {field.type === 'object' && (
-          <div className="mt-1.5 ml-0.5 space-y-0 border-l-2 border-border/40 pl-3">
+          <div className="mt-1 ml-0.5 space-y-0 border-l-2 border-border/40 pl-2.5">
             {field.children.length > 0 ? (
               renderFieldRows(field.children, depth + 1)
             ) : (
@@ -508,9 +598,9 @@ export default function Schemas() {
   );
 
   const visualPaneContent = (
-    <div data-testid="schema-visual-panel" className="h-full min-h-0 overflow-auto p-3">
+    <div data-testid="schema-visual-panel" className="h-full min-h-0 overflow-auto p-2.5">
       {extractSchemaFields.length > 0 ? (
-        <div className="space-y-3">
+        <div className="space-y-2">
           {renderFieldRows(extractSchemaFields)}
           <button
             type="button"
@@ -536,39 +626,52 @@ export default function Schemas() {
   );
 
   const codePaneContent = (
-    <div data-testid="schema-code-panel" className="h-full min-h-0 p-3">
-      <div className="h-full overflow-hidden rounded-md border border-border/70 bg-background">
-        <MonacoEditor
-          language="json"
-          theme={monacoTheme}
-          defaultValue={extractSchemaPreviewJson}
-          onMount={(editor) => {
-            editorRef.current = editor;
-            editor.onDidFocusEditorText(() => { codeHasFocusRef.current = true; });
-            editor.onDidBlurEditorText(() => {
-              codeHasFocusRef.current = false;
-              try {
-                const parsed = JSON.parse(editor.getValue());
-                if (parsed?.type === 'object') {
-                  setExtractSchemaFields(parseObjectSchemaToFields(parsed));
+    <div data-testid="schema-code-panel" className="flex h-full min-h-0 flex-col p-2.5">
+      <div className={cn(
+        "flex min-h-0 flex-1 flex-col overflow-hidden rounded-md border bg-background",
+        codeError ? "border-destructive/50" : "border-border/70",
+      )}>
+        <div className="min-h-0 flex-1">
+          <MonacoEditor
+            language="json"
+            theme={monacoTheme}
+            defaultValue={extractSchemaPreviewJson}
+            onMount={(editor) => {
+              editorRef.current = editor;
+              editor.onDidFocusEditorText(() => { codeHasFocusRef.current = true; setCodeError(null); });
+              editor.onDidBlurEditorText(() => {
+                codeHasFocusRef.current = false;
+                try {
+                  const parsed = JSON.parse(editor.getValue());
+                  if (parsed?.type === 'object') {
+                    setExtractSchemaFields(parseObjectSchemaToFields(parsed));
+                    setCodeError(null);
+                  }
+                } catch (e) {
+                  setCodeError(e instanceof SyntaxError ? e.message : 'Invalid JSON');
                 }
-              } catch { /* invalid JSON — user still editing */ }
-            });
-          }}
-          options={{
-            minimap: { enabled: false },
-            fontSize: 13,
-            lineHeight: 1.6,
-            scrollBeyondLastLine: false,
-            wordWrap: 'on',
-            automaticLayout: true,
-            scrollbar: {
-              verticalScrollbarSize: 6,
-              horizontalScrollbarSize: 6,
-              useShadows: false,
-            },
-          }}
-        />
+              });
+            }}
+            options={{
+              minimap: { enabled: false },
+              fontSize: 13,
+              lineHeight: 1.6,
+              scrollBeyondLastLine: false,
+              wordWrap: 'on',
+              automaticLayout: true,
+              scrollbar: {
+                verticalScrollbarSize: 6,
+                horizontalScrollbarSize: 6,
+                useShadows: false,
+              },
+            }}
+          />
+        </div>
+        {codeError && (
+          <div className="shrink-0 border-t border-destructive/30 bg-destructive/5 px-2 py-1 text-[11px] text-destructive truncate">
+            {codeError}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -591,13 +694,13 @@ export default function Schemas() {
 
         {workspaceStage === 'editing' && (
           <>
-            <div className="flex flex-wrap items-center gap-2 border-b border-border bg-card px-2 py-1.5">
+            <div className="flex flex-wrap items-center gap-2 border-b border-border bg-card px-2 py-1">
               <div role="toolbar" aria-label="Schema view options" className="flex items-center gap-1">
                 <button
                   type="button"
                   aria-pressed={editorView === 'visual'}
-                  onClick={() => setEditorView('visual')}
-                  className={`inline-flex h-9 items-center gap-1.5 rounded-md border px-2.5 text-[13px] font-semibold ${viewButtonClass(editorView === 'visual')}`}
+                  onClick={() => switchEditorView('visual')}
+                  className={`inline-flex h-8 items-center gap-1 rounded-md border px-2 text-[13px] font-semibold ${viewButtonClass(editorView === 'visual')}`}
                 >
                   <IconEye size={15} />
                   Visual
@@ -605,8 +708,8 @@ export default function Schemas() {
                 <button
                   type="button"
                   aria-pressed={editorView === 'split'}
-                  onClick={() => setEditorView('split')}
-                  className={`inline-flex h-9 items-center gap-1.5 rounded-md border px-2.5 text-[13px] font-semibold ${viewButtonClass(editorView === 'split')}`}
+                  onClick={() => switchEditorView('split')}
+                  className={`inline-flex h-8 items-center gap-1 rounded-md border px-2 text-[13px] font-semibold ${viewButtonClass(editorView === 'split')}`}
                 >
                   <IconLayoutColumns size={15} />
                   Split
@@ -614,23 +717,31 @@ export default function Schemas() {
                 <button
                   type="button"
                   aria-pressed={editorView === 'code'}
-                  onClick={() => setEditorView('code')}
-                  className={`inline-flex h-9 items-center gap-1.5 rounded-md border px-2.5 text-[13px] font-semibold ${viewButtonClass(editorView === 'code')}`}
+                  onClick={() => switchEditorView('code')}
+                  className={`inline-flex h-8 items-center gap-1 rounded-md border px-2 text-[13px] font-semibold ${viewButtonClass(editorView === 'code')}`}
                 >
                   <IconCode size={15} />
                   Code
                 </button>
               </div>
 
-              <div className="ml-auto flex items-center gap-1">
+              <div className="ml-auto flex min-w-0 items-center gap-1.5">
+                {editingSchemaId && schemaName && (
+                  <span className="truncate text-sm font-medium text-foreground" title={schemaName}>
+                    {schemaName}
+                  </span>
+                )}
                 <Button
                   type="button"
                   variant="ghost"
                   size="sm"
-                  className="h-9 gap-1.5 px-2.5 text-[13px] font-semibold text-muted-foreground"
+                  className="h-8 gap-1 px-2 text-[13px] font-semibold text-muted-foreground"
                   onClick={() => {
                     setWorkspaceStage('start');
                     setExtractSchemaFields([]);
+                    setEditingSchemaId(null);
+                    setSchemaName('');
+                    setCodeError(null);
                   }}
                 >
                   <IconRefresh size={15} />
@@ -639,28 +750,25 @@ export default function Schemas() {
                 <Button
                   type="button"
                   size="sm"
-                  className="h-9 gap-1.5 px-2.5 text-[13px] font-semibold"
+                  className="h-8 gap-1 px-2 text-[13px] font-semibold"
+                  disabled={saveBusy}
                   onClick={() => {
-                    // TODO: persist schema to backend
-                    console.log('Save schema:', extractSchemaPreviewJson);
+                    if (editingSchemaId && resolvedProjectId) {
+                      void handleSave();
+                    } else {
+                      setSaveDialogOpen(true);
+                    }
                   }}
                 >
                   <IconDeviceFloppy size={15} />
-                  Save
+                  {saveBusy ? 'Saving…' : editingSchemaId ? 'Update' : 'Save'}
                 </Button>
               </div>
             </div>
 
             {editorView !== 'split' && (
               <div className="flex min-h-0 flex-1 overflow-hidden bg-background">
-                <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-                  <div className="grid min-h-10 grid-cols-[1fr] border-b border-border bg-card">
-                    <div className="inline-flex min-h-10 items-center px-2 text-xs font-medium text-muted-foreground">
-                      {editorView === 'visual' ? 'Visual' : 'Code'}
-                    </div>
-                  </div>
-                  {editorView === 'visual' ? visualPaneContent : codePaneContent}
-                </div>
+                {editorView === 'visual' ? visualPaneContent : codePaneContent}
               </div>
             )}
 
@@ -682,11 +790,6 @@ export default function Schemas() {
                 }}
               >
                 <Splitter.Panel id="schema-visual" className="flex min-h-0 min-w-0 flex-col">
-                  <div className="grid min-h-10 grid-cols-[1fr] border-b border-border bg-card">
-                    <div className="inline-flex min-h-10 items-center px-2 text-xs font-medium text-muted-foreground">
-                      Visual
-                    </div>
-                  </div>
                   {visualPaneContent}
                 </Splitter.Panel>
 
@@ -702,11 +805,6 @@ export default function Schemas() {
                 </Splitter.ResizeTrigger>
 
                 <Splitter.Panel id="schema-code" className="flex min-h-0 min-w-0 flex-col">
-                  <div className="grid min-h-10 grid-cols-[1fr] border-b border-border bg-card">
-                    <div className="inline-flex min-h-10 items-center px-2 text-xs font-medium text-muted-foreground">
-                      Code
-                    </div>
-                  </div>
                   {codePaneContent}
                 </Splitter.Panel>
               </Splitter.Root>
@@ -731,12 +829,79 @@ export default function Schemas() {
 
     if (tabId === 'schema-library') {
       return (
-        <SchemaListPlaceholder
-          title="User Schemas"
-          description="Saved user schemas will appear here in a file-list view."
-          columns={['Name', 'Updated', 'Fields']}
-          footer="0 saved schemas"
-        />
+        <div className="flex h-full min-h-0 flex-col p-1">
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-md border border-border bg-card">
+            <div className="border-b border-border px-3 py-2.5">
+              <div className="text-sm font-semibold text-foreground">User Schemas</div>
+              <p className="mt-1 text-xs text-muted-foreground">Saved extraction schemas for this project.</p>
+            </div>
+            <div className="min-h-0 flex-1 overflow-auto">
+              {!resolvedProjectId ? (
+                <div className="px-3 py-10 text-center text-sm text-muted-foreground">
+                  Select a project to view schemas.
+                </div>
+              ) : schemasLoading ? (
+                <div className="px-3 py-10 text-center text-sm text-muted-foreground">
+                  Loading…
+                </div>
+              ) : schemas.length === 0 ? (
+                <div className="px-3 py-10 text-center text-sm text-muted-foreground">
+                  No schemas saved yet.
+                </div>
+              ) : (
+                <table className="w-full table-fixed text-left text-[12px] leading-5">
+                  <thead className="sticky top-0 z-10 border-b border-border bg-card text-muted-foreground">
+                    <tr>
+                      <th className="w-[45%] px-2.5 py-1.5 text-[10px] font-medium uppercase tracking-[0.08em]">Name</th>
+                      <th className="px-2.5 py-1.5 text-[10px] font-medium uppercase tracking-[0.08em]">Fields</th>
+                      <th className="px-2.5 py-1.5 text-[10px] font-medium uppercase tracking-[0.08em]">Updated</th>
+                      <th className="w-8" />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {schemas.map((s) => {
+                      const fieldCount = Object.keys(
+                        (s.schema_body as Record<string, unknown>)?.properties ?? {},
+                      ).length;
+                      return (
+                        <tr
+                          key={s.schema_id}
+                          onClick={() => handleLoadSchema(s)}
+                          className={cn(
+                            'cursor-pointer border-b border-border transition-colors hover:bg-accent/50',
+                            editingSchemaId === s.schema_id && 'bg-accent/30',
+                          )}
+                        >
+                          <td className="truncate px-2.5 py-1.5 font-medium text-foreground">{s.schema_name}</td>
+                          <td className="px-2.5 py-1.5 text-muted-foreground">{fieldCount}</td>
+                          <td className="px-2.5 py-1.5 text-muted-foreground">
+                            {new Date(s.updated_at).toLocaleDateString()}
+                          </td>
+                          <td className="px-1 py-1">
+                            <button
+                              type="button"
+                              className="inline-flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:text-destructive"
+                              title="Delete schema"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                void handleDeleteSchema(s.schema_id);
+                              }}
+                            >
+                              <IconTrash size={14} />
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              )}
+            </div>
+            <div className="border-t border-border px-3 py-2 text-xs text-muted-foreground">
+              {schemas.length} saved schema{schemas.length === 1 ? '' : 's'}
+            </div>
+          </div>
+        </div>
       );
     }
 
@@ -768,7 +933,7 @@ export default function Schemas() {
     }
 
     return null;
-  }, [schemaEditorContent]);
+  }, [schemaEditorContent, resolvedProjectId, schemasLoading, schemas, editingSchemaId, handleLoadSchema, handleDeleteSchema]);
 
   return (
     <div className="h-full w-full min-h-0 p-2">
@@ -785,6 +950,39 @@ export default function Schemas() {
           maxColumns={3}
         />
       </div>
+
+      <DialogRoot open={saveDialogOpen} onOpenChange={(e) => { if (!e.open) setSaveDialogOpen(false); }}>
+        <DialogContent>
+          <DialogCloseTrigger />
+          <DialogTitle>Save Schema As</DialogTitle>
+          <DialogBody>
+            <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-1">
+                <label className="text-sm font-medium">Schema name</label>
+                <Input
+                  value={schemaName}
+                  onChange={(e) => setSchemaName(e.currentTarget.value)}
+                  placeholder="e.g., Invoice Schema"
+                  autoFocus
+                />
+              </div>
+              {!resolvedProjectId && (
+                <p className="text-xs text-destructive">Select a project first to save schemas.</p>
+              )}
+            </div>
+          </DialogBody>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSaveDialogOpen(false)}>Cancel</Button>
+            <Button
+              disabled={!schemaName.trim() || !resolvedProjectId || saveBusy}
+              onClick={() => void handleSave().then((ok) => { if (ok) setSaveDialogOpen(false); })}
+            >
+              {saveBusy && <div className="mr-1.5 h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />}
+              Save
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </DialogRoot>
     </div>
   );
 }

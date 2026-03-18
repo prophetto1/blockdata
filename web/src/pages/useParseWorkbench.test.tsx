@@ -59,6 +59,14 @@ const baseDoc = {
   conv_total_blocks: 42,
 };
 
+const defaultTreeSitterState = {
+  rawText: null,
+  loading: false,
+  error: null,
+  downloadUrl: null,
+  downloadFilename: null,
+};
+
 function createArtifacts(overrides: Partial<ParseArtifactBundle> = {}): ParseArtifactBundle {
   return {
     cacheKey: 'doc-1',
@@ -90,6 +98,8 @@ function createArtifacts(overrides: Partial<ParseArtifactBundle> = {}): ParseArt
       loading: false,
       error: null,
     },
+    treeSitterAst: defaultTreeSitterState,
+    treeSitterSymbols: defaultTreeSitterState,
     ...overrides,
   };
 }

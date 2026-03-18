@@ -1,0 +1,11 @@
+from __future__ import annotations
+
+# Source: E:\KESTRA\webserver\src\main\java\io\kestra\webserver\models\api\secret\ApiSecretMeta.java
+
+from dataclasses import dataclass
+from typing import Any
+
+
+@dataclass(slots=True, kw_only=True)
+class ApiSecretMeta:
+    key: str | None = None

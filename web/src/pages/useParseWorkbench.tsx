@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { IconBraces, IconDownload, IconFileCode, IconLoader2, IconFileText, IconLayoutList, IconSettings } from '@tabler/icons-react';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { IconDownload, IconFileCode, IconLoader2, IconFileText, IconLayoutList, IconSettings, IconX } from '@tabler/icons-react';
 import ReactMarkdown from 'react-markdown';
 import remarkFrontmatter from 'remark-frontmatter';
 import remarkGfm from 'remark-gfm';
@@ -24,6 +25,7 @@ import {
   DocumentPreviewShell,
 } from '@/components/documents/DocumentPreviewShell';
 import { ParseConfigColumn } from '@/components/documents/ParseConfigColumn';
+import { TreeSitterAstPreview } from '@/components/documents/TreeSitterAstPreview';
 import { ParseSettingsColumn } from '@/components/documents/ParseSettingsColumn';
 import { ParseRowActions, ParseTabPanel, useParseTab } from '@/components/documents/ParseTabPanel';
 import { cn } from '@/lib/utils';
@@ -38,6 +40,7 @@ import {
   type ParseArtifactBundle,
 } from './parseArtifacts';
 import type { DoclingNativeItem } from '@/lib/doclingNativeItems';
+import { filterDocsByTrack, getAppliedProfileName, type ParseTrack } from '@/components/documents/parseProfileSupport';
 
 // ─── Data fetchers ───────────────────────────────────────────────────────────
 
@@ -164,7 +167,7 @@ function getParsedBlockMetadata(block: BlockRow): ParsedBlockMetadata {
   };
 }
 
-function DownloadsTab({ doc, artifacts }: { doc: ProjectDocumentRow | null; artifacts: ParseArtifactBundle | null }) {
+function DownloadsTab({ doc, artifacts, onClose }: { doc: ProjectDocumentRow | null; artifacts: ParseArtifactBundle | null; onClose?: () => void }) {
   const [downloadingId, setDownloadingId] = useState<ParseDownloadItem['id'] | null>(null);
 
   if (!doc) {
@@ -186,7 +189,14 @@ function DownloadsTab({ doc, artifacts }: { doc: ProjectDocumentRow | null; arti
   const downloads = getParseDownloadItems(artifacts);
 
   return (
-    <DocumentPreviewShell doc={doc}>
+    <DocumentPreviewShell
+      doc={doc}
+      headerActions={onClose ? (
+        <button type="button" aria-label="Close" onClick={onClose} className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">
+          <IconX size={16} />
+        </button>
+      ) : undefined}
+    >
       <div className="space-y-4 px-4 py-4">
         <div className="rounded-xl border border-border bg-muted/20 px-4 py-3">
           <div className="text-sm font-medium text-foreground">Download parse artifacts</div>
@@ -259,7 +269,7 @@ function DownloadsTab({ doc, artifacts }: { doc: ProjectDocumentRow | null; arti
 
 // ─── Tab components ──────────────────────────────────────────────────────────
 
-function DoclingMdTab({ doc, artifacts }: { doc: ProjectDocumentRow | null; artifacts: ParseArtifactBundle | null }) {
+function DoclingMdTab({ doc, artifacts, onClose }: { doc: ProjectDocumentRow | null; artifacts: ParseArtifactBundle | null; onClose?: () => void }) {
   if (!doc) {
     return (
       <DocumentPreviewFrame>
@@ -291,8 +301,13 @@ function DoclingMdTab({ doc, artifacts }: { doc: ProjectDocumentRow | null; arti
   return (
     <DocumentPreviewShell
       doc={doc}
-      downloadUrl={artifacts.markdown.downloadUrl}
-      downloadFilename={artifacts.markdown.downloadFilename}
+      downloadUrl={onClose ? undefined : artifacts.markdown.downloadUrl}
+      downloadFilename={onClose ? undefined : artifacts.markdown.downloadFilename}
+      headerActions={onClose ? (
+        <button type="button" aria-label="Close" onClick={onClose} className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">
+          <IconX size={16} />
+        </button>
+      ) : undefined}
     >
       <div className="px-6 py-4">
         <div className="docling-md-preview">
@@ -308,7 +323,7 @@ function DoclingMdTab({ doc, artifacts }: { doc: ProjectDocumentRow | null; arti
   );
 }
 
-function BlocksTab({ doc, artifacts }: { doc: ProjectDocumentRow | null; artifacts: ParseArtifactBundle | null }) {
+function BlocksTab({ doc, artifacts, onClose }: { doc: ProjectDocumentRow | null; artifacts: ParseArtifactBundle | null; onClose?: () => void }) {
   const { registry } = useBlockTypeRegistry();
   const badgeColorMap = useMemo(
     () => ({ ...(registry?.badgeColor ?? {}), ...(registry?.labelBadgeColor ?? {}) }),
@@ -359,8 +374,14 @@ function BlocksTab({ doc, artifacts }: { doc: ProjectDocumentRow | null; artifac
     );
   }
 
+  const closeAction = onClose ? (
+    <button type="button" aria-label="Close" onClick={onClose} className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">
+      <IconX size={16} />
+    </button>
+  ) : undefined;
+
   return (
-    <DocumentPreviewShell doc={doc}>
+    <DocumentPreviewShell doc={doc} headerActions={closeAction}>
       <div className="space-y-3 px-4 py-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="text-xs font-semibold tracking-[0.04em] text-muted-foreground">
@@ -489,8 +510,7 @@ type ParseFileListPaneProps = {
 };
 
 function getParseProfileName(doc: ProjectDocumentRow): string | null {
-  const name = (doc.pipeline_config as Record<string, unknown> | null)?.name;
-  return typeof name === 'string' && name.trim().length > 0 ? name : null;
+  return getAppliedProfileName(doc);
 }
 
 function formatParseStatus(status: ProjectDocumentRow['status']): string {
@@ -659,22 +679,211 @@ function ParseFileNavigator({
   );
 }
 
+// ─── Tree-sitter tab components ──────────────────────────────────────────────
+
+function TreeSitterAstTab({ doc, artifacts }: { doc: ProjectDocumentRow | null; artifacts: ParseArtifactBundle | null }) {
+  if (!doc) {
+    return (
+      <DocumentPreviewFrame>
+        <DocumentPreviewMessage message="Select a parsed code file to view its AST." />
+      </DocumentPreviewFrame>
+    );
+  }
+
+  const state = artifacts?.treeSitterAst;
+  if (!state || state.loading) {
+    return (
+      <DocumentPreviewShell doc={doc}>
+        <DocumentPreviewMessage message={<IconLoader2 size={20} className="animate-spin text-muted-foreground" />} />
+      </DocumentPreviewShell>
+    );
+  }
+
+  if (state.error || !state.rawText) {
+    return (
+      <DocumentPreviewShell doc={doc}>
+        <DocumentPreviewMessage message={state.error ?? 'No AST artifact available. Parse this file with a tree-sitter profile.'} />
+      </DocumentPreviewShell>
+    );
+  }
+
+  return (
+    <DocumentPreviewShell doc={doc}>
+      <TreeSitterAstPreview jsonText={state.rawText} />
+    </DocumentPreviewShell>
+  );
+}
+
+function TreeSitterSymbolsTab({ doc, artifacts }: { doc: ProjectDocumentRow | null; artifacts: ParseArtifactBundle | null }) {
+  if (!doc) {
+    return (
+      <DocumentPreviewFrame>
+        <DocumentPreviewMessage message="Select a parsed code file to view its symbol outline." />
+      </DocumentPreviewFrame>
+    );
+  }
+
+  const state = artifacts?.treeSitterSymbols;
+  if (!state || state.loading) {
+    return (
+      <DocumentPreviewShell doc={doc}>
+        <DocumentPreviewMessage message={<IconLoader2 size={20} className="animate-spin text-muted-foreground" />} />
+      </DocumentPreviewShell>
+    );
+  }
+
+  if (state.error || !state.rawText) {
+    return (
+      <DocumentPreviewShell doc={doc}>
+        <DocumentPreviewMessage message={state.error ?? 'No symbols artifact available. Parse this file with a tree-sitter profile.'} />
+      </DocumentPreviewShell>
+    );
+  }
+
+  const symbols = JSON.parse(state.rawText) as Array<{ kind: string; name: string; start_line: number; end_line: number; parent: string | null }>;
+
+  return (
+    <DocumentPreviewShell doc={doc}>
+      <div className="overflow-auto p-3">
+        <table className="w-full text-xs font-mono">
+          <thead>
+            <tr className="border-b text-left text-muted-foreground">
+              <th className="pb-1 pr-3">Kind</th>
+              <th className="pb-1 pr-3">Name</th>
+              <th className="pb-1 pr-3">Lines</th>
+              <th className="pb-1">Parent</th>
+            </tr>
+          </thead>
+          <tbody>
+            {symbols.map((s, i) => (
+              <tr key={i} className="border-b border-border/50 last:border-0">
+                <td className="py-0.5 pr-3">
+                  <Badge size="sm" variant="outline">{s.kind}</Badge>
+                </td>
+                <td className="py-0.5 pr-3 font-semibold">{s.name}</td>
+                <td className="py-0.5 pr-3 text-muted-foreground">L{s.start_line + 1}–{s.end_line + 1}</td>
+                <td className="py-0.5 text-muted-foreground">{s.parent ?? '—'}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </DocumentPreviewShell>
+  );
+}
+
+function TreeSitterDownloadsTab({ doc, artifacts }: { doc: ProjectDocumentRow | null; artifacts: ParseArtifactBundle | null }) {
+  if (!doc) {
+    return (
+      <DocumentPreviewFrame>
+        <DocumentPreviewMessage message="Select a parsed code file to download its artifacts." />
+      </DocumentPreviewFrame>
+    );
+  }
+
+  const ast = artifacts?.treeSitterAst;
+  const symbols = artifacts?.treeSitterSymbols;
+
+  if (!ast || !symbols || ast.loading || symbols.loading) {
+    return (
+      <DocumentPreviewShell doc={doc}>
+        <DocumentPreviewMessage message={<IconLoader2 size={20} className="animate-spin text-muted-foreground" />} />
+      </DocumentPreviewShell>
+    );
+  }
+
+  const items = [
+    { label: 'AST JSON', url: ast.downloadUrl, filename: ast.downloadFilename, error: ast.error },
+    { label: 'Symbols JSON', url: symbols.downloadUrl, filename: symbols.downloadFilename, error: symbols.error },
+  ];
+
+  return (
+    <DocumentPreviewShell doc={doc}>
+      <div className="space-y-2 p-4">
+        {items.map((item) => (
+          <div key={item.label} className="flex items-center justify-between rounded-lg border border-border px-3 py-2">
+            <div>
+              <div className="text-sm font-medium">{item.label}</div>
+              {item.error && <div className="text-xs text-destructive">{item.error}</div>}
+              {item.filename && !item.error && <div className="text-xs text-muted-foreground">{item.filename}</div>}
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              disabled={!item.url}
+              onClick={() => {
+                if (item.url) downloadFromSignedUrl(item.url, item.filename ?? item.label);
+              }}
+            >
+              <IconDownload size={16} />
+            </Button>
+          </div>
+        ))}
+      </div>
+    </DocumentPreviewShell>
+  );
+}
+
 // ─── Tabs & panes ────────────────────────────────────────────────────────────
 
 export const PARSE_TABS: WorkbenchTab[] = [
   { id: 'parse-compact', label: 'File List', icon: IconFileCode },
   { id: 'config', label: 'Parse Config', icon: IconSettings },
   { id: 'parse-settings', label: 'Parse Settings', icon: IconSettings },
-  { id: 'docling-md', label: 'Parsed Markdown', icon: IconFileText },
-  { id: 'blocks', label: 'Parsed Blocks', icon: IconLayoutList },
-  { id: 'docling-json', label: 'Downloads', icon: IconBraces },
+  { id: 'preview-main', label: 'Preview', icon: IconFileText },
+  { id: 'preview-detail', label: 'Detail', icon: IconLayoutList },
+  { id: 'preview-downloads', label: 'Downloads', icon: IconDownload },
 ];
 
 export const PARSE_DEFAULT_PANES: Pane[] = normalizePaneWidths([
   { id: 'pane-parse', tabs: ['parse-compact'], activeTab: 'parse-compact', width: 32 },
   { id: 'pane-config', tabs: ['config', 'parse-settings'], activeTab: 'config', width: 24 },
-  { id: 'pane-preview', tabs: ['docling-md', 'blocks', 'docling-json'], activeTab: 'docling-md', width: 44 },
+  { id: 'pane-preview', tabs: ['preview-main', 'preview-detail', 'preview-downloads'], activeTab: 'preview-main', width: 44 },
 ]);
+
+// ─── Track switcher ──────────────────────────────────────────────────────────
+
+function TrackSwitcher({
+  activeTrack,
+  onTrackChange,
+  doclingCount,
+  codeCount,
+}: {
+  activeTrack: ParseTrack;
+  onTrackChange: (track: ParseTrack) => void;
+  doclingCount: number;
+  codeCount: number;
+}) {
+  return (
+    <div className="flex items-center gap-1 border-b border-border px-2 py-1.5">
+      <button
+        type="button"
+        onClick={() => onTrackChange('docling')}
+        className={cn(
+          'rounded-md px-3 py-1 text-xs font-medium transition-colors',
+          activeTrack === 'docling'
+            ? 'bg-primary text-primary-foreground'
+            : 'text-muted-foreground hover:bg-accent hover:text-foreground',
+        )}
+      >
+        Documents ({doclingCount})
+      </button>
+      <button
+        type="button"
+        onClick={() => onTrackChange('tree_sitter')}
+        className={cn(
+          'rounded-md px-3 py-1 text-xs font-medium transition-colors',
+          activeTrack === 'tree_sitter'
+            ? 'bg-primary text-primary-foreground'
+            : 'text-muted-foreground hover:bg-accent hover:text-foreground',
+        )}
+      >
+        Code ({codeCount})
+      </button>
+    </div>
+  );
+}
 
 // ─── Hook ────────────────────────────────────────────────────────────────────
 
@@ -682,20 +891,76 @@ export function useParseWorkbench() {
   useShellHeaderTitle({ title: 'Parse Documents' });
   const { resolvedProjectId } = useProjectFocus();
   const workbenchRef = useRef<WorkbenchHandle>(null);
+  const isMobile = useIsMobile();
   const artifactsCacheRef = useRef(new Map<string, ParseArtifactBundle>());
   const artifactsRequestRef = useRef(new Map<string, Promise<ParseArtifactBundle>>());
 
   const docState = useProjectDocuments(resolvedProjectId);
   const { docs, loading, error, selected, toggleSelect, toggleSelectAll, clearSelection, allSelected, someSelected, refreshDocs } = docState;
 
-  const parseTab = useParseTab();
-
+  const [activeTrack, setActiveTrack] = useState<ParseTrack>('docling');
   const [activeDocUid, setActiveDocUid] = useState<string | null>(null);
   const [activeArtifacts, setActiveArtifacts] = useState<ParseArtifactBundle | null>(null);
+  const [mobileSheet, setMobileSheet] = useState<'docling-md' | 'blocks' | 'downloads' | null>(null);
+
+  const trackDocs = useMemo(() => filterDocsByTrack(docs, activeTrack), [docs, activeTrack]);
+  const doclingDocs = useMemo(() => filterDocsByTrack(docs, 'docling'), [docs]);
+  const codeDocs = useMemo(() => filterDocsByTrack(docs, 'tree_sitter'), [docs]);
+
+  // Reset track state when project changes
+  const trackInitRef = useRef(false);
+  useEffect(() => {
+    trackInitRef.current = false;
+    setActiveTrack('docling');
+  }, [resolvedProjectId]);
+
+  // Auto-select track based on what files exist (once per project load)
+  useEffect(() => {
+    if (loading || docs.length === 0 || trackInitRef.current) return;
+    trackInitRef.current = true;
+    if (doclingDocs.length === 0 && codeDocs.length > 0) {
+      setActiveTrack('tree_sitter');
+    }
+  }, [loading, docs.length, doclingDocs.length, codeDocs.length]);
+
+  // Track-aware selection: select-all/deselect-all only affects the current track's files
+  const trackUids = useMemo(() => new Set(trackDocs.map((d) => d.source_uid)), [trackDocs]);
+  const trackSelected = useMemo(() => {
+    const s = new Set<string>();
+    for (const uid of selected) {
+      if (trackUids.has(uid)) s.add(uid);
+    }
+    return s;
+  }, [selected, trackUids]);
+  const trackAllSelected = trackDocs.length > 0 && trackSelected.size === trackDocs.length;
+  const trackSomeSelected = trackSelected.size > 0 && trackSelected.size < trackDocs.length;
+  const toggleTrackSelectAll = useCallback(() => {
+    if (trackAllSelected) {
+      // Deselect only this track's files
+      for (const uid of trackUids) {
+        if (selected.has(uid)) toggleSelect(uid);
+      }
+    } else {
+      // Select all this track's files (keep other track's selection intact)
+      for (const uid of trackUids) {
+        if (!selected.has(uid)) toggleSelect(uid);
+      }
+    }
+  }, [trackAllSelected, trackUids, selected, toggleSelect]);
+
+  // Clear activeDoc when switching tracks if the selected doc isn't in the new track
+  useEffect(() => {
+    if (activeDocUid) {
+      const stillValid = trackDocs.some((d) => d.source_uid === activeDocUid);
+      if (!stillValid) setActiveDocUid(null);
+    }
+  }, [activeTrack, trackDocs, activeDocUid]);
+
   const activeDoc = useMemo(
     () => docs.find((d) => d.source_uid === activeDocUid) ?? null,
     [docs, activeDocUid],
   );
+  const parseTab = useParseTab(activeTrack, activeDoc);
 
   useEffect(() => {
     if (!activeDoc) {
@@ -790,27 +1055,34 @@ export function useParseWorkbench() {
             <div className="mx-auto flex h-full min-h-0 w-full max-w-[58rem] flex-col overflow-hidden rounded-md border border-border bg-card">
               {tabId === 'parse-navigator' ? (
                 <ParseFileNavigator
-                  docs={docs}
+                  docs={trackDocs}
                   loading={loading}
                   error={error}
-                  selected={selected}
+                  selected={trackSelected}
                   toggleSelect={toggleSelect}
-                  toggleSelectAll={toggleSelectAll}
-                  allSelected={allSelected}
-                  someSelected={someSelected}
+                  toggleSelectAll={toggleTrackSelectAll}
+                  allSelected={trackAllSelected}
+                  someSelected={trackSomeSelected}
                   activeDocUid={activeDocUid}
                   onDocClick={handleDocClick}
                 />
               ) : (
+                <>
+                <TrackSwitcher
+                  activeTrack={activeTrack}
+                  onTrackChange={setActiveTrack}
+                  doclingCount={doclingDocs.length}
+                  codeCount={codeDocs.length}
+                />
                 <DocumentFileTable
-                  docs={docs}
+                  docs={trackDocs}
                   loading={loading}
                   error={error}
-                  selected={selected}
+                  selected={trackSelected}
                   toggleSelect={toggleSelect}
-                  toggleSelectAll={toggleSelectAll}
-                  allSelected={allSelected}
-                  someSelected={someSelected}
+                  toggleSelectAll={toggleTrackSelectAll}
+                  allSelected={trackAllSelected}
+                  someSelected={trackSomeSelected}
                   activeDoc={activeDocUid}
                   onDocClick={handleDocClick}
                   extraColumns={parseExtraColumns}
@@ -820,6 +1092,18 @@ export function useParseWorkbench() {
                       parseTab={parseTab}
                       onReset={handleReset}
                       onDelete={handleDelete}
+                      onDoclingMdPreview={isMobile ? (d) => {
+                        handleDocClick(d);
+                        setMobileSheet('docling-md');
+                      } : undefined}
+                      onBlocksPreview={isMobile ? (d) => {
+                        handleDocClick(d);
+                        setMobileSheet('blocks');
+                      } : undefined}
+                      onDoclingJsonPreview={isMobile ? (d) => {
+                        handleDocClick(d);
+                        setMobileSheet('downloads');
+                      } : undefined}
                     />
                   )}
                   className={cn(
@@ -827,6 +1111,7 @@ export function useParseWorkbench() {
                     tabId === 'parse-compact' && 'parse-documents-table-compact',
                   )}
                 />
+                </>
               )}
             </div>
           </div>
@@ -839,7 +1124,8 @@ export function useParseWorkbench() {
       return (
         <ParseConfigColumn
           docs={docs}
-          selected={selected}
+          trackDocs={trackDocs}
+          selected={trackSelected}
           selectedDoc={activeDoc}
           parseTab={parseTab}
           onReset={(uids) => { for (const uid of uids) void handleReset(uid); }}
@@ -860,20 +1146,50 @@ export function useParseWorkbench() {
       );
     }
 
-    if (tabId === 'docling-md') {
-      return <DoclingMdTab doc={activeDoc} artifacts={activeArtifacts} />;
+    if (tabId === 'preview-main') {
+      return activeTrack === 'tree_sitter'
+        ? <TreeSitterAstTab doc={activeDoc} artifacts={activeArtifacts} />
+        : <DoclingMdTab doc={activeDoc} artifacts={activeArtifacts} />;
     }
 
-    if (tabId === 'blocks') {
-      return <BlocksTab doc={activeDoc} artifacts={activeArtifacts} />;
+    if (tabId === 'preview-detail') {
+      return activeTrack === 'tree_sitter'
+        ? <TreeSitterSymbolsTab doc={activeDoc} artifacts={activeArtifacts} />
+        : <BlocksTab doc={activeDoc} artifacts={activeArtifacts} />;
     }
 
-    if (tabId === 'docling-json') {
-      return <DownloadsTab doc={activeDoc} artifacts={activeArtifacts} />;
+    if (tabId === 'preview-downloads') {
+      return activeTrack === 'tree_sitter'
+        ? <TreeSitterDownloadsTab doc={activeDoc} artifacts={activeArtifacts} />
+        : <DownloadsTab doc={activeDoc} artifacts={activeArtifacts} />;
     }
 
     return null;
-  }, [docs, loading, error, selected, toggleSelect, toggleSelectAll, clearSelection, allSelected, someSelected, activeDocUid, activeDoc, activeArtifacts, handleDocClick, parseTab, parseExtraColumns, handleReset, handleDelete]);
+  }, [docs, loading, error, selected, trackSelected, toggleSelect, toggleTrackSelectAll, clearSelection, trackAllSelected, trackSomeSelected, activeDocUid, activeDoc, activeArtifacts, activeTrack, trackDocs, doclingDocs, codeDocs, handleDocClick, parseTab, parseExtraColumns, handleReset, handleDelete]);
 
-  return { renderContent, workbenchRef };
+  const dynamicTabLabel = useCallback((tabId: string): string | null => {
+    if (tabId === 'preview-main') return activeTrack === 'tree_sitter' ? 'AST' : 'Parsed Markdown';
+    if (tabId === 'preview-detail') return activeTrack === 'tree_sitter' ? 'Symbols' : 'Parsed Blocks';
+    if (tabId === 'preview-downloads') return 'Downloads';
+    return null;
+  }, [activeTrack]);
+
+  const mobilePreviewPanel = isMobile && mobileSheet ? (
+    <div className="fixed inset-x-0 bottom-0 z-[105] flex flex-col bg-background" style={{ top: 'var(--app-shell-header-height)' }}>
+      <div className="min-h-0 flex-1 overflow-auto">
+        {mobileSheet === 'docling-md' && <DoclingMdTab doc={activeDoc} artifacts={activeArtifacts} onClose={() => setMobileSheet(null)} />}
+        {mobileSheet === 'blocks' && <BlocksTab doc={activeDoc} artifacts={activeArtifacts} onClose={() => setMobileSheet(null)} />}
+        {mobileSheet === 'downloads' && <DownloadsTab doc={activeDoc} artifacts={activeArtifacts} onClose={() => setMobileSheet(null)} />}
+      </div>
+    </div>
+  ) : null;
+
+  return {
+    renderContent,
+    dynamicTabLabel,
+    workbenchRef,
+    mobilePreviewPanel,
+    tabs: PARSE_TABS,
+    defaultPanes: PARSE_DEFAULT_PANES,
+  };
 }

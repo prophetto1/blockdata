@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { Avatar } from '@ark-ui/react/avatar';
+import { Layout03Icon } from '@hugeicons/core-free-icons';
+import { HugeiconsIcon } from '@hugeicons/react';
 import { ToggleGroup } from '@ark-ui/react/toggle-group';
 import {
   IconChevronLeft,
@@ -106,7 +108,7 @@ function ThemeToggleRow() {
               value={opt.value}
               onClick={(e) => e.stopPropagation()}
               className={cn(
-                'inline-flex h-6 w-6 items-center justify-center rounded transition-colors',
+                'inline-flex h-7 w-7 items-center justify-center rounded transition-colors',
                 choice === opt.value
                   ? 'bg-background text-foreground shadow-sm'
                   : 'text-muted-foreground hover:text-foreground',
@@ -114,7 +116,7 @@ function ThemeToggleRow() {
               title={opt.label}
               aria-label={`Theme: ${opt.label}`}
             >
-              <Icon size={14} stroke={1.75} />
+              <Icon size={16} stroke={1.75} />
             </ToggleGroup.Item>
           );
         })}
@@ -132,15 +134,19 @@ function AccountMenuContent({
   docsSiteUrl,
   onNavigate,
   onSignOut,
+  isSuperuser,
+  onAdminNavigate,
 }: {
   userLabel?: string;
   docsSiteUrl: string;
   onNavigate: () => void;
   onSignOut?: () => void | Promise<void>;
+  isSuperuser?: boolean;
+  onAdminNavigate?: () => void;
 }) {
   return (
     <MenuContent className="min-w-64 p-0">
-      {/* Account header â€” username + email, gear icon right */}
+      {/* Account header -- username + email, action icons right */}
       <div className="flex items-start justify-between px-3 pb-2 pt-3">
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium text-foreground">
@@ -150,20 +156,31 @@ function AccountMenuContent({
             {userLabel ?? 'No email'}
           </p>
         </div>
-        <div className="ml-2 mt-0.5 flex shrink-0 items-center gap-1">
+        <div className="ml-2 mt-0.5 flex shrink-0 items-center gap-1.5">
+          {isSuperuser && onAdminNavigate && (
+            <button
+              type="button"
+              onClick={onAdminNavigate}
+              className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+              title="Admin"
+              aria-label="Admin"
+            >
+              <IconShieldCog size={18} stroke={1.75} />
+            </button>
+          )}
           <button
             type="button"
             onClick={onNavigate}
-            className="inline-flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+            className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
             title="Settings"
             aria-label="Settings"
           >
-            <IconSettings size={14} stroke={1.75} />
+            <IconSettings size={18} stroke={1.75} />
           </button>
         </div>
       </div>
 
-      {/* Flat menu list â€” label left, icon right (Vercel style) */}
+      {/* Flat menu list -- label left, icon right (Vercel style) */}
       <div className="py-1.5">
         {/* Theme row (custom, not a MenuItem) */}
         <ThemeToggleRow />
@@ -174,7 +191,7 @@ function AccountMenuContent({
           onClick={() => { /* placeholder */ }}
         >
           <span>Changelog</span>
-          <IconFileText size={16} stroke={1.75} className="text-muted-foreground" />
+          <IconFileText size={18} stroke={1.75} className="text-muted-foreground" />
         </MenuItem>
         <MenuItem
           value="help"
@@ -182,7 +199,7 @@ function AccountMenuContent({
           onClick={() => { /* placeholder */ }}
         >
           <span>Help</span>
-          <IconHelp size={16} stroke={1.75} className="text-muted-foreground" />
+          <IconHelp size={18} stroke={1.75} className="text-muted-foreground" />
         </MenuItem>
         <MenuItem
           value="docs"
@@ -190,7 +207,7 @@ function AccountMenuContent({
           onClick={() => { window.open(docsSiteUrl, '_blank', 'noopener'); }}
         >
           <span>Docs</span>
-          <IconBook2 size={16} stroke={1.75} className="text-muted-foreground" />
+          <IconBook2 size={18} stroke={1.75} className="text-muted-foreground" />
         </MenuItem>
 
         {onSignOut && (
@@ -200,7 +217,7 @@ function AccountMenuContent({
             onClick={() => { void onSignOut(); }}
           >
             <span>Log Out</span>
-            <IconLogout size={16} stroke={1.75} className="text-muted-foreground" />
+            <IconLogout size={18} stroke={1.75} className="text-muted-foreground" />
           </MenuItem>
         )}
       </div>
@@ -217,7 +234,7 @@ export function LeftRailShadcn({
   userLabel,
   onSignOut,
   desktopCompact = false,
-  onToggleDesktopCompact: _onToggleDesktopCompact,
+  onToggleDesktopCompact,
 }: LeftRailShadcnProps) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -262,7 +279,7 @@ export function LeftRailShadcn({
   }, [location.pathname]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /**
-   * Back out of drill view. Only switches the sidebar to the top-level nav â€”
+   * Back out of drill view. Only switches the sidebar to the top-level nav --
    * does NOT navigate away from the current page. The user stays on whatever
    * content they were viewing. The skipAutoDrillRef prevents the route-based
    * auto-drill from immediately re-activating.
@@ -358,7 +375,7 @@ export function LeftRailShadcn({
             <div className="space-y-0.5">
               {section.items.map((item) => {
                 const ItemIcon = item.icon;
-                // For flows drill, paths are tab slugs â€” resolve to full path
+                // For flows drill, paths are tab slugs -- resolve to full path
                 const resolvedPath = flowId
                   ? resolveFlowDrillPath(item.path, flowId)
                   : item.path;
@@ -534,15 +551,18 @@ export function LeftRailShadcn({
                   : 'px-1.5 py-1',
               )}
               onClick={() => {
+                if (desktopCompact) {
+                  onToggleDesktopCompact?.();
+                  return;
+                }
                 navigate('/app');
                 onNavigate?.();
               }}
-              aria-label="Go to home"
+              aria-label={desktopCompact ? 'Expand side navigation' : 'Go to home'}
+              title={desktopCompact ? 'Expand side navigation' : undefined}
             >
               {desktopCompact ? (
-                <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary text-xs font-bold text-primary-foreground">
-                  B
-                </span>
+                <HugeiconsIcon icon={Layout03Icon} size={18} strokeWidth={2.1} />
               ) : (
                 <span className="inline-flex items-baseline text-sm font-semibold uppercase tracking-[0.2em]">
                   <span className="text-sidebar-foreground">Block</span>
@@ -550,6 +570,17 @@ export function LeftRailShadcn({
                 </span>
               )}
             </button>
+            {!desktopCompact && onToggleDesktopCompact && (
+              <button
+                type="button"
+                onClick={onToggleDesktopCompact}
+                aria-label="Collapse side navigation"
+                title="Collapse side navigation"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-md text-sidebar-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+              >
+                <HugeiconsIcon icon={Layout03Icon} size={18} strokeWidth={2.1} />
+              </button>
+            )}
           </div>
           {!desktopCompact && <div className="h-px w-full bg-sidebar-border" />}
         </SidebarHeader>
@@ -567,54 +598,9 @@ export function LeftRailShadcn({
           </SidebarGroup>
         </SidebarContent>
 
-
         {BOTTOM_RAIL_NAV.length > 0 && (
           <div className={desktopCompact ? 'px-0 pb-1' : 'px-2 pb-1'}>
             {renderBottomUtilityNav()}
-          </div>
-        )}
-
-        {/* ---- Admin (superusers only) ---- */}
-        {isSuperuser && (
-          <div className={desktopCompact ? 'px-0 pb-1' : 'px-2 pb-1'}>
-            {desktopCompact ? (
-              <div className="flex flex-col items-center gap-0.5">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveDrillId('superuser');
-                    navigateTo('/app/superuser');
-                  }}
-                  className={cn(
-                    'flex h-9 w-9 items-center justify-center rounded-md transition-colors',
-                    location.pathname.startsWith('/app/superuser')
-                      ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-                      : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
-                  )}
-                  aria-label="Admin"
-                >
-                  <IconShieldCog size={20} stroke={1.75} />
-                </button>
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveDrillId('superuser');
-                  navigateTo('/app/superuser');
-                }}
-                className={cn(
-                  'flex w-full items-center gap-2.5 rounded-md px-2.5 h-9 text-sm leading-snug transition-colors',
-                  location.pathname.startsWith('/app/superuser')
-                    ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium'
-                    : 'text-sidebar-foreground/80 font-normal hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
-                )}
-              >
-                <IconShieldCog size={16} stroke={1.75} className="shrink-0" />
-                <span className="truncate">Admin</span>
-                <IconChevronRight size={14} stroke={1.75} className="ml-auto shrink-0 text-sidebar-foreground/40" />
-              </button>
-            )}
           </div>
         )}
 
@@ -623,7 +609,7 @@ export function LeftRailShadcn({
           <div className="mx-2.5 h-px bg-sidebar-border" />
           <MenuRoot positioning={{ placement: 'top-start', offset: { mainAxis: 8, crossAxis: 0 } }}>
             <div className={cn(desktopCompact ? 'flex justify-center px-0 py-2' : 'flex items-center gap-2 px-3 py-2')}>
-              {/* Avatar + username + dots â€” all trigger the menu */}
+              {/* Avatar + username + dots -- all trigger the menu */}
               <MenuTrigger
                 className={cn(
                   'flex items-center gap-2 rounded-md border-0 bg-transparent transition-colors hover:bg-sidebar-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring',
@@ -665,6 +651,11 @@ export function LeftRailShadcn({
                 docsSiteUrl={docsSiteUrl}
                 onNavigate={() => { navigate('/app/settings'); onNavigate?.(); }}
                 onSignOut={onSignOut}
+                isSuperuser={isSuperuser}
+                onAdminNavigate={() => {
+                  setActiveDrillId('superuser');
+                  navigateTo('/app/superuser');
+                }}
               />
             </MenuPositioner>
           </MenuRoot>
@@ -673,6 +664,9 @@ export function LeftRailShadcn({
     </SidebarProvider>
   );
 }
+
+
+
 
 
 

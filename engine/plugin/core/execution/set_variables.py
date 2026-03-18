@@ -1,0 +1,21 @@
+from __future__ import annotations
+
+# Source: E:\KESTRA\core\src\main\java\io\kestra\plugin\core\execution\SetVariables.java
+
+from dataclasses import dataclass
+from typing import Any
+
+from engine.core.models.executions.execution import Execution
+from engine.core.models.tasks.execution_updatable_task import ExecutionUpdatableTask
+from engine.core.runners.run_context import RunContext
+from engine.core.models.tasks.task import Task
+
+
+@dataclass(slots=True, kw_only=True)
+class SetVariables(Task):
+    """Set execution-scoped variables."""
+    variables: Property[dict[str, Any]]
+    overwrite: Property[bool]
+
+    def update(self, execution: Execution, run_context: RunContext) -> Execution:
+        raise NotImplementedError  # TODO: translate from Java

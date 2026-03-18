@@ -1,0 +1,14 @@
+from __future__ import annotations
+
+# Source: E:\KESTRA\core\src\main\java\io\kestra\core\exceptions\InvalidQueryFiltersException.java
+
+from dataclasses import dataclass, field
+from typing import Any, ClassVar
+
+from engine.core.exceptions.kestra_runtime_exception import KestraRuntimeException
+
+
+@dataclass(slots=True, kw_only=True)
+class InvalidQueryFiltersException(KestraRuntimeException):
+    serial_version_uid: ClassVar[int] = 1
+    invalid_query_filter_message: ClassVar[str] = "Provided query filters are invalid: %s"

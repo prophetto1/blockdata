@@ -96,7 +96,7 @@ def _validate_owned_project(sb, project_id: str | None, user_id: str) -> None:
         return
     project = sb.table("projects").select("project_id").eq(
         "project_id", project_id
-    ).eq("owner_id", user_id).maybeSingle().execute()
+    ).eq("owner_id", user_id).maybe_single().execute()
     if not project.data:
         raise HTTPException(403, "Project not found or not owned by caller")
 

@@ -1,7 +1,7 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { IconUpload, IconFiles, IconEye, IconDownload, IconTrash } from '@tabler/icons-react';
 import { Button } from '@/components/ui/button';
-import type { WorkbenchTab } from '@/components/workbench/Workbench';
+import type { WorkbenchHandle, WorkbenchTab } from '@/components/workbench/Workbench';
 import { normalizePaneWidths, type Pane } from '@/components/workbench/workbenchState';
 import { useProjectDocuments } from '@/hooks/useProjectDocuments';
 import { useProjectFocus } from '@/hooks/useProjectFocus';
@@ -24,9 +24,8 @@ export const ASSETS_TABS: WorkbenchTab[] = [
 ];
 
 export const ASSETS_DEFAULT_PANES: Pane[] = normalizePaneWidths([
-  { id: 'pane-upload', tabs: ['upload'], activeTab: 'upload', width: 20, minWidth: 16, maxWidth: 24, maxTabs: 1 },
-  { id: 'pane-files', tabs: ['files'], activeTab: 'files', width: 30, minWidth: 22 },
-  { id: 'pane-preview', tabs: ['preview'], activeTab: 'preview', width: 50 },
+  { id: 'pane-left', tabs: ['upload'], activeTab: 'upload', width: 30, minWidth: 20 },
+  { id: 'pane-preview', tabs: ['preview'], activeTab: 'preview', width: 70 },
 ]);
 
 export function useAssetsWorkbench() {
@@ -36,7 +35,22 @@ export function useAssetsWorkbench() {
   const docState = useProjectDocuments(resolvedProjectId);
   const { docs, loading, error, selected, toggleSelect, toggleSelectAll, allSelected, someSelected, refreshDocs } = docState;
 
+  const workbenchRef = useRef<WorkbenchHandle>(null);
   const [activeDocUid, setActiveDocUid] = useState<string | null>(null);
+
+  // Show the Files tab only when the project has documents
+  useEffect(() => {
+    const handle = workbenchRef.current;
+    if (!handle) return;
+    const panes = handle.getPanes();
+    const hasFilesTab = panes.some((p) => p.tabs.includes('files'));
+
+    if (docs.length > 0 && !hasFilesTab) {
+      handle.addTab('files', 'pane-left');
+    } else if (docs.length === 0 && !loading && hasFilesTab) {
+      handle.removeTab('files');
+    }
+  }, [docs.length, loading]);
 
   const activeDoc = useMemo(
     () => docs.find((d) => d.source_uid === activeDocUid) ?? null,
@@ -137,5 +151,5 @@ export function useAssetsWorkbench() {
     return null;
   }, [resolvedProjectId, docs, loading, error, selected, toggleSelect, toggleSelectAll, allSelected, someSelected, activeDocUid, activeDoc, handleDocClick, renderRowActions, refreshDocs]);
 
-  return { renderContent };
+  return { renderContent, workbenchRef };
 }

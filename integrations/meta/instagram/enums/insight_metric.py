@@ -1,0 +1,31 @@
+from __future__ import annotations
+
+# Source: E:\KESTRA-IO\plugins\plugin-meta\src\main\java\io\kestra\plugin\meta\instagram\enums\InsightMetric.java
+
+from enum import Enum
+from typing import Any
+
+
+class InsightMetric(str, Enum):
+    LIKES = "LIKES"
+    COMMENTS = "COMMENTS"
+    SAVES = "SAVES"
+    SHARES = "SHARES"
+    REACH = "REACH"
+    IMPRESSIONS = "IMPRESSIONS"
+    PROFILE_VISITS = "PROFILE_VISITS"
+    PROFILE_ACTIVITY = "PROFILE_ACTIVITY"
+    WEBSITE_CLICKS = "WEBSITE_CLICKS"
+    EMAIL_CONTACTS = "EMAIL_CONTACTS"
+    PHONE_CALL_CLICKS = "PHONE_CALL_CLICKS"
+    TEXT_MESSAGE_CLICKS = "TEXT_MESSAGE_CLICKS"
+    GET_DIRECTIONS_CLICKS = "GET_DIRECTIONS_CLICKS"
+    FOLLOWS = "FOLLOWS"
+    UNFOLLOWS = "UNFOLLOWS"
+    VIEWS = "VIEWS"
+    TOTAL_INTERACTIONS = "TOTAL_INTERACTIONS"
+    REPLIES = "REPLIES"
+    TAPS_FORWARD = "TAPS_FORWARD"
+    TAPS_BACK = "TAPS_BACK"
+    EXITS = "EXITS"
+    NAVIGATION = "NAVIGATION"

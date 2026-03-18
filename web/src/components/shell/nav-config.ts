@@ -30,6 +30,7 @@ import {
   IconClipboardList,
   IconScan,
   IconTransform,
+  IconFileExport,
 } from '@tabler/icons-react';
 
 export type NavItem = {
@@ -65,6 +66,7 @@ export const TOP_LEVEL_NAV: Array<NavItem | 'divider'> = [
   { label: 'Parse', icon: IconScan, path: '/app/parse' },
   { label: 'Extract', icon: IconWand, path: '/app/extract' },
   { label: 'Transform', icon: IconArrowsShuffle, path: '/app/transform' },
+  { label: 'Convert', icon: IconFileExport, path: '/app/convert' },
   { label: 'RAG', icon: IconTransform, path: '/app/rag' },
   'divider',
   { label: 'Flows', icon: IconFolderPlus, path: '/app/flows', drillId: 'flows' },
@@ -72,6 +74,8 @@ export const TOP_LEVEL_NAV: Array<NavItem | 'divider'> = [
   { label: 'Database', icon: IconDatabase, path: '/app/database' },
   { label: 'Load', icon: IconPlayerPlay, path: '/app/load' },
   { label: 'Schema', icon: IconSchema, path: '/app/schemas' },
+  'divider',
+  { label: 'Workspace', icon: IconFileCode, path: '/app/workspace' },
   'divider',
   { label: 'Integrations', icon: IconApps, path: '/app/marketplace/integrations' },
   { label: 'Services', icon: IconServer, path: '/app/marketplace/services' },
@@ -86,9 +90,7 @@ export const ALL_TOP_LEVEL_ITEMS: NavItem[] = TOP_LEVEL_NAV.filter(
   (entry): entry is NavItem => entry !== 'divider',
 );
 
-export const BOTTOM_RAIL_NAV: NavItem[] = [
-  { label: 'ELT', icon: IconCode, path: '/app/elt' },
-];
+export const BOTTOM_RAIL_NAV: NavItem[] = [];
 
 const FLOWS_DRILL: NavDrillConfig = {
   id: 'flows',
@@ -158,6 +160,7 @@ const SUPERUSER_DRILL: NavDrillConfig = {
     },
     {
       items: [
+        { label: 'ELT', icon: IconCode, path: '/app/elt' },
         { label: 'Docling', icon: IconSettings, path: '/app/superuser/parsers-docling' },
         { label: 'Instance Config', icon: IconServer, path: '/app/superuser/instance-config' },
         { label: 'Worker Config', icon: IconServer, path: '/app/superuser/worker-config' },
@@ -186,6 +189,14 @@ export function findDrillByRoute(pathname: string): NavDrillConfig | null {
     if (!config.pathTemplate && pathname === config.parentPath) {
       return config;
     }
+    // Check if any item in this drill owns the current route
+    for (const section of config.sections) {
+      for (const item of section.items) {
+        if (pathname === item.path || pathname.startsWith(item.path + '/')) {
+          return config;
+        }
+      }
+    }
   }
   return null;
 }
@@ -205,6 +216,7 @@ export const NAV_GROUPS: NavGroup[] = [
     label: 'Editor',
     items: [
       { label: 'Schema', icon: IconSchema, path: '/app/schemas' },
+      { label: 'Workspace', icon: IconFileCode, path: '/app/workspace' },
       { label: 'API', icon: IconTerminal2, path: '/app/api-editor' },
     ],
   },
@@ -222,4 +234,7 @@ export const NAV_GROUPS: NavGroup[] = [
     ],
   },
 ];
+
+
+
 

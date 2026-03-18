@@ -1,0 +1,17 @@
+from __future__ import annotations
+
+# Source: E:\KESTRA\core\src\main\java\io\kestra\core\validations\validator\DataChartKPIValidator.java
+
+from dataclasses import dataclass
+from typing import Any
+
+from engine.core.models.dashboards.charts.data_chart_kpi import DataChartKPI
+from engine.core.validations.data_chart_kpi_validation import DataChartKPIValidation
+
+
+@dataclass(slots=True, kw_only=True)
+class DataChartKPIValidator:
+    repository_type: str | None = None
+
+    def is_valid(self, data_chart: DataChartKPI[Any, Any], annotation_metadata: AnnotationValue[DataChartKPIValidation], context: ConstraintValidatorContext) -> bool:
+        raise NotImplementedError  # TODO: translate from Java

@@ -45,7 +45,7 @@ describe('primeParseArtifactsForDocument', () => {
     const loadDocumentViewMode = vi.fn(async () => 'raw_docling' as const);
     const getArtifactLocator = vi.fn(async (
       _sourceUid: string,
-      reprType: 'doclingdocument_json' | 'markdown_bytes' | 'html_bytes',
+      reprType: 'doclingdocument_json' | 'markdown_bytes' | 'html_bytes' | 'tree_sitter_ast_json' | 'tree_sitter_symbols_json',
     ) => {
       if (reprType === 'markdown_bytes') return 'converted/source-1/example.md';
       if (reprType === 'html_bytes') return 'converted/source-1/example.html';

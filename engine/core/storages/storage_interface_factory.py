@@ -1,0 +1,40 @@
+from __future__ import annotations
+
+# Source: E:\KESTRA\core\src\main\java\io\kestra\core\storages\StorageInterfaceFactory.java
+# WARNING: Unresolved types: Validator
+
+from dataclasses import dataclass, field
+from typing import Any, ClassVar, Iterator
+
+from engine.core.plugins.plugin_registry import PluginRegistry
+from engine.core.storages.storage_configuration import StorageConfiguration
+from engine.core.storages.storage_interface import StorageInterface
+
+
+@dataclass(slots=True, kw_only=True)
+class StorageInterfaceFactory:
+    kestra_storage_type_config: ClassVar[str] = "kestra.storage.type"
+    plugin_registry: PluginRegistry | None = None
+    validator: Validator | None = None
+
+    def make(self, storage_configuration: StorageConfiguration, identifier: str, plugin_configuration: dict[str, Any]) -> StorageInterface:
+        raise NotImplementedError  # TODO: translate from Java
+
+    def init(self, storage_configuration: StorageConfiguration, plugin: StorageInterface) -> StorageInterface:
+        raise NotImplementedError  # TODO: translate from Java
+
+    def get_loggable_storage_ids(self) -> str:
+        raise NotImplementedError  # TODO: translate from Java
+
+    @staticmethod
+    def all_storage_classes(plugin_registry: PluginRegistry) -> Iterator[TypeAndId]:
+        raise NotImplementedError  # TODO: translate from Java
+
+    @staticmethod
+    def all_ids_for(classes: Iterator[TypeAndId]) -> str:
+        raise NotImplementedError  # TODO: translate from Java
+
+    @dataclass(slots=True)
+    class TypeAndId:
+        type: str | None = None
+        id: str | None = None

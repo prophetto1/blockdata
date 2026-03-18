@@ -42,6 +42,7 @@ const serviceRow: ServiceRow = {
   auth_type: 'none',
   auth_config: {},
   docs_url: null,
+  primary_stage: null,
   created_at: '2026-03-05T00:00:00.000Z',
   updated_at: '2026-03-05T00:00:00.000Z',
 };
@@ -51,6 +52,7 @@ const functionRow: ServiceFunctionRow = {
   service_id: 'service-1',
   function_name: 'slack_execution',
   function_type: 'utility',
+  bd_stage: 'utility',
   label: 'Send Execution Status',
   description: 'Send execution status to Slack.',
   long_description: 'Detailed docs content.',

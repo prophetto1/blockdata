@@ -17,20 +17,30 @@ export default function AuthCallback() {
     let finished = false;
     const finish = async () => {
       try {
-        // supabase-js is configured with `detectSessionInUrl: true`, so by the time this
-        // route mounts the session is usually already persisted.
         const { data, error } = await supabase.auth.getSession();
         if (error) throw error;
-        if (data.session) {
-          setStatus('ok');
-          setMessage('Signed in. Redirecting…');
-          navigate(nextPath, { replace: true });
+        if (!data.session) {
+          setStatus('error');
+          setMessage('No session found. Please sign in again.');
+          navigate('/login', { replace: true });
           return;
         }
 
-        setStatus('error');
-        setMessage('No session found. Please sign in again.');
-        navigate('/login', { replace: true });
+        setStatus('ok');
+        setMessage('Signed in. Redirecting…');
+
+        // First-time user detection: profile trigger only reads the
+        // 'display_name' metadata key, which OAuth providers don't set
+        // (Google uses 'full_name', GitHub uses 'name'). So for new OAuth
+        // users, profiles.display_name is null → redirect to welcome page.
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('display_name')
+          .eq('user_id', data.session.user.id)
+          .maybeSingle();
+
+        const dest = !profile?.display_name ? '/auth/welcome' : nextPath;
+        navigate(dest, { replace: true });
       } catch (e) {
         setStatus('error');
         setMessage(e instanceof Error ? e.message : String(e));

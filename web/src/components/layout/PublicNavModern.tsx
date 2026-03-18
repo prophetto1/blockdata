@@ -49,7 +49,7 @@ export function PublicNavModern() {
         <div className="flex-1" />
 
         {/* Right side */}
-        <div className="flex items-center gap-1">
+        <div className="flex min-w-0 items-center gap-1 overflow-hidden">
 
           {/* Theme toggle */}
           <button
@@ -89,7 +89,7 @@ export function PublicNavModern() {
           {!isLoginPage && (
             <button
               type="button"
-              className="inline-flex h-9 items-center rounded-lg px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground cursor-pointer"
+              className="inline-flex h-9 shrink-0 items-center rounded-lg px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground cursor-pointer"
               onClick={() => navigate('/login')}
             >
               Log in
@@ -100,7 +100,7 @@ export function PublicNavModern() {
           {!isRegisterPage && (
             <Button
               size="sm"
-              className="h-9 rounded-lg px-4 text-sm font-medium"
+              className="h-9 shrink-0 rounded-lg px-4 text-sm font-medium"
               onClick={() => navigate('/early-access')}
             >
               Get started

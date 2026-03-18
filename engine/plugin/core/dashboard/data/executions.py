@@ -1,0 +1,19 @@
+from __future__ import annotations
+
+# Source: E:\KESTRA\core\src\main\java\io\kestra\plugin\core\dashboard\data\Executions.java
+
+from dataclasses import dataclass
+from typing import Any
+
+from engine.core.models.dashboards.column_descriptor import ColumnDescriptor
+from engine.core.models.dashboards.data_filter import DataFilter
+from engine.plugin.core.dashboard.data.i_executions import IExecutions
+from engine.core.repositories.query_builder_interface import QueryBuilderInterface
+
+
+@dataclass(slots=True, kw_only=True)
+class Executions(DataFilter):
+    """Display Execution data in a dashboard chart."""
+
+    def repository_class(self) -> type[Any]:
+        raise NotImplementedError  # TODO: translate from Java

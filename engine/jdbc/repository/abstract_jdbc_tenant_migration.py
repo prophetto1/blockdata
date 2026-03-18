@@ -1,0 +1,39 @@
+from __future__ import annotations
+
+# Source: E:\KESTRA\jdbc\src\main\java\io\kestra\jdbc\repository\AbstractJdbcTenantMigration.java
+
+from abc import ABC, abstractmethod
+from dataclasses import dataclass, field
+from logging import Logger, getLogger
+from typing import Any, ClassVar
+
+from engine.jdbc.jooq_dsl_context_wrapper import JooqDSLContextWrapper
+from engine.core.repositories.tenant_migration_interface import TenantMigrationInterface
+
+
+@dataclass(slots=True, kw_only=True)
+class AbstractJdbcTenantMigration(ABC):
+    key_tables: ClassVar[list[str]]
+    logger: ClassVar[Logger] = getLogger(__name__)
+    dsl_context_wrapper: JooqDSLContextWrapper | None = None
+
+    def migrate_tenant(self, tenant_id: str, dry_run: bool) -> None:
+        raise NotImplementedError  # TODO: translate from Java
+
+    def migrate(self, dry_run: bool) -> None:
+        raise NotImplementedError  # TODO: translate from Java
+
+    @staticmethod
+    def table_with_key(table_name: str) -> bool:
+        raise NotImplementedError  # TODO: translate from Java
+
+    @abstractmethod
+    def update_tenant_id_field(self, table: Table[Any], context: DSLContext) -> int:
+        ...
+
+    @abstractmethod
+    def update_tenant_id_field_and_key(self, table: Table[Any], context: DSLContext) -> int:
+        ...
+
+    def delete_tutorial_flows(self, table: Table[Any], context: DSLContext) -> int:
+        raise NotImplementedError  # TODO: translate from Java

@@ -13,6 +13,22 @@ vi.mock('@/components/common/useShellHeaderTitle', () => ({
   useShellHeaderTitle: vi.fn(),
 }));
 
+vi.mock('@/hooks/useProjectFocus', () => ({
+  useProjectFocus: () => ({ resolvedProjectId: 'project-1' }),
+}));
+
+vi.mock('@/hooks/useExtractionSchemas', () => ({
+  useExtractionSchemas: () => ({
+    schemas: [],
+    loading: false,
+    error: null,
+    createSchema: vi.fn(),
+    updateSchema: vi.fn(),
+    deleteSchema: vi.fn(),
+    refetch: vi.fn(),
+  }),
+}));
+
 vi.mock('@monaco-editor/react', () => ({
   default: ({ defaultValue }: { defaultValue?: string }) => (
     <div data-testid="monaco-editor">{defaultValue}</div>

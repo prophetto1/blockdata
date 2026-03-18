@@ -1,0 +1,13 @@
+from __future__ import annotations
+
+# Source: E:\KESTRA\webserver\src\main\java\io\kestra\webserver\services\BasicAuthCredentials.java
+
+from dataclasses import dataclass
+from typing import Any
+
+
+@dataclass(slots=True, kw_only=True)
+class BasicAuthCredentials:
+    uid: str | None = None
+    username: str | None = None
+    password: str | None = None

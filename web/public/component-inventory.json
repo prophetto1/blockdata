@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-03-15T01:26:28.081Z",
+  "generatedAt": "2026-03-17T00:24:12.317Z",
   "scope": "auth",
   "pages": [
     {
@@ -844,6 +844,130 @@
       ]
     },
     {
+      "page": "src/pages/LoadPage.tsx",
+      "componentCount": 0,
+      "categoryCounts": {},
+      "components": []
+    },
+    {
+      "page": "src/pages/marketplace/FunctionCatalogPage.tsx",
+      "componentCount": 12,
+      "categoryCounts": {
+        "external-package": 2,
+        "local-components": 10
+      },
+      "components": [
+        {
+          "component": "HugeiconsIcon",
+          "usedAs": "HugeiconsIcon",
+          "source": "@hugeicons/react",
+          "importKind": "named",
+          "importedAs": "HugeiconsIcon",
+          "category": "external-package",
+          "definition": "HugeiconsIcon comes from @hugeicons/react (named import of HugeiconsIcon)"
+        },
+        {
+          "component": "Link",
+          "usedAs": "Link",
+          "source": "react-router-dom",
+          "importKind": "named",
+          "importedAs": "Link",
+          "category": "external-package",
+          "definition": "Link comes from react-router-dom (named import of Link)"
+        },
+        {
+          "component": "MenuContent",
+          "usedAs": "MenuContent",
+          "source": "@/components/ui/menu",
+          "importKind": "named",
+          "importedAs": "MenuContent",
+          "category": "local-components",
+          "definition": "MenuContent comes from @/components/ui/menu (named import of MenuContent)"
+        },
+        {
+          "component": "MenuIndicator",
+          "usedAs": "MenuIndicator",
+          "source": "@/components/ui/menu",
+          "importKind": "named",
+          "importedAs": "MenuIndicator",
+          "category": "local-components",
+          "definition": "MenuIndicator comes from @/components/ui/menu (named import of MenuIndicator)"
+        },
+        {
+          "component": "MenuItem",
+          "usedAs": "MenuItem",
+          "source": "@/components/ui/menu",
+          "importKind": "named",
+          "importedAs": "MenuItem",
+          "category": "local-components",
+          "definition": "MenuItem comes from @/components/ui/menu (named import of MenuItem)"
+        },
+        {
+          "component": "MenuPortal",
+          "usedAs": "MenuPortal",
+          "source": "@/components/ui/menu",
+          "importKind": "named",
+          "importedAs": "MenuPortal",
+          "category": "local-components",
+          "definition": "MenuPortal comes from @/components/ui/menu (named import of MenuPortal)"
+        },
+        {
+          "component": "MenuPositioner",
+          "usedAs": "MenuPositioner",
+          "source": "@/components/ui/menu",
+          "importKind": "named",
+          "importedAs": "MenuPositioner",
+          "category": "local-components",
+          "definition": "MenuPositioner comes from @/components/ui/menu (named import of MenuPositioner)"
+        },
+        {
+          "component": "MenuRoot",
+          "usedAs": "MenuRoot",
+          "source": "@/components/ui/menu",
+          "importKind": "named",
+          "importedAs": "MenuRoot",
+          "category": "local-components",
+          "definition": "MenuRoot comes from @/components/ui/menu (named import of MenuRoot)"
+        },
+        {
+          "component": "MenuSeparator",
+          "usedAs": "MenuSeparator",
+          "source": "@/components/ui/menu",
+          "importKind": "named",
+          "importedAs": "MenuSeparator",
+          "category": "local-components",
+          "definition": "MenuSeparator comes from @/components/ui/menu (named import of MenuSeparator)"
+        },
+        {
+          "component": "MenuTrigger",
+          "usedAs": "MenuTrigger",
+          "source": "@/components/ui/menu",
+          "importKind": "named",
+          "importedAs": "MenuTrigger",
+          "category": "local-components",
+          "definition": "MenuTrigger comes from @/components/ui/menu (named import of MenuTrigger)"
+        },
+        {
+          "component": "PageHeader",
+          "usedAs": "PageHeader",
+          "source": "@/components/common/PageHeader",
+          "importKind": "named",
+          "importedAs": "PageHeader",
+          "category": "local-components",
+          "definition": "PageHeader comes from @/components/common/PageHeader (named import of PageHeader)"
+        },
+        {
+          "component": "ScrollArea",
+          "usedAs": "ScrollArea",
+          "source": "@/components/ui/scroll-area",
+          "importKind": "named",
+          "importedAs": "ScrollArea",
+          "category": "local-components",
+          "definition": "ScrollArea comes from @/components/ui/scroll-area (named import of ScrollArea)"
+        }
+      ]
+    },
+    {
       "page": "src/pages/marketplace/IntegrationsCatalog.tsx",
       "componentCount": 3,
       "categoryCounts": {
@@ -882,10 +1006,10 @@
     },
     {
       "page": "src/pages/marketplace/ServiceDetailPage.tsx",
-      "componentCount": 11,
+      "componentCount": 12,
       "categoryCounts": {
         "local-components": 9,
-        "external-package": 1,
+        "external-package": 2,
         "tabler-icons": 1
       },
       "components": [
@@ -951,6 +1075,15 @@
           "importedAs": "JsonBlock",
           "category": "local-components",
           "definition": "JsonBlock comes from @/components/services/function-reference (named import of JsonBlock)"
+        },
+        {
+          "component": "Link",
+          "usedAs": "Link",
+          "source": "react-router-dom",
+          "importKind": "named",
+          "importedAs": "Link",
+          "category": "external-package",
+          "definition": "Link comes from react-router-dom (named import of Link)"
         },
         {
           "component": "PageHeader",
@@ -2182,6 +2315,33 @@
           "importedAs": "Workbench",
           "category": "local-components",
           "definition": "Workbench comes from @/components/workbench/Workbench (named import of Workbench)"
+        }
+      ]
+    },
+    {
+      "page": "src/pages/settings/ConnectionsPanel.tsx",
+      "componentCount": 2,
+      "categoryCounts": {
+        "relative-local": 2
+      },
+      "components": [
+        {
+          "component": "SettingsPageFrame",
+          "usedAs": "SettingsPageFrame",
+          "source": "./SettingsPageHeader",
+          "importKind": "named",
+          "importedAs": "SettingsPageFrame",
+          "category": "relative-local",
+          "definition": "SettingsPageFrame comes from ./SettingsPageHeader (named import of SettingsPageFrame)"
+        },
+        {
+          "component": "SettingsSection",
+          "usedAs": "SettingsSection",
+          "source": "./SettingsPageHeader",
+          "importKind": "named",
+          "importedAs": "SettingsSection",
+          "category": "relative-local",
+          "definition": "SettingsSection comes from ./SettingsPageHeader (named import of SettingsSection)"
         }
       ]
     },
@@ -4151,6 +4311,24 @@
       ]
     },
     {
+      "page": "src/pages/TransformPage.tsx",
+      "componentCount": 1,
+      "categoryCounts": {
+        "local-components": 1
+      },
+      "components": [
+        {
+          "component": "Workbench",
+          "usedAs": "Workbench",
+          "source": "@/components/workbench/Workbench",
+          "importKind": "named",
+          "importedAs": "Workbench",
+          "category": "local-components",
+          "definition": "Workbench comes from @/components/workbench/Workbench (named import of Workbench)"
+        }
+      ]
+    },
+    {
       "page": "src/pages/UppyLibraryDemo.tsx",
       "componentCount": 16,
       "categoryCounts": {
@@ -4306,13 +4484,13 @@
       ]
     }
   ],
-  "totalComponentUsages": 428,
+  "totalComponentUsages": 444,
   "categoryTotals": {
-    "external-package": 17,
-    "local-components": 139,
+    "external-package": 20,
+    "local-components": 150,
     "tabler-icons": 79,
     "in-file component": 18,
     "ark-ui": 158,
-    "relative-local": 17
+    "relative-local": 19
   }
 }
