@@ -172,7 +172,7 @@ export async function moveNode(
   }
   // Guard: cannot move into itself
   // NOTE: moving a parent into a descendant (e.g., /a into /a/b) is guarded
-  // by path-prefix check in the UI layer (SuperuserLayout2), not here,
+  // by path-prefix check in the UI layer, not here,
   // because isSameEntry only catches exact matches.
   if (await node.handle.isSameEntry(targetDirHandle)) {
     throw new Error('Cannot move a node into itself');

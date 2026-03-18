@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "pdfjs-express:assets": "node ./src/scripts/syncPdfjsExpressAssets.mjs",
-    "dev": "npm run pdfjs-express:assets && vite --host 0.0.0.0 --port 5275",
-    "dev:alt": "npm run pdfjs-express:assets && vite --host 0.0.0.0 --port 4173",
+    "dev": "npm run pdfjs-express:assets && vite --host 0.0.0.0 --port 5374",
+    "dev:alt": "npm run pdfjs-express:assets && vite --host 0.0.0.0 --port 5375",
     "inventory:refresh": "node ./scripts/generate-component-inventory.mjs",
     "build": "npm run pdfjs-express:assets && npm run inventory:refresh && tsc -b && vite build",
     "build:meta-configurator-embed": "node ../scripts/build-meta-configurator-embed.mjs",
