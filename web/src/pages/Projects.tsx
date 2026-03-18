@@ -220,7 +220,7 @@ export default function Projects() {
     closeCreateModal();
     setCreating(false);
     notifyProjectListChanged(newId);
-    navigate(`/app/elt/${newId}`);
+    navigate(`/app/assets`);
   };
 
   const hasFilters = debouncedSearch.length > 0 || statusFilter !== 'all';

@@ -17,6 +17,8 @@ type ProjectBootstrapRow = {
 type ProjectsHomeProps = {
   title?: string;
   basePath?: string;
+  /** When true, appends the project ID to the basePath (e.g. /app/elt/:projectId). */
+  appendProjectId?: boolean;
 };
 
 const DEFAULT_PROJECT_NAME = 'Default Project';
@@ -45,7 +47,7 @@ async function loadProjects(): Promise<ProjectBootstrapRow[]> {
   return (data ?? []) as ProjectBootstrapRow[];
 }
 
-export default function ProjectsHome({ title = 'ELT', basePath = '/app/elt' }: ProjectsHomeProps) {
+export default function ProjectsHome({ title = 'Assets', basePath = '/app/assets', appendProjectId = false }: ProjectsHomeProps) {
   useShellHeaderTitle({ title });
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -98,7 +100,8 @@ export default function ProjectsHome({ title = 'ELT', basePath = '/app/elt' }: P
       const targetProject = focusedProject ?? defaultProject ?? projects[0];
 
       writeFocusedProjectId(targetProject.project_id);
-      navigate(`${basePath}/${targetProject.project_id}`, { replace: true });
+      const target = appendProjectId ? `${basePath}/${targetProject.project_id}` : basePath;
+      navigate(target, { replace: true });
     } catch (bootstrapError) {
       setError(bootstrapError instanceof Error ? bootstrapError.message : String(bootstrapError));
     } finally {

@@ -137,7 +137,7 @@ export const router = createBrowserRouter([
           // App landing + projects
           { path: '/app', element: <AppHome /> },
 
-          { path: '/app/elt', element: <ProjectsHome /> },
+          { path: '/app/elt', element: <ProjectsHome title="ELT" basePath="/app/elt" appendProjectId /> },
           { path: '/app/elt/:projectId', element: <DocumentTest /> },
           { path: '/app/elt/:projectId/upload-uppy-demo', element: <UppyLibraryDemo /> },
           { path: '/app/elt/:projectId/runs/:runId', element: <RunDetail /> },
