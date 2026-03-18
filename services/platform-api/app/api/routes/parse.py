@@ -26,7 +26,7 @@ from app.domain.conversion.repository import (
     upsert_conversion_parsing,
 )
 from app.infra.supabase_client import get_supabase_admin
-from app.infra.storage import download_from_storage, upload_to_storage
+from app.infra.storage import download_from_storage, upsert_to_storage
 
 router = APIRouter(tags=["parse"])
 
@@ -98,7 +98,7 @@ async def parse_route(
         # Upload AST artifact (if profile includes it)
         if "ast_json" in profile_artifacts:
             ast_locator = f"converted/{body.source_uid}/{body.source_uid}.ast.json"
-            await upload_to_storage(
+            await upsert_to_storage(
                 supabase_url, supabase_key, DOCUMENTS_BUCKET,
                 ast_locator, result.ast_json, "application/json; charset=utf-8",
             )
@@ -114,7 +114,7 @@ async def parse_route(
         # Upload symbols artifact (if profile includes it)
         if "symbols_json" in profile_artifacts:
             symbols_locator = f"converted/{body.source_uid}/{body.source_uid}.symbols.json"
-            await upload_to_storage(
+            await upsert_to_storage(
                 supabase_url, supabase_key, DOCUMENTS_BUCKET,
                 symbols_locator, result.symbols_json, "application/json; charset=utf-8",
             )
