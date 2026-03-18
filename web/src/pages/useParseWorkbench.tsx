@@ -907,6 +907,22 @@ export function useParseWorkbench() {
   const doclingDocs = useMemo(() => filterDocsByTrack(docs, 'docling'), [docs]);
   const codeDocs = useMemo(() => filterDocsByTrack(docs, 'tree_sitter'), [docs]);
 
+  // Reset track state when project changes
+  const trackInitRef = useRef(false);
+  useEffect(() => {
+    trackInitRef.current = false;
+    setActiveTrack('docling');
+  }, [resolvedProjectId]);
+
+  // Auto-select track based on what files exist (once per project load)
+  useEffect(() => {
+    if (loading || docs.length === 0 || trackInitRef.current) return;
+    trackInitRef.current = true;
+    if (doclingDocs.length === 0 && codeDocs.length > 0) {
+      setActiveTrack('tree_sitter');
+    }
+  }, [loading, docs.length, doclingDocs.length, codeDocs.length]);
+
   // Track-aware selection: select-all/deselect-all only affects the current track's files
   const trackUids = useMemo(() => new Set(trackDocs.map((d) => d.source_uid)), [trackDocs]);
   const trackSelected = useMemo(() => {
