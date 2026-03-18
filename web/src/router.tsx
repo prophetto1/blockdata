@@ -51,10 +51,7 @@ import { FlowsRouteShell } from '@/components/layout/FlowsRouteShell';
 import { featureFlags } from '@/lib/featureFlags';
 import { SuperuserGuard } from '@/pages/superuser/SuperuserGuard';
 import NotFound from '@/pages/NotFound';
-import { StudioLayout } from '@/components/layout/StudioLayout';
-import StudioHome from '@/pages/studio/StudioHome';
-import { StudioSectionPlaceholder } from '@/pages/studio/StudioSectionPlaceholder';
-import { styleTokens } from '@/lib/styleTokens';
+import { AdminShellLayout } from '@/components/layout/AdminShellLayout';
 
 
 function LegacyToTransform() {
@@ -214,7 +211,13 @@ export const router = createBrowserRouter([
             element: featureFlags.commandsUI ? <Commands /> : <Navigate to="/app/settings" replace />,
           },
 
-          // Superuser dashboard (gated by registry_superuser_profiles)
+          { path: '*', element: <NotFound /> },
+        ],
+      },
+      // Admin shell — separate from AppLayout, no inherited header/rail
+      {
+        element: <AdminShellLayout />,
+        children: [
           {
             path: '/app/superuser',
             element: <SuperuserGuard />,
@@ -229,21 +232,6 @@ export const router = createBrowserRouter([
               { path: 'test-integrations', lazy: () => import('@/pages/superuser/TestIntegrations') },
             ],
           },
-
-          { path: '*', element: <NotFound /> },
-        ],
-      },
-      // Data Studio shell — separate from AppLayout, no inherited header/rail
-      {
-        element: <StudioLayout />,
-        children: [
-          { path: '/app/studio',        element: <StudioHome /> },
-          { path: '/app/studio/sql',    element: <StudioSectionPlaceholder section="SQL"    color={styleTokens.studio.colors.sql} /> },
-          { path: '/app/studio/python', element: <StudioSectionPlaceholder section="Python" color={styleTokens.studio.colors.python} /> },
-          { path: '/app/studio/visual', element: <StudioSectionPlaceholder section="Visual" color={styleTokens.studio.colors.visual} /> },
-          { path: '/app/studio/data',   element: <StudioSectionPlaceholder section="Tables" color={styleTokens.studio.colors.data} /> },
-          { path: '/app/studio/runs',   element: <StudioSectionPlaceholder section="Runs"   color={styleTokens.studio.colors.runs} /> },
-          { path: '/app/studio/jobs',   element: <StudioSectionPlaceholder section="Jobs"   color={styleTokens.studio.colors.jobs} /> },
         ],
       },
     ],

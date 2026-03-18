@@ -1,7 +1,6 @@
 import type { Icon } from '@tabler/icons-react';
 import {
   IconApps,
-  IconCode,
   IconDatabase,
   IconFileCode,
   IconFolder,
@@ -20,7 +19,6 @@ import {
   IconTopologyRing3,
   IconUserCircle,
   IconWand,
-  IconWorldCog,
   IconEdit,
   IconClock,
   IconFileText,
@@ -76,7 +74,6 @@ export const TOP_LEVEL_NAV: Array<NavItem | 'divider'> = [
   { label: 'Schema', icon: IconSchema, path: '/app/schemas' },
   'divider',
   { label: 'Workspace', icon: IconFileCode, path: '/app/workspace' },
-  { label: 'Studio', icon: IconCode, path: '/app/studio' },
   'divider',
   { label: 'Integrations', icon: IconApps, path: '/app/marketplace/integrations' },
   { label: 'Services', icon: IconServer, path: '/app/marketplace/services' },
@@ -145,26 +142,7 @@ const SETTINGS_DRILL: NavDrillConfig = {
   ],
 };
 
-const SUPERUSER_DRILL: NavDrillConfig = {
-  id: 'superuser',
-  parentLabel: 'Superuser',
-  parentPath: '/app/superuser',
-  routePrefix: '/app/superuser',
-  sections: [
-    {
-      items: [
-        { label: 'Docling', icon: IconSettings, path: '/app/superuser/parsers-docling' },
-        { label: 'Instance Config', icon: IconServer, path: '/app/superuser/instance-config' },
-        { label: 'Worker Config', icon: IconServer, path: '/app/superuser/worker-config' },
-        { label: 'Audit History', icon: IconClipboardList, path: '/app/superuser/audit' },
-        { label: 'API Endpoints', icon: IconCode, path: '/app/superuser/api-endpoints' },
-      ],
-    },
-  ],
-};
-
-export const DRILL_CONFIGS: NavDrillConfig[] = [FLOWS_DRILL, SETTINGS_DRILL, SUPERUSER_DRILL];
-export const ADMIN_NAV_ITEMS: NavItem[] = SUPERUSER_DRILL.sections.flatMap((s) => s.items);
+export const DRILL_CONFIGS: NavDrillConfig[] = [FLOWS_DRILL, SETTINGS_DRILL];
 
 const DRILL_BY_ID = new Map(DRILL_CONFIGS.map((c) => [c.id, c]));
 

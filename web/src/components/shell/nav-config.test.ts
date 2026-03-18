@@ -48,15 +48,12 @@ describe('nav-config side rail', () => {
   });
 
 
-  it('places Workspace and Studio in their own rail section, above Integrations', () => {
+  it('places Workspace in its own rail section, above Integrations', () => {
     const schemaIndex = TOP_LEVEL_NAV.findIndex(
       (entry) => entry !== 'divider' && entry.path === '/app/schemas',
     );
     const workspaceIndex = TOP_LEVEL_NAV.findIndex(
       (entry) => entry !== 'divider' && entry.path === '/app/workspace',
-    );
-    const studioIndex = TOP_LEVEL_NAV.findIndex(
-      (entry) => entry !== 'divider' && entry.path === '/app/studio',
     );
     const integrationsIndex = TOP_LEVEL_NAV.findIndex(
       (entry) => entry !== 'divider' && entry.path === '/app/marketplace/integrations',
@@ -65,9 +62,8 @@ describe('nav-config side rail', () => {
     expect(schemaIndex).toBeGreaterThanOrEqual(0);
     expect(workspaceIndex).toBe(schemaIndex + 2); // divider between schema and workspace
     expect(TOP_LEVEL_NAV[workspaceIndex - 1]).toBe('divider');
-    expect(studioIndex).toBe(workspaceIndex + 1);  // studio immediately follows workspace
-    expect(TOP_LEVEL_NAV[studioIndex + 1]).toBe('divider');
-    expect(integrationsIndex).toBe(studioIndex + 2); // divider then integrations
+    expect(TOP_LEVEL_NAV[workspaceIndex + 1]).toBe('divider');
+    expect(integrationsIndex).toBe(workspaceIndex + 2); // divider then integrations
   });
   it('places Extract, Transform, Convert, RAG in sequence in the top-level nav', () => {
     const labels = ALL_TOP_LEVEL_ITEMS.map((item) => item.label);

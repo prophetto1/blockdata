@@ -71,20 +71,8 @@ export const styleTokens = {
     codePaneBorder: 'var(--app-code-pane-border)',
     codePaneFg: 'var(--app-code-pane-fg)',
   },
-  studio: {
-    navWidth: 48,
-    navExpandedWidth: 200,
-    background: '#09090b',
-    surface: '#111113',
-    border: 'rgba(255,255,255,0.07)',
-    colors: {
-      sql: '#06b6d4',
-      python: '#a855f7',
-      visual: '#f59e0b',
-      data: '#22c55e',
-      runs: '#f97316',
-      jobs: '#f97316',
-    },
+  admin: {
+    navWidth: 200,
   },
 } as const;
 
