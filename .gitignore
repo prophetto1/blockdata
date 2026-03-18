@@ -52,6 +52,8 @@ web-docs/dev-server.log
 services/*/.pytest_cache/
 services/*/__pycache__/
 services/*/.venv/
+kt/**/__pycache__/
+kt/.runtime/
 
 # Smoke test artifacts
 scripts/export-test.jsonl
