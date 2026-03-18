@@ -49,7 +49,7 @@ import {
 } from '@/components/ui/menu';
 import { cn } from '@/lib/utils';
 import { DOCS_URL } from '@/lib/urls';
-import { useProjectFocus } from '@/hooks/useProjectFocus';
+
 import { useTheme, type ThemeChoice } from '@/hooks/useTheme';
 
 type LeftRailShadcnProps = {
@@ -243,16 +243,8 @@ export function LeftRailShadcn({
   const superuserProbe = useSuperuserProbe();
   const isSuperuser = superuserProbe === true || superuserProbe === null;
 
-  /* ------ Project focus (shared hook) ------ */
-  const { resolvedProjectId } = useProjectFocus();
-  const eltPath = resolvedProjectId ? `/app/elt/${resolvedProjectId}` : '/app/elt';
-
-  const globalPathOverrides: Record<string, string> = {
-    '/app/elt': eltPath,
-  };
-
   const navigateTo = (path: string) => {
-    navigate(globalPathOverrides[path] ?? path);
+    navigate(path);
     onNavigate?.();
   };
 

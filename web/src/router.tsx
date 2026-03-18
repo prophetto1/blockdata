@@ -4,7 +4,7 @@ import { PublicLayout } from '@/components/layout/PublicLayout';
 import { PublicFullBleedLayout } from '@/components/layout/PublicFullBleedLayout';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { AuthGuard } from '@/auth/AuthGuard';
-import { LegacyRunRedirect } from '@/components/common/LegacyRedirect';
+
 
 import MarketingIntegrations from '@/pages/MarketingIntegrations';
 import AuthCallback from '@/pages/AuthCallback';
@@ -13,10 +13,10 @@ import LoginSplit from '@/pages/LoginSplit';
 import Projects from '@/pages/Projects';
 import FlowDetail from '@/pages/FlowDetail';
 import FlowsList from '@/pages/FlowsList';
-import UppyLibraryDemo from '@/pages/UppyLibraryDemo';
+
 import Schemas from '@/pages/Schemas';
 import SchemaLayout from '@/pages/SchemaLayout';
-import RunDetail from '@/pages/RunDetail';
+
 import { SettingsLayout, SettingsAccount, SettingsAiOverview, SettingsProviderForm, SettingsModelRoles, SettingsGridSample, SettingsThemes } from '@/pages/settings';
 import PlatformLanding from '@/pages/experiments/PlatformLanding';
 import Landing from '@/pages/Landing';
@@ -30,7 +30,7 @@ import McpServers from '@/pages/settings/McpServers';
 import ConnectionsPanel from '@/pages/settings/ConnectionsPanel';
 import { ScalarApiPlaygroundPage } from '@/pages/settings/ScalarApiPlaygroundPage';
 import Commands from '@/pages/Commands';
-import DocumentTest from '@/pages/DocumentTest';
+
 import DatabasePlaceholder from '@/pages/DatabasePlaceholder';
 import ProjectAssetsPage from '@/pages/ProjectAssetsPage';
 import ParsePage from '@/pages/ParsePage';
@@ -41,7 +41,7 @@ import TransformPage from '@/pages/TransformPage';
 import LoadPage from '@/pages/LoadPage';
 import AppHome from '@/pages/AppHome';
 import EarlyAccess from '@/pages/EarlyAccess';
-import ProjectsHome from '@/pages/ProjectsHome';
+
 import IntegrationsCatalog from '@/pages/marketplace/IntegrationsCatalog';
 import ServicesCatalog from '@/pages/marketplace/ServicesCatalog';
 import ServiceDetailPage from '@/pages/marketplace/ServiceDetailPage';
@@ -51,28 +51,11 @@ import { FlowsRouteShell } from '@/components/layout/FlowsRouteShell';
 import { featureFlags } from '@/lib/featureFlags';
 import { SuperuserGuard } from '@/pages/superuser/SuperuserGuard';
 import NotFound from '@/pages/NotFound';
+import { StudioLayout } from '@/components/layout/StudioLayout';
+import StudioHome from '@/pages/studio/StudioHome';
+import { StudioSectionPlaceholder } from '@/pages/studio/StudioSectionPlaceholder';
+import { styleTokens } from '@/lib/styleTokens';
 
-function LegacyToElt() {
-  return <Navigate to="/app/elt" replace />;
-}
-
-function LegacyToEltProject() {
-  const { projectId } = useParams<{ projectId: string }>();
-  const target = projectId ? `/app/elt/${projectId}` : '/app/elt';
-  return <Navigate to={target} replace />;
-}
-
-function LegacyToEltProjectRun() {
-  const { projectId, runId } = useParams<{ projectId: string; runId: string }>();
-  if (!projectId || !runId) return <Navigate to="/app/elt" replace />;
-  return <Navigate to={`/app/elt/${projectId}/runs/${runId}`} replace />;
-}
-
-function LegacyToEltProjectUppyDemo() {
-  const { projectId } = useParams<{ projectId: string }>();
-  if (!projectId) return <Navigate to="/app/elt" replace />;
-  return <Navigate to={`/app/elt/${projectId}/upload-uppy-demo`} replace />;
-}
 
 function LegacyToTransform() {
   const { projectId } = useParams<{ projectId: string }>();
@@ -137,10 +120,6 @@ export const router = createBrowserRouter([
           // App landing + projects
           { path: '/app', element: <AppHome /> },
 
-          { path: '/app/elt', element: <ProjectsHome title="ELT" basePath="/app/elt" appendProjectId /> },
-          { path: '/app/elt/:projectId', element: <DocumentTest /> },
-          { path: '/app/elt/:projectId/upload-uppy-demo', element: <UppyLibraryDemo /> },
-          { path: '/app/elt/:projectId/runs/:runId', element: <RunDetail /> },
           { path: '/app/projects/list', element: <Projects /> },
           { path: '/app/database', element: <DatabasePlaceholder /> },
           { path: '/app/assets', element: <ProjectAssetsPage /> },
@@ -163,18 +142,10 @@ export const router = createBrowserRouter([
             ],
           },
 
-          // Project-scoped routes
-          { path: '/app/projects', element: <LegacyToElt /> },
-          { path: '/app/projects/:projectId', element: <LegacyToEltProject /> },
-          { path: '/app/projects/:projectId/upload', element: <LegacyToEltProject /> },
           { path: '/app/ui', element: <Navigate to="/app/schemas" replace /> },
           { path: '/app/ui/:section', element: <Navigate to="/app/schemas" replace /> },
-          { path: '/app/projects/:projectId/upload-uppy-demo', element: <LegacyToEltProjectUppyDemo /> },
-          { path: '/app/projects/:projectId/runs/:runId', element: <LegacyToEltProjectRun /> },
           { path: '/app/transform', element: <TransformPage /> },
           { path: '/app/transform/:projectId', element: <LegacyToTransform /> },
-          { path: '/app/upload', element: <LegacyToElt /> },
-          { path: '/app/documents', element: <LegacyToElt /> },
 
           // Global schemas (not project-scoped)
           { path: '/app/schemas', element: <Schemas /> },
@@ -249,9 +220,6 @@ export const router = createBrowserRouter([
             element: <SuperuserGuard />,
             children: [
               { index: true, lazy: () => import('@/pages/superuser/SuperuserWorkspace') },
-              { path: 'layout-1', lazy: () => import('@/pages/superuser/SuperuserLayout1') },
-              { path: 'layout-2', lazy: () => import('@/pages/superuser/SuperuserLayout2') },
-              { path: 'layout-3', lazy: () => import('@/pages/superuser/SuperuserLayout3') },
               { path: 'parsers-docling', lazy: () => import('@/pages/settings/DoclingConfigPanel') },
               { path: 'document-views', lazy: () => import('@/pages/superuser/SuperuserDocumentViews') },
               { path: 'instance-config', lazy: () => import('@/pages/superuser/SuperuserInstanceConfig') },
@@ -262,11 +230,20 @@ export const router = createBrowserRouter([
             ],
           },
 
-          // Legacy flat routes → redirect to project-scoped equivalents
-          { path: '/app/test', element: <LegacyToElt /> },
-          { path: '/app/test/:projectId', element: <LegacyToEltProject /> },
-          { path: '/app/runs/:runId', element: <LegacyRunRedirect /> },
           { path: '*', element: <NotFound /> },
+        ],
+      },
+      // Data Studio shell — separate from AppLayout, no inherited header/rail
+      {
+        element: <StudioLayout />,
+        children: [
+          { path: '/app/studio',        element: <StudioHome /> },
+          { path: '/app/studio/sql',    element: <StudioSectionPlaceholder section="SQL"    color={styleTokens.studio.colors.sql} /> },
+          { path: '/app/studio/python', element: <StudioSectionPlaceholder section="Python" color={styleTokens.studio.colors.python} /> },
+          { path: '/app/studio/visual', element: <StudioSectionPlaceholder section="Visual" color={styleTokens.studio.colors.visual} /> },
+          { path: '/app/studio/data',   element: <StudioSectionPlaceholder section="Tables" color={styleTokens.studio.colors.data} /> },
+          { path: '/app/studio/runs',   element: <StudioSectionPlaceholder section="Runs"   color={styleTokens.studio.colors.runs} /> },
+          { path: '/app/studio/jobs',   element: <StudioSectionPlaceholder section="Jobs"   color={styleTokens.studio.colors.jobs} /> },
         ],
       },
     ],

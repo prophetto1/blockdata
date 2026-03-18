@@ -29,11 +29,9 @@ describe('nav-config side rail', () => {
     expect(paths).not.toContain('/app/tenant');
   });
 
-  it('keeps ELT in the lower utility rail', () => {
-    const paths = BOTTOM_RAIL_NAV.map((item) => item.path);
-
-    expect(paths).toContain('/app/elt');
-    expect(paths).not.toContain('/app/rag');
+  it('bottom utility rail is defined (currently empty)', () => {
+    expect(BOTTOM_RAIL_NAV).toBeDefined();
+    expect(Array.isArray(BOTTOM_RAIL_NAV)).toBe(true);
   });
 
   it('includes extract plus editor and catalog items', () => {
@@ -50,29 +48,35 @@ describe('nav-config side rail', () => {
   });
 
 
-  it('places Workspace below Schema and above Integrations in its own rail section', () => {
+  it('places Workspace and Studio in their own rail section, above Integrations', () => {
     const schemaIndex = TOP_LEVEL_NAV.findIndex(
       (entry) => entry !== 'divider' && entry.path === '/app/schemas',
     );
     const workspaceIndex = TOP_LEVEL_NAV.findIndex(
       (entry) => entry !== 'divider' && entry.path === '/app/workspace',
     );
+    const studioIndex = TOP_LEVEL_NAV.findIndex(
+      (entry) => entry !== 'divider' && entry.path === '/app/studio',
+    );
     const integrationsIndex = TOP_LEVEL_NAV.findIndex(
       (entry) => entry !== 'divider' && entry.path === '/app/marketplace/integrations',
     );
 
     expect(schemaIndex).toBeGreaterThanOrEqual(0);
-    expect(workspaceIndex).toBe(schemaIndex + 2);
+    expect(workspaceIndex).toBe(schemaIndex + 2); // divider between schema and workspace
     expect(TOP_LEVEL_NAV[workspaceIndex - 1]).toBe('divider');
-    expect(TOP_LEVEL_NAV[workspaceIndex + 1]).toBe('divider');
-    expect(integrationsIndex).toBe(workspaceIndex + 2);
+    expect(studioIndex).toBe(workspaceIndex + 1);  // studio immediately follows workspace
+    expect(TOP_LEVEL_NAV[studioIndex + 1]).toBe('divider');
+    expect(integrationsIndex).toBe(studioIndex + 2); // divider then integrations
   });
-  it('places Transform between Extract and RAG in the top-level nav', () => {
+  it('places Extract, Transform, Convert, RAG in sequence in the top-level nav', () => {
     const labels = ALL_TOP_LEVEL_ITEMS.map((item) => item.label);
+    const extractIdx = labels.indexOf('Extract');
 
-    expect(labels.indexOf('Extract')).toBeGreaterThanOrEqual(0);
-    expect(labels.indexOf('Transform')).toBe(labels.indexOf('Extract') + 1);
-    expect(labels.indexOf('RAG')).toBe(labels.indexOf('Transform') + 1);
+    expect(extractIdx).toBeGreaterThanOrEqual(0);
+    expect(labels.indexOf('Transform')).toBe(extractIdx + 1);
+    expect(labels.indexOf('Convert')).toBe(extractIdx + 2);
+    expect(labels.indexOf('RAG')).toBe(extractIdx + 3);
   });
 
   it('has dividers in TOP_LEVEL_NAV', () => {

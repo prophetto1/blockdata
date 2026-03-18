@@ -76,6 +76,7 @@ export const TOP_LEVEL_NAV: Array<NavItem | 'divider'> = [
   { label: 'Schema', icon: IconSchema, path: '/app/schemas' },
   'divider',
   { label: 'Workspace', icon: IconFileCode, path: '/app/workspace' },
+  { label: 'Studio', icon: IconCode, path: '/app/studio' },
   'divider',
   { label: 'Integrations', icon: IconApps, path: '/app/marketplace/integrations' },
   { label: 'Services', icon: IconServer, path: '/app/marketplace/services' },
@@ -151,16 +152,7 @@ const SUPERUSER_DRILL: NavDrillConfig = {
   routePrefix: '/app/superuser',
   sections: [
     {
-      label: 'Layouts',
       items: [
-        { label: 'Layout 1', icon: IconFileCode, path: '/app/superuser/layout-1' },
-        { label: 'Layout 2', icon: IconWorldCog, path: '/app/superuser/layout-2' },
-        { label: 'Layout 3', icon: IconFileCode, path: '/app/superuser/layout-3' },
-      ],
-    },
-    {
-      items: [
-        { label: 'ELT', icon: IconCode, path: '/app/elt' },
         { label: 'Docling', icon: IconSettings, path: '/app/superuser/parsers-docling' },
         { label: 'Instance Config', icon: IconServer, path: '/app/superuser/instance-config' },
         { label: 'Worker Config', icon: IconServer, path: '/app/superuser/worker-config' },
