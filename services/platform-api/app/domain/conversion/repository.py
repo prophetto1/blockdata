@@ -44,7 +44,7 @@ def insert_representation(
             "artifact_size_bytes": len(artifact_bytes),
             "artifact_meta": artifact_meta or {},
         },
-        on_conflict="source_uid,representation_type",
+        on_conflict="conv_uid,representation_type",
     ).execute()
 
 
