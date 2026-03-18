@@ -2,10 +2,13 @@
 
 import importlib
 import inspect
+import logging
 import pkgutil
 from typing import Any
 
 from app.domain.plugins.models import BasePlugin
+
+logger = logging.getLogger("platform-api")
 
 PLUGIN_REGISTRY: dict[str, BasePlugin] = {}
 FUNCTION_NAME_MAP: dict[str, str] = {}
@@ -33,7 +36,11 @@ def discover_plugins() -> None:
     import app.plugins as plugins_pkg
 
     for _importer, modname, _ispkg in pkgutil.iter_modules(plugins_pkg.__path__):
-        module = importlib.import_module(f"app.plugins.{modname}")
+        try:
+            module = importlib.import_module(f"app.plugins.{modname}")
+        except Exception as exc:
+            logger.warning("Skipping plugin %s: %s", modname, exc)
+            continue
         for _name, obj in inspect.getmembers(module, inspect.isclass):
             if issubclass(obj, BasePlugin) and obj is not BasePlugin:
                 instance = obj()
