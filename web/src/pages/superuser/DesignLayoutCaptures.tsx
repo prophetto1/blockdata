@@ -8,6 +8,7 @@ import {
   IconEye,
   IconPlus,
   IconRefresh,
+  IconTrash,
 } from '@tabler/icons-react';
 import { Search01Icon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
@@ -40,6 +41,43 @@ import type { CaptureEntry, CaptureRequest, PageType, ThemeRequest } from './des
 /* ------------------------------------------------------------------ */
 
 const CAPTURE_SERVER = import.meta.env.VITE_CAPTURE_SERVER_URL || 'http://localhost:4488';
+const DELETE_CAPABILITY_TTL_MS = 10_000;
+
+type DeleteCapabilityCache = {
+  checkedAt: number;
+  supportsDelete: boolean | null;
+};
+const deleteCapabilityCache: DeleteCapabilityCache = {
+  checkedAt: 0,
+  supportsDelete: null,
+};
+
+async function checkServerDeleteCapability(): Promise<boolean> {
+  const now = Date.now();
+  if (deleteCapabilityCache.supportsDelete !== null && now - deleteCapabilityCache.checkedAt < DELETE_CAPABILITY_TTL_MS) {
+    return deleteCapabilityCache.supportsDelete;
+  }
+
+  try {
+    const res = await fetch(`${CAPTURE_SERVER}`, {
+      method: 'OPTIONS',
+    });
+    const allowMethods = res.headers.get('access-control-allow-methods') || '';
+    const supportsDelete = allowMethods.toUpperCase().includes('DELETE');
+    deleteCapabilityCache.checkedAt = now;
+    deleteCapabilityCache.supportsDelete = supportsDelete;
+    return supportsDelete;
+  } catch {
+    deleteCapabilityCache.checkedAt = now;
+    deleteCapabilityCache.supportsDelete = false;
+    return false;
+  }
+}
+
+function staleDeleteServerError() {
+  const base = CAPTURE_SERVER.replace(/\/+$/, '');
+  return `Delete endpoint unavailable on ${base}. This usually means the capture server is still running an older script. Restart with "npm run capture-server" from this repo, then retry.`;
+}
 
 type SortField = 'name' | 'viewport' | 'theme' | 'pageType' | 'capturedAt';
 type SortDir = 'asc' | 'desc';
@@ -104,6 +142,29 @@ async function requestCapture(body: CaptureRequest): Promise<{ id: string; statu
   return res.json();
 }
 
+function normalizeOutputDir(outputDir: string): string {
+  return outputDir.replace(/\\/g, "/");
+}
+
+function makeCaptureEntryForPreview(row: CaptureEntry): CaptureEntry {
+  return {
+    ...row,
+    outputDir: normalizeOutputDir(row.outputDir),
+  };
+}
+
+async function parseFailureBody(res: Response): Promise<string> {
+  const text = await res.text();
+  if (!text) return `HTTP ${res.status}`;
+
+  try {
+    const payload = JSON.parse(text);
+    return typeof payload?.error === "string" ? payload.error : text;
+  } catch {
+    return text.length > 260 ? `${text.slice(0, 260)}...` : text;
+  }
+}
+
 async function requestAuthComplete(captureId: string): Promise<{ id: string; status: string }> {
   const res = await fetch(`${CAPTURE_SERVER}/auth-complete`, {
     method: 'POST',
@@ -113,6 +174,41 @@ async function requestAuthComplete(captureId: string): Promise<{ id: string; sta
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
     throw new Error(err.error ?? `HTTP ${res.status}`);
+  }
+  return res.json();
+}
+
+async function requestDeleteCapture(captureId: string): Promise<{ id: string; status: string }> {
+  const encoded = encodeURIComponent(captureId);
+  const deleteUrl = `${CAPTURE_SERVER}/captures/${encoded}/delete`;
+  const supportsDelete = await checkServerDeleteCapability();
+  const attempted: string[] = [];
+
+  let res = await fetch(deleteUrl, { method: 'POST' });
+  if (res.ok) return res.json();
+  attempted.push(`POST ${deleteUrl} (${res.status})`);
+
+  // Fallback for backends that only implement explicit body endpoint
+  res = await fetch(`${CAPTURE_SERVER}/captures/delete`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id: captureId }),
+  });
+  if (res.ok) return res.json();
+  attempted.push(`POST ${CAPTURE_SERVER}/captures/delete (${res.status})`);
+
+  if (!supportsDelete) {
+    throw new Error(`${staleDeleteServerError()}\nRecent attempts: ${attempted.join(', ')}`);
+  }
+
+  // Fallback to legacy DELETE endpoint for older deployments
+  res = await fetch(`${CAPTURE_SERVER}/captures/${encoded}`, {
+    method: 'DELETE',
+  });
+
+  if (!res.ok) {
+    const err = await parseFailureBody(res);
+    throw new Error(`${err}\nRecent attempts: ${attempted.join(', ')}; DELETE /captures/:id was attempted as final fallback.`);
   }
   return res.json();
 }
@@ -144,6 +240,8 @@ export function Component() {
   const [sortField, setSortField] = useState<SortField | null>('capturedAt');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [deleting, setDeleting] = useState<Set<string>>(new Set());
+  const [previewLoadFailed, setPreviewLoadFailed] = useState<Set<string>>(new Set());
 
   const utilityIconSize = ICON_SIZES[ICON_CONTEXT_SIZE[ICON_STANDARD.utilityTopRight.context]];
   const utilityIconStroke = ICON_STROKES[ICON_STANDARD.utilityTopRight.stroke];
@@ -155,6 +253,7 @@ export function Component() {
     const { data, connected } = await fetchCaptures();
     setRows(data);
     setServerOnline(connected);
+    setPreviewLoadFailed(new Set());
     setLoading(false);
   }, []);
 
@@ -203,9 +302,24 @@ export function Component() {
 
   // ---------- re-capture ----------
 
-  const handleReCapture = async (row: CaptureEntry) => {
+  const handleReCapture = async (row: CaptureEntry, forceAuth = false) => {
     const [w, h] = row.viewport.split('x').map(Number);
-    const req: CaptureRequest = { url: row.url, width: w, height: h, theme: row.theme, pageType: row.pageType };
+    const req: CaptureRequest = {
+      url: row.url,
+      width: w,
+      height: h,
+      theme: row.theme,
+      pageType: row.pageType,
+      forceAuth,
+    };
+    if (forceAuth) {
+      setPreviewLoadFailed((prev) => {
+        const next = new Set(prev);
+        next.delete(row.id);
+        return next;
+      });
+    }
+
     try {
       const result = await requestCapture(req);
       if (result.status === 'auth-needed') {
@@ -224,6 +338,29 @@ export function Component() {
       setCaptureForm(req);
       setModalStatus({ state: 'error', message: err instanceof Error ? err.message : String(err) });
       setShowAddNew(true);
+    }
+  };
+
+  const handleDelete = async (row: CaptureEntry) => {
+    if (!window.confirm(`Delete capture "${row.name}" and remove its artifacts?`)) return;
+
+    setDeleting((prev) => new Set(prev).add(row.id));
+    try {
+      await requestDeleteCapture(row.id);
+      setSelected((prev) => {
+        const next = new Set(prev);
+        next.delete(row.id);
+        return next;
+      });
+      await loadData();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : String(err));
+    } finally {
+      setDeleting((prev) => {
+        const next = new Set(prev);
+        next.delete(row.id);
+        return next;
+      });
     }
   };
 
@@ -300,14 +437,18 @@ export function Component() {
             <span className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2">
               <HugeiconsIcon icon={Search01Icon} size={utilityIconSize} strokeWidth={utilityIconStroke} className="text-muted-foreground" />
             </span>
-            <input
-              type="text"
-              value={query}
-              onChange={(e) => { setQuery(e.currentTarget.value); setPage(1); }}
-              placeholder="Search captures"
-              className="h-8 w-full rounded-md border border-border bg-background pl-8 pr-2 text-sm text-foreground outline-none focus-visible:ring-1 focus-visible:ring-ring"
-            />
-          </label>
+                <input
+                  type="text"
+                  value={query}
+                  onChange={(e) => {
+                    const next = e.currentTarget?.value ?? "";
+                    setQuery(next);
+                    setPage(1);
+                  }}
+                  placeholder="Search captures"
+                  className="h-8 w-full rounded-md border border-border bg-background pl-8 pr-2 text-sm text-foreground outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                />
+              </label>
 
           <div className="ml-auto flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={() => void loadData()}>
@@ -405,11 +546,24 @@ export function Component() {
                     <td className="px-3 py-3">
                       <div className="flex items-center gap-2.5">
                         {row.status === 'complete' && (
-                          <img
-                            src={captureFileUrl(row, row.theme === 'both' ? 'light' : row.theme, 'viewport.png')}
-                            alt=""
-                            className="h-8 w-14 shrink-0 rounded border border-border object-cover object-top"
-                          />
+                          previewLoadFailed.has(row.id) ? (
+                            <div className="flex h-8 w-14 shrink-0 items-center justify-center rounded border border-dashed border-border bg-muted text-[10px] text-muted-foreground">
+                              No image
+                            </div>
+                          ) : (
+                            <img
+                              src={captureFileUrl(
+                                makeCaptureEntryForPreview(row),
+                                row.theme === 'both' ? 'light' : row.theme,
+                                'viewport.png',
+                              )}
+                              alt=""
+                              className="h-8 w-14 shrink-0 rounded border border-border object-cover object-top"
+                              onError={() =>
+                                setPreviewLoadFailed((prev) => new Set(prev).add(row.id))
+                              }
+                            />
+                          )
                         )}
                         <span className="text-sm font-medium text-foreground">{row.name}</span>
                       </div>
@@ -475,6 +629,28 @@ export function Component() {
                         >
                           <IconCamera size={14} />
                         </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7"
+                          aria-label="Re-capture with fresh authentication"
+                          title="Re-capture with fresh authentication"
+                          onClick={() => void handleReCapture(row, true)}
+                          disabled={deleting.has(row.id)}
+                        >
+                          <IconRefresh size={14} />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300"
+                          aria-label="Delete capture"
+                          title="Delete capture and artifacts"
+                          onClick={() => void handleDelete(row)}
+                          disabled={deleting.has(row.id)}
+                        >
+                          <IconTrash size={14} />
+                        </Button>
                       </div>
                     </td>
                   </tr>
@@ -487,11 +663,15 @@ export function Component() {
         {/* Pagination footer */}
         <div className="flex items-center justify-between border-t border-border px-3 py-2 text-xs text-muted-foreground">
           <div className="flex items-center gap-2">
-            <select
-              value={pageSize}
-              onChange={(e) => { setPageSize(Number(e.currentTarget.value)); setPage(1); }}
-              className="rounded-md border border-border bg-background px-2 py-1 text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-            >
+              <select
+                value={pageSize}
+                onChange={(e) => {
+                  const value = Number(e.currentTarget?.value ?? "0");
+                  setPageSize(Number.isFinite(value) && value > 0 ? value : 10);
+                  setPage(1);
+                }}
+                className="rounded-md border border-border bg-background px-2 py-1 text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              >
               {PAGE_SIZES.map((s) => (
                 <option key={s} value={s}>{s} per page</option>
               ))}
@@ -536,7 +716,10 @@ export function Component() {
               <input
                 type="url"
                 value={captureForm.url}
-                onChange={(e) => setCaptureForm((f) => ({ ...f, url: e.currentTarget.value }))}
+                onChange={(e) => {
+                  const value = e.currentTarget?.value ?? "";
+                  setCaptureForm((f) => ({ ...f, url: value }));
+                }}
                 placeholder="https://www.evidence.studio/settings/organization"
                 className="mt-1 flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               />
@@ -545,22 +728,28 @@ export function Component() {
             <div className="grid grid-cols-2 gap-3">
               <label className="block">
                 <span className="text-sm font-medium">Width</span>
-                <input
-                  type="number"
-                  value={captureForm.width}
-                  onChange={(e) => setCaptureForm((f) => ({ ...f, width: Number(e.currentTarget.value) }))}
-                  className="mt-1 flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                />
-              </label>
-              <label className="block">
-                <span className="text-sm font-medium">Height</span>
-                <input
-                  type="number"
-                  value={captureForm.height}
-                  onChange={(e) => setCaptureForm((f) => ({ ...f, height: Number(e.currentTarget.value) }))}
-                  className="mt-1 flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                />
-              </label>
+              <input
+                type="number"
+                value={captureForm.width}
+                onChange={(e) => {
+                  const value = Number(e.currentTarget?.value ?? "0");
+                  setCaptureForm((f) => ({ ...f, width: Number.isFinite(value) && value > 0 ? value : 1920 }));
+                }}
+                className="mt-1 flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              />
+            </label>
+            <label className="block">
+              <span className="text-sm font-medium">Height</span>
+              <input
+                type="number"
+                value={captureForm.height}
+                onChange={(e) => {
+                  const value = Number(e.currentTarget?.value ?? "0");
+                  setCaptureForm((f) => ({ ...f, height: Number.isFinite(value) && value > 0 ? value : 1080 }));
+                }}
+                className="mt-1 flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              />
+            </label>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
@@ -568,7 +757,10 @@ export function Component() {
                 <span className="text-sm font-medium">Theme</span>
                 <select
                   value={captureForm.theme}
-                  onChange={(e) => setCaptureForm((f) => ({ ...f, theme: e.currentTarget.value as ThemeRequest }))}
+                  onChange={(e) => {
+                    const next = (e.currentTarget?.value ?? "light") as ThemeRequest;
+                    setCaptureForm((f) => ({ ...f, theme: next }));
+                  }}
                   className="mt-1 flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 >
                   <option value="light">Light</option>
@@ -580,7 +772,10 @@ export function Component() {
                 <span className="text-sm font-medium">Page Type</span>
                 <select
                   value={captureForm.pageType}
-                  onChange={(e) => setCaptureForm((f) => ({ ...f, pageType: e.currentTarget.value as PageType }))}
+                  onChange={(e) => {
+                    const next = (e.currentTarget?.value ?? "settings") as PageType;
+                    setCaptureForm((f) => ({ ...f, pageType: next }));
+                  }}
                   className="mt-1 flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 >
                   <option value="settings">Settings</option>

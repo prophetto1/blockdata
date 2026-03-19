@@ -259,6 +259,8 @@ async function collectReport(page, capture) {
         lineHeight: style.lineHeight,
         fontWeight: style.fontWeight,
         letterSpacing: style.letterSpacing,
+        fontStyle: style.fontStyle,
+        textTransform: style.textTransform,
         color: style.color,
         backgroundColor: style.backgroundColor,
         border: style.border,
@@ -295,6 +297,16 @@ async function collectReport(page, capture) {
 
         if (current.classList.length > 0) {
           part += `.${Array.from(current.classList).slice(0, 2).join(".")}`;
+        }
+
+        if (current.parentElement) {
+          const siblings = Array.from(current.parentElement.children).filter(
+            (s) => s.tagName === current.tagName && s.className === current.className
+          );
+          if (siblings.length > 1) {
+            const idx = Array.from(current.parentElement.children).indexOf(current) + 1;
+            part += `:nth-child(${idx})`;
+          }
         }
 
         parts.unshift(part);
@@ -425,8 +437,10 @@ async function collectReport(page, capture) {
       const children = Array.from(appFrame.children).filter(isVisible);
 
       if (topToolbar) {
-        const afterToolbar = children.find((child) => child !== topToolbar);
-        if (afterToolbar) return afterToolbar;
+        const toolbarIndex = children.indexOf(topToolbar);
+        if (toolbarIndex >= 0 && toolbarIndex + 1 < children.length) {
+          return children[toolbarIndex + 1];
+        }
       }
 
       return children[0] || null;
@@ -435,22 +449,34 @@ async function collectReport(page, capture) {
     function pickSplitChildren(shellRow) {
       if (!shellRow) return { leftRail: null, mainCanvas: null, rightRail: null };
 
-      const children = Array.from(shellRow.children).filter(isVisible);
+      const minRailWidth = 40;
 
-      if (children.length >= 3) {
+      function assignFromChildren(kids) {
+        if (kids.length === 0) return { leftRail: null, mainCanvas: null, rightRail: null };
+
+        const widest = [...kids].sort((a, b) =>
+          b.getBoundingClientRect().width - a.getBoundingClientRect().width
+        )[0];
+        const mainIndex = kids.indexOf(widest);
+
+        const leftCandidates = kids.slice(0, mainIndex).filter(
+          (el) => el.getBoundingClientRect().width >= minRailWidth
+        );
+        const rightCandidates = kids.slice(mainIndex + 1).filter(
+          (el) => el.getBoundingClientRect().width >= minRailWidth
+        );
+
         return {
-          leftRail: children[0],
-          mainCanvas: children[1],
-          rightRail: children[2],
+          leftRail: leftCandidates[leftCandidates.length - 1] || null,
+          mainCanvas: widest,
+          rightRail: rightCandidates[0] || null,
         };
       }
 
+      const children = Array.from(shellRow.children).filter(isVisible);
+
       if (children.length >= 2) {
-        return {
-          leftRail: children[0],
-          mainCanvas: children[1],
-          rightRail: null,
-        };
+        return assignFromChildren(children);
       }
 
       const nested = firstVisible(shellRow, [":scope > div", ":scope > section", ":scope > main"]);
@@ -459,12 +485,7 @@ async function collectReport(page, capture) {
       }
 
       const nestedChildren = Array.from(nested.children).filter(isVisible);
-
-      return {
-        leftRail: nestedChildren[0] || null,
-        mainCanvas: nestedChildren[1] || null,
-        rightRail: nestedChildren[2] || null,
-      };
+      return assignFromChildren(nestedChildren);
     }
 
     function pickDatasetSelector(leftRail) {
@@ -546,6 +567,17 @@ async function collectReport(page, capture) {
       const tag = element.tagName.toLowerCase();
       const text = textSnippet(element.textContent || "", 120).toLowerCase();
 
+      if (tag === "h1" || tag === "h2" || tag === "h3" || tag === "h4" || tag === "h5" || tag === "h6") {
+        return "heading";
+      }
+      if (tag === "p") return "paragraph";
+      if (tag === "pre" || tag === "code") return "code";
+      if (tag === "blockquote") return "blockquote";
+      if (tag === "figcaption") return "figcaption";
+      if (tag === "label" || tag === "legend") return "form-label";
+      if (tag === "dt" || tag === "dd") return "definition";
+      if (tag === "li") return "list-item";
+      if (tag === "th" || tag === "td") return "table-cell";
       if (role === "tab" || text === "results" || text === "sql" || text === "component") return "tab";
       if (tag === "input" || tag === "textarea" || role === "textbox" || role === "searchbox") return "input";
       if (tag === "button") return "button";
@@ -569,6 +601,24 @@ async function collectReport(page, capture) {
         "input",
         "textarea",
         "select",
+        "h1",
+        "h2",
+        "h3",
+        "h4",
+        "h5",
+        "h6",
+        "p",
+        "pre",
+        "code",
+        "blockquote",
+        "figcaption",
+        "label",
+        "legend",
+        "dt",
+        "dd",
+        "li",
+        "th",
+        "td",
         "[role='tab']",
         "[role='tablist']",
         "[role='navigation']",
@@ -607,6 +657,99 @@ async function collectReport(page, capture) {
         .slice(0, 20);
     }
 
+    function typographyScale(root) {
+      const selectors = [
+        "h1",
+        "h2",
+        "h3",
+        "h4",
+        "h5",
+        "h6",
+        "p",
+        "pre",
+        "code",
+        "blockquote",
+        "figcaption",
+        "label",
+        "legend",
+        "dt",
+        "dd",
+        "li",
+        "th",
+        "td",
+        "span",
+      ];
+
+      const buckets = new Map();
+      for (const element of queryVisible(root, selectors)) {
+        const text = textSnippet(element.textContent || "", 120);
+        if (!text) continue;
+
+        const style = getComputedStyle(element);
+        const key = [
+          style.fontFamily,
+          style.fontSize,
+          style.fontWeight,
+          style.lineHeight,
+          style.letterSpacing,
+          style.fontStyle,
+          style.textTransform,
+        ].join("|");
+
+        const tag = element.tagName.toLowerCase();
+        const entry = buckets.get(key);
+        if (entry) {
+          entry.occurrences += 1;
+          if (!entry.tags.includes(tag)) entry.tags.push(tag);
+          if (!entry.sampleText && text) entry.sampleText = text;
+        } else {
+          buckets.set(key, {
+            fontFamily: style.fontFamily,
+            fontSize: style.fontSize,
+            lineHeight: style.lineHeight,
+            fontWeight: style.fontWeight,
+            letterSpacing: style.letterSpacing,
+            fontStyle: style.fontStyle,
+            textTransform: style.textTransform,
+            color: style.color,
+            sampleText: text,
+            sampleTag: tag,
+            occurrences: 1,
+            tags: [tag],
+          });
+        }
+      }
+
+      const scale = [...buckets.values()].sort((left, right) =>
+        Number.parseFloat(right.fontSize || "0") - Number.parseFloat(left.fontSize || "0")
+      );
+
+      const fontSizes = scale
+        .map((entry) => Number.parseFloat(entry.fontSize))
+        .filter((value) => Number.isFinite(value));
+      const uniqueFontSizes = new Set(scale.map((entry) => entry.fontSize));
+      const fontFamilies = [
+        ...new Set(
+          scale.map((entry) => entry.fontFamily).map((family) => {
+            const [primary] = family.split(",");
+            return primary?.trim();
+          }),
+        ),
+      ]
+        .filter(Boolean)
+        .map((value) => value.replace(/^"|"$/g, ""));
+
+      return {
+        scale,
+        fontFamilies,
+        fontSizeRange: {
+          min: fontSizes.length ? `${Math.min(...fontSizes)}px` : "0px",
+          max: fontSizes.length ? `${Math.max(...fontSizes)}px` : "0px",
+          distinct: uniqueFontSizes.size,
+        },
+      };
+    }
+
     function visibleSections(appFrame) {
       return queryVisible(appFrame, ["header", "nav", "main", "section", "aside", "footer"])
         .filter(isInViewport)
@@ -615,18 +758,65 @@ async function collectReport(page, capture) {
     }
 
     function themeTokens(elements) {
-      return elements
-        .filter(Boolean)
-        .map((element) => {
-          const style = getComputedStyle(element);
-          return {
-            label: element.getAttribute("data-layout-label") || element.tagName.toLowerCase(),
-            color: style.color,
-            backgroundColor: style.backgroundColor,
-            borderColor: style.borderColor,
-            boxShadow: style.boxShadow,
-          };
-        });
+      const seen = new Set();
+      const tokens = [];
+
+      function pushToken(element, labelOverride) {
+        if (!element) return;
+
+        const style = getComputedStyle(element);
+        const label = labelOverride || element.getAttribute("data-layout-label") || element.tagName.toLowerCase();
+        const token = {
+          label,
+          color: style.color,
+          backgroundColor: style.backgroundColor,
+          borderColor: style.borderColor,
+          boxShadow: style.boxShadow,
+          outlineColor: style.outlineColor,
+          textDecorationColor: style.textDecorationColor,
+        };
+
+        const signature = `${label}|${token.color}|${token.backgroundColor}|${token.borderColor}|${token.boxShadow}|${token.outlineColor}|${token.textDecorationColor}`;
+        if (seen.has(signature)) return;
+        seen.add(signature);
+        tokens.push(token);
+      }
+
+      for (const element of elements.filter(Boolean)) {
+        pushToken(element);
+      }
+
+      const body = document.body;
+      if (body) {
+        pushToken(firstVisible(body, ["a"]), "link");
+        pushToken(firstVisible(body, ["input", "textarea", "select"]), "input");
+      }
+
+      const bodyStyle = body ? getComputedStyle(body) : null;
+      const bodyBg = bodyStyle ? bodyStyle.backgroundColor : "rgba(0, 0, 0, 0)";
+      const surfaceCandidates = Array.from(document.querySelectorAll("main, section, article, aside, div, header, footer, nav"))
+        .filter(isVisible)
+        .map((element) => ({
+          element,
+          rect: element.getBoundingClientRect(),
+          style: getComputedStyle(element),
+        }))
+        .filter(({ element, rect, style }) => {
+          if (rect.width * rect.height < 8000) return false;
+          if (!style.backgroundColor || style.backgroundColor === "rgba(0, 0, 0, 0)") return false;
+          if (style.backgroundColor === "transparent") return false;
+          const parentStyle = element.parentElement ? getComputedStyle(element.parentElement) : null;
+          if (parentStyle && style.backgroundColor === parentStyle.backgroundColor) return false;
+          return bodyBg ? style.backgroundColor !== bodyBg : true;
+        })
+        .sort((left, right) => right.rect.width * right.rect.height - left.rect.width * left.rect.height)
+        .slice(0, 6);
+
+      for (const { element } of surfaceCandidates) {
+        pushToken(element, `surface`);
+      }
+
+      return tokens;
     }
 
     function collectCoordinateDiagnostics(elements) {
@@ -708,6 +898,7 @@ async function collectReport(page, capture) {
         actionButtons: actionButtons.map((element) => summarizeElement(element, "actionButton")),
         visibleSections: visibleSections(appFrame),
       },
+      typography: typographyScale(document),
       components: {
         appFrameInventory: componentInventory(appFrame),
         leftRailInventory: componentInventory(leftRail),
@@ -806,6 +997,7 @@ function determineThemes(options) {
   }
 
   const requestedTheme = options.theme ?? "system";
+  if (requestedTheme === "both") return ["light", "dark"];
   if (requestedTheme === "light" || requestedTheme === "dark" || requestedTheme === "system") {
     return [requestedTheme];
   }

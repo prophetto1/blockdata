@@ -22,4 +22,5 @@ export type CaptureRequest = {
   height: number;
   theme: ThemeRequest;
   pageType: PageType;
+  forceAuth?: boolean;
 };

@@ -11,7 +11,7 @@ Start from the JSON emitted by `scripts/measure-layout.mjs`. Do not replace meas
 - Browser:
 - Viewport:
 - Device scale factor or zoom:
-- Captured state:
+- Captured state (theme):
 - Raw report path:
 - Screenshot paths:
 
@@ -20,6 +20,7 @@ Start from the JSON emitted by `scripts/measure-layout.mjs`. Do not replace meas
 - Top-level sections in visual order
 - Main container width and page padding
 - Major regions such as nav, hero, filters, grid, cards, footer
+- Shell layout: toolbar, left rail, main canvas, right rail (when present)
 
 ## Layout System
 
@@ -31,33 +32,56 @@ Start from the JSON emitted by `scripts/measure-layout.mjs`. Do not replace meas
 
 ## Typography
 
-- Family
-- Size
+Pull from `report.typography.scale`. Each entry in the scale is a unique typographic treatment.
+
+For each distinct treatment:
+
+- Font family (first family from stack)
+- Font size
 - Line height
-- Weight
+- Font weight
+- Font style
+- Text transform
+- Letter spacing (when not `normal`)
 - Color
-- Letter spacing when relevant
+- Sample text and tag
+- Occurrence count
+
+Summary from `report.typography`:
+
+- Font families in use: `fontFamilies[]`
+- Size range: `fontSizeRange.min` to `fontSizeRange.max` (`fontSizeRange.distinct` sizes)
 
 ## Surfaces And Effects
 
-- Backgrounds
+- Backgrounds (from `theme.tokens` surface entries)
 - Borders
 - Radii
 - Shadows
 - Opacity or blur
 
+## Theme Tokens
+
+Pull from `report.theme.tokens`. Includes structural elements, links, inputs, and surface elevations.
+
+- Body / app frame colors
+- Link color
+- Input field styling
+- Surface elevation backgrounds (distinct from body)
+
 ## Components
 
-Repeat this section for each important component:
+Repeat this section for each important component. Pull from `report.components` inventories.
 
 - Component name:
-- Selector or description:
+- Kind (heading, button, link, input, paragraph, code, etc.):
+- Selector:
 - Width:
 - Height:
 - Position:
 - Internal padding:
 - Gap:
-- Typography:
+- Typography (reference scale entry):
 - Border, radius, background:
 - Notes:
 
