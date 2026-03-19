@@ -1,21 +1,22 @@
 # Component Inventory
 
-Generated: 2026-03-17T00:24:12.323Z
+Generated: 2026-03-19T23:05:14.921Z
 Scope: auth
 
-Pages scanned: 49
-Unique component usages: 444
+Pages scanned: 50
+Unique component usages: 416
 
 ## Category Totals
 
 | Category | Count |
 | --- | ---: |
-| ark-ui | 158 |
-| external-package | 20 |
+| ark-ui | 153 |
+| external-package | 18 |
 | in-file component | 18 |
-| local-components | 150 |
-| relative-local | 19 |
-| tabler-icons | 79 |
+| local-components | 131 |
+| local-pages | 1 |
+| relative-local | 21 |
+| tabler-icons | 74 |
 
 ## src/pages/AgentOnboarding.tsx
 
@@ -23,7 +24,7 @@ Component usages: 1
 
 | Used As | Source | Category | Definition |
 | --- | --- | --- | --- |
-| `Navigate` | `react-router-dom` | external-package | Navigate comes from react-router-dom (named import of Navigate) |
+| `AgentOnboardingSelect` | `@/pages/AgentOnboardingSelect` | local-pages | AgentOnboardingSelect comes from @/pages/AgentOnboardingSelect (default import of default) |
 
 ## src/pages/AgentOnboardingAuth.tsx
 
@@ -79,6 +80,14 @@ Component usages: 1
 | --- | --- | --- | --- |
 | `PageHeader` | `@/components/common/PageHeader` | local-components | PageHeader comes from @/components/common/PageHeader (named import of PageHeader) |
 
+## src/pages/ConvertPage.tsx
+
+Component usages: 1
+
+| Used As | Source | Category | Definition |
+| --- | --- | --- | --- |
+| `Workbench` | `@/components/workbench/Workbench` | local-components | Workbench comes from @/components/workbench/Workbench (named import of Workbench) |
+
 ## src/pages/DatabasePlaceholder.tsx
 
 Component usages: 4
@@ -89,23 +98,6 @@ Component usages: 4
 | `ErrorAlert` | `@/components/common/ErrorAlert` | local-components | ErrorAlert comes from @/components/common/ErrorAlert (named import of ErrorAlert) |
 | `IconDatabase` | `@tabler/icons-react` | tabler-icons | IconDatabase comes from @tabler/icons-react (named import of IconDatabase) |
 | `PageHeader` | `@/components/common/PageHeader` | local-components | PageHeader comes from @/components/common/PageHeader (named import of PageHeader) |
-
-## src/pages/DocumentTest.tsx
-
-Component usages: 10
-
-| Used As | Source | Category | Definition |
-| --- | --- | --- | --- |
-| `IconArrowsTransferDown` | `@tabler/icons-react` | tabler-icons | IconArrowsTransferDown comes from @tabler/icons-react (named import of IconArrowsTransferDown) |
-| `IconChevronDown` | `@tabler/icons-react` | tabler-icons | IconChevronDown comes from @tabler/icons-react (named import of IconChevronDown) |
-| `IconTransform` | `@tabler/icons-react` | tabler-icons | IconTransform comes from @tabler/icons-react (named import of IconTransform) |
-| `MenuContent` | `@/components/ui/menu` | local-components | MenuContent comes from @/components/ui/menu (named import of MenuContent) |
-| `MenuItem` | `@/components/ui/menu` | local-components | MenuItem comes from @/components/ui/menu (named import of MenuItem) |
-| `MenuPortal` | `@/components/ui/menu` | local-components | MenuPortal comes from @/components/ui/menu (named import of MenuPortal) |
-| `MenuPositioner` | `@/components/ui/menu` | local-components | MenuPositioner comes from @/components/ui/menu (named import of MenuPositioner) |
-| `MenuRoot` | `@/components/ui/menu` | local-components | MenuRoot comes from @/components/ui/menu (named import of MenuRoot) |
-| `MenuTrigger` | `@/components/ui/menu` | local-components | MenuTrigger comes from @/components/ui/menu (named import of MenuTrigger) |
-| `Workbench` | `@/components/workbench/Workbench` | local-components | Workbench comes from @/components/workbench/Workbench (named import of Workbench) |
 
 ## src/pages/ExtractPage.tsx
 
@@ -179,6 +171,14 @@ Component usages: 38
 | `Select.ValueText` | `@ark-ui/react/select` | ark-ui | Select.ValueText comes from @ark-ui/react/select (named import of Select) |
 | `SortIcon` | `(in-file or unresolved)` | in-file component | SortIcon is defined in the same page file |
 | `StatusCell` | `(in-file or unresolved)` | in-file component | StatusCell is defined in the same page file |
+
+## src/pages/kestra/LogsPage.tsx
+
+Component usages: 1
+
+| Used As | Source | Category | Definition |
+| --- | --- | --- | --- |
+| `KestraPageShell` | `./KestraPageShell` | relative-local | KestraPageShell comes from ./KestraPageShell (default import of default) |
 
 ## src/pages/kestra/TestsPage.tsx
 
@@ -338,33 +338,6 @@ Component usages: 29
 | `SegmentGroupItemText` | `@/components/ui/segment-group` | local-components | SegmentGroupItemText comes from @/components/ui/segment-group (named import of SegmentGroupItemText) |
 | `SegmentGroupRoot` | `@/components/ui/segment-group` | local-components | SegmentGroupRoot comes from @/components/ui/segment-group (named import of SegmentGroupRoot) |
 
-## src/pages/ProjectsHome.tsx
-
-Component usages: 1
-
-| Used As | Source | Category | Definition |
-| --- | --- | --- | --- |
-| `ErrorAlert` | `@/components/common/ErrorAlert` | local-components | ErrorAlert comes from @/components/common/ErrorAlert (named import of ErrorAlert) |
-
-## src/pages/RunDetail.tsx
-
-Component usages: 12
-
-| Used As | Source | Category | Definition |
-| --- | --- | --- | --- |
-| `AppBreadcrumbs` | `@/components/common/AppBreadcrumbs` | local-components | AppBreadcrumbs comes from @/components/common/AppBreadcrumbs (named import of AppBreadcrumbs) |
-| `Badge` | `@/components/ui/badge` | local-components | Badge comes from @/components/ui/badge (named import of Badge) |
-| `DialogBody` | `@/components/ui/dialog` | local-components | DialogBody comes from @/components/ui/dialog (named import of DialogBody) |
-| `DialogCloseTrigger` | `@/components/ui/dialog` | local-components | DialogCloseTrigger comes from @/components/ui/dialog (named import of DialogCloseTrigger) |
-| `DialogContent` | `@/components/ui/dialog` | local-components | DialogContent comes from @/components/ui/dialog (named import of DialogContent) |
-| `DialogFooter` | `@/components/ui/dialog` | local-components | DialogFooter comes from @/components/ui/dialog (named import of DialogFooter) |
-| `DialogRoot` | `@/components/ui/dialog` | local-components | DialogRoot comes from @/components/ui/dialog (named import of DialogRoot) |
-| `DialogTitle` | `@/components/ui/dialog` | local-components | DialogTitle comes from @/components/ui/dialog (named import of DialogTitle) |
-| `ErrorAlert` | `@/components/common/ErrorAlert` | local-components | ErrorAlert comes from @/components/common/ErrorAlert (named import of ErrorAlert) |
-| `IconPlayerStop` | `@tabler/icons-react` | tabler-icons | IconPlayerStop comes from @tabler/icons-react (named import of IconPlayerStop) |
-| `IconTrash` | `@tabler/icons-react` | tabler-icons | IconTrash comes from @tabler/icons-react (named import of IconTrash) |
-| `PageHeader` | `@/components/common/PageHeader` | local-components | PageHeader comes from @/components/common/PageHeader (named import of PageHeader) |
-
 ## src/pages/SchemaLayout.tsx
 
 Component usages: 25
@@ -399,11 +372,17 @@ Component usages: 25
 
 ## src/pages/Schemas.tsx
 
-Component usages: 30
+Component usages: 36
 
 | Used As | Source | Category | Definition |
 | --- | --- | --- | --- |
 | `Button` | `@/components/ui/button` | local-components | Button comes from @/components/ui/button (named import of Button) |
+| `DialogBody` | `@/components/ui/dialog` | local-components | DialogBody comes from @/components/ui/dialog (named import of DialogBody) |
+| `DialogCloseTrigger` | `@/components/ui/dialog` | local-components | DialogCloseTrigger comes from @/components/ui/dialog (named import of DialogCloseTrigger) |
+| `DialogContent` | `@/components/ui/dialog` | local-components | DialogContent comes from @/components/ui/dialog (named import of DialogContent) |
+| `DialogFooter` | `@/components/ui/dialog` | local-components | DialogFooter comes from @/components/ui/dialog (named import of DialogFooter) |
+| `DialogRoot` | `@/components/ui/dialog` | local-components | DialogRoot comes from @/components/ui/dialog (named import of DialogRoot) |
+| `DialogTitle` | `@/components/ui/dialog` | local-components | DialogTitle comes from @/components/ui/dialog (named import of DialogTitle) |
 | `IconAsterisk` | `@tabler/icons-react` | tabler-icons | IconAsterisk comes from @tabler/icons-react (named import of IconAsterisk) |
 | `IconBrackets` | `@tabler/icons-react` | tabler-icons | IconBrackets comes from @tabler/icons-react (named import of IconBrackets) |
 | `IconCheck` | `@tabler/icons-react` | tabler-icons | IconCheck comes from @tabler/icons-react (named import of IconCheck) |
@@ -433,6 +412,14 @@ Component usages: 30
 | `Splitter.ResizeTriggerIndicator` | `@ark-ui/react/splitter` | ark-ui | Splitter.ResizeTriggerIndicator comes from @ark-ui/react/splitter (named import of Splitter) |
 | `Splitter.Root` | `@ark-ui/react/splitter` | ark-ui | Splitter.Root comes from @ark-ui/react/splitter (named import of Splitter) |
 | `Workbench` | `@/components/workbench/Workbench` | local-components | Workbench comes from @/components/workbench/Workbench (named import of Workbench) |
+
+## src/pages/SecretsPage.tsx
+
+Component usages: 1
+
+| Used As | Source | Category | Definition |
+| --- | --- | --- | --- |
+| `PageHeader` | `@/components/common/PageHeader` | local-components | PageHeader comes from @/components/common/PageHeader (named import of PageHeader) |
 
 ## src/pages/settings/ConnectionsPanel.tsx
 
@@ -487,6 +474,14 @@ Component usages: 38
 | `SwitchThumb` | `@/components/ui/switch` | local-components | SwitchThumb comes from @/components/ui/switch (named import of SwitchThumb) |
 | `TextInput` | `(in-file or unresolved)` | in-file component | TextInput is defined in the same page file |
 | `Toggle` | `(in-file or unresolved)` | in-file component | Toggle is defined in the same page file |
+
+## src/pages/settings/InstanceConfigPanel.test.tsx
+
+Component usages: 1
+
+| Used As | Source | Category | Definition |
+| --- | --- | --- | --- |
+| `InstanceConfigPanel` | `./InstanceConfigPanel` | relative-local | InstanceConfigPanel comes from ./InstanceConfigPanel (named import of InstanceConfigPanel) |
 
 ## src/pages/settings/InstanceConfigPanel.tsx
 
@@ -781,26 +776,11 @@ Component usages: 1
 | --- | --- | --- | --- |
 | `Workbench` | `@/components/workbench/Workbench` | local-components | Workbench comes from @/components/workbench/Workbench (named import of Workbench) |
 
-## src/pages/UppyLibraryDemo.tsx
+## src/pages/Workspace.tsx
 
-Component usages: 16
+Component usages: 1
 
 | Used As | Source | Category | Definition |
 | --- | --- | --- | --- |
-| `AppBreadcrumbs` | `@/components/common/AppBreadcrumbs` | local-components | AppBreadcrumbs comes from @/components/common/AppBreadcrumbs (named import of AppBreadcrumbs) |
-| `Badge` | `@/components/ui/badge` | local-components | Badge comes from @/components/ui/badge (named import of Badge) |
-| `Button` | `@/components/ui/button` | local-components | Button comes from @/components/ui/button (named import of Button) |
-| `Dashboard` | `@uppy/react/dashboard` | external-package | Dashboard comes from @uppy/react/dashboard (default import of default) |
-| `ErrorAlert` | `@/components/common/ErrorAlert` | local-components | ErrorAlert comes from @/components/common/ErrorAlert (named import of ErrorAlert) |
-| `PageHeader` | `@/components/common/PageHeader` | local-components | PageHeader comes from @/components/common/PageHeader (named import of PageHeader) |
-| `SegmentGroupIndicator` | `@/components/ui/segment-group` | local-components | SegmentGroupIndicator comes from @/components/ui/segment-group (named import of SegmentGroupIndicator) |
-| `SegmentGroupItem` | `@/components/ui/segment-group` | local-components | SegmentGroupItem comes from @/components/ui/segment-group (named import of SegmentGroupItem) |
-| `SegmentGroupItemHiddenInput` | `@/components/ui/segment-group` | local-components | SegmentGroupItemHiddenInput comes from @/components/ui/segment-group (named import of SegmentGroupItemHiddenInput) |
-| `SegmentGroupItemText` | `@/components/ui/segment-group` | local-components | SegmentGroupItemText comes from @/components/ui/segment-group (named import of SegmentGroupItemText) |
-| `SegmentGroupRoot` | `@/components/ui/segment-group` | local-components | SegmentGroupRoot comes from @/components/ui/segment-group (named import of SegmentGroupRoot) |
-| `Switch.Control` | `@ark-ui/react/switch` | ark-ui | Switch.Control comes from @ark-ui/react/switch (named import of Switch) |
-| `Switch.HiddenInput` | `@ark-ui/react/switch` | ark-ui | Switch.HiddenInput comes from @ark-ui/react/switch (named import of Switch) |
-| `Switch.Label` | `@ark-ui/react/switch` | ark-ui | Switch.Label comes from @ark-ui/react/switch (named import of Switch) |
-| `Switch.Root` | `@ark-ui/react/switch` | ark-ui | Switch.Root comes from @ark-ui/react/switch (named import of Switch) |
-| `Switch.Thumb` | `@ark-ui/react/switch` | ark-ui | Switch.Thumb comes from @ark-ui/react/switch (named import of Switch) |
+| `Workbench` | `@/components/workbench/Workbench` | local-components | Workbench comes from @/components/workbench/Workbench (named import of Workbench) |
 

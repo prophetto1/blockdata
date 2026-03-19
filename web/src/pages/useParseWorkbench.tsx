@@ -896,7 +896,7 @@ export function useParseWorkbench() {
   const artifactsRequestRef = useRef(new Map<string, Promise<ParseArtifactBundle>>());
 
   const docState = useProjectDocuments(resolvedProjectId);
-  const { docs, loading, error, selected, toggleSelect, toggleSelectAll, clearSelection, allSelected, someSelected, refreshDocs } = docState;
+  const { docs, loading, error, selected, toggleSelect, clearSelection, refreshDocs } = docState;
 
   const [activeTrack, setActiveTrack] = useState<ParseTrack>('docling');
   const [activeDocUid, setActiveDocUid] = useState<string | null>(null);

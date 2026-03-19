@@ -29,7 +29,6 @@ import {
   IconTransform,
   IconFileExport,
   IconRobot,
-  IconRocket,
   IconActivity,
 } from '@tabler/icons-react';
 

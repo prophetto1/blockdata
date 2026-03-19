@@ -1,22 +1,22 @@
 {
-  "generatedAt": "2026-03-17T00:24:12.317Z",
+  "generatedAt": "2026-03-19T23:05:14.915Z",
   "scope": "auth",
   "pages": [
     {
       "page": "src/pages/AgentOnboarding.tsx",
       "componentCount": 1,
       "categoryCounts": {
-        "external-package": 1
+        "local-pages": 1
       },
       "components": [
         {
-          "component": "Navigate",
-          "usedAs": "Navigate",
-          "source": "react-router-dom",
-          "importKind": "named",
-          "importedAs": "Navigate",
-          "category": "external-package",
-          "definition": "Navigate comes from react-router-dom (named import of Navigate)"
+          "component": "AgentOnboardingSelect",
+          "usedAs": "AgentOnboardingSelect",
+          "source": "@/pages/AgentOnboardingSelect",
+          "importKind": "default",
+          "importedAs": "default",
+          "category": "local-pages",
+          "definition": "AgentOnboardingSelect comes from @/pages/AgentOnboardingSelect (default import of default)"
         }
       ]
     },
@@ -180,6 +180,24 @@
       ]
     },
     {
+      "page": "src/pages/ConvertPage.tsx",
+      "componentCount": 1,
+      "categoryCounts": {
+        "local-components": 1
+      },
+      "components": [
+        {
+          "component": "Workbench",
+          "usedAs": "Workbench",
+          "source": "@/components/workbench/Workbench",
+          "importKind": "named",
+          "importedAs": "Workbench",
+          "category": "local-components",
+          "definition": "Workbench comes from @/components/workbench/Workbench (named import of Workbench)"
+        }
+      ]
+    },
+    {
       "page": "src/pages/DatabasePlaceholder.tsx",
       "componentCount": 4,
       "categoryCounts": {
@@ -222,106 +240,6 @@
           "importedAs": "PageHeader",
           "category": "local-components",
           "definition": "PageHeader comes from @/components/common/PageHeader (named import of PageHeader)"
-        }
-      ]
-    },
-    {
-      "page": "src/pages/DocumentTest.tsx",
-      "componentCount": 10,
-      "categoryCounts": {
-        "tabler-icons": 3,
-        "local-components": 7
-      },
-      "components": [
-        {
-          "component": "IconArrowsTransferDown",
-          "usedAs": "IconArrowsTransferDown",
-          "source": "@tabler/icons-react",
-          "importKind": "named",
-          "importedAs": "IconArrowsTransferDown",
-          "category": "tabler-icons",
-          "definition": "IconArrowsTransferDown comes from @tabler/icons-react (named import of IconArrowsTransferDown)"
-        },
-        {
-          "component": "IconChevronDown",
-          "usedAs": "IconChevronDown",
-          "source": "@tabler/icons-react",
-          "importKind": "named",
-          "importedAs": "IconChevronDown",
-          "category": "tabler-icons",
-          "definition": "IconChevronDown comes from @tabler/icons-react (named import of IconChevronDown)"
-        },
-        {
-          "component": "IconTransform",
-          "usedAs": "IconTransform",
-          "source": "@tabler/icons-react",
-          "importKind": "named",
-          "importedAs": "IconTransform",
-          "category": "tabler-icons",
-          "definition": "IconTransform comes from @tabler/icons-react (named import of IconTransform)"
-        },
-        {
-          "component": "MenuContent",
-          "usedAs": "MenuContent",
-          "source": "@/components/ui/menu",
-          "importKind": "named",
-          "importedAs": "MenuContent",
-          "category": "local-components",
-          "definition": "MenuContent comes from @/components/ui/menu (named import of MenuContent)"
-        },
-        {
-          "component": "MenuItem",
-          "usedAs": "MenuItem",
-          "source": "@/components/ui/menu",
-          "importKind": "named",
-          "importedAs": "MenuItem",
-          "category": "local-components",
-          "definition": "MenuItem comes from @/components/ui/menu (named import of MenuItem)"
-        },
-        {
-          "component": "MenuPortal",
-          "usedAs": "MenuPortal",
-          "source": "@/components/ui/menu",
-          "importKind": "named",
-          "importedAs": "MenuPortal",
-          "category": "local-components",
-          "definition": "MenuPortal comes from @/components/ui/menu (named import of MenuPortal)"
-        },
-        {
-          "component": "MenuPositioner",
-          "usedAs": "MenuPositioner",
-          "source": "@/components/ui/menu",
-          "importKind": "named",
-          "importedAs": "MenuPositioner",
-          "category": "local-components",
-          "definition": "MenuPositioner comes from @/components/ui/menu (named import of MenuPositioner)"
-        },
-        {
-          "component": "MenuRoot",
-          "usedAs": "MenuRoot",
-          "source": "@/components/ui/menu",
-          "importKind": "named",
-          "importedAs": "MenuRoot",
-          "category": "local-components",
-          "definition": "MenuRoot comes from @/components/ui/menu (named import of MenuRoot)"
-        },
-        {
-          "component": "MenuTrigger",
-          "usedAs": "MenuTrigger",
-          "source": "@/components/ui/menu",
-          "importKind": "named",
-          "importedAs": "MenuTrigger",
-          "category": "local-components",
-          "definition": "MenuTrigger comes from @/components/ui/menu (named import of MenuTrigger)"
-        },
-        {
-          "component": "Workbench",
-          "usedAs": "Workbench",
-          "source": "@/components/workbench/Workbench",
-          "importKind": "named",
-          "importedAs": "Workbench",
-          "category": "local-components",
-          "definition": "Workbench comes from @/components/workbench/Workbench (named import of Workbench)"
         }
       ]
     },
@@ -822,6 +740,24 @@
           "importedAs": null,
           "category": "in-file component",
           "definition": "StatusCell is defined in the same page file"
+        }
+      ]
+    },
+    {
+      "page": "src/pages/kestra/LogsPage.tsx",
+      "componentCount": 1,
+      "categoryCounts": {
+        "relative-local": 1
+      },
+      "components": [
+        {
+          "component": "KestraPageShell",
+          "usedAs": "KestraPageShell",
+          "source": "./KestraPageShell",
+          "importKind": "default",
+          "importedAs": "default",
+          "category": "relative-local",
+          "definition": "KestraPageShell comes from ./KestraPageShell (default import of default)"
         }
       ]
     },
@@ -1662,142 +1598,6 @@
       ]
     },
     {
-      "page": "src/pages/ProjectsHome.tsx",
-      "componentCount": 1,
-      "categoryCounts": {
-        "local-components": 1
-      },
-      "components": [
-        {
-          "component": "ErrorAlert",
-          "usedAs": "ErrorAlert",
-          "source": "@/components/common/ErrorAlert",
-          "importKind": "named",
-          "importedAs": "ErrorAlert",
-          "category": "local-components",
-          "definition": "ErrorAlert comes from @/components/common/ErrorAlert (named import of ErrorAlert)"
-        }
-      ]
-    },
-    {
-      "page": "src/pages/RunDetail.tsx",
-      "componentCount": 12,
-      "categoryCounts": {
-        "local-components": 10,
-        "tabler-icons": 2
-      },
-      "components": [
-        {
-          "component": "AppBreadcrumbs",
-          "usedAs": "AppBreadcrumbs",
-          "source": "@/components/common/AppBreadcrumbs",
-          "importKind": "named",
-          "importedAs": "AppBreadcrumbs",
-          "category": "local-components",
-          "definition": "AppBreadcrumbs comes from @/components/common/AppBreadcrumbs (named import of AppBreadcrumbs)"
-        },
-        {
-          "component": "Badge",
-          "usedAs": "Badge",
-          "source": "@/components/ui/badge",
-          "importKind": "named",
-          "importedAs": "Badge",
-          "category": "local-components",
-          "definition": "Badge comes from @/components/ui/badge (named import of Badge)"
-        },
-        {
-          "component": "DialogBody",
-          "usedAs": "DialogBody",
-          "source": "@/components/ui/dialog",
-          "importKind": "named",
-          "importedAs": "DialogBody",
-          "category": "local-components",
-          "definition": "DialogBody comes from @/components/ui/dialog (named import of DialogBody)"
-        },
-        {
-          "component": "DialogCloseTrigger",
-          "usedAs": "DialogCloseTrigger",
-          "source": "@/components/ui/dialog",
-          "importKind": "named",
-          "importedAs": "DialogCloseTrigger",
-          "category": "local-components",
-          "definition": "DialogCloseTrigger comes from @/components/ui/dialog (named import of DialogCloseTrigger)"
-        },
-        {
-          "component": "DialogContent",
-          "usedAs": "DialogContent",
-          "source": "@/components/ui/dialog",
-          "importKind": "named",
-          "importedAs": "DialogContent",
-          "category": "local-components",
-          "definition": "DialogContent comes from @/components/ui/dialog (named import of DialogContent)"
-        },
-        {
-          "component": "DialogFooter",
-          "usedAs": "DialogFooter",
-          "source": "@/components/ui/dialog",
-          "importKind": "named",
-          "importedAs": "DialogFooter",
-          "category": "local-components",
-          "definition": "DialogFooter comes from @/components/ui/dialog (named import of DialogFooter)"
-        },
-        {
-          "component": "DialogRoot",
-          "usedAs": "DialogRoot",
-          "source": "@/components/ui/dialog",
-          "importKind": "named",
-          "importedAs": "DialogRoot",
-          "category": "local-components",
-          "definition": "DialogRoot comes from @/components/ui/dialog (named import of DialogRoot)"
-        },
-        {
-          "component": "DialogTitle",
-          "usedAs": "DialogTitle",
-          "source": "@/components/ui/dialog",
-          "importKind": "named",
-          "importedAs": "DialogTitle",
-          "category": "local-components",
-          "definition": "DialogTitle comes from @/components/ui/dialog (named import of DialogTitle)"
-        },
-        {
-          "component": "ErrorAlert",
-          "usedAs": "ErrorAlert",
-          "source": "@/components/common/ErrorAlert",
-          "importKind": "named",
-          "importedAs": "ErrorAlert",
-          "category": "local-components",
-          "definition": "ErrorAlert comes from @/components/common/ErrorAlert (named import of ErrorAlert)"
-        },
-        {
-          "component": "IconPlayerStop",
-          "usedAs": "IconPlayerStop",
-          "source": "@tabler/icons-react",
-          "importKind": "named",
-          "importedAs": "IconPlayerStop",
-          "category": "tabler-icons",
-          "definition": "IconPlayerStop comes from @tabler/icons-react (named import of IconPlayerStop)"
-        },
-        {
-          "component": "IconTrash",
-          "usedAs": "IconTrash",
-          "source": "@tabler/icons-react",
-          "importKind": "named",
-          "importedAs": "IconTrash",
-          "category": "tabler-icons",
-          "definition": "IconTrash comes from @tabler/icons-react (named import of IconTrash)"
-        },
-        {
-          "component": "PageHeader",
-          "usedAs": "PageHeader",
-          "source": "@/components/common/PageHeader",
-          "importKind": "named",
-          "importedAs": "PageHeader",
-          "category": "local-components",
-          "definition": "PageHeader comes from @/components/common/PageHeader (named import of PageHeader)"
-        }
-      ]
-    },
-    {
       "page": "src/pages/SchemaLayout.tsx",
       "componentCount": 25,
       "categoryCounts": {
@@ -2037,9 +1837,9 @@
     },
     {
       "page": "src/pages/Schemas.tsx",
-      "componentCount": 30,
+      "componentCount": 36,
       "categoryCounts": {
-        "local-components": 3,
+        "local-components": 9,
         "tabler-icons": 10,
         "external-package": 1,
         "in-file component": 1,
@@ -2054,6 +1854,60 @@
           "importedAs": "Button",
           "category": "local-components",
           "definition": "Button comes from @/components/ui/button (named import of Button)"
+        },
+        {
+          "component": "DialogBody",
+          "usedAs": "DialogBody",
+          "source": "@/components/ui/dialog",
+          "importKind": "named",
+          "importedAs": "DialogBody",
+          "category": "local-components",
+          "definition": "DialogBody comes from @/components/ui/dialog (named import of DialogBody)"
+        },
+        {
+          "component": "DialogCloseTrigger",
+          "usedAs": "DialogCloseTrigger",
+          "source": "@/components/ui/dialog",
+          "importKind": "named",
+          "importedAs": "DialogCloseTrigger",
+          "category": "local-components",
+          "definition": "DialogCloseTrigger comes from @/components/ui/dialog (named import of DialogCloseTrigger)"
+        },
+        {
+          "component": "DialogContent",
+          "usedAs": "DialogContent",
+          "source": "@/components/ui/dialog",
+          "importKind": "named",
+          "importedAs": "DialogContent",
+          "category": "local-components",
+          "definition": "DialogContent comes from @/components/ui/dialog (named import of DialogContent)"
+        },
+        {
+          "component": "DialogFooter",
+          "usedAs": "DialogFooter",
+          "source": "@/components/ui/dialog",
+          "importKind": "named",
+          "importedAs": "DialogFooter",
+          "category": "local-components",
+          "definition": "DialogFooter comes from @/components/ui/dialog (named import of DialogFooter)"
+        },
+        {
+          "component": "DialogRoot",
+          "usedAs": "DialogRoot",
+          "source": "@/components/ui/dialog",
+          "importKind": "named",
+          "importedAs": "DialogRoot",
+          "category": "local-components",
+          "definition": "DialogRoot comes from @/components/ui/dialog (named import of DialogRoot)"
+        },
+        {
+          "component": "DialogTitle",
+          "usedAs": "DialogTitle",
+          "source": "@/components/ui/dialog",
+          "importKind": "named",
+          "importedAs": "DialogTitle",
+          "category": "local-components",
+          "definition": "DialogTitle comes from @/components/ui/dialog (named import of DialogTitle)"
         },
         {
           "component": "IconAsterisk",
@@ -2315,6 +2169,24 @@
           "importedAs": "Workbench",
           "category": "local-components",
           "definition": "Workbench comes from @/components/workbench/Workbench (named import of Workbench)"
+        }
+      ]
+    },
+    {
+      "page": "src/pages/SecretsPage.tsx",
+      "componentCount": 1,
+      "categoryCounts": {
+        "local-components": 1
+      },
+      "components": [
+        {
+          "component": "PageHeader",
+          "usedAs": "PageHeader",
+          "source": "@/components/common/PageHeader",
+          "importKind": "named",
+          "importedAs": "PageHeader",
+          "category": "local-components",
+          "definition": "PageHeader comes from @/components/common/PageHeader (named import of PageHeader)"
         }
       ]
     },
@@ -2696,6 +2568,24 @@
           "importedAs": null,
           "category": "in-file component",
           "definition": "Toggle is defined in the same page file"
+        }
+      ]
+    },
+    {
+      "page": "src/pages/settings/InstanceConfigPanel.test.tsx",
+      "componentCount": 1,
+      "categoryCounts": {
+        "relative-local": 1
+      },
+      "components": [
+        {
+          "component": "InstanceConfigPanel",
+          "usedAs": "InstanceConfigPanel",
+          "source": "./InstanceConfigPanel",
+          "importKind": "named",
+          "importedAs": "InstanceConfigPanel",
+          "category": "relative-local",
+          "definition": "InstanceConfigPanel comes from ./InstanceConfigPanel (named import of InstanceConfigPanel)"
         }
       ]
     },
@@ -4329,168 +4219,32 @@
       ]
     },
     {
-      "page": "src/pages/UppyLibraryDemo.tsx",
-      "componentCount": 16,
+      "page": "src/pages/Workspace.tsx",
+      "componentCount": 1,
       "categoryCounts": {
-        "local-components": 10,
-        "external-package": 1,
-        "ark-ui": 5
+        "local-components": 1
       },
       "components": [
         {
-          "component": "AppBreadcrumbs",
-          "usedAs": "AppBreadcrumbs",
-          "source": "@/components/common/AppBreadcrumbs",
+          "component": "Workbench",
+          "usedAs": "Workbench",
+          "source": "@/components/workbench/Workbench",
           "importKind": "named",
-          "importedAs": "AppBreadcrumbs",
+          "importedAs": "Workbench",
           "category": "local-components",
-          "definition": "AppBreadcrumbs comes from @/components/common/AppBreadcrumbs (named import of AppBreadcrumbs)"
-        },
-        {
-          "component": "Badge",
-          "usedAs": "Badge",
-          "source": "@/components/ui/badge",
-          "importKind": "named",
-          "importedAs": "Badge",
-          "category": "local-components",
-          "definition": "Badge comes from @/components/ui/badge (named import of Badge)"
-        },
-        {
-          "component": "Button",
-          "usedAs": "Button",
-          "source": "@/components/ui/button",
-          "importKind": "named",
-          "importedAs": "Button",
-          "category": "local-components",
-          "definition": "Button comes from @/components/ui/button (named import of Button)"
-        },
-        {
-          "component": "Dashboard",
-          "usedAs": "Dashboard",
-          "source": "@uppy/react/dashboard",
-          "importKind": "default",
-          "importedAs": "default",
-          "category": "external-package",
-          "definition": "Dashboard comes from @uppy/react/dashboard (default import of default)"
-        },
-        {
-          "component": "ErrorAlert",
-          "usedAs": "ErrorAlert",
-          "source": "@/components/common/ErrorAlert",
-          "importKind": "named",
-          "importedAs": "ErrorAlert",
-          "category": "local-components",
-          "definition": "ErrorAlert comes from @/components/common/ErrorAlert (named import of ErrorAlert)"
-        },
-        {
-          "component": "PageHeader",
-          "usedAs": "PageHeader",
-          "source": "@/components/common/PageHeader",
-          "importKind": "named",
-          "importedAs": "PageHeader",
-          "category": "local-components",
-          "definition": "PageHeader comes from @/components/common/PageHeader (named import of PageHeader)"
-        },
-        {
-          "component": "SegmentGroupIndicator",
-          "usedAs": "SegmentGroupIndicator",
-          "source": "@/components/ui/segment-group",
-          "importKind": "named",
-          "importedAs": "SegmentGroupIndicator",
-          "category": "local-components",
-          "definition": "SegmentGroupIndicator comes from @/components/ui/segment-group (named import of SegmentGroupIndicator)"
-        },
-        {
-          "component": "SegmentGroupItem",
-          "usedAs": "SegmentGroupItem",
-          "source": "@/components/ui/segment-group",
-          "importKind": "named",
-          "importedAs": "SegmentGroupItem",
-          "category": "local-components",
-          "definition": "SegmentGroupItem comes from @/components/ui/segment-group (named import of SegmentGroupItem)"
-        },
-        {
-          "component": "SegmentGroupItemHiddenInput",
-          "usedAs": "SegmentGroupItemHiddenInput",
-          "source": "@/components/ui/segment-group",
-          "importKind": "named",
-          "importedAs": "SegmentGroupItemHiddenInput",
-          "category": "local-components",
-          "definition": "SegmentGroupItemHiddenInput comes from @/components/ui/segment-group (named import of SegmentGroupItemHiddenInput)"
-        },
-        {
-          "component": "SegmentGroupItemText",
-          "usedAs": "SegmentGroupItemText",
-          "source": "@/components/ui/segment-group",
-          "importKind": "named",
-          "importedAs": "SegmentGroupItemText",
-          "category": "local-components",
-          "definition": "SegmentGroupItemText comes from @/components/ui/segment-group (named import of SegmentGroupItemText)"
-        },
-        {
-          "component": "SegmentGroupRoot",
-          "usedAs": "SegmentGroupRoot",
-          "source": "@/components/ui/segment-group",
-          "importKind": "named",
-          "importedAs": "SegmentGroupRoot",
-          "category": "local-components",
-          "definition": "SegmentGroupRoot comes from @/components/ui/segment-group (named import of SegmentGroupRoot)"
-        },
-        {
-          "component": "Switch",
-          "usedAs": "Switch.Control",
-          "source": "@ark-ui/react/switch",
-          "importKind": "named",
-          "importedAs": "Switch",
-          "category": "ark-ui",
-          "definition": "Switch.Control comes from @ark-ui/react/switch (named import of Switch)"
-        },
-        {
-          "component": "Switch",
-          "usedAs": "Switch.HiddenInput",
-          "source": "@ark-ui/react/switch",
-          "importKind": "named",
-          "importedAs": "Switch",
-          "category": "ark-ui",
-          "definition": "Switch.HiddenInput comes from @ark-ui/react/switch (named import of Switch)"
-        },
-        {
-          "component": "Switch",
-          "usedAs": "Switch.Label",
-          "source": "@ark-ui/react/switch",
-          "importKind": "named",
-          "importedAs": "Switch",
-          "category": "ark-ui",
-          "definition": "Switch.Label comes from @ark-ui/react/switch (named import of Switch)"
-        },
-        {
-          "component": "Switch",
-          "usedAs": "Switch.Root",
-          "source": "@ark-ui/react/switch",
-          "importKind": "named",
-          "importedAs": "Switch",
-          "category": "ark-ui",
-          "definition": "Switch.Root comes from @ark-ui/react/switch (named import of Switch)"
-        },
-        {
-          "component": "Switch",
-          "usedAs": "Switch.Thumb",
-          "source": "@ark-ui/react/switch",
-          "importKind": "named",
-          "importedAs": "Switch",
-          "category": "ark-ui",
-          "definition": "Switch.Thumb comes from @ark-ui/react/switch (named import of Switch)"
+          "definition": "Workbench comes from @/components/workbench/Workbench (named import of Workbench)"
         }
       ]
     }
   ],
-  "totalComponentUsages": 444,
+  "totalComponentUsages": 416,
   "categoryTotals": {
-    "external-package": 20,
-    "local-components": 150,
-    "tabler-icons": 79,
+    "local-pages": 1,
+    "local-components": 131,
+    "tabler-icons": 74,
     "in-file component": 18,
-    "ark-ui": 158,
-    "relative-local": 19
+    "ark-ui": 153,
+    "external-package": 18,
+    "relative-local": 21
   }
 }
