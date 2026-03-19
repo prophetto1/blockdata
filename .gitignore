@@ -90,6 +90,7 @@ external/
 
 # Dev output (logs, playwright, scripts)
 output/
+docs/design-layouts/logs/
 
 # Windows admin/network scratch files
 *.jfm
