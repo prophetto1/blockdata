@@ -1,7 +1,7 @@
 # Handoff: Overlay Capture & Admin Cleanup
 
 **Date:** 2026-03-19
-**Status:** Plan written, not yet implemented
+**Status:** Plan written (v2 with review feedback applied), not yet implemented
 **Plan:** `docs/plans/2026-03-19-overlay-capture-and-admin-cleanup.md`
 
 ---
@@ -38,18 +38,16 @@
 ### Feature: Overlay/component capture
 **Problem:** Some pages have dialogs triggered by button clicks (e.g., "Add New"). The current capture only measures the base page state — modals are invisible.
 
-**Solution:** Two-pass capture. Pass 1 runs `measureLayout()` as normal. Pass 2 opens a second browser session, navigates to the same URL, clicks the trigger button, waits for the dialog, then runs a new `measureOverlay()` script scoped to just the dialog element.
+**Solution:** Two-pass capture. Pass 1 runs `measureLayout()` as normal. Pass 2 opens a second browser session, navigates to the same URL, auto-detects the primary action button, clicks it, waits for `[role="dialog"]`, then measures the dialog. Script owns all interaction logic — no user-provided selectors or button text.
 
-**Output structure:**
+**Output:** Single file `overlay-report.json` placed beside `report.json` in the theme folder. No screenshots in v1, no subdirectory.
+
 ```
 <capture-dir>/<viewport>/light/
-  report.json           ← base page (existing)
-  viewport.png          ← base page (existing)
-  full-page.png         ← base page (existing)
-  overlays/<trigger-slug>/
-    report.json         ← dialog-only measurements (NEW)
-    component.png       ← cropped to dialog element (NEW)
-    viewport.png        ← full viewport with dialog visible (NEW)
+  report.json            ← base page (existing)
+  viewport.png           ← base page (existing)
+  full-page.png          ← base page (existing)
+  overlay-report.json    ← dialog-only measurements (NEW)
 ```
 
 ### Feature: Admin table actions cleanup
@@ -57,8 +55,13 @@
 
 **Solution:** Replace with 3-dot dropdown menu + standalone delete button.
 - No overlay: 2 menu items (View Screenshot, View JSON)
-- With overlay: 4 menu items (+ View Component, View Component JSON)
+- With overlay: 3 menu items (+ View Overlay JSON)
 - Delete button stays separate (destructive action outside the menu)
+- All icon+text buttons become text-only; icon-only buttons (3-dot, delete) stay icon-only
+
+### Other changes
+- **"Both" theme removed** — one theme per capture (Light or Dark)
+- **Re-capture buttons removed** — workflow is delete + add new
 
 ---
 
@@ -66,19 +69,33 @@
 
 | File | Role |
 |------|------|
-| `web/src/pages/superuser/design-captures.types.ts` | Add `OverlayConfig`, `hasOverlay`, `overlayName` to types |
-| `web/src/pages/superuser/DesignLayoutCaptures.tsx` | Replace 5 buttons with Menu dropdown + delete. Add overlay checkbox + fields to Add New form |
+| `.gitignore` | Add `!docs/jon/skills/` exception so skill scripts are tracked |
+| `web/src/pages/superuser/design-captures.types.ts` | Remove `'both'` from ThemeRequest, add `hasOverlay?: boolean` to CaptureEntry, add `needsOverlayCapture?: boolean` to CaptureRequest |
+| `web/src/pages/superuser/DesignLayoutCaptures.tsx` | 3-dot dropdown menu, text-only buttons, overlay checkbox, remove recapture + "both" theme |
 | `web/src/components/ui/menu.tsx` | Existing Ark UI Menu component (ready to use) |
-| `docs/jon/skills/design-1-layouts-spec-with-playwright/scripts/measure-overlay.mjs` | NEW — dialog measurement script |
-| `scripts/capture-server.mjs` | Wire overlay: `loadOverlayModule()`, pass overlay config through `startCapture`/`runCapture`, call `measureOverlay` after base capture |
+| `docs/jon/skills/design-1-layouts-spec-with-playwright/scripts/measure-overlay.mjs` | NEW — dialog measurement script, script-owned interaction, JSON-only output |
+| `scripts/capture-server.mjs` | Wire overlay: `loadOverlayModule()`, call `measureOverlay` after base capture, write to theme dir |
 
 ## Key decisions made
-- **Two independent browser sessions** (not modifying measureLayout internals) — keeps base capture unchanged
+- **Two independent browser sessions** — keeps base capture unchanged
 - **Overlay failure doesn't fail the whole capture** — base page succeeds independently
-- **Button text matching** for trigger (`page.getByRole('button', { name })`) — human-readable, Playwright-recommended
-- **Default wait selector:** `[role="dialog"]`
-- **`docs/jon/skills/` is gitignored** — measure-overlay.mjs will need `git add -f` or a gitignore exclusion for `!docs/jon/skills/`
-- **Separate JSON per overlay** — not merged into base report
+- **Script owns interaction logic** — auto-detects primary action button, uses `[role="dialog"]`, no user config
+- **JSON-only v1** — no overlay screenshots, just `overlay-report.json`
+- **One theme per capture** — "Both" option removed, prevents scope creep
+- **`docs/jon/skills/` tracked via .gitignore exception** — no `git add -f`
+- **Same wait strategy** as measure-layout.mjs: `waitUntil: "load"` + best-effort networkidle with 5s cap
+- **Button pattern** — icon-only (3-dot trigger, trash) or text-only (Refresh, Add New, Capture). No icon+text combos.
+
+## Review feedback applied (v2)
+The plan was reviewed and 8 items of feedback were applied:
+1. Fixed overlay path mismatch — output goes into theme dir, not above it
+2. Boolean toggle instead of freeform triggerText/waitFor fields
+3. Recapture stays removed (user decision)
+4. Import cleanup scoped correctly — only remove truly unused icons
+5. Gitignore exception added as explicit pre-step
+6. Wait strategy matches measure-layout.mjs
+7. "Both" theme option eliminated
+8. Verification criteria match actual v1 output
 
 ## Execution
-Plan has 6 tasks. Recommended: subagent-driven in a single session. Start with `/using-superpowers` then execute the plan task by task.
+Plan has pre-step + 6 tasks. Recommended: subagent-driven in a single session. Start with `/using-superpowers` then execute the plan task by task.
