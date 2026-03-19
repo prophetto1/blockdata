@@ -5,6 +5,7 @@ $repoRoot = Split-Path -Parent $scriptDir
 $logDir = Join-Path $repoRoot "docs\design-layouts\logs"
 $stdoutPath = Join-Path $logDir "capture-server.stdout.log"
 $stderrPath = Join-Path $logDir "capture-server.stderr.log"
+$nodeExe = (Get-Command node.exe -ErrorAction Stop).Source
 
 function Get-CaptureServerListeners {
   $raw = cmd /c "netstat -ano | findstr :4488"
@@ -48,9 +49,24 @@ if ($portStillOpen) {
   exit 1
 }
 
-$command = "npm run capture-server 1> `"$stdoutPath`" 2> `"$stderrPath`""
-$process = Start-Process -FilePath "cmd.exe" -ArgumentList "/c", $command -WorkingDirectory $repoRoot -WindowStyle Hidden -PassThru
+$command = "start `"`" /b `"$nodeExe`" scripts\capture-server.mjs 1> `"$stdoutPath`" 2> `"$stderrPath`""
+Push-Location $repoRoot
+try {
+  cmd /c $command | Out-Null
+} finally {
+  Pop-Location
+}
 
-Write-Output "Capture server started with PID $($process.Id)"
+Start-Sleep -Seconds 2
+
+$portNowOpen = Test-NetConnection -ComputerName "localhost" -Port 4488 -InformationLevel Quiet -WarningAction SilentlyContinue
+if (-not $portNowOpen) {
+  Write-Error "Capture server launch command returned, but localhost:4488 is still unavailable. Check $stderrPath for startup errors."
+  exit 1
+}
+
+$listenerPid = (Get-CaptureServerListeners | Select-Object -First 1)
+Write-Output "Capture server started on port 4488"
+Write-Output "listener pid: $listenerPid"
 Write-Output "stdout: $stdoutPath"
 Write-Output "stderr: $stderrPath"
