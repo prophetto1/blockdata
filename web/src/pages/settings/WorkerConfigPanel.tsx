@@ -134,7 +134,6 @@ const ALL_KEYS = new Set(SECTIONS.flatMap((s) => s.settings.map((st) => st.key))
 /* ------------------------------------------------------------------ */
 
 export function WorkerConfigPanel() {
-  const [activeSection, setActiveSection] = useState(SECTIONS[0].id);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<{ kind: 'success' | 'error'; message: string } | null>(null);
@@ -257,93 +256,63 @@ export function WorkerConfigPanel() {
     }
   };
 
-  const currentSection = SECTIONS.find((s) => s.id === activeSection) ?? SECTIONS[0];
-
   return (
-    <div className="flex h-full gap-0 overflow-hidden">
-      {/* Section sidebar */}
-      <nav className="w-56 shrink-0 overflow-y-auto border-r border-border pr-2">
-        <ul className="space-y-0.5 py-1">
-          {SECTIONS.map((section) => {
-            const sectionDirtyCount = section.settings.filter((s) => dirtyKeys.has(s.key)).length;
-            return (
-              <li key={section.id}>
-                <button
-                  type="button"
-                  onClick={() => setActiveSection(section.id)}
-                  className={cn(
-                    'flex w-full items-center justify-between rounded-md px-2.5 py-1.5 text-sm font-medium transition-colors',
-                    section.id === activeSection
-                      ? 'bg-accent text-accent-foreground'
-                      : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground',
-                  )}
-                >
-                  <span>{section.label}</span>
-                  {sectionDirtyCount > 0 && (
-                    <span className="ml-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary/20 px-1 text-[10px] font-semibold text-primary">
-                      {sectionDirtyCount}
-                    </span>
-                  )}
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-
-        {dirtyKeys.size > 0 && (
-          <div className="mt-4 px-1">
-            <Button
-              size="sm"
-              className="w-full text-xs"
-              disabled={savingKey === '__all__'}
-              onClick={() => void handleSaveAll()}
-            >
-              {savingKey === '__all__' ? 'Saving...' : `Save all (${dirtyKeys.size})`}
-            </Button>
-          </div>
-        )}
-      </nav>
-
-      {/* Settings content */}
-      <div className="min-w-0 flex-1 overflow-y-auto pl-6">
-        {status && (
-          <div className={cn(
-            'mb-3 rounded-md border p-2 text-xs',
-            status.kind === 'error'
-              ? 'border-red-400/40 bg-red-500/10 text-red-200'
-              : 'border-emerald-400/40 bg-emerald-500/10 text-emerald-100',
-          )}>
-            {status.message}
-          </div>
-        )}
-
-        {error && (
-          <div className="mb-3 rounded-md border border-red-400/40 bg-red-500/10 p-2 text-xs text-red-200">
-            {error}
-          </div>
-        )}
-
-        <div className="mb-4">
-          <h2 className="text-lg font-semibold">{currentSection.label}</h2>
-          <p className="text-xs text-muted-foreground">
-            {currentSection.settings.length} setting{currentSection.settings.length !== 1 ? 's' : ''}
-            {loading && ' — loading...'}
-          </p>
+    <div className="h-full overflow-y-auto px-6">
+      {status && (
+        <div className={cn(
+          'mb-3 rounded-md border p-2 text-xs',
+          status.kind === 'error'
+            ? 'border-red-400/40 bg-red-500/10 text-red-200'
+            : 'border-emerald-400/40 bg-emerald-500/10 text-emerald-100',
+        )}>
+          {status.message}
         </div>
+      )}
 
-        <div className="space-y-3 pb-6">
-          {currentSection.settings.map((setting) => (
-            <SettingCard
-              key={setting.key}
-              setting={setting}
-              value={values[setting.key]}
-              onChange={handleChange}
-              dirty={dirtyKeys.has(setting.key)}
-              saving={savingKey === setting.key}
-              onSave={(k) => void handleSave(k)}
-            />
-          ))}
+      {error && (
+        <div className="mb-3 rounded-md border border-red-400/40 bg-red-500/10 p-2 text-xs text-red-200">
+          {error}
         </div>
+      )}
+
+      {dirtyKeys.size > 0 && (
+        <div className="mb-4 flex justify-end">
+          <Button
+            size="sm"
+            className="text-xs"
+            disabled={savingKey === '__all__'}
+            onClick={() => void handleSaveAll()}
+          >
+            {savingKey === '__all__' ? 'Saving...' : `Save all (${dirtyKeys.size})`}
+          </Button>
+        </div>
+      )}
+
+      <div className="space-y-8 pb-6">
+        {SECTIONS.map((section) => (
+          <section key={section.id} id={section.id} className="scroll-mt-6">
+            <div className="mb-4">
+              <h2 className="text-lg font-semibold">{section.label}</h2>
+              <p className="text-xs text-muted-foreground">
+                {section.settings.length} setting{section.settings.length !== 1 ? 's' : ''}
+                {loading && ' — loading...'}
+              </p>
+            </div>
+            <div className="space-y-3">
+              {section.settings.map((setting) => (
+                <SettingCard
+                  key={setting.key}
+                  setting={setting}
+                  value={values[setting.key]}
+                  onChange={handleChange}
+                  dirty={dirtyKeys.has(setting.key)}
+                  saving={savingKey === setting.key}
+                  onSave={(k) => void handleSave(k)}
+                />
+              ))}
+            </div>
+          </section>
+        ))}
       </div>
     </div>
   );

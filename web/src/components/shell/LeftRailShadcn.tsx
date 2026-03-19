@@ -31,6 +31,7 @@ import {
   type NavItem,
   type NavDrillConfig,
 } from '@/components/shell/nav-config';
+import type { AdminNavSection } from '@/components/admin/AdminLeftNav';
 import {
   Sidebar,
   SidebarContent,
@@ -59,6 +60,8 @@ type LeftRailShadcnProps = {
   desktopCompact?: boolean;
   onToggleDesktopCompact?: () => void;
   disableAutoDrill?: boolean;
+  hideNav?: boolean;
+  navSections?: AdminNavSection[];
 };
 
 /* ------------------------------------------------------------------ */
@@ -237,6 +240,8 @@ export function LeftRailShadcn({
   desktopCompact = false,
   onToggleDesktopCompact,
   disableAutoDrill = false,
+  hideNav = false,
+  navSections,
 }: LeftRailShadcnProps) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -509,6 +514,41 @@ export function LeftRailShadcn({
       </div>
     );
   };
+
+  const renderSectionsNav = (sections: AdminNavSection[]) => (
+    <div className="space-y-4">
+      {sections.map((section) => (
+        <div key={section.label}>
+          <div className="mb-1.5 px-2.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-sidebar-foreground/45">
+            {section.label}
+          </div>
+          <div className="space-y-0.5">
+            {section.items.map((item) => {
+              const ItemIcon = item.icon;
+              const isActive = location.pathname === item.path || location.pathname.startsWith(item.path + '/');
+              return (
+                <button
+                  key={item.path}
+                  type="button"
+                  onClick={() => navigateTo(item.path)}
+                  className={cn(
+                    'flex w-full items-center gap-2.5 rounded-md px-2.5 h-9 text-sm leading-snug transition-colors',
+                    isActive
+                      ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium'
+                      : 'text-sidebar-foreground/80 font-normal hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+                  )}
+                >
+                  <ItemIcon size={16} stroke={1.75} className="shrink-0" />
+                  <span className="truncate">{item.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+
   return (
     <SidebarProvider
       open={!desktopCompact}
@@ -584,19 +624,31 @@ export function LeftRailShadcn({
         </SidebarHeader>
 
         {/* ---- Content: Nav items or drill view ---- */}
-        <SidebarContent className={desktopCompact ? 'px-0' : 'px-1'}>
-          <SidebarGroup className={desktopCompact ? 'p-0' : 'p-1'}>
-            <SidebarGroupContent>
-              {desktopCompact
-                ? renderCompactNav()
-                : activeDrillConfig
-                  ? renderDrillView(activeDrillConfig)
-                  : renderTopLevelNav()}
-            </SidebarGroupContent>
-          </SidebarGroup>
-        </SidebarContent>
+        {navSections ? (
+          <SidebarContent className="px-1">
+            <SidebarGroup className="p-1">
+              <SidebarGroupContent>
+                {renderSectionsNav(navSections)}
+              </SidebarGroupContent>
+            </SidebarGroup>
+          </SidebarContent>
+        ) : !hideNav ? (
+          <SidebarContent className={desktopCompact ? 'px-0' : 'px-1'}>
+            <SidebarGroup className={desktopCompact ? 'p-0' : 'p-1'}>
+              <SidebarGroupContent>
+                {desktopCompact
+                  ? renderCompactNav()
+                  : activeDrillConfig
+                    ? renderDrillView(activeDrillConfig)
+                    : renderTopLevelNav()}
+              </SidebarGroupContent>
+            </SidebarGroup>
+          </SidebarContent>
+        ) : (
+          <SidebarContent className="flex-1" />
+        )}
 
-        {BOTTOM_RAIL_NAV.length > 0 && (
+        {!hideNav && !navSections && BOTTOM_RAIL_NAV.length > 0 && (
           <div className={desktopCompact ? 'px-0 pb-1' : 'px-2 pb-1'}>
             {renderBottomUtilityNav()}
           </div>

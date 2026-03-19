@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useShellHeaderTitle } from '@/components/common/useShellHeaderTitle';
 import { edgeFetch } from '@/lib/edge';
@@ -25,7 +24,6 @@ const SETTING: SettingDef = {
 export function Component() {
   useShellHeaderTitle({ title: 'Block Types', breadcrumbs: ['Settings', 'Admin', 'Docling', 'Block Types'] });
 
-  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<{ kind: 'success' | 'error'; message: string } | null>(null);
@@ -87,28 +85,8 @@ export function Component() {
   };
 
   return (
-    <div className="flex h-full min-h-0 overflow-hidden">
-      <nav className="w-56 shrink-0 border-r border-border">
-        <div className="p-2">
-          <button
-            type="button"
-            className="flex w-full items-center rounded-md px-2.5 py-1.5 text-sm text-muted-foreground transition hover:bg-accent/50 hover:text-foreground"
-            onClick={() => navigate('/app/superuser/parsers-docling')}
-          >
-            Profiles
-          </button>
-          <button
-            type="button"
-            className="mt-1 flex w-full items-center rounded-md bg-accent px-2.5 py-1.5 text-sm font-medium text-accent-foreground"
-            aria-current="page"
-          >
-            Block Types
-          </button>
-        </div>
-      </nav>
-
-      <div className="min-w-0 flex flex-1 flex-col overflow-auto p-4">
-        <div className="mx-auto w-full max-w-3xl space-y-4">
+    <div className="h-full overflow-auto p-4">
+      <div className="mx-auto w-full max-w-3xl space-y-4">
         {status && (
           <div className={`rounded-md border p-2 text-xs ${
             status.kind === 'error'
@@ -145,7 +123,6 @@ export function Component() {
           onSave={() => void handleSave()}
         />
         </div>
-      </div>
     </div>
   );
 }

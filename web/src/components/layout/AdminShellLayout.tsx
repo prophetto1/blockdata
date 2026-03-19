@@ -1,8 +1,8 @@
 import { useCallback, useRef, useState, type CSSProperties, type MouseEvent as ReactMouseEvent } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/auth/AuthContext';
-import { AdminLeftNav } from '@/components/admin/AdminLeftNav';
-import { LeftRailShadcn } from '@/components/shell/LeftRailShadcn';
+import { AdminLeftNav, NAV_SECTIONS } from '@/components/admin/AdminLeftNav';
+import { LeftRailShadcn as AdminChromeRail } from '@/components/shell/LeftRailShadcn';
 import { styleTokens } from '@/lib/styleTokens';
 
 const SIDEBAR_WIDTH_KEY = 'blockdata.shell.sidebar_width';
@@ -86,10 +86,11 @@ export function AdminShellLayout() {
           zIndex: 20,
         }}
       >
-        <LeftRailShadcn
+        <AdminChromeRail
           userLabel={profile?.display_name || profile?.email || user?.email}
           onSignOut={handleSignOut}
           disableAutoDrill
+          navSections={NAV_SECTIONS}
         />
         <div
           role="separator"
