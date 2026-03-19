@@ -230,6 +230,7 @@ export const router = createBrowserRouter([
               { path: 'audit', lazy: () => import('@/pages/superuser/SuperuserAuditHistory') },
               { path: 'api-endpoints', lazy: () => import('@/pages/superuser/SuperuserApiEndpoints') },
               { path: 'test-integrations', lazy: () => import('@/pages/superuser/TestIntegrations') },
+              { path: 'design-layout-captures', lazy: () => import('@/pages/superuser/DesignLayoutCaptures') },
             ],
           },
         ],

@@ -7,6 +7,7 @@ import {
   IconTestPipe,
   IconFileText,
   IconChevronLeft,
+  IconCamera,
   type Icon,
 } from '@tabler/icons-react';
 
@@ -42,6 +43,12 @@ const NAV_SECTIONS: AdminNavSection[] = [
       { label: 'Audit History', icon: IconClipboardList, path: '/app/superuser/audit' },
       { label: 'API Endpoints', icon: IconCode, path: '/app/superuser/api-endpoints' },
       { label: 'Test Integrations', icon: IconTestPipe, path: '/app/superuser/test-integrations' },
+    ],
+  },
+  {
+    label: 'DESIGN',
+    items: [
+      { label: 'Layout Captures', icon: IconCamera, path: '/app/superuser/design-layout-captures' },
     ],
   },
 ];

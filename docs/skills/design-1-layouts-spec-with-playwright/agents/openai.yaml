@@ -1,4 +1,4 @@
 interface:
   display_name: "Measure Web Layouts"
   short_description: "Run deterministic Playwright layout captures"
-  default_prompt: "Use $measuring-layouts-with-playwright to run a deterministic layout capture for https://example.com at 1440x1024 and turn the JSON report into a parity spec."
+  default_prompt: "Use $measuring-layouts-with-playwright to run a deterministic layout capture for https://example.com at 1920x1080 and turn the JSON report into a parity spec."

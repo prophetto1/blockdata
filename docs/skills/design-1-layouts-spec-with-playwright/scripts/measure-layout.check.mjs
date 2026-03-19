@@ -5,31 +5,51 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const scriptPath = path.join(__dirname, "measure-layout.mjs");
-const fixturePath = path.join(__dirname, "fixtures", "sample-layout.html");
-const outputDir = path.join(__dirname, "..", "..", "..", "..", "output", "playwright", "skill-test");
-const jsonPath = path.join(outputDir, "report.json");
 
 async function main() {
-  fs.rmSync(outputDir, { recursive: true, force: true });
+  const { deriveDefaultOutputDir, deriveCaptureSlug } = await import(pathToFileURL(scriptPath).href);
 
-  const { measureLayout } = await import(pathToFileURL(scriptPath).href);
-  const report = await measureLayout({
-    url: fixturePath,
-    width: 1440,
-    height: 1024,
-    outputDir,
-    jsonOut: jsonPath,
+  const rootDir = path.join("E:", "writing-system");
+
+  assert.equal(
+    deriveCaptureSlug("https://www.evidence.studio/connectors"),
+    "evidence-studio-connectors"
+  );
+
+  assert.equal(
+    deriveCaptureSlug("https://www.evidence.studio/explore?table=demo.daily_orders"),
+    "evidence-studio-explore-table-demo-daily-orders"
+  );
+
+  assert.equal(
+    deriveCaptureSlug(path.join(rootDir, "docs", "fixtures", "sample-layout.html")),
+    "sample-layout"
+  );
+
+  const defaultDir = deriveDefaultOutputDir({
+    repoRoot: rootDir,
+    targetUrl: "https://www.evidence.studio/explore?table=demo.daily_orders",
+    width: 1920,
+    height: 1080,
   });
 
-  assert.ok(fs.existsSync(jsonPath), "expected JSON report");
-  assert.equal(report.capture.viewport.width, 1440);
-  assert.equal(report.capture.viewport.height, 1024);
-  assert.equal(report.capture.page.title, "Sample Layout");
-  assert.equal(report.measurements.shell.maxWidth, 1280);
-  assert.equal(report.measurements.hero.heading.fontSize, "72px");
-  assert.equal(report.measurements.search.width, 280);
-  assert.equal(report.measurements.cards.count, 4);
-  assert.equal(report.measurements.cards.first.radius, "12px");
+  assert.equal(
+    defaultDir,
+    path.join(
+      rootDir,
+      "docs",
+      "design-layouts",
+      "evidence-studio-explore-table-demo-daily-orders",
+      "1920x1080"
+    )
+  );
+
+  const explicitDir = path.resolve(rootDir, "custom-output");
+  const derivedJson = path.join(defaultDir, "report.json");
+  const explicitJson = path.join(explicitDir, "report.json");
+
+  assert.equal(derivedJson.endsWith(path.join("1920x1080", "report.json")), true);
+  assert.equal(explicitJson, path.join(explicitDir, "report.json"));
 
   console.log("measure-layout check passed");
 }

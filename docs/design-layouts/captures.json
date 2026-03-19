@@ -1,0 +1,13 @@
+[
+  {
+    "id": "evidence-dev--1920x1080--light--marketing",
+    "name": "evidence-dev",
+    "url": "https://www.evidence.dev",
+    "viewport": "1920x1080",
+    "theme": "light",
+    "pageType": "marketing",
+    "capturedAt": "2026-03-19T11:44:16.797Z",
+    "outputDir": "evidence-dev\\1920x1080",
+    "status": "complete"
+  }
+]

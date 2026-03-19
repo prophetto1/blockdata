@@ -1,4 +1,7 @@
 {
+  "scripts": {
+    "capture-server": "node scripts/capture-server.mjs"
+  },
   "dependencies": {
     "@uppy/react": "^5.2.0",
     "pg": "^8.19.0",

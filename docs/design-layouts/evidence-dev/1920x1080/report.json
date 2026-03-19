@@ -1,0 +1,1100 @@
+{
+  "capture": {
+    "browser": "chromium",
+    "capturedAt": "2026-03-19T11:44:15.793Z",
+    "viewport": {
+      "width": 1920,
+      "height": 1080,
+      "deviceScaleFactor": 1
+    },
+    "requestedTheme": "light",
+    "requestedPageMode": "auto",
+    "page": {
+      "url": "https://evidence.dev/",
+      "title": "Evidence - Business Intelligence as Code"
+    },
+    "runtime": {
+      "scrollX": 0,
+      "scrollY": 0,
+      "innerWidth": 1920,
+      "innerHeight": 1080,
+      "devicePixelRatio": 1
+    },
+    "resolvedTheme": "light",
+    "pageMode": "marketing",
+    "artifacts": {
+      "reportPath": "E:\\writing-system\\docs\\design-layouts\\evidence-dev\\1920x1080\\light\\report.json",
+      "viewportScreenshot": "E:\\writing-system\\docs\\design-layouts\\evidence-dev\\1920x1080\\light\\viewport.png",
+      "fullPageScreenshot": "E:\\writing-system\\docs\\design-layouts\\evidence-dev\\1920x1080\\light\\full-page.png"
+    }
+  },
+  "measurements": {
+    "appFrame": {
+      "label": "appFrame",
+      "tag": "body",
+      "id": null,
+      "role": null,
+      "className": "",
+      "selector": "",
+      "text": "Product Docs Resources Pricing Log in Get started Open main menu Close menu Log in Get started Product Docs Resources Pricing New Embedded A",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 1920,
+        "height": 7812.91
+      },
+      "absoluteRect": {
+        "x": 0,
+        "y": 0,
+        "width": 1920,
+        "height": 7812.91
+      },
+      "style": {
+        "fontFamily": "Geist, Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "fontSize": "16px",
+        "lineHeight": "24px",
+        "fontWeight": "400",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)",
+        "backgroundColor": "rgb(252, 252, 252)",
+        "border": "0px solid rgb(229, 231, 235)",
+        "borderColor": "rgb(229, 231, 235)",
+        "borderRadius": "0px",
+        "boxShadow": "none",
+        "paddingTop": "0px",
+        "paddingRight": "0px",
+        "paddingBottom": "0px",
+        "paddingLeft": "0px",
+        "marginTop": "0px",
+        "marginRight": "0px",
+        "marginBottom": "0px",
+        "marginLeft": "0px",
+        "gap": "normal",
+        "maxWidth": "none"
+      }
+    },
+    "topToolbar": {
+      "label": "topToolbar",
+      "tag": "header",
+      "id": "header",
+      "role": null,
+      "className": "sticky top-0 z-50 bg-[#fcfcfc]/80 antialiased",
+      "selector": "header#header",
+      "text": "Product Docs Resources Pricing Log in Get started Open main menu Close menu Log in Get started Product Docs Resources Pricing",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 1920,
+        "height": 51
+      },
+      "absoluteRect": {
+        "x": 0,
+        "y": 0,
+        "width": 1920,
+        "height": 51
+      },
+      "style": {
+        "fontFamily": "Geist, Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "fontSize": "16px",
+        "lineHeight": "24px",
+        "fontWeight": "400",
+        "letterSpacing": "normal",
+        "color": "rgb(0, 0, 0)",
+        "backgroundColor": "rgba(252, 252, 252, 0.8)",
+        "border": "0px solid rgb(229, 231, 235)",
+        "borderColor": "rgb(229, 231, 235)",
+        "borderRadius": "0px",
+        "boxShadow": "none",
+        "paddingTop": "0px",
+        "paddingRight": "0px",
+        "paddingBottom": "0px",
+        "paddingLeft": "0px",
+        "marginTop": "0px",
+        "marginRight": "0px",
+        "marginBottom": "0px",
+        "marginLeft": "0px",
+        "gap": "normal",
+        "maxWidth": "none"
+      }
+    },
+    "shellRow": null,
+    "leftRail": null,
+    "rightRail": null,
+    "datasetSelector": null,
+    "searchInput": null,
+    "fieldList": null,
+    "mainCanvas": null,
+    "tabStrip": null,
+    "emptyState": null,
+    "actionButtons": [
+      {
+        "label": "actionButton",
+        "tag": "button",
+        "id": null,
+        "role": null,
+        "className": "mx-1 flex items-center text-sm font-normal leading-6 text-gray-800 transition-colors duration-200 hover:text-blue-600 svelte-1h749wv",
+        "selector": "header#header > div.border-b.border-gray-200/50 > nav.mx-auto.flex > div.hidden.md:flex > div.relative > button.mx-1.flex",
+        "text": "Product",
+        "rect": {
+          "x": 798.58,
+          "y": 13,
+          "width": 66.27,
+          "height": 24
+        },
+        "absoluteRect": {
+          "x": 798.58,
+          "y": 13,
+          "width": 66.27,
+          "height": 24
+        },
+        "style": {
+          "fontFamily": "Geist, Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+          "fontSize": "14px",
+          "lineHeight": "24px",
+          "fontWeight": "400",
+          "letterSpacing": "normal",
+          "color": "rgb(31, 41, 55)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px solid rgb(229, 231, 235)",
+          "borderColor": "rgb(229, 231, 235)",
+          "borderRadius": "0px",
+          "boxShadow": "none",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "marginTop": "0px",
+          "marginRight": "4px",
+          "marginBottom": "0px",
+          "marginLeft": "4px",
+          "gap": "normal",
+          "maxWidth": "none"
+        }
+      },
+      {
+        "label": "actionButton",
+        "tag": "button",
+        "id": null,
+        "role": null,
+        "className": "mx-1 flex items-center text-sm font-normal leading-6 text-gray-800 transition-colors duration-200 hover:text-blue-600 svelte-1h749wv",
+        "selector": "header#header > div.border-b.border-gray-200/50 > nav.mx-auto.flex > div.hidden.md:flex > div.relative > button.mx-1.flex",
+        "text": "Resources",
+        "rect": {
+          "x": 961.55,
+          "y": 13,
+          "width": 83.39,
+          "height": 24
+        },
+        "absoluteRect": {
+          "x": 961.55,
+          "y": 13,
+          "width": 83.39,
+          "height": 24
+        },
+        "style": {
+          "fontFamily": "Geist, Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+          "fontSize": "14px",
+          "lineHeight": "24px",
+          "fontWeight": "400",
+          "letterSpacing": "normal",
+          "color": "rgb(31, 41, 55)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px solid rgb(229, 231, 235)",
+          "borderColor": "rgb(229, 231, 235)",
+          "borderRadius": "0px",
+          "boxShadow": "none",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "marginTop": "0px",
+          "marginRight": "4px",
+          "marginBottom": "0px",
+          "marginLeft": "4px",
+          "gap": "normal",
+          "maxWidth": "none"
+        }
+      },
+      {
+        "label": "actionButton",
+        "tag": "a",
+        "id": null,
+        "role": null,
+        "className": "mx-1 text-sm font-normal leading-6 text-gray-800 transition-colors duration-200 hover:text-blue-600",
+        "selector": "header#header > div.border-b.border-gray-200/50 > nav.mx-auto.flex > div.hidden.md:flex > a.mx-1.text-sm",
+        "text": "Docs",
+        "rect": {
+          "x": 896.84,
+          "y": 13,
+          "width": 32.7,
+          "height": 24
+        },
+        "absoluteRect": {
+          "x": 896.84,
+          "y": 13,
+          "width": 32.7,
+          "height": 24
+        },
+        "style": {
+          "fontFamily": "Geist, Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+          "fontSize": "14px",
+          "lineHeight": "24px",
+          "fontWeight": "400",
+          "letterSpacing": "normal",
+          "color": "rgb(31, 41, 55)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px solid rgb(229, 231, 235)",
+          "borderColor": "rgb(229, 231, 235)",
+          "borderRadius": "0px",
+          "boxShadow": "none",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "marginTop": "0px",
+          "marginRight": "4px",
+          "marginBottom": "0px",
+          "marginLeft": "4px",
+          "gap": "normal",
+          "maxWidth": "none"
+        }
+      },
+      {
+        "label": "actionButton",
+        "tag": "a",
+        "id": null,
+        "role": null,
+        "className": "mx-1 text-sm font-normal leading-6 text-gray-800 transition-colors duration-200 hover:text-blue-600",
+        "selector": "header#header > div.border-b.border-gray-200/50 > nav.mx-auto.flex > div.hidden.md:flex > a.mx-1.text-sm",
+        "text": "Pricing",
+        "rect": {
+          "x": 1076.94,
+          "y": 13,
+          "width": 44.47,
+          "height": 24
+        },
+        "absoluteRect": {
+          "x": 1076.94,
+          "y": 13,
+          "width": 44.47,
+          "height": 24
+        },
+        "style": {
+          "fontFamily": "Geist, Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+          "fontSize": "14px",
+          "lineHeight": "24px",
+          "fontWeight": "400",
+          "letterSpacing": "normal",
+          "color": "rgb(31, 41, 55)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px solid rgb(229, 231, 235)",
+          "borderColor": "rgb(229, 231, 235)",
+          "borderRadius": "0px",
+          "boxShadow": "none",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "marginTop": "0px",
+          "marginRight": "4px",
+          "marginBottom": "0px",
+          "marginLeft": "4px",
+          "gap": "normal",
+          "maxWidth": "none"
+        }
+      },
+      {
+        "label": "actionButton",
+        "tag": "a",
+        "id": null,
+        "role": null,
+        "className": "hidden whitespace-nowrap rounded-md border bg-white px-2 py-1 text-xs font-medium text-gray-800 transition-colors duration-200 hover:bg-gray-100 hover:text-gray-800 md:flex",
+        "selector": "header#header > div.border-b.border-gray-200/50 > nav.mx-auto.flex > div.flex.flex-1 > div.flex.flex-row > a.hidden.whitespace-nowrap",
+        "text": "Log in",
+        "rect": {
+          "x": 1342.22,
+          "y": 12,
+          "width": 51.98,
+          "height": 26
+        },
+        "absoluteRect": {
+          "x": 1342.22,
+          "y": 12,
+          "width": 51.98,
+          "height": 26
+        },
+        "style": {
+          "fontFamily": "Geist, Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+          "fontSize": "12px",
+          "lineHeight": "16px",
+          "fontWeight": "500",
+          "letterSpacing": "normal",
+          "color": "rgb(31, 41, 55)",
+          "backgroundColor": "rgb(255, 255, 255)",
+          "border": "1px solid rgb(229, 231, 235)",
+          "borderColor": "rgb(229, 231, 235)",
+          "borderRadius": "6px",
+          "boxShadow": "none",
+          "paddingTop": "4px",
+          "paddingRight": "8px",
+          "paddingBottom": "4px",
+          "paddingLeft": "8px",
+          "marginTop": "0px",
+          "marginRight": "0px",
+          "marginBottom": "0px",
+          "marginLeft": "0px",
+          "gap": "normal",
+          "maxWidth": "none"
+        }
+      },
+      {
+        "label": "actionButton",
+        "tag": "a",
+        "id": null,
+        "role": null,
+        "className": "hidden whitespace-nowrap rounded-md border border-black bg-black px-2 py-1 text-xs font-medium text-white transition-colors duration-200 hover:bg-gray-700 md:flex",
+        "selector": "header#header > div.border-b.border-gray-200/50 > nav.mx-auto.flex > div.flex.flex-1 > div.flex.flex-row > a.hidden.whitespace-nowrap",
+        "text": "Get started",
+        "rect": {
+          "x": 1406.2,
+          "y": 12,
+          "width": 81.8,
+          "height": 26
+        },
+        "absoluteRect": {
+          "x": 1406.2,
+          "y": 12,
+          "width": 81.8,
+          "height": 26
+        },
+        "style": {
+          "fontFamily": "Geist, Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+          "fontSize": "12px",
+          "lineHeight": "16px",
+          "fontWeight": "500",
+          "letterSpacing": "normal",
+          "color": "rgb(255, 255, 255)",
+          "backgroundColor": "rgb(0, 0, 0)",
+          "border": "1px solid rgb(0, 0, 0)",
+          "borderColor": "rgb(0, 0, 0)",
+          "borderRadius": "6px",
+          "boxShadow": "none",
+          "paddingTop": "4px",
+          "paddingRight": "8px",
+          "paddingBottom": "4px",
+          "paddingLeft": "8px",
+          "marginTop": "0px",
+          "marginRight": "0px",
+          "marginBottom": "0px",
+          "marginLeft": "0px",
+          "gap": "normal",
+          "maxWidth": "none"
+        }
+      }
+    ],
+    "visibleSections": [
+      {
+        "label": null,
+        "tag": "header",
+        "id": "header",
+        "role": null,
+        "className": "sticky top-0 z-50 bg-[#fcfcfc]/80 antialiased",
+        "selector": "header#header",
+        "text": "Product Docs Resources Pricing Log in Get started Open main menu Close menu Log in Get started Product Docs Resources Pricing",
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 1920,
+          "height": 51
+        },
+        "absoluteRect": {
+          "x": 0,
+          "y": 0,
+          "width": 1920,
+          "height": 51
+        },
+        "style": {
+          "fontFamily": "Geist, Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+          "fontSize": "16px",
+          "lineHeight": "24px",
+          "fontWeight": "400",
+          "letterSpacing": "normal",
+          "color": "rgb(0, 0, 0)",
+          "backgroundColor": "rgba(252, 252, 252, 0.8)",
+          "border": "0px solid rgb(229, 231, 235)",
+          "borderColor": "rgb(229, 231, 235)",
+          "borderRadius": "0px",
+          "boxShadow": "none",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "marginTop": "0px",
+          "marginRight": "0px",
+          "marginBottom": "0px",
+          "marginLeft": "0px",
+          "gap": "normal",
+          "maxWidth": "none"
+        }
+      },
+      {
+        "label": null,
+        "tag": "nav",
+        "id": null,
+        "role": null,
+        "className": "mx-auto flex max-w-6xl items-center justify-between px-6 py-4 md:py-3 lg:px-12",
+        "selector": "header#header > div.border-b.border-gray-200/50 > nav.mx-auto.flex",
+        "text": "Product Docs Resources Pricing Log in Get started Open main menu",
+        "rect": {
+          "x": 384,
+          "y": 0,
+          "width": 1152,
+          "height": 50
+        },
+        "absoluteRect": {
+          "x": 384,
+          "y": 0,
+          "width": 1152,
+          "height": 50
+        },
+        "style": {
+          "fontFamily": "Geist, Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+          "fontSize": "16px",
+          "lineHeight": "24px",
+          "fontWeight": "400",
+          "letterSpacing": "normal",
+          "color": "rgb(0, 0, 0)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px solid rgb(229, 231, 235)",
+          "borderColor": "rgb(229, 231, 235)",
+          "borderRadius": "0px",
+          "boxShadow": "none",
+          "paddingTop": "12px",
+          "paddingRight": "48px",
+          "paddingBottom": "12px",
+          "paddingLeft": "48px",
+          "marginTop": "0px",
+          "marginRight": "384px",
+          "marginBottom": "0px",
+          "marginLeft": "384px",
+          "gap": "normal",
+          "maxWidth": "1152px"
+        }
+      }
+    ]
+  },
+  "components": {
+    "appFrameInventory": [
+      {
+        "kind": "button",
+        "label": null,
+        "tag": "button",
+        "id": null,
+        "role": null,
+        "className": "mx-1 flex items-center text-sm font-normal leading-6 text-gray-800 transition-colors duration-200 hover:text-blue-600 svelte-1h749wv",
+        "selector": "header#header > div.border-b.border-gray-200/50 > nav.mx-auto.flex > div.hidden.md:flex > div.relative > button.mx-1.flex",
+        "text": "Product",
+        "rect": {
+          "x": 798.58,
+          "y": 13,
+          "width": 66.27,
+          "height": 24
+        },
+        "absoluteRect": {
+          "x": 798.58,
+          "y": 13,
+          "width": 66.27,
+          "height": 24
+        },
+        "style": {
+          "fontFamily": "Geist, Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+          "fontSize": "14px",
+          "lineHeight": "24px",
+          "fontWeight": "400",
+          "letterSpacing": "normal",
+          "color": "rgb(31, 41, 55)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px solid rgb(229, 231, 235)",
+          "borderColor": "rgb(229, 231, 235)",
+          "borderRadius": "0px",
+          "boxShadow": "none",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "marginTop": "0px",
+          "marginRight": "4px",
+          "marginBottom": "0px",
+          "marginLeft": "4px",
+          "gap": "normal",
+          "maxWidth": "none"
+        }
+      },
+      {
+        "kind": "button",
+        "label": null,
+        "tag": "button",
+        "id": null,
+        "role": null,
+        "className": "mx-1 flex items-center text-sm font-normal leading-6 text-gray-800 transition-colors duration-200 hover:text-blue-600 svelte-1h749wv",
+        "selector": "header#header > div.border-b.border-gray-200/50 > nav.mx-auto.flex > div.hidden.md:flex > div.relative > button.mx-1.flex",
+        "text": "Resources",
+        "rect": {
+          "x": 961.55,
+          "y": 13,
+          "width": 83.39,
+          "height": 24
+        },
+        "absoluteRect": {
+          "x": 961.55,
+          "y": 13,
+          "width": 83.39,
+          "height": 24
+        },
+        "style": {
+          "fontFamily": "Geist, Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+          "fontSize": "14px",
+          "lineHeight": "24px",
+          "fontWeight": "400",
+          "letterSpacing": "normal",
+          "color": "rgb(31, 41, 55)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px solid rgb(229, 231, 235)",
+          "borderColor": "rgb(229, 231, 235)",
+          "borderRadius": "0px",
+          "boxShadow": "none",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "marginTop": "0px",
+          "marginRight": "4px",
+          "marginBottom": "0px",
+          "marginLeft": "4px",
+          "gap": "normal",
+          "maxWidth": "none"
+        }
+      },
+      {
+        "kind": "button",
+        "label": null,
+        "tag": "button",
+        "id": null,
+        "role": null,
+        "className": "mx-auto mb-2 w-[200px] rounded-md border bg-white px-3 py-1.5 text-center text-sm font-medium text-gray-800 transition-colors duration-200 hover:bg-gray-100 hover:text-gray-800 sm:mx-0 sm:w-auto lg:mb-4",
+        "selector": "div.mx-auto.max-w-7xl > div.px-6.pt-2 > div.mx-auto.max-w-4xl > div > div > div.mx-auto.mt-8 > button.mx-auto.mb-2",
+        "text": "Book a demo",
+        "rect": {
+          "x": 964.34,
+          "y": 376.03,
+          "width": 111.75,
+          "height": 34
+        },
+        "absoluteRect": {
+          "x": 964.34,
+          "y": 376.03,
+          "width": 111.75,
+          "height": 34
+        },
+        "style": {
+          "fontFamily": "Geist, Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+          "fontSize": "14px",
+          "lineHeight": "20px",
+          "fontWeight": "500",
+          "letterSpacing": "normal",
+          "color": "rgb(31, 41, 55)",
+          "backgroundColor": "rgb(255, 255, 255)",
+          "border": "1px solid rgb(229, 231, 235)",
+          "borderColor": "rgb(229, 231, 235)",
+          "borderRadius": "6px",
+          "boxShadow": "none",
+          "paddingTop": "6px",
+          "paddingRight": "12px",
+          "paddingBottom": "6px",
+          "paddingLeft": "12px",
+          "marginTop": "0px",
+          "marginRight": "0px",
+          "marginBottom": "16px",
+          "marginLeft": "0px",
+          "gap": "normal",
+          "maxWidth": "none"
+        }
+      },
+      {
+        "kind": "link",
+        "label": null,
+        "tag": "a",
+        "id": null,
+        "role": null,
+        "className": "text-md font-sans font-semibold tracking-wide antialiased",
+        "selector": "header#header > div.border-b.border-gray-200/50 > nav.mx-auto.flex > div.flex.md:flex-1 > a.text-md.font-sans",
+        "text": "",
+        "rect": {
+          "x": 432,
+          "y": 15.5,
+          "width": 93.05,
+          "height": 19
+        },
+        "absoluteRect": {
+          "x": 432,
+          "y": 15.5,
+          "width": 93.05,
+          "height": 19
+        },
+        "style": {
+          "fontFamily": "Geist, Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+          "fontSize": "16px",
+          "lineHeight": "24px",
+          "fontWeight": "600",
+          "letterSpacing": "0.4px",
+          "color": "rgb(0, 0, 0)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px solid rgb(229, 231, 235)",
+          "borderColor": "rgb(229, 231, 235)",
+          "borderRadius": "0px",
+          "boxShadow": "none",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "marginTop": "0px",
+          "marginRight": "0px",
+          "marginBottom": "0px",
+          "marginLeft": "0px",
+          "gap": "normal",
+          "maxWidth": "none"
+        }
+      },
+      {
+        "kind": "link",
+        "label": null,
+        "tag": "a",
+        "id": null,
+        "role": null,
+        "className": "mx-1 text-sm font-normal leading-6 text-gray-800 transition-colors duration-200 hover:text-blue-600",
+        "selector": "header#header > div.border-b.border-gray-200/50 > nav.mx-auto.flex > div.hidden.md:flex > a.mx-1.text-sm",
+        "text": "Docs",
+        "rect": {
+          "x": 896.84,
+          "y": 13,
+          "width": 32.7,
+          "height": 24
+        },
+        "absoluteRect": {
+          "x": 896.84,
+          "y": 13,
+          "width": 32.7,
+          "height": 24
+        },
+        "style": {
+          "fontFamily": "Geist, Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+          "fontSize": "14px",
+          "lineHeight": "24px",
+          "fontWeight": "400",
+          "letterSpacing": "normal",
+          "color": "rgb(31, 41, 55)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px solid rgb(229, 231, 235)",
+          "borderColor": "rgb(229, 231, 235)",
+          "borderRadius": "0px",
+          "boxShadow": "none",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "marginTop": "0px",
+          "marginRight": "4px",
+          "marginBottom": "0px",
+          "marginLeft": "4px",
+          "gap": "normal",
+          "maxWidth": "none"
+        }
+      },
+      {
+        "kind": "link",
+        "label": null,
+        "tag": "a",
+        "id": null,
+        "role": null,
+        "className": "mx-1 text-sm font-normal leading-6 text-gray-800 transition-colors duration-200 hover:text-blue-600",
+        "selector": "header#header > div.border-b.border-gray-200/50 > nav.mx-auto.flex > div.hidden.md:flex > a.mx-1.text-sm",
+        "text": "Pricing",
+        "rect": {
+          "x": 1076.94,
+          "y": 13,
+          "width": 44.47,
+          "height": 24
+        },
+        "absoluteRect": {
+          "x": 1076.94,
+          "y": 13,
+          "width": 44.47,
+          "height": 24
+        },
+        "style": {
+          "fontFamily": "Geist, Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+          "fontSize": "14px",
+          "lineHeight": "24px",
+          "fontWeight": "400",
+          "letterSpacing": "normal",
+          "color": "rgb(31, 41, 55)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px solid rgb(229, 231, 235)",
+          "borderColor": "rgb(229, 231, 235)",
+          "borderRadius": "0px",
+          "boxShadow": "none",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "marginTop": "0px",
+          "marginRight": "4px",
+          "marginBottom": "0px",
+          "marginLeft": "4px",
+          "gap": "normal",
+          "maxWidth": "none"
+        }
+      },
+      {
+        "kind": "link",
+        "label": null,
+        "tag": "a",
+        "id": null,
+        "role": null,
+        "className": "hidden whitespace-nowrap rounded-md border bg-white px-2 py-1 text-xs font-medium text-gray-800 transition-colors duration-200 hover:bg-gray-100 hover:text-gray-800 md:flex",
+        "selector": "header#header > div.border-b.border-gray-200/50 > nav.mx-auto.flex > div.flex.flex-1 > div.flex.flex-row > a.hidden.whitespace-nowrap",
+        "text": "Log in",
+        "rect": {
+          "x": 1342.22,
+          "y": 12,
+          "width": 51.98,
+          "height": 26
+        },
+        "absoluteRect": {
+          "x": 1342.22,
+          "y": 12,
+          "width": 51.98,
+          "height": 26
+        },
+        "style": {
+          "fontFamily": "Geist, Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+          "fontSize": "12px",
+          "lineHeight": "16px",
+          "fontWeight": "500",
+          "letterSpacing": "normal",
+          "color": "rgb(31, 41, 55)",
+          "backgroundColor": "rgb(255, 255, 255)",
+          "border": "1px solid rgb(229, 231, 235)",
+          "borderColor": "rgb(229, 231, 235)",
+          "borderRadius": "6px",
+          "boxShadow": "none",
+          "paddingTop": "4px",
+          "paddingRight": "8px",
+          "paddingBottom": "4px",
+          "paddingLeft": "8px",
+          "marginTop": "0px",
+          "marginRight": "0px",
+          "marginBottom": "0px",
+          "marginLeft": "0px",
+          "gap": "normal",
+          "maxWidth": "none"
+        }
+      },
+      {
+        "kind": "link",
+        "label": null,
+        "tag": "a",
+        "id": null,
+        "role": null,
+        "className": "hidden whitespace-nowrap rounded-md border border-black bg-black px-2 py-1 text-xs font-medium text-white transition-colors duration-200 hover:bg-gray-700 md:flex",
+        "selector": "header#header > div.border-b.border-gray-200/50 > nav.mx-auto.flex > div.flex.flex-1 > div.flex.flex-row > a.hidden.whitespace-nowrap",
+        "text": "Get started",
+        "rect": {
+          "x": 1406.2,
+          "y": 12,
+          "width": 81.8,
+          "height": 26
+        },
+        "absoluteRect": {
+          "x": 1406.2,
+          "y": 12,
+          "width": 81.8,
+          "height": 26
+        },
+        "style": {
+          "fontFamily": "Geist, Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+          "fontSize": "12px",
+          "lineHeight": "16px",
+          "fontWeight": "500",
+          "letterSpacing": "normal",
+          "color": "rgb(255, 255, 255)",
+          "backgroundColor": "rgb(0, 0, 0)",
+          "border": "1px solid rgb(0, 0, 0)",
+          "borderColor": "rgb(0, 0, 0)",
+          "borderRadius": "6px",
+          "boxShadow": "none",
+          "paddingTop": "4px",
+          "paddingRight": "8px",
+          "paddingBottom": "4px",
+          "paddingLeft": "8px",
+          "marginTop": "0px",
+          "marginRight": "0px",
+          "marginBottom": "0px",
+          "marginLeft": "0px",
+          "gap": "normal",
+          "maxWidth": "none"
+        }
+      },
+      {
+        "kind": "link",
+        "label": null,
+        "tag": "a",
+        "id": null,
+        "role": null,
+        "className": "svelte-1rd5ln3",
+        "selector": "div > div.relative.isolate > div.mx-auto.max-w-7xl > div > div.text-center.svelte-1rd5ln3 > a.svelte-1rd5ln3",
+        "text": "New Embedded Analytics as Code → Embedded Analytics as Code →",
+        "rect": {
+          "x": 839.09,
+          "y": 87,
+          "width": 241.81,
+          "height": 21
+        },
+        "absoluteRect": {
+          "x": 839.09,
+          "y": 87,
+          "width": 241.81,
+          "height": 21
+        },
+        "style": {
+          "fontFamily": "Geist, Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+          "fontSize": "16px",
+          "lineHeight": "24px",
+          "fontWeight": "400",
+          "letterSpacing": "normal",
+          "color": "rgb(0, 0, 0)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px solid rgb(229, 231, 235)",
+          "borderColor": "rgb(229, 231, 235)",
+          "borderRadius": "0px",
+          "boxShadow": "none",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "marginTop": "0px",
+          "marginRight": "0px",
+          "marginBottom": "0px",
+          "marginLeft": "0px",
+          "gap": "normal",
+          "maxWidth": "none"
+        }
+      },
+      {
+        "kind": "link",
+        "label": null,
+        "tag": "a",
+        "id": null,
+        "role": null,
+        "className": "mx-auto mb-2 w-[200px] rounded-md border border-black bg-black px-3 py-1.5 text-center text-sm font-medium text-white shadow-sm shadow-gray-400/30 transition-all duration-300 hover:bg-gray-700 hover:text-white hover:shadow-sm hover:shadow-gray-500/50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-900 sm:mx-0 sm:w-auto lg:mb-4",
+        "selector": "div.mx-auto.max-w-7xl > div.px-6.pt-2 > div.mx-auto.max-w-4xl > div > div > div.mx-auto.mt-8 > a.mx-auto.mb-2",
+        "text": "Get started",
+        "rect": {
+          "x": 843.91,
+          "y": 376.03,
+          "width": 100.44,
+          "height": 34
+        },
+        "absoluteRect": {
+          "x": 843.91,
+          "y": 376.03,
+          "width": 100.44,
+          "height": 34
+        },
+        "style": {
+          "fontFamily": "Geist, Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+          "fontSize": "14px",
+          "lineHeight": "20px",
+          "fontWeight": "500",
+          "letterSpacing": "normal",
+          "color": "rgb(255, 255, 255)",
+          "backgroundColor": "rgb(0, 0, 0)",
+          "border": "1px solid rgb(0, 0, 0)",
+          "borderColor": "rgb(0, 0, 0)",
+          "borderRadius": "6px",
+          "boxShadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(156, 163, 175, 0.3) 0px 1px 2px 0px",
+          "paddingTop": "6px",
+          "paddingRight": "12px",
+          "paddingBottom": "6px",
+          "paddingLeft": "12px",
+          "marginTop": "0px",
+          "marginRight": "0px",
+          "marginBottom": "16px",
+          "marginLeft": "0px",
+          "gap": "normal",
+          "maxWidth": "none"
+        }
+      },
+      {
+        "kind": "header",
+        "label": null,
+        "tag": "header",
+        "id": "header",
+        "role": null,
+        "className": "sticky top-0 z-50 bg-[#fcfcfc]/80 antialiased",
+        "selector": "header#header",
+        "text": "Product Docs Resources Pricing Log in Get started Open main menu Close menu Log in Get started Product Docs Resources Pricing",
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 1920,
+          "height": 51
+        },
+        "absoluteRect": {
+          "x": 0,
+          "y": 0,
+          "width": 1920,
+          "height": 51
+        },
+        "style": {
+          "fontFamily": "Geist, Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+          "fontSize": "16px",
+          "lineHeight": "24px",
+          "fontWeight": "400",
+          "letterSpacing": "normal",
+          "color": "rgb(0, 0, 0)",
+          "backgroundColor": "rgba(252, 252, 252, 0.8)",
+          "border": "0px solid rgb(229, 231, 235)",
+          "borderColor": "rgb(229, 231, 235)",
+          "borderRadius": "0px",
+          "boxShadow": "none",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "marginTop": "0px",
+          "marginRight": "0px",
+          "marginBottom": "0px",
+          "marginLeft": "0px",
+          "gap": "normal",
+          "maxWidth": "none"
+        }
+      },
+      {
+        "kind": "navigation",
+        "label": null,
+        "tag": "nav",
+        "id": null,
+        "role": null,
+        "className": "mx-auto flex max-w-6xl items-center justify-between px-6 py-4 md:py-3 lg:px-12",
+        "selector": "header#header > div.border-b.border-gray-200/50 > nav.mx-auto.flex",
+        "text": "Product Docs Resources Pricing Log in Get started Open main menu",
+        "rect": {
+          "x": 384,
+          "y": 0,
+          "width": 1152,
+          "height": 50
+        },
+        "absoluteRect": {
+          "x": 384,
+          "y": 0,
+          "width": 1152,
+          "height": 50
+        },
+        "style": {
+          "fontFamily": "Geist, Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+          "fontSize": "16px",
+          "lineHeight": "24px",
+          "fontWeight": "400",
+          "letterSpacing": "normal",
+          "color": "rgb(0, 0, 0)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px solid rgb(229, 231, 235)",
+          "borderColor": "rgb(229, 231, 235)",
+          "borderRadius": "0px",
+          "boxShadow": "none",
+          "paddingTop": "12px",
+          "paddingRight": "48px",
+          "paddingBottom": "12px",
+          "paddingLeft": "48px",
+          "marginTop": "0px",
+          "marginRight": "384px",
+          "marginBottom": "0px",
+          "marginLeft": "384px",
+          "gap": "normal",
+          "maxWidth": "1152px"
+        }
+      }
+    ],
+    "leftRailInventory": [],
+    "mainCanvasInventory": [],
+    "rightRailInventory": [],
+    "repeatedItems": {
+      "fieldList": []
+    }
+  },
+  "theme": {
+    "tokens": [
+      {
+        "label": "appFrame",
+        "color": "rgb(0, 0, 0)",
+        "backgroundColor": "rgb(252, 252, 252)",
+        "borderColor": "rgb(229, 231, 235)",
+        "boxShadow": "none"
+      },
+      {
+        "label": "appFrame",
+        "color": "rgb(0, 0, 0)",
+        "backgroundColor": "rgb(252, 252, 252)",
+        "borderColor": "rgb(229, 231, 235)",
+        "boxShadow": "none"
+      },
+      {
+        "label": "topToolbar",
+        "color": "rgb(0, 0, 0)",
+        "backgroundColor": "rgba(252, 252, 252, 0.8)",
+        "borderColor": "rgb(229, 231, 235)",
+        "boxShadow": "none"
+      }
+    ]
+  },
+  "diagnostics": {
+    "coordinates": [
+      {
+        "selector": "",
+        "viewportRect": {
+          "x": 0,
+          "y": 0,
+          "width": 1920,
+          "height": 7812.91
+        },
+        "scroll": {
+          "x": 0,
+          "y": 0
+        },
+        "offsetTop": 0,
+        "offsetLeft": 0
+      },
+      {
+        "selector": "header#header",
+        "viewportRect": {
+          "x": 0,
+          "y": 0,
+          "width": 1920,
+          "height": 51
+        },
+        "scroll": {
+          "x": 0,
+          "y": 0
+        },
+        "offsetTop": 0,
+        "offsetLeft": 0
+      }
+    ]
+  },
+  "notes": {
+    "measuredState": "visible-rendered-state-only",
+    "themeRule": "Each theme is a separate measured pass. Do not merge light and dark observations.",
+    "captureOrder": "DOM measured before screenshots."
+  }
+}
