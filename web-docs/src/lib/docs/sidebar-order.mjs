@@ -21,7 +21,7 @@ export default {
 
   internal: {
     label: 'Internal',
-    order: ['docs-site-direction', 'shell-contract-spec', 'arango-cloud', 'style-guide'],
+    order: ['docs-site-direction', 'shell-contract-spec', 'arango-cloud', 'gcp-benchmark-access', 'style-guide'],
   },
 
   'internal/style-guide': {

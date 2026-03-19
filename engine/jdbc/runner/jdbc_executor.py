@@ -53,7 +53,6 @@ from engine.core.models.flows.state import State
 from engine.core.runners.subflow_execution_end import SubflowExecutionEnd
 from engine.core.runners.subflow_execution_result import SubflowExecutionResult
 from engine.core.models.executions.task_run import TaskRun
-from engine.plugin.core.flow.template import Template
 from engine.core.trace.tracer import Tracer
 from engine.core.trace.tracer_factory import TracerFactory
 from engine.core.repositories.trigger_repository_interface import TriggerRepositoryInterface
@@ -91,7 +90,7 @@ class JdbcExecutor:
     multiple_condition_event_queue: QueueInterface[MultipleConditionEvent] | None = None
     run_context_factory: RunContextFactory | None = None
     plugin_default_service: PluginDefaultService | None = None
-    template_executor_interface: Optional[Template.TemplateExecutorInterface] | None = None
+    template_executor_interface: Any | None = None  # deprecated Template removed
     executor_service: ExecutorService | None = None
     multiple_condition_storage: MultipleConditionStorageInterface | None = None
     flow_trigger_service: FlowTriggerService | None = None
