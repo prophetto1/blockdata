@@ -60,7 +60,7 @@ function readCaptures() {
     outputDir: typeof entry.outputDir === "string" ? entry.outputDir.replace(/\\/g, "/") : entry.outputDir,
     status:
       entry.status === "complete" &&
-      (typeof entry.outputDir !== "string" || !fs.existsSync(path.join(capturesRoot, entry.outputDir.replace(/\\/g, "/")))
+      (typeof entry.outputDir !== "string" || !fs.existsSync(path.join(capturesRoot, entry.outputDir.replace(/\\/g, "/"))))
         ? "failed"
         : entry.status,
   }));

@@ -1,1 +1,57 @@
-[]
+[
+  {
+    "id": "gumloop-com-settings-profile-secrets--1920x1080--light--settings",
+    "name": "gumloop-com-settings-profile-secrets",
+    "url": "https://www.gumloop.com/settings/profile/secrets",
+    "viewport": "1920x1080",
+    "theme": "light",
+    "pageType": "settings",
+    "capturedAt": "2026-03-19T17:55:10.475Z",
+    "outputDir": "gumloop-com-settings-profile-secrets/1920x1080",
+    "status": "complete"
+  },
+  {
+    "id": "app-botpress-cloud-workspaces-wkspace-01km1nxxeabvwbqhwxm1txfd68-bots-86366dcd-abac-4a09-b23a-bb56932ee643-new-adk-bot-setup--1920x1080--light--settings",
+    "name": "app-botpress-cloud-workspaces-wkspace-01km1nxxeabvwbqhwxm1txfd68-bots-86366dcd-abac-4a09-b23a-bb56932ee643-new-adk-bot-setup",
+    "url": "https://app.botpress.cloud/workspaces/wkspace_01KM1NXXEABVWBQHWXM1TXFD68/bots/86366dcd-abac-4a09-b23a-bb56932ee643/new-adk-bot-setup",
+    "viewport": "1920x1080",
+    "theme": "light",
+    "pageType": "settings",
+    "capturedAt": "2026-03-19T18:22:33.661Z",
+    "outputDir": "app-botpress-cloud-workspaces-wkspace-01km1nxxeabvwbqhwxm1txfd68-bots-86366dcd-abac-4a09-b23a-bb56932ee643-new-adk-bot-setup/1920x1080",
+    "status": "complete"
+  },
+  {
+    "id": "app-botpress-cloud-workspaces-wkspace-01km1mk9wmh0xje6fgxk7ysehj-home--1920x1080--light--dashboard",
+    "name": "app-botpress-cloud-workspaces-wkspace-01km1mk9wmh0xje6fgxk7ysehj-home",
+    "url": "https://app.botpress.cloud/workspaces/wkspace_01KM1MK9WMH0XJE6FGXK7YSEHJ/home",
+    "viewport": "1920x1080",
+    "theme": "light",
+    "pageType": "dashboard",
+    "capturedAt": "2026-03-19T18:23:59.697Z",
+    "outputDir": "app-botpress-cloud-workspaces-wkspace-01km1mk9wmh0xje6fgxk7ysehj-home/1920x1080",
+    "status": "complete"
+  },
+  {
+    "id": "app-botpress-cloud-workspaces-wkspace-01km1mk9wmh0xje6fgxk7ysehj-bots-dc2d85c0-a17d-4e4c-8b40-62a428a937e2-overview--1920x1080--light--dashboard",
+    "name": "app-botpress-cloud-workspaces-wkspace-01km1mk9wmh0xje6fgxk7ysehj-bots-dc2d85c0-a17d-4e4c-8b40-62a428a937e2-overview",
+    "url": "https://app.botpress.cloud/workspaces/wkspace_01KM1MK9WMH0XJE6FGXK7YSEHJ/bots/dc2d85c0-a17d-4e4c-8b40-62a428a937e2/overview",
+    "viewport": "1920x1080",
+    "theme": "light",
+    "pageType": "dashboard",
+    "capturedAt": "2026-03-19T18:24:49.800Z",
+    "outputDir": "app-botpress-cloud-workspaces-wkspace-01km1mk9wmh0xje6fgxk7ysehj-bots-dc2d85c0-a17d-4e4c-8b40-62a428a937e2-overview/1920x1080",
+    "status": "complete"
+  },
+  {
+    "id": "studio-botpress-cloud-dc2d85c0-a17d-4e4c-8b40-62a428a937e2-home-gl-1-10y0001-gcl-au-ndq0odcwnjeumtc3mzg3njq5ma-ga-nzi3otiynzazlje3nzm4nzy0odk-ga-hkhswes9v9-cze3nzm5ndqwntgkbzewjgcxjhqxnzczotq0njc3jgo1nsrsmcronjc4mdmwmjg3--1920x1080--dark--workbench",
+    "name": "studio-botpress-cloud-dc2d85c0-a17d-4e4c-8b40-62a428a937e2-home-gl-1-10y0001-gcl-au-ndq0odcwnjeumtc3mzg3njq5ma-ga-nzi3otiynzazlje3nzm4nzy0odk-ga-hkhswes9v9-cze3nzm5ndqwntgkbzewjgcxjhqxnzczotq0njc3jgo1nsrsmcronjc4mdmwmjg3",
+    "url": "https://studio.botpress.cloud/dc2d85c0-a17d-4e4c-8b40-62a428a937e2/home?_gl=1*10y0001*_gcl_au*NDQ0ODcwNjEuMTc3Mzg3NjQ5MA..*_ga*NzI3OTIyNzAzLjE3NzM4NzY0ODk.*_ga_HKHSWES9V9*czE3NzM5NDQwNTgkbzEwJGcxJHQxNzczOTQ0Njc3JGo1NSRsMCRoNjc4MDMwMjg3",
+    "viewport": "1920x1080",
+    "theme": "dark",
+    "pageType": "workbench",
+    "capturedAt": "2026-03-19T18:32:38.354Z",
+    "outputDir": "studio-botpress-cloud-dc2d85c0-a17d-4e4c-8b40-62a428a937e2-home-gl-1-10y0001-gcl-au-ndq0odcwnjeumtc3mzg3njq5ma-ga-nzi3otiynzazlje3nzm4nzy0odk-ga-hkhswes9v9-cze3nzm5ndqwntgkbzewjgcxjhqxnzczotq0njc3jgo1nsrsmcronjc4mdmwmjg3/1920x1080",
+    "status": "complete"
+  }
+]
