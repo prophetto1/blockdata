@@ -1,0 +1,51 @@
+{
+  "pageId": "workspace-home",
+  "sourcePath": "E:\\writing-system\\web\\src\\pages\\workspace\\WorkspaceHomePage.tsx",
+  "devUrl": "http://127.0.0.1:4173/workspace",
+  "specRoot": "E:\\writing-system\\web-docs\\specs",
+  "specRefs": [
+    "app-shell-contract.json",
+    "token-contract.json",
+    "typography-contract.json",
+    "component-contracts.json"
+  ],
+  "sourceFindings": [
+    {
+      "area": "component-contract",
+      "status": "violation",
+      "detail": "Page uses raw button markup where the component contract requires an Ark UI button mapping."
+    },
+    {
+      "area": "token-contract",
+      "status": "violation",
+      "detail": "Hard-coded border color is used instead of the canonized border token."
+    },
+    {
+      "area": "app-shell-contract",
+      "status": "pass",
+      "detail": "Shell header and rail structure match the current shell contract."
+    }
+  ],
+  "renderedFindings": [
+    {
+      "area": "day-night",
+      "status": "violation",
+      "detail": "Night mode card border color does not match the night token contract."
+    },
+    {
+      "area": "typography",
+      "status": "violation",
+      "detail": "Hero heading line-height does not match the canonized heading contract."
+    }
+  ],
+  "fixesApplied": [
+    "Replaced raw button markup with the required Ark UI mapped component.",
+    "Swapped hard-coded border color to the canonized border token.",
+    "Adjusted hero heading line-height to match the typography contract.",
+    "Aligned night mode card border token with the day/night contract."
+  ],
+  "verification": {
+    "sourceRecheck": "pass",
+    "renderedRecheck": "pass"
+  }
+}

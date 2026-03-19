@@ -58,6 +58,7 @@ type LeftRailShadcnProps = {
   onSignOut?: () => void | Promise<void>;
   desktopCompact?: boolean;
   onToggleDesktopCompact?: () => void;
+  disableAutoDrill?: boolean;
 };
 
 /* ------------------------------------------------------------------ */
@@ -235,6 +236,7 @@ export function LeftRailShadcn({
   onSignOut,
   desktopCompact = false,
   onToggleDesktopCompact,
+  disableAutoDrill = false,
 }: LeftRailShadcnProps) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -254,6 +256,10 @@ export function LeftRailShadcn({
 
   // Auto-drill based on current route
   useEffect(() => {
+    if (disableAutoDrill) {
+      if (activeDrillId !== null) setActiveDrillId(null);
+      return;
+    }
     if (skipAutoDrillRef.current) {
       skipAutoDrillRef.current = false;
       return;
@@ -268,7 +274,7 @@ export function LeftRailShadcn({
         setActiveDrillId(null);
       }
     }
-  }, [location.pathname]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [disableAutoDrill, location.pathname]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /**
    * Back out of drill view. Only switches the sidebar to the top-level nav --
@@ -656,6 +662,7 @@ export function LeftRailShadcn({
     </SidebarProvider>
   );
 }
+
 
 
 

@@ -3,6 +3,8 @@
 .codex/settings.local.json
 .mcp.json
 skills/
+!docs/skills/
+!docs/skills/**
 json-schemas/
 .codex/
 .codex-tmp/
@@ -76,3 +78,19 @@ supabase/.temp/
 infra/
 scripts/kestra-plugin-details.json
 web-docs/*.log
+
+# External repos / clones
+external/
+
+# pnpm home cache
+.pnpm-home/
+
+# Dev output (logs, playwright, scripts)
+output/
+
+# Windows admin/network scratch files
+*.jfm
+*.sdb
+*.inf
+secpol-export*.cfg
+tmp_*.ps1

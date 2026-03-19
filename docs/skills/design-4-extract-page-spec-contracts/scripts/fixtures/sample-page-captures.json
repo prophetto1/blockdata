@@ -1,0 +1,131 @@
+{
+  "pageId": "workspace-home",
+  "sourceUrl": "https://example.com/app/workspace",
+  "themeSupport": "dual",
+  "captures": [
+    {
+      "viewportName": "desktop",
+      "width": 1440,
+      "height": 1024,
+      "theme": "day",
+      "shell": {
+        "maxWidth": 1280,
+        "paddingLeft": 16,
+        "paddingRight": 16,
+        "headerHeight": 72,
+        "railWidth": 272
+      },
+      "typography": {
+        "heading": { "fontSize": "72px", "lineHeight": "80px", "fontWeight": "400" },
+        "body": { "fontSize": "18px", "lineHeight": "28px", "fontWeight": "400" }
+      },
+      "tokens": {
+        "background": "rgb(247, 248, 250)",
+        "surface": "rgb(255, 255, 255)",
+        "textPrimary": "rgb(17, 24, 39)",
+        "border": "rgb(209, 213, 219)",
+        "accent": "rgb(37, 99, 235)"
+      },
+      "spacingScale": ["16px", "24px", "32px"],
+      "components": [
+        { "kind": "header", "count": 1 },
+        { "kind": "search-input", "count": 1 },
+        { "kind": "request-panel", "count": 1 },
+        { "kind": "card", "count": 4 }
+      ]
+    },
+    {
+      "viewportName": "desktop",
+      "width": 1440,
+      "height": 1024,
+      "theme": "night",
+      "shell": {
+        "maxWidth": 1280,
+        "paddingLeft": 16,
+        "paddingRight": 16,
+        "headerHeight": 72,
+        "railWidth": 272
+      },
+      "typography": {
+        "heading": { "fontSize": "72px", "lineHeight": "80px", "fontWeight": "400" },
+        "body": { "fontSize": "18px", "lineHeight": "28px", "fontWeight": "400" }
+      },
+      "tokens": {
+        "background": "rgb(10, 12, 16)",
+        "surface": "rgb(18, 22, 28)",
+        "textPrimary": "rgb(244, 247, 250)",
+        "border": "rgb(48, 54, 61)",
+        "accent": "rgb(148, 140, 45)"
+      },
+      "spacingScale": ["16px", "24px", "32px"],
+      "components": [
+        { "kind": "header", "count": 1 },
+        { "kind": "search-input", "count": 1 },
+        { "kind": "request-panel", "count": 1 },
+        { "kind": "card", "count": 4 }
+      ]
+    },
+    {
+      "viewportName": "tablet",
+      "width": 1024,
+      "height": 1366,
+      "theme": "day",
+      "shell": {
+        "maxWidth": 960,
+        "paddingLeft": 16,
+        "paddingRight": 16,
+        "headerHeight": 72,
+        "railWidth": 240
+      },
+      "typography": {
+        "heading": { "fontSize": "56px", "lineHeight": "64px", "fontWeight": "400" },
+        "body": { "fontSize": "18px", "lineHeight": "28px", "fontWeight": "400" }
+      },
+      "tokens": {
+        "background": "rgb(247, 248, 250)",
+        "surface": "rgb(255, 255, 255)",
+        "textPrimary": "rgb(17, 24, 39)",
+        "border": "rgb(209, 213, 219)",
+        "accent": "rgb(37, 99, 235)"
+      },
+      "spacingScale": ["16px", "24px", "32px"],
+      "components": [
+        { "kind": "header", "count": 1 },
+        { "kind": "search-input", "count": 1 },
+        { "kind": "request-panel", "count": 1 },
+        { "kind": "card", "count": 2 }
+      ]
+    },
+    {
+      "viewportName": "mobile",
+      "width": 390,
+      "height": 844,
+      "theme": "day",
+      "shell": {
+        "maxWidth": 390,
+        "paddingLeft": 16,
+        "paddingRight": 16,
+        "headerHeight": 64,
+        "railWidth": 0
+      },
+      "typography": {
+        "heading": { "fontSize": "40px", "lineHeight": "46px", "fontWeight": "400" },
+        "body": { "fontSize": "16px", "lineHeight": "24px", "fontWeight": "400" }
+      },
+      "tokens": {
+        "background": "rgb(247, 248, 250)",
+        "surface": "rgb(255, 255, 255)",
+        "textPrimary": "rgb(17, 24, 39)",
+        "border": "rgb(209, 213, 219)",
+        "accent": "rgb(37, 99, 235)"
+      },
+      "spacingScale": ["12px", "16px", "24px"],
+      "components": [
+        { "kind": "header", "count": 1 },
+        { "kind": "search-input", "count": 1 },
+        { "kind": "request-panel", "count": 1 },
+        { "kind": "card", "count": 1 }
+      ]
+    }
+  ]
+}

@@ -52,32 +52,31 @@ export function AdminLeftNav() {
   return (
     <nav
       aria-label="Admin navigation"
-      className="flex h-full w-[200px] min-w-[200px] flex-col overflow-y-auto overflow-x-hidden border-r border-border bg-card"
+      data-testid="admin-secondary-rail"
+      className="flex h-full w-[184px] min-w-[184px] flex-col overflow-y-auto overflow-x-hidden border-r border-sidebar-border px-2 py-3"
+      style={{ backgroundColor: 'var(--sidebar-accent)' }}
     >
-      {/* Back link */}
-      <div className="p-3 pb-2">
+      <div className="px-2 pb-3">
         <Link
           to="/app/assets"
           aria-label="Back to app"
-          className="flex items-center gap-2 rounded-md px-2 py-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+          className="flex items-center gap-2 rounded-md px-2.5 py-2 text-xs font-medium text-sidebar-foreground/75 transition-colors hover:bg-background/70 hover:text-sidebar-accent-foreground"
         >
           <IconChevronLeft size={14} stroke={2} />
-          <span className="text-xs font-medium">Back to App</span>
+          <span>Back to App</span>
         </Link>
       </div>
 
-      <div className="mx-3 mb-2 h-px bg-border" />
+      <div className="mx-2 mb-3 h-px bg-sidebar-border" />
 
-      {/* Nav sections */}
-      <div className="flex flex-1 flex-col gap-4 px-2 pb-4">
+      <div className="flex flex-1 flex-col gap-4 px-1 pb-2">
         {NAV_SECTIONS.map((section) => (
           <div key={section.label}>
-            <p className="mb-1 px-2 text-[10px] font-mono tracking-widest text-muted-foreground/40">
+            <p className="mb-1.5 px-2.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-sidebar-foreground/45">
               {section.label}
             </p>
             {section.items.map((item) => {
-              const isActive =
-                pathname === item.path || pathname.startsWith(item.path + '/');
+              const isActive = pathname === item.path || pathname.startsWith(item.path + '/');
 
               return (
                 <Link
@@ -86,14 +85,14 @@ export function AdminLeftNav() {
                   aria-label={item.label}
                   aria-current={isActive ? 'page' : undefined}
                   className={[
-                    'flex items-center gap-2.5 rounded-md px-2 py-1.5 text-[13px] transition-colors',
+                    'flex items-center gap-2.5 rounded-md px-2.5 py-2 text-[13px] transition-colors',
                     isActive
-                      ? 'bg-accent text-accent-foreground'
-                      : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
+                      ? 'bg-background text-foreground shadow-sm'
+                      : 'text-sidebar-foreground/72 hover:bg-background/60 hover:text-foreground',
                   ].join(' ')}
                 >
                   <item.icon size={15} stroke={isActive ? 2 : 1.75} className="shrink-0" />
-                  <span>{item.label}</span>
+                  <span className="truncate">{item.label}</span>
                 </Link>
               );
             })}

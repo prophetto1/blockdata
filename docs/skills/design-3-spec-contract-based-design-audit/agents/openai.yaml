@@ -1,0 +1,4 @@
+interface:
+  display_name: "Audit Pages Against Specs"
+  short_description: "Audit one page against canonized specs"
+  default_prompt: "Use $auditing-pages-against-spec-contracts to audit one page against the canonized specs in web-docs/specs, fix inconsistencies, and verify the rendered result."
