@@ -3,8 +3,6 @@
 .codex/settings.local.json
 .mcp.json
 skills/
-!docs/skills/
-!docs/skills/**
 json-schemas/
 .codex/
 .codex-tmp/

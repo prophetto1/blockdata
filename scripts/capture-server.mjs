@@ -15,6 +15,7 @@ const capturesRoot = path.join(repoRoot, "docs", "design-layouts");
 const skillScriptsDir = path.join(
   repoRoot,
   "docs",
+  "jon",
   "skills",
   "design-1-layouts-spec-with-playwright",
   "scripts"
