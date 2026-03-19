@@ -94,3 +94,5 @@ output/
 *.inf
 secpol-export*.cfg
 tmp_*.ps1
+tmp_*
+tmp-*
