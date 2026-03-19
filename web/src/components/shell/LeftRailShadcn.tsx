@@ -17,6 +17,7 @@ import {
   IconLogout,
   IconSettings,
   IconShieldCog,
+  IconSwitchHorizontal,
 } from '@tabler/icons-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useSuperuserProbe } from '@/hooks/useSuperuserProbe';
@@ -28,8 +29,12 @@ import {
   findDrillByRoute,
   getDrillConfig,
   resolveFlowDrillPath,
+  getNavStyle,
+  setNavStyle,
+  getActiveNav,
   type NavItem,
   type NavDrillConfig,
+  type NavStyle,
 } from '@/components/shell/nav-config';
 import type { AdminNavSection } from '@/components/admin/AdminLeftNav';
 import {
@@ -250,6 +255,14 @@ export function LeftRailShadcn({
   const superuserProbe = useSuperuserProbe();
   const isSuperuser = superuserProbe === true || superuserProbe === null;
 
+  const [navStyle, setNavStyleState] = useState<NavStyle>(getNavStyle);
+  const activeNav = navStyle === 'pipeline' ? getActiveNav() : TOP_LEVEL_NAV;
+  const toggleNavStyle = () => {
+    const next: NavStyle = navStyle === 'classic' ? 'pipeline' : 'classic';
+    setNavStyle(next);
+    setNavStyleState(next);
+  };
+
   const navigateTo = (path: string) => {
     navigate(path);
     onNavigate?.();
@@ -306,14 +319,26 @@ export function LeftRailShadcn({
   }, [location.pathname]);
 
   const userInitial = userLabel?.match(/[A-Za-z0-9]/)?.[0]?.toUpperCase() ?? '?';
+  const isClassicView = navStyle === 'classic';
+  const railStackClass = isClassicView ? 'space-y-0' : 'space-y-0.5';
+  const railDividerClass = isClassicView ? 'my-1 mx-2 h-px bg-sidebar-border' : 'my-1.5 mx-2.5 h-px bg-sidebar-border';
+  const railItemClass = isClassicView
+    ? 'flex w-full items-center gap-2 rounded-md px-2 h-8 text-[13px] leading-snug transition-colors'
+    : 'flex w-full items-center gap-2.5 rounded-md px-2.5 h-9 text-sm leading-snug transition-colors';
+  const drillBackClass = isClassicView
+    ? 'flex w-full items-center gap-1.5 rounded-md px-2 h-8 text-[13px] font-medium leading-snug text-sidebar-foreground/80 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
+    : 'flex w-full items-center gap-2 rounded-md px-2.5 h-9 text-sm font-medium leading-snug text-sidebar-foreground/80 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground';
+  const drillSectionLabelClass = isClassicView
+    ? 'mb-0.5 mt-1.5 px-2 text-[10px] font-semibold uppercase tracking-wide text-sidebar-foreground/50'
+    : 'mb-1 mt-2 px-2.5 text-[11px] font-semibold uppercase tracking-wide text-sidebar-foreground/50';
 
   /* ------ Render helpers ------ */
 
   const renderTopLevelNav = () => (
-    <div className="space-y-0.5">
-      {TOP_LEVEL_NAV.map((entry, index) => {
+    <div className={railStackClass}>
+      {activeNav.map((entry, index) => {
         if (entry === 'divider') {
-          return <div key={`divider-${index}`} className="my-1.5 mx-2.5 h-px bg-sidebar-border" />;
+          return <div key={`divider-${index}`} className={railDividerClass} />;
         }
 
         const item = entry;
@@ -332,7 +357,7 @@ export function LeftRailShadcn({
               navigateTo(item.path);
             }}
             className={cn(
-              'flex w-full items-center gap-2.5 rounded-md px-2.5 h-9 text-sm leading-snug transition-colors',
+              railItemClass,
               isActive
                 ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium'
                 : 'text-sidebar-foreground/80 font-normal hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
@@ -353,29 +378,29 @@ export function LeftRailShadcn({
     const flowId = config.id === 'flows' ? extractFlowId(location.pathname) : null;
 
     return (
-      <div className="space-y-0.5">
+      <div className={railStackClass}>
         {/* Back button */}
         <button
           type="button"
           onClick={() => drillBack()}
-          className="flex w-full items-center gap-2 rounded-md px-2.5 h-9 text-sm font-medium leading-snug text-sidebar-foreground/80 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+          className={drillBackClass}
         >
           <IconChevronLeft size={16} stroke={1.75} className="shrink-0" />
           <span className="truncate">{config.id === 'superuser' ? 'Main Menu' : config.parentLabel}</span>
         </button>
 
-        <div className="mx-2.5 my-1 h-px bg-sidebar-border" />
+        <div className={railDividerClass} />
 
         {/* Sections */}
         {config.sections.map((section, sectionIndex) => (
           <div key={section.label ?? sectionIndex}>
-            {sectionIndex > 0 && <div className="mx-2.5 my-1.5 h-px bg-sidebar-border" />}
+            {sectionIndex > 0 && <div className={railDividerClass} />}
             {section.label && (
-              <div className="mb-1 mt-2 px-2.5 text-[11px] font-semibold uppercase tracking-wide text-sidebar-foreground/50">
+              <div className={drillSectionLabelClass}>
                 {section.label}
               </div>
             )}
-            <div className="space-y-0.5">
+            <div className={railStackClass}>
               {section.items.map((item) => {
                 const ItemIcon = item.icon;
                 // For flows drill, paths are tab slugs -- resolve to full path
@@ -401,7 +426,7 @@ export function LeftRailShadcn({
                       onNavigate?.();
                     }}
                     className={cn(
-                      'flex w-full items-center gap-2.5 rounded-md px-2.5 h-9 text-sm leading-snug transition-colors',
+                      railItemClass,
                       isActive
                         ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium'
                         : 'text-sidebar-foreground/80 font-normal hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
@@ -427,7 +452,7 @@ export function LeftRailShadcn({
 
   const renderCompactNav = () => (
     <div className="flex flex-col items-center gap-0.5 pt-1">
-      {TOP_LEVEL_NAV.map((entry, index) => {
+      {activeNav.map((entry, index) => {
         if (entry === 'divider') {
           return <div key={`divider-${index}`} className="my-1 h-px w-6 bg-sidebar-border" />;
         }
@@ -489,7 +514,7 @@ export function LeftRailShadcn({
     }
 
     return (
-      <div className="space-y-0.5">
+      <div className={railStackClass}>
         {BOTTOM_RAIL_NAV.map((item) => {
           const ItemIcon = item.icon;
           const isActive = activeMenuPath === item.path;
@@ -498,9 +523,9 @@ export function LeftRailShadcn({
             <button
               key={item.path}
               type="button"
-              onClick={() => navigateTo(item.path)}
-              className={cn(
-                'flex w-full items-center gap-2.5 rounded-md px-2.5 h-9 text-sm leading-snug transition-colors',
+            onClick={() => navigateTo(item.path)}
+            className={cn(
+                railItemClass,
                 isActive
                   ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium'
                   : 'text-sidebar-foreground/80 font-normal hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
@@ -580,34 +605,49 @@ export function LeftRailShadcn({
                 : 'h-[60px] justify-between px-3',
             )}
           >
-            <button
-              type="button"
-              className={cn(
-                'inline-flex items-center gap-2.5 rounded-md text-left transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
-                desktopCompact
-                  ? 'size-10 justify-center p-0'
-                  : 'px-1.5 py-1',
-              )}
-              onClick={() => {
-                if (desktopCompact) {
-                  onToggleDesktopCompact?.();
-                  return;
-                }
-                navigate('/app');
-                onNavigate?.();
-              }}
-              aria-label={desktopCompact ? 'Expand side navigation' : 'Go to home'}
-              title={desktopCompact ? 'Expand side navigation' : undefined}
-            >
-              {desktopCompact ? (
-                <HugeiconsIcon icon={Layout03Icon} size={18} strokeWidth={2.1} />
-              ) : (
-                <span className="inline-flex items-baseline text-sm font-semibold uppercase tracking-[0.2em]">
-                  <span className="text-sidebar-foreground">Block</span>
-                  <span className="text-primary">Data</span>
-                </span>
-              )}
-            </button>
+            {navSections ? (
+              <button
+                type="button"
+                className="inline-flex items-center gap-1.5 rounded-md px-1.5 py-1 text-left text-sm text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                onClick={() => {
+                  navigate('/app');
+                  onNavigate?.();
+                }}
+                aria-label="Go to app"
+              >
+                <IconChevronLeft size={14} stroke={2} className="shrink-0" />
+                <span className="font-medium">Go to App</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                className={cn(
+                  'inline-flex items-center gap-2.5 rounded-md text-left transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+                  desktopCompact
+                    ? 'size-10 justify-center p-0'
+                    : 'px-1.5 py-1',
+                )}
+                onClick={() => {
+                  if (desktopCompact) {
+                    onToggleDesktopCompact?.();
+                    return;
+                  }
+                  navigate('/app');
+                  onNavigate?.();
+                }}
+                aria-label={desktopCompact ? 'Expand side navigation' : 'Go to home'}
+                title={desktopCompact ? 'Expand side navigation' : undefined}
+              >
+                {desktopCompact ? (
+                  <HugeiconsIcon icon={Layout03Icon} size={18} strokeWidth={2.1} />
+                ) : (
+                  <span className="inline-flex items-baseline text-sm font-semibold uppercase tracking-[0.2em]">
+                    <span className="text-sidebar-foreground">Block</span>
+                    <span className="text-primary">Data</span>
+                  </span>
+                )}
+              </button>
+            )}
             {!desktopCompact && onToggleDesktopCompact && (
               <button
                 type="button"
@@ -651,6 +691,21 @@ export function LeftRailShadcn({
         {!hideNav && !navSections && BOTTOM_RAIL_NAV.length > 0 && (
           <div className={desktopCompact ? 'px-0 pb-1' : 'px-2 pb-1'}>
             {renderBottomUtilityNav()}
+          </div>
+        )}
+
+        {/* ---- Nav style toggle ---- */}
+        {!navSections && !desktopCompact && (
+          <div className="px-3 pb-1">
+            <button
+              type="button"
+              onClick={toggleNavStyle}
+              className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs text-sidebar-foreground/50 transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground"
+              title={`Switch to ${navStyle === 'classic' ? 'pipeline' : 'classic'} navigation`}
+            >
+              <IconSwitchHorizontal size={14} stroke={1.75} className="shrink-0" />
+              <span>{navStyle === 'classic' ? 'Pipeline view' : 'Classic view'}</span>
+            </button>
           </div>
         )}
 

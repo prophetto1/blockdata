@@ -60,6 +60,7 @@ describe('LeftRailShadcn', () => {
   });
 
   beforeEach(() => {
+    window.localStorage.clear();
     rpcMock.mockReset();
     rpcMock.mockResolvedValue({
       data: [
@@ -86,6 +87,33 @@ describe('LeftRailShadcn', () => {
     expect(screen.getByText('Workspace')).toBeInTheDocument();
     expect(screen.getByText('Database')).toBeInTheDocument();
     expect(screen.getAllByText('Settings').length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('defaults to pipeline navigation when no preference is stored', async () => {
+    render(
+      <MemoryRouter initialEntries={['/app/assets']}>
+        <LeftRailShadcn />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText('Ingest')).toBeInTheDocument();
+    expect(screen.queryByText('Parse')).not.toBeInTheDocument();
+  });
+
+  it('uses denser item sizing in classic view', async () => {
+    window.localStorage.setItem('blockdata.nav.style', 'classic');
+
+    render(
+      <MemoryRouter initialEntries={['/app/assets']}>
+        <LeftRailShadcn />
+      </MemoryRouter>,
+    );
+
+    const assetsButton = await screen.findByRole('button', { name: 'Assets' });
+
+    expect(assetsButton.className).toContain('h-8');
+    expect(assetsButton.className).toContain('text-[13px]');
+    expect(assetsButton.className).toContain('px-2');
   });
 
   it('shows drill view when on a settings route', async () => {

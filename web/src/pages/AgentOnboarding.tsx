@@ -1,5 +1,5 @@
-import { Navigate } from 'react-router-dom';
+import AgentOnboardingSelect from '@/pages/AgentOnboardingSelect';
 
 export default function AgentOnboarding() {
-  return <Navigate to="/app/onboarding/agents/select" replace />;
+  return <AgentOnboardingSelect />;
 }

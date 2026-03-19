@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { edgeFetch } from '@/lib/edge';
 import { cn } from '@/lib/utils';
@@ -208,6 +209,12 @@ const ALL_INSTANCE_KEYS = new Set(SECTIONS.flatMap((s) => s.settings.map((st) =>
 /* ------------------------------------------------------------------ */
 
 export function InstanceConfigPanel() {
+  const { hash } = useLocation();
+  const activeSection = useMemo(() => {
+    const id = hash.replace('#', '');
+    return SECTIONS.find((s) => s.id === id) ?? SECTIONS[0]!;
+  }, [hash]);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<{ kind: 'success' | 'error'; message: string } | null>(null);
@@ -369,31 +376,27 @@ export function InstanceConfigPanel() {
         </div>
       )}
 
-      <div className="space-y-8 pb-6">
-        {SECTIONS.map((section) => (
-          <section key={section.id} id={section.id} className="scroll-mt-6">
-            <div className="mb-4">
-              <h2 className="text-lg font-semibold">{section.label}</h2>
-              <p className="text-xs text-muted-foreground">
-                {section.settings.length} setting{section.settings.length !== 1 ? 's' : ''}
-                {loading && ' — loading...'}
-              </p>
-            </div>
-            <div className="space-y-3">
-              {section.settings.map((setting) => (
-                <SettingCard
-                  key={setting.key}
-                  setting={setting}
-                  value={values[setting.key]}
-                  onChange={handleChange}
-                  dirty={dirtyKeys.has(setting.key)}
-                  saving={savingKey === setting.key}
-                  onSave={(k) => void handleSave(k)}
-                />
-              ))}
-            </div>
-          </section>
-        ))}
+      <div className="pb-6">
+        <div className="mb-4">
+          <h2 className="text-lg font-semibold">{activeSection.label}</h2>
+          <p className="text-xs text-muted-foreground">
+            {activeSection.settings.length} setting{activeSection.settings.length !== 1 ? 's' : ''}
+            {loading && ' — loading...'}
+          </p>
+        </div>
+        <div className="space-y-3">
+          {activeSection.settings.map((setting) => (
+            <SettingCard
+              key={setting.key}
+              setting={setting}
+              value={values[setting.key]}
+              onChange={handleChange}
+              dirty={dirtyKeys.has(setting.key)}
+              saving={savingKey === setting.key}
+              onSave={(k) => void handleSave(k)}
+            />
+          ))}
+        </div>
       </div>
     </div>
   );

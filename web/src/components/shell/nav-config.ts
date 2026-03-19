@@ -6,7 +6,6 @@ import {
   IconFolder,
   IconFolderPlus,
   IconGitBranch,
-  IconKey,
   IconLayoutDashboard,
   IconPalette,
   IconPlayerPlay,
@@ -29,6 +28,9 @@ import {
   IconScan,
   IconTransform,
   IconFileExport,
+  IconRobot,
+  IconRocket,
+  IconActivity,
 } from '@tabler/icons-react';
 
 export type NavItem = {
@@ -56,6 +58,7 @@ export type NavDrillConfig = {
   parentPath: string;
   sections: NavDrillSection[];
   routePrefix: string;
+  routeAliases?: string[];
   pathTemplate?: string;
 };
 
@@ -66,6 +69,8 @@ export const TOP_LEVEL_NAV: Array<NavItem | 'divider'> = [
   { label: 'Transform', icon: IconArrowsShuffle, path: '/app/transform' },
   { label: 'Convert', icon: IconFileExport, path: '/app/convert' },
   { label: 'RAG', icon: IconTransform, path: '/app/rag' },
+  { label: 'Knowledge Bases', icon: IconDatabase, path: '/app/knowledge-bases' },
+  { label: 'Agent Onboarding', icon: IconRobot, path: '/app/onboarding/agents' },
   'divider',
   { label: 'Flows', icon: IconFolderPlus, path: '/app/flows', drillId: 'flows' },
   'divider',
@@ -77,14 +82,52 @@ export const TOP_LEVEL_NAV: Array<NavItem | 'divider'> = [
   'divider',
   { label: 'Integrations', icon: IconApps, path: '/app/marketplace/integrations' },
   { label: 'Services', icon: IconServer, path: '/app/marketplace/services' },
+  { label: 'Secrets', icon: IconLock, path: '/app/secrets' },
   { label: 'API', icon: IconTerminal2, path: '/app/api-editor' },
   'divider',
   { label: 'Tests', icon: IconTestPipe, path: '/app/tests' },
+  { label: 'Logs', icon: IconFileText, path: '/app/logs' },
   'divider',
   { label: 'Settings', icon: IconSettings, path: '/app/settings', drillId: 'settings' },
 ];
 
-export const ALL_TOP_LEVEL_ITEMS: NavItem[] = TOP_LEVEL_NAV.filter(
+export const PIPELINE_NAV: Array<NavItem | 'divider'> = [
+  { label: 'Assets', icon: IconFolder, path: '/app/assets' },
+  { label: 'Ingest', icon: IconScan, path: '/app/parse', drillId: 'ingest' },
+  { label: 'Knowledge Bases', icon: IconDatabase, path: '/app/knowledge-bases' },
+  'divider',
+  { label: 'Build AI / Agents', icon: IconRobot, path: '/app/onboarding/agents', drillId: 'build-ai' },
+  { label: 'Define Workflows', icon: IconFolderPlus, path: '/app/flows', drillId: 'flows' },
+  'divider',
+  { label: 'Connections', icon: IconPlugConnected, path: '/app/marketplace/integrations', drillId: 'connections' },
+  { label: 'Workbench', icon: IconFileCode, path: '/app/workspace', drillId: 'workbench' },
+  'divider',
+  { label: 'Pipeline Services', icon: IconTransform, path: '/app/rag', drillId: 'pipeline-services' },
+  { label: 'Observability', icon: IconActivity, path: '/app/observability', drillId: 'observability' },
+  'divider',
+  { label: 'Settings', icon: IconSettings, path: '/app/settings', drillId: 'settings' },
+];
+
+/* ---- Nav style toggle (classic vs pipeline) ---- */
+
+export type NavStyle = 'classic' | 'pipeline';
+const NAV_STYLE_KEY = 'blockdata.nav.style';
+
+export function getNavStyle(): NavStyle {
+  if (typeof window === 'undefined') return 'pipeline';
+  const stored = window.localStorage.getItem(NAV_STYLE_KEY);
+  return stored === 'classic' ? 'classic' : 'pipeline';
+}
+
+export function setNavStyle(style: NavStyle) {
+  window.localStorage.setItem(NAV_STYLE_KEY, style);
+}
+
+export function getActiveNav(): Array<NavItem | 'divider'> {
+  return getNavStyle() === 'pipeline' ? PIPELINE_NAV : TOP_LEVEL_NAV;
+}
+
+export const ALL_TOP_LEVEL_ITEMS: NavItem[] = [...TOP_LEVEL_NAV, ...PIPELINE_NAV].filter(
   (entry): entry is NavItem => entry !== 'divider',
 );
 
@@ -129,20 +172,117 @@ const SETTINGS_DRILL: NavDrillConfig = {
         { label: 'Themes', icon: IconPalette, path: '/app/settings/themes' },
       ],
     },
+  ],
+};
+
+/* ---- Pipeline drill configs ---- */
+
+const INGEST_DRILL: NavDrillConfig = {
+  id: 'ingest',
+  parentLabel: 'Ingest',
+  parentPath: '/app/parse',
+  routePrefix: '/app/__ingest__',
+  sections: [
     {
-      label: 'Operations',
+      label: 'Ingest',
       items: [
-        { label: 'AI Providers', icon: IconKey, path: '/app/settings/ai' },
-        { label: 'Model Roles', icon: IconWand, path: '/app/settings/model-roles' },
-        { label: 'Connections', icon: IconDatabase, path: '/app/settings/connections' },
-        { label: 'MCP Servers', icon: IconPlugConnected, path: '/app/settings/mcp' },
-        { label: 'Admin', icon: IconServer, path: '/app/superuser/instance-config' },
+        { label: 'Parse', icon: IconScan, path: '/app/parse' },
+        { label: 'Extract', icon: IconWand, path: '/app/extract' },
+        { label: 'Convert', icon: IconFileExport, path: '/app/convert' },
+        { label: 'Database', icon: IconDatabase, path: '/app/database' },
+        { label: 'Load', icon: IconPlayerPlay, path: '/app/load' },
+        { label: 'Schema', icon: IconSchema, path: '/app/schemas' },
       ],
     },
   ],
 };
 
-export const DRILL_CONFIGS: NavDrillConfig[] = [FLOWS_DRILL, SETTINGS_DRILL];
+const BUILD_AI_DRILL: NavDrillConfig = {
+  id: 'build-ai',
+  parentLabel: 'Build AI / Agents',
+  parentPath: '/app/onboarding/agents',
+  routePrefix: '/app/__build-ai__',
+  routeAliases: ['/app/onboarding/agents', '/app/agents'],
+  sections: [
+    {
+      label: 'Build AI / Agents',
+      items: [
+        { label: 'Agent Onboarding', icon: IconRobot, path: '/app/onboarding/agents' },
+        { label: 'Skills', icon: IconWand, path: '/app/skills' },
+        { label: 'MCP', icon: IconPlugConnected, path: '/app/mcp-tools' },
+      ],
+    },
+  ],
+};
+
+const CONNECTIONS_DRILL: NavDrillConfig = {
+  id: 'connections',
+  parentLabel: 'Connections',
+  parentPath: '/app/marketplace/integrations',
+  routePrefix: '/app/__connections__',
+  sections: [
+    {
+      label: 'Connections',
+      items: [
+        { label: 'Integrations', icon: IconApps, path: '/app/marketplace/integrations' },
+        { label: 'Services', icon: IconServer, path: '/app/marketplace/services' },
+      ],
+    },
+  ],
+};
+
+const WORKBENCH_DRILL: NavDrillConfig = {
+  id: 'workbench',
+  parentLabel: 'Workbench',
+  parentPath: '/app/workspace',
+  routePrefix: '/app/__workbench__',
+  sections: [
+    {
+      label: 'Workbench',
+      items: [
+        { label: 'Flows', icon: IconFolderPlus, path: '/app/flows' },
+        { label: 'Transform', icon: IconArrowsShuffle, path: '/app/transform' },
+        { label: 'Secrets', icon: IconLock, path: '/app/secrets' },
+        { label: 'API', icon: IconTerminal2, path: '/app/api-editor' },
+        { label: 'Tests', icon: IconTestPipe, path: '/app/tests' },
+      ],
+    },
+  ],
+};
+
+const OBSERVABILITY_DRILL: NavDrillConfig = {
+  id: 'observability',
+  parentLabel: 'Observability',
+  parentPath: '/app/observability',
+  routePrefix: '/app/__observability__',
+  sections: [
+    {
+      label: 'Observability',
+      items: [
+        { label: 'Telemetry', icon: IconActivity, path: '/app/observability/telemetry' },
+        { label: 'Traces', icon: IconArrowsShuffle, path: '/app/observability/traces' },
+        { label: 'Logs', icon: IconFileText, path: '/app/logs' },
+      ],
+    },
+  ],
+};
+
+const PIPELINE_SERVICES_DRILL: NavDrillConfig = {
+  id: 'pipeline-services',
+  parentLabel: 'Pipeline Services',
+  parentPath: '/app/rag',
+  routePrefix: '/app/__pipeline-services__',
+  sections: [
+    {
+      label: 'Pipeline Services',
+      items: [
+        { label: 'RAG', icon: IconTransform, path: '/app/rag' },
+      ],
+    },
+  ],
+};
+
+export const DRILL_CONFIGS: NavDrillConfig[] = [FLOWS_DRILL, SETTINGS_DRILL, INGEST_DRILL, BUILD_AI_DRILL, CONNECTIONS_DRILL, WORKBENCH_DRILL, PIPELINE_SERVICES_DRILL, OBSERVABILITY_DRILL];
 
 const DRILL_BY_ID = new Map(DRILL_CONFIGS.map((c) => [c.id, c]));
 
@@ -152,7 +292,8 @@ export function getDrillConfig(drillId: string): NavDrillConfig | undefined {
 
 export function findDrillByRoute(pathname: string): NavDrillConfig | null {
   for (const config of DRILL_CONFIGS) {
-    if (pathname.startsWith(config.routePrefix)) {
+    const routePrefixes = [config.routePrefix, ...(config.routeAliases ?? [])];
+    if (routePrefixes.some((prefix) => pathname.startsWith(prefix))) {
       if (config.pathTemplate && pathname === config.parentPath) continue;
       return config;
     }

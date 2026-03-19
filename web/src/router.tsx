@@ -38,6 +38,7 @@ import { Component as Workspace } from '@/pages/Workspace';
 import ExtractPage from '@/pages/ExtractPage';
 import ConvertPage from '@/pages/ConvertPage';
 import TransformPage from '@/pages/TransformPage';
+import SecretsPage from '@/pages/SecretsPage';
 import LoadPage from '@/pages/LoadPage';
 import AppHome from '@/pages/AppHome';
 import EarlyAccess from '@/pages/EarlyAccess';
@@ -46,6 +47,7 @@ import IntegrationsCatalog from '@/pages/marketplace/IntegrationsCatalog';
 import ServicesCatalog from '@/pages/marketplace/ServicesCatalog';
 import ServiceDetailPage from '@/pages/marketplace/ServiceDetailPage';
 import FunctionCatalogPage from '@/pages/marketplace/FunctionCatalogPage';
+import LogsPage from '@/pages/kestra/LogsPage';
 import TestsPage from '@/pages/kestra/TestsPage';
 import { FlowsRouteShell } from '@/components/layout/FlowsRouteShell';
 import { featureFlags } from '@/lib/featureFlags';
@@ -124,7 +126,9 @@ export const router = createBrowserRouter([
           { path: '/app/workspace', element: <Workspace /> },
           { path: '/app/extract', element: <ExtractPage /> },
           { path: '/app/convert', element: <ConvertPage /> },
+          { path: '/app/secrets', element: <SecretsPage /> },
           { path: '/app/tests', element: <TestsPage /> },
+          { path: '/app/logs', element: <LogsPage /> },
           { path: '/app/test-integrations', element: <Navigate to="/app/superuser/test-integrations" replace /> },
           { path: '/app/marketplace/integrations', element: <IntegrationsCatalog /> },
           { path: '/app/marketplace/services', element: <ServicesCatalog /> },
@@ -160,6 +164,14 @@ export const router = createBrowserRouter([
           // Load (GCS → ArangoDB wizard)
           { path: '/app/load', element: <LoadPage /> },
 
+          // Pipeline nav pages
+          { path: '/app/knowledge-bases', lazy: () => import('@/pages/KnowledgeBases') },
+          { path: '/app/skills', lazy: () => import('@/pages/Skills') },
+          { path: '/app/mcp-tools', lazy: () => import('@/pages/McpTools') },
+          { path: '/app/observability', element: <Navigate to="/app/observability/telemetry" replace /> },
+          { path: '/app/observability/telemetry', lazy: () => import('@/pages/ObservabilityTelemetry') },
+          { path: '/app/observability/traces', lazy: () => import('@/pages/ObservabilityTraces') },
+
           // Settings (API keys, model defaults, MCP)
           {
             path: '/app/settings',
@@ -168,11 +180,11 @@ export const router = createBrowserRouter([
               { index: true, element: <Navigate to="/app/settings/profile" replace /> },
               { path: 'profile', element: <SettingsAccount /> },
               { path: 'themes', element: <SettingsThemes /> },
-              { path: 'ai', element: <SettingsAiOverview /> },
-              { path: 'ai/:providerId', element: <SettingsProviderForm /> },
-              { path: 'model-roles', element: <SettingsModelRoles /> },
-              { path: 'mcp', element: <McpServers /> },
-              { path: 'connections', element: <ConnectionsPanel /> },
+              { path: 'ai', element: <Navigate to="/app/superuser/ai-providers" replace /> },
+              { path: 'ai/:providerId', element: <Navigate to="/app/superuser/ai-providers" replace /> },
+              { path: 'model-roles', element: <Navigate to="/app/superuser/model-roles" replace /> },
+              { path: 'mcp', element: <Navigate to="/app/superuser/mcp" replace /> },
+              { path: 'connections', element: <Navigate to="/app/superuser/connections" replace /> },
               { path: 'grid-sample', element: <SettingsGridSample /> },
               { path: 'admin', element: <Navigate to="/app/superuser/instance-config" replace /> },
               { path: 'admin/:category', element: <LegacySettingsAdminRedirect /> },
@@ -204,8 +216,8 @@ export const router = createBrowserRouter([
             path: '/app/onboarding/agents/connect/:agentSlug/:authMethod',
             element: featureFlags.agentsConfigUI ? <AgentOnboardingConnect /> : <Navigate to="/app/settings" replace />,
           },
-          // /app/mcp removed — MCP now lives at /app/settings/mcp
-          { path: '/app/mcp', element: <Navigate to="/app/settings/mcp" replace /> },
+          // /app/mcp removed — MCP now lives at /app/superuser/mcp
+          { path: '/app/mcp', element: <Navigate to="/app/superuser/mcp" replace /> },
           {
             path: '/app/commands',
             element: featureFlags.commandsUI ? <Commands /> : <Navigate to="/app/settings" replace />,
@@ -231,6 +243,11 @@ export const router = createBrowserRouter([
               { path: 'api-endpoints', lazy: () => import('@/pages/superuser/SuperuserApiEndpoints') },
               { path: 'test-integrations', lazy: () => import('@/pages/superuser/TestIntegrations') },
               { path: 'design-layout-captures', lazy: () => import('@/pages/superuser/DesignLayoutCaptures') },
+              { path: 'ai-providers', element: <SettingsAiOverview /> },
+              { path: 'ai-providers/:providerId', element: <SettingsProviderForm /> },
+              { path: 'model-roles', element: <SettingsModelRoles /> },
+              { path: 'connections', element: <ConnectionsPanel /> },
+              { path: 'mcp', element: <McpServers /> },
             ],
           },
         ],

@@ -14,15 +14,18 @@ describe('nav-config side rail', () => {
     const paths = ALL_TOP_LEVEL_ITEMS.map((item) => item.path);
 
     expect(paths).toContain('/app/assets');
+    expect(paths).toContain('/app/knowledge-bases');
+    expect(paths).toContain('/app/onboarding/agents');
     expect(paths).toContain('/app/parse');
     expect(paths).toContain('/app/extract');
     expect(paths).toContain('/app/rag');
     expect(paths).toContain('/app/flows');
     expect(paths).toContain('/app/database');
+    expect(paths).toContain('/app/secrets');
+    expect(paths).toContain('/app/logs');
     expect(paths).toContain('/app/settings');
     expect(paths).not.toContain('/app/elt');
     expect(paths).not.toContain('/app/executions');
-    expect(paths).not.toContain('/app/logs');
     expect(paths).not.toContain('/app/namespaces');
     expect(paths).not.toContain('/app/plugins');
     expect(paths).not.toContain('/app/blueprints');
@@ -39,10 +42,13 @@ describe('nav-config side rail', () => {
 
     expect(paths).toContain('/app/extract');
     expect(paths).toContain('/app/transform');
+    expect(paths).toContain('/app/knowledge-bases');
+    expect(paths).toContain('/app/onboarding/agents');
     expect(paths).toContain('/app/schemas');
     expect(paths).toContain('/app/api-editor');
     expect(paths).toContain('/app/marketplace/integrations');
     expect(paths).toContain('/app/marketplace/services');
+    expect(paths).toContain('/app/secrets');
     expect(paths).toContain('/app/tests');
     expect(paths).not.toContain('/app/docs');
   });
@@ -87,12 +93,30 @@ describe('nav-config side rail', () => {
     expect(drillIds).toContain('flows');
     expect(drillIds).toContain('settings');
   });
+
+  it('keeps Assets label aligned across classic and pipeline nav', () => {
+    const classicAssets = TOP_LEVEL_NAV.find((entry) => entry !== 'divider' && entry.path === '/app/assets');
+    const activeAssets = ALL_TOP_LEVEL_ITEMS.filter((item) => item.path === '/app/assets').map((item) => item.label);
+
+    expect(classicAssets && classicAssets !== 'divider' ? classicAssets.label : null).toBe('Assets');
+    expect(activeAssets).toContain('Assets');
+    expect(activeAssets).not.toContain('Aggregate Sources');
+  });
+
+  it('exposes Agent Onboarding in classic view', () => {
+    const classicOnboarding = TOP_LEVEL_NAV.find(
+      (entry) => entry !== 'divider' && entry.path === '/app/onboarding/agents',
+    );
+
+    expect(classicOnboarding && classicOnboarding !== 'divider' ? classicOnboarding.label : null).toBe('Agent Onboarding');
+  });
 });
 
 describe('drill configs', () => {
   it('has configs for flows and settings', () => {
     expect(getDrillConfig('flows')).toBeDefined();
     expect(getDrillConfig('settings')).toBeDefined();
+    expect(getDrillConfig('observability')).toBeDefined();
     expect(getDrillConfig('nonexistent')).toBeUndefined();
   });
 
@@ -115,11 +139,63 @@ describe('drill configs', () => {
     expect(sectionLabels).toContain('Operations');
   });
 
+  it('exposes secrets in classic view', () => {
+    const classicSecrets = TOP_LEVEL_NAV.find(
+      (entry) => entry !== 'divider' && entry.path === '/app/secrets',
+    );
+
+    expect(classicSecrets && classicSecrets !== 'divider' ? classicSecrets.label : null).toBe('Secrets');
+  });
+
+  it('observability drill exposes logs', () => {
+    const observability = getDrillConfig('observability')!;
+    const labels = observability.sections.flatMap((section) => section.items.map((item) => item.label));
+    const paths = observability.sections.flatMap((section) => section.items.map((item) => item.path));
+
+    expect(labels).toContain('Logs');
+    expect(paths).toContain('/app/logs');
+  });
+
+  it('build ai drill omits integration options', () => {
+    const buildAi = getDrillConfig('build-ai')!;
+    const labels = buildAi.sections.flatMap((section) => section.items.map((item) => item.label));
+    const paths = buildAi.sections.flatMap((section) => section.items.map((item) => item.path));
+
+    expect(labels).toContain('Agent Onboarding');
+    expect(paths).toContain('/app/onboarding/agents');
+    expect(labels).not.toContain('Integration Options');
+    expect(paths).not.toContain('/app/agents');
+  });
+
+  it('workbench drill exposes transform', () => {
+    const workbench = getDrillConfig('workbench')!;
+    const labels = workbench.sections.flatMap((section) => section.items.map((item) => item.label));
+    const paths = workbench.sections.flatMap((section) => section.items.map((item) => item.path));
+
+    expect(labels).toContain('Transform');
+    expect(paths).toContain('/app/transform');
+    expect(labels).toContain('Secrets');
+    expect(paths).toContain('/app/secrets');
+  });
+
+  it('settings drill does not include admin/superuser links', () => {
+    const settings = getDrillConfig('settings')!;
+    const allPaths = settings.sections.flatMap((s) => s.items.map((item) => item.path));
+
+    expect(allPaths.some((path) => path.startsWith('/app/superuser'))).toBe(false);
+  });
+
   it('findDrillByRoute matches correctly', () => {
     expect(findDrillByRoute('/app/flows/abc/edit')?.id).toBe('flows');
     expect(findDrillByRoute('/app/flows')).toBeNull();
     expect(findDrillByRoute('/app/settings/profile')?.id).toBe('settings');
     expect(findDrillByRoute('/app/settings')?.id).toBe('settings');
+    expect(findDrillByRoute('/app/onboarding/agents/select')?.id).toBe('build-ai');
+    expect(findDrillByRoute('/app/onboarding/agents')?.id).toBe('build-ai');
+    expect(findDrillByRoute('/app/agents')?.id).toBe('build-ai');
+    expect(findDrillByRoute('/app/secrets')?.id).toBe('workbench');
+    expect(findDrillByRoute('/app/logs')?.id).toBe('observability');
+    expect(findDrillByRoute('/app/transform')?.id).toBe('workbench');
     expect(findDrillByRoute('/app/elt')).toBeNull();
     expect(findDrillByRoute('/app/database')).toBeNull();
   });

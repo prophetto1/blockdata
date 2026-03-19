@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Select as ArkSelect, createListCollection } from '@ark-ui/react/select';
 import { Portal } from '@ark-ui/react/portal';
 import { supabase } from '@/lib/supabase';
@@ -516,7 +515,6 @@ export function Component() {
 export function DoclingConfigPanel() {
   useShellHeaderTitle({ title: 'Profiles', breadcrumbs: ['Settings', 'Admin', 'Docling', 'Profiles'] });
 
-  const navigate = useNavigate();
   const [profiles, setProfiles] = useState<ParsingProfile[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [editConfig, setEditConfig] = useState<DoclingConfig | null>(null);
@@ -702,27 +700,7 @@ export function DoclingConfigPanel() {
 
 
   return (
-    <div className="flex h-full min-h-0 overflow-hidden">
-      <nav className="w-56 shrink-0 border-r border-border">
-        <div className="p-2">
-          <button
-            type="button"
-            className="flex w-full items-center rounded-md bg-accent px-2.5 py-1.5 text-sm font-medium text-accent-foreground"
-            aria-current="page"
-          >
-            Profiles
-          </button>
-          <button
-            type="button"
-            className="mt-1 flex w-full items-center rounded-md px-2.5 py-1.5 text-sm text-muted-foreground transition hover:bg-accent/50 hover:text-foreground"
-            onClick={() => navigate('/app/superuser/document-views')}
-          >
-            Block Types
-          </button>
-        </div>
-      </nav>
-
-      <div className="min-w-0 flex flex-1 flex-col overflow-hidden">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden">
         {error && (
           <div className="border-b border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-700 dark:text-red-300">
             {error}
@@ -846,7 +824,6 @@ export function DoclingConfigPanel() {
             No profiles. Click "Add Profile" to create one.
           </div>
         )}
-      </div>
     </div>
   );
 }

@@ -5,8 +5,11 @@ import {
   IconClipboardList,
   IconCode,
   IconTestPipe,
-  IconFileText,
   IconCamera,
+  IconKey,
+  IconWand,
+  IconDatabase,
+  IconPlugConnected,
   type Icon,
 } from '@tabler/icons-react';
 
@@ -31,9 +34,12 @@ export const NAV_SECTIONS: AdminNavSection[] = [
     ],
   },
   {
-    label: 'DATA',
+    label: 'OPERATIONS',
     items: [
-      { label: 'Document Views', icon: IconFileText, path: '/app/superuser/document-views' },
+      { label: 'AI Providers', icon: IconKey, path: '/app/superuser/ai-providers' },
+      { label: 'Model Roles', icon: IconWand, path: '/app/superuser/model-roles' },
+      { label: 'Connections', icon: IconDatabase, path: '/app/superuser/connections' },
+      { label: 'MCP Servers', icon: IconPlugConnected, path: '/app/superuser/mcp' },
     ],
   },
   {
@@ -128,10 +134,11 @@ export function AdminLeftNav() {
               <p className="mb-1.5 px-2.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-sidebar-foreground/45">
                 {section.label}
               </p>
-              {section.items.map((item) => {
+              {section.items.map((item, idx) => {
                 const isHash = item.href.startsWith('#');
+                const firstHashIdx = section.items.findIndex((i) => i.href.startsWith('#'));
                 const isActive = isHash
-                  ? hash === item.href
+                  ? hash ? hash === item.href : idx === firstHashIdx
                   : pathname === item.href || pathname.startsWith(item.href + '/');
 
                 return (
