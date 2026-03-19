@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env node
+#!/usr/bin/env node
 
 import fs from "node:fs";
 import path from "node:path";
@@ -33,13 +33,34 @@ function ensureDir(dirPath) {
 
 function readCaptures() {
   if (!fs.existsSync(capturesJsonPath)) return [];
-  const captures = JSON.parse(fs.readFileSync(capturesJsonPath, "utf8"));
+  const raw = fs.readFileSync(capturesJsonPath, "utf8");
+  const trimmed = String(raw).trim();
+  let capturesJsonText = trimmed;
+  let captures;
+
+  try {
+    captures = JSON.parse(capturesJsonText);
+  } catch (error) {
+    // Backward-compatibility repair for accidental writes that stored escaped newlines
+    // as literal "\\n" characters (for example `[]\\n`), which breaks JSON.parse.
+    while (capturesJsonText.endsWith("\\n")) {
+      capturesJsonText = capturesJsonText.slice(0, -2);
+    }
+    try {
+      captures = JSON.parse(capturesJsonText);
+      console.warn(`[capture] Repaired captures.json after detecting escaped newline corruption at ${capturesJsonPath}`);
+      writeCaptures(captures);
+    } catch {
+      throw new Error(`Invalid captures.json: ${(error && error.message) || "Unknown JSON parse error"}`);
+    }
+  }
+
   return captures.map((entry) => ({
     ...entry,
     outputDir: typeof entry.outputDir === "string" ? entry.outputDir.replace(/\\/g, "/") : entry.outputDir,
     status:
       entry.status === "complete" &&
-      (typeof entry.outputDir !== "string" || !fs.existsSync(path.join(capturesRoot, entry.outputDir.replace(/\\/g, "/"))))
+      (typeof entry.outputDir !== "string" || !fs.existsSync(path.join(capturesRoot, entry.outputDir.replace(/\\/g, "/")))
         ? "failed"
         : entry.status,
   }));
@@ -282,7 +303,7 @@ async function launchAuthContext(playwright, width, height) {
 }
 
 /* ------------------------------------------------------------------ */
-/*  Auth sessions â€” headed browser kept open for manual login          */
+/*  Auth sessions — headed browser kept open for manual login          */
 /* ------------------------------------------------------------------ */
 
 // Map<captureId, { context, page, storageStatePath, cleanup, tempProfileRoot?, entry }>
@@ -301,7 +322,7 @@ async function startAuthSession(id, entry, targetUrl, storageStatePath, width, h
     tempProfileRoot,
     entry,
   });
-  console.log(`[auth] Headed browser opened for ${targetUrl} â€” waiting for login`);
+  console.log(`[auth] Headed browser opened for ${targetUrl} — waiting for login`);
 }
 
 async function completeAuthSession(id) {
@@ -440,7 +461,7 @@ async function startCapture(body) {
 
 async function runCapture(id, entry, options) {
   updateCaptureStatus(id, "capturing");
-  console.log(`[capture] Starting ${id} â†’ ${options.url} at ${options.width}x${options.height} theme=${options.theme}`);
+  console.log(`[capture] Starting ${id} → ${options.url} at ${options.width}x${options.height} theme=${options.theme}`);
 
   try {
     const mod = await loadMeasureModule();
@@ -493,13 +514,13 @@ async function handleRequest(req, res) {
   }
 
   try {
-    // GET /captures â€” list all
+    // GET /captures — list all
     if (method === "GET" && pathname === "/captures") {
       sendJson(res, 200, readCaptures());
       return;
     }
 
-    // POST /capture â€” start new capture
+    // POST /capture — start new capture
     if (method === "POST" && pathname === "/capture") {
       const body = await readBody(req);
       const result = await startCapture(body);
@@ -507,7 +528,7 @@ async function handleRequest(req, res) {
       return;
     }
 
-    // POST /captures/delete â€” remove capture and artifacts
+    // POST /captures/delete — remove capture and artifacts
     if (method === "POST" && pathname === "/captures/delete") {
       const body = await readBody(req);
       const id = body?.id;
@@ -524,7 +545,7 @@ async function handleRequest(req, res) {
       return;
     }
 
-    // POST /captures/:id/delete â€” remove capture and artifacts
+    // POST /captures/:id/delete — remove capture and artifacts
     if (method === "POST") {
       const deleteMatch = pathname.match(/^\/captures\/(.+)\/delete\/?$/);
       if (deleteMatch) {
@@ -539,7 +560,7 @@ async function handleRequest(req, res) {
       }
     }
 
-    // DELETE /captures/:id â€” remove capture and artifacts
+    // DELETE /captures/:id — remove capture and artifacts
     if (method === "DELETE" && pathname.startsWith("/captures/")) {
       const id = decodeURIComponent(pathname.slice("/captures/".length));
       const deleted = await deleteCapture(id);
@@ -551,7 +572,7 @@ async function handleRequest(req, res) {
       return;
     }
 
-    // POST /auth-complete â€” user finished login in headed browser
+    // POST /auth-complete — user finished login in headed browser
     if (method === "POST" && pathname === "/auth-complete") {
       const body = await readBody(req);
       const { id } = body;
@@ -584,7 +605,7 @@ async function handleRequest(req, res) {
       return;
     }
 
-    // GET /status/:id â€” check single capture
+    // GET /status/:id — check single capture
     if (method === "GET" && pathname.startsWith("/status/")) {
       const id = decodeURIComponent(pathname.slice("/status/".length));
       const captures = readCaptures();
@@ -597,7 +618,7 @@ async function handleRequest(req, res) {
       return;
     }
 
-    // GET /files/* â€” serve captured files (screenshots, reports)
+    // GET /files/* — serve captured files (screenshots, reports)
     if (method === "GET" && pathname.startsWith("/files/")) {
       const designLayoutsDir = path.join(repoRoot, "docs", "design-layouts");
       const relativePath = decodeURIComponent(pathname.slice("/files/".length));
@@ -645,11 +666,11 @@ async function handleRequest(req, res) {
 const server = http.createServer(handleRequest);
 server.listen(PORT, () => {
   console.log(`\nCapture server running on http://localhost:${PORT}`);
-  console.log(`  GET  /captures        â€” list all captures`);
-  console.log(`  POST /capture         â€” start new { url, width, height, theme, pageType }`);
-  console.log(`  POST /captures/delete â€” remove capture and artifacts (payload id)`);
-  console.log(`  POST /captures/:id/delete â€” remove capture and artifacts`);
-  console.log(`  DELETE /captures/:id    â€” remove capture and artifacts (legacy)`);
-  console.log(`  POST /auth-complete  â€” signal login done { id }`);
-  console.log(`  GET  /status/:id      â€” check one capture\n`);
+  console.log(`  GET  /captures        — list all captures`);
+  console.log(`  POST /capture         — start new { url, width, height, theme, pageType }`);
+  console.log(`  POST /captures/delete — remove capture and artifacts (payload id)`);
+  console.log(`  POST /captures/:id/delete — remove capture and artifacts`);
+  console.log(`  DELETE /captures/:id    — remove capture and artifacts (legacy)`);
+  console.log(`  POST /auth-complete  — signal login done { id }`);
+  console.log(`  GET  /status/:id      — check one capture\n`);
 });
