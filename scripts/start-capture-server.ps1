@@ -28,24 +28,13 @@ New-Item -ItemType Directory -Force -Path $logDir | Out-Null
 
 $listeners = Get-CaptureServerListeners
 
-foreach ($processId in $listeners) {
-  if ($processId) {
-    Stop-Process -Id $processId -Force -ErrorAction SilentlyContinue
-  }
-}
-
-Start-Sleep -Milliseconds 500
-
-$portStillOpen = Test-NetConnection -ComputerName "localhost" -Port 4488 -InformationLevel Quiet -WarningAction SilentlyContinue
-
-if ($portStillOpen) {
-  $remaining = Get-CaptureServerListeners
-  $pidList = if ($remaining) {
-    ($remaining | ForEach-Object { "$_" }) -join ", "
+if ($listeners) {
+  $pidList = if ($listeners) {
+    ($listeners | ForEach-Object { "$_" }) -join ", "
   } else {
     "unknown"
   }
-  Write-Error "Capture server is still bound to port 4488 by PID(s): $pidList. Stop that process, then re-run scripts/start-capture-server.ps1."
+  Write-Error "Port 4488 is already in use by PID(s): $pidList. Stop the existing capture server, then re-run scripts/start-capture-server.ps1."
   exit 1
 }
 
@@ -59,9 +48,22 @@ try {
 
 Start-Sleep -Seconds 2
 
-$portNowOpen = Test-NetConnection -ComputerName "localhost" -Port 4488 -InformationLevel Quiet -WarningAction SilentlyContinue
-if (-not $portNowOpen) {
-  Write-Error "Capture server launch command returned, but localhost:4488 is still unavailable. Check $stderrPath for startup errors."
+$ready = $false
+for ($i = 0; $i -lt 10; $i++) {
+  Start-Sleep -Milliseconds 500
+  try {
+    $response = Invoke-WebRequest -Uri "http://localhost:4488/captures" -UseBasicParsing -TimeoutSec 2
+    if ($response.StatusCode -ge 200 -and $response.StatusCode -lt 500) {
+      $ready = $true
+      break
+    }
+  } catch {
+    # Keep polling until timeout.
+  }
+}
+
+if (-not $ready) {
+  Write-Error "Capture server launch command returned, but http://localhost:4488/captures did not become ready. Check $stderrPath for startup errors."
   exit 1
 }
 
