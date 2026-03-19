@@ -29,7 +29,9 @@ third_party/meta-configurator/meta_configurator/NUL
 
 # GCP service account keys (never commit)
 docs/test-keys/
-docs/jon/test-keys/*.json
+
+# Personal docs (Jon)
+docs/jon/
 
 # OS generated files
 .DS_Store
