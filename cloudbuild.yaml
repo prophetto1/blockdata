@@ -5,7 +5,7 @@ steps:
       - '-t'
       - '$_IMAGE_NAME'
       - '-f'
-      - 'services/platform-api/Dockerfile'
-      - 'services/platform-api'
+      - 'docker/platform-api/Dockerfile'
+      - 'docker/platform-api'
 images:
   - '$_IMAGE_NAME'

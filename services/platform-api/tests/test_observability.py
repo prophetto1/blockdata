@@ -67,6 +67,7 @@ def _make_settings(**overrides) -> Settings:
         "otel_log_correlation": True,
         "otel_metrics_enabled": True,
         "otel_logs_enabled": True,
+        "signoz_ui_url": "http://localhost:8080",
         "jaeger_ui_url": "http://localhost:16686",
     }
     defaults.update(overrides)
@@ -133,7 +134,22 @@ def test_get_telemetry_status_shape():
     assert status["otlp_endpoint"] == "http://localhost:4318"
     assert status["metrics_enabled"] is True
     assert status["logs_enabled"] is True
+    assert status["signoz_ui_url"] == "http://localhost:8080"
+    assert status["jaeger_ui_url"] == "http://localhost:16686"
+    assert "signoz_ui_url" in status
     assert "jaeger_ui_url" in status
+
+
+def test_telemetry_status_returns_signoz_ui_url_and_deprecated_alias():
+    status = get_telemetry_status(
+        _make_settings(
+            otel_enabled=True,
+            signoz_ui_url="http://localhost:8080",
+            jaeger_ui_url="http://localhost:16686",
+        )
+    )
+    assert status["signoz_ui_url"] == "http://localhost:8080"
+    assert status["jaeger_ui_url"] == "http://localhost:16686"
 
 
 # --- Task 5: Manual span tests ---
@@ -215,6 +231,7 @@ def test_telemetry_status_returns_shape_for_superuser(monkeypatch):
         assert "otlp_endpoint" in body
         assert "sampler" in body
         assert "log_correlation" in body
+        assert "signoz_ui_url" in body
         assert "jaeger_ui_url" in body
     get_settings.cache_clear()
 

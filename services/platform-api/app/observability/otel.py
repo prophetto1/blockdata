@@ -133,6 +133,7 @@ def get_telemetry_status(settings: Settings) -> dict[str, object]:
         "log_correlation": settings.otel_log_correlation,
         "metrics_enabled": settings.otel_metrics_enabled,
         "logs_enabled": settings.otel_logs_enabled,
+        "signoz_ui_url": settings.signoz_ui_url,
         "jaeger_ui_url": settings.jaeger_ui_url,
     }
 

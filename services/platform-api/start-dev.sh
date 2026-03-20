@@ -18,7 +18,8 @@ echo "SUPABASE_URL:  $SUPABASE_URL"
 echo "LOG_LEVEL:     ${LOG_LEVEL:-INFO}"
 echo "OTEL_ENABLED:  ${OTEL_ENABLED:-false}"
 echo "OTEL_OTLP:     ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://localhost:4318}"
-echo "JAEGER_UI_URL: ${JAEGER_UI_URL:-http://localhost:16686}"
+echo "SIGNOZ_UI_URL: ${SIGNOZ_UI_URL:-http://localhost:8080}"
+echo "JAEGER_UI_URL: ${JAEGER_UI_URL:-http://localhost:16686} (deprecated)"
 echo "==========================="
 
 exec python3 -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload

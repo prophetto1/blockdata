@@ -43,6 +43,7 @@ class Settings:
     otel_log_correlation: bool = True
     otel_metrics_enabled: bool = True
     otel_logs_enabled: bool = True
+    signoz_ui_url: str = "http://localhost:8080"
     jaeger_ui_url: str = "http://localhost:16686"
 
     @classmethod
@@ -69,6 +70,8 @@ class Settings:
             otel_log_correlation=_env_bool("OTEL_LOG_CORRELATION", True),
             otel_metrics_enabled=_env_bool("OTEL_METRICS_ENABLED", True),
             otel_logs_enabled=_env_bool("OTEL_LOGS_ENABLED", True),
+            signoz_ui_url=os.environ.get("SIGNOZ_UI_URL", "http://localhost:8080"),
+            # Keep JAEGER_UI_URL as a compatibility alias for one migration pass.
             jaeger_ui_url=os.environ.get("JAEGER_UI_URL", "http://localhost:16686"),
         )
 
