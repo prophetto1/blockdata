@@ -138,6 +138,10 @@ def create_app() -> FastAPI:
     from app.api.routes.storage import router as storage_router
     app.include_router(storage_router)
 
+    # 5f. Observability endpoints (superuser, before plugin catch-all)
+    from app.api.routes.telemetry import router as telemetry_router
+    app.include_router(telemetry_router)
+
     # 6. Plugin catch-all MUST be last
     from app.api.routes.plugin_execution import router as plugin_router
     app.include_router(plugin_router)

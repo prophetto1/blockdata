@@ -160,6 +160,54 @@ def test_plugin_execute_creates_span(monkeypatch):
     get_settings.cache_clear()
 
 
+# --- Task 6: Telemetry status endpoint tests ---
+
+
+def test_telemetry_status_rejects_no_auth(monkeypatch):
+    """GET /observability/telemetry-status without auth returns 401."""
+    monkeypatch.setenv("CONVERSION_SERVICE_KEY", "test-key")
+    monkeypatch.setenv("SUPABASE_URL", "http://localhost:54321")
+    monkeypatch.setenv("SUPABASE_SERVICE_ROLE_KEY", "fake-key")
+    get_settings.cache_clear()
+
+    from app.main import create_app
+    from fastapi.testclient import TestClient
+    app = create_app()
+    with TestClient(app) as c:
+        resp = c.get("/observability/telemetry-status")
+        assert resp.status_code == 401
+    get_settings.cache_clear()
+
+
+def test_telemetry_status_returns_shape_for_superuser(monkeypatch):
+    """Superuser (M2M bearer) gets 200 with expected payload shape."""
+    monkeypatch.setenv("CONVERSION_SERVICE_KEY", "test-key")
+    monkeypatch.setenv("SUPABASE_URL", "http://localhost:54321")
+    monkeypatch.setenv("SUPABASE_SERVICE_ROLE_KEY", "fake-key")
+    get_settings.cache_clear()
+
+    from app.main import create_app
+    from fastapi.testclient import TestClient
+    app = create_app()
+    with TestClient(app) as c:
+        resp = c.get(
+            "/observability/telemetry-status",
+            headers={"Authorization": "Bearer test-key"},
+        )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert "enabled" in body
+        assert "service_name" in body
+        assert "otlp_endpoint" in body
+        assert "sampler" in body
+        assert "log_correlation" in body
+        assert "jaeger_ui_url" in body
+    get_settings.cache_clear()
+
+
+# --- Task 5: Manual span tests (continued) ---
+
+
 def test_span_records_exception_on_plugin_error(monkeypatch):
     """Error path records exception metadata on the span safely."""
     from unittest.mock import MagicMock, patch, AsyncMock
