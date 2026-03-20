@@ -1,6 +1,4 @@
-"""Platform API — unified FastAPI service for BlockData."""
-
-import logging
+﻿import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -9,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.domain.plugins.registry import discover_plugins, FUNCTION_NAME_MAP
 from app.core.reserved_routes import check_collisions
 from app.workers.conversion_pool import init_pool, shutdown_pool
+from app.workers.storage_cleanup import start_storage_cleanup_worker, stop_storage_cleanup_worker
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
 logger = logging.getLogger("platform-api")
@@ -26,15 +25,19 @@ def create_app() -> FastAPI:
         pool = init_pool()
         logger.info(f"Conversion pool: {pool.status()}")
 
+        # Start storage cleanup worker
+        start_storage_cleanup_worker()
+
         yield
 
-        # Shutdown conversion pool gracefully
+        # Shutdown background workers gracefully
+        stop_storage_cleanup_worker()
         shutdown_pool()
         logger.info("Conversion pool shut down.")
 
     app = FastAPI(title="Platform API", lifespan=lifespan)
 
-    # Auth middleware for /convert and /citations — runs BEFORE body parsing
+    # Auth middleware for /convert and /citations â€” runs BEFORE body parsing
     from app.auth.middleware import AuthBeforeBodyMiddleware
     app.add_middleware(AuthBeforeBodyMiddleware)
 
@@ -85,7 +88,7 @@ def create_app() -> FastAPI:
         from app.api.routes.parse import router as parse_router
         app.include_router(parse_router)
     except ImportError as e:
-        logger.warning(f"Parse route disabled — missing dependency: {e}")
+        logger.warning(f"Parse route disabled â€” missing dependency: {e}")
 
     # 5e. Storage quota and uploads (user-scoped, before plugin catch-all)
     from app.api.routes.storage import router as storage_router

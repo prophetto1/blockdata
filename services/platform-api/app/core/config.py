@@ -23,6 +23,7 @@ class Settings:
     log_level: str = "INFO"
     gcs_user_storage_bucket: Optional[str] = None
     user_storage_max_file_bytes: int = 1073741824  # 1 GB
+    storage_cleanup_interval_seconds: int = 300
 
     @classmethod
     def from_env(cls) -> "Settings":
@@ -36,6 +37,7 @@ class Settings:
             log_level=os.environ.get("LOG_LEVEL", "INFO"),
             gcs_user_storage_bucket=_env_or_none("GCS_USER_STORAGE_BUCKET"),
             user_storage_max_file_bytes=int(os.environ.get("USER_STORAGE_MAX_FILE_BYTES", "1073741824")),
+            storage_cleanup_interval_seconds=int(os.environ.get("STORAGE_CLEANUP_INTERVAL_SECONDS", "300")),
         )
 
 
