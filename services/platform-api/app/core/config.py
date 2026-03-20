@@ -41,6 +41,8 @@ class Settings:
     otel_traces_sampler: str = "parentbased_traceidratio"
     otel_traces_sampler_arg: float = 1.0
     otel_log_correlation: bool = True
+    otel_metrics_enabled: bool = True
+    otel_logs_enabled: bool = True
     jaeger_ui_url: str = "http://localhost:16686"
 
     @classmethod
@@ -65,6 +67,8 @@ class Settings:
             otel_traces_sampler=os.environ.get("OTEL_TRACES_SAMPLER", "parentbased_traceidratio"),
             otel_traces_sampler_arg=float(os.environ.get("OTEL_TRACES_SAMPLER_ARG", "1.0")),
             otel_log_correlation=_env_bool("OTEL_LOG_CORRELATION", True),
+            otel_metrics_enabled=_env_bool("OTEL_METRICS_ENABLED", True),
+            otel_logs_enabled=_env_bool("OTEL_LOGS_ENABLED", True),
             jaeger_ui_url=os.environ.get("JAEGER_UI_URL", "http://localhost:16686"),
         )
 

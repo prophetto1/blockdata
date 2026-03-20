@@ -41,6 +41,16 @@ def test_otel_log_correlation_override(monkeypatch):
     get_settings.cache_clear()
 
 
+def test_otel_signal_exports_parse_env_flags(monkeypatch):
+    monkeypatch.setenv("OTEL_METRICS_ENABLED", "false")
+    monkeypatch.setenv("OTEL_LOGS_ENABLED", "false")
+    get_settings.cache_clear()
+    settings = get_settings()
+    assert settings.otel_metrics_enabled is False
+    assert settings.otel_logs_enabled is False
+    get_settings.cache_clear()
+
+
 # --- Task 3: Bootstrap tests ---
 
 
@@ -55,6 +65,8 @@ def _make_settings(**overrides) -> Settings:
         "otel_traces_sampler": "parentbased_traceidratio",
         "otel_traces_sampler_arg": 1.0,
         "otel_log_correlation": True,
+        "otel_metrics_enabled": True,
+        "otel_logs_enabled": True,
         "jaeger_ui_url": "http://localhost:16686",
     }
     defaults.update(overrides)
@@ -119,6 +131,8 @@ def test_get_telemetry_status_shape():
     assert status["enabled"] is True
     assert status["service_name"] == "test-svc"
     assert status["otlp_endpoint"] == "http://localhost:4318"
+    assert status["metrics_enabled"] is True
+    assert status["logs_enabled"] is True
     assert "jaeger_ui_url" in status
 
 
