@@ -14,6 +14,13 @@ def _env_or_none(name: str) -> Optional[str]:
     return value or None
 
 
+def _env_bool(name: str, default: bool = False) -> bool:
+    value = os.environ.get(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "y", "on"}
+
+
 @dataclass(frozen=True)
 class Settings:
     supabase_url: Optional[str] = None
@@ -24,6 +31,17 @@ class Settings:
     gcs_user_storage_bucket: Optional[str] = None
     user_storage_max_file_bytes: int = 1073741824  # 1 GB
     storage_cleanup_interval_seconds: int = 300
+    # OpenTelemetry settings
+    otel_enabled: bool = False
+    otel_service_name: str = "platform-api"
+    otel_service_namespace: str = "blockdata"
+    otel_deployment_env: str = "local"
+    otel_exporter_otlp_endpoint: str = "http://localhost:4318"
+    otel_exporter_otlp_protocol: str = "http/protobuf"
+    otel_traces_sampler: str = "parentbased_traceidratio"
+    otel_traces_sampler_arg: float = 1.0
+    otel_log_correlation: bool = True
+    jaeger_ui_url: str = "http://localhost:16686"
 
     @classmethod
     def from_env(cls) -> "Settings":
@@ -38,6 +56,16 @@ class Settings:
             gcs_user_storage_bucket=_env_or_none("GCS_USER_STORAGE_BUCKET"),
             user_storage_max_file_bytes=int(os.environ.get("USER_STORAGE_MAX_FILE_BYTES", "1073741824")),
             storage_cleanup_interval_seconds=int(os.environ.get("STORAGE_CLEANUP_INTERVAL_SECONDS", "300")),
+            otel_enabled=_env_bool("OTEL_ENABLED", False),
+            otel_service_name=os.environ.get("OTEL_SERVICE_NAME", "platform-api"),
+            otel_service_namespace=os.environ.get("OTEL_SERVICE_NAMESPACE", "blockdata"),
+            otel_deployment_env=os.environ.get("OTEL_DEPLOYMENT_ENV", "local"),
+            otel_exporter_otlp_endpoint=os.environ.get("OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:4318"),
+            otel_exporter_otlp_protocol=os.environ.get("OTEL_EXPORTER_OTLP_PROTOCOL", "http/protobuf"),
+            otel_traces_sampler=os.environ.get("OTEL_TRACES_SAMPLER", "parentbased_traceidratio"),
+            otel_traces_sampler_arg=float(os.environ.get("OTEL_TRACES_SAMPLER_ARG", "1.0")),
+            otel_log_correlation=_env_bool("OTEL_LOG_CORRELATION", True),
+            jaeger_ui_url=os.environ.get("JAEGER_UI_URL", "http://localhost:16686"),
         )
 
 
