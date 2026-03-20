@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-03-19T23:05:14.915Z",
+  "generatedAt": "2026-03-20T15:30:04.522Z",
   "scope": "auth",
   "pages": [
     {
@@ -1287,6 +1287,99 @@
           "definition": "Link comes from react-router-dom (named import of Link)"
         }
       ]
+    },
+    {
+      "page": "src/pages/observability/ObservabilityIndexRedirect.tsx",
+      "componentCount": 1,
+      "categoryCounts": {
+        "external-package": 1
+      },
+      "components": [
+        {
+          "component": "Navigate",
+          "usedAs": "Navigate",
+          "source": "react-router-dom",
+          "importKind": "named",
+          "importedAs": "Navigate",
+          "category": "external-package",
+          "definition": "Navigate comes from react-router-dom (named import of Navigate)"
+        }
+      ]
+    },
+    {
+      "page": "src/pages/observability/ObservabilityLayout.tsx",
+      "componentCount": 2,
+      "categoryCounts": {
+        "external-package": 2
+      },
+      "components": [
+        {
+          "component": "Link",
+          "usedAs": "Link",
+          "source": "react-router-dom",
+          "importKind": "named",
+          "importedAs": "Link",
+          "category": "external-package",
+          "definition": "Link comes from react-router-dom (named import of Link)"
+        },
+        {
+          "component": "Outlet",
+          "usedAs": "Outlet",
+          "source": "react-router-dom",
+          "importKind": "named",
+          "importedAs": "Outlet",
+          "category": "external-package",
+          "definition": "Outlet comes from react-router-dom (named import of Outlet)"
+        }
+      ]
+    },
+    {
+      "page": "src/pages/observability/ObservabilityLogsPage.tsx",
+      "componentCount": 0,
+      "categoryCounts": {},
+      "components": []
+    },
+    {
+      "page": "src/pages/observability/ObservabilityTraceDetailPage.tsx",
+      "componentCount": 1,
+      "categoryCounts": {
+        "local-components": 1
+      },
+      "components": [
+        {
+          "component": "TraceDetailsPanel",
+          "usedAs": "TraceDetailsPanel",
+          "source": "@/components/observability/TraceDetailsPanel",
+          "importKind": "named",
+          "importedAs": "TraceDetailsPanel",
+          "category": "local-components",
+          "definition": "TraceDetailsPanel comes from @/components/observability/TraceDetailsPanel (named import of TraceDetailsPanel)"
+        }
+      ]
+    },
+    {
+      "page": "src/pages/observability/ObservabilityTracesPage.tsx",
+      "componentCount": 1,
+      "categoryCounts": {
+        "local-components": 1
+      },
+      "components": [
+        {
+          "component": "TracesTable",
+          "usedAs": "TracesTable",
+          "source": "@/components/observability/TracesTable",
+          "importKind": "named",
+          "importedAs": "TracesTable",
+          "category": "local-components",
+          "definition": "TracesTable comes from @/components/observability/TracesTable (named import of TracesTable)"
+        }
+      ]
+    },
+    {
+      "page": "src/pages/observability/TelemetryStatusPage.tsx",
+      "componentCount": 0,
+      "categoryCounts": {},
+      "components": []
     },
     {
       "page": "src/pages/ParsePage.tsx",
@@ -4237,14 +4330,14 @@
       ]
     }
   ],
-  "totalComponentUsages": 416,
+  "totalComponentUsages": 421,
   "categoryTotals": {
     "local-pages": 1,
-    "local-components": 131,
+    "local-components": 133,
     "tabler-icons": 74,
     "in-file component": 18,
     "ark-ui": 153,
-    "external-package": 18,
+    "external-package": 21,
     "relative-local": 21
   }
 }

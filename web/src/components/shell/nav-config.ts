@@ -259,14 +259,14 @@ const OBSERVABILITY_DRILL: NavDrillConfig = {
   id: 'observability',
   parentLabel: 'Observability',
   parentPath: '/app/observability',
-  routePrefix: '/app/__observability__',
+  routePrefix: '/app/observability/',
   sections: [
     {
       label: 'Observability',
       items: [
         { label: 'Telemetry', icon: IconActivity, path: '/app/observability/telemetry' },
         { label: 'Traces', icon: IconArrowsShuffle, path: '/app/observability/traces' },
-        { label: 'Logs', icon: IconFileText, path: '/app/logs' },
+        { label: 'Logs', icon: IconFileText, path: '/app/observability/logs' },
       ],
     },
   ],
@@ -355,6 +355,7 @@ export const NAV_GROUPS: NavGroup[] = [
     ],
   },
 ];
+
 
 
 

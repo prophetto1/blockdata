@@ -22,7 +22,7 @@ describe('nav-config side rail', () => {
     expect(paths).toContain('/app/flows');
     expect(paths).toContain('/app/database');
     expect(paths).toContain('/app/secrets');
-    expect(paths).toContain('/app/logs');
+    expect(paths).toContain('/app/observability/logs');
     expect(paths).toContain('/app/settings');
     expect(paths).not.toContain('/app/elt');
     expect(paths).not.toContain('/app/executions');
@@ -154,7 +154,7 @@ describe('drill configs', () => {
     const paths = observability.sections.flatMap((section) => section.items.map((item) => item.path));
 
     expect(labels).toContain('Logs');
-    expect(paths).toContain('/app/logs');
+    expect(paths).toContain('/app/observability/logs');
   });
 
   it('build ai drill omits integration options', () => {
@@ -196,7 +196,7 @@ describe('drill configs', () => {
     expect(findDrillByRoute('/app/agents')?.id).toBe('build-ai');
     expect(findDrillByRoute('/app/skills')?.id).toBe('build-ai');
     expect(findDrillByRoute('/app/secrets')?.id).toBe('workbench');
-    expect(findDrillByRoute('/app/logs')?.id).toBe('observability');
+    expect(findDrillByRoute('/app/logs')).toBeNull();
     expect(findDrillByRoute('/app/transform')?.id).toBe('workbench');
     expect(findDrillByRoute('/app/elt')).toBeNull();
     expect(findDrillByRoute('/app/database')?.id).toBe('ingest');
@@ -207,6 +207,7 @@ describe('drill configs', () => {
     expect(resolveFlowDrillPath('overview', 'abc')).toBe('/app/flows/abc/overview');
   });
 });
+
 
 
 
