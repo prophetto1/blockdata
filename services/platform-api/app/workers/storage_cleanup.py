@@ -7,6 +7,10 @@ from typing import Any
 from app.core.config import get_settings
 from app.infra.supabase_client import get_supabase_admin
 
+from opentelemetry import trace
+
+tracer = trace.get_tracer(__name__)
+
 logger = logging.getLogger("platform-api.storage-cleanup")
 
 _cleanup_task: asyncio.Task[None] | None = None
@@ -42,11 +46,15 @@ async def _release_expired_reservations_once() -> int:
 async def _storage_cleanup_loop(interval_seconds: int) -> None:
     assert _cleanup_stop_event is not None
     while not _cleanup_stop_event.is_set():
-        try:
-            released = await _release_expired_reservations_once()
-            logger.info("Released %s expired storage reservations", released)
-        except Exception:
-            logger.exception("Storage cleanup worker failed")
+        with tracer.start_as_current_span("storage_cleanup.run") as span:
+            try:
+                released = await _release_expired_reservations_once()
+                span.set_attribute("released_count", released)
+                logger.info("Released %s expired storage reservations", released)
+            except Exception as e:
+                span.record_exception(e)
+                span.set_attribute("error.type", type(e).__name__)
+                logger.exception("Storage cleanup worker failed")
 
         try:
             await asyncio.wait_for(_cleanup_stop_event.wait(), timeout=interval_seconds)

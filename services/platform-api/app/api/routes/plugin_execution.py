@@ -10,6 +10,10 @@ from app.auth.principals import AuthPrincipal
 from app.domain.plugins.models import PluginOutput, ExecutionContext
 from app.domain.plugins.registry import resolve, resolve_by_function_name
 
+from opentelemetry import trace
+
+tracer = trace.get_tracer(__name__)
+
 logger = logging.getLogger("platform-api")
 
 router = APIRouter(tags=["plugins"])
@@ -33,27 +37,33 @@ async def execute(
     request: PluginRequest,
     auth: AuthPrincipal = Depends(require_auth),
 ) -> PluginResponse:
-    task_type = resolve_by_function_name(function_name)
-    if not task_type:
-        raise HTTPException(404, f"No handler for function: {function_name}")
+    with tracer.start_as_current_span("plugin.execute") as span:
+        span.set_attribute("plugin.name", function_name)
 
-    plugin = resolve(task_type)
-    if not plugin:
-        raise HTTPException(404, f"No handler for task type: {task_type}")
+        task_type = resolve_by_function_name(function_name)
+        if not task_type:
+            raise HTTPException(404, f"No handler for function: {function_name}")
 
-    context = ExecutionContext(
-        execution_id=request.execution_id,
-        task_run_id=request.task_run_id,
-        user_id=auth.user_id,
-        variables=request.variables,
-    )
+        plugin = resolve(task_type)
+        if not plugin:
+            raise HTTPException(404, f"No handler for task type: {task_type}")
 
-    try:
-        result = await plugin.run(request.params, context)
-    except Exception as e:
-        logger.error(f"Plugin {function_name} failed: {e}\n{traceback.format_exc()}")
-        result = PluginOutput(state="FAILED", logs=[str(e)])
-    finally:
-        context.cleanup()
+        context = ExecutionContext(
+            execution_id=request.execution_id,
+            task_run_id=request.task_run_id,
+            user_id=auth.user_id,
+            variables=request.variables,
+        )
 
-    return PluginResponse(function_name=function_name, output=result)
+        try:
+            result = await plugin.run(request.params, context)
+        except Exception as e:
+            span.record_exception(e)
+            span.set_attribute("error.type", type(e).__name__)
+            logger.error(f"Plugin {function_name} failed: {e}\n{traceback.format_exc()}")
+            result = PluginOutput(state="FAILED", logs=[str(e)])
+        finally:
+            context.cleanup()
+
+        span.set_attribute("plugin.result_state", result.state)
+        return PluginResponse(function_name=function_name, output=result)

@@ -28,6 +28,10 @@ from app.domain.conversion.repository import (
 from app.infra.supabase_client import get_supabase_admin
 from app.infra.storage import download_from_storage, upsert_to_storage
 
+from opentelemetry import trace
+
+tracer = trace.get_tracer(__name__)
+
 router = APIRouter(tags=["parse"])
 
 DOCUMENTS_BUCKET = os.environ.get("DOCUMENTS_BUCKET", "documents")
@@ -54,99 +58,105 @@ async def parse_route(
     body: ParseRequest,
     auth: AuthPrincipal = Depends(require_user_auth),
 ):
-    sb = get_supabase_admin()
-    supabase_url = os.environ.get("SUPABASE_URL", "")
-    supabase_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
+    with tracer.start_as_current_span("parse.request") as span:
+        sb = get_supabase_admin()
+        supabase_url = os.environ.get("SUPABASE_URL", "")
+        supabase_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
 
-    # 1. Look up the document
-    doc = sb.table("source_documents").select(
-        "source_uid, source_type, source_locator"
-    ).eq("source_uid", body.source_uid).maybe_single().execute()
+        # 1. Look up the document
+        doc = sb.table("source_documents").select(
+            "source_uid, source_type, source_locator"
+        ).eq("source_uid", body.source_uid).maybe_single().execute()
 
-    if not doc.data:
-        return JSONResponse(status_code=404, content={"detail": "Document not found"})
+        if not doc.data:
+            return JSONResponse(status_code=404, content={"detail": "Document not found"})
 
-    source_type = doc.data["source_type"]
-    source_locator = doc.data["source_locator"]
+        source_type = doc.data["source_type"]
+        source_locator = doc.data["source_locator"]
+        span.set_attribute("source_type", source_type)
 
-    # 2. Resolve profile and track
-    profile = _resolve_profile(sb, body.profile_id)
-    profile_config = (profile.get("config") or {}) if profile else {}
-    profile_artifacts: list[str] = profile_config.get("artifacts", ["ast_json", "symbols_json"])
+        # 2. Resolve profile and track
+        profile = _resolve_profile(sb, body.profile_id)
+        profile_config = (profile.get("config") or {}) if profile else {}
+        profile_artifacts: list[str] = profile_config.get("artifacts", ["ast_json", "symbols_json"])
 
-    if is_code_extension(source_type):
-        track = "tree_sitter"
-    else:
-        return JSONResponse(
-            status_code=400,
-            content={"detail": f"No parser available for source_type '{source_type}' through /parse. Use trigger-parse for Docling formats."},
-        )
-
-    # 3. Generate a job ID (matches Docling pattern where trigger-parse creates one)
-    conversion_job_id = str(uuid.uuid4())
-
-    # 4. Tree-sitter path
-    try:
-        mark_source_status(body.source_uid, "converting", conversion_job_id=conversion_job_id)
-
-        # Download source from storage (service_role — no signed URL needed)
-        source_bytes = await download_from_storage(
-            supabase_url, supabase_key, DOCUMENTS_BUCKET, source_locator,
-        )
-        result = parse_source(source_bytes, source_type)
-
-        # Pre-compute artifact locators so they're available for the parsing record.
-        ast_locator = f"converted/{body.source_uid}/{body.source_uid}.ast.json" if "ast_json" in profile_artifacts else None
-        symbols_locator = f"converted/{body.source_uid}/{body.source_uid}.symbols.json" if "symbols_json" in profile_artifacts else None
-
-        # Upload AST artifact (if profile includes it)
-        if ast_locator:
-            await upsert_to_storage(
-                supabase_url, supabase_key, DOCUMENTS_BUCKET,
-                ast_locator, result.ast_json, "application/json; charset=utf-8",
+        if is_code_extension(source_type):
+            track = "tree_sitter"
+        else:
+            return JSONResponse(
+                status_code=400,
+                content={"detail": f"No parser available for source_type '{source_type}' through /parse. Use trigger-parse for Docling formats."},
             )
-            insert_representation(
+
+        span.set_attribute("track", track)
+
+        # 3. Generate a job ID (matches Docling pattern where trigger-parse creates one)
+        conversion_job_id = str(uuid.uuid4())
+
+        # 4. Tree-sitter path
+        try:
+            mark_source_status(body.source_uid, "converting", conversion_job_id=conversion_job_id)
+
+            # Download source from storage (service_role — no signed URL needed)
+            source_bytes = await download_from_storage(
+                supabase_url, supabase_key, DOCUMENTS_BUCKET, source_locator,
+            )
+            result = parse_source(source_bytes, source_type)
+
+            # Pre-compute artifact locators so they're available for the parsing record.
+            ast_locator = f"converted/{body.source_uid}/{body.source_uid}.ast.json" if "ast_json" in profile_artifacts else None
+            symbols_locator = f"converted/{body.source_uid}/{body.source_uid}.symbols.json" if "symbols_json" in profile_artifacts else None
+
+            # Upload AST artifact (if profile includes it)
+            if ast_locator:
+                await upsert_to_storage(
+                    supabase_url, supabase_key, DOCUMENTS_BUCKET,
+                    ast_locator, result.ast_json, "application/json; charset=utf-8",
+                )
+                insert_representation(
+                    source_uid=body.source_uid,
+                    parsing_tool="tree_sitter",
+                    representation_type="tree_sitter_ast_json",
+                    artifact_locator=ast_locator,
+                    artifact_bytes=result.ast_json,
+                    artifact_meta={"language": result.language, "node_count": result.node_count},
+                )
+
+            # Upload symbols artifact (if profile includes it)
+            if symbols_locator:
+                await upsert_to_storage(
+                    supabase_url, supabase_key, DOCUMENTS_BUCKET,
+                    symbols_locator, result.symbols_json, "application/json; charset=utf-8",
+                )
+                insert_representation(
+                    source_uid=body.source_uid,
+                    parsing_tool="tree_sitter",
+                    representation_type="tree_sitter_symbols_json",
+                    artifact_locator=symbols_locator,
+                    artifact_bytes=result.symbols_json,
+                    artifact_meta={"language": result.language},
+                )
+
+            # Persist parsing record + mark complete.
+            # Use the primary artifact locator as conv_locator for view_documents.
+            primary_locator = ast_locator or symbols_locator
+            upsert_conversion_parsing(
                 source_uid=body.source_uid,
-                parsing_tool="tree_sitter",
-                representation_type="tree_sitter_ast_json",
-                artifact_locator=ast_locator,
-                artifact_bytes=result.ast_json,
-                artifact_meta={"language": result.language, "node_count": result.node_count},
+                conv_parsing_tool="tree_sitter",
+                pipeline_config=body.pipeline_config or profile_config,
+                parser_runtime_meta={
+                    "language": result.language,
+                    "node_count": result.node_count,
+                    "source_type": result.source_type,
+                },
+                conv_locator=primary_locator,
             )
+            mark_source_status(body.source_uid, "parsed")
 
-        # Upload symbols artifact (if profile includes it)
-        if symbols_locator:
-            await upsert_to_storage(
-                supabase_url, supabase_key, DOCUMENTS_BUCKET,
-                symbols_locator, result.symbols_json, "application/json; charset=utf-8",
-            )
-            insert_representation(
-                source_uid=body.source_uid,
-                parsing_tool="tree_sitter",
-                representation_type="tree_sitter_symbols_json",
-                artifact_locator=symbols_locator,
-                artifact_bytes=result.symbols_json,
-                artifact_meta={"language": result.language},
-            )
+        except Exception as e:
+            span.record_exception(e)
+            span.set_attribute("error.type", type(e).__name__)
+            mark_source_status(body.source_uid, "conversion_failed", error=str(e)[:1000])
+            return JSONResponse(status_code=500, content={"detail": str(e)[:500]})
 
-        # Persist parsing record + mark complete.
-        # Use the primary artifact locator as conv_locator for view_documents.
-        primary_locator = ast_locator or symbols_locator
-        upsert_conversion_parsing(
-            source_uid=body.source_uid,
-            conv_parsing_tool="tree_sitter",
-            pipeline_config=body.pipeline_config or profile_config,
-            parser_runtime_meta={
-                "language": result.language,
-                "node_count": result.node_count,
-                "source_type": result.source_type,
-            },
-            conv_locator=primary_locator,
-        )
-        mark_source_status(body.source_uid, "parsed")
-
-    except Exception as e:
-        mark_source_status(body.source_uid, "conversion_failed", error=str(e)[:1000])
-        return JSONResponse(status_code=500, content={"detail": str(e)[:500]})
-
-    return {"ok": True, "track": track}
+        return {"ok": True, "track": track}

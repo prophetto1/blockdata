@@ -120,3 +120,83 @@ def test_get_telemetry_status_shape():
     assert status["service_name"] == "test-svc"
     assert status["otlp_endpoint"] == "http://localhost:4318"
     assert "jaeger_ui_url" in status
+
+
+# --- Task 5: Manual span tests ---
+
+
+def test_plugin_execute_creates_span(monkeypatch):
+    """Plugin execution route creates a 'plugin.execute' span with attributes."""
+    from unittest.mock import MagicMock, patch
+
+    monkeypatch.setenv("CONVERSION_SERVICE_KEY", "test-key")
+    monkeypatch.setenv("SUPABASE_URL", "http://localhost:54321")
+    monkeypatch.setenv("SUPABASE_SERVICE_ROLE_KEY", "fake-key")
+    get_settings.cache_clear()
+
+    mock_span = MagicMock()
+    mock_cm = MagicMock()
+    mock_cm.__enter__ = MagicMock(return_value=mock_span)
+    mock_cm.__exit__ = MagicMock(return_value=False)
+    mock_tracer = MagicMock()
+    mock_tracer.start_as_current_span.return_value = mock_cm
+
+    from app.main import create_app
+    app = create_app()
+
+    with patch("app.api.routes.plugin_execution.tracer", mock_tracer):
+        from fastapi.testclient import TestClient
+        with TestClient(app) as c:
+            resp = c.post(
+                "/core_log",
+                json={"params": {"message": "test"}},
+                headers={"Authorization": "Bearer test-key"},
+            )
+            assert resp.status_code == 200
+
+    mock_tracer.start_as_current_span.assert_called_with("plugin.execute")
+    mock_span.set_attribute.assert_any_call("plugin.name", "core_log")
+    mock_span.set_attribute.assert_any_call("plugin.result_state", "SUCCESS")
+    get_settings.cache_clear()
+
+
+def test_span_records_exception_on_plugin_error(monkeypatch):
+    """Error path records exception metadata on the span safely."""
+    from unittest.mock import MagicMock, patch, AsyncMock
+
+    monkeypatch.setenv("CONVERSION_SERVICE_KEY", "test-key")
+    monkeypatch.setenv("SUPABASE_URL", "http://localhost:54321")
+    monkeypatch.setenv("SUPABASE_SERVICE_ROLE_KEY", "fake-key")
+    get_settings.cache_clear()
+
+    mock_span = MagicMock()
+    mock_cm = MagicMock()
+    mock_cm.__enter__ = MagicMock(return_value=mock_span)
+    mock_cm.__exit__ = MagicMock(return_value=False)
+    mock_tracer = MagicMock()
+    mock_tracer.start_as_current_span.return_value = mock_cm
+
+    from app.main import create_app
+    app = create_app()
+
+    # Make the plugin raise an exception
+    boom = ValueError("test boom")
+    mock_plugin = MagicMock()
+    mock_plugin.run = AsyncMock(side_effect=boom)
+
+    with patch("app.api.routes.plugin_execution.tracer", mock_tracer), \
+         patch("app.api.routes.plugin_execution.resolve_by_function_name", return_value="core_log"), \
+         patch("app.api.routes.plugin_execution.resolve", return_value=mock_plugin):
+        from fastapi.testclient import TestClient
+        with TestClient(app) as c:
+            resp = c.post(
+                "/core_log",
+                json={"params": {"message": "test"}},
+                headers={"Authorization": "Bearer test-key"},
+            )
+            assert resp.status_code == 200  # Route catches and wraps as FAILED
+
+    mock_span.record_exception.assert_called_once_with(boom)
+    mock_span.set_attribute.assert_any_call("error.type", "ValueError")
+    mock_span.set_attribute.assert_any_call("plugin.result_state", "FAILED")
+    get_settings.cache_clear()

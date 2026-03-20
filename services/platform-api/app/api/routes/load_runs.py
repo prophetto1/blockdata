@@ -23,6 +23,10 @@ from app.domain.plugins.models import ExecutionContext
 from app.domain.plugins.registry import resolve, resolve_by_function_name
 from app.infra.supabase_client import get_supabase_admin
 
+from opentelemetry import trace
+
+tracer = trace.get_tracer(__name__)
+
 logger = logging.getLogger("load-runs")
 router = APIRouter(prefix="/load-runs", tags=["load-runs"])
 
@@ -114,93 +118,100 @@ class SubmitLoadRequest(BaseModel):
 @router.post("", summary="Submit a new load run")
 async def submit_load(body: SubmitLoadRequest, auth: AuthPrincipal = Depends(require_user_auth)):
     """Create a load run: list source files, create run + items."""
-    sb = get_supabase_admin()
+    with tracer.start_as_current_span("load_runs.submit") as span:
+        span.set_attribute("has_project", body.project_id is not None)
 
-    # 0. Validate project ownership if project_id is provided
-    _validate_owned_project(sb, body.project_id, auth.user_id)
+        sb = get_supabase_admin()
 
-    # 1. Validate source and destination functions
-    src_fn = sb.table("service_functions").select("*").eq(
-        "function_name", body.source_function_name).single().execute()
-    if not src_fn.data or src_fn.data.get("bd_stage") != "source":
-        raise HTTPException(400, "Source function not found or not a source-stage function")
+        # 0. Validate project ownership if project_id is provided
+        _validate_owned_project(sb, body.project_id, auth.user_id)
 
-    dst_fn = sb.table("service_functions").select("*").eq(
-        "function_name", body.dest_function_name).single().execute()
-    if not dst_fn.data or dst_fn.data.get("bd_stage") != "destination":
-        raise HTTPException(400, "Destination function not found or not a destination-stage function")
+        # 1. Validate source and destination functions
+        src_fn = sb.table("service_functions").select("*").eq(
+            "function_name", body.source_function_name).single().execute()
+        if not src_fn.data or src_fn.data.get("bd_stage") != "source":
+            raise HTTPException(400, "Source function not found or not a source-stage function")
 
-    # 2. Call the source list function to discover files
-    list_task_type = resolve_by_function_name(body.source_function_name)
-    if not list_task_type:
-        raise HTTPException(400, f"Source function '{body.source_function_name}' not found in plugin registry")
-    list_plugin = resolve(list_task_type)
-    if not list_plugin:
-        raise HTTPException(500, f"No handler for source function '{body.source_function_name}'")
+        dst_fn = sb.table("service_functions").select("*").eq(
+            "function_name", body.dest_function_name).single().execute()
+        if not dst_fn.data or dst_fn.data.get("bd_stage") != "destination":
+            raise HTTPException(400, "Destination function not found or not a destination-stage function")
 
-    exec_id = str(uuid.uuid4())
-    ctx = ExecutionContext(execution_id=exec_id, user_id=auth.user_id)
-    list_result = await list_plugin.run({
-        "connection_id": body.source_connection_id,
-        "bucket": body.config.get("bucket", ""),
-        "prefix": body.config.get("prefix", ""),
-        "glob": body.config.get("glob", "*.csv"),
-    }, ctx)
+        # 2. Call the source list function to discover files
+        list_task_type = resolve_by_function_name(body.source_function_name)
+        if not list_task_type:
+            raise HTTPException(400, f"Source function '{body.source_function_name}' not found in plugin registry")
+        list_plugin = resolve(list_task_type)
+        if not list_plugin:
+            raise HTTPException(500, f"No handler for source function '{body.source_function_name}'")
 
-    if list_result.state != "SUCCESS":
-        raise HTTPException(400, f"Source listing failed: {list_result.logs}")
+        exec_id = str(uuid.uuid4())
+        ctx = ExecutionContext(execution_id=exec_id, user_id=auth.user_id)
+        list_result = await list_plugin.run({
+            "connection_id": body.source_connection_id,
+            "bucket": body.config.get("bucket", ""),
+            "prefix": body.config.get("prefix", ""),
+            "glob": body.config.get("glob", "*.csv"),
+        }, ctx)
 
-    objects = list_result.data.get("objects", [])
-    if not objects:
-        raise HTTPException(400, "No files found matching the source configuration")
+        if list_result.state != "SUCCESS":
+            raise HTTPException(400, f"Source listing failed: {list_result.logs}")
 
-    # 3. Create the composite run (set created_by for RLS ownership).
-    # rows_affected is set atomically in the INSERT — no separate UPDATE.
-    run_id = str(uuid.uuid4())
-    sb.table("service_runs").insert({
-        "run_id": run_id,
-        "function_id": src_fn.data["function_id"],
-        "service_id": src_fn.data["service_id"],
-        "dest_function_id": dst_fn.data["function_id"],
-        "dest_service_id": dst_fn.data["service_id"],
-        "project_id": body.project_id,
-        "created_by": auth.user_id,
-        "status": "pending",
-        "rows_affected": len(objects),
-        "config_snapshot": {
-            "source_function_name": body.source_function_name,
-            "source_download_function": body.source_download_function,
-            "source_connection_id": body.source_connection_id,
-            "dest_load_function": body.dest_function_name,
-            "dest_connection_id": body.dest_connection_id,
-            **body.config,
-        },
-        "started_at": _now(),
-    }).execute()
+        objects = list_result.data.get("objects", [])
+        if not objects:
+            raise HTTPException(400, "No files found matching the source configuration")
 
-    # 4. Create one item per discovered file.
-    # Run creation and item creation should be atomic. If item insert fails,
-    # compensate by marking the run failed so no orphaned pending run remains.
-    items = [
-        {
+        span.set_attribute("item_count", len(objects))
+
+        # 3. Create the composite run (set created_by for RLS ownership).
+        # rows_affected is set atomically in the INSERT — no separate UPDATE.
+        run_id = str(uuid.uuid4())
+        sb.table("service_runs").insert({
             "run_id": run_id,
-            "item_key": obj["name"],
-            "item_type": "file",
+            "function_id": src_fn.data["function_id"],
+            "service_id": src_fn.data["service_id"],
+            "dest_function_id": dst_fn.data["function_id"],
+            "dest_service_id": dst_fn.data["service_id"],
+            "project_id": body.project_id,
+            "created_by": auth.user_id,
             "status": "pending",
-        }
-        for obj in objects
-    ]
-    try:
-        sb.table("service_run_items").insert(items).execute()
-    except Exception as e:
-        sb.table("service_runs").update({
-            "status": "failed",
-            "error_message": f"Item creation failed: {str(e)[:500]}",
-            "completed_at": _now(),
-        }).eq("run_id", run_id).execute()
-        raise HTTPException(500, f"Failed to create run items: {str(e)[:200]}")
+            "rows_affected": len(objects),
+            "config_snapshot": {
+                "source_function_name": body.source_function_name,
+                "source_download_function": body.source_download_function,
+                "source_connection_id": body.source_connection_id,
+                "dest_load_function": body.dest_function_name,
+                "dest_connection_id": body.dest_connection_id,
+                **body.config,
+            },
+            "started_at": _now(),
+        }).execute()
 
-    return {"run_id": run_id, "status": "pending", "total_items": len(items)}
+        # 4. Create one item per discovered file.
+        # Run creation and item creation should be atomic. If item insert fails,
+        # compensate by marking the run failed so no orphaned pending run remains.
+        items = [
+            {
+                "run_id": run_id,
+                "item_key": obj["name"],
+                "item_type": "file",
+                "status": "pending",
+            }
+            for obj in objects
+        ]
+        try:
+            sb.table("service_run_items").insert(items).execute()
+        except Exception as e:
+            span.record_exception(e)
+            span.set_attribute("error.type", type(e).__name__)
+            sb.table("service_runs").update({
+                "status": "failed",
+                "error_message": f"Item creation failed: {str(e)[:500]}",
+                "completed_at": _now(),
+            }).eq("run_id", run_id).execute()
+            raise HTTPException(500, f"Failed to create run items: {str(e)[:200]}")
+
+        return {"run_id": run_id, "status": "pending", "total_items": len(items)}
 
 
 @router.post("/{run_id}/step", summary="Process next pending item in a load run")
@@ -213,99 +224,103 @@ async def step_load(run_id: str, auth: AuthPrincipal = Depends(require_user_auth
     4. Mark item complete or failed
     5. If no pending items remain, mark run complete
     """
-    sb = get_supabase_admin()
+    with tracer.start_as_current_span("load_runs.step") as span:
+        sb = get_supabase_admin()
 
-    # Load the run and verify ownership (service-role bypasses RLS)
-    run = sb.table("service_runs").select("*").eq("run_id", run_id).single().execute()
-    if not run.data:
-        raise HTTPException(404, "Run not found")
-    if run.data.get("created_by") != auth.user_id:
-        raise HTTPException(403, "Not your run")
-    if run.data["status"] in ("complete", "partial", "failed", "cancelled"):
-        return {"run_id": run_id, "status": run.data["status"], "message": "Run already finished"}
+        # Load the run and verify ownership (service-role bypasses RLS)
+        run = sb.table("service_runs").select("*").eq("run_id", run_id).single().execute()
+        if not run.data:
+            raise HTTPException(404, "Run not found")
+        if run.data.get("created_by") != auth.user_id:
+            raise HTTPException(403, "Not your run")
+        if run.data["status"] in ("complete", "partial", "failed", "cancelled"):
+            return {"run_id": run_id, "status": run.data["status"], "message": "Run already finished"}
 
-    config = run.data.get("config_snapshot", {})
+        span.set_attribute("run_status", run.data["status"])
+        config = run.data.get("config_snapshot", {})
 
-    # Mark run as running if it was pending
-    if run.data["status"] == "pending":
-        sb.table("service_runs").update({"status": "running"}).eq("run_id", run_id).execute()
+        # Mark run as running if it was pending
+        if run.data["status"] == "pending":
+            sb.table("service_runs").update({"status": "running"}).eq("run_id", run_id).execute()
 
-    # Claim one pending item atomically via RPC (prevents double-claiming)
-    claimed = sb.rpc("claim_run_item", {"p_run_id": run_id, "p_limit": 1}).execute()
-    if not claimed.data:
-        # No pending items — but other items may still be 'running' under
-        # concurrent /step calls. Try to finalize; if items are still active
-        # the helper will return without stamping.
+        # Claim one pending item atomically via RPC (prevents double-claiming)
+        claimed = sb.rpc("claim_run_item", {"p_run_id": run_id, "p_limit": 1}).execute()
+        if not claimed.data:
+            # No pending items — but other items may still be 'running' under
+            # concurrent /step calls. Try to finalize; if items are still active
+            # the helper will return without stamping.
+            result = _maybe_finalize_run(sb, run_id, logger)
+            return {"run_id": run_id, "status": result.get("status", "running"), "remaining": result.get("active", 0)}
+
+        item = claimed.data[0]
+        item_id = item["item_id"]
+        object_name = item["item_key"]
+
+        try:
+            # Step A: Download CSV from GCS and write JSONL to storage
+            src_download_fn = config.get("source_download_function", "gcs_download_csv")
+            dst_load_fn = config.get("dest_load_function", "arangodb_load")
+
+            download_task_type = resolve_by_function_name(src_download_fn)
+            if not download_task_type:
+                raise Exception(f"Source download function '{src_download_fn}' not found in plugin registry")
+            download_plugin = resolve(download_task_type)
+            if not download_plugin:
+                raise Exception(f"No handler for source download task type: {download_task_type}")
+            ctx = ExecutionContext(execution_id=f"{run_id}/{item_id}", user_id=auth.user_id)
+            download_result = await download_plugin.run({
+                "connection_id": config["source_connection_id"],
+                "bucket": config.get("bucket", ""),
+                "object_name": object_name,
+                "key_column": config.get("key_column"),
+            }, ctx)
+
+            if download_result.state != "SUCCESS":
+                raise Exception(f"Download failed: {download_result.logs}")
+
+            storage_uri = download_result.data["storage_uri"]
+            row_count = download_result.data["row_count"]
+
+            # Step B: Load JSONL into destination
+            load_task_type = resolve_by_function_name(dst_load_fn)
+            if not load_task_type:
+                raise Exception(f"Destination load function '{dst_load_fn}' not found in plugin registry")
+            load_plugin = resolve(load_task_type)
+            if not load_plugin:
+                raise Exception(f"No handler for destination task type: {load_task_type}")
+            load_result = await load_plugin.run({
+                "connection_id": config["dest_connection_id"],
+                "collection": config.get("collection", ""),
+                "source_uri": storage_uri,
+                "create_collection": config.get("create_collection", False),
+            }, ctx)
+
+            if load_result.state == "FAILED":
+                raise Exception(f"Load failed: {load_result.logs}")
+
+            # Mark item complete
+            sb.table("service_run_items").update({
+                "status": "complete",
+                "rows_written": load_result.data.get("inserted", 0),
+                "rows_failed": load_result.data.get("failed", 0),
+                "storage_uri": storage_uri,
+                "completed_at": _now(),
+            }).eq("item_id", item_id).execute()
+
+        except Exception as e:
+            span.record_exception(e)
+            span.set_attribute("error.type", type(e).__name__)
+            logger.error(f"Load step failed for item {item_id}: {e}")
+            sb.table("service_run_items").update({
+                "status": "failed",
+                "error_message": str(e)[:1000],
+                "completed_at": _now(),
+            }).eq("item_id", item_id).execute()
+
+        # Try to finalize the run. The helper checks for BOTH pending and running
+        # items, so concurrent /step calls won't stamp complete prematurely.
         result = _maybe_finalize_run(sb, run_id, logger)
-        return {"run_id": run_id, "status": result.get("status", "running"), "remaining": result.get("active", 0)}
-
-    item = claimed.data[0]
-    item_id = item["item_id"]
-    object_name = item["item_key"]
-
-    try:
-        # Step A: Download CSV from GCS and write JSONL to storage
-        src_download_fn = config.get("source_download_function", "gcs_download_csv")
-        dst_load_fn = config.get("dest_load_function", "arangodb_load")
-
-        download_task_type = resolve_by_function_name(src_download_fn)
-        if not download_task_type:
-            raise Exception(f"Source download function '{src_download_fn}' not found in plugin registry")
-        download_plugin = resolve(download_task_type)
-        if not download_plugin:
-            raise Exception(f"No handler for source download task type: {download_task_type}")
-        ctx = ExecutionContext(execution_id=f"{run_id}/{item_id}", user_id=auth.user_id)
-        download_result = await download_plugin.run({
-            "connection_id": config["source_connection_id"],
-            "bucket": config.get("bucket", ""),
-            "object_name": object_name,
-            "key_column": config.get("key_column"),
-        }, ctx)
-
-        if download_result.state != "SUCCESS":
-            raise Exception(f"Download failed: {download_result.logs}")
-
-        storage_uri = download_result.data["storage_uri"]
-        row_count = download_result.data["row_count"]
-
-        # Step B: Load JSONL into destination
-        load_task_type = resolve_by_function_name(dst_load_fn)
-        if not load_task_type:
-            raise Exception(f"Destination load function '{dst_load_fn}' not found in plugin registry")
-        load_plugin = resolve(load_task_type)
-        if not load_plugin:
-            raise Exception(f"No handler for destination task type: {load_task_type}")
-        load_result = await load_plugin.run({
-            "connection_id": config["dest_connection_id"],
-            "collection": config.get("collection", ""),
-            "source_uri": storage_uri,
-            "create_collection": config.get("create_collection", False),
-        }, ctx)
-
-        if load_result.state == "FAILED":
-            raise Exception(f"Load failed: {load_result.logs}")
-
-        # Mark item complete
-        sb.table("service_run_items").update({
-            "status": "complete",
-            "rows_written": load_result.data.get("inserted", 0),
-            "rows_failed": load_result.data.get("failed", 0),
-            "storage_uri": storage_uri,
-            "completed_at": _now(),
-        }).eq("item_id", item_id).execute()
-
-    except Exception as e:
-        logger.error(f"Load step failed for item {item_id}: {e}")
-        sb.table("service_run_items").update({
-            "status": "failed",
-            "error_message": str(e)[:1000],
-            "completed_at": _now(),
-        }).eq("item_id", item_id).execute()
-
-    # Try to finalize the run. The helper checks for BOTH pending and running
-    # items, so concurrent /step calls won't stamp complete prematurely.
-    result = _maybe_finalize_run(sb, run_id, logger)
-    return {"run_id": run_id, "processed": object_name, "remaining": result.get("active", 0)}
+        return {"run_id": run_id, "processed": object_name, "remaining": result.get("active", 0)}
 
 
 @router.get("/{run_id}", summary="Get load run status and item details")

@@ -16,6 +16,9 @@ from app.infra.http_client import upload_bytes, append_token_if_needed, download
 from app.workers.conversion_pool import get_conversion_pool, PoolOverloaded
 
 from eyecite import get_citations, resolve_citations
+from opentelemetry import trace
+
+tracer = trace.get_tracer(__name__)
 
 router = APIRouter(tags=["conversion"])
 
@@ -79,60 +82,67 @@ async def convert_route(
                 headers={"Retry-After": "15"},
             )
 
-    callback_payload: dict[str, Any] = {
-        "source_uid": body.source_uid,
-        "conversion_job_id": body.conversion_job_id,
-        "track": track,
-        "md_key": body.output.key,
-        "docling_key": None,
-        "html_key": None,
-        "doctags_key": None,
-        "pipeline_config": body.pipeline_config,
-        "blocks": [],
-        "conv_uid": None,
-        "docling_artifact_size_bytes": None,
-        "success": False,
-        "error": None,
-    }
+    with tracer.start_as_current_span("conversion.request") as span:
+        span.set_attribute("source_type", body.source_type)
+        span.set_attribute("track", track)
+        span.set_attribute("use_pool", use_pool)
 
-    try:
-        # Docling conversion is CPU-bound — offload to process pool.
-        if use_pool:
-            markdown_bytes, docling_json_bytes, html_bytes, doctags_bytes, blocks = (
-                await pool.submit(_run_convert_in_process, body.model_dump())
-            )
-        else:
-            markdown_bytes, docling_json_bytes, html_bytes, doctags_bytes, blocks = await convert(body)
+        callback_payload: dict[str, Any] = {
+            "source_uid": body.source_uid,
+            "conversion_job_id": body.conversion_job_id,
+            "track": track,
+            "md_key": body.output.key,
+            "docling_key": None,
+            "html_key": None,
+            "doctags_key": None,
+            "pipeline_config": body.pipeline_config,
+            "blocks": [],
+            "conv_uid": None,
+            "docling_artifact_size_bytes": None,
+            "success": False,
+            "error": None,
+        }
 
-        md_url = append_token_if_needed(body.output.signed_upload_url, body.output.token)
-        await upload_bytes(md_url, markdown_bytes, "text/markdown; charset=utf-8")
+        try:
+            # Docling conversion is CPU-bound — offload to process pool.
+            if use_pool:
+                markdown_bytes, docling_json_bytes, html_bytes, doctags_bytes, blocks = (
+                    await pool.submit(_run_convert_in_process, body.model_dump())
+                )
+            else:
+                markdown_bytes, docling_json_bytes, html_bytes, doctags_bytes, blocks = await convert(body)
 
-        if body.docling_output and docling_json_bytes:
-            url = append_token_if_needed(body.docling_output.signed_upload_url, body.docling_output.token)
-            await upload_bytes(url, docling_json_bytes, "application/json; charset=utf-8")
-            callback_payload["docling_key"] = body.docling_output.key
-            callback_payload["conv_uid"] = _build_docling_conv_uid(docling_json_bytes)
-            callback_payload["docling_artifact_size_bytes"] = len(docling_json_bytes)
+            md_url = append_token_if_needed(body.output.signed_upload_url, body.output.token)
+            await upload_bytes(md_url, markdown_bytes, "text/markdown; charset=utf-8")
 
-        if body.html_output and html_bytes:
-            url = append_token_if_needed(body.html_output.signed_upload_url, body.html_output.token)
-            await upload_bytes(url, html_bytes, "text/html")
-            callback_payload["html_key"] = body.html_output.key
+            if body.docling_output and docling_json_bytes:
+                url = append_token_if_needed(body.docling_output.signed_upload_url, body.docling_output.token)
+                await upload_bytes(url, docling_json_bytes, "application/json; charset=utf-8")
+                callback_payload["docling_key"] = body.docling_output.key
+                callback_payload["conv_uid"] = _build_docling_conv_uid(docling_json_bytes)
+                callback_payload["docling_artifact_size_bytes"] = len(docling_json_bytes)
 
-        if body.doctags_output and doctags_bytes:
-            url = append_token_if_needed(body.doctags_output.signed_upload_url, body.doctags_output.token)
-            await upload_bytes(url, doctags_bytes, "text/plain; charset=utf-8")
-            callback_payload["doctags_key"] = body.doctags_output.key
+            if body.html_output and html_bytes:
+                url = append_token_if_needed(body.html_output.signed_upload_url, body.html_output.token)
+                await upload_bytes(url, html_bytes, "text/html")
+                callback_payload["html_key"] = body.html_output.key
 
-        callback_payload["blocks"] = blocks
-        callback_payload["success"] = True
-    except Exception as e:
-        callback_payload["success"] = False
-        callback_payload["error"] = str(e)[:1000]
-    finally:
-        await send_conversion_callback(body.callback_url, shared_secret, callback_payload)
+            if body.doctags_output and doctags_bytes:
+                url = append_token_if_needed(body.doctags_output.signed_upload_url, body.doctags_output.token)
+                await upload_bytes(url, doctags_bytes, "text/plain; charset=utf-8")
+                callback_payload["doctags_key"] = body.doctags_output.key
 
-    return {"ok": True}
+            callback_payload["blocks"] = blocks
+            callback_payload["success"] = True
+        except Exception as e:
+            span.record_exception(e)
+            span.set_attribute("error.type", type(e).__name__)
+            callback_payload["success"] = False
+            callback_payload["error"] = str(e)[:1000]
+        finally:
+            await send_conversion_callback(body.callback_url, shared_secret, callback_payload)
+
+        return {"ok": True}
 
 
 @router.post("/citations")
