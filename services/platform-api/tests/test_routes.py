@@ -148,3 +148,45 @@ def test_api_v1_embeddings_stub(client):
 def test_api_v1_jobs_stub(client):
     resp = client.get("/api/v1/jobs")
     assert resp.status_code == 501
+
+
+def test_health_with_otel_enabled(monkeypatch):
+    """App starts and serves /health with OTEL_ENABLED=true."""
+    monkeypatch.setenv("OTEL_ENABLED", "true")
+    monkeypatch.setenv("OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:4318")
+    monkeypatch.setenv("CONVERSION_SERVICE_KEY", "test-key")
+    monkeypatch.setenv("SUPABASE_URL", "http://localhost:54321")
+    monkeypatch.setenv("SUPABASE_SERVICE_ROLE_KEY", "fake-key")
+
+    from app.core.config import get_settings
+    get_settings.cache_clear()
+
+    from app.main import create_app
+    app = create_app()
+    with TestClient(app) as c:
+        resp = c.get("/health")
+        assert resp.status_code == 200
+
+    get_settings.cache_clear()
+
+
+def test_two_apps_with_otel_enabled(monkeypatch):
+    """Two create_app() calls in one process with telemetry — no exception."""
+    monkeypatch.setenv("OTEL_ENABLED", "true")
+    monkeypatch.setenv("OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:4318")
+    monkeypatch.setenv("CONVERSION_SERVICE_KEY", "test-key")
+    monkeypatch.setenv("SUPABASE_URL", "http://localhost:54321")
+    monkeypatch.setenv("SUPABASE_SERVICE_ROLE_KEY", "fake-key")
+
+    from app.core.config import get_settings
+    get_settings.cache_clear()
+
+    from app.main import create_app
+    app1 = create_app()
+    app2 = create_app()
+    with TestClient(app1) as c1:
+        assert c1.get("/health").status_code == 200
+    with TestClient(app2) as c2:
+        assert c2.get("/health").status_code == 200
+
+    get_settings.cache_clear()

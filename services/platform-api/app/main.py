@@ -4,16 +4,53 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.core.config import get_settings
 from app.domain.plugins.registry import discover_plugins, FUNCTION_NAME_MAP
 from app.core.reserved_routes import check_collisions
+from app.observability import configure_telemetry, shutdown_telemetry
 from app.workers.conversion_pool import init_pool, shutdown_pool
 from app.workers.storage_cleanup import start_storage_cleanup_worker, stop_storage_cleanup_worker
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
+_logging_configured = False
+
+
+class _OtelDefaultsFilter(logging.Filter):
+    """Inject default otelTraceID/otelSpanID when not set by OTel instrumentation."""
+
+    def filter(self, record):
+        if not hasattr(record, "otelTraceID"):
+            record.otelTraceID = "0"
+        if not hasattr(record, "otelSpanID"):
+            record.otelSpanID = "0"
+        return True
+
+
+def configure_logging(settings) -> None:
+    """Set up root logger with trace-correlated format. Safe to call multiple times."""
+    global _logging_configured
+    if _logging_configured:
+        return
+    root = logging.getLogger()
+    root.setLevel(getattr(logging, settings.log_level.upper(), logging.INFO))
+    # Remove any existing handlers (e.g. from earlier basicConfig calls)
+    for h in root.handlers[:]:
+        root.removeHandler(h)
+    handler = logging.StreamHandler()
+    handler.setFormatter(logging.Formatter(
+        "%(asctime)s %(name)s %(levelname)s [trace=%(otelTraceID)s span=%(otelSpanID)s] %(message)s"
+    ))
+    handler.addFilter(_OtelDefaultsFilter())
+    root.addHandler(handler)
+    _logging_configured = True
+
+
 logger = logging.getLogger("platform-api")
 
 
 def create_app() -> FastAPI:
+    settings = get_settings()
+    configure_logging(settings)
+
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         discover_plugins()
@@ -33,9 +70,16 @@ def create_app() -> FastAPI:
         # Shutdown background workers gracefully
         stop_storage_cleanup_worker()
         shutdown_pool()
+        # Flush any pending telemetry spans
+        telem_state = getattr(app.state, "telemetry", None)
+        if telem_state:
+            shutdown_telemetry(telem_state)
         logger.info("Conversion pool shut down.")
 
     app = FastAPI(title="Platform API", lifespan=lifespan)
+
+    # Bootstrap OpenTelemetry (idempotent, no-ops when OTEL_ENABLED=false)
+    app.state.telemetry = configure_telemetry(app, settings)
 
     # Auth middleware for /convert and /citations â€” runs BEFORE body parsing
     from app.auth.middleware import AuthBeforeBodyMiddleware
