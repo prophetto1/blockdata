@@ -1,0 +1,28 @@
+name: Migration History Hygiene
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  check-duplicate-migration-timestamps:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Ensure unique migration timestamps
+        run: |
+          set -euo pipefail
+          dupes=$(
+            for f in supabase/migrations/*.sql; do
+              basename "$f" .sql | cut -d_ -f1
+            done | sort | uniq -d
+          )
+
+          if [ -n "$dupes" ]; then
+            echo "Duplicate migration timestamps:"
+            echo "$dupes"
+            exit 1
+          fi
+
+          echo "No duplicate migration timestamps found."
