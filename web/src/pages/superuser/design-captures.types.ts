@@ -2,7 +2,7 @@ export type CaptureStatus = 'pending' | 'auth-needed' | 'capturing' | 'complete'
 
 export type PageType = 'settings' | 'editor' | 'dashboard' | 'workbench' | 'marketing';
 
-export type ThemeRequest = 'light' | 'dark' | 'both';
+export type ThemeRequest = 'light' | 'dark';
 
 export type CaptureEntry = {
   id: string;
@@ -14,6 +14,15 @@ export type CaptureEntry = {
   capturedAt: string | null;
   outputDir: string;
   status: CaptureStatus;
+  hasOverlay?: boolean;
+  overlayRequested?: boolean;
+};
+
+export type CaptureOverlayOptions = {
+  triggerTextCandidates?: string[];
+  triggerSelector?: string;
+  overlaySelector?: string;
+  dialogSelector?: string;
 };
 
 export type CaptureRequest = {
@@ -23,4 +32,6 @@ export type CaptureRequest = {
   theme: ThemeRequest;
   pageType: PageType;
   forceAuth?: boolean;
+  needsOverlayCapture?: boolean;
+  overlayOptions?: CaptureOverlayOptions;
 };

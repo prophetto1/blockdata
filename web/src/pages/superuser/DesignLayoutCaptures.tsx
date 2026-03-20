@@ -3,11 +3,7 @@ import {
   IconArrowDown,
   IconArrowUp,
   IconArrowsSort,
-  IconCamera,
-  IconDownload,
-  IconEye,
-  IconPlus,
-  IconRefresh,
+  IconDots,
   IconTrash,
 } from '@tabler/icons-react';
 import { Search01Icon } from '@hugeicons/core-free-icons';
@@ -17,6 +13,14 @@ import { Pagination } from '@ark-ui/react/pagination';
 import { useShellHeaderTitle } from '@/components/common/useShellHeaderTitle';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+  MenuContent,
+  MenuItem,
+  MenuPositioner,
+  MenuPortal,
+  MenuRoot,
+  MenuTrigger,
+} from '@/components/ui/menu';
 import {
   DialogRoot,
   DialogContent,
@@ -95,7 +99,6 @@ const PAGE_TYPE_COLORS = {
 const THEME_BADGE = {
   light: 'default',
   dark: 'dark',
-  both: 'gray',
 } as const satisfies Record<ThemeRequest, string>;
 
 /* ------------------------------------------------------------------ */
@@ -302,7 +305,7 @@ export function Component() {
 
   // ---------- re-capture ----------
 
-  const handleReCapture = async (row: CaptureEntry, forceAuth = false) => {
+  const handleReCapture = async (row: CaptureEntry, options?: { forceAuth?: boolean }) => {
     const [w, h] = row.viewport.split('x').map(Number);
     const req: CaptureRequest = {
       url: row.url,
@@ -310,9 +313,10 @@ export function Component() {
       height: h,
       theme: row.theme,
       pageType: row.pageType,
-      forceAuth,
+      forceAuth: options?.forceAuth,
+      needsOverlayCapture: row.overlayRequested ?? row.hasOverlay,
     };
-    if (forceAuth) {
+    if (options?.forceAuth) {
       setPreviewLoadFailed((prev) => {
         const next = new Set(prev);
         next.delete(row.id);
@@ -373,6 +377,7 @@ export function Component() {
     height: 1080,
     theme: 'light',
     pageType: 'settings',
+    needsOverlayCapture: undefined,
   });
   const [modalStatus, setModalStatus] = useState<{
     state: 'idle' | 'submitting' | 'auth-needed' | 'capturing' | 'done' | 'error';
@@ -452,11 +457,9 @@ export function Component() {
 
           <div className="ml-auto flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={() => void loadData()}>
-              <IconRefresh size={14} />
               Refresh
             </Button>
             <Button size="sm" onClick={() => setShowAddNew(true)}>
-              <IconPlus size={14} />
               Add New
             </Button>
           </div>
@@ -550,7 +553,7 @@ export function Component() {
                             <img
                               src={captureFileUrl(
                                 makeCaptureEntryForPreview(row),
-                                row.theme === 'both' ? 'light' : row.theme,
+                                row.theme,
                                 'viewport.png',
                               )}
                               alt=""
@@ -589,52 +592,81 @@ export function Component() {
                       </Badge>
                     </td>
                     <td className="px-3 py-3" onClick={(e) => e.stopPropagation()}>
-                      <div className="flex flex-wrap items-center justify-end gap-1">
-                        {row.status === 'complete' && (
-                          <>
+                      <div className="flex items-center justify-end gap-1">
+                        <MenuRoot>
+                          <MenuTrigger asChild>
                             <Button
                               variant="ghost"
                               size="icon"
                               className="h-7 w-7"
-                              aria-label="View screenshot"
-                              title="View screenshot"
-                              onClick={() => window.open(captureFileUrl(row, row.theme === 'both' ? 'light' : row.theme, 'viewport.png'), '_blank')}
+                              aria-label="Actions"
+                              title="Actions"
                             >
-                              <IconEye size={14} />
+                              <IconDots size={14} />
                             </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7"
-                              aria-label="Download report"
-                              title="Download report"
-                              onClick={() => window.open(captureFileUrl(row, row.theme === 'both' ? 'light' : row.theme, 'report.json'), '_blank')}
-                            >
-                              <IconDownload size={14} />
-                            </Button>
-                          </>
-                        )}
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7"
-                          aria-label="Re-capture"
-                          title="Re-capture"
-                          onClick={() => void handleReCapture(row)}
-                        >
-                          <IconCamera size={14} />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7"
-                          aria-label="Re-capture with fresh authentication"
-                          title="Re-capture with fresh authentication"
-                          onClick={() => void handleReCapture(row, true)}
-                          disabled={deleting.has(row.id)}
-                        >
-                          <IconRefresh size={14} />
-                        </Button>
+                          </MenuTrigger>
+                          <MenuPortal>
+                            <MenuPositioner>
+                              <MenuContent>
+                                {row.status === 'complete' && (
+                                  <>
+                                    <MenuItem
+                                      value="view-screenshot"
+                                      onClick={() =>
+                                        window.open(
+                                          captureFileUrl(makeCaptureEntryForPreview(row), row.theme, 'viewport.png'),
+                                          '_blank',
+                                        )
+                                      }
+                                    >
+                                      View Screenshot
+                                    </MenuItem>
+                                    <MenuItem
+                                      value="view-json"
+                                      onClick={() =>
+                                        window.open(
+                                          captureFileUrl(makeCaptureEntryForPreview(row), row.theme, 'report.json'),
+                                          '_blank',
+                                        )
+                                      }
+                                    >
+                                      View JSON
+                                    </MenuItem>
+                                    {row.hasOverlay && (
+                                      <MenuItem
+                                        value="view-overlay-json"
+                                        onClick={() =>
+                                          window.open(
+                                            captureFileUrl(
+                                              makeCaptureEntryForPreview(row),
+                                              row.theme,
+                                              'overlay-report.json',
+                                            ),
+                                            '_blank',
+                                          )
+                                        }
+                                      >
+                                        View Overlay JSON
+                                      </MenuItem>
+                                    )}
+                                  </>
+                                )}
+                                <MenuItem
+                                  value="re-capture"
+                                  onClick={() => void handleReCapture(row)}
+                                >
+                                  Re-capture
+                                </MenuItem>
+                                <MenuItem
+                                  value="re-capture-fresh-auth"
+                                  onClick={() => void handleReCapture(row, { forceAuth: true })}
+                                >
+                                  Re-capture (fresh auth)
+                                </MenuItem>
+                              </MenuContent>
+                            </MenuPositioner>
+                          </MenuPortal>
+                        </MenuRoot>
                         <Button
                           variant="ghost"
                           size="icon"
@@ -760,7 +792,6 @@ export function Component() {
                 >
                   <option value="light">Light</option>
                   <option value="dark">Dark</option>
-                  <option value="both">Both (light + dark)</option>
                 </select>
               </label>
               <label className="block">
@@ -779,8 +810,21 @@ export function Component() {
                   <option value="workbench">Workbench</option>
                   <option value="marketing">Marketing</option>
                 </select>
+                </label>
+              </div>
+
+              <label className="mt-2 flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={!!captureForm.needsOverlayCapture}
+                  onChange={(e) => {
+                    const checked = e.currentTarget.checked;
+                    setCaptureForm((f) => ({ ...f, needsOverlayCapture: checked || undefined }));
+                  }}
+                  className="h-4 w-4 rounded border-input"
+                />
+                <span className="text-sm font-medium">Capture overlay component</span>
               </label>
-            </div>
 
             {/* Status feedback */}
             {modalStatus.state === 'submitting' && (
@@ -819,7 +863,6 @@ export function Component() {
             )}
             {(modalStatus.state === 'idle' || modalStatus.state === 'error') && (
               <Button size="sm" onClick={() => void handleStartCapture()} disabled={!captureForm.url}>
-                <IconCamera size={14} />
                 Capture
               </Button>
             )}

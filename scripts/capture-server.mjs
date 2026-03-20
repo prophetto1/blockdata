@@ -119,6 +119,15 @@ function updateCaptureStatus(id, status, capturedAt = null) {
   }
 }
 
+function updateCaptureEntryById(id, patch) {
+  const captures = readCaptures();
+  const idx = captures.findIndex((entry) => entry.id === id);
+  if (idx >= 0) {
+    captures[idx] = { ...captures[idx], ...patch };
+    writeCaptures(captures);
+  }
+}
+
 function parseBoolean(value) {
   if (typeof value === "boolean") return value;
   if (!value) return false;
@@ -307,10 +316,19 @@ async function launchAuthContext(playwright, width, height) {
 /*  Auth sessions — headed browser kept open for manual login          */
 /* ------------------------------------------------------------------ */
 
-// Map<captureId, { context, page, storageStatePath, cleanup, tempProfileRoot?, entry }>
+// Map<captureId, { context, page, storageStatePath, cleanup, tempProfileRoot?, entry, requestedOverlayCapture, overlayOptions }>
 const authSessions = new Map();
 
-async function startAuthSession(id, entry, targetUrl, storageStatePath, width, height) {
+async function startAuthSession(
+  id,
+  entry,
+  targetUrl,
+  storageStatePath,
+  width,
+  height,
+  requestedOverlayCapture,
+  overlayOptions = {},
+) {
   const playwright = resolvePlaywright();
   const { page, context, cleanup, tempProfileRoot } = await launchAuthContext(playwright, width, height);
   await page.goto(targetUrl, { waitUntil: "load" });
@@ -322,6 +340,8 @@ async function startAuthSession(id, entry, targetUrl, storageStatePath, width, h
     cleanup,
     tempProfileRoot,
     entry,
+    requestedOverlayCapture,
+    overlayOptions,
   });
   console.log(`[auth] Headed browser opened for ${targetUrl} — waiting for login`);
 }
@@ -395,6 +415,10 @@ async function loadMeasureModule() {
   return import(pathToFileURL(path.join(skillScriptsDir, "measure-layout.mjs")).href);
 }
 
+async function loadOverlayModule() {
+  return import(pathToFileURL(path.join(skillScriptsDir, "measure-overlay.mjs")).href);
+}
+
 async function startCapture(body) {
   const {
     url,
@@ -403,8 +427,10 @@ async function startCapture(body) {
     theme = "light",
     pageType = "settings",
     forceAuth = false,
+    needsOverlayCapture = false,
   } = body;
   if (!url) throw new Error("Missing required field: url");
+  const requestedOverlayCapture = parseBoolean(needsOverlayCapture);
 
   const mod = await loadMeasureModule();
   const slug = mod.deriveCaptureSlug(url);
@@ -422,6 +448,8 @@ async function startCapture(body) {
     capturedAt: null,
     outputDir: path.relative(path.join(repoRoot, "docs", "design-layouts"), outputDir).replace(/\\/g, "/"),
     status: "pending",
+    hasOverlay: false,
+    overlayRequested: requestedOverlayCapture,
   };
 
   const captures = readCaptures();
@@ -449,7 +477,16 @@ async function startCapture(body) {
 
   if (needsAuth) {
     updateCaptureStatus(id, "auth-needed");
-    await startAuthSession(id, entry, url, storageStatePath, width, height);
+    await startAuthSession(
+      id,
+      entry,
+      url,
+      storageStatePath,
+      width,
+      height,
+      requestedOverlayCapture,
+      body?.overlayOptions,
+    );
     return {
       id,
       status: "auth-needed",
@@ -457,10 +494,23 @@ async function startCapture(body) {
     };
   }
 
-  return runCapture(id, entry, { url, width, height, theme, storageStatePath, outputDir });
+  return runCapture(
+    id,
+    entry,
+    {
+      url,
+      width,
+      height,
+      theme,
+      storageStatePath,
+      outputDir,
+      overlayOptions: body?.overlayOptions,
+    },
+    requestedOverlayCapture,
+  );
 }
 
-async function runCapture(id, entry, options) {
+async function runCapture(id, entry, options, requestedOverlayCapture = false) {
   updateCaptureStatus(id, "capturing");
   console.log(`[capture] Starting ${id} → ${options.url} at ${options.width}x${options.height} theme=${options.theme}`);
 
@@ -475,16 +525,43 @@ async function runCapture(id, entry, options) {
       outputDir: options.outputDir,
     };
 
-    if (options.theme === "both") {
-      measureOptions.captureBothThemes = "true";
-    } else if (options.theme === "light" || options.theme === "dark") {
+    if (options.theme === "light" || options.theme === "dark") {
       measureOptions.theme = options.theme;
     }
 
     await mod.measureLayout(measureOptions);
 
     const capturedAt = new Date().toISOString();
-    updateCaptureStatus(id, "complete", capturedAt);
+    const entryForPersist = { ...entry, status: "complete", capturedAt, hasOverlay: false };
+    updateCaptureEntryById(id, entryForPersist);
+
+    if (requestedOverlayCapture) {
+      const overlayMod = await loadOverlayModule();
+      try {
+        const overlayThemeDir = path.join(options.outputDir, options.theme);
+        const { reportPath } = await overlayMod.measureOverlay({
+          url: options.url,
+          width: options.width,
+          height: options.height,
+          storageStatePath: options.storageStatePath,
+          outputDir: overlayThemeDir,
+          repoRoot,
+          overlayOptions: options.overlayOptions || {},
+        });
+
+        updateCaptureEntryById(id, {
+          ...entryForPersist,
+          hasOverlay: Boolean(reportPath && fs.existsSync(reportPath)),
+        });
+      } catch (overlayErr) {
+        console.error(`[capture] Overlay capture failed for ${id}:`, overlayErr.message);
+        updateCaptureEntryById(id, {
+          ...entryForPersist,
+          hasOverlay: false,
+        });
+      }
+    }
+
     console.log(`[capture] Complete: ${id}`);
     return { id, status: "complete" };
   } catch (err) {
@@ -585,6 +662,7 @@ async function handleRequest(req, res) {
 
       // Save storageState and close headed browser
       const session = authSessions.get(id);
+      const requestedOverlayCapture = Boolean(session?.requestedOverlayCapture);
       await completeAuthSession(id);
 
       // Now run the actual capture with saved auth
@@ -600,7 +678,8 @@ async function handleRequest(req, res) {
         theme: entry.theme,
         storageStatePath: session.storageStatePath,
         outputDir,
-      });
+        overlayOptions: session.overlayOptions || {},
+      }, requestedOverlayCapture);
 
       sendJson(res, 200, result);
       return;
