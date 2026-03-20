@@ -6,6 +6,8 @@ skills/
 json-schemas/
 .codex/
 .codex-tmp/
+.agent/
+.ai/
 # Project-specific ignores
 ref-repos/
 
@@ -27,6 +29,7 @@ third_party/meta-configurator/meta_configurator/NUL
 
 # GCP service account keys (never commit)
 docs/test-keys/
+secrets/
 
 # Personal docs (Jon)
 docs/jon/
