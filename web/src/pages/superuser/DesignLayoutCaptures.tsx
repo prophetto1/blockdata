@@ -464,7 +464,7 @@ export function Component() {
 
         {/* Table */}
         <ScrollArea className="min-h-0 flex-1">
-          <table className="w-full text-left">
+          <table className="w-full table-fixed text-left">
             <thead className="sticky top-0 z-10 bg-card text-xs text-muted-foreground">
               <tr className="border-b border-border">
                 <th className="w-10 px-3 py-2">
@@ -482,34 +482,30 @@ export function Component() {
                     <Checkbox.HiddenInput />
                   </Checkbox.Root>
                 </th>
-                <th className="px-3 py-2 font-medium">
-                  <button type="button" onClick={() => toggleSort('name')} className="inline-flex items-center gap-1 hover:text-foreground">
-                    Name <SortIcon field="name" activeField={sortField} dir={sortDir} />
-                  </button>
-                </th>
-                <th className="px-3 py-2 font-medium">URL</th>
-                <th className="px-3 py-2 font-medium">
+                <th className="w-[6rem] px-3 py-2 font-medium">Preview</th>
+                <th className="w-[36%] px-3 py-2 font-medium">URL</th>
+                <th className="w-[7rem] px-3 py-2 font-medium">
                   <button type="button" onClick={() => toggleSort('viewport')} className="inline-flex items-center gap-1 hover:text-foreground">
                     Viewport <SortIcon field="viewport" activeField={sortField} dir={sortDir} />
                   </button>
                 </th>
-                <th className="px-3 py-2 font-medium">
+                <th className="w-[6rem] px-3 py-2 font-medium">
                   <button type="button" onClick={() => toggleSort('theme')} className="inline-flex items-center gap-1 hover:text-foreground">
                     Theme <SortIcon field="theme" activeField={sortField} dir={sortDir} />
                   </button>
                 </th>
-                <th className="px-3 py-2 font-medium">
+                <th className="w-[7rem] px-3 py-2 font-medium">
                   <button type="button" onClick={() => toggleSort('pageType')} className="inline-flex items-center gap-1 hover:text-foreground">
                     Page Type <SortIcon field="pageType" activeField={sortField} dir={sortDir} />
                   </button>
                 </th>
-                <th className="px-3 py-2 font-medium">
+                <th className="w-[10rem] px-3 py-2 font-medium">
                   <button type="button" onClick={() => toggleSort('capturedAt')} className="inline-flex items-center gap-1 hover:text-foreground">
                     Captured <SortIcon field="capturedAt" activeField={sortField} dir={sortDir} />
                   </button>
                 </th>
-                <th className="px-3 py-2 font-medium">Status</th>
-                <th className="px-3 py-2 font-medium text-right">Actions</th>
+                <th className="w-[7rem] px-3 py-2 font-medium">Status</th>
+                <th className="w-[9rem] px-3 py-2 font-medium text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -544,7 +540,7 @@ export function Component() {
                       </Checkbox.Root>
                     </td>
                     <td className="px-3 py-3">
-                      <div className="flex items-center gap-2.5">
+                      <div className="flex items-center justify-center">
                         {row.status === 'complete' && (
                           previewLoadFailed.has(row.id) ? (
                             <div className="flex h-8 w-14 shrink-0 items-center justify-center rounded border border-dashed border-border bg-muted text-[10px] text-muted-foreground">
@@ -565,10 +561,9 @@ export function Component() {
                             />
                           )
                         )}
-                        <span className="text-sm font-medium text-foreground">{row.name}</span>
                       </div>
                     </td>
-                    <td className="px-3 py-3 text-sm text-muted-foreground max-w-[250px] truncate" title={row.url}>
+                    <td className="break-all whitespace-normal px-3 py-3 text-sm text-muted-foreground" title={row.url}>
                       {row.url}
                     </td>
                     <td className="px-3 py-3 text-sm text-muted-foreground font-mono">{row.viewport}</td>
@@ -594,7 +589,7 @@ export function Component() {
                       </Badge>
                     </td>
                     <td className="px-3 py-3" onClick={(e) => e.stopPropagation()}>
-                      <div className="flex items-center justify-end gap-1">
+                      <div className="flex flex-wrap items-center justify-end gap-1">
                         {row.status === 'complete' && (
                           <>
                             <Button

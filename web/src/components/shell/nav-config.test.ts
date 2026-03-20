@@ -131,12 +131,13 @@ describe('drill configs', () => {
     expect(labels).toContain('Audit Logs');
   });
 
-  it('settings drill has expected sections', () => {
+  it('settings drill stays focused on general profile controls', () => {
     const settings = getDrillConfig('settings')!;
     const sectionLabels = settings.sections.map((s) => s.label);
+    const allPaths = settings.sections.flatMap((section) => section.items.map((item) => item.path));
 
-    expect(sectionLabels).toContain('General');
-    expect(sectionLabels).toContain('Operations');
+    expect(sectionLabels).toEqual(['General']);
+    expect(allPaths).toEqual(['/app/settings/profile', '/app/settings/themes']);
   });
 
   it('exposes secrets in classic view', () => {
@@ -193,11 +194,12 @@ describe('drill configs', () => {
     expect(findDrillByRoute('/app/onboarding/agents/select')?.id).toBe('build-ai');
     expect(findDrillByRoute('/app/onboarding/agents')?.id).toBe('build-ai');
     expect(findDrillByRoute('/app/agents')?.id).toBe('build-ai');
+    expect(findDrillByRoute('/app/skills')?.id).toBe('build-ai');
     expect(findDrillByRoute('/app/secrets')?.id).toBe('workbench');
     expect(findDrillByRoute('/app/logs')?.id).toBe('observability');
     expect(findDrillByRoute('/app/transform')?.id).toBe('workbench');
     expect(findDrillByRoute('/app/elt')).toBeNull();
-    expect(findDrillByRoute('/app/database')).toBeNull();
+    expect(findDrillByRoute('/app/database')?.id).toBe('ingest');
   });
 
   it('resolveFlowDrillPath builds correct paths', () => {

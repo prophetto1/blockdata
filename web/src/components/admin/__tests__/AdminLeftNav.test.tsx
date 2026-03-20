@@ -14,29 +14,34 @@ function renderNav(pathname = '/app/superuser') {
 }
 
 describe('AdminLeftNav', () => {
-  it('renders a nav with admin navigation label', () => {
+  it('renders a nav with the secondary rail label', () => {
     renderNav();
-    expect(screen.getByRole('navigation', { name: /admin navigation/i })).toBeInTheDocument();
+    expect(screen.getByRole('navigation', { name: /admin secondary navigation/i })).toBeInTheDocument();
   });
 
-  it('renders links for all admin sections', () => {
-    renderNav();
-    expect(screen.getByRole('link', { name: /instance/i })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /workers/i })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /docling/i })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /document views/i })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /audit history/i })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /api endpoints/i })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /test integrations/i })).toBeInTheDocument();
+  it('renders no secondary links on the admin index page', () => {
+    renderNav('/app/superuser');
+    expect(screen.queryAllByRole('link')).toHaveLength(0);
   });
 
-  it('renders a back link', () => {
-    renderNav();
-    expect(screen.getByRole('link', { name: /back to app/i })).toHaveAttribute('href', '/app/assets');
-  });
-
-  it('marks active link', () => {
+  it('renders instance section anchors and defaults to the first hash target', () => {
     renderNav('/app/superuser/instance-config');
-    expect(screen.getByRole('link', { name: /instance/i })).toHaveAttribute('aria-current', 'page');
+
+    expect(screen.getByRole('link', { name: /jobs/i })).toHaveAttribute('href', '/app/superuser/instance-config#jobs');
+    expect(screen.getByRole('link', { name: /workers/i })).toHaveAttribute('href', '/app/superuser/instance-config#workers');
+    expect(screen.getByRole('link', { name: /jobs/i })).toHaveAttribute('aria-current', 'page');
+  });
+
+  it('uses the hash to mark the active instance subsection', () => {
+    renderNav('/app/superuser/instance-config#workers');
+    expect(screen.getByRole('link', { name: /workers/i })).toHaveAttribute('aria-current', 'page');
+  });
+
+  it('renders docling secondary links for docling pages', () => {
+    renderNav('/app/superuser/parsers-docling');
+
+    expect(screen.getByRole('link', { name: /profiles/i })).toHaveAttribute('href', '/app/superuser/parsers-docling');
+    expect(screen.getByRole('link', { name: /block types/i })).toHaveAttribute('href', '/app/superuser/document-views');
+    expect(screen.getByRole('link', { name: /profiles/i })).toHaveAttribute('aria-current', 'page');
   });
 });

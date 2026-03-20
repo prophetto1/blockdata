@@ -130,6 +130,12 @@ export const ALL_TOP_LEVEL_ITEMS: NavItem[] = [...TOP_LEVEL_NAV, ...PIPELINE_NAV
   (entry): entry is NavItem => entry !== 'divider',
 );
 
+const TOP_LEVEL_DRILL_BY_PATH = new Map(
+  ALL_TOP_LEVEL_ITEMS
+    .filter((item): item is NavItem & { drillId: string } => typeof item.drillId === 'string')
+    .map((item) => [item.path, item.drillId]),
+);
+
 export const BOTTOM_RAIL_NAV: NavItem[] = [];
 
 const FLOWS_DRILL: NavDrillConfig = {
@@ -302,6 +308,11 @@ export function findDrillByRoute(pathname: string): NavDrillConfig | null {
     // Check if any item in this drill owns the current route
     for (const section of config.sections) {
       for (const item of section.items) {
+        const owningTopLevelDrillId = TOP_LEVEL_DRILL_BY_PATH.get(item.path);
+        // Cross-links inside other drills should not steal a top-level drill landing page.
+        if (pathname === item.path && owningTopLevelDrillId && owningTopLevelDrillId !== config.id) {
+          continue;
+        }
         if (pathname === item.path || pathname.startsWith(item.path + '/')) {
           return config;
         }
