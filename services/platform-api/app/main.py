@@ -87,6 +87,10 @@ def create_app() -> FastAPI:
     except ImportError as e:
         logger.warning(f"Parse route disabled — missing dependency: {e}")
 
+    # 5e. Storage quota and uploads (user-scoped, before plugin catch-all)
+    from app.api.routes.storage import router as storage_router
+    app.include_router(storage_router)
+
     # 6. Plugin catch-all MUST be last
     from app.api.routes.plugin_execution import router as plugin_router
     app.include_router(plugin_router)

@@ -21,6 +21,8 @@ class Settings:
     platform_api_m2m_token: str = ""
     conversion_service_key: str = ""  # backward compat alias
     log_level: str = "INFO"
+    gcs_user_storage_bucket: Optional[str] = None
+    user_storage_max_file_bytes: int = 1073741824  # 1 GB
 
     @classmethod
     def from_env(cls) -> "Settings":
@@ -32,6 +34,8 @@ class Settings:
             platform_api_m2m_token=m2m or conv_key,
             conversion_service_key=conv_key or m2m,
             log_level=os.environ.get("LOG_LEVEL", "INFO"),
+            gcs_user_storage_bucket=_env_or_none("GCS_USER_STORAGE_BUCKET"),
+            user_storage_max_file_bytes=int(os.environ.get("USER_STORAGE_MAX_FILE_BYTES", "1073741824")),
         )
 
 
