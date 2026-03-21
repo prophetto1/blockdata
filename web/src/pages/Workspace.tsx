@@ -1,7 +1,9 @@
 import { Workbench } from '@/components/workbench/Workbench';
+import { useShellHeaderTitle } from '@/components/common/useShellHeaderTitle';
 import { useWorkspaceEditor, WORKSPACE_TABS, WORKSPACE_DEFAULT_PANES } from './superuser/useWorkspaceEditor';
 
 export function Component() {
+  useShellHeaderTitle({});
   const { renderContent } = useWorkspaceEditor('workspace-dir');
   return (
     <div className="h-full w-full min-h-0 p-2">

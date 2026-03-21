@@ -62,10 +62,6 @@ function isPreviewTab(value: string): boolean {
   return value.startsWith(PREVIEW_TAB_PREFIX);
 }
 
-function buildPreviewLabel(index: number): string {
-  return index === 0 ? 'Preview' : `Preview-${String(index + 1).padStart(2, '0')}`;
-}
-
 type FlowMetadataResponse = {
   id?: string;
   namespace?: string;
@@ -164,7 +160,7 @@ function FlowWorkspaceFrame({ children }: { children: React.ReactNode }) {
 export default function FlowDetail() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { flowId, tab } = useParams<{ flowId: string; tab?: string }>();
+  const { namespace: namespaceParam, flowId, tab } = useParams<{ namespace: string; flowId: string; tab?: string }>();
   const [flowName, setFlowName] = useState('Flow');
   const [namespace, setNamespace] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -172,15 +168,6 @@ export default function FlowDetail() {
   const [topologyResetNonce, setTopologyResetNonce] = useState(0);
   const [previewTabs] = useState<string[]>([]);
   const [projectId, setProjectId] = useState<string | null>(() => readFocusedProjectId());
-
-  const previewTabConfigs = useMemo<FlowTabConfig[]>(
-    () => previewTabs.map((value, index) => ({ value, label: buildPreviewLabel(index) })),
-    [previewTabs],
-  );
-  const allTabs = useMemo<FlowTabConfig[]>(
-    () => [...FLOW_TABS, ...previewTabConfigs],
-    [previewTabConfigs],
-  );
 
   const activeTab = useMemo(() => {
     if (tab && isPreviewTab(tab) && previewTabs.includes(tab)) return tab;
@@ -207,13 +194,14 @@ export default function FlowDetail() {
     }
     if (tab !== activeTab) {
       const resolvedFlowId = encodeURIComponent(flowId);
-      navigate(`/app/flows/${resolvedFlowId}/${activeTab}${searchSuffix}`, { replace: true });
+      const resolvedNamespace = encodeURIComponent(namespaceParam ?? 'default');
+      navigate(`/app/flows/${resolvedNamespace}/${resolvedFlowId}/${activeTab}${searchSuffix}`, { replace: true });
       return;
     }
     if (typeof window !== 'undefined' && !isLockedFlowTab(activeTab)) {
       window.localStorage.setItem(FLOW_DEFAULT_TAB_STORAGE_KEY, activeTab);
     }
-  }, [activeTab, flowId, navigate, searchSuffix, tab]);
+  }, [activeTab, flowId, navigate, namespaceParam, searchSuffix, tab]);
 
   useEffect(() => {
     if (!shouldApplyDefaultTimeRange(activeTab, searchParams)) return;
@@ -243,7 +231,7 @@ export default function FlowDetail() {
     const load = async () => {
       setError(null);
       try {
-        const flowPath = `flows/default/${encodeURIComponent(flowId)}`;
+        const flowPath = `flows/${encodeURIComponent(namespaceParam ?? 'default')}/${encodeURIComponent(flowId)}`;
         const projectSuffix = projectId ? `?project_id=${encodeURIComponent(projectId)}` : '';
         const metadata = await edgeJson<FlowMetadataResponse>(`${flowPath}${projectSuffix}`);
         if (cancelled) return;
@@ -254,7 +242,7 @@ export default function FlowDetail() {
 
         const resolvedNamespace = (typeof metadata.namespace === 'string' && metadata.namespace.length > 0)
           ? metadata.namespace
-          : 'default';
+          : (namespaceParam ?? 'default');
         setFlowName(flowNameFromLabel ?? `Flow ${flowId.slice(0, 8)}`);
         setNamespace(resolvedNamespace);
         setFlowTriggers(toFlowTriggers(metadata.triggers));
@@ -275,17 +263,12 @@ export default function FlowDetail() {
     return () => {
       cancelled = true;
     };
-  }, [flowId, projectId]);
+  }, [flowId, namespaceParam, projectId]);
 
-  const activeTabLabel = useMemo(
-    () => allTabs.find((item) => item.value === activeTab)?.label ?? activeTab,
-    [activeTab, allTabs],
-  );
   const useWorkspaceFrame = activeTab === 'edit' || activeTab === 'topology' || isPreviewTab(activeTab);
 
   useShellHeaderTitle({
     title: flowName,
-    breadcrumbs: ['Flows', flowName, activeTabLabel],
   });
 
   if (!flowId) return null;
@@ -325,7 +308,7 @@ export default function FlowDetail() {
       return (
         <OverviewTab
           onExecute={() => navigate(
-            `/app/flows/${encodeURIComponent(flowId)}/executions${searchSuffix}`,
+            `/app/flows/${encodeURIComponent(namespace ?? namespaceParam ?? 'default')}/${encodeURIComponent(flowId)}/executions${searchSuffix}`,
           )}
         />
       );
@@ -346,7 +329,7 @@ export default function FlowDetail() {
             nextExecutionDate: t.nextExecutionDate,
             disabled: t.disabled,
           }))}
-          onEditFlow={() => navigate(`/app/flows/${encodeURIComponent(flowId)}/edit`)}
+          onEditFlow={() => navigate(`/app/flows/${encodeURIComponent(namespace ?? namespaceParam ?? 'default')}/${encodeURIComponent(flowId)}/edit`)}
         />
       );
     }

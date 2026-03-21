@@ -91,7 +91,7 @@
     "pageType": "marketing",
     "capturedAt": null,
     "outputDir": "reducto-ai-utm-content-777921860384-utm-term-reducto-utm-device-c-utm-network-g-campaignid-23097717334-adgroupid-190295734687-adid-777921860384-utm-term-reducto-utm-campaign-defense-utm-source-google-utm-medium-cpc-gad-source-1-gad-campaignid-23097717334-gclid-cjwkcajwg-nnbhageiwaiypya1zit5knphod-rdwl87om0vru635s6rmt0mjokkd0s3dta7ofmrnbrocyyoqavd-bwe/1920x1080",
-    "status": "auth-needed",
+    "status": "failed",
     "hasOverlay": false,
     "overlayRequested": false
   },

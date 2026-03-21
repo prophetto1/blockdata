@@ -130,6 +130,20 @@ describe('LeftRailShadcn', () => {
     expect(screen.getByText('Themes')).toBeInTheDocument();
   });
 
+  it('renders Flows as a plain classic nav item without a drill chevron', async () => {
+    window.localStorage.setItem('blockdata.nav.style', 'classic');
+
+    render(
+      <MemoryRouter initialEntries={['/app/flows']}>
+        <LeftRailShadcn />
+      </MemoryRouter>,
+    );
+
+    const flowsButton = await screen.findByRole('button', { name: 'Flows' });
+
+    expect(flowsButton.querySelector('.ml-auto')).toBeNull();
+  });
+
   it('renders compact mode with icon-only buttons', () => {
     const { container } = render(
       <MemoryRouter initialEntries={['/app/database']}>

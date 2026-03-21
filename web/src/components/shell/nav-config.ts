@@ -71,7 +71,7 @@ export const TOP_LEVEL_NAV: Array<NavItem | 'divider'> = [
   { label: 'Knowledge Bases', icon: IconDatabase, path: '/app/knowledge-bases' },
   { label: 'Agent Onboarding', icon: IconRobot, path: '/app/onboarding/agents' },
   'divider',
-  { label: 'Flows', icon: IconFolderPlus, path: '/app/flows', drillId: 'flows' },
+  { label: 'Flows', icon: IconFolderPlus, path: '/app/flows' },
   'divider',
   { label: 'Database', icon: IconDatabase, path: '/app/database' },
   { label: 'Load', icon: IconPlayerPlay, path: '/app/load' },

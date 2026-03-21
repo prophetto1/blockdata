@@ -4,7 +4,7 @@ import { useShellHeaderTitle } from '@/components/common/useShellHeaderTitle';
 import { DocxPreview } from '@/components/documents/DocxPreview';
 import { PdfjsExpressPreview } from '@/components/documents/PdfjsExpressPreview';
 import { PptxPreview } from '@/components/documents/PptxPreview';
-import { ProjectParseUppyUploader, type UploadBatchResult } from '@/components/documents/ProjectParseUppyUploader';
+import { ProjectParseUploader, type UploadBatchResult } from '@/components/documents/ProjectParseUploader';
 import { NativeSelect } from '@/components/ui/native-select';
 import { supabase } from '@/lib/supabase';
 import { TABLES } from '@/lib/tables';
@@ -401,14 +401,10 @@ export default function Upload() {
         <div className="upload-left-stack flex flex-col gap-4">
           {/* Upload card */}
           <div className="upload-left-upload-card bg-card p-4">
-            <ProjectParseUppyUploader
+            <ProjectParseUploader
               projectId={projectId}
-              ingestMode="upload_only"
               onBatchUploaded={handleBatchUploaded}
-              enableRemoteSources
               hideHeader
-              companionUrl={import.meta.env.VITE_UPPY_COMPANION_URL as string | undefined}
-              height={220}
             />
           </div>
 

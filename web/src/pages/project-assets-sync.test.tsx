@@ -18,8 +18,8 @@ vi.mock('@/components/ui/scroll-area', () => ({
   ScrollArea: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }));
 
-vi.mock('@/components/documents/ProjectParseUppyUploader', () => ({
-  ProjectParseUppyUploader: ({
+vi.mock('@/components/documents/ProjectParseUploader', () => ({
+  ProjectParseUploader: ({
     onBatchUploaded,
   }: {
     onBatchUploaded?: () => void | Promise<void>;

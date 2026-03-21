@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
+import { useShellHeaderTitle } from '@/components/common/useShellHeaderTitle';
 import { ScalarApiPlayground } from './ScalarApiPlayground';
 import {
   SCALAR_THEME_SYNC_EVENT,
@@ -53,6 +54,7 @@ function readShellTokens(): ScalarThemeSyncMessage['tokens'] {
 }
 
 export function ScalarApiPlaygroundPage() {
+  useShellHeaderTitle({});
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const lastMessageSignature = useRef<string>('');
   const location = useLocation();

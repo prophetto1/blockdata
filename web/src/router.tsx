@@ -49,7 +49,7 @@ import ServiceDetailPage from '@/pages/marketplace/ServiceDetailPage';
 import FunctionCatalogPage from '@/pages/marketplace/FunctionCatalogPage';
 import LogsPage from '@/pages/kestra/LogsPage';
 import TestsPage from '@/pages/kestra/TestsPage';
-import { FlowsRouteShell } from '@/components/layout/FlowsRouteShell';
+import { FlowsShellLayout } from '@/components/layout/FlowsShellLayout';
 import { featureFlags } from '@/lib/featureFlags';
 import { SuperuserGuard } from '@/pages/superuser/SuperuserGuard';
 import NotFound from '@/pages/NotFound';
@@ -134,14 +134,7 @@ export const router = createBrowserRouter([
           { path: '/app/marketplace/services', element: <ServicesCatalog /> },
           { path: '/app/marketplace/services/:serviceId', element: <ServiceDetailPage /> },
           { path: '/app/marketplace/functions', element: <FunctionCatalogPage /> },
-          {
-            path: '/app/flows',
-            element: <FlowsRouteShell />,
-            children: [
-              { index: true, element: <FlowsList /> },
-              { path: ':flowId/:tab?', element: <FlowDetail /> },
-            ],
-          },
+          { path: '/app/flows', element: <FlowsList /> },
 
           { path: '/app/ui', element: <Navigate to="/app/schemas" replace /> },
           { path: '/app/ui/:section', element: <Navigate to="/app/schemas" replace /> },
@@ -227,6 +220,15 @@ export const router = createBrowserRouter([
         ],
       },
       // Admin shell — separate from AppLayout, no inherited header/rail
+      {
+        element: <FlowsShellLayout />,
+        children: [
+          {
+            path: '/app/flows/:namespace/:flowId/:tab?',
+            element: <FlowDetail />,
+          },
+        ],
+      },
       {
         element: <AdminShellLayout />,
         children: [

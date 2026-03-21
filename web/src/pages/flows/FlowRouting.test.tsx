@@ -1,7 +1,8 @@
 import { cleanup, render, screen } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import { AppLayout } from './AppLayout';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { AppLayout } from '@/components/layout/AppLayout';
+import { FlowsShellLayout } from '@/components/layout/FlowsShellLayout';
 
 vi.mock('@/auth/AuthContext', () => ({
   useAuth: () => ({
@@ -80,39 +81,29 @@ function renderAt(pathname: string) {
     <MemoryRouter initialEntries={[pathname]}>
       <Routes>
         <Route element={<AppLayout />}>
-          <Route path="/app/*" element={<div data-testid="route-content" />} />
+          <Route path="/app/flows" element={<div data-testid="flows-table-page" />} />
+        </Route>
+        <Route path="/app/flows/:namespace/:flowId/:tab" element={<FlowsShellLayout />}>
+          <Route index element={<div data-testid="flows-detail-page" />} />
         </Route>
       </Routes>
     </MemoryRouter>,
   );
 }
 
-describe('AppLayout route shells', () => {
-  it('renders schema routes without AppPageShell so the workbench can fill the full height', () => {
-    renderAt('/app/schemas');
-
-    expect(screen.getByTestId('route-content')).toBeInTheDocument();
-    expect(screen.queryByTestId('app-page-shell')).not.toBeInTheDocument();
-  });
-
-  it('renders the workspace route without AppPageShell so the workspace can fill the full height', () => {
-    renderAt('/app/workspace');
-
-    expect(screen.getByTestId('route-content')).toBeInTheDocument();
-    expect(screen.queryByTestId('app-page-shell')).not.toBeInTheDocument();
-  });
-
-  it('renders the flows list route without AppPageShell so the table remains full-bleed', () => {
+describe('flows route ownership', () => {
+  it('keeps the table route inside AppLayout', () => {
     renderAt('/app/flows');
 
-    expect(screen.getByTestId('route-content')).toBeInTheDocument();
-    expect(screen.queryByTestId('app-page-shell')).not.toBeInTheDocument();
+    expect(screen.getByTestId('left-rail')).toBeInTheDocument();
+    expect(screen.getByTestId('flows-table-page')).toBeInTheDocument();
   });
 
-  it('keeps generic app routes inside AppPageShell', () => {
-    renderAt('/app');
+  it('renders detail routes inside the dedicated flows shell instead of AppLayout', () => {
+    renderAt('/app/flows/default/demo-flow/overview');
 
-    expect(screen.getByTestId('route-content')).toBeInTheDocument();
-    expect(screen.getByTestId('app-page-shell')).toBeInTheDocument();
+    expect(screen.queryByTestId('left-rail')).not.toBeInTheDocument();
+    expect(screen.getByTestId('flows-detail-page')).toBeInTheDocument();
+    expect(screen.getByTestId('flows-shell-frame')).toBeInTheDocument();
   });
 });
