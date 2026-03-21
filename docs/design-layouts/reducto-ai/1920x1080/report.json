@@ -1,0 +1,2265 @@
+{
+  "capture": {
+    "browser": "chromium",
+    "capturedAt": "2026-03-21T01:28:16.744Z",
+    "viewport": {
+      "width": 1920,
+      "height": 1080,
+      "deviceScaleFactor": 1
+    },
+    "requestedTheme": "light",
+    "requestedPageMode": "auto",
+    "page": {
+      "url": "https://reducto.ai/",
+      "title": "Reducto: AI document parsing & extraction software"
+    },
+    "runtime": {
+      "scrollX": 0,
+      "scrollY": 0,
+      "innerWidth": 1920,
+      "innerHeight": 1080,
+      "devicePixelRatio": 1
+    },
+    "resolvedTheme": "light",
+    "pageMode": "marketing",
+    "artifacts": {
+      "reportPath": "E:\\writing-system\\docs\\design-layouts\\reducto-ai\\1920x1080\\light\\report.json",
+      "viewportScreenshot": "E:\\writing-system\\docs\\design-layouts\\reducto-ai\\1920x1080\\light\\viewport.png",
+      "fullPageScreenshot": "E:\\writing-system\\docs\\design-layouts\\reducto-ai\\1920x1080\\light\\full-page.png"
+    }
+  },
+  "measurements": {
+    "appFrame": {
+      "label": "appFrame",
+      "tag": "div",
+      "id": null,
+      "role": null,
+      "className": "mt-16",
+      "selector": "div.mt-16",
+      "text": "PricingIndustriesCustomersResourcesCareersLog inContact salesAnnouncing $108M in total funding and our Series B led by a16zTurn documents in",
+      "rect": {
+        "x": 0,
+        "y": 64,
+        "width": 1920,
+        "height": 10946.22
+      },
+      "absoluteRect": {
+        "x": 0,
+        "y": 64,
+        "width": 1920,
+        "height": 10946.22
+      },
+      "style": {
+        "fontFamily": "reductosans, \"reductosans Fallback\"",
+        "fontSize": "16px",
+        "lineHeight": "24px",
+        "fontWeight": "400",
+        "letterSpacing": "normal",
+        "fontStyle": "normal",
+        "textTransform": "none",
+        "color": "rgb(49, 6, 50)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "border": "0px solid rgb(215, 204, 193)",
+        "borderColor": "rgb(215, 204, 193)",
+        "borderRadius": "0px",
+        "boxShadow": "none",
+        "paddingTop": "0px",
+        "paddingRight": "0px",
+        "paddingBottom": "0px",
+        "paddingLeft": "0px",
+        "marginTop": "64px",
+        "marginRight": "0px",
+        "marginBottom": "0px",
+        "marginLeft": "0px",
+        "gap": "normal",
+        "maxWidth": "none"
+      }
+    },
+    "topToolbar": {
+      "label": "topToolbar",
+      "tag": "header",
+      "id": null,
+      "role": null,
+      "className": "xs:px-6 flex w-full max-w-[1280px] gap-6 px-4 sm:px-8 md:px-16 flex-col items-center text-center",
+      "selector": "div.mt-16 > main > section.mx-auto.flex > header.xs:px-6.flex",
+      "text": "Turn documents into data. Build without constraints.Reducto combines the best of computer vision and new vision-language models to produce t",
+      "rect": {
+        "x": 320,
+        "y": 229,
+        "width": 1280,
+        "height": 364
+      },
+      "absoluteRect": {
+        "x": 320,
+        "y": 229,
+        "width": 1280,
+        "height": 364
+      },
+      "style": {
+        "fontFamily": "reductoSerif, \"reductoSerif Fallback\"",
+        "fontSize": "16px",
+        "lineHeight": "24px",
+        "fontWeight": "400",
+        "letterSpacing": "normal",
+        "fontStyle": "normal",
+        "textTransform": "none",
+        "color": "rgb(49, 6, 50)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "border": "0px solid rgb(215, 204, 193)",
+        "borderColor": "rgb(215, 204, 193)",
+        "borderRadius": "0px",
+        "boxShadow": "none",
+        "paddingTop": "0px",
+        "paddingRight": "64px",
+        "paddingBottom": "0px",
+        "paddingLeft": "64px",
+        "marginTop": "0px",
+        "marginRight": "0px",
+        "marginBottom": "0px",
+        "marginLeft": "0px",
+        "gap": "24px",
+        "maxWidth": "1280px"
+      }
+    },
+    "shellRow": {
+      "label": "shellRow",
+      "tag": "nav",
+      "id": null,
+      "role": null,
+      "className": "fixed top-0 z-50 h-16 w-full border-b border-transparent bg-stone-50 transition-shadow",
+      "selector": "div.mt-16 > nav.fixed.top-0",
+      "text": "PricingIndustriesCustomersResourcesCareersLog inContact sales",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 1920,
+        "height": 64
+      },
+      "absoluteRect": {
+        "x": 0,
+        "y": 0,
+        "width": 1920,
+        "height": 64
+      },
+      "style": {
+        "fontFamily": "reductosans, \"reductosans Fallback\"",
+        "fontSize": "16px",
+        "lineHeight": "24px",
+        "fontWeight": "400",
+        "letterSpacing": "normal",
+        "fontStyle": "normal",
+        "textTransform": "none",
+        "color": "rgb(49, 6, 50)",
+        "backgroundColor": "oklch(0.985 0.001 106.423)",
+        "border": "",
+        "borderColor": "rgba(0, 0, 0, 0)",
+        "borderRadius": "0px",
+        "boxShadow": "none",
+        "paddingTop": "0px",
+        "paddingRight": "0px",
+        "paddingBottom": "0px",
+        "paddingLeft": "0px",
+        "marginTop": "0px",
+        "marginRight": "0px",
+        "marginBottom": "0px",
+        "marginLeft": "0px",
+        "gap": "normal",
+        "maxWidth": "none"
+      }
+    },
+    "leftRail": {
+      "label": "leftRail",
+      "tag": "span",
+      "id": null,
+      "role": null,
+      "className": "",
+      "selector": "div.mt-16 > nav.fixed.top-0 > div.mx-auto.flex > span",
+      "text": "",
+      "rect": {
+        "x": 452,
+        "y": 22.77,
+        "width": 100,
+        "height": 17.47
+      },
+      "absoluteRect": {
+        "x": 452,
+        "y": 22.77,
+        "width": 100,
+        "height": 17.47
+      },
+      "style": {
+        "fontFamily": "reductosans, \"reductosans Fallback\"",
+        "fontSize": "16px",
+        "lineHeight": "24px",
+        "fontWeight": "400",
+        "letterSpacing": "normal",
+        "fontStyle": "normal",
+        "textTransform": "none",
+        "color": "rgb(49, 6, 50)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "border": "0px solid rgb(215, 204, 193)",
+        "borderColor": "rgb(215, 204, 193)",
+        "borderRadius": "0px",
+        "boxShadow": "none",
+        "paddingTop": "0px",
+        "paddingRight": "0px",
+        "paddingBottom": "0px",
+        "paddingLeft": "0px",
+        "marginTop": "0px",
+        "marginRight": "0px",
+        "marginBottom": "0px",
+        "marginLeft": "0px",
+        "gap": "normal",
+        "maxWidth": "none"
+      }
+    },
+    "rightRail": {
+      "label": "rightRail",
+      "tag": "div",
+      "id": null,
+      "role": null,
+      "className": "inline-flex items-center gap-4",
+      "selector": "div.mt-16 > nav.fixed.top-0 > div.mx-auto.flex > div.inline-flex.items-center",
+      "text": "Log inContact sales",
+      "rect": {
+        "x": 1289.97,
+        "y": 12.5,
+        "width": 178.03,
+        "height": 38
+      },
+      "absoluteRect": {
+        "x": 1289.97,
+        "y": 12.5,
+        "width": 178.03,
+        "height": 38
+      },
+      "style": {
+        "fontFamily": "reductosans, \"reductosans Fallback\"",
+        "fontSize": "16px",
+        "lineHeight": "24px",
+        "fontWeight": "400",
+        "letterSpacing": "normal",
+        "fontStyle": "normal",
+        "textTransform": "none",
+        "color": "rgb(49, 6, 50)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "border": "0px solid rgb(215, 204, 193)",
+        "borderColor": "rgb(215, 204, 193)",
+        "borderRadius": "0px",
+        "boxShadow": "none",
+        "paddingTop": "0px",
+        "paddingRight": "0px",
+        "paddingBottom": "0px",
+        "paddingLeft": "0px",
+        "marginTop": "0px",
+        "marginRight": "0px",
+        "marginBottom": "0px",
+        "marginLeft": "0px",
+        "gap": "16px",
+        "maxWidth": "none"
+      }
+    },
+    "datasetSelector": null,
+    "searchInput": null,
+    "fieldList": null,
+    "mainCanvas": {
+      "label": "mainCanvas",
+      "tag": "div",
+      "id": null,
+      "role": null,
+      "className": "absolute left-1/2 hidden -translate-x-1/2 items-center gap-6 lg:flex",
+      "selector": "div.mt-16 > nav.fixed.top-0 > div.mx-auto.flex > div.absolute.left-1/2",
+      "text": "PricingIndustriesCustomersResourcesCareers",
+      "rect": {
+        "x": 717.3,
+        "y": 16.5,
+        "width": 485.41,
+        "height": 30
+      },
+      "absoluteRect": {
+        "x": 717.3,
+        "y": 16.5,
+        "width": 485.41,
+        "height": 30
+      },
+      "style": {
+        "fontFamily": "reductosans, \"reductosans Fallback\"",
+        "fontSize": "16px",
+        "lineHeight": "24px",
+        "fontWeight": "400",
+        "letterSpacing": "normal",
+        "fontStyle": "normal",
+        "textTransform": "none",
+        "color": "rgb(49, 6, 50)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "border": "0px solid rgb(215, 204, 193)",
+        "borderColor": "rgb(215, 204, 193)",
+        "borderRadius": "0px",
+        "boxShadow": "none",
+        "paddingTop": "0px",
+        "paddingRight": "0px",
+        "paddingBottom": "0px",
+        "paddingLeft": "0px",
+        "marginTop": "0px",
+        "marginRight": "0px",
+        "marginBottom": "0px",
+        "marginLeft": "0px",
+        "gap": "24px",
+        "maxWidth": "none"
+      }
+    },
+    "tabStrip": null,
+    "emptyState": null,
+    "actionButtons": [
+      {
+        "label": "actionButton",
+        "tag": "a",
+        "id": null,
+        "role": null,
+        "className": "inline-flex items-center justify-center font-medium font-inter gap-2.5 transition-colors duration-300 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 disabled:pointer-events-none bg-brand-02 text-white border border-[#690F6B] hover:bg-[linear-gradient(0deg,rgba(0,0,0,0.15)_0%,rgba(0,0,0,0.15)_100%)] shadow-[0px_-2px_0px_0px_rgba(255,255,255,0.25)_inset,0px_2px_0px_0px_rgba(255,255,255,0.25)_inset] disabled:hover:bg-brand-02 disabled:shadow-none py-3 h-14 px-6 text-[17px]",
+        "selector": "div.mt-16 > main > section.mx-auto.flex > header.xs:px-6.flex > div.flex.flex-col > div.inline-flex.gap-4 > a.inline-flex.items-center",
+        "text": "Try for free",
+        "rect": {
+          "x": 777.83,
+          "y": 537,
+          "width": 167.33,
+          "height": 56
+        },
+        "absoluteRect": {
+          "x": 777.83,
+          "y": 537,
+          "width": 167.33,
+          "height": 56
+        },
+        "style": {
+          "fontFamily": "Inter, \"Inter Fallback\"",
+          "fontSize": "17px",
+          "lineHeight": "25.5px",
+          "fontWeight": "500",
+          "letterSpacing": "normal",
+          "fontStyle": "normal",
+          "textTransform": "none",
+          "color": "rgb(255, 255, 255)",
+          "backgroundColor": "rgb(157, 23, 160)",
+          "border": "1px solid rgb(105, 15, 107)",
+          "borderColor": "rgb(105, 15, 107)",
+          "borderRadius": "0px",
+          "boxShadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(255, 255, 255, 0.25) 0px -2px 0px 0px inset, rgba(255, 255, 255, 0.25) 0px 2px 0px 0px inset",
+          "paddingTop": "12px",
+          "paddingRight": "24px",
+          "paddingBottom": "12px",
+          "paddingLeft": "24px",
+          "marginTop": "0px",
+          "marginRight": "0px",
+          "marginBottom": "0px",
+          "marginLeft": "0px",
+          "gap": "10px",
+          "maxWidth": "none"
+        }
+      },
+      {
+        "label": "actionButton",
+        "tag": "a",
+        "id": null,
+        "role": null,
+        "className": "inline-flex items-center justify-center font-medium font-inter gap-2.5 transition-colors duration-300 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 disabled:pointer-events-none bg-white text-stone-700 border border-stone-300 hover:text-stone-800 hover:border-stone-400 disabled:hover:text-stone-700 disabled:hover:border-stone-300 py-3 h-14 px-6 text-[17px]",
+        "selector": "div.mt-16 > main > section.mx-auto.flex > header.xs:px-6.flex > div.flex.flex-col > div.inline-flex.gap-4 > a.inline-flex.items-center",
+        "text": "Request a demo",
+        "rect": {
+          "x": 961.16,
+          "y": 537,
+          "width": 181.02,
+          "height": 56
+        },
+        "absoluteRect": {
+          "x": 961.16,
+          "y": 537,
+          "width": 181.02,
+          "height": 56
+        },
+        "style": {
+          "fontFamily": "Inter, \"Inter Fallback\"",
+          "fontSize": "17px",
+          "lineHeight": "25.5px",
+          "fontWeight": "500",
+          "letterSpacing": "normal",
+          "fontStyle": "normal",
+          "textTransform": "none",
+          "color": "oklch(0.374 0.01 67.558)",
+          "backgroundColor": "rgb(255, 255, 255)",
+          "border": "1px solid oklch(0.869 0.005 56.366)",
+          "borderColor": "oklch(0.869 0.005 56.366)",
+          "borderRadius": "0px",
+          "boxShadow": "none",
+          "paddingTop": "12px",
+          "paddingRight": "24px",
+          "paddingBottom": "12px",
+          "paddingLeft": "24px",
+          "marginTop": "0px",
+          "marginRight": "0px",
+          "marginBottom": "0px",
+          "marginLeft": "0px",
+          "gap": "10px",
+          "maxWidth": "none"
+        }
+      }
+    ],
+    "visibleSections": [
+      {
+        "label": null,
+        "tag": "header",
+        "id": null,
+        "role": null,
+        "className": "xs:px-6 flex w-full max-w-[1280px] gap-6 px-4 sm:px-8 md:px-16 flex-col items-center text-center",
+        "selector": "div.mt-16 > main > section.mx-auto.flex > header.xs:px-6.flex",
+        "text": "Turn documents into data. Build without constraints.Reducto combines the best of computer vision and new vision-language models to produce t",
+        "rect": {
+          "x": 320,
+          "y": 229,
+          "width": 1280,
+          "height": 364
+        },
+        "absoluteRect": {
+          "x": 320,
+          "y": 229,
+          "width": 1280,
+          "height": 364
+        },
+        "style": {
+          "fontFamily": "reductoSerif, \"reductoSerif Fallback\"",
+          "fontSize": "16px",
+          "lineHeight": "24px",
+          "fontWeight": "400",
+          "letterSpacing": "normal",
+          "fontStyle": "normal",
+          "textTransform": "none",
+          "color": "rgb(49, 6, 50)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px solid rgb(215, 204, 193)",
+          "borderColor": "rgb(215, 204, 193)",
+          "borderRadius": "0px",
+          "boxShadow": "none",
+          "paddingTop": "0px",
+          "paddingRight": "64px",
+          "paddingBottom": "0px",
+          "paddingLeft": "64px",
+          "marginTop": "0px",
+          "marginRight": "0px",
+          "marginBottom": "0px",
+          "marginLeft": "0px",
+          "gap": "24px",
+          "maxWidth": "1280px"
+        }
+      },
+      {
+        "label": null,
+        "tag": "nav",
+        "id": null,
+        "role": null,
+        "className": "fixed top-0 z-50 h-16 w-full border-b border-transparent bg-stone-50 transition-shadow",
+        "selector": "div.mt-16 > nav.fixed.top-0",
+        "text": "PricingIndustriesCustomersResourcesCareersLog inContact sales",
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 1920,
+          "height": 64
+        },
+        "absoluteRect": {
+          "x": 0,
+          "y": 0,
+          "width": 1920,
+          "height": 64
+        },
+        "style": {
+          "fontFamily": "reductosans, \"reductosans Fallback\"",
+          "fontSize": "16px",
+          "lineHeight": "24px",
+          "fontWeight": "400",
+          "letterSpacing": "normal",
+          "fontStyle": "normal",
+          "textTransform": "none",
+          "color": "rgb(49, 6, 50)",
+          "backgroundColor": "oklch(0.985 0.001 106.423)",
+          "border": "",
+          "borderColor": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px",
+          "boxShadow": "none",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "marginTop": "0px",
+          "marginRight": "0px",
+          "marginBottom": "0px",
+          "marginLeft": "0px",
+          "gap": "normal",
+          "maxWidth": "none"
+        }
+      },
+      {
+        "label": null,
+        "tag": "main",
+        "id": null,
+        "role": null,
+        "className": "",
+        "selector": "div.mt-16 > main",
+        "text": "Turn documents into data. Build without constraints.Reducto combines the best of computer vision and new vision-language models to produce t",
+        "rect": {
+          "x": 0,
+          "y": 109,
+          "width": 1920,
+          "height": 9833.22
+        },
+        "absoluteRect": {
+          "x": 0,
+          "y": 109,
+          "width": 1920,
+          "height": 9833.22
+        },
+        "style": {
+          "fontFamily": "reductosans, \"reductosans Fallback\"",
+          "fontSize": "16px",
+          "lineHeight": "24px",
+          "fontWeight": "400",
+          "letterSpacing": "normal",
+          "fontStyle": "normal",
+          "textTransform": "none",
+          "color": "rgb(49, 6, 50)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px solid rgb(215, 204, 193)",
+          "borderColor": "rgb(215, 204, 193)",
+          "borderRadius": "0px",
+          "boxShadow": "none",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "marginTop": "0px",
+          "marginRight": "0px",
+          "marginBottom": "0px",
+          "marginLeft": "0px",
+          "gap": "normal",
+          "maxWidth": "none"
+        }
+      },
+      {
+        "label": null,
+        "tag": "section",
+        "id": null,
+        "role": null,
+        "className": "mx-auto flex flex-col items-center py-12 font-serif md:gap-16 md:py-12 xl:py-30 gap-1 bg-stone-50 pb-0 md:pb-0 lg:pb-0",
+        "selector": "div.mt-16 > main > section.mx-auto.flex",
+        "text": "Turn documents into data. Build without constraints.Reducto combines the best of computer vision and new vision-language models to produce t",
+        "rect": {
+          "x": 0,
+          "y": 109,
+          "width": 1920,
+          "height": 1601.22
+        },
+        "absoluteRect": {
+          "x": 0,
+          "y": 109,
+          "width": 1920,
+          "height": 1601.22
+        },
+        "style": {
+          "fontFamily": "reductoSerif, \"reductoSerif Fallback\"",
+          "fontSize": "16px",
+          "lineHeight": "24px",
+          "fontWeight": "400",
+          "letterSpacing": "normal",
+          "fontStyle": "normal",
+          "textTransform": "none",
+          "color": "rgb(49, 6, 50)",
+          "backgroundColor": "oklch(0.985 0.001 106.423)",
+          "border": "0px solid rgb(215, 204, 193)",
+          "borderColor": "rgb(215, 204, 193)",
+          "borderRadius": "0px",
+          "boxShadow": "none",
+          "paddingTop": "120px",
+          "paddingRight": "0px",
+          "paddingBottom": "120px",
+          "paddingLeft": "0px",
+          "marginTop": "0px",
+          "marginRight": "0px",
+          "marginBottom": "0px",
+          "marginLeft": "0px",
+          "gap": "64px",
+          "maxWidth": "none"
+        }
+      }
+    ]
+  },
+  "typography": {
+    "scale": [
+      {
+        "fontFamily": "reductoSerif, \"reductoSerif Fallback\"",
+        "fontSize": "136px",
+        "lineHeight": "100px",
+        "fontWeight": "650",
+        "letterSpacing": "normal",
+        "fontStyle": "normal",
+        "textTransform": "none",
+        "color": "rgb(49, 6, 50)",
+        "sampleText": "0",
+        "sampleTag": "h2",
+        "occurrences": 1,
+        "tags": [
+          "h2"
+        ]
+      },
+      {
+        "fontFamily": "reductoSerif, \"reductoSerif Fallback\"",
+        "fontSize": "136px",
+        "lineHeight": "100px",
+        "fontWeight": "650",
+        "letterSpacing": "-1.36px",
+        "fontStyle": "normal",
+        "textTransform": "none",
+        "color": "oklch(0.268 0.007 34.298)",
+        "sampleText": "0",
+        "sampleTag": "span",
+        "occurrences": 1,
+        "tags": [
+          "span"
+        ]
+      },
+      {
+        "fontFamily": "reductoSerif, \"reductoSerif Fallback\"",
+        "fontSize": "80px",
+        "lineHeight": "90px",
+        "fontWeight": "470",
+        "letterSpacing": "-0.8px",
+        "fontStyle": "normal",
+        "textTransform": "none",
+        "color": "oklch(0.268 0.007 34.298)",
+        "sampleText": "Turn documents into data. Build without constraints.",
+        "sampleTag": "h1",
+        "occurrences": 2,
+        "tags": [
+          "h1",
+          "span"
+        ]
+      },
+      {
+        "fontFamily": "reductoSerif, \"reductoSerif Fallback\"",
+        "fontSize": "80px",
+        "lineHeight": "90px",
+        "fontWeight": "470",
+        "letterSpacing": "normal",
+        "fontStyle": "normal",
+        "textTransform": "none",
+        "color": "oklch(0.268 0.007 34.298)",
+        "sampleText": "Get started in minutes.",
+        "sampleTag": "h2",
+        "occurrences": 1,
+        "tags": [
+          "h2"
+        ]
+      },
+      {
+        "fontFamily": "\"Reddit Mono\", \"Reddit Mono Fallback\"",
+        "fontSize": "80px",
+        "lineHeight": "90px",
+        "fontWeight": "400",
+        "letterSpacing": "-2.4px",
+        "fontStyle": "normal",
+        "textTransform": "none",
+        "color": "rgb(157, 23, 160)",
+        "sampleText": "data",
+        "sampleTag": "span",
+        "occurrences": 1,
+        "tags": [
+          "span"
+        ]
+      },
+      {
+        "fontFamily": "reductoSerif, \"reductoSerif Fallback\"",
+        "fontSize": "64px",
+        "lineHeight": "80px",
+        "fontWeight": "470",
+        "letterSpacing": "normal",
+        "fontStyle": "normal",
+        "textTransform": "none",
+        "color": "oklch(0.268 0.007 34.298)",
+        "sampleText": "Free your data from documents.",
+        "sampleTag": "h2",
+        "occurrences": 6,
+        "tags": [
+          "h2"
+        ]
+      },
+      {
+        "fontFamily": "reductoSerif, \"reductoSerif Fallback\"",
+        "fontSize": "32px",
+        "lineHeight": "40px",
+        "fontWeight": "470",
+        "letterSpacing": "normal",
+        "fontStyle": "normal",
+        "textTransform": "none",
+        "color": "oklch(0.268 0.007 34.298)",
+        "sampleText": "Finance",
+        "sampleTag": "h5",
+        "occurrences": 1,
+        "tags": [
+          "h5"
+        ]
+      },
+      {
+        "fontFamily": "Inter, \"Inter Fallback\"",
+        "fontSize": "24px",
+        "lineHeight": "32px",
+        "fontWeight": "500",
+        "letterSpacing": "normal",
+        "fontStyle": "normal",
+        "textTransform": "none",
+        "color": "rgb(113, 134, 19)",
+        "sampleText": "Parse",
+        "sampleTag": "p",
+        "occurrences": 4,
+        "tags": [
+          "p"
+        ]
+      },
+      {
+        "fontFamily": "reductoSerif, \"reductoSerif Fallback\"",
+        "fontSize": "24px",
+        "lineHeight": "32px",
+        "fontWeight": "470",
+        "letterSpacing": "normal",
+        "fontStyle": "normal",
+        "textTransform": "none",
+        "color": "oklch(0.374 0.01 67.558)",
+        "sampleText": "Reducto helped us parse documents we previously could not because of table complexity. It's probably the only AI product",
+        "sampleTag": "p",
+        "occurrences": 1,
+        "tags": [
+          "p"
+        ]
+      },
+      {
+        "fontFamily": "Inter, \"Inter Fallback\"",
+        "fontSize": "20px",
+        "lineHeight": "32px",
+        "fontWeight": "400",
+        "letterSpacing": "normal",
+        "fontStyle": "normal",
+        "textTransform": "none",
+        "color": "oklch(0.553 0.013 58.071)",
+        "sampleText": "Reducto combines the best of computer vision and new vision-language models to produce the most accurate, LLM-ready resu",
+        "sampleTag": "p",
+        "occurrences": 2,
+        "tags": [
+          "p",
+          "span"
+        ]
+      },
+      {
+        "fontFamily": "Inter, \"Inter Fallback\"",
+        "fontSize": "18px",
+        "lineHeight": "28px",
+        "fontWeight": "500",
+        "letterSpacing": "normal",
+        "fontStyle": "normal",
+        "textTransform": "none",
+        "color": "oklch(0.444 0.011 73.639)",
+        "sampleText": "Layout extraction",
+        "sampleTag": "h5",
+        "occurrences": 15,
+        "tags": [
+          "h5",
+          "p"
+        ]
+      },
+      {
+        "fontFamily": "Inter, \"Inter Fallback\"",
+        "fontSize": "18px",
+        "lineHeight": "28px",
+        "fontWeight": "400",
+        "letterSpacing": "normal",
+        "fontStyle": "normal",
+        "textTransform": "none",
+        "color": "oklch(0.553 0.013 58.071)",
+        "sampleText": "A toolbox of flexible APIs for all your needs.",
+        "sampleTag": "p",
+        "occurrences": 6,
+        "tags": [
+          "p"
+        ]
+      },
+      {
+        "fontFamily": "reductosans, \"reductosans Fallback\"",
+        "fontSize": "16px",
+        "lineHeight": "24px",
+        "fontWeight": "400",
+        "letterSpacing": "normal",
+        "fontStyle": "normal",
+        "textTransform": "none",
+        "color": "rgb(49, 6, 50)",
+        "sampleText": "Footer",
+        "sampleTag": "h2",
+        "occurrences": 1,
+        "tags": [
+          "h2"
+        ]
+      },
+      {
+        "fontFamily": "Inter, \"Inter Fallback\"",
+        "fontSize": "16px",
+        "lineHeight": "24px",
+        "fontWeight": "400",
+        "letterSpacing": "normal",
+        "fontStyle": "normal",
+        "textTransform": "none",
+        "color": "rgb(49, 6, 50)",
+        "sampleText": "Do you offer trials? How can I get access to an API key?",
+        "sampleTag": "h3",
+        "occurrences": 16,
+        "tags": [
+          "h3",
+          "p",
+          "span"
+        ]
+      },
+      {
+        "fontFamily": "Inter, \"Inter Fallback\"",
+        "fontSize": "16px",
+        "lineHeight": "24px",
+        "fontWeight": "500",
+        "letterSpacing": "normal",
+        "fontStyle": "normal",
+        "textTransform": "none",
+        "color": "oklch(0.553 0.013 58.071)",
+        "sampleText": "Helping everyone from startups to Fortune 10 enterprises unlock their data.",
+        "sampleTag": "p",
+        "occurrences": 6,
+        "tags": [
+          "p",
+          "span"
+        ]
+      },
+      {
+        "fontFamily": "reductoSerif, \"reductoSerif Fallback\"",
+        "fontSize": "16px",
+        "lineHeight": "24px",
+        "fontWeight": "400",
+        "letterSpacing": "normal",
+        "fontStyle": "normal",
+        "textTransform": "none",
+        "color": "rgb(49, 6, 50)",
+        "sampleText": "Harvey",
+        "sampleTag": "li",
+        "occurrences": 16,
+        "tags": [
+          "li"
+        ]
+      },
+      {
+        "fontFamily": "Inter, \"Inter Fallback\"",
+        "fontSize": "15px",
+        "lineHeight": "24px",
+        "fontWeight": "500",
+        "letterSpacing": "normal",
+        "fontStyle": "normal",
+        "textTransform": "none",
+        "color": "rgb(255, 255, 255)",
+        "sampleText": "Product",
+        "sampleTag": "h3",
+        "occurrences": 7,
+        "tags": [
+          "h3",
+          "p",
+          "span"
+        ]
+      },
+      {
+        "fontFamily": "reductosans, \"reductosans Fallback\"",
+        "fontSize": "15px",
+        "lineHeight": "24px",
+        "fontWeight": "400",
+        "letterSpacing": "normal",
+        "fontStyle": "normal",
+        "textTransform": "none",
+        "color": "rgb(199, 183, 217)",
+        "sampleText": "Reducto helps leading AI teams transform unstructured documents into structured, reliable data that can power production",
+        "sampleTag": "p",
+        "occurrences": 1,
+        "tags": [
+          "p"
+        ]
+      },
+      {
+        "fontFamily": "Inter, \"Inter Fallback\"",
+        "fontSize": "15px",
+        "lineHeight": "24px",
+        "fontWeight": "400",
+        "letterSpacing": "normal",
+        "fontStyle": "normal",
+        "textTransform": "none",
+        "color": "rgb(157, 23, 160)",
+        "sampleText": "Use cases",
+        "sampleTag": "span",
+        "occurrences": 1,
+        "tags": [
+          "span"
+        ]
+      },
+      {
+        "fontFamily": "reductosans, \"reductosans Fallback\"",
+        "fontSize": "14px",
+        "lineHeight": "20px",
+        "fontWeight": "400",
+        "letterSpacing": "normal",
+        "fontStyle": "normal",
+        "textTransform": "none",
+        "color": "rgb(199, 183, 217)",
+        "sampleText": "Reducto, Inc. © 2026",
+        "sampleTag": "p",
+        "occurrences": 1,
+        "tags": [
+          "p"
+        ]
+      }
+    ],
+    "fontFamilies": [
+      "reductoSerif",
+      "Reddit Mono",
+      "Inter",
+      "reductosans"
+    ],
+    "fontSizeRange": {
+      "min": "14px",
+      "max": "136px",
+      "distinct": 10
+    }
+  },
+  "components": {
+    "appFrameInventory": [
+      {
+        "kind": "button",
+        "label": null,
+        "tag": "button",
+        "id": null,
+        "role": null,
+        "className": "font-inter flex items-center py-[5px] text-[15px] leading-[22px] font-medium text-stone-600 lg:text-[14px] lg:leading-[20px] lg:text-stone-500 hover:text-stone-800",
+        "selector": "div.mt-16 > nav.fixed.top-0 > div.mx-auto.flex > div.absolute.left-1/2 > button.font-inter.flex:nth-child(2)",
+        "text": "Industries",
+        "rect": {
+          "x": 804.05,
+          "y": 16.5,
+          "width": 82.44,
+          "height": 30
+        },
+        "absoluteRect": {
+          "x": 804.05,
+          "y": 16.5,
+          "width": 82.44,
+          "height": 30
+        },
+        "style": {
+          "fontFamily": "Inter, \"Inter Fallback\"",
+          "fontSize": "14px",
+          "lineHeight": "20px",
+          "fontWeight": "500",
+          "letterSpacing": "normal",
+          "fontStyle": "normal",
+          "textTransform": "none",
+          "color": "oklch(0.553 0.013 58.071)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px solid rgb(215, 204, 193)",
+          "borderColor": "rgb(215, 204, 193)",
+          "borderRadius": "0px",
+          "boxShadow": "none",
+          "paddingTop": "5px",
+          "paddingRight": "0px",
+          "paddingBottom": "5px",
+          "paddingLeft": "0px",
+          "marginTop": "0px",
+          "marginRight": "0px",
+          "marginBottom": "0px",
+          "marginLeft": "0px",
+          "gap": "normal",
+          "maxWidth": "none"
+        }
+      },
+      {
+        "kind": "button",
+        "label": null,
+        "tag": "button",
+        "id": null,
+        "role": null,
+        "className": "font-inter flex items-center py-[5px] text-[15px] leading-[22px] font-medium text-stone-600 lg:text-[14px] lg:leading-[20px] lg:text-stone-500 hover:text-stone-800",
+        "selector": "div.mt-16 > nav.fixed.top-0 > div.mx-auto.flex > div.absolute.left-1/2 > button.font-inter.flex:nth-child(4)",
+        "text": "Resources",
+        "rect": {
+          "x": 1023.42,
+          "y": 16.5,
+          "width": 86.52,
+          "height": 30
+        },
+        "absoluteRect": {
+          "x": 1023.42,
+          "y": 16.5,
+          "width": 86.52,
+          "height": 30
+        },
+        "style": {
+          "fontFamily": "Inter, \"Inter Fallback\"",
+          "fontSize": "14px",
+          "lineHeight": "20px",
+          "fontWeight": "500",
+          "letterSpacing": "normal",
+          "fontStyle": "normal",
+          "textTransform": "none",
+          "color": "oklch(0.553 0.013 58.071)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px solid rgb(215, 204, 193)",
+          "borderColor": "rgb(215, 204, 193)",
+          "borderRadius": "0px",
+          "boxShadow": "none",
+          "paddingTop": "5px",
+          "paddingRight": "0px",
+          "paddingBottom": "5px",
+          "paddingLeft": "0px",
+          "marginTop": "0px",
+          "marginRight": "0px",
+          "marginBottom": "0px",
+          "marginLeft": "0px",
+          "gap": "normal",
+          "maxWidth": "none"
+        }
+      },
+      {
+        "kind": "link",
+        "label": null,
+        "tag": "a",
+        "id": null,
+        "role": null,
+        "className": "cursor-pointer",
+        "selector": "div.mt-16 > nav.fixed.top-0 > div.mx-auto.flex > span > a.cursor-pointer",
+        "text": "",
+        "rect": {
+          "x": 452,
+          "y": 22.77,
+          "width": 100,
+          "height": 17.47
+        },
+        "absoluteRect": {
+          "x": 452,
+          "y": 22.77,
+          "width": 100,
+          "height": 17.47
+        },
+        "style": {
+          "fontFamily": "reductosans, \"reductosans Fallback\"",
+          "fontSize": "16px",
+          "lineHeight": "24px",
+          "fontWeight": "400",
+          "letterSpacing": "normal",
+          "fontStyle": "normal",
+          "textTransform": "none",
+          "color": "rgb(49, 6, 50)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px solid rgb(215, 204, 193)",
+          "borderColor": "rgb(215, 204, 193)",
+          "borderRadius": "0px",
+          "boxShadow": "none",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "marginTop": "0px",
+          "marginRight": "0px",
+          "marginBottom": "0px",
+          "marginLeft": "0px",
+          "gap": "normal",
+          "maxWidth": "none"
+        }
+      },
+      {
+        "kind": "link",
+        "label": null,
+        "tag": "a",
+        "id": null,
+        "role": null,
+        "className": "font-inter flex items-center py-[5px] text-[15px] leading-[22px] font-medium text-stone-600 lg:text-[14px] lg:leading-[20px] lg:text-stone-500 hover:text-stone-800 lg:px-2",
+        "selector": "div.mt-16 > nav.fixed.top-0 > div.mx-auto.flex > div.absolute.left-1/2 > a.font-inter.flex:nth-child(1)",
+        "text": "Pricing",
+        "rect": {
+          "x": 717.3,
+          "y": 16.5,
+          "width": 62.75,
+          "height": 30
+        },
+        "absoluteRect": {
+          "x": 717.3,
+          "y": 16.5,
+          "width": 62.75,
+          "height": 30
+        },
+        "style": {
+          "fontFamily": "Inter, \"Inter Fallback\"",
+          "fontSize": "14px",
+          "lineHeight": "20px",
+          "fontWeight": "500",
+          "letterSpacing": "normal",
+          "fontStyle": "normal",
+          "textTransform": "none",
+          "color": "oklch(0.553 0.013 58.071)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px solid rgb(215, 204, 193)",
+          "borderColor": "rgb(215, 204, 193)",
+          "borderRadius": "0px",
+          "boxShadow": "none",
+          "paddingTop": "5px",
+          "paddingRight": "8px",
+          "paddingBottom": "5px",
+          "paddingLeft": "8px",
+          "marginTop": "0px",
+          "marginRight": "0px",
+          "marginBottom": "0px",
+          "marginLeft": "0px",
+          "gap": "normal",
+          "maxWidth": "none"
+        }
+      },
+      {
+        "kind": "link",
+        "label": null,
+        "tag": "a",
+        "id": null,
+        "role": null,
+        "className": "font-inter flex items-center py-[5px] text-[15px] leading-[22px] font-medium text-stone-600 lg:text-[14px] lg:leading-[20px] lg:text-stone-500 hover:text-stone-800 lg:px-2",
+        "selector": "div.mt-16 > nav.fixed.top-0 > div.mx-auto.flex > div.absolute.left-1/2 > a.font-inter.flex:nth-child(3)",
+        "text": "Customers",
+        "rect": {
+          "x": 910.48,
+          "y": 16.5,
+          "width": 88.94,
+          "height": 30
+        },
+        "absoluteRect": {
+          "x": 910.48,
+          "y": 16.5,
+          "width": 88.94,
+          "height": 30
+        },
+        "style": {
+          "fontFamily": "Inter, \"Inter Fallback\"",
+          "fontSize": "14px",
+          "lineHeight": "20px",
+          "fontWeight": "500",
+          "letterSpacing": "normal",
+          "fontStyle": "normal",
+          "textTransform": "none",
+          "color": "oklch(0.553 0.013 58.071)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px solid rgb(215, 204, 193)",
+          "borderColor": "rgb(215, 204, 193)",
+          "borderRadius": "0px",
+          "boxShadow": "none",
+          "paddingTop": "5px",
+          "paddingRight": "8px",
+          "paddingBottom": "5px",
+          "paddingLeft": "8px",
+          "marginTop": "0px",
+          "marginRight": "0px",
+          "marginBottom": "0px",
+          "marginLeft": "0px",
+          "gap": "normal",
+          "maxWidth": "none"
+        }
+      },
+      {
+        "kind": "link",
+        "label": null,
+        "tag": "a",
+        "id": null,
+        "role": null,
+        "className": "font-inter flex items-center py-[5px] text-[15px] leading-[22px] font-medium text-stone-600 lg:text-[14px] lg:leading-[20px] lg:text-stone-500 hover:text-stone-800 lg:px-2",
+        "selector": "div.mt-16 > nav.fixed.top-0 > div.mx-auto.flex > div.absolute.left-1/2 > a.font-inter.flex:nth-child(5)",
+        "text": "Careers",
+        "rect": {
+          "x": 1133.94,
+          "y": 16.5,
+          "width": 68.77,
+          "height": 30
+        },
+        "absoluteRect": {
+          "x": 1133.94,
+          "y": 16.5,
+          "width": 68.77,
+          "height": 30
+        },
+        "style": {
+          "fontFamily": "Inter, \"Inter Fallback\"",
+          "fontSize": "14px",
+          "lineHeight": "20px",
+          "fontWeight": "500",
+          "letterSpacing": "normal",
+          "fontStyle": "normal",
+          "textTransform": "none",
+          "color": "oklch(0.553 0.013 58.071)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px solid rgb(215, 204, 193)",
+          "borderColor": "rgb(215, 204, 193)",
+          "borderRadius": "0px",
+          "boxShadow": "none",
+          "paddingTop": "5px",
+          "paddingRight": "8px",
+          "paddingBottom": "5px",
+          "paddingLeft": "8px",
+          "marginTop": "0px",
+          "marginRight": "0px",
+          "marginBottom": "0px",
+          "marginLeft": "0px",
+          "gap": "normal",
+          "maxWidth": "none"
+        }
+      },
+      {
+        "kind": "link",
+        "label": null,
+        "tag": "a",
+        "id": null,
+        "role": null,
+        "className": "font-inter hidden text-[14px] leading-[20px] font-medium text-stone-500 hover:text-stone-800 lg:block",
+        "selector": "div.mt-16 > nav.fixed.top-0 > div.mx-auto.flex > div.inline-flex.items-center > a.font-inter.hidden",
+        "text": "Log in",
+        "rect": {
+          "x": 1289.97,
+          "y": 21.5,
+          "width": 40.73,
+          "height": 20
+        },
+        "absoluteRect": {
+          "x": 1289.97,
+          "y": 21.5,
+          "width": 40.73,
+          "height": 20
+        },
+        "style": {
+          "fontFamily": "Inter, \"Inter Fallback\"",
+          "fontSize": "14px",
+          "lineHeight": "20px",
+          "fontWeight": "500",
+          "letterSpacing": "normal",
+          "fontStyle": "normal",
+          "textTransform": "none",
+          "color": "oklch(0.553 0.013 58.071)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px solid rgb(215, 204, 193)",
+          "borderColor": "rgb(215, 204, 193)",
+          "borderRadius": "0px",
+          "boxShadow": "none",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "marginTop": "0px",
+          "marginRight": "0px",
+          "marginBottom": "0px",
+          "marginLeft": "0px",
+          "gap": "normal",
+          "maxWidth": "none"
+        }
+      },
+      {
+        "kind": "link",
+        "label": null,
+        "tag": "a",
+        "id": null,
+        "role": null,
+        "className": "inline-flex items-center justify-center font-medium font-inter gap-2.5 transition-colors duration-300 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 disabled:pointer-events-none border bg-background shadow-xs hover:text-accent-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50 disabled:hover:bg-background disabled:hover:text-current h-[38px] text-[14px] leading-[20px] px-[14px] border-stone-500 text-stone-700 hover:bg-white",
+        "selector": "div.mt-16 > nav.fixed.top-0 > div.mx-auto.flex > div.inline-flex.items-center > a.inline-flex.items-center",
+        "text": "Contact sales",
+        "rect": {
+          "x": 1346.7,
+          "y": 12.5,
+          "width": 121.3,
+          "height": 38
+        },
+        "absoluteRect": {
+          "x": 1346.7,
+          "y": 12.5,
+          "width": 121.3,
+          "height": 38
+        },
+        "style": {
+          "fontFamily": "Inter, \"Inter Fallback\"",
+          "fontSize": "14px",
+          "lineHeight": "20px",
+          "fontWeight": "500",
+          "letterSpacing": "normal",
+          "fontStyle": "normal",
+          "textTransform": "none",
+          "color": "oklch(0.374 0.01 67.558)",
+          "backgroundColor": "rgb(248, 248, 246)",
+          "border": "1px solid oklch(0.553 0.013 58.071)",
+          "borderColor": "oklch(0.553 0.013 58.071)",
+          "borderRadius": "0px",
+          "boxShadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 1px 2px 0px",
+          "paddingTop": "0px",
+          "paddingRight": "14px",
+          "paddingBottom": "0px",
+          "paddingLeft": "14px",
+          "marginTop": "0px",
+          "marginRight": "0px",
+          "marginBottom": "0px",
+          "marginLeft": "0px",
+          "gap": "10px",
+          "maxWidth": "none"
+        }
+      },
+      {
+        "kind": "link",
+        "label": null,
+        "tag": "a",
+        "id": null,
+        "role": null,
+        "className": "bg-brand-02 block w-full px-4 py-3 text-white text-center text-sm font-medium transition-colors duration-200 hover:bg-[#8A1589] border-b border-[#690F6B]",
+        "selector": "div.mt-16 > a.bg-brand-02.block",
+        "text": "Announcing $108M in total funding and our Series B led by a16z",
+        "rect": {
+          "x": 0,
+          "y": 64,
+          "width": 1920,
+          "height": 45
+        },
+        "absoluteRect": {
+          "x": 0,
+          "y": 64,
+          "width": 1920,
+          "height": 45
+        },
+        "style": {
+          "fontFamily": "reductosans, \"reductosans Fallback\"",
+          "fontSize": "14px",
+          "lineHeight": "20px",
+          "fontWeight": "500",
+          "letterSpacing": "normal",
+          "fontStyle": "normal",
+          "textTransform": "none",
+          "color": "rgb(255, 255, 255)",
+          "backgroundColor": "rgb(157, 23, 160)",
+          "border": "",
+          "borderColor": "rgb(105, 15, 107)",
+          "borderRadius": "0px",
+          "boxShadow": "none",
+          "paddingTop": "12px",
+          "paddingRight": "16px",
+          "paddingBottom": "12px",
+          "paddingLeft": "16px",
+          "marginTop": "0px",
+          "marginRight": "0px",
+          "marginBottom": "0px",
+          "marginLeft": "0px",
+          "gap": "normal",
+          "maxWidth": "none"
+        }
+      },
+      {
+        "kind": "link",
+        "label": null,
+        "tag": "a",
+        "id": null,
+        "role": null,
+        "className": "inline-flex items-center justify-center font-medium font-inter gap-2.5 transition-colors duration-300 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 disabled:pointer-events-none bg-brand-02 text-white border border-[#690F6B] hover:bg-[linear-gradient(0deg,rgba(0,0,0,0.15)_0%,rgba(0,0,0,0.15)_100%)] shadow-[0px_-2px_0px_0px_rgba(255,255,255,0.25)_inset,0px_2px_0px_0px_rgba(255,255,255,0.25)_inset] disabled:hover:bg-brand-02 disabled:shadow-none py-3 h-14 px-6 text-[17px]",
+        "selector": "div.mt-16 > main > section.mx-auto.flex > header.xs:px-6.flex > div.flex.flex-col > div.inline-flex.gap-4 > a.inline-flex.items-center",
+        "text": "Try for free",
+        "rect": {
+          "x": 777.83,
+          "y": 537,
+          "width": 167.33,
+          "height": 56
+        },
+        "absoluteRect": {
+          "x": 777.83,
+          "y": 537,
+          "width": 167.33,
+          "height": 56
+        },
+        "style": {
+          "fontFamily": "Inter, \"Inter Fallback\"",
+          "fontSize": "17px",
+          "lineHeight": "25.5px",
+          "fontWeight": "500",
+          "letterSpacing": "normal",
+          "fontStyle": "normal",
+          "textTransform": "none",
+          "color": "rgb(255, 255, 255)",
+          "backgroundColor": "rgb(157, 23, 160)",
+          "border": "1px solid rgb(105, 15, 107)",
+          "borderColor": "rgb(105, 15, 107)",
+          "borderRadius": "0px",
+          "boxShadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(255, 255, 255, 0.25) 0px -2px 0px 0px inset, rgba(255, 255, 255, 0.25) 0px 2px 0px 0px inset",
+          "paddingTop": "12px",
+          "paddingRight": "24px",
+          "paddingBottom": "12px",
+          "paddingLeft": "24px",
+          "marginTop": "0px",
+          "marginRight": "0px",
+          "marginBottom": "0px",
+          "marginLeft": "0px",
+          "gap": "10px",
+          "maxWidth": "none"
+        }
+      },
+      {
+        "kind": "link",
+        "label": null,
+        "tag": "a",
+        "id": null,
+        "role": null,
+        "className": "inline-flex items-center justify-center font-medium font-inter gap-2.5 transition-colors duration-300 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 disabled:pointer-events-none bg-white text-stone-700 border border-stone-300 hover:text-stone-800 hover:border-stone-400 disabled:hover:text-stone-700 disabled:hover:border-stone-300 py-3 h-14 px-6 text-[17px]",
+        "selector": "div.mt-16 > main > section.mx-auto.flex > header.xs:px-6.flex > div.flex.flex-col > div.inline-flex.gap-4 > a.inline-flex.items-center",
+        "text": "Request a demo",
+        "rect": {
+          "x": 961.16,
+          "y": 537,
+          "width": 181.02,
+          "height": 56
+        },
+        "absoluteRect": {
+          "x": 961.16,
+          "y": 537,
+          "width": 181.02,
+          "height": 56
+        },
+        "style": {
+          "fontFamily": "Inter, \"Inter Fallback\"",
+          "fontSize": "17px",
+          "lineHeight": "25.5px",
+          "fontWeight": "500",
+          "letterSpacing": "normal",
+          "fontStyle": "normal",
+          "textTransform": "none",
+          "color": "oklch(0.374 0.01 67.558)",
+          "backgroundColor": "rgb(255, 255, 255)",
+          "border": "1px solid oklch(0.869 0.005 56.366)",
+          "borderColor": "oklch(0.869 0.005 56.366)",
+          "borderRadius": "0px",
+          "boxShadow": "none",
+          "paddingTop": "12px",
+          "paddingRight": "24px",
+          "paddingBottom": "12px",
+          "paddingLeft": "24px",
+          "marginTop": "0px",
+          "marginRight": "0px",
+          "marginBottom": "0px",
+          "marginLeft": "0px",
+          "gap": "10px",
+          "maxWidth": "none"
+        }
+      },
+      {
+        "kind": "heading",
+        "label": null,
+        "tag": "h1",
+        "id": null,
+        "role": null,
+        "className": "font-serif text-[48px] font-[470] leading-[60px] text-stone-800 md:text-[64px] md:leading-[80px] xl:text-[80px] xl:leading-[90px] tracking-[-0.8px]",
+        "selector": "div.mt-16 > main > section.mx-auto.flex > header.xs:px-6.flex > div.flex.w-full > div.text-center.max-w-[640px] > h1.font-serif.text-[48px]",
+        "text": "Turn documents into data. Build without constraints.",
+        "rect": {
+          "x": 460,
+          "y": 229,
+          "width": 1000,
+          "height": 180
+        },
+        "absoluteRect": {
+          "x": 460,
+          "y": 229,
+          "width": 1000,
+          "height": 180
+        },
+        "style": {
+          "fontFamily": "reductoSerif, \"reductoSerif Fallback\"",
+          "fontSize": "80px",
+          "lineHeight": "90px",
+          "fontWeight": "470",
+          "letterSpacing": "-0.8px",
+          "fontStyle": "normal",
+          "textTransform": "none",
+          "color": "oklch(0.268 0.007 34.298)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px solid rgb(215, 204, 193)",
+          "borderColor": "rgb(215, 204, 193)",
+          "borderRadius": "0px",
+          "boxShadow": "none",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "marginTop": "0px",
+          "marginRight": "0px",
+          "marginBottom": "0px",
+          "marginLeft": "0px",
+          "gap": "normal",
+          "maxWidth": "none"
+        }
+      },
+      {
+        "kind": "paragraph",
+        "label": null,
+        "tag": "p",
+        "id": null,
+        "role": null,
+        "className": "font-inter text-[18px] leading-[28px] text-stone-500 max-w-[440px] md:max-w-[520px] md:text-[20px] md:leading-[32px] lg:max-w-[720px]",
+        "selector": "div.mt-16 > main > section.mx-auto.flex > header.xs:px-6.flex > div.flex.flex-col > p.font-inter.text-[18px]",
+        "text": "Reducto combines the best of computer vision and new vision-language models to produce the most accurate, LLM-ready results.",
+        "rect": {
+          "x": 600,
+          "y": 433,
+          "width": 720,
+          "height": 64
+        },
+        "absoluteRect": {
+          "x": 600,
+          "y": 433,
+          "width": 720,
+          "height": 64
+        },
+        "style": {
+          "fontFamily": "Inter, \"Inter Fallback\"",
+          "fontSize": "20px",
+          "lineHeight": "32px",
+          "fontWeight": "400",
+          "letterSpacing": "normal",
+          "fontStyle": "normal",
+          "textTransform": "none",
+          "color": "oklch(0.553 0.013 58.071)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px solid rgb(215, 204, 193)",
+          "borderColor": "rgb(215, 204, 193)",
+          "borderRadius": "0px",
+          "boxShadow": "none",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "marginTop": "0px",
+          "marginRight": "0px",
+          "marginBottom": "0px",
+          "marginLeft": "0px",
+          "gap": "normal",
+          "maxWidth": "720px"
+        }
+      },
+      {
+        "kind": "header",
+        "label": null,
+        "tag": "header",
+        "id": null,
+        "role": null,
+        "className": "xs:px-6 flex w-full max-w-[1280px] gap-6 px-4 sm:px-8 md:px-16 flex-col items-center text-center",
+        "selector": "div.mt-16 > main > section.mx-auto.flex > header.xs:px-6.flex",
+        "text": "Turn documents into data. Build without constraints.Reducto combines the best of computer vision and new vision-language models to produce t",
+        "rect": {
+          "x": 320,
+          "y": 229,
+          "width": 1280,
+          "height": 364
+        },
+        "absoluteRect": {
+          "x": 320,
+          "y": 229,
+          "width": 1280,
+          "height": 364
+        },
+        "style": {
+          "fontFamily": "reductoSerif, \"reductoSerif Fallback\"",
+          "fontSize": "16px",
+          "lineHeight": "24px",
+          "fontWeight": "400",
+          "letterSpacing": "normal",
+          "fontStyle": "normal",
+          "textTransform": "none",
+          "color": "rgb(49, 6, 50)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px solid rgb(215, 204, 193)",
+          "borderColor": "rgb(215, 204, 193)",
+          "borderRadius": "0px",
+          "boxShadow": "none",
+          "paddingTop": "0px",
+          "paddingRight": "64px",
+          "paddingBottom": "0px",
+          "paddingLeft": "64px",
+          "marginTop": "0px",
+          "marginRight": "0px",
+          "marginBottom": "0px",
+          "marginLeft": "0px",
+          "gap": "24px",
+          "maxWidth": "1280px"
+        }
+      },
+      {
+        "kind": "navigation",
+        "label": null,
+        "tag": "nav",
+        "id": null,
+        "role": null,
+        "className": "fixed top-0 z-50 h-16 w-full border-b border-transparent bg-stone-50 transition-shadow",
+        "selector": "div.mt-16 > nav.fixed.top-0",
+        "text": "PricingIndustriesCustomersResourcesCareersLog inContact sales",
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 1920,
+          "height": 64
+        },
+        "absoluteRect": {
+          "x": 0,
+          "y": 0,
+          "width": 1920,
+          "height": 64
+        },
+        "style": {
+          "fontFamily": "reductosans, \"reductosans Fallback\"",
+          "fontSize": "16px",
+          "lineHeight": "24px",
+          "fontWeight": "400",
+          "letterSpacing": "normal",
+          "fontStyle": "normal",
+          "textTransform": "none",
+          "color": "rgb(49, 6, 50)",
+          "backgroundColor": "oklch(0.985 0.001 106.423)",
+          "border": "",
+          "borderColor": "rgba(0, 0, 0, 0)",
+          "borderRadius": "0px",
+          "boxShadow": "none",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "marginTop": "0px",
+          "marginRight": "0px",
+          "marginBottom": "0px",
+          "marginLeft": "0px",
+          "gap": "normal",
+          "maxWidth": "none"
+        }
+      },
+      {
+        "kind": "section",
+        "label": null,
+        "tag": "section",
+        "id": null,
+        "role": null,
+        "className": "mx-auto flex flex-col items-center py-12 font-serif md:gap-16 md:py-12 xl:py-30 gap-1 bg-stone-50 pb-0 md:pb-0 lg:pb-0",
+        "selector": "div.mt-16 > main > section.mx-auto.flex",
+        "text": "Turn documents into data. Build without constraints.Reducto combines the best of computer vision and new vision-language models to produce t",
+        "rect": {
+          "x": 0,
+          "y": 109,
+          "width": 1920,
+          "height": 1601.22
+        },
+        "absoluteRect": {
+          "x": 0,
+          "y": 109,
+          "width": 1920,
+          "height": 1601.22
+        },
+        "style": {
+          "fontFamily": "reductoSerif, \"reductoSerif Fallback\"",
+          "fontSize": "16px",
+          "lineHeight": "24px",
+          "fontWeight": "400",
+          "letterSpacing": "normal",
+          "fontStyle": "normal",
+          "textTransform": "none",
+          "color": "rgb(49, 6, 50)",
+          "backgroundColor": "oklch(0.985 0.001 106.423)",
+          "border": "0px solid rgb(215, 204, 193)",
+          "borderColor": "rgb(215, 204, 193)",
+          "borderRadius": "0px",
+          "boxShadow": "none",
+          "paddingTop": "120px",
+          "paddingRight": "0px",
+          "paddingBottom": "120px",
+          "paddingLeft": "0px",
+          "marginTop": "0px",
+          "marginRight": "0px",
+          "marginBottom": "0px",
+          "marginLeft": "0px",
+          "gap": "64px",
+          "maxWidth": "none"
+        }
+      }
+    ],
+    "leftRailInventory": [
+      {
+        "kind": "link",
+        "label": null,
+        "tag": "a",
+        "id": null,
+        "role": null,
+        "className": "cursor-pointer",
+        "selector": "div.mt-16 > nav.fixed.top-0 > div.mx-auto.flex > span > a.cursor-pointer",
+        "text": "",
+        "rect": {
+          "x": 452,
+          "y": 22.77,
+          "width": 100,
+          "height": 17.47
+        },
+        "absoluteRect": {
+          "x": 452,
+          "y": 22.77,
+          "width": 100,
+          "height": 17.47
+        },
+        "style": {
+          "fontFamily": "reductosans, \"reductosans Fallback\"",
+          "fontSize": "16px",
+          "lineHeight": "24px",
+          "fontWeight": "400",
+          "letterSpacing": "normal",
+          "fontStyle": "normal",
+          "textTransform": "none",
+          "color": "rgb(49, 6, 50)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px solid rgb(215, 204, 193)",
+          "borderColor": "rgb(215, 204, 193)",
+          "borderRadius": "0px",
+          "boxShadow": "none",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "marginTop": "0px",
+          "marginRight": "0px",
+          "marginBottom": "0px",
+          "marginLeft": "0px",
+          "gap": "normal",
+          "maxWidth": "none"
+        }
+      }
+    ],
+    "mainCanvasInventory": [
+      {
+        "kind": "button",
+        "label": null,
+        "tag": "button",
+        "id": null,
+        "role": null,
+        "className": "font-inter flex items-center py-[5px] text-[15px] leading-[22px] font-medium text-stone-600 lg:text-[14px] lg:leading-[20px] lg:text-stone-500 hover:text-stone-800",
+        "selector": "div.mt-16 > nav.fixed.top-0 > div.mx-auto.flex > div.absolute.left-1/2 > button.font-inter.flex:nth-child(2)",
+        "text": "Industries",
+        "rect": {
+          "x": 804.05,
+          "y": 16.5,
+          "width": 82.44,
+          "height": 30
+        },
+        "absoluteRect": {
+          "x": 804.05,
+          "y": 16.5,
+          "width": 82.44,
+          "height": 30
+        },
+        "style": {
+          "fontFamily": "Inter, \"Inter Fallback\"",
+          "fontSize": "14px",
+          "lineHeight": "20px",
+          "fontWeight": "500",
+          "letterSpacing": "normal",
+          "fontStyle": "normal",
+          "textTransform": "none",
+          "color": "oklch(0.553 0.013 58.071)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px solid rgb(215, 204, 193)",
+          "borderColor": "rgb(215, 204, 193)",
+          "borderRadius": "0px",
+          "boxShadow": "none",
+          "paddingTop": "5px",
+          "paddingRight": "0px",
+          "paddingBottom": "5px",
+          "paddingLeft": "0px",
+          "marginTop": "0px",
+          "marginRight": "0px",
+          "marginBottom": "0px",
+          "marginLeft": "0px",
+          "gap": "normal",
+          "maxWidth": "none"
+        }
+      },
+      {
+        "kind": "button",
+        "label": null,
+        "tag": "button",
+        "id": null,
+        "role": null,
+        "className": "font-inter flex items-center py-[5px] text-[15px] leading-[22px] font-medium text-stone-600 lg:text-[14px] lg:leading-[20px] lg:text-stone-500 hover:text-stone-800",
+        "selector": "div.mt-16 > nav.fixed.top-0 > div.mx-auto.flex > div.absolute.left-1/2 > button.font-inter.flex:nth-child(4)",
+        "text": "Resources",
+        "rect": {
+          "x": 1023.42,
+          "y": 16.5,
+          "width": 86.52,
+          "height": 30
+        },
+        "absoluteRect": {
+          "x": 1023.42,
+          "y": 16.5,
+          "width": 86.52,
+          "height": 30
+        },
+        "style": {
+          "fontFamily": "Inter, \"Inter Fallback\"",
+          "fontSize": "14px",
+          "lineHeight": "20px",
+          "fontWeight": "500",
+          "letterSpacing": "normal",
+          "fontStyle": "normal",
+          "textTransform": "none",
+          "color": "oklch(0.553 0.013 58.071)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px solid rgb(215, 204, 193)",
+          "borderColor": "rgb(215, 204, 193)",
+          "borderRadius": "0px",
+          "boxShadow": "none",
+          "paddingTop": "5px",
+          "paddingRight": "0px",
+          "paddingBottom": "5px",
+          "paddingLeft": "0px",
+          "marginTop": "0px",
+          "marginRight": "0px",
+          "marginBottom": "0px",
+          "marginLeft": "0px",
+          "gap": "normal",
+          "maxWidth": "none"
+        }
+      },
+      {
+        "kind": "link",
+        "label": null,
+        "tag": "a",
+        "id": null,
+        "role": null,
+        "className": "font-inter flex items-center py-[5px] text-[15px] leading-[22px] font-medium text-stone-600 lg:text-[14px] lg:leading-[20px] lg:text-stone-500 hover:text-stone-800 lg:px-2",
+        "selector": "div.mt-16 > nav.fixed.top-0 > div.mx-auto.flex > div.absolute.left-1/2 > a.font-inter.flex:nth-child(1)",
+        "text": "Pricing",
+        "rect": {
+          "x": 717.3,
+          "y": 16.5,
+          "width": 62.75,
+          "height": 30
+        },
+        "absoluteRect": {
+          "x": 717.3,
+          "y": 16.5,
+          "width": 62.75,
+          "height": 30
+        },
+        "style": {
+          "fontFamily": "Inter, \"Inter Fallback\"",
+          "fontSize": "14px",
+          "lineHeight": "20px",
+          "fontWeight": "500",
+          "letterSpacing": "normal",
+          "fontStyle": "normal",
+          "textTransform": "none",
+          "color": "oklch(0.553 0.013 58.071)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px solid rgb(215, 204, 193)",
+          "borderColor": "rgb(215, 204, 193)",
+          "borderRadius": "0px",
+          "boxShadow": "none",
+          "paddingTop": "5px",
+          "paddingRight": "8px",
+          "paddingBottom": "5px",
+          "paddingLeft": "8px",
+          "marginTop": "0px",
+          "marginRight": "0px",
+          "marginBottom": "0px",
+          "marginLeft": "0px",
+          "gap": "normal",
+          "maxWidth": "none"
+        }
+      },
+      {
+        "kind": "link",
+        "label": null,
+        "tag": "a",
+        "id": null,
+        "role": null,
+        "className": "font-inter flex items-center py-[5px] text-[15px] leading-[22px] font-medium text-stone-600 lg:text-[14px] lg:leading-[20px] lg:text-stone-500 hover:text-stone-800 lg:px-2",
+        "selector": "div.mt-16 > nav.fixed.top-0 > div.mx-auto.flex > div.absolute.left-1/2 > a.font-inter.flex:nth-child(3)",
+        "text": "Customers",
+        "rect": {
+          "x": 910.48,
+          "y": 16.5,
+          "width": 88.94,
+          "height": 30
+        },
+        "absoluteRect": {
+          "x": 910.48,
+          "y": 16.5,
+          "width": 88.94,
+          "height": 30
+        },
+        "style": {
+          "fontFamily": "Inter, \"Inter Fallback\"",
+          "fontSize": "14px",
+          "lineHeight": "20px",
+          "fontWeight": "500",
+          "letterSpacing": "normal",
+          "fontStyle": "normal",
+          "textTransform": "none",
+          "color": "oklch(0.553 0.013 58.071)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px solid rgb(215, 204, 193)",
+          "borderColor": "rgb(215, 204, 193)",
+          "borderRadius": "0px",
+          "boxShadow": "none",
+          "paddingTop": "5px",
+          "paddingRight": "8px",
+          "paddingBottom": "5px",
+          "paddingLeft": "8px",
+          "marginTop": "0px",
+          "marginRight": "0px",
+          "marginBottom": "0px",
+          "marginLeft": "0px",
+          "gap": "normal",
+          "maxWidth": "none"
+        }
+      },
+      {
+        "kind": "link",
+        "label": null,
+        "tag": "a",
+        "id": null,
+        "role": null,
+        "className": "font-inter flex items-center py-[5px] text-[15px] leading-[22px] font-medium text-stone-600 lg:text-[14px] lg:leading-[20px] lg:text-stone-500 hover:text-stone-800 lg:px-2",
+        "selector": "div.mt-16 > nav.fixed.top-0 > div.mx-auto.flex > div.absolute.left-1/2 > a.font-inter.flex:nth-child(5)",
+        "text": "Careers",
+        "rect": {
+          "x": 1133.94,
+          "y": 16.5,
+          "width": 68.77,
+          "height": 30
+        },
+        "absoluteRect": {
+          "x": 1133.94,
+          "y": 16.5,
+          "width": 68.77,
+          "height": 30
+        },
+        "style": {
+          "fontFamily": "Inter, \"Inter Fallback\"",
+          "fontSize": "14px",
+          "lineHeight": "20px",
+          "fontWeight": "500",
+          "letterSpacing": "normal",
+          "fontStyle": "normal",
+          "textTransform": "none",
+          "color": "oklch(0.553 0.013 58.071)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px solid rgb(215, 204, 193)",
+          "borderColor": "rgb(215, 204, 193)",
+          "borderRadius": "0px",
+          "boxShadow": "none",
+          "paddingTop": "5px",
+          "paddingRight": "8px",
+          "paddingBottom": "5px",
+          "paddingLeft": "8px",
+          "marginTop": "0px",
+          "marginRight": "0px",
+          "marginBottom": "0px",
+          "marginLeft": "0px",
+          "gap": "normal",
+          "maxWidth": "none"
+        }
+      }
+    ],
+    "rightRailInventory": [
+      {
+        "kind": "link",
+        "label": null,
+        "tag": "a",
+        "id": null,
+        "role": null,
+        "className": "font-inter hidden text-[14px] leading-[20px] font-medium text-stone-500 hover:text-stone-800 lg:block",
+        "selector": "div.mt-16 > nav.fixed.top-0 > div.mx-auto.flex > div.inline-flex.items-center > a.font-inter.hidden",
+        "text": "Log in",
+        "rect": {
+          "x": 1289.97,
+          "y": 21.5,
+          "width": 40.73,
+          "height": 20
+        },
+        "absoluteRect": {
+          "x": 1289.97,
+          "y": 21.5,
+          "width": 40.73,
+          "height": 20
+        },
+        "style": {
+          "fontFamily": "Inter, \"Inter Fallback\"",
+          "fontSize": "14px",
+          "lineHeight": "20px",
+          "fontWeight": "500",
+          "letterSpacing": "normal",
+          "fontStyle": "normal",
+          "textTransform": "none",
+          "color": "oklch(0.553 0.013 58.071)",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "border": "0px solid rgb(215, 204, 193)",
+          "borderColor": "rgb(215, 204, 193)",
+          "borderRadius": "0px",
+          "boxShadow": "none",
+          "paddingTop": "0px",
+          "paddingRight": "0px",
+          "paddingBottom": "0px",
+          "paddingLeft": "0px",
+          "marginTop": "0px",
+          "marginRight": "0px",
+          "marginBottom": "0px",
+          "marginLeft": "0px",
+          "gap": "normal",
+          "maxWidth": "none"
+        }
+      },
+      {
+        "kind": "link",
+        "label": null,
+        "tag": "a",
+        "id": null,
+        "role": null,
+        "className": "inline-flex items-center justify-center font-medium font-inter gap-2.5 transition-colors duration-300 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 disabled:pointer-events-none border bg-background shadow-xs hover:text-accent-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50 disabled:hover:bg-background disabled:hover:text-current h-[38px] text-[14px] leading-[20px] px-[14px] border-stone-500 text-stone-700 hover:bg-white",
+        "selector": "div.mt-16 > nav.fixed.top-0 > div.mx-auto.flex > div.inline-flex.items-center > a.inline-flex.items-center",
+        "text": "Contact sales",
+        "rect": {
+          "x": 1346.7,
+          "y": 12.5,
+          "width": 121.3,
+          "height": 38
+        },
+        "absoluteRect": {
+          "x": 1346.7,
+          "y": 12.5,
+          "width": 121.3,
+          "height": 38
+        },
+        "style": {
+          "fontFamily": "Inter, \"Inter Fallback\"",
+          "fontSize": "14px",
+          "lineHeight": "20px",
+          "fontWeight": "500",
+          "letterSpacing": "normal",
+          "fontStyle": "normal",
+          "textTransform": "none",
+          "color": "oklch(0.374 0.01 67.558)",
+          "backgroundColor": "rgb(248, 248, 246)",
+          "border": "1px solid oklch(0.553 0.013 58.071)",
+          "borderColor": "oklch(0.553 0.013 58.071)",
+          "borderRadius": "0px",
+          "boxShadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 1px 2px 0px",
+          "paddingTop": "0px",
+          "paddingRight": "14px",
+          "paddingBottom": "0px",
+          "paddingLeft": "14px",
+          "marginTop": "0px",
+          "marginRight": "0px",
+          "marginBottom": "0px",
+          "marginLeft": "0px",
+          "gap": "10px",
+          "maxWidth": "none"
+        }
+      }
+    ],
+    "repeatedItems": {
+      "fieldList": []
+    }
+  },
+  "theme": {
+    "tokens": [
+      {
+        "label": "body",
+        "color": "rgb(49, 6, 50)",
+        "backgroundColor": "rgb(248, 248, 246)",
+        "borderColor": "rgb(215, 204, 193)",
+        "boxShadow": "none",
+        "outlineColor": "rgb(49, 6, 50)",
+        "textDecorationColor": "rgb(49, 6, 50)"
+      },
+      {
+        "label": "appFrame",
+        "color": "rgb(49, 6, 50)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "borderColor": "rgb(215, 204, 193)",
+        "boxShadow": "none",
+        "outlineColor": "rgb(49, 6, 50)",
+        "textDecorationColor": "rgb(49, 6, 50)"
+      },
+      {
+        "label": "topToolbar",
+        "color": "rgb(49, 6, 50)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "borderColor": "rgb(215, 204, 193)",
+        "boxShadow": "none",
+        "outlineColor": "rgb(49, 6, 50)",
+        "textDecorationColor": "rgb(49, 6, 50)"
+      },
+      {
+        "label": "leftRail",
+        "color": "rgb(49, 6, 50)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "borderColor": "rgb(215, 204, 193)",
+        "boxShadow": "none",
+        "outlineColor": "rgb(49, 6, 50)",
+        "textDecorationColor": "rgb(49, 6, 50)"
+      },
+      {
+        "label": "mainCanvas",
+        "color": "rgb(49, 6, 50)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "borderColor": "rgb(215, 204, 193)",
+        "boxShadow": "none",
+        "outlineColor": "rgb(49, 6, 50)",
+        "textDecorationColor": "rgb(49, 6, 50)"
+      },
+      {
+        "label": "rightRail",
+        "color": "rgb(49, 6, 50)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "borderColor": "rgb(215, 204, 193)",
+        "boxShadow": "none",
+        "outlineColor": "rgb(49, 6, 50)",
+        "textDecorationColor": "rgb(49, 6, 50)"
+      },
+      {
+        "label": "link",
+        "color": "rgb(49, 6, 50)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "borderColor": "rgb(215, 204, 193)",
+        "boxShadow": "none",
+        "outlineColor": "rgb(49, 6, 50)",
+        "textDecorationColor": "rgb(49, 6, 50)"
+      },
+      {
+        "label": "surface",
+        "color": "rgb(49, 6, 50)",
+        "backgroundColor": "oklch(0.985 0.001 106.423)",
+        "borderColor": "rgb(215, 204, 193)",
+        "boxShadow": "none",
+        "outlineColor": "rgb(49, 6, 50)",
+        "textDecorationColor": "rgb(49, 6, 50)"
+      },
+      {
+        "label": "surface",
+        "color": "rgb(49, 6, 50)",
+        "backgroundColor": "oklch(0.268 0.007 34.298)",
+        "borderColor": "rgb(215, 204, 193)",
+        "boxShadow": "none",
+        "outlineColor": "rgb(49, 6, 50)",
+        "textDecorationColor": "rgb(49, 6, 50)"
+      },
+      {
+        "label": "surface",
+        "color": "rgb(49, 6, 50)",
+        "backgroundColor": "rgb(51, 6, 52)",
+        "borderColor": "rgb(215, 204, 193)",
+        "boxShadow": "none",
+        "outlineColor": "rgb(49, 6, 50)",
+        "textDecorationColor": "rgb(49, 6, 50)"
+      },
+      {
+        "label": "surface",
+        "color": "rgb(49, 6, 50)",
+        "backgroundColor": "rgb(253, 253, 251)",
+        "borderColor": "rgb(215, 204, 193)",
+        "boxShadow": "none",
+        "outlineColor": "rgb(49, 6, 50)",
+        "textDecorationColor": "rgb(49, 6, 50)"
+      }
+    ]
+  },
+  "diagnostics": {
+    "coordinates": [
+      {
+        "selector": "div.mt-16",
+        "viewportRect": {
+          "x": 0,
+          "y": 64,
+          "width": 1920,
+          "height": 10946.22
+        },
+        "scroll": {
+          "x": 0,
+          "y": 0
+        },
+        "offsetTop": 64,
+        "offsetLeft": 0
+      },
+      {
+        "selector": "div.mt-16 > main > section.mx-auto.flex > header.xs:px-6.flex",
+        "viewportRect": {
+          "x": 320,
+          "y": 229,
+          "width": 1280,
+          "height": 364
+        },
+        "scroll": {
+          "x": 0,
+          "y": 0
+        },
+        "offsetTop": 229,
+        "offsetLeft": 320
+      },
+      {
+        "selector": "div.mt-16 > nav.fixed.top-0 > div.mx-auto.flex > span",
+        "viewportRect": {
+          "x": 452,
+          "y": 22.77,
+          "width": 100,
+          "height": 17.47
+        },
+        "scroll": {
+          "x": 0,
+          "y": 0
+        },
+        "offsetTop": 23,
+        "offsetLeft": 452
+      },
+      {
+        "selector": "div.mt-16 > nav.fixed.top-0 > div.mx-auto.flex > div.absolute.left-1/2",
+        "viewportRect": {
+          "x": 717.3,
+          "y": 16.5,
+          "width": 485.41,
+          "height": 30
+        },
+        "scroll": {
+          "x": 0,
+          "y": 0
+        },
+        "offsetTop": 17,
+        "offsetLeft": 960
+      },
+      {
+        "selector": "div.mt-16 > nav.fixed.top-0 > div.mx-auto.flex > div.inline-flex.items-center",
+        "viewportRect": {
+          "x": 1289.97,
+          "y": 12.5,
+          "width": 178.03,
+          "height": 38
+        },
+        "scroll": {
+          "x": 0,
+          "y": 0
+        },
+        "offsetTop": 13,
+        "offsetLeft": 1290
+      }
+    ]
+  },
+  "notes": {
+    "measuredState": "visible-rendered-state-only",
+    "themeRule": "Each theme is a separate measured pass. Do not merge light and dark observations.",
+    "captureOrder": "DOM measured before screenshots."
+  }
+}

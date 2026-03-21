@@ -1,19 +1,19 @@
 # Component Inventory
 
-Generated: 2026-03-20T15:30:04.531Z
+Generated: 2026-03-21T00:51:35.560Z
 Scope: auth
 
-Pages scanned: 56
-Unique component usages: 421
+Pages scanned: 50
+Unique component usages: 416
 
 ## Category Totals
 
 | Category | Count |
 | --- | ---: |
 | ark-ui | 153 |
-| external-package | 21 |
+| external-package | 18 |
 | in-file component | 18 |
-| local-components | 133 |
+| local-components | 131 |
 | local-pages | 1 |
 | relative-local | 21 |
 | tabler-icons | 74 |
@@ -285,53 +285,6 @@ Component usages: 1
 | Used As | Source | Category | Definition |
 | --- | --- | --- | --- |
 | `Link` | `react-router-dom` | external-package | Link comes from react-router-dom (named import of Link) |
-
-## src/pages/observability/ObservabilityIndexRedirect.tsx
-
-Component usages: 1
-
-| Used As | Source | Category | Definition |
-| --- | --- | --- | --- |
-| `Navigate` | `react-router-dom` | external-package | Navigate comes from react-router-dom (named import of Navigate) |
-
-## src/pages/observability/ObservabilityLayout.tsx
-
-Component usages: 2
-
-| Used As | Source | Category | Definition |
-| --- | --- | --- | --- |
-| `Link` | `react-router-dom` | external-package | Link comes from react-router-dom (named import of Link) |
-| `Outlet` | `react-router-dom` | external-package | Outlet comes from react-router-dom (named import of Outlet) |
-
-## src/pages/observability/ObservabilityLogsPage.tsx
-
-Component usages: 0
-
-| Used As | Source | Category | Definition |
-| --- | --- | --- | --- |
-
-## src/pages/observability/ObservabilityTraceDetailPage.tsx
-
-Component usages: 1
-
-| Used As | Source | Category | Definition |
-| --- | --- | --- | --- |
-| `TraceDetailsPanel` | `@/components/observability/TraceDetailsPanel` | local-components | TraceDetailsPanel comes from @/components/observability/TraceDetailsPanel (named import of TraceDetailsPanel) |
-
-## src/pages/observability/ObservabilityTracesPage.tsx
-
-Component usages: 1
-
-| Used As | Source | Category | Definition |
-| --- | --- | --- | --- |
-| `TracesTable` | `@/components/observability/TracesTable` | local-components | TracesTable comes from @/components/observability/TracesTable (named import of TracesTable) |
-
-## src/pages/observability/TelemetryStatusPage.tsx
-
-Component usages: 0
-
-| Used As | Source | Category | Definition |
-| --- | --- | --- | --- |
 
 ## src/pages/ParsePage.tsx
 

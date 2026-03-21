@@ -63,7 +63,7 @@ export type NavDrillConfig = {
 
 export const TOP_LEVEL_NAV: Array<NavItem | 'divider'> = [
   { label: 'Assets', icon: IconFolder, path: '/app/assets' },
-  { label: 'Parse', icon: IconScan, path: '/app/parse' },
+  { label: 'Ingest', icon: IconScan, path: '/app/parse' },
   { label: 'Extract', icon: IconWand, path: '/app/extract' },
   { label: 'Transform', icon: IconArrowsShuffle, path: '/app/transform' },
   { label: 'Convert', icon: IconFileExport, path: '/app/convert' },
@@ -77,7 +77,7 @@ export const TOP_LEVEL_NAV: Array<NavItem | 'divider'> = [
   { label: 'Load', icon: IconPlayerPlay, path: '/app/load' },
   { label: 'Schema', icon: IconSchema, path: '/app/schemas' },
   'divider',
-  { label: 'Workspace', icon: IconFileCode, path: '/app/workspace' },
+  { label: 'Workbench', icon: IconFileCode, path: '/app/workspace' },
   'divider',
   { label: 'Integrations', icon: IconApps, path: '/app/marketplace/integrations' },
   { label: 'Services', icon: IconServer, path: '/app/marketplace/services' },
@@ -259,14 +259,14 @@ const OBSERVABILITY_DRILL: NavDrillConfig = {
   id: 'observability',
   parentLabel: 'Observability',
   parentPath: '/app/observability',
-  routePrefix: '/app/observability/',
+  routePrefix: '/app/__observability__',
   sections: [
     {
       label: 'Observability',
       items: [
         { label: 'Telemetry', icon: IconActivity, path: '/app/observability/telemetry' },
         { label: 'Traces', icon: IconArrowsShuffle, path: '/app/observability/traces' },
-        { label: 'Logs', icon: IconFileText, path: '/app/observability/logs' },
+        { label: 'Logs', icon: IconFileText, path: '/app/logs' },
       ],
     },
   ],

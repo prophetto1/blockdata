@@ -53,5 +53,31 @@
     "capturedAt": "2026-03-19T18:32:38.354Z",
     "outputDir": "studio-botpress-cloud-dc2d85c0-a17d-4e4c-8b40-62a428a937e2-home-gl-1-10y0001-gcl-au-ndq0odcwnjeumtc3mzg3njq5ma-ga-nzi3otiynzazlje3nzm4nzy0odk-ga-hkhswes9v9-cze3nzm5ndqwntgkbzewjgcxjhqxnzczotq0njc3jgo1nsrsmcronjc4mdmwmjg3/1920x1080",
     "status": "complete"
+  },
+  {
+    "id": "localhost-signup--1920x1080--light--dashboard",
+    "name": "localhost-signup",
+    "url": "http://localhost:8080/signup",
+    "viewport": "1920x1080",
+    "theme": "light",
+    "pageType": "dashboard",
+    "capturedAt": null,
+    "outputDir": "localhost-signup/1920x1080",
+    "status": "failed",
+    "hasOverlay": false,
+    "overlayRequested": false
+  },
+  {
+    "id": "reducto-ai--1920x1080--light--marketing",
+    "name": "reducto-ai",
+    "url": "https://reducto.ai/",
+    "viewport": "1920x1080",
+    "theme": "light",
+    "pageType": "marketing",
+    "capturedAt": null,
+    "outputDir": "reducto-ai/1920x1080",
+    "status": "auth-needed",
+    "hasOverlay": false,
+    "overlayRequested": false
   }
 ]

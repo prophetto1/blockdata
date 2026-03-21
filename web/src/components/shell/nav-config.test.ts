@@ -22,7 +22,7 @@ describe('nav-config side rail', () => {
     expect(paths).toContain('/app/flows');
     expect(paths).toContain('/app/database');
     expect(paths).toContain('/app/secrets');
-    expect(paths).toContain('/app/observability/logs');
+    expect(paths).toContain('/app/logs');
     expect(paths).toContain('/app/settings');
     expect(paths).not.toContain('/app/elt');
     expect(paths).not.toContain('/app/executions');
@@ -110,6 +110,22 @@ describe('nav-config side rail', () => {
 
     expect(classicOnboarding && classicOnboarding !== 'divider' ? classicOnboarding.label : null).toBe('Agent Onboarding');
   });
+
+  it('uses Ingest as the classic top-level label for /app/parse', () => {
+    const classicParse = TOP_LEVEL_NAV.find(
+      (entry) => entry !== 'divider' && entry.path === '/app/parse',
+    );
+
+    expect(classicParse && classicParse !== 'divider' ? classicParse.label : null).toBe('Ingest');
+  });
+
+  it('uses Workbench as the classic top-level label for /app/workspace', () => {
+    const classicWorkspace = TOP_LEVEL_NAV.find(
+      (entry) => entry !== 'divider' && entry.path === '/app/workspace',
+    );
+
+    expect(classicWorkspace && classicWorkspace !== 'divider' ? classicWorkspace.label : null).toBe('Workbench');
+  });
 });
 
 describe('drill configs', () => {
@@ -154,7 +170,7 @@ describe('drill configs', () => {
     const paths = observability.sections.flatMap((section) => section.items.map((item) => item.path));
 
     expect(labels).toContain('Logs');
-    expect(paths).toContain('/app/observability/logs');
+    expect(paths).toContain('/app/logs');
   });
 
   it('build ai drill omits integration options', () => {
@@ -196,7 +212,7 @@ describe('drill configs', () => {
     expect(findDrillByRoute('/app/agents')?.id).toBe('build-ai');
     expect(findDrillByRoute('/app/skills')?.id).toBe('build-ai');
     expect(findDrillByRoute('/app/secrets')?.id).toBe('workbench');
-    expect(findDrillByRoute('/app/logs')).toBeNull();
+    expect(findDrillByRoute('/app/logs')?.id).toBe('observability');
     expect(findDrillByRoute('/app/transform')?.id).toBe('workbench');
     expect(findDrillByRoute('/app/elt')).toBeNull();
     expect(findDrillByRoute('/app/database')?.id).toBe('ingest');

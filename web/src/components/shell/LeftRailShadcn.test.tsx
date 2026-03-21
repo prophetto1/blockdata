@@ -76,6 +76,8 @@ describe('LeftRailShadcn', () => {
   });
 
   it('renders the brand logo and top-level nav items', async () => {
+    window.localStorage.setItem('blockdata.nav.style', 'classic');
+
     render(
       <MemoryRouter initialEntries={['/app/database']}>
         <LeftRailShadcn />
@@ -84,7 +86,8 @@ describe('LeftRailShadcn', () => {
 
     expect(await screen.findByRole('button', { name: 'Go to home' })).toBeInTheDocument();
     expect(screen.getByText('Flows')).toBeInTheDocument();
-    expect(screen.getByText('Workspace')).toBeInTheDocument();
+    expect(screen.getByText('Workbench')).toBeInTheDocument();
+    expect(screen.getByText('Ingest')).toBeInTheDocument();
     expect(screen.getByText('Database')).toBeInTheDocument();
     expect(screen.getAllByText('Settings').length).toBeGreaterThanOrEqual(1);
   });

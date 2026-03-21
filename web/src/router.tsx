@@ -42,12 +42,6 @@ import SecretsPage from '@/pages/SecretsPage';
 import LoadPage from '@/pages/LoadPage';
 import AppHome from '@/pages/AppHome';
 import EarlyAccess from '@/pages/EarlyAccess';
-import ObservabilityLayout from '@/pages/observability/ObservabilityLayout';
-import ObservabilityIndexRedirect from '@/pages/observability/ObservabilityIndexRedirect';
-import TelemetryStatusPage from '@/pages/observability/TelemetryStatusPage';
-import ObservabilityTracesPage from '@/pages/observability/ObservabilityTracesPage';
-import ObservabilityTraceDetailPage from '@/pages/observability/ObservabilityTraceDetailPage';
-import ObservabilityLogsPage from '@/pages/observability/ObservabilityLogsPage';
 
 import IntegrationsCatalog from '@/pages/marketplace/IntegrationsCatalog';
 import ServicesCatalog from '@/pages/marketplace/ServicesCatalog';
@@ -174,17 +168,9 @@ export const router = createBrowserRouter([
           { path: '/app/knowledge-bases', lazy: () => import('@/pages/KnowledgeBases') },
           { path: '/app/skills', lazy: () => import('@/pages/Skills') },
           { path: '/app/mcp-tools', lazy: () => import('@/pages/McpTools') },
-          {
-            path: '/app/observability',
-            element: <ObservabilityLayout />,
-            children: [
-              { index: true, element: <ObservabilityIndexRedirect /> },
-              { path: 'telemetry', element: <TelemetryStatusPage /> },
-              { path: 'traces', element: <ObservabilityTracesPage /> },
-              { path: 'traces/:traceId', element: <ObservabilityTraceDetailPage /> },
-              { path: 'logs', element: <ObservabilityLogsPage /> },
-            ],
-          },
+          { path: '/app/observability', element: <Navigate to="/app/observability/telemetry" replace /> },
+          { path: '/app/observability/telemetry', lazy: () => import('@/pages/ObservabilityTelemetry') },
+          { path: '/app/observability/traces', lazy: () => import('@/pages/ObservabilityTraces') },
 
           // Settings (API keys, model defaults, MCP)
           {
