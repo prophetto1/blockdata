@@ -1,6 +1,5 @@
 # Admin Shell Cleanup Implementation Plan
 
-> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
 **Goal:** Keep the existing two admin rail containers and the first rail's resize behavior, move admin page menus left by one rail, and remove all page-level third-rail navigation from superuser screens.
 

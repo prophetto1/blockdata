@@ -50,9 +50,11 @@
     "viewport": "1920x1080",
     "theme": "dark",
     "pageType": "workbench",
-    "capturedAt": "2026-03-19T18:32:38.354Z",
+    "capturedAt": "2026-03-21T01:33:07.286Z",
     "outputDir": "studio-botpress-cloud-dc2d85c0-a17d-4e4c-8b40-62a428a937e2-home-gl-1-10y0001-gcl-au-ndq0odcwnjeumtc3mzg3njq5ma-ga-nzi3otiynzazlje3nzm4nzy0odk-ga-hkhswes9v9-cze3nzm5ndqwntgkbzewjgcxjhqxnzczotq0njc3jgo1nsrsmcronjc4mdmwmjg3/1920x1080",
-    "status": "complete"
+    "status": "complete",
+    "hasOverlay": false,
+    "overlayRequested": false
   },
   {
     "id": "localhost-signup--1920x1080--light--dashboard",
@@ -76,6 +78,32 @@
     "pageType": "marketing",
     "capturedAt": null,
     "outputDir": "reducto-ai/1920x1080",
+    "status": "auth-needed",
+    "hasOverlay": false,
+    "overlayRequested": false
+  },
+  {
+    "id": "reducto-ai-utm-content-777921860384-utm-term-reducto-utm-device-c-utm-network-g-campaignid-23097717334-adgroupid-190295734687-adid-777921860384-utm-term-reducto-utm-campaign-defense-utm-source-google-utm-medium-cpc-gad-source-1-gad-campaignid-23097717334-gclid-cjwkcajwg-nnbhageiwaiypya1zit5knphod-rdwl87om0vru635s6rmt0mjokkd0s3dta7ofmrnbrocyyoqavd-bwe--1920x1080--light--marketing",
+    "name": "reducto-ai-utm-content-777921860384-utm-term-reducto-utm-device-c-utm-network-g-campaignid-23097717334-adgroupid-190295734687-adid-777921860384-utm-term-reducto-utm-campaign-defense-utm-source-google-utm-medium-cpc-gad-source-1-gad-campaignid-23097717334-gclid-cjwkcajwg-nnbhageiwaiypya1zit5knphod-rdwl87om0vru635s6rmt0mjokkd0s3dta7ofmrnbrocyyoqavd-bwe",
+    "url": "https://reducto.ai/?utm_content=777921860384&utm_term=reducto&utm_device=c&utm_network=g&campaignid=23097717334&adgroupid=190295734687&adid=777921860384&utm_term=reducto&utm_campaign=defense&utm_source=google&utm_medium=cpc&gad_source=1&gad_campaignid=23097717334&gclid=CjwKCAjwg_nNBhAGEiwAiYPYA1zit5KNPhoD-RdWl87OM0Vru635s6rmT0mjOkKd0s3DTA7oFMrnbRoCyYoQAvD_BwE",
+    "viewport": "1920x1080",
+    "theme": "light",
+    "pageType": "marketing",
+    "capturedAt": null,
+    "outputDir": "reducto-ai-utm-content-777921860384-utm-term-reducto-utm-device-c-utm-network-g-campaignid-23097717334-adgroupid-190295734687-adid-777921860384-utm-term-reducto-utm-campaign-defense-utm-source-google-utm-medium-cpc-gad-source-1-gad-campaignid-23097717334-gclid-cjwkcajwg-nnbhageiwaiypya1zit5knphod-rdwl87om0vru635s6rmt0mjokkd0s3dta7ofmrnbrocyyoqavd-bwe/1920x1080",
+    "status": "auth-needed",
+    "hasOverlay": false,
+    "overlayRequested": false
+  },
+  {
+    "id": "reducto-ai-utm-content-777921860384-utm-term-reducto-utm-device-c-utm-network-g-campaignid-23097717334-adgroupid-190295734687-adid-777921860384-utm-term-reducto-utm-campaign-defense-utm-source-google-utm-medium-cpc-gad-source-1-gad-campaignid-23097717334-gclid-cjwkcajwg-nnbhageiwaiypya1zit5knphod-rdwl87om0vru635s6rmt0mjokkd0s3dta7ofmrnbrocyyoqavd-bwe--1920x1080--light--settings",
+    "name": "reducto-ai-utm-content-777921860384-utm-term-reducto-utm-device-c-utm-network-g-campaignid-23097717334-adgroupid-190295734687-adid-777921860384-utm-term-reducto-utm-campaign-defense-utm-source-google-utm-medium-cpc-gad-source-1-gad-campaignid-23097717334-gclid-cjwkcajwg-nnbhageiwaiypya1zit5knphod-rdwl87om0vru635s6rmt0mjokkd0s3dta7ofmrnbrocyyoqavd-bwe",
+    "url": "https://reducto.ai/?utm_content=777921860384&utm_term=reducto&utm_device=c&utm_network=g&campaignid=23097717334&adgroupid=190295734687&adid=777921860384&utm_term=reducto&utm_campaign=defense&utm_source=google&utm_medium=cpc&gad_source=1&gad_campaignid=23097717334&gclid=CjwKCAjwg_nNBhAGEiwAiYPYA1zit5KNPhoD-RdWl87OM0Vru635s6rmT0mjOkKd0s3DTA7oFMrnbRoCyYoQAvD_BwE",
+    "viewport": "1920x1080",
+    "theme": "light",
+    "pageType": "settings",
+    "capturedAt": null,
+    "outputDir": "reducto-ai-utm-content-777921860384-utm-term-reducto-utm-device-c-utm-network-g-campaignid-23097717334-adgroupid-190295734687-adid-777921860384-utm-term-reducto-utm-campaign-defense-utm-source-google-utm-medium-cpc-gad-source-1-gad-campaignid-23097717334-gclid-cjwkcajwg-nnbhageiwaiypya1zit5knphod-rdwl87om0vru635s6rmt0mjokkd0s3dta7ofmrnbrocyyoqavd-bwe/1920x1080",
     "status": "auth-needed",
     "hasOverlay": false,
     "overlayRequested": false

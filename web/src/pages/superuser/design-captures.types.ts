@@ -1,4 +1,4 @@
-export type CaptureStatus = 'pending' | 'auth-needed' | 'capturing' | 'complete' | 'failed';
+export type CaptureStatus = 'pending' | 'capturing' | 'complete' | 'failed';
 
 export type PageType = 'settings' | 'editor' | 'dashboard' | 'workbench' | 'marketing';
 
@@ -22,5 +22,4 @@ export type CaptureRequest = {
   height: number;
   theme: ThemeRequest;
   pageType: PageType;
-  forceAuth?: boolean;
 };

@@ -1,7 +1,6 @@
 {
   "scripts": {
-    "capture-server": "node scripts/capture-server.mjs",
-    "measure-overlay": "node docs/jon/skills/design-1-layouts-spec-with-playwright/scripts/measure-overlay.mjs"
+    "capture-server": "node scripts/capture-server.mjs"
   },
   "dependencies": {
     "@uppy/react": "^5.2.0",

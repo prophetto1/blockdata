@@ -79,7 +79,7 @@ describe('LeftRailShadcn', () => {
     window.localStorage.setItem('blockdata.nav.style', 'classic');
 
     render(
-      <MemoryRouter initialEntries={['/app/database']}>
+      <MemoryRouter initialEntries={['/app/assets']}>
         <LeftRailShadcn />
       </MemoryRouter>,
     );
@@ -88,7 +88,7 @@ describe('LeftRailShadcn', () => {
     expect(screen.getByText('Flows')).toBeInTheDocument();
     expect(screen.getByText('Workbench')).toBeInTheDocument();
     expect(screen.getByText('Ingest')).toBeInTheDocument();
-    expect(screen.getByText('Database')).toBeInTheDocument();
+    expect(screen.getByText('Assets')).toBeInTheDocument();
     expect(screen.getAllByText('Settings').length).toBeGreaterThanOrEqual(1);
   });
 
@@ -128,7 +128,6 @@ describe('LeftRailShadcn', () => {
 
     expect(await screen.findByText('Account')).toBeInTheDocument();
     expect(screen.getByText('Themes')).toBeInTheDocument();
-    expect(screen.getByText('AI Providers')).toBeInTheDocument();
   });
 
   it('renders compact mode with icon-only buttons', () => {

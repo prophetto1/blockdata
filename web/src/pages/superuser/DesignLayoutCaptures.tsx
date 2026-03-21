@@ -165,19 +165,6 @@ async function parseFailureBody(res: Response): Promise<string> {
   }
 }
 
-async function requestAuthComplete(captureId: string): Promise<{ id: string; status: string }> {
-  const res = await fetch(`${CAPTURE_SERVER}/auth-complete`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ id: captureId }),
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
-    throw new Error(err.error ?? `HTTP ${res.status}`);
-  }
-  return res.json();
-}
-
 async function requestDeleteCapture(captureId: string): Promise<{ id: string; status: string }> {
   const encoded = encodeURIComponent(captureId);
   const deleteUrl = `${CAPTURE_SERVER}/captures/${encoded}/delete`;
@@ -302,7 +289,7 @@ export function Component() {
 
   // ---------- re-capture ----------
 
-  const handleReCapture = async (row: CaptureEntry, forceAuth = false) => {
+  const handleReCapture = async (row: CaptureEntry) => {
     const [w, h] = row.viewport.split('x').map(Number);
     const req: CaptureRequest = {
       url: row.url,
@@ -310,30 +297,11 @@ export function Component() {
       height: h,
       theme: row.theme,
       pageType: row.pageType,
-      forceAuth,
     };
-    if (forceAuth) {
-      setPreviewLoadFailed((prev) => {
-        const next = new Set(prev);
-        next.delete(row.id);
-        return next;
-      });
-    }
 
     try {
-      const result = await requestCapture(req);
-      if (result.status === 'auth-needed') {
-        // Open modal pre-filled so user can complete auth flow
-        setCaptureForm(req);
-        setModalStatus({
-          state: 'auth-needed',
-          captureId: result.id,
-          message: result.message ?? 'Browser opened. Complete login, then click "Auth Complete".',
-        });
-        setShowAddNew(true);
-      } else {
-        void loadData();
-      }
+      await requestCapture(req);
+      void loadData();
     } catch (err) {
       setCaptureForm(req);
       setModalStatus({ state: 'error', message: err instanceof Error ? err.message : String(err) });
@@ -375,7 +343,7 @@ export function Component() {
     pageType: 'settings',
   });
   const [modalStatus, setModalStatus] = useState<{
-    state: 'idle' | 'submitting' | 'auth-needed' | 'capturing' | 'done' | 'error';
+    state: 'idle' | 'submitting' | 'capturing' | 'done' | 'error';
     message?: string;
     captureId?: string;
   }>({ state: 'idle' });
@@ -384,35 +352,13 @@ export function Component() {
     setModalStatus({ state: 'submitting' });
     try {
       const result = await requestCapture(captureForm);
-      if (result.status === 'auth-needed') {
-        setModalStatus({
-          state: 'auth-needed',
-          captureId: result.id,
-          message: result.message ?? 'Browser opened. Complete login, then click "Auth Complete".',
-        });
-      } else if (result.status === 'complete') {
-        setModalStatus({ state: 'done', captureId: result.id });
-        void loadData();
-      } else {
-        setModalStatus({ state: 'capturing', captureId: result.id });
-        void loadData();
-      }
-    } catch (err) {
-      setModalStatus({ state: 'error', message: err instanceof Error ? err.message : String(err) });
-    }
-  };
-
-  const handleAuthComplete = async () => {
-    if (!modalStatus.captureId) return;
-    setModalStatus({ state: 'capturing', captureId: modalStatus.captureId });
-    try {
-      const result = await requestAuthComplete(modalStatus.captureId);
       if (result.status === 'complete') {
         setModalStatus({ state: 'done', captureId: result.id });
+        void loadData();
       } else {
         setModalStatus({ state: 'capturing', captureId: result.id });
+        void loadData();
       }
-      void loadData();
     } catch (err) {
       setModalStatus({ state: 'error', message: err instanceof Error ? err.message : String(err) });
     }
@@ -580,7 +526,6 @@ export function Component() {
                           row.status === 'complete' ? 'green'
                           : row.status === 'failed' ? 'red'
                           : row.status === 'capturing' ? 'blue'
-                          : row.status === 'auth-needed' ? 'yellow'
                           : 'gray'
                         }
                         size="sm"
@@ -623,17 +568,6 @@ export function Component() {
                           onClick={() => void handleReCapture(row)}
                         >
                           <IconCamera size={14} />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7"
-                          aria-label="Re-capture with fresh authentication"
-                          title="Re-capture with fresh authentication"
-                          onClick={() => void handleReCapture(row, true)}
-                          disabled={deleting.has(row.id)}
-                        >
-                          <IconRefresh size={14} />
                         </Button>
                         <Button
                           variant="ghost"
@@ -786,11 +720,6 @@ export function Component() {
             {modalStatus.state === 'submitting' && (
               <p className="text-sm text-muted-foreground">Starting capture...</p>
             )}
-            {modalStatus.state === 'auth-needed' && (
-              <div className="flex gap-3 rounded-md border border-yellow-300 bg-yellow-50 p-3 dark:border-yellow-700 dark:bg-yellow-900/20">
-                <span className="text-sm text-yellow-800 dark:text-yellow-300">{modalStatus.message}</span>
-              </div>
-            )}
             {modalStatus.state === 'capturing' && (
               <div className="flex gap-3 rounded-md border border-blue-300 bg-blue-50 p-3 dark:border-blue-700 dark:bg-blue-900/20">
                 <span className="text-sm text-blue-800 dark:text-blue-300">Capturing... Playwright is running the measurement scripts.</span>
@@ -811,11 +740,6 @@ export function Component() {
           <DialogFooter>
             {modalStatus.state !== 'done' && (
               <Button size="sm" variant="outline" onClick={() => setShowAddNew(false)}>Cancel</Button>
-            )}
-            {modalStatus.state === 'auth-needed' && (
-              <Button size="sm" onClick={() => void handleAuthComplete()}>
-                Auth Complete
-              </Button>
             )}
             {(modalStatus.state === 'idle' || modalStatus.state === 'error') && (
               <Button size="sm" onClick={() => void handleStartCapture()} disabled={!captureForm.url}>

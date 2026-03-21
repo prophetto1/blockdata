@@ -3,7 +3,6 @@
 import fs from "node:fs";
 import path from "node:path";
 import http from "node:http";
-import os from "node:os";
 import { createRequire } from "node:module";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
@@ -119,232 +118,6 @@ function updateCaptureStatus(id, status, capturedAt = null) {
   }
 }
 
-function parseBoolean(value) {
-  if (typeof value === "boolean") return value;
-  if (!value) return false;
-  return ["1", "true", "yes", "y", "on"].includes(String(value).toLowerCase());
-}
-
-const AUTH_PATH_HINTS = [
-  "/login",
-  "/signin",
-  "/sign-in",
-  "/sign_in",
-  "/log-in",
-  "/auth",
-  "/sso",
-  "/oauth",
-  "/id/",
-  "/session",
-  "/account",
-];
-
-const AUTH_TEXT_HINTS = [
-  "sign in",
-  "signin",
-  "log in",
-  "log into",
-  "authentication",
-  "authorize",
-  "authorization",
-  "forgot password",
-  "create account",
-  "continue with",
-  "single sign",
-  "password",
-];
-
-function isLikelyLoggedOutPage(finalUrl, title = "", bodyText = "") {
-  const normalizedUrl = String(finalUrl || "").toLowerCase();
-  const normalizedTitle = String(title || "").toLowerCase();
-  const normalizedBody = String(bodyText || "").toLowerCase();
-
-  const urlHints = AUTH_PATH_HINTS.some((hint) => normalizedUrl.includes(hint));
-  const textHints = AUTH_TEXT_HINTS.some(
-    (hint) => normalizedTitle.includes(hint) || normalizedBody.includes(hint)
-  );
-  return urlHints || textHints;
-}
-
-async function validateStorageState(playwright, { url, storageStatePath, width, height }) {
-  const browser = await playwright.chromium.launch({
-    headless: true,
-    args: ["--disable-blink-features=AutomationControlled"],
-  });
-
-  try {
-    const context = await browser.newContext({
-      viewport: { width, height },
-      deviceScaleFactor: 1,
-      storageState: path.resolve(storageStatePath),
-    });
-
-    const page = await context.newPage();
-    await page.goto(url, { waitUntil: "domcontentloaded", timeout: 20000 });
-
-    const finalUrl = page.url();
-    const title = await page.title().catch(() => "");
-    let bodyText = "";
-    try {
-      bodyText = (await page.locator("body").innerText()) || "";
-    } catch {
-      // no-op
-    }
-
-    const hasPasswordInput = (await page.locator('input[type="password"]').count().catch(() => 0)) > 0;
-    const looksLoggedOut =
-      isLikelyLoggedOutPage(finalUrl, title, bodyText) ||
-      (hasPasswordInput &&
-        (bodyText.toLowerCase().includes("email") || bodyText.toLowerCase().includes("password")));
-
-    await context.close();
-    return !looksLoggedOut;
-  } catch (error) {
-    console.warn(`[auth] Failed auth-state validation for ${url}: ${error?.message || error}`);
-    return false;
-  } finally {
-    await browser.close();
-  }
-}
-
-function normalizeChromeProfilePath(candidate) {
-  if (!candidate) return null;
-  const resolved = path.resolve(candidate);
-  return fs.existsSync(resolved) && fs.statSync(resolved).isDirectory() ? resolved : null;
-}
-
-function resolveDefaultChromeProfileDir() {
-  const home = process.env.USERPROFILE || os.homedir();
-  const defaultProfilePath = path.join(home, "AppData", "Local", "Google", "Chrome", "User Data");
-  return normalizeChromeProfilePath(defaultProfilePath);
-}
-
-async function launchAuthContext(playwright, width, height) {
-  const useProfile = parseBoolean(process.env.CAPTURE_USE_CHROME_PROFILE ?? true);
-  const channel = process.env.CAPTURE_CHROME_CHANNEL || "chrome";
-  const profileName = process.env.CAPTURE_CHROME_PROFILE_NAME || "Default";
-  const browserArgs = ["--disable-blink-features=AutomationControlled"];
-
-  async function launchFallback() {
-    const browser = await playwright.chromium.launch({
-      channel,
-      headless: false,
-      args: browserArgs,
-    });
-    const context = await browser.newContext({
-      viewport: { width, height },
-      deviceScaleFactor: 1,
-    });
-    const page = await context.newPage();
-    return {
-      page,
-      context,
-      cleanup: async () => {
-        await context.close();
-        await browser.close();
-      },
-    };
-  }
-
-  if (!useProfile) {
-    return launchFallback();
-  }
-
-  const profileBase = normalizeChromeProfilePath(process.env.CAPTURE_CHROME_PROFILE_DIR) || resolveDefaultChromeProfileDir();
-  if (!profileBase) {
-    return launchFallback();
-  }
-
-  const resolvedProfileDir = path.join(profileBase, profileName);
-  if (!normalizeChromeProfilePath(resolvedProfileDir)) {
-    return launchFallback();
-  }
-
-  const tempProfileRoot = fs.mkdtempSync(path.join(os.tmpdir(), "capture-chrome-profile-"));
-  const copiedProfileDir = path.join(tempProfileRoot, profileName);
-  const sourceLocalState = path.join(profileBase, "Local State");
-  const targetLocalState = path.join(tempProfileRoot, "Local State");
-
-  try {
-    fs.cpSync(resolvedProfileDir, copiedProfileDir, { recursive: true });
-    if (fs.existsSync(sourceLocalState)) {
-      fs.copyFileSync(sourceLocalState, targetLocalState);
-    }
-
-    const context = await playwright.chromium.launchPersistentContext(tempProfileRoot, {
-      channel,
-      headless: false,
-      viewport: { width, height },
-      deviceScaleFactor: 1,
-      args: [...browserArgs, `--profile-directory=${profileName}`],
-    });
-    const page = await context.newPage();
-    return {
-      page,
-      context,
-      tempProfileRoot,
-      cleanup: async () => {
-        await context.close();
-        try {
-          fs.rmSync(tempProfileRoot, { recursive: true, force: true });
-        } catch {
-          // ignore cleanup errors
-        }
-      },
-    };
-  } catch (error) {
-    try {
-      fs.rmSync(tempProfileRoot, { recursive: true, force: true });
-    } catch {
-      // ignore cleanup errors
-    }
-    console.warn(`[auth] Chrome profile launch failed (${error?.message || error}). Falling back to headed Chromium session.`);
-    return launchFallback();
-  }
-}
-
-/* ------------------------------------------------------------------ */
-/*  Auth sessions — headed browser kept open for manual login          */
-/* ------------------------------------------------------------------ */
-
-// Map<captureId, { context, page, storageStatePath, cleanup, tempProfileRoot?, entry }>
-const authSessions = new Map();
-
-async function startAuthSession(id, entry, targetUrl, storageStatePath, width, height) {
-  const playwright = resolvePlaywright();
-  const { page, context, cleanup, tempProfileRoot } = await launchAuthContext(playwright, width, height);
-  await page.goto(targetUrl, { waitUntil: "load" });
-
-  authSessions.set(id, {
-    context,
-    page,
-    storageStatePath,
-    cleanup,
-    tempProfileRoot,
-    entry,
-  });
-  console.log(`[auth] Headed browser opened for ${targetUrl} — waiting for login`);
-}
-
-async function completeAuthSession(id) {
-  const session = authSessions.get(id);
-  if (!session) throw new Error(`No auth session for capture '${id}'`);
-
-  const { context, storageStatePath, cleanup } = session;
-
-  // Save storageState from the context the user logged into
-  ensureDir(path.dirname(storageStatePath));
-  await context.storageState({ path: storageStatePath });
-  console.log(`[auth] Storage state saved to ${storageStatePath}`);
-
-  if (cleanup) {
-    await cleanup();
-  } else {
-    await context.close();
-  }
-  authSessions.delete(id);
-}
-
 async function deleteCapture(id) {
   const captures = readCaptures();
   const index = captures.findIndex((entry) => entry.id === id);
@@ -355,15 +128,6 @@ async function deleteCapture(id) {
   const [entry] = captures.splice(index, 1);
   writeCaptures(captures);
 
-  const session = authSessions.get(id);
-  if (session) {
-    try {
-      await (session.cleanup ? session.cleanup() : session.context?.close?.());
-    } finally {
-      authSessions.delete(id);
-    }
-  }
-
   const designLayoutsRoot = path.join(repoRoot, "docs", "design-layouts");
   const outputDirPath = path.join(designLayoutsRoot, entry.outputDir);
   try {
@@ -372,16 +136,6 @@ async function deleteCapture(id) {
     }
   } catch (error) {
     console.warn(`[capture] Failed to remove output dir for ${id}: ${error?.message || error}`);
-  }
-
-  const mod = await loadMeasureModule();
-  const authStatePath = mod.deriveAuthStatePath({ repoRoot, targetUrl: entry.url });
-  try {
-    if (fs.existsSync(authStatePath)) {
-      fs.rmSync(authStatePath, { force: true });
-    }
-  } catch (error) {
-    console.warn(`[capture] Failed to remove auth state for ${id}: ${error?.message || error}`);
   }
 
   return entry;
@@ -402,14 +156,12 @@ async function startCapture(body) {
     height = 1080,
     theme = "light",
     pageType = "settings",
-    forceAuth = false,
   } = body;
   if (!url) throw new Error("Missing required field: url");
 
   const mod = await loadMeasureModule();
   const slug = mod.deriveCaptureSlug(url);
   const outputDir = mod.deriveDefaultOutputDir({ repoRoot, targetUrl: url, width, height });
-  const storageStatePath = mod.deriveAuthStatePath({ repoRoot, targetUrl: url });
   const id = `${slug}--${width}x${height}--${theme}--${pageType}`;
 
   const entry = {
@@ -433,31 +185,7 @@ async function startCapture(body) {
   }
   writeCaptures(captures);
 
-  const hasAuth = fs.existsSync(storageStatePath);
-  let needsAuth = !hasAuth || forceAuth;
-  if (!needsAuth) {
-    const playwright = resolvePlaywright();
-    needsAuth = !(await validateStorageState(playwright, { url, storageStatePath, width, height }));
-    if (needsAuth) {
-      try {
-        fs.rmSync(storageStatePath, { force: true });
-      } catch {
-        // ignore cleanup errors
-      }
-    }
-  }
-
-  if (needsAuth) {
-    updateCaptureStatus(id, "auth-needed");
-    await startAuthSession(id, entry, url, storageStatePath, width, height);
-    return {
-      id,
-      status: "auth-needed",
-      message: `Headed browser opened for ${new URL(url).hostname}. Log in, then click "Auth Complete".`,
-    };
-  }
-
-  return runCapture(id, entry, { url, width, height, theme, storageStatePath, outputDir });
+  return runCapture(id, entry, { url, width, height, theme, outputDir });
 }
 
 async function runCapture(id, entry, options) {
@@ -471,7 +199,6 @@ async function runCapture(id, entry, options) {
       url: options.url,
       width: String(options.width),
       height: String(options.height),
-      storageStatePath: options.storageStatePath,
       outputDir: options.outputDir,
     };
 
@@ -573,39 +300,6 @@ async function handleRequest(req, res) {
       return;
     }
 
-    // POST /auth-complete — user finished login in headed browser
-    if (method === "POST" && pathname === "/auth-complete") {
-      const body = await readBody(req);
-      const { id } = body;
-
-      if (!authSessions.has(id)) {
-        sendJson(res, 404, { error: `No active auth session for capture '${id}'` });
-        return;
-      }
-
-      // Save storageState and close headed browser
-      const session = authSessions.get(id);
-      await completeAuthSession(id);
-
-      // Now run the actual capture with saved auth
-      const entry = session.entry;
-      const mod = await loadMeasureModule();
-      const [w, h] = entry.viewport.split("x").map(Number);
-      const outputDir = mod.deriveDefaultOutputDir({ repoRoot, targetUrl: entry.url, width: w, height: h });
-
-      const result = await runCapture(id, entry, {
-        url: entry.url,
-        width: w,
-        height: h,
-        theme: entry.theme,
-        storageStatePath: session.storageStatePath,
-        outputDir,
-      });
-
-      sendJson(res, 200, result);
-      return;
-    }
-
     // GET /status/:id — check single capture
     if (method === "GET" && pathname.startsWith("/status/")) {
       const id = decodeURIComponent(pathname.slice("/status/".length));
@@ -672,6 +366,5 @@ server.listen(PORT, () => {
   console.log(`  POST /captures/delete — remove capture and artifacts (payload id)`);
   console.log(`  POST /captures/:id/delete — remove capture and artifacts`);
   console.log(`  DELETE /captures/:id    — remove capture and artifacts (legacy)`);
-  console.log(`  POST /auth-complete  — signal login done { id }`);
   console.log(`  GET  /status/:id      — check one capture\n`);
 });
