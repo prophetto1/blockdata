@@ -24,6 +24,7 @@ import { useSuperuserProbe } from '@/hooks/useSuperuserProbe';
 
 import {
   TOP_LEVEL_NAV,
+  PIPELINE_NAV,
   ALL_TOP_LEVEL_ITEMS,
   BOTTOM_RAIL_NAV,
   findDrillByRoute,
@@ -263,6 +264,17 @@ export function LeftRailShadcn({
     setNavStyleState(next);
   };
 
+  // Drill IDs reachable from the current nav style — prevents auto-drill from
+  // activating pipeline-only drills while in classic view (and vice-versa).
+  const validDrillIds = useMemo(() => {
+    const nav = navStyle === 'pipeline' ? PIPELINE_NAV : TOP_LEVEL_NAV;
+    return new Set(
+      nav
+        .filter((entry): entry is NavItem => entry !== 'divider' && !!entry.drillId)
+        .map((item) => item.drillId!),
+    );
+  }, [navStyle]);
+
   const navigateTo = (path: string) => {
     navigate(path);
     onNavigate?.();
@@ -272,7 +284,8 @@ export function LeftRailShadcn({
   const [activeDrillId, setActiveDrillId] = useState<string | null>(null);
   const skipAutoDrillRef = useRef(false);
 
-  // Auto-drill based on current route
+  // Auto-drill based on current route — only activates drills reachable from
+  // the current nav style so pipeline-only drills don't fire in classic view.
   useEffect(() => {
     if (disableAutoDrill) {
       if (activeDrillId !== null) setActiveDrillId(null);
@@ -283,7 +296,7 @@ export function LeftRailShadcn({
       return;
     }
     const drillMatch = findDrillByRoute(location.pathname);
-    if (drillMatch) {
+    if (drillMatch && validDrillIds.has(drillMatch.id)) {
       if (activeDrillId !== drillMatch.id) {
         setActiveDrillId(drillMatch.id);
       }
@@ -292,7 +305,7 @@ export function LeftRailShadcn({
         setActiveDrillId(null);
       }
     }
-  }, [disableAutoDrill, location.pathname]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [disableAutoDrill, location.pathname, validDrillIds]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /**
    * Back out of drill view. Only switches the sidebar to the top-level nav --
