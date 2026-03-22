@@ -1,6 +1,6 @@
 # User Storage Signup Verification Implementation Plan
 
-> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
+> **For Codex:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
 **Goal:** Build the full signup-verification storage feature: policy-backed default quota for new users, quota-aware uploads and quota display in the authenticated product, and a superuser storage policy plus provisioning monitor so a new signup can be verified end-to-end.
 
@@ -9,6 +9,206 @@
 **Tech Stack:** Supabase Postgres migrations and RPCs, FastAPI, React + TypeScript, OpenTelemetry, pytest, Vitest.
 
 ---
+
+## Manifest
+
+### Platform API
+
+| Verb | Path | Action | Status |
+|------|------|--------|--------|
+| GET | `/storage/quota` | Read the authenticated user's quota summary | Existing - no contract changes |
+| POST | `/storage/uploads` | Reserve upload slot and issue signed upload URL | Existing - add `source_type` and `doc_title`; require precomputed `source_uid` for `storage_kind='source'` |
+| POST | `/storage/uploads/{reservation_id}/complete` | Finalize upload and debit quota | Existing - add `source_documents` write-through for `storage_kind='source'` |
+| DELETE | `/storage/uploads/{reservation_id}` | Cancel a pending upload reservation | Existing - no contract changes |
+| DELETE | `/storage/objects/{storage_object_id}` | Delete an uploaded object and release used quota | Existing - no contract changes |
+| POST | `/storage/quota/reconcile` | Recalculate quota counters for the current user | Existing - no contract changes |
+| GET | `/admin/storage/policy` | Read the global default new-user storage quota | New |
+| PATCH | `/admin/storage/policy` | Update the global default new-user storage quota | New |
+| GET | `/admin/storage/provisioning/recent` | Inspect recent signup provisioning state | New |
+
+#### New endpoint contracts
+
+`GET /admin/storage/policy`
+
+- Auth: `require_superuser`
+- Request: no body
+- Response:
+
+```json
+{
+  "default_new_user_quota_bytes": 5368709120,
+  "updated_at": "2026-03-21T18:25:00Z",
+  "updated_by": "d7fd4f9a-4601-4a6b-ae96-62d9f24b4f2e"
+}
+```
+
+- Touches: `public.admin_runtime_policy`
+
+`PATCH /admin/storage/policy`
+
+- Auth: `require_superuser`
+- Request:
+
+```json
+{
+  "default_new_user_quota_bytes": 5368709120,
+  "reason": "Set free-tier signup quota to 5 GB for verification"
+}
+```
+
+- Response:
+
+```json
+{
+  "default_new_user_quota_bytes": 5368709120,
+  "updated_at": "2026-03-21T18:25:00Z",
+  "updated_by": "d7fd4f9a-4601-4a6b-ae96-62d9f24b4f2e"
+}
+```
+
+- Touches: `public.admin_runtime_policy`, `public.admin_runtime_policy_audit`
+
+`GET /admin/storage/provisioning/recent?limit=50`
+
+- Auth: `require_superuser`
+- Request: query param `limit` with range `1..200`
+- Response:
+
+```json
+{
+  "items": [
+    {
+      "user_id": "cc258c55-1780-41cf-a0d8-6e283c7c74a0",
+      "email": "new-user@example.com",
+      "created_at": "2026-03-21T18:20:00Z",
+      "has_auth_user": true,
+      "has_default_project": true,
+      "default_project_id": "5ea0f0b8-0d90-4c24-a5ae-5dc3909d04bd",
+      "has_storage_quota": true,
+      "quota_bytes": 5368709120,
+      "used_bytes": 0,
+      "reserved_bytes": 0,
+      "status": "ok"
+    }
+  ]
+}
+```
+
+- Touches: `auth.users` via Supabase admin API, `public.user_projects`, `public.storage_quotas`
+
+#### Modified endpoint contracts
+
+`POST /storage/uploads`
+
+- Change: add `source_type` and `doc_title` to the request contract and require a precomputed `source_uid` for source uploads.
+- Why: the current browser ingest flow computes a content-addressed `source_uid`, and the new platform upload flow must preserve that identity model so the compatibility bridge can continue populating `source_documents`.
+
+`POST /storage/uploads/{reservation_id}/complete`
+
+- Change: after quota finalization, source uploads also create or update the matching `source_documents` row.
+- Why: the visible assets/parsing UI still reads from `source_documents`, so quota accounting alone is insufficient.
+
+### Observability
+
+| Type | Name | Where | Purpose |
+|------|------|-------|---------|
+| Trace span | `storage.quota.read` | `services/platform-api/app/api/routes/storage.py:read_storage_quota` | Measure quota read latency and failures |
+| Trace span | `storage.upload.reserve` | `services/platform-api/app/api/routes/storage.py:create_upload` | Measure reservation latency and over-quota failures |
+| Trace span | `storage.upload.sign_url` | `services/platform-api/app/api/routes/storage.py:create_upload` | Measure signed URL generation inside reservation flow |
+| Trace span | `storage.upload.complete` | `services/platform-api/app/api/routes/storage.py:finalize_upload` | Measure completion latency and object verification failures |
+| Trace span | `storage.upload.cancel` | `services/platform-api/app/api/routes/storage.py:cancel_upload` | Measure cancellation behavior |
+| Trace span | `storage.object.delete` | `services/platform-api/app/api/routes/storage.py:delete_storage_object` | Measure delete latency and quota release behavior |
+| Trace span | `admin.storage.policy.read` | `services/platform-api/app/api/routes/admin_storage.py:get_storage_policy` | Measure superuser policy read latency |
+| Trace span | `admin.storage.policy.update` | `services/platform-api/app/api/routes/admin_storage.py:patch_storage_policy` | Measure superuser policy update latency |
+| Trace span | `admin.storage.provisioning.recent` | `services/platform-api/app/api/routes/admin_storage.py:get_recent_storage_provisioning` | Measure provisioning monitor query latency |
+| Metric | `platform.storage.quota.read.count` | `storage.py:read_storage_quota` | Count quota reads |
+| Metric | `platform.storage.upload.reserve.count` | `storage.py:create_upload` | Count successful reservation attempts |
+| Metric | `platform.storage.upload.reserve.failure.count` | `storage.py:create_upload` | Count failed reservations |
+| Metric | `platform.storage.upload.complete.count` | `storage.py:finalize_upload` | Count successful completions |
+| Metric | `platform.storage.upload.complete.failure.count` | `storage.py:finalize_upload` | Count failed completions |
+| Metric | `platform.storage.upload.cancel.count` | `storage.py:cancel_upload` | Count cancelled reservations |
+| Metric | `platform.storage.object.delete.count` | `storage.py:delete_storage_object` | Count deleted objects |
+| Metric | `platform.storage.quota.exceeded.count` | `storage.py:create_upload` | Count over-quota reservation rejections |
+| Metric | `platform.admin.storage.policy.update.count` | `admin_storage.py:patch_storage_policy` | Count quota policy updates |
+| Metric | `platform.admin.storage.provisioning.incomplete.count` | `admin_storage.py:get_recent_storage_provisioning` | Count incomplete signup provisioning rows in each response |
+| Histogram | `platform.storage.upload.reserve.duration.ms` | `storage.py:create_upload` | Measure reservation duration |
+| Histogram | `platform.storage.upload.complete.duration.ms` | `storage.py:finalize_upload` | Measure completion duration |
+| Histogram | `platform.admin.storage.policy.duration.ms` | `admin_storage.py:get_storage_policy`, `admin_storage.py:patch_storage_policy` | Measure policy endpoint duration |
+| Histogram | `platform.admin.storage.provisioning.query.duration.ms` | `admin_storage.py:get_recent_storage_provisioning` | Measure provisioning monitor query duration |
+| Structured log | `admin.storage.policy.updated` | `admin_storage.py:patch_storage_policy` | Audit old value, new value, and operator reason |
+| Structured log | `admin.storage.provisioning.incomplete` | `admin_storage.py:get_recent_storage_provisioning` | Record incomplete provisioning counts without emitting user identifiers |
+
+Observability attribute rules:
+
+- Allowed attributes: `storage.kind`, `source.type`, `requested.bytes`, `actual.bytes`, `quota.bytes`, `used.bytes`, `reserved.bytes`, `limit`, `status`, `result`, `http.status_code`, `has_project_id`
+- Forbidden in trace or metric attributes: `user_id`, `email`, `reservation_id`, `source_uid`, raw filenames, full storage object keys
+
+### Database Migrations
+
+| Migration | Creates/Alters | Affects Existing Data? |
+|-----------|----------------|------------------------|
+| `20260321120000_storage_default_quota_policy.sql` | Seeds `storage.default_new_user_quota_bytes`, adds `current_default_user_storage_quota_bytes()`, replaces `handle_new_user_storage_quota()` to read policy | No - existing users keep their current quota rows |
+| `20260321130000_storage_source_document_bridge.sql` | Adds `doc_title` and `source_type` to `storage_upload_reservations`, replaces the storage reservation/completion RPC contract to carry that metadata | Yes - backfills safe values for pending reservations only; no quota rewrite |
+
+### Edge Functions
+
+No edge functions created or modified.
+
+Existing edge functions such as [`ingest`](/e:/writing-system/supabase/functions/ingest/index.ts) and [`admin-config`](/e:/writing-system/supabase/functions/admin-config/index.ts) are read only as compatibility references. This implementation stays in `platform-api`. If reuse of an existing edge function becomes preferable, stop and confirm with the user first.
+
+### Frontend Surface Area
+
+**New pages:** `0`
+
+No new top-level routes are added.
+
+**New components:** `3`
+
+| Component | File | Used by |
+|-----------|------|---------|
+| `StorageQuotaSummary` | `web/src/components/storage/StorageQuotaSummary.tsx` | `ProjectAssetsPage.tsx` |
+| `SuperuserStoragePolicy` | `web/src/pages/superuser/SuperuserStoragePolicy.tsx` | `SuperuserWorkspace.tsx` |
+| `SuperuserProvisioningMonitor` | `web/src/pages/superuser/SuperuserProvisioningMonitor.tsx` | `SuperuserWorkspace.tsx` |
+
+**New hooks:** `1`
+
+| Hook | File |
+|------|------|
+| `useStorageQuota` | `web/src/hooks/useStorageQuota.ts` |
+
+**New libraries/services:** `1`
+
+| Module | File |
+|--------|------|
+| `storageUploadService` | `web/src/lib/storageUploadService.ts` |
+
+**Modified pages:** `2`
+
+| Page | File | What changes |
+|------|------|--------------|
+| `ProjectAssetsPage` | `web/src/pages/ProjectAssetsPage.tsx` | Add visible quota summary above the live assets workbench |
+| `SuperuserWorkspace` | `web/src/pages/superuser/SuperuserWorkspace.tsx` | Replace placeholder panels with storage policy and provisioning monitor tabs |
+
+**Modified components:** `3`
+
+| Component | File | What changes |
+|-----------|------|--------------|
+| `UploadTabPanel` | `web/src/components/documents/UploadTabPanel.tsx` | Refresh documents and quota after storage upload completion |
+| `ProjectParseUploader` | `web/src/components/documents/ProjectParseUploader.tsx` | Continue using `useDirectUpload()` after it migrates to the storage API |
+| `FlowWorkbench` | `web/src/components/flows/FlowWorkbench.tsx` | Replace direct `edgeFetch('ingest')` upload calls with `storageUploadService` |
+
+**Modified hooks/services:** `2`
+
+| Module | File | What changes |
+|--------|------|--------------|
+| `useDirectUpload` | `web/src/hooks/useDirectUpload.ts` | Replace edge-function upload with storage reservation flow |
+| `useAssetsWorkbench` | `web/src/pages/useAssetsWorkbench.tsx` | Pass quota refresh and keep assets route state in sync after upload |
+
+**Modified supporting files:** `1`
+
+| File | What changes |
+|------|--------------|
+| `web/package.json` | Add a browser-safe incremental SHA-256 dependency so `source_uid` hashing does not buffer large files into memory |
 
 ## Pre-Implementation Contract
 
@@ -52,14 +252,17 @@ The implementation is only complete when all of the following are true:
 2. `PATCH /admin/storage/policy`
 3. `GET /admin/storage/provisioning/recent`
 
-#### Existing platform API endpoints reused as-is: `6`
+#### Existing platform API endpoints modified: `2`
+
+1. `POST /storage/uploads` — add `source_type`, `doc_title`; require precomputed `source_uid` for `storage_kind='source'`
+2. `POST /storage/uploads/{reservation_id}/complete` — add `source_documents` write-through for `storage_kind='source'`
+
+#### Existing platform API endpoints reused as-is: `4`
 
 1. `GET /storage/quota`
-2. `POST /storage/uploads`
-3. `POST /storage/uploads/{reservation_id}/complete`
-4. `DELETE /storage/uploads/{reservation_id}`
-5. `DELETE /storage/objects/{storage_object_id}`
-6. `POST /storage/quota/reconcile`
+2. `DELETE /storage/uploads/{reservation_id}`
+3. `DELETE /storage/objects/{storage_object_id}`
+4. `POST /storage/quota/reconcile`
 
 #### Required user API contract extensions
 
@@ -240,7 +443,7 @@ logger.info(
 #### Tests
 
 - New test modules: `4`
-- Modified existing test modules: `4`
+- Modified existing test modules: `3`
 
 ### Locked File Inventory
 
@@ -251,6 +454,7 @@ logger.info(
 - `services/platform-api/app/api/routes/admin_storage.py`
 - `services/platform-api/app/observability/storage_metrics.py`
 - `services/platform-api/app/services/storage_source_documents.py`
+- `services/platform-api/tests/test_storage_source_documents.py`
 - `web/src/hooks/useStorageQuota.ts`
 - `web/src/lib/storageUploadService.ts`
 - `web/src/components/storage/StorageQuotaSummary.tsx`
@@ -266,13 +470,13 @@ logger.info(
 - `services/platform-api/app/main.py`
 - `web/src/pages/ProjectAssetsPage.tsx`
 - `web/src/pages/useAssetsWorkbench.tsx`
+- `web/package.json`
 - `web/src/hooks/useDirectUpload.ts`
 - `web/src/components/documents/UploadTabPanel.tsx`
 - `web/src/components/documents/ProjectParseUploader.tsx`
 - `web/src/components/flows/FlowWorkbench.tsx`
 - `web/src/pages/superuser/SuperuserWorkspace.tsx`
 - `services/platform-api/tests/test_storage_routes.py`
-- `services/platform-api/tests/test_storage_helpers.py`
 - `web/src/pages/ProjectAssetsPage.test.tsx`
 - `web/src/pages/project-assets-sync.test.tsx`
 
@@ -280,17 +484,27 @@ logger.info(
 
 The current edge ingest flow computes `source_uid` before upload and the existing app depends on that identity model. The new storage upload path must preserve it instead of improvising a different ID scheme.
 
+Do not implement this with `file.arrayBuffer()` for large browser uploads. A `1 GB` test file would force a painful full-buffer read in the browser. Also do not move `source_uid` assignment to backend completion as a surgical change: the current [`build_object_key()`](/e:/writing-system/services/platform-api/app/api/routes/storage.py) contract requires `source_uid` during reservation time for source objects. Moving assignment to completion would require temporary object keys plus a post-upload rename or key-remap flow, which is a different architectural plan.
+
+The plan therefore locks in incremental client-side hashing: preserve pre-upload `source_uid`, but compute it by streaming file chunks instead of reading the whole file into memory at once.
+
 Frontend helper contract:
 
 ```ts
+import { sha256 } from "@noble/hashes/sha2";
+
 export async function computeSourceUid(file: File, sourceType: string): Promise<string> {
-  const prefix = new TextEncoder().encode(`${sourceType}\n`);
-  const bytes = new Uint8Array(await file.arrayBuffer());
-  const joined = new Uint8Array(prefix.length + bytes.length);
-  joined.set(prefix, 0);
-  joined.set(bytes, prefix.length);
-  const digest = await crypto.subtle.digest("SHA-256", joined);
-  return Array.from(new Uint8Array(digest))
+  const hasher = sha256.create();
+  hasher.update(new TextEncoder().encode(`${sourceType}\n`));
+
+  const reader = file.stream().getReader();
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    if (value) hasher.update(value);
+  }
+
+  return Array.from(hasher.digest())
     .map((value) => value.toString(16).padStart(2, "0"))
     .join("");
 }
@@ -322,7 +536,6 @@ async def upsert_source_document_for_storage_object(
 
 **Files:**
 - Create: `supabase/migrations/20260321120000_storage_default_quota_policy.sql`
-- Modify: `supabase/migrations/20260319190000_102_user_storage_quota.sql`
 
 **Step 1: Add the migration that seeds the new policy key**
 
@@ -362,7 +575,7 @@ end;
 $$;
 ```
 
-**Step 3: Replace the hard-coded signup literal in `handle_new_user_storage_quota()`**
+**Step 3: In the new migration, replace the hard-coded signup literal in `handle_new_user_storage_quota()`**
 
 ```sql
 create or replace function public.handle_new_user_storage_quota()
@@ -395,7 +608,7 @@ Expected: `53687091200`
 **Step 5: Commit**
 
 ```bash
-git add supabase/migrations/20260319190000_102_user_storage_quota.sql supabase/migrations/20260321120000_storage_default_quota_policy.sql
+git add supabase/migrations/20260321120000_storage_default_quota_policy.sql
 git commit -m "feat(storage): make signup quota policy-backed"
 ```
 
@@ -570,10 +783,31 @@ git commit -m "chore(storage): instrument storage admin and upload routes"
 **Files:**
 - Create: `supabase/migrations/20260321130000_storage_source_document_bridge.sql`
 - Create: `services/platform-api/app/services/storage_source_documents.py`
+- Create: `services/platform-api/tests/test_storage_source_documents.py`
 - Modify: `services/platform-api/app/api/routes/storage.py`
 - Modify: `services/platform-api/tests/test_storage_routes.py`
 
-**Step 1: Add a failing route test that proves `source_documents` is written on source upload completion**
+**Step 1: Add a failing helper test for the source-document bridge**
+
+```python
+def test_upsert_source_document_for_storage_object_builds_expected_payload(fake_supabase_admin):
+    upsert_source_document_for_storage_object(
+        fake_supabase_admin,
+        owner_id="user-1",
+        project_id="project-1",
+        source_uid="abc123",
+        source_type="pdf",
+        doc_title="Outline",
+        storage_object_id="obj-1",
+        object_key="users/user-1/projects/project-1/sources/abc123/source/outline.pdf",
+        bytes_used=1234,
+    )
+
+    assert fake_supabase_admin.upsert_payload["source_uid"] == "abc123"
+    assert fake_supabase_admin.upsert_payload["doc_title"] == "Outline"
+```
+
+**Step 2: Add a failing route test that proves `source_documents` is written on source upload completion**
 
 ```python
 def test_complete_source_upload_writes_source_document(user_client, monkeypatch):
@@ -596,7 +830,7 @@ def test_complete_source_upload_writes_source_document(user_client, monkeypatch)
     assert calls["upserted"]["source_uid"] == "abc123"
 ```
 
-**Step 2: Extend the reservation schema with source-document metadata**
+**Step 3: Extend the reservation schema with source-document metadata**
 
 Only add what is missing from the current schema. `project_id` and `source_uid` already exist in [`20260319190000_102_user_storage_quota.sql`](/e:/writing-system/supabase/migrations/20260319190000_102_user_storage_quota.sql). The bridge migration should add `doc_title` and `source_type`, backfill safe defaults for pending rows, and extend the reservation RPC contract.
 
@@ -610,7 +844,7 @@ update public.storage_upload_reservations
  where doc_title is null;
 ```
 
-**Step 3: Extend the FastAPI request model and RPC payload**
+**Step 4: Extend the FastAPI request model and RPC payload**
 
 ```python
 class CreateUploadRequest(BaseModel):
@@ -625,7 +859,7 @@ class CreateUploadRequest(BaseModel):
     artifact_name: str | None = None
 ```
 
-**Step 4: Write the source-document compatibility helper and call it from completion**
+**Step 5: Write the source-document compatibility helper and call it from completion**
 
 ```python
 async def upsert_source_document_for_storage_object(
@@ -669,20 +903,21 @@ if reservation["storage_kind"] == "source":
     )
 ```
 
-**Step 5: Run tests and commit**
+**Step 6: Run tests and commit**
 
-Run: `cd services/platform-api && pytest tests/test_storage_routes.py -q`
+Run: `cd services/platform-api && pytest tests/test_storage_source_documents.py tests/test_storage_routes.py -q`
 
 Expected: PASS
 
 ```bash
-git add supabase/migrations/20260321130000_storage_source_document_bridge.sql services/platform-api/app/services/storage_source_documents.py services/platform-api/app/api/routes/storage.py services/platform-api/tests/test_storage_routes.py
+git add supabase/migrations/20260321130000_storage_source_document_bridge.sql services/platform-api/app/services/storage_source_documents.py services/platform-api/app/api/routes/storage.py services/platform-api/tests/test_storage_source_documents.py services/platform-api/tests/test_storage_routes.py
 git commit -m "feat(storage): bridge source uploads into source documents"
 ```
 
 ### Task 5: Build a shared frontend storage upload client
 
 **Files:**
+- Modify: `web/package.json`
 - Create: `web/src/lib/storageUploadService.ts`
 - Test: `web/src/lib/storageUploadService.test.ts`
 
@@ -706,6 +941,24 @@ it("prepares a source upload payload with doc_title and source_type", async () =
 **Step 2: Implement the client helpers**
 
 ```ts
+import { sha256 } from "@noble/hashes/sha2";
+
+export async function computeSourceUid(file: File, sourceType: string): Promise<string> {
+  const hasher = sha256.create();
+  hasher.update(new TextEncoder().encode(`${sourceType}\n`));
+
+  const reader = file.stream().getReader();
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    if (value) hasher.update(value);
+  }
+
+  return Array.from(hasher.digest())
+    .map((value) => value.toString(16).padStart(2, "0"))
+    .join("");
+}
+
 export async function prepareSourceUpload(
   file: File,
   options?: { docTitle?: string },
@@ -732,10 +985,22 @@ export async function uploadWithReservation(params: {
   file: File;
   docTitle?: string;
 }) {
+  const postJson = async <T,>(path: string, body: unknown): Promise<T> => {
+    const response = await platformApiFetch(path, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (!response.ok) {
+      throw new Error(`storage upload request failed: ${response.status}`);
+    }
+    return (await response.json()) as T;
+  };
+
   const prepared = await prepareSourceUpload(params.file, { docTitle: params.docTitle });
-  const reservation = await platformApiJson("/storage/uploads", {
-    method: "POST",
-    body: JSON.stringify({ project_id: params.projectId, ...prepared }),
+  const reservation = await postJson<UploadReservation>("/storage/uploads", {
+    project_id: params.projectId,
+    ...prepared,
   });
 
   await fetch(reservation.signed_upload_url, {
@@ -744,10 +1009,10 @@ export async function uploadWithReservation(params: {
     body: params.file,
   });
 
-  return await platformApiJson(`/storage/uploads/${reservation.reservation_id}/complete`, {
-    method: "POST",
-    body: JSON.stringify({ actual_bytes: params.file.size }),
-  });
+  return await postJson<CompletedUpload>(
+    `/storage/uploads/${reservation.reservation_id}/complete`,
+    { actual_bytes: params.file.size },
+  );
 }
 ```
 
@@ -760,7 +1025,7 @@ Expected: PASS
 **Step 5: Commit**
 
 ```bash
-git add web/src/lib/storageUploadService.ts web/src/lib/storageUploadService.test.ts
+git add web/package.json web/src/lib/storageUploadService.ts web/src/lib/storageUploadService.test.ts
 git commit -m "feat(frontend): add shared storage upload client"
 ```
 
@@ -924,7 +1189,21 @@ it("renders the storage policy panel and provisioning monitor", async () => {
 
 ```tsx
 export function SuperuserStoragePolicy() {
-  const { data, isLoading } = useAdminStoragePolicy();
+  const [data, setData] = useState<{ default_new_user_quota_bytes: number | null } | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    platformApiFetch("/admin/storage/policy")
+      .then((response) => response.ok ? response.json() : null)
+      .then((json) => {
+        if (!cancelled) setData(json);
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, []);
 
   return (
     <section className="flex h-full flex-col gap-3 p-3">
@@ -942,14 +1221,28 @@ export function SuperuserStoragePolicy() {
 
 ```tsx
 export function SuperuserProvisioningMonitor() {
-  const { data, isLoading } = useRecentStorageProvisioning();
+  const [rows, setRows] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    platformApiFetch("/admin/storage/provisioning/recent?limit=50")
+      .then((response) => response.ok ? response.json() : { items: [] })
+      .then((json) => {
+        if (!cancelled) setRows(json.items ?? []);
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, []);
 
   return (
     <section className="flex h-full flex-col gap-3 p-3">
       <header>
         <h2 className="text-sm font-semibold">Recent Signup Provisioning</h2>
       </header>
-      <ProvisioningTable rows={data?.items ?? []} loading={isLoading} />
+      <ProvisioningTable rows={rows} loading={isLoading} />
     </section>
   );
 }
@@ -985,7 +1278,7 @@ Run:
 
 ```bash
 cd services/platform-api
-pytest tests/test_storage_helpers.py tests/test_storage_routes.py tests/test_admin_storage_routes.py -q
+pytest tests/test_storage_helpers.py tests/test_storage_routes.py tests/test_admin_storage_routes.py tests/test_storage_source_documents.py -q
 ```
 
 Expected: PASS

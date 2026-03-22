@@ -4,7 +4,7 @@ This document defines mandatory requirements for every implementation plan writt
 
 This is how we must work to be productive and efficient - we must analyze the codebase, understand the platform-apis - what exists already and what needs to be newly created - and we must have understanding about what we are developing in order to define the traces that will be emited as a result of the development. 
 
-I know that a plan unable to produce this requirement set is a plan that was not properly thought out and analyzed. 
+A plan unable to produce this requirement set is a plan that was not properly thought out and analyzed. 
 
 Use any skill or mcp as needed. Use any tool as many times as you need. Use every resource available to you in any read-only way as much as you want. But after all of that - when writing the plan, you must ensure you follow the guideline outlined in this document.
 

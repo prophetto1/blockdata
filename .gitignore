@@ -8,6 +8,7 @@ json-schemas/
 .codex-tmp/
 .agent/
 .ai/
+.worktrees/
 # Project-specific ignores
 ref-repos/
 
@@ -50,6 +51,7 @@ node_modules/
 *.tmp
 *.bak
 ~$*
+.worktrees/
 tmp-*.log
 scripts/logs/*.log
 web-docs/scripts/*.log
