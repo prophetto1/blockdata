@@ -146,6 +146,10 @@ def create_app() -> FastAPI:
     from app.api.routes.variables import router as variables_router
     app.include_router(variables_router)
 
+    # 5h. OAuth observability endpoints (anonymous + superuser, before plugin catch-all)
+    from app.api.routes.auth_oauth import router as auth_oauth_router
+    app.include_router(auth_oauth_router)
+
     # 6. Plugin catch-all MUST be last
     from app.api.routes.plugin_execution import router as plugin_router
     app.include_router(plugin_router)

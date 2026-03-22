@@ -21,6 +21,15 @@ def _env_bool(name: str, default: bool = False) -> bool:
     return value.strip().lower() in {"1", "true", "yes", "y", "on"}
 
 
+def _env_csv(name: str) -> tuple[str, ...]:
+    value = os.environ.get(name)
+    if value is None:
+        return ()
+
+    parts = [part.strip() for part in value.split(",")]
+    return tuple(part for part in parts if part)
+
+
 @dataclass(frozen=True)
 class Settings:
     supabase_url: Optional[str] = None
@@ -31,6 +40,7 @@ class Settings:
     gcs_user_storage_bucket: Optional[str] = None
     user_storage_max_file_bytes: int = 1073741824  # 1 GB
     storage_cleanup_interval_seconds: int = 300
+    auth_redirect_origins: tuple[str, ...] = ()
     # OpenTelemetry settings
     otel_enabled: bool = False
     otel_service_name: str = "platform-api"
@@ -59,6 +69,7 @@ class Settings:
             gcs_user_storage_bucket=_env_or_none("GCS_USER_STORAGE_BUCKET"),
             user_storage_max_file_bytes=int(os.environ.get("USER_STORAGE_MAX_FILE_BYTES", "1073741824")),
             storage_cleanup_interval_seconds=int(os.environ.get("STORAGE_CLEANUP_INTERVAL_SECONDS", "300")),
+            auth_redirect_origins=_env_csv("AUTH_REDIRECT_ORIGINS"),
             otel_enabled=_env_bool("OTEL_ENABLED", False),
             otel_service_name=os.environ.get("OTEL_SERVICE_NAME", "platform-api"),
             otel_service_namespace=os.environ.get("OTEL_SERVICE_NAMESPACE", "blockdata"),

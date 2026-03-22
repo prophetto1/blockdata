@@ -6,7 +6,7 @@
 
 **Tech Stack:** Supabase Auth, Supabase Postgres migrations, FastAPI, OpenTelemetry, React 19, React Router 7, Vite, Vitest, pytest.
 
-**Status:** Draft
+**Status:** In Progress
 **Author:** Codex
 **Date:** 2026-03-21
 
@@ -130,25 +130,6 @@ Existing edge functions such as `ingest`, `google-drive-import`, and `admin-conf
 | `.env.example` | Add `AUTH_REDIRECT_ORIGINS` and `VITE_AUTH_REDIRECT_ORIGIN` to shared env documentation |
 | `supabase/config.toml` | Align local auth URL configuration and add commented Google/GitHub provider stanzas for local parity |
 
-## Investigation Evidence
-
-- Existing intent doc: `docs/plans/_implemted-awating-qc/2026-03-17-oauth-login.md`
-- Mounted auth flow: `web/src/pages/LoginSplit.tsx`, `web/src/pages/AuthCallback.tsx`, `web/src/pages/AuthWelcome.tsx`, `web/src/router.tsx`
-- Current hosted provider state: `https://dbdzzhshmigewyprahej.supabase.co/auth/v1/settings` currently reports `google: false` and `github: false`
-- Current targeted test state: `npm --prefix web run test -- src/pages/LoginSplit.test.tsx src/pages/AuthCallback.test.tsx` currently fails `AuthCallback.test.tsx` in the valid callback session case
-- Existing app observability scope: `services/platform-api/app/main.py` and `services/platform-api/app/observability/otel.py` instrument `platform-api` routes and workers, but the current browser -> Supabase Auth -> browser login path bypasses that runtime completely
-- Existing observability UI surface: `web/src/pages/ObservabilityTelemetry.tsx` and `web/src/pages/ObservabilityTraces.tsx` are placeholder pages, not a live trace explorer
-- Official redirect rule: Supabase requires `redirectTo` URLs to be in the project Redirect URLs allow-list: https://supabase.com/docs/guides/auth/redirect-urls
-
-## External Systems / Manual Configuration
-
-1. Google Cloud Console OAuth client must use `https://dbdzzhshmigewyprahej.supabase.co/auth/v1/callback` as the authorized callback URL.
-2. GitHub OAuth App must use `https://dbdzzhshmigewyprahej.supabase.co/auth/v1/callback` as the callback URL.
-3. Supabase Authentication -> Providers must have both Google and GitHub enabled with valid client credentials.
-4. Supabase Authentication -> URL Configuration must allow the exact local and production `/auth/callback` URLs this app will use.
-5. `platform-api` runtime configuration must set `AUTH_REDIRECT_ORIGINS` to the same expected redirect-origin set the readiness endpoint reports.
-6. The canonical production domain must be confirmed during execution before the allow-list is finalized.
-
 ## Pre-Implementation Contract
 
 No major product, API, observability, or inventory decision may be improvised during implementation. If any item below needs to change, the implementation must stop and this plan must be revised first.
@@ -166,6 +147,7 @@ No major product, API, observability, or inventory decision may be improvised du
 9. Attempt credentials must live in `sessionStorage` only and must be cleared on terminal success or failure.
 10. If attempt creation succeeds but `supabase.auth.signInWithOAuth()` fails before redirect, the frontend must immediately post a terminal `failed` event for that attempt, clear `sessionStorage`, and surface the initiation error in UI.
 11. Superuser operators must be able to diagnose provider readiness and recent failures without depending on raw Supabase dashboard logs.
+12. Local development support must allow both `5374` and `5375` callback origins because `npm run dev` can fall forward to `5375` when `5374` is already occupied.
 
 ### Locked Acceptance Contract
 
@@ -319,9 +301,9 @@ The work is complete only when all of the following are true:
 
 Execution notes:
 
-- Use `@test-driven-development` for every code change.
-- Use `@verification-before-completion` before any success claim.
-- Do not start code changes until Task 1 external configuration state is complete enough to produce `google: true` and `github: true` from the hosted settings endpoint.
+- Use `test-driven-development` for every code change.
+- Use `verification-before-completion` before any success claim.
+- Do not claim end-to-end social-login success until Task 1 external configuration state is complete enough to produce `google: true` and `github: true` from the hosted settings endpoint.
 
 ## Task 1: Lock External Provider Configuration
 
@@ -382,9 +364,11 @@ Execution notes:
 
 **Step 3:** Keep this migration additive only; do not rewrite any existing auth or profile tables.
 
-**Test command:** `supabase db reset`
+**Step 4:** Prefer hosted Supabase MCP for migration verification in this repo state: apply the migration to the hosted project, confirm `public.auth_oauth_attempts` appears in the public table list, and confirm the migration appears in the hosted migration list. If a local Docker-backed Supabase CLI stack is available, `supabase db reset` is an optional additional parity check.
 
-**Expected output:** The new migration applies successfully and the local database resets without migration errors.
+**Test command:** `Supabase MCP: apply_migration(name="20260321200000_auth_oauth_attempts"), list_tables(schemas=["public"]), list_migrations()`
+
+**Expected output:** The hosted project shows `public.auth_oauth_attempts` in the public schema and a migration entry for `20260321200000_auth_oauth_attempts`; optional local `supabase db reset` also passes if Docker-backed local Supabase is available.
 
 **Commit:** `feat(auth): add oauth attempt tracking migration`
 

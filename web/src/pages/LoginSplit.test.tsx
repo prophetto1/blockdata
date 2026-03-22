@@ -9,6 +9,7 @@ let authState = {
   loading: false,
   signIn: vi.fn(),
   resendSignupConfirmation: vi.fn(),
+  signInWithOAuth: vi.fn(),
 };
 
 vi.mock('@/auth/AuthContext', () => ({
@@ -22,6 +23,7 @@ describe('LoginSplit', () => {
       loading: false,
       signIn: vi.fn().mockResolvedValue(undefined),
       resendSignupConfirmation: vi.fn().mockResolvedValue(undefined),
+      signInWithOAuth: vi.fn().mockResolvedValue(undefined),
     };
   });
 
@@ -68,6 +70,38 @@ describe('LoginSplit', () => {
     await waitFor(() => {
       expect(authState.signIn).toHaveBeenCalledWith('dev@example.com', 'SecretPass123!');
       expect(screen.getByText('App Home')).toBeInTheDocument();
+    });
+  });
+
+  it('renders both social login buttons and calls the selected provider', async () => {
+    render(
+      <MemoryRouter initialEntries={['/login']}>
+        <Routes>
+          <Route path="/login" element={<LoginSplit />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Continue with Google' }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Continue with Google' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Continue with GitHub' })).toBeInTheDocument();
+      expect(authState.signInWithOAuth).toHaveBeenCalledWith('google');
+    });
+  });
+
+  it('renders callback-propagated auth errors from the URL query string', async () => {
+    render(
+      <MemoryRouter initialEntries={['/login?auth_error=Provider%20disabled']}>
+        <Routes>
+          <Route path="/login" element={<LoginSplit />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Provider disabled')).toBeInTheDocument();
     });
   });
 });
