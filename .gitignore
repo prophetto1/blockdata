@@ -13,6 +13,7 @@ json-schemas/
 ref-repos/
 
 -personal-/
+_legalAGI/
 src-content/
 .mypy_cache/
 .playwright-mcp/
@@ -27,6 +28,7 @@ third_party/meta-configurator/meta_configurator/NUL
 # Environment files
 .env
 .env.*
+!.env.example
 
 # GCP service account keys (never commit)
 docs/test-keys/

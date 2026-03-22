@@ -1,5 +1,12 @@
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
+import {
+  createOAuthAttempt,
+  finalizeStoredOAuthAttemptFailure,
+  type OAuthAttemptFailureCategory,
+  storeOAuthAttempt,
+} from '@/lib/authOAuthAttempts';
+import { getAuthRedirectUrl } from '@/lib/authRedirects';
 import { supabase } from '@/lib/supabase';
 import { TABLES } from '@/lib/tables';
 import type { ProfileRow } from '@/lib/types';
@@ -25,6 +32,24 @@ const DEV_AUTO_LOGIN_EMAIL = (
 const DEV_AUTO_LOGIN_PASSWORD = (
   import.meta.env.VITE_DEV_AUTO_LOGIN_PASSWORD as string | undefined
 ) || 'TestPass123!';
+
+function getOAuthNextPath(): string {
+  const next = new URL(window.location.href).searchParams.get('next');
+  return next && next.startsWith('/') ? next : '/app';
+}
+
+function buildOAuthCallbackPath(nextPath: string): string {
+  if (nextPath === '/app') return '/auth/callback';
+  return `/auth/callback?next=${encodeURIComponent(nextPath)}`;
+}
+
+function mapOAuthFailureCategory(error: unknown): OAuthAttemptFailureCategory {
+  const message = error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase();
+  if (message.includes('provider is not enabled') || message.includes('unsupported provider')) {
+    return 'provider_disabled';
+  }
+  return 'unexpected';
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
@@ -124,7 +149,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       password: params.password,
       options: {
         data: params.displayName ? { display_name: params.displayName } : undefined,
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        emailRedirectTo: getAuthRedirectUrl('/auth/callback'),
       },
     });
     if (error) throw error;
@@ -135,7 +160,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { error } = await supabase.auth.resend({
       type: 'signup',
       email,
-      options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+      options: { emailRedirectTo: getAuthRedirectUrl('/auth/callback') },
     });
     if (error) throw error;
   };
@@ -146,13 +171,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signInWithOAuth = async (provider: 'google' | 'github') => {
-    const { error } = await supabase.auth.signInWithOAuth({
+    const nextPath = getOAuthNextPath();
+    const redirectTo = getAuthRedirectUrl(buildOAuthCallbackPath(nextPath));
+    const redirectOrigin = new URL(redirectTo).origin;
+
+    const attempt = await createOAuthAttempt({
       provider,
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-      },
+      redirectOrigin,
+      nextPath,
     });
-    if (error) throw error;
+    storeOAuthAttempt({
+      attemptId: attempt.attemptId,
+      attemptSecret: attempt.attemptSecret,
+    });
+
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo,
+        },
+      });
+      if (error) throw error;
+    } catch (error) {
+      await finalizeStoredOAuthAttemptFailure({
+        failureCategory: mapOAuthFailureCategory(error),
+        result: 'login_error',
+      });
+      throw error;
+    }
   };
 
   return (

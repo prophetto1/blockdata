@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Navigate, useNavigate, Link } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Navigate, useNavigate, Link, useLocation } from 'react-router-dom';
 import { Field } from '@ark-ui/react/field';
 import { PasswordInput } from '@ark-ui/react/password-input';
 import { IconEye, IconEyeOff } from '@tabler/icons-react';
@@ -15,6 +15,7 @@ export default function LoginSplit() {
   const [info, setInfo] = useState<string | null>(null);
   const { signIn, resendSignupConfirmation, session, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const inputClass =
     'w-full rounded-md border border-input bg-transparent px-3 py-2.5 text-sm text-foreground shadow-sm transition-colors placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring';
@@ -52,6 +53,14 @@ export default function LoginSplit() {
     !!email &&
     !!error &&
     /confirm|confirmed|verification|verify/i.test(error);
+
+  useEffect(() => {
+    const authError = new URLSearchParams(location.search).get('auth_error');
+    if (authError) {
+      setError(authError);
+      setInfo(null);
+    }
+  }, [location.search]);
 
   if (authLoading) {
     return (

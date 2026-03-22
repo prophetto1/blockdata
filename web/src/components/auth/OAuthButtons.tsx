@@ -54,7 +54,7 @@ export function OAuthButtons() {
           onClick={() => handleOAuth(p.id)}
         >
           {p.icon}
-          {loadingProvider === p.id ? 'Redirecting\u2026' : p.label}
+          {p.label}
         </Button>
       ))}
       {error && (

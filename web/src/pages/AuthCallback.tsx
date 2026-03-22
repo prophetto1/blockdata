@@ -1,11 +1,47 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import {
+  clearStoredOAuthAttempt,
+  readStoredOAuthAttempt,
+  recordOAuthAttemptEvent,
+  type OAuthAttemptFailureCategory,
+  type OAuthAttemptProfileState,
+  type OAuthAttemptResult,
+} from '@/lib/authOAuthAttempts';
 import { supabase } from '@/lib/supabase';
+
+function encodeLoginError(message: string): string {
+  return `/login?auth_error=${encodeURIComponent(message)}`;
+}
+
+function readCallbackError(): { code: string | null; message: string } | null {
+  const url = new URL(window.location.href);
+  const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+
+  const code =
+    hashParams.get('error') ??
+    url.searchParams.get('error') ??
+    hashParams.get('error_code') ??
+    url.searchParams.get('error_code');
+
+  const description =
+    hashParams.get('error_description') ??
+    url.searchParams.get('error_description') ??
+    hashParams.get('error_message') ??
+    url.searchParams.get('error_message');
+
+  if (!code && !description) return null;
+
+  return {
+    code,
+    message: description ?? 'Authentication failed. Please sign in again.',
+  };
+}
 
 export default function AuthCallback() {
   const navigate = useNavigate();
   const [status, setStatus] = useState<'working' | 'ok' | 'error'>('working');
-  const [message, setMessage] = useState<string>('Finishing sign-in…');
+  const [message, setMessage] = useState<string>('Finishing sign-in...');
 
   const nextPath = useMemo(() => {
     const url = new URL(window.location.href);
@@ -14,48 +50,124 @@ export default function AuthCallback() {
   }, []);
 
   useEffect(() => {
-    let finished = false;
+    let cancelled = false;
+    const storedAttempt = readStoredOAuthAttempt();
+
+    const recordAttemptEvent = async (input: {
+      event:
+        | 'callback_received'
+        | 'session_detected'
+        | 'profile_missing'
+        | 'profile_present'
+        | 'completed'
+        | 'failed';
+      result?: OAuthAttemptResult;
+      failureCategory?: OAuthAttemptFailureCategory;
+      callbackErrorCode?: string;
+      profileState?: OAuthAttemptProfileState;
+    }) => {
+      if (!storedAttempt) return;
+
+      try {
+        await recordOAuthAttemptEvent({
+          attemptId: storedAttempt.attemptId,
+          attemptSecret: storedAttempt.attemptSecret,
+          event: input.event,
+          result: input.result,
+          failureCategory: input.failureCategory,
+          callbackErrorCode: input.callbackErrorCode,
+          profileState: input.profileState,
+        });
+      } catch (error) {
+        console.warn(
+          '[auth] failed to record oauth attempt event:',
+          error instanceof Error ? error.message : String(error),
+        );
+      }
+    };
+
+    const completeWithError = async (
+      authMessage: string,
+      failureCategory: OAuthAttemptFailureCategory,
+      callbackErrorCode?: string,
+    ) => {
+      if (cancelled) return;
+      setStatus('error');
+      setMessage(authMessage);
+      await recordAttemptEvent({
+        event: 'failed',
+        result: 'login_error',
+        failureCategory,
+        callbackErrorCode,
+      });
+      clearStoredOAuthAttempt();
+      navigate(encodeLoginError(authMessage), { replace: true });
+    };
+
     const finish = async () => {
       try {
+        await recordAttemptEvent({ event: 'callback_received' });
+
+        const callbackError = readCallbackError();
+        if (callbackError) {
+          await completeWithError(
+            callbackError.message,
+            'callback_error',
+            callbackError.code ?? undefined,
+          );
+          return;
+        }
+
         const { data, error } = await supabase.auth.getSession();
         if (error) throw error;
         if (!data.session) {
-          setStatus('error');
-          setMessage('No session found. Please sign in again.');
-          navigate('/login', { replace: true });
+          await completeWithError('No session found. Please sign in again.', 'no_session');
           return;
         }
 
         setStatus('ok');
-        setMessage('Signed in. Redirecting…');
+        setMessage('Signed in. Redirecting...');
+        await recordAttemptEvent({ event: 'session_detected' });
 
-        // First-time user detection: profile trigger only reads the
-        // 'display_name' metadata key, which OAuth providers don't set
-        // (Google uses 'full_name', GitHub uses 'name'). So for new OAuth
-        // users, profiles.display_name is null → redirect to welcome page.
-        const { data: profile } = await supabase
+        const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('display_name')
           .eq('user_id', data.session.user.id)
           .maybeSingle();
 
-        const dest = !profile?.display_name ? '/auth/welcome' : nextPath;
-        navigate(dest, { replace: true });
-      } catch (e) {
-        setStatus('error');
-        setMessage(e instanceof Error ? e.message : String(e));
-        navigate('/login', { replace: true });
-      } finally {
-        finished = true;
+        if (profileError) throw profileError;
+
+        const profileState: OAuthAttemptProfileState = profile?.display_name ? 'present' : 'missing';
+        await recordAttemptEvent({
+          event: profileState === 'present' ? 'profile_present' : 'profile_missing',
+          profileState,
+        });
+
+        const result: OAuthAttemptResult = profileState === 'present' ? 'app' : 'welcome';
+        const destination = result === 'welcome' ? '/auth/welcome' : nextPath;
+        await recordAttemptEvent({
+          event: 'completed',
+          result,
+          profileState,
+        });
+        clearStoredOAuthAttempt();
+        navigate(destination, { replace: true });
+      } catch (error) {
+        const messageText = error instanceof Error ? error.message : String(error);
+        const failureCategory: OAuthAttemptFailureCategory =
+          messageText.toLowerCase().includes('profile') ? 'profile_lookup_failed' : 'unexpected';
+        await completeWithError(messageText, failureCategory);
       }
     };
 
-    // Some redirects land before storage/session is fully written; a short delay makes this robust.
-    const t = window.setTimeout(() => {
-      if (!finished) void finish();
+    const timer = window.setTimeout(() => {
+      if (!cancelled) void finish();
     }, 150);
 
-    return () => window.clearTimeout(t);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
   }, [navigate, nextPath]);
 
   return (
