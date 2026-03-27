@@ -1,11 +1,5 @@
 import { useCallback, useRef, useState } from 'react';
-import { edgeFetch } from '@/lib/edge';
-
-type IngestResponse = {
-  source_uid?: string;
-  status?: string;
-  error?: string;
-};
+import { uploadWithReservation } from '@/lib/storageUploadService';
 
 export type StagedFile = {
   id: string;
@@ -20,18 +14,15 @@ export type UploadStatus = 'idle' | 'uploading' | 'done';
 async function uploadOneFile(
   file: File,
   projectId: string,
-): Promise<IngestResponse> {
-  const form = new FormData();
-  form.append('file', file);
-  form.append('project_id', projectId);
-  form.append('ingest_mode', 'upload_only');
-
-  const resp = await edgeFetch('ingest', { method: 'POST', body: form });
-  const body = (await resp.json()) as IngestResponse;
-  if (!resp.ok) {
-    throw new Error(body.error ?? `HTTP ${resp.status}`);
-  }
-  return body;
+): Promise<{ source_uid?: string }> {
+  const result = await uploadWithReservation({
+    projectId,
+    file,
+    docTitle: file.name,
+  });
+  return {
+    source_uid: result.sourceUid,
+  };
 }
 
 export function useDirectUpload(projectId: string) {

@@ -1,6 +1,7 @@
-import { render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { cleanup, render, screen } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import ProjectAssetsPage from './ProjectAssetsPage';
+import { platformApiFetch } from '@/lib/platformApi';
 
 vi.mock('@/components/common/useShellHeaderTitle', () => ({
   useShellHeaderTitle: vi.fn(),
@@ -10,6 +11,29 @@ vi.mock('@/hooks/useProjectFocus', () => ({
   useProjectFocus: () => ({
     resolvedProjectId: 'project-1',
   }),
+}));
+
+vi.mock('@/lib/platformApi', () => ({
+  platformApiFetch: vi.fn(),
+}));
+
+vi.mock('@/lib/supabase', () => ({
+  supabase: {
+    storage: {
+      from: vi.fn(() => ({
+        remove: vi.fn(),
+        createSignedUrl: vi.fn(),
+      })),
+    },
+    auth: {
+      getSession: vi.fn(),
+      refreshSession: vi.fn(),
+    },
+  },
+}));
+
+vi.mock('@/lib/edge', () => ({
+  manageDocument: vi.fn(),
 }));
 
 const useProjectDocumentsMock = vi.fn((_projectId: string | null) => ({
@@ -59,6 +83,7 @@ const documentFileTableMock = vi.fn((props: Record<string, unknown>) => (
 ));
 
 const workbenchMock = vi.fn();
+const platformApiFetchMock = vi.mocked(platformApiFetch);
 
 vi.mock('@/components/documents/DocumentFileTable', () => ({
   DocumentFileTable: (props: Record<string, unknown>) => documentFileTableMock(props),
@@ -91,6 +116,32 @@ vi.mock('@/components/workbench/Workbench', () => ({
 }));
 
 describe('ProjectAssetsPage', () => {
+  beforeEach(() => {
+    platformApiFetchMock.mockReset();
+    platformApiFetchMock.mockResolvedValue(new Response(JSON.stringify({
+      quota_bytes: 5 * 1024 * 1024 * 1024,
+      used_bytes: 1 * 1024 * 1024 * 1024,
+      reserved_bytes: 0,
+    }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    }));
+    documentFileTableMock.mockClear();
+    workbenchMock.mockClear();
+  });
+
+  afterEach(() => {
+    cleanup();
+  });
+
+  it('renders used, reserved, total, and remaining quota on the assets page', async () => {
+    render(<ProjectAssetsPage />);
+
+    expect(await screen.findByText(/5 GB total/i)).toBeInTheDocument();
+    expect(screen.getByText(/1 GB used/i)).toBeInTheDocument();
+    expect(screen.getByText(/4 GB remaining/i)).toBeInTheDocument();
+  });
+
   it('renders the files pane with the parse compact file-list styling', () => {
     render(<ProjectAssetsPage />);
 

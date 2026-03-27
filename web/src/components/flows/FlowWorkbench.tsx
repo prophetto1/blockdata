@@ -35,7 +35,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { DocxPreview } from '@/components/documents/DocxPreview';
 import { PdfjsExpressPreview } from '@/components/documents/PdfjsExpressPreview';
 import { PptxPreview } from '@/components/documents/PptxPreview';
-import { edgeFetch, edgeJson } from '@/lib/edge';
+import { edgeJson, manageDocument } from '@/lib/edge';
 import { fetchAllProjectDocuments } from '@/lib/projectDocuments';
 import { PROJECT_LIST_CHANGED_EVENT, readFocusedProjectId } from '@/lib/projectFocus';
 import {
@@ -51,7 +51,7 @@ import {
   sortDocumentsByUploadedAt,
 } from '@/lib/projectDetailHelpers';
 import { supabase } from '@/lib/supabase';
-import { manageDocument } from '@/lib/edge';
+import { uploadWithReservation } from '@/lib/storageUploadService';
 import FlowCanvas from './FlowCanvas';
 import { useFlowDocument, type FlowDocumentHandle } from './nocode/useFlowDocument';
 import { NocodeEditor } from './nocode/NocodeEditor';
@@ -686,31 +686,12 @@ function FilesTree({
 
     for (const file of files) {
       const relativePath = normalizeFilePath(getUploadedPath(file));
-      const formData = new FormData();
-      formData.append('file', file, file.name);
-      formData.append('project_id', projectId);
-      formData.append('ingest_mode', 'upload_only');
-      if (relativePath.length > 0) {
-        formData.append('doc_title', relativePath);
-      }
-
       try {
-        const response = await edgeFetch('ingest', { method: 'POST', body: formData });
-        const text = await response.text();
-        if (!response.ok) {
-          let message = text || `HTTP ${response.status}`;
-          try {
-            const parsed = JSON.parse(text) as { error?: string };
-            if (typeof parsed.error === 'string' && parsed.error.trim().length > 0) {
-              message = parsed.error.trim();
-            }
-          } catch {
-            // Keep raw response text when JSON parsing fails.
-          }
-          if (!firstError) {
-            firstError = `Upload failed for ${file.name}: ${message}`;
-          }
-        }
+        await uploadWithReservation({
+          projectId,
+          file,
+          docTitle: relativePath.length > 0 ? relativePath : file.name,
+        });
       } catch (error) {
         if (!firstError) {
           const message = error instanceof Error ? error.message : String(error);
@@ -798,15 +779,14 @@ function FilesTree({
     const createdFile = new File([createDefaultTextFileContents(fileName)], fileName, { type: 'text/plain' });
     setCreatingType(null);
     setCreateName('');
-    const formData = new FormData();
-    formData.append('file', createdFile, createdFile.name);
-    formData.append('project_id', projectId);
-    formData.append('ingest_mode', 'upload_only');
-    formData.append('doc_title', filePath);
-    const response = await edgeFetch('ingest', { method: 'POST', body: formData });
-    if (!response.ok) {
-      const text = await response.text();
-      setDocsError(text || `Upload failed: HTTP ${response.status}`);
+    try {
+      await uploadWithReservation({
+        projectId,
+        file: createdFile,
+        docTitle: filePath,
+      });
+    } catch (error) {
+      setDocsError(error instanceof Error ? error.message : String(error));
       return;
     }
     await loadProjectDocs();
