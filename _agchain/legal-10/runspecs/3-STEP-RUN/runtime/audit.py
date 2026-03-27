@@ -62,7 +62,7 @@ def emit_run_record(
     run_log_path: Path,
     record: dict[str, Any],
 ) -> None:
-    """Append a record to run.jsonl."""
+    """Append a record to run.jsonl, including optional supporting metadata."""
     run_log_path.parent.mkdir(parents=True, exist_ok=True)
     with open(run_log_path, "a", encoding="utf-8") as f:
         f.write(json.dumps(record, ensure_ascii=False) + "\n")

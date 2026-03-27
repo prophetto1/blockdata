@@ -13,6 +13,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import asyncio
 import json
 import os
 import re
@@ -41,6 +42,8 @@ from runtime.input_assembler import build_messages
 from runtime.staging import create_staging, stage_files, cleanup_staging
 from runtime.audit import hash_file, hash_bytes, emit_audit_record, emit_run_record
 from runtime.state import CandidateState
+from runtime.execution_backend import ExecutionBackend, resolve_backend
+from runtime.execution_result import ExecutionResult
 from scorers.d1_known_authority_scorer import score_d1_known_authority
 from scorers.citation_integrity import score_citation_integrity
 from adapters.model_adapter import create_adapter, ModelAdapter
@@ -67,13 +70,33 @@ def _parse_model_json(raw: str) -> dict[str, Any] | None:
         return None
 
 
+def _resolve_model_name(provider: str, model: str | None) -> str:
+    if model:
+        return model
+    if provider == "openai":
+        return "gpt-4o"
+    if provider == "anthropic":
+        return "claude-sonnet-4-5-20250929"
+    raise ValueError(f"Unknown provider: {provider}")
+
+
+def _execution_metadata(result: ExecutionResult) -> dict[str, Any]:
+    return {
+        "backend": result.backend,
+        "provider": result.provider,
+        "model_name": result.model_name,
+        "usage": result.usage,
+        "timing_ms": result.timing_ms,
+    }
+
+
 # ---------------------------------------------------------------------------
 # Judge call
 # ---------------------------------------------------------------------------
 
-def run_judge_call(
+async def run_judge_call(
     *,
-    judge_adapter: ModelAdapter,
+    judge_backend: ExecutionBackend,
     judge_prompt_def: dict[str, Any],
     d2_output: dict[str, Any],
     j3_output: dict[str, Any],
@@ -102,7 +125,8 @@ def run_judge_call(
         {"role": "user", "content": resolved},
     ]
 
-    raw_response = judge_adapter.call_model(messages, temperature=0.0, max_tokens=2048)
+    result = await judge_backend.execute(messages, temperature=0.0, max_tokens=2048)
+    raw_response = result.response_text
     parsed = _parse_model_json(raw_response)
 
     # Compute totals
@@ -119,6 +143,8 @@ def run_judge_call(
         "raw_response": raw_response,
         "parsed": parsed,
         "computed": computed,
+        "model_name": result.model_name,
+        "execution_metadata": _execution_metadata(result),
     }
 
 
@@ -126,13 +152,16 @@ def run_judge_call(
 # Single EU execution
 # ---------------------------------------------------------------------------
 
-def run_single_eu(
+async def run_single_eu(
     *,
     benchmark_dir: Path,
     eu_dir: Path,
     runs_dir: Path,
-    eval_adapter: ModelAdapter,
-    judge_adapter: ModelAdapter,
+    eval_backend: ExecutionBackend,
+    judge_backend: ExecutionBackend,
+    eval_model_name: str,
+    judge_model_name: str,
+    execution_backend_name: str,
     run_id: str,
     profile: Any = None,
     build_messages_fn: Any = None,
@@ -163,6 +192,8 @@ def run_single_eu(
         state = CandidateState()
     step_outputs: dict[str, dict[str, Any]] = {}
     step_scores: dict[str, Any] = {}
+    resolved_eval_model_name = eval_model_name
+    resolved_judge_model_name = judge_model_name
 
     # Load step definitions
     step_defs: dict[str, dict[str, Any]] = {}
@@ -207,7 +238,9 @@ def run_single_eu(
         msg_hash = hash_bytes(msg_bytes)
 
         # 5. Model call
-        raw_response = eval_adapter.call_model(messages, temperature=0.0, max_tokens=4096)
+        result = await eval_backend.execute(messages, temperature=0.0, max_tokens=4096)
+        raw_response = result.response_text
+        resolved_eval_model_name = result.model_name or resolved_eval_model_name
 
         # 6. Parse + validate
         parsed = _parse_model_json(raw_response)
@@ -251,11 +284,12 @@ def run_single_eu(
             "step_id": step_id,
             "type": "model_call",
             "call_id": call_id,
-            "model": eval_adapter.model_name,
+            "model": resolved_eval_model_name,
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "raw_response_length": len(raw_response),
             "parsed": parsed if not parsed.get("_parse_error") else None,
             "score": step_scores.get(step_id),
+            "execution_metadata": _execution_metadata(result),
         })
 
         # 10. Cleanup staging
@@ -282,8 +316,8 @@ def run_single_eu(
         closed_id = judge_step_ids[0] if judge_step_ids else "d2"
         open_id = judge_step_ids[1] if judge_step_ids and len(judge_step_ids) > 1 else "j3"
 
-        judge_result = run_judge_call(
-            judge_adapter=judge_adapter,
+        judge_result = await run_judge_call(
+            judge_backend=judge_backend,
             judge_prompt_def=judge_prompt_def,
             d2_output=d2_output,
             j3_output=j3_output,
@@ -291,16 +325,18 @@ def run_single_eu(
             open_step_id=open_id,
             system_message=system_message,
         )
+        resolved_judge_model_name = judge_result["model_name"] or resolved_judge_model_name
 
         emit_run_record(run_log, {
             "step_id": "judge_irac_pair",
             "type": "judge",
             "grades_step_ids": judge_step_ids,
-            "model": judge_adapter.model_name,
+            "model": resolved_judge_model_name,
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "raw_response": judge_result["raw_response"],
             "parsed": judge_result["parsed"],
             "computed": judge_result["computed"],
+            "execution_metadata": judge_result["execution_metadata"],
         })
 
         if judge_result["computed"]:
@@ -366,8 +402,8 @@ def run_single_eu(
         "run_id": run_id,
         "eu_id": eu_id,
         "benchmark_id": benchmark.get("benchmark_id"),
-        "eval_model": eval_adapter.model_name,
-        "judge_model": judge_adapter.model_name,
+        "eval_model": resolved_eval_model_name,
+        "judge_model": resolved_judge_model_name,
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "aggregate_score": aggregate_score,
         "chain_completion": chain_completion,
@@ -398,13 +434,14 @@ def run_single_eu(
         "eu_id": eu_id,
         "benchmark_dir": str(benchmark_dir),
         "eu_dir": str(eu_dir),
-        "eval_model": eval_adapter.model_name,
-        "judge_model": judge_adapter.model_name,
+        "eval_model": resolved_eval_model_name,
+        "judge_model": resolved_judge_model_name,
         "step_count": len(plan["steps"]),
+        "execution_backend": execution_backend_name,
         "session_strategy": "Replay_Minimal",
         "runner_version": "run_3s_v1",
         "file_hashes": file_hashes,
-        "reproducibility_key": f"{eval_adapter.model_name}|{judge_adapter.model_name}|temp=0.0|Replay_Minimal",
+        "reproducibility_key": f"{resolved_eval_model_name}|{resolved_judge_model_name}|temp=0.0|Replay_Minimal",
         "created_at": datetime.now(timezone.utc).isoformat(),
     }
     manifest_path = runs_dir / run_id / "run_manifest.json"
@@ -429,6 +466,7 @@ def main() -> None:
     parser.add_argument("--model", type=str, help="Model name (default depends on provider)")
     parser.add_argument("--judge-provider", type=str, help="Judge model provider (defaults to --provider)")
     parser.add_argument("--judge-model", type=str, help="Judge model name (defaults to --model)")
+    parser.add_argument("--execution-backend", default="direct", choices=["direct", "inspect"], help="Execution backend")
     parser.add_argument("--limit", type=int, default=0, help="Max EUs to run (0 = all)")
     parser.add_argument(
         "--profile",
@@ -460,11 +498,28 @@ def main() -> None:
         else:
             _profile_obj = Profile.model_validate_json(Path(args.profile).read_text())
 
-    # Create adapters
-    eval_adapter = create_adapter(args.provider, model=args.model)
     judge_provider = args.judge_provider or args.provider
-    judge_model = args.judge_model or args.model
-    judge_adapter = create_adapter(judge_provider, model=judge_model)
+    eval_model_name = _resolve_model_name(args.provider, args.model)
+    judge_model_name = _resolve_model_name(judge_provider, args.judge_model or args.model)
+
+    eval_adapter: ModelAdapter | None = None
+    judge_adapter: ModelAdapter | None = None
+    if args.execution_backend == "direct":
+        eval_adapter = create_adapter(args.provider, model=eval_model_name)
+        judge_adapter = create_adapter(judge_provider, model=judge_model_name)
+
+    eval_backend = resolve_backend(
+        args.execution_backend,
+        provider=args.provider,
+        model=eval_model_name,
+        adapter=eval_adapter,
+    )
+    judge_backend = resolve_backend(
+        args.execution_backend,
+        provider=judge_provider,
+        model=judge_model_name,
+        adapter=judge_adapter,
+    )
 
     # Collect EU dirs
     eu_dirs: list[Path] = []
@@ -483,29 +538,37 @@ def main() -> None:
         eu_dirs = eu_dirs[:args.limit]
 
     print(f"Legal-10 3-Step Runner")
-    print(f"  Eval model: {eval_adapter.model_name}")
-    print(f"  Judge model: {judge_adapter.model_name}")
+    print(f"  Execution backend: {args.execution_backend}")
+    print(f"  Eval model: {eval_model_name}")
+    print(f"  Judge model: {judge_model_name}")
     print(f"  EUs: {len(eu_dirs)}")
     print()
 
-    for eu_dir in eu_dirs:
-        run_id = f"run_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:6]}"
-        try:
-            run_single_eu(
-                benchmark_dir=args.benchmark_dir,
-                eu_dir=eu_dir,
-                runs_dir=args.runs_dir,
-                eval_adapter=eval_adapter,
-                judge_adapter=judge_adapter,
-                run_id=run_id,
-                profile=_profile_obj,
-                build_messages_fn=_bm_fn,
-            )
-        except Exception as e:
-            print(f"  ERROR running EU {eu_dir.name}: {e}", file=sys.stderr)
-            import traceback
-            traceback.print_exc()
-        print()
+    async def _run_all() -> None:
+        for eu_dir in eu_dirs:
+            run_id = f"run_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:6]}"
+            try:
+                await run_single_eu(
+                    benchmark_dir=args.benchmark_dir,
+                    eu_dir=eu_dir,
+                    runs_dir=args.runs_dir,
+                    eval_backend=eval_backend,
+                    judge_backend=judge_backend,
+                    eval_model_name=eval_model_name,
+                    judge_model_name=judge_model_name,
+                    execution_backend_name=args.execution_backend,
+                    run_id=run_id,
+                    profile=_profile_obj,
+                    build_messages_fn=_bm_fn,
+                )
+            except Exception as e:
+                print(f"  ERROR running EU {eu_dir.name}: {e}", file=sys.stderr)
+                import traceback
+
+                traceback.print_exc()
+            print()
+
+    asyncio.run(_run_all())
 
 
 if __name__ == "__main__":
