@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-03-21T17:19:49.581Z",
+  "generatedAt": "2026-03-27T21:34:19.949Z",
   "scope": "auth",
   "pages": [
     {
@@ -1308,11 +1308,20 @@
     },
     {
       "page": "src/pages/ProjectAssetsPage.tsx",
-      "componentCount": 1,
+      "componentCount": 2,
       "categoryCounts": {
-        "local-components": 1
+        "local-components": 2
       },
       "components": [
+        {
+          "component": "StorageQuotaSummary",
+          "usedAs": "StorageQuotaSummary",
+          "source": "@/components/storage/StorageQuotaSummary",
+          "importKind": "named",
+          "importedAs": "StorageQuotaSummary",
+          "category": "local-components",
+          "definition": "StorageQuotaSummary comes from @/components/storage/StorageQuotaSummary (named import of StorageQuotaSummary)"
+        },
         {
           "component": "Workbench",
           "usedAs": "Workbench",
@@ -2176,17 +2185,17 @@
       "page": "src/pages/SecretsPage.tsx",
       "componentCount": 1,
       "categoryCounts": {
-        "local-components": 1
+        "external-package": 1
       },
       "components": [
         {
-          "component": "PageHeader",
-          "usedAs": "PageHeader",
-          "source": "@/components/common/PageHeader",
+          "component": "Navigate",
+          "usedAs": "Navigate",
+          "source": "react-router-dom",
           "importKind": "named",
-          "importedAs": "PageHeader",
-          "category": "local-components",
-          "definition": "PageHeader comes from @/components/common/PageHeader (named import of PageHeader)"
+          "importedAs": "Navigate",
+          "category": "external-package",
+          "definition": "Navigate comes from react-router-dom (named import of Navigate)"
         }
       ]
     },
@@ -4119,6 +4128,128 @@
       ]
     },
     {
+      "page": "src/pages/settings/SettingsSecrets.test.tsx",
+      "componentCount": 8,
+      "categoryCounts": {
+        "local-components": 1,
+        "in-file component": 2,
+        "external-package": 3,
+        "local-pages": 1,
+        "relative-local": 1
+      },
+      "components": [
+        {
+          "component": "HeaderCenterProvider",
+          "usedAs": "HeaderCenterProvider",
+          "source": "@/components/shell/HeaderCenterContext",
+          "importKind": "named",
+          "importedAs": "HeaderCenterProvider",
+          "category": "local-components",
+          "definition": "HeaderCenterProvider comes from @/components/shell/HeaderCenterContext (named import of HeaderCenterProvider)"
+        },
+        {
+          "component": "HeaderCenterReader",
+          "usedAs": "HeaderCenterReader",
+          "source": "(in-file or unresolved)",
+          "importKind": null,
+          "importedAs": null,
+          "category": "in-file component",
+          "definition": "HeaderCenterReader is defined in the same page file"
+        },
+        {
+          "component": "LocationProbe",
+          "usedAs": "LocationProbe",
+          "source": "(in-file or unresolved)",
+          "importKind": null,
+          "importedAs": null,
+          "category": "in-file component",
+          "definition": "LocationProbe is defined in the same page file"
+        },
+        {
+          "component": "MemoryRouter",
+          "usedAs": "MemoryRouter",
+          "source": "react-router-dom",
+          "importKind": "named",
+          "importedAs": "MemoryRouter",
+          "category": "external-package",
+          "definition": "MemoryRouter comes from react-router-dom (named import of MemoryRouter)"
+        },
+        {
+          "component": "Route",
+          "usedAs": "Route",
+          "source": "react-router-dom",
+          "importKind": "named",
+          "importedAs": "Route",
+          "category": "external-package",
+          "definition": "Route comes from react-router-dom (named import of Route)"
+        },
+        {
+          "component": "Routes",
+          "usedAs": "Routes",
+          "source": "react-router-dom",
+          "importKind": "named",
+          "importedAs": "Routes",
+          "category": "external-package",
+          "definition": "Routes comes from react-router-dom (named import of Routes)"
+        },
+        {
+          "component": "SecretsPage",
+          "usedAs": "SecretsPage",
+          "source": "@/pages/SecretsPage",
+          "importKind": "default",
+          "importedAs": "default",
+          "category": "local-pages",
+          "definition": "SecretsPage comes from @/pages/SecretsPage (default import of default)"
+        },
+        {
+          "component": "SettingsSecrets",
+          "usedAs": "SettingsSecrets",
+          "source": "./SettingsSecrets",
+          "importKind": "default",
+          "importedAs": "default",
+          "category": "relative-local",
+          "definition": "SettingsSecrets comes from ./SettingsSecrets (default import of default)"
+        }
+      ]
+    },
+    {
+      "page": "src/pages/settings/SettingsSecrets.tsx",
+      "componentCount": 3,
+      "categoryCounts": {
+        "local-components": 2,
+        "relative-local": 1
+      },
+      "components": [
+        {
+          "component": "SecretEditorDialog",
+          "usedAs": "SecretEditorDialog",
+          "source": "@/components/settings/SecretEditorDialog",
+          "importKind": "named",
+          "importedAs": "SecretEditorDialog",
+          "category": "local-components",
+          "definition": "SecretEditorDialog comes from @/components/settings/SecretEditorDialog (named import of SecretEditorDialog)"
+        },
+        {
+          "component": "SecretsTable",
+          "usedAs": "SecretsTable",
+          "source": "@/components/settings/SecretsTable",
+          "importKind": "named",
+          "importedAs": "SecretsTable",
+          "category": "local-components",
+          "definition": "SecretsTable comes from @/components/settings/SecretsTable (named import of SecretsTable)"
+        },
+        {
+          "component": "SettingsPageFrame",
+          "usedAs": "SettingsPageFrame",
+          "source": "./SettingsPageHeader",
+          "importKind": "named",
+          "importedAs": "SettingsPageFrame",
+          "category": "relative-local",
+          "definition": "SettingsPageFrame comes from ./SettingsPageHeader (named import of SettingsPageFrame)"
+        }
+      ]
+    },
+    {
       "page": "src/pages/settings/SettingsThemes.tsx",
       "componentCount": 2,
       "categoryCounts": {
@@ -4237,14 +4368,14 @@
       ]
     }
   ],
-  "totalComponentUsages": 416,
+  "totalComponentUsages": 428,
   "categoryTotals": {
-    "local-pages": 1,
-    "local-components": 131,
+    "local-pages": 2,
+    "local-components": 134,
     "tabler-icons": 74,
-    "in-file component": 18,
+    "in-file component": 20,
     "ark-ui": 153,
-    "external-package": 18,
-    "relative-local": 21
+    "external-package": 22,
+    "relative-local": 23
   }
 }

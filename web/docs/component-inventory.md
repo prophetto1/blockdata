@@ -1,21 +1,21 @@
 # Component Inventory
 
-Generated: 2026-03-21T17:19:49.587Z
+Generated: 2026-03-27T21:34:19.954Z
 Scope: auth
 
-Pages scanned: 50
-Unique component usages: 416
+Pages scanned: 52
+Unique component usages: 428
 
 ## Category Totals
 
 | Category | Count |
 | --- | ---: |
 | ark-ui | 153 |
-| external-package | 18 |
-| in-file component | 18 |
-| local-components | 131 |
-| local-pages | 1 |
-| relative-local | 21 |
+| external-package | 22 |
+| in-file component | 20 |
+| local-components | 134 |
+| local-pages | 2 |
+| relative-local | 23 |
 | tabler-icons | 74 |
 
 ## src/pages/AgentOnboarding.tsx
@@ -296,10 +296,11 @@ Component usages: 1
 
 ## src/pages/ProjectAssetsPage.tsx
 
-Component usages: 1
+Component usages: 2
 
 | Used As | Source | Category | Definition |
 | --- | --- | --- | --- |
+| `StorageQuotaSummary` | `@/components/storage/StorageQuotaSummary` | local-components | StorageQuotaSummary comes from @/components/storage/StorageQuotaSummary (named import of StorageQuotaSummary) |
 | `Workbench` | `@/components/workbench/Workbench` | local-components | Workbench comes from @/components/workbench/Workbench (named import of Workbench) |
 
 ## src/pages/Projects.tsx
@@ -419,7 +420,7 @@ Component usages: 1
 
 | Used As | Source | Category | Definition |
 | --- | --- | --- | --- |
-| `PageHeader` | `@/components/common/PageHeader` | local-components | PageHeader comes from @/components/common/PageHeader (named import of PageHeader) |
+| `Navigate` | `react-router-dom` | external-package | Navigate comes from react-router-dom (named import of Navigate) |
 
 ## src/pages/settings/ConnectionsPanel.tsx
 
@@ -740,6 +741,31 @@ Component usages: 57
 | `Tooltip.Positioner` | `@ark-ui/react/tooltip` | ark-ui | Tooltip.Positioner comes from @ark-ui/react/tooltip (named import of Tooltip) |
 | `Tooltip.Root` | `@ark-ui/react/tooltip` | ark-ui | Tooltip.Root comes from @ark-ui/react/tooltip (named import of Tooltip) |
 | `Tooltip.Trigger` | `@ark-ui/react/tooltip` | ark-ui | Tooltip.Trigger comes from @ark-ui/react/tooltip (named import of Tooltip) |
+
+## src/pages/settings/SettingsSecrets.test.tsx
+
+Component usages: 8
+
+| Used As | Source | Category | Definition |
+| --- | --- | --- | --- |
+| `HeaderCenterProvider` | `@/components/shell/HeaderCenterContext` | local-components | HeaderCenterProvider comes from @/components/shell/HeaderCenterContext (named import of HeaderCenterProvider) |
+| `HeaderCenterReader` | `(in-file or unresolved)` | in-file component | HeaderCenterReader is defined in the same page file |
+| `LocationProbe` | `(in-file or unresolved)` | in-file component | LocationProbe is defined in the same page file |
+| `MemoryRouter` | `react-router-dom` | external-package | MemoryRouter comes from react-router-dom (named import of MemoryRouter) |
+| `Route` | `react-router-dom` | external-package | Route comes from react-router-dom (named import of Route) |
+| `Routes` | `react-router-dom` | external-package | Routes comes from react-router-dom (named import of Routes) |
+| `SecretsPage` | `@/pages/SecretsPage` | local-pages | SecretsPage comes from @/pages/SecretsPage (default import of default) |
+| `SettingsSecrets` | `./SettingsSecrets` | relative-local | SettingsSecrets comes from ./SettingsSecrets (default import of default) |
+
+## src/pages/settings/SettingsSecrets.tsx
+
+Component usages: 3
+
+| Used As | Source | Category | Definition |
+| --- | --- | --- | --- |
+| `SecretEditorDialog` | `@/components/settings/SecretEditorDialog` | local-components | SecretEditorDialog comes from @/components/settings/SecretEditorDialog (named import of SecretEditorDialog) |
+| `SecretsTable` | `@/components/settings/SecretsTable` | local-components | SecretsTable comes from @/components/settings/SecretsTable (named import of SecretsTable) |
+| `SettingsPageFrame` | `./SettingsPageHeader` | relative-local | SettingsPageFrame comes from ./SettingsPageHeader (named import of SettingsPageFrame) |
 
 ## src/pages/settings/SettingsThemes.tsx
 

@@ -193,7 +193,7 @@ The user-api-keys edge function continues to encrypt user_api_keys rows with SUP
 | SecretsPage | web/src/pages/SecretsPage.tsx | Replace placeholder with compatibility redirect to /app/settings/secrets |
 | Router settings subtree | web/src/router.tsx | Mount /app/settings/secrets and keep /app/secrets compatibility path |
 
-**Modified support files:** 6
+**Modified support files:** 7
 
 | File | What changes |
 | --- | --- |
@@ -202,6 +202,7 @@ The user-api-keys edge function continues to encrypt user_api_keys rows with SUP
 | web/src/pages/settings/settings-nav.test.ts | Verify Secrets appears and resolves correctly |
 | web/src/components/shell/nav-config.ts | Point Secrets to canonical settings route /app/settings/secrets |
 | web/src/components/shell/nav-config.test.ts | Verify shell nav points to canonical secrets surface |
+| web/src/components/common/useShellHeaderTitle.tsx | Preserve canonical Settings / Secrets breadcrumb resolution after the shell nav entries point to /app/settings/secrets |
 | web/src/components/common/useShellHeaderTitle.test.tsx | Verify breadcrumb/title resolves Settings / Secrets |
 
 ## Pre-Implementation Contract
@@ -321,7 +322,7 @@ The implementation is only complete when all of the following are true:
 - New top-level pages/routes: 1
 - New visual components: 2
 - New frontend libraries/services: 1
-- Modified existing frontend files: 8
+- Modified existing frontend files: 9
 
 ### Tests
 
@@ -358,6 +359,7 @@ The implementation is only complete when all of the following are true:
 - web/src/pages/settings/settings-nav.test.ts
 - web/src/components/shell/nav-config.ts
 - web/src/components/shell/nav-config.test.ts
+- web/src/components/common/useShellHeaderTitle.tsx
 - web/src/components/common/useShellHeaderTitle.test.tsx
 - services/platform-api/tests/test_variables.py
 - services/platform-api/tests/test_connections.py
@@ -737,7 +739,7 @@ npm --prefix web run test -- src/pages/settings/SettingsSecrets.test.tsx src/pag
 
 ### Task 9: Implement the frontend secrets surface
 
-**File(s):** `web/src/lib/secretsApi.ts`, `web/src/pages/settings/SettingsSecrets.tsx`, `web/src/components/settings/SecretsTable.tsx`, `web/src/components/settings/SecretEditorDialog.tsx`, `web/src/router.tsx`, `web/src/pages/SecretsPage.tsx`, `web/src/pages/settings/index.ts`, `web/src/pages/settings/settings-nav.ts`, `web/src/components/shell/nav-config.ts`
+**File(s):** `web/src/lib/secretsApi.ts`, `web/src/pages/settings/SettingsSecrets.tsx`, `web/src/components/settings/SecretsTable.tsx`, `web/src/components/settings/SecretEditorDialog.tsx`, `web/src/router.tsx`, `web/src/pages/SecretsPage.tsx`, `web/src/pages/settings/index.ts`, `web/src/pages/settings/settings-nav.ts`, `web/src/components/shell/nav-config.ts`, `web/src/components/common/useShellHeaderTitle.tsx`
 
 - **Step 1:** Add secretsApi.ts for typed CRUD calls to /secrets.
 - **Step 2:** Build SettingsSecrets.tsx with metadata-only table, create/edit dialog, rotate flow, and delete flow. Follow the existing settings visual language and interaction patterns used by nearby settings surfaces such as `ConnectionsPanel`.
@@ -745,6 +747,7 @@ npm --prefix web run test -- src/pages/settings/SettingsSecrets.test.tsx src/pag
 - **Step 4:** Convert SecretsPage.tsx from placeholder into a compatibility redirect to /app/settings/secrets.
 - **Step 5:** Update settings-nav.ts to add Secrets with IconLock under Operations group.
 - **Step 6:** Update nav-config.ts to point both shell nav entries to /app/settings/secrets.
+- **Step 6a:** Update useShellHeaderTitle.tsx so the canonical route still resolves the breadcrumb as Settings / Secrets after the shell nav entries target /app/settings/secrets.
 - **Step 7:** Run frontend tests.
 
 **Test command:**
@@ -775,14 +778,15 @@ npm --prefix web run test -- src/pages/settings/SettingsSecrets.test.tsx src/pag
 
 - **Step 3:** Verify migration state and table privileges in Supabase.
 - **Step 3a:** Verify `select count(*) from public.user_variables where name <> upper(name)` returns zero after the migration.
+- **Step 3b:** If the target environment does not yet contain `public.user_variables`, stop. That environment is missing the prerequisite rollout owned by [2026-03-27-live-supabase-auth-secrets-rollout-and-completion-evidence-plan.md](E:/writing-system/docs/plans/2026-03-27-live-supabase-auth-secrets-rollout-and-completion-evidence-plan.md), and this verification sweep cannot complete until that follow-up plan is executed.
 - **Step 4:** Verify /app/secrets redirects and Settings / Secrets works for an authenticated user.
 - **Step 5:** Verify case-insensitive secret creation/update and runtime lookup all converge on the uppercase canonical secret name.
 - **Step 6:** Compare actual file inventory against locked counts.
-- **Step 7:** Verify platform.crypto.fallback.count metric is registered (will emit once legacy-encrypted rows are decrypted in a live environment).
+- **Step 7:** Verify platform.crypto.fallback.count emits in a real deployed fallback path, using a legacy-encrypted row and the configured live telemetry sink.
 
 **Test command:** Both test commands above.
 
-**Expected output:** All targeted tests pass. Inventory counts match.
+**Expected output:** All targeted tests pass. Inventory counts match. The live Supabase migration state is correct, the authenticated redirect and Settings / Secrets flow work, and the required deployed observability evidence has been captured.
 
 **Commit:** `chore(secrets): verify auth secrets variables env separation`
 
