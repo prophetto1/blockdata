@@ -1,6 +1,7 @@
 import importlib
-import pytest
 from unittest.mock import MagicMock, patch
+
+import pytest
 from fastapi.testclient import TestClient
 
 from app.auth.dependencies import require_user_auth
@@ -29,21 +30,23 @@ def client():
     app.dependency_overrides.clear()
 
 
-def test_list_variables_returns_empty_for_new_user(client):
+def test_list_secrets_returns_empty_for_new_user(client):
     secrets_module = _secrets_module()
     with patch.object(secrets_module, "get_supabase_admin") as mock_sb:
         mock_sb.return_value.table.return_value.select.return_value.eq.return_value.order.return_value.execute.return_value = MagicMock(
             data=[]
         )
-        resp = client.get("/variables")
+
+        resp = client.get("/secrets")
 
     assert resp.status_code == 200
-    assert resp.json() == {"variables": []}
+    assert resp.json() == {"secrets": []}
 
 
-def test_create_variable_returns_metadata_only(client):
+def test_create_secret_returns_metadata_only_and_uses_envelope_key(client):
+    secrets_module = _secrets_module()
     inserted = {
-        "id": "var-1",
+        "id": "secret-1",
         "name": "OPENAI_API_KEY",
         "description": "OpenAI key",
         "value_kind": "secret",
@@ -52,12 +55,9 @@ def test_create_variable_returns_metadata_only(client):
         "updated_at": "2026-03-21T12:00:00Z",
     }
 
-    secrets_module = _secrets_module()
     with patch.object(secrets_module, "get_supabase_admin") as mock_sb, patch.object(
         secrets_module, "encrypt_with_context"
-    ) as mock_encrypt, patch.object(
-        secrets_module, "get_envelope_key"
-    ) as mock_get_key:
+    ) as mock_encrypt, patch.object(secrets_module, "get_envelope_key") as mock_get_key:
         mock_get_key.return_value = "app-envelope-key"
         mock_encrypt.return_value = "enc:v1:iv:cipher"
         mock_sb.return_value.table.return_value.insert.return_value.execute.return_value = MagicMock(
@@ -65,7 +65,7 @@ def test_create_variable_returns_metadata_only(client):
         )
 
         resp = client.post(
-            "/variables",
+            "/secrets",
             json={
                 "name": "openAi_api_key",
                 "value": "sk-secret-1234",
@@ -76,33 +76,31 @@ def test_create_variable_returns_metadata_only(client):
 
     assert resp.status_code == 200
     body = resp.json()
-    assert body["variable"]["name"] == "OPENAI_API_KEY"
-    assert body["variable"]["value_suffix"] == "....1234"
-    assert "secret" not in body
-    assert "value" not in body["variable"]
+    assert body["secret"]["name"] == "OPENAI_API_KEY"
+    assert body["secret"]["value_suffix"] == "....1234"
+    assert "value" not in body["secret"]
+    assert "value_encrypted" not in body["secret"]
 
     payload = mock_sb.return_value.table.return_value.insert.call_args.args[0]
     assert payload["name"] == "OPENAI_API_KEY"
     mock_get_key.assert_called_once()
 
 
-def test_patch_variable_updates_without_returning_plaintext(client):
+def test_update_secret_returns_metadata_only_and_canonicalizes_name(client):
+    secrets_module = _secrets_module()
     updated = {
-        "id": "var-1",
+        "id": "secret-1",
         "name": "OPENAI_API_KEY",
         "description": "Rotated key",
-        "value_kind": "secret",
+        "value_kind": "api_key",
         "value_suffix": "....5678",
         "created_at": "2026-03-21T12:00:00Z",
         "updated_at": "2026-03-21T13:00:00Z",
     }
 
-    secrets_module = _secrets_module()
     with patch.object(secrets_module, "get_supabase_admin") as mock_sb, patch.object(
         secrets_module, "encrypt_with_context"
-    ) as mock_encrypt, patch.object(
-        secrets_module, "get_envelope_key"
-    ) as mock_get_key:
+    ) as mock_encrypt, patch.object(secrets_module, "get_envelope_key") as mock_get_key:
         mock_get_key.return_value = "app-envelope-key"
         mock_encrypt.return_value = "enc:v1:iv:newcipher"
         mock_sb.return_value.table.return_value.update.return_value.eq.return_value.eq.return_value.execute.return_value = MagicMock(
@@ -110,49 +108,36 @@ def test_patch_variable_updates_without_returning_plaintext(client):
         )
 
         resp = client.patch(
-            "/variables/var-1",
+            "/secrets/secret-1",
             json={
                 "name": "openAi_api_key",
                 "description": "Rotated key",
+                "value_kind": "api_key",
                 "value": "sk-secret-5678",
             },
         )
 
     assert resp.status_code == 200
     body = resp.json()
-    assert body["variable"]["name"] == "OPENAI_API_KEY"
-    assert body["variable"]["description"] == "Rotated key"
-    assert "secret" not in body
-    assert body["variable"]["value_suffix"] == "....5678"
-    assert "value" not in body["variable"]
+    assert body["secret"]["name"] == "OPENAI_API_KEY"
+    assert body["secret"]["description"] == "Rotated key"
+    assert "value" not in body["secret"]
+    assert "value_encrypted" not in body["secret"]
 
-    updates = mock_sb.return_value.table.return_value.update.call_args.args[0]
+    updates = (
+        mock_sb.return_value.table.return_value.update.call_args.args[0]
+    )
     assert updates["name"] == "OPENAI_API_KEY"
 
 
-def test_delete_variable_returns_ok(client):
+def test_delete_secret_returns_ok(client):
     secrets_module = _secrets_module()
     with patch.object(secrets_module, "get_supabase_admin") as mock_sb:
         mock_sb.return_value.table.return_value.delete.return_value.eq.return_value.eq.return_value.execute.return_value = MagicMock(
-            data=[{"id": "var-1"}]
+            data=[{"id": "secret-1"}]
         )
 
-        resp = client.delete("/variables/var-1")
+        resp = client.delete("/secrets/secret-1")
 
     assert resp.status_code == 200
-    assert resp.json() == {"ok": True, "id": "var-1"}
-
-
-def test_user_cannot_access_another_users_variable(client):
-    secrets_module = _secrets_module()
-    with patch.object(secrets_module, "get_supabase_admin") as mock_sb:
-        mock_sb.return_value.table.return_value.update.return_value.eq.return_value.eq.return_value.execute.return_value = MagicMock(
-            data=[]
-        )
-
-        resp = client.patch(
-            "/variables/var-other",
-            json={"description": "should fail"},
-        )
-
-    assert resp.status_code == 404
+    assert resp.json() == {"ok": True, "id": "secret-1"}

@@ -1,27 +1,27 @@
-"""User-scoped variables metadata and encrypted value storage."""
+"""Deprecated compatibility aliases for the canonical /secrets surface."""
 
-import os
 from typing import Literal
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, Response
 from pydantic import BaseModel, Field
 
+from app.api.routes.secrets import (
+    CreateSecretRequest,
+    UpdateSecretRequest,
+    create_secret,
+    delete_secret,
+    list_secrets,
+    update_secret,
+)
 from app.auth.dependencies import require_user_auth
 from app.auth.principals import AuthPrincipal
-from app.infra.crypto import encrypt_with_context
-from app.infra.supabase_client import get_supabase_admin
 
 router = APIRouter(prefix="/variables", tags=["variables"])
 
-CRYPTO_CONTEXT = "user-variables-v1"
-METADATA_COLUMNS = "id,name,description,value_kind,value_suffix,created_at,updated_at"
 
-
-def _derive_suffix(value: str) -> str:
-    text = str(value or "")
-    if not text:
-        return ""
-    return f"....{text[-4:]}" if len(text) >= 4 else f"....{text}"
+def _apply_deprecation_headers(response: Response) -> None:
+    response.headers["Deprecation"] = "true"
+    response.headers["X-Replaced-By"] = "/secrets"
 
 
 class VariableMetadata(BaseModel):
@@ -61,72 +61,81 @@ class DeleteVariableResponse(BaseModel):
     id: str
 
 
-@router.get("", response_model=ListVariablesResponse, summary="List current user variables")
-async def list_variables(auth: AuthPrincipal = Depends(require_user_auth)):
-    sb = get_supabase_admin()
-    result = (
-        sb.table("user_variables")
-        .select(METADATA_COLUMNS)
-        .eq("user_id", auth.user_id)
-        .order("updated_at", desc=True)
-        .execute()
+@router.get(
+    "",
+    response_model=ListVariablesResponse,
+    summary="Deprecated compatibility alias for listing current user secrets",
+    deprecated=True,
+)
+async def list_variables(
+    response: Response,
+    auth: AuthPrincipal = Depends(require_user_auth),
+):
+    _apply_deprecation_headers(response)
+    result = await list_secrets(auth)
+    return {"variables": result["secrets"]}
+
+
+@router.post(
+    "",
+    response_model=VariableResponse,
+    summary="Deprecated compatibility alias for creating a user secret",
+    deprecated=True,
+)
+async def create_variable(
+    body: CreateVariableRequest,
+    response: Response,
+    auth: AuthPrincipal = Depends(require_user_auth),
+):
+    _apply_deprecation_headers(response)
+    result = await create_secret(
+        CreateSecretRequest(
+            name=body.name,
+            value=body.value,
+            description=body.description,
+            value_kind=body.value_kind,
+        ),
+        auth,
     )
-    return {"variables": result.data or []}
+    return {"variable": result["secret"]}
 
 
-@router.post("", response_model=VariableResponse, summary="Create a user variable")
-async def create_variable(body: CreateVariableRequest, auth: AuthPrincipal = Depends(require_user_auth)):
-    sb = get_supabase_admin()
-    secret = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
-    encrypted = encrypt_with_context(body.value, secret, CRYPTO_CONTEXT)
-    payload = {
-        "user_id": auth.user_id,
-        "name": body.name,
-        "description": body.description,
-        "value_kind": body.value_kind,
-        "value_suffix": _derive_suffix(body.value),
-        "value_encrypted": encrypted,
-    }
-    result = sb.table("user_variables").insert(payload).execute()
-    if not result.data:
-        raise HTTPException(status_code=400, detail="Failed to create variable")
-    return {"variable": result.data[0]}
-
-
-@router.patch("/{variable_id}", response_model=VariableResponse, summary="Update a user variable")
+@router.patch(
+    "/{variable_id}",
+    response_model=VariableResponse,
+    summary="Deprecated compatibility alias for updating a user secret",
+    deprecated=True,
+)
 async def update_variable(
     variable_id: str,
     body: UpdateVariableRequest,
+    response: Response,
     auth: AuthPrincipal = Depends(require_user_auth),
 ):
-    sb = get_supabase_admin()
-    updates = body.model_dump(exclude_none=True)
-    if "value" in updates:
-        secret = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
-        updates["value_encrypted"] = encrypt_with_context(updates.pop("value"), secret, CRYPTO_CONTEXT)
-        updates["value_suffix"] = _derive_suffix(body.value or "")
-    result = (
-        sb.table("user_variables")
-        .update(updates)
-        .eq("id", variable_id)
-        .eq("user_id", auth.user_id)
-        .execute()
+    _apply_deprecation_headers(response)
+    result = await update_secret(
+        variable_id,
+        UpdateSecretRequest(
+            name=body.name,
+            value=body.value,
+            description=body.description,
+            value_kind=body.value_kind,
+        ),
+        auth,
     )
-    if not result.data:
-        raise HTTPException(status_code=404, detail="Variable not found")
-    return {"variable": result.data[0]}
+    return {"variable": result["secret"]}
 
 
-@router.delete("/{variable_id}", response_model=DeleteVariableResponse, summary="Delete a user variable")
-async def delete_variable(variable_id: str, auth: AuthPrincipal = Depends(require_user_auth)):
-    sb = get_supabase_admin()
-    result = (
-        sb.table("user_variables")
-        .delete()
-        .eq("id", variable_id)
-        .eq("user_id", auth.user_id)
-        .execute()
-    )
-    if not result.data:
-        raise HTTPException(status_code=404, detail="Variable not found")
-    return {"ok": True, "id": variable_id}
+@router.delete(
+    "/{variable_id}",
+    response_model=DeleteVariableResponse,
+    summary="Deprecated compatibility alias for deleting a user secret",
+    deprecated=True,
+)
+async def delete_variable(
+    variable_id: str,
+    response: Response,
+    auth: AuthPrincipal = Depends(require_user_auth),
+):
+    _apply_deprecation_headers(response)
+    return await delete_secret(variable_id, auth)

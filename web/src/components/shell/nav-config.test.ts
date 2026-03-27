@@ -147,13 +147,17 @@ describe('drill configs', () => {
     expect(labels).toContain('Audit Logs');
   });
 
-  it('settings drill stays focused on general profile controls', () => {
+  it('settings drill includes the canonical secrets route', () => {
     const settings = getDrillConfig('settings')!;
     const sectionLabels = settings.sections.map((s) => s.label);
     const allPaths = settings.sections.flatMap((section) => section.items.map((item) => item.path));
 
     expect(sectionLabels).toEqual(['General']);
-    expect(allPaths).toEqual(['/app/settings/profile', '/app/settings/themes']);
+    expect(allPaths).toEqual([
+      '/app/settings/profile',
+      '/app/settings/themes',
+      '/app/settings/secrets',
+    ]);
   });
 
   it('exposes secrets in classic view', () => {
@@ -192,7 +196,7 @@ describe('drill configs', () => {
     expect(labels).toContain('Transform');
     expect(paths).toContain('/app/transform');
     expect(labels).toContain('Secrets');
-    expect(paths).toContain('/app/secrets');
+    expect(paths).toContain('/app/settings/secrets');
   });
 
   it('settings drill does not include admin/superuser links', () => {
@@ -212,6 +216,7 @@ describe('drill configs', () => {
     expect(findDrillByRoute('/app/agents')?.id).toBe('build-ai');
     expect(findDrillByRoute('/app/skills')?.id).toBe('build-ai');
     expect(findDrillByRoute('/app/secrets')?.id).toBe('workbench');
+    expect(findDrillByRoute('/app/settings/secrets')?.id).toBe('settings');
     expect(findDrillByRoute('/app/logs')?.id).toBe('observability');
     expect(findDrillByRoute('/app/transform')?.id).toBe('workbench');
     expect(findDrillByRoute('/app/elt')).toBeNull();

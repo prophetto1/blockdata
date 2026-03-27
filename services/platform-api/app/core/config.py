@@ -34,6 +34,7 @@ def _env_csv(name: str) -> tuple[str, ...]:
 class Settings:
     supabase_url: Optional[str] = None
     supabase_service_role_key: Optional[str] = None
+    app_secret_envelope_key: Optional[str] = None
     platform_api_m2m_token: str = ""
     conversion_service_key: str = ""  # backward compat alias
     log_level: str = "INFO"
@@ -63,6 +64,7 @@ class Settings:
         return cls(
             supabase_url=_env_or_none("SUPABASE_URL"),
             supabase_service_role_key=_env_or_none("SUPABASE_SERVICE_ROLE_KEY"),
+            app_secret_envelope_key=_env_or_none("APP_SECRET_ENVELOPE_KEY"),
             platform_api_m2m_token=m2m or conv_key,
             conversion_service_key=conv_key or m2m,
             log_level=os.environ.get("LOG_LEVEL", "INFO"),

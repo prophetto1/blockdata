@@ -11,7 +11,7 @@
 
 ## Scope Statement
 
-This plan owns **execution plumbing only**: replacing the two direct `ModelAdapter.call_model()` sites in `run_3s.py` with a backend-abstracted seam that can dispatch to either the current sync adapters or InspectAI's async model execution.
+This plan owns **execution plumbing only**: replacing the two direct `ModelAdapter.call_model()` sites in `run_3s.py` with backend-abstracted seams that can dispatch to either the current sync adapters or InspectAI's async model execution while preserving the runner's existing separate eval-model and judge-model CLI surface.
 
 This plan does **not**:
 
@@ -148,9 +148,10 @@ No major product, API, observability, or inventory decision may be improvised du
 10. AGChain runtime helpers (`payload_gate.py`, `input_assembler.py`, `state.py`, `staging.py`, scorers) remain the authoritative owners of their respective concerns.
 11. `run_3s.py` must continue to call the same payload-gate, state, staging, scorer, and audit flows.
 12. Candidate and judge calls both move through the new execution backend seam.
-13. InspectAI model-role mapping is limited in this plan to eval/candidate and judge execution routing.
-14. If `inspect_ai` is unavailable and the `inspect` backend is requested, the runner must fail clearly with an actionable error.
-15. Tool execution, MCP, sandboxing, approval policy, runtime-config, and compaction remain deferred to the consolidation plan.
+13. `run_3s.py` resolves **two backend instances per run**: one for eval/candidate calls and one for judge calls. The backend kind comes from one CLI flag, but provider/model selection continues to respect the existing `--provider/--model` and `--judge-provider/--judge-model` split.
+14. InspectAI model-role mapping is limited in this plan to eval/candidate and judge execution routing.
+15. If `inspect_ai` is unavailable and the `inspect` backend is requested, the runner must fail clearly with an actionable error.
+16. Tool execution, MCP, sandboxing, approval policy, runtime-config, and compaction remain deferred to the consolidation plan.
 ### Locked ExecutionResult Contract
 
 ```python
@@ -200,7 +201,8 @@ The implementation is only complete when all of the following are true:
 6. Existing AGChain audit artifacts continue to be emitted, and supporting execution metadata is recorded without removing existing canonical fields.
 7. Existing profile tests continue to pass.
 8. Existing IRAC tests continue to pass.
-9. A new execution-backend test suite covers backend selection, normalized result shape, direct-backend behavior, async protocol, per-call parameters, and missing-Inspect failure behavior.
+9. The existing separate eval-model and judge-model CLI surface is preserved under both backend kinds.
+10. A new execution-backend test suite covers backend selection, normalized result shape, direct-backend behavior, async protocol, per-call parameters, and missing-Inspect failure behavior.
 ### Locked Platform Surface
 
 CLI surface added or modified:
@@ -230,9 +232,9 @@ Supporting execution metadata may be added into existing emitted records, but th
 ### Locked Inventory Counts
 
 - New files: `4`
-- Modified files: `3`
+- Modified files: `2`
 - New test files: `1` (included in the 4 new)
-- Total files touched: `7`
+- Total files touched: `6`
 
 ### Locked File Inventory
 
@@ -246,8 +248,7 @@ Supporting execution metadata may be added into existing emitted records, but th
 #### Modified files
 
 1. `_agchain/legal-10/runspecs/3-STEP-RUN/run_3s.py`
-2. `_agchain/legal-10/runspecs/3-STEP-RUN/adapters/model_adapter.py`
-3. `_agchain/legal-10/runspecs/3-STEP-RUN/runtime/audit.py`
+2. `_agchain/legal-10/runspecs/3-STEP-RUN/runtime/audit.py`
 ## Frozen Seam Contract
 
 ### Already-Assembled Messages Guard
@@ -316,14 +317,24 @@ Define:
   ) -> ExecutionResult:
   ```
 - `DirectBackend` — wraps existing `ModelAdapter`, calls `call_model()` synchronously inside the async method, returns `ExecutionResult` with `response_text` populated, `usage = None`, `timing_ms = None`
-- `resolve_backend(name: str, ...) -> ExecutionBackend` — factory that returns `DirectBackend` for `"direct"` and lazy-imports `InspectBackend` for `"inspect"`
+- `resolve_backend(
+      name: str,
+      *,
+      provider: str,
+      model: str,
+      adapter: ModelAdapter | None = None,
+  ) -> ExecutionBackend` — factory that:
+  - returns `DirectBackend(adapter)` for `"direct"` and requires `adapter` to be passed
+  - accepts `provider` and `model` as separate inputs; `run_3s.py` does not pre-compose an InspectAI `"provider/model"` string
+  - lazy-imports and returns `InspectBackend(provider=provider, model=model)` for `"inspect"`
+  - raises `ValueError` on unknown backend name
 
 ### `inspect_backend.py`
 
 Define `InspectBackend(ExecutionBackend)`:
 
 - Lazy-imports `inspect_ai.model.get_model`, `GenerateConfig`, `ChatMessageSystem`, `ChatMessageUser` at first use
-- Creates InspectAI model via `get_model("provider/model", config=GenerateConfig(...))` during initialization
+- Creates InspectAI model via `get_model("provider/model", config=GenerateConfig(...))` during initialization using the provider/model pair passed into `resolve_backend()`
 - `execute()` converts `list[dict[str, str]]` to `list[ChatMessage]` internally
 - Calls `await model.generate(messages, config=GenerateConfig(temperature=..., max_tokens=...))`
 - Maps `ModelOutput` to `ExecutionResult`:
@@ -335,31 +346,21 @@ Define `InspectBackend(ExecutionBackend)`:
 - Raises transport/API errors as exceptions (does not catch them)
 - Does not add tool, MCP, sandbox, or approval behavior
 
-### `model_adapter.py`
-
-Keep existing provider adapters intact. Allowed changes:
-
-- helper methods or small adapter-level metadata accessors (e.g., `provider_name` property)
-- minimal typing updates if needed
-
-Disallowed changes:
-
-- changing provider request semantics
-- introducing InspectAI imports
-- removing existing `create_adapter()` behavior
-
 ### `run_3s.py`
 
 Modify only enough to:
 
 - accept `--execution-backend` CLI argument (default `"direct"`)
-- resolve the backend once in `main()` via `resolve_backend()`
+- resolve `eval_backend` and `judge_backend` once in `main()` via `resolve_backend()`, preserving the existing separate eval/judge provider-model selection
+- change `run_judge_call(..., judge_adapter: ModelAdapter, ...)` to `async def run_judge_call(..., judge_backend: ExecutionBackend, ...)`; the function keeps judge-message assembly and dispatches `await judge_backend.execute(...)` internally
+- change `run_single_eu(..., eval_adapter: ModelAdapter, judge_adapter: ModelAdapter, ...)` to accept `eval_backend` and `judge_backend`; the function keeps candidate-step orchestration and judge handoff internally
 - make `run_single_eu()` and `run_judge_call()` async
 - add `asyncio.run()` at the entry point in `main()`
-- replace `judge_adapter.call_model(messages, ...)` at line 105 with `await backend.execute(messages, ...)`
-- replace `eval_adapter.call_model(messages, ...)` at line 210 with `await backend.execute(messages, ...)`
+- replace `judge_adapter.call_model(messages, ...)` at line 105 with `await judge_backend.execute(messages, ...)`
+- replace `eval_adapter.call_model(messages, ...)` at line 210 with `await eval_backend.execute(messages, ...)`
 - consume `ExecutionResult.response_text` wherever raw response text was previously used
-- append supporting execution metadata (backend, usage, timing_ms) into existing emitted run records
+- use `ExecutionResult.model_name` for emitted `model`, `summary.json` `eval_model` / `judge_model`, and `run_manifest.json` reproducibility fields when available; fall back to the existing adapter/CLI model string only if backend metadata is `None`
+- append supporting execution metadata (backend, provider, model_name, usage, timing_ms) into existing emitted run records
 
 Do not move step logic, scoring logic, payload admission, or staging ownership out of this file.
 
@@ -369,7 +370,7 @@ Keep artifact file names and canonical emission behavior intact.
 
 Allowed change:
 
-- permit additional optional supporting metadata fields in emitted run records (backend name, usage, timing)
+- permit additional optional supporting metadata fields in emitted run records (backend name, provider, model name, usage, timing)
 
 Disallowed change:
 
@@ -381,6 +382,7 @@ Disallowed change:
 Add tests for:
 
 - backend resolution (`"direct"` returns `DirectBackend`, `"inspect"` with missing package raises clear error)
+- inspect resolution uses explicit `provider` / `model` inputs; provider-model concatenation stays inside the inspect backend
 - `ExecutionResult` contract (all locked fields present, correct types)
 - direct backend preserves `response_text` byte-identical to mocked `ModelAdapter.call_model()` return
 - async protocol works (tests use `pytest-asyncio` or `asyncio.run()`)
@@ -390,170 +392,206 @@ Add tests for:
 
 Tests must not require live provider credentials.
 
-Tasks
-Task 1: Write failing tests for ExecutionResult and DirectBackend
-Files: _agchain/legal-10/tests/test_execution_backend.py
+## Tasks
 
-Step 1: Create test file with pytest-asyncio or asyncio.run() test helpers.
-Step 2: Write test: ExecutionResult has all six locked fields with correct types.
-Step 3: Write test: DirectBackend.execute() returns ExecutionResult where response_text matches mocked call_model() return, backend == "direct", usage is None, timing_ms is None.
-Step 4: Write test: DirectBackend.execute() forwards temperature and max_tokens to the adapter.
-Step 5: Run tests — confirm they fail (modules don't exist yet).
+### Task 1: Write failing tests for ExecutionResult and DirectBackend
 
-Test command:
+**Files:** `_agchain/legal-10/tests/test_execution_backend.py`
 
+**Step 1:** Create test file with `pytest-asyncio` or `asyncio.run()` test helpers.
+**Step 2:** Write test: `ExecutionResult` has all six locked fields with correct types.
+**Step 3:** Write test: `DirectBackend.execute()` returns `ExecutionResult` where `response_text` matches mocked `call_model()` return, `backend == "direct"`, `usage is None`, `timing_ms is None`.
+**Step 4:** Write test: `DirectBackend.execute()` forwards `temperature` and `max_tokens` to the adapter.
+**Step 5:** Run tests — confirm they fail (modules don't exist yet).
 
+**Test command:**
+```
 cd E:\writing-system\_agchain\legal-10
 python -m pytest tests/test_execution_backend.py -k "result or direct" -q
-Expected output: Tests fail with ImportError (modules not yet created).
+```
 
-Commit: test: add failing tests for execution result and direct backend
+**Expected output:** Tests fail with `ImportError` (modules not yet created).
 
-Task 2: Implement ExecutionResult and DirectBackend
-Files:
+**Commit:** `test: add failing tests for execution result and direct backend`
 
-_agchain/legal-10/runspecs/3-STEP-RUN/runtime/execution_result.py
-_agchain/legal-10/runspecs/3-STEP-RUN/runtime/execution_backend.py
-Step 1: Create execution_result.py with the locked ExecutionResult dataclass.
-Step 2: Create execution_backend.py with ExecutionBackend abstract base (async execute() method), DirectBackend implementation, and resolve_backend() factory.
-Step 3: DirectBackend.execute() calls adapter.call_model(messages, temperature=temperature, max_tokens=max_tokens) synchronously and wraps the string result in ExecutionResult.
-Step 4: Run the tests from Task 1.
+---
 
-Test command:
+### Task 2: Implement ExecutionResult and DirectBackend
 
+**Files:**
+- `_agchain/legal-10/runspecs/3-STEP-RUN/runtime/execution_result.py`
+- `_agchain/legal-10/runspecs/3-STEP-RUN/runtime/execution_backend.py`
 
+**Step 1:** Create `execution_result.py` with the locked `ExecutionResult` dataclass.
+**Step 2:** Create `execution_backend.py` with `ExecutionBackend` abstract base (async `execute()` method), `DirectBackend` implementation, and `resolve_backend()` factory.
+**Step 3:** `DirectBackend.execute()` calls `adapter.call_model(messages, temperature=temperature, max_tokens=max_tokens)` synchronously and wraps the string result in `ExecutionResult`.
+**Step 4:** Run the tests from Task 1.
+
+**Test command:**
+```
 cd E:\writing-system\_agchain\legal-10
 python -m pytest tests/test_execution_backend.py -k "result or direct" -q
-Expected output: All direct-backend and result-shape tests pass.
+```
 
-Commit: add execution result and direct backend seam
+**Expected output:** All direct-backend and result-shape tests pass.
 
-Task 3: Write failing tests for InspectBackend and missing-package error
-Files: _agchain/legal-10/tests/test_execution_backend.py
+**Commit:** `add execution result and direct backend seam`
 
-Step 1: Write test: resolve_backend("inspect") raises ImportError with actionable message when inspect_ai is not installed.
-Step 2: Write test: InspectBackend can be instantiated when inspect_ai is available (mock the import).
-Step 3: Write test: InspectBackend.execute() returns ExecutionResult with all fields populated from mocked ModelOutput.
-Step 4: Write test: InspectBackend converts timing_ms correctly (seconds × 1000).
-Step 5: Write test: InspectBackend populates usage dict with locked keys only.
-Step 6: Run tests — confirm new tests fail.
+---
 
-Test command:
+### Task 3: Write failing tests for InspectBackend and missing-package error
 
+**Files:** `_agchain/legal-10/tests/test_execution_backend.py`
 
+**Step 1:** Write test: `resolve_backend("inspect", provider="openai", model="gpt-4o")` raises `ImportError` with actionable message when `inspect_ai` is not installed.
+**Step 2:** Write test: `InspectBackend` can be instantiated when `inspect_ai` is available (mock the import).
+**Step 3:** Write test: `InspectBackend.execute()` returns `ExecutionResult` with all fields populated from mocked `ModelOutput`.
+**Step 4:** Write test: `InspectBackend` converts `timing_ms` correctly (seconds × 1000).
+**Step 5:** Write test: `InspectBackend` populates usage dict with locked keys only.
+**Step 6:** Run tests — confirm new tests fail.
+
+**Test command:**
+```
 cd E:\writing-system\_agchain\legal-10
 python -m pytest tests/test_execution_backend.py -k inspect -q
-Expected output: New inspect tests fail (module not yet created).
+```
 
-Commit: test: add failing tests for inspect backend and missing-package error
+**Expected output:** New inspect tests fail (module not yet created).
 
-Task 4: Implement InspectBackend
-Files:
+**Commit:** `test: add failing tests for inspect backend and missing-package error`
 
-_agchain/legal-10/runspecs/3-STEP-RUN/runtime/inspect_backend.py
-_agchain/legal-10/runspecs/3-STEP-RUN/runtime/execution_backend.py (register in resolver)
-Step 1: Create inspect_backend.py with lazy import guard.
-Step 2: Implement message conversion: iterate list[dict[str, str]] → ChatMessageSystem / ChatMessageUser based on role field.
-Step 3: Implement execute(): call await self._model.generate(messages, config=GenerateConfig(temperature=..., max_tokens=...)).
-Step 4: Map ModelOutput → ExecutionResult with locked field mappings and unit conversion.
-Step 5: Update resolve_backend() in execution_backend.py to lazy-import and return InspectBackend for "inspect".
-Step 6: Run all backend tests.
+---
 
-Test command:
+### Task 4: Implement InspectBackend
 
+**Files:**
+- `_agchain/legal-10/runspecs/3-STEP-RUN/runtime/inspect_backend.py`
+- `_agchain/legal-10/runspecs/3-STEP-RUN/runtime/execution_backend.py` (register in resolver)
 
+**Step 1:** Create `inspect_backend.py` with lazy import guard.
+**Step 2:** Implement message conversion: iterate `list[dict[str, str]]` → `ChatMessageSystem` / `ChatMessageUser` based on `role` field.
+**Step 3:** Implement `execute()`: call `await self._model.generate(messages, config=GenerateConfig(temperature=..., max_tokens=...))`.
+**Step 4:** Map `ModelOutput` → `ExecutionResult` with locked field mappings and unit conversion.
+**Step 5:** Update `resolve_backend()` in `execution_backend.py` to lazy-import and return `InspectBackend` for `"inspect"`.
+**Step 6:** Run all backend tests.
+
+**Test command:**
+```
 cd E:\writing-system\_agchain\legal-10
 python -m pytest tests/test_execution_backend.py -q
 python runspecs/3-STEP-RUN/run_3s.py --help
-Expected output: All backend tests pass. --help works without import failure.
+```
 
-Commit: add guarded inspect-ai execution backend
+**Expected output:** All backend tests pass. `--help` works without import failure.
 
-Task 5: Wire backend into the runner
-Files: _agchain/legal-10/runspecs/3-STEP-RUN/run_3s.py
+**Commit:** `add guarded inspect-ai execution backend`
 
-Step 1: Add --execution-backend argument to argparse with default "direct" and choices ["direct", "inspect"].
-Step 2: In main(), call resolve_backend(args.execution_backend, ...) to get the backend instance.
-Step 3: Make run_judge_call() async. Replace judge_adapter.call_model(messages, temperature=0.0, max_tokens=2048) with await backend.execute(messages, temperature=0.0, max_tokens=2048). Use result.response_text for the raw response.
-Step 4: Make run_single_eu() async. Replace eval_adapter.call_model(messages, temperature=0.0, max_tokens=4096) with await backend.execute(messages, temperature=0.0, max_tokens=4096). Use result.response_text for the raw response.
-Step 5: Wrap the EU iteration loop in main() with asyncio.run() on an async inner function.
-Step 6: Verify --help still works. Verify existing behavior is preserved with --execution-backend direct.
+---
 
-Test command:
+### Task 5: Wire backend into the runner
 
+**Files:** `_agchain/legal-10/runspecs/3-STEP-RUN/run_3s.py`
 
+**Step 1:** Add `--execution-backend` argument to `argparse` with default `"direct"` and choices `["direct", "inspect"]`.
+**Step 2:** In `main()`, resolve `eval_backend` and `judge_backend` separately via `resolve_backend(args.execution_backend, provider=..., model=..., adapter=...)`, using the existing eval `--provider/--model` pair for candidate calls and the existing `--judge-provider/--judge-model` pair for judge calls.
+**Step 3:** Make `run_judge_call()` async and change its parameter from `judge_adapter` to `judge_backend`. Keep judge-message assembly inside `run_judge_call()`, but replace `judge_adapter.call_model(messages, temperature=0.0, max_tokens=2048)` with `await judge_backend.execute(messages, temperature=0.0, max_tokens=2048)`. Use `result.response_text` for the raw response and `result.model_name` (fallback: existing adapter/CLI model string) for emitted judge model identity.
+**Step 4:** Make `run_single_eu()` async and change its parameters from `eval_adapter` / `judge_adapter` to `eval_backend` / `judge_backend`. Keep candidate-step orchestration and judge handoff in this function, but replace `eval_adapter.call_model(messages, temperature=0.0, max_tokens=4096)` with `await eval_backend.execute(messages, temperature=0.0, max_tokens=4096)`. Use `result.response_text` for the raw response and `result.model_name` (fallback: existing adapter/CLI model string) for emitted candidate model identity, `summary.json`, and `run_manifest.json`.
+**Step 5:** Wrap the EU iteration loop in `main()` with `asyncio.run()` on an async inner function.
+**Step 6:** Verify `--help` still works. Verify existing behavior is preserved with `--execution-backend direct`.
+
+**Test command:**
+```
 cd E:\writing-system\_agchain\legal-10
 python runspecs/3-STEP-RUN/run_3s.py --help
 python -m pytest tests/test_irac_judge_requirement.py -q
 python -m pytest tests/test_execution_backend.py -q
-Expected output: Help text includes --execution-backend. All tests pass.
+```
 
-Commit: wire execution backend selection into legal-10 runner
+**Expected output:** Help text includes `--execution-backend`. All tests pass.
 
-Task 6: Add supporting execution metadata to audit artifacts
-Files:
+**Commit:** `wire execution backend selection into legal-10 runner`
 
-_agchain/legal-10/runspecs/3-STEP-RUN/runtime/audit.py
-_agchain/legal-10/runspecs/3-STEP-RUN/run_3s.py
-Step 1: In run_3s.py, after each backend.execute() call, capture the ExecutionResult and pass its metadata fields into the existing emit_run_record() calls.
-Step 2: Add optional execution_metadata dict to run records: {"backend": result.backend, "model_name": result.model_name, "usage": result.usage, "timing_ms": result.timing_ms}.
-Step 3: Do not change emit_audit_record() canonical fields or hash computation.
-Step 4: Add run_manifest.json field for execution_backend alongside existing session_strategy.
-Step 5: Write a test that verifies run records contain execution metadata when populated.
+---
 
-Test command:
+### Task 6: Add supporting execution metadata to audit artifacts
 
+**Files:**
+- `_agchain/legal-10/runspecs/3-STEP-RUN/runtime/audit.py`
+- `_agchain/legal-10/runspecs/3-STEP-RUN/run_3s.py`
 
+**Step 1:** In `run_3s.py`, after each `eval_backend.execute()` / `judge_backend.execute()` call, capture the `ExecutionResult` and pass its metadata fields into the existing `emit_run_record()` calls.
+**Step 2:** Add optional `execution_metadata` dict to run records: `{"backend": result.backend, "provider": result.provider, "model_name": result.model_name, "usage": result.usage, "timing_ms": result.timing_ms}`.
+**Step 3:** Do not change `emit_audit_record()` canonical fields or hash computation.
+**Step 4:** Add `run_manifest.json` field for `execution_backend` alongside existing `session_strategy`.
+**Step 5:** Write a test that verifies run records contain execution metadata when populated.
+
+**Test command:**
+```
 cd E:\writing-system\_agchain\legal-10
 python -m pytest tests/test_execution_backend.py -q
 python -m pytest tests/test_irac_judge_requirement.py -q
 python -m pytest tests/test_profile_types.py tests/test_profile_registry.py -q
-Expected output: All tests pass. Existing profile and IRAC tests unaffected.
+```
 
-Commit: capture supporting execution metadata in audit artifacts
+**Expected output:** All tests pass. Existing profile and IRAC tests unaffected.
 
-Task 7: Final regression sweep
-Files: none (verification only)
+**Commit:** `capture supporting execution metadata in audit artifacts`
 
-Step 1: Run the full test suite.
-Step 2: Verify --help works without inspect_ai installed.
-Step 3: Verify --execution-backend inspect without inspect_ai fails with clear message.
-Step 4: Confirm inventory count matches: 4 new files, 3 modified files.
+---
 
-Test command:
+### Task 7: Final regression sweep
 
+**Files:** none (verification only)
 
+**Step 1:** Run the full test suite.
+**Step 2:** Verify `--help` works without `inspect_ai` installed.
+**Step 3:** From the `runspecs/3-STEP-RUN` directory, verify `resolve_backend("inspect", provider="openai", model="gpt-4o")` fails with a clear `ImportError` message when `inspect_ai` is not installed.
+**Step 4:** Confirm inventory count matches: 4 new files, 2 modified files.
+
+**Test command:**
+```powershell
 cd E:\writing-system\_agchain\legal-10
 python -m pytest tests/ -q
 python runspecs/3-STEP-RUN/run_3s.py --help
-python -c "from runtime.execution_backend import resolve_backend; import asyncio; asyncio.run(resolve_backend('inspect').execute([], temperature=0.0, max_tokens=1))" 2>&1 | head -5
-Expected output: All tests pass. Help works. Inspect backend without package gives clear error.
+cd E:\writing-system\_agchain\legal-10\runspecs\3-STEP-RUN
+@'
+from runtime.execution_backend import resolve_backend
+try:
+    resolve_backend("inspect", provider="openai", model="gpt-4o")
+except ImportError as e:
+    print(type(e).__name__, e)
+'@ | python -
+```
 
-Commit: no commit (verification only)
+**Expected output:** Full-suite tests pass, or any citation-integrity failures are confirmed to be the same pre-existing stale-path issue accepted in Completion Criteria. Help works. Inspect backend without package prints a clear `ImportError` message naming the missing install requirement.
 
-Explicit Risks Accepted In This Plan
-InspectAI import shape. The exact inspect_ai model API may differ from the reference repo analysis. Task 4 may require one revision pass after live import testing. This is noted in the substrate gap analysis and accepted.
+**Commit:** no commit (verification only)
 
-Direct backend metadata gap. The direct backend sets usage = None and timing_ms = None because the current OpenAIAdapter and AnthropicAdapter do not expose token counts or timing. This is acceptable — the normalized result allows None for all metadata fields.
+## Explicit Risks Accepted In This Plan
 
-Deferred InspectAI capabilities. Tool execution, MCP, sandbox, approval chains, and compaction are all supported by InspectAI but intentionally deferred. The consolidation plan owns that scope.
+1. **InspectAI import shape.** The exact `inspect_ai` model API may differ from the reference repo analysis. Task 4 may require one revision pass after live import testing. This is noted in the substrate gap analysis and accepted.
 
-Async conversion risk. Making run_single_eu and run_judge_call async changes calling convention. The frozen seam contract ensures no semantic change to payload admission, message assembly, state, staging, or scoring. The async boundary is at the execution call sites only.
+2. **Direct backend metadata gap.** The direct backend sets `usage = None` and `timing_ms = None` because the current `OpenAIAdapter` and `AnthropicAdapter` do not expose token counts or timing. This is acceptable — the normalized result allows `None` for all metadata fields.
 
-Moderation refusal handling. Model refusals produce empty response_text and rely on the existing parse-failure path. The refusal reason is not surfaced in ExecutionResult for this pass. If refusal diagnostics become important, a later revision can add a separate metadata field — but not in the usage dict.
+3. **Deferred InspectAI capabilities.** Tool execution, MCP, sandbox, approval chains, and compaction are all supported by InspectAI but intentionally deferred. The consolidation plan owns that scope.
 
-Completion Criteria
+4. **Async conversion risk.** Making `run_single_eu` and `run_judge_call` async changes calling convention. The frozen seam contract ensures no semantic change to payload admission, message assembly, state, staging, or scoring. The async boundary is at the execution call sites only.
+
+5. **Moderation refusal handling.** Model refusals produce empty `response_text` and rely on the existing parse-failure path. The refusal reason is not surfaced in `ExecutionResult` for this pass. If refusal diagnostics become important, a later revision can add a separate metadata field — but not in the `usage` dict.
+
+## Completion Criteria
+
 This plan is complete only when:
 
-The codebase contains the new execution backend seam and normalized ExecutionResult.
-The async protocol is in place: ExecutionBackend.execute() is async, run_single_eu() and run_judge_call() are async, main() uses asyncio.run().
-The default direct path still works without InspectAI installed.
-The optional InspectAI path is selectable via --execution-backend inspect and fails clearly when unavailable.
-Both candidate and judge execution are routed through the backend layer with correct per-call temperature and max_tokens.
-AGChain canonical audit artifacts are still the benchmark proof surface.
-Supporting execution metadata is captured in run records without replacing canonical fields.
-The usage dict contains only the locked usage keys — no moderation errors or non-usage metadata.
-Existing profile tests pass.
-Existing IRAC tests pass.
-File inventory matches: 4 new, 3 modified, 7 total.
-Any citation-integrity failures are confirmed to be the same pre-existing stale-path issue, not new regressions from this plan.
+1. The codebase contains the new execution backend seam and normalized `ExecutionResult`.
+2. The async protocol is in place: `ExecutionBackend.execute()` is async, `run_single_eu()` and `run_judge_call()` are async, `main()` uses `asyncio.run()`.
+3. The default direct path still works without InspectAI installed.
+4. The optional InspectAI path is selectable via `--execution-backend inspect` and fails clearly when unavailable.
+5. Both candidate and judge execution are routed through the backend layer with correct per-call `temperature` and `max_tokens`.
+6. AGChain canonical audit artifacts are still the benchmark proof surface.
+7. Supporting execution metadata is captured in run records without replacing canonical fields.
+8. The `usage` dict contains only the locked usage keys — no moderation errors or non-usage metadata.
+9. Existing profile tests pass.
+10. Existing IRAC tests pass.
+11. File inventory matches: 4 new, 2 modified, 6 total.
+12. Any citation-integrity failures are confirmed to be the same pre-existing stale-path issue, not new regressions from this plan.

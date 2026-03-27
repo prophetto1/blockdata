@@ -25,7 +25,9 @@ def client():
 
 def test_connect_stores_encrypted_credentials(client):
     with patch("app.api.routes.connections.get_supabase_admin") as mock_sb, \
-         patch("app.api.routes.connections.encrypt_with_context") as mock_encrypt:
+         patch("app.api.routes.connections.encrypt_with_context") as mock_encrypt, \
+         patch("app.api.routes.connections.get_envelope_key", create=True) as mock_get_key:
+        mock_get_key.return_value = "app-envelope-key"
         mock_encrypt.return_value = "enc:v1:mock:test"
         mock_table = MagicMock()
         mock_table.upsert.return_value.execute.return_value = MagicMock(data=[{}])
@@ -40,6 +42,7 @@ def test_connect_stores_encrypted_credentials(client):
 
     assert resp.status_code == 200
     assert resp.json()["ok"] is True
+    mock_get_key.assert_called_once()
 
 
 def test_connect_rejects_missing_provider(client):
@@ -68,3 +71,28 @@ def test_test_connection_calls_plugin(client):
 
     assert resp.status_code == 200
     assert resp.json()["valid"] is True
+
+
+def test_resolve_connection_uses_dual_key_fallback(client):
+    with patch("app.infra.connection.get_supabase_admin") as mock_sb, patch(
+        "app.infra.connection.decrypt_with_fallback", create=True
+    ) as mock_decrypt:
+        mock_sb.return_value.table.return_value.select.return_value.eq.return_value.single.return_value.execute.return_value = MagicMock(
+            data={
+                "credential_encrypted": "enc:v1:iv:cipher",
+                "metadata_jsonb": {"endpoint": "https://x:8529"},
+                "provider": "arangodb",
+                "connection_type": "arangodb_credential",
+                "status": "connected",
+                "user_id": "user-1",
+            }
+        )
+        mock_decrypt.return_value = '{"username":"root","password":"secret"}'
+
+        from app.infra.connection import resolve_connection_sync
+
+        creds = resolve_connection_sync("conn-1", "user-1")
+
+    assert creds["endpoint"] == "https://x:8529"
+    assert creds["username"] == "root"
+    mock_decrypt.assert_called_once_with("enc:v1:iv:cipher", "provider-connections-v1")

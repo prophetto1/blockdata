@@ -9,7 +9,15 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from opentelemetry import metrics, trace
 from pydantic import BaseModel, Field
+
+from app.infra.crypto import decrypt_with_fallback
+from app.observability.otel import safe_attributes
+
+tracer = trace.get_tracer(__name__)
+meter = metrics.get_meter(__name__)
+secrets_resolve_counter = meter.create_counter("platform.secrets.resolve.count")
 
 
 class PluginOutput(BaseModel):
@@ -121,8 +129,46 @@ class ExecutionContext:
         return current
 
     async def get_secret(self, key: str) -> str:
-        """Fetch a secret value. Currently reads from env vars."""
-        return os.environ.get(key, "")
+        """Fetch a user-scoped secret value, falling back to env vars."""
+        normalized_name = key.strip().upper()
+
+        with tracer.start_as_current_span("secrets.resolve") as span:
+            if self.user_id and self.supabase_url and self.supabase_key:
+                from supabase import create_client
+
+                sb = create_client(self.supabase_url, self.supabase_key)
+                result = (
+                    sb.table("user_variables")
+                    .select("value_encrypted")
+                    .eq("user_id", self.user_id)
+                    .eq("name", normalized_name)
+                    .limit(1)
+                    .execute()
+                )
+                row = (result.data or [None])[0]
+                if row and row.get("value_encrypted"):
+                    attrs = {
+                        "caller": "platform-api",
+                        "resolution_source": "user_secret",
+                        "result": "hit",
+                    }
+                    for attr_key, attr_value in safe_attributes(attrs).items():
+                        span.set_attribute(attr_key, attr_value)
+                    secrets_resolve_counter.add(1, safe_attributes(attrs))
+                    return decrypt_with_fallback(
+                        row["value_encrypted"], "user-variables-v1"
+                    )
+
+            value = os.environ.get(normalized_name, "")
+            attrs = {
+                "caller": "platform-api",
+                "resolution_source": "env" if value else "miss",
+                "result": "hit" if value else "miss",
+            }
+            for attr_key, attr_value in safe_attributes(attrs).items():
+                span.set_attribute(attr_key, attr_value)
+            secrets_resolve_counter.add(1, safe_attributes(attrs))
+            return value
 
     async def upload_file(self, bucket: str, path: str, content: bytes) -> str:
         """Upload to Supabase Storage. Returns public URL.

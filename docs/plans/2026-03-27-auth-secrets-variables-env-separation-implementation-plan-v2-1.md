@@ -2,7 +2,7 @@
 
 **Goal:** Separate identity/auth concerns from secret storage and runtime configuration, make the frontend use one canonical user-facing secrets surface, and harden backend secret handling so sensitive user values are treated as secrets — with backward-compatible dual-key decryption that preserves all existing encrypted rows.
 
-**Architecture:** Keep hosted Supabase Auth as the identity and session authority. Keep services/platform-api as the app-owned secret control plane and trusted runtime resolution layer. Preserve user_provider_connections as the separate store for structured provider credentials. Make the canonical user-facing management surface Settings / Secrets, keep /app/secrets as a compatibility redirect for one phase. Harden the existing user_variables store into a route-only encrypted secret store, expose it through /secrets, and use a dedicated application encryption root secret (APP_SECRET_ENVELOPE_KEY) for all new encryptions. Existing rows encrypted with SUPABASE_SERVICE_ROLE_KEY remain readable through a backward-compatible dual-key decrypt fallback. user_api_keys is excluded from the crypto root split in this plan because its encrypt path is in a Deno edge function with an incompatible key derivation. `pipeline-worker` is explicitly not upgraded to user-scoped secret resolution in this plan because its deprecated `POST /{function_name}` route has no trusted authenticated-user seam; worker secret lookup remains env-only until a separate authenticated migration or decommissioning plan lands.
+**Architecture:** Keep hosted Supabase Auth as the identity and session authority. Keep services/platform-api as the app-owned secret control plane and trusted runtime resolution layer. Preserve user_provider_connections as the separate store for structured provider credentials. Make the canonical user-facing management surface Settings / Secrets, keep /app/secrets as a compatibility redirect for one phase. Harden the existing user_variables store into a route-only encrypted secret store, expose it through /secrets, and use a dedicated application encryption root secret (APP_SECRET_ENVELOPE_KEY) for all new encryptions. Existing rows encrypted with SUPABASE_SERVICE_ROLE_KEY remain readable through a backward-compatible dual-key decrypt fallback, and the hardening migration canonicalizes legacy `public.user_variables.name` values to uppercase so exact-name runtime lookup stays simple after deploy. user_api_keys is excluded from the crypto root split in this plan because its encrypt path is in a Deno edge function with an incompatible key derivation. `pipeline-worker` is explicitly not upgraded to user-scoped secret resolution in this plan because its deprecated `POST /{function_name}` route has no trusted authenticated-user seam; worker secret lookup remains env-only until a separate authenticated migration or decommissioning plan lands.
 
 **Tech Stack:** Supabase Postgres migrations, FastAPI, Supabase Python client, React + TypeScript, existing crypto helpers, OpenTelemetry, pytest, Vitest.
 
@@ -111,6 +111,7 @@ Python crypto.py derives keys as SHA256(secret + context). The Deno edge functio
 #### GET/POST/PATCH/DELETE /variables
 
 - **Change:** retain as compatibility aliases to the same secret-management implementation, emit deprecation response metadata, and stop describing the surface as "Variables" in user-facing responses or OpenAPI summaries.
+- **Compatibility response shape:** preserve the existing `{"variables": [...]}` / `{"variable": {...}}` body keys in this phase so deprecated callers continue to work. The canonical `/secrets` surface uses `{"secrets": [...]}` / `{"secret": {...}}`.
 - **Implementation constraint:** keep this inside `variables.py` by calling the same handler functions used by `/secrets` directly; do not introduce a new shared service module in this phase.
 - **Why:** the current backend already exposes /variables, but the mounted frontend does not use a Variables settings surface and the stored values are secret-valued rather than general-purpose non-secret config.
 
@@ -156,7 +157,7 @@ No `pipeline-worker` route contract changes in this plan.
 
 | Migration | Creates/Alters | Affects Existing Data? |
 | --- | --- | --- |
-| 20260327110000_user_secret_store_hardening.sql | Hardens public.user_variables into a route-only secret store by revoking direct browser table access, preserving service-role access, retaining owner-bound RLS, and clarifying table comments/default semantics as secret storage | No data rewrite. Existing rows encrypted with SUPABASE_SERVICE_ROLE_KEY remain readable through dual-key decrypt fallback introduced in Task 3 |
+| 20260327110000_user_secret_store_hardening.sql | Hardens public.user_variables into a route-only secret store by revoking direct browser table access, preserving service-role access, retaining owner-bound RLS, canonicalizing existing `name` values to uppercase, and clarifying table comments/default semantics as secret storage | Limited data rewrite: existing `public.user_variables.name` values are updated to uppercase canonical form. No ciphertext rewrite. Existing rows encrypted with SUPABASE_SERVICE_ROLE_KEY remain readable through dual-key decrypt fallback introduced later in this plan |
 
 ## Edge Functions
 
@@ -217,7 +218,7 @@ No major product, API, observability, auth-boundary, crypto-boundary, or termino
 - Connections remains a distinct product surface for structured provider credentials. It is not merged into Secrets in this phase.
 - Environment variables remain deployment/runtime configuration owned by the process environment and .env, not user-managed config rows.
 - The existing public.user_variables table is treated as the physical secret store for this phase; the product surface and API surface are canonicalized to Secrets without a risky table rename.
-- Secret names are case-insensitive and canonicalized to uppercase at write/read boundaries. The persisted `name` value and metadata responses use the uppercase canonical form.
+- Secret names are case-insensitive. The hardening migration canonicalizes existing `public.user_variables.name` values to uppercase, and all future write/read boundaries use the uppercase canonical form. The persisted `name` value and metadata responses use the uppercase canonical form.
 - New secret encryptions use APP_SECRET_ENVELOPE_KEY. Decrypt paths try APP_SECRET_ENVELOPE_KEY first and fall back to SUPABASE_SERVICE_ROLE_KEY for rows encrypted before the rotation. Both env vars are required until a separate rotation plan re-encrypts all existing rows.
 - Trusted runtime resolution order is: user secret hit (decrypted via dual-key fallback), then env fallback, then empty string or explicit miss behavior. Browser code never resolves plaintext secret values from storage rows.
 - `services/platform-api` is the only runtime in scope for new user-scoped secret resolution. `pipeline-worker` remains a deprecated env-only compatibility surface and does not gain request-body identity propagation in this plan.
@@ -233,14 +234,15 @@ The implementation is only complete when all of the following are true:
 - Visiting /app/secrets redirects to /app/settings/secrets.
 - The Settings / Secrets page can list, create, update, and delete authenticated user secrets through platform-api.
 - Secret list/detail responses return metadata only and never plaintext values or ciphertext blobs.
-- Secret creation, update, and runtime lookup are case-insensitive, and persisted/returned secret names are canonicalized to uppercase.
+- Secret creation, update, and runtime lookup are case-insensitive, persisted/returned secret names are canonicalized to uppercase, and legacy `public.user_variables.name` rows are normalized to that same uppercase canonical form by the migration.
 - Direct browser table access to public.user_variables is no longer sufficient to read or mutate secret rows.
 - `services/platform-api` `ExecutionContext.get_secret()` remains async, normalizes the requested secret name before querying storage, resolves a user-scoped secret when a user id is present, and falls back to env only when no user secret exists.
 - `pipeline-worker` route shape and auth behavior are unchanged in this plan.
 - Connections flows continue to work without being merged into Secrets.
 - OAuth login behavior is unchanged.
 - All new encrypt operations use APP_SECRET_ENVELOPE_KEY. All decrypt operations on user_variables and user_provider_connections try APP_SECRET_ENVELOPE_KEY first with backward-compatible fallback to SUPABASE_SERVICE_ROLE_KEY. Both env vars are required.
-- Existing encrypted rows in user_variables and user_provider_connections remain readable after deployment with no data rewrite.
+- Existing encrypted rows in user_variables and user_provider_connections remain readable after deployment with no ciphertext rewrite.
+- Existing `public.user_variables.name` values are normalized to uppercase during the hardening migration.
 - The platform.crypto.fallback.count metric is emitting, providing visibility into how many rows still need rotation.
 
 ## Locked Platform API Surface
@@ -394,7 +396,7 @@ A new get_envelope_key() function returns APP_SECRET_ENVELOPE_KEY and raises Run
 ## Frozen Runtime Resolution Seam Contract
 
 - `services/platform-api` `ExecutionContext.get_secret()` remains `async def`.
-- `services/platform-api` normalizes requested secret names to uppercase before querying `public.user_variables` and before env fallback.
+- `services/platform-api` normalizes requested secret names to uppercase before querying `public.user_variables` and before env fallback. This exact-name lookup is safe because the hardening migration canonicalizes legacy stored names first.
 - `pipeline-worker` continues to expose the existing `POST /{function_name}` execution route unchanged.
 - `pipeline-worker` remains env-only for secret lookup in this plan.
 
@@ -407,6 +409,7 @@ Do not implement this by introducing a second competing menu label such as Varia
 ## Explicit Risks Accepted In This Plan
 
 - Physical table stays named user_variables. The product/API surface is canonicalized to Secrets without a risky table rename.
+- The hardening migration rewrites existing `public.user_variables.name` values to uppercase canonical form. Any direct SQL consumer that depended on legacy casing will observe the canonical value after deploy.
 - Compatibility aliases for /variables temporarily preserve backend naming drift while callers migrate.
 - Connections remains separate even though some users may think of connection credentials as "secrets."
 - `pipeline-worker` remains unable to resolve user-scoped secrets safely until it has a trusted authenticated caller seam or is fully decommissioned. This plan accepts that limitation instead of introducing a request-body `user_id` trust hole.
@@ -427,7 +430,8 @@ The work is complete only when all of the following are true:
 - All new encrypt operations use APP_SECRET_ENVELOPE_KEY.
 - All decrypt operations on user_variables and user_provider_connections use dual-key fallback.
 - Secret names are canonicalized to uppercase consistently at create, update, and runtime lookup boundaries.
-- Existing encrypted rows remain readable with no data rewrite.
+- Existing encrypted rows remain readable with no ciphertext rewrite.
+- Existing `public.user_variables.name` rows have been canonicalized to uppercase.
 - The platform.crypto.fallback.count metric is emitting.
 
 ## Tasks
@@ -580,18 +584,18 @@ python -m pytest services/platform-api/tests/test_secrets.py services/platform-a
 
 **File(s):** `supabase/migrations/20260327110000_user_secret_store_hardening.sql`
 
-- **Step 1:** Create the migration to revoke direct table privileges on public.user_variables from anon and authenticated.
+- **Step 1:** Create the migration to revoke direct table privileges on public.user_variables from anon and authenticated, and update all existing `name` values to their uppercase canonical form.
 - **Step 2:** Preserve service-role CRUD access and keep owner-bound RLS in place.
-- **Step 3:** Add comments clarifying that public.user_variables is the physical encrypted secret store for this phase.
-- **Step 4:** Verify the migration applies and table privileges match the locked contract.
+- **Step 3:** Add comments clarifying that public.user_variables is the physical encrypted secret store for this phase and that the migration canonicalizes metadata names only, not ciphertext.
+- **Step 4:** Verify the migration applies, table privileges match the locked contract, and no remaining `public.user_variables.name` values differ from `upper(name)`.
 
 **Test command:**
 
 ```text
-Supabase MCP: apply_migration, then list_tables(schemas=["public"], verbose=true)
+Supabase MCP: apply_migration, list_tables(schemas=["public"], verbose=true), then execute_sql("select count(*) as non_uppercase_names from public.user_variables where name <> upper(name);")
 ```
 
-**Expected output:** Migration recorded, public.user_variables still exists, direct authenticated privileges revoked.
+**Expected output:** Migration recorded, public.user_variables still exists, direct authenticated privileges revoked, and `non_uppercase_names = 0`.
 
 **Commit:** `feat(secrets): harden secret store privileges`
 
@@ -685,6 +689,7 @@ python -m pytest services/platform-api/tests/test_secrets.py services/platform-a
 async def get_secret(self, name: str) -> str:
     """Resolve a user-scoped secret by name, falling back to env."""
     normalized_name = name.strip().upper()
+    # Task 4 canonicalized legacy rows, so exact uppercase lookup is safe here.
     if self.user_id and self.supabase_url and self.supabase_key:
         sb = create_client(self.supabase_url, self.supabase_key)
         result = sb.table("user_variables").select(
@@ -769,6 +774,7 @@ npm --prefix web run test -- src/pages/settings/SettingsSecrets.test.tsx src/pag
 ```
 
 - **Step 3:** Verify migration state and table privileges in Supabase.
+- **Step 3a:** Verify `select count(*) from public.user_variables where name <> upper(name)` returns zero after the migration.
 - **Step 4:** Verify /app/secrets redirects and Settings / Secrets works for an authenticated user.
 - **Step 5:** Verify case-insensitive secret creation/update and runtime lookup all converge on the uppercase canonical secret name.
 - **Step 6:** Compare actual file inventory against locked counts.

@@ -6,7 +6,6 @@ GCP Vertex SA connection but is NOT extended further.
 """
 import json as json_mod
 import logging
-import os
 from datetime import datetime, timezone
 from typing import Any
 
@@ -17,7 +16,7 @@ from app.auth.dependencies import require_user_auth
 from app.auth.principals import AuthPrincipal
 from app.domain.plugins.registry import resolve, resolve_by_function_name
 from app.infra.connection import resolve_connection_sync
-from app.infra.crypto import encrypt_with_context
+from app.infra.crypto import encrypt_with_context, get_envelope_key
 from app.infra.supabase_client import get_supabase_admin
 
 logger = logging.getLogger("connections")
@@ -59,10 +58,8 @@ async def list_connections(auth: AuthPrincipal = Depends(require_user_auth)):
 @router.post("/connect", summary="Save encrypted credentials for a provider")
 async def connect(body: ConnectRequest, auth: AuthPrincipal = Depends(require_user_auth)):
     sb = get_supabase_admin()
-    secret = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
-
     encrypted = encrypt_with_context(
-        json_mod.dumps(body.credentials), secret, CRYPTO_CONTEXT
+        json_mod.dumps(body.credentials), get_envelope_key(), CRYPTO_CONTEXT
     )
 
     result = sb.table("user_provider_connections").upsert({

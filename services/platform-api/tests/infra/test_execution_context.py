@@ -207,3 +207,50 @@ def test_resolve_still_works():
     assert ctx._resolve("a.b.c") == "deep"
     assert ctx._resolve("a.b.missing") is None
     assert ctx._resolve("nonexistent") is None
+
+
+@pytest.mark.asyncio
+async def test_get_secret_normalizes_lookup_name_to_uppercase(ctx):
+    mock_limit = MagicMock()
+    mock_limit.execute.return_value = MagicMock(data=[{"value_encrypted": "enc:v1:iv:cipher"}])
+    mock_eq_name = MagicMock()
+    mock_eq_name.limit.return_value = mock_limit
+    mock_eq_user = MagicMock()
+    mock_eq_user.eq.return_value = mock_eq_name
+    mock_select = MagicMock()
+    mock_select.eq.return_value = mock_eq_user
+    mock_table = MagicMock()
+    mock_table.select.return_value = mock_select
+    mock_client = MagicMock()
+    mock_client.table.return_value = mock_table
+
+    with patch("supabase.create_client", return_value=mock_client), patch(
+        "app.domain.plugins.models.decrypt_with_fallback", create=True
+    ) as mock_decrypt:
+        mock_decrypt.return_value = "resolved-secret"
+        result = await ctx.get_secret("mixed_Case_secret")
+
+    assert result == "resolved-secret"
+    mock_eq_user.eq.assert_called_once_with("name", "MIXED_CASE_SECRET")
+
+
+@pytest.mark.asyncio
+async def test_get_secret_uses_uppercase_env_fallback(ctx, monkeypatch):
+    mock_limit = MagicMock()
+    mock_limit.execute.return_value = MagicMock(data=[])
+    mock_eq_name = MagicMock()
+    mock_eq_name.limit.return_value = mock_limit
+    mock_eq_user = MagicMock()
+    mock_eq_user.eq.return_value = mock_eq_name
+    mock_select = MagicMock()
+    mock_select.eq.return_value = mock_eq_user
+    mock_table = MagicMock()
+    mock_table.select.return_value = mock_select
+    mock_client = MagicMock()
+    mock_client.table.return_value = mock_table
+    monkeypatch.setenv("MIXED_CASE_SECRET", "env-secret")
+
+    with patch("supabase.create_client", return_value=mock_client):
+        result = await ctx.get_secret("mixed_Case_secret")
+
+    assert result == "env-secret"

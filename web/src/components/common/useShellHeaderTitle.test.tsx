@@ -64,6 +64,17 @@ describe('useShellHeaderTitle classic breadcrumb resolution', () => {
     expect(screen.queryByText('Profile')).not.toBeInTheDocument();
   });
 
+  it('uses the nav child label for the canonical secrets settings route', () => {
+    renderHeaderAt('/app/settings/secrets', {
+      title: 'Secrets',
+      breadcrumbs: ['Settings', 'Secrets'],
+    });
+
+    expect(screen.getByText('Settings')).toBeInTheDocument();
+    expect(screen.getByText('Secrets')).toBeInTheDocument();
+    expect(screen.queryByText('Variables')).not.toBeInTheDocument();
+  });
+
   it('uses systematic classic flow detail breadcrumbs', () => {
     renderHeaderAt('/app/flows/default-flow/overview', {
       title: 'Default Flow',
