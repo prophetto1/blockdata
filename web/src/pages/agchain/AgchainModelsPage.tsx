@@ -3,6 +3,7 @@ import { AgchainModelInspector } from '@/components/agchain/models/AgchainModelI
 import { AgchainModelsTable } from '@/components/agchain/models/AgchainModelsTable';
 import { AgchainModelsToolbar } from '@/components/agchain/models/AgchainModelsToolbar';
 import { useAgchainModels } from '@/hooks/agchain/useAgchainModels';
+import { AgchainPageFrame } from './AgchainPageFrame';
 
 export default function AgchainModelsPage() {
   const [search, setSearch] = useState('');
@@ -40,38 +41,36 @@ export default function AgchainModelsPage() {
   }, [items, search]);
 
   return (
-    <div className="min-h-full bg-background">
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-8 py-8">
-        <AgchainModelsToolbar
-          providers={providers}
-          search={search}
-          onSearchChange={setSearch}
-          onCreate={createModel}
-          creating={mutating}
-          error={error}
-        />
+    <AgchainPageFrame className="gap-6 py-8">
+      <AgchainModelsToolbar
+        providers={providers}
+        search={search}
+        onSearchChange={setSearch}
+        onCreate={createModel}
+        creating={mutating}
+        error={error}
+      />
 
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.55fr)_minmax(24rem,0.95fr)]">
-          <AgchainModelsTable
-            items={filteredItems}
-            loading={listLoading || providersLoading}
-            selectedModelId={selectedModelId}
-            onSelect={selectModel}
-          />
-          <AgchainModelInspector
-            selectedModel={selectedModel}
-            providers={providers}
-            providerDefinition={providerDefinition}
-            recentHealthChecks={recentHealthChecks}
-            loading={detailLoading}
-            error={detailError}
-            saving={mutating}
-            refreshing={refreshing}
-            onRefresh={refreshSelectedModelHealth}
-            onUpdate={updateSelectedModel}
-          />
-        </div>
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.55fr)_minmax(24rem,0.95fr)]">
+        <AgchainModelsTable
+          items={filteredItems}
+          loading={listLoading || providersLoading}
+          selectedModelId={selectedModelId}
+          onSelect={selectModel}
+        />
+        <AgchainModelInspector
+          selectedModel={selectedModel}
+          providers={providers}
+          providerDefinition={providerDefinition}
+          recentHealthChecks={recentHealthChecks}
+          loading={detailLoading}
+          error={detailError}
+          saving={mutating}
+          refreshing={refreshing}
+          onRefresh={refreshSelectedModelHealth}
+          onUpdate={updateSelectedModel}
+        />
       </div>
-    </div>
+    </AgchainPageFrame>
   );
 }

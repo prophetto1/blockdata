@@ -266,6 +266,7 @@
 .top-command-bar-right {
   min-width: max-content;
   flex-shrink: 0;
+  justify-self: end;
   position: relative;
   z-index: 1;
 }
@@ -275,6 +276,7 @@
   min-width: 0;
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 8px;
 }
 
@@ -288,10 +290,6 @@
 .top-command-bar-assistant-toggle.is-active {
   background: var(--accent);
   color: var(--accent-foreground);
-}
-
-.top-command-bar-theme-toggle {
-  margin-left: auto;
 }
 
 .shell-workspace-selector-trigger {

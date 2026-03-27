@@ -160,11 +160,13 @@ export function TopCommandBar({
           {resolvedMiddleNode}
         </div>
       )}
-      {searchNode ? (
-        <div className="top-command-bar-search">
-          {searchNode}
-        </div>
-      ) : null}
+      <div
+        className="top-command-bar-search"
+        data-testid="top-command-bar-search-slot"
+        aria-hidden={searchNode ? undefined : true}
+      >
+        {searchNode}
+      </div>
       <div className="top-command-bar-right" data-testid="top-command-bar-right">
         <div className="top-command-bar-right-content">
           {showRightSlot ? (

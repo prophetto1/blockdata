@@ -1,4 +1,5 @@
 import { useLocation, useParams } from 'react-router-dom';
+import { AgchainPageFrame } from './AgchainPageFrame';
 
 const SECTION_LABELS: Record<string, string> = {
   '#steps':      'Steps',
@@ -27,16 +28,14 @@ export default function AgchainBenchmarkWorkbenchPage() {
   const activeLabel = SECTION_LABELS[activeHash] ?? 'Steps';
 
   return (
-    <div className="min-h-full bg-background">
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-8 py-10">
-        <section className="rounded-3xl border border-border/70 bg-card/80 p-8 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">Benchmark</p>
-          <h1 className="mt-3 text-3xl font-semibold tracking-tight text-foreground">{title}</h1>
-          <p className="mt-3 max-w-3xl text-sm leading-7 text-muted-foreground">
-            {activeLabel} — not yet implemented.
-          </p>
-        </section>
-      </div>
-    </div>
+    <AgchainPageFrame className="gap-8 py-10">
+      <section className="rounded-3xl border border-border/70 bg-card/80 p-8 shadow-sm">
+        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">Benchmark</p>
+        <h1 className="mt-3 text-3xl font-semibold tracking-tight text-foreground">{title}</h1>
+        <p className="mt-3 max-w-3xl text-sm leading-7 text-muted-foreground">
+          {activeLabel} — not yet implemented.
+        </p>
+      </section>
+    </AgchainPageFrame>
   );
 }

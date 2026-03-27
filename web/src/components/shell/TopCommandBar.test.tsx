@@ -50,4 +50,20 @@ describe('TopCommandBar', () => {
     expect(within(right).getByRole('button', { name: /toggle color scheme/i })).toBeInTheDocument();
     expect(within(right).getByRole('button', { name: /workspace selector/i })).toBeInTheDocument();
   });
+
+  it('preserves the search grid slot when search is hidden so right-side controls do not shift columns', () => {
+    render(
+      <MemoryRouter initialEntries={['/app/agchain/runs']}>
+        <TopCommandBar onToggleNav={vi.fn()} hideProjectSwitcher hideSearch />
+      </MemoryRouter>,
+    );
+
+    const searchSlot = screen.getByTestId('top-command-bar-search-slot');
+    const right = screen.getByTestId('top-command-bar-right');
+
+    expect(searchSlot).toBeInTheDocument();
+    expect(searchSlot).toBeEmptyDOMElement();
+    expect(within(right).getByRole('button', { name: /toggle color scheme/i })).toBeInTheDocument();
+    expect(within(right).getByRole('button', { name: /workspace selector/i })).toBeInTheDocument();
+  });
 });

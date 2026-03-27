@@ -1,4 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { Select, createListCollection } from '@ark-ui/react/select';
+import { Portal } from '@ark-ui/react/portal';
+import { IconChevronDown } from '@tabler/icons-react';
 import {
   sanitizeModelTargetWrite,
   type AgchainModelTarget,
@@ -6,7 +9,6 @@ import {
   type AgchainProviderDefinition,
 } from '@/lib/agchainModels';
 import { Button } from '@/components/ui/button';
-import { NativeSelect } from '@/components/ui/native-select';
 import {
   Sheet,
   SheetContent,
@@ -124,30 +126,78 @@ export function ModelTargetFormFields({
     onChange({ ...draft, [key]: value });
   }
 
+  const providerCollection = useMemo(
+    () => createListCollection({
+      items: providers.map((item) => ({ value: item.provider_slug, label: item.display_name })),
+    }),
+    [providers],
+  );
+
+  const authKindCollection = useMemo(
+    () => createListCollection({
+      items: (provider?.supported_auth_kinds ?? ['api_key']).map((item) => ({ value: item, label: item })),
+    }),
+    [provider],
+  );
+
+  const probeStrategyCollection = useMemo(
+    () => createListCollection({
+      items: [
+        { value: 'provider_default', label: 'provider_default' },
+        { value: 'http_openai_models', label: 'http_openai_models' },
+        { value: 'http_anthropic_models', label: 'http_anthropic_models' },
+        { value: 'http_google_models', label: 'http_google_models' },
+        { value: 'custom_http', label: 'custom_http' },
+        { value: 'none', label: 'none' },
+      ],
+    }),
+    [],
+  );
+
   return (
     <div className="grid gap-4">
       <div className="grid gap-2">
-        <label className="text-sm font-medium text-foreground" htmlFor="model-target-provider">
+        <label className="text-sm font-medium text-foreground">
           Provider
         </label>
-        <NativeSelect
-          id="model-target-provider"
-          value={draft.provider_slug}
+        <Select.Root
+          collection={providerCollection}
+          value={[draft.provider_slug]}
           disabled={providerLocked}
-          options={providers.map((item) => ({
-            value: item.provider_slug,
-            label: item.display_name,
-          }))}
-          onChange={(event) => {
-            const nextProvider = getProvider(providers, event.target.value);
+          positioning={{ placement: 'bottom-start', sameWidth: true, offset: { mainAxis: 4 } }}
+          onValueChange={(details) => {
+            const nextSlug = details.value[0];
+            if (!nextSlug) return;
+            const nextProvider = getProvider(providers, nextSlug);
             onChange({
               ...draft,
-              provider_slug: event.target.value,
+              provider_slug: nextSlug,
               auth_kind: nextProvider?.supported_auth_kinds[0] ?? draft.auth_kind,
               probe_strategy: 'provider_default',
             });
           }}
-        />
+        >
+          <Select.HiddenSelect />
+          <Select.Control>
+            <Select.Trigger className={`${inputClass} flex items-center justify-between`}>
+              <Select.ValueText placeholder="Select provider" />
+              <Select.Indicator>
+                <IconChevronDown size={14} className="shrink-0 text-muted-foreground" />
+              </Select.Indicator>
+            </Select.Trigger>
+          </Select.Control>
+          <Portal>
+            <Select.Positioner className="z-[200]">
+              <Select.Content className="rounded-md border border-border bg-popover p-1 text-sm shadow-md">
+                {providerCollection.items.map((item) => (
+                  <Select.Item key={item.value} item={item} className="cursor-pointer rounded px-2 py-1.5 text-sm hover:bg-accent">
+                    <Select.ItemText>{item.label}</Select.ItemText>
+                  </Select.Item>
+                ))}
+              </Select.Content>
+            </Select.Positioner>
+          </Portal>
+        </Select.Root>
       </div>
 
       <div className="grid gap-2 md:grid-cols-2">
@@ -163,18 +213,39 @@ export function ModelTargetFormFields({
           />
         </div>
         <div className="grid gap-2">
-          <label className="text-sm font-medium text-foreground" htmlFor="model-target-auth-kind">
+          <label className="text-sm font-medium text-foreground">
             Auth Kind
           </label>
-          <NativeSelect
-            id="model-target-auth-kind"
-            value={draft.auth_kind}
-            options={(provider?.supported_auth_kinds ?? ['api_key']).map((item) => ({
-              value: item,
-              label: item,
-            }))}
-            onChange={(event) => setField('auth_kind', event.target.value)}
-          />
+          <Select.Root
+            collection={authKindCollection}
+            value={[draft.auth_kind]}
+            positioning={{ placement: 'bottom-start', sameWidth: true, offset: { mainAxis: 4 } }}
+            onValueChange={(details) => {
+              const next = details.value[0];
+              if (next) setField('auth_kind', next);
+            }}
+          >
+            <Select.HiddenSelect />
+            <Select.Control>
+              <Select.Trigger className={`${inputClass} flex items-center justify-between`}>
+                <Select.ValueText placeholder="Select auth kind" />
+                <Select.Indicator>
+                  <IconChevronDown size={14} className="shrink-0 text-muted-foreground" />
+                </Select.Indicator>
+              </Select.Trigger>
+            </Select.Control>
+            <Portal>
+              <Select.Positioner className="z-[200]">
+                <Select.Content className="rounded-md border border-border bg-popover p-1 text-sm shadow-md">
+                  {authKindCollection.items.map((item) => (
+                    <Select.Item key={item.value} item={item} className="cursor-pointer rounded px-2 py-1.5 text-sm hover:bg-accent">
+                      <Select.ItemText>{item.label}</Select.ItemText>
+                    </Select.Item>
+                  ))}
+                </Select.Content>
+              </Select.Positioner>
+            </Portal>
+          </Select.Root>
         </div>
       </div>
 
@@ -219,22 +290,39 @@ export function ModelTargetFormFields({
           />
         </div>
         <div className="grid gap-2">
-          <label className="text-sm font-medium text-foreground" htmlFor="model-target-probe-strategy">
+          <label className="text-sm font-medium text-foreground">
             Probe Strategy
           </label>
-          <NativeSelect
-            id="model-target-probe-strategy"
-            value={draft.probe_strategy}
-            options={[
-              { value: 'provider_default', label: 'provider_default' },
-              { value: 'http_openai_models', label: 'http_openai_models' },
-              { value: 'http_anthropic_models', label: 'http_anthropic_models' },
-              { value: 'http_google_models', label: 'http_google_models' },
-              { value: 'custom_http', label: 'custom_http' },
-              { value: 'none', label: 'none' },
-            ]}
-            onChange={(event) => setField('probe_strategy', event.target.value)}
-          />
+          <Select.Root
+            collection={probeStrategyCollection}
+            value={[draft.probe_strategy]}
+            positioning={{ placement: 'bottom-start', sameWidth: true, offset: { mainAxis: 4 } }}
+            onValueChange={(details) => {
+              const next = details.value[0];
+              if (next) setField('probe_strategy', next);
+            }}
+          >
+            <Select.HiddenSelect />
+            <Select.Control>
+              <Select.Trigger className={`${inputClass} flex items-center justify-between`}>
+                <Select.ValueText placeholder="Select strategy" />
+                <Select.Indicator>
+                  <IconChevronDown size={14} className="shrink-0 text-muted-foreground" />
+                </Select.Indicator>
+              </Select.Trigger>
+            </Select.Control>
+            <Portal>
+              <Select.Positioner className="z-[200]">
+                <Select.Content className="rounded-md border border-border bg-popover p-1 text-sm shadow-md">
+                  {probeStrategyCollection.items.map((item) => (
+                    <Select.Item key={item.value} item={item} className="cursor-pointer rounded px-2 py-1.5 text-sm hover:bg-accent">
+                      <Select.ItemText>{item.label}</Select.ItemText>
+                    </Select.Item>
+                  ))}
+                </Select.Content>
+              </Select.Positioner>
+            </Portal>
+          </Select.Root>
         </div>
       </div>
 

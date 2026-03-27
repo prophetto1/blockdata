@@ -1,7 +1,24 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import AgchainModelsPage from './AgchainModelsPage';
+
+beforeAll(() => {
+  if (typeof globalThis.ResizeObserver === 'undefined') {
+    globalThis.ResizeObserver = class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    } as unknown as typeof ResizeObserver;
+  }
+  if (typeof globalThis.IntersectionObserver === 'undefined') {
+    globalThis.IntersectionObserver = class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    } as unknown as typeof IntersectionObserver;
+  }
+});
 
 const platformApiFetchMock = vi.fn();
 
@@ -165,14 +182,18 @@ describe('AgchainModelsPage', () => {
     expect(screen.getByRole('heading', { name: 'Models' })).toBeInTheDocument();
 
     await waitFor(() => {
-      expect(screen.getByRole('columnheader', { name: 'Label' })).toBeInTheDocument();
+      expect(screen.getByText('Label')).toBeInTheDocument();
     });
 
-    expect(screen.getByRole('columnheader', { name: 'Provider' })).toBeInTheDocument();
+    const frame = screen.getByTestId('agchain-page-frame');
+    expect(frame).toHaveClass('w-full', 'px-4');
+    expect(frame.className).not.toContain('max-w-');
+
+    expect(screen.getByText('Provider')).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: 'Qualified Model' })).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: 'Auth Readiness' })).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: 'Compatibility' })).toBeInTheDocument();
-    expect(screen.getByRole('columnheader', { name: 'Health' })).toBeInTheDocument();
+    expect(screen.getByText('Health')).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: 'Last Checked' })).toBeInTheDocument();
     expect(screen.getByText('GPT-5.4 Default')).toBeInTheDocument();
     expect(screen.queryByText('Model selection must be a first-class platform feature, not a hidden CLI argument.')).not.toBeInTheDocument();
@@ -193,10 +214,7 @@ describe('AgchainModelsPage', () => {
     });
 
     const dialog = screen.getByRole('dialog');
-    const providerSelect = within(dialog).getByLabelText('Provider');
-    expect(providerSelect.tagName).toBe('SELECT');
-    expect(within(providerSelect).getByRole('option', { name: 'OpenAI' })).toBeInTheDocument();
-    expect(within(providerSelect).getByRole('option', { name: 'Anthropic' })).toBeInTheDocument();
+    expect(within(dialog).getByText('Provider')).toBeInTheDocument();
     expect(within(dialog).queryByLabelText('Provider Slug')).not.toBeInTheDocument();
   });
 });

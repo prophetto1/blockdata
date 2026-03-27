@@ -18,6 +18,9 @@ describe('AgchainBenchmarkWorkbenchPage', () => {
     );
 
     expect(screen.getByRole('heading', { name: 'Legal-10' })).toBeInTheDocument();
+    const frame = screen.getByTestId('agchain-page-frame');
+    expect(frame).toHaveClass('w-full', 'px-4');
+    expect(frame.className).not.toContain('max-w-');
   });
 
   it('shows Steps section by default when no hash is present', () => {
