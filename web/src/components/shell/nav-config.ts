@@ -82,7 +82,7 @@ export const TOP_LEVEL_NAV: Array<NavItem | 'divider'> = [
   'divider',
   { label: 'Integrations', icon: IconApps, path: '/app/marketplace/integrations' },
   { label: 'Services', icon: IconServer, path: '/app/marketplace/services' },
-  { label: 'Secrets', icon: IconLock, path: '/app/secrets' },
+  { label: 'Secrets', icon: IconLock, path: '/app/settings/secrets' },
   { label: 'API', icon: IconTerminal2, path: '/app/api-editor' },
   'divider',
   { label: 'Tests', icon: IconTestPipe, path: '/app/tests' },
@@ -176,6 +176,7 @@ const SETTINGS_DRILL: NavDrillConfig = {
       items: [
         { label: 'Account', icon: IconUserCircle, path: '/app/settings/profile' },
         { label: 'Themes', icon: IconPalette, path: '/app/settings/themes' },
+        { label: 'Secrets', icon: IconLock, path: '/app/settings/secrets' },
       ],
     },
   ],
@@ -248,7 +249,7 @@ const WORKBENCH_DRILL: NavDrillConfig = {
       items: [
         { label: 'Flows', icon: IconFolderPlus, path: '/app/flows' },
         { label: 'Transform', icon: IconArrowsShuffle, path: '/app/transform' },
-        { label: 'Secrets', icon: IconLock, path: '/app/secrets' },
+        { label: 'Secrets', icon: IconLock, path: '/app/settings/secrets' },
         { label: 'API', icon: IconTerminal2, path: '/app/api-editor' },
         { label: 'Tests', icon: IconTestPipe, path: '/app/tests' },
       ],

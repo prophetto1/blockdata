@@ -21,7 +21,7 @@ describe('nav-config side rail', () => {
     expect(paths).toContain('/app/rag');
     expect(paths).toContain('/app/flows');
     expect(paths).toContain('/app/database');
-    expect(paths).toContain('/app/secrets');
+    expect(paths).toContain('/app/settings/secrets');
     expect(paths).toContain('/app/logs');
     expect(paths).toContain('/app/settings');
     expect(paths).not.toContain('/app/elt');
@@ -48,7 +48,7 @@ describe('nav-config side rail', () => {
     expect(paths).toContain('/app/api-editor');
     expect(paths).toContain('/app/marketplace/integrations');
     expect(paths).toContain('/app/marketplace/services');
-    expect(paths).toContain('/app/secrets');
+    expect(paths).toContain('/app/settings/secrets');
     expect(paths).toContain('/app/tests');
     expect(paths).not.toContain('/app/docs');
   });
@@ -162,7 +162,7 @@ describe('drill configs', () => {
 
   it('exposes secrets in classic view', () => {
     const classicSecrets = TOP_LEVEL_NAV.find(
-      (entry) => entry !== 'divider' && entry.path === '/app/secrets',
+      (entry) => entry !== 'divider' && entry.path === '/app/settings/secrets',
     );
 
     expect(classicSecrets && classicSecrets !== 'divider' ? classicSecrets.label : null).toBe('Secrets');
@@ -215,7 +215,7 @@ describe('drill configs', () => {
     expect(findDrillByRoute('/app/onboarding/agents')?.id).toBe('build-ai');
     expect(findDrillByRoute('/app/agents')?.id).toBe('build-ai');
     expect(findDrillByRoute('/app/skills')?.id).toBe('build-ai');
-    expect(findDrillByRoute('/app/secrets')?.id).toBe('workbench');
+    expect(findDrillByRoute('/app/secrets')).toBeNull();
     expect(findDrillByRoute('/app/settings/secrets')?.id).toBe('settings');
     expect(findDrillByRoute('/app/logs')?.id).toBe('observability');
     expect(findDrillByRoute('/app/transform')?.id).toBe('workbench');

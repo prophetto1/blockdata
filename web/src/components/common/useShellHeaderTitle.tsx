@@ -60,11 +60,11 @@ function matchesPath(pathname: string, path: string): boolean {
 }
 
 function resolveClassicSegments(pathname: string): string[] | null {
-  const topLevelMatch = CLASSIC_TOP_LEVEL_ITEMS.find((item) => pathname === item.path);
-  if (topLevelMatch) return [topLevelMatch.label];
-
   const childMatch = CLASSIC_STATIC_CHILDREN.find((item) => pathname === item.path);
   if (childMatch) return [childMatch.parentLabel, childMatch.label];
+
+  const topLevelMatch = CLASSIC_TOP_LEVEL_ITEMS.find((item) => pathname === item.path);
+  if (topLevelMatch) return [topLevelMatch.label];
 
   const flowDetailMatch = pathname.match(/^\/app\/flows\/[^/]+\/([^/]+)$/);
   if (flowDetailMatch) {

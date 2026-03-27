@@ -17,7 +17,7 @@ import FlowsList from '@/pages/FlowsList';
 import Schemas from '@/pages/Schemas';
 import SchemaLayout from '@/pages/SchemaLayout';
 
-import { SettingsLayout, SettingsAccount, SettingsAiOverview, SettingsProviderForm, SettingsModelRoles, SettingsGridSample, SettingsThemes } from '@/pages/settings';
+import { SettingsLayout, SettingsAccount, SettingsAiOverview, SettingsProviderForm, SettingsModelRoles, SettingsGridSample, SettingsSecrets, SettingsThemes } from '@/pages/settings';
 import PlatformLanding from '@/pages/experiments/PlatformLanding';
 import Landing from '@/pages/Landing';
 import Agents from '@/pages/Agents';
@@ -174,6 +174,7 @@ export const router = createBrowserRouter([
               { index: true, element: <Navigate to="/app/settings/profile" replace /> },
               { path: 'profile', element: <SettingsAccount /> },
               { path: 'themes', element: <SettingsThemes /> },
+              { path: 'secrets', element: <SettingsSecrets /> },
               { path: 'ai', element: <Navigate to="/app/superuser/ai-providers" replace /> },
               { path: 'ai/:providerId', element: <Navigate to="/app/superuser/ai-providers" replace /> },
               { path: 'model-roles', element: <Navigate to="/app/superuser/model-roles" replace /> },

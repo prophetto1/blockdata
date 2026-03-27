@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------ */
 /*  ServicesPanel — API layer (zero React dependency)                  */
-/*  Targets FastAPI pipeline-worker at PIPELINE_WORKER_URL             */
+/*  Targets FastAPI platform-api at PLATFORM_API_URL                   */
 /* ------------------------------------------------------------------ */
 
 import { supabase } from '@/lib/supabase';
@@ -18,7 +18,7 @@ import { isPlainRecord, parseJsonTextarea, parseTagsText, SERVICE_TYPE_LABELS } 
 /*  Base URL + auth helper                                             */
 /* ------------------------------------------------------------------ */
 
-const PIPELINE_WORKER_URL = (
+const PLATFORM_API_URL = (
   import.meta.env.VITE_PLATFORM_API_URL ?? 'http://localhost:8000'
 ).replace(/\/+$/, '');
 
@@ -38,32 +38,32 @@ async function requireAccessToken(): Promise<string> {
 }
 
 /* ------------------------------------------------------------------ */
-/*  Generic fetch to pipeline-worker                                   */
+/*  Generic fetch to platform-api                                      */
 /* ------------------------------------------------------------------ */
 
 type MutationResult =
   | { ok: true; payload: Record<string, unknown> }
   | { ok: false; error: string };
 
-async function pipelineFetch(
+async function platformFetch(
   path: string,
   init: RequestInit = {},
 ): Promise<Response> {
   const token = await requireAccessToken();
-  const url = `${PIPELINE_WORKER_URL}${path}`;
+  const url = `${PLATFORM_API_URL}${path}`;
   const headers = new Headers(init.headers);
   headers.set('Authorization', `Bearer ${token}`);
   headers.set('Content-Type', 'application/json');
   return fetch(url, { ...init, headers });
 }
 
-async function pipelineMutation(
+async function platformMutation(
   method: 'POST' | 'PATCH' | 'DELETE',
   path: string,
   body?: Record<string, unknown>,
 ): Promise<MutationResult> {
   try {
-    const resp = await pipelineFetch(path, {
+    const resp = await platformFetch(path, {
       method,
       body: body ? JSON.stringify(body) : undefined,
     });
@@ -186,7 +186,7 @@ export async function toggleServiceEnabled(
   serviceId: string,
   enabled: boolean,
 ): Promise<MutationResult> {
-  return pipelineMutation('PATCH', `/admin/services/service/${serviceId}`, {
+  return platformMutation('PATCH', `/admin/services/service/${serviceId}`, {
     enabled,
   });
 }
@@ -219,7 +219,7 @@ export async function saveService(
       error: 'Service type, service name, and base URL are required.',
     };
   }
-  return pipelineMutation('PATCH', `/admin/services/service/${serviceId}`, {
+  return platformMutation('PATCH', `/admin/services/service/${serviceId}`, {
     service_type: draft.service_type.trim(),
     service_name: draft.service_name.trim(),
     base_url: draft.base_url.trim(),
@@ -232,7 +232,7 @@ export async function saveService(
 export async function deleteService(
   serviceId: string,
 ): Promise<MutationResult> {
-  return pipelineMutation('DELETE', `/admin/services/service/${serviceId}`);
+  return platformMutation('DELETE', `/admin/services/service/${serviceId}`);
 }
 
 export async function createService(
@@ -263,7 +263,7 @@ export async function createService(
       error: 'Service type, service name, and base URL are required.',
     };
   }
-  return pipelineMutation('POST', '/admin/services/service', {
+  return platformMutation('POST', '/admin/services/service', {
     service_type: draft.service_type.trim(),
     service_name: draft.service_name.trim(),
     base_url: draft.base_url.trim(),
@@ -281,7 +281,7 @@ export async function toggleFunctionEnabled(
   functionId: string,
   enabled: boolean,
 ): Promise<MutationResult> {
-  return pipelineMutation('PATCH', `/admin/services/function/${functionId}`, {
+  return platformMutation('PATCH', `/admin/services/function/${functionId}`, {
     enabled,
   });
 }
@@ -300,7 +300,7 @@ export async function saveFunction(
       error: 'Function name, label, and entrypoint are required.',
     };
   }
-  return pipelineMutation('PATCH', `/admin/services/function/${functionId}`, {
+  return platformMutation('PATCH', `/admin/services/function/${functionId}`, {
     function_name: draft.function_name.trim(),
     function_type: draft.function_type,
     label: draft.label.trim(),
@@ -315,7 +315,7 @@ export async function saveFunction(
 export async function deleteFunction(
   functionId: string,
 ): Promise<MutationResult> {
-  return pipelineMutation('DELETE', `/admin/services/function/${functionId}`);
+  return platformMutation('DELETE', `/admin/services/function/${functionId}`);
 }
 
 export async function createFunction(
@@ -332,7 +332,7 @@ export async function createFunction(
       error: 'Function name, label, and entrypoint are required.',
     };
   }
-  return pipelineMutation('POST', '/admin/services/function', {
+  return platformMutation('POST', '/admin/services/function', {
     service_id: serviceId,
     function_name: draft.function_name.trim(),
     function_type: draft.function_type,
@@ -358,7 +358,7 @@ export async function saveFunctionRaw(
   json: Record<string, unknown>,
 ): Promise<MutationResult> {
   const { function_id, service_id, created_at, updated_at, ...payload } = json;
-  return pipelineMutation('PATCH', `/admin/services/function/${functionId}`, payload);
+  return platformMutation('PATCH', `/admin/services/function/${functionId}`, payload);
 }
 
 export async function importRegistryJson(
@@ -380,7 +380,7 @@ export async function importRegistryJson(
       error: 'Import JSON must be an object or an array of plugins.',
     };
   }
-  return pipelineMutation('POST', '/admin/services/import', {
+  return platformMutation('POST', '/admin/services/import', {
     import_mode: 'upsert',
     ...payload,
   });

@@ -74,8 +74,9 @@ describe('SettingsSecrets', () => {
     );
 
     expect(await screen.findByText('OPENAI_API_KEY')).toBeInTheDocument();
-    expect(screen.getByText('Settings')).toBeInTheDocument();
-    expect(screen.getByText('Secrets')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Secrets' })).toBeInTheDocument();
+    expect(screen.getByTestId('header-center')).toHaveTextContent('Settings');
+    expect(screen.getByTestId('header-center')).toHaveTextContent('Secrets');
     expect(screen.queryByText('Variables')).not.toBeInTheDocument();
   });
 
@@ -100,7 +101,7 @@ describe('SettingsSecrets', () => {
     fireEvent.change(screen.getByLabelText('Value'), { target: { value: 'ghp-secret-7890' } });
     fireEvent.change(screen.getByLabelText('Description'), { target: { value: 'GitHub token' } });
     fireEvent.change(screen.getByLabelText('Value Type'), { target: { value: 'token' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Create Secret' }));
+    fireEvent.submit(screen.getByLabelText('Value').closest('form')!);
 
     await waitFor(() => {
       expect(createSecret).toHaveBeenCalledWith({
@@ -145,7 +146,7 @@ describe('SettingsSecrets', () => {
     fireEvent.change(screen.getByLabelText('Description'), { target: { value: 'Rotated key' } });
     fireEvent.change(screen.getByLabelText('Value'), { target: { value: 'sk-rotated-5678' } });
     fireEvent.change(screen.getByLabelText('Value Type'), { target: { value: 'client_secret' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Save Changes' }));
+    fireEvent.submit(screen.getByLabelText('Value').closest('form')!);
 
     await waitFor(() => {
       expect(updateSecret).toHaveBeenCalledWith('secret-1', {

@@ -1,6 +1,7 @@
 import {
   IconDatabase,
   IconKey,
+  IconLock,
   IconPalette,
   IconPlugConnected,
   IconUserCircle,
@@ -38,6 +39,7 @@ export const SETTINGS_NAV: SettingsNavGroup[] = [
         { id: 'model-roles', label: 'Model Roles', icon: IconWand, path: '/app/settings/model-roles' },
         { id: 'mcp-servers', label: 'MCP Servers', icon: IconPlugConnected, path: '/app/settings/mcp' },
         { id: 'connections', label: 'Connections', icon: IconDatabase, path: '/app/settings/connections' },
+        { id: 'secrets', label: 'Secrets', icon: IconLock, path: '/app/settings/secrets' },
       ],
     },
 ];

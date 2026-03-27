@@ -112,7 +112,7 @@ export const SERVICE_TYPE_LABELS: Record<string, string> = {
   edge: 'Edge Functions',
   integration: 'Integration',
   notification: 'Notifications',
-  'pipeline-worker': 'Pipeline Worker',
+  'pipeline-worker': 'Platform API',
 } as const;
 
 export function getServiceTypeLabel(type: string): string {

@@ -61,10 +61,10 @@ class BasePlugin(ABC):
 
 @dataclass
 class ExecutionContext:
-    """Provides template rendering, logging, and service access to plugins.
+    """Plugin execution context.
 
-    Faithful port of pipeline-worker/app/shared/context.py.
-    All methods preserve the same signatures and behavior.
+    Provides template rendering, logging, secret resolution, and
+    service access to plugins.
     """
     execution_id: str = ""
     task_run_id: str = ""
