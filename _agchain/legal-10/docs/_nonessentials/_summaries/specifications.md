@@ -17,8 +17,8 @@ This is the **definitive end-to-end specification** for the 3-Step MVP, covering
 ### Authority and Conflict Resolution
 
 The document defines a canonical authority hierarchy:
-1. **M1** (`mvp/M1-buildtime-packaging-sealing-dev-brief.md`) — highest authority for bundle layout, schemas, sealing
-2. **Inter-step requirements** (`platform/inter-step-requirements.md`) — highest authority for runner semantics
+1. **M1** (`_essentials/mvp/M1-buildtime-packaging-sealing-dev-brief.md`) — highest authority for bundle layout, schemas, sealing
+2. **Inter-step requirements** (`_essentials/platform/inter-step-requirements.md`) — highest authority for runner semantics
 3. **FDQ specs** (`fdq/*.md`, `fdq/post/*.md`) — authoritative for step prompts, contracts, scoring
 4. Everything else — supplementary
 

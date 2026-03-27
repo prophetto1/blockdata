@@ -92,9 +92,9 @@ They must generate outputs conforming to the "final shape" spec and the 3-step M
 - `component_map_backwards_eu_packet.png`
 
 ### Step definitions
-- `fdq-01-ka-sc.md`
-- `fdq-09-irac without rp.md`
-- `fdq-10-irac with rp.md`
+- `../fdq/01-ka-sc.md`
+- `../fdq/09-irac-without-rp.md`
+- `../fdq/10-irac-with-rp.md`
 - `0124-irac-scoring-v2.md`
 - `[runspec-agnostic] irac-scoring-guide.md`
 
@@ -288,7 +288,7 @@ Notes:
 Required computations:
 - `anchor_inventory_full`: sorted unique `normalized_cite` values from `datasets/citation_inventory.parquet` where `anchor_caseId = <anchor_caseId>`.
 - `rp_subset`: from the shipped `p2.json` authorities: take each authority’s `inventory_normalized_cite`, dedupe, sort.
-- `known_authority`: computed from `datasets/legal10-updates.duckdb` using `scotus_citations_ranked_flat`, `scdb_cases`, and `shepards_edges` exactly as defined in `fdq-01-ka-sc.md` (tie-breaks included).
+- `known_authority`: computed from `datasets/legal10-updates.duckdb` using `scotus_citations_ranked_flat`, `scdb_cases`, and `shepards_edges` exactly as defined in `../fdq/01-ka-sc.md` (tie-breaks included).
 
 ### Benchmark packet: `benchmark/benchmark.json` (3-step)
 ```json
@@ -343,9 +343,9 @@ Note:
 
 ### Benchmark packet: `benchmark/model_steps/*.json` + `benchmark/judge_prompts/*.json`
 Benchmark-builder must materialize these JSON files. Use the prompt templates in:
-- `fdq-01-ka-sc.md` (d1)
-- `fdq-09-irac without rp.md` (d2 prompt content, but remove dependency placeholders; closed-book IRAC is anchor-only)
-- `fdq-10-irac with rp.md` (j3 prompt content, but remove dependency placeholders; open-book IRAC is anchor + RP)
+- `../fdq/01-ka-sc.md` (d1)
+- `../fdq/09-irac-without-rp.md` (d2 prompt content, but remove dependency placeholders; closed-book IRAC is anchor-only)
+- `../fdq/10-irac-with-rp.md` (j3 prompt content, but remove dependency placeholders; open-book IRAC is anchor + RP)
 - `[runspec-agnostic] irac-scoring-guide.md` (judge prompt content: one judge call grades both IRACs)
 
 ---

@@ -537,8 +537,8 @@ The run validates the complete pipeline works end-to-end. Score issues are data/
 
 When documents conflict, per `legal-10/docs/_INDEX.md`:
 
-1. **HIGHEST:** `mvp/M1-buildtime-packaging-sealing-dev-brief.md` -- bundle layout, schemas, sealing
-2. **SECOND:** `platform/inter-step-requirements.md` -- runner semantics (95 numbered requirements IS-1.1.1 through IS-7.3.7)
+1. **HIGHEST:** `_essentials/mvp/M1-buildtime-packaging-sealing-dev-brief.md` -- bundle layout, schemas, sealing
+2. **SECOND:** `_essentials/platform/inter-step-requirements.md` -- runner semantics (95 numbered requirements IS-1.1.1 through IS-7.3.7)
 3. **THIRD:** `fdq/*.md` and `fdq/post/*.md` -- per-step prompts, contracts, scoring
 4. **FOURTH:** `irac-pair-scoring.md` is AUTHORITATIVE for judge protocol (supersedes `judge-evaluation-both-iracs.md`)
 5. **SUPPLEMENTARY:** Everything in `secondary-reference/`, `steps-reference/`, `-ongoing-work/`
