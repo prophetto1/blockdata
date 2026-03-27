@@ -22,6 +22,15 @@ B:\kestra
 B:\kestra-io
 B:\mdast
 
+## Repo Workflows
+
+- Web app commands live in `web/package.json`: use `cd web && npm run dev` for the main Vite app on port `5374`, `cd web && npm run dev:alt` for port `5375`, `cd web && npm run test` for Vitest, and `cd web && npm run build` for the full asset-sync + inventory-refresh + Vite build path.
+- Platform API tests run from `services/platform-api`: use `cd services/platform-api && pytest -q` for targeted or suite-level verification.
+- Supabase edge function tests run from `supabase`: use `cd supabase && deno test functions/<function>/index.test.ts` for focused function coverage.
+- Root capture tooling is wired in `package.json`: use `npm run capture-server` to start `scripts/capture-server.mjs` when a local capture server is needed.
+- Supabase edge function deploys are handled by `.github/workflows/deploy-edge-functions.yml`; prefer that workflow's `supabase functions deploy --use-api --project-ref ...` path over inventing a separate deploy flow.
+- Supabase migration filenames must keep unique leading timestamps because `.github/workflows/migration-history-hygiene.yml` rejects duplicate prefixes in `supabase/migrations/*.sql`.
+
 ## Context Mode
 
 # context-mode - MANDATORY routing rules
