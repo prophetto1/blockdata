@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Evaluation Units - LegalChain</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+      };
+    </script>
+</head>
+<body class="bg-neutral-950 text-neutral-400 font-sans antialiased">
+    <main id="l10-page" data-l10-layout="research" data-l10-sidenav="site" data-l10-sidenav-pos="left">
+        <article class="max-w-4xl mx-auto research-content">
+            
+            <!-- HEADER BLOCK -->
+            <header class="mb-10 border-b border-neutral-800 pb-6">
+                <h1 class="text-4xl font-serif font-light text-white">The Sealed Room</h1>
+                <p class="serif-dense mt-4 text-neutral-500 text-sm leading-relaxed max-w-2xl font-serif">
+                    Guaranteeing long-term benchmark stability. Evaluation Units are self-contained, air-gapped test environments that bundle a task with its specific research evidence.
+                </p>
+            </header>
+
+            <!-- UNIT STATS GRID (Layout A Signature) -->
+            <div class="grid grid-cols-3 gap-0 border-t border-l border-neutral-800 bg-neutral-900/10 mb-12">
+                <div class="border-r border-b border-neutral-800 p-4">
+                    <div class="text-[10px] font-mono text-neutral-600 uppercase mb-1">Population</div>
+                    <div class="text-xl font-mono text-white">27,412</div>
+                    <div class="text-[10px] text-neutral-500">Atomic Units</div>
+                </div>
+                <div class="border-r border-b border-neutral-800 p-4">
+                    <div class="text-[10px] font-mono text-neutral-600 uppercase mb-1">Architecture</div>
+                    <div class="text-xl font-mono text-white">JSONL</div>
+                    <div class="text-[10px] text-neutral-500">Self-Contained</div>
+                </div>
+                <div class="border-r border-b border-neutral-800 p-4">
+                    <div class="text-[10px] font-mono text-blue-500 uppercase mb-1">Security</div>
+                    <div class="text-xl font-mono text-white">SEALED</div>
+                    <div class="text-[10px] text-neutral-500">SHA-256 Verified</div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+                <!-- LEFT COLUMN: PHILOSOPHY -->
+                <div class="space-y-8">
+                    <section>
+                        <div class="text-[10px] font-mono text-neutral-600 uppercase mb-2">The "Briefcase" Model</div>
+                        <p class="text-sm text-neutral-400 font-serif leading-relaxed">
+                            Should the runner query a live database, or should every authority be packed inside the test case? We chose the latter: the <strong>Option C</strong> principle.
+                        </p>
+                    </section>
+
+                    <section class="border border-neutral-800 p-6 bg-neutral-900/10">
+                        <div class="text-[10px] font-mono text-blue-500 mb-4">[ SEPARATION OF CONVENTION ]</div>
+                        <div class="space-y-4">
+                            <div class="flex gap-4 items-start">
+                                <div class="w-2 h-2 mt-1.5 bg-blue-500"></div>
+                                <div>
+                                    <div class="text-[10px] text-white uppercase font-bold mb-1">Reproducibility</div>
+                                    <p class="text-[10px] text-neutral-500 font-serif leading-relaxed"> inputs are preserved. Even if the database changes, the EU remains identical.</p>
+                                </div>
+                            </div>
+                            <div class="flex gap-4 items-start">
+                                <div class="w-2 h-2 mt-1.5 bg-neutral-700"></div>
+                                <div>
+                                    <div class="text-[10px] text-white uppercase font-bold mb-1">Portability</div>
+                                    <p class="text-[10px] text-neutral-500 font-serif leading-relaxed">No "database setup" required. Air-gapped execution possible on any node.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- RIGHT COLUMN: SCHEMA -->
+                <div>
+                    <div class="text-[10px] font-mono text-neutral-600 uppercase mb-4">Anatomy of an EU</div>
+                    <div class="space-y-6">
+                        <div>
+                             <div class="text-[10px] font-mono text-neutral-500 mb-2">// eu.json (The Truth)</div>
+                             <div class="bg-neutral-900 border border-neutral-800 p-4 font-mono text-[10px] text-neutral-200">
+                                <pre><code>{
+  "unit_id": "scotus_1402",
+  "question": "Does 42 USC...",
+  "rubric": ["cite_authority", "logic"],
+  "ground_truth": ["120 U.S. 45"]
+}</code></pre>
+                             </div>
+                        </div>
+                        <div>
+                             <div class="text-[10px] font-mono text-neutral-500 mb-2">// research_pack.json (The Evidence)</div>
+                             <div class="bg-neutral-900 border border-neutral-800 p-4 font-mono text-[10px] text-neutral-200">
+                                <pre><code>{
+  "task_context": "...",
+  "authorities": [
+    { "cite": "120 U.S. 45", "text": "..." }
+  ]
+}</code></pre>
+                             </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </article>
+    </main>
+    <script src="../shared/site-shell.js"></script>
+</body>
+</html>

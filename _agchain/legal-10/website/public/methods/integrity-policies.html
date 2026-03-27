@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Integrity Policies - LegalChain</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        legalblue: {
+                            50: '#f0f7ff',
+                            100: '#e0effe',
+                            200: '#bae0fd',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#1e3a8a',
+                        }
+                    },
+                    fontFamily: {
+                        serif: ['"Merriweather"', 'serif'],
+                        sans: ['"Inter"', 'sans-serif'],
+                    }
+                }
+            }
+        };
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;0,900;1,300&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ startOnLoad: true, theme: 'neutral' });
+    </script>
+    <link rel="stylesheet" href="../shared/report.css">
+</head>
+<body>
+    <main id="l10-page" data-l10-layout="research" data-l10-sidenav="site" data-l10-sidenav-pos="left">
+        <article class="prose prose-slate dark:prose-invert max-w-4xl mx-auto research-content font-sans">
+            
+            <header class="mb-16 not-prose">
+                <h1 class="text-4xl md:text-5xl font-serif font-black text-slate-900 dark:text-white mb-6 leading-tight">
+                    The Hard Gate
+                </h1>
+                <p class="text-xl md:text-2xl text-slate-600 dark:text-slate-300 font-serif leading-relaxed border-l-4 border-amber-500 pl-6">
+                    Why we reject "partial credit" for dangerous errors and apply zero scores when integrity checks fail.
+                </p>
+            </header>
+
+            <p class="lead font-serif text-lg leading-loose">
+                Most benchmarks treat errors as additive penalties: a wrong answer subtracts points from a total. LegalChain operates differently. We identify classes of errors—fabrication, incoherence, silence—that render a legal document professionally unusable. When these errors occur, the integrity score is set to zero and the violations are flagged in scoring details. The run continues to completion, ensuring complete diagnostic data.
+            </p>
+
+            <h2 class="font-serif text-2xl font-bold mt-12 mb-6">Defense Depth</h2>
+            <p>
+                We employ a series of integrity gates that every response must pass before it is even considered for quality scoring.
+            </p>
+
+            <div class="my-12 not-prose">
+                <div class="mermaid bg-slate-50 dark:bg-slate-900/50 p-6 rounded-xl border border-slate-200 dark:border-slate-800 text-center">
+                    graph LR
+                        Input[Model Response] --> Gate1{Parsing Gate}
+                        Gate1 -->|Pass| Gate2{Citation Gate}
+                        Gate1 -->|Fail| Flag1[Score: 0.0 + Flag]
+
+                        Gate2 -->|Pass| Gate3{Structure Gate}
+                        Gate2 -->|Fail| Flag2[Score: 0.0 + Flag]
+
+                        Gate3 -->|Pass| Gate4{Coverage Gate}
+                        Gate3 -->|Fail| Flag3[Score: 0.0 + Flag]
+
+                        Gate4 -->|Pass| Score[Quality Scoring]
+                        Gate4 -->|Fail| Flag4[Score: 0.0 + Flag]
+
+                        style Flag1 fill:#fef3c7,stroke:#f59e0b,stroke-width:1px,color:#92400e
+                        style Flag2 fill:#fef3c7,stroke:#f59e0b,stroke-width:1px,color:#92400e
+                        style Flag3 fill:#fef3c7,stroke:#f59e0b,stroke-width:1px,color:#92400e
+                        style Flag4 fill:#fef3c7,stroke:#f59e0b,stroke-width:1px,color:#92400e
+                        style Score fill:#dcfce7,stroke:#22c55e,stroke-width:2px,color:#166534
+                </div>
+            </div>
+
+            <div class="space-y-12 my-12">
+                <section>
+                    <h3 class="font-serif text-xl font-bold mb-4 flex items-center gap-2">
+                        <span class="text-red-600">⚠</span> The Fabrication Gate (d8)
+                    </h3>
+                    <p class="text-slate-600">
+                        <strong>Policy:</strong> Any citation to a non-existent case results in a zero integrity score and is flagged in scoring details.<br>
+                        <strong>Rationale:</strong> Under ABA Model Rule 3.3, a lawyer cannot knowingly make a false statement of law. A brief with one fake citation is not "mostly good"; it is a malpractice liability. The run continues to completion for full diagnostic capture.
+                    </p>
+                </section>
+
+                <section>
+                    <h3 class="font-serif text-xl font-bold mb-4 flex items-center gap-2">
+                        <span class="text-amber-600">⚠</span> The Structure Gate
+                    </h3>
+                    <p class="text-slate-600">
+                        <strong>Policy:</strong> Failure to produce an IRAC structure (Issue, Rule, Application, Conclusion) results in a zero structure score.<br>
+                        <strong>Rationale:</strong> Legal reasoning requires structure. A stream-of-consciousness essay is not a legal memo, even if it touches on the right topics. It is functionally useless to a practitioner.
+                    </p>
+                </section>
+
+                <section>
+                    <h3 class="font-serif text-xl font-bold mb-4 flex items-center gap-2">
+                        <span class="text-blue-600">⚠</span> The Coverage Gate
+                    </h3>
+                    <p class="text-slate-600">
+                         <strong>Policy:</strong> Failure to cite <i>any</i> authority from the provided ResearchPack results in a zero consistency score.<br>
+                        <strong>Rationale:</strong> If the model ignores the provided evidence (RAG context) effectively, it is not performing the task. It is hallucinating generic law rather than analyzing the specific case.
+                    </p>
+                </section>
+            </div>
+
+            <h2 class="font-serif text-2xl font-bold mt-12 mb-6">Why Not Partial Credit?</h2>
+            <div class="bg-slate-50 dark:bg-slate-900/50 p-8 rounded-xl border border-slate-200 dark:border-slate-800 my-8">
+                <p class="font-serif text-lg leading-relaxed text-slate-800 dark:text-slate-200">
+                    "The 80% of the brief that is correct is worthless without trust in the 20% that is wrong."
+                </p>
+            </div>
+            <p>
+                In an educational setting, getting 4/5 answers right is a B. In a legal setting, getting 4/5 citations right and fabricating the fifth is a sanctionable offense.
+            </p>
+            <p>
+                We measure <strong>Completion Rate</strong> (percentage of queries that survive all gates) as a primary metric alongside Quality Score. A model with high quality but low completion is dangerous. A model with high completion but low quality is safe but weak. You need both.
+            </p>
+
+        </article>
+    </main>
+    <script src="../shared/site-shell.js"></script>
+</body>
+</html>

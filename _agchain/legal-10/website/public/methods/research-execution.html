@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Research Execution - LegalChain</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        legalblue: {
+                            50: '#f0f7ff',
+                            100: '#e0effe',
+                            200: '#bae0fd',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#1e3a8a',
+                        },
+                        standard: {
+                            400: '#fbbf24', // Amber-400
+                            500: '#f59e0b', // Amber-500
+                            600: '#d97706', // Amber-600
+                            900: '#451a03', // Amber-950
+                        }
+                    },
+                     fontFamily: {
+                        mono: ['"Fira Code"', 'monospace'],
+                        sans: ['"Inter"', 'sans-serif'],
+                        serif: ['"Merriweather"', 'serif'],
+                    }
+                }
+            }
+        };
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;0,900;1,300&family=Inter:wght@300;400;500;600&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../shared/report.css">
+</head>
+<body>
+    <main id="l10-page" data-l10-layout="research" data-l10-sidenav="site" data-l10-sidenav-pos="left">
+        <article class="prose prose-slate dark:prose-invert max-w-4xl mx-auto research-content">
+            
+            <header class="mb-16">
+                <h1 class="research-title">Research Execution</h1>
+                
+                <p class="lead text-xl text-neutral-600 dark:text-neutral-400 font-serif italic border-l-4 border-standard-500 pl-6 py-2">
+                    Operationalizing legal work as a unified professional workflow governed by practice standards.
+                </p>
+            </header>
+
+            <h2>Beyond Isolated Skills</h2>
+            <p>
+                Before asking whether an LLM "knows law," we must define what legal AI is intended to do. LegalChain operationalizes legal work not as a collection of disjointed skills, but as <strong>Research Execution</strong>—the integrated professional competency of completing a legal research task from question to answer.
+            </p>
+
+            <div class="my-16 space-y-4 not-prose">
+                <h3 class="text-xs font-bold uppercase tracking-widest text-neutral-500 mb-6">Authority Sources</h3>
+                
+                <!-- MacCrate -->
+                <div class="p-8 bg-neutral-900 border border-neutral-700 rounded-xl relative overflow-hidden group">
+                    <div class="absolute top-0 right-0 p-4 opacity-10 font-serif text-6xl italic group-hover:opacity-20 transition-opacity">1992</div>
+                    <div class="relative z-10">
+                        <div class="text-standard-400 font-mono text-[10px] uppercase mb-2">ABA Section of Legal Education</div>
+                        <h4 class="text-white text-xl font-serif font-bold mb-4">The MacCrate Report</h4>
+                        <p class="text-neutral-400 text-sm leading-relaxed italic border-l-2 border-neutral-700 pl-4">
+                            "Legal research is a fundamental lawyering skill... emphasizing devising and implementing a coherent and effective research design."
+                        </p>
+                    </div>
+                </div>
+
+                <!-- AALL -->
+                <div class="p-8 bg-neutral-900 border border-neutral-700 rounded-xl relative overflow-hidden group">
+                    <div class="absolute top-0 right-0 p-4 opacity-10 font-serif text-6xl italic group-hover:opacity-20 transition-opacity">2013</div>
+                    <div class="relative z-10">
+                        <div class="text-standard-400 font-mono text-[10px] uppercase mb-2">AALL Principles & Standards</div>
+                        <h4 class="text-white text-xl font-serif font-bold mb-4">Principle IV: Effective Application</h4>
+                        <p class="text-neutral-400 text-sm leading-relaxed italic border-l-2 border-neutral-700 pl-4">
+                            "A successful legal researcher applies information effectively to resolve a specific issue or need... synthesizing legal doctrine across similar cases."
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Shultz -->
+                <div class="p-8 bg-neutral-900 border border-neutral-700 rounded-xl relative overflow-hidden group">
+                    <div class="absolute top-0 right-0 p-4 opacity-10 font-serif text-6xl italic group-hover:opacity-20 transition-opacity">2011</div>
+                    <div class="relative z-10">
+                        <div class="text-standard-400 font-mono text-[10px] uppercase mb-2">Shultz & Zedeck Empirical Study</div>
+                        <h4 class="text-white text-xl font-serif font-bold mb-4">Lawyering Effectiveness Factors</h4>
+                        <p class="text-neutral-400 text-sm leading-relaxed italic border-l-2 border-neutral-700 pl-4">
+                            Identifies 26 performance measures including "Fact Finding," "Researching the Law," and "Integrity & Honesty."
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <h2>The Integrated Workflow</h2>
+            <p>
+                These sources do not describe independent skills tested in isolation. They describe a workflow that succeeds or fails as a unit. In legal practice, accuracy is not a gradient; it is a binary requirement for professional utility.
+            </p>
+
+            <div class="not-prose my-12 border-t border-b border-neutral-200 dark:border-neutral-800 py-8">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+                    <div>
+                        <h4 class="text-red-600 font-bold mb-2">Individual Skill Failure</h4>
+                        <p class="text-sm text-neutral-600 dark:text-neutral-400">A lawyer who finds the right case but extracts the **wrong holding** has not executed research competently.</p>
+                    </div>
+                    <div>
+                        <h4 class="text-red-900 font-bold mb-2">Fabrication Failure</h4>
+                        <p class="text-sm text-neutral-600 dark:text-neutral-400">A lawyer who synthesizes brilliantly but cites **fabricated authority** has produced worthless work product.</p>
+                    </div>
+                </div>
+            </div>
+
+            <p>
+                LegalChain measures the <strong>Integrated Competency</strong>. Our scoring reflects the job performance reality: the chain either produces a usable legal product, or it fails.
+            </p>
+
+        </article>
+    </main>
+    <script src="../shared/site-shell.js"></script>
+</body>
+</html>

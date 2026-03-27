@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hybrid Scoring - LegalChain</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        legalblue: {
+                            50: '#f0f7ff',
+                            100: '#e0effe',
+                            200: '#bae0fd',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#1e3a8a',
+                        },
+                        amber: {
+                            400: '#fbbf24',
+                            500: '#f59e0b',
+                            600: '#d97706',
+                        }
+                    },
+                     fontFamily: {
+                        mono: ['"Fira Code"', 'monospace'],
+                        sans: ['"Inter"', 'sans-serif'],
+                        serif: ['"Merriweather"', 'serif'],
+                    }
+                }
+            }
+        };
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;0,900;1,300&family=Inter:wght@300;400;500;600&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../shared/report.css">
+</head>
+<body class="bg-[#050505] text-[#d4d4d4] font-serif">
+    <main id="l10-page" data-l10-layout="research" data-l10-sidenav="site" data-l10-sidenav-pos="left">
+        <article class="prose prose-slate dark:prose-invert max-w-4xl mx-auto research-content">
+            
+            <header class="mb-16">
+                <h1 class="research-title text-white">Hybrid Scoring</h1>
+                
+                <p class="lead text-xl text-neutral-400 font-serif italic border-l-4 border-amber-600 pl-6 py-2">
+                    A tri-phase composite system combining deterministic verification with qualitative judgment to ensure legal reasoning integrity.
+                </p>
+            </header>
+
+            <h2>The Problem with Single-Method Scoring</h2>
+            <p>
+                Purely rule-based scoring misses the nuance of legal arguments, while purely LLM-based judging can be subjective and brittle. LegalChain solves this by using a <strong>Composite Scoring</strong> model that captures both structure and substance.
+            </p>
+
+            <!-- Composite Weighting Dashboard -->
+            <div class="my-16 not-prose">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-1 border border-neutral-800 bg-neutral-800">
+                    <!-- Phase 1 -->
+                    <div class="bg-neutral-900 p-6 flex flex-col justify-between">
+                        <div>
+                            <div class="text-[10px] font-mono text-neutral-500 uppercase tracking-widest mb-2">Phase 01</div>
+                            <h3 class="text-white text-lg font-bold mb-4">Structure</h3>
+                        </div>
+                        <div class="flex items-end justify-between">
+                            <div class="text-3xl font-mono text-amber-500 font-bold">10%</div>
+                            <div class="text-[10px] text-neutral-500 uppercase">Binary Check</div>
+                        </div>
+                    </div>
+                    <!-- Phase 2 -->
+                    <div class="bg-neutral-900 p-6 flex flex-col justify-between">
+                        <div>
+                            <div class="text-[10px] font-mono text-neutral-500 uppercase tracking-widest mb-2">Phase 02</div>
+                            <h3 class="text-white text-lg font-bold mb-4">Consistency</h3>
+                        </div>
+                        <div class="flex items-end justify-between">
+                            <div class="text-3xl font-mono text-amber-500 font-bold">40%</div>
+                            <div class="text-[10px] text-neutral-500 uppercase">Deterministic</div>
+                        </div>
+                    </div>
+                    <!-- Phase 3 -->
+                    <div class="bg-neutral-900 p-6 flex flex-col justify-between">
+                        <div>
+                            <div class="text-[10px] font-mono text-neutral-500 uppercase tracking-widest mb-2">Phase 03</div>
+                            <h3 class="text-white text-lg font-bold mb-4">LLM Judge</h3>
+                        </div>
+                        <div class="flex items-end justify-between">
+                            <div class="text-3xl font-mono text-amber-500 font-bold">50%</div>
+                            <div class="text-[10px] text-neutral-500 uppercase">Qualitative</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-4 flex gap-1 h-2">
+                    <div class="w-[10%] bg-amber-600"></div>
+                    <div class="w-[40%] bg-amber-500"></div>
+                    <div class="w-[50%] bg-amber-400"></div>
+                </div>
+            </div>
+
+            <h2>Architecture of Valuation</h2>
+            
+            <div class="grid grid-cols-1 gap-8 my-12 not-prose">
+                <div class="p-6 border border-neutral-800 bg-neutral-900/50">
+                    <h4 class="text-white font-mono text-sm mb-4 border-b border-neutral-800 pb-2">PHASE 1: STRUCTURAL PRESENCE (10%)</h4>
+                    <p class="text-sm text-neutral-400 leading-relaxed font-serif">
+                        Ensures the model produced all IRAC components—Issue, Rule, Application, and Conclusion. This is a binary gate: either the skeleton exists, or the score is zeroed for this phase.
+                    </p>
+                </div>
+
+                <div class="p-6 border border-neutral-800 bg-neutral-900/50">
+                    <h4 class="text-white font-mono text-sm mb-4 border-b border-neutral-800 pb-2">PHASE 2: CHAIN CONSISTENCY (40%)</h4>
+                    <p class="text-sm text-neutral-400 leading-relaxed font-serif mb-4">
+                        Deterministic fidelity checks (CC1-CC5) that compare the S6 synthesis against prior step outputs (S1-S4). Catches internal contradictions where the model's conclusion disagrees with its own prior reasoning.
+                    </p>
+                    <a href="chain-consistency-checks.html" class="text-[10px] font-mono text-amber-500 hover:underline uppercase tracking-widest">See Consistency Metrics &rarr;</a>
+                </div>
+
+                <div class="p-6 border border-neutral-800 bg-neutral-900/50">
+                    <h4 class="text-white font-mono text-sm mb-4 border-b border-neutral-800 pb-2">PHASE 3: LLM JUDGE (50%)</h4>
+                    <p class="text-sm text-neutral-400 leading-relaxed font-serif">
+                        Qualitative evaluation of legal reasoning merit. A judge model examines the persuasiveness and accuracy of the rule application using established <a href="judge-policy.html" class="text-amber-500 underline">Judging Policies</a>.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Circuit Breaker Section -->
+            <div class="my-16 p-8 border border-neutral-800 bg-neutral-950 not-prose relative overflow-hidden">
+                <div class="absolute top-0 right-0 p-4 opacity-10">
+                    <svg width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                        <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+                    </svg>
+                </div>
+                <div class="text-[10px] font-mono text-amber-500 uppercase tracking-widest mb-4 flex items-center gap-2">
+                    <span class="w-2 h-2 bg-amber-500 animate-pulse"></span>
+                    Failover Logic: Weight Redistribution
+                </div>
+                <h3 class="text-white text-xl font-bold mb-4">Handling Judge Unavailability</h3>
+                <p class="text-neutral-400 text-sm font-serif leading-relaxed mb-6">
+                    In exceptional circumstances where the LLM Judge is unavailable, the system can shift priority to deterministic metrics. <strong class="text-amber-500">Important:</strong> Runs executed in resilient mode are flagged in scoring details. Full benchmark validity requires judge scoring; resilient mode provides diagnostic data only.
+                </p>
+                <div class="flex items-center gap-8 border-t border-neutral-800 pt-6">
+                    <div class="text-center">
+                        <div class="text-[10px] text-neutral-500 uppercase mb-1">Structure</div>
+                        <div class="text-2xl font-mono text-white">20%</div>
+                    </div>
+                    <div class="text-2xl text-neutral-700">+</div>
+                    <div class="text-center">
+                        <div class="text-[10px] text-neutral-500 uppercase mb-1">Consistency</div>
+                        <div class="text-2xl font-mono text-white">80%</div>
+                    </div>
+                    <div class="ml-auto text-right">
+                        <div class="text-[10px] bg-amber-500/10 text-amber-500 border border-amber-500/20 px-2 py-1 uppercase font-bold">Mode: Resilient (Flagged)</div>
+                    </div>
+                </div>
+            </div>
+
+        </article>
+    </main>
+    <script src="../shared/site-shell.js"></script>
+</body>
+</html>

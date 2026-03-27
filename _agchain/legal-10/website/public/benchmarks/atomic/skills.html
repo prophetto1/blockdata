@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Skill Reference - L10 Atomic - LegalChain</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = { darkMode: "class" };
+    </script>
+  </head>
+  <body class="min-h-screen bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 transition-colors">
+    <main id="l10-page" data-l10-layout="two-col" data-l10-sidenav="site" data-l10-content-width="narrow" data-l10-subnav="breadcrumb">
+      <header class="mb-8">
+        <h1 class="text-4xl font-light tracking-tight mb-2">Skill Reference</h1>
+        <p class="text-gray-600 dark:text-gray-400 max-w-3xl">
+          Complete specification for each of the 7 legal reasoning skills with input/output schemas,
+          ground truth sources, scoring logic, and worked examples.
+        </p>
+      </header>
+
+      <!-- Quick Nav -->
+      <nav class="mb-8">
+        <div class="flex flex-wrap gap-2">
+          <a href="#s1" class="px-3 py-1 text-sm bg-gray-100 dark:bg-gray-800 rounded hover:bg-gray-200 dark:hover:bg-gray-700">S1</a>
+          <a href="#s2" class="px-3 py-1 text-sm bg-gray-100 dark:bg-gray-800 rounded hover:bg-gray-200 dark:hover:bg-gray-700">S2</a>
+          <a href="#s3" class="px-3 py-1 text-sm bg-gray-100 dark:bg-gray-800 rounded hover:bg-gray-200 dark:hover:bg-gray-700">S3</a>
+          <a href="#s4" class="px-3 py-1 text-sm bg-gray-100 dark:bg-gray-800 rounded hover:bg-gray-200 dark:hover:bg-gray-700">S4</a>
+          <a href="#s5" class="px-3 py-1 text-sm bg-gray-100 dark:bg-gray-800 rounded hover:bg-gray-200 dark:hover:bg-gray-700">S5</a>
+          <a href="#s6" class="px-3 py-1 text-sm bg-gray-100 dark:bg-gray-800 rounded hover:bg-gray-200 dark:hover:bg-gray-700">S6</a>
+          <a href="#s7" class="px-3 py-1 text-sm bg-gray-100 dark:bg-gray-800 rounded hover:bg-gray-200 dark:hover:bg-gray-700">S7</a>
+        </div>
+      </nav>
+
+      <!-- S1: Known Authority -->
+      <section id="s1" class="mb-12 scroll-mt-20">
+        <div class="border-l-4 border-blue-500 pl-4 mb-4">
+          <h2 class="text-xl font-semibold">S1: Known Authority Retrieval</h2>
+          <p class="text-sm text-gray-600 dark:text-gray-400">Given metadata about a case, verify it exists and retrieve its details.</p>
+        </div>
+
+        <div class="space-y-4">
+          <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-5">
+            <h3 class="font-medium mb-3">Purpose</h3>
+            <p class="text-sm text-gray-600 dark:text-gray-400">
+              S1 establishes the anchor case for the chain. This skill tests the model's ability to correctly
+              identify and describe a real Supreme Court case from the SCDB database.
+            </p>
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-4">
+            <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-5">
+              <h3 class="font-medium mb-3">Input Schema</h3>
+              <pre class="text-xs bg-gray-50 dark:bg-gray-800 p-3 rounded overflow-x-auto">{
+  "citation": "347 U.S. 483",
+  "case_name_hint": "Brown v. Board of Education",
+  "term_hint": 1954
+}</pre>
+            </div>
+
+            <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-5">
+              <h3 class="font-medium mb-3">Output Schema</h3>
+              <pre class="text-xs bg-gray-50 dark:bg-gray-800 p-3 rounded overflow-x-auto">{
+  "us_cite": "347 U.S. 483",
+  "case_name": "Brown v. Board of Education of Topeka",
+  "term": 1954
+}</pre>
+            </div>
+          </div>
+
+          <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-5">
+            <h3 class="font-medium mb-3">Ground Truth & Scoring</h3>
+            <div class="grid md:grid-cols-2 gap-4 text-sm">
+              <div>
+                <div class="text-gray-500 dark:text-gray-400 mb-1">Source</div>
+                <div>scdb_sample.csv (usCite, caseName, term)</div>
+              </div>
+              <div>
+                <div class="text-gray-500 dark:text-gray-400 mb-1">Method</div>
+                <div>Exact match on all fields (canonicalized)</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-neutral-50 dark:bg-neutral-900/40 border border-neutral-200 dark:border-neutral-800 rounded-lg p-4">
+            <h3 class="font-medium text-neutral-900 dark:text-neutral-100 mb-2">Example</h3>
+            <div class="grid md:grid-cols-2 gap-4 text-sm">
+              <div>
+                <div class="text-neutral-700 dark:text-neutral-300 font-medium mb-1">Input</div>
+                <div class="text-neutral-700 dark:text-neutral-300">Citation: 410 U.S. 113, Case: Roe v. Wade, Term: 1973</div>
+              </div>
+              <div>
+                <div class="text-neutral-700 dark:text-neutral-300 font-medium mb-1">Expected Output</div>
+                <div class="text-neutral-700 dark:text-neutral-300">us_cite: "410 U.S. 113", case_name: "Roe v. Wade", term: 1973</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- S2: Unknown Authority -->
+      <section id="s2" class="mb-12 scroll-mt-20">
+        <div class="border-l-4 border-green-500 pl-4 mb-4">
+          <h2 class="text-xl font-semibold">S2: Unknown Authority Retrieval</h2>
+          <p class="text-sm text-gray-600 dark:text-gray-400">Given a cited case, predict which subsequent cases cite it.</p>
+        </div>
+
+        <div class="space-y-4">
+          <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-5">
+            <h3 class="font-medium mb-3">Purpose</h3>
+            <p class="text-sm text-gray-600 dark:text-gray-400">
+              S2 tests the model's knowledge of legal citation networks. Given a case, the model must
+              identify which subsequent cases have cited it, demonstrating awareness of legal precedent relationships.
+            </p>
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-4">
+            <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-5">
+              <h3 class="font-medium mb-3">Input Schema</h3>
+              <pre class="text-xs bg-gray-50 dark:bg-gray-800 p-3 rounded overflow-x-auto">{
+  "cited_case": {
+    "us_cite": "347 U.S. 483",
+    "case_name": "Brown v. Board of Education",
+    "term": 1954
+  }
+}</pre>
+            </div>
+
+            <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-5">
+              <h3 class="font-medium mb-3">Output Schema</h3>
+              <pre class="text-xs bg-gray-50 dark:bg-gray-800 p-3 rounded overflow-x-auto">{
+  "citing_cases": [
+    { "us_cite": "349 U.S. 294", "case_name": "Brown II" },
+    { "us_cite": "358 U.S. 1", "case_name": "Cooper v. Aaron" }
+  ]
+}</pre>
+            </div>
+          </div>
+
+          <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-5">
+            <h3 class="font-medium mb-3">Ground Truth & Scoring</h3>
+            <div class="space-y-3 text-sm">
+              <div class="grid md:grid-cols-2 gap-4">
+                <div>
+                  <div class="text-gray-500 dark:text-gray-400 mb-1">Source</div>
+                  <div>scotus_shepards_sample.csv (citing_case_us_cite)</div>
+                </div>
+                <div>
+                  <div class="text-gray-500 dark:text-gray-400 mb-1">Method</div>
+                  <div>Ranked retrieval metrics</div>
+                </div>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                  <thead class="text-left border-b border-gray-200 dark:border-gray-700">
+                    <tr>
+                      <th class="py-2 pr-4">Metric</th>
+                      <th class="py-2 pr-4">Definition</th>
+                      <th class="py-2">Storage</th>
+                    </tr>
+                  </thead>
+                  <tbody class="text-gray-600 dark:text-gray-400">
+                    <tr><td class="py-1">MRR</td><td>Mean Reciprocal Rank</td><td>StepResult.score</td></tr>
+                    <tr><td class="py-1">hit@10</td><td>Ground truth in top 10</td><td>StepResult.correct</td></tr>
+                    <tr><td class="py-1">hit@1, hit@5, hit@20</td><td>Additional hit metrics</td><td>parsed.metrics</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+            <h3 class="font-medium text-green-800 dark:text-green-200 mb-2">Example</h3>
+            <div class="text-sm text-green-700 dark:text-green-300">
+              <div><strong>Input:</strong> Miranda v. Arizona (384 U.S. 436)</div>
+              <div class="mt-1"><strong>Model returns:</strong> [Harris v. New York, Michigan v. Tucker, Oregon v. Mathiason]</div>
+              <div class="mt-1"><strong>Ground truth:</strong> 417 U.S. 433 (Michigan v. Tucker)</div>
+              <div class="mt-1"><strong>Result:</strong> rank=2, MRR=0.5, hit@10=True</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- S3: Validate Authority -->
+      <section id="s3" class="mb-12 scroll-mt-20">
+        <div class="border-l-4 border-yellow-500 pl-4 mb-4">
+          <h2 class="text-xl font-semibold">S3: Validate Authority</h2>
+          <p class="text-sm text-gray-600 dark:text-gray-400">Determine if a case has been overruled and identify the overruling case.</p>
+        </div>
+
+        <div class="space-y-4">
+          <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-5">
+            <h3 class="font-medium mb-3">Purpose</h3>
+            <p class="text-sm text-gray-600 dark:text-gray-400">
+              S3 tests the model's knowledge of precedent validity. A competent legal AI must know when
+              a case is no longer good law and can identify what case overruled it.
+            </p>
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-4">
+            <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-5">
+              <h3 class="font-medium mb-3">Input Schema</h3>
+              <pre class="text-xs bg-gray-50 dark:bg-gray-800 p-3 rounded overflow-x-auto">{
+  "case": {
+    "us_cite": "163 U.S. 537",
+    "case_name": "Plessy v. Ferguson",
+    "term": 1896
+  }
+}</pre>
+            </div>
+
+            <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-5">
+              <h3 class="font-medium mb-3">Output Schema</h3>
+              <pre class="text-xs bg-gray-50 dark:bg-gray-800 p-3 rounded overflow-x-auto">{
+  "is_overruled": true,
+  "overruling_case": "Brown v. Board of Education",
+  "year_overruled": 1954
+}</pre>
+            </div>
+          </div>
+
+          <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-5">
+            <h3 class="font-medium mb-3">Ground Truth & Scoring</h3>
+            <div class="space-y-3 text-sm">
+              <div>
+                <div class="text-gray-500 dark:text-gray-400 mb-1">Source</div>
+                <div>scotus_overruled_db.csv (288 overruled cases)</div>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                  <thead class="text-left border-b border-gray-200 dark:border-gray-700">
+                    <tr>
+                      <th class="py-2 pr-4">Condition</th>
+                      <th class="py-2 pr-4">Score</th>
+                      <th class="py-2">Correct</th>
+                    </tr>
+                  </thead>
+                  <tbody class="text-gray-600 dark:text-gray-400">
+                    <tr><td class="py-1">Not overruled, model says not overruled</td><td>1.0</td><td>True</td></tr>
+                    <tr><td class="py-1">Overruled, model says overruled + correct year</td><td>1.0</td><td>True</td></tr>
+                    <tr><td class="py-1">Overruled, model says overruled + wrong year</td><td>0.5</td><td>False</td></tr>
+                    <tr><td class="py-1">Mismatch on is_overruled</td><td>0.0</td><td>False</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-4">
+            <div class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+              <h3 class="font-medium text-yellow-800 dark:text-yellow-200 mb-2">Example: Overruled</h3>
+              <div class="text-sm text-yellow-700 dark:text-yellow-300">
+                <div><strong>Input:</strong> Lochner v. New York (198 U.S. 45, 1905)</div>
+                <div class="mt-1"><strong>Expected:</strong> is_overruled: true, overruling_case: "West Coast Hotel Co. v. Parrish", year: 1937</div>
+              </div>
+            </div>
+            <div class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+              <h3 class="font-medium text-yellow-800 dark:text-yellow-200 mb-2">Example: Not Overruled</h3>
+              <div class="text-sm text-yellow-700 dark:text-yellow-300">
+                <div><strong>Input:</strong> Marbury v. Madison (5 U.S. 137, 1803)</div>
+                <div class="mt-1"><strong>Expected:</strong> is_overruled: false, overruling_case: null, year: null</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- S4: Fact Extraction -->
+      <section id="s4" class="mb-12 scroll-mt-20">
+        <div class="border-l-4 border-purple-500 pl-4 mb-4">
+          <h2 class="text-xl font-semibold">S4: Fact Extraction</h2>
+          <p class="text-sm text-gray-600 dark:text-gray-400">Extract disposition, prevailing party, and holding summary from majority opinion.</p>
+        </div>
+
+        <div class="space-y-4">
+          <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-5">
+            <h3 class="font-medium mb-3">Purpose</h3>
+            <p class="text-sm text-gray-600 dark:text-gray-400">
+              S4 tests the model's ability to read and extract structured information from legal text.
+              This is a core legal AI skill - understanding case outcomes from opinion text.
+            </p>
+          </div>
+
+          <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-5">
+            <h3 class="font-medium mb-3">Output Schema</h3>
+            <pre class="text-xs bg-gray-50 dark:bg-gray-800 p-3 rounded overflow-x-auto">{
+  "disposition": "reversed and remanded",
+  "party_winning": "petitioner",
+  "holding_summary": "The Court held that segregation in public schools violates the Equal Protection Clause."
+}</pre>
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-4">
+            <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-5">
+              <h3 class="font-medium mb-3">Disposition Enum (Closed)</h3>
+              <ul class="text-xs text-gray-600 dark:text-gray-400 space-y-1">
+                <li>stay granted</li>
+                <li>affirmed</li>
+                <li>reversed</li>
+                <li>reversed and remanded</li>
+                <li>vacated and remanded</li>
+                <li>affirmed and reversed in part</li>
+                <li>affirmed and vacated in part</li>
+                <li>affirmed and reversed in part and remanded</li>
+                <li>vacated</li>
+                <li>petition denied</li>
+                <li>certification</li>
+              </ul>
+            </div>
+
+            <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-5">
+              <h3 class="font-medium mb-3">Party Winning Enum</h3>
+              <ul class="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                <li><strong>petitioner</strong> - SCDB code 1</li>
+                <li><strong>respondent</strong> - SCDB code 0</li>
+                <li><strong>unclear</strong> - SCDB code 2</li>
+              </ul>
+              <div class="mt-4">
+                <h3 class="font-medium mb-2">Scoring</h3>
+                <div class="text-sm text-gray-600 dark:text-gray-400">
+                  0.5 per field (disposition + party_winning)
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-4">
+            <h3 class="font-medium text-purple-800 dark:text-purple-200 mb-2">Example</h3>
+            <div class="text-sm text-purple-700 dark:text-purple-300">
+              <div><strong>Input:</strong> "...The judgment of the Court of Appeals is reversed, and the case is remanded for further proceedings consistent with this opinion. It is so ordered."</div>
+              <div class="mt-2"><strong>Expected:</strong> disposition: "reversed and remanded", party_winning: "petitioner"</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- S5: Distinguish -->
+      <section id="s5" class="mb-12 scroll-mt-20">
+        <div class="border-l-4 border-orange-500 pl-4 mb-4">
+          <h2 class="text-xl font-semibold">S5: Distinguish</h2>
+          <p class="text-sm text-gray-600 dark:text-gray-400">Determine whether the citing case agrees with or distinguishes from the cited case.</p>
+        </div>
+
+        <div class="space-y-4">
+          <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-5">
+            <h3 class="font-medium mb-3">Purpose</h3>
+            <p class="text-sm text-gray-600 dark:text-gray-400">
+              S5 is the core legal reasoning skill. It tests whether the model can determine the doctrinal
+              relationship between two cases based on available information.
+            </p>
+          </div>
+
+          <div class="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-4 mb-4">
+            <h3 class="font-medium text-orange-800 dark:text-orange-200 mb-2">Two Variants</h3>
+            <div class="grid md:grid-cols-2 gap-4 text-sm">
+              <div class="text-orange-700 dark:text-orange-300">
+                <div class="font-medium">S5:cb (Closed-Book)</div>
+                <div class="mt-1">Uses: metadata + S4 extracted facts only</div>
+                <div>Runs on: all CHAIN_CORE instances</div>
+              </div>
+              <div class="text-orange-700 dark:text-orange-300">
+                <div class="font-medium">S5:rag (RAG-Enhanced)</div>
+                <div class="mt-1">Uses: all S5:cb inputs + citing opinion text</div>
+                <div>Runs on: CHAIN_RAG_SUBSET only</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-4">
+            <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-5">
+              <h3 class="font-medium mb-3">Output Schema</h3>
+              <pre class="text-xs bg-gray-50 dark:bg-gray-800 p-3 rounded overflow-x-auto">{
+  "agrees": true,
+  "reasoning": "The citing case follows the precedent because..."
+}</pre>
+              <div class="mt-3 text-xs text-gray-500 dark:text-gray-400">
+                Note: Field is "agrees", matching ground truth field edge.agree
+              </div>
+            </div>
+
+            <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-5">
+              <h3 class="font-medium mb-3">Ground Truth</h3>
+              <div class="text-sm text-gray-600 dark:text-gray-400 space-y-2">
+                <div><strong>Source:</strong> scotus_shepards_sample.csv (agree field)</div>
+                <div><strong>True (1):</strong> followed/parallel (agrees)</div>
+                <div><strong>False (0):</strong> distinguished/criticized/overruled</div>
+                <div class="mt-3"><strong>Scoring:</strong> Binary exact match</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-4">
+            <h3 class="font-medium text-orange-800 dark:text-orange-200 mb-2">Example (S5:cb)</h3>
+            <div class="text-sm text-orange-700 dark:text-orange-300">
+              <div><strong>Cited:</strong> Brown v. Board of Education (347 U.S. 483, 1954)</div>
+              <div><strong>Citing:</strong> Cooper v. Aaron (358 U.S. 1, 1958)</div>
+              <div class="mt-2"><strong>Expected:</strong> agrees: true</div>
+              <div><strong>Reasoning:</strong> "Cooper v. Aaron reaffirmed Brown's holding that segregation is unconstitutional..."</div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- S6: IRAC Synthesis -->
+      <section id="s6" class="mb-12 scroll-mt-20">
+        <div class="border-l-4 border-pink-500 pl-4 mb-4">
+          <h2 class="text-xl font-semibold">S6: IRAC Synthesis</h2>
+          <p class="text-sm text-gray-600 dark:text-gray-400">Synthesize all prior outputs into IRAC-structured legal analysis.</p>
+        </div>
+
+        <div class="space-y-4">
+          <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-5">
+            <h3 class="font-medium mb-3">Purpose</h3>
+            <p class="text-sm text-gray-600 dark:text-gray-400">
+              S6 is the capstone skill. It tests whether the model can integrate information from prior
+              steps into a coherent legal analysis using the Issue-Rule-Application-Conclusion (IRAC) framework.
+            </p>
+          </div>
+
+          <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-5">
+            <h3 class="font-medium mb-3">Output Schema</h3>
+            <pre class="text-xs bg-gray-50 dark:bg-gray-800 p-3 rounded overflow-x-auto">{
+  "issue": "Whether segregation in public schools violates the Equal Protection Clause...",
+  "rule": "The Equal Protection Clause prohibits states from denying equal protection...",
+  "application": "Applying this rule to the facts, segregation generates a feeling of inferiority...",
+  "conclusion": "Therefore, the Court concludes that 'separate but equal' has no place."
+}</pre>
+          </div>
+
+          <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-5">
+            <h3 class="font-medium mb-3">Rubric-Based Scoring</h3>
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead class="text-left border-b border-gray-200 dark:border-gray-700">
+                  <tr>
+                    <th class="py-2 pr-4">Component</th>
+                    <th class="py-2 pr-4">Weight</th>
+                    <th class="py-2">Criteria</th>
+                  </tr>
+                </thead>
+                <tbody class="text-gray-600 dark:text-gray-400">
+                  <tr><td class="py-1">Issue</td><td>20%</td><td>Clear, correctly framed legal question</td></tr>
+                  <tr><td class="py-1">Rule</td><td>25%</td><td>Accurate statement of legal rule from case</td></tr>
+                  <tr><td class="py-1">Application</td><td>35%</td><td>Logical application with citation support</td></tr>
+                  <tr><td class="py-1">Conclusion</td><td>20%</td><td>Consistent with analysis, cites outcome</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="mt-3 text-xs text-gray-500 dark:text-gray-400">
+              Correct = score >= 0.5
+            </div>
+          </div>
+
+          <div class="bg-pink-50 dark:bg-pink-900/20 border border-pink-200 dark:border-pink-800 rounded-lg p-4">
+            <h3 class="font-medium text-pink-800 dark:text-pink-200 mb-2">S7 Gating (in L10 Agentic)</h3>
+            <p class="text-sm text-pink-700 dark:text-pink-300">
+              In L10 Agentic, S6 results can be voided by S7 if fabricated citations are detected.
+              The voided flag is set but status remains "OK" (execution happened, just invalidated post-hoc).
+              In L10 Atomic, skills are evaluated independently without gating.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- S7: Citation Integrity -->
+      <section id="s7" class="mb-12 scroll-mt-20">
+        <div class="border-l-4 border-red-500 pl-4 mb-4">
+          <h2 class="text-xl font-semibold">S7: Citation Integrity</h2>
+          <p class="text-sm text-gray-600 dark:text-gray-400">Verify all citations in S6 output are real cases (no hallucinations).</p>
+        </div>
+
+        <div class="space-y-4">
+          <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-4">
+            <div class="text-sm font-medium text-red-800 dark:text-red-200 mb-1">Professional Responsibility Gate</div>
+            <p class="text-sm text-red-700 dark:text-red-300">
+              S7 is the hallucination gate. Fabricating citations is a serious professional ethics violation.
+              A single fake citation results in failure and (in L10 Agentic) voids the entire S6 analysis.
+            </p>
+          </div>
+
+          <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-5">
+            <h3 class="font-medium mb-3">Output Schema</h3>
+            <pre class="text-xs bg-gray-50 dark:bg-gray-800 p-3 rounded overflow-x-auto">{
+  "citations_found": [
+    { "cite": "347 U.S. 483", "exists": true },
+    { "cite": "384 U.S. 436", "exists": true },
+    { "cite": "999 U.S. 999", "exists": false }
+  ],
+  "all_valid": false
+}</pre>
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-4">
+            <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-5">
+              <h3 class="font-medium mb-3">Ground Truth Sources</h3>
+              <ul class="text-sm text-gray-600 dark:text-gray-400 space-y-2">
+                <li><strong>fake_cases.csv</strong> - Known fabricated citations</li>
+                <li><strong>scdb_sample.csv</strong> - Known real citations</li>
+              </ul>
+              <div class="mt-3 text-xs text-gray-500 dark:text-gray-400">
+                Citations extracted using eyecite library
+              </div>
+            </div>
+
+            <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-5">
+              <h3 class="font-medium mb-3">Verification Logic</h3>
+              <ol class="text-sm text-gray-600 dark:text-gray-400 space-y-1 list-decimal list-inside">
+                <li>Check if citation is in fake_cites set -> False</li>
+                <li>Check if citation is in real_cites set -> True</li>
+                <li>Unknown citation -> False (conservative)</li>
+              </ol>
+              <div class="mt-3"><strong>Scoring:</strong> Binary - all citations must be valid</div>
+            </div>
+          </div>
+
+          <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-5">
+            <h3 class="font-medium mb-3">Metrics</h3>
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead class="text-left border-b border-gray-200 dark:border-gray-700">
+                  <tr>
+                    <th class="py-2 pr-4">Metric</th>
+                    <th class="py-2">Definition</th>
+                  </tr>
+                </thead>
+                <tbody class="text-gray-600 dark:text-gray-400">
+                  <tr><td class="py-1">Void Rate</td><td>Chains with voided=True / total chains</td></tr>
+                  <tr><td class="py-1">Hallucination Rate</td><td>Citations with exists=False / total citations</td></tr>
+                  <tr><td class="py-1">Clean Rate</td><td>Chains with all_valid=True / total chains</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+            <h3 class="font-medium text-red-800 dark:text-red-200 mb-2">Example: Failed Verification</h3>
+            <div class="text-sm text-red-700 dark:text-red-300">
+              <div><strong>S6 Output:</strong> "As established in Brown v. Board of Education (347 U.S. 483)... Following Smith v. Jones (999 U.S. 999)..."</div>
+              <div class="mt-2"><strong>S7 Result:</strong></div>
+              <ul class="list-disc list-inside ml-2">
+                <li>347 U.S. 483 -> exists: true</li>
+                <li>999 U.S. 999 -> exists: false (fabricated!)</li>
+              </ul>
+              <div class="mt-1"><strong>Outcome:</strong> all_valid: false, S6 voided</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Navigation -->
+      <section class="mb-8">
+        <div class="flex gap-4">
+          <a href="index.html" class="text-sm text-amber-700 dark:text-amber-300 hover:underline">
+            ← Back to Overview
+          </a>
+          <a href="design.html" class="text-sm text-amber-700 dark:text-amber-300 hover:underline">
+            Design Specification
+          </a>
+        </div>
+      </section>
+    </main>
+
+    <script src="../../shared/site-shell.js"></script>
+  </body>
+</html>

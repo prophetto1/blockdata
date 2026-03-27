@@ -1,0 +1,42 @@
+{
+  "benchmark_id": "legal10_3step_v1",
+  "plan_id": "legal10_3step_v1_plan",
+  "plan_version": "1.0.0",
+  "steps": [
+    {
+      "inject_payloads": [
+        "p1"
+      ],
+      "output_contract": "ka_sc_v1",
+      "scorer_ref": "score_d1_known_authority_v1",
+      "scoring": "deterministic",
+      "step_file": "model_steps/d1.json",
+      "step_id": "d1"
+    },
+    {
+      "inject_payloads": [
+        "p1"
+      ],
+      "judge_prompt_file": "judge_prompts/irac_mee_pair_v1.json",
+      "output_contract": "irac_v1",
+      "scoring": "judge",
+      "step_file": "model_steps/d2.json",
+      "step_id": "d2"
+    },
+    {
+      "inject_payloads": [
+        "p1",
+        "p2"
+      ],
+      "judge_grades_step_ids": [
+        "d2",
+        "j3"
+      ],
+      "judge_prompt_file": "judge_prompts/irac_mee_pair_v1.json",
+      "output_contract": "irac_v1",
+      "scoring": "judge",
+      "step_file": "model_steps/j3.json",
+      "step_id": "j3"
+    }
+  ]
+}

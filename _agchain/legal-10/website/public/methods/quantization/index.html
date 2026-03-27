@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Quantization & Reasoning Performance - LegalChain</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = { darkMode: "class" };
+    </script>
+    <link rel="stylesheet" href="../../shared/report.css" />
+  </head>
+  <body class="bg-neutral-50 dark:bg-neutral-950">
+    <main id="l10-page" data-l10-layout="research" data-l10-sidenav="site" data-l10-sidenav-pos="left">
+      <article class="prose prose-slate dark:prose-invert max-w-4xl mx-auto research-content">
+        <h1 class="research-title">Quantization &amp; Reasoning Performance</h1>
+
+        <div class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-10 not-prose">
+          <p class="text-neutral-600 dark:text-neutral-300 leading-relaxed">
+            This section is being assembled. It collects public technical notes about post-training quantization (PTQ)
+            variation, precision-tier ambiguity, and how surface linguistic fluency can remain stable while reasoning
+            performance deteriorates across deployment regimes.
+          </p>
+          <div class="mt-6 inline-block px-4 py-2 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 rounded-lg text-sm border border-amber-200 dark:border-amber-800">
+            Drafting in progress
+          </div>
+        </div>
+
+        <h2>Subpages</h2>
+        <ul>
+          <li><a href="/methods/quantization/ptq-methods.html">PTQ Methods</a></li>
+          <li><a href="/methods/quantization/stacking-problem.html">Stacking Problem</a></li>
+          <li><a href="/methods/quantization/precision-tier-evaluation.html">Precision-Tier Evaluation</a></li>
+        </ul>
+      </article>
+    </main>
+    <script src="../../shared/site-shell.js"></script>
+  </body>
+</html>

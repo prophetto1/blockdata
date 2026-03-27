@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Report (Sample) - LegalChain</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = { darkMode: "class" };
+    </script>
+  </head>
+  <body class="min-h-screen bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 transition-colors">
+    <main id="l10-page" data-l10-layout="article" data-l10-sidenav="toc" data-l10-sidenav-pos="right" data-l10-typography="report" data-l10-content-width="narrow" style="max-width: 48rem; margin-inline: auto;">
+      <h1>Sample Report</h1>
+      <p>
+        This is a placeholder report page showing the intended reading experience: larger serif text and a left “On this page” TOC.
+      </p>
+
+      <h2>Summary</h2>
+      <p>
+        Report summary goes here: run id, model, dataset slice, and headline metrics (void rate, per-step accuracy, etc.).
+      </p>
+
+      <h2>Method</h2>
+      <p>
+        Describe the evaluation method used for this report. Keep this consistent across reports so comparisons are easy.
+      </p>
+
+      <h3>Inputs</h3>
+      <ul>
+        <li>Run identifier + timestamp</li>
+        <li>Model + backend configuration</li>
+        <li>Dataset slice + coverage constraints</li>
+      </ul>
+
+      <h3>Outputs</h3>
+      <ul>
+        <li>Chain-level metrics</li>
+        <li>Per-step metrics</li>
+        <li>Failure modes + examples</li>
+      </ul>
+
+      <h2>Findings</h2>
+      <p>
+        Main narrative findings. Use short paragraphs and clear headings so the TOC remains useful.
+      </p>
+
+      <h3>Step performance</h3>
+      <p>
+        Discuss where accuracy drops and why. Link to supporting tables/charts if needed.
+      </p>
+
+      <h3>Failure modes</h3>
+      <p>
+        Highlight common error clusters (e.g., S4 disposition confusion, S6 incoherent synthesis, citation integrity issues).
+      </p>
+
+      <h2>Appendix</h2>
+      <p>
+        Include additional details (definitions, thresholds, or per-step rubric notes).
+      </p>
+    </main>
+
+    <script src="../shared/site-shell.js"></script>
+  </body>
+</html>

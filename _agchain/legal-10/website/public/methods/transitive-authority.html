@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transitive Authority (S9) - LegalChain</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>tailwind.config = { darkMode: "class" };</script>
+</head>
+<body class="bg-neutral-950 text-neutral-400 font-sans antialiased">
+    <main id="l10-page" data-l10-layout="research" data-l10-sidenav="site" data-l10-sidenav-pos="left">
+        <article class="prose prose-slate dark:prose-invert max-w-4xl mx-auto research-content">
+
+            <header class="mb-10 border-b border-neutral-800 pb-6">
+                <h1 class="text-4xl font-serif font-light text-white">Transitive Authority</h1>
+                <p class="serif-dense mt-4 text-neutral-500 text-sm leading-relaxed max-w-2xl font-serif">
+                    Testing whether models can reason across three-case citation chains—a capability no other legal benchmark measures.
+                </p>
+            </header>
+
+            <div class="grid grid-cols-3 gap-0 border-t border-l border-neutral-800 bg-neutral-900/10 mb-12">
+                <div class="border-r border-b border-neutral-800 p-4">
+                    <div class="text-[10px] font-mono text-neutral-600 uppercase mb-1">Case A</div>
+                    <div class="text-xl font-mono text-neutral-500">ANCHOR</div>
+                    <div class="text-[10px] text-neutral-500">Original precedent</div>
+                </div>
+                <div class="border-r border-b border-neutral-800 p-4">
+                    <div class="text-[10px] font-mono text-neutral-600 uppercase mb-1">Case B</div>
+                    <div class="text-xl font-mono text-amber-500">MIDDLE</div>
+                    <div class="text-[10px] text-neutral-500">Cites A</div>
+                </div>
+                <div class="border-r border-b border-neutral-800 p-4">
+                    <div class="text-[10px] font-mono text-neutral-600 uppercase mb-1">Case C</div>
+                    <div class="text-xl font-mono text-emerald-500">NEWEST</div>
+                    <div class="text-[10px] text-neutral-500">Cites B → predicts A</div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+                <div class="space-y-8">
+                    <section>
+                        <div class="text-[10px] font-mono text-neutral-600 uppercase mb-2">The Challenge</div>
+                        <p class="text-sm text-neutral-400 font-serif leading-relaxed">
+                            Given Case A (anchor) cited by Case B (middle) cited by Case C (newest), can the model predict how C treats A—without being told directly? This requires chaining inferences: B→A treatment plus C→B treatment should inform C→A treatment.
+                        </p>
+                    </section>
+
+                    <section class="border border-neutral-800 p-5 bg-neutral-900/10">
+                        <div class="text-[10px] font-mono text-blue-500 mb-4">[ REASONING CHAIN ]</div>
+                        <div class="font-mono text-[11px] space-y-2">
+                            <div class="text-neutral-500">If B follows A...</div>
+                            <div class="text-neutral-500">And C follows B...</div>
+                            <div class="text-emerald-500">Then C likely follows A</div>
+                        </div>
+                    </section>
+                </div>
+
+                <div class="space-y-8">
+                    <section>
+                        <div class="text-[10px] font-mono text-neutral-600 uppercase mb-2">Budget Distribution</div>
+                        <p class="text-sm text-neutral-400 font-serif leading-relaxed">
+                            Opinion text is distributed strategically: 40% for the newest case (C), 60% split between anchor and middle. This forces the model to reason with incomplete information—mirroring how lawyers work with case summaries before reading full opinions.
+                        </p>
+                    </section>
+
+                    <div class="p-4 bg-neutral-900/50 border border-neutral-800">
+                        <div class="text-[10px] font-mono text-neutral-500 uppercase mb-2">Novel Evaluation</div>
+                        <p class="text-[10px] text-neutral-500 font-serif italic">No other legal AI benchmark tests transitive reasoning across precedent chains. This evaluates a fundamental capability lawyers use daily: inferring relationships between authorities through intermediate citations.</p>
+                    </div>
+                </div>
+            </div>
+
+        </article>
+    </main>
+    <script src="../shared/site-shell.js"></script>
+</body>
+</html>

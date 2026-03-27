@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contracts & Schemas - LegalChain</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        legalblue: {
+                            50: '#f0f7ff',
+                            100: '#e0effe',
+                            200: '#bae0fd',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#1e3a8a',
+                        },
+                        contract: {
+                            400: '#a78bfa', // Violet-400
+                            500: '#8b5cf6', // Violet-500
+                            600: '#7c3aed', // Violet-600
+                            900: '#2e1065', // Violet-950
+                        }
+                    },
+                     fontFamily: {
+                        mono: ['"Fira Code"', 'monospace'],
+                        sans: ['"Inter"', 'sans-serif'],
+                        serif: ['"Merriweather"', 'serif'],
+                    }
+                }
+            }
+        };
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;0,900;1,300&family=Inter:wght@300;400;500;600&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../shared/report.css">
+</head>
+<body>
+    <main id="l10-page" data-l10-layout="research" data-l10-sidenav="site" data-l10-sidenav-pos="left">
+        <article class="prose prose-slate dark:prose-invert max-w-4xl mx-auto research-content">
+            
+            <header class="mb-16">
+                <h1 class="research-title">Contracts & Schemas</h1>
+                
+                <p class="lead text-xl text-neutral-600 dark:text-neutral-400 font-serif italic border-l-4 border-contract-500 pl-6 py-2">
+                    The 10-step chain-of-thought architecture that converts raw primary sources into structured legal reasoning.
+                </p>
+            </header>
+
+            <h2>The Chain Phases</h2>
+            <p>
+                LegalChain decomposes the legal research process into four distinct logical phases. Each phase represents a shift in cognitive mode, from mechanical retrieval to substantive synthesis.
+            </p>
+
+            <!-- Phase Map Visualization -->
+            <div class="my-16 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 not-prose">
+                <!-- Phase 1 -->
+                <div class="p-6 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl">
+                    <div class="text-[10px] text-contract-500 font-bold mb-2 uppercase tracking-widest">Phase I</div>
+                    <h3 class="text-neutral-900 dark:text-white font-serif font-bold mb-2">Rule Phase</h3>
+                    <p class="text-xs text-neutral-500">Identify, retrieve, and validate legal authority.</p>
+                    <div class="mt-4 flex gap-1">
+                        <span class="w-6 h-6 rounded bg-neutral-200 dark:bg-neutral-800 flex items-center justify-center text-[10px] font-mono">S1</span>
+                        <span class="w-6 h-6 rounded bg-neutral-200 dark:bg-neutral-800 flex items-center justify-center text-[10px] font-mono">S2</span>
+                        <span class="w-6 h-6 rounded bg-neutral-200 dark:bg-neutral-800 flex items-center justify-center text-[10px] font-mono">S3</span>
+                    </div>
+                </div>
+                <!-- Phase 2 -->
+                <div class="p-6 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl">
+                    <div class="text-[10px] text-contract-500 font-bold mb-2 uppercase tracking-widest">Phase II</div>
+                    <h3 class="text-neutral-900 dark:text-white font-serif font-bold mb-2">Application</h3>
+                    <p class="text-xs text-neutral-500">Extract facts and apply precedent through distinction.</p>
+                    <div class="mt-4 flex gap-1">
+                        <span class="w-6 h-6 rounded bg-neutral-200 dark:bg-neutral-800 flex items-center justify-center text-[10px] font-mono">S4</span>
+                        <span class="w-6 h-6 rounded bg-neutral-200 dark:bg-neutral-800 flex items-center justify-center text-[10px] font-mono">S5</span>
+                    </div>
+                </div>
+                <!-- Phase 3 -->
+                <div class="p-6 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl">
+                    <div class="text-[10px] text-contract-500 font-bold mb-2 uppercase tracking-widest">Phase III</div>
+                    <h3 class="text-neutral-900 dark:text-white font-serif font-bold mb-2">Synthesis</h3>
+                    <p class="text-xs text-neutral-500">Synthesize analysis and verify citation integrity.</p>
+                    <div class="mt-4 flex gap-1">
+                        <span class="w-6 h-6 rounded bg-neutral-200 dark:bg-neutral-800 flex items-center justify-center text-[10px] font-mono">S6</span>
+                        <span class="w-6 h-6 rounded bg-neutral-200 dark:bg-neutral-800 flex items-center justify-center text-[10px] font-mono">S7</span>
+                        <span class="w-6 h-6 rounded bg-neutral-200 dark:bg-neutral-800 flex items-center justify-center text-[10px] font-mono">S8</span>
+                    </div>
+                </div>
+                <!-- Phase 4 -->
+                <div class="p-6 bg-neutral-900 border border-contract-500/50 rounded-xl shadow-lg ring-1 ring-contract-500/20">
+                    <div class="text-[10px] text-contract-400 font-bold mb-2 uppercase tracking-widest">Phase IV</div>
+                    <h3 class="text-white font-serif font-bold mb-2">Advanced</h3>
+                    <p class="text-xs text-neutral-400">Transitive reasoning and evidentiary grounding.</p>
+                    <div class="mt-4 flex gap-1 text-white">
+                        <span class="w-6 h-6 rounded bg-contract-600 flex items-center justify-center text-[10px] font-mono">S9</span>
+                        <span class="w-6 h-6 rounded bg-contract-600 flex items-center justify-center text-[10px] font-mono">S10</span>
+                    </div>
+                </div>
+            </div>
+
+            <h2>Step Definitions</h2>
+            <p>
+                Every step in the chain is a discrete, testable unit. The "Contract" defines the required input, the expected operation, and the ground truth against which the output is validated.
+            </p>
+
+            <div class="overflow-x-auto my-12 border border-neutral-200 dark:border-neutral-800 rounded-lg not-prose">
+                <table class="w-full text-left border-collapse text-sm">
+                    <thead class="bg-neutral-50 dark:bg-neutral-900 text-neutral-500">
+                        <tr>
+                            <th class="p-4 border-b border-neutral-200 dark:border-neutral-800">Step</th>
+                            <th class="p-4 border-b border-neutral-200 dark:border-neutral-800">Name</th>
+                            <th class="p-4 border-b border-neutral-200 dark:border-neutral-800">Functional Task</th>
+                            <th class="p-4 border-b border-neutral-200 dark:border-neutral-800">Ground Truth</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-neutral-100 dark:divide-neutral-800">
+                        <tr class="hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors">
+                            <td class="p-4 font-mono font-bold text-contract-600">S1</td>
+                            <td class="p-4 font-bold text-neutral-900 dark:text-neutral-100">Citation ID</td>
+                            <td class="p-4 text-neutral-600 dark:text-neutral-400">Extract case metadata from opinion text.</td>
+                            <td class="p-4 text-xs font-mono text-neutral-500">SCDB</td>
+                        </tr>
+                        <tr class="hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors">
+                            <td class="p-4 font-mono font-bold text-contract-600">S2</td>
+                            <td class="p-4 font-bold text-neutral-900 dark:text-neutral-100">Unknown Authority</td>
+                            <td class="p-4 text-neutral-600 dark:text-neutral-400">Find cases citing the anchor case.</td>
+                            <td class="p-4 text-xs font-mono text-neutral-500">Shepard's Cite Network</td>
+                        </tr>
+                        <tr class="hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors">
+                            <td class="p-4 font-mono font-bold text-contract-600">S3</td>
+                            <td class="p-4 font-bold text-neutral-900 dark:text-neutral-100">Validation</td>
+                            <td class="p-4 text-neutral-600 dark:text-neutral-400">Report overruling status (Dual-Channel).</td>
+                            <td class="p-4 text-xs font-mono text-neutral-500">SCDB + Shepard's</td>
+                        </tr>
+                        <tr class="hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors">
+                            <td class="p-4 font-mono font-bold text-contract-600">S4</td>
+                            <td class="p-4 font-bold text-neutral-900 dark:text-neutral-100">Fact Extraction</td>
+                            <td class="p-4 text-neutral-600 dark:text-neutral-400">Extract disposition and winning party.</td>
+                            <td class="p-4 text-xs font-mono text-neutral-500">SCDB Codes</td>
+                        </tr>
+                        <tr class="hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors">
+                            <td class="p-4 font-mono font-bold text-contract-600">S5</td>
+                            <td class="p-4 font-bold text-neutral-900 dark:text-neutral-100">Treatment</td>
+                            <td class="p-4 text-neutral-600 dark:text-neutral-400">Predict treatment relationship (Target vs. Citing).</td>
+                            <td class="p-4 text-xs font-mono text-neutral-500">Shepard's `agree` field</td>
+                        </tr>
+                        <tr class="hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors">
+                            <td class="p-4 font-mono font-bold text-contract-600">S6</td>
+                            <td class="p-4 font-bold text-neutral-900 dark:text-neutral-100">Synthesis (CB)</td>
+                            <td class="p-4 text-neutral-600 dark:text-neutral-400">Synthesis from extracted artifacts (Reasoning).</td>
+                            <td class="p-4 text-xs font-mono text-neutral-500">MEE Rubric</td>
+                        </tr>
+                        <tr class="hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors">
+                            <td class="p-4 font-mono font-bold text-contract-600">S7</td>
+                            <td class="p-4 font-bold text-neutral-900 dark:text-neutral-100">Synthesis (OB)</td>
+                            <td class="p-4 text-neutral-600 dark:text-neutral-400">Synthesis with full ResearchPack (RAG).</td>
+                            <td class="p-4 text-xs font-mono text-neutral-500">Integration Delta</td>
+                        </tr>
+                        <tr class="hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors">
+                            <td class="p-4 font-mono font-bold text-contract-600">S8</td>
+                            <td class="p-4 font-bold text-contract-500">Integrity Gate</td>
+                            <td class="p-4 text-neutral-600 dark:text-neutral-400">FAB gate: Verify no fabricated citations.</td>
+                            <td class="p-4 text-xs font-mono text-neutral-500">Deterministic Registry</td>
+                        </tr>
+                        <tr class="hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors">
+                            <td class="p-4 font-mono font-bold text-contract-600">S9</td>
+                            <td class="p-4 font-bold text-neutral-900 dark:text-neutral-100">Transitive Authority</td>
+                            <td class="p-4 text-neutral-600 dark:text-neutral-400">Trace precedent A → B → C triangle.</td>
+                            <td class="p-4 text-xs font-mono text-neutral-500">Jurisdictional Weight</td>
+                        </tr>
+                        <tr class="hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors">
+                            <td class="p-4 font-mono font-bold text-contract-600">S10</td>
+                            <td class="p-4 font-bold text-neutral-900 dark:text-neutral-100">Evidentiary</td>
+                            <td class="p-4 text-neutral-600 dark:text-neutral-400">Outcome prediction from oral arguments.</td>
+                            <td class="p-4 text-xs font-mono text-neutral-500">Oyez Transcripts</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h2>Dependency & Validation</h2>
+            <p>
+                Steps in LegalChain are not isolated. Each step declares its <strong>Step Contracts</strong>—the specific results from prior steps it requires to function.
+            </p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 my-12 not-prose">
+                <div class="p-6 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg">
+                    <div class="text-[10px] font-mono text-neutral-500 uppercase mb-4 tracking-widest">[ CODE LOGIC ]</div>
+                    <code class="text-xs text-contract-500 block mb-4">step.requires() -> Set[step_id]</code>
+                    <p class="text-xs text-neutral-600 dark:text-neutral-400 font-serif">A step like <strong>S6 (Synthesis)</strong> requires <code>{S1, S4, S5}</code> outputs to generate its prompt. If any prerequisite failed, S6 is automatically marked as <code>SKIPPED_DEPENDENCY</code>.</p>
+                </div>
+                <div class="p-6 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg">
+                    <div class="text-[10px] font-mono text-neutral-500 uppercase mb-4 tracking-widest">[ SUCCESS CRITERIA ]</div>
+                    <code class="text-xs text-contract-500 block mb-4">status == "OK" and correct == True</code>
+                    <p class="text-xs text-neutral-600 dark:text-neutral-400 font-serif">Only steps that return a valid (OK) and accurate (True) result allow the chain to proceed. This ensures that the model is never forced to reason from incorrect data.</p>
+                </div>
+            </div>
+
+        </article>
+    </main>
+    <script src="../shared/site-shell.js"></script>
+</body>
+</html>

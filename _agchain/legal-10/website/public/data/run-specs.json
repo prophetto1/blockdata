@@ -1,0 +1,29 @@
+{
+  "updated_at": "2026-01-11",
+  "runSpecs": [
+    {
+      "id": "l10_core",
+      "label": "L10 v2.0.0 (core)",
+      "benchmarkVersion": "2.0.0",
+      "datasetVersion": "scotus_shepards_v1.2",
+      "columns": "core",
+      "dataUrl": "/data/leaderboard-l10-core.sim.json"
+    },
+    {
+      "id": "l10_full",
+      "label": "L10 v2.0.0 (full)",
+      "benchmarkVersion": "2.0.0",
+      "datasetVersion": "scotus_shepards_v1.2",
+      "columns": "full",
+      "dataUrl": "/data/leaderboard-l10-full.sim.json"
+    },
+    {
+      "id": "ag10_main",
+      "label": "AG10 v1.0 (main, sim)",
+      "benchmarkVersion": "ag10_v1.0",
+      "datasetVersion": "scotus_shepards_v1.2",
+      "columns": "ag10",
+      "dataUrl": "/data/leaderboard-ag10.sim.json"
+    }
+  ]
+}

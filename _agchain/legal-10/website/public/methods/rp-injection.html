@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ResearchPack Injection (S7) - LegalChain</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+      };
+    </script>
+</head>
+<body class="bg-neutral-950 text-neutral-400 font-sans antialiased">
+    <main id="l10-page" data-l10-layout="research" data-l10-sidenav="site" data-l10-sidenav-pos="left">
+        <article class="prose prose-slate dark:prose-invert max-w-4xl mx-auto research-content">
+            
+            <!-- HEADER BLOCK -->
+            <header class="mb-10 border-b border-neutral-800 pb-6">
+                <h1 class="text-4xl font-serif font-light text-white">ResearchPack Injection</h1>
+                <p class="serif-dense mt-4 text-neutral-500 text-sm leading-relaxed max-w-2xl font-serif">
+                    Transitioning from parametric reasoning to evidence-grounded synthesis by binding sealed ResearchPacks to the model context. S7 is where the model "opens the books."
+                </p>
+            </header>
+
+            <!-- PROMPT BLUEPRINT DIAGRAM -->
+            <div class="my-12 not-prose border border-neutral-800 bg-neutral-900/10 p-8">
+                <div class="text-[10px] font-mono text-neutral-600 uppercase mb-6 tracking-widest text-center">Prompt Blueprint Architecture</div>
+                
+                <div class="flex flex-col gap-1 max-w-md mx-auto">
+                    <!-- Layer 1: System -->
+                    <div class="border border-neutral-700 bg-neutral-900 p-3 text-center">
+                        <div class="text-[9px] font-mono text-neutral-500 uppercase">Layer 01: System Instructions</div>
+                        <div class="text-[10px] text-neutral-300">"You are a legal research assistant..."</div>
+                    </div>
+                    <!-- Connector -->
+                    <div class="h-4 w-px bg-neutral-800 mx-auto"></div>
+                    <!-- Layer 2: ResearchPack -->
+                    <div class="border border-emerald-900 bg-emerald-950/20 p-4 text-center ring-1 ring-emerald-500/20 shadow-lg shadow-emerald-500/5">
+                        <div class="text-[9px] font-mono text-emerald-500 uppercase font-bold">Layer 02: ResearchPack (Injected)</div>
+                        <div class="text-[10px] text-neutral-300 mt-1">Full Opinion + Contextual Snippets</div>
+                        <div class="text-[9px] text-neutral-500 mt-1 font-mono">~15k - 60k characters</div>
+                    </div>
+                    <!-- Connector -->
+                    <div class="h-4 w-px bg-neutral-800 mx-auto"></div>
+                    <!-- Layer 3: S6 Draft -->
+                    <div class="border border-blue-900 bg-blue-950/20 p-3 text-center">
+                        <div class="text-[9px] font-mono text-blue-500 uppercase">Layer 03: S6 Baseline Draft</div>
+                        <div class="text-[10px] text-neutral-300">Preliminary Closed-Book analysis</div>
+                    </div>
+                    <!-- Connector -->
+                    <div class="h-4 w-px bg-neutral-800 mx-auto"></div>
+                    <!-- Layer 4: Task -->
+                    <div class="border border-neutral-700 bg-neutral-900 p-3 text-center">
+                        <div class="text-[9px] font-mono text-neutral-500 uppercase">Layer 04: IRAC Task Rules</div>
+                        <div class="text-[10px] text-neutral-300">JSON schema + Citation enforcement</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+                <!-- LEFT COLUMN: INJECTION LOGIC -->
+                <div class="space-y-8">
+                    <section>
+                        <div class="text-[10px] font-mono text-neutral-600 uppercase mb-2">Technical Binding</div>
+                        <p class="text-sm text-neutral-400 font-serif leading-relaxed">
+                            Every model run at S7 is reproducible. ResearchPacks are sealed at build time and bound to the prompt at runtime using deterministic variable injection. This eliminates RAG-delivery variance—the model receives the exact same character strings in every identical test run.
+                        </p>
+                    </section>
+                    
+                    <section class="border border-neutral-800 p-5 bg-neutral-900/10">
+                        <div class="text-[10px] font-mono text-blue-400 mb-4 tracking-widest">// s7_open_book_synthesis.py</div>
+                        <div class="font-mono text-[10px] space-y-2">
+                            <div class="text-neutral-500">variables = {</div>
+                            <div class="text-neutral-300 pl-4">"research_packet_text": pack.<span class="text-blue-400">render_prompt_text</span>(),</div>
+                            <div class="text-neutral-300 pl-4">"s6_draft": <span class="text-blue-400">s6_result.parsed</span>["irac"]</div>
+                            <div class="text-neutral-500">}</div>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- RIGHT COLUMN: CITATION PROTOCOL -->
+                <div class="space-y-8">
+                    <section>
+                        <div class="text-[10px] font-mono text-neutral-600 uppercase mb-2">The Citation Protocol</div>
+                        <p class="text-sm text-neutral-400 font-serif leading-relaxed">
+                            Grounding is not optional. To pass the subsequent Stage 08 Integrity Gate, the S7 engine enforces four mandatory citation rules. Failure to cite the ResearchPack identifiers results in a baseline failure.
+                        </p>
+                    </section>
+
+                    <section class="border border-dashed border-neutral-700 p-6 bg-neutral-900/5">
+                        <div class="text-[10px] font-mono text-neutral-500 uppercase mb-4 tracking-widest">Enforcement Rules</div>
+                        <ul class="space-y-4 not-prose">
+                            <li class="flex items-start gap-3">
+                                <span class="w-1.5 h-1.5 bg-blue-500 mt-1.5 shrink-0"></span>
+                                <span class="text-[11px] text-neutral-400 font-serif italic">Every material claim must cite a Document ID from the pack (e.g., [DOC1]).</span>
+                            </li>
+                            <li class="flex items-start gap-3">
+                                <span class="w-1.5 h-1.5 bg-blue-500 mt-1.5 shrink-0"></span>
+                                <span class="text-[11px] text-neutral-400 font-serif italic">Literal U.S. Reports citations must be inclusive (Name, Volume, Page).</span>
+                            </li>
+                            <li class="flex items-start gap-3">
+                                <span class="w-1.5 h-1.5 bg-blue-500 mt-1.5 shrink-0"></span>
+                                <span class="text-[11px] text-neutral-400 font-serif italic">Conflicts between documents must be surfaced and reasoned about.</span>
+                            </li>
+                        </ul>
+                    </section>
+                </div>
+            </div>
+
+        </article>
+    </main>
+    <script src="../shared/site-shell.js"></script>
+</body>
+</html>

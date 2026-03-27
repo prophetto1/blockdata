@@ -1,0 +1,1033 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Leaderboard - LegalChain</title>
+
+    <!-- Fonts + Tailwind (CDN) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = { darkMode: "class" };
+    </script>
+
+    <!-- AG Grid (Community) -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/ag-grid-community@34.3.1/styles/ag-grid.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/ag-grid-community@34.3.1/styles/ag-theme-alpine.css"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@34.3.1/dist/ag-grid-community.min.js"></script>
+
+    <style>
+      /* Page typography: headings serif; UI/table sans */
+
+      .l10-ui {
+        font-family: "Inter", system-ui, sans-serif;
+      }
+
+      /* AG Grid theme tuned to match “shadcn-ish” cards */
+      .ag-theme-alpine,
+      .ag-theme-alpine-dark {
+        --ag-font-family: "Inter", system-ui, sans-serif;
+        --ag-font-size: 13px;
+
+        --ag-foreground-color: #0f172a;
+        /* slate-900 */
+        --ag-background-color: #ffffff;
+        --ag-header-foreground-color: #0f172a;
+        --ag-header-background-color: #f8fafc;
+        /* slate-50 */
+        --ag-odd-row-background-color: #fcfcfd;
+        --ag-border-color: #e2e8f0;
+        /* slate-200 */
+        --ag-row-hover-color: #f1f5f9;
+        /* slate-100 */
+
+        --ag-input-focus-border-color: #3b82f6;
+        /* blue-500 */
+        --ag-range-selection-border-color: #3b82f6;
+        --ag-selected-row-background-color: rgba(59, 130, 246, 0.1);
+      }
+
+      /* Dark grid palette (apply via theme class toggle: ag-theme-alpine-dark) */
+      .ag-theme-alpine-dark {
+        --ag-foreground-color: #e5e5e5; /* neutral-200 */
+        --ag-background-color: #0a0a0a; /* neutral-950 */
+        --ag-header-foreground-color: #e5e5e5;
+        --ag-header-background-color: #111111; /* neutral-900-ish */
+        --ag-odd-row-background-color: #0f0f0f; /* neutral-925-ish */
+        --ag-border-color: #262626; /* neutral-800 */
+        --ag-row-hover-color: #171717; /* neutral-900 */
+        --ag-selected-row-background-color: rgba(59, 130, 246, 0.18);
+      }
+
+      /* Extra specificity: prevent any late CSS from overriding dark tokens */
+      html.dark #myGrid.ag-theme-alpine-dark {
+        --ag-foreground-color: #e5e5e5;
+        --ag-background-color: #0a0a0a;
+        --ag-header-foreground-color: #e5e5e5;
+        --ag-header-background-color: #111111;
+        --ag-odd-row-background-color: #0f0f0f;
+        --ag-border-color: #262626;
+        --ag-row-hover-color: #171717;
+        --ag-selected-row-background-color: rgba(59, 130, 246, 0.18);
+      }
+
+      /* Subtle grid rounding inside card */
+      .ag-theme-alpine .ag-root-wrapper {
+        border-radius: 0.75rem;
+        /* rounded-xl */
+        overflow: hidden;
+      }
+
+      /* Force AG Grid surfaces to use theme variables (dark mode stability) */
+      .ag-theme-alpine,
+      .ag-theme-alpine-dark,
+      .ag-theme-alpine .ag-root-wrapper,
+      .ag-theme-alpine-dark .ag-root-wrapper,
+      .ag-theme-alpine .ag-root-wrapper-body,
+      .ag-theme-alpine-dark .ag-root-wrapper-body,
+      .ag-theme-alpine .ag-body-viewport,
+      .ag-theme-alpine-dark .ag-body-viewport,
+      .ag-theme-alpine .ag-center-cols-viewport,
+      .ag-theme-alpine-dark .ag-center-cols-viewport,
+      .ag-theme-alpine .ag-pinned-left-cols-viewport,
+      .ag-theme-alpine-dark .ag-pinned-left-cols-viewport,
+      .ag-theme-alpine .ag-pinned-right-cols-viewport,
+      .ag-theme-alpine-dark .ag-pinned-right-cols-viewport,
+      .ag-theme-alpine .ag-center-cols-container,
+      .ag-theme-alpine-dark .ag-center-cols-container,
+      .ag-theme-alpine .ag-pinned-left-cols-container,
+      .ag-theme-alpine-dark .ag-pinned-left-cols-container,
+      .ag-theme-alpine .ag-pinned-right-cols-container,
+      .ag-theme-alpine-dark .ag-pinned-right-cols-container {
+        background-color: var(--ag-background-color);
+        color: var(--ag-foreground-color);
+      }
+
+      .ag-theme-alpine .ag-header,
+      .ag-theme-alpine-dark .ag-header,
+      .ag-theme-alpine .ag-header-viewport,
+      .ag-theme-alpine-dark .ag-header-viewport,
+      .ag-theme-alpine .ag-header-container,
+      .ag-theme-alpine-dark .ag-header-container,
+      .ag-theme-alpine .ag-pinned-left-header,
+      .ag-theme-alpine-dark .ag-pinned-left-header {
+        background-color: var(--ag-header-background-color);
+        color: var(--ag-header-foreground-color);
+      }
+
+      .ag-theme-alpine .ag-header-cell-text,
+      .ag-theme-alpine-dark .ag-header-cell-text,
+      .ag-theme-alpine .ag-header-group-text,
+      .ag-theme-alpine-dark .ag-header-group-text {
+        color: var(--ag-header-foreground-color);
+      }
+
+      .ag-theme-alpine .ag-row-odd,
+      .ag-theme-alpine-dark .ag-row-odd {
+        background-color: var(--ag-odd-row-background-color);
+      }
+
+	    </style>
+	  </head>
+
+  <body>
+    <!-- Shell will apply body classes + nav/footer -->
+    <main
+      id="l10-page"
+      data-l10-layout="wide"
+      data-l10-sidenav="site"
+      data-l10-subnav="breadcrumb"
+      class="max-w-screen-2xl mx-auto px-6 py-8"
+    >
+      <!-- Wide pages are NOT wrapped by site-shell. Content follows directly. -->
+
+      <div
+        class="l10-ui mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
+      >
+        <div class="flex items-center gap-3">
+          <div
+            class="text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400"
+          >
+            Run Spec
+          </div>
+	          <select
+	            id="run-spec"
+	            class="rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 px-3 py-2 text-sm text-neutral-700 dark:text-neutral-200"
+	          >
+	            <option>Loading…</option>
+	          </select>
+	        </div>
+	        <div id="run-spec-meta" class="text-xs text-neutral-500"></div>
+	      </div>
+
+      <section
+        class="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-4 sm:p-6 l10-ui shadow-sm"
+      >
+        <div
+          class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4"
+        >
+          <div>
+            <h2
+              class="text-lg font-semibold text-neutral-900 dark:text-neutral-100"
+            >
+              Leaderboard
+            </h2>
+            <p class="text-sm text-neutral-500">
+              Quick search, numeric filters, column groups, and pinned model
+              names.
+            </p>
+          </div>
+
+          <div class="flex flex-col sm:flex-row gap-2 sm:items-center">
+            <div class="relative">
+              <input
+                id="filter-text"
+                type="text"
+                placeholder="Search models / providers…"
+                class="w-full sm:w-72 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 px-3 py-2 text-sm text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-blue-500/60"
+              />
+            </div>
+
+            <label
+              class="inline-flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-300"
+            >
+              <input
+                id="toggle-percent"
+                type="checkbox"
+                class="accent-blue-600"
+                checked
+              />
+              Percent view
+            </label>
+
+            <button
+              id="toggle-fullwidth"
+              type="button"
+              class="inline-flex items-center justify-center gap-2 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 px-3 py-2 text-sm text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-900 transition-colors"
+              aria-pressed="false"
+              title="Toggle full-width layout"
+            >
+              <svg
+                class="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M8 3H5a2 2 0 00-2 2v3m18-3V5a2 2 0 00-2-2h-3m0 18h3a2 2 0 002-2v-3M3 16v3a2 2 0 002 2h3"
+                ></path>
+              </svg>
+              <span id="toggle-fullwidth-label">Full width</span>
+            </button>
+          </div>
+        </div>
+
+        <div
+          id="banner"
+          class="hidden mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-amber-900 text-sm"
+        ></div>
+
+        <!-- Desktop Grid (hidden on small screens) -->
+        <div
+          id="myGrid"
+          class="ag-theme-alpine w-full hidden lg:block"
+          style="height: 620px"
+        ></div>
+
+        <!-- Mobile Card View (shown only on small screens) -->
+        <div id="mobile-leaderboard" class="lg:hidden space-y-4 mt-2">
+          <div
+            class="flex items-center justify-center py-12 text-neutral-400"
+          >
+            <span class="animate-pulse text-sm"
+              >Loading mobile optimized view...</span
+            >
+          </div>
+        </div>
+
+        <p class="mt-3 text-xs text-neutral-500">
+          Tip: use search and column filters; switch Run Spec for different
+          views.
+        </p>
+      </section>
+    </main>
+
+    <!-- Site shell -->
+    <script src="../shared/site-shell.js"></script>
+
+    <script>
+      // --- Helpers ---
+      function fmt(n, digits = 1) {
+        if (n === null || n === undefined || Number.isNaN(Number(n)))
+          return "—";
+        return Number(n).toFixed(digits);
+      }
+
+      function median(values) {
+        const arr = values
+          .filter((v) => typeof v === "number" && !Number.isNaN(v))
+          .slice()
+          .sort((a, b) => a - b);
+        if (arr.length === 0) return null;
+        const mid = Math.floor(arr.length / 2);
+        return arr.length % 2 ? arr[mid] : (arr[mid - 1] + arr[mid]) / 2;
+      }
+
+      // --- Data loading (JSON-only; repo is truth) ---
+      async function loadDataFromJson(jsonUrl) {
+        const url = String(jsonUrl || "").trim();
+        if (!url) return [];
+        const res = await fetch(url, { cache: "no-store" });
+        if (!res.ok) throw new Error(`Failed to load ${url} (${res.status})`);
+        const json = await res.json();
+        return Array.isArray(json?.models) ? json.models : [];
+      }
+
+      // --- Grid ---
+      let gridApi = null;
+      let asPercent = true;
+
+      // --- Width toggle ---
+      const WIDTH_STORAGE_KEY = "l10_leaderboard_full_width";
+      let fullWidth = false;
+
+      function loadFullWidthPref() {
+        try {
+          return window.localStorage?.getItem(WIDTH_STORAGE_KEY) === "1";
+        } catch {
+          return false;
+        }
+      }
+
+      function saveFullWidthPref(next) {
+        try {
+          window.localStorage?.setItem(WIDTH_STORAGE_KEY, next ? "1" : "0");
+        } catch {
+          // ignore (e.g. file://, blocked storage)
+        }
+      }
+
+      function updateFullWidthToggleUi(next) {
+        const btn = document.getElementById("toggle-fullwidth");
+        const label = document.getElementById("toggle-fullwidth-label");
+        if (btn) btn.setAttribute("aria-pressed", next ? "true" : "false");
+        if (label) label.textContent = next ? "Constrain" : "Full width";
+      }
+
+      function setFullWidth(next) {
+        fullWidth = !!next;
+        const page = document.getElementById("l10-page");
+        if (page) {
+          page.classList.toggle("max-w-screen-2xl", !fullWidth);
+          page.classList.toggle("max-w-none", fullWidth);
+          page.classList.toggle("w-full", fullWidth);
+        }
+        updateFullWidthToggleUi(fullWidth);
+        saveFullWidthPref(fullWidth);
+
+        // Let layout settle, then refit columns to new width.
+        requestAnimationFrame(() => {
+          const api = getApi();
+          if (!api?.sizeColumnsToFit) return;
+          try {
+            api.sizeColumnsToFit();
+          } catch {
+            // ignore
+          }
+        });
+      }
+
+      function numberCol(field, header, width) {
+        return {
+          field,
+          headerName: header,
+          width,
+          sortable: true,
+          filter: "agNumberColumnFilter",
+          valueFormatter: (p) => {
+            const v = p.value;
+            if (v === null || v === undefined || Number.isNaN(Number(v)))
+              return "";
+            return asPercent ? `${fmt(v, 1)}%` : fmt(v, 3);
+          },
+        };
+      }
+
+      const columnDefs = [
+        {
+          field: "model",
+          headerName: "Model",
+          pinned: "left",
+          minWidth: 220,
+          flex: 2,
+          checkboxSelection: true,
+          headerCheckboxSelection: true,
+          cellRenderer: (p) => {
+            const name = p.value || "";
+            const sub = p.data?.provider
+              ? `<div class="text-[11px] text-neutral-500 dark:text-neutral-400">${p.data.provider}</div>`
+              : "";
+            return `<div class="leading-tight">
+                    <div class="font-medium">${name}</div>
+                    ${sub}
+                  </div>`;
+          },
+        },
+
+        {
+          headerName: "Chain",
+          children: [
+            {
+              field: "chain",
+              headerName: "Chain",
+              width: 110,
+              sortable: true,
+              filter: "agNumberColumnFilter",
+              cellStyle: { fontWeight: "700" },
+              valueFormatter: (p) =>
+                asPercent ? `${fmt(p.value, 1)}%` : fmt(p.value, 3),
+              cellRenderer: (p) => {
+                const v = Number(p.value);
+                if (!Number.isFinite(v)) return "";
+                const pct = Math.max(0, Math.min(100, v));
+                // inline bar (no extra libs)
+                return `
+                <div class="flex items-center gap-2">
+                  <div class="w-20 h-2 rounded bg-neutral-200 dark:bg-neutral-800 overflow-hidden">
+                    <div class="h-2 rounded bg-blue-500" style="width:${pct}%;"></div>
+                  </div>
+                  <span class="tabular-nums">${
+                    asPercent ? fmt(v, 1) + "%" : fmt(v, 3)
+                  }</span>
+                </div>
+              `;
+              },
+            },
+          ],
+        },
+
+        {
+          headerName: "Skills",
+          children: [
+            numberCol("s1", "S1", 90),
+            numberCol("s3_consistency", "S3", 90),
+            numberCol("s4_disposition", "S4", 90),
+            numberCol("s5_cb", "S5 CB", 100),
+            numberCol("s5_rag", "S5 RAG", 110),
+            numberCol("s6", "S6", 90),
+            numberCol("s7", "S7", 90),
+            numberCol("s8_pass_rate", "S8", 90),
+          ],
+        },
+
+        {
+          headerName: "Efficiency",
+          children: [
+            {
+              field: "avg_latency_ms",
+              headerName: "Latency (ms)",
+              width: 130,
+              filter: "agNumberColumnFilter",
+            },
+            {
+              field: "cost_per_instance",
+              headerName: "Cost ($)",
+              width: 110,
+              filter: "agNumberColumnFilter",
+              valueFormatter: (p) => {
+                const v = Number(p.value);
+                if (!Number.isFinite(v)) return "";
+                return `$${v.toFixed(4)}`;
+              },
+            },
+          ],
+        },
+      ];
+
+      const gridOptions = {
+        // AG Grid v33+ defaults to the Quartz theming API; we use legacy CSS themes via class names.
+        theme: "legacy",
+        columnDefs,
+        rowData: [],
+        rowHeight: 44,
+        defaultColDef: {
+          resizable: true,
+          sortable: true,
+          filter: true,
+          floatingFilter: true,
+          suppressMenu: true,
+        },
+        rowSelection: "multiple",
+        animateRows: true,
+        pagination: true,
+        paginationPageSize: 15,
+        suppressRowClickSelection: true,
+        onGridReady: (params) => {
+          gridApi = params.api;
+          try {
+            params.api.sizeColumnsToFit();
+          } catch {
+            // ignore (can happen if grid is hidden or width is 0)
+          }
+        },
+        onGridSizeChanged: (params) => {
+          try {
+            params.api.sizeColumnsToFit();
+          } catch {
+            // ignore (can happen if grid is hidden or width is 0)
+          }
+        },
+      };
+
+      function getApi() {
+        return gridApi || gridOptions.api || null;
+      }
+
+      function apiSetGridOption(api, key, value) {
+        if (!api) return false;
+        if (typeof api.setGridOption === "function") {
+          api.setGridOption(key, value);
+          return true;
+        }
+        return false;
+      }
+
+      function apiSetRowData(api, rows) {
+        if (!api) return;
+        if (typeof api.setRowData === "function") {
+          api.setRowData(rows);
+          return;
+        }
+        if (apiSetGridOption(api, "rowData", rows)) return;
+      }
+
+      function apiSetColumnDefs(api, defs) {
+        if (!api) return;
+        if (typeof api.setColumnDefs === "function") {
+          api.setColumnDefs(defs);
+          return;
+        }
+        if (apiSetGridOption(api, "columnDefs", defs)) return;
+      }
+
+      function apiSetQuickFilter(api, text) {
+        if (!api) return;
+        if (typeof api.setQuickFilter === "function") {
+          api.setQuickFilter(text);
+          return;
+        }
+        if (apiSetGridOption(api, "quickFilterText", text)) return;
+      }
+
+      function setBanner(msg, kind = "warn") {
+        const el = document.getElementById("banner");
+        if (!el) return;
+        if (!msg) {
+          el.classList.add("hidden");
+          el.textContent = "";
+          return;
+        }
+        el.textContent = msg;
+        el.classList.remove("hidden");
+        if (kind === "error") {
+          el.className =
+            "mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-900 text-sm";
+        } else {
+          el.className =
+            "mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-amber-900 text-sm";
+        }
+      }
+
+      function updateStats(models) {
+      const n = models.length;
+      const elModels = document.getElementById("stat-models");
+      if (elModels) elModels.textContent = n ? String(n) : "—";
+
+      const sorted = models.slice().sort((a, b) => (b.chain ?? -Infinity) - (a.chain ?? -Infinity));
+      const top = sorted[0];
+      if (top) {
+        const elTopChain = document.getElementById("stat-top-chain");
+        const elTopName = document.getElementById("stat-top-name");
+        if (elTopChain) elTopChain.textContent = `${fmt(top.chain, 1)}%`;
+        if (elTopName) elTopName.textContent = top.model || "—";
+      }
+
+      const med = median(models.map(m => m.chain));
+      const elMedChain = document.getElementById("stat-median-chain");
+      if (elMedChain) elMedChain.textContent = med === null ? "—" : `${fmt(med, 1)}%`;
+
+      const cheapest = models.slice().filter(m => Number.isFinite(Number(m.cost_per_instance)))
+        .sort((a, b) => Number(a.cost_per_instance) - Number(b.cost_per_instance))[0];
+      if (cheapest) {
+        const elLowCost = document.getElementById("stat-low-cost");
+        const elLowCostName = document.getElementById("stat-low-cost-name");
+        if (elLowCost) elLowCost.textContent = `$${Number(cheapest.cost_per_instance).toFixed(4)}`;
+        if (elLowCostName) elLowCostName.textContent = cheapest.model || "—";
+      }
+    }
+
+      // --- Run Specs (from JSON) ---
+      const RUN_SPEC_STORAGE_KEY = "l10_leaderboard_run_spec";
+      // Use a relative path so local preview + subfolder hosting work reliably.
+      const RUN_SPECS_URL = "../data/run-specs.json";
+      let RUN_SPECS = [
+        {
+          id: "l10_core",
+          label: "L10 v2.0.0 (core)",
+          benchmarkVersion: "2.0.0",
+          datasetVersion: "scotus_shepards_v1.2",
+          columns: "core",
+          dataUrl: "/data/leaderboard-l10-core.sim.json",
+        },
+	        {
+	          id: "l10_full",
+	          label: "L10 v2.0.0 (full)",
+	          benchmarkVersion: "2.0.0",
+	          datasetVersion: "scotus_shepards_v1.2",
+	          columns: "full",
+	          dataUrl: "/data/leaderboard-l10-full.sim.json",
+	        },
+          {
+            id: "ag10_main",
+            label: "AG10 v1.0 (main, sim)",
+            benchmarkVersion: "ag10_v1.0",
+            datasetVersion: "scotus_shepards_v1.2",
+            columns: "ag10",
+            dataUrl: "/data/leaderboard-ag10.sim.json",
+          },
+	      ];
+
+      async function loadRunSpecs() {
+        try {
+          const res = await fetch(RUN_SPECS_URL, { cache: "no-store" });
+          if (!res.ok) throw new Error(`Failed to load ${RUN_SPECS_URL} (${res.status})`);
+          const json = await res.json();
+          const specs = Array.isArray(json?.runSpecs) ? json.runSpecs : null;
+          if (specs && specs.length) return specs;
+        } catch (err) {
+          console.warn("[leaderboard] Could not load run specs; using embedded defaults.", err);
+        }
+        return RUN_SPECS;
+      }
+
+      function normalizeRunSpecs(specs) {
+        // If specs are authored as absolute "/data/..." paths, make them relative to /leaderboard/
+        // so local preview and nested hosting work consistently.
+        return (Array.isArray(specs) ? specs : []).map((s) => {
+          const dataUrl = typeof s?.dataUrl === "string" ? s.dataUrl : "";
+          if (dataUrl.startsWith("/data/")) return { ...s, dataUrl: `..${dataUrl}` };
+          return s;
+        });
+      }
+
+      let activeRunSpecId = null;
+
+      function getRunSpecById(id) {
+        return RUN_SPECS.find((s) => s.id === id) || RUN_SPECS[0];
+      }
+
+      function loadRunSpecPref() {
+        try {
+          const v = window.localStorage?.getItem(RUN_SPEC_STORAGE_KEY) || "";
+          return RUN_SPECS.some((s) => s.id === v) ? v : null;
+        } catch {
+          return null;
+        }
+      }
+
+      function saveRunSpecPref(id) {
+        try {
+          window.localStorage?.setItem(RUN_SPEC_STORAGE_KEY, id);
+        } catch {
+          // ignore
+        }
+      }
+
+      function coreColumnDefs() {
+        return [
+          {
+            field: "model",
+            headerName: "Model",
+            pinned: "left",
+            minWidth: 240,
+            flex: 2,
+            checkboxSelection: true,
+            headerCheckboxSelection: true,
+            headerTooltip: "Model name",
+            cellRenderer: (p) => {
+              const name = p.value || "";
+              const provider = p.data?.provider || "";
+              const sub = provider
+                ? `<div class="text-[11px] text-neutral-500 dark:text-neutral-400">${provider}</div>`
+                : "";
+              return `<div class="leading-tight"><div class="font-medium">${name}</div>${sub}</div>`;
+            },
+          },
+          numberCol("chain", "Chain", 120),
+          numberCol("avg_pass_rate", "Avg Pass", 120),
+          numberCol("s8_pass_rate", "S8 Integrity", 130),
+          {
+            field: "avg_latency_ms",
+            headerName: "Latency (ms)",
+            width: 130,
+            filter: "agNumberColumnFilter",
+            headerTooltip: "Average latency per instance (milliseconds)",
+          },
+          {
+            field: "cost_per_instance",
+            headerName: "Cost ($)",
+            width: 110,
+            filter: "agNumberColumnFilter",
+            headerTooltip: "Average cost per instance (USD)",
+            valueFormatter: (p) => {
+              const v = Number(p.value);
+              if (!Number.isFinite(v)) return "";
+              return `$${v.toFixed(4)}`;
+            },
+          },
+        ];
+      }
+
+      function ag10ColumnDefs() {
+        const stepCol = (field, header) => ({
+          field,
+          headerName: header,
+          width: 74,
+          sortable: true,
+          filter: "agNumberColumnFilter",
+          valueFormatter: (p) => {
+            const v = p.value;
+            if (v === null || v === undefined || Number.isNaN(Number(v))) return "";
+            return asPercent ? `${fmt(v, 1)}%` : fmt(v, 3);
+          },
+        });
+
+        return [
+          {
+            field: "model",
+            headerName: "Model",
+            pinned: "left",
+            minWidth: 240,
+            flex: 2,
+            checkboxSelection: true,
+            headerCheckboxSelection: true,
+            headerTooltip: "Model name",
+            cellRenderer: (p) => {
+              const name = p.value || "";
+              const provider = p.data?.provider || "";
+              const sub = provider
+                ? `<div class="text-[11px] text-neutral-500 dark:text-neutral-400">${provider}</div>`
+                : "";
+              return `<div class="leading-tight"><div class="font-medium">${name}</div>${sub}</div>`;
+            },
+          },
+          {
+            field: "chain",
+            headerName: "Composite",
+            width: 150,
+            sortable: true,
+            filter: "agNumberColumnFilter",
+            cellStyle: { fontWeight: "700" },
+            valueFormatter: (p) => (asPercent ? `${fmt(p.value, 1)}%` : fmt(p.value, 3)),
+            cellRenderer: (p) => {
+              const v = Number(p.value);
+              if (!Number.isFinite(v)) return "";
+              const pct = Math.max(0, Math.min(100, v));
+              return `
+                <div class="flex items-center gap-2">
+                  <div class="w-20 h-2 rounded bg-neutral-200 dark:bg-neutral-800 overflow-hidden">
+                    <div class="h-2 rounded bg-blue-500" style="width:${pct}%;"></div>
+                  </div>
+                  <span class="tabular-nums">${asPercent ? fmt(v, 1) + "%" : fmt(v, 3)}</span>
+                </div>
+              `;
+            },
+          },
+          { headerName: "D1–D7", children: [stepCol("d1", "D1"), stepCol("d2", "D2"), stepCol("d3", "D3"), stepCol("d4", "D4"), stepCol("d5", "D5"), stepCol("d6", "D6"), stepCol("d7", "D7")] },
+          { headerName: "J8–J10", children: [stepCol("j8", "J8"), stepCol("j9", "J9"), stepCol("j10", "J10")] },
+          {
+            headerName: "Efficiency",
+            children: [
+              {
+                field: "avg_latency_ms",
+                headerName: "Latency (ms)",
+                width: 130,
+                filter: "agNumberColumnFilter",
+              },
+              {
+                field: "cost_per_instance",
+                headerName: "Cost ($)",
+                width: 110,
+                filter: "agNumberColumnFilter",
+                valueFormatter: (p) => {
+                  const v = Number(p.value);
+                  if (!Number.isFinite(v)) return "";
+                  return `$${v.toFixed(4)}`;
+                },
+              },
+            ],
+          },
+        ];
+      }
+
+      function fullColumnDefs() {
+        return columnDefs;
+      }
+
+      function columnDefsForSpec(spec) {
+        if (spec.columns === "core") return coreColumnDefs();
+        if (spec.columns === "ag10") return ag10ColumnDefs();
+        return fullColumnDefs();
+      }
+
+      function applyRunSpecToGrid(api) {
+        const spec = getRunSpecById(activeRunSpecId);
+        apiSetColumnDefs(api, columnDefsForSpec(spec));
+      }
+
+      function applyFilterText(text) {
+        const api = getApi();
+        if (!api) return;
+        apiSetQuickFilter(api, text);
+      }
+
+      function updateRunSpecMeta(spec) {
+        const el = document.getElementById("run-spec-meta");
+        if (!el) return;
+        const bv = spec?.benchmarkVersion || "";
+        const dv = spec?.datasetVersion || "";
+        el.textContent = bv && dv ? `${bv} • ${dv}` : "";
+      }
+
+      function setRunSpec(id, { hydrateNow = true } = {}) {
+        activeRunSpecId = RUN_SPECS.some((s) => s.id === id) ? id : RUN_SPECS[0].id;
+        saveRunSpecPref(activeRunSpecId);
+
+        const spec = getRunSpecById(activeRunSpecId);
+        updateRunSpecMeta(spec);
+
+        const select = document.getElementById("run-spec");
+        if (select && select.value !== activeRunSpecId) select.value = activeRunSpecId;
+        applyRunSpecToGrid(getApi());
+
+        const filter = document.getElementById("filter-text");
+        if (filter) applyFilterText(filter.value);
+        if (hydrateNow) hydrate();
+      }
+
+      async function hydrate() {
+        setBanner(""); // clear
+        const api = getApi();
+        const mobileContainer = document.getElementById("mobile-leaderboard");
+
+        try {
+          const spec = getRunSpecById(activeRunSpecId);
+          const models = await loadDataFromJson(spec?.dataUrl);
+          if (api) {
+            apiSetRowData(api, models);
+            requestAnimationFrame(() => {
+              try {
+                if (typeof api.sizeColumnsToFit === "function") api.sizeColumnsToFit();
+                if (typeof api.refreshCells === "function") api.refreshCells({ force: true });
+              } catch {
+                // ignore
+              }
+            });
+          }
+          updateStats(models);
+
+          // Populate Mobile Cards
+          if (mobileContainer) {
+            mobileContainer.innerHTML = "";
+            if (models.length === 0) {
+              mobileContainer.innerHTML =
+                '<div class="p-8 text-center text-neutral-500">No data found.</div>';
+            } else {
+              // Sort by chain score descending for mobile
+              const sorted = models
+                .slice()
+                .sort((a, b) => (b.chain ?? 0) - (a.chain ?? 0));
+              for (const m of sorted) {
+                const card = document.createElement("div");
+                card.className =
+                  "bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl p-5 shadow-sm active:scale-[0.98] transition-transform";
+                const chainPct = Math.max(
+                  0,
+                  Math.min(100, Number(m.chain || 0))
+                );
+
+                card.innerHTML = `
+                 <div class="flex items-start justify-between mb-4">
+                   <div>
+                     <div class="font-bold text-lg text-neutral-900 dark:text-white">${
+                       m.model || "Unknown"
+                     }</div>
+                     <div class="text-xs text-neutral-500 font-medium uppercase tracking-wider">${
+                       m.provider || "Provider"
+                     }</div>
+                   </div>
+                   <div class="text-right">
+                     <div class="text-blue-600 dark:text-blue-400 font-bold text-xl">${fmt(
+                       m.chain,
+                       1
+                     )}%</div>
+                     <div class="text-[10px] text-neutral-500 uppercase font-bold tracking-tighter">Chain Score</div>
+                   </div>
+                 </div>
+                 
+                 <div class="grid grid-cols-2 gap-4 mb-4">
+                   <div class="bg-white dark:bg-neutral-900 border border-neutral-100 dark:border-neutral-800 rounded-lg p-2.5">
+                     <div class="text-[10px] text-neutral-400 uppercase font-bold mb-1">Pass Rate (Avg)</div>
+                     <div class="text-sm font-semibold">${fmt(
+                       m.avg_pass_rate,
+                       1
+                     )}%</div>
+                   </div>
+                   <div class="bg-white dark:bg-neutral-900 border border-neutral-100 dark:border-neutral-800 rounded-lg p-2.5">
+                     <div class="text-[10px] text-neutral-400 uppercase font-bold mb-1">S8 Transitive</div>
+                     <div class="text-sm font-semibold">${fmt(
+                       m.s8_pass_rate,
+                       1
+                     )}%</div>
+                   </div>
+                 </div>
+
+                 <div class="w-full h-1.5 rounded-full bg-neutral-200 dark:bg-neutral-800 overflow-hidden">
+                   <div class="h-1.5 bg-blue-500 rounded-full" style="width: ${chainPct}%"></div>
+                 </div>
+               `;
+                mobileContainer.appendChild(card);
+              }
+            }
+          }
+        } catch (err) {
+          console.error(err);
+          setBanner(
+            `Could not load data. If you're opening this via file://, run a local web server. Error: ${
+              err?.message || err
+            }`,
+            "error"
+          );
+          if (api) apiSetRowData(api, []);
+          updateStats([]);
+          if (mobileContainer)
+            mobileContainer.innerHTML = `<div class="p-4 text-red-500 text-sm">Error: ${err.message}</div>`;
+        }
+      }
+
+      // --- Wire up UI ---
+      function wireUi() {
+      const filter = document.getElementById("filter-text");
+      const toggle = document.getElementById("toggle-percent");
+      const fullWidthBtn = document.getElementById("toggle-fullwidth");
+      const runSpecSelect = document.getElementById("run-spec");
+      const exportBtn = document.getElementById("btn-export");
+      const refreshBtn = document.getElementById("btn-refresh");
+
+	      if (filter) {
+	        filter.addEventListener("input", () => {
+	          applyFilterText(filter.value);
+	        });
+	      }
+
+	      if (toggle) {
+	        toggle.addEventListener("change", () => {
+	          asPercent = toggle.checked;
+	          const api = getApi();
+	          if (!api) return;
+	          if (typeof api.refreshCells === "function") api.refreshCells({ force: true });
+	        });
+	      }
+
+      if (fullWidthBtn) {
+        fullWidthBtn.addEventListener("click", () => setFullWidth(!fullWidth));
+      }
+
+      if (runSpecSelect) {
+        runSpecSelect.addEventListener("change", () => {
+          setRunSpec(runSpecSelect.value);
+        });
+      }
+
+      if (exportBtn) {
+        exportBtn.addEventListener("click", () => {
+          const api = getApi();
+          if (!api) return;
+          api.exportDataAsCsv({ fileName: "legal-10-leaderboard.csv" });
+        });
+      }
+
+      if (refreshBtn) {
+        refreshBtn.addEventListener("click", hydrate);
+      }
+    }
+
+      function applyGridThemeFromShell() {
+        const gridEl = document.getElementById("myGrid");
+        if (!gridEl) return;
+        const isDark = document.documentElement.classList.contains("dark");
+        gridEl.classList.toggle("ag-theme-alpine-dark", isDark);
+        gridEl.classList.toggle("ag-theme-alpine", !isDark);
+      }
+
+      // Repaint grid when the shell toggles light/dark.
+      window.addEventListener("l10-theme-changed", () => {
+        applyGridThemeFromShell();
+        const api = getApi();
+        if (!api) return;
+        if (typeof api.refreshHeader === "function") api.refreshHeader();
+        if (typeof api.refreshCells === "function") api.refreshCells({ force: true });
+      });
+
+	      // --- Init (after shell moves DOM) ---
+	      Promise.resolve(window.l10ShellReady)
+	        .catch(() => null)
+	        .then(async () => {
+	        fullWidth = loadFullWidthPref();
+	        setFullWidth(fullWidth);
+
+        // Ensure the initial theme matches the shell before grid init.
+        applyGridThemeFromShell();
+
+        // Load Run Specs (from JSON), then populate selector.
+        RUN_SPECS = normalizeRunSpecs(await loadRunSpecs());
+
+        // Populate run spec selector.
+        const sel = document.getElementById("run-spec");
+        if (sel) {
+          sel.innerHTML = "";
+          for (const spec of RUN_SPECS) {
+            const opt = document.createElement("option");
+            opt.value = spec.id;
+            opt.textContent = spec.label;
+            sel.appendChild(opt);
+          }
+        }
+        setRunSpec(loadRunSpecPref() || RUN_SPECS[0].id, { hydrateNow: false });
+
+        const gridDiv = document.querySelector("#myGrid");
+        // In newer AG Grid versions, createGrid returns the API. In older ones, it returns undefined.
+        const maybeApi = agGrid.createGrid(gridDiv, gridOptions);
+        if (maybeApi) gridApi = maybeApi;
+
+	        wireUi();
+	        setRunSpec(activeRunSpecId, { hydrateNow: false });
+	        hydrate();
+	      });
+	    </script>
+	  </body>
+</html>

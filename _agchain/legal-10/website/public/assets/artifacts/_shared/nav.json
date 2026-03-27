@@ -1,0 +1,11 @@
+{
+  "brand": { "title": "LegalChain", "href": "/" },
+  "top": [
+    { "title": "Overview", "href": "/" },
+    { "title": "L10 Agentic", "href": "/l10-agentic/" },
+    { "title": "Developers", "href": "/developers/" }
+  ],
+  "side": [
+    { "title": "Artifacts Home", "href": "/assets/artifacts/" }
+  ]
+}

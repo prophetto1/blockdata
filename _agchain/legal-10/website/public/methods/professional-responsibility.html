@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional Responsibility - LegalChain</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        legalblue: {
+                            50: '#f0f7ff',
+                            100: '#e0effe',
+                            200: '#bae0fd',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#1e3a8a',
+                        },
+                        responsibility: {
+                            400: '#f87171', // Red-400
+                            500: '#ef4444', // Red-500
+                            600: '#dc2626', // Red-600
+                            900: '#450a0a', // Red-950
+                        }
+                    },
+                     fontFamily: {
+                        mono: ['"Fira Code"', 'monospace'],
+                        sans: ['"Inter"', 'sans-serif'],
+                        serif: ['"Merriweather"', 'serif'],
+                    }
+                }
+            }
+        };
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;0,900;1,300&family=Inter:wght@300;400;500;600&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../shared/report.css">
+    <style>
+        .penalty-stamp {
+            border: 4px solid #f59e0b;
+            color: #f59e0b;
+            padding: 4px 8px;
+            text-transform: uppercase;
+            font-weight: 900;
+            font-family: 'Fira Code', monospace;
+            transform: rotate(-12deg);
+            opacity: 0.8;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <main id="l10-page" data-l10-layout="research" data-l10-sidenav="site" data-l10-sidenav-pos="left">
+        <article class="prose prose-slate dark:prose-invert max-w-4xl mx-auto research-content">
+            
+            <header class="mb-16">
+                <h1 class="research-title">Professional Responsibility</h1>
+                
+                <p class="lead text-xl text-neutral-600 dark:text-neutral-400 font-serif italic border-l-4 border-responsibility-500 pl-6 py-2">
+                    Operationalizing ABA Model Rule 3.3 through the deterministic Fabrication Gate (S8).
+                </p>
+            </header>
+
+            <!-- FABRICATION GATE HERO -->
+            <div class="my-16 bg-neutral-900 border border-neutral-700 rounded-xl overflow-hidden shadow-2xl not-prose relative">
+                <div class="bg-neutral-800 px-4 py-2 flex items-center justify-between border-b border-neutral-700">
+                    <div class="flex items-center gap-2">
+                        <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                        <div class="font-mono text-xs text-neutral-400 ml-2">integrity_gate_s8.rs</div>
+                    </div>
+                </div>
+
+                <div class="p-8 font-mono text-sm leading-relaxed grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+                    <div class="space-y-4">
+                        <div class="text-neutral-500 uppercase text-[10px] tracking-widest">S8 Detection Logic</div>
+                        <div class="flex gap-4">
+                            <span class="text-neutral-700">INPUT:</span>
+                            <span class="text-neutral-300">Generated Synthesis S7</span>
+                        </div>
+                        <div class="flex gap-4">
+                            <span class="text-neutral-700">MATCH:</span>
+                            <span class="text-cyan-400">"See Smith v. Doe, 123 U.S. 456..."</span>
+                        </div>
+                        <div class="flex gap-4">
+                            <span class="text-neutral-700">QUERY:</span>
+                            <span class="text-yellow-400">Registry.lookup("123 U.S. 456")</span>
+                        </div>
+                        <div class="flex gap-4">
+                            <span class="text-neutral-700">FINAL:</span>
+                            <span class="text-red-500 font-bold">MISSING / FABRICATED</span>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col items-center justify-center">
+                        <div class="penalty-stamp text-4xl">SCORE: 0.0</div>
+                        <div class="mt-8 text-center text-neutral-500 text-[10px] uppercase tracking-widest">Integrity Flag Set</div>
+                    </div>
+                </div>
+            </div>
+
+            <h2>The Fabrication Gate (S8)</h2>
+            <p>
+                In legal practice, character and integrity are not "bonuses"—they are binary constraints. LegalChain operationalizes <strong>ABA Model Rule 3.3</strong> ("Candor Toward the Tribunal") through a deterministic Citation Integrity Gate (S8).
+            </p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 my-12 not-prose">
+                <div class="p-6 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg shadow-sm">
+                    <h4 class="text-green-600 font-bold mb-2">Success Condition</h4>
+                    <p class="text-sm text-neutral-600 dark:text-neutral-400">If all citations are verified against our SCDB registry, the synthesis score stands. Truthfulness is verified before fluency is rewarded.</p>
+                </div>
+                <div class="p-6 bg-white dark:bg-neutral-900 border border-amber-500/30 rounded-lg shadow-sm ring-1 ring-amber-500/10">
+                    <h4 class="text-amber-600 font-bold mb-2">Failure Condition</h4>
+                    <p class="text-sm text-neutral-600 dark:text-neutral-400">If even <strong>one</strong> fabricated citation is detected, the integrity score is set to zero and flagged, regardless of how "well-reasoned" the intermediate steps appeared. The run continues to completion for full diagnostics.</p>
+                </div>
+            </div>
+
+            <h2>Zero-Score Semantics</h2>
+            <p>
+                Unlike standard benchmarks that might penalize a hallucination with a minor deduction, LegalChain uses <strong>Zero-Score Semantics</strong> for integrity failures. This reflects the reality of U.S. courts (e.g., <i>Mata v. Avianca</i>), where submitting a brief with fabricated citations is a sanctionable offense that renders the document professionally worthless. The integrity score is set to zero and the violation is flagged in scoring details.
+            </p>
+
+            <h2>Technical Infrastructure</h2>
+            <div class="not-prose space-y-2 my-12">
+                <div class="p-4 bg-neutral-50 dark:bg-neutral-800/30 rounded border border-neutral-200 dark:border-neutral-800 flex items-center gap-4">
+                    <div class="w-8 h-8 rounded-full bg-neutral-200 dark:bg-neutral-700 flex items-center justify-center font-bold text-xs">1</div>
+                    <div class="flex-1">
+                        <span class="font-bold text-neutral-900 dark:text-white">Registry Lookup:</span>
+                        <span class="text-sm text-neutral-500 ml-2">Cross-checked against the SCDB Case Universe.</span>
+                    </div>
+                </div>
+                <div class="p-4 bg-neutral-50 dark:bg-neutral-800/30 rounded border border-neutral-200 dark:border-neutral-800 flex items-center gap-4">
+                    <div class="w-8 h-8 rounded-full bg-neutral-200 dark:bg-neutral-700 flex items-center justify-center font-bold text-xs">2</div>
+                    <div class="flex-1">
+                        <span class="font-bold text-neutral-900 dark:text-white">Synthetic Traps:</span>
+                        <span class="text-sm text-neutral-500 ml-2">Intentional injection of fake cases to test model "biting."</span>
+                    </div>
+                </div>
+                <div class="p-4 bg-neutral-50 dark:bg-neutral-800/30 rounded border border-neutral-200 dark:border-neutral-800 flex items-center gap-4">
+                    <div class="w-8 h-8 rounded-full bg-neutral-200 dark:bg-neutral-700 flex items-center justify-center font-bold text-xs">3</div>
+                    <div class="flex-1">
+                        <span class="font-bold text-neutral-900 dark:text-white">Deterministic:</span>
+                        <span class="text-sm text-neutral-500 ml-2">100% code-based verification; no LLM-as-a-Judge.</span>
+                    </div>
+                </div>
+            </div>
+
+            <h2>Lawyering Effectiveness</h2>
+            <p>
+                This design aligns with <strong>Shultz & Zedeck Factor 21</strong>: <i>"Integrity & Honesty: has core values and beliefs; acts with integrity and honesty."</i> For Legal AI to be production-ready, it must prioritize truth over fluency.
+            </p>
+
+        </article>
+    </main>
+    <script src="../shared/site-shell.js"></script>
+</body>
+</html>

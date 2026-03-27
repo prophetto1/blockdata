@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Design Specification - L10 Atomic - LegalChain</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = { darkMode: "class" };
+    </script>
+  </head>
+  <body class="min-h-screen bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 transition-colors">
+    <main id="l10-page" data-l10-layout="two-col" data-l10-sidenav="site" data-l10-content-width="narrow" data-l10-subnav="breadcrumb">
+
+      <header class="mb-10">
+        <h1 class="text-4xl font-light tracking-tight text-neutral-900 dark:text-neutral-100">Design</h1>
+        <p class="mt-3 text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
+          L10 Atomic evaluates each skill independently (no error propagation), producing per-skill scores and a final summary.
+        </p>
+      </header>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
+      <!-- Scope Section -->
+      <section class="mb-10">
+        <div class="text-[10px] font-mono uppercase tracking-widest text-neutral-500 dark:text-neutral-500 mb-2">Scope</div>
+        <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-5 space-y-4">
+          <div>
+            <h3 class="font-medium mb-2">Skills Included</h3>
+            <p class="text-sm text-gray-600 dark:text-gray-400">
+              L10 Atomic evaluates all 7 core legal reasoning skills independently:
+              S1 (Known Authority), S2 (Unknown Authority), S3 (Validate Authority),
+              S4 (Fact Extraction), S5 (Distinguish), S6 (IRAC Synthesis), S7 (Citation Integrity).
+            </p>
+          </div>
+          <div>
+            <h3 class="font-medium mb-2">Modalities</h3>
+            <ul class="text-sm text-gray-600 dark:text-gray-400 list-disc list-inside space-y-1">
+              <li><strong>S5:cb</strong> - Closed-book (metadata + extracted facts only)</li>
+              <li><strong>S5:rag</strong> - RAG-enhanced (includes citing opinion text)</li>
+              <li>All other skills run in a single modality</li>
+            </ul>
+          </div>
+          <div>
+            <h3 class="font-medium mb-2">Gates</h3>
+            <p class="text-sm text-gray-600 dark:text-gray-400">
+              S7 (Citation Integrity) functions as a hard gate in L10 Agentic, voiding S6 output if fabrications are detected.
+              In L10 Atomic, S7 is evaluated independently and does not void other skill scores.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Scoring Section -->
+      <section class="mb-10">
+        <div class="text-[10px] font-mono uppercase tracking-widest text-neutral-500 dark:text-neutral-500 mb-2">Scoring Methods</div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden">
+            <thead class="bg-gray-50 dark:bg-gray-800">
+              <tr>
+                <th class="px-4 py-3 text-left font-semibold">Step</th>
+                <th class="px-4 py-3 text-left font-semibold">Method</th>
+                <th class="px-4 py-3 text-left font-semibold">Score</th>
+                <th class="px-4 py-3 text-left font-semibold">Correct</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-900">
+              <tr>
+                <td class="px-4 py-3 font-medium">S1</td>
+                <td class="px-4 py-3">Exact match</td>
+                <td class="px-4 py-3"><code class="text-xs bg-gray-100 dark:bg-gray-800 px-1 rounded">1.0</code> or <code class="text-xs bg-gray-100 dark:bg-gray-800 px-1 rounded">0.0</code></td>
+                <td class="px-4 py-3">All fields match</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 font-medium">S2</td>
+                <td class="px-4 py-3">Ranked retrieval</td>
+                <td class="px-4 py-3">MRR (0.0-1.0)</td>
+                <td class="px-4 py-3">hit@10</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 font-medium">S3</td>
+                <td class="px-4 py-3">Exact + partial credit</td>
+                <td class="px-4 py-3"><code class="text-xs bg-gray-100 dark:bg-gray-800 px-1 rounded">1.0</code>, <code class="text-xs bg-gray-100 dark:bg-gray-800 px-1 rounded">0.5</code>, or <code class="text-xs bg-gray-100 dark:bg-gray-800 px-1 rounded">0.0</code></td>
+                <td class="px-4 py-3">is_overruled + year match</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 font-medium">S4</td>
+                <td class="px-4 py-3">Weighted fields</td>
+                <td class="px-4 py-3">0.5 per field</td>
+                <td class="px-4 py-3">Both fields match</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 font-medium">S5:cb / S5:rag</td>
+                <td class="px-4 py-3">Binary</td>
+                <td class="px-4 py-3"><code class="text-xs bg-gray-100 dark:bg-gray-800 px-1 rounded">1.0</code> or <code class="text-xs bg-gray-100 dark:bg-gray-800 px-1 rounded">0.0</code></td>
+                <td class="px-4 py-3">agrees == edge.agree</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 font-medium">S6</td>
+                <td class="px-4 py-3">Rubric-based</td>
+                <td class="px-4 py-3">0.0-1.0 weighted</td>
+                <td class="px-4 py-3">score >= 0.5</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 font-medium">S7</td>
+                <td class="px-4 py-3">Binary</td>
+                <td class="px-4 py-3"><code class="text-xs bg-gray-100 dark:bg-gray-800 px-1 rounded">1.0</code> or <code class="text-xs bg-gray-100 dark:bg-gray-800 px-1 rounded">0.0</code></td>
+                <td class="px-4 py-3">all_valid == True</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      </div>
+
+      <!-- Detailed Scoring Rules -->
+      <section class="mb-10">
+        <div class="text-[10px] font-mono uppercase tracking-widest text-neutral-500 dark:text-neutral-500 mb-2">Detailed Scoring Rules</div>
+        <div class="space-y-6">
+
+          <!-- S1 -->
+          <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-5">
+            <h3 class="font-medium mb-3">S1: Known Authority Retrieval</h3>
+            <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">
+              All three fields must match exactly: <code class="text-xs bg-gray-100 dark:bg-gray-800 px-1 rounded">us_cite</code>,
+              <code class="text-xs bg-gray-100 dark:bg-gray-800 px-1 rounded">case_name</code>,
+              <code class="text-xs bg-gray-100 dark:bg-gray-800 px-1 rounded">term</code>.
+            </p>
+            <div class="text-xs bg-gray-50 dark:bg-gray-800 p-3 rounded font-mono">
+              Normalization: Citations canonicalized (spaces → underscores, periods removed, lowercase)
+            </div>
+          </div>
+
+          <!-- S2 -->
+          <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-5">
+            <h3 class="font-medium mb-3">S2: Unknown Authority Retrieval</h3>
+            <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">
+              Uses ranked retrieval metrics. Primary score is MRR (Mean Reciprocal Rank).
+            </p>
+            <div class="text-sm space-y-2">
+              <div><strong>MRR:</strong> 1/(rank of first correct result), or 0 if not found</div>
+              <div><strong>hit@k:</strong> True if ground truth appears in top k results</div>
+            </div>
+            <div class="mt-3 text-xs text-gray-500 dark:text-gray-400">
+              Additional metrics: hit@1, hit@5, hit@10, hit@20, rank
+            </div>
+          </div>
+
+          <!-- S3 -->
+          <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-5">
+            <h3 class="font-medium mb-3">S3: Validate Authority</h3>
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead class="text-left">
+                  <tr class="border-b border-gray-200 dark:border-gray-700">
+                    <th class="py-2 pr-4">Condition</th>
+                    <th class="py-2 pr-4">Score</th>
+                    <th class="py-2">Correct</th>
+                  </tr>
+                </thead>
+                <tbody class="text-gray-600 dark:text-gray-400">
+                  <tr><td class="py-1">Not overruled, model says not overruled</td><td>1.0</td><td>True</td></tr>
+                  <tr><td class="py-1">Overruled, model says overruled with correct year</td><td>1.0</td><td>True</td></tr>
+                  <tr><td class="py-1">Overruled, model says overruled with wrong year</td><td>0.5</td><td>False</td></tr>
+                  <tr><td class="py-1">Overruled, model says not overruled</td><td>0.0</td><td>False</td></tr>
+                  <tr><td class="py-1">Not overruled, model says overruled</td><td>0.0</td><td>False</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- S4 -->
+          <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-5">
+            <h3 class="font-medium mb-3">S4: Fact Extraction</h3>
+            <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">
+              Two fields evaluated independently, 0.5 weight each:
+            </p>
+            <ul class="text-sm list-disc list-inside text-gray-600 dark:text-gray-400 space-y-1">
+              <li><strong>disposition</strong> - Must match closed enum exactly</li>
+              <li><strong>party_winning</strong> - "petitioner", "respondent", or "unclear"</li>
+            </ul>
+            <div class="mt-3 text-xs bg-gray-50 dark:bg-gray-800 p-3 rounded">
+              Disposition enum: stay granted, affirmed, reversed, reversed and remanded, vacated and remanded,
+              affirmed and reversed in part, affirmed and vacated in part, affirmed and reversed in part and remanded,
+              vacated, petition denied, certification
+            </div>
+          </div>
+
+          <!-- S5 -->
+          <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-5">
+            <h3 class="font-medium mb-3">S5: Distinguish</h3>
+            <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">
+              Binary classification: does the citing case agree with or distinguish from the cited case?
+            </p>
+            <div class="grid md:grid-cols-2 gap-4 mt-3">
+              <div class="text-sm">
+                <div class="font-medium mb-1">S5:cb (Closed-Book)</div>
+                <div class="text-gray-600 dark:text-gray-400">Uses only metadata + S4 extracted facts</div>
+              </div>
+              <div class="text-sm">
+                <div class="font-medium mb-1">S5:rag (RAG-Enhanced)</div>
+                <div class="text-gray-600 dark:text-gray-400">Adds citing opinion text</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- S6 -->
+          <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-5">
+            <h3 class="font-medium mb-3">S6: IRAC Synthesis</h3>
+            <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">
+              Rubric-based scoring with weighted components:
+            </p>
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead class="text-left">
+                  <tr class="border-b border-gray-200 dark:border-gray-700">
+                    <th class="py-2 pr-4">Component</th>
+                    <th class="py-2 pr-4">Weight</th>
+                    <th class="py-2">Criteria</th>
+                  </tr>
+                </thead>
+                <tbody class="text-gray-600 dark:text-gray-400">
+                  <tr><td class="py-1">Issue</td><td>20%</td><td>Clear, correctly framed legal question</td></tr>
+                  <tr><td class="py-1">Rule</td><td>25%</td><td>Accurate statement of legal rule from case</td></tr>
+                  <tr><td class="py-1">Application</td><td>35%</td><td>Logical application with citation support</td></tr>
+                  <tr><td class="py-1">Conclusion</td><td>20%</td><td>Consistent with analysis, cites outcome</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- S7 -->
+          <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-5">
+            <h3 class="font-medium mb-3">S7: Citation Integrity</h3>
+            <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">
+              All citations must be verifiable real cases. A single fabricated citation results in failure.
+            </p>
+            <div class="text-sm space-y-2">
+              <div><strong>Verification:</strong> Citations extracted using <code class="text-xs bg-gray-100 dark:bg-gray-800 px-1 rounded">eyecite</code> library</div>
+              <div><strong>Ground truth:</strong> Cross-referenced against SCDB and fake_cases.csv</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Dataset Schema -->
+      <section class="mb-10">
+        <h2 class="text-xl font-semibold mb-4">Dataset Schema</h2>
+        <div class="space-y-4">
+          <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-5">
+            <h3 class="font-medium mb-3">Ground Truth Sources</h3>
+            <div class="grid md:grid-cols-2 gap-4">
+              <div class="text-sm">
+                <div class="font-medium text-gray-700 dark:text-gray-300 mb-2">scdb_sample.csv</div>
+                <ul class="text-gray-600 dark:text-gray-400 space-y-1">
+                  <li>S1: usCite, caseName, term</li>
+                  <li>S4: caseDisposition, partyWinning</li>
+                </ul>
+              </div>
+              <div class="text-sm">
+                <div class="font-medium text-gray-700 dark:text-gray-300 mb-2">scotus_shepards_sample.csv</div>
+                <ul class="text-gray-600 dark:text-gray-400 space-y-1">
+                  <li>S2: citing_case_us_cite</li>
+                  <li>S5: agree (edge label)</li>
+                </ul>
+              </div>
+              <div class="text-sm">
+                <div class="font-medium text-gray-700 dark:text-gray-300 mb-2">scotus_overruled_db.csv</div>
+                <ul class="text-gray-600 dark:text-gray-400 space-y-1">
+                  <li>S3: overruling_case_name, year_overruled</li>
+                </ul>
+              </div>
+              <div class="text-sm">
+                <div class="font-medium text-gray-700 dark:text-gray-300 mb-2">fake_cases.csv</div>
+                <ul class="text-gray-600 dark:text-gray-400 space-y-1">
+                  <li>S7: Known fabricated citations</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-5">
+            <h3 class="font-medium mb-3">Output Schemas</h3>
+            <div class="text-sm font-mono bg-gray-50 dark:bg-gray-800 p-4 rounded overflow-x-auto">
+<pre>// S1 Output
+{ "us_cite": string, "case_name": string, "term": int }
+
+// S2 Output
+{ "citing_cases": [{ "us_cite": string, "case_name": string }] }
+
+// S3 Output
+{ "is_overruled": bool, "overruling_case": string|null, "year_overruled": int|null }
+
+// S4 Output
+{ "disposition": string, "party_winning": string, "holding_summary": string }
+
+// S5 Output
+{ "agrees": bool, "reasoning": string }
+
+// S6 Output
+{ "issue": string, "rule": string, "application": string, "conclusion": string }
+
+// S7 Output
+{ "citations_found": [{ "cite": string, "exists": bool }], "all_valid": bool }</pre>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Aggregation -->
+      <section class="mb-10">
+        <h2 class="text-xl font-semibold mb-4">Aggregation & Reporting</h2>
+        <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-5">
+          <div class="space-y-4">
+            <div>
+              <h3 class="font-medium mb-2">Per-Skill Metrics</h3>
+              <p class="text-sm text-gray-600 dark:text-gray-400">
+                Each skill reports accuracy as: <code class="text-xs bg-gray-100 dark:bg-gray-800 px-1 rounded">correct / total</code> for instances with <code class="text-xs bg-gray-100 dark:bg-gray-800 px-1 rounded">status="OK"</code>.
+              </p>
+            </div>
+            <div>
+              <h3 class="font-medium mb-2">Coverage Reporting</h3>
+              <p class="text-sm text-gray-600 dark:text-gray-400">
+                S5:rag coverage = instances with citing text / total instances.
+                Reported separately from accuracy.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Versioning -->
+      <section class="mb-10">
+        <h2 class="text-xl font-semibold mb-4">Versioning Policy</h2>
+        <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-5">
+          <div class="space-y-4">
+            <div>
+              <h3 class="font-medium mb-2">Breaking Changes (Major Version)</h3>
+              <ul class="text-sm text-gray-600 dark:text-gray-400 list-disc list-inside space-y-1">
+                <li>Changes to scoring formulas</li>
+                <li>Adding/removing skills from evaluation</li>
+                <li>Changes to ground truth sources</li>
+              </ul>
+            </div>
+            <div>
+              <h3 class="font-medium mb-2">Compatible Changes (Minor Version)</h3>
+              <ul class="text-sm text-gray-600 dark:text-gray-400 list-disc list-inside space-y-1">
+                <li>Adding new metrics without changing existing ones</li>
+                <li>Expanding dataset coverage</li>
+                <li>Improving documentation</li>
+              </ul>
+            </div>
+            <div>
+              <h3 class="font-medium mb-2">Run Artifacts</h3>
+              <p class="text-sm text-gray-600 dark:text-gray-400">
+                Each benchmark run produces: manifest with dataset hashes, per-instance step traces,
+                aggregated scores, and model metadata.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Navigation -->
+      <section class="mb-8">
+        <div class="flex gap-4">
+          <a href="index.html" class="text-sm text-blue-600 dark:text-blue-400 hover:underline">
+            ← Back to Overview
+          </a>
+          <a href="skills.html" class="text-sm text-blue-600 dark:text-blue-400 hover:underline">
+            Skill Reference →
+          </a>
+        </div>
+      </section>
+    </main>
+
+    <script src="../../shared/site-shell.js"></script>
+  </body>
+</html>

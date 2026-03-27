@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Who We Are - LegalChain</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,700&family=Libre+Baskerville:ital,wght@0,400;1,400&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            serif: ['"EB Garamond"', 'serif'],
+            classic: ['"Libre Baskerville"', 'serif'],
+            mono: ['ui-monospace', 'monospace'],
+          },
+          colors: {
+            void: '#050505',
+            paper: '#f4f4f5',
+            signal: '#dc2626',
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Absolute overrides to fix the 'font is wrong' issue */
+    body {
+      background-color: #ffffff !important;
+      font-family: "EB Garamond", serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    .dark body {
+      background-color: #050505 !important;
+    }
+    
+    .content-serif {
+      font-family: "EB Garamond", serif !important;
+      border-bottom: none !important; /* Remove lingering line */
+      padding-bottom: 0 !important;
+      text-transform: none !important;
+    }
+    
+    .label-mono {
+      font-family: ui-monospace, monospace !important;
+      text-transform: uppercase !important;
+      letter-spacing: 0.1em;
+    }
+
+    ::selection { background: #dc2626; color: white; }
+  </style>
+</head>
+<body class="bg-white dark:bg-void text-void dark:text-gray-200 min-h-screen transition-colors duration-500 selection:bg-signal selection:text-white">
+
+  <!-- TOP BAR (Managed by site-shell.js) -->
+  <div id="nav-container"></div>
+
+  <!-- SINGLE COLUMN CONTENT CONTAINER -->
+  <main id="l10-page" data-l10-layout="about" class="min-h-screen py-24 px-6 md:px-12 w-full mx-auto">
+
+    <!-- HEADER SECTION: ITZALICIZED QUOTE -->
+    <header class="mb-12 max-w-6xl">
+      <h1 class="content-serif italic text-3xl md:text-4xl lg:text-4xl leading-tight text-void dark:text-white mb-12">
+        LegalChain is a stateful execution environment—a <span class="font-semibold">flight simulator for legal AI.</span>
+      </h1>
+    </header>
+
+    <div class="space-y-12">
+      
+      <!-- Introduction Block -->
+      <article class="grid md:grid-cols-12 gap-8 items-start">
+        <!-- SEPARATE DIV FOR LABEL -->
+
+        
+        <!-- SEPARATE DIV FOR CONTENT (Avoids font leakage) -->
+        <div class="md:col-span-8 space-y-8 max-w-3xl">
+          <p class="content-serif text-lg leading-relaxed text-gray-700 dark:text-gray-300">
+            LegalChain is a production-grade, chained benchmark designed to evaluate the limits of reasoning in Large Language Models.
+            The project emerged from a critical realization: while models have become fluently articulate in legal prose, their ability to maintain
+            substantive logical integrity over complex, multi-step workflows remains fragile.
+          </p>
+          <p class="content-serif text-lg leading-relaxed text-gray-700 dark:text-gray-300">
+            Unlike existing public benchmarks that test skills in isolation—testing whether a model can identify a hearsay exception or
+            summarize a clause—LegalChain measures the <strong>connective tissue</strong> of legal practice. We evaluate whether a model
+            can chain ten distinct reasoning steps without succumbing to the "Cascade Penalty."
+          </p>
+        </div>
+      </article>
+
+
+
+      <!-- Visual Footer -->
+      <footer class="pt-12 border-t border-black/10 dark:border-white/10 mt-24">
+        
+        <div class="flex justify-center gap-6 font-mono text-xs uppercase tracking-widest">
+          <a href="/about/mission.html" class="px-8 py-4 bg-void dark:bg-white text-white dark:text-black hover:opacity-90">
+            Our Mission
+          </a>
+          <a href="/about/donate.html" class="px-8 py-4 border border-gray-300 dark:border-gray-700 text-void dark:text-white hover:bg-gray-100 dark:hover:bg-gray-900 transition-colors">
+            Support Us
+          </a>
+        </div>
+      </footer>
+
+    </div>
+
+  </main>
+  
+  <script src="../shared/site-shell.js"></script>
+
+</body>
+</html>

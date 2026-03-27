@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>L10 Atomic - LegalChain</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = { darkMode: "class" };
+    </script>
+  </head>
+  <body class="min-h-screen bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 transition-colors">
+    <main id="l10-page" data-l10-layout="two-col" data-l10-sidenav="site" data-l10-content-width="narrow" data-l10-subnav="breadcrumb">
+
+
+      <!-- Key Difference Callout -->
+      <div class="bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800 rounded-lg p-4 mb-8">
+        <div class="text-sm font-medium text-amber-900 dark:text-amber-200 mb-1">How Atomic Differs from Agentic</div>
+        <p class="text-sm text-amber-800 dark:text-amber-200/90">
+          <strong>L10 Agentic</strong> chains skills sequentially (S1 → S7), where errors propagate downstream.
+          A model with 90% accuracy per skill achieves only ~48% end-to-end success.<br>
+          <strong>L10 Atomic</strong> evaluates each skill independently, reporting "90% on S1, 70% on S5, 85% on S7"
+          without cascading failures.
+        </p>
+      </div>
+
+      <!-- The 7 Skills Overview -->
+      <section class="mb-10">
+        <h2 class="text-xl font-semibold mb-4">The 7 Skills</h2>
+        <div class="space-y-4">
+          <!-- S1 -->
+          <div class="bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-lg p-4">
+            <div class="flex items-start justify-between">
+              <div>
+                <div class="text-sm font-medium">S1: Known Authority Retrieval</div>
+                <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                  Given a citation or case name, return exact citation, full case name, and SCOTUS term.
+                </div>
+              </div>
+              <span class="text-xs bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 px-2 py-1 rounded">Deterministic</span>
+            </div>
+            <div class="mt-3 grid grid-cols-3 gap-4 text-xs">
+              <div><span class="text-gray-500">Ground Truth:</span> SCDB</div>
+              <div><span class="text-gray-500">Scoring:</span> Exact match</div>
+              <div><span class="text-gray-500">Output:</span> {us_cite, case_name, term}</div>
+            </div>
+          </div>
+
+          <!-- S2 -->
+          <div class="bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-lg p-4">
+            <div class="flex items-start justify-between">
+              <div>
+                <div class="text-sm font-medium">S2: Unknown Authority Retrieval</div>
+                <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                  Given a case, predict which subsequent cases cite it. Tests citation network awareness.
+                </div>
+              </div>
+              <span class="text-xs bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 px-2 py-1 rounded">Deterministic</span>
+            </div>
+            <div class="mt-3 grid grid-cols-3 gap-4 text-xs">
+              <div><span class="text-gray-500">Ground Truth:</span> Shepard's</div>
+              <div><span class="text-gray-500">Scoring:</span> MRR, hit@10</div>
+              <div><span class="text-gray-500">Output:</span> Ranked citing cases</div>
+            </div>
+          </div>
+
+          <!-- S3 -->
+          <div class="bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-lg p-4">
+            <div class="flex items-start justify-between">
+              <div>
+                <div class="text-sm font-medium">S3: Validate Authority</div>
+                <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                  Determine if authority remains good law. Identify overruling case and year if applicable.
+                </div>
+              </div>
+              <span class="text-xs bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 px-2 py-1 rounded">Deterministic</span>
+            </div>
+            <div class="mt-3 grid grid-cols-3 gap-4 text-xs">
+              <div><span class="text-gray-500">Ground Truth:</span> scotus_overruled_db</div>
+              <div><span class="text-gray-500">Scoring:</span> Exact + partial credit</div>
+              <div><span class="text-gray-500">Output:</span> {is_overruled, overruling_case, year}</div>
+            </div>
+          </div>
+
+          <!-- S4 -->
+          <div class="bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-lg p-4">
+            <div class="flex items-start justify-between">
+              <div>
+                <div class="text-sm font-medium">S4: Fact Extraction</div>
+                <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                  Extract disposition, prevailing party, and holding summary from majority opinion text.
+                </div>
+              </div>
+              <span class="text-xs bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 px-2 py-1 rounded">Deterministic</span>
+            </div>
+            <div class="mt-3 grid grid-cols-3 gap-4 text-xs">
+              <div><span class="text-gray-500">Ground Truth:</span> SCDB metadata</div>
+              <div><span class="text-gray-500">Scoring:</span> Closed enum match</div>
+              <div><span class="text-gray-500">Output:</span> {disposition, party_winning, holding}</div>
+            </div>
+          </div>
+
+          <!-- S5 -->
+          <div class="bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-lg p-4">
+            <div class="flex items-start justify-between">
+              <div>
+                <div class="text-sm font-medium">S5: Distinguish Cases</div>
+                <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                  Determine whether a citing case agrees with or distinguishes from precedent.
+                  <span class="text-blue-600 dark:text-blue-400">Two variants: S5:cb (closed-book) and S5:rag (with citing text).</span>
+                </div>
+              </div>
+              <span class="text-xs bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 px-2 py-1 rounded">Deterministic</span>
+            </div>
+            <div class="mt-3 grid grid-cols-3 gap-4 text-xs">
+              <div><span class="text-gray-500">Ground Truth:</span> Shepard's edge.agree</div>
+              <div><span class="text-gray-500">Scoring:</span> Binary match</div>
+              <div><span class="text-gray-500">Output:</span> {agrees, reasoning}</div>
+            </div>
+          </div>
+
+          <!-- S6 -->
+          <div class="bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-lg p-4">
+            <div class="flex items-start justify-between">
+              <div>
+                <div class="text-sm font-medium">S6: IRAC Synthesis</div>
+                <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                  Write IRAC-structured legal analysis integrating all prior outputs. Tests synthesis capability.
+                </div>
+              </div>
+              <span class="text-xs bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300 px-2 py-1 rounded">Rubric-Based</span>
+            </div>
+            <div class="mt-3 grid grid-cols-3 gap-4 text-xs">
+              <div><span class="text-gray-500">Ground Truth:</span> MEE rubric</div>
+              <div><span class="text-gray-500">Scoring:</span> Weighted (0-1)</div>
+              <div><span class="text-gray-500">Output:</span> {issue, rule, application, conclusion}</div>
+            </div>
+          </div>
+
+          <!-- S7 -->
+          <div class="bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-lg p-4">
+            <div class="flex items-start justify-between">
+              <div>
+                <div class="text-sm font-medium">S7: Citation Integrity</div>
+                <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                  Verify all citations are real cases (no hallucinations).
+                  <span class="text-red-600 dark:text-red-400">Professional responsibility gate.</span>
+                </div>
+              </div>
+              <span class="text-xs bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 px-2 py-1 rounded">Hard Gate</span>
+            </div>
+            <div class="mt-3 grid grid-cols-3 gap-4 text-xs">
+              <div><span class="text-gray-500">Ground Truth:</span> SCDB + fake_cases.csv</div>
+              <div><span class="text-gray-500">Scoring:</span> Binary (pass/void)</div>
+              <div><span class="text-gray-500">Output:</span> {citations_found, all_valid}</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Navigation -->
+      <section class="mb-8">
+        <h2 class="text-xl font-semibold mb-4">Documentation</h2>
+        <div class="grid md:grid-cols-2 gap-4">
+          <a href="design.html" class="block bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-lg p-4 hover:border-gray-300 dark:hover:border-neutral-600 transition-colors">
+            <div class="text-sm font-medium mb-1">Design Specification</div>
+            <div class="text-xs text-gray-600 dark:text-gray-400">Detailed scoring rules, dataset schemas, and evaluation methodology.</div>
+          </a>
+          <a href="skills.html" class="block bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-lg p-4 hover:border-gray-300 dark:hover:border-neutral-600 transition-colors">
+            <div class="text-sm font-medium mb-1">Skill Reference</div>
+            <div class="text-xs text-gray-600 dark:text-gray-400">Complete specification for each of the 7 skills with examples.</div>
+          </a>
+        </div>
+      </section>
+
+      <!-- Theoretical Foundation -->
+      <section class="mb-8">
+        <h2 class="text-xl font-semibold mb-4">Theoretical Foundation</h2>
+        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+          The 7 skills derive from three authoritative sources on legal research competency:
+        </p>
+        <ul class="text-sm text-gray-600 dark:text-gray-400 space-y-2">
+          <li><strong>MacCrate Report (ABA, 1992)</strong> - "Coherent and effective research design"</li>
+          <li><strong>AALL Principles (2013)</strong> - "Successful legal researcher applies information effectively"</li>
+          <li><strong>Shultz & Zedeck (2011)</strong> - Empirical study of lawyer effectiveness (26 factors)</li>
+        </ul>
+      </section>
+    </main>
+
+    <script src="../../shared/site-shell.js"></script>
+  </body>
+</html>

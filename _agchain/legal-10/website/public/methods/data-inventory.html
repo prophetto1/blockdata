@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Data Inventory & Lineage - Methodology A</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        legalblue: {
+                            50: '#f0f7ff',
+                            100: '#e0effe',
+                            200: '#bae0fd',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#1e3a8a',
+                        }
+                    }
+                }
+            }
+        };
+    </script>
+</head>
+<body class="bg-neutral-950 text-neutral-400 font-sans antialiased">
+    <main id="l10-page" data-l10-layout="research" data-l10-sidenav="site" data-l10-sidenav-pos="left">
+        <article class="max-w-4xl mx-auto research-content">
+            <header class="mb-16">
+                <h1 class="research-title">Data Inventory & Lineage</h1>
+                
+                <p class="lead text-xl text-neutral-400 font-serif italic border-l-4 border-amber-900/50 pl-6 py-2">
+                    LegalChain evaluates AI against the largest empirically-grounded legal corpus ever assembled: 27,733 Supreme Court opinions, 43,000+ lower federal court decisions, and 5.7 million precedential relationships.
+                </p>
+            </header>
+
+            <div class="not-prose grid grid-cols-1 md:grid-cols-3 gap-4 my-12">
+                    <div class="text-3xl font-bold text-legalblue-700 dark:text-legalblue-400 mb-1">~70k</div>
+                    <div class="text-xs uppercase tracking-wider text-neutral-500 font-semibold">Verified Opinions</div>
+                </div>
+                <div class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg p-6 shadow-sm">
+                    <div class="text-3xl font-bold text-legalblue-700 dark:text-legalblue-400 mb-1">5.7M</div>
+                    <div class="text-xs uppercase tracking-wider text-neutral-500 font-semibold">Citations Mapped</div>
+                </div>
+                <div class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg p-6 shadow-sm">
+                    <div class="text-3xl font-bold text-legalblue-700 dark:text-legalblue-400 mb-1">100%</div>
+                    <div class="text-xs uppercase tracking-wider text-neutral-500 font-semibold">Academic Sourced</div>
+                </div>
+            </div>
+
+            <h2>Why Domain Provenance Matters</h2>
+            <p>A benchmark is only as credible as its underlying data. LegalChain draws exclusively from publicly available, academically validated sources. We do not use proprietary annotations, crowd-sourced labels, or synthetic training data.</p>
+
+            <div class="not-prose grid grid-cols-1 md:grid-cols-3 gap-6 my-10">
+                <div class="space-y-2">
+                    <h4 class="font-bold text-neutral-800 dark:text-neutral-200">Verifiability</h4>
+                    <p class="text-sm text-neutral-600 dark:text-neutral-400">Any researcher can reconstruct our corpus from original sources. We publish exact source files and transformation scripts.</p>
+                </div>
+                <div class="space-y-2">
+                    <h4 class="font-bold text-neutral-800 dark:text-neutral-200">Authority</h4>
+                    <p class="text-sm text-neutral-600 dark:text-neutral-400">Every source is peer-reviewed or published by official government institutions like the SCDB or Harvard Library.</p>
+                </div>
+                <div class="space-y-2">
+                    <h4 class="font-bold text-neutral-800 dark:text-neutral-200">Stability</h4>
+                    <p class="text-sm text-neutral-600 dark:text-neutral-400">Academic datasets change with version control, unlike commercial databases that drift without preserving state.</p>
+                </div>
+            </div>
+
+            <h2>Primary Data Sources</h2>
+            <p>The LegalChain corpus is synthesized from four primary authoritative libraries.</p>
+
+            <div class="not-prose space-y-6 my-12">
+                <!-- SCDB Card -->
+                <div class="flex flex-col md:flex-row gap-6 p-6 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl">
+                    <div class="w-16 h-16 shrink-0 bg-blue-50 dark:bg-blue-900/40 rounded-lg flex items-center justify-center text-blue-600 dark:text-blue-400 font-bold text-2xl">
+                        SC
+                    </div>
+                    <div class="space-y-2">
+                        <h4 class="font-bold text-lg mb-0 leading-none">Supreme Court Database (SCDB)</h4>
+                        <div class="text-xs text-neutral-500 font-medium">Washington University in St. Louis / Harold J. Spaeth</div>
+                        <p class="text-sm text-neutral-600 dark:text-neutral-400">The foundation of the anchor corpus. Coverage of 29,021 cases (1791–2021) with 55 standardized variables including decision date, voting alignment, and case names.</p>
+                    </div>
+                </div>
+
+                <!-- CAP Card -->
+                <div class="flex flex-col md:flex-row gap-6 p-6 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl">
+                    <div class="w-16 h-16 shrink-0 bg-indigo-50 dark:bg-indigo-900/40 rounded-lg flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold text-2xl">
+                        CP
+                    </div>
+                    <div class="space-y-2">
+                        <h4 class="font-bold text-lg mb-0 leading-none">Caselaw Access Project (CAP)</h4>
+                        <div class="text-xs text-neutral-500 font-medium">Harvard Law School Library</div>
+                        <p class="text-sm text-neutral-600 dark:text-neutral-400">The first complete digitization of American case law. We extract 43,043 federal appellate and district court opinions cited directly by the Supreme Court.</p>
+                    </div>
+                </div>
+
+                <!-- Fowler/Shepard grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="p-6 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl">
+                        <h4 class="font-bold mb-4 flex items-center gap-2">
+                            <span class="p-1 px-2 rounded bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 text-xs">NW</span>
+                            Fowler Authority Scores
+                        </h4>
+                        <p class="text-sm text-neutral-600 dark:text-neutral-400">Eigenvector centrality measures for 27,846 cases, providing a continuous importance score (0.0–1.0) rather than binary classifications.</p>
+                    </div>
+                    <div class="p-6 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl">
+                        <h4 class="font-bold mb-4 flex items-center gap-2">
+                            <span class="p-1 px-2 rounded bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 text-xs">TR</span>
+                            Shepard's treatment Citations
+                        </h4>
+                        <p class="text-sm text-neutral-600 dark:text-neutral-400">5.7 million citation edges labeled with treatment semantics (Followed, Overruled, Distinguished) to evaluate relational reasoning.</p>
+                    </div>
+                </div>
+            </div>
+
+            <h2>Derived Artifacts</h2>
+            <p>Raw data is transformed into resolution maps and ground-truth vectors used for evaluation scoring.</p>
+
+            <table class="min-w-full">
+                <thead>
+                    <tr>
+                        <th>Artifact / Map</th>
+                        <th>Coverage</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>SCOTUS-to-SCOTUS</strong></td>
+                        <td>323,404 citations</td>
+                        <td><span class="p-1 px-2 rounded bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 text-[10px] uppercase font-bold">Verified</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>SCOTUS-to-CAP</strong></td>
+                        <td>55,534 citations</td>
+                        <td><span class="p-1 px-2 rounded bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 text-[10px] uppercase font-bold">Verified</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Precedent Validity Map</strong></td>
+                        <td>288 overrulings</td>
+                        <td><span class="p-1 px-2 rounded bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400 text-[10px] uppercase font-bold">Annotated</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Hallucination Scopes</strong></td>
+                        <td>1,000 fake cases</td>
+                        <td><span class="p-1 px-2 rounded bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-400 text-[10px] uppercase font-bold">Synthetic</span></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h2>Corpus Constraints</h2>
+            <p>To ensure high precision and avoid model leakage, we apply strict exclusion rules.</p>
+
+            <div class="not-prose bg-neutral-100 dark:bg-neutral-900/40 border-l-4 border-red-500 rounded-r-xl p-8 my-10">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="space-y-4">
+                        <div class="flex items-center gap-3">
+                            <span class="text-red-500 font-bold">✕</span>
+                            <span class="text-sm font-semibold uppercase tracking-wider text-neutral-500">No Proprietary data</span>
+                        </div>
+                        <p class="text-sm text-neutral-600 dark:text-neutral-400">No Westlaw or Lexis editorial annotations that would break redistribution rights.</p>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="flex items-center gap-3">
+                            <span class="text-red-500 font-bold">✕</span>
+                            <span class="text-sm font-semibold uppercase tracking-wider text-neutral-500">No Post-2021 Data</span>
+                        </div>
+                        <p class="text-sm text-neutral-600 dark:text-neutral-400">Fixed temporal cutoff prevents modern cases from leaking into model evaluation.</p>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="flex items-center gap-3">
+                            <span class="text-red-500 font-bold">✕</span>
+                            <span class="text-sm font-semibold uppercase tracking-wider text-neutral-500">No Crowd-Sourcing</span>
+                        </div>
+                        <p class="text-sm text-neutral-600 dark:text-neutral-400">Zero reliance on mechanical turk or low-expertise labels for legal ground truth.</p>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="flex items-center gap-3">
+                            <span class="text-red-500 font-bold">✕</span>
+                            <span class="text-sm font-semibold uppercase tracking-wider text-neutral-500">No State Court Data</span>
+                        </div>
+                        <p class="text-sm text-neutral-600 dark:text-neutral-400">Exclusively limited to the Federal Case Law universe for high precision evaluation.</p>
+                    </div>
+                </div>
+            </div>
+
+            <h2>Storage & Stability</h2>
+            <p>The total LegalChain runtime inventory occupies **3.7 GB**. This represents a 94% reduction from the raw 24 GB CAP corpus, achieved by surgical extraction of only relevant precedential anchors.</p>
+
+            <div class="not-prose my-12 border border-neutral-200 dark:border-neutral-800 rounded-xl overflow-hidden shadow-sm">
+                <div class="bg-neutral-50 dark:bg-neutral-900 px-6 py-4 font-mono text-xs text-neutral-500 border-b border-neutral-200 dark:border-neutral-800 flex justify-between">
+                    <span>SEALED_BUILD_MANIFEST.JSON</span>
+                    <span class="text-emerald-600 dark:text-emerald-400 font-bold">INTEGRITY_VERIFIED</span>
+                </div>
+                <div class="p-6 bg-white dark:bg-neutral-950 space-y-3 font-mono text-[11px]">
+                    <div class="flex justify-between">
+                        <span class="text-neutral-400">Case_metadata.parquet</span>
+                        <span class="text-legalblue-700 dark:text-legalblue-400">SHA256: 4e9d7...d3c8</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-neutral-400">Citation_inventory.parquet</span>
+                        <span class="text-legalblue-700 dark:text-legalblue-400">SHA256: f1a2b...9e0c</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-neutral-400">Appellate_text_v1.bin</span>
+                        <span class="text-legalblue-700 dark:text-legalblue-400">SHA256: a8b7c...2d1e</span>
+                    </div>
+                </div>
+            </div>
+
+        </article>
+    </main>
+
+    <script src="../shared/site-shell.js"></script>
+</body>
+</html>

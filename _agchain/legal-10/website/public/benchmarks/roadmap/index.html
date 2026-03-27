@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Roadmap - Benchmarks - LegalChain</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = { darkMode: "class" };
+    </script>
+  </head>
+  <body class="min-h-screen bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 transition-colors">
+    <main
+      id="l10-page"
+      data-l10-layout="two-col"
+      data-l10-sidenav="site"
+      data-l10-subnav="none"
+      data-l10-content-width="narrow"
+    >
+      <header class="mb-10">
+        <h1 class="mt-2 text-4xl font-light tracking-tight text-neutral-900 dark:text-neutral-100">Roadmap</h1>
+        <p class="mt-4 text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
+          This page is being rebuilt.
+        </p>
+      </header>
+
+      <section class="mb-10">
+        <h2 class="text-xl font-semibold mb-3">In progress</h2>
+        <div class="bg-white/80 dark:bg-neutral-900/40 border border-neutral-200 dark:border-neutral-800 rounded-xl p-5">
+          <ul class="list-disc list-inside text-sm text-neutral-700 dark:text-neutral-300 space-y-1">
+            <li>Define the public roadmap structure for benchmark families and run specs.</li>
+            <li>Introduce a precision-tier benchmark track under <span class="font-mono text-[12px]">Quantization</span>.</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <a
+          href="/benchmarks/index.html"
+          class="block bg-white/80 dark:bg-neutral-900/40 border border-neutral-200 dark:border-neutral-800 rounded-xl p-5 hover:border-neutral-300 dark:hover:border-neutral-700 transition-colors"
+        >
+          <div class="text-[10px] font-mono uppercase tracking-widest text-neutral-500 dark:text-neutral-500 mb-2">Benchmarks</div>
+          <div class="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-1">Back to overview</div>
+          <div class="text-sm text-neutral-700 dark:text-neutral-300">AG8, AG10, L7 and how to read them.</div>
+        </a>
+
+        <a
+          href="/methods/index.html"
+          class="block bg-white/80 dark:bg-neutral-900/40 border border-neutral-200 dark:border-neutral-800 rounded-xl p-5 hover:border-neutral-300 dark:hover:border-neutral-700 transition-colors"
+        >
+          <div class="text-[10px] font-mono uppercase tracking-widest text-neutral-500 dark:text-neutral-500 mb-2">How it works</div>
+          <div class="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-1">Methodology</div>
+          <div class="text-sm text-neutral-700 dark:text-neutral-300">Runner semantics, artifacts, and integrity policies.</div>
+        </a>
+      </section>
+    </main>
+
+    <script src="../../shared/site-shell.js"></script>
+  </body>
+</html>

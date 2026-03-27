@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Quantization - Benchmarks - LegalChain</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = { darkMode: "class" };
+    </script>
+  </head>
+  <body class="min-h-screen bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 transition-colors">
+    <main
+      id="l10-page"
+      data-l10-layout="two-col"
+      data-l10-sidenav="site"
+      data-l10-subnav="none"
+      data-l10-content-width="narrow"
+    >
+      <header class="mb-10">
+        <h1 class="mt-2 text-4xl font-light tracking-tight text-neutral-900 dark:text-neutral-100">Quantization</h1>
+        <p class="mt-4 text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
+          Under development. This benchmark is intended to evaluate changes in legal reasoning performance across different
+          deployment precision tiers (e.g. int8, int4) and quantization methods.
+        </p>
+      </header>
+
+      <section class="mb-10">
+        <h2 class="text-xl font-semibold mb-3">Related methodology</h2>
+        <div class="bg-white/80 dark:bg-neutral-900/40 border border-neutral-200 dark:border-neutral-800 rounded-xl p-5">
+          <ul class="list-disc list-inside text-sm text-neutral-700 dark:text-neutral-300 space-y-1">
+            <li><a class="underline" href="/methods/quantization/index.html">Quantization &amp; Reasoning Performance</a></li>
+            <li><a class="underline" href="/methods/quantization/ptq-methods.html">PTQ Methods</a></li>
+            <li><a class="underline" href="/methods/quantization/stacking-problem.html">Stacking Problem</a></li>
+            <li><a class="underline" href="/methods/quantization/precision-tier-evaluation.html">Precision-Tier Evaluation</a></li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
+        <div class="bg-white/80 dark:bg-neutral-900/40 border border-neutral-200 dark:border-neutral-800 rounded-xl p-5">
+          <div class="text-[10px] font-mono uppercase tracking-widest text-neutral-700 dark:text-neutral-500 mb-2">Status</div>
+          <div class="text-sm text-neutral-800 dark:text-neutral-200">Planned</div>
+        </div>
+        <div class="bg-white/80 dark:bg-neutral-900/40 border border-neutral-200 dark:border-neutral-800 rounded-xl p-5">
+          <div class="text-[10px] font-mono uppercase tracking-widest text-neutral-700 dark:text-neutral-500 mb-2">Focus</div>
+          <div class="text-sm text-neutral-800 dark:text-neutral-200">Reasoning vs fluency</div>
+        </div>
+        <div class="bg-white/80 dark:bg-neutral-900/40 border border-neutral-200 dark:border-neutral-800 rounded-xl p-5">
+          <div class="text-[10px] font-mono uppercase tracking-widest text-neutral-700 dark:text-neutral-500 mb-2">Output</div>
+          <div class="text-sm text-neutral-800 dark:text-neutral-200">Precision-tier comparison</div>
+        </div>
+      </section>
+
+      <section class="mb-10">
+        <h2 class="text-xl font-semibold mb-3">Planned evaluation shape</h2>
+        <div class="bg-white/80 dark:bg-neutral-900/40 border border-neutral-200 dark:border-neutral-800 rounded-xl p-5">
+          <ul class="list-disc list-inside text-sm text-neutral-700 dark:text-neutral-300 space-y-1">
+            <li>Run the same task set across multiple precision tiers (example tiers: int8, int4, int2).</li>
+            <li>Compare reasoning-oriented performance to fluency-oriented indicators to detect divergence.</li>
+            <li>Record configuration metadata for each run so comparisons are attributable to a defined regime.</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <a
+          href="/benchmarks/roadmap/index.html"
+          class="block bg-white/80 dark:bg-neutral-900/40 border border-neutral-200 dark:border-neutral-800 rounded-xl p-5 hover:border-neutral-300 dark:hover:border-neutral-700 transition-colors"
+        >
+          <div class="text-[10px] font-mono uppercase tracking-widest text-neutral-500 dark:text-neutral-500 mb-2">Benchmarks</div>
+          <div class="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-1">Roadmap</div>
+          <div class="text-sm text-neutral-700 dark:text-neutral-300">Other benchmarks under development.</div>
+        </a>
+
+        <a
+          href="/methods/index.html"
+          class="block bg-white/80 dark:bg-neutral-900/40 border border-neutral-200 dark:border-neutral-800 rounded-xl p-5 hover:border-neutral-300 dark:hover:border-neutral-700 transition-colors"
+        >
+          <div class="text-[10px] font-mono uppercase tracking-widest text-neutral-500 dark:text-neutral-500 mb-2">How it works</div>
+          <div class="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-1">Methodology</div>
+          <div class="text-sm text-neutral-700 dark:text-neutral-300">Runner semantics and artifacts.</div>
+        </a>
+      </section>
+    </main>
+
+    <script src="../../shared/site-shell.js"></script>
+  </body>
+</html>

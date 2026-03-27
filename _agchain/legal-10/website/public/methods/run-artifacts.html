@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Run Artifacts - LegalChain</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        legalblue: {
+                            50: '#f0f7ff',
+                            100: '#e0effe',
+                            200: '#bae0fd',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#1e3a8a',
+                        },
+                        artifact: {
+                            400: '#94a3b8', // Slate-400
+                            500: '#64748b', // Slate-500
+                            600: '#475569', // Slate-600
+                            900: '#0f172a', // Slate-950
+                        }
+                    },
+                     fontFamily: {
+                        mono: ['"Fira Code"', 'monospace'],
+                        sans: ['"Inter"', 'sans-serif'],
+                        serif: ['"Merriweather"', 'serif'],
+                    }
+                }
+            }
+        };
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;0,900;1,300&family=Inter:wght@300;400;500;600&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../shared/report.css">
+</head>
+<body>
+    <main id="l10-page" data-l10-layout="research" data-l10-sidenav="site" data-l10-sidenav-pos="left">
+        <article class="prose prose-slate dark:prose-invert max-w-4xl mx-auto research-content">
+            
+            <header class="mb-16">
+                <h1 class="research-title">Run Artifacts</h1>
+                
+                <p class="lead text-xl text-neutral-600 dark:text-neutral-400 font-serif italic border-l-4 border-artifact-500 pl-6 py-2">
+                    Visualizing the exhaustive evidence chain generation for every evaluation execution.
+                </p>
+            </header>
+
+            <h2>The Trace Lifecycle</h2>
+            <p>
+                In LegalChain, an evaluation "Run" is not just a final score. It is a persistent collection of **Run Artifacts** that allow researchers to audit the specific logic and data used at every turn. This ensures that every high-level finding is backed by low-level transactional evidence.
+            </p>
+
+            <!-- ARTIFACT TIMELINE -->
+            <div class="my-16 space-y-8 not-prose">
+                <div class="relative pl-12 border-l-2 border-neutral-200 dark:border-neutral-800 pb-8">
+                    <div class="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-blue-500 border-4 border-neutral-50 dark:border-neutral-950"></div>
+                    <div class="text-[10px] font-mono text-neutral-500 uppercase mb-2">Pre-Flight</div>
+                    <h4 class="text-lg font-serif font-bold text-neutral-900 dark:text-white mb-2">Run Configuration ID</h4>
+                    <p class="text-sm text-neutral-600 dark:text-neutral-400 font-serif">A unique fingerprint of model parameters, prompt versions, and data slices (e.g., <code>CR-01-v3.0</code>).</p>
+                </div>
+                <div class="relative pl-12 border-l-2 border-neutral-200 dark:border-neutral-800 pb-8">
+                    <div class="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-artifact-500 border-4 border-neutral-50 dark:border-neutral-950"></div>
+                    <div class="text-[10px] font-mono text-neutral-500 uppercase mb-2">Execution</div>
+                    <h4 class="text-lg font-serif font-bold text-neutral-900 dark:text-white mb-2">Langfuse Traces</h4>
+                    <p class="text-sm text-neutral-600 dark:text-neutral-400 font-serif">Deep observability of every LLM call, including raw tokens, latency, and intermediate S1-S5 outputs stored as JSON objects.</p>
+                </div>
+                <div class="relative pl-12 border-l-2 border-neutral-200 dark:border-neutral-800">
+                    <div class="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-emerald-500 border-4 border-neutral-50 dark:border-neutral-950"></div>
+                    <div class="text-[10px] font-mono text-neutral-500 uppercase mb-2">Finalization</div>
+                    <h4 class="text-lg font-serif font-bold text-neutral-900 dark:text-white mb-2">Delta Reports</h4>
+                    <p class="text-sm text-neutral-600 dark:text-neutral-400 font-serif">The final synthesis artifact comparing S6 (Closed) and S7 (Open) performance metrics for that specific run.</p>
+                </div>
+            </div>
+
+            <h2>Governance via Constitution</h2>
+            <p>
+                Run artifacts are governed by the **LegalChain Constitution (v1.0)**, which enforces a strict "Proposed-First" development workflow. This means that run artifacts must be version-pinned and immutable once a Certified Run (CR) is initiated.
+            </p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 my-12 not-prose">
+                <div class="p-6 bg-neutral-900 border border-neutral-700 rounded-lg">
+                    <h4 class="font-bold text-white mb-2 font-mono text-sm underline decoration-blue-500 underline-offset-4">Pillar: Static Labs</h4>
+                    <p class="text-xs text-neutral-400 font-serif leading-relaxed italic">"The Lab Floor is provisioned with 8.7GB of static ResearchPacks, ensuring unified, open-book evaluation that is 100% executionally reproducible."</p>
+                </div>
+                <div class="p-6 bg-neutral-900 border border-neutral-700 rounded-lg">
+                    <h4 class="font-bold text-white mb-2 font-mono text-sm underline decoration-emerald-500 underline-offset-4">Pillar: Governance</h4>
+                    <p class="text-xs text-neutral-400 font-serif leading-relaxed italic">"Full enterprise-grade observability is active via Langfuse, providing real-time tracing of the Reasoning Bridge and multiplicative error propagation."</p>
+                </div>
+            </div>
+
+            <h2>Auditability</h2>
+            <p>
+                Because every step in the chain is logged with its associated **Ground Truth Contract**, researchers can instantly identify where a model diverged from reality. Was it a failure of citation ID (S1), context extraction (S4), or doctrinal logic (S6)? The artifacts provide the answer.
+            </p>
+
+        </article>
+    </main>
+    <script src="../shared/site-shell.js"></script>
+</body>
+</html>

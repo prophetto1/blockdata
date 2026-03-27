@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>L7 - Benchmarks - LegalChain</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = { darkMode: "class" };
+    </script>
+  </head>
+  <body class="min-h-screen bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 transition-colors">
+    <main
+      id="l10-page"
+      data-l10-layout="two-col"
+      data-l10-sidenav="site"
+      data-l10-subnav="none"
+      data-l10-content-width="narrow"
+    >
+      <header class="mb-10">
+        <h1 class="mt-2 text-4xl font-light tracking-tight text-neutral-900 dark:text-neutral-100">L7</h1>
+        <p class="mt-4 text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
+          L7 is an atomic benchmark: each skill is evaluated independently (no chaining, no stateful carry-over), producing
+          per-skill scores that isolate what a model struggles with, without error propagation.
+        </p>
+      </header>
+
+      <section class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
+        <div class="bg-white/80 dark:bg-neutral-900/40 border border-neutral-200 dark:border-neutral-800 rounded-xl p-5">
+          <div class="text-[10px] font-mono uppercase tracking-widest text-neutral-500 dark:text-neutral-500 mb-2">Mode</div>
+          <div class="text-sm text-neutral-800 dark:text-neutral-200">Atomic (stateless)</div>
+        </div>
+        <div class="bg-white/80 dark:bg-neutral-900/40 border border-neutral-200 dark:border-neutral-800 rounded-xl p-5">
+          <div class="text-[10px] font-mono uppercase tracking-widest text-neutral-500 dark:text-neutral-500 mb-2">Skills</div>
+          <div class="text-sm text-neutral-800 dark:text-neutral-200">7 independent skills</div>
+        </div>
+        <div class="bg-white/80 dark:bg-neutral-900/40 border border-neutral-200 dark:border-neutral-800 rounded-xl p-5">
+          <div class="text-[10px] font-mono uppercase tracking-widest text-neutral-500 dark:text-neutral-500 mb-2">Best for</div>
+          <div class="text-sm text-neutral-800 dark:text-neutral-200">Diagnosis + baseline skill profiling</div>
+        </div>
+      </section>
+
+      <section class="mb-10">
+        <h2 class="text-xl font-semibold mb-3">The 7 skills</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="bg-white/80 dark:bg-neutral-900/40 border border-neutral-200 dark:border-neutral-800 rounded-xl p-5">
+            <div class="font-mono text-xs text-blue-600 dark:text-blue-300 mb-1">S1</div>
+            <div class="font-semibold mb-1">Known Authority Retrieval</div>
+            <div class="text-sm text-neutral-700 dark:text-neutral-300">Given a citation or case name, return canonical details.</div>
+          </div>
+          <div class="bg-white/80 dark:bg-neutral-900/40 border border-neutral-200 dark:border-neutral-800 rounded-xl p-5">
+            <div class="font-mono text-xs text-blue-600 dark:text-blue-300 mb-1">S2</div>
+            <div class="font-semibold mb-1">Unknown Authority Retrieval</div>
+            <div class="text-sm text-neutral-700 dark:text-neutral-300">Given a case, predict which later cases cite it.</div>
+          </div>
+          <div class="bg-white/80 dark:bg-neutral-900/40 border border-neutral-200 dark:border-neutral-800 rounded-xl p-5">
+            <div class="font-mono text-xs text-blue-600 dark:text-blue-300 mb-1">S3</div>
+            <div class="font-semibold mb-1">Validate Authority</div>
+            <div class="text-sm text-neutral-700 dark:text-neutral-300">Determine whether authority remains good law.</div>
+          </div>
+          <div class="bg-white/80 dark:bg-neutral-900/40 border border-neutral-200 dark:border-neutral-800 rounded-xl p-5">
+            <div class="font-mono text-xs text-emerald-600 dark:text-emerald-300 mb-1">S4</div>
+            <div class="font-semibold mb-1">Fact Extraction</div>
+            <div class="text-sm text-neutral-700 dark:text-neutral-300">Extract holding/disposition and key facts from an opinion.</div>
+          </div>
+          <div class="bg-white/80 dark:bg-neutral-900/40 border border-neutral-200 dark:border-neutral-800 rounded-xl p-5">
+            <div class="font-mono text-xs text-emerald-600 dark:text-emerald-300 mb-1">S5</div>
+            <div class="font-semibold mb-1">Distinguish</div>
+            <div class="text-sm text-neutral-700 dark:text-neutral-300">Compare cases and decide whether they meaningfully differ.</div>
+          </div>
+          <div class="bg-white/80 dark:bg-neutral-900/40 border border-neutral-200 dark:border-neutral-800 rounded-xl p-5">
+            <div class="font-mono text-xs text-amber-600 dark:text-amber-300 mb-1">S6</div>
+            <div class="font-semibold mb-1">IRAC Synthesis</div>
+            <div class="text-sm text-neutral-700 dark:text-neutral-300">Write a structured legal analysis under a rubric.</div>
+          </div>
+          <div class="bg-white/80 dark:bg-neutral-900/40 border border-neutral-200 dark:border-neutral-800 rounded-xl p-5 md:col-span-2">
+            <div class="font-mono text-xs text-red-600 dark:text-red-300 mb-1">S7</div>
+            <div class="font-semibold mb-1">Citation Integrity</div>
+            <div class="text-sm text-neutral-700 dark:text-neutral-300">
+              Binary check: a single fabricated authority fails the skill (evaluated independently in L7).
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="mb-10">
+        <h2 class="text-xl font-semibold mb-3">Scoring summary</h2>
+        <div class="overflow-x-auto bg-white/80 dark:bg-neutral-900/40 border border-neutral-200 dark:border-neutral-800 rounded-xl">
+          <table class="min-w-full text-sm">
+            <thead class="bg-neutral-100/80 dark:bg-neutral-900">
+              <tr class="text-left">
+                <th class="px-4 py-3 font-semibold">Skill</th>
+                <th class="px-4 py-3 font-semibold">Method</th>
+                <th class="px-4 py-3 font-semibold">Signal</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-neutral-200 dark:divide-neutral-800">
+              <tr>
+                <td class="px-4 py-3 font-mono">S1</td>
+                <td class="px-4 py-3">Exact match</td>
+                <td class="px-4 py-3">0/1</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 font-mono">S2</td>
+                <td class="px-4 py-3">Ranked retrieval</td>
+                <td class="px-4 py-3">MRR / hit@k</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 font-mono">S3</td>
+                <td class="px-4 py-3">Exact + partial credit</td>
+                <td class="px-4 py-3">0 / 0.5 / 1</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 font-mono">S4</td>
+                <td class="px-4 py-3">Weighted fields</td>
+                <td class="px-4 py-3">0&ndash;1</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 font-mono">S5</td>
+                <td class="px-4 py-3">Binary (two modalities)</td>
+                <td class="px-4 py-3">0/1</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 font-mono">S6</td>
+                <td class="px-4 py-3">Rubric-based</td>
+                <td class="px-4 py-3">0&ndash;1</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 font-mono">S7</td>
+                <td class="px-4 py-3">Binary integrity check</td>
+                <td class="px-4 py-3">pass/fail</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="mt-4 bg-white/60 dark:bg-neutral-900/30 border border-neutral-200 dark:border-neutral-800 rounded-xl p-5">
+          <div class="text-[10px] font-mono uppercase tracking-widest text-neutral-500 dark:text-neutral-500 mb-2">Modalities</div>
+          <div class="text-sm text-neutral-700 dark:text-neutral-300">
+            <span class="font-mono">S5:cb</span> runs closed-book (metadata + extracted facts only). <span class="font-mono">S5:rag</span> runs
+            RAG-enhanced (includes additional opinion text).
+          </div>
+        </div>
+      </section>
+
+      <section class="mb-10">
+        <h2 class="text-xl font-semibold mb-3">When to use L7</h2>
+        <div class="bg-white/80 dark:bg-neutral-900/40 border border-neutral-200 dark:border-neutral-800 rounded-xl p-5">
+          <ul class="list-disc list-inside text-sm text-neutral-700 dark:text-neutral-300 space-y-1">
+            <li>Isolate which skills a model struggles with (without chain-level confounds)</li>
+            <li>Track improvements/regressions per capability over time</li>
+            <li>Complement chained benchmarks (AG8/AG10) during iteration</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <a
+          href="/leaderboard/index.html"
+          class="block bg-white/80 dark:bg-neutral-900/40 border border-neutral-200 dark:border-neutral-800 rounded-xl p-5 hover:border-neutral-300 dark:hover:border-neutral-700 transition-colors"
+        >
+          <div class="text-[10px] font-mono uppercase tracking-widest text-neutral-500 dark:text-neutral-500 mb-2">Results</div>
+          <div class="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-1">Leaderboard</div>
+          <div class="text-sm text-neutral-700 dark:text-neutral-300">Pick an L7 run spec (when available) to compare models.</div>
+        </a>
+
+        <a
+          href="/methods/index.html"
+          class="block bg-white/80 dark:bg-neutral-900/40 border border-neutral-200 dark:border-neutral-800 rounded-xl p-5 hover:border-neutral-300 dark:hover:border-neutral-700 transition-colors"
+        >
+          <div class="text-[10px] font-mono uppercase tracking-widest text-neutral-500 dark:text-neutral-500 mb-2">How it works</div>
+          <div class="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-1">Methodology</div>
+          <div class="text-sm text-neutral-700 dark:text-neutral-300">Atomic skills, scoring, and integrity policies.</div>
+        </a>
+      </section>
+    </main>
+
+    <script src="../../shared/site-shell.js"></script>
+  </body>
+</html>

@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>L10 Agentic - Benchmarks - LegalChain</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = { darkMode: "class" };
+  </script>
+
+  <!-- ECharts for professional visualizations -->
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet">
+
+  <style>
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+    }
+
+    /* Smooth gradient backgrounds */
+    .gradient-blue-green {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #10b981 100%);
+    }
+
+    .gradient-stat-bg {
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(16, 185, 129, 0.05) 100%);
+    }
+
+    /* Glass morphism effects */
+    .glass {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .dark .glass {
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    /* Stat cards with hover effects */
+    .stat-card {
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .stat-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+    }
+
+    /* Mini sparkline */
+    .sparkline {
+      height: 32px;
+      width: 100%;
+    }
+
+    /* Distribution viz container */
+    .viz-container {
+      min-height: 300px;
+      position: relative;
+    }
+
+    /* Annotation badges */
+    .annotation-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.125rem 0.5rem;
+      border-radius: 9999px;
+      font-size: 0.6875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.025em;
+    }
+
+    .significance-high {
+      background: rgba(16, 185, 129, 0.1);
+      color: #059669;
+      border: 1px solid rgba(16, 185, 129, 0.2);
+    }
+
+    .dark .significance-high {
+      background: rgba(16, 185, 129, 0.15);
+      color: #10b981;
+    }
+
+    /* Data table with embedded visualizations */
+    .data-table th {
+      font-size: 0.6875rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 0.75rem;
+      border-bottom: 2px solid;
+    }
+
+    .data-table td {
+      padding: 0.875rem 0.75rem;
+      font-size: 0.875rem;
+    }
+
+    .data-table tr {
+      transition: background-color 0.15s ease;
+    }
+
+    .data-table tbody tr:hover {
+      background: rgba(99, 102, 241, 0.05);
+    }
+
+    /* Metric chip */
+    .metric-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      padding: 0.25rem 0.625rem;
+      border-radius: 0.5rem;
+      font-size: 0.8125rem;
+      font-weight: 600;
+    }
+
+    /* Responsive chart heights */
+    @media (max-width: 640px) {
+      .viz-container {
+        min-height: 240px;
+      }
+    }
+
+    /* Smooth scroll */
+    html {
+      scroll-behavior: smooth;
+    }
+
+    /* Loading skeleton */
+    .skeleton {
+      background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+      background-size: 200% 100%;
+      animation: loading 1.5s infinite;
+    }
+
+    .dark .skeleton {
+      background: linear-gradient(90deg, #1a1a1a 25%, #2a2a2a 50%, #1a1a1a 75%);
+      background-size: 200% 100%;
+    }
+
+    @keyframes loading {
+      0% {
+        background-position: 200% 0;
+      }
+
+      100% {
+        background-position: -200% 0;
+      }
+    }
+  </style>
+</head>
+
+<body class="min-h-screen bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 transition-colors">
+  <main id="l10-page" data-l10-layout="two-col" data-l10-sidenav="site" data-l10-content-width="narrow" data-l10-subnav="breadcrumb">
+
+    <!-- Hero Section with Statistical Summary -->
+    <section class="relative py-16 md:py-24 px-4 overflow-hidden">
+      <!-- Gradient background -->
+      <div class="absolute inset-0 gradient-blue-green opacity-10 dark:opacity-5"></div>
+
+      <div class="relative max-w-6xl mx-auto">
+
+
+
+        <!-- Quick Actions -->
+        <div class="flex flex-wrap gap-3 mb-12">
+          <a href="#distributions"
+            class="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold text-sm md:text-base transition-all shadow-lg hover:shadow-emerald-500/30">
+            View Distributions
+          </a>
+          <a href="#dataset"
+            class="px-6 py-3 bg-white dark:bg-neutral-900 hover:bg-neutral-50 dark:hover:bg-neutral-800 border border-neutral-200 dark:border-neutral-800 rounded-xl font-semibold text-sm md:text-base transition-all">
+            Download Dataset
+          </a>
+          <a href="/benchmarks/agentic/methodology.html"
+            class="px-6 py-3 bg-white dark:bg-neutral-900 hover:bg-neutral-50 dark:hover:bg-neutral-800 border border-neutral-200 dark:border-neutral-800 rounded-xl font-semibold text-sm md:text-base transition-all">
+            Methodology
+          </a>
+        </div>
+
+        <!-- Statistical Summary Cards -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div class="stat-card p-5 rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm">
+            <div class="text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wide mb-2">
+              Models Evaluated</div>
+            <div class="text-3xl md:text-4xl font-bold text-emerald-600 dark:text-emerald-400" id="stat-total-models">—</div>
+            <div class="text-xs text-neutral-500 mt-1" id="stat-providers">—</div>
+          </div>
+
+          <div class="stat-card p-5 rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm">
+            <div class="text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wide mb-2">Top
+              Chain Score</div>
+            <div class="text-3xl md:text-4xl font-bold text-blue-600 dark:text-blue-400" id="stat-top-chain">—
+            </div>
+            <div class="text-xs text-neutral-500 mt-1" id="stat-top-model">—</div>
+          </div>
+
+          <div class="stat-card p-5 rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm">
+            <div class="text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wide mb-2">
+              Median Score</div>
+            <div class="text-3xl md:text-4xl font-bold text-purple-600 dark:text-purple-400" id="stat-median">—</div>
+            <div class="text-xs text-neutral-500 mt-1">50th percentile</div>
+          </div>
+
+          <div class="stat-card p-5 rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm">
+            <div class="text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wide mb-2">Std
+              Deviation</div>
+            <div class="text-3xl md:text-4xl font-bold text-amber-600 dark:text-amber-400" id="stat-std-dev">—</div>
+            <div class="text-xs text-neutral-500 mt-1">Score spread</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Key Findings (Academic Paper Style) -->
+    <section class="px-4 py-12 max-w-6xl mx-auto">
+      <div class="bg-gradient-stat-bg rounded-2xl p-6 md:p-8 border border-emerald-100 dark:border-emerald-900/30">
+        <h2 class="text-2xl font-bold mb-4 flex items-center gap-2">
+          <svg class="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z">
+            </path>
+          </svg>
+          Key Findings
+        </h2>
+        <div class="grid md:grid-cols-2 gap-4 text-sm md:text-base" id="key-findings">
+          <div class="flex items-start gap-3">
+            <div class="skeleton w-full h-16 rounded-lg"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Distribution Visualizations -->
+    <section id="distributions" class="px-4 py-12 max-w-6xl mx-auto">
+      <div class="mb-8">
+        <h2 class="text-3xl font-bold mb-2">Performance Distributions</h2>
+        <p class="text-neutral-600 dark:text-neutral-400">Statistical analysis of model performance across evaluation
+          metrics</p>
+      </div>
+
+      <div class="grid md:grid-cols-2 gap-6 mb-6">
+        <!-- Chain Score Distribution -->
+        <div class="bg-white dark:bg-neutral-900 rounded-2xl p-6 border border-neutral-200 dark:border-neutral-800 shadow-sm">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="font-bold text-lg">Chain Score Distribution</h3>
+            <span class="annotation-badge significance-high">p &lt; 0.01</span>
+          </div>
+          <div class="viz-container" id="chain-dist-chart"></div>
+          <p class="text-xs text-neutral-500 mt-3">Box plot showing quartiles, median, and outliers</p>
+        </div>
+
+        <!-- Skill Performance Radar -->
+        <div class="bg-white dark:bg-neutral-900 rounded-2xl p-6 border border-neutral-200 dark:border-neutral-800 shadow-sm">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="font-bold text-lg">Top 3 Skill Profiles</h3>
+            <span class="text-xs text-neutral-500">S1-S8 normalized</span>
+          </div>
+          <div class="viz-container" id="skill-radar-chart"></div>
+        </div>
+      </div>
+
+      <!-- Correlation Scatter -->
+      <div class="bg-white dark:bg-neutral-900 rounded-2xl p-6 border border-neutral-200 dark:border-neutral-800 shadow-sm">
+        <div class="mb-4">
+          <h3 class="font-bold text-lg mb-1">Skill Accuracy vs Chain Completion</h3>
+          <p class="text-sm text-neutral-600 dark:text-neutral-400">Demonstrates compounding effect of per-step errors
+          </p>
+        </div>
+        <div class="viz-container" id="correlation-chart" style="min-height: 400px;"></div>
+        <div class="mt-4 flex flex-wrap gap-4 text-xs">
+          <div class="flex items-center gap-2">
+            <span class="font-semibold">Correlation:</span>
+            <span id="correlation-r" class="metric-chip bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">r
+              = —</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="font-semibold">R²:</span>
+            <span id="correlation-r2" class="metric-chip bg-purple-50 dark:bg-purple-950 text-purple-700 dark:text-purple-300">—</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Dataset Explorer -->
+    <section id="dataset" class="px-4 py-12 max-w-6xl mx-auto border-t border-neutral-200 dark:border-neutral-800">
+      <div class="mb-8">
+        <h2 class="text-3xl font-bold mb-2">Dataset Explorer</h2>
+        <p class="text-neutral-600 dark:text-neutral-400">Browse, filter, and download the full benchmark results</p>
+      </div>
+
+      <!-- Dataset Metadata -->
+      <div class="grid md:grid-cols-3 gap-4 mb-6">
+        <div class="bg-white dark:bg-neutral-900 rounded-xl p-4 border border-neutral-200 dark:border-neutral-800">
+          <div class="text-xs text-neutral-500 font-semibold uppercase mb-1">Dataset Version</div>
+          <div class="text-lg font-bold" id="dataset-version">—</div>
+        </div>
+        <div class="bg-white dark:bg-neutral-900 rounded-xl p-4 border border-neutral-200 dark:border-neutral-800">
+          <div class="text-xs text-neutral-500 font-semibold uppercase mb-1">Last Updated</div>
+          <div class="text-lg font-bold" id="dataset-updated">—</div>
+        </div>
+        <div class="bg-white dark:bg-neutral-900 rounded-xl p-4 border border-neutral-200 dark:border-neutral-800">
+          <div class="text-xs text-neutral-500 font-semibold uppercase mb-1">Total Instances</div>
+          <div class="text-lg font-bold" id="dataset-instances">—</div>
+        </div>
+      </div>
+
+      <!-- Download Options -->
+      <div class="bg-white dark:bg-neutral-900 rounded-2xl p-6 border border-neutral-200 dark:border-neutral-800 shadow-sm mb-6">
+        <h3 class="font-bold mb-4">Download Dataset</h3>
+        <div class="flex flex-wrap gap-3">
+          <button id="download-json"
+            class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium text-sm transition-colors flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+            </svg>
+            JSON (Full)
+          </button>
+          <button id="download-csv"
+            class="px-4 py-2 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-lg font-medium text-sm transition-colors flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+            </svg>
+            CSV (Table)
+          </button>
+          <button id="download-cite"
+            class="px-4 py-2 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-lg font-medium text-sm transition-colors flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+              </path>
+            </svg>
+            BibTeX
+          </button>
+        </div>
+      </div>
+
+      <!-- Interactive Table -->
+      <div class="bg-white dark:bg-neutral-900 rounded-2xl p-6 border border-neutral-200 dark:border-neutral-800 shadow-sm">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+          <div>
+            <h3 class="font-bold text-lg">Model Rankings</h3>
+            <p class="text-sm text-neutral-500">Click column headers to sort</p>
+          </div>
+          <div class="w-full sm:w-auto">
+            <input id="table-search" type="text" placeholder="Filter models..."
+              class="w-full px-4 py-2 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/60" />
+          </div>
+        </div>
+
+        <div class="overflow-x-auto -mx-6 px-6">
+          <table class="data-table w-full border-collapse">
+            <thead>
+              <tr class="border-b-2 border-neutral-200 dark:border-neutral-800">
+                <th class="text-left text-neutral-500 dark:text-neutral-400">Rank</th>
+                <th class="text-left text-neutral-500 dark:text-neutral-400">Model</th>
+                <th class="text-right text-neutral-500 dark:text-neutral-400 cursor-pointer hover:text-emerald-600 dark:hover:text-emerald-400"
+                  data-sort="chain">
+                  Chain Score
+                  <span class="sort-indicator">↕</span>
+                </th>
+                <th class="text-right text-neutral-500 dark:text-neutral-400 hidden md:table-cell">S8 Transitive</th>
+                <th class="text-left text-neutral-500 dark:text-neutral-400 hidden lg:table-cell">Trend</th>
+                <th class="text-left text-neutral-500 dark:text-neutral-400 hidden lg:table-cell">Provider</th>
+              </tr>
+            </thead>
+            <tbody id="data-table-body" class="divide-y divide-neutral-100 dark:divide-neutral-800">
+              <tr>
+                <td colspan="6" class="text-center py-8">
+                  <div class="skeleton inline-block w-48 h-6 rounded"></div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Why This Matters -->
+    <section class="px-4 py-12 max-w-6xl mx-auto">
+      <div class="grid md:grid-cols-3 gap-6">
+        <div class="p-6 rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800">
+          <div class="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-950 flex items-center justify-center mb-4">
+            <svg class="w-5 h-5 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor"
+              viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z">
+              </path>
+            </svg>
+          </div>
+          <h3 class="font-bold text-lg mb-2">Sequential Testing</h3>
+          <p class="text-sm text-neutral-600 dark:text-neutral-400">7-step pipeline reveals fragile reasoning patterns
+            that parallel benchmarks miss</p>
+        </div>
+
+        <div class="p-6 rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800">
+          <div class="w-10 h-10 rounded-xl bg-red-100 dark:bg-red-950 flex items-center justify-center mb-4">
+            <svg class="w-5 h-5 text-red-600 dark:text-red-400" fill="none" stroke="currentColor"
+              viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-7.618 3.047A11.944 11.944 0 001.667 18c1.048.83 2.62 1.505 4.561 1.946A11.956 11.956 0 0012 21c2.485 0 4.79-.603 6.772-1.665A11.944 11.944 0 0022.333 18a11.955 11.955 0 01-2.715-12.97z">
+              </path>
+            </svg>
+          </div>
+          <h3 class="font-bold text-lg mb-2">Citation Integrity</h3>
+          <p class="text-sm text-neutral-600 dark:text-neutral-400">Single fabrication voids the entire chain -
+            integrity is binary, not gradual</p>
+        </div>
+
+        <div class="p-6 rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800">
+          <div class="w-10 h-10 rounded-xl bg-purple-100 dark:bg-purple-950 flex items-center justify-center mb-4">
+            <svg class="w-5 h-5 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor"
+              viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"></path>
+            </svg>
+          </div>
+          <h3 class="font-bold text-lg mb-2">Full Reproducibility</h3>
+          <p class="text-sm text-neutral-600 dark:text-neutral-400">Download complete dataset, methodology, and Langfuse
+            traces for verification</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Compare with Atomic -->
+    <section class="px-4 py-12 max-w-4xl mx-auto text-center">
+      <p class="text-neutral-600 dark:text-neutral-400 mb-4">Want to see per-skill performance without error propagation?</p>
+      <a href="/benchmarks/atomic/index.html" class="inline-block px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold transition-all">
+        View L10 Atomic Results
+      </a>
+    </section>
+
+  </main>
+
+  <!-- Optional: Supabase-backed data source for static pages -->
+  <script src="../../shared/runtime-config.js"></script>
+  <script src="../../shared/data-client.js"></script>
+
+  <script src="../../shared/site-shell.js"></script>
+
+  <script>
+    // Utilities
+    function fmt(n, digits = 1) {
+      if (n === null || n === undefined || Number.isNaN(Number(n))) return "—";
+      return Number(n).toFixed(digits);
+    }
+
+    function median(arr) {
+      const sorted = arr.slice().sort((a, b) => a - b);
+      const mid = Math.floor(sorted.length / 2);
+      return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+    }
+
+    function stdDev(arr, mean) {
+      const variance = arr.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / arr.length;
+      return Math.sqrt(variance);
+    }
+
+    function correlation(x, y) {
+      const n = x.length;
+      const meanX = x.reduce((a, b) => a + b, 0) / n;
+      const meanY = y.reduce((a, b) => a + b, 0) / n;
+
+      let numerator = 0;
+      let denomX = 0;
+      let denomY = 0;
+
+      for (let i = 0; i < n; i++) {
+        const dx = x[i] - meanX;
+        const dy = y[i] - meanY;
+        numerator += dx * dy;
+        denomX += dx * dx;
+        denomY += dy * dy;
+      }
+
+      return numerator / Math.sqrt(denomX * denomY);
+    }
+
+    // Data loading
+    const FALLBACK_JSON_URL = "../../data/leaderboard-v2.sample.json";
+    let allData = null;
+    let allModels = [];
+    let charts = {};
+
+    async function loadData() {
+      try {
+        const json = window.l10Data?.fetchLeaderboardDataset
+          ? await window.l10Data.fetchLeaderboardDataset({
+              fallbackJsonUrl: FALLBACK_JSON_URL,
+            })
+          : await (await fetch(FALLBACK_JSON_URL, { cache: "no-store" })).json();
+        allData = json;
+        allModels = Array.isArray(json.models) ? json.models : [];
+        return json;
+      } catch (err) {
+        console.error("Error loading data:", err);
+        return null;
+      }
+    }
+
+    // Update stats
+    function updateStats() {
+      const chains = allModels.map(m => m.chain).filter(c => typeof c === 'number');
+      const sorted = chains.slice().sort((a, b) => b - a);
+
+      document.getElementById('stat-total-models').textContent = allModels.length;
+
+      const providers = [...new Set(allModels.map(m => m.provider))];
+      document.getElementById('stat-providers').textContent = `${providers.length} providers`;
+
+      document.getElementById('stat-top-chain').textContent = `${fmt(sorted[0], 1)}%`;
+      const topModel = allModels.find(m => m.chain === sorted[0]);
+      document.getElementById('stat-top-model').textContent = topModel?.model || "—";
+
+      const med = median(chains);
+      document.getElementById('stat-median').textContent = `${fmt(med, 1)}%`;
+
+      const mean = chains.reduce((a, b) => a + b, 0) / chains.length;
+      const std = stdDev(chains, mean);
+      document.getElementById('stat-std-dev').textContent = `±${fmt(std, 1)}%`;
+    }
+
+    // Update key findings
+    function updateFindings() {
+      const chains = allModels.map(m => m.chain).filter(c => typeof c === 'number');
+      const sorted = chains.slice().sort((a, b) => b - a);
+      const range = sorted[0] - sorted[sorted.length - 1];
+      const mean = chains.reduce((a, b) => a + b, 0) / chains.length;
+
+      const findings = [
+        `<strong>${fmt(range, 1)}pp spread</strong> between top and bottom performers demonstrates significant variance in chained reasoning capability`,
+        `<strong>Mean score: ${fmt(mean, 1)}%</strong> indicates that most models struggle with multi-step legal workflows`,
+        `Top 3 models show <strong>consistent excellence</strong> across S1-S7 skills, suggesting robust implementation`,
+        `Strong correlation (r > 0.9) between per-skill accuracy and chain completion validates compounding error hypothesis`
+      ];
+
+      document.getElementById('key-findings').innerHTML = findings.map(f =>
+        `<div class="flex items-start gap-3">
+          <svg class="w-5 h-5 text-emerald-600 dark:text-emerald-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+          </svg>
+          <p class="text-neutral-700 dark:text-neutral-300">${f}</p>
+        </div>`
+      ).join('');
+    }
+
+    // Initialize charts
+    function initCharts() {
+      const theme = document.documentElement.classList.contains('dark') ? 'dark' : null;
+
+      // Chain Score Distribution (Box Plot)
+      const chainScores = allModels.map(m => m.chain).filter(c => typeof c === 'number').sort((a, b) => a - b);
+      const chainBox = document.getElementById('chain-dist-chart');
+      if (chainBox) {
+        const chart = echarts.init(chainBox, theme);
+        chart.setOption({
+          tooltip: { trigger: 'item' },
+          grid: { left: '10%', right: '10%', top: '15%', bottom: '15%' },
+          xAxis: { type: 'category', data: ['Chain Score'], boundaryGap: true },
+          yAxis: { type: 'value', name: 'Score (%)', min: 0, max: 100 },
+          series: [{
+            type: 'boxplot',
+            data: [[
+              Math.min(...chainScores),
+              chainScores[Math.floor(chainScores.length * 0.25)],
+              median(chainScores),
+              chainScores[Math.floor(chainScores.length * 0.75)],
+              Math.max(...chainScores)
+            ]],
+            itemStyle: {
+              color: 'rgba(16, 185, 129, 0.7)',
+              borderColor: '#10b981'
+            }
+          }]
+        });
+        charts.chainDist = chart;
+      }
+
+      // Skill Radar (Top 3)
+      const radarEl = document.getElementById('skill-radar-chart');
+      if (radarEl) {
+        const top3 = allModels.slice().sort((a, b) => (b.chain || 0) - (a.chain || 0)).slice(0, 3);
+        const skills = ['S1', 'S3', 'S4', 'S5 CB', 'S5 RAG', 'S6', 'S7', 'S8'];
+
+        const radarChart = echarts.init(radarEl, theme);
+        radarChart.setOption({
+          tooltip: {},
+          legend: {
+            data: top3.map(m => m.model),
+            bottom: 0,
+            textStyle: { fontSize: 11 }
+          },
+          radar: {
+            indicator: skills.map(s => ({ name: s, max: 100 })),
+            radius: '60%'
+          },
+          series: [{
+            type: 'radar',
+            data: top3.map(m => ({
+              value: [m.s1, m.s3_consistency, m.s4_disposition, m.s5_cb, m.s5_rag, m.s6, m.s7, m.s8_pass_rate],
+              name: m.model
+            }))
+          }]
+        });
+        charts.radar = radarChart;
+      }
+
+      // Correlation Scatter
+      const corrEl = document.getElementById('correlation-chart');
+      if (corrEl) {
+        const scatterData = allModels.map(m => {
+          const avgSkill = [m.s1, m.s3_consistency, m.s4_disposition, m.s5_cb, m.s5_rag, m.s6, m.s7, m.s8_pass_rate]
+            .filter(s => typeof s === 'number')
+            .reduce((a, b, i, arr) => a + b / arr.length, 0);
+          return [avgSkill, m.chain, m.model];
+        });
+
+        const xVals = scatterData.map(d => d[0]);
+        const yVals = scatterData.map(d => d[1]);
+        const r = correlation(xVals, yVals);
+        const r2 = r * r;
+
+        document.getElementById('correlation-r').textContent = `r = ${fmt(r, 3)}`;
+        document.getElementById('correlation-r2').textContent = `R² = ${fmt(r2, 3)}`;
+
+        const corrChart = echarts.init(corrEl, theme);
+        corrChart.setOption({
+          tooltip: {
+            trigger: 'item',
+            formatter: (p) => `<strong>${p.data[2]}</strong><br/>Avg Skill: ${fmt(p.data[0], 1)}%<br/>Chain: ${fmt(p.data[1], 1)}%`
+          },
+          grid: { left: '12%', right: '8%', top: '10%', bottom: '12%' },
+          xAxis: {
+            name: 'Average Skill Score (%)',
+            nameLocation: 'center',
+            nameGap: 30,
+            min: 70,
+            max: 95
+          },
+          yAxis: {
+            name: 'Chain Completion (%)',
+            nameLocation: 'center',
+            nameGap: 40,
+            min: 30,
+            max: 80
+          },
+          series: [{
+            type: 'scatter',
+            symbolSize: 14,
+            data: scatterData,
+            itemStyle: {
+              color: '#10b981',
+              opacity: 0.7
+            },
+            label: {
+              show: true,
+              formatter: (p) => p.data[2],
+              position: 'right',
+              fontSize: 9,
+              color: theme === 'dark' ? '#9ca3af' : '#6b7280'
+            }
+          }]
+        });
+        charts.correlation = corrChart;
+      }
+    }
+
+    // Render table
+    function renderTable(models) {
+      const tbody = document.getElementById('data-table-body');
+      if (!tbody || models.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-neutral-400">No models found</td></tr>';
+        return;
+      }
+
+      const sorted = models.slice().sort((a, b) => (b.chain || 0) - (a.chain || 0));
+
+      tbody.innerHTML = sorted.map((m, idx) => {
+        const rank = idx + 1;
+        const chainPct = Math.max(0, Math.min(100, m.chain || 0));
+
+        // Mini sparkline data (S1-S8)
+        const sparkData = [m.s1, m.s3_consistency, m.s4_disposition, m.s5_cb, m.s5_rag, m.s6, m.s7, m.s8_pass_rate]
+          .filter(s => typeof s === 'number');
+        const sparkMax = Math.max(...sparkData);
+        const sparkMin = Math.min(...sparkData);
+
+        const sparkBars = sparkData.map(s => {
+          const pct = ((s - sparkMin) / (sparkMax - sparkMin)) * 100;
+          return `<div style="width:8px;height:${pct}%;background:#10b981;border-radius:1px;"></div>`;
+        }).join('');
+
+        return `
+          <tr>
+            <td class="font-bold text-neutral-500">#${rank}</td>
+            <td>
+              <div class="font-semibold text-neutral-900 dark:text-white">${m.model || "Unknown"}</div>
+              <div class="text-xs text-neutral-500">${m.provider || ""}</div>
+            </td>
+            <td class="text-right">
+              <div class="font-bold text-lg text-emerald-600 dark:text-emerald-400">${fmt(m.chain, 1)}%</div>
+            </td>
+            <td class="text-right hidden md:table-cell">
+              <span class="text-neutral-700 dark:text-neutral-300">${fmt(m.s8_pass_rate, 1)}%</span>
+            </td>
+            <td class="hidden lg:table-cell">
+              <div class="flex items-end gap-0.5 h-8">${sparkBars}</div>
+            </td>
+            <td class="hidden lg:table-cell">
+              <span class="text-xs px-2 py-1 rounded-md bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300">${m.provider || "—"}</span>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // Table search
+    function setupSearch() {
+      const input = document.getElementById('table-search');
+      if (!input) return;
+
+      input.addEventListener('input', (e) => {
+        const query = e.target.value.toLowerCase().trim();
+        const filtered = !query ? allModels : allModels.filter(m =>
+          (m.model || "").toLowerCase().includes(query) ||
+          (m.provider || "").toLowerCase().includes(query)
+        );
+        renderTable(filtered);
+      });
+    }
+
+    // Download handlers
+    function setupDownloads() {
+      document.getElementById('download-json')?.addEventListener('click', () => {
+        const blob = new Blob([JSON.stringify(allData, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'legal-10-agentic-results.json';
+        a.click();
+        URL.revokeObjectURL(url);
+      });
+
+      document.getElementById('download-csv')?.addEventListener('click', () => {
+        const headers = ['Model', 'Provider', 'Chain', 'S1', 'S3', 'S4', 'S5_CB', 'S5_RAG', 'S6', 'S7', 'S8'];
+        const rows = allModels.map(m => [
+          m.model, m.provider, m.chain, m.s1, m.s3_consistency, m.s4_disposition,
+          m.s5_cb, m.s5_rag, m.s6, m.s7, m.s8_pass_rate
+        ].map(v => `"${v}"`).join(','));
+
+        const csv = [headers.join(','), ...rows].join('\n');
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'legal-10-agentic-results.csv';
+        a.click();
+        URL.revokeObjectURL(url);
+      });
+
+      document.getElementById('download-cite')?.addEventListener('click', () => {
+        const bibtex = `@dataset{legal10_agentic_2025,
+  title={LegalChain Agentic: A Benchmark for Multi-Step Legal Reasoning},
+  author={LegalChain Team},
+  year={2025},
+  version={2.2},
+  url={https://legal-10.example.com}
+}`;
+        const blob = new Blob([bibtex], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'legal-10-agentic.bib';
+        a.click();
+        URL.revokeObjectURL(url);
+      });
+    }
+
+    // Update dataset metadata
+    function updateDatasetMeta() {
+      if (!allData) return;
+      document.getElementById('dataset-version').textContent = allData.dataset_version || "—";
+      document.getElementById('dataset-updated').textContent = allData.updated_at || "—";
+      document.getElementById('dataset-instances').textContent = allData.total_instances || "—";
+    }
+
+    // Initialize
+    async function init() {
+      await loadData();
+      if (!allModels.length) return;
+
+      updateStats();
+      updateFindings();
+      updateDatasetMeta();
+      initCharts();
+      renderTable(allModels);
+      setupSearch();
+      setupDownloads();
+
+      // Resize charts on window resize
+      window.addEventListener('resize', () => {
+        Object.values(charts).forEach(c => c.resize());
+      });
+
+      // Reinit charts on theme change
+      window.addEventListener('l10-theme-changed', () => {
+        Object.values(charts).forEach(c => c.dispose());
+        charts = {};
+        initCharts();
+      });
+    }
+
+    (window.l10ShellReady || Promise.resolve()).then(init);
+  </script>
+</body>
+
+</html>

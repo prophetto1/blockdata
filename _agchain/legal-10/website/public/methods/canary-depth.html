@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Canary Depth - LegalChain</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        legalblue: {
+                            50: '#f0f7ff',
+                            100: '#e0effe',
+                            200: '#bae0fd',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#1e3a8a',
+                        },
+                        canary: {
+                            400: '#facc15', // Yellow-400
+                            500: '#eab308', // Yellow-500
+                            900: '#422006', // Yellow-950 equivalent
+                            glow: 'rgba(250, 204, 21, 0.5)'
+                        }
+                    },
+                     fontFamily: {
+                        mono: ['"Fira Code"', 'monospace'],
+                        sans: ['"Inter"', 'sans-serif'],
+                        serif: ['"Merriweather"', 'serif'],
+                    }
+                }
+            }
+        };
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;0,900;1,300&family=Inter:wght@300;400;500;600&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../shared/report.css">
+    <style>
+        .terminal-scanline {
+            background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.2) 50%, rgba(0,0,0,0.2));
+            background-size: 100% 4px;
+            pointer-events: none;
+        }
+        .text-glow {
+            text-shadow: 0 0 10px var(--tw-shadow-color);
+        }
+    </style>
+</head>
+<body>
+    <main id="l10-page" data-l10-layout="research" data-l10-sidenav="site" data-l10-sidenav-pos="left">
+        <article class="prose prose-slate dark:prose-invert max-w-4xl mx-auto research-content">
+            
+            <header class="mb-16">
+                <h1 class="research-title">The Canary Mechanism</h1>
+                
+                <p class="lead text-xl text-neutral-600 dark:text-neutral-400 font-serif italic border-l-4 border-canary-500 pl-6 py-2">
+                    Algorithmically detecting when a model "knows too much" by distinguishing between answerable evidence and passing mentions.
+                </p>
+            </header>
+
+            <!-- TERMINAL HERO -->
+            <div class="my-16 bg-neutral-900 border border-neutral-700 rounded-xl overflow-hidden shadow-2xl not-prose relative group">
+                <div class="absolute inset-0 terminal-scanline opacity-20"></div>
+                
+                <!-- Terminal Header -->
+                <div class="bg-neutral-800 px-4 py-2 flex items-center gap-2 border-b border-neutral-700">
+                    <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                    <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                    <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                    <div class="ml-4 font-mono text-xs text-neutral-400">canary_protocol.py — Active Monitor</div>
+                </div>
+
+                <!-- Terminal Content -->
+                <div class="p-8 font-mono text-sm leading-relaxed">
+                    <div class="flex gap-4 mb-6">
+                        <div class="text-neutral-500">USER:</div>
+                        <div class="text-neutral-300">"What did the court hold in <span class="text-canary-400">Miranda v. Arizona</span>?"</div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <!-- Scenario A -->
+                        <div class="bg-neutral-950/50 p-4 rounded border border-neutral-800 relative overflow-hidden">
+                            <div class="absolute top-0 right-0 bg-red-900/50 text-red-400 text-[10px] px-2 py-0.5 uppercase tracking-widest font-bold">Failed</div>
+                            <div class="text-xs text-neutral-500 mb-2 uppercase tracking-widest">Scenario A: Hallucination</div>
+                            <div class="text-red-400 mb-2">> Miranda established that suspects must be informed of rights...</div>
+                            <div class="text-neutral-500 italic text-xs mt-4">
+                                [ALERT] Citation classified as "PASSING".<br>
+                                [ALERT] Model provided external details.<br>
+                                [STATUS] <span class="text-red-500 font-bold">INTEGRITY VIOLATION</span>
+                            </div>
+                        </div>
+
+                        <!-- Scenario B -->
+                        <div class="bg-neutral-950/50 p-4 rounded border border-green-900/30 relative overflow-hidden">
+                             <div class="absolute top-0 right-0 bg-green-900/50 text-green-400 text-[10px] px-2 py-0.5 uppercase tracking-widest font-bold">Passed</div>
+                            <div class="text-xs text-neutral-500 mb-2 uppercase tracking-widest">Scenario B: Discipline</div>
+                            <div class="text-green-400 mb-2">> The text only cites Miranda in passing. No holding provided.</div>
+                            <div class="text-neutral-500 italic text-xs mt-4">
+                                [INFO] Citation classified as "PASSING".<br>
+                                [INFO] Model refused to answer.<br>
+                                [STATUS] <span class="text-green-500 font-bold">VERIFIED</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <h2>The Hallucination Gap</h2>
+            <p>
+                In a "Frozen Context" evaluation, the model is strictly limited to the provided evidence. However, large models have memorized famous cases like <i>Miranda</i> or <i>Roe</i> during pre-training.
+            </p>
+            <p>
+                If an anchor opinion cites <i>Miranda</i> only in a string cite (e.g., "See Miranda..."), the text contains <strong>zero</strong> information about <i>Miranda</i>'s actual holding. If the model answers the question correctly, it is cheating. It is leaking training data.
+            </p>
+
+            <h2>3-Factor Detection Algorithm</h2>
+            <p>
+                To enforce discipline, we must know the ground truth: <strong>Is this citation answerable?</strong> We assume the answer is NO ("Passing") unless we find strong evidence otherwise ("Detailed").
+            </p>
+
+            <div class="not-prose my-12 space-y-2">
+                
+                <!-- Factor 1 -->
+                <div class="flex items-center gap-6 p-6 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg shadow-sm">
+                    <div class="w-16 text-center">
+                        <div class="text-3xl font-black text-amber-500">01</div>
+                        <div class="text-[10px] font-bold uppercase text-neutral-400">Factor</div>
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="text-lg font-bold text-neutral-900 dark:text-white mb-1">Syllabus Check (Gold Standard)</h3>
+                        <p class="text-sm text-neutral-600 dark:text-neutral-400">Did the Reporter of Decisions mention this cited case in the anchor's official syllabus?</p>
+                    </div>
+                    <div class="hidden md:block text-right">
+                        <div class="inline-block bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-bold px-3 py-1 rounded-full">100% Confidence</div>
+                    </div>
+                </div>
+
+                <!-- Factor 2 -->
+                 <div class="flex items-center gap-6 p-6 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg shadow-sm">
+                    <div class="w-16 text-center">
+                        <div class="text-3xl font-black text-blue-500">02</div>
+                        <div class="text-[10px] font-bold uppercase text-neutral-400">Factor</div>
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="text-lg font-bold text-neutral-900 dark:text-white mb-1">Structural Detection</h3>
+                        <p class="text-sm text-neutral-600 dark:text-neutral-400">Is the citation part of a list? (e.g., preceded by <code class="text-xs bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded">See also</code>, <code class="text-xs bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded">Cf.</code>, or <code class="text-xs bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded">;</code>)</p>
+                    </div>
+                    <div class="hidden md:block text-right">
+                        <div class="inline-block bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-xs font-bold px-3 py-1 rounded-full">~90% Confidence</div>
+                    </div>
+                </div>
+
+                 <!-- Factor 3 -->
+                 <div class="flex items-center gap-6 p-6 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg shadow-sm">
+                    <div class="w-16 text-center">
+                        <div class="text-3xl font-black text-neutral-400">03</div>
+                        <div class="text-[10px] font-bold uppercase text-neutral-400">Factor</div>
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="text-lg font-bold text-neutral-900 dark:text-white mb-1">Statistical Forensics (TF-IDF)</h3>
+                        <p class="text-sm text-neutral-600 dark:text-neutral-400">Does the anchor's discussion vocabulary strictly overlap with the cited case's syllabus?</p>
+                    </div>
+                    <div class="hidden md:block text-right">
+                        <div class="inline-block bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 text-xs font-bold px-3 py-1 rounded-full">Fallback</div>
+                    </div>
+                </div>
+
+            </div>
+
+            <h2>Run-Time Enforcement</h2>
+            <p>
+                The labeling happens at <strong>build time</strong>. At <strong>run time</strong>, the labels act as the answer key. This rewards models for "epistemic humility"—admitting when the evidence is insufficient.
+            </p>
+
+            <div class="overflow-x-auto my-8 border border-neutral-200 dark:border-neutral-800 rounded-lg">
+                <table class="w-full text-left border-collapse text-sm">
+                    <thead class="bg-neutral-50 dark:bg-neutral-900">
+                        <tr>
+                            <th class="p-4 font-bold border-b border-neutral-200 dark:border-neutral-800">Label</th>
+                            <th class="p-4 font-bold border-b border-neutral-200 dark:border-neutral-800">Model Response</th>
+                            <th class="p-4 font-bold border-b border-neutral-200 dark:border-neutral-800">Score</th>
+                            <th class="p-4 font-bold border-b border-neutral-200 dark:border-neutral-800">Result</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-neutral-100 dark:divide-neutral-800">
+                        <tr class="bg-yellow-50/50 dark:bg-yellow-900/10">
+                            <td class="p-4 text-xs font-mono">PASSING</td>
+                            <td class="p-4">"It held that..."</td>
+                            <td class="p-4 font-bold text-red-600">0.0</td>
+                            <td class="p-4 text-red-600 font-bold text-xs uppercase">Hallucination</td>
+                        </tr>
+                        <tr class="bg-green-50/50 dark:bg-green-900/10">
+                            <td class="p-4 text-xs font-mono">PASSING</td>
+                            <td class="p-4">"Insufficient info..."</td>
+                            <td class="p-4 font-bold text-green-600">1.0</td>
+                            <td class="p-4 text-green-600 font-bold text-xs uppercase">Discipline</td>
+                        </tr>
+                        <tr>
+                            <td class="p-4 text-xs font-mono">DETAILED</td>
+                            <td class="p-4">"It held that..."</td>
+                            <td class="p-4 font-bold text-green-600">1.0</td>
+                            <td class="p-4">Correct Retrieval</td>
+                        </tr>
+                        <tr>
+                            <td class="p-4 text-xs font-mono">DETAILED</td>
+                            <td class="p-4">"Insufficient info..."</td>
+                            <td class="p-4 font-bold text-amber-600">0.5</td>
+                            <td class="p-4">Over-Conservative</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+        </article>
+    </main>
+    <script src="../shared/site-shell.js"></script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+duckdb==1.4.3
+pandas==2.2.0
+pydantic>=2.0,<3
+pydantic-settings>=2.0
+
+# Citation extraction (S8 + RP generation)
+eyecite==2.5.2
+
+# Model backends / observability (optional at runtime, but used by scripts)
+openai>=1.50.0
+langfuse>=3.11,<4
+
+# Utilities
+requests>=2.31.0
+tqdm>=4.65.0

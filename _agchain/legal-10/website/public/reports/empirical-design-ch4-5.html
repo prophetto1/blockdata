@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Empirical Design: Chapters IV-V - LegalChain</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = { darkMode: "class" };
+    </script>
+  </head>
+  <body class="min-h-screen bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 transition-colors">
+    <main id="l10-page" data-l10-layout="article" data-l10-sidenav="toc" data-l10-sidenav-pos="right" data-l10-typography="report" style="max-width: 48rem; margin-inline: auto;">
+      <h1>Empirical Final Design v4.0</h1>
+      <p><strong>Chapters IV &amp; V: Evidence &amp; Benchmark Design</strong></p>
+
+      <h2>Typography Reference</h2>
+      <p>This section shows each styled element once for reference. Body text uses serif font at 16.5px, line-height 1.68.</p>
+
+      <h3>H3: Third-level heading</h3>
+      <p>Regular paragraph text. Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
+
+      <h4>H4: Fourth-level heading</h4>
+      <p>Text with <strong>bold</strong>, <em>italic</em>, and <a href="#">link</a> styles.</p>
+
+      <blockquote>
+        Blockquote: Used for quoted material or callouts. This shows the left border and background styling.
+      </blockquote>
+
+      <ul>
+        <li>Unordered list item one</li>
+        <li>Unordered list item two</li>
+      </ul>
+
+      <ol>
+        <li>Ordered list item one</li>
+        <li>Ordered list item two</li>
+      </ol>
+
+      <table>
+        <thead>
+          <tr><th>Table Header 1</th><th>Table Header 2</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Table cell</td><td>Table cell</td></tr>
+        </tbody>
+      </table>
+
+      <pre><code>// Code block example
+function example() {
+  return "preformatted text";
+}</code></pre>
+
+      <hr>
+
+      <h2>IV. Evidence that Quantization Impacts Legal Skills</h2>
+      <p>
+        This section maps existing evidence to each skill, establishing that quantization plausibly degrades the underlying capabilities each skill requires.
+      </p>
+
+      <h3>4.1 Summary: The Full Skill Surface Is At Risk</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Skill</th>
+            <th>Mechanism Evidence</th>
+            <th>Risk Level</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>S3: Known Authority</td><td>Long-context degradation</td><td>High</td></tr>
+          <tr><td>S4: Unknown Authority</td><td>Reasoning + retrieval</td><td>High</td></tr>
+          <tr><td>S5: Validating Authority</td><td>Temporal reasoning</td><td>Medium</td></tr>
+          <tr><td>S6: Fact Extraction</td><td>Long-context retrieval</td><td>High</td></tr>
+          <tr><td>S7: Distinguishing Cases</td><td>Multi-step reasoning</td><td>High</td></tr>
+          <tr><td>S8: Synthesizing Results</td><td>Integration + accuracy</td><td>High</td></tr>
+          <tr><td>PR: Prof. Responsibility</td><td>Fabrication resistance</td><td>Very High</td></tr>
+        </tbody>
+      </table>
+
+      <h3>4.2.1 Research Planning</h3>
+      <p><strong>Mechanism:</strong> Research planning requires decomposing complex queries into subtasks—exactly the multi-hop reasoning that Li et al. showed degrades up to 4× under quantization.</p>
+      <table>
+        <thead><tr><th>Study</th><th>Finding</th></tr></thead>
+        <tbody>
+          <tr><td>ACBench (Dong et al., 2025)</td><td>4-bit quantization creates critical divergence between apparent competence and actual reliability with real-world accuracy drops by 10-15%.</td></tr>
+          <tr><td>Liu et al. (2025)</td><td>Lower bit-width quantization introduces task-difficulty-dependent accuracy risks; explicitly evaluates KV cache / activation quantization as well as weights.</td></tr>
+          <tr><td>IntactKV (2024)</td><td>Mechanism support that KV cache quantization can be a failure point for workflow state maintenance.</td></tr>
+        </tbody>
+      </table>
+
+      <h3>4.2.2 Strategic Stopping</h3>
+      <p><strong>Mechanism:</strong> Strategic stopping requires calibrated confidence—knowing when you have enough. ECE studies show quantized models become overconfident, failing to recognize their own uncertainty.</p>
+      <table>
+        <thead><tr><th>Study</th><th>Finding</th></tr></thead>
+        <tbody>
+          <tr><td>Zhong et al., 2025</td><td>Quantized LLMs are consistently worse-calibrated than full-precision counterparts with errors in 85% of reported measurements (41 of 48 test conditions).</td></tr>
+        </tbody>
+      </table>
+
+      <h3>4.2.3 Finding Known Authority</h3>
+      <p><strong>Mechanism:</strong> Known authority retrieval requires precise matching across long contexts. Embedding quantization collapses semantic distances; generator quantization corrupts attention to specific passages.</p>
+      <table>
+        <thead><tr><th>Study</th><th>Finding</th></tr></thead>
+        <tbody>
+          <tr><td>Mekala et al. (2025)</td><td>8-bit is roughly preserved (small average drop), but 4-bit methods can produce very large losses (up to ~59%), especially for long-context inputs.</td></tr>
+          <tr><td>LegalBench-RAG (2024)</td><td>Legal-domain benchmark that isolates retrieval quality—great "legal retrieval is hard" anchor even before quantization.</td></tr>
+        </tbody>
+      </table>
+
+      <h3>4.2.4 Finding Unknown Authority</h3>
+      <p><strong>Mechanism:</strong> Finding unknown authority requires decomposing fact patterns into legal issues. Liu et al. show quantization degrades multi-hop reasoning by up to 4× on complex tasks.</p>
+      <table>
+        <thead><tr><th>Study</th><th>Finding</th></tr></thead>
+        <tbody>
+          <tr><td>Li et al.</td><td>Low-bit quantization introduces up to 32.39% accuracy degradation (avg. 11.31%) on complex math reasoning, with degradation specifically in numerical computation and planning capabilities.</td></tr>
+          <tr><td>Liu et al., 2025</td><td>Lower bit-widths introduce significant accuracy risks across DeepSeek-R1, LLaMA, and Qwen.</td></tr>
+          <tr><td>Yazan, Verberne & Situmeang (2024)</td><td>In RAG pipelines, quantization may not impair RAG when base LLM performs well, but smaller models show high sensitivity to context length and setup.</td></tr>
+        </tbody>
+      </table>
+
+      <h3>4.2.5 Validating Authority</h3>
+      <p><strong>Mechanism:</strong> Validation requires temporal reasoning (when was this overruled?) and status classification (still good law?). These are exactly the fine-grained distinctions that outlier weight clipping destroys.</p>
+      <table>
+        <thead><tr><th>Study</th><th>Finding</th></tr></thead>
+        <tbody>
+          <tr><td>Liu et al. (2025)</td><td>While W8A8/W4A16 can be lossless, lower bit-widths introduce significant accuracy risks, with task difficulty a critical determinant—placing authority-validation in the high-risk regime.</td></tr>
+          <tr><td>MixKVQ (Zhang et al. 2025)</td><td>Existing low-bit KV-cache quantization can exhibit severe performance degradation on complex reasoning tasks; fixed-precision methods at very low bit-widths struggle with outlier channels.</td></tr>
+          <tr><td>TimeBench</td><td>GPT-4 achieves only 66.4% accuracy on tasks requiring implicit temporal relationships. Accuracy varies from 40.25% to 92% depending on how temporal facts are organized.</td></tr>
+        </tbody>
+      </table>
+
+      <h3>4.2.6 Fact Extraction</h3>
+      <p><strong>Mechanism:</strong> Fact extraction from contracts is long-context retrieval. The 59% accuracy collapse on NIAH-none (correctly identifying when information is absent) directly implicates document review reliability.</p>
+      <table>
+        <thead><tr><th>Study</th><th>Finding</th></tr></thead>
+        <tbody>
+          <tr><td>Mekala et al. (2025)</td><td>Up to 59% degradation on long-context extraction tasks at 4-bit quantization. S6's failure mode is particularly insidious because extracted "holdings" may be linguistically plausible while being substantively fabricated.</td></tr>
+        </tbody>
+      </table>
+
+      <h3>4.2.7 Distinguishing Cases</h3>
+      <p><strong>Mechanism:</strong> Case distinction requires tracking multiple factors simultaneously and identifying material differences. This is multi-step reasoning—the capacity most vulnerable to quantization.</p>
+      <table>
+        <thead><tr><th>Study</th><th>Finding</th></tr></thead>
+        <tbody>
+          <tr><td>Dahl et al. (2024)</td><td>Models "cannot reliably detect when they are hallucinating" and fail to correct users' incorrect legal assumptions. Combined with Li et al.'s 32.39% reasoning degradation under quantization, demonstrates high unreliability.</td></tr>
+          <tr><td>Liu et al., 2025</td><td>Low-bit regimes create accuracy risks on hard reasoning tasks (the cognitive substrate for distinction).</td></tr>
+        </tbody>
+      </table>
+
+      <h3>4.2.8 Synthesizing Results</h3>
+      <p><strong>Mechanism:</strong> Synthesis requires integrating multiple sources while maintaining coherence. CLERC explicitly reports that strong models can produce highly rated analyses while hallucinating—"good writing ≠ truthful authority."</p>
+      <table>
+        <thead><tr><th>Study</th><th>Finding</th></tr></thead>
+        <tbody>
+          <tr><td>LegalEval-Q (Li & Wu, 2025)</td><td>Measures clarity/coherence/terminology quality; reports quantization has negligible impact on writing-quality metrics—supports "fluency preserved while truth degrades" story.</td></tr>
+          <tr><td>Lewis et al. (2020)</td><td>Canonical RAG citation establishing retrieval + generation as a distinct paradigm; provenance/updating are core motivations.</td></tr>
+        </tbody>
+      </table>
+
+      <h3>4.2.9 Professional Responsibility</h3>
+      <p><strong>Mechanism:</strong> Citation integrity and fabrication resistance depend on precise parametric memory. Quantization clips the outlier weights encoding rare-but-accurate associations.</p>
+      <table>
+        <thead><tr><th>Study</th><th>Finding</th></tr></thead>
+        <tbody>
+          <tr><td>Q-Misalign (Dong et al., 2025)</td><td>Safety alignment is not preserved by quantization but is contingent upon precision—vulnerabilities can remain dormant, making pre-deployment safety audits unreliable for detecting post-quantization failure modes.</td></tr>
+          <tr><td>Li et al. (2024)</td><td>4-bit quantization significantly weakens fabrication resistance.</td></tr>
+          <tr><td>Dahl et al. (2024)</td><td>LLMs hallucinate legal authority at alarming rates (69-88%) on verifiable legal queries.</td></tr>
+        </tbody>
+      </table>
+
+      <h2>V. The Legal-7 Benchmark: Building the Benchmark</h2>
+
+      <h3>5.1 Research Execution as Job Performance</h3>
+      <p>
+        Section II identified the cognitive skills that constitute competent legal work. But these sources converge on something more fundamental than a checklist: <strong>Research Execution</strong>—the integrated professional competency of completing a legal research task from question to answer.
+      </p>
+      <p>
+        Shultz & Zedeck's empirical study confirms this framing. Their 26 "Lawyering Effectiveness Factors" are <strong>job performance measures</strong>—derived from asking lawyers, judges, and clients: "If you were looking for a lawyer for an important matter, what qualities would cause you to choose that attorney?"
+      </p>
+      <p>
+        AALL Principle IV operationalizes this directly: "A successful legal researcher applies information effectively <strong>to resolve a specific issue or need</strong>."
+      </p>
+
+      <h3>5.2 The Legal-7 Chain</h3>
+      <p>The Legal-7 (L7) Agentic benchmark operationalizes Research Execution as a seven-step dependent chain:</p>
+      <table>
+        <thead>
+          <tr><th>Step</th><th>Name</th><th>Modality</th><th>Task</th><th>Ground Truth</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>S1</td><td>Known Authority</td><td>RAG</td><td>Resolve known citation to correct authority</td><td>SCDB citation lookup</td></tr>
+          <tr><td>S2</td><td>Unknown Authority</td><td>RAG</td><td>Retrieve relevant law from fact pattern</td><td>shepards_data.csv</td></tr>
+          <tr><td>S3</td><td>Validate Authority</td><td>RAG</td><td>Determine if authority remains good law</td><td>scotus_overruled_db.csv</td></tr>
+          <tr><td>S4</td><td>Fact Extraction</td><td>RAG</td><td>Extract disposition, holding, outcome from opinion</td><td>SCDB metadata + opinion text</td></tr>
+          <tr><td>S5</td><td>Distinguish Cases</td><td>RAG + CB</td><td>Decide if precedent applies or can be distinguished</td><td>shepards.agree field</td></tr>
+          <tr><td>S6</td><td>IRAC Synthesis</td><td>RAG</td><td>Write IRAC-structured legal analysis</td><td>MEE rubric + chain grounding</td></tr>
+          <tr><td>S7</td><td>Citation Integrity</td><td>CB</td><td>Verify no fabricated citations in S6 output</td><td>fake_cases.csv + SCDB</td></tr>
+        </tbody>
+      </table>
+      <p>The chain maps to the IRAC framework that governs U.S. common law analysis:</p>
+      <ul>
+        <li><strong>Rule Phase (S1–S3):</strong> Identify, retrieve, and validate legal authority</li>
+        <li><strong>Application Phase (S4–S5):</strong> Extract facts and apply precedent through distinction</li>
+        <li><strong>Conclusion Phase (S6–S7):</strong> Synthesize analysis and verify citation integrity</li>
+      </ul>
+
+      <h3>5.3 Why S6 Validates the Chain</h3>
+      <p>
+        S6 is administered closed-book: the model cannot return to the sources. It must synthesize an IRAC memo from what it gathered in S1–S5.
+      </p>
+      <p>This design reflects AALL Principle IV's standard: applying gathered information to resolve an issue.</p>
+      <table>
+        <thead><tr><th>If Step Fails...</th><th>Cascade Effect</th></tr></thead>
+        <tbody>
+          <tr><td>S1 (Known Authority)</td><td>Wrong case → all downstream analysis corrupted</td></tr>
+          <tr><td>S2 (Unknown Authority)</td><td>Missing precedent → incomplete rule statement</td></tr>
+          <tr><td>S3 (Validate Authority)</td><td>Citing bad law → S6 argument fails</td></tr>
+          <tr><td>S4 (Fact Extraction)</td><td>Wrong facts → S5 distinction invalid</td></tr>
+          <tr><td>S5 (Distinguish)</td><td>Wrong application → S6 conclusion unsupported</td></tr>
+          <tr><td>S6 (IRAC Synthesis)</td><td>Poor reasoning → chain fails at capstone</td></tr>
+          <tr><td>S7 (Citation Integrity)</td><td>Fabrication detected → S6 voided, chain fails</td></tr>
+        </tbody>
+      </table>
+      <p>
+        A model achieving 90% accuracy on each independent skill will, under independence assumptions, complete only 0.9<sup>7</sup> ≈ 48% of full chains successfully. This multiplicative penalty reflects the reality of legal practice.
+      </p>
+
+      <h3>5.4 S7 as Professional Responsibility Gate</h3>
+      <p>
+        S7 operationalizes Shultz & Zedeck's Factor 21: "Integrity & Honesty—has core values and beliefs; acts with integrity and honesty."
+      </p>
+      <p>
+        Under Model Rule 3.3(a)(1), attorneys may not "make a false statement of fact or law to a tribunal." A brief citing fabricated cases is not merely imperfect; it is professionally worthless and potentially sanctionable.
+      </p>
+      <p>
+        L7 mirrors this: if S7 detects any fabricated citation in the S6 output, the entire S6 score is voided—set to zero regardless of reasoning quality.
+      </p>
+
+      <h3>5.5 S5 Dual-Modality: The Reasoning Bridge</h3>
+      <p>S5 (Distinguish Cases) occupies a unique position in the chain. It is the point where retrieval must transform into reasoning. The model must:</p>
+      <ul>
+        <li>Understand the holding of a precedent case</li>
+        <li>Understand the facts of the current case</li>
+        <li>Determine whether the precedent applies or can be distinguished</li>
+      </ul>
+      <p>To isolate the reasoning component, L7 tests S5 in two modalities:</p>
+      <p><strong>S5-RAG (Primary):</strong> Both case texts available. Tests whether the model can distinguish cases with full information.</p>
+      <p><strong>S5-CB (Diagnostic):</strong> Only the S4-extracted holding available; no citing case text. Tests whether the model can reason from the rule alone.</p>
+      <p>The gap between S5-RAG and S5-CB is the <strong>Fluency-Reasoning Divergence measurement</strong>:</p>
+      <table>
+        <thead><tr><th>S5-RAG</th><th>S5-CB</th><th>Interpretation</th></tr></thead>
+        <tbody>
+          <tr><td>High</td><td>High</td><td>Model reasons well</td></tr>
+          <tr><td>High</td><td>Low</td><td>Model copies, doesn't reason (surface fluency vs reasoning divergence signature)</td></tr>
+          <tr><td>Low</td><td>Low</td><td>Model cannot perform the task</td></tr>
+        </tbody>
+      </table>
+
+      <h3>5.6 Grading Architecture</h3>
+      <p>L7 achieves 6/7 objective grading:</p>
+      <table>
+        <thead><tr><th>Step</th><th>Grading Method</th><th>Ground Truth Source</th></tr></thead>
+        <tbody>
+          <tr><td>S1</td><td>Exact match</td><td>SCDB citation</td></tr>
+          <tr><td>S2</td><td>MRR / Hit@k</td><td>Shepard's precedent relationships</td></tr>
+          <tr><td>S3</td><td>Exact match</td><td>scotus_overruled_db</td></tr>
+          <tr><td>S4</td><td>Exact match (disposition, party)</td><td>SCDB metadata</td></tr>
+          <tr><td>S5</td><td>Exact match</td><td>shepards.agree field</td></tr>
+          <tr><td>S6</td><td><strong>Hybrid</strong> (50% objective, 50% LLM-as-Judge)</td><td>Chain grounding + MEE rubric</td></tr>
+          <tr><td>S7</td><td>Deterministic</td><td>Citation existence check</td></tr>
+        </tbody>
+      </table>
+      <p>
+        Only S6 requires rubric-based evaluation. This architecture minimizes LLM-as-judge circularity: most of the benchmark is deterministic.
+      </p>
+
+      <h3>5.7 Task Structure: From Case to Chain</h3>
+      <p>Each L7 chain instance begins with a <strong>Supreme Court case pair</strong> drawn from the Shepard's citation network.</p>
+      <table>
+        <thead><tr><th>Element</th><th>Source</th><th>Example</th></tr></thead>
+        <tbody>
+          <tr><td>Cited Case</td><td>scdb_sample.csv</td><td><em>Brown v. Board of Education</em>, 347 U.S. 483 (1954)</td></tr>
+          <tr><td>Citing Case</td><td>scotus_shepards_sample.csv</td><td><em>Cooper v. Aaron</em>, 358 U.S. 1 (1958)</td></tr>
+          <tr><td>Shepard's Signal</td><td>shepards field</td><td>"followed"</td></tr>
+          <tr><td>Doctrinal Agreement</td><td>agree field</td><td>True (citing case follows precedent)</td></tr>
+          <tr><td>Overrule Status</td><td>scotus_overruled_db.csv</td><td>None (not overruled)</td></tr>
+          <tr><td>Opinion Text</td><td>majority opinion field</td><td>Full text of majority opinion</td></tr>
+        </tbody>
+      </table>
+
+      <h3>5.8 Scoring Summary</h3>
+      <table>
+        <thead><tr><th>Step</th><th>Ground Truth</th><th>Scoring Method</th></tr></thead>
+        <tbody>
+          <tr><td>S1</td><td>SCDB metadata</td><td>Exact match</td></tr>
+          <tr><td>S2</td><td>Shepard's citing_case_us_cite</td><td>MRR, hit@10</td></tr>
+          <tr><td>S3</td><td>scotus_overruled_db</td><td>Binary match on is_overruled</td></tr>
+          <tr><td>S4</td><td>SCDB caseDisposition, partyWinning</td><td>Closed enum exact match</td></tr>
+          <tr><td>S5</td><td>Shepard's agree field</td><td>Binary match</td></tr>
+          <tr><td>S6</td><td>MEE rubric + chain grounding</td><td>Hybrid (50% objective, 50% rubric)</td></tr>
+          <tr><td>S7</td><td>fake_cases.csv + SCDB</td><td>Deterministic lookup</td></tr>
+        </tbody>
+      </table>
+
+      <h3>5.9 What L7 Detects That Parallel Benchmarks Cannot</h3>
+      <p>L7 detects three failure modes invisible to parallel evaluation:</p>
+      <p><strong>Cascade failures.</strong> A model that hallucinates at S1 corrupts all downstream steps. Parallel scoring treats S1 as one task among many; L7 propagates the error through the chain.</p>
+      <p><strong>Surface fluency vs reasoning divergence signature.</strong> The S5 RAG-CB gap directly measures whether the model is reasoning or copying. No parallel benchmark isolates this.</p>
+      <p><strong>Professional responsibility failures.</strong> S7 voiding enforces the binary reality of citation integrity—a synthesized memo is either citable or it is not.</p>
+      <p>
+        For quantization testing, these properties are essential. We hypothesize that compression degrades reasoning while preserving fluency. L7's chained architecture, dual-modality S5, and hard-gate S7 are designed to make this degradation visible.
+      </p>
+
+    </main>
+
+    <script src="../shared/site-shell.js"></script>
+  </body>
+</html>

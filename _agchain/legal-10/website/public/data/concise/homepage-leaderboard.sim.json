@@ -1,0 +1,87 @@
+{
+  "updated_at": "2026-01-12",
+  "source": "simulated",
+  "note": "Homepage concise leaderboard preview (design/testing only).",
+  "models": [
+    {
+      "model": "o1",
+      "provider": "OpenAI",
+      "chain": 74.8,
+      "s8_pass_rate": 94,
+      "avg_latency_ms": 3120,
+      "cost_per_instance": 0.061
+    },
+    {
+      "model": "Claude 3.5 Sonnet",
+      "provider": "Anthropic",
+      "chain": 73.1,
+      "s8_pass_rate": 95,
+      "avg_latency_ms": 2340,
+      "cost_per_instance": 0.042
+    },
+    {
+      "model": "GPT-4o",
+      "provider": "OpenAI",
+      "chain": 70.6,
+      "s8_pass_rate": 95,
+      "avg_latency_ms": 1890,
+      "cost_per_instance": 0.038
+    },
+    {
+      "model": "Gemini 1.5 Pro",
+      "provider": "Google",
+      "chain": 68.9,
+      "s8_pass_rate": 93,
+      "avg_latency_ms": 2050,
+      "cost_per_instance": 0.029
+    },
+    {
+      "model": "Claude 3.5 Haiku",
+      "provider": "Anthropic",
+      "chain": 64.7,
+      "s8_pass_rate": 95,
+      "avg_latency_ms": 1220,
+      "cost_per_instance": 0.012
+    },
+    {
+      "model": "GPT-4o mini",
+      "provider": "OpenAI",
+      "chain": 62.8,
+      "s8_pass_rate": 95,
+      "avg_latency_ms": 980,
+      "cost_per_instance": 0.006
+    },
+    {
+      "model": "DeepSeek R1",
+      "provider": "DeepSeek",
+      "chain": 61.2,
+      "s8_pass_rate": 94,
+      "avg_latency_ms": 4200,
+      "cost_per_instance": 0.01
+    },
+    {
+      "model": "Mistral Large",
+      "provider": "Mistral",
+      "chain": 59.6,
+      "s8_pass_rate": 92,
+      "avg_latency_ms": 2450,
+      "cost_per_instance": 0.015
+    },
+    {
+      "model": "Qwen2.5 72B Instruct",
+      "provider": "Alibaba",
+      "chain": 57.9,
+      "s8_pass_rate": 91,
+      "avg_latency_ms": 3800,
+      "cost_per_instance": 0.008
+    },
+    {
+      "model": "Llama 3.1 405B Instruct",
+      "provider": "Meta",
+      "chain": 56.4,
+      "s8_pass_rate": 90,
+      "avg_latency_ms": 4100,
+      "cost_per_instance": 0.014
+    }
+  ]
+}

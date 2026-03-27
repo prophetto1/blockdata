@@ -1,0 +1,164 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 400">
+  <defs>
+    <!-- Extraction steps (teal) -->
+    <linearGradient id="extractGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#14b8a6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0d9488;stop-opacity:1" />
+    </linearGradient>
+    <!-- Classification steps (blue - site accent) -->
+    <linearGradient id="classifyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#2563eb;stop-opacity:1" />
+    </linearGradient>
+    <!-- Synthesis steps (purple) -->
+    <linearGradient id="synthesisGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#a855f7;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#9333ea;stop-opacity:1" />
+    </linearGradient>
+    <!-- Gate (red/orange) -->
+    <linearGradient id="gateGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#f97316;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#ea580c;stop-opacity:1" />
+    </linearGradient>
+    <!-- Arrow marker -->
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#9ca3af" />
+    </marker>
+    <marker id="arrowOrange" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#ea580c" />
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="400" fill="#0b1220" rx="12"/>
+
+  <!-- Title -->
+  <text x="480" y="35" text-anchor="middle" font-family="'Source Serif 4', Georgia, serif" font-size="20" font-weight="400" fill="#e5e7eb">L10 Agentic Chain v2.0</text>
+  <text x="480" y="55" text-anchor="middle" font-family="'Source Serif 4', Georgia, serif" font-size="12" fill="#9ca3af">S1 → S3 → S4 → S5 → S6 → S7 → S8</text>
+
+  <!-- Step boxes -->
+  <!-- S1 -->
+  <g transform="translate(40, 80)">
+    <rect width="110" height="80" rx="10" fill="url(#extractGrad)" />
+    <text x="55" y="30" text-anchor="middle" font-family="'Source Serif 4', Georgia, serif" font-size="22" font-weight="600" fill="white">S1</text>
+    <text x="55" y="50" text-anchor="middle" font-family="'Source Serif 4', Georgia, serif" font-size="9" fill="#ccfbf1">Citation</text>
+    <text x="55" y="62" text-anchor="middle" font-family="'Source Serif 4', Georgia, serif" font-size="9" fill="#ccfbf1">Identification</text>
+    <text x="55" y="74" text-anchor="middle" font-family="'Source Serif 4', Georgia, serif" font-size="8" fill="#5eead4" font-style="italic">Extraction</text>
+  </g>
+
+  <!-- S3 -->
+  <g transform="translate(170, 80)">
+    <rect width="110" height="80" rx="10" fill="url(#classifyGrad)" />
+    <text x="55" y="30" text-anchor="middle" font-family="'Source Serif 4', Georgia, serif" font-size="22" font-weight="600" fill="white">S3</text>
+    <text x="55" y="50" text-anchor="middle" font-family="'Source Serif 4', Georgia, serif" font-size="9" fill="#dbeafe">Authority</text>
+    <text x="55" y="62" text-anchor="middle" font-family="'Source Serif 4', Georgia, serif" font-size="9" fill="#dbeafe">Status</text>
+    <text x="55" y="74" text-anchor="middle" font-family="'Source Serif 4', Georgia, serif" font-size="8" fill="#93c5fd" font-style="italic">Dual-Channel</text>
+  </g>
+
+  <!-- S4 -->
+  <g transform="translate(300, 80)">
+    <rect width="110" height="80" rx="10" fill="url(#extractGrad)" />
+    <text x="55" y="30" text-anchor="middle" font-family="'Source Serif 4', Georgia, serif" font-size="22" font-weight="600" fill="white">S4</text>
+    <text x="55" y="50" text-anchor="middle" font-family="'Source Serif 4', Georgia, serif" font-size="9" fill="#ccfbf1">Fact</text>
+    <text x="55" y="62" text-anchor="middle" font-family="'Source Serif 4', Georgia, serif" font-size="9" fill="#ccfbf1">Extraction</text>
+    <text x="55" y="74" text-anchor="middle" font-family="'Source Serif 4', Georgia, serif" font-size="8" fill="#5eead4" font-style="italic">Extraction</text>
+  </g>
+
+  <!-- S5 -->
+  <g transform="translate(430, 80)">
+    <rect width="110" height="80" rx="10" fill="url(#classifyGrad)" />
+    <text x="55" y="30" text-anchor="middle" font-family="'Source Serif 4', Georgia, serif" font-size="22" font-weight="600" fill="white">S5</text>
+    <text x="55" y="50" text-anchor="middle" font-family="'Source Serif 4', Georgia, serif" font-size="9" fill="#dbeafe">Treatment</text>
+    <text x="55" y="62" text-anchor="middle" font-family="'Source Serif 4', Georgia, serif" font-size="9" fill="#dbeafe">Classification</text>
+    <text x="55" y="74" text-anchor="middle" font-family="'Source Serif 4', Georgia, serif" font-size="8" fill="#93c5fd" font-style="italic">CB / RAG</text>
+  </g>
+
+  <!-- S6 -->
+  <g transform="translate(560, 80)">
+    <rect width="110" height="80" rx="10" fill="url(#synthesisGrad)" />
+    <text x="55" y="30" text-anchor="middle" font-family="'Source Serif 4', Georgia, serif" font-size="22" font-weight="600" fill="white">S6</text>
+    <text x="55" y="50" text-anchor="middle" font-family="'Source Serif 4', Georgia, serif" font-size="9" fill="#f3e8ff">Closed-Book</text>
+    <text x="55" y="62" text-anchor="middle" font-family="'Source Serif 4', Georgia, serif" font-size="9" fill="#f3e8ff">IRAC</text>
+    <text x="55" y="74" text-anchor="middle" font-family="'Source Serif 4', Georgia, serif" font-size="8" fill="#d8b4fe" font-style="italic">Faithfulness</text>
+  </g>
+
+  <!-- S7 -->
+  <g transform="translate(690, 80)">
+    <rect width="110" height="80" rx="10" fill="url(#synthesisGrad)" />
+    <text x="55" y="30" text-anchor="middle" font-family="'Source Serif 4', Georgia, serif" font-size="22" font-weight="600" fill="white">S7</text>
+    <text x="55" y="50" text-anchor="middle" font-family="'Source Serif 4', Georgia, serif" font-size="9" fill="#f3e8ff">Open-Book</text>
+    <text x="55" y="62" text-anchor="middle" font-family="'Source Serif 4', Georgia, serif" font-size="9" fill="#f3e8ff">IRAC</text>
+    <text x="55" y="74" text-anchor="middle" font-family="'Source Serif 4', Georgia, serif" font-size="8" fill="#d8b4fe" font-style="italic">Correctness</text>
+  </g>
+
+  <!-- S8 (Gate) -->
+  <g transform="translate(820, 80)">
+    <rect width="110" height="80" rx="10" fill="url(#gateGrad)" />
+    <text x="55" y="30" text-anchor="middle" font-family="'Source Serif 4', Georgia, serif" font-size="22" font-weight="600" fill="white">S8</text>
+    <text x="55" y="50" text-anchor="middle" font-family="'Source Serif 4', Georgia, serif" font-size="9" fill="#ffedd5">Citation</text>
+    <text x="55" y="62" text-anchor="middle" font-family="'Source Serif 4', Georgia, serif" font-size="9" fill="#ffedd5">Integrity</text>
+    <text x="55" y="74" text-anchor="middle" font-family="'Source Serif 4', Georgia, serif" font-size="8" fill="#fed7aa" font-style="italic">Gate</text>
+  </g>
+
+  <!-- Arrows between steps -->
+  <line x1="150" y1="120" x2="168" y2="120" stroke="#9ca3af" stroke-width="2" marker-end="url(#arrowhead)" />
+  <line x1="280" y1="120" x2="298" y2="120" stroke="#9ca3af" stroke-width="2" marker-end="url(#arrowhead)" />
+  <line x1="410" y1="120" x2="428" y2="120" stroke="#9ca3af" stroke-width="2" marker-end="url(#arrowhead)" />
+  <line x1="540" y1="120" x2="558" y2="120" stroke="#9ca3af" stroke-width="2" marker-end="url(#arrowhead)" />
+  <line x1="670" y1="120" x2="688" y2="120" stroke="#9ca3af" stroke-width="2" marker-end="url(#arrowhead)" />
+  <line x1="800" y1="120" x2="818" y2="120" stroke="#9ca3af" stroke-width="2" marker-end="url(#arrowhead)" />
+
+  <!-- S8 Gate voiding arrow back to S7 -->
+  <path d="M 875 160 L 875 190 L 745 190 L 745 162" fill="none" stroke="#f97316" stroke-width="2" stroke-dasharray="6,3" marker-end="url(#arrowOrange)" />
+  <text x="810" y="205" text-anchor="middle" font-family="'Source Serif 4', Georgia, serif" font-size="10" fill="#fb923c">voids if fabrication</text>
+
+  <!-- ChainContext bar -->
+  <rect x="40" y="230" width="890" height="45" rx="12" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.10)" stroke-width="1"/>
+  <text x="485" y="250" text-anchor="middle" font-family="'Source Serif 4', Georgia, serif" font-size="11" font-weight="500" fill="#e5e7eb">ChainContext</text>
+  <text x="485" y="265" text-anchor="middle" font-family="'Source Serif 4', Georgia, serif" font-size="10" fill="#9ca3af">Mutable state passed between steps • Output of each step drives the next</text>
+
+  <!-- Data flow arrows from steps to context -->
+  <line x1="95" y1="160" x2="95" y2="228" stroke="rgba(255,255,255,0.10)" stroke-width="1" stroke-dasharray="3,2" />
+  <line x1="225" y1="160" x2="225" y2="228" stroke="rgba(255,255,255,0.10)" stroke-width="1" stroke-dasharray="3,2" />
+  <line x1="355" y1="160" x2="355" y2="228" stroke="rgba(255,255,255,0.10)" stroke-width="1" stroke-dasharray="3,2" />
+  <line x1="485" y1="160" x2="485" y2="228" stroke="rgba(255,255,255,0.10)" stroke-width="1" stroke-dasharray="3,2" />
+  <line x1="615" y1="160" x2="615" y2="228" stroke="rgba(255,255,255,0.10)" stroke-width="1" stroke-dasharray="3,2" />
+  <line x1="745" y1="160" x2="745" y2="228" stroke="rgba(255,255,255,0.10)" stroke-width="1" stroke-dasharray="3,2" />
+  <line x1="875" y1="160" x2="875" y2="228" stroke="rgba(255,255,255,0.10)" stroke-width="1" stroke-dasharray="3,2" />
+
+  <!-- Legend -->
+  <g transform="translate(40, 295)">
+    <rect width="18" height="18" rx="4" fill="url(#extractGrad)" />
+    <text x="26" y="14" font-family="'Source Serif 4', Georgia, serif" font-size="11" fill="#9ca3af">Extraction</text>
+
+    <rect x="120" width="18" height="18" rx="4" fill="url(#classifyGrad)" />
+    <text x="146" y="14" font-family="'Source Serif 4', Georgia, serif" font-size="11" fill="#9ca3af">Classification</text>
+
+    <rect x="260" width="18" height="18" rx="4" fill="url(#synthesisGrad)" />
+    <text x="286" y="14" font-family="'Source Serif 4', Georgia, serif" font-size="11" fill="#9ca3af">Synthesis</text>
+
+    <rect x="380" width="18" height="18" rx="4" fill="url(#gateGrad)" />
+    <text x="406" y="14" font-family="'Source Serif 4', Georgia, serif" font-size="11" fill="#9ca3af">Integrity Gate</text>
+  </g>
+
+  <!-- Two-Axis Evaluation box -->
+  <g transform="translate(560, 290)">
+    <rect width="370" height="95" rx="12" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.10)" stroke-width="1"/>
+    <text x="185" y="22" text-anchor="middle" font-family="'Source Serif 4', Georgia, serif" font-size="12" font-weight="500" fill="#e5e7eb">Two-Axis Evaluation</text>
+
+    <!-- Axis A -->
+    <rect x="15" y="35" width="165" height="50" rx="6" fill="#581c87" fill-opacity="0.3" stroke="#a855f7" stroke-width="1"/>
+    <text x="97" y="52" text-anchor="middle" font-family="'Source Serif 4', Georgia, serif" font-size="10" font-weight="500" fill="#d8b4fe">Axis A: Faithfulness</text>
+    <text x="97" y="66" text-anchor="middle" font-family="'Source Serif 4', Georgia, serif" font-size="9" fill="#a78bfa">S6 • Uses own artifacts</text>
+    <text x="97" y="78" text-anchor="middle" font-family="'Source Serif 4', Georgia, serif" font-size="9" fill="#a78bfa">Chain consistency</text>
+
+    <!-- Axis B -->
+    <rect x="190" y="35" width="165" height="50" rx="6" fill="#581c87" fill-opacity="0.3" stroke="#a855f7" stroke-width="1"/>
+    <text x="272" y="52" text-anchor="middle" font-family="'Source Serif 4', Georgia, serif" font-size="10" font-weight="500" fill="#d8b4fe">Axis B: Correctness</text>
+    <text x="272" y="66" text-anchor="middle" font-family="'Source Serif 4', Georgia, serif" font-size="9" fill="#a78bfa">S7 • Uses ResearchPack</text>
+    <text x="272" y="78" text-anchor="middle" font-family="'Source Serif 4', Georgia, serif" font-size="9" fill="#a78bfa">Document extraction</text>
+  </g>
+
+  <!-- Coverage tier labels -->
+  <text x="480" y="395" text-anchor="middle" font-family="'Source Serif 4', Georgia, serif" font-size="10" fill="#6b7280">Tier A: S1, S3, S4, S5:cb, S6, S7, S8 (cited case opinion) • Tier B: + S5:rag (both opinions)</text>
+</svg>

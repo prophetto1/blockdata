@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Graceful Degradation - LegalChain</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        legalblue: {
+                            50: '#f0f7ff',
+                            100: '#e0effe',
+                            200: '#bae0fd',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#1e3a8a',
+                        },
+                        gate: {
+                            400: '#f472b6', // Pink-400
+                            500: '#ec4899', // Pink-500
+                            600: '#db2777', // Pink-600
+                        }
+                    },
+                     fontFamily: {
+                        mono: ['"Fira Code"', 'monospace'],
+                        sans: ['"Inter"', 'sans-serif'],
+                        serif: ['"Merriweather"', 'serif'],
+                    }
+                }
+            }
+        };
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;0,900;1,300&family=Inter:wght@300;400;500;600&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../shared/report.css">
+</head>
+<body class="bg-[#050505] text-[#d4d4d4] font-serif">
+    <main id="l10-page" data-l10-layout="research" data-l10-sidenav="site" data-l10-sidenav-pos="left">
+        <article class="prose prose-slate dark:prose-invert max-w-4xl mx-auto research-content">
+            
+            <header class="mb-16">
+                <h1 class="research-title text-white">Graceful Degradation</h1>
+                
+                <p class="lead text-xl text-neutral-400 font-serif italic border-l-4 border-gate-600 pl-6 py-2">
+                    Non-binary evaluation: preserving partial results through dependency and coverage gating logic.
+                </p>
+            </header>
+
+            <h2>The Resilient Chain</h2>
+            <p>
+                Most benchmark frameworks treat evaluation as binary: either a test executes fully, or it fails entirely. LegalChain takes a different path. When a step cannot execute, the system records <strong>why</strong> and continues, ensuring that partial reasoning is never discarded.
+            </p>
+
+            <!-- Protocol Gate Flowchart -->
+            <div class="my-16 not-prose flex flex-col items-center">
+                <div class="w-full max-w-lg space-y-4">
+                    <!-- Step Arrival -->
+                    <div class="p-4 border border-neutral-800 bg-neutral-900 text-center font-mono text-xs uppercase tracking-widest text-neutral-500">
+                        Step Arrival
+                    </div>
+                    
+                    <div class="flex justify-center h-8">
+                        <div class="w-px bg-neutral-800"></div>
+                    </div>
+
+                    <!-- Dependency Gate -->
+                    <div class="relative group">
+                        <div class="p-6 border border-gate-600 bg-neutral-900 relative z-10">
+                            <h4 class="text-white font-bold text-center mb-2">Dependency Gate</h4>
+                            <p class="text-[10px] text-neutral-500 text-center uppercase">Did prerequisite steps complete?</p>
+                        </div>
+                        <div class="absolute top-1/2 left-full -translate-y-1/2 ml-4 flex items-center">
+                            <div class="w-8 h-px bg-neutral-800"></div>
+                            <div class="ml-2 text-[10px] font-mono text-gate-400">SKIPPED_DEPENDENCY</div>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-center h-8">
+                        <div class="w-px bg-neutral-800"></div>
+                    </div>
+
+                    <!-- Coverage Gate -->
+                    <div class="relative group">
+                        <div class="p-6 border border-gate-600 bg-neutral-900 relative z-10">
+                            <h4 class="text-white font-bold text-center mb-2">Coverage Gate</h4>
+                            <p class="text-[10px] text-neutral-500 text-center uppercase">Is required data present?</p>
+                        </div>
+                        <div class="absolute top-1/2 left-full -translate-y-1/2 ml-4 flex items-center">
+                            <div class="w-8 h-px bg-neutral-800"></div>
+                            <div class="ml-2 text-[10px] font-mono text-gate-400">SKIPPED_COVERAGE</div>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-center h-8">
+                        <div class="w-px bg-neutral-800"></div>
+                    </div>
+
+                    <!-- Execute -->
+                    <div class="p-4 border border-emerald-500/50 bg-emerald-500/10 text-center font-mono text-xs uppercase tracking-widest text-emerald-500">
+                        Execute Step
+                    </div>
+                </div>
+            </div>
+
+            <h2>Adaptive Status Registry</h2>
+            <p>
+                Every step in a LegalChain run is assigned one of three primary terminal statuses. These statuses are preserved in the final <code>jsonl</code> output for meta-analysis.
+            </p>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-px bg-neutral-800 border border-neutral-800 my-12 not-prose">
+                <div class="p-6 bg-neutral-900">
+                    <div class="text-emerald-500 font-mono text-xs mb-2">● OK</div>
+                    <div class="text-[10px] text-neutral-500 uppercase mb-4">Nominal</div>
+                    <p class="text-xs text-neutral-400 font-serif">Step executed successfully and produced valid output schema.</p>
+                </div>
+                <div class="p-6 bg-neutral-900">
+                    <div class="text-gate-400 font-mono text-xs mb-2">○ SKIPPED_DEP</div>
+                    <div class="text-[10px] text-neutral-500 uppercase mb-4">Cascade</div>
+                    <p class="text-xs text-neutral-400 font-serif">Step was bypassed because a prerequisite step failed or was skipped.</p>
+                </div>
+                <div class="p-6 bg-neutral-900">
+                    <div class="text-amber-500 font-mono text-xs mb-2">○ SKIPPED_COV</div>
+                    <div class="text-[10px] text-neutral-500 uppercase mb-4">Data Gap</div>
+                    <p class="text-xs text-neutral-400 font-serif">Step was bypassed due to missing text or metadata in the instance.</p>
+                </div>
+            </div>
+
+            <h2>Dependency Cascades</h2>
+            <p>
+                The chain architecture creates natural cascades. If **S1 (Authority Identification)** fails to produce a result, it is impossible for **S5 (Point-to-Point Analysis)** to execute. Instead of crashing, S5 receives the <code>SKIPPED_DEPENDENCY</code> status, preserving the audit trail.
+            </p>
+
+            <div class="my-12 p-8 border border-neutral-800 bg-neutral-950 not-prose">
+                <div class="text-[10px] font-mono text-neutral-500 uppercase mb-4 tracking-widest">[ CASCADE.MAP ]</div>
+                <div class="space-y-4 font-mono text-xs">
+                    <div class="flex items-center gap-4">
+                        <span class="w-16 text-neutral-600">S1</span>
+                        <span class="text-red-500">FAILED (No Citation)</span>
+                    </div>
+                    <div class="flex items-center gap-4 pl-4 border-l border-neutral-800">
+                        <span class="w-16 text-neutral-600">S2-S4</span>
+                        <span class="text-neutral-500">SKIPPED_DEPENDENCY</span>
+                    </div>
+                    <div class="flex items-center gap-4 pl-8 border-l border-neutral-800">
+                        <span class="w-16 text-neutral-600">S5</span>
+                        <span class="text-neutral-500">SKIPPED_DEPENDENCY</span>
+                    </div>
+                    <div class="flex items-center gap-4 pl-12 border-l border-neutral-800">
+                        <span class="w-16 text-neutral-600">S6-S8</span>
+                        <span class="text-neutral-500">SKIPPED_DEPENDENCY</span>
+                    </div>
+                </div>
+            </div>
+
+        </article>
+    </main>
+    <script src="../shared/site-shell.js"></script>
+</body>
+</html>

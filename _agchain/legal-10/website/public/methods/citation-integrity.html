@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Citation Integrity - LegalChain</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+      };
+    </script>
+</head>
+<body class="bg-neutral-950 text-neutral-400 font-sans antialiased">
+    <main id="l10-page" data-l10-layout="research" data-l10-sidenav="site" data-l10-sidenav-pos="left">
+        <article class="max-w-5xl mx-auto research-content px-6">
+            
+            <!-- HEADER BLOCK (Layout B) -->
+            <header class="mb-12 border-b border-neutral-800 pb-8 text-center md:text-left">
+                <h1 class="text-4xl font-serif font-light text-white">Citation Integrity</h1>
+                <p class="serif-dense mt-4 text-neutral-500 text-sm leading-relaxed max-w-2xl font-serif mx-auto md:mx-0">
+                    Fabricated citations are career-ending errors. Stage 8 enforces a zero-tolerance filter, applying a zero integrity score to any evaluation unit that contains hallucinated authorities.
+                </p>
+            </header>
+
+            <!-- HERO: PENALTY MATRIX (Layout B Signature) -->
+            <div class="w-full border border-neutral-800 bg-neutral-900/10 mb-16 overflow-hidden">
+                <div class="bg-neutral-900/50 p-4 border-b border-neutral-800 flex justify-between items-center">
+                    <div class="text-[10px] font-mono text-neutral-500 uppercase">PENALTY VARIANCE: TRADITIONAL VS LEGAL-10</div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-neutral-800">
+                    <div class="p-8 text-center">
+                        <div class="text-[10px] font-mono text-neutral-600 uppercase mb-4">Baseline Benchmark</div>
+                        <div class="text-5xl font-mono text-neutral-700 mb-2">4.5<span class="text-xl">/6.0</span></div>
+                        <div class="text-[10px] text-neutral-500 italic">Graduated Penalty (Minor Deduction)</div>
+                    </div>
+                    <div class="p-8 text-center bg-amber-950/10">
+                        <div class="text-[10px] font-mono text-amber-500 uppercase mb-4">LegalChain Gate</div>
+                        <div class="text-5xl font-mono text-amber-600 mb-2">0.0<span class="text-xl">/6.0</span></div>
+                        <div class="text-[10px] text-amber-900 uppercase font-bold tracking-widest">INTEGRITY: ZERO + FLAG</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CONTENT LAYER -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-12">
+                
+                <!-- MAIN COLUMN -->
+                <div class="lg:col-span-8 space-y-12">
+                    <section>
+                        <div class="text-[10px] font-mono text-neutral-600 uppercase mb-4 tracking-widest">[ PHILOSOPHY ]</div>
+                        <p class="text-sm text-neutral-400 font-serif leading-relaxed mb-6">
+                            In law, a fabricated citation (e.g., <i>Mata v. Avianca</i>) is a false statement of law to a tribunal. A benchmark that gives partial credit for "mostly correct" briefs containing fake cases is measuring academic capability, not professional readiness.
+                        </p>
+                        <p class="text-sm text-neutral-400 font-serif leading-relaxed">
+                            A model must either anchor its reasoning in the verified case universe or fail. There is no middle ground for "creative" legal synthesis.
+                        </p>
+                    </section>
+
+                    <section class="border border-neutral-800 p-8 bg-neutral-900/20">
+                         <div class="text-[10px] font-mono text-red-500 mb-6 uppercase tracking-widest">[ S8 VERIFICATION PROTOCOL ]</div>
+                         <div class="space-y-6">
+                            <div class="flex items-center gap-4">
+                                <div class="w-8 h-8 bg-neutral-800 flex items-center justify-center font-mono text-xs text-neutral-500">A</div>
+                                <div class="text-xs text-neutral-300 font-mono">EXTRACT_CITES (Regex + LLM Guard)</div>
+                            </div>
+                            <div class="flex items-center gap-4">
+                                <div class="w-8 h-8 bg-neutral-800 flex items-center justify-center font-mono text-xs text-neutral-500">B</div>
+                                <div class="text-xs text-neutral-300 font-mono">UNIVERSE_MATCH (Direct Match CAP/SCDB)</div>
+                            </div>
+                            <div class="flex items-center gap-4">
+                                <div class="w-8 h-8 bg-neutral-800 flex items-center justify-center font-mono text-xs text-neutral-500">C</div>
+                                <div class="text-xs text-neutral-300 font-mono">HONEYPOT_CHECK (Flag deterministic traps)</div>
+                            </div>
+                         </div>
+                    </section>
+                </div>
+
+                <!-- SIDEBAR SPECS -->
+                <div class="lg:col-span-4 space-y-8">
+                    <div class="bg-neutral-900 border border-neutral-800 p-5">
+                        <div class="text-[10px] font-mono text-blue-500 mb-4 uppercase">[ THE HONEY POT ]</div>
+                        <p class="text-[10px] text-neutral-400 font-serif leading-relaxed mb-4 italic">
+                            LegalChain maintains a database of 1,024 plausible-looking but non-existent citations (e.g., Smith v. Jones, 412 U.S. 881).
+                        </p>
+                        <div class="text-[10px] text-neutral-600 font-mono uppercase">Goal: Detect active confabulation.</div>
+                    </div>
+
+                    <div class="p-5 border border-red-900/20 bg-red-950/5">
+                        <div class="text-[10px] font-mono text-red-500 mb-2 uppercase">[ LEGAL ETHICS ]</div>
+                        <div class="text-xs text-neutral-500 font-serif italic mb-4">"A lawyer shall not knowingly make a false statement of fact or law to a tribunal."</div>
+                        <div class="text-[10px] text-neutral-600 font-mono uppercase tracking-widest">— ABA Rule 3.3</div>
+                    </div>
+                </div>
+            </div>
+
+        </article>
+    </main>
+    <script src="../shared/site-shell.js"></script>
+</body>
+</html>

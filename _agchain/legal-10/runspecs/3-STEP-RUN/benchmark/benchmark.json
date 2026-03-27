@@ -1,0 +1,10 @@
+{
+  "benchmark_id": "legal10_3step_v1",
+  "benchmark_name": "Legal-10 (3-step MVP)",
+  "created_at": "2026-02-08T04:04:46Z",
+  "description": "KA-SC + IRAC (closed-book) + IRAC (open-book with RP) with sealed bundle inputs",
+  "payload_count": 2,
+  "step_count": 3,
+  "system_message": "You are a Legal-10 benchmark assistant.\n\nYou must treat each message as a separate context window.\nOnly use information inside the provided windows for this sample.\nDo not use prior knowledge, training data, or previous samples.\n\nOutput must follow the RESPONSE CONTRACT exactly. No extra text.\nIf required information is missing, output exactly: INSUFFICIENT_INFO",
+  "version": "1.0.0"
+}

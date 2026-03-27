@@ -1,0 +1,164 @@
+/* Codex typography mode.
+   Activated when the shell adds .l10-report to the content wrapper. */
+
+@import url("https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;0,900;1,300;1,400&family=Fira+Code:wght@400;500;600&display=swap");
+
+.l10-report {
+  font-family: "Merriweather", ui-serif, Georgia, Cambria, "Times New Roman",
+    Times, serif;
+  font-size: 14px; /* Dense 14px Base */
+  line-height: 1.6;
+  font-weight: 300; /* Light weight for Merriweather */
+  color: #d4d4d4; /* Default dark mode text */
+}
+
+/* Light mode override */
+.light .l10-report {
+  color: #1a1a1a;
+}
+
+.l10-report h1,
+.l10-report h2,
+.l10-report h3,
+.l10-report h4 {
+  font-family: "Fira Code", monospace; /* Technical Headers */
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+
+.l10-report h1 {
+  font-size: 24px;
+  margin: 0 0 16px 0;
+  border-bottom: 2px solid #333;
+  padding-bottom: 8px;
+}
+
+.l10-report h2 {
+  font-size: 18px;
+  margin: 32px 0 12px 0;
+  color: #a3a3a3; /* Muted header */
+  border-bottom: 1px dotted #333;
+  padding-bottom: 4px;
+}
+.light .l10-report h2 {
+  color: #525252;
+  border-bottom-color: #e5e5e5;
+}
+
+.l10-report h3 {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 24px 0 8px 0;
+  color: #e5e5e5;
+}
+.light .l10-report h3 {
+  color: #171717;
+}
+
+.l10-report h4 {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 16px 0 6px 0;
+  text-transform: uppercase;
+  color: #737373;
+}
+
+.l10-report p {
+  margin: 0 0 12px 0;
+  max-width: 65ch; /* Comfortable measure */
+}
+
+.l10-report ul {
+  margin: 0 0 16px 20px;
+  list-style-type: square;
+}
+
+.l10-report ol {
+  margin: 0 0 16px 20px;
+}
+
+.l10-report li {
+  margin-bottom: 6px;
+}
+
+.l10-report a {
+  color: #4b6cab; /* Accent Blue */
+  text-decoration: none;
+  border-bottom: 1px dotted rgba(75, 108, 171, 0.5);
+}
+
+.l10-report a:hover {
+  border-bottom-style: solid;
+}
+
+.l10-report blockquote {
+  margin: 20px 0;
+  padding: 12px 16px;
+  border-left: 2px solid #c5a065; /* Accent Gold */
+  background: rgba(197, 160, 101, 0.05);
+  font-style: italic;
+  font-size: 13px;
+}
+
+.l10-report table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 20px 0;
+  font-size: 12px;
+  font-family: "Fira Code", monospace;
+}
+
+.l10-report th,
+.l10-report td {
+  border: 1px solid #333;
+  padding: 8px 12px;
+  vertical-align: top;
+  text-align: left;
+}
+.light .l10-report th,
+.light .l10-report td {
+  border-color: #e5e5e5;
+}
+
+.l10-report th {
+  font-weight: 600;
+  background: #171717;
+  color: #a3a3a3;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.light .l10-report th {
+  background: #f5f5f5;
+  color: #525252;
+}
+
+.l10-report pre {
+  overflow: auto;
+  padding: 16px;
+  border-radius: 4px;
+  background: #0a0a0a;
+  border: 1px solid #262626;
+  margin: 20px 0;
+}
+.light .l10-report pre {
+  background: #f9f9f9;
+  border-color: #e5e5e5;
+}
+
+.l10-report code {
+  font-family: "Fira Code", monospace;
+  font-size: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 2px 4px;
+  border-radius: 2px;
+}
+.light .l10-report code {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.l10-report pre code {
+  background: none;
+  padding: 0;
+  color: inherit;
+  font-size: 12px;
+}

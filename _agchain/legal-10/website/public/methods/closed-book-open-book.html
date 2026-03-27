@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Closed-Book vs Open-Book - LegalChain</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>tailwind.config = { darkMode: "class" };</script>
+</head>
+<body class="bg-neutral-950 text-neutral-400 font-sans antialiased">
+    <main id="l10-page" data-l10-layout="research" data-l10-sidenav="site" data-l10-sidenav-pos="left">
+        <article class="prose prose-slate dark:prose-invert max-w-4xl mx-auto research-content">
+
+            <header class="mb-10 border-b border-neutral-800 pb-6">
+                <h1 class="text-4xl font-serif font-light text-white">Closed-Book vs Open-Book</h1>
+                <p class="serif-dense mt-4 text-neutral-500 text-sm leading-relaxed max-w-2xl font-serif">
+                    Step variants that measure parametric knowledge versus retrieval-augmented capability using the same ground truth.
+                </p>
+            </header>
+
+            <div class="grid grid-cols-2 gap-0 border-t border-l border-neutral-800 bg-neutral-900/10 mb-12">
+                <div class="border-r border-b border-neutral-800 p-4">
+                    <div class="text-[10px] font-mono text-neutral-600 uppercase mb-1">CB Mode</div>
+                    <div class="text-xl font-mono text-amber-500">CLOSED-BOOK</div>
+                    <div class="text-[10px] text-neutral-500">Parametric Only</div>
+                </div>
+                <div class="border-r border-b border-neutral-800 p-4">
+                    <div class="text-[10px] font-mono text-neutral-600 uppercase mb-1">RAG Mode</div>
+                    <div class="text-xl font-mono text-emerald-500">OPEN-BOOK</div>
+                    <div class="text-[10px] text-neutral-500">+ Retrieved Evidence</div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+                <div class="space-y-8">
+                    <section>
+                        <div class="text-[10px] font-mono text-neutral-600 uppercase mb-2">The Split</div>
+                        <p class="text-sm text-neutral-400 font-serif leading-relaxed">
+                            Some steps run in both <strong class="text-white">CB (closed-book)</strong> and <strong class="text-white">RAG</strong> variants. CB tests what the model knows from pretraining alone. RAG tests whether the model can effectively use provided evidence. Same ground truth, different input conditions.
+                        </p>
+                    </section>
+
+                    <section class="border border-neutral-800 p-5 bg-neutral-900/10">
+                        <div class="text-[10px] font-mono text-blue-500 mb-4">[ VARIANT STEPS ]</div>
+                        <div class="font-mono text-[11px] space-y-2">
+                            <div class="flex justify-between">
+                                <span class="text-neutral-300">S5:cb</span>
+                                <span class="text-neutral-500">Metadata + Shepard's only</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-neutral-300">S5:rag</span>
+                                <span class="text-neutral-500">+ Full opinion text</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-neutral-300">S9:cb / S9:rag</span>
+                                <span class="text-neutral-500">Same pattern</span>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <div class="space-y-8">
+                    <section>
+                        <div class="text-[10px] font-mono text-neutral-600 uppercase mb-2">Diagnostic Value</div>
+                        <p class="text-sm text-neutral-400 font-serif leading-relaxed">
+                            The gap between CB and RAG scores is diagnostic. High RAG but low CB may indicate "copying" rather than reasoning. Similar scores in both may suggest genuine understanding—or data contamination (which the Canary mechanism detects).
+                        </p>
+                    </section>
+
+                    <div class="p-4 bg-neutral-900/50 border border-neutral-800">
+                        <div class="text-[10px] font-mono text-neutral-500 uppercase mb-2">Key Insight</div>
+                        <p class="text-[10px] text-neutral-500 font-serif italic">Measuring both modes reveals whether a model is reasoning from evidence or merely pattern-matching against pretraining. The delta is often more informative than either score alone.</p>
+                    </div>
+                </div>
+            </div>
+
+        </article>
+    </main>
+    <script src="../shared/site-shell.js"></script>
+</body>
+</html>

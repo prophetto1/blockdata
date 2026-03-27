@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SCDB Case Universe - LegalChain</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        legalblue: {
+                            50: '#f0f7ff',
+                            100: '#e0effe',
+                            200: '#bae0fd',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#1e3a8a',
+                        }
+                    }
+                }
+            }
+        };
+    </script>
+    <link rel="stylesheet" href="../shared/report.css">
+</head>
+<body>
+    <main id="l10-page" data-l10-layout="research" data-l10-sidenav="site" data-l10-sidenav-pos="left">
+        <article class="prose prose-slate dark:prose-invert max-w-4xl mx-auto research-content">
+            <header class="mb-16">
+                <h1 class="research-title">SCDB Case Universe</h1>
+                
+                <p class="lead text-xl text-neutral-600 dark:text-neutral-400 font-serif italic border-l-4 border-amber-500 pl-6 py-2">
+                    Defining the boundaries of the LegalChain corpus: Anchors of reasoning and Authorities of precedent.
+                </p>
+            </header>
+
+            <h2>Overview</h2>
+            <p>
+                LegalChain defines two distinct case universes: <strong>Anchors</strong> (the 27,733 Supreme Court opinions that form evaluation tasks) and <strong>Authorities</strong> (the 64,548 cases those opinions cite). This boundary is deliberate. Supreme Court opinions provide the gold standard for legal reasoning, while the citation network captures how that reasoning draws on precedent.
+            </p>
+
+            <div class="my-16 flex flex-col md:flex-row gap-8 items-center justify-center p-8 bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-sm not-prose">
+                <div class="flex-1 text-center p-6 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-800">
+                    <div class="text-3xl font-black text-blue-600 mb-2">27,733</div>
+                    <div class="text-sm font-bold text-blue-900 dark:text-blue-100">Anchor Cases</div>
+                    <div class="text-xs text-blue-500 mt-2 italic">SCOTUS Majority Opinions</div>
+                </div>
+                <div class="text-neutral-300 dark:text-neutral-600">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                </div>
+                <div class="flex-1 text-center p-6 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-100 dark:border-amber-800">
+                    <div class="text-3xl font-black text-amber-600 mb-2">64,548</div>
+                    <div class="text-sm font-bold text-amber-900 dark:text-amber-100">Authority Cases</div>
+                    <div class="text-xs text-amber-500 mt-2 italic">Cited Precedents</div>
+                </div>
+            </div>
+
+            <h2>The Anchor Universe</h2>
+            <p>
+                <strong>Definition:</strong> All Supreme Court majority opinions from 1791 to 2021 with available full text.
+            </p>
+            <p>
+                We chose Supreme Court opinions as anchors because they represent the highest quality legal reasoning in the American system. LegalChain samples across eras to prevent temporal bias:
+            </p>
+            
+            <div class="overflow-x-auto my-8">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="border-b-2 border-neutral-200 dark:border-neutral-800">
+                            <th class="py-3 font-bold text-sm uppercase tracking-wider">Era</th>
+                            <th class="py-3 font-bold text-sm uppercase tracking-wider text-right">Cases</th>
+                            <th class="py-3 font-bold text-sm uppercase tracking-wider">Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-neutral-100 dark:divide-neutral-900 text-sm">
+                        <tr>
+                            <td class="py-4 font-bold">1791-1850</td>
+                            <td class="py-4 text-right">1,247</td>
+                            <td class="py-4 italic text-neutral-500">Early Republic development</td>
+                        </tr>
+                        <tr>
+                            <td class="py-4 font-bold">1851-1900</td>
+                            <td class="py-4 text-right">5,819</td>
+                            <td class="py-4 italic text-neutral-500">Post-Civil War constitutional shift</td>
+                        </tr>
+                        <tr>
+                            <td class="py-4 font-bold">1901-1950</td>
+                            <td class="py-4 text-right">7,412</td>
+                            <td class="py-4 italic text-neutral-500">Progressive Era & New Deal</td>
+                        </tr>
+                        <tr>
+                            <td class="py-4 font-bold text-legalblue-600">1951-2000</td>
+                            <td class="py-4 text-right text-legalblue-600 font-bold">9,847</td>
+                            <td class="py-4 italic text-neutral-500">Modern Rights Revolution</td>
+                        </tr>
+                        <tr>
+                            <td class="py-4 font-bold">2001-2021</td>
+                            <td class="py-4 text-right">3,408</td>
+                            <td class="py-4 italic text-neutral-500">Digital Age & Roberts Court</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h2>The Authority Universe</h2>
+            <p>
+                <strong>Definition:</strong> All cases cited by at least one anchor opinion.
+            </p>
+            <p>
+                This is not arbitrary. This reflects legal practice—a lawyer's relevant universe consists of the cases that matter to the issue at hand. If a case is never cited by a Supreme Court opinion, it is not in our authority universe.
+            </p>
+
+            <div class="bg-neutral-100 dark:bg-neutral-900/50 rounded-2xl p-8 my-12 border border-neutral-200 dark:border-neutral-800 not-prose">
+                <h3 class="text-sm font-bold uppercase tracking-widest text-neutral-500 mb-6 text-center">Authority Breakdown by Source</h3>
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm font-medium">Supreme Court (SCOTUS)</span>
+                        <div class="flex-1 mx-4 h-2 bg-neutral-200 dark:bg-neutral-800 rounded-full overflow-hidden">
+                            <div class="bg-blue-500 h-full" style="width: 100%"></div>
+                        </div>
+                        <span class="text-xs font-mono text-neutral-500">21,505</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm font-medium">Circuit Courts (F., F.2d, F.3d)</span>
+                        <div class="flex-1 mx-4 h-2 bg-neutral-200 dark:bg-neutral-800 rounded-full overflow-hidden">
+                            <div class="bg-indigo-500 h-full" style="width: 99.1%"></div>
+                        </div>
+                        <span class="text-xs font-mono text-neutral-500">36,552</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm font-medium">District Courts (F.Supp)</span>
+                        <div class="flex-1 mx-4 h-2 bg-neutral-200 dark:bg-neutral-800 rounded-full overflow-hidden">
+                            <div class="bg-cyan-500 h-full" style="width: 96.8%"></div>
+                        </div>
+                        <span class="text-xs font-mono text-neutral-500">6,491</span>
+                    </div>
+                </div>
+            </div>
+
+            <h2>Temporal Boundaries</h2>
+            <p>
+                LegalChain freezes its corpus at 2021. This ensures stability and reduces the risk of data contamination from models trained on ultra-recent legal events.
+            </p>
+            <blockquote>
+                "The case universe is frozen at dataset build time. No cases are added or removed after the initial build, guaranteeing that evaluations run a year apart are testing against identical foundations."
+            </blockquote>
+
+        </article>
+    </main>
+    <script src="../shared/site-shell.js"></script>
+</body>
+</html>

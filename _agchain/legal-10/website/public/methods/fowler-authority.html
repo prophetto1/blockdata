@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fowler Authority Integration - Methodology A</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+      };
+    </script>
+</head>
+<body class="bg-neutral-950 text-neutral-400 font-sans antialiased">
+    <main id="l10-page" data-l10-layout="research" data-l10-sidenav="site" data-l10-sidenav-pos="left">
+        <article class="max-w-4xl mx-auto research-content">
+            
+            <!-- HEADER BLOCK -->
+            <header class="mb-10 border-b border-neutral-800 pb-6">
+                <h1 class="text-4xl font-serif font-light text-white">Fowler Authority Scores</h1>
+                <p class="serif-dense mt-4 text-neutral-500 text-sm leading-relaxed max-w-2xl font-serif">
+                    Moving from binary "overruled" flags to continuous, network-based authority scoring. LegalChain integrates the Fowler/Jeon methodology to quantify case centrality within the citation graph.
+                </p>
+            </header>
+
+            <!-- AUTHORITY LEVELS GRID -->
+            <div class="grid grid-cols-3 gap-0 border-t border-l border-neutral-800 bg-neutral-900/10 mb-12">
+                <div class="border-r border-b border-neutral-800 p-4">
+                    <div class="text-[10px] font-mono text-emerald-500 uppercase mb-1">Landmark</div>
+                    <div class="text-xl font-mono text-white">0.9 - 1.0</div>
+                    <div class="text-[10px] text-neutral-500">Doctrinal Anchors</div>
+                </div>
+                <div class="border-r border-b border-neutral-800 p-4">
+                    <div class="text-[10px] font-mono text-blue-500 uppercase mb-1">Strong</div>
+                    <div class="text-xl font-mono text-white">0.5 - 0.9</div>
+                    <div class="text-[10px] text-neutral-500">Black Letter Law</div>
+                </div>
+                <div class="border-r border-b border-neutral-800 p-4">
+                    <div class="text-[10px] font-mono text-amber-500 uppercase mb-1">Moderate/Weak</div>
+                    <div class="text-xl font-mono text-white">&lt; 0.5</div>
+                    <div class="text-[10px] text-neutral-500">Niche / Obsolete</div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+                <!-- LEFT COLUMN: THEORY -->
+                <div class="space-y-8">
+                    <section>
+                        <div class="text-[10px] font-mono text-neutral-600 uppercase mb-2">Network Centrality</div>
+                        <p class="text-sm text-neutral-400 font-serif leading-relaxed">
+                            Traditional databases use binary flags (Overruled/Good). This fails to capture cases that are technically "good law" but have been hollowed out. Fowler scores (`pauth_score`) allow the model to <strong>weigh authority</strong> proportionally.
+                        </p>
+                    </section>
+
+                    <section class="border border-neutral-800 p-5 bg-neutral-900/10">
+                        <div class="text-[10px] font-mono text-blue-500 mb-4">[ PIPELINE INTEGRATION ]</div>
+                        <ul class="space-y-3 text-xs font-mono">
+                            <li class="flex items-start gap-3">
+                                <span class="text-neutral-700">01</span>
+                                <span class="text-neutral-300">Embed field `fowler_pauth_score` in SCDB source.</span>
+                            </li>
+                            <li class="flex items-start gap-3">
+                                <span class="text-neutral-700">02</span>
+                                <span class="text-neutral-300">Constraint: Model must justify weight vs score.</span>
+                            </li>
+                            <li class="flex items-start gap-3">
+                                <span class="text-neutral-700">03</span>
+                                <span class="text-neutral-300">Evaluation: Penalize over-reliance on &lt; 0.2 cases.</span>
+                            </li>
+                        </ul>
+                    </section>
+                </div>
+
+                <!-- RIGHT COLUMN: SAMPLE MAP -->
+                <div>
+                    <div class="text-[10px] font-mono text-neutral-600 uppercase mb-4">Authority Map (Sample Set)</div>
+                    <table class="w-full text-left border-collapse font-mono text-[10px]">
+                        <thead>
+                            <tr class="border-b border-neutral-800">
+                                <th class="py-2 text-neutral-600 font-normal">Case Name</th>
+                                <th class="py-2 text-neutral-600 font-normal">Score</th>
+                                <th class="py-2 text-neutral-600 font-normal">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-neutral-900">
+                            <tr>
+                                <td class="py-2 text-neutral-200">Miranda v. Arizona</td>
+                                <td class="py-2 text-emerald-400">0.982</td>
+                                <td class="py-2 text-neutral-500 italic">Anchor</td>
+                            </tr>
+                            <tr>
+                                <td class="py-2 text-neutral-200">Terry v. Ohio</td>
+                                <td class="py-2 text-emerald-400">0.941</td>
+                                <td class="py-2 text-neutral-500 italic">Central</td>
+                            </tr>
+                            <tr>
+                                <td class="py-2 text-neutral-200">Katz v. United States</td>
+                                <td class="py-2 text-blue-400">0.812</td>
+                                <td class="py-2 text-neutral-500 italic">Reliable</td>
+                            </tr>
+                            <tr>
+                                <td class="py-2 text-neutral-200">Olmstead v. U.S.</td>
+                                <td class="py-2 text-red-500">0.024</td>
+                                <td class="py-2 text-neutral-500 italic">Shadow</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="mt-8 p-4 bg-neutral-900/50 border border-neutral-800">
+                        <div class="text-[10px] font-mono text-neutral-500 uppercase mb-2">Technical Note</div>
+                        <p class="text-[10px] text-neutral-500 font-serif italic">Scores are recalculated annually. Cases in the "Shadow" range (&lt; 0.1) are treated as functionally overruled for the purpose of the deterministic check phase.</p>
+                    </div>
+                </div>
+            </div>
+
+        </article>
+    </main>
+    <script src="../shared/site-shell.js"></script>
+</body>
+</html>

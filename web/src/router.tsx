@@ -54,6 +54,7 @@ import { featureFlags } from '@/lib/featureFlags';
 import { SuperuserGuard } from '@/pages/superuser/SuperuserGuard';
 import NotFound from '@/pages/NotFound';
 import { AdminShellLayout } from '@/components/layout/AdminShellLayout';
+import { AgchainShellLayout } from '@/components/layout/AgchainShellLayout';
 
 
 function LegacyToTransform() {
@@ -250,6 +251,53 @@ export const router = createBrowserRouter([
               { path: 'model-roles', element: <SettingsModelRoles /> },
               { path: 'connections', element: <ConnectionsPanel /> },
               { path: 'mcp', element: <McpServers /> },
+            ],
+          },
+        ],
+      },
+      {
+        element: <AgchainShellLayout />,
+        children: [
+          {
+            path: '/app/agchain',
+            children: [
+              {
+                index: true,
+                element: <Navigate to="/app/agchain/benchmarks" replace />,
+              },
+              {
+                path: 'benchmarks',
+                children: [
+                  {
+                    index: true,
+                    lazy: async () => ({ Component: (await import('@/pages/agchain/AgchainBenchmarksPage')).default }),
+                  },
+                  {
+                    path: ':benchmarkId',
+                    lazy: async () => ({ Component: (await import('@/pages/agchain/AgchainBenchmarkWorkbenchPage')).default }),
+                  },
+                ],
+              },
+              {
+                path: 'models',
+                lazy: async () => ({ Component: (await import('@/pages/agchain/AgchainModelsPage')).default }),
+              },
+              {
+                path: 'runs',
+                lazy: async () => ({ Component: (await import('@/pages/agchain/AgchainRunsPage')).default }),
+              },
+              {
+                path: 'results',
+                lazy: async () => ({ Component: (await import('@/pages/agchain/AgchainResultsPage')).default }),
+              },
+              {
+                path: 'observability',
+                lazy: async () => ({ Component: (await import('@/pages/agchain/AgchainObservabilityPage')).default }),
+              },
+              // Removed routes — redirect to nearest equivalent
+              { path: 'build',     element: <Navigate to="/app/agchain/benchmarks" replace /> },
+              { path: 'artifacts', element: <Navigate to="/app/agchain/observability" replace /> },
+              { path: 'settings',  element: <Navigate to="/app/agchain/benchmarks" replace /> },
             ],
           },
         ],

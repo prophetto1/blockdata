@@ -4,6 +4,7 @@ import { Menu02Icon, SparklesIcon, Moon02Icon, Sun03Icon, Search01Icon } from '@
 import { HugeiconsIcon } from '@hugeicons/react';
 import { useHeaderCenter } from '@/components/shell/HeaderCenterContext';
 import { ProjectSwitcher } from '@/components/shell/ProjectSwitcher';
+import { ShellWorkspaceSelector } from '@/components/shell/ShellWorkspaceSelector';
 import { useTheme } from '@/hooks/useTheme';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -141,7 +142,7 @@ export function TopCommandBar({
     <div
       className={className}
     >
-      <div className="top-command-bar-left">
+      <div className="top-command-bar-left" data-testid="top-command-bar-left">
         <button
           type="button"
           aria-label="Toggle navigation"
@@ -164,7 +165,7 @@ export function TopCommandBar({
           {searchNode}
         </div>
       ) : null}
-      <div className="top-command-bar-right">
+      <div className="top-command-bar-right" data-testid="top-command-bar-right">
         <div className="top-command-bar-right-content">
           {showRightSlot ? (
             <div className="top-command-bar-right-slot">
@@ -205,6 +206,7 @@ export function TopCommandBar({
                 />
               )}
           </button>
+          {!shellGuides ? <ShellWorkspaceSelector /> : null}
         </div>
       </div>
     </div>

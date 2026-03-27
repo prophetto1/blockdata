@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Frozen Context Spec - Methodology A</title>
+    <script src="https://cdn.tailwindcss.com"></script><script>tailwind.config={darkMode:"class"};</script>
+    <link rel="stylesheet" href="../shared/report.css">
+</head>
+<body class="bg-gray-50 text-gray-900 font-sans antialiased">
+    <main id="l10-page" data-l10-layout="research" data-l10-sidenav="site" data-l10-sidenav-pos="left">
+        <div class="layout-research max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            
+            <article class="prose prose-slate max-w-4xl mx-auto research-content">
+                <h1 class="research-title">Frozen Context Spec</h1>
+                
+                <p class="lead text-xl text-gray-600 mb-12 font-serif">
+                    Defining the "Atomic ResearchPack" through byte-for-byte reproducibility and frozen constant extraction.
+                </p>
+                
+                <p class="text-sm text-gray-500 mb-4"><em>(Content synced from Methodology B)</em></p>
+
+                <h2>The Crisis of Context</h2>
+                <p>
+                    Most RAG benchmarks treat "retrieval" as an opaque process. If you run the benchmark today, you might get different 
+                    snippets than you did yesterday due to index shifts, embedding updates, or nondeterministic re-ranking. 
+                    This makes scientific comparison impossible: <em>Did the model improve, or did it just get lucky with better context?</em>
+                </p>
+
+                <h2>The Fix: The Frozen Context Spec</h2>
+                <p>
+                    LegalChain treats the context window itself as a <strong>normative scientific artifact</strong>. 
+                    The construction of a ResearchPack (RP) is governed by a strict, "frozen" specification (Step 4A) that guarantees 
+                    byte-for-byte reproducibility.
+                </p>
+
+                <h3>Core Principles</h3>
+                <ul class="list-disc pl-5 mb-8 space-y-2">
+                    <li><strong>No Runtime Retrieval:</strong> Context is built <em>once</em> at build time, hashed, and sealed.</li>
+                    <li><strong>Deterministic Trimming:</strong> Anchors > 80k chars are trimmed using a strict "Head-Tail" strategy (first 40k + last 40k), ensuring widely cited intro/conclusion text is preserved.</li>
+                    <li><strong>Frozen Constants:</strong> All "magic numbers" (e.g., snippet window = +/- 80 chars, Top-K = 12) are hardcoded in the <code class="bg-gray-100 text-sm px-1 py-0.5 rounded">rp_constants.py</code> spec.</li>
+                    <li><strong>Zero Randomness:</strong> All tie-breaking (e.g., sorting citations with identical relevance) uses lexicographical keys (e.g., citation string).</li>
+                </ul>
+
+                <h2>The "RPv1.1" Scoring Formula</h2>
+                <p>
+                     To rank thousands of potential citations down to a "Top 12" context window, we use a deterministic scoring formula. 
+                     This formula is frozen for the duration of the benchmark version.
+                </p>
+
+                <div class="bg-gray-900 text-gray-100 p-6 rounded-lg my-8 font-mono text-sm overflow-x-auto">
+                    <div class="mb-2 text-gray-400"># Deterministic Relevance Score (Frozen)</div>
+                    <div>Score = E + W_t(label) + 0.2*log(freq) + W_pos + W_density - 0.5*Overruled</div>
+                    <br>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                        <div>
+                            <span class="text-blue-400">E</span> = Edge exists (1.0|0.0)<br>
+                            <span class="text-blue-400">W_t</span> = Treatment weight (Followed=1.0, etc.)
+                        </div>
+                        <div>
+                            <span class="text-green-400">W_pos</span> = Positional boost (Intro > Body)<br>
+                            <span class="text-green-400">W_density</span> = "Holding" keyword density
+                        </div>
+                    </div>
+                </div>
+
+                <h3>CAP Integration (RPv1.1)</h3>
+                <p>
+                    For federal cases (Caselaw Access Project) where high-quality Shepard's signals (E) are missing, the formula automatically 
+                    adapts to rely on <strong>Semantic Density</strong> (<code class="text-sm bg-gray-100 px-1">W_density</code>) and 
+                    <strong>Positional Authority</strong> (<code class="text-sm bg-gray-100 px-1">W_pos</code>). This ensures a unified standard 
+                    for both SCOTUS and Federal context.
+                </p>
+
+                <h2>Auditability</h2>
+                <p>
+                    Every generated ResearchPack includes a <code>rp_manifest.json</code> containing:
+                </p>
+                <ul class="list-disc pl-5 mt-2 space-y-1 text-sm bg-gray-50 p-4 border border-gray-200 rounded">
+                    <li>Git SHA of the builder code</li>
+                    <li>Exact values of all constants used</li>
+                    <li>SHA-256 hashes of all input datasets</li>
+                    <li>Coverage statistics (how many candidates were found vs selected)</li>
+                </ul>
+                <p class="mt-4">
+                    This allows any researcher to verify that the context window they are evaluating was built according to the strict v1.1 standard.
+                </p>
+
+            </article>
+
+        </div>
+    </main>
+    <script src="../shared/site-shell.js"></script>
+</body>
+</html>

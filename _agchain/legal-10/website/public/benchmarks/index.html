@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Benchmarks - LegalChain</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = { darkMode: "class" };
+    </script>
+  </head>
+
+  <body class="min-h-screen bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 transition-colors">
+    <main
+      id="l10-page"
+      data-l10-layout="two-col"
+      data-l10-sidenav="site"
+      data-l10-subnav="none"
+      data-l10-content-width="narrow"
+    >
+      <header class="mb-10">
+        <h1 class="mt-2 text-4xl font-light tracking-tight text-neutral-900 dark:text-neutral-100">Benchmarks</h1>
+        <p class="mt-4 text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
+          LegalChain is a family of sealed, stateful benchmarks (AG8, AG10, AG15...) executed by one auditable runner. Each
+          evaluation unit (EU) is an on-disk instance containing staged, model-visible payloads and EU-private ground truth
+          for scoring. Every run emits reproducible artifacts (e.g. <span class="font-mono text-[12px]">run.jsonl</span>,
+          <span class="font-mono text-[12px]">audit_log.jsonl</span>, <span class="font-mono text-[12px]">summary.json</span>).
+        </p>
+      </header>
+
+      <section class="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <a
+          href="/benchmarks/ag8/index.html"
+          class="block bg-white/80 dark:bg-neutral-900/40 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6 hover:border-neutral-300 dark:hover:border-neutral-700 transition-colors"
+        >
+          <div class="text-[10px] font-mono uppercase tracking-widest text-neutral-500 dark:text-neutral-500 mb-2">Baseline</div>
+          <div class="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-1">AG8</div>
+          <div class="text-sm text-neutral-700 dark:text-neutral-300">
+            10-step chained baseline for regression testing and diagnosing core failure modes.
+          </div>
+        </a>
+
+        <a
+          href="/benchmarks/ag10/index.html"
+          class="block bg-white/80 dark:bg-neutral-900/40 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6 hover:border-neutral-300 dark:hover:border-neutral-700 transition-colors"
+        >
+          <div class="text-[10px] font-mono uppercase tracking-widest text-neutral-500 dark:text-neutral-500 mb-2">Standard</div>
+          <div class="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-1">AG10</div>
+          <div class="text-sm text-neutral-700 dark:text-neutral-300">
+            10-step chained standard with broader coverage and consistency checks.
+          </div>
+        </a>
+
+        <a
+          href="/benchmarks/l7/index.html"
+          class="block bg-white/80 dark:bg-neutral-900/40 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6 hover:border-neutral-300 dark:hover:border-neutral-700 transition-colors"
+        >
+          <div class="text-[10px] font-mono uppercase tracking-widest text-neutral-500 dark:text-neutral-500 mb-2">Atomic</div>
+          <div class="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-1">L7</div>
+          <div class="text-sm text-neutral-700 dark:text-neutral-300">
+            7 independent skills, evaluated without chaining or error propagation.
+          </div>
+        </a>
+
+        <a
+          href="/benchmarks/roadmap/index.html"
+          class="block bg-white/80 dark:bg-neutral-900/40 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6 hover:border-neutral-300 dark:hover:border-neutral-700 transition-colors"
+        >
+          <div class="text-[10px] font-mono uppercase tracking-widest text-neutral-500 dark:text-neutral-500 mb-2">Coming</div>
+          <div class="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-1">Roadmap</div>
+          <div class="text-sm text-neutral-700 dark:text-neutral-300">
+            AG15 flagship, practice-area variants, and infrastructure direction.
+          </div>
+        </a>
+      </section>
+
+      <div class="mt-10 flex flex-wrap gap-3">
+        <a
+          href="/pitch-deck/"
+          class="inline-flex items-center gap-2 text-sm px-4 py-2 rounded-lg border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors"
+        >
+          Open pitch deck
+        </a>
+        <a
+          href="/leaderboard/index.html"
+          class="inline-flex items-center gap-2 text-sm px-4 py-2 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white/60 dark:bg-neutral-900/30 hover:bg-white dark:hover:bg-neutral-900/60 transition-colors"
+        >
+          View leaderboard
+        </a>
+        <a
+          href="/methods/index.html"
+          class="inline-flex items-center gap-2 text-sm px-4 py-2 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white/60 dark:bg-neutral-900/30 hover:bg-white dark:hover:bg-neutral-900/60 transition-colors"
+        >
+          Read methodology
+        </a>
+      </div>
+    </main>
+
+    <script src="../shared/site-shell.js"></script>
+  </body>
+</html>

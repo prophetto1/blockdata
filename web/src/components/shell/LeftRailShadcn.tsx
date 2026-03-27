@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { Avatar } from '@ark-ui/react/avatar';
 import { Layout03Icon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
@@ -30,6 +30,7 @@ import {
   findDrillByRoute,
   getDrillConfig,
   resolveFlowDrillPath,
+  resolveBenchmarkDrillPath,
   getNavStyle,
   setNavStyle,
   getActiveNav,
@@ -68,6 +69,7 @@ type LeftRailShadcnProps = {
   disableAutoDrill?: boolean;
   hideNav?: boolean;
   navSections?: AdminNavSection[];
+  headerBrand?: ReactNode;
 };
 
 /* ------------------------------------------------------------------ */
@@ -84,6 +86,11 @@ function isItemActive(item: NavItem, pathname: string): boolean {
  */
 function extractFlowId(pathname: string): string | null {
   const match = pathname.match(/^\/app\/flows\/([^/]+)/);
+  return match ? decodeURIComponent(match[1]!) : null;
+}
+
+function extractBenchmarkId(pathname: string): string | null {
+  const match = pathname.match(/^\/app\/agchain\/benchmarks\/([^/]+)/);
   return match ? decodeURIComponent(match[1]!) : null;
 }
 
@@ -248,6 +255,7 @@ export function LeftRailShadcn({
   disableAutoDrill = false,
   hideNav = false,
   navSections,
+  headerBrand,
 }: LeftRailShadcnProps) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -266,14 +274,17 @@ export function LeftRailShadcn({
 
   // Drill IDs reachable from the current nav style — prevents auto-drill from
   // activating pipeline-only drills while in classic view (and vice-versa).
+  // When navSections is provided (custom shell), also include those drillIds.
   const validDrillIds = useMemo(() => {
     const nav = navStyle === 'pipeline' ? PIPELINE_NAV : TOP_LEVEL_NAV;
-    return new Set(
-      nav
-        .filter((entry): entry is NavItem => entry !== 'divider' && !!entry.drillId)
-        .map((item) => item.drillId!),
-    );
-  }, [navStyle]);
+    const topLevelIds = nav
+      .filter((entry): entry is NavItem => entry !== 'divider' && !!entry.drillId)
+      .map((item) => item.drillId!);
+    const sectionIds = navSections
+      ? navSections.flatMap((s) => s.items).filter((i) => !!i.drillId).map((i) => i.drillId!)
+      : [];
+    return new Set([...topLevelIds, ...sectionIds]);
+  }, [navStyle, navSections]);
 
   const navigateTo = (path: string) => {
     navigate(path);
@@ -389,6 +400,7 @@ export function LeftRailShadcn({
 
   const renderDrillView = (config: NavDrillConfig) => {
     const flowId = config.id === 'flows' ? extractFlowId(location.pathname) : null;
+    const benchmarkId = config.id === 'benchmark' ? extractBenchmarkId(location.pathname) : null;
 
     return (
       <div className={railStackClass}>
@@ -416,18 +428,21 @@ export function LeftRailShadcn({
             <div className={railStackClass}>
               {section.items.map((item) => {
                 const ItemIcon = item.icon;
-                // For flows drill, paths are tab slugs -- resolve to full path
+                // Resolve item path to full URL depending on drill type
                 const resolvedPath = flowId
                   ? resolveFlowDrillPath(item.path, flowId)
-                  : item.path;
+                  : benchmarkId
+                    ? resolveBenchmarkDrillPath(item.path, benchmarkId)
+                    : item.path;
                 const isActive = flowId
                   ? location.pathname === resolvedPath || location.pathname.startsWith(resolvedPath + '/')
-                  : item.path === config.parentPath
-                    ? location.pathname === item.path
-                    : isItemActive(item, location.pathname);
+                  : benchmarkId
+                    ? location.pathname + location.hash === resolvedPath
+                    : item.path === config.parentPath
+                      ? location.pathname === item.path
+                      : isItemActive(item, location.pathname);
 
-                // For flows drill without a flowId, items are not navigable
-                const isDisabled = config.id === 'flows' && !flowId;
+                const isDisabled = (config.id === 'flows' && !flowId) || (config.id === 'benchmark' && !benchmarkId);
 
                 return (
                   <button
@@ -563,12 +578,16 @@ export function LeftRailShadcn({
           <div className="space-y-0.5">
             {section.items.map((item) => {
               const ItemIcon = item.icon;
+              const hasDrill = Boolean(item.drillId);
               const isActive = location.pathname === item.path || location.pathname.startsWith(item.path + '/');
               return (
                 <button
                   key={item.path}
                   type="button"
-                  onClick={() => navigateTo(item.path)}
+                  onClick={() => {
+                    if (hasDrill) setActiveDrillId(item.drillId!);
+                    navigateTo(item.path);
+                  }}
                   className={cn(
                     'flex w-full items-center gap-2.5 rounded-md px-2.5 h-9 text-sm leading-snug transition-colors',
                     isActive
@@ -578,6 +597,9 @@ export function LeftRailShadcn({
                 >
                   <ItemIcon size={16} stroke={1.75} className="shrink-0" />
                   <span className="truncate">{item.label}</span>
+                  {hasDrill && (
+                    <IconChevronRight size={14} stroke={1.75} className="ml-auto shrink-0 text-sidebar-foreground/40" />
+                  )}
                 </button>
               );
             })}
@@ -619,6 +641,18 @@ export function LeftRailShadcn({
             )}
           >
             {navSections ? (
+              headerBrand ? (
+                <div
+                  className={cn(
+                    'inline-flex items-center gap-2 rounded-md',
+                    desktopCompact
+                      ? 'size-10 justify-center p-0'
+                      : 'px-1.5 py-1',
+                  )}
+                >
+                  {headerBrand}
+                </div>
+              ) : (
               <button
                 type="button"
                 className="inline-flex items-center gap-1.5 rounded-md px-1.5 py-1 text-left text-sm text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
@@ -631,6 +665,7 @@ export function LeftRailShadcn({
                 <IconChevronLeft size={14} stroke={2} className="shrink-0" />
                 <span className="font-medium">Go to App</span>
               </button>
+              )
             ) : (
               <button
                 type="button"
@@ -681,7 +716,9 @@ export function LeftRailShadcn({
           <SidebarContent className="px-1">
             <SidebarGroup className="p-1">
               <SidebarGroupContent>
-                {renderSectionsNav(navSections)}
+                {activeDrillConfig
+                  ? renderDrillView(activeDrillConfig)
+                  : renderSectionsNav(navSections)}
               </SidebarGroupContent>
             </SidebarGroup>
           </SidebarContent>

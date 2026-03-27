@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Atomic Skills - LegalChain</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              legalblue: {
+                50: "#f0f7ff",
+                100: "#e0effe",
+                200: "#bae0fd",
+                600: "#2563eb",
+                700: "#1d4ed8",
+                800: "#1e40af",
+                900: "#1e3a8a",
+              },
+              skill: {
+                400: "#818cf8", // Indigo-400
+                500: "#6366f1", // Indigo-500
+                900: "#1e1b4b", // Indigo-950
+                glow: "rgba(99, 102, 241, 0.5)",
+              },
+            },
+            fontFamily: {
+              mono: ['"Fira Code"', "monospace"],
+              sans: ['"Inter"', "sans-serif"],
+              serif: ['"Merriweather"', "serif"],
+            },
+          },
+        },
+      };
+    </script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;0,900;1,300&family=Inter:wght@300;400;500;600&family=Fira+Code:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../shared/report.css" />
+    <style>
+      .terminal-scanline {
+        background: linear-gradient(
+          to bottom,
+          rgba(255, 255, 255, 0),
+          rgba(255, 255, 255, 0) 50%,
+          rgba(0, 0, 0, 0.2) 50%,
+          rgba(0, 0, 0, 0.2)
+        );
+        background-size: 100% 4px;
+        pointer-events: none;
+      }
+    </style>
+  </head>
+  <body>
+    <main
+      id="l10-page"
+      data-l10-layout="research"
+      data-l10-sidenav="site"
+      data-l10-sidenav-pos="left"
+    >
+      <article
+        class="prose prose-slate dark:prose-invert max-w-4xl mx-auto research-content"
+      >
+        <header class="mb-16">
+          <h1 class="research-title">Atomic Skills</h1>
+
+          <p
+            class="lead text-xl text-neutral-600 dark:text-neutral-400 font-serif italic border-l-4 border-skill-500 pl-6 py-2"
+          >
+            Distinguishing between isolated capabilities and integrated
+            professional competency.
+          </p>
+        </header>
+
+        <!-- DEPTH TERMINAL -->
+        <div
+          class="my-16 bg-neutral-900 border border-neutral-700 rounded-xl overflow-hidden shadow-2xl not-prose relative group"
+        >
+          <div class="absolute inset-0 terminal-scanline opacity-10"></div>
+
+          <div
+            class="bg-neutral-800 px-4 py-2 flex items-center gap-2 border-b border-neutral-700"
+          >
+            <div class="w-3 h-3 rounded-full bg-indigo-500"></div>
+            <div class="font-mono text-xs text-neutral-400 ml-2">
+              cognitive_depth_matrix.sh
+            </div>
+          </div>
+
+          <div class="p-8 font-mono text-sm">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <!-- Level 1 -->
+              <div
+                class="p-4 border border-neutral-800 rounded bg-neutral-950/50"
+              >
+                <div
+                  class="text-[10px] text-indigo-400 font-bold mb-2 uppercase tracking-tighter"
+                >
+                  Level 01
+                </div>
+                <div class="text-white font-bold mb-1">ATOMIC</div>
+                <div class="text-neutral-500 text-xs">
+                  Single-step, isolated prediction. No dependencies.
+                </div>
+                <div class="mt-4 text-[10px] text-neutral-600 italic">
+                  "Is this hearsay?"
+                </div>
+              </div>
+
+              <!-- Level 2 -->
+              <div
+                class="p-4 border border-indigo-900/30 rounded bg-indigo-950/20"
+              >
+                <div
+                  class="text-[10px] text-indigo-400 font-bold mb-2 uppercase tracking-tighter"
+                >
+                  Level 02
+                </div>
+                <div class="text-white font-bold mb-1">COMPOSITE</div>
+                <div class="text-neutral-500 text-xs">
+                  Multi-step reasoning with limited context linkage.
+                </div>
+                <div class="mt-4 text-[10px] text-neutral-600 italic">
+                  "Extract holding -> Apply"
+                </div>
+              </div>
+
+              <!-- Level 3 -->
+              <div
+                class="p-4 border border-indigo-400/50 rounded bg-indigo-900/40 shadow-[0_0_20px_rgba(99,102,241,0.2)]"
+              >
+                <div
+                  class="text-[10px] text-indigo-400 font-bold mb-2 uppercase tracking-tighter"
+                >
+                  Level 03
+                </div>
+                <div class="text-white font-bold mb-1">AGENTIC</div>
+                <div class="text-indigo-200 text-xs">
+                  Autonomous workflow across 10+ dependent steps.
+                </div>
+                <div class="mt-4 text-[10px] text-indigo-300 italic">
+                  "Complete Research Chain"
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <h2>The Reasoning Cliff</h2>
+        <p>
+          The LegalChain framework categorizes AI legal capabilities across three
+          levels of cognitive depth. This taxonomy ensures that performance
+          measured at simple levels (e.g., "finding a case") is not mistaken for
+          performance at professional levels (e.g., "completing a research
+          memo").
+        </p>
+        <p>
+          Research into AI agents has identified a
+          <strong>"Reasoning Cliff"</strong>: models that perform exceptionally
+          well at atomic tasks often experience 10-15% accuracy drops when those
+          same skills are embedded in agentic workflows.
+        </p>
+
+        <div class="not-prose my-12 space-y-4">
+          <div
+            class="flex items-start gap-6 p-6 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg"
+          >
+            <div class="bg-indigo-100 dark:bg-indigo-900/30 p-3 rounded-lg">
+              <svg
+                class="w-6 h-6 text-indigo-600 dark:text-indigo-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M13 10V3L4 14h7v7l9-11h-7z"
+                />
+              </svg>
+            </div>
+            <div>
+              <h3
+                class="text-lg font-bold text-neutral-900 dark:text-white mb-1"
+              >
+                Hidden Failure Modes
+              </h3>
+              <p class="text-sm text-neutral-600 dark:text-neutral-400">
+                By testing at Agentic depth, we reveal reasoning collapse and
+                error propagation that invisible to standard atomic testing.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <h2>Why Depth Matters for Law</h2>
+        <p>
+          In legal practice, an "Atomic" success (extracting the right quote) is
+          worthless if the "Agentic" workflow fails (e.g., the case was
+          overruled, or the citation was fabricated). Professional legal work is
+          inherently agentic; therefore, its evaluation must be as well.
+        </p>
+
+      </article>
+    </main>
+    <script src="../shared/site-shell.js"></script>
+  </body>
+</html>

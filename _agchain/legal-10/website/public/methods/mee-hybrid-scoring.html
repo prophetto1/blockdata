@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hybrid IRAC Scoring - LegalChain</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        legalblue: {
+                            50: '#f0f7ff',
+                            100: '#e0effe',
+                            200: '#bae0fd',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#1e3a8a',
+                        },
+                        scoring: {
+                            400: '#fb923c', // Orange-400
+                            500: '#f97316', // Orange-500
+                            600: '#ea580c', // Orange-600
+                            900: '#7c2d12', // Orange-950
+                        }
+                    },
+                     fontFamily: {
+                        mono: ['"Fira Code"', 'monospace'],
+                        sans: ['"Inter"', 'sans-serif'],
+                        serif: ['"Merriweather"', 'serif'],
+                    }
+                }
+            }
+        };
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;0,900;1,300&family=Inter:wght@300;400;500;600&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../shared/report.css">
+</head>
+<body>
+    <main id="l10-page" data-l10-layout="research" data-l10-sidenav="site" data-l10-sidenav-pos="left">
+        <article class="prose prose-slate dark:prose-invert max-w-4xl mx-auto research-content">
+            
+            <header class="mb-16">
+                <h1 class="research-title">Hybrid IRAC Scoring</h1>
+                
+                <p class="lead text-xl text-neutral-600 dark:text-neutral-400 font-serif italic border-l-4 border-scoring-500 pl-6 py-2">
+                    Blending deterministic chain consistency with expert-calibrated synthesis rubrics (MEE).
+                </p>
+            </header>
+
+            <h2>The Composite Method</h2>
+            <p>
+                Evaluating legal synthesis is notoriously difficult due to the nuance of reasoning. LegalChain solves this by using a <strong>Composite Scoring Architecture</strong> that balances three distinct signals, minimizing the risks of "LLM-as-a-Judge" circularity.
+            </p>
+
+            <div class="my-16 not-prose p-10 bg-neutral-900 border border-neutral-700 rounded-xl shadow-2xl relative">
+                 <div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
+                    <div class="space-y-4">
+                        <div class="text-[10px] text-neutral-500 uppercase tracking-widest font-mono">Signal 01</div>
+                        <div class="text-4xl font-black text-white">10%</div>
+                        <div class="text-xs font-bold text-scoring-400 uppercase">Structure</div>
+                    </div>
+                    <div class="space-y-4 border-x border-neutral-800">
+                        <div class="text-[10px] text-neutral-500 uppercase tracking-widest font-mono">Signal 02</div>
+                        <div class="text-4xl font-black text-white">40%</div>
+                        <div class="text-xs font-bold text-scoring-500 uppercase">Consistency</div>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="text-[10px] text-neutral-500 uppercase tracking-widest font-mono">Signal 03</div>
+                        <div class="text-4xl font-black text-white">50%</div>
+                        <div class="text-xs font-bold text-scoring-600 uppercase">Reasoning</div>
+                    </div>
+                 </div>
+                 <div class="mt-10 pt-10 border-t border-neutral-800 text-center">
+                    <p class="text-[10px] text-neutral-500 uppercase tracking-[0.3em] font-mono leading-relaxed">
+                        Structure (Presence of IRAC) + Consistency (Fact Usage) + Quality (MEE Rubric)
+                    </p>
+                 </div>
+            </div>
+
+            <h2>MEE-Based Reasoning Rubric</h2>
+            <p>
+                The 50% "Reasoning Quality" signal is assessed using a rubric derived from the **Multistate Essay Examination (MEE)** professional standards. Our LLM-Judge is calibrated to evaluate:
+            </p>
+
+            <div class="space-y-6 my-12 not-prose">
+                <div class="flex items-start gap-6 p-6 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg">
+                    <div class="font-mono text-xl font-black text-scoring-500">I</div>
+                    <div>
+                        <h4 class="font-bold text-neutral-900 dark:text-white mb-1">Issue Identification</h4>
+                        <p class="text-sm text-neutral-500 italic">Does the model capture the precise legal conflict identified in S1?</p>
+                    </div>
+                </div>
+                <div class="flex items-start gap-6 p-6 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg">
+                    <div class="font-mono text-xl font-black text-scoring-500">R</div>
+                    <div>
+                        <h4 class="font-bold text-neutral-900 dark:text-white mb-1">Rule Statement</h4>
+                        <p class="text-sm text-neutral-500 italic">Is the legal principle extracted from the cited case accurate and complete?</p>
+                    </div>
+                </div>
+                <div class="flex items-start gap-6 p-6 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg">
+                    <div class="font-mono text-xl font-black text-scoring-500">A</div>
+                    <div>
+                        <h4 class="font-bold text-neutral-900 dark:text-white mb-1">Application / Analysis</h4>
+                        <p class="text-sm text-neutral-500 italic">The "Reasoning Bridge": Does the model logically connect facts to the rule?</p>
+                    </div>
+                </div>
+                <div class="flex items-start gap-6 p-6 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg">
+                    <div class="font-mono text-xl font-black text-scoring-500">C</div>
+                    <div>
+                        <h4 class="font-bold text-neutral-900 dark:text-white mb-1">Conclusion</h4>
+                        <p class="text-sm text-neutral-500 italic">Is the final outcome grounded in the preceding analysis?</p>
+                    </div>
+                </div>
+            </div>
+
+            <h2>Deterministic Anchoring</h2>
+            <p>
+                The 40% **Chain Consistency** component is deterministic. We check if the model used the specific metadata and holding codes extracted in steps S1 and S4. If a model writes a "correct" answer but ignores its own previous findings, it is penalized for lack of internal coherence—a hallmark of stochastic mimicry rather than logical reasoning.
+            </p>
+
+        </article>
+    </main>
+    <script src="../shared/site-shell.js"></script>
+</body>
+</html>

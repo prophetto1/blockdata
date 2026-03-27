@@ -1,0 +1,9 @@
+[
+  {
+    "category": "notice",
+    "date": "2026-01-14",
+    "title": "Notices board is live",
+    "description": "This feed renders on the homepage and the About > Notices page from /data/notices.json.",
+    "href": "about/notices.html"
+  }
+]

@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Release Model - LegalChain</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        legalblue: {
+                            50: '#f0f7ff',
+                            100: '#e0effe',
+                            200: '#bae0fd',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#1e3a8a',
+                        },
+                        release: {
+                            400: '#2dd4bf', // Teal-400
+                            500: '#14b8a6', // Teal-500
+                            600: '#0d9488', // Teal-600
+                            900: '#134e4a', // Teal-950
+                        }
+                    },
+                     fontFamily: {
+                        mono: ['"Fira Code"', 'monospace'],
+                        sans: ['"Inter"', 'sans-serif'],
+                        serif: ['"Merriweather"', 'serif'],
+                    }
+                }
+            }
+        };
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;0,900;1,300&family=Inter:wght@300;400;500;600&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../shared/report.css">
+</head>
+<body>
+    <main id="l10-page" data-l10-layout="research" data-l10-sidenav="site" data-l10-sidenav-pos="left">
+        <article class="prose prose-slate dark:prose-invert max-w-4xl mx-auto research-content">
+            
+            <header class="mb-16">
+                <h1 class="research-title">Release Model</h1>
+                
+                <p class="lead text-xl text-neutral-600 dark:text-neutral-400 font-serif italic border-l-4 border-release-500 pl-6 py-2">
+                    Traversing the path from proof-of-concept to the "Gold Master" production benchmark.
+                </p>
+            </header>
+
+            <h2>System Maturity (v3.0)</h2>
+            <p>
+                As of January 2026, LegalChain has transitioned into its **Gold Master (v3.0)** production state. The release model architecture governs the lifecycle of data, engine code, and evaluation protocols to ensure consistent scientific comparisons.
+            </p>
+
+            <div class="my-16 grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-12 not-prose">
+                <div class="space-y-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-2 h-2 rounded-full bg-release-500"></div>
+                        <h4 class="font-bold text-neutral-900 dark:text-white uppercase tracking-widest text-xs">V1.0: Foundations</h4>
+                    </div>
+                    <p class="text-sm text-neutral-600 dark:text-neutral-400 font-serif leading-relaxed">The proof-of-concept mapping of the 10-step chain and initial data-corpus verification.</p>
+                </div>
+                <div class="space-y-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-2 h-2 rounded-full bg-release-500"></div>
+                        <h4 class="font-bold text-neutral-900 dark:text-white uppercase tracking-widest text-xs">V2.0: Integration</h4>
+                    </div>
+                    <p class="text-sm text-neutral-600 dark:text-neutral-400 font-serif leading-relaxed">Refinement of the "Reasoning Bridge" metric and dual-modality (CB vs OB) evaluation logic.</p>
+                </div>
+                <div class="space-y-4 bg-release-900/10 p-6 border border-release-500/20 rounded-xl md:col-span-2">
+                    <div class="flex items-center gap-3 mb-2">
+                        <div class="w-3 h-3 rounded-full bg-release-500 animate-pulse"></div>
+                        <h4 class="font-bold text-white uppercase tracking-widest text-sm">V3.0: Gold Master (CURRENT)</h4>
+                    </div>
+                    <p class="text-sm text-neutral-300 font-serif leading-relaxed">Full implementation of S9 (Transitive Authority) and S10 (Oyez Grounding). Introduction of the S8 integrity gate with voiding semantics. Provisioned with 8.7GB of static ResearchPacks.</p>
+                </div>
+            </div>
+
+            <h2>Certified Runs (CR)</h2>
+            <p>
+                A <strong>Certified Run (CR)</strong> is a standardized evaluation execution using a specific version of the LegalChain Release Model. Certified runs are the only results considered authoritative for leaderboards and whitepapers.
+            </p>
+
+            <div class="bg-neutral-900 border border-neutral-700 p-8 rounded-xl my-12 not-prose font-mono text-xs">
+                <div class="text-neutral-500 mb-4 tracking-widest">RELEASE_SPEC_{VERSION_LATEST}</div>
+                <div class="space-y-2">
+                    <div class="flex justify-between">
+                        <span class="text-neutral-400">BENCHMARK_VER</span>
+                        <span class="text-teal-400">v3.0.4-stable</span>
+                    </div>
+                     <div class="flex justify-between">
+                        <span class="text-neutral-400">CORPUS_SLICE</span>
+                        <span class="text-teal-400">scotus_l2_gold</span>
+                    </div>
+                     <div class="flex justify-between">
+                        <span class="text-neutral-400">INTEGRITY_GATES</span>
+                        <span class="text-teal-400">S8_ACTIVE_VOID_ON</span>
+                    </div>
+                </div>
+            </div>
+
+            <h2>Lifecycle Management</h2>
+            <p>
+                The release model ensures that "Hallways" in the evaluation pipeline are never modified mid-experiment. If a prompt or scoring rubric requires an update, it is staged for the next minor release (e.g., v3.1), and all current runs remain pinned to their verified release state.
+            </p>
+
+        </article>
+    </main>
+    <script src="../shared/site-shell.js"></script>
+</body>
+</html>

@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Runner Semantics - LegalChain</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        legalblue: {
+                            50: '#f0f7ff',
+                            100: '#e0effe',
+                            200: '#bae0fd',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#1e3a8a',
+                        },
+                        mono: {
+                            900: '#0f172a',
+                        }
+                    },
+                    fontFamily: {
+                        serif: ['"Merriweather"', 'serif'],
+                        sans: ['"Inter"', 'sans-serif'],
+                        mono: ['"Fira Code"', 'monospace'],
+                    }
+                }
+            }
+        };
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;0,900;1,300&family=Inter:wght@300;400;500;600&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+    <!-- Mermaid removed: keep page readable when JS/CDNs fail -->
+    <link rel="stylesheet" href="../shared/report.css">
+</head>
+<body>
+    <main id="l10-page" data-l10-layout="research" data-l10-sidenav="site" data-l10-sidenav-pos="left">
+        <article class="prose prose-slate dark:prose-invert max-w-4xl mx-auto research-content font-sans">
+            
+            <header class="mb-16 not-prose">
+                <h1 class="text-4xl md:text-5xl font-serif font-black text-slate-900 dark:text-white mb-6 leading-tight">
+                    The Chain Reaction
+                </h1>
+                <p class="text-xl md:text-2xl text-slate-600 dark:text-slate-300 font-serif leading-relaxed border-l-4 border-amber-500 pl-6">
+                    How LegalChain steps through a strictly defined sequence of cognitive operations, from retrieval to synthesis.
+                </p>
+            </header>
+
+            <p class="lead font-serif text-lg leading-loose">
+                Most legal AI benchmarks are "single-shot": you feed a question and get an answer. LegalChain is "chained." The runner executes a sequence of 10 distinct steps (S1-S10), where the output of each step becomes the context for the next. This mimics the actual cognitive workflow of a human lawyer.
+            </p>
+
+            <h2 class="font-serif text-2xl font-bold mt-12 mb-6">The 10-Skill Pipeline</h2>
+            <div class="my-10 not-prose">
+                <div class="bg-slate-50 dark:bg-slate-900/50 p-6 rounded-xl border border-slate-200 dark:border-slate-800">
+                    <div class="text-center text-sm font-mono text-slate-500 mb-4">Pipeline (high level)</div>
+                    <div class="flex flex-wrap items-center justify-center gap-2 text-[11px] md:text-sm font-mono">
+                        <span class="px-2 py-1 rounded border border-slate-200 dark:border-slate-800 bg-white/70 dark:bg-slate-950/20">EU</span>
+                        <span class="text-slate-500">+</span>
+                        <span class="px-2 py-1 rounded border border-slate-200 dark:border-slate-800 bg-white/70 dark:bg-slate-950/20">RP</span>
+                        <span class="text-slate-500">→</span>
+                        <span class="px-2 py-1 rounded border border-slate-200 dark:border-slate-800 bg-white/70 dark:bg-slate-950/20">S1</span>
+                        <span class="text-slate-500">→</span>
+                        <span class="px-2 py-1 rounded border border-slate-200 dark:border-slate-800 bg-white/70 dark:bg-slate-950/20">S2</span>
+                        <span class="text-slate-500">→</span>
+                        <span class="px-2 py-1 rounded border border-slate-200 dark:border-slate-800 bg-white/70 dark:bg-slate-950/20">S3</span>
+                        <span class="text-slate-500">→</span>
+                        <span class="px-2 py-1 rounded border border-slate-200 dark:border-slate-800 bg-white/70 dark:bg-slate-950/20">S4</span>
+                        <span class="text-slate-500">→</span>
+                        <span class="px-2 py-1 rounded border border-slate-200 dark:border-slate-800 bg-white/70 dark:bg-slate-950/20">S5</span>
+                        <span class="text-slate-500">→</span>
+                        <span class="px-2 py-1 rounded border border-green-200 dark:border-green-900 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300">S6</span>
+                        <span class="text-slate-500">→</span>
+                        <span class="px-2 py-1 rounded border border-slate-200 dark:border-slate-800 bg-white/70 dark:bg-slate-950/20">S7</span>
+                        <span class="text-slate-500">→</span>
+                        <span class="px-2 py-1 rounded border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300">S8</span>
+                        <span class="text-slate-500">→</span>
+                        <span class="px-2 py-1 rounded border border-slate-200 dark:border-slate-800 bg-white/70 dark:bg-slate-950/20">S9</span>
+                        <span class="text-slate-500">→</span>
+                        <span class="px-2 py-1 rounded border border-slate-200 dark:border-slate-800 bg-white/70 dark:bg-slate-950/20">S10</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="space-y-4 my-12 text-sm">
+                <div class="grid grid-cols-12 gap-4 border-b border-slate-100 dark:border-slate-800 pb-2">
+                    <div class="col-span-1 font-bold text-slate-400">Step</div>
+                    <div class="col-span-3 font-bold text-slate-900 dark:text-slate-100">Operation</div>
+                    <div class="col-span-8 text-slate-600 dark:text-slate-400">Context Added</div>
+                </div>
+                
+                <div class="grid grid-cols-12 gap-4 items-center">
+                    <div class="col-span-1 font-mono font-bold text-blue-600">S1</div>
+                    <div class="col-span-3 font-bold">Issue Identification</div>
+                    <div class="col-span-8 text-slate-600">Extracts the precise legal question from the prompt.</div>
+                </div>
+                 <div class="grid grid-cols-12 gap-4 items-center bg-slate-50 dark:bg-slate-900/50 p-2 rounded">
+                    <div class="col-span-1 font-mono font-bold text-blue-600">S2</div>
+                    <div class="col-span-3 font-bold">Rule Extraction</div>
+                    <div class="col-span-8 text-slate-600">Selects applicable rules from the ResearchPack.</div>
+                </div>
+                 <div class="grid grid-cols-12 gap-4 items-center">
+                    <div class="col-span-1 font-mono font-bold text-blue-600">S3</div>
+                    <div class="col-span-3 font-bold">Authority Validation</div>
+                    <div class="col-span-8 text-slate-600">Verifies that retrieved Cases remain good law.</div>
+                </div>
+                 <div class="grid grid-cols-12 gap-4 items-center bg-slate-50 dark:bg-slate-900/50 p-2 rounded">
+                    <div class="col-span-1 font-mono font-bold text-blue-600">S4</div>
+                    <div class="col-span-3 font-bold">Fact Analysis</div>
+                    <div class="col-span-8 text-slate-600">Applies rules to the facts of the instant case.</div>
+                </div>
+                 <div class="grid grid-cols-12 gap-4 items-center">
+                    <div class="col-span-1 font-mono font-bold text-blue-600">S5</div>
+                    <div class="col-span-3 font-bold">Prediction</div>
+                    <div class="col-span-8 text-slate-600">Predicts outcome based on analysis (pre-writing).</div>
+                </div>
+                <div class="grid grid-cols-12 gap-4 items-center bg-slate-50 dark:bg-slate-900/50 p-2 rounded border-l-4 border-green-500">
+                    <div class="col-span-1 font-mono font-bold text-green-600">S6</div>
+                    <div class="col-span-3 font-bold">Synthesis</div>
+                    <div class="col-span-8 text-slate-600">Generates the final IRAC-format memorandum.</div>
+                </div>
+            </div>
+
+            <h2 class="font-serif text-2xl font-bold mt-12 mb-6">Chain Context</h2>
+            <p>
+                The "ChainContext" object is the spine of the execution. It accumulates state. S6 (Synthesis) cannot "see" the future, but it can see everything S1-S5 produced.
+            </p>
+            
+            <div class="bg-slate-900 p-6 rounded-lg text-slate-300 font-mono text-xs overflow-x-auto shadow-lg my-6">
+class ChainContext:
+    eu: EvaluationUnit      # The Task (Immutable)
+    rp: ResearchPack        # The Evidence (Immutable)
+    results: Dict[str, StepResult]  # Accumulating Memory
+
+    def store(self, step_name, result):
+        self.results[step_name] = result
+
+    def history(self):
+        return self.results.values()
+            </div>
+
+            <h2 class="font-serif text-2xl font-bold mt-12 mb-6">Error Propagation</h2>
+            <p>
+                In a chain, failure compounds. If S2 (Rule Extraction) fails to find any rules, what happens to S6 (Synthesis)?
+            </p>
+            <p>
+                LegalChain uses <strong>Degraded Execution</strong>. If a step fails, the runner passes an empty or default value to the next step rather than crashing. This forces the model to attempt recovery—mimicking a lawyer who can't find a perfect case but must still advise the client.
+            </p>
+            <p>
+                However, <strong>Integrity Failures</strong> (S8) result in a zero integrity score and are flagged in scoring details. The run continues to completion to capture full diagnostic data.
+            </p>
+
+        </article>
+    </main>
+    <script src="../shared/site-shell.js"></script>
+</body>
+</html>

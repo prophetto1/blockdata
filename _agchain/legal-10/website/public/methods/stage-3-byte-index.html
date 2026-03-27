@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CAP Byte Index - LegalChain</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+      };
+    </script>
+</head>
+<body class="bg-neutral-950 text-neutral-400 font-sans antialiased">
+    <main id="l10-page" data-l10-layout="research" data-l10-sidenav="site" data-l10-sidenav-pos="left">
+        <article class="max-w-4xl mx-auto research-content">
+            
+            <!-- HEADER BLOCK -->
+            <header class="mb-10 border-b border-neutral-800 pb-6">
+                <h1 class="text-4xl font-serif font-light text-white">CAP Byte Index</h1>
+                <p class="serif-dense mt-4 text-neutral-500 text-sm leading-relaxed max-w-2xl font-serif">
+                    Enabling O(1) random access to 1.4 GB of JSONL data. Stage 3 reduces case extraction time from 500ms to 1ms by pre-computing exact byte offsets for every authority.
+                </p>
+            </header>
+
+            <!-- PERFORMANCE STATS GRID -->
+            <div class="grid grid-cols-3 gap-0 border-t border-l border-neutral-800 bg-neutral-900/10 mb-12">
+                <div class="border-r border-b border-neutral-800 p-4">
+                    <div class="text-[10px] font-mono text-neutral-600 uppercase mb-1">Latency Gain</div>
+                    <div class="text-xl font-mono text-emerald-500">500x</div>
+                    <div class="text-[10px] text-neutral-500">500ms -> 1ms</div>
+                </div>
+                <div class="border-r border-b border-neutral-800 p-4">
+                    <div class="text-[10px] font-mono text-neutral-600 uppercase mb-1">Complexity</div>
+                    <div class="text-xl font-mono text-white">O(1)</div>
+                    <div class="text-[10px] text-neutral-500">Constant Time</div>
+                </div>
+                <div class="border-r border-b border-neutral-800 p-4">
+                    <div class="text-[10px] font-mono text-neutral-600 uppercase mb-1">Overhead</div>
+                    <div class="text-xl font-mono text-white">624 KB</div>
+                    <div class="text-[10px] text-neutral-500">In-Memory Index</div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+                <!-- LEFT COLUMN: ALGORITHM -->
+                <div class="space-y-8">
+                    <section>
+                        <div class="text-[10px] font-mono text-neutral-600 uppercase mb-2">The Performance Problem</div>
+                        <p class="text-sm text-neutral-400 font-serif leading-relaxed">
+                            CAP text is stored in massive JSONL bundles. A standard linear scan for a specific case (O(n)) requires reading gigabytes of text, making the 27k ResearchPack construction prohibitively slow (10+ hours).
+                        </p>
+                    </section>
+
+                    <section class="border border-neutral-800 p-5 bg-neutral-900/10">
+                        <div class="text-[10px] font-mono text-amber-500 mb-4">[ EXTRACTION TRACE ]</div>
+                        <div class="space-y-4">
+                            <div>
+                                <div class="text-[10px] font-mono text-neutral-600 uppercase mb-1">01. INDEX LOOKUP</div>
+                                <div class="text-[10px] text-neutral-400 font-mono italic">Locate `cap_id` in Parquet Index</div>
+                            </div>
+                            <div class="border-l border-neutral-800 ml-2 pl-4 py-1">
+                                <div class="text-[10px] font-mono text-neutral-600 uppercase mb-1">02. FILE SEEK</div>
+                                <div class="text-[10px] text-neutral-400 font-mono italic">f.seek(523,847,621)</div>
+                            </div>
+                            <div class="border-l border-neutral-800 ml-2 pl-4 py-1 text-emerald-500/80">
+                                <div class="text-[10px] font-mono uppercase mb-1">03. EXACT READ</div>
+                                <div class="text-[10px] font-mono italic">f.read(12,847 bytes)</div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- RIGHT COLUMN: SCHEMA / MANIFEST -->
+                <div>
+                    <div class="text-[10px] font-mono text-neutral-600 uppercase mb-4">Index Mapping Example</div>
+                    <table class="w-full text-left border-collapse font-mono text-[10px]">
+                        <thead>
+                            <tr class="border-b border-neutral-800">
+                                <th class="py-2 text-neutral-600 font-normal">CAP ID</th>
+                                <th class="py-2 text-neutral-600 font-normal">Byte Offset</th>
+                                <th class="py-2 text-neutral-600 font-normal">Length</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-neutral-900 text-neutral-300">
+                            <tr>
+                                <td class="py-2 font-bold">1403610</td>
+                                <td class="py-2 text-blue-400">523,847,621</td>
+                                <td class="py-2">12,847</td>
+                            </tr>
+                            <tr>
+                                <td class="py-2 font-bold">1046253</td>
+                                <td class="py-2 text-blue-400">892,104,502</td>
+                                <td class="py-2">9,112</td>
+                            </tr>
+                            <tr>
+                                <td class="py-2 font-bold">1098412</td>
+                                <td class="py-2 text-blue-400">1,102,543,892</td>
+                                <td class="py-2">15,403</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="mt-8">
+                        <div class="text-[10px] font-mono text-neutral-600 uppercase mb-2">Build Manifest Excerpt</div>
+                        <div class="bg-neutral-900 border border-neutral-800 p-4 font-mono text-[10px] text-neutral-200">
+                            <pre><code>{
+  "cap_sha256": "a1b2c3...",
+  "index_sha256": "g7h8i9...",
+  "strategy": "constant_time"
+}</code></pre>
+                        </div>
+                    </div>
+
+                    <div class="mt-8 p-4 bg-amber-900/5 border border-amber-900/20">
+                        <div class="text-[10px] font-mono text-amber-600 uppercase mb-2">Build-Time Utility</div>
+                        <p class="text-[10px] text-neutral-500 font-serif italic">Byte Indexing is exclusive to Stage 4A (Build-Time). Runners receive fully extracted Research Packs, requiring no runtime lookups.</p>
+                    </div>
+                </div>
+            </div>
+
+        </article>
+    </main>
+    <script src="../shared/site-shell.js"></script>
+</body>
+</html>

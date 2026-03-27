@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chained Evaluation - LegalChain</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        legalblue: {
+                            50: '#f0f7ff',
+                            100: '#e0effe',
+                            200: '#bae0fd',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#1e3a8a',
+                        },
+                        cascade: {
+                            400: '#f87171', // Red-400
+                            500: '#ef4444', // Red-500
+                            900: '#450a0a', // Red-950
+                        }
+                    },
+                     fontFamily: {
+                        mono: ['"Fira Code"', 'monospace'],
+                        sans: ['"Inter"', 'sans-serif'],
+                        serif: ['"Merriweather"', 'serif'],
+                    }
+                }
+            }
+        };
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;0,900;1,300&family=Inter:wght@300;400;500;600&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../shared/report.css">
+    <style>
+        .cascade-line {
+            background: linear-gradient(180deg, rgba(239, 68, 68, 0.2) 0%, rgba(239, 68, 68, 0.5) 100%);
+            width: 2px;
+        }
+    </style>
+</head>
+<body>
+    <main id="l10-page" data-l10-layout="research" data-l10-sidenav="site" data-l10-sidenav-pos="left">
+        <article class="prose prose-slate dark:prose-invert max-w-4xl mx-auto research-content">
+            
+            <header class="mb-16">
+                <h1 class="research-title">Chained Evaluation</h1>
+                
+                <p class="lead text-xl text-neutral-600 dark:text-neutral-400 font-serif italic border-l-4 border-cascade-500 pl-6 py-2">
+                    Measuring why a model with 90% accuracy can fail 65% of professional workflows.
+                </p>
+            </header>
+
+            <!-- CASCADE HERO -->
+            <div class="my-16 grid grid-cols-1 md:grid-cols-2 gap-12 not-prose">
+                <div class="bg-neutral-900 border border-neutral-700 rounded-xl p-8 relative overflow-hidden">
+                    <div class="absolute top-0 right-0 p-4 font-mono text-[10px] text-neutral-600 uppercase">Multiplicative Degradation</div>
+                    
+                    <div class="space-y-6 relative z-10">
+                        <!-- Step 1 -->
+                        <div class="flex items-center gap-4">
+                            <div class="w-8 h-8 rounded bg-green-900/30 border border-green-500/50 flex items-center justify-center text-green-400 font-mono text-xs">S1</div>
+                            <div class="flex-1 h-2 bg-neutral-800 rounded-full overflow-hidden">
+                                <div class="w-[90%] h-full bg-green-500"></div>
+                            </div>
+                            <div class="text-[10px] font-mono text-neutral-400">90%</div>
+                        </div>
+                        
+                        <!-- Step 3 -->
+                        <div class="flex items-center gap-4">
+                            <div class="w-8 h-8 rounded bg-yellow-900/30 border border-yellow-500/50 flex items-center justify-center text-yellow-400 font-mono text-xs">S3</div>
+                            <div class="flex-1 h-2 bg-neutral-800 rounded-full overflow-hidden">
+                                <div class="w-[73%] h-full bg-yellow-500"></div>
+                            </div>
+                            <div class="text-[10px] font-mono text-neutral-400">73%</div>
+                        </div>
+
+                        <!-- Step 10 -->
+                        <div class="flex items-center gap-4">
+                            <div class="w-8 h-8 rounded bg-red-900/30 border border-red-500/50 flex items-center justify-center text-red-400 font-mono text-xs">S10</div>
+                            <div class="flex-1 h-2 bg-neutral-800 rounded-full overflow-hidden">
+                                <div class="w-[35%] h-full bg-red-500"></div>
+                            </div>
+                            <div class="text-[10px] font-mono text-neutral-400">35%</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex flex-col justify-center">
+                    <h3 class="text-2xl font-serif font-bold text-neutral-900 dark:text-white mb-4">The Success Probability</h3>
+                    <div class="font-mono text-lg text-cascade-500 mb-4 font-bold">
+                        P(Success) = P(S<sub>1</sub>) &times; P(S<sub>2</sub>) &times; ... &times; P(S<sub>10</sub>)
+                    </div>
+                    <p class="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed">
+                        The core insight of chained evaluation is multiplicative. A model that achieves impressive scores on independent tasks quickly collapses when those tasks are dependent.
+                    </p>
+                </div>
+            </div>
+
+            <h2>The Multiplicative Reality</h2>
+            <p>
+                Legal research is not a series of independent tasks; it is a dependent workflow. LegalChain operationalizes this by evaluating models through a <strong>10-step chained dependency</strong>.
+            </p>
+
+            <div class="overflow-x-auto my-12 border border-neutral-200 dark:border-neutral-800 rounded-lg shadow-sm">
+                <table class="w-full text-left border-collapse">
+                    <thead class="bg-neutral-50 dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-800 text-xs uppercase tracking-widest text-neutral-500">
+                        <tr>
+                            <th class="p-4 font-bold">Chain Length</th>
+                            <th class="p-4 font-bold">Completion Rate (@ 90% accuracy)</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-neutral-100 dark:divide-neutral-800 font-mono text-sm">
+                        <tr>
+                            <td class="p-4">1 Step</td>
+                            <td class="p-4 text-green-600">90.0%</td>
+                        </tr>
+                        <tr>
+                            <td class="p-4">3 Steps</td>
+                            <td class="p-4">72.9%</td>
+                        </tr>
+                        <tr>
+                            <td class="p-4">5 Steps</td>
+                            <td class="p-4">59.0%</td>
+                        </tr>
+                        <tr class="bg-neutral-50 dark:bg-neutral-900/50">
+                            <td class="p-4 font-bold">10 Steps</td>
+                            <td class="p-4 font-bold text-cascade-500">34.9%</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h2>Cascade Failures</h2>
+            <p>
+                In a parallel benchmark (like LegalBench or CaseHOLD), an error at Step 1 is just one point lost. In LegalChain, an error at Step 1 <strong>corrupts the entire chain</strong>.
+            </p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 my-12 not-prose">
+                <div class="p-6 bg-neutral-50 dark:bg-neutral-900 rounded-lg border-l-4 border-cascade-400">
+                    <h4 class="font-bold text-neutral-900 dark:text-white mb-2">01. Propagation</h4>
+                    <p class="text-sm text-neutral-600 dark:text-neutral-400">If the model identifies the wrong case in S1, all downstream facts, distinctions, and synthesis are grounded in false authority.</p>
+                </div>
+                <div class="p-6 bg-neutral-50 dark:bg-neutral-900 rounded-lg border-l-4 border-amber-500">
+                    <h4 class="font-bold text-neutral-900 dark:text-white mb-2">02. The "Fabrication Gate"</h4>
+                    <p class="text-sm text-neutral-600 dark:text-neutral-400">If the model hallucinates a citation at step 8, the integrity score is set to zero and flagged, regardless of prior reasoning. The run continues to completion for full diagnostics.</p>
+                </div>
+            </div>
+
+            <h2>Why We Chain</h2>
+            <p>
+                Chained evaluation provides a more accurate proxy for professional utility. A legal brief is only as strong as its weakest link. By forcing models to maintain coherent reasoning across ten dependent steps, we identify the exact point where "apparent competence" diverges from "actual reliability."
+            </p>
+
+        </article>
+    </main>
+    <script src="../shared/site-shell.js"></script>
+</body>
+</html>

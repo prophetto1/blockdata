@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Step Contracts - LegalChain</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        legalblue: {
+                            50: '#f0f7ff',
+                            100: '#e0effe',
+                            200: '#bae0fd',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#1e3a8a',
+                        },
+                        contract: {
+                            400: '#a78bfa', // Violet-400
+                            500: '#8b5cf6', // Violet-500
+                            600: '#7c3aed', // Violet-600
+                            900: '#2e1065', // Violet-950
+                        }
+                    },
+                     fontFamily: {
+                        mono: ['"Fira Code"', 'monospace'],
+                        sans: ['"Inter"', 'sans-serif'],
+                        serif: ['"Merriweather"', 'serif'],
+                    }
+                }
+            }
+        };
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;0,900;1,300&family=Inter:wght@300;400;500;600&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../shared/report.css">
+    <style>
+        .step-node {
+            position: relative;
+        }
+        .step-node:not(:last-child)::after {
+            content: "";
+            position: absolute;
+            left: 50%;
+            bottom: -20px;
+            width: 2px;
+            height: 20px;
+            background: currentColor;
+            opacity: 0.3;
+        }
+    </style>
+</head>
+<body>
+    <main id="l10-page" data-l10-layout="research" data-l10-sidenav="site" data-l10-sidenav-pos="left">
+        <article class="prose prose-slate dark:prose-invert max-w-4xl mx-auto research-content">
+            
+            <header class="mb-16">
+                <h1 class="research-title">The 10-Step Chain</h1>
+                
+                <p class="lead text-xl text-neutral-600 dark:text-neutral-400 font-serif italic border-l-4 border-contract-500 pl-6 py-2">
+                    Decomposing research execution into deterministic contracts across four logical phases.
+                </p>
+            </header>
+
+            <h2>Functional "Contracts"</h2>
+            <p>
+                LegalChain evaluates models through a dependent chain of 10 steps. Each step acts as a <strong>"contract"</strong>: it takes specific inputs (often from previous steps) and must produce a verified output.
+            </p>
+
+            <div class="my-16 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 not-prose">
+                <!-- Phase 1 -->
+                <div class="p-6 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl">
+                    <div class="text-[10px] text-contract-500 font-bold mb-2 uppercase tracking-widest">Phase I</div>
+                    <h3 class="text-neutral-900 dark:text-white font-serif font-bold mb-2">Rule Phase</h3>
+                    <p class="text-xs text-neutral-500">Identify, retrieve, and validate legal authority.</p>
+                    <div class="mt-4 flex gap-1">
+                        <span class="w-6 h-6 rounded bg-neutral-200 dark:bg-neutral-800 flex items-center justify-center text-[10px] font-mono">S1</span>
+                        <span class="w-6 h-6 rounded bg-neutral-200 dark:bg-neutral-800 flex items-center justify-center text-[10px] font-mono">S2</span>
+                        <span class="w-6 h-6 rounded bg-neutral-200 dark:bg-neutral-800 flex items-center justify-center text-[10px] font-mono">S3</span>
+                    </div>
+                </div>
+                <!-- Phase 2 -->
+                <div class="p-6 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl">
+                    <div class="text-[10px] text-contract-500 font-bold mb-2 uppercase tracking-widest">Phase II</div>
+                    <h3 class="text-neutral-900 dark:text-white font-serif font-bold mb-2">Application</h3>
+                    <p class="text-xs text-neutral-500">Extract facts and apply precedent through distinction.</p>
+                    <div class="mt-4 flex gap-1">
+                        <span class="w-6 h-6 rounded bg-neutral-200 dark:bg-neutral-800 flex items-center justify-center text-[10px] font-mono">S4</span>
+                        <span class="w-6 h-6 rounded bg-neutral-200 dark:bg-neutral-800 flex items-center justify-center text-[10px] font-mono">S5</span>
+                    </div>
+                </div>
+                <!-- Phase 3 -->
+                <div class="p-6 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl">
+                    <div class="text-[10px] text-contract-500 font-bold mb-2 uppercase tracking-widest">Phase III</div>
+                    <h3 class="text-neutral-900 dark:text-white font-serif font-bold mb-2">Synthesis</h3>
+                    <p class="text-xs text-neutral-500">Synthesize analysis and verify citation integrity.</p>
+                    <div class="mt-4 flex gap-1">
+                        <span class="w-6 h-6 rounded bg-neutral-200 dark:bg-neutral-800 flex items-center justify-center text-[10px] font-mono">S6</span>
+                        <span class="w-6 h-6 rounded bg-neutral-200 dark:bg-neutral-800 flex items-center justify-center text-[10px] font-mono">S7</span>
+                        <span class="w-6 h-6 rounded bg-neutral-200 dark:bg-neutral-800 flex items-center justify-center text-[10px] font-mono">S8</span>
+                    </div>
+                </div>
+                <!-- Phase 4 -->
+                <div class="p-6 bg-neutral-900 border border-contract-500/50 rounded-xl shadow-lg ring-1 ring-contract-500/20">
+                    <div class="text-[10px] text-contract-400 font-bold mb-2 uppercase tracking-widest">Phase IV</div>
+                    <h3 class="text-white font-serif font-bold mb-2">Advanced</h3>
+                    <p class="text-xs text-neutral-400">Transitive reasoning and evidentiary grounding.</p>
+                    <div class="mt-4 flex gap-1 text-white">
+                        <span class="w-6 h-6 rounded bg-contract-600 flex items-center justify-center text-[10px] font-mono">S9</span>
+                        <span class="w-6 h-6 rounded bg-contract-600 flex items-center justify-center text-[10px] font-mono">S10</span>
+                    </div>
+                </div>
+            </div>
+
+            <h2>Step Definitions</h2>
+            <div class="overflow-x-auto my-12 border border-neutral-200 dark:border-neutral-800 rounded-lg">
+                <table class="w-full text-left border-collapse text-sm">
+                    <thead class="bg-neutral-50 dark:bg-neutral-900 text-neutral-500">
+                        <tr>
+                            <th class="p-4 border-b border-neutral-200 dark:border-neutral-800">Step</th>
+                            <th class="p-4 border-b border-neutral-200 dark:border-neutral-800">Name</th>
+                            <th class="p-4 border-b border-neutral-200 dark:border-neutral-800">Task</th>
+                            <th class="p-4 border-b border-neutral-200 dark:border-neutral-800">Ground Truth</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-neutral-100 dark:divide-neutral-800">
+                        <tr>
+                            <td class="p-4 font-mono font-bold text-contract-600">S1</td>
+                            <td class="p-4 font-bold">Citation ID</td>
+                            <td class="p-4">Extract case metadata from opinion text.</td>
+                            <td class="p-4 text-xs font-mono">SCDB</td>
+                        </tr>
+                        <tr>
+                            <td class="p-4 font-mono font-bold text-contract-600">S2</td>
+                            <td class="p-4 font-bold">Unknown Authority</td>
+                            <td class="p-4">Find cases citing the anchor case.</td>
+                            <td class="p-4 text-xs font-mono">Shepard's Cite Network</td>
+                        </tr>
+                        <tr>
+                            <td class="p-4 font-mono font-bold text-contract-600">S3</td>
+                            <td class="p-4 font-bold">Validation</td>
+                            <td class="p-4">Report overruling status (Dual-Channel).</td>
+                            <td class="p-4 text-xs font-mono">SCDB + Shepard's</td>
+                        </tr>
+                        <tr>
+                            <td class="p-4 font-mono font-bold text-contract-600">S4</td>
+                            <td class="p-4 font-bold">Fact Extraction</td>
+                            <td class="p-4">Extract disposition and winning party.</td>
+                            <td class="p-4 text-xs font-mono">SCDB Codes</td>
+                        </tr>
+                        <tr>
+                            <td class="p-4 font-mono font-bold text-contract-600">S5</td>
+                            <td class="p-4 font-bold">Treatment</td>
+                            <td class="p-4">Predict treatment relationship (Target vs. Citing).</td>
+                            <td class="p-4 text-xs font-mono">Shepard's agree field</td>
+                        </tr>
+                        <tr>
+                            <td class="p-4 font-mono font-bold text-contract-600">S6</td>
+                            <td class="p-4 font-bold">Synthesis (CB)</td>
+                            <td class="p-4">Synthesis from extracted artifacts (Reasoning).</td>
+                            <td class="p-4 text-xs font-mono">MEE Rubric</td>
+                        </tr>
+                        <tr>
+                            <td class="p-4 font-mono font-bold text-contract-600">S7</td>
+                            <td class="p-4 font-bold">Synthesis (OB)</td>
+                            <td class="p-4">Synthesis with full ResearchPack (RAG).</td>
+                            <td class="p-4 text-xs font-mono">Integration Delta</td>
+                        </tr>
+                        <tr>
+                            <td class="p-4 font-mono font-bold text-contract-600">S8</td>
+                            <td class="p-4 font-bold text-red-600">Integrity Gate</td>
+                            <td class="p-4">FAB gate: Verify no fabricated citations.</td>
+                            <td class="p-4 text-xs font-mono">Deterministic Registry</td>
+                        </tr>
+                        <tr>
+                            <td class="p-4 font-mono font-bold text-contract-600">S9</td>
+                            <td class="p-4 font-bold">Transitive Auth.</td>
+                            <td class="p-4">Trace precedent A → B → C triangle.</td>
+                            <td class="p-4 text-xs font-mono">Jurisdictional Weight</td>
+                        </tr>
+                        <tr>
+                            <td class="p-4 font-mono font-bold text-contract-600">S10</td>
+                            <td class="p-4 font-bold">Evidentiary</td>
+                            <td class="p-4">Outcome prediction from oral arguments.</td>
+                            <td class="p-4 text-xs font-mono">Oyez Transcripts</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h2>Transitive Reasoning</h2>
+            <p>
+                Steps S9 and S10 represent the advanced frontier of the 10-step chain. While S1-S8 test the standard IRAC memo workflow, S9 and S10 test deeper doctrinal understanding—determining how a court's reasoning propagates through a network of citing decisions.
+            </p>
+
+        </article>
+    </main>
+    <script src="../shared/site-shell.js"></script>
+</body>
+</html>

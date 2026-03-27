@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Composite Scoring - LegalChain</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        legalblue: {
+                            50: '#f0f7ff',
+                            100: '#e0effe',
+                            200: '#bae0fd',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#1e3a8a',
+                        }
+                    },
+                    fontFamily: {
+                        serif: ['"Merriweather"', 'serif'],
+                        sans: ['"Inter"', 'sans-serif'],
+                    }
+                }
+            }
+        };
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;0,900;1,300&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <!-- Mermaid removed: keep page readable when JS/CDNs fail -->
+    <link rel="stylesheet" href="../shared/report.css">
+</head>
+<body>
+    <main id="l10-page" data-l10-layout="research" data-l10-sidenav="site" data-l10-sidenav-pos="left">
+        <article class="prose prose-slate dark:prose-invert max-w-4xl mx-auto research-content font-sans">
+            
+            <header class="mb-16 not-prose">
+                <h1 class="text-4xl md:text-5xl font-serif font-black text-slate-900 dark:text-white mb-6 leading-tight">
+                    Calibrated Judgment
+                </h1>
+                <p class="text-xl md:text-2xl text-slate-600 dark:text-slate-300 font-serif leading-relaxed border-l-4 border-amber-500 pl-6">
+                    A balanced scoring architecture that blends deterministic rigor with expert LLM assessment.
+                </p>
+            </header>
+
+            <p class="lead font-serif text-lg leading-loose">
+                LegalChain relies on a "Composite Score" that aggregates three distinct signals: structure, consistency, and reasoning quality. This approach prevents models from gaming the metric with well-formatted hallucinations or technically accurate but irrelevant answers.
+            </p>
+
+            <h2 class="font-serif text-2xl font-bold mt-12 mb-6">The Three Phases</h2>
+            <p>
+                The composite score calculates a weighted average of three critical dimensions.
+            </p>
+
+            <div class="my-12 not-prose">
+                <div class="overflow-x-auto bg-slate-50 dark:bg-slate-900/50 p-6 rounded-xl border border-slate-200 dark:border-slate-800">
+                    <div class="text-center text-sm font-mono text-slate-500 mb-4">Phases feeding the Composite Score</div>
+                    <table class="min-w-full text-sm">
+                        <thead class="text-left text-slate-700 dark:text-slate-200">
+                            <tr class="border-b border-slate-200 dark:border-slate-800">
+                                <th class="py-2 pr-6 font-semibold">Phase</th>
+                                <th class="py-2 pr-6 font-semibold">Weight</th>
+                                <th class="py-2 pr-6 font-semibold">Evaluator</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-slate-700 dark:text-slate-300">
+                            <tr class="border-b border-slate-200/70 dark:border-slate-800/70">
+                                <td class="py-2 pr-6 font-medium">Phase 1: Structure</td>
+                                <td class="py-2 pr-6 font-mono">10%</td>
+                                <td class="py-2 pr-6">Deterministic</td>
+                            </tr>
+                            <tr class="border-b border-slate-200/70 dark:border-slate-800/70">
+                                <td class="py-2 pr-6 font-medium">Phase 2: Consistency</td>
+                                <td class="py-2 pr-6 font-mono">40%</td>
+                                <td class="py-2 pr-6">Deterministic</td>
+                            </tr>
+                            <tr>
+                                <td class="py-2 pr-6 font-medium">Phase 3: Quality</td>
+                                <td class="py-2 pr-6 font-mono">50%</td>
+                                <td class="py-2 pr-6">LLM Judge</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="space-y-12 my-12">
+                <section>
+                    <div class="flex items-center gap-4 mb-4">
+                        <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center font-black text-blue-600 text-xl">1</div>
+                        <h3 class="text-xl font-bold">Phase 1: Structure (10%)</h3>
+                    </div>
+                    <p class="text-slate-600 ml-16">
+                        <strong>"Did the model follow instructions?"</strong><br>
+                        This deterministic check validates the presence of required IRAC sections (Issue, Rule, Application, Conclusion). It ensures basic format compliance.
+                    </p>
+                </section>
+                
+                <section>
+                    <div class="flex items-center gap-4 mb-4">
+                        <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center font-black text-blue-600 text-xl">2</div>
+                        <h3 class="text-xl font-bold">Phase 2: Consistency (40%)</h3>
+                    </div>
+                    <p class="text-slate-600 ml-16">
+                        <strong>"Did the model use the materials?"</strong><br>
+                        This phase checks internal coherence. Does the Conclusion answer the Issue? Does the Rule section cite cases provided in the ResearchPack? It penalizes generic answers that ignore the specific evidence.
+                    </p>
+                </section>
+                
+                <section>
+                    <div class="flex items-center gap-4 mb-4">
+                        <div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center font-black text-red-600 text-xl">3</div>
+                        <h3 class="text-xl font-bold">Phase 3: Quality (50%)</h3>
+                    </div>
+                    <p class="text-slate-600 ml-16">
+                        <strong>"Is the reasoning sound?"</strong><br>
+                        This is the only phase that uses an LLM judge. It evaluates the logic, nuance, and persuasiveness of the argument using a calibrated rubric.
+                    </p>
+                </section>
+            </div>
+
+            <h2 class="font-serif text-2xl font-bold mt-12 mb-6">Why These Weights?</h2>
+            <div class="bg-slate-50 dark:bg-slate-900/50 p-8 rounded-xl border border-slate-200 dark:border-slate-800 my-8">
+                <blockquote class="italic text-lg text-slate-700 dark:text-slate-300">
+                    "Quality matters most. Engagement matters significantly. Structure matters, but is a baseline."
+                </blockquote>
+            </div>
+            <p>
+                We weight <strong>Quality (50%)</strong> highest because legal analysis is fundamentally about reasoning. A perfectly formatted document with bad logic is useless.
+            </p>
+            <p>
+                <strong>Consistency (40%)</strong> is weighted heavily to punish "lazy" LLMs that hallucinate generic principles instead of synthesizing the specific cases provided (RAG adherence).
+            </p>
+            <p>
+                <strong>Structure (10%)</strong> is kept low because satisfying format requirements is trivial for modern models and does not correlate strongly with legal intelligence.
+            </p>
+
+            <h2 class="font-serif text-2xl font-bold mt-12 mb-6">Interaction with Gates</h2>
+            <p>
+                The Composite Score is only calculated if the response passes all <strong>Integrity Gates</strong>. If a response contains a fabricated citation (S8 failure), the entire chain is voided.
+            </p>
+            
+            <div class="my-8 not-prose p-6 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-center">
+                <div class="text-red-800 dark:text-red-300 font-mono font-bold block mb-2">IF Integrity_Gate_Failed THEN</div>
+                <div class="text-4xl font-black text-red-600 dark:text-red-400">Score = 0</div>
+                <div class="text-sm text-red-500 mt-2">Regardless of Quality or Structure</div>
+            </div>
+
+        </article>
+    </main>
+    <script src="../shared/site-shell.js"></script>
+</body>
+</html>

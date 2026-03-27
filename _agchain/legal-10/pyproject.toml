@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "legal-10"
+version = "0.1.0"
+description = "A Chained Legal Reasoning Benchmark for Large Language Models"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+dynamic = ["dependencies"]
+
+[project.scripts]
+l10-run-chain = "scripts.run_chain:main"
+l10-validate-joins = "scripts.validate_joins:main"
+l10-serve-api = "scripts.serve_api:main"
+
+[tool.setuptools]
+packages = { find = {} }
+
+[tool.setuptools.dynamic]
+dependencies = { file = ["requirements.txt"] }
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+  "integration: integration tests that may require network/HF data",
+]

@@ -1,0 +1,12 @@
+# robots.txt for legalchain.run
+# https://www.legalchain.run/
+
+User-agent: *
+Allow: /
+
+# Sitemap location
+Sitemap: https://www.legalchain.run/sitemap.xml
+
+# Disallow archived/legacy content
+Disallow: /_archive/
+Disallow: /_legacy/

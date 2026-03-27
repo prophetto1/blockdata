@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Context-Adaptive Scoring - LegalChain</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>tailwind.config = { darkMode: "class" };</script>
+</head>
+<body class="bg-neutral-950 text-neutral-400 font-sans antialiased">
+    <main id="l10-page" data-l10-layout="research" data-l10-sidenav="site" data-l10-sidenav-pos="left">
+        <article class="prose prose-slate dark:prose-invert max-w-4xl mx-auto research-content">
+
+            <header class="mb-10 border-b border-neutral-800 pb-6">
+                <h1 class="text-4xl font-serif font-light text-white">Context-Adaptive Scoring</h1>
+                <p class="serif-dense mt-4 text-neutral-500 text-sm leading-relaxed max-w-2xl font-serif">
+                    Expected behavior changes based on what information was available—Mode A vs Mode B scoring for CC5.
+                </p>
+            </header>
+
+            <div class="grid grid-cols-2 gap-0 border-t border-l border-neutral-800 bg-neutral-900/10 mb-12">
+                <div class="border-r border-b border-neutral-800 p-4">
+                    <div class="text-[10px] font-mono text-neutral-600 uppercase mb-1">Mode A</div>
+                    <div class="text-xl font-mono text-amber-500">NO CLAIMS</div>
+                    <div class="text-[10px] text-neutral-500">S5 failed/skipped</div>
+                </div>
+                <div class="border-r border-b border-neutral-800 p-4">
+                    <div class="text-[10px] font-mono text-neutral-600 uppercase mb-1">Mode B</div>
+                    <div class="text-xl font-mono text-emerald-500">MUST MATCH</div>
+                    <div class="text-[10px] text-neutral-500">S5 succeeded</div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+                <div class="space-y-8">
+                    <section>
+                        <div class="text-[10px] font-mono text-neutral-600 uppercase mb-2">The Adaptive Principle</div>
+                        <p class="text-sm text-neutral-400 font-serif leading-relaxed">
+                            When S5 (relationship analysis) succeeded, the synthesis <strong class="text-white">must</strong> include relationship claims consistent with S5's findings (Mode B). When S5 failed or was skipped, the synthesis should <strong class="text-white">not</strong> fabricate relationship assertions (Mode A).
+                        </p>
+                    </section>
+
+                    <section class="border border-neutral-800 p-5 bg-neutral-900/10">
+                        <div class="text-[10px] font-mono text-blue-500 mb-4">[ MODE SELECTION ]</div>
+                        <div class="font-mono text-[11px] space-y-2">
+                            <div class="flex justify-between">
+                                <span class="text-neutral-500">S5 status</span>
+                                <span class="text-neutral-500">→</span>
+                                <span class="text-neutral-300">Mode</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-red-400">FAILED/SKIPPED</span>
+                                <span class="text-neutral-500">→</span>
+                                <span class="text-amber-500">A</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-emerald-400">OK</span>
+                                <span class="text-neutral-500">→</span>
+                                <span class="text-emerald-500">B</span>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <div class="space-y-8">
+                    <section>
+                        <div class="text-[10px] font-mono text-neutral-600 uppercase mb-2">Argument Context Filtering</div>
+                        <p class="text-sm text-neutral-400 font-serif leading-relaxed">
+                            The system distinguishes between the model <em>asserting</em> a relationship versus <em>quoting</em> a party's argument. "Petitioner argues the precedent should be distinguished" is not the model claiming distinction—it's accurate case summarization.
+                        </p>
+                    </section>
+
+                    <div class="p-4 bg-neutral-900/50 border border-neutral-800">
+                        <div class="text-[10px] font-mono text-neutral-500 uppercase mb-2">Fair Evaluation</div>
+                        <p class="text-[10px] text-neutral-500 font-serif italic">Context-adaptive scoring prevents penalizing models for omitting analysis they couldn't perform (no evidence) while catching those that hallucinate relationships without evidentiary basis.</p>
+                    </div>
+                </div>
+            </div>
+
+        </article>
+    </main>
+    <script src="../shared/site-shell.js"></script>
+</body>
+</html>

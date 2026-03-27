@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Donate - LegalChain</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,700&family=Libre+Baskerville:ital,wght@0,400;1,400&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            serif: ['"EB Garamond"', 'serif'],
+            classic: ['"Libre Baskerville"', 'serif'],
+            mono: ['ui-monospace', 'monospace'],
+          },
+          colors: {
+            void: '#050505',
+            paper: '#f4f4f5',
+            signal: '#dc2626',
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Absolute overrides */
+    body {
+      background-color: #ffffff !important;
+      font-family: "EB Garamond", serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    .dark body {
+      background-color: #050505 !important;
+    }
+    
+    .content-serif {
+      font-family: "EB Garamond", serif !important;
+      border-bottom: none !important; 
+      padding-bottom: 0 !important;
+      text-transform: none !important;
+    }
+    
+    .label-mono {
+      font-family: ui-monospace, monospace !important;
+      text-transform: uppercase !important;
+      letter-spacing: 0.1em;
+    }
+
+    ::selection { background: #dc2626; color: white; }
+  </style>
+</head>
+<body class="bg-white dark:bg-void text-void dark:text-gray-200 min-h-screen transition-colors duration-500 selection:bg-signal selection:text-white">
+
+  <!-- TOP BAR (Managed by site-shell.js) -->
+  <div id="nav-container"></div>
+
+  <!-- SINGLE COLUMN CONTENT CONTAINER -->
+  <main id="l10-page" data-l10-layout="about" class="min-h-screen py-24 px-6 md:px-12 w-full mx-auto">
+
+    <!-- HEADER SECTION -->
+    <header class="mb-12 max-w-6xl">
+      <h1 class="content-serif italic text-3xl md:text-4xl lg:text-4xl leading-tight text-void dark:text-white mb-12">
+        Support the infrastructure of <span class="font-semibold">rigorous AI evaluation.</span>
+      </h1>
+    </header>
+
+    <div class="space-y-12">
+      
+      <!-- Why Fund Us Block -->
+      <article class="grid md:grid-cols-12 gap-8 items-start">
+        <div class="md:col-span-8 space-y-8 max-w-3xl">
+          <p class="content-serif text-lg leading-relaxed text-gray-700 dark:text-gray-300">
+            LegalChain is an independent research project building rigorous evaluation infrastructure for AI legal reasoning. This work requires significant compute resources, data licensing, and dedicated development time. Your contribution directly enables continued progress on this open-source benchmark.
+          </p>
+        </div>
+      </article>
+
+      <!-- What It Funds Block -->
+      <article class="grid md:grid-cols-12 gap-8 items-start">
+        <div class="md:col-span-8 grid md:grid-cols-2 gap-12 max-w-5xl">
+            <div class="space-y-4">
+               <h4 class="label-mono text-xs text-teal-500 border-b border-gray-200 dark:border-gray-800 pb-2">Compute & API Costs</h4>
+               <p class="content-serif text-lg text-gray-700 dark:text-gray-300 leading-relaxed">
+                 Running comprehensive evaluations across multiple LLMs requires substantial API credits and compute infrastructure.
+               </p>
+            </div>
+            <div class="space-y-4">
+               <h4 class="label-mono text-xs text-teal-500 border-b border-gray-200 dark:border-gray-800 pb-2">Data & Infrastructure</h4>
+               <p class="content-serif text-lg text-gray-700 dark:text-gray-300 leading-relaxed">
+                 Maintaining the evaluation harness, hosting datasets, and keeping the benchmark suite current with new model releases.
+               </p>
+            </div>
+            <div class="space-y-4">
+               <h4 class="label-mono text-xs text-teal-500 border-b border-gray-200 dark:border-gray-800 pb-2">Open-Source Dev</h4>
+               <p class="content-serif text-lg text-gray-700 dark:text-gray-300 leading-relaxed">
+                 Dedicated time to improve the evaluation methodology, expand the case corpus, and publish reproducible research.
+               </p>
+            </div>
+        </div>
+      </article>
+
+      <!-- Ways to Contribute Block (PAYPAL POPUP IMPLEMENTATION) -->
+      <article class="grid md:grid-cols-12 gap-8 items-start">
+        <div class="md:col-span-8 grid md:grid-cols-2 gap-12 max-w-5xl">
+            
+            <div class="space-y-4">
+               <h4 class="label-mono text-xs text-teal-500 border-b border-gray-200 dark:border-gray-800 pb-2">PayPal</h4>
+               
+               <!-- BUTTON TO TRIGGER MODAL -->
+               <button onclick="document.getElementById('qr-modal').classList.remove('hidden')" 
+                       class="group inline-flex items-center gap-3 px-6 py-4 bg-void dark:bg-white text-white dark:text-black font-mono text-xs uppercase tracking-widest hover:opacity-90 transition-all">
+                 <span>Donate via PayPal</span>
+                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+               </button>
+               
+               <p class="content-serif text-lg text-gray-700 dark:text-gray-300 leading-relaxed pt-2">
+                 Scan our QR code via the PayPal app for one-time or recurring contributions.
+               </p>
+            </div>
+
+        </div>
+      </article>
+
+      <!-- Visual Footer -->
+      <footer class="pt-12 border-t border-black/10 dark:border-white/10 mt-24">
+        <div class="flex justify-center gap-6 font-mono text-xs uppercase tracking-widest">
+          <a href="/about/index.html" class="px-8 py-4 bg-void dark:bg-white text-white dark:text-black hover:opacity-90">
+            Who We Are
+          </a>
+          <a href="/about/mission.html" class="px-8 py-4 border border-gray-300 dark:border-gray-700 text-void dark:text-white hover:bg-gray-100 dark:hover:bg-gray-900 transition-colors">
+            Mission
+          </a>
+        </div>
+      </footer>
+
+    </div>
+
+    <!-- MODAL POPUP (Hidden by default) -->
+    <div id="qr-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm transition-opacity opacity-0 duration-300" 
+         onclick="closeModal()">
+      <div class="bg-white dark:bg-gray-900 p-8 rounded-none shadow-2xl transform transition-all scale-95 duration-300 max-w-sm w-full mx-4 relative border border-gray-200 dark:border-gray-800" 
+           onclick="event.stopPropagation()">
+        
+        <!-- Close button -->
+        <button onclick="closeModal()" class="absolute top-4 right-4 text-gray-400 hover:text-black dark:hover:text-white">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+
+        <div class="text-center space-y-6">
+          <div class="flex justify-center mb-4">
+             <!-- Optional Icon or Title -->
+             <span class="font-mono text-xs uppercase tracking-widest text-teal-600 dark:text-teal-400 border-b border-teal-500 pb-1">Secure Donation</span>
+          </div>
+          
+          <div class="bg-white p-4 inline-block rounded-lg shadow-inner">
+             <img src="../assets/images/paypal-qr.png" alt="PayPal QR Code" class="w-56 h-56 object-contain">
+          </div>
+          
+          <div class="space-y-2">
+            <h3 class="font-serif text-xl text-void dark:text-white">Scan to Donate</h3>
+            <p class="font-mono text-xs text-gray-500 uppercase tracking-wider">LegalChain Research</p>
+            <p class="font-serif text-sm text-gray-600 dark:text-gray-400 mt-2">Open the PayPal app and scan this code to contribute securely.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+  
+  <script src="../shared/site-shell.js"></script>
+  
+  <script>
+    // Simple Modal Logic with Animation Handling
+    const modal = document.getElementById('qr-modal');
+    
+    // Override the onclick to include animation logic
+    document.querySelector('button[onclick*="qr-modal"]').onclick = function() {
+        modal.classList.remove('hidden');
+        // Small delay to allow display:block to apply before opacity transition
+        setTimeout(() => {
+            modal.classList.remove('opacity-0');
+            modal.querySelector('div').classList.remove('scale-95');
+            modal.querySelector('div').classList.add('scale-100');
+        }, 10);
+    };
+
+    function closeModal() {
+        modal.classList.add('opacity-0');
+        modal.querySelector('div').classList.remove('scale-100');
+        modal.querySelector('div').classList.add('scale-95');
+        
+        // Wait for transition to finish before hiding
+        setTimeout(() => {
+            modal.classList.add('hidden');
+        }, 300);
+    }
+  </script>
+
+</body>
+</html>

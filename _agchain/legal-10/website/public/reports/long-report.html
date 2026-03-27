@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Long Report (Test) - LegalChain</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = { darkMode: "class" };
+    </script>
+  </head>
+  <body class="min-h-screen bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 transition-colors">
+    <main id="l10-page" data-l10-layout="article" data-l10-sidenav="toc" data-l10-sidenav-pos="right" data-l10-typography="report" data-l10-content-width="narrow" style="max-width: 48rem; margin-inline: auto;">
+      <h1>Empirical Final Design (Long Report Test)</h1>
+      <p>
+        This page exists to stress-test report typography and the right-side Contents TOC (scrolling, active section highlight,
+        tables, lists, code blocks, and quotes).
+      </p>
+
+      <h2>Summary</h2>
+      <p>
+        We suspect aggressive quantization can create a “silent defect zone” where fluency remains stable while multi-step legal
+        reasoning degrades. This report format is designed to make those failures observable with consistent structure.
+      </p>
+
+      <h3>Key metrics</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Metric</th>
+            <th>Definition</th>
+            <th>Why it matters</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Chain completion</td>
+            <td>Percent of instances that pass all steps and gates</td>
+            <td>Captures compounding error across steps</td>
+          </tr>
+          <tr>
+            <td>Citation integrity</td>
+            <td>Percent of responses without fabricated authorities</td>
+            <td>Hard constraint for legal work product</td>
+          </tr>
+          <tr>
+            <td>Surface fluency vs reasoning proxy</td>
+            <td>Drop in “validate + synthesize” under compression</td>
+            <td>Detects reasoning fragility vs surface fluency</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>Background</h2>
+      <p>
+        In production, vendors routinely trade precision for throughput. The user sees faster responses; the risk is a selective
+        drop in reasoning capacity. A benchmark must be chain-aware to detect that.
+      </p>
+
+      <h3>Design principle</h3>
+      <blockquote>
+        Don’t grade the plan; grade the memo. Planning is implicit in whether synthesis succeeds.
+      </blockquote>
+
+      <h2>Method</h2>
+      <p>
+        The report structure below is intentionally repetitive: each section has the same density and spacing so that visual rhythm
+        stays stable while you scroll, and the TOC remains useful.
+      </p>
+
+      <h3>Inputs</h3>
+      <ul>
+        <li>Run id, timestamp, and model configuration</li>
+        <li>Dataset slice and coverage constraints</li>
+        <li>Decoding parameters and determinism settings</li>
+      </ul>
+
+      <h3>Outputs</h3>
+      <ul>
+        <li>Per-step metrics and chain score</li>
+        <li>Gate outcomes (pass/fail) with rationale</li>
+        <li>Artifact bundle hashes for auditability</li>
+      </ul>
+
+      <h2>Implementation notes</h2>
+      <p>
+        This block checks code styling in report mode: inline <code>code</code>, and fenced blocks.
+      </p>
+      <pre><code>run_id = "l10_demo_2025_01_01"
+model = {"name": "example", "precision": "4-bit", "ptq": "awq"}
+thresholds = {"citation_integrity": "strict"}</code></pre>
+
+      <h2>Findings</h2>
+      <p>
+        The sections below are intentionally long to test scroll behavior and TOC highlighting over many headings.
+      </p>
+
+      <h3>F1: Surface fluency stability</h3>
+      <p>
+        We often observe stable grammar, formatting, and confident tone even when legal validation quality drops. This mismatch is
+        exactly why a report layout needs strong structure and navigability.
+      </p>
+
+      <h3>F2: Reasoning fragility under compression</h3>
+      <p>
+        Under aggressive PTQ, rare but critical weight directions can clip first. In legal tasks, those are often activated during
+        validation, distinguishing, and synthesis—where multi-factor tests and exception handling matter.
+      </p>
+
+      <h2>Section stress test A</h2>
+      <p>
+        Scroll rhythm test paragraph. Repeatable spacing helps you notice anomalies in charts/tables rather than in inconsistent
+        typography.
+      </p>
+      <h3>A.1</h3>
+      <p>
+        Dense paragraph test. Dense paragraph test. Dense paragraph test. Dense paragraph test. Dense paragraph test. Dense
+        paragraph test. Dense paragraph test. Dense paragraph test.
+      </p>
+      <h3>A.2</h3>
+      <p>
+        Dense paragraph test. Dense paragraph test. Dense paragraph test. Dense paragraph test. Dense paragraph test. Dense
+        paragraph test. Dense paragraph test. Dense paragraph test.
+      </p>
+
+      <h2>Section stress test B</h2>
+      <p>
+        Dense paragraph test. Dense paragraph test. Dense paragraph test. Dense paragraph test. Dense paragraph test.
+      </p>
+      <h3>B.1</h3>
+      <p>
+        Dense paragraph test. Dense paragraph test. Dense paragraph test. Dense paragraph test. Dense paragraph test. Dense
+        paragraph test.
+      </p>
+      <h3>B.2</h3>
+      <p>
+        Dense paragraph test. Dense paragraph test. Dense paragraph test. Dense paragraph test. Dense paragraph test. Dense
+        paragraph test.
+      </p>
+
+      <h2>Section stress test C</h2>
+      <p>
+        Dense paragraph test. Dense paragraph test. Dense paragraph test. Dense paragraph test. Dense paragraph test.
+      </p>
+      <h3>C.1</h3>
+      <p>
+        Dense paragraph test. Dense paragraph test. Dense paragraph test. Dense paragraph test. Dense paragraph test. Dense
+        paragraph test.
+      </p>
+      <h3>C.2</h3>
+      <p>
+        Dense paragraph test. Dense paragraph test. Dense paragraph test. Dense paragraph test. Dense paragraph test. Dense
+        paragraph test.
+      </p>
+
+      <h2>Section stress test D</h2>
+      <p>
+        Dense paragraph test. Dense paragraph test. Dense paragraph test. Dense paragraph test. Dense paragraph test.
+      </p>
+      <h3>D.1</h3>
+      <p>
+        Dense paragraph test. Dense paragraph test. Dense paragraph test. Dense paragraph test. Dense paragraph test. Dense
+        paragraph test.
+      </p>
+      <h3>D.2</h3>
+      <p>
+        Dense paragraph test. Dense paragraph test. Dense paragraph test. Dense paragraph test. Dense paragraph test. Dense
+        paragraph test.
+      </p>
+
+      <h2>Appendix</h2>
+      <p>
+        Quick checklist for report UI:
+      </p>
+      <ol>
+        <li>TOC stays visible and scrollable</li>
+        <li>Active section highlight updates smoothly</li>
+        <li>Tables remain readable in light and dark</li>
+        <li>Code blocks don’t overflow horizontally</li>
+      </ol>
+    </main>
+
+    <script src="../shared/site-shell.js"></script>
+  </body>
+</html>

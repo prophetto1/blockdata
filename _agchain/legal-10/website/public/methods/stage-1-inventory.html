@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Citation Inventory - Methodology A</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        legalblue: {
+                            50: '#f0f7ff',
+                            100: '#e0effe',
+                            200: '#bae0fd',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#1e3a8a',
+                        }
+                    }
+                }
+            }
+        };
+    </script>
+</head>
+<body class="bg-neutral-950 text-neutral-400 font-sans antialiased">
+    <main id="l10-page" data-l10-layout="research" data-l10-sidenav="site" data-l10-sidenav-pos="left">
+        <article class="max-w-4xl mx-auto research-content">
+            
+            <!-- HEADER BLOCK: SLIDE STYLE -->
+            <header class="mb-10 border-b border-neutral-800 pb-6">
+                <h1 class="text-4xl font-serif font-light text-white">Citation Inventory</h1>
+                <p class="serif-dense mt-4 text-neutral-500 text-sm leading-relaxed max-w-2xl font-serif">
+                    Stage 1 performs a deterministic scan of Supreme Court majority opinions. It decomposes legal text into atomic citation occurrences (S1), governed by a strict I/O contract.
+                </p>
+            </header>
+
+            <!-- STATS GRID: SHARP & DENSE -->
+            <div class="grid grid-cols-3 gap-0 border-t border-l border-neutral-800 bg-neutral-900/10 mb-12">
+                <div class="border-r border-b border-neutral-800 p-4">
+                    <div class="text-[10px] font-mono text-neutral-600 uppercase mb-1">Anchor Specs</div>
+                    <div class="text-xl font-mono text-white">27,733</div>
+                    <div class="text-[10px] text-neutral-500">Majority Opinions</div>
+                </div>
+                <div class="border-r border-b border-neutral-800 p-4">
+                    <div class="text-[10px] font-mono text-neutral-600 uppercase mb-1">Extraction</div>
+                    <div class="text-xl font-mono text-white">378,938</div>
+                    <div class="text-[10px] text-neutral-500">Raw Occurrences</div>
+                </div>
+                <div class="border-r border-b border-neutral-800 p-4">
+                    <div class="text-[10px] font-mono text-neutral-600 uppercase mb-1">Unique Set</div>
+                    <div class="text-xl font-mono text-white">~67k</div>
+                    <div class="text-[10px] text-neutral-500">Verified Cites</div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+                <!-- LEFT COLUMN -->
+                <div class="space-y-8">
+                    <section>
+                        <div class="text-[10px] font-mono text-neutral-600 uppercase mb-2">Extraction Methodology</div>
+                        <p class="text-sm text-neutral-400 font-serif leading-relaxed">
+                            Unlike naive approaches that deduplicate cases immediately, Stage 1 preserves every occurrence. This captures <strong>Frequency Signal</strong> and <strong>Position Signal</strong>—distinguishing cert-defining citations from boilerplate footnotes.
+                        </p>
+                    </section>
+
+                    <section class="border border-neutral-800 p-5 bg-neutral-900/20">
+                        <div class="text-[10px] font-mono text-blue-500 mb-4">[ PIPELINE FLOW ]</div>
+                        <div class="space-y-3">
+                            <div class="flex items-center gap-4">
+                                <span class="w-8 text-[10px] font-mono text-neutral-700">01</span>
+                                <div class="text-xs text-neutral-300 font-mono">load_anchor(caseId)</div>
+                            </div>
+                            <div class="flex items-center gap-4 border-l border-neutral-800 ml-4 h-4"></div>
+                            <div class="flex items-center gap-4">
+                                <span class="w-8 text-[10px] font-mono text-neutral-700">02</span>
+                                <div class="text-xs text-neutral-300 font-mono">scan_patterns(regex)</div>
+                            </div>
+                            <div class="flex items-center gap-4 border-l border-neutral-800 ml-4 h-4"></div>
+                            <div class="flex items-center gap-4 text-blue-400">
+                                <span class="w-8 text-[10px] font-mono text-neutral-700">03</span>
+                                <div class="text-xs font-mono">record_offsets()</div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- RIGHT COLUMN -->
+                <div>
+                    <div class="text-[10px] font-mono text-neutral-600 uppercase mb-4">Parquet Schema: citation_inventory</div>
+                    <table class="w-full text-left border-collapse font-mono text-[10px]">
+                        <thead>
+                            <tr class="border-b border-neutral-800">
+                                <th class="py-2 text-neutral-600 font-normal">Column</th>
+                                <th class="py-2 text-neutral-600 font-normal">Type</th>
+                                <th class="py-2 text-neutral-600 font-normal">Role</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-neutral-900">
+                            <tr>
+                                <td class="py-2 text-neutral-200">anchor_caseId</td>
+                                <td class="py-2 text-blue-400">string</td>
+                                <td class="py-2 text-neutral-500 italic">Primary PK</td>
+                            </tr>
+                            <tr>
+                                <td class="py-2 text-neutral-200">cite_type</td>
+                                <td class="py-2 text-blue-400">string</td>
+                                <td class="py-2 text-neutral-500 italic">Reporter</td>
+                            </tr>
+                            <tr>
+                                <td class="py-2 text-neutral-200">normalized_cite</td>
+                                <td class="py-2 text-blue-400">string</td>
+                                <td class="py-2 text-neutral-500 italic">Joint-Key</td>
+                            </tr>
+                            <tr>
+                                <td class="py-2 text-neutral-200">start / end</td>
+                                <td class="py-2 text-blue-400">int</td>
+                                <td class="py-2 text-neutral-500 italic">Spatial</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="mt-8">
+                        <div class="text-[10px] font-mono text-neutral-600 uppercase mb-4">Coverage Stats</div>
+                        <div class="space-y-4">
+                            <div>
+                                <div class="flex justify-between text-[10px] font-mono mb-1">
+                                    <span class="text-neutral-500 uppercase">U.S. Reports</span>
+                                    <span class="text-blue-500">85.4%</span>
+                                </div>
+                                <div class="w-full h-[1px] bg-neutral-900">
+                                    <div class="bg-blue-600 h-full" style="width: 85.4%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-[10px] font-mono mb-1">
+                                    <span class="text-neutral-500 uppercase">Federal Reporters</span>
+                                    <span class="text-indigo-500">10.1%</span>
+                                </div>
+                                <div class="w-full h-[1px] bg-neutral-900">
+                                    <div class="bg-indigo-600 h-full" style="width: 10.1%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </article>
+    </main>
+    <script src="../shared/site-shell.js"></script>
+</body>
+</html>

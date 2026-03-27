@@ -89,6 +89,28 @@ web-docs/*.log
 
 # External repos / clones
 external/
+_agentDev/
+tmp/
+
+# _agchain
+_agchain/_reference/
+_agchain/.*
+!_agchain/.gitattributes
+!_agchain/.editorconfig
+!_agchain/.env.example
+!_agchain/.hub_state
+_agchain/-personal-/
+_agchain/-refs/
+_agchain/_platformDirections/
+_agchain/agchain-416e399dbaa0.json
+_agchain/datasets/
+_agchain/docs/
+docs/agchain/
+_agchain/docs-site/dist/
+_agchain/legal-10/src/integrations/inspect-ai/
+_agchain/legal-10/pitch-deck/out/
+_agchain/legal-10/pitch-deck/package-lock.json
+_agchain/**/__pycache__/
 
 # pnpm home cache
 .pnpm-home/

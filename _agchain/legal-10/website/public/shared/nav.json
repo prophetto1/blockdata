@@ -1,0 +1,379 @@
+{
+  "brand": {
+    "title": "LegalChain",
+    "href": "/"
+  },
+  "top": [
+    {
+      "title": "Methodology",
+      "href": "/methods/index.html",
+      "aliases": [
+        "/our-methods.html",
+        "/methods",
+        "/methods/",
+        "/methods/*"
+      ],
+      "side": [
+        {
+          "title": "Start Here",
+          "href": "/methods/index.html"
+        },
+        {
+          "title": "Data & Corpus",
+          "href": "/methods/case-universe.html",
+          "children": [
+            {
+              "title": "SCDB Case Universe",
+              "href": "/methods/case-universe.html"
+            },
+            {
+              "title": "CAP Corpus + Metadata",
+              "href": "/methods/cap-metadata.html"
+            },
+            {
+              "title": "Fowler Authority Integration",
+              "href": "/methods/fowler-authority.html"
+            },
+            {
+              "title": "K Rule Authority Selection",
+              "href": "/methods/k-rule-authority-selection.html"
+            },
+            {
+              "title": "Data Inventory & Lineage",
+              "href": "/methods/data-inventory.html"
+            },
+            {
+              "title": "Citation Inventory",
+              "href": "/methods/stage-1-inventory.html"
+            },
+            {
+              "title": "Federal\u2192CAP Crosswalk",
+              "href": "/methods/stage-2-crosswalk.html"
+            },
+            {
+              "title": "SCOTUS\u2192SCOTUS Crosswalk",
+              "href": "/methods/stage-2b-scotus.html"
+            },
+            {
+              "title": "Unique Authority Definition",
+              "href": "/methods/unique-authority.html"
+            },
+            {
+              "title": "CAP Byte Index",
+              "href": "/methods/stage-3-byte-index.html"
+            }
+          ]
+        },
+        {
+          "title": "Evaluation Pipeline",
+          "href": "/methods/evaluation-pipeline.html",
+          "children": [
+            {
+              "title": "Research Execution",
+              "href": "/methods/research-execution.html"
+            },
+            {
+              "title": "Chained Evaluation",
+              "href": "/methods/chained-evaluation.html"
+            },
+            {
+              "title": "Stateful Delivery Model",
+              "href": "/methods/stateful-delivery-model.html"
+            },
+            {
+              "title": "Atomic Skills",
+              "href": "/methods/atomic-skills.html"
+            },
+            {
+              "title": "Why Chaining",
+              "href": "/methods/why-chaining.html"
+            },
+            {
+              "title": "Graceful Degradation",
+              "href": "/methods/graceful-degradation.html"
+            },
+            {
+              "title": "Contracts",
+              "href": "/methods/step-contracts.html"
+            },
+            {
+              "title": "Runner/Executor Semantics",
+              "href": "/methods/runner-semantics.html"
+            },
+            {
+              "title": "Closed-Book vs Open-Book",
+              "href": "/methods/closed-book-open-book.html"
+            },
+            {
+              "title": "Transitive Authority (S9)",
+              "href": "/methods/transitive-authority.html"
+            },
+            {
+              "title": "ResearchPack Injection (S7)",
+              "href": "/methods/rp-injection.html"
+            }
+          ]
+        },
+        {
+          "title": "Scoring & Judging",
+          "href": "/methods/scoring-judging.html",
+          "children": [
+            {
+              "title": "Hybrid Scoring (S6)",
+              "href": "/methods/hybrid-scoring.html"
+            },
+            {
+              "title": "Chain Consistency Checks",
+              "href": "/methods/chain-consistency-checks.html"
+            },
+            {
+              "title": "Context-Adaptive Scoring",
+              "href": "/methods/context-adaptive-scoring.html"
+            },
+            {
+              "title": "Deterministic Scoring Map",
+              "href": "/methods/deterministic-scoring.html"
+            },
+            {
+              "title": "LLM Judge Policy",
+              "href": "/methods/judge-policy.html"
+            },
+            {
+              "title": "Composite Scoring",
+              "href": "/methods/composite-scoring.html"
+            },
+            {
+              "title": "Citation Integrity Gate (S8)",
+              "href": "/methods/citation-integrity-gate.html"
+            },
+            {
+              "title": "Integrity Policies",
+              "href": "/methods/integrity-policies.html"
+            }
+          ]
+        },
+        {
+          "title": "Artifacts & Reproducibility",
+          "href": "/methods/artifacts-reproducibility.html",
+          "children": [
+            {
+              "title": "Evaluation Units (EU)",
+              "href": "/methods/evaluation-units.html"
+            },
+            {
+              "title": "ResearchPacks (RP)",
+              "href": "/methods/research-packs.html"
+            },
+            {
+              "title": "Contracts & Schemas",
+              "href": "/methods/contracts-schemas.html"
+            },
+            {
+              "title": "Frozen Context Spec",
+              "href": "/methods/frozen-context-spec.html"
+            },
+            {
+              "title": "Run Artifacts",
+              "href": "/methods/run-artifacts.html"
+            }
+          ]
+        },
+        {
+          "title": "Validation Checks",
+          "href": "/methods/validation-checks.html",
+          "children": [
+            {
+              "title": "The Canary Mechanism",
+              "href": "/methods/canary-depth.html"
+            },
+            {
+              "title": "Synthetic (Fake) Case Traps",
+              "href": "/methods/synthetic-traps.html"
+            },
+            {
+              "title": "Evaluation Observability",
+              "href": "/methods/evaluation-observability.html"
+            }
+          ]
+        },
+        {
+          "title": "Quantization & Reasoning Performance",
+          "href": "/methods/quantization/index.html",
+          "children": [
+            {
+              "title": "Overview",
+              "href": "/methods/quantization/index.html"
+            },
+            {
+              "title": "PTQ Methods",
+              "href": "/methods/quantization/ptq-methods.html"
+            },
+            {
+              "title": "Stacking Problem",
+              "href": "/methods/quantization/stacking-problem.html"
+            },
+            {
+              "title": "Precision-Tier Evaluation",
+              "href": "/methods/quantization/precision-tier-evaluation.html"
+            }
+          ]
+        },
+        {
+          "title": "Problems We Solve",
+          "href": "/methods/problems-we-solve.html"
+        }
+      ]
+    },
+    {
+      "title": "Benchmarks",
+      "href": "/benchmarks/index.html",
+      "aliases": [
+        "/benchmarks/index.html",
+        "/benchmarks",
+        "/benchmarks/",
+        "/benchmarks/*",
+        "/benchmarks/l7",
+        "/benchmarks/l7/",
+        "/benchmarks/l7/index.html",
+        "/benchmarks/atomic",
+        "/benchmarks/atomic/",
+        "/benchmarks/atomic/index.html",
+        "/benchmarks/atomic/design.html",
+        "/benchmarks/atomic/skills.html",
+        "/benchmarks/agentic",
+        "/benchmarks/agentic/",
+        "/benchmarks/agentic/index.html",
+        "/benchmarks/agentic/design.html",
+        "/pitch-deck",
+        "/pitch-deck/",
+        "/pitch-deck/index.html"
+      ],
+      "side": [
+        {
+          "title": "Overview",
+          "href": "/benchmarks/index.html"
+        },
+        {
+          "title": "Legal-10",
+          "href": "/benchmarks/index.html"
+        },
+        {
+          "title": "Atomic",
+          "href": "/benchmarks/atomic/index.html"
+        },
+        {
+          "title": "L7",
+          "href": "/benchmarks/l7/index.html"
+        },
+        {
+          "title": "Quantization",
+          "href": "/benchmarks/bit-precision/index.html"
+        },
+        {
+          "title": "Roadmap",
+          "href": "/benchmarks/roadmap/index.html"
+        },
+        {
+          "title": "Pitch Deck",
+          "href": "/pitch-deck/"
+        }
+      ]
+    },
+    {
+      "title": "Leaderboard",
+      "href": "/leaderboard/index.html",
+      "aliases": [
+        "/leaderboard/index.html",
+        "/leaderboard/",
+        "/leaderboard/leaderboard_sub_1.html",
+        "/leaderboard/leaderboard_sub_2.html"
+      ],
+      "side": [
+        {
+          "title": "Main Leaderboard",
+          "href": "/leaderboard/index.html"
+        },
+        {
+          "title": "Charts & Analysis",
+          "href": "/leaderboard/leaderboard_sub_1.html"
+        },
+        {
+          "title": "Deep Dive",
+          "href": "/leaderboard/leaderboard_sub_2.html"
+        }
+      ]
+    },
+    {
+      "title": "Reports",
+      "href": "/reports/",
+      "aliases": [
+        "/reports/index.html",
+        "/reports/",
+        "/reports.html",
+        "/reports/empirical-design-ch4-5.html",
+        "/reports/long-report.html",
+        "/reports/sample-report.html"
+      ],
+      "side": [
+        {
+          "title": "All Reports",
+          "href": "/reports/"
+        },
+        {
+          "title": "Empirical Design",
+          "href": "/reports/empirical-design-ch4-5.html"
+        },
+        {
+          "title": "Long Report",
+          "href": "/reports/long-report.html"
+        },
+        {
+          "title": "Sample Report",
+          "href": "/reports/sample-report.html"
+        }
+      ]
+    },
+    {
+      "title": "About Us",
+      "href": "/about/index.html",
+      "aliases": [
+        "/about/index.html",
+        "/about/mission.html",
+        "/about/donate.html",
+        "/about/contact.html",
+        "/about/notices.html",
+        "/contact.html"
+      ],
+      "side": [
+        {
+          "title": "Who We Are",
+          "href": "/about/index.html"
+        },
+        {
+          "title": "Mission",
+          "href": "/about/mission.html"
+        },
+        {
+          "title": "Donate",
+          "href": "/about/donate.html"
+        },
+
+        {
+          "title": "Notices",
+          "href": "/about/notices.html"
+        },
+        {
+          "title": "Contact",
+          "href": "/about/contact.html"
+        }
+      ]
+    }
+  ],
+  "github": {
+    "href": "https://github.com/prophetto1/l10-bench"
+  },
+  "huggingface": {
+    "href": "https://huggingface.co/legal10"
+  },
+  "email": "leg10bench@gmail.com"
+}

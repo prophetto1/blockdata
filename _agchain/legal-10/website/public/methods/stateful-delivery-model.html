@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stateful Delivery Model - LegalChain</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        legalblue: {
+                            50: '#f0f7ff',
+                            100: '#e0effe',
+                            200: '#bae0fd',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#1e3a8a',
+                        },
+                        state: {
+                            400: '#34d399', // Emerald-400
+                            500: '#10b981', // Emerald-500
+                            600: '#059669', // Emerald-600
+                            900: '#064e3b', // Emerald-950
+                        }
+                    },
+                     fontFamily: {
+                        mono: ['"Fira Code"', 'monospace'],
+                        sans: ['"Inter"', 'sans-serif'],
+                        serif: ['"Merriweather"', 'serif'],
+                    }
+                }
+            }
+        };
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;0,900;1,300&family=Inter:wght@300;400;500;600&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../shared/report.css">
+</head>
+<body>
+    <main id="l10-page" data-l10-layout="research" data-l10-sidenav="site" data-l10-sidenav-pos="left">
+        <article class="prose prose-slate dark:prose-invert max-w-4xl mx-auto research-content">
+            
+            <header class="mb-16">
+                <h1 class="research-title">Stateful Delivery Model</h1>
+                
+                <p class="lead text-xl text-neutral-600 dark:text-neutral-400 font-serif italic border-l-4 border-state-500 pl-6 py-2">
+                    Eliminating information contamination through controlled, multi-stage context injection within a single continuous session.
+                </p>
+            </header>
+
+            <h2>The Contamination Problem</h2>
+            <p>
+                When evaluating an LLM's legal reasoning, it is difficult to distinguish between <strong>genuine understanding</strong> and <strong>mere retrieval</strong> of training data. If a model is asked to analyze <i>Strickland v. Washington</i>, it may produce a correct answer simply because it has memorized the case, effectively "peeking" at the answer sheet.
+            </p>
+
+            <!-- Delivery Timeline Visualization -->
+            <div class="my-16 not-prose">
+                <div class="relative pt-8 pb-12">
+                    <!-- Line -->
+                    <div class="absolute top-1/2 left-0 w-full h-0.5 bg-neutral-200 dark:bg-neutral-800 -translate-y-1/2"></div>
+                    
+                    <div class="relative flex justify-between">
+                        <!-- D1 -->
+                        <div class="flex flex-col items-center group">
+                            <div class="w-8 h-8 bg-neutral-900 border-2 border-state-500 rounded-full flex items-center justify-center text-state-500 font-mono text-xs z-10 transition-transform group-hover:scale-110">D1</div>
+                            <div class="mt-4 text-center">
+                                <div class="text-[10px] font-bold text-state-500 uppercase tracking-widest">Closed-Book</div>
+                                <div class="text-xs text-neutral-400">Metadata + Query</div>
+                            </div>
+                        </div>
+
+                        <!-- D2 -->
+                        <div class="flex flex-col items-center group">
+                            <div class="w-8 h-8 bg-neutral-900 border-2 border-state-500 rounded-full flex items-center justify-center text-state-500 font-mono text-xs z-10 shadow-[0_0_15px_rgba(16,185,129,0.3)] transition-transform group-hover:scale-110">D2</div>
+                            <div class="mt-4 text-center">
+                                <div class="text-[10px] font-bold text-state-500 uppercase tracking-widest">Open-Book</div>
+                                <div class="text-xs text-neutral-400">ResearchPack Injection</div>
+                            </div>
+                        </div>
+
+                        <!-- D3 -->
+                        <div class="flex flex-col items-center group">
+                            <div class="w-8 h-8 bg-neutral-900 border-2 border-state-500 rounded-full flex items-center justify-center text-state-500 font-mono text-xs z-10 transition-transform group-hover:scale-110">D3</div>
+                            <div class="mt-4 text-center">
+                                <div class="text-[10px] font-bold text-state-500 uppercase tracking-widest">Integrity Gate</div>
+                                <div class="text-xs text-neutral-400">Canaries + Traps</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <h2>Architecture of State</h2>
+            <p>
+                LegalChain runs each evaluation as a <strong>single continuous session</strong>. Unlike traditional benchmarks that treat prompts as stateless snapshots, our <code>ChainExecutor</code> maintains context accumulation across the entire S1-S10 lifecycle.
+            </p>
+
+            <div class="overflow-x-auto my-12 border border-neutral-200 dark:border-neutral-800 rounded-lg not-prose">
+                <table class="w-full text-left border-collapse text-sm">
+                    <thead class="bg-neutral-50 dark:bg-neutral-900 text-neutral-500">
+                        <tr>
+                            <th class="p-4 border-b border-neutral-200 dark:border-neutral-800">Delivery</th>
+                            <th class="p-4 border-b border-neutral-200 dark:border-neutral-800">Timeline</th>
+                            <th class="p-4 border-b border-neutral-200 dark:border-neutral-800">Payload Contents</th>
+                            <th class="p-4 border-b border-neutral-200 dark:border-neutral-800">Purpose</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-neutral-100 dark:divide-neutral-800">
+                        <tr class="hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors">
+                            <td class="p-4 font-mono font-bold text-state-600">D1</td>
+                            <td class="p-4">Pre-S1</td>
+                            <td class="p-4 text-xs font-serif text-neutral-500">Target citation, court year, case name, legal issue.</td>
+                            <td class="p-4"><span class="px-2 py-0.5 bg-neutral-100 dark:bg-neutral-800 text-[10px] font-bold uppercase rounded">Baseline</span></td>
+                        </tr>
+                        <tr class="hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors">
+                            <td class="p-4 font-mono font-bold text-state-600">D2</td>
+                            <td class="p-4">Post-S4</td>
+                            <td class="p-4 text-xs font-serif text-neutral-500">Full ResearchPack: majority opinion, authorities, Shepard's data.</td>
+                            <td class="p-4"><span class="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 text-[10px] font-bold uppercase rounded">Synthesis</span></td>
+                        </tr>
+                        <tr class="hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors">
+                            <td class="p-4 font-mono font-bold text-state-600">D3</td>
+                            <td class="p-4">Post-S7</td>
+                            <td class="p-4 text-xs font-serif text-neutral-500">Synthetic trap cases, modified holdings, canary strings.</td>
+                            <td class="p-4"><span class="px-2 py-0.5 bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold uppercase rounded">Integrity</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h2>Execution Flow: Temporal Audit Trail</h2>
+            <p>
+                By timing these deliveries, we create a <strong>temporal audit trail</strong>. We can compare the model's reasoning in D1 (relying on internal memory) against its D2 refined analysis (using external evidence).
+            </p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 my-12 not-prose">
+                <!-- Flexible Mode Card -->
+                <div class="p-6 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg group">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="text-[10px] font-mono text-neutral-500 uppercase tracking-widest">Enforcement Mode</div>
+                        <span class="text-[10px] px-2 py-0.5 bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 font-bold rounded">FLEXIBLE</span>
+                    </div>
+                    <h4 class="text-neutral-900 dark:text-white font-serif font-bold mb-2">Reasoning Quality (S1-S7)</h4>
+                    <p class="text-xs text-neutral-600 dark:text-neutral-400 font-serif mb-4">Focuses on substantive accuracy and legal synthesis. Minor citation formatting errors are tolerated if the underlying logic is sound.</p>
+                    <div class="flex gap-2">
+                        <div class="flex-1 h-1 bg-blue-500 rounded"></div>
+                        <div class="flex-1 h-1 bg-blue-500 rounded"></div>
+                        <div class="flex-1 h-1 bg-neutral-200 dark:bg-neutral-800 rounded"></div>
+                    </div>
+                </div>
+
+                <!-- Strict Mode Card -->
+                <div class="p-6 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg group">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="text-[10px] font-mono text-neutral-500 uppercase tracking-widest">Enforcement Mode</div>
+                        <span class="text-[10px] px-2 py-0.5 bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400 font-bold rounded">STRICT</span>
+                    </div>
+                    <h4 class="text-neutral-900 dark:text-white font-serif font-bold mb-2">Integrity Gate (S8)</h4>
+                    <p class="text-xs text-neutral-600 dark:text-neutral-400 font-serif mb-4">Binary validation. Any citation of a synthetic case or failure to detect a canary trap triggers an immediate 100% chain failure.</p>
+                    <div class="flex gap-2">
+                        <div class="flex-1 h-1 bg-red-500 rounded"></div>
+                        <div class="flex-1 h-1 bg-red-500 rounded"></div>
+                        <div class="flex-1 h-1 bg-red-500 rounded"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="my-12 p-8 bg-neutral-950 border border-neutral-800 rounded-lg not-prose">
+                <div class="text-[10px] font-mono text-state-500 uppercase mb-4 tracking-widest">[ CHAINEXECUTOR.LOG ]</div>
+                <div class="space-y-2 font-mono text-xs text-neutral-500">
+                    <div>[08:00:01] <span class="text-white">INIT_SESSION</span> - Target: 410 U.S. 113</div>
+                    <div>[08:00:02] <span class="text-state-500">INJECT_PAYLOAD</span> - D1 (Closed-Book Content)</div>
+                    <div>[08:00:05] S1-S4 reasoning recorded... <span class="text-state-500">SUCCESS</span></div>
+                    <div class="py-2 border-y border-neutral-800 my-2">
+                        [08:00:06] <span class="text-blue-500">DELIVERY_BOUNDARY_D2</span> - ResearchPack Injection
+                        <div class="pl-4 text-[10px] text-neutral-600">Context Size expanded: 2,400 tokens -> 48,500 tokens</div>
+                    </div>
+                    <div>[08:00:15] S5-S7 synthesis complete... <span class="text-state-500">SUCCESS</span></div>
+                    <div>[08:00:16] <span class="text-emerald-500">DELIVERY_BOUNDARY_D3</span> - Canary Injection</div>
+                    <div>[08:00:20] S8 Integrity Gate status: <span class="text-emerald-500">PASSED</span></div>
+                </div>
+            </div>
+
+        </article>
+    </main>
+    <script src="../shared/site-shell.js"></script>
+</body>
+</html>

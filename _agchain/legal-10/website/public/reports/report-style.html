@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Epoch Style Demo - LegalChain</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        legalblue: {
+                            50: '#f0f7ff',
+                            100: '#e0effe',
+                            200: '#bae0fd',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#1e3a8a',
+                        },
+                        neutral: {
+                            950: '#0a0a0a',
+                        }
+                    }
+                }
+            }
+        };
+    </script>
+    <!-- Tooltip styling -->
+    <link rel="stylesheet" href="https://unpkg.com/tippy.js@6/dist/tippy.css" />
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap');
+
+        :root {
+            --tippy-bg: #111111;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .font-serif {
+            font-family: 'Source Serif 4', serif;
+        }
+
+        /* Tippy Theme */
+        .tippy-box[data-theme~='legal10'] {
+            background-color: var(--tippy-bg);
+            color: #e5e7eb;
+            font-family: 'Inter', sans-serif;
+            font-size: 13px;
+            border-radius: 6px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
+            border: 1px solid #262626;
+        }
+
+        .tippy-box[data-theme~='legal10'] .tippy-arrow {
+            color: var(--tippy-bg);
+        }
+
+        /* Accordion Custom Styles */
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+
+        .accordion-item.active .accordion-content {
+            max-height: 500px;
+        }
+
+        .accordion-item.active .accordion-icon {
+            transform: rotate(180deg);
+        }
+
+        /* Code Block Styling */
+        pre code {
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+        }
+
+        .copy-btn.copied {
+            @apply text-emerald-600;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 transition-colors">
+
+    <main id="l10-page" data-l10-layout="wide" data-l10-sidenav="site">
+
+        <div class="max-w-6xl mx-auto px-6 py-12 space-y-20">
+
+            <!-- Hero Section -->
+            <header class="max-w-3xl">
+                <div class="text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-500 mb-4">
+                    Design Lab / Interactive
+                </div>
+                <h1 class="text-4xl md:text-5xl font-bold tracking-tight mb-6">
+                    Epoch-Style Interactivity
+                </h1>
+                <p class="text-xl text-neutral-600 dark:text-neutral-400 leading-relaxed font-serif italic">
+                    Exploring high-density, scholarly interactivity for the v3.0 Gold Master release.
+                </p>
+            </header>
+
+            <!-- 1. ECharts Visualisation -->
+            <section class="space-y-6">
+                <div class="flex items-center justify-between border-b border-neutral-200 dark:border-neutral-800 pb-4">
+                    <h2 class="text-xs font-bold uppercase tracking-widest text-neutral-500">Trajectory Analysis</h2>
+                    <span class="text-xs text-neutral-400 font-medium italic">S8 Citation Pass Rate vs. Chain Efficiency</span>
+                </div>
+                <!-- Chart Container -->
+                <div class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-6 sm:p-8 shadow-sm h-[450px]" id="scatter-chart">
+                </div>
+            </section>
+
+            <!-- 2. Rich Tooltips (Tippy.js) & Accordions -->
+            <div class="grid md:grid-cols-2 gap-12">
+                <!-- Tooltips Column -->
+                <section class="space-y-6">
+                    <h2 class="text-xs font-bold uppercase tracking-widest text-neutral-500 border-b border-neutral-200 dark:border-neutral-800 pb-4">Granular Skill Surface</h2>
+                    <div class="grid grid-cols-2 gap-4">
+                        <button class="tippy-trigger group p-4 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl text-left hover:border-indigo-500 transition-colors"
+                            data-tippy-content="<b>S8 Citation Integrity:</b> A binary gate that voids the entire chain if a hallucinated case is cited. Mandatory for Model Ranking v3.0.">
+                            <div class="text-[10px] font-bold text-neutral-400 uppercase mb-2">Technical Gate</div>
+                            <div class="font-bold group-hover:text-indigo-600">S8 Integrity</div>
+                        </button>
+                        <button class="tippy-trigger group p-4 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl text-left hover:border-indigo-500 transition-colors"
+                            data-tippy-content="<b>Deterministic Synthesis:</b> Measures the alignment between identified sources and the final synthesized synthesis.">
+                            <div class="text-[10px] font-bold text-neutral-400 uppercase mb-2">Scoring Mode</div>
+                            <div class="font-bold group-hover:text-indigo-600">Hybrid IRAC</div>
+                        </button>
+                    </div>
+                </section>
+
+                <!-- Accordions Column -->
+                <section class="space-y-6">
+                    <h2 class="text-xs font-bold uppercase tracking-widest text-neutral-500 border-b border-neutral-200 dark:border-neutral-800 pb-4">Chain Logic (S1-S10)</h2>
+                    <div class="space-y-3">
+                        <!-- Accordion Item 1 -->
+                        <div class="accordion-item bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl overflow-hidden group">
+                            <button class="w-full px-5 py-4 flex items-center justify-between text-left font-bold hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors" onclick="toggleAccordion(this)">
+                                <span>Phase I: Source Acquisition</span>
+                                <svg class="accordion-icon w-4 h-4 text-neutral-400 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </button>
+                            <div class="accordion-content">
+                                <div class="px-5 pb-5 text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed font-serif italic">
+                                    The initial 3 steps (S1–S3) focus exclusively on locating and validating primary law artifacts. 
+                                    Failure at this stage results in a "Research Null" state.
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Accordion Item 2 -->
+                        <div class="accordion-item bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl overflow-hidden group">
+                            <button class="w-full px-5 py-4 flex items-center justify-between text-left font-bold hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors" onclick="toggleAccordion(this)">
+                                <span>Phase II: Agentic Synthesis</span>
+                                <svg class="accordion-icon w-4 h-4 text-neutral-400 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </button>
+                            <div class="accordion-content">
+                                <div class="px-5 pb-5 text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed font-serif italic">
+                                    Steps S4–S7 implement the reasoning loop where the model must extract rules, identify contradictions, 
+                                    and build an IRAC-compliant synthesis.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- 3. Code Blocks & Data Tables -->
+            <div class="grid md:grid-cols-2 gap-12 pb-20">
+                <!-- Code Block -->
+                <section class="space-y-6">
+                    <h2 class="text-xs font-bold uppercase tracking-widest text-neutral-500 border-b border-neutral-200 dark:border-neutral-800 pb-4">Provenance Extract</h2>
+                    <div class="relative group">
+                        <pre class="bg-[#111111] text-neutral-300 p-6 rounded-2xl overflow-x-auto text-[13px] leading-relaxed border border-neutral-800"><code id="provenance-code">{
+  "step": "S8_CITATION_INTEGRITY",
+  "result": "PASS",
+  "validations": [
+    { "id": "L1", "status": "VERIFIED" },
+    { "id": "L2", "status": "VERIFIED" }
+  ],
+  "latency": 0.82
+}</code></pre>
+                        <button onclick="copyToClipboard(this)" class="copy-btn absolute top-4 right-4 p-2 bg-neutral-800/50 hover:bg-neutral-800 text-neutral-400 rounded-lg transition-all opacity-0 group-hover:opacity-100">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m3 3h2a2 2 0 012 2v2M7 11h.01m-2 2h4.5M12 11h.01M10 13h4.5"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </section>
+
+                <!-- Mini Table -->
+                <section class="space-y-6">
+                    <h2 class="text-xs font-bold uppercase tracking-widest text-neutral-500 border-b border-neutral-200 dark:border-neutral-800 pb-4">Bench Comparison</h2>
+                    <div class="overflow-hidden border border-neutral-200 dark:border-neutral-800 rounded-xl">
+                        <table class="w-full text-sm">
+                            <thead class="bg-neutral-50 dark:bg-neutral-900 text-neutral-400 text-[10px] font-bold uppercase tracking-widest border-b border-neutral-200 dark:border-neutral-800">
+                                <tr>
+                                    <th class="px-5 py-3 text-left">Model</th>
+                                    <th class="px-5 py-3 text-right">Chain</th>
+                                    <th class="px-5 py-3 text-right">S8 Pass</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-neutral-200 dark:divide-neutral-800">
+                                <tr class="hover:bg-neutral-50 dark:hover:bg-neutral-900 transition-colors">
+                                    <td class="px-5 py-4 font-bold">Claude 3.5 Sonnet</td>
+                                    <td class="px-5 py-4 text-right text-indigo-600 font-medium">92.4%</td>
+                                    <td class="px-5 py-4 text-right text-emerald-600 font-medium">96.1%</td>
+                                </tr>
+                                <tr class="hover:bg-neutral-50 dark:hover:bg-neutral-900 transition-colors">
+                                    <td class="px-5 py-4 font-bold">GPT-4o</td>
+                                    <td class="px-5 py-4 text-right text-indigo-600 font-medium">88.7%</td>
+                                    <td class="px-5 py-4 text-right text-emerald-600 font-medium">94.3%</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- JS Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <script src="https://unpkg.com/@popperjs/core@2"></script>
+    <script src="https://unpkg.com/tippy.js@6"></script>
+    <script src="../shared/site-shell.js"></script>
+
+    <script>
+        // 1. ECharts Initialisation
+        function initChart() {
+            const chartDom = document.getElementById('scatter-chart');
+            if (!chartDom) return;
+            const myChart = echarts.init(chartDom, window.matchMedia('(pre-password: dark)').matches ? 'dark' : null);
+            
+            const option = {
+                backgroundColor: 'transparent',
+                tooltip: {
+                    trigger: 'item',
+                    backgroundColor: '#111111',
+                    borderColor: '#262626',
+                    textStyle: { color: '#e5e7eb', fontSize: 12, fontFamily: 'Inter' }
+                },
+                grid: { left: '4%', right: '4%', bottom: '10%', top: '10%', containLabel: true },
+                xAxis: {
+                    name: 'Chain Efficiency',
+                    splitLine: { lineStyle: { color: '#262626', type: 'dashed' } },
+                    axisLabel: { color: '#737373', fontSize: 11 }
+                },
+                yAxis: {
+                    name: 'S8 Citation Pass Rate (%)',
+                    splitLine: { lineStyle: { color: '#262626', type: 'dashed' } },
+                    axisLabel: { color: '#737373', fontSize: 11 }
+                },
+                series: [{
+                    symbolSize: 20,
+                    data: [
+                        [10.2, 82, 'Llama-3-70b'],
+                        [1.5, 96.1, 'Claude 3.5 Sonnet'],
+                        [1.8, 94.3, 'GPT-4o'],
+                        [2.4, 91.2, 'Gemini 1.5 Pro'],
+                        [8.1, 74.2, 'OpenRouter/405b']
+                    ],
+                    type: 'scatter',
+                    itemStyle: {
+                        color: function(params) {
+                            const colors = ['#6366f1', '#10b981', '#3b82f6', '#f59e0b', '#8b5cf6'];
+                            return colors[params.dataIndex];
+                        },
+                        opacity: 0.8
+                    }
+                }]
+            };
+
+            myChart.setOption(option);
+            window.addEventListener('resize', () => myChart.resize());
+        }
+
+        // 2. Tippy Tooltips
+        tippy('.tippy-trigger', {
+            theme: 'legal10',
+            allowHTML: true,
+            interactive: true,
+            placement: 'top',
+        });
+
+        // 3. Accordion Logic
+        function toggleAccordion(btn) {
+            const item = btn.parentElement;
+            const isActive = item.classList.contains('active');
+            
+            // Close all
+            document.querySelectorAll('.accordion-item').forEach(i => i.classList.remove('active'));
+            
+            // Open clicked
+            if (!isActive) item.classList.add('active');
+        }
+
+        // 4. Native Clipboard API
+        async function copyToClipboard(btn) {
+            const code = document.getElementById('provenance-code').innerText;
+            try {
+                await navigator.clipboard.writeText(code);
+                btn.classList.add('copied');
+                const originalIcon = btn.innerHTML;
+                btn.innerHTML = `
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                `;
+                setTimeout(() => {
+                    btn.classList.remove('copied');
+                    btn.innerHTML = originalIcon;
+                }, 2000);
+            } catch (err) {
+                console.error('Failed to copy: ', err);
+            }
+        }
+
+        window.addEventListener('l10-shell-ready', () => {
+             initChart();
+        });
+    </script>
+</body>
+
+</html>

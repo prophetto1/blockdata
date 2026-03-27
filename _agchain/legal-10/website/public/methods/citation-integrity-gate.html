@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Citation Integrity Gate (S8) - LegalChain</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+      };
+    </script>
+</head>
+<body class="bg-neutral-950 text-neutral-400 font-sans antialiased">
+    <main id="l10-page" data-l10-layout="research" data-l10-sidenav="site" data-l10-sidenav-pos="left">
+        <article class="prose prose-slate dark:prose-invert max-w-4xl mx-auto research-content">
+            
+            <!-- HEADER BLOCK -->
+            <header class="mb-10 border-b border-neutral-800 pb-6">
+                <h1 class="text-4xl font-serif font-light text-white">Citation Integrity Gate</h1>
+                <p class="serif-dense mt-4 text-neutral-500 text-sm leading-relaxed max-w-2xl font-serif">
+                    Establishing a deterministic verification boundary to prevent the injection of hallucinated legal authority into the results. S8 ensures that every citation is grounded in verifiable canon.
+                </p>
+            </header>
+
+            <!-- CONSOLE STATUS GRID -->
+            <div class="grid grid-cols-3 gap-0 border-t border-l border-neutral-800 bg-neutral-900/10 mb-12">
+                <div class="border-r border-b border-neutral-800 p-4">
+                    <div class="text-[10px] font-mono text-neutral-600 uppercase mb-1">State</div>
+                    <div class="text-xl font-mono text-emerald-500">[ ACTIVE ]</div>
+                    <div class="text-[10px] text-neutral-500">Deterministic Step</div>
+                </div>
+                <div class="border-r border-b border-neutral-800 p-4">
+                    <div class="text-[10px] font-mono text-neutral-600 uppercase mb-1">Scope</div>
+                    <div class="text-xl font-mono text-white">U.S. REPORTS</div>
+                    <div class="text-[10px] text-neutral-500">SCDB Canonical</div>
+                </div>
+                <div class="border-r border-b border-neutral-800 p-4">
+                    <div class="text-[10px] font-mono text-neutral-600 uppercase mb-1">Outcome</div>
+                    <div class="text-xl font-mono text-amber-500">SCORE: 0.0</div>
+                    <div class="text-[10px] text-neutral-500">Integrity Penalty</div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+                <!-- LEFT COLUMN: SYSTEM LOGIC -->
+                <div class="space-y-8">
+                    <section>
+                        <div class="text-[10px] font-mono text-neutral-600 uppercase mb-2">The Hallucination Problem</div>
+                        <p class="text-sm text-neutral-400 font-serif leading-relaxed">
+                            Language models can generate fluent, persuasive legal analysis that cites cases that do not exist. In legal practice, citing a fabricated authority is a serious professional violation. LegalChain addresses this through <strong>Step 8 (S8)</strong>: a deterministic citation integrity gate that verifies every legal citation before allowing scores to stand.
+                        </p>
+                    </section>
+
+                    <section class="border border-neutral-800 p-5 bg-neutral-900/10">
+                        <div class="text-[10px] font-mono text-blue-500 mb-4">[ VERIFICATION PIPELINE ]</div>
+                        <div class="flex flex-col gap-3 font-mono text-[10px]">
+                            <div class="flex items-center gap-2">
+                                <span class="text-neutral-600">IN</span>
+                                <span class="text-neutral-300 bg-neutral-800 px-2 py-0.5">S7 OUTPUT</span>
+                            </div>
+                            <div class="pl-4 border-l border-neutral-800 flex flex-col gap-2">
+                                <div class="text-neutral-500">↓ Extract (eyecite + regex)</div>
+                                <div class="text-neutral-500">↓ Check SCDB Set (~27k cites)</div>
+                                <div class="text-neutral-500">↓ Check Synthetic Trap Set</div>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="text-neutral-600">OUT</span>
+                                <span class="text-emerald-500 bg-emerald-950/30 px-2 py-0.5 border border-emerald-900/50">ALL_VALID: TRUE/FALSE</span>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- RIGHT COLUMN: INTEGRITY SCORING -->
+                <div class="space-y-8">
+                    <section>
+                        <div class="text-[10px] font-mono text-neutral-600 uppercase mb-2">Integrity Scoring</div>
+                        <p class="text-sm text-neutral-400 font-serif leading-relaxed">
+                            When S8 fails, the integrity score is set to zero and the violation is flagged in scoring details. The analysis might be excellent—except for the fact that its foundational authority is invented. Citation fabrication results in a <strong>zero integrity score</strong> in the LegalChain framework. The run continues to completion for full diagnostic capture.
+                        </p>
+                    </section>
+
+                    <section>
+                        <div class="text-[10px] font-mono text-neutral-600 uppercase mb-2">Scoring Logic (Deterministic)</div>
+                        <div class="bg-neutral-900 border border-neutral-800 p-4 rounded overflow-hidden">
+                            <pre class="m-0 bg-transparent border-0 p-0 text-[11px] text-blue-400"><code class="language-python">if not s8_result.all_valid:
+    s7.integrity_score = 0.0
+    s7.scoring_details["fabrication_flag"] = True
+    # Run continues to completion</code></pre>
+                        </div>
+                    </section>
+
+                    <div class="p-4 bg-neutral-900/50 border border-neutral-800">
+                        <div class="text-[10px] font-mono text-neutral-500 uppercase mb-2">Policy Note</div>
+                        <p class="text-[10px] text-neutral-500 font-serif italic">Deterministic steps have zero variance and zero model cost. They enforce hard boundaries that fluency cannot bypass, ensuring evaluation integrity.</p>
+                    </div>
+                </div>
+            </div>
+
+        </article>
+    </main>
+    <script src="../shared/site-shell.js"></script>
+</body>
+</html>

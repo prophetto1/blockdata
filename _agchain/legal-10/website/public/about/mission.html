@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mission – LegalChain</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,700&family=Libre+Baskerville:ital,wght@0,400;1,400&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            serif: ['"EB Garamond"', 'serif'],
+            classic: ['"Libre Baskerville"', 'serif'],
+            mono: ['ui-monospace', 'monospace'],
+          },
+          colors: {
+            void: '#050505',
+            paper: '#f4f4f5',
+            signal: '#dc2626',
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Absolute overrides to fix the 'font is wrong' issue */
+    body {
+      background-color: #ffffff !important;
+      font-family: "EB Garamond", serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    .dark body {
+      background-color: #050505 !important;
+    }
+    
+    .content-serif {
+      font-family: "EB Garamond", serif !important;
+      border-bottom: none !important; /* Remove lingering line */
+      padding-bottom: 0 !important;
+      text-transform: none !important;
+    }
+    
+    .label-mono {
+      font-family: ui-monospace, monospace !important;
+      text-transform: uppercase !important;
+      letter-spacing: 0.1em;
+    }
+
+    ::selection { background: #dc2626; color: white; }
+  </style>
+</head>
+<body class="bg-white dark:bg-void text-void dark:text-gray-200 min-h-screen transition-colors duration-500 selection:bg-signal selection:text-white">
+
+  <!-- TOP BAR (Managed by site-shell.js) -->
+  <div id="nav-container"></div>
+
+  <!-- SINGLE COLUMN CONTENT CONTAINER -->
+  <main id="l10-page" data-l10-layout="about" class="min-h-screen py-24 px-6 md:px-12 w-full mx-auto">
+
+    <!-- HEADER SECTION -->
+    <header class="mb-12 max-w-6xl">
+      <h1 class="content-serif italic text-3xl md:text-4xl lg:text-4xl leading-tight text-void dark:text-white mb-12">
+        LegalChain is an <span class="font-semibold">Audit Layer for the Agentic Economy.</span>
+      </h1>
+    </header>
+
+    <div class="space-y-12">
+      
+      <!-- Philosophy Block -->
+      <article class="grid md:grid-cols-12 gap-8 items-start">
+
+        
+        <div class="md:col-span-8 space-y-8 max-w-3xl">
+          <p class="content-serif text-lg leading-relaxed text-gray-700 dark:text-gray-300">
+            LegalChain is chartered to advance the following core objectives:
+          </p>
+          <ol class="content-serif text-lg leading-relaxed text-gray-700 dark:text-gray-300 list-decimal list-outside ml-5 space-y-4">
+            <li>Build a chained evaluation platform for agentic and RAG workflows.</li>
+            <li>Establish a deep-reasoning stress test for multi-step, stateful tasks.</li>
+            <li>Create standards for post-training compression (PTQ/quantization) methods.</li>
+          </ol>
+        </div>
+      </article>
+
+
+
+      <!-- Core Values Block -->
+      <article class="grid md:grid-cols-12 gap-8 items-start">
+
+        
+        <div class="md:col-span-8 grid md:grid-cols-2 gap-12 max-w-5xl">
+            
+            <div class="space-y-4">
+               <h4 class="label-mono text-xs text-teal-500 border-b border-gray-200 dark:border-gray-800 pb-2">Transparency</h4>
+               <p class="content-serif text-lg text-gray-700 dark:text-gray-300 leading-relaxed">
+                 Every prompt, every trace, and every grading rubric is open for public audit. No black boxes.
+               </p>
+            </div>
+
+            <div class="space-y-4">
+               <h4 class="label-mono text-xs text-teal-500 border-b border-gray-200 dark:border-gray-800 pb-2">Observability</h4>
+               <p class="content-serif text-lg text-gray-700 dark:text-gray-300 leading-relaxed">
+                 Full Langfuse traces for model runs, enabling engineers to see exactly where the chain broke.
+               </p>
+            </div>
+
+            <div class="space-y-4">
+               <h4 class="label-mono text-xs text-teal-500 border-b border-gray-200 dark:border-gray-800 pb-2">Independence</h4>
+               <p class="content-serif text-lg text-gray-700 dark:text-gray-300 leading-relaxed">
+                 LegalChain is model-agnostic. We serve the law, not the model providers.
+               </p>
+            </div>
+
+            <div class="space-y-4">
+               <h4 class="label-mono text-xs text-teal-500 border-b border-gray-200 dark:border-gray-800 pb-2">Math > Vibes</h4>
+               <p class="content-serif text-lg text-gray-700 dark:text-white leading-relaxed">
+                 We reject 'policy-based' evaluations. Our standard is deterministic, rooted in the graph theory of the SCDB.
+               </p>
+            </div>
+
+        </div>
+      </article>
+
+      <!-- Visual Footer -->
+      <footer class="pt-12 border-t border-black/10 dark:border-white/10 mt-24">
+        <div class="flex justify-center gap-6 font-mono text-xs uppercase tracking-widest">
+          <a href="/about/index.html" class="px-8 py-4 bg-void dark:bg-white text-white dark:text-black hover:opacity-90">
+            Who We Are
+          </a>
+          <a href="/about/donate.html" class="px-8 py-4 border border-gray-300 dark:border-gray-700 text-void dark:text-white hover:bg-gray-100 dark:hover:bg-gray-900 transition-colors">
+            Support Us
+          </a>
+        </div>
+      </footer>
+
+    </div>
+
+  </main>
+  
+  <script src="../shared/site-shell.js"></script>
+
+</body>
+</html>

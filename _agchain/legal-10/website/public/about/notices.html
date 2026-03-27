@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Notices – LegalChain</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;500;600;700&family=Libre+Baskerville:wght@400&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            serif: ['"EB Garamond"', 'serif'],
+            classic: ['"Libre Baskerville"', 'serif'],
+            mono: ['ui-monospace', 'monospace'],
+          },
+          colors: {
+            void: '#050505',
+            paper: '#f4f4f5',
+            signal: '#dc2626',
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Absolute overrides to fix the 'font is wrong' issue */
+    body {
+      background-color: #ffffff !important;
+      font-family: "EB Garamond", serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    .dark body {
+      background-color: #050505 !important;
+    }
+    
+    .content-serif {
+      font-family: "EB Garamond", serif !important;
+      border-bottom: none !important; /* Remove lingering line */
+      padding-bottom: 0 !important;
+      text-transform: none !important;
+    }
+    
+    .label-mono {
+      font-family: ui-monospace, monospace !important;
+      text-transform: uppercase !important;
+      letter-spacing: 0.1em;
+    }
+
+    ::selection { background: #dc2626; color: white; }
+  </style>
+</head>
+<body class="bg-white dark:bg-void text-void dark:text-gray-200 min-h-screen transition-colors duration-500 selection:bg-signal selection:text-white">
+
+  <!-- TOP BAR (Managed by site-shell.js) -->
+  <div id="nav-container"></div>
+
+  <!-- SINGLE COLUMN CONTENT CONTAINER -->
+  <main id="l10-page" data-l10-layout="about" class="min-h-screen py-24 px-6 md:px-12 w-full mx-auto">
+
+    <!-- HEADER SECTION - NO ITALICS -->
+    <header class="mb-12 max-w-6xl">
+      <h1 class="content-serif text-3xl md:text-4xl lg:text-4xl leading-tight text-void dark:text-white mb-12">
+        Repo-backed notices feed loaded from <span class="font-semibold">/data/notices.json.</span>
+      </h1>
+    </header>
+
+    <div class="space-y-4">
+      
+      <!-- LOADING / ERROR STATES -->
+      <div id="notices-empty" class="text-sm text-gray-500 font-mono hidden">No notices yet.</div>
+      <div id="notices-error" class="text-sm text-signal font-mono hidden"></div>
+
+      <!-- NOTICES FEED CONTAINER -->
+      <div id="notices-list" class="grid gap-6"></div>
+
+    </div>
+
+    <!-- Visual Footer -->
+    <footer class="pt-12 border-t border-black/10 dark:border-white/10 mt-24 md:ml-[33%]">
+      <div class="flex gap-6 font-mono text-xs uppercase tracking-widest">
+        <a href="/about/index.html" class="px-8 py-4 bg-void dark:bg-white text-white dark:text-black hover:opacity-90">
+          Who We Are
+        </a>
+        <a href="/about/mission.html" class="px-8 py-4 border border-gray-300 dark:border-gray-700 text-void dark:text-white hover:bg-gray-100 dark:hover:bg-gray-900 transition-colors">
+          Mission
+        </a>
+      </div>
+    </footer>
+
+  </main>
+  
+  <script src="../shared/site-shell.js"></script>
+
+  <script>
+    (function () {
+      const listEl = document.getElementById("notices-list");
+      const emptyEl = document.getElementById("notices-empty");
+      const errorEl = document.getElementById("notices-error");
+
+      function show(el, text) {
+        if (!el) return;
+        if (typeof text === "string") el.textContent = text;
+        el.classList.remove("hidden");
+      }
+      function hide(el) {
+        if (!el) return;
+        el.classList.add("hidden");
+      }
+
+      function normalizeHref(href) {
+        const h = String(href || "").trim();
+        if (!h) return "";
+        if (h.startsWith("http://") || h.startsWith("https://")) return h;
+        if (h.startsWith("/")) return h;
+        return `/${h}`;
+      }
+
+      function card(n) {
+        const wrap = document.createElement("article");
+        // Functional Card Style: Boxed, border, hover effect
+        wrap.className = "group border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/40 p-6 md:p-8 hover:border-signal transition-colors duration-300";
+
+        const cat = String(n.category || "notice").toUpperCase();
+        const date = String(n.date || "");
+        const title = String(n.title || "");
+        const desc = String(n.description || "");
+        const href = normalizeHref(n.href);
+
+        wrap.innerHTML = `
+          <div class="flex flex-wrap items-center gap-3 mb-4 font-mono text-xs">
+            <span class="text-signal uppercase tracking-wider font-semibold border border-signal px-2 py-0.5 rounded-sm">
+              ${cat}
+            </span>
+            <span class="text-gray-500 dark:text-gray-400">
+              ${date}
+            </span>
+          </div>
+          
+          <h3 class="content-serif text-2xl font-semibold text-void dark:text-white mb-3">
+            ${href ? `<a href="${href}" class="hover:underline decoration-signal decoration-2 underline-offset-4">${title}</a>` : title}
+          </h3>
+          
+          ${desc ? `<p class="content-serif text-lg leading-relaxed text-gray-700 dark:text-gray-300 max-w-3xl">${desc}</p>` : ""}
+          
+          ${href ? `<div class="mt-6 flex items-center gap-2 text-xs font-mono uppercase tracking-widest text-signal group-hover:underline">
+            <span>Read Update</span>
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+          </div>` : ""}
+        `;
+        return wrap;
+      }
+
+      async function load() {
+        hide(emptyEl);
+        hide(errorEl);
+        listEl.innerHTML = "";
+        listEl.className = "grid gap-4"; // Tighter functional grid
+
+        try {
+          const res = await fetch("/data/notices.json", { cache: "no-store" });
+          if (!res.ok) throw new Error(`HTTP ${res.status} loading /data/notices.json`);
+          const notices = await res.json();
+          const arr = Array.isArray(notices) ? notices : [];
+          if (arr.length === 0) {
+            show(emptyEl);
+            return;
+          }
+          for (const n of arr) listEl.appendChild(card(n));
+        } catch (err) {
+          show(errorEl, String(err?.message || err));
+        }
+      }
+
+      load();
+    })();
+  </script>
+
+</body>
+</html>

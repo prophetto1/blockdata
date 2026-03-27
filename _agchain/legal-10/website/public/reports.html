@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Redirecting?</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = { darkMode: "class" };
+    </script>
+    <script>
+      window.location.replace('/reports/');
+    </script>
+  </head>
+  <body class="min-h-screen bg-white dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100">
+    <main id="l10-page" data-l10-layout="wide" data-l10-subnav="none" class="max-w-3xl mx-auto px-6 py-24">
+      <p class="text-sm text-neutral-600 dark:text-neutral-400">
+        Redirecting to <a class="underline" href="/reports/">/reports/</a>?
+      </p>
+    </main>
+    <script src="shared/site-shell.js"></script>
+  </body>
+</html>

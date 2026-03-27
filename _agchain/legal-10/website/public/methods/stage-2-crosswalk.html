@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Federal→CAP Crosswalk - LegalChain</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+      };
+    </script>
+</head>
+<body class="bg-neutral-950 text-neutral-400 font-sans antialiased">
+    <main id="l10-page" data-l10-layout="research" data-l10-sidenav="site" data-l10-sidenav-pos="left">
+        <article class="max-w-5xl mx-auto research-content px-6">
+            
+            <!-- HEADER BLOCK (Integrated Layout B) -->
+            <header class="mb-12 border-b border-neutral-800 pb-8">
+                <h1 class="text-4xl font-serif font-light text-white">Federal→CAP Crosswalk</h1>
+                <p class="serif-dense mt-4 text-neutral-500 text-sm leading-relaxed max-w-2xl font-serif">
+                    Resolving 55,534 raw citation strings to verified Caselaw Access Project records. This stage bridges the gap between Supreme Court string pointers and canonical federal authorities.
+                </p>
+            </header>
+
+            <!-- HERO: FULL-WIDTH MATRIX (Layout B Signature) -->
+            <div class="w-full border border-neutral-800 bg-neutral-900/10 mb-16 overflow-hidden">
+                <div class="bg-neutral-900/50 p-4 border-b border-neutral-800 flex justify-between items-center">
+                    <div class="text-[10px] font-mono text-neutral-500 uppercase">MAPPING MATRIX: SCOTUS -> CAP</div>
+                    <div class="text-[10px] font-mono text-emerald-500">[ 98.2% RESOLVED ]</div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse font-mono text-[10px]">
+                        <thead>
+                            <tr class="border-b border-neutral-800 text-neutral-600">
+                                <th class="p-4 font-normal">Input Citation</th>
+                                <th class="p-4 font-normal">Normalization</th>
+                                <th class="p-4 font-normal">CAP Resolution</th>
+                                <th class="p-4 font-normal">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-neutral-900 text-neutral-400">
+                            <tr>
+                                <td class="p-4 text-neutral-500">495 F. 2d 1187</td>
+                                <td class="p-4 text-blue-400">495 F.2d 1187</td>
+                                <td class="p-4 text-white">CAP_ID: 1046253</td>
+                                <td class="p-4"><span class="bg-emerald-500/10 text-emerald-500 px-2 py-0.5 border border-emerald-500/20">MATCH</span></td>
+                            </tr>
+                            <tr>
+                                <td class="p-4 text-neutral-500">202 F. Supp. 305</td>
+                                <td class="p-4 text-blue-400">202 F.Supp. 305</td>
+                                <td class="p-4 text-white">CAP_ID: 1403610</td>
+                                <td class="p-4"><span class="bg-emerald-500/10 text-emerald-500 px-2 py-0.5 border border-emerald-500/20">MATCH</span></td>
+                            </tr>
+                             <tr>
+                                <td class="p-4 text-neutral-500">See 105 F.3d 12</td>
+                                <td class="p-4 text-blue-400">105 F.3d 12</td>
+                                <td class="p-4 text-white">CAP_ID: 2209141</td>
+                                <td class="p-4"><span class="bg-emerald-500/10 text-emerald-500 px-2 py-0.5 border border-emerald-500/20">MATCH</span></td>
+                            </tr>
+                            <tr>
+                                <td class="p-4 text-neutral-500">999 U.S. 999</td>
+                                <td class="p-4 text-red-400">999 U.S. 999</td>
+                                <td class="p-4 text-neutral-600">NULL</td>
+                                <td class="p-4"><span class="bg-red-500/10 text-red-500 px-2 py-0.5 border border-red-500/20">TRAP</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- CONTENT LAYER -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-12">
+                
+                <!-- MAIN COLUMN (Layout B: Fluid Prose) -->
+                <div class="lg:col-span-8 space-y-12">
+                    <section>
+                        <div class="text-[10px] font-mono text-neutral-600 uppercase mb-4 tracking-widest">[ METHODOLOGY ]</div>
+                        <p class="text-sm text-neutral-400 font-serif leading-relaxed mb-6">
+                            When a Supreme Court opinion cites "495 F.2d 1187," it provides a string pointer. To include this authority in a ResearchPack, we must connect it to a stable identity in the CAP database.
+                        </p>
+                        <p class="text-sm text-neutral-400 font-serif leading-relaxed">
+                            Our crosswalk achieves a <strong>98.2% match rate</strong> through deterministic normalization. If a direct lookup against official citation fields fails, the engine falls back to volume-page matching within the reporter series.
+                        </p>
+                    </section>
+
+                    <section class="space-y-6">
+                        <div class="text-[10px] font-mono text-neutral-600 uppercase mb-2">Resolution Algorithm</div>
+                        <div class="space-y-4">
+                            <div class="flex gap-6 items-start">
+                                <div class="text-xl font-mono text-neutral-800">01</div>
+                                <div>
+                                    <div class="text-xs text-white uppercase font-bold mb-1">Normalization</div>
+                                    <p class="text-xs text-neutral-500 font-serif">Remove punctuation, unify spacing, and standardize reporter abbreviations.</p>
+                                </div>
+                            </div>
+                            <div class="flex gap-6 items-start">
+                                <div class="text-xl font-mono text-neutral-800">02</div>
+                                <div>
+                                    <div class="text-xs text-white uppercase font-bold mb-1">Index Query</div>
+                                    <p class="text-xs text-neutral-500 font-serif">Search the unified CAP/SCOTUS index (Parquet) for the canonical string.</p>
+                                </div>
+                            </div>
+                            <div class="flex gap-6 items-start">
+                                <div class="text-xl font-mono text-neutral-800">03</div>
+                                <div>
+                                    <div class="text-xs text-white uppercase font-bold mb-1">Fallback Resolution</div>
+                                    <p class="text-xs text-neutral-500 font-serif">Apply heuristic matching for citations with high OCR noise or non-standard formatting.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- SIDEBAR SPECS (Layout B: Technical Callouts) -->
+                <div class="lg:col-span-4 space-y-8">
+                    <div class="bg-neutral-900 border border-neutral-800 p-5">
+                        <div class="text-[10px] font-mono text-emerald-500 mb-4 uppercase">[ ACCURACY REPORT ]</div>
+                        <div class="space-y-4 text-[10px] font-mono">
+                            <div class="flex justify-between">
+                                <span class="text-neutral-500 uppercase">Direct Match</span>
+                                <span class="text-white">97.0%</span>
+                            </div>
+                            <div class="w-full h-1 bg-neutral-800">
+                                <div class="bg-emerald-500 h-full w-[97%]"></div>
+                            </div>
+                            <div class="flex justify-between mt-2">
+                                <span class="text-neutral-500 uppercase">Fallback</span>
+                                <span class="text-white">1.2%</span>
+                            </div>
+                            <div class="w-full h-1 bg-neutral-800">
+                                <div class="bg-blue-500 h-full w-[1.2%]"></div>
+                            </div>
+                            <div class="flex justify-between mt-2">
+                                <span class="text-neutral-500 uppercase">Unresolved</span>
+                                <span class="text-red-500">1.8%</span>
+                            </div>
+                            <div class="w-full h-1 bg-neutral-800">
+                                <div class="bg-red-500 h-full w-[1.8%]"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="p-5 border border-neutral-800 bg-neutral-900/10">
+                        <div class="text-[10px] font-mono text-neutral-600 mb-2 uppercase">[ ARTIFACT ]</div>
+                        <div class="text-xs text-neutral-300 font-mono mb-2">scotus_to_cap_map.jsonl</div>
+                        <div class="text-[10px] text-neutral-500 font-serif italic">Size: 24 MB. Contains mapping from normalized citations to CAP IDs and decision metadata.</div>
+                    </div>
+                </div>
+            </div>
+
+        </article>
+    </main>
+    <script src="../shared/site-shell.js"></script>
+</body>
+</html>

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Closed-Book vs Open-Book Evaluation - LegalChain</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+      };
+    </script>
+</head>
+<body class="bg-neutral-950 text-neutral-400 font-sans antialiased">
+    <main id="l10-page" data-l10-layout="research" data-l10-sidenav="site" data-l10-sidenav-pos="left">
+        <article class="prose prose-slate dark:prose-invert max-w-4xl mx-auto research-content">
+            
+            <!-- HEADER BLOCK -->
+            <header class="mb-10 border-b border-neutral-800 pb-6">
+                <h1 class="text-4xl font-serif font-light text-white">Closed-Book vs Open-Book</h1>
+                <p class="serif-dense mt-4 text-neutral-500 text-sm leading-relaxed max-w-2xl font-serif">
+                    Controlled evaluation variants that test the same legal task under different information conditions to distinguish between parametric knowledge and document synthesis.
+                </p>
+            </header>
+
+            <!-- DIAGNOSTIC MATRIX -->
+            <div class="grid grid-cols-2 gap-px border border-neutral-800 bg-neutral-800 mb-12 not-prose">
+                <div class="bg-neutral-900 p-6">
+                    <div class="text-[10px] font-mono text-emerald-500 uppercase mb-2">Category: Robust</div>
+                    <div class="text-xl font-serif text-white mb-2 italic">CB High + OB High</div>
+                    <div class="text-[10px] text-neutral-500 font-mono">Strong internal knowledge + effective document utilization.</div>
+                </div>
+                <div class="bg-neutral-900 p-6">
+                    <div class="text-[10px] font-mono text-blue-500 uppercase mb-2">Category: Research-Dependent</div>
+                    <div class="text-xl font-serif text-white mb-2 italic">CB Low + OB High</div>
+                    <div class="text-[10px] text-neutral-500 font-mono">Dependent on retrieval; limited innate legal understanding.</div>
+                </div>
+                <div class="bg-neutral-900 p-6">
+                    <div class="text-[10px] font-mono text-amber-500 uppercase mb-2">Category: Logic-Heavy</div>
+                    <div class="text-xl font-serif text-white mb-2 italic">CB High + OB Low</div>
+                    <div class="text-[10px] text-neutral-500 font-mono">Intrinsic understanding, but fails to extract context.</div>
+                </div>
+                <div class="bg-neutral-900 p-6">
+                    <div class="text-[10px] font-mono text-red-500 uppercase mb-2">Category: Fundamental Gap</div>
+                    <div class="text-xl font-serif text-white mb-2 italic">CB Low + OB Low</div>
+                    <div class="text-[10px] text-neutral-500 font-mono">Insufficient capability for the assigned legal task.</div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+                <!-- LEFT COLUMN: THEORY -->
+                <div class="space-y-8">
+                    <section>
+                        <div class="text-[10px] font-mono text-neutral-600 uppercase mb-2">The Mechanism</div>
+                        <p class="text-sm text-neutral-400 font-serif leading-relaxed">
+                            When a legal AI fails, the cause matters. Did it lack knowledge, or did it fail to find information? Most benchmarks conflate these. LegalChain isolates them by running the exact same task with and without source documents.
+                        </p>
+                    </section>
+                    
+                    <section class="border border-neutral-800 p-5 bg-neutral-900/10">
+                        <div class="text-[10px] font-mono text-blue-500 mb-4">[ INPUT: CLOSED-BOOK ]</div>
+                        <div class="font-mono text-[10px] text-neutral-500 leading-tight">
+                            {<br>
+                            &nbsp;&nbsp;"task": "Compare Citations",<br>
+                            &nbsp;&nbsp;"anchor": "384 U.S. 436",<br>
+                            &nbsp;&nbsp;"authority": "418 U.S. 683",<br>
+                            &nbsp;&nbsp;"context": null<br>
+                            }
+                        </div>
+                        <div class="mt-4 text-[10px] text-neutral-600 italic">// Only metadata provided.</div>
+                    </section>
+                </div>
+
+                <!-- RIGHT COLUMN: IMPLEMENTATION -->
+                <div class="space-y-8">
+                    <section>
+                        <div class="text-[10px] font-mono text-neutral-600 uppercase mb-2">The Reasoning Bridge</div>
+                        <p class="text-sm text-neutral-400 font-serif leading-relaxed">
+                            The performance delta between modalities reveals the <strong>Reasoning Bridge</strong>. A model excelling closed-book demonstrates genuine legal understanding. Strong open-book performance reveals document analysis capability—extracting info from text it has never encountered.
+                        </p>
+                    </section>
+
+                    <section class="border border-neutral-800 p-5 bg-neutral-900/10">
+                        <div class="text-[10px] font-mono text-emerald-500 mb-4">[ INPUT: OPEN-BOOK ]</div>
+                        <div class="font-mono text-[10px] text-neutral-500 leading-tight">
+                            {<br>
+                            &nbsp;&nbsp;"task": "Compare Citations",<br>
+                            &nbsp;&nbsp;"anchor": "384 U.S. 436",<br>
+                            &nbsp;&nbsp;"authority": "418 U.S. 683",<br>
+                            &nbsp;&nbsp;"context": "RESEARCH_PACK_V2"<br>
+                            }
+                        </div>
+                        <div class="mt-4 text-[10px] text-neutral-600 italic">// Full opinion text injected.</div>
+                    </section>
+                </div>
+            </div>
+
+        </article>
+    </main>
+    <script src="../shared/site-shell.js"></script>
+</body>
+</html>

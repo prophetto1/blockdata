@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Judge Policy - LegalChain</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        legalblue: {
+                            50: '#f0f7ff',
+                            100: '#e0effe',
+                            200: '#bae0fd',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#1e3a8a',
+                        }
+                    },
+                    fontFamily: {
+                        serif: ['"Merriweather"', 'serif'],
+                        sans: ['"Inter"', 'sans-serif'],
+                    }
+                }
+            }
+        };
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;0,900;1,300&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ startOnLoad: true, theme: 'neutral' });
+    </script>
+    <link rel="stylesheet" href="../shared/report.css">
+</head>
+<body>
+    <main id="l10-page" data-l10-layout="research" data-l10-sidenav="site" data-l10-sidenav-pos="left">
+        <article class="prose prose-slate dark:prose-invert max-w-4xl mx-auto research-content font-sans">
+            
+            <header class="mb-16 not-prose">
+                <h1 class="text-4xl md:text-5xl font-serif font-black text-slate-900 dark:text-white mb-6 leading-tight">
+                    The Automated Expert
+                </h1>
+                <p class="text-xl md:text-2xl text-slate-600 dark:text-slate-300 font-serif leading-relaxed border-l-4 border-amber-500 pl-6">
+                    How we use calibrated LLM judges to evaluate nuance, logic, and reasoning quality at scale.
+                </p>
+            </header>
+
+            <p class="lead font-serif text-lg leading-loose">
+                Some questions have binary answers: "Did it contain a citation?" But legal reasoning is qualitative: "Is this argument persuasive?" To evaluate these dimensions without the prohibitive cost of human experts, LegalChain uses calibrated LLM judges running on strict, versioned rubrics.
+            </p>
+
+            <h2 class="font-serif text-2xl font-bold mt-12 mb-6">The Judicial Process</h2>
+            <p>
+                The judge does not "vibe check." It follows a structured deliberation process defined by our prompt engineering.
+            </p>
+
+            <div class="my-12 not-prose">
+                <div class="mermaid bg-slate-50 dark:bg-slate-900/50 p-6 rounded-xl border border-slate-200 dark:border-slate-800 text-center">
+                    graph LR
+                        Prompt[Versioned Prompt] --> Judge{LLM Judge}
+                        Evidence[ResearchPack] --> Judge
+                        Output[Model Response] --> Judge
+                        
+                        Judge -->|Evaluates| Rubric[IRAC Rubric]
+                        Rubric -->|Scores| Result[Phase 3 Score]
+                        
+                        subgraph "Configuration"
+                            Temp[Temperature: 0]
+                            Model[Model: Claude-3.5]
+                        end
+                        
+                        Temp -.-> Judge
+                        Model -.-> Judge
+                        
+                        style Result fill:#dcfce7,stroke:#22c55e,stroke-width:2px,color:#166534
+                        style Judge fill:#2563eb,stroke:#1d4ed8,stroke-width:2px,color:#fff
+                </div>
+            </div>
+
+            <h2 class="font-serif text-2xl font-bold mt-12 mb-6">The IRAC Rubric</h2>
+            <p>
+                We evaluate legal reasoning using the standard law school format: <strong>Issue, Rule, Application, Conclusion</strong>.
+            </p>
+            
+            <div class="grid md:grid-cols-2 gap-8 my-10 not-prose">
+                <div class="bg-slate-50 dark:bg-slate-900/40 p-6 rounded-lg border border-slate-200 dark:border-slate-800">
+                    <div class="flex justify-between items-center mb-4">
+                        <h4 class="font-bold text-lg text-slate-900 dark:text-slate-100">Application</h4>
+                        <span class="bg-blue-100 text-blue-800 text-xs font-bold px-2 py-1 rounded">Weight: 40%</span>
+                    </div>
+                    <p class="text-sm text-slate-600 dark:text-slate-400">
+                        The core of legal reasoning. Does the model thoughtfully apply the rule to the specific facts, or is it mechanical and superficial?
+                    </p>
+                </div>
+                
+                <div class="bg-slate-50 dark:bg-slate-900/40 p-6 rounded-lg border border-slate-200 dark:border-slate-800">
+                    <div class="flex justify-between items-center mb-4">
+                        <h4 class="font-bold text-lg text-slate-900 dark:text-slate-100">Rule Statement</h4>
+                        <span class="bg-blue-100 text-blue-800 text-xs font-bold px-2 py-1 rounded">Weight: 25%</span>
+                    </div>
+                    <p class="text-sm text-slate-600 dark:text-slate-400">
+                        Accuracy of the legal principle. Does the model correctly synthesize the holding from the cited case?
+                    </p>
+                </div>
+                
+                 <div class="bg-slate-50 dark:bg-slate-900/40 p-6 rounded-lg border border-slate-200 dark:border-slate-800">
+                    <div class="flex justify-between items-center mb-4">
+                        <h4 class="font-bold text-lg text-slate-900 dark:text-slate-100">Conclusion</h4>
+                        <span class="bg-blue-100 text-blue-800 text-xs font-bold px-2 py-1 rounded">Weight: 20%</span>
+                    </div>
+                    <p class="text-sm text-slate-600 dark:text-slate-400">
+                        Logical soundness. Does the conclusion follow necessarily from the premises established in the application?
+                    </p>
+                </div>
+                
+                <div class="bg-slate-50 dark:bg-slate-900/40 p-6 rounded-lg border border-slate-200 dark:border-slate-800">
+                    <div class="flex justify-between items-center mb-4">
+                        <h4 class="font-bold text-lg text-slate-900 dark:text-slate-100">Issue</h4>
+                        <span class="bg-blue-100 text-blue-800 text-xs font-bold px-2 py-1 rounded">Weight: 15%</span>
+                    </div>
+                    <p class="text-sm text-slate-600 dark:text-slate-400">
+                        Problem identification. Did the model correctly spot the legal question presented by the prompt?
+                    </p>
+                </div>
+            </div>
+
+            <h2 class="font-serif text-2xl font-bold mt-12 mb-6">Calibration & Rigor</h2>
+            <p>
+                We do not blindly trust the LLM judge. To ensure reliability:
+            </p>
+            <ul class="list-disc pl-5 space-y-4 mb-8 text-slate-700 dark:text-slate-300">
+                <li><strong>Temperature Zero:</strong> All judge calls use <code>temperature=0</code> to minimize randomness.</li>
+                <li><strong>Hashed Prompts:</strong> Evaluation prompts are immutable. Any change to the judging criteria bumps the version number.</li>
+                <li><strong>Human Baseline:</strong> We calibrate the judge against a set of human-annotated samples. We require a Pearson correlation > 0.85 to certify a judge configuration.</li>
+            </ul>
+
+            <h2 class="font-serif text-2xl font-bold mt-12 mb-6">What Judges DO NOT Do</h2>
+            <p>
+                We restrict the judge to <strong>qualitative</strong> assessment only.
+            </p>
+            <div class="bg-slate-50 dark:bg-slate-900/50 p-6 rounded-lg border border-slate-200 dark:border-slate-800 my-6">
+                <ul class="space-y-2 text-sm font-mono text-slate-600 dark:text-slate-400">
+                    <li class="flex gap-2"><span class="text-red-500">❌</span> Did it cite real cases? (Handled by Deterministic Gate)</li>
+                    <li class="flex gap-2"><span class="text-red-500">❌</span> Did it follow IRAC format? (Handled by Structure Check)</li>
+                    <li class="flex gap-2"><span class="text-green-500">✔</span> Is the argument logical? (THIS is the judge's job)</li>
+                </ul>
+            </div>
+            <p>
+                This separation of powers ensures that hard constraints (citations, format) are enforced by code, while the LLM focuses entirely on softer reasoning skills.
+            </p>
+
+        </article>
+    </main>
+    <script src="../shared/site-shell.js"></script>
+</body>
+</html>

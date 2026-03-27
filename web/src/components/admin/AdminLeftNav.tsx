@@ -17,6 +17,7 @@ export type AdminNavItem = {
   label: string;
   icon: Icon;
   path: string;
+  drillId?: string;
 };
 
 export type AdminNavSection = {

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Evaluation Observability - LegalChain</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>tailwind.config = { darkMode: "class" };</script>
+</head>
+<body class="bg-neutral-950 text-neutral-400 font-sans antialiased">
+    <main id="l10-page" data-l10-layout="research" data-l10-sidenav="site" data-l10-sidenav-pos="left">
+        <article class="prose prose-slate dark:prose-invert max-w-4xl mx-auto research-content">
+
+            <header class="mb-10 border-b border-neutral-800 pb-6">
+                <h1 class="text-4xl font-serif font-light text-white">Evaluation Observability</h1>
+                <p class="serif-dense mt-4 text-neutral-500 text-sm leading-relaxed max-w-2xl font-serif">
+                    Full tracing via Langfuse ensures every model call is recorded, traceable, and auditable—enabling transparent, reproducible evaluation.
+                </p>
+            </header>
+
+            <div class="grid grid-cols-3 gap-0 border-t border-l border-neutral-800 bg-neutral-900/10 mb-12">
+                <div class="border-r border-b border-neutral-800 p-4">
+                    <div class="text-[10px] font-mono text-neutral-600 uppercase mb-1">Traces</div>
+                    <div class="text-xl font-mono text-emerald-500">CHAIN</div>
+                    <div class="text-[10px] text-neutral-500">Full Run Context</div>
+                </div>
+                <div class="border-r border-b border-neutral-800 p-4">
+                    <div class="text-[10px] font-mono text-neutral-600 uppercase mb-1">Spans</div>
+                    <div class="text-xl font-mono text-blue-500">STEP</div>
+                    <div class="text-[10px] text-neutral-500">Per-Step Detail</div>
+                </div>
+                <div class="border-r border-b border-neutral-800 p-4">
+                    <div class="text-[10px] font-mono text-neutral-600 uppercase mb-1">Generations</div>
+                    <div class="text-xl font-mono text-amber-500">JUDGE</div>
+                    <div class="text-[10px] text-neutral-500">LLM Judge Calls</div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+                <div class="space-y-8">
+                    <section>
+                        <div class="text-[10px] font-mono text-neutral-600 uppercase mb-2">What Gets Traced</div>
+                        <p class="text-sm text-neutral-400 font-serif leading-relaxed">
+                            Every model call is recorded with full context: <strong class="text-white">prompts</strong>, <strong class="text-white">responses</strong>, <strong class="text-white">latency</strong>, <strong class="text-white">status</strong>, and <strong class="text-white">sub-scores</strong>. When LLM-as-judge is used for S6 Phase 3, the judge's reasoning is captured separately.
+                        </p>
+                    </section>
+
+                    <section class="border border-neutral-800 p-5 bg-neutral-900/10">
+                        <div class="text-[10px] font-mono text-blue-500 mb-4">[ TRACE HIERARCHY ]</div>
+                        <div class="font-mono text-[11px] space-y-2">
+                            <div class="text-neutral-300">Chain Trace</div>
+                            <div class="pl-4 text-neutral-500">├─ S1 Span (status, latency)</div>
+                            <div class="pl-4 text-neutral-500">├─ S4 Span</div>
+                            <div class="pl-4 text-neutral-500">├─ S6 Span</div>
+                            <div class="pl-8 text-neutral-500">└─ Judge Generation</div>
+                        </div>
+                    </section>
+                </div>
+
+                <div class="space-y-8">
+                    <section>
+                        <div class="text-[10px] font-mono text-neutral-600 uppercase mb-2">Why Observability Matters</div>
+                        <p class="text-sm text-neutral-400 font-serif leading-relaxed">
+                            <strong class="text-white">Debugging:</strong> When a model scores poorly, trace exactly which step failed.<br/>
+                            <strong class="text-white">Audit trail:</strong> Every score has provenance.<br/>
+                            <strong class="text-white">Reproducibility:</strong> Full traces enable independent verification.
+                        </p>
+                    </section>
+
+                    <div class="p-4 bg-neutral-900/50 border border-neutral-800">
+                        <div class="text-[10px] font-mono text-neutral-500 uppercase mb-2">Transparency Principle</div>
+                        <p class="text-[10px] text-neutral-500 font-serif italic">Evaluation methodology should be verifiable. With full tracing, anyone can inspect exactly what prompt produced a given score and confirm our methodology works as documented.</p>
+                    </div>
+                </div>
+            </div>
+
+        </article>
+    </main>
+    <script src="../shared/site-shell.js"></script>
+</body>
+</html>

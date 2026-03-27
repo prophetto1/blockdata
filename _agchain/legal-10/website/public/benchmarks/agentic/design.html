@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Benchmarks · L10 Agentic · Design - LegalChain</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = { darkMode: "class" };
+    </script>
+  </head>
+  <body class="min-h-screen bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 transition-colors">
+    <main id="l10-page" data-l10-layout="two-col" data-l10-sidenav="site" data-l10-content-width="narrow" data-l10-subnav="breadcrumb">
+
+      <header class="mb-10">
+        <h1 class="text-4xl font-light tracking-tight text-neutral-900 dark:text-neutral-100">Design</h1>
+        <p class="mt-3 text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
+          L10 Agentic chains steps sequentially; downstream steps consume earlier outputs, so errors can propagate.
+        </p>
+      </header>
+
+      <section class="space-y-8">
+        <h2 class="text-xl font-semibold">Chain definition</h2>
+        <ul class="list-disc list-inside text-sm text-neutral-700 dark:text-neutral-300 space-y-1">
+          <li>Step ordering and dependencies</li>
+          <li>Inputs/outputs per step</li>
+          <li>Chain-level metrics and pass/fail rules</li>
+        </ul>
+
+        <h2 class="text-xl font-semibold">Gates</h2>
+        <ul class="list-disc list-inside text-sm text-neutral-700 dark:text-neutral-300 space-y-1">
+          <li>Citation integrity and other hard constraints</li>
+          <li>How gate failures affect scoring and leaderboard inclusion</li>
+        </ul>
+
+        <h2 class="text-xl font-semibold">Artifacts</h2>
+        <ul class="list-disc list-inside text-sm text-neutral-700 dark:text-neutral-300 space-y-1">
+          <li>Trace format for per-step prompts/outputs</li>
+          <li>Normalized outputs used for deterministic scoring</li>
+          <li>Report generation inputs</li>
+        </ul>
+      </section>
+    </main>
+
+    <script src="../../shared/site-shell.js"></script>
+  </body>
+</html>

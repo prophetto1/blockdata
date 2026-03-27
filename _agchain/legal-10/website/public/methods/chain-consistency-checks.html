@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chain Consistency Checks - LegalChain</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        legalblue: {
+                            50: '#f0f7ff',
+                            100: '#e0effe',
+                            200: '#bae0fd',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#1e3a8a',
+                        },
+                        check: {
+                            400: '#818cf8', // Indigo-400
+                            500: '#6366f1', // Indigo-500
+                            600: '#4f46e5', // Indigo-600
+                        }
+                    },
+                     fontFamily: {
+                        mono: ['"Fira Code"', 'monospace'],
+                        sans: ['"Inter"', 'sans-serif'],
+                        serif: ['"Merriweather"', 'serif'],
+                    }
+                }
+            }
+        };
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;0,900;1,300&family=Inter:wght@300;400;500;600&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../shared/report.css">
+</head>
+<body class="bg-[#050505] text-[#d4d4d4] font-serif">
+    <main id="l10-page" data-l10-layout="research" data-l10-sidenav="site" data-l10-sidenav-pos="left">
+        <article class="prose prose-slate dark:prose-invert max-w-4xl mx-auto research-content">
+            
+            <header class="mb-16">
+                <h1 class="research-title text-white">Chain Consistency Checks</h1>
+                
+                <p class="lead text-xl text-neutral-400 font-serif italic border-l-4 border-check-600 pl-6 py-2">
+                    Deterministic fidelity verification: ensuring the final synthesis honors all intermediate conclusions of the reasoning chain.
+                </p>
+            </header>
+
+            <h2>Verified Fidelity</h2>
+            <p>
+                Language models often generate fluent text that contradicts their own prior reasoning—concluding that a party prevails after establishing facts that support the opposition. LegalChain addresses this through <strong>five deterministic checks</strong> that require no additional LLM inference.
+            </p>
+
+            <!-- Fidelity Registry Table -->
+            <div class="my-12 overflow-x-auto border border-neutral-800 bg-neutral-900/50 not-prose">
+                <table class="w-full text-left border-collapse text-xs">
+                    <thead class="bg-neutral-900 text-neutral-500 font-mono">
+                        <tr>
+                            <th class="p-4 border-b border-neutral-800">ID</th>
+                            <th class="p-4 border-b border-neutral-800">TARGET</th>
+                            <th class="p-4 border-b border-neutral-800">SOURCE</th>
+                            <th class="p-4 border-b border-neutral-800">HALLUCINATION CAUGHT</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-neutral-800">
+                        <tr class="hover:bg-neutral-800/50 transition-colors">
+                            <td class="p-4 font-mono text-check-400">CC1</td>
+                            <td class="p-4 font-bold text-white">Rule Section</td>
+                            <td class="p-4 text-neutral-500 font-mono uppercase">S1 Citation</td>
+                            <td class="p-4 bg-neutral-950/50">Missing or incorrect target case reference.</td>
+                        </tr>
+                        <tr class="hover:bg-neutral-800/50 transition-colors">
+                            <td class="p-4 font-mono text-check-400">CC2</td>
+                            <td class="p-4 font-bold text-white">Rule Section</td>
+                            <td class="p-4 text-neutral-500 font-mono uppercase">S3 Status</td>
+                            <td class="p-4 bg-neutral-950/50">Citing overturned law as good law (or vice-versa).</td>
+                        </tr>
+                        <tr class="hover:bg-neutral-800/50 transition-colors">
+                            <td class="p-4 font-mono text-check-400">CC3</td>
+                            <td class="p-4 font-bold text-white">Conclusion</td>
+                            <td class="p-4 text-neutral-500 font-mono uppercase">S4 Disposition</td>
+                            <td class="p-4 bg-neutral-950/50">Affirmed/Reversed mismatch relative to S4 extraction.</td>
+                        </tr>
+                        <tr class="hover:bg-neutral-800/50 transition-colors">
+                            <td class="p-4 font-mono text-check-400">CC4</td>
+                            <td class="p-4 font-bold text-white">Conclusion</td>
+                            <td class="p-4 text-neutral-500 font-mono uppercase">S4 Winner</td>
+                            <td class="p-4 bg-neutral-950/50">Incorrect party assertion based on extracted data.</td>
+                        </tr>
+                        <tr class="hover:bg-neutral-800/50 transition-colors">
+                            <td class="p-4 font-mono text-check-400">CC5</td>
+                            <td class="p-4 font-bold text-white">Application</td>
+                            <td class="p-4 text-neutral-500 font-mono uppercase">S5 Relationship</td>
+                            <td class="p-4 bg-neutral-950/50">Fabricating relationship logic when S5 was skipped.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h2>Context-Adaptive Scoring</h2>
+            <p>
+                Checks like <strong>CC5</strong> are adaptive. The system adjusts its expectations based on what the model actually had available. If <strong>S5 (Relationship Analysis)</strong> failed due to coverage gaps, the model is not penalized for omitting it—but it is penalized if it "hallucinates" a relationship that it did not actually analyze.
+            </p>
+
+            <!-- Case Study / Nuance Box -->
+            <div class="my-16 grid grid-cols-1 md:grid-cols-2 gap-px bg-neutral-800 border border-neutral-800 not-prose">
+                <div class="p-8 bg-neutral-950">
+                    <div class="text-[10px] font-mono text-check-400 uppercase tracking-widest mb-4">Linguistic Logic</div>
+                    <h3 class="text-white text-xl font-bold mb-4">Assertion vs. Quotation</h3>
+                    <p class="text-neutral-400 text-sm font-serif leading-relaxed">
+                        The system uses structural pattern matching to distinguish between the model's own conclusions and text it is merely quoting from a party's argument.
+                    </p>
+                </div>
+                <div class="p-8 bg-neutral-900 border-l border-neutral-800">
+                    <div class="space-y-4">
+                        <div class="border-l-2 border-red-500/50 pl-4 py-1">
+                            <div class="text-[10px] text-neutral-500 uppercase font-mono">Assertion (Checked)</div>
+                            <div class="text-xs text-neutral-300 italic font-serif">"The court correctly <strong>reversed</strong> the lower ruling..."</div>
+                        </div>
+                        <div class="border-l-2 border-green-500/50 pl-4 py-1">
+                            <div class="text-[10px] text-neutral-500 uppercase font-mono">Quotation (Excluded)</div>
+                            <div class="text-xs text-neutral-300 italic font-serif">"Petitioner argued that the and court should have <strong>affirmed</strong>..."</div>
+                        </div>
+                    </div>
+                    <div class="mt-6 pt-4 border-t border-neutral-800 text-[10px] text-neutral-500 font-mono">
+                        Regex-based boundary detection prevents false positive contradictions.
+                    </div>
+                </div>
+            </div>
+
+            <h2>Scaling Quality Assurance</h2>
+            <p>
+                By verifying internal consistency algorithmically, LegalChain achieves reproducible quality assurance that scales. A synthesis that claims "the Court affirmed" when the model’s own S4 extraction found "reversed" fails CC3, regardless of how persuasively the text is written.
+            </p>
+
+        </article>
+    </main>
+    <script src="../shared/site-shell.js"></script>
+</body>
+</html>

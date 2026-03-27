@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deterministic Scoring - LegalChain</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        legalblue: {
+                            50: '#f0f7ff',
+                            100: '#e0effe',
+                            200: '#bae0fd',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#1e3a8a',
+                        }
+                    },
+                    fontFamily: {
+                        serif: ['"Merriweather"', 'serif'],
+                        sans: ['"Inter"', 'sans-serif'],
+                    }
+                }
+            }
+        };
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;0,900;1,300&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ startOnLoad: true, theme: 'neutral' });
+    </script>
+    <link rel="stylesheet" href="../shared/report.css">
+</head>
+<body>
+    <main id="l10-page" data-l10-layout="research" data-l10-sidenav="site" data-l10-sidenav-pos="left">
+        <article class="prose prose-slate dark:prose-invert max-w-4xl mx-auto research-content font-sans">
+            
+            <header class="mb-16 not-prose">
+                <h1 class="text-4xl md:text-5xl font-serif font-black text-slate-900 dark:text-white mb-6 leading-tight">
+                    No Hidden Variables
+                </h1>
+                <p class="text-xl md:text-2xl text-slate-600 dark:text-slate-300 font-serif leading-relaxed border-l-4 border-amber-500 pl-6">
+                    Why we freeze scoring constants and enforce calculating 75% of metrics using code, not judges.
+                </p>
+            </header>
+
+            <p class="lead font-serif text-lg leading-loose">
+                If the score changes, the model must have changed. That is the golden rule of benchmarking. But with non-deterministic aggregators and "vibe-based" judging, scores often drift due to randomness in the evaluation process itself. LegalChain maximizes metric stability by relying on deterministic, audit-trail-verified scoring logic for all structural and citation components.
+            </p>
+
+            <h2 class="font-serif text-2xl font-bold mt-12 mb-6">The Formula is Fixed</h2>
+            <p>
+                When ranking precedents for a ResearchPack, or verifying a citation, we use frozen code paths. There is no LLM "deciding" if a case is relevant; there is a formula.
+            </p>
+
+            <div class="my-12 not-prose">
+                <div class="mermaid bg-slate-50 dark:bg-slate-900/50 p-6 rounded-xl border border-slate-200 dark:border-slate-800 text-center">
+                    graph LR
+                        Inputs[Sealed Inputs] --> Formula{Deterministic\nAlgorithm}
+                        Formula --> Output[Frozen Score]
+                        
+                        subgraph "Inputs"
+                            Signals[Introduction Signals]
+                            Treat[Shepard's Treatment]
+                            Freq[Citation Frequency]
+                            Fowler[Network Score]
+                        end
+                        
+                        Inputs --> Signals
+                        Inputs --> Treat
+                        Inputs --> Freq
+                        Inputs --> Fowler
+                        
+                        Signals -.-> Formula
+                        Treat -.-> Formula
+                        Freq -.-> Formula
+                        Fowler -.-> Formula
+                        
+                        style Formula fill:#dcfce7,stroke:#22c55e,stroke-width:2px,color:#166534
+                        style Output fill:#fff,stroke:#333,stroke-width:2px
+                </div>
+                <div class="text-center font-mono text-xs text-slate-500 mt-4 bg-slate-100 dark:bg-slate-900 py-2 rounded">
+                    R = 1.0*E + W_t + 0.2*log1p(freq) + W_s - 0.5*O
+                </div>
+            </div>
+
+            <h2 class="font-serif text-2xl font-bold mt-12 mb-6">Frozen Constants</h2>
+            <p>
+                Every weight, every threshold, and every penalty is explicitly versioned. We do not tweak these "under the hood."
+            </p>
+            
+            <div class="grid md:grid-cols-2 gap-8 my-10 not-prose">
+                <div class="bg-slate-50 dark:bg-slate-900/40 p-6 rounded-lg border border-slate-200 dark:border-slate-800">
+                    <h4 class="font-serif font-bold text-lg mb-4 text-slate-900 dark:text-slate-100">Signal Weights</h4>
+                    <table class="w-full text-sm text-left">
+                        <tr class="border-b border-slate-200 dark:border-slate-800">
+                            <td class="py-2 text-slate-500">"followed"</td>
+                            <td class="py-2 font-mono font-bold text-right">1.0</td>
+                        </tr>
+                        <tr class="border-b border-slate-200 dark:border-slate-800">
+                            <td class="py-2 text-slate-500">"cites"</td>
+                            <td class="py-2 font-mono font-bold text-right">0.7</td>
+                        </tr>
+                         <tr class="border-b border-slate-200 dark:border-slate-800">
+                            <td class="py-2 text-slate-500">"explained"</td>
+                            <td class="py-2 font-mono font-bold text-right">0.5</td>
+                        </tr>
+                        <tr>
+                            <td class="py-2 text-slate-500">"overruled"</td>
+                            <td class="py-2 font-mono font-bold text-right">0.0</td>
+                        </tr>
+                    </table>
+                </div>
+                
+                <div class="bg-slate-50 dark:bg-slate-900/40 p-6 rounded-lg border border-slate-200 dark:border-slate-800">
+                    <h4 class="font-serif font-bold text-lg mb-4 text-slate-900 dark:text-slate-100">Budget Limits</h4>
+                    <table class="w-full text-sm text-left">
+                        <tr class="border-b border-slate-200 dark:border-slate-800">
+                            <td class="py-2 text-slate-500">Max Anchor Chars</td>
+                            <td class="py-2 font-mono font-bold text-right">80,000</td>
+                        </tr>
+                        <tr class="border-b border-slate-200 dark:border-slate-800">
+                            <td class="py-2 text-slate-500">Max Pack Chars</td>
+                            <td class="py-2 font-mono font-bold text-right">120,000</td>
+                        </tr>
+                         <tr class="border-b border-slate-200 dark:border-slate-800">
+                            <td class="py-2 text-slate-500">Top-K Authorities</td>
+                            <td class="py-2 font-mono font-bold text-right">12</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <h3 class="font-serif text-xl font-bold mt-8 mb-4">What IS Judged?</h3>
+            <p>
+                We reserve LLM judging only for qualities that cannot be measured via code:
+            </p>
+            <ul class="list-disc pl-5 space-y-2 mb-8 text-slate-700 dark:text-slate-300">
+                <li><strong>Quality of Reasoning:</strong> Is the argument logical and persuasive?</li>
+                <li><strong>Doctrinal Nuance:</strong> Does the analysis capture the subtlety of a holding?</li>
+                <li><strong>Completeness:</strong> Did the model address all relevant factors?</li>
+            </ul>
+            <p>
+                For everything else—Did it cite real cases? Did it follow IRAC structure? Did it find the right precedent?—we use code.
+            </p>
+
+        </article>
+    </main>
+    <script src="../shared/site-shell.js"></script>
+</body>
+</html>

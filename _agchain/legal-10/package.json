@@ -1,0 +1,16 @@
+{
+  "name": "legal-10",
+  "private": true,
+  "scripts": {
+    "build": "node -e \"console.log('legal-10: static site (no build step)')\"",
+    "validate:site": "py website/scripts/validate_site_html.py",
+    "validate:site:draft": "py website/scripts/validate_site_html.py website-draft/public",
+    "dev": "py website/scripts/dev.py",
+    "dev:draft": "npm run validate:site:draft && npx serve website-draft/public",
+    "serve": "py website/scripts/dev.py",
+    "serve:draft": "npm run validate:site:draft && npx serve website-draft/public",
+    "pocketbase": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/run-pocketbase.ps1",
+    "pocketbase:migrate": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"& ./tools/pocketbase/pocketbase.exe migrate up --dir ../.hub_state/legal-10/pocketbase/pb_data --migrationsDir ../agchain.hub/pocketbase/migrations\"",
+    "pockethost": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/pockethost.ps1"
+  }
+}

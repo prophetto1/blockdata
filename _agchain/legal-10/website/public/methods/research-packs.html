@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ResearchPacks - LegalChain</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        legalblue: {
+                            50: '#f0f7ff',
+                            100: '#e0effe',
+                            200: '#bae0fd',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#1e3a8a',
+                        }
+                    }
+                }
+            }
+        };
+    </script>
+    <link rel="stylesheet" href="../shared/report.css">
+</head>
+<body>
+    <main id="l10-page" data-l10-layout="research" data-l10-sidenav="site" data-l10-sidenav-pos="left">
+        <article class="prose prose-slate dark:prose-invert max-w-4xl mx-auto research-content">
+            <header class="mb-16">
+                <h1 class="research-title">ResearchPacks</h1>
+                
+                <p class="lead text-xl text-neutral-600 dark:text-neutral-400 font-serif italic border-l-4 border-amber-500 pl-6 py-2">
+                    Cryptographically sealed, self-contained evidence bundles that eliminate external database dependencies at runtime.
+                </p>
+            </header>
+
+            <div class="my-16 flex flex-col md:flex-row gap-8 items-center justify-center p-8 bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-sm not-prose">
+                <div class="flex-1 text-center p-6 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-800">
+                    <div class="text-3xl font-black text-blue-600 mb-2">Sealed</div>
+                    <div class="text-sm font-bold text-blue-900 dark:text-blue-100">Zero Dependencies</div>
+                    <div class="text-xs text-blue-500 mt-2 italic">No Runtime Lookups</div>
+                </div>
+                <div class="text-neutral-300 dark:text-neutral-600">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                </div>
+                <div class="flex-1 text-center p-6 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl border border-emerald-100 dark:border-emerald-800">
+                    <div class="text-3xl font-black text-emerald-600 mb-2 font-mono">SHA-256</div>
+                    <div class="text-sm font-bold text-emerald-900 dark:text-emerald-100">Integrity Verified</div>
+                    <div class="text-xs text-emerald-500 mt-2 italic">Bit-Exact Reproducibility</div>
+                </div>
+                <div class="text-neutral-300 dark:text-neutral-600">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </div>
+                 <div class="flex-1 text-center p-6 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-100 dark:border-amber-800">
+                    <div class="text-3xl font-black text-amber-600 mb-2">15%</div>
+                    <div class="text-sm font-bold text-amber-900 dark:text-amber-100">Original Size</div>
+                    <div class="text-xs text-amber-500 mt-2 italic">Via Summarization</div>
+                </div>
+            </div>
+
+            <h2>The Reproducibility Problem</h2>
+            <p>
+                Traditional benchmarks evaluate models against live external datasets. When those datasets change, scores become incomparable. When databases go offline, evaluations break. To reproduce coverage numbers from six months ago often requires complex database reconstruction.
+            </p>
+            <p>
+                LegalChain solves this by <strong>sealing inputs at build time</strong>. A ResearchPack travels with its evaluation instance, guaranteeing that the inputs used to produce a score today are identical to those used next year.
+            </p>
+
+            <h2>Anatomy of a ResearchPack</h2>
+            <div class="not-prose space-y-4 my-8">
+                <div class="flex items-start gap-4 p-4 rounded-lg bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800">
+                    <div class="w-12 h-12 rounded bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 flex items-center justify-center font-bold text-neutral-500 shrink-0 shadow-sm">
+                        DOC1
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-sm mb-1">Anchor Opinion</h4>
+                        <p class="text-sm text-neutral-600 dark:text-neutral-400">The full, unaltered text of the Supreme Court majority opinion under analysis.</p>
+                    </div>
+                </div>
+                <div class="flex items-start gap-4 p-4 rounded-lg bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800">
+                    <div class="w-12 h-12 rounded bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 flex items-center justify-center font-bold text-neutral-500 shrink-0 shadow-sm">
+                        DOC2
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-sm mb-1">Cited Authorities</h4>
+                        <p class="text-sm text-neutral-600 dark:text-neutral-400">Authoritative summaries (Syllabi/Head Matter) of the top-ranked precedents cited by the anchor.</p>
+                    </div>
+                </div>
+                 <div class="flex items-start gap-4 p-4 rounded-lg bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800">
+                    <div class="w-12 h-12 rounded bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 flex items-center justify-center font-bold text-neutral-500 shrink-0 shadow-sm">
+                        DOC3
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-sm mb-1">Citation Evidence</h4>
+                        <p class="text-sm text-neutral-600 dark:text-neutral-400">Context snippets, treatment signals ("followed", "distinguished"), and metadata.</p>
+                    </div>
+                </div>
+            </div>
+
+            <h2>Deterministic Ranking</h2>
+            <p>
+                To select the most relevant authorities, we use a deterministic formula combining multiple signals:
+            </p>
+             <div class="my-8 p-6 bg-neutral-100 dark:bg-neutral-900/50 rounded-xl border border-neutral-200 dark:border-neutral-800 text-sm">
+                <h4 class="font-bold text-neutral-700 dark:text-neutral-300 mb-4 uppercase text-xs tracking-wider">Scoring Factors</h4>
+                <ul class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <li class="flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+                        <span>Log-scaled Citation Frequency</span>
+                    </li>
+                     <li class="flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+                        <span>Shepard's Treatment (Followed/Criticized)</span>
+                    </li>
+                     <li class="flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+                        <span>Introductory Signals ("see", "cf.")</span>
+                    </li>
+                     <li class="flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+                        <span>Fowler Precedential Score</span>
+                    </li>
+                </ul>
+            </div>
+
+            <h2>Optimized Summarization</h2>
+            <p>
+                Including full text for every cited case would explode the context window (>400k characters). Instead, we use <strong>Authoritative Summaries</strong>:
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 my-8 not-prose">
+                <div class="p-6 bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl">
+                    <h4 class="font-bold mb-2">SCOTUS Syllabi</h4>
+                    <p class="text-sm text-neutral-600 dark:text-neutral-400 mb-4">Official summaries prepared by the Reporter of Decisions. High-quality, court-approved abstracts.</p>
+                    <div class="text-xs font-mono bg-neutral-100 dark:bg-neutral-900 p-2 rounded">Avg length: 1,800 chars</div>
+                </div>
+                <div class="p-6 bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl">
+                    <h4 class="font-bold mb-2">CAP Head Matter</h4>
+                    <p class="text-sm text-neutral-600 dark:text-neutral-400 mb-4">Editorial summaries and headnotes from published reporters, widely used by legal professionals.</p>
+                    <div class="text-xs font-mono bg-neutral-100 dark:bg-neutral-900 p-2 rounded">Avg length: 1,300 chars</div>
+                </div>
+            </div>
+
+            <div class="bg-amber-50 dark:bg-amber-900/20 rounded-2xl p-8 my-12 border border-amber-100 dark:border-amber-800 not-prose">
+                <h3 class="text-sm font-bold uppercase tracking-widest text-amber-800 dark:text-amber-400 mb-4">Directory Structure</h3>
+                <div class="font-mono text-sm text-amber-900 dark:text-amber-100 bg-white dark:bg-neutral-950 p-4 rounded border border-amber-100 dark:border-amber-800">
+rps/
+  rpv2__1963-130/              # Unique deterministic ID
+    research_pack.json         # Sealed Payload
+    rp_manifest.json           # Audit Trail
+    rp_sha256.txt              # Verification Hash
+                </div>
+            </div>
+
+        </article>
+    </main>
+    <script src="../shared/site-shell.js"></script>
+</body>
+</html>

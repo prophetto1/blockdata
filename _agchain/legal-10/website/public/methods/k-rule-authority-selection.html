@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>K Rule: Authority Selection - LegalChain</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        legalblue: {
+                            50: '#f0f7ff',
+                            100: '#e0effe',
+                            200: '#bae0fd',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#1e3a8a',
+                        },
+                        selection: {
+                            400: '#fbbf24', // Amber-400
+                            500: '#f59e0b', // Amber-500
+                            600: '#d97706', // Amber-600
+                            900: '#451a03', // Amber-950
+                        }
+                    },
+                     fontFamily: {
+                        mono: ['"Fira Code"', 'monospace'],
+                        sans: ['"Inter"', 'sans-serif'],
+                        serif: ['"Merriweather"', 'serif'],
+                    }
+                }
+            }
+        };
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;0,900;1,300&family=Inter:wght@300;400;500;600&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../shared/report.css">
+</head>
+<body>
+    <main id="l10-page" data-l10-layout="research" data-l10-sidenav="site" data-l10-sidenav-pos="left">
+        <article class="prose prose-slate dark:prose-invert max-w-4xl mx-auto research-content">
+            
+            <header class="mb-16">
+                <h1 class="research-title">The K Rule: Authority Selection</h1>
+                
+                <p class="lead text-xl text-neutral-600 dark:text-neutral-400 font-serif italic border-l-4 border-selection-500 pl-6 py-2">
+                    Deterministic curation of high-impact precedents using global network centrality scores.
+                </p>
+            </header>
+
+            <h2>The Selection Problem</h2>
+            <p>
+                A typical Supreme Court opinion contains dozens of citations. Including all of them would create unwieldy context packets, while including too few might omit critical precedents. The <strong>K Rule</strong> provides a principled method to select the most authoritative citations for inclusion in ResearchPacks.
+            </p>
+
+            <!-- Metrics Split Card -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 my-16 not-prose">
+                <div class="p-8 bg-neutral-900 border border-neutral-700 rounded-xl relative overflow-hidden group">
+                    <div class="absolute top-0 right-0 p-4 opacity-10 font-mono text-4xl group-hover:opacity-20 transition-opacity">SCOTUS</div>
+                    <div class="relative z-10">
+                        <h4 class="text-white text-lg font-bold mb-4 flex items-center gap-2">
+                             <span class="w-1.5 h-6 bg-selection-500"></span>
+                             Fowler Score
+                        </h4>
+                        <p class="text-neutral-400 text-xs mb-6">Derived from network analysis of the U.S. Supreme Court citation graph.</p>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <div class="flex justify-between text-[10px] text-neutral-500 mb-1"><span>Landmark</span> <span>0.9-1.0</span></div>
+                                <div class="h-1.5 w-full bg-neutral-800 rounded-full overflow-hidden">
+                                    <div class="h-full bg-selection-500 w-[95%]"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-[10px] text-neutral-500 mb-1"><span>Strong</span> <span>0.5-0.9</span></div>
+                                <div class="h-1.5 w-full bg-neutral-800 rounded-full overflow-hidden">
+                                    <div class="h-full bg-selection-500 w-[70%]"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-8 bg-neutral-900 border border-neutral-700 rounded-xl relative overflow-hidden group">
+                    <div class="absolute top-0 right-0 p-4 opacity-10 font-mono text-4xl group-hover:opacity-20 transition-opacity">CAP</div>
+                    <div class="relative z-10">
+                        <h4 class="text-white text-lg font-bold mb-4 flex items-center gap-2">
+                             <span class="w-1.5 h-6 bg-blue-500"></span>
+                             PageRank Percentile
+                        </h4>
+                        <p class="text-neutral-400 text-xs mb-6">Centrality measured across the broader Federal reporter citation network.</p>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <div class="flex justify-between text-[10px] text-neutral-500 mb-1"><span>High Centrality</span> <span>Top 10%</span></div>
+                                <div class="h-1.5 w-full bg-neutral-800 rounded-full overflow-hidden">
+                                    <div class="h-full bg-blue-500 w-[90%]"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-[10px] text-neutral-500 mb-1"><span>Supplementary</span> <span>Top 25%</span></div>
+                                <div class="h-1.5 w-full bg-neutral-800 rounded-full overflow-hidden">
+                                    <div class="h-full bg-blue-500 w-[65%]"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <h2>The K Values</h2>
+            <p>
+                We analyzed authority score distributions across 20,402 anchors to determine the "sweet spot" where authority quality remains high without bloating the context budget.
+            </p>
+
+            <div class="my-12 overflow-x-auto border border-neutral-200 dark:border-neutral-800 rounded-lg not-prose">
+                <table class="w-full text-left border-collapse text-sm">
+                    <thead class="bg-neutral-50 dark:bg-neutral-900 text-neutral-500">
+                        <tr>
+                            <th class="p-4 border-b border-neutral-200 dark:border-neutral-800">Source</th>
+                            <th class="p-4 border-b border-neutral-200 dark:border-neutral-800">K Value</th>
+                            <th class="p-4 border-b border-neutral-200 dark:border-neutral-800">Mean Authority Quality</th>
+                            <th class="p-4 border-b border-neutral-200 dark:border-neutral-800">Rationale</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-neutral-100 dark:divide-neutral-800">
+                        <tr>
+                            <td class="p-4 font-bold text-neutral-900 dark:text-neutral-100">SCOTUS</td>
+                            <td class="p-4 font-mono font-bold text-selection-600">10</td>
+                            <td class="p-4">0.76 (Fowler)</td>
+                            <td class="p-4 text-xs text-neutral-500">Landmark-heavy selection; maintains high precedential density.</td>
+                        </tr>
+                        <tr>
+                            <td class="p-4 font-bold text-neutral-900 dark:text-neutral-100">CAP</td>
+                            <td class="p-4 font-mono font-bold text-selection-600">5</td>
+                            <td class="p-4">0.72 (PageRank)</td>
+                            <td class="p-4 text-xs text-neutral-500">Focused set of supplemental circuit/district authorities.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h2>How Selection Works</h2>
+            <p>
+                The process is fully deterministic and occurs during the pipeline build-time (Stages 3.7 to 4A).
+            </p>
+
+            <div class="my-12 p-8 bg-neutral-900 border border-neutral-700 rounded-xl font-mono text-xs whitespace-pre overflow-x-auto not-prose">
+<span class="text-selection-400 select-none"># Stage 3.7 Process</span>
+1. Rank all citations by <span class="text-white">Fowler</span> / <span class="text-white">PageRank</span>
+2. Generate <span class="text-selection-400">ranked.jsonl</span> maps per anchor
+
+<span class="text-selection-400 select-none"># Stage 4A Build</span>
+3. Apply <span class="text-white">K Rule</span> (Top 10 / Top 5)
+4. Record audit trail in <span class="text-selection-400">doc3.json</span>:
+<span class="text-neutral-500">   {
+     "scotus_k_config": 10,
+     "selected": 8,
+     "shipped": 8
+   }</span>
+            </div>
+
+            <!-- Tie-Breaking Notice -->
+            <div class="my-12 p-6 bg-amber-50 dark:bg-selection-900/10 border border-selection-500/30 rounded-lg not-prose">
+                <div class="flex gap-4">
+                    <div class="text-selection-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                    </div>
+                    <div>
+                        <h4 class="text-selection-700 dark:text-selection-400 font-bold text-sm mb-1 uppercase tracking-widest">Tie-Breaking Policy</h4>
+                        <p class="text-xs text-selection-800 dark:text-neutral-400 leading-relaxed italic">
+                            In cases of identical authority scores, ties are broken lexicographically by the citation string (e.g., "410 U.S. 113" &lt; "411 U.S. 1"). This ensures 100% deterministic selection across runs.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+        </article>
+    </main>
+    <script src="../shared/site-shell.js"></script>
+</body>
+</html>

@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Problems We Solve - Methodology</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = { darkMode: "class" };
+    </script>
+  </head>
+  <body>
+    <main id="l10-page" data-l10-layout="research" data-l10-sidenav="site" data-l10-sidenav-pos="left">
+      <article class="prose prose-slate dark:prose-invert max-w-6xl mx-auto research-content px-4">
+        <header class="mb-8 mt-4">
+          <h1 class="text-4xl font-mono font-bold tracking-tighter text-neutral-900 dark:text-white mb-4 border-b border-neutral-200 dark:border-neutral-800 pb-4">
+            Problems We Solve
+          </h1>
+          <p class="lead text-lg text-neutral-400 font-serif italic border-l-4 border-yellow-500 pl-6 py-1 max-w-4xl">
+            Failure modes that only surface under stateful, multi-step legal workflows.
+          </p>
+        </header>
+
+        <h2>Surface Fluency vs Reasoning Divergence</h2>
+        <p>
+          A model can write grammatically correct, professionally-styled legal text while producing substantively wrong analysis.
+          Standard benchmarks often reward fluency as a proxy for intelligence; LegalChain isolates reasoning from style.
+        </p>
+
+        <h2>The Compression Gap</h2>
+        <p>
+          Legal AI products are frequently deployed under aggressive quantization to reduce operational costs. This compression often
+          preserves surface fluency while silently degrading complex reasoning. LegalChain provides a stress-test for these
+          production-grade trade-offs.
+        </p>
+      </article>
+    </main>
+    <script src="../shared/site-shell.js"></script>
+  </body>
+</html>

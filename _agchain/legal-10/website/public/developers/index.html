@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Developers - LegalChain</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = { darkMode: "class" };
+    </script>
+    <style>
+        .dev-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .dev-card:hover {
+            transform: translateY(-4px);
+            border-color: #3b82f6;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        .step-gradient {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        }
+    </style>
+</head>
+
+<body class="min-h-screen bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 transition-colors">
+    <main id="l10-page" data-l10-layout="centered" data-l10-content-width="wide">
+
+        <!-- Header -->
+        <header class="py-16 px-4 text-center max-w-4xl mx-auto">
+            <div class="text-xs font-bold uppercase tracking-[0.2em] text-blue-600 dark:text-blue-400 mb-4">
+                Project Governance
+            </div>
+            <h1 class="text-4xl md:text-5xl font-extrabold mb-6 tracking-tight">
+                Developer Resources
+            </h1>
+            <p class="text-lg text-neutral-600 dark:text-neutral-400 leading-relaxed max-w-2xl mx-auto">
+                Everything you need to build, evaluate, and contribute to the LegalChain ecosystem.
+            </p>
+        </header>
+
+        <div class="max-w-6xl mx-auto px-4 pb-20">
+            <div class="grid md:grid-cols-2 gap-8 mb-16">
+                <!-- Getting Started -->
+                <div
+                    class="dev-card bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-8 shadow-sm">
+                    <div
+                        class="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center mb-6">
+                        <svg class="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
+                        </svg>
+                    </div>
+                    <h2 class="text-2xl font-bold mb-4">Getting Started</h2>
+                    <p class="text-neutral-600 dark:text-neutral-400 mb-8 leading-relaxed">
+                        Clone the official evaluation harness and start running benchmark chains against your own models
+                        locally.
+                    </p>
+                    <div class="space-y-4">
+                        <a href="https://github.com/legal10bench/L10bench"
+                            class="flex items-center justify-between p-4 bg-neutral-50 dark:bg-neutral-800/50 rounded-xl hover:bg-blue-50 dark:hover:bg-blue-900/20 group transition-colors">
+                            <span class="font-bold">Harness Repository</span>
+                            <svg class="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none"
+                                stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
+                            </svg>
+                        </a>
+                        <a href="/benchmarks/atomic/design.html"
+                            class="flex items-center justify-between p-4 bg-neutral-50 dark:bg-neutral-800/50 rounded-xl hover:bg-blue-50 dark:hover:bg-blue-900/20 group transition-colors">
+                            <span class="font-bold">Dataset Schemas</span>
+                            <svg class="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none"
+                                stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- API Reference -->
+                <div
+                    class="dev-card bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-8 shadow-sm">
+                    <div
+                        class="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-xl flex items-center justify-center mb-6">
+                        <svg class="w-6 h-6 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                        </svg>
+                    </div>
+                    <h2 class="text-2xl font-bold mb-4">API & Observability</h2>
+                    <p class="text-neutral-600 dark:text-neutral-400 mb-8 leading-relaxed">
+                        Leverage Langfuse integration for deep-dive tracing of agentic decision trees and per-step
+                        quality audits.
+                    </p>
+                    <div class="space-y-4">
+                        <div
+                            class="p-4 border border-dashed border-neutral-300 dark:border-neutral-700 rounded-xl opacity-60">
+                            <span class="text-sm font-bold opacity-50 uppercase tracking-widest">Planned</span>
+                            <div class="font-bold">Observability Setup Guide</div>
+                        </div>
+                        <div
+                            class="p-4 border border-dashed border-neutral-300 dark:border-neutral-700 rounded-xl opacity-60">
+                            <span class="text-sm font-bold opacity-50 uppercase tracking-widest">Planned</span>
+                            <div class="font-bold">Custom Prompt Templates</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Submission Process -->
+            <div class="step-gradient text-white rounded-3xl p-10 md:p-16 shadow-2xl relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 blur-3xl -mr-20 -mt-20"></div>
+                <div class="relative z-10">
+                    <h2 class="text-3xl font-bold mb-12">Standard Submission Workflow</h2>
+                    <div class="grid md:grid-cols-3 gap-12">
+                        <div class="space-y-4">
+                            <div class="text-5xl font-black text-blue-500/30">01</div>
+                            <h3 class="text-xl font-bold">Run Evaluation</h3>
+                            <p class="text-neutral-400 text-sm leading-relaxed">Execute the L10-Atomic or L10-Agentic
+                                chain against your model via the CLI.</p>
+                        </div>
+                        <div class="space-y-4">
+                            <div class="text-5xl font-black text-blue-500/30">02</div>
+                            <h3 class="text-xl font-bold">Generate Trace</h3>
+                            <p class="text-neutral-400 text-sm leading-relaxed">Collect standardized JSON traces
+                                containing raw prompts, outputs, and metrics.</p>
+                        </div>
+                        <div class="space-y-4">
+                            <div class="text-5xl font-black text-blue-500/30">03</div>
+                            <h3 class="text-xl font-bold">Submit Pull Request</h3>
+                            <p class="text-neutral-400 text-sm leading-relaxed">Submit traces via PR. Our judge will
+                                verify the S1-S7 integrity gates automatically.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="../shared/site-shell.js"></script>
+</body>
+
+</html>

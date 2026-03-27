@@ -1,0 +1,304 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LegalChain | Agentic Legal Reasoning Benchmark</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          fontFamily: {
+            'sans': ['Inter', 'system-ui', 'sans-serif'],
+            'mono': ['JetBrains Mono', 'monospace']
+          },
+          colors: {
+            teal: { 500: '#0ea5e9', 600: '#0284c7', 900: '#0c4a6e' }
+          }
+        }
+      }
+    };
+  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
+  <style type="text/tailwindcss">
+    @layer base {
+      body { @apply bg-white dark:bg-neutral-950 text-neutral-900 dark:text-white selection:bg-teal-500/30 transition-colors duration-300; }
+    }
+    .text-massive { font-size: clamp(3.5rem, 12vw, 9rem); line-height: 0.9; letter-spacing: -0.04em; font-weight: 900; @apply text-neutral-900 dark:text-white; }
+    .glass-card { @apply bg-neutral-50/50 dark:bg-neutral-900/50 backdrop-blur-xl border border-neutral-200 dark:border-white/5 rounded-3xl p-8 transition-all; }
+    .status-dot { @apply w-2 h-2 rounded-full; }
+    .online { @apply bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.5)]; }
+  </style>
+</head>
+<body>
+  <!-- Shell will inject nav/footer around this -->
+  <main id="l10-page" data-l10-layout="wide" data-l10-subnav="none" class="p-4 md:p-8">
+    <div class="max-w-screen-2xl mx-auto space-y-8">
+
+      <!-- STATUS BAR -->
+      <div class="flex items-center justify-between px-4 py-2 text-neutral-600 dark:text-neutral-400 text-[10px] font-mono tracking-[0.3em] uppercase">
+        <div class="flex items-center gap-4">
+          <span class="status-dot online"></span>
+          <span>BENCHMARK ACTIVE [v3.0]</span>
+        </div>
+
+      </div>
+
+      <!-- HERO SECTION -->
+      <section class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+
+        <!-- MAIN HEADLINE (8 COLS) -->
+        <!-- BOX 1: CONTENT (4 COLS) -->
+        <div class="lg:col-span-4 glass-card flex flex-col justify-center overflow-hidden relative">
+          <div class="absolute -top-24 -right-24 w-96 h-96 bg-teal-500/10 blur-[120px] rounded-full"></div>
+          <div class="text-teal-500 font-mono text-xs mb-4 tracking-widest uppercase">What is LegalChain?</div>
+          <p class="text-lg text-neutral-900 dark:text-neutral-200 font-normal leading-snug drop-shadow-sm">
+            LegalChain is the public benchmark intro site for Legal-10 and the main showcase for AGChain. AGChain is the benchmark authoring platform under development; LegalChain is where the benchmark, methodology, leaderboard, and pitch are published today.
+          </p>
+        </div>
+
+        <!-- BOX 2: EMPTY PLACEHOLDER (4 COLS) -->
+        <div class="lg:col-span-4 glass-card flex flex-col justify-center relative overflow-hidden">
+             <!-- Empty box for future content -->
+        </div>
+
+        <!-- SIDE STATS (4 COLS) -->
+        <div class="lg:col-span-4 flex flex-col gap-8">
+          <div class="glass-card flex-1">
+              <div class="flex items-center justify-between gap-4 mb-4">
+                <div class="text-[10px] font-mono text-neutral-600 uppercase tracking-widest">Notices</div>
+                <a href="/about/notices.html" class="text-[10px] font-mono text-teal-500 hover:underline">ALL -></a>
+              </div>
+              <div id="notices-mini" class="space-y-4">
+                <div class="text-sm text-neutral-700 dark:text-neutral-300">No notices yet.</div>
+              </div>
+          </div>
+          <div class="glass-card flex-1 bg-neutral-100 dark:bg-white/5 border-none p-10 flex flex-col justify-between">
+              <p class="text-lg font-light leading-relaxed italic text-neutral-700 dark:text-neutral-300">
+                  "The transition from atomic prompts to stress-tests that evaluate multi-step, complex reasoning in chained, stateful conditions requires new standards."
+              </p>
+              <div class="mt-8 flex items-center gap-4">
+                  <a href="/about/mission.html" class="px-6 py-2 bg-neutral-900 dark:bg-white text-white dark:text-black text-xs font-bold rounded-full uppercase tracking-widest hover:opacity-80 transition-opacity">Read Mission</a>
+                  <a href="/pitch-deck/" class="px-6 py-2 bg-teal-500/10 border border-teal-500/30 text-teal-700 dark:text-teal-300 text-xs font-bold rounded-full uppercase tracking-widest hover:bg-teal-500/20 transition-colors">View Pitch Deck</a>
+              </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TECHNICAL DESCRIPTION (FULL WIDTH) -->
+      <section class="glass-card border-none bg-neutral-100 dark:bg-white/5">
+          <div class="grid grid-cols-1 md:grid-cols-6 gap-8 items-center">
+              <div class="md:col-span-1">
+                  <div class="text-teal-500 font-mono text-[10px] uppercase tracking-widest mb-2">Technical Baseline</div>
+                  <div class="brand-logo text-2xl font-semibold tracking-tight text-neutral-900 dark:text-neutral-100">10-Skill Chain</div>
+              </div>
+              <div class="md:col-span-3">
+                  <p class="text-lg leading-relaxed text-neutral-800 dark:text-neutral-300 font-light text-balance">
+                      AGChain provides the evaluation infrastructure; LegalChain is the public benchmark surface running on top of it. Unlike traditional benchmarks that test isolated questions, this stack evaluates 10-step chained reasoning where errors propagate realistically, verifying citations against a sealed universe of 27,733 Supreme Court opinions and 378,938 extracted citation occurrences. With structural no-leak architecture and deterministic synthetic traps, it distinguishes grounded legal reasoning from hallucination in high-stakes workflows.
+                  </p>
+              </div>
+              <div class="md:col-span-2 flex flex-col gap-2 md:pl-8 border-t md:border-t-0 md:border-l border-neutral-200 dark:border-white/10 pt-8 md:pt-0">
+                  <div class="text-[10px] font-mono uppercase tracking-tight text-neutral-700 dark:text-neutral-500">First Chained Legal Benchmark</div>
+                  <div class="text-[10px] font-mono uppercase tracking-tight text-neutral-700 dark:text-neutral-500">Deterministic Reference Pack</div>
+                  <div class="text-[10px] font-mono uppercase tracking-tight text-neutral-700 dark:text-neutral-500">Shepard's as Relevance Oracle</div>
+                  <div class="text-[10px] font-mono uppercase tracking-tight text-neutral-700 dark:text-neutral-500">Chain-Faithful Evaluation</div>
+                  <div class="text-[10px] font-mono uppercase tracking-tight text-neutral-700 dark:text-neutral-500">Citation Integrity Gate</div>
+                  <div class="text-[10px] font-mono uppercase tracking-tight text-neutral-700 dark:text-neutral-500">Structural No-Leak Architecture</div>
+                  <div class="text-[10px] font-mono uppercase tracking-tight text-neutral-700 dark:text-neutral-500">Selection Manifest as Contract</div>
+                  <div class="text-[10px] font-mono uppercase tracking-tight text-neutral-700 dark:text-neutral-500">Two-Layer Architecture</div>
+              </div>
+          </div>
+      </section>
+
+      <!-- CORE CONTENT GRID -->
+      <section class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+
+          <!-- LEADERBOARD PREVIEW (8 COLS) -->
+          <div class="lg:col-span-8 glass-card p-0 overflow-hidden">
+              <div class="p-8 border-b border-neutral-200 dark:border-white/5 flex items-center justify-between">
+                  <h2 class="text-xl font-bold">Top Performance</h2>
+                  <a href="/leaderboard/index.html" class="text-xs font-mono text-teal-500 hover:underline">FULL_LOGS -></a>
+              </div>
+              <div class="overflow-x-auto">
+                  <table class="w-full text-left text-sm border-collapse">
+                      <thead class="bg-neutral-100 dark:bg-white/5 text-[10px] font-mono uppercase tracking-widest text-neutral-600 dark:text-neutral-500 border-b border-neutral-200 dark:border-white/5">
+                          <tr>
+                              <th class="p-6">Model</th>
+                              <th class="p-6">Composite</th>
+                              <th class="p-6 text-right">S8 Integrity</th>
+                              <th class="p-6 text-right">Latency</th>
+                              <th class="p-6 text-right">Cost</th>
+                          </tr>
+                      </thead>
+                      <tbody id="lb-body" class="divide-y divide-neutral-200 dark:divide-white/5">
+                          <tr class="animate-pulse">
+                              <td colspan="5" class="p-12 text-center text-neutral-700 dark:text-neutral-300">
+                                <div class="font-semibold">Leaderboard preview</div>
+                                <div class="mt-2 text-sm text-neutral-600 dark:text-neutral-400">Open the full leaderboard to view results.</div>
+                                <a href="/leaderboard/index.html" class="inline-block mt-3 text-xs font-mono text-teal-500 hover:underline">VIEW_LEADERBOARD -&gt;</a>
+                              </td>
+                          </tr>
+                      </tbody>
+                  </table>
+              </div>
+          </div>
+
+          <!-- RIGHT COLUMN (4 COLS) -->
+          <div class="lg:col-span-4 flex flex-col gap-8">
+              <div class="glass-card min-h-[240px] flex flex-col justify-center border-emerald-500/20 bg-emerald-500/5">
+                  <div class="text-[10px] font-mono text-neutral-600 uppercase tracking-widest mb-2">Leader: GPT-4o</div>
+                  <div class="text-7xl font-bold tracking-tighter text-emerald-800 dark:text-emerald-400" id="stat-leader">91%</div>
+              </div>
+          </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- Optional: Supabase-backed data source for static pages -->
+  <script src="/shared/runtime-config.js"></script>
+  <script src="/shared/data-client.js"></script>
+
+  <script src="/shared/site-shell.js"></script>
+  <script>
+    async function loadHomepageLeaderboardModels() {
+        // Prefer a homepage-specific concise dataset (repo-backed).
+        try {
+            const res = await fetch("/data/concise/homepage-leaderboard.sim.json", { cache: "no-store" });
+            if (res.ok) {
+                const json = await res.json();
+                if (Array.isArray(json?.models)) return json.models;
+            }
+        } catch (_) {
+            // ignore
+        }
+
+        // Fallback: existing data client (optional; may be disabled later).
+        try {
+            if (window.l10Data?.fetchLeaderboardModels) {
+                return await window.l10Data.fetchLeaderboardModels({
+                    fallbackJsonUrl: "/data/leaderboard-v2.sample.json",
+                });
+            }
+        } catch (_) {
+            // ignore
+        }
+
+        // Final fallback: static sample JSON.
+        try {
+            const res = await fetch("/data/leaderboard-v2.sample.json", { cache: "no-store" });
+            if (res.ok) {
+                const json = await res.json();
+                if (Array.isArray(json?.models)) return json.models;
+            }
+        } catch (_) {
+            // ignore
+        }
+
+        return [];
+    }
+
+    async function hydrate() {
+        try {
+            const models = await loadHomepageLeaderboardModels();
+
+            let reps = [];
+            try {
+              const repRes = await fetch("../data/notices.json", { cache: "no-store" });
+              reps = repRes.ok ? await repRes.json() : [];
+            } catch (_) {
+              reps = [];
+            }
+
+            const sortedModels = models
+              .slice()
+              .sort((a, b) => (b.chain ?? -Infinity) - (a.chain ?? -Infinity));
+
+            // Populate Stats
+            document.getElementById('stat-leader').innerText =
+              sortedModels[0]?.chain === undefined ? "â€”" : (sortedModels[0].chain).toFixed(1) + '%';
+
+            // Populate Table
+            const tbody = document.getElementById('lb-body');
+            if (!sortedModels.length) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="p-12 text-center text-neutral-600 dark:text-neutral-300">
+                            No results yet.
+                        </td>
+                    </tr>
+                `;
+            } else {
+                tbody.innerHTML = sortedModels.slice(0, 6).map(m => {
+                    const chain = Number(m.chain);
+                    const s8 = Number(m.s8_pass_rate);
+                    const latency = Number(m.avg_latency_ms);
+                    const cost = Number(m.cost_per_instance);
+
+                    const chainText = Number.isFinite(chain) ? chain.toFixed(1) + '%' : '';
+                    const chainBar = Number.isFinite(chain) ? Math.max(0, Math.min(100, chain)) : 0;
+
+                    const s8Text = Number.isFinite(s8) ? s8.toFixed(0) + '%' : '';
+                    const latencyText = Number.isFinite(latency) ? latency.toFixed(0) + ' ms' : '';
+                    const costText = Number.isFinite(cost) ? '$' + cost.toFixed(4) : '';
+
+                    const provider = (m.provider || '').toString().toUpperCase();
+                    return `
+                        <tr class="hover:bg-neutral-100 dark:hover:bg-white/5 transition-colors">
+                            <td class="p-6 font-bold tracking-tight">
+                                ${m.model || ''}
+                                <span class="block text-[10px] font-mono text-neutral-700 dark:text-neutral-400 font-normal mt-1">${provider}</span>
+                            </td>
+                            <td class="p-6">
+                                <div class="flex items-center gap-4">
+                                    <div class="text-xl font-bold">${chainText}</div>
+                                    <div class="w-16 h-1.5 bg-neutral-200 dark:bg-neutral-800 rounded-full overflow-hidden">
+                                        <div class="h-full bg-teal-500" style="width: ${chainBar}%"></div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="p-6 text-right font-mono text-emerald-600 dark:text-emerald-500">${s8Text}</td>
+                            <td class="p-6 text-right font-mono text-neutral-700 dark:text-neutral-200">${latencyText}</td>
+                            <td class="p-6 text-right font-mono text-neutral-700 dark:text-neutral-200">${costText}</td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+
+            // Populate Notices (mini)
+            const noticesMini = document.getElementById('notices-mini');
+            if (noticesMini) {
+              const items = Array.isArray(reps) ? reps.slice(0, 3) : [];
+              if (!items.length) {
+                noticesMini.innerHTML = `<div class="text-sm text-neutral-700 dark:text-neutral-300">No notices yet.</div>`;
+              } else {
+                noticesMini.innerHTML = items.map(r => `
+                    <div class="group">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="text-[9px] font-mono px-1 border border-teal-500/30 text-teal-600 dark:text-teal-500 uppercase">${r.category}</span>
+                            <span class="text-[10px] text-neutral-700 dark:text-neutral-400 font-mono">${r.date}</span>
+                        </div>
+                        <a href="../${r.href || '#'}" class="block hover:text-teal-600 dark:hover:text-teal-400 transition-colors">
+                            <div class="text-base font-bold leading-snug"># ${r.title}</div>
+                            <div class="text-sm text-neutral-700 dark:text-neutral-300 mt-1 line-clamp-2">${r.description || ''}</div>
+                        </a>
+                    </div>
+                `).join('');
+              }
+            }
+
+        } catch (e) { console.error(e); }
+    }
+
+    // Wait for shell to be ready, then hydrate
+    window.addEventListener("l10-shell-ready", hydrate);
+    // Fallback if shell doesn't fire event
+    window.l10ShellReady?.then(hydrate).catch(() => {
+      document.addEventListener('DOMContentLoaded', hydrate);
+    });
+  </script>
+</body>
+</html>
+

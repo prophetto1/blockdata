@@ -1,6 +1,7 @@
 import type { Icon } from '@tabler/icons-react';
 import {
   IconApps,
+  IconAtom2,
   IconDatabase,
   IconFileCode,
   IconFolder,
@@ -287,7 +288,31 @@ const PIPELINE_SERVICES_DRILL: NavDrillConfig = {
   ],
 };
 
-export const DRILL_CONFIGS: NavDrillConfig[] = [FLOWS_DRILL, SETTINGS_DRILL, INGEST_DRILL, BUILD_AI_DRILL, CONNECTIONS_DRILL, WORKBENCH_DRILL, PIPELINE_SERVICES_DRILL, OBSERVABILITY_DRILL];
+const BENCHMARK_DRILL: NavDrillConfig = {
+  id: 'benchmark',
+  parentLabel: 'Benchmarks',
+  parentPath: '/app/agchain/benchmarks',
+  routePrefix: '/app/agchain/benchmarks/',
+  pathTemplate: '/app/agchain/benchmarks/:benchmarkId',
+  sections: [
+    {
+      label: '',
+      items: [
+        { label: 'Steps',      icon: IconClipboardList,  path: '#steps' },
+        { label: 'Questions',  icon: IconFileText,        path: '#questions' },
+        { label: 'Context',    icon: IconLayoutDashboard, path: '#context' },
+        { label: 'State',      icon: IconDatabase,        path: '#state' },
+        { label: 'Scoring',    icon: IconChartBar,        path: '#scoring' },
+        { label: 'Models',     icon: IconAtom2,           path: '#models' },
+        { label: 'Runner',     icon: IconPlayerPlay,      path: '#runner' },
+        { label: 'Validation', icon: IconTestPipe,        path: '#validation' },
+        { label: 'Runs',       icon: IconActivity,        path: '#runs' },
+      ],
+    },
+  ],
+};
+
+export const DRILL_CONFIGS: NavDrillConfig[] = [FLOWS_DRILL, SETTINGS_DRILL, INGEST_DRILL, BUILD_AI_DRILL, CONNECTIONS_DRILL, WORKBENCH_DRILL, PIPELINE_SERVICES_DRILL, OBSERVABILITY_DRILL, BENCHMARK_DRILL];
 
 const DRILL_BY_ID = new Map(DRILL_CONFIGS.map((c) => [c.id, c]));
 
@@ -324,6 +349,10 @@ export function findDrillByRoute(pathname: string): NavDrillConfig | null {
 
 export function resolveFlowDrillPath(tabSlug: string, flowId: string): string {
   return `/app/flows/${encodeURIComponent(flowId)}/${tabSlug}`;
+}
+
+export function resolveBenchmarkDrillPath(hashSlug: string, benchmarkId: string): string {
+  return `/app/agchain/benchmarks/${encodeURIComponent(benchmarkId)}${hashSlug}`;
 }
 
 export const GLOBAL_MENUS: NavItem[] = [
