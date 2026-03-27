@@ -243,9 +243,9 @@ export function stepFormValuesToDraft(values: {
   api_call_boundary: AgchainBenchmarkStepRow['api_call_boundary'];
   inject_payloads_csv: string;
   scoring_mode: AgchainBenchmarkStepRow['scoring_mode'];
-  output_contract: string;
-  scorer_ref: string;
-  judge_prompt_ref: string;
+  output_contract: string | null;
+  scorer_ref: string | null;
+  judge_prompt_ref: string | null;
   judge_grades_step_ids_csv: string;
   enabled: boolean;
   step_config_json: string;

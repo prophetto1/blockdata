@@ -7,7 +7,6 @@ import {
   fetchAgchainBenchmarkSteps,
   reorderAgchainBenchmarkSteps,
   type AgchainBenchmarkDetail,
-  type AgchainBenchmarkStepRow,
   type AgchainBenchmarkStepWrite,
   type AgchainBenchmarkStepsDetail,
   updateAgchainBenchmarkStep,

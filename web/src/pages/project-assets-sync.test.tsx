@@ -95,16 +95,6 @@ const originalDoc = {
   conv_locator: 'projects/project-1/converted/original-draft.docx',
 };
 
-const uploadedDoc = {
-  ...originalDoc,
-  source_uid: 'source-2',
-  conv_uid: 'conv-2',
-  doc_title: 'Uploaded Notes.docx',
-  source_locator: 'projects/project-1/source/uploaded-notes.docx',
-  conv_locator: 'projects/project-1/converted/uploaded-notes.docx',
-  uploaded_at: '2026-03-11T00:00:00.000Z',
-};
-
 describe('project asset surfaces', () => {
   beforeEach(() => {
     refreshDocs.mockReset();
@@ -116,8 +106,10 @@ describe('project asset surfaces', () => {
       selected: new Set<string>(),
       toggleSelect: vi.fn(),
       toggleSelectAll: vi.fn(),
+      clearSelection: vi.fn(),
       allSelected: false,
       someSelected: false,
+      selectedDocs: [],
       refreshDocs,
     });
   });
