@@ -1,0 +1,248 @@
+{
+  "$defs": {
+    "ProfileConstraints": {
+      "properties": {
+        "max_tokens_per_step": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Tokens Per Step"
+        },
+        "max_cost_per_run": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Cost Per Run"
+        },
+        "max_retries_per_step": {
+          "default": 3,
+          "title": "Max Retries Per Step",
+          "type": "integer"
+        },
+        "timeout_per_step_seconds": {
+          "default": 300,
+          "title": "Timeout Per Step Seconds",
+          "type": "integer"
+        },
+        "max_connections": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Connections"
+        },
+        "max_tool_output": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Tool Output"
+        },
+        "max_sandboxes": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Sandboxes"
+        }
+      },
+      "title": "ProfileConstraints",
+      "type": "object"
+    },
+    "SessionStrategyConfig": {
+      "properties": {
+        "strategy_id": {
+          "enum": [
+            "replay_minimal",
+            "replay_full"
+          ],
+          "title": "Strategy Id",
+          "type": "string"
+        },
+        "parameters": {
+          "additionalProperties": true,
+          "default": {},
+          "title": "Parameters",
+          "type": "object"
+        }
+      },
+      "required": [
+        "strategy_id"
+      ],
+      "title": "SessionStrategyConfig",
+      "type": "object"
+    },
+    "StateProviderConfig": {
+      "properties": {
+        "provider_id": {
+          "enum": [
+            "type_0",
+            "type_i",
+            "type_ii",
+            "type_iii"
+          ],
+          "title": "Provider Id",
+          "type": "string"
+        },
+        "parameters": {
+          "additionalProperties": true,
+          "default": {},
+          "title": "Parameters",
+          "type": "object"
+        }
+      },
+      "required": [
+        "provider_id"
+      ],
+      "title": "StateProviderConfig",
+      "type": "object"
+    },
+    "ToolStrategyConfig": {
+      "properties": {
+        "strategy_id": {
+          "enum": [
+            "no_tools",
+            "standard",
+            "mcp"
+          ],
+          "title": "Strategy Id",
+          "type": "string"
+        },
+        "parameters": {
+          "additionalProperties": true,
+          "default": {},
+          "title": "Parameters",
+          "type": "object"
+        },
+        "tool_filter": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tool Filter"
+        }
+      },
+      "required": [
+        "strategy_id"
+      ],
+      "title": "ToolStrategyConfig",
+      "type": "object"
+    }
+  },
+  "properties": {
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "name": {
+      "title": "Name",
+      "type": "string"
+    },
+    "version": {
+      "default": "1.0.0",
+      "title": "Version",
+      "type": "string"
+    },
+    "session_strategy": {
+      "$ref": "#/$defs/SessionStrategyConfig"
+    },
+    "state_provider": {
+      "$ref": "#/$defs/StateProviderConfig"
+    },
+    "tool_strategy": {
+      "$ref": "#/$defs/ToolStrategyConfig"
+    },
+    "constraints": {
+      "$ref": "#/$defs/ProfileConstraints",
+      "default": {
+        "max_tokens_per_step": null,
+        "max_cost_per_run": null,
+        "max_retries_per_step": 3,
+        "timeout_per_step_seconds": 300,
+        "max_connections": null,
+        "max_tool_output": null,
+        "max_sandboxes": null
+      }
+    },
+    "cache_policy": {
+      "default": "disabled",
+      "enum": [
+        "disabled",
+        "read",
+        "write",
+        "read_write"
+      ],
+      "title": "Cache Policy",
+      "type": "string"
+    },
+    "compaction": {
+      "default": "none",
+      "enum": [
+        "auto",
+        "native",
+        "summary",
+        "edit",
+        "trim",
+        "none"
+      ],
+      "title": "Compaction",
+      "type": "string"
+    },
+    "compaction_threshold": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Compaction Threshold"
+    }
+  },
+  "required": [
+    "id",
+    "name",
+    "session_strategy",
+    "state_provider",
+    "tool_strategy"
+  ],
+  "title": "Profile",
+  "type": "object"
+}

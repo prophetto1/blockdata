@@ -89,6 +89,7 @@ web-docs/*.log
 
 # External repos / clones
 external/
+_external/
 _agentDev/
 tmp/
 
@@ -97,7 +98,6 @@ _agchain/_reference/
 _agchain/.*
 !_agchain/.gitattributes
 !_agchain/.editorconfig
-!_agchain/.env.example
 !_agchain/.hub_state
 _agchain/-personal-/
 _agchain/-refs/

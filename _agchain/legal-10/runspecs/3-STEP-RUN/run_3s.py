@@ -134,6 +134,8 @@ def run_single_eu(
     eval_adapter: ModelAdapter,
     judge_adapter: ModelAdapter,
     run_id: str,
+    profile: Any = None,
+    build_messages_fn: Any = None,
 ) -> dict[str, Any]:
     """Execute the 3-step chain for one EU."""
     benchmark = _load_json(benchmark_dir / "benchmark.json")
@@ -147,7 +149,18 @@ def run_single_eu(
 
     print(f"  Run {run_id} | EU {eu_id}")
 
-    state = CandidateState()
+    _session = None
+    if profile is not None:
+        from profiles.registry import resolve_profile
+        _resolved = resolve_profile(
+            profile,
+            build_messages_fn=build_messages_fn,
+            candidate_state=CandidateState(),
+        )
+        state = _resolved.state
+        _session = _resolved.session
+    else:
+        state = CandidateState()
     step_outputs: dict[str, dict[str, Any]] = {}
     step_scores: dict[str, Any] = {}
 
@@ -173,12 +186,20 @@ def run_single_eu(
         staged_paths = stage_files(staging_dir, step_def, payloads, state.as_dict())
 
         # 3. InputAssembler
-        messages = build_messages(
-            step_def=step_def,
-            payloads=payloads,
-            candidate_state=state.as_dict(),
-            system_message=system_message,
-        )
+        if _session is not None:
+            messages = _session.init_messages(
+                step_def=step_def,
+                payloads=payloads,
+                candidate_state=state.as_dict(),
+                system_message=system_message,
+            )
+        else:
+            messages = build_messages(
+                step_def=step_def,
+                payloads=payloads,
+                candidate_state=state.as_dict(),
+                system_message=system_message,
+            )
 
         # 4. Audit (pre-call)
         staged_hashes = {p.name: hash_file(p) for p in staged_paths}
@@ -409,11 +430,35 @@ def main() -> None:
     parser.add_argument("--judge-provider", type=str, help="Judge model provider (defaults to --provider)")
     parser.add_argument("--judge-model", type=str, help="Judge model name (defaults to --model)")
     parser.add_argument("--limit", type=int, default=0, help="Max EUs to run (0 = all)")
+    parser.add_argument(
+        "--profile",
+        type=str,
+        default=None,
+        help="Profile ID ('baseline') or path to profile JSON. If omitted, uses legacy code path.",
+    )
     args = parser.parse_args()
 
     if not args.benchmark_dir.exists():
         print(f"ERROR: Benchmark dir not found: {args.benchmark_dir}", file=sys.stderr)
         sys.exit(1)
+
+    # Profile resolution (opt-in)
+    _profile_obj = None
+    _bm_fn = None
+    if args.profile is not None:
+        _agchain_root = Path(__file__).resolve().parents[3]
+        sys.path.insert(0, str(_agchain_root))
+
+        from profiles.registry import get_baseline_profile
+        from profiles.types import Profile
+        import profiles.baseline  # noqa: F401 — triggers strategy registration
+        from runtime.input_assembler import build_messages as _bm
+
+        _bm_fn = _bm
+        if args.profile == "baseline":
+            _profile_obj = get_baseline_profile()
+        else:
+            _profile_obj = Profile.model_validate_json(Path(args.profile).read_text())
 
     # Create adapters
     eval_adapter = create_adapter(args.provider, model=args.model)
@@ -453,6 +498,8 @@ def main() -> None:
                 eval_adapter=eval_adapter,
                 judge_adapter=judge_adapter,
                 run_id=run_id,
+                profile=_profile_obj,
+                build_messages_fn=_bm_fn,
             )
         except Exception as e:
             print(f"  ERROR running EU {eu_dir.name}: {e}", file=sys.stderr)
