@@ -1,11 +1,17 @@
+import { StorageQuotaSummary } from '@/components/storage/StorageQuotaSummary';
+import { useStorageQuota } from '@/hooks/useStorageQuota';
 import { Workbench } from '@/components/workbench/Workbench';
 import { useAssetsWorkbench, ASSETS_TABS, ASSETS_DEFAULT_PANES } from './useAssetsWorkbench';
 
 export default function ProjectAssetsPage() {
-  const { renderContent, workbenchRef } = useAssetsWorkbench();
+  const quota = useStorageQuota();
+  const { renderContent, workbenchRef } = useAssetsWorkbench({ refreshQuota: quota.refresh });
   return (
     <div className="h-full w-full min-h-0 p-2">
       <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-md border border-border bg-card">
+        <div className="border-b border-border px-2 py-2">
+          <StorageQuotaSummary quota={quota.data} loading={quota.loading} error={quota.error} />
+        </div>
         <Workbench
           ref={workbenchRef}
           tabs={ASSETS_TABS}

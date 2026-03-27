@@ -28,7 +28,7 @@ export const ASSETS_DEFAULT_PANES: Pane[] = normalizePaneWidths([
   { id: 'pane-preview', tabs: ['preview'], activeTab: 'preview', width: 70 },
 ]);
 
-export function useAssetsWorkbench() {
+export function useAssetsWorkbench({ refreshQuota }: { refreshQuota?: () => Promise<void> | void } = {}) {
   useShellHeaderTitle({ title: 'Project Assets' });
   const { resolvedProjectId } = useProjectFocus();
 
@@ -109,7 +109,15 @@ export function useAssetsWorkbench() {
           </div>
         );
       }
-      return <UploadTabPanel projectId={resolvedProjectId} onUploadComplete={refreshDocs} />;
+      return (
+        <UploadTabPanel
+          projectId={resolvedProjectId}
+          onUploadComplete={() => {
+            refreshDocs();
+            void refreshQuota?.();
+          }}
+        />
+      );
     }
 
     if (tabId === 'files') {
@@ -149,7 +157,7 @@ export function useAssetsWorkbench() {
     }
 
     return null;
-  }, [resolvedProjectId, docs, loading, error, selected, toggleSelect, toggleSelectAll, allSelected, someSelected, activeDocUid, activeDoc, handleDocClick, renderRowActions, refreshDocs]);
+  }, [resolvedProjectId, docs, loading, error, selected, toggleSelect, toggleSelectAll, allSelected, someSelected, activeDocUid, activeDoc, handleDocClick, renderRowActions, refreshDocs, refreshQuota]);
 
   return { renderContent, workbenchRef };
 }

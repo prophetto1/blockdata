@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import ProjectAssetsPage from './ProjectAssetsPage';
-import { fetchAllProjectDocuments } from '@/lib/projectDocuments';
+import { useProjectDocuments } from '@/hooks/useProjectDocuments';
 
 vi.mock('@/components/common/useShellHeaderTitle', () => ({
   useShellHeaderTitle: vi.fn(),
@@ -18,23 +18,66 @@ vi.mock('@/components/ui/scroll-area', () => ({
   ScrollArea: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }));
 
-vi.mock('@/components/documents/ProjectParseUploader', () => ({
-  ProjectParseUploader: ({
-    onBatchUploaded,
+vi.mock('@/lib/supabase', () => ({
+  supabase: {
+    storage: {
+      from: vi.fn(() => ({
+        remove: vi.fn(),
+      })),
+    },
+    removeChannel: vi.fn(),
+  },
+}));
+
+vi.mock('@/lib/edge', () => ({
+  manageDocument: vi.fn(),
+}));
+
+vi.mock('@/components/documents/UploadTabPanel', () => ({
+  UploadTabPanel: ({
+    onUploadComplete,
   }: {
-    onBatchUploaded?: () => void | Promise<void>;
+    onUploadComplete?: () => void | Promise<void>;
   }) => (
-    <button type="button" onClick={() => void onBatchUploaded?.()}>
+    <button type="button" onClick={() => void onUploadComplete?.()}>
       Simulate upload
     </button>
   ),
 }));
 
-vi.mock('@/lib/projectDocuments', () => ({
-  fetchAllProjectDocuments: vi.fn(),
+vi.mock('@/components/documents/DocumentFileTable', () => ({
+  DocumentFileTable: ({ docs }: { docs: Array<{ doc_title: string }> }) => (
+    <div>{docs.map((doc) => <div key={doc.doc_title}>{doc.doc_title}</div>)}</div>
+  ),
 }));
 
-const fetchAllProjectDocumentsMock = vi.mocked(fetchAllProjectDocuments);
+vi.mock('@/components/documents/PreviewTabPanel', () => ({
+  PreviewTabPanel: () => <div>Preview</div>,
+}));
+
+vi.mock('@/components/workbench/Workbench', () => ({
+  Workbench: ({
+    defaultPanes,
+    renderContent,
+  }: {
+    defaultPanes: Array<{ id: string; activeTab: string }>;
+    renderContent: (tabId: string) => React.ReactNode;
+  }) => (
+    <div>
+      {defaultPanes.map((pane) => (
+        <section key={pane.id}>{renderContent(pane.activeTab)}</section>
+      ))}
+      <section>{renderContent('files')}</section>
+    </div>
+  ),
+}));
+
+vi.mock('@/hooks/useProjectDocuments', () => ({
+  useProjectDocuments: vi.fn(),
+}));
+
+const useProjectDocumentsMock = vi.mocked(useProjectDocuments);
+const refreshDocs = vi.fn();
 
 const originalDoc = {
   source_uid: 'source-1',
@@ -64,14 +107,22 @@ const uploadedDoc = {
 
 describe('project asset surfaces', () => {
   beforeEach(() => {
-    fetchAllProjectDocumentsMock.mockReset();
+    refreshDocs.mockReset();
+    useProjectDocumentsMock.mockReset();
+    useProjectDocumentsMock.mockReturnValue({
+      docs: [originalDoc],
+      loading: false,
+      error: null,
+      selected: new Set<string>(),
+      toggleSelect: vi.fn(),
+      toggleSelectAll: vi.fn(),
+      allSelected: false,
+      someSelected: false,
+      refreshDocs,
+    });
   });
 
   it('refreshes project assets when the upload surface reports a new file', async () => {
-    fetchAllProjectDocumentsMock
-      .mockResolvedValueOnce([originalDoc])
-      .mockResolvedValueOnce([uploadedDoc, originalDoc]);
-
     render(<ProjectAssetsPage />);
 
     expect(await screen.findByText('Original Draft.docx')).toBeInTheDocument();
@@ -79,9 +130,7 @@ describe('project asset surfaces', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Simulate upload' }));
 
     await waitFor(() => {
-      expect(fetchAllProjectDocumentsMock).toHaveBeenCalledTimes(2);
+      expect(refreshDocs).toHaveBeenCalledTimes(1);
     });
-
-    expect(await screen.findByText('Uploaded Notes.docx')).toBeInTheDocument();
   });
 });

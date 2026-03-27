@@ -106,6 +106,8 @@ def create_app() -> FastAPI:
     # 3. Admin routes (platform_admin role required)
     from app.api.routes.admin_services import router as admin_router
     app.include_router(admin_router)
+    from app.api.routes.admin_storage import router as admin_storage_router
+    app.include_router(admin_storage_router)
 
     # 4. Future /api/v1/* routes (stubs)
     from app.api.routes.crews import router as crews_router
