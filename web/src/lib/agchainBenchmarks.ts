@@ -97,8 +97,11 @@ export type AgchainBenchmarkStepsDetail = {
   steps: AgchainBenchmarkStepRow[];
 };
 
-type BenchmarksResponse = {
+export type AgchainBenchmarkListResponse = {
   items: AgchainBenchmarkListRow[];
+  total: number;
+  limit: number;
+  offset: number;
 };
 
 type BenchmarkCreateResponse = {
@@ -250,11 +253,7 @@ export function stepFormValuesToDraft(values: {
   enabled: boolean;
   step_config_json: string;
 }): AgchainBenchmarkStepWrite {
-  let parsedStepConfig: Record<string, unknown> = {};
-  const trimmedJson = values.step_config_json.trim();
-  if (trimmedJson) {
-    parsedStepConfig = JSON.parse(trimmedJson) as Record<string, unknown>;
-  }
+  const parsedStepConfig = parseStepConfigJson(values.step_config_json);
 
   return {
     step_id: values.step_id.trim(),
@@ -272,10 +271,36 @@ export function stepFormValuesToDraft(values: {
   };
 }
 
-export async function fetchAgchainBenchmarks(): Promise<AgchainBenchmarkListRow[]> {
-  const response = await platformApiFetch('/agchain/benchmarks');
-  const data = await parseJsonResponse<BenchmarksResponse>(response);
-  return data.items ?? [];
+export function parseStepConfigJson(stepConfigJson: string): Record<string, unknown> {
+  const trimmedJson = stepConfigJson.trim();
+  if (!trimmedJson) {
+    return {};
+  }
+
+  try {
+    return JSON.parse(trimmedJson) as Record<string, unknown>;
+  } catch {
+    throw new Error('Step config must be valid JSON.');
+  }
+}
+
+export async function fetchAgchainBenchmarks(
+  limit = 50,
+  offset = 0,
+): Promise<AgchainBenchmarkListResponse> {
+  const params = new URLSearchParams({
+    limit: String(limit),
+    offset: String(offset),
+  });
+  const response = await platformApiFetch(`/agchain/benchmarks?${params.toString()}`);
+  const data = await parseJsonResponse<Partial<AgchainBenchmarkListResponse>>(response);
+  const items = data.items ?? [];
+  return {
+    items,
+    total: data.total ?? items.length,
+    limit: data.limit ?? limit,
+    offset: data.offset ?? offset,
+  };
 }
 
 export async function createAgchainBenchmark(

@@ -79,6 +79,9 @@ type ProvidersResponse = {
 
 type ModelsResponse = {
   items: AgchainModelTarget[];
+  total: number;
+  limit: number;
+  offset: number;
 };
 
 function trimToNull(value: string | null | undefined): string | null {
@@ -117,8 +120,12 @@ export async function fetchAgchainModelProviders(): Promise<AgchainProviderDefin
   return data.items ?? [];
 }
 
-export async function fetchAgchainModels(): Promise<AgchainModelTarget[]> {
-  const response = await platformApiFetch('/agchain/models');
+export async function fetchAgchainModels(limit = 50, offset = 0): Promise<AgchainModelTarget[]> {
+  const params = new URLSearchParams({
+    limit: String(limit),
+    offset: String(offset),
+  });
+  const response = await platformApiFetch(`/agchain/models?${params.toString()}`);
   const data = await parseJsonResponse<ModelsResponse>(response);
   return data.items ?? [];
 }

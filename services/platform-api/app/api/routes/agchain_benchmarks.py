@@ -20,7 +20,7 @@ from app.domain.agchain.benchmark_registry import (
     reorder_benchmark_steps,
     update_benchmark_step,
 )
-from app.observability.otel import safe_attributes
+from app.observability.contract import safe_attributes, set_span_attributes
 
 router = APIRouter(prefix="/agchain/benchmarks", tags=["agchain-benchmarks"])
 logger = logging.getLogger("agchain-benchmarks")
@@ -80,13 +80,6 @@ class BenchmarkStepUpdateRequest(BaseModel):
 class BenchmarkStepReorderRequest(BaseModel):
     ordered_step_ids: list[str] = Field(default_factory=list)
 
-
-def _set_span_attrs(span, attrs: dict[str, Any]) -> None:
-    for key, value in safe_attributes(attrs).items():
-        if value is not None:
-            span.set_attribute(key, value)
-
-
 @router.get("", summary="List AG chain benchmarks")
 async def list_benchmarks_route(
     search: str | None = Query(default=None),
@@ -120,7 +113,7 @@ async def list_benchmarks_route(
             "validation_status": validation_status,
             "has_active_runs": has_active_runs,
         }
-        _set_span_attrs(span, attrs)
+        set_span_attributes(span, attrs)
         benchmarks_list_counter.add(1, safe_attributes(attrs))
         benchmarks_list_duration_ms.record(duration_ms, safe_attributes(attrs))
         return {"items": items}
@@ -137,7 +130,7 @@ async def create_benchmark_route(
             "benchmark_slug": result["benchmark_slug"],
             "result": "created",
         }
-        _set_span_attrs(span, attrs)
+        set_span_attributes(span, attrs)
         benchmarks_create_counter.add(1, safe_attributes(attrs))
         logger.info(
             "agchain.benchmarks.created",
@@ -165,7 +158,7 @@ async def get_benchmark_route(
             "validation_status": current_version.get("validation_status"),
             "step_count": current_version.get("step_count"),
         }
-        _set_span_attrs(span, attrs)
+        set_span_attributes(span, attrs)
         benchmarks_get_counter.add(1, safe_attributes(attrs))
         return result
 
@@ -184,7 +177,7 @@ async def get_benchmark_steps_route(
             "version_status": (result.get("current_version") or {}).get("version_status"),
             "step_count": len(result.get("steps") or []),
         }
-        _set_span_attrs(span, attrs)
+        set_span_attributes(span, attrs)
         benchmarks_steps_get_counter.add(1, safe_attributes(attrs))
         benchmarks_steps_get_duration_ms.record(duration_ms, safe_attributes(attrs))
         return result
@@ -211,7 +204,7 @@ async def create_benchmark_step_route(
             "api_call_boundary": body.api_call_boundary,
             "result": "created",
         }
-        _set_span_attrs(span, attrs)
+        set_span_attributes(span, attrs)
         benchmarks_steps_create_counter.add(1, safe_attributes(attrs))
         benchmarks_steps_write_duration_ms.record(duration_ms, safe_attributes(attrs))
         logger.info(
@@ -249,7 +242,7 @@ async def update_benchmark_step_route(
             "api_call_boundary": payload.get("api_call_boundary"),
             "result": "updated",
         }
-        _set_span_attrs(span, attrs)
+        set_span_attributes(span, attrs)
         benchmarks_steps_update_counter.add(1, safe_attributes(attrs))
         benchmarks_steps_write_duration_ms.record(duration_ms, safe_attributes(attrs))
         logger.info(
@@ -282,7 +275,7 @@ async def reorder_benchmark_steps_route(
             "step_count": result["step_count"],
             "result": "reordered",
         }
-        _set_span_attrs(span, attrs)
+        set_span_attributes(span, attrs)
         benchmarks_steps_reorder_counter.add(1, safe_attributes(attrs))
         benchmarks_steps_write_duration_ms.record(duration_ms, safe_attributes(attrs))
         logger.info(
@@ -314,7 +307,7 @@ async def delete_benchmark_step_route(
             "benchmark_slug": benchmark_slug,
             "result": "deleted",
         }
-        _set_span_attrs(span, attrs)
+        set_span_attributes(span, attrs)
         benchmarks_steps_delete_counter.add(1, safe_attributes(attrs))
         benchmarks_steps_write_duration_ms.record(duration_ms, safe_attributes(attrs))
         logger.info(

@@ -45,12 +45,6 @@ def configure_telemetry(app: FastAPI, settings: Settings) -> dict[str, object]:
     from opentelemetry.sdk.resources import Resource
     from opentelemetry.sdk.trace import TracerProvider
     from opentelemetry.sdk.trace.export import BatchSpanProcessor
-    from opentelemetry.sdk.trace.sampling import (
-        ALWAYS_OFF,
-        ALWAYS_ON,
-        ParentBased,
-        TraceIdRatioBased,
-    )
 
     resource = Resource.create(
         {
@@ -151,6 +145,7 @@ def _build_sampler(name: str, arg: float):
         return ALWAYS_ON
     if name_lower == "always_off":
         return ALWAYS_OFF
+    logger.warning("otel.unknown_sampler %s", name)
     return ALWAYS_ON
 
 

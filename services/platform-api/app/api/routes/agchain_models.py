@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import time
 from typing import Any
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from opentelemetry import metrics, trace
@@ -19,7 +20,7 @@ from app.domain.agchain import (
     resolve_provider_definition,
     update_model_target,
 )
-from app.observability.otel import safe_attributes
+from app.observability.contract import safe_attributes, set_span_attributes
 
 router = APIRouter(prefix="/agchain/models", tags=["agchain-models"])
 logger = logging.getLogger("agchain-models")
@@ -66,19 +67,12 @@ class ModelTargetUpdateRequest(BaseModel):
     notes: str | None = None
     enabled: bool | None = None
 
-
-def _set_span_attrs(span, attrs: dict[str, Any]) -> None:
-    for key, value in safe_attributes(attrs).items():
-        if value is not None:
-            span.set_attribute(key, value)
-
-
 @router.get("/providers", summary="List supported AG chain model providers")
 async def list_supported_providers_route(auth: AuthPrincipal = Depends(require_user_auth)):
     with tracer.start_as_current_span("agchain.models.providers.list") as span:
         providers = list_supported_providers()
         attrs = {"row_count": len(providers)}
-        _set_span_attrs(span, attrs)
+        set_span_attributes(span, attrs)
         providers_list_counter.add(1, safe_attributes(attrs))
         return {"items": providers}
 
@@ -90,46 +84,51 @@ async def list_models(
     health_status: str | None = Query(default=None),
     enabled: bool | None = Query(default=None),
     search: str | None = Query(default=None),
+    limit: int = Query(default=50, ge=1),
+    offset: int = Query(default=0, ge=0),
     auth: AuthPrincipal = Depends(require_user_auth),
 ):
     start = time.perf_counter()
     with tracer.start_as_current_span("agchain.models.list") as span:
-        items = list_model_targets(
+        payload = list_model_targets(
             user_id=auth.user_id,
             provider_slug=provider_slug,
             compatibility=compatibility,
             health_status=health_status,
             enabled=enabled,
             search=search,
+            limit=limit,
+            offset=offset,
         )
         duration_ms = max(0, int((time.perf_counter() - start) * 1000))
         attrs = {
             "filter.provider_slug_present": provider_slug is not None,
             "filter.compatibility": compatibility,
             "filter.health_status": health_status,
-            "row_count": len(items),
+            "row_count": len(payload["items"]),
             "latency_ms": duration_ms,
         }
-        _set_span_attrs(span, attrs)
+        set_span_attributes(span, attrs)
         models_list_counter.add(1, safe_attributes(attrs))
         models_list_duration_ms.record(duration_ms, safe_attributes(attrs))
-        return {"items": items}
+        return payload
 
 
 @router.get("/{model_target_id}", summary="Get one AG chain model target")
 async def get_model(
-    model_target_id: str,
+    model_target_id: UUID,
     auth: AuthPrincipal = Depends(require_user_auth),
 ):
     with tracer.start_as_current_span("agchain.models.get") as span:
+        model_target_id_str = str(model_target_id)
         model_target, recent_health_checks = load_model_detail(
             user_id=auth.user_id,
-            model_target_id=model_target_id,
+            model_target_id=model_target_id_str,
         )
         if model_target is None:
             raise HTTPException(status_code=404, detail="AG chain model target not found")
         provider_definition = resolve_provider_definition(model_target["provider_slug"])
-        _set_span_attrs(
+        set_span_attributes(
             span,
             {
                 "provider_slug": model_target["provider_slug"],
@@ -158,7 +157,7 @@ async def create_model(
             "supports_judge": body.supports_judge,
             "enabled": body.enabled,
         }
-        _set_span_attrs(span, attrs)
+        set_span_attributes(span, attrs)
         models_create_counter.add(1, safe_attributes(attrs))
         logger.info(
             "agchain.models.created",
@@ -169,14 +168,15 @@ async def create_model(
 
 @router.patch("/{model_target_id}", summary="Update an AG chain model target")
 async def patch_model(
-    model_target_id: str,
+    model_target_id: UUID,
     body: ModelTargetUpdateRequest,
     auth: AuthPrincipal = Depends(require_superuser),
 ):
     with tracer.start_as_current_span("agchain.models.update") as span:
+        model_target_id_str = str(model_target_id)
         model_target_id = update_model_target(
             user_id=auth.user_id,
-            model_target_id=model_target_id,
+            model_target_id=model_target_id_str,
             payload=body.model_dump(exclude_none=True),
         )
         attrs = {
@@ -184,7 +184,7 @@ async def patch_model(
             "auth_kind": body.auth_kind,
             "probe_strategy": body.probe_strategy,
         }
-        _set_span_attrs(span, attrs)
+        set_span_attributes(span, attrs)
         models_update_counter.add(1, safe_attributes(attrs))
         logger.info(
             "agchain.models.updated",
@@ -195,12 +195,16 @@ async def patch_model(
 
 @router.post("/{model_target_id}/refresh-health", summary="Refresh health for an AG chain model target")
 async def refresh_model_health(
-    model_target_id: str,
+    model_target_id: UUID,
     auth: AuthPrincipal = Depends(require_superuser),
 ):
     start = time.perf_counter()
     with tracer.start_as_current_span("agchain.models.refresh_health") as span:
-        outcome = await refresh_model_target_health(user_id=auth.user_id, model_target_id=model_target_id)
+        model_target_id_str = str(model_target_id)
+        outcome = await refresh_model_target_health(
+            user_id=auth.user_id,
+            model_target_id=model_target_id_str,
+        )
         duration_ms = max(0, int((time.perf_counter() - start) * 1000))
         attrs = {
             "health_status": outcome["health_status"],
@@ -208,11 +212,11 @@ async def refresh_model_health(
             "result": outcome["health_status"],
             "latency_ms": duration_ms,
         }
-        _set_span_attrs(span, attrs)
+        set_span_attributes(span, attrs)
         models_refresh_counter.add(1, safe_attributes(attrs))
         models_refresh_duration_ms.record(duration_ms, safe_attributes(attrs))
         logger.info(
             "agchain.models.health_refreshed",
-            extra={"model_target_id": model_target_id, "subject_id": auth.user_id, **safe_attributes(attrs)},
+            extra={"model_target_id": model_target_id_str, "subject_id": auth.user_id, **safe_attributes(attrs)},
         )
         return {"ok": True, **outcome}

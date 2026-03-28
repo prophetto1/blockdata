@@ -355,11 +355,120 @@ async def test_finalize_source_upload_writes_source_document(monkeypatch):
             "source_uid": "abc123",
             "source_type": "pdf",
             "doc_title": "Folder/Outline.pdf",
-            "storage_object_id": "obj-1",
             "object_key": "users/user-1/assets/projects/project-1/sources/abc123/source/outline.pdf",
             "bytes_used": 1234,
         }
     ]
+
+
+@pytest.mark.asyncio
+async def test_finalize_completed_source_upload_repairs_source_document_bridge(monkeypatch):
+    calls: list[dict] = []
+
+    reservation = {
+        "reservation_id": "res-1",
+        "owner_user_id": "user-1",
+        "project_id": "project-1",
+        "bucket": "unit-bucket",
+        "object_key": "users/user-1/assets/projects/project-1/sources/abc123/source/outline.pdf",
+        "requested_bytes": 1234,
+        "content_type": "application/pdf",
+        "original_filename": "outline.pdf",
+        "storage_kind": "source",
+        "source_uid": "abc123",
+        "source_type": "pdf",
+        "doc_title": "Folder/Outline.pdf",
+        "status": "completed",
+    }
+    existing = {
+        "storage_object_id": "obj-1",
+        "reservation_id": "res-1",
+        "object_key": "users/user-1/assets/projects/project-1/sources/abc123/source/outline.pdf",
+        "byte_size": 1234,
+        "storage_kind": "source",
+    }
+
+    monkeypatch.setattr("app.api.routes.storage.get_supabase_admin", lambda: object())
+    monkeypatch.setattr("app.api.routes.storage._fetch_reservation", lambda *_a, **_k: reservation)
+    monkeypatch.setattr(
+        "app.api.routes.storage._fetch_storage_object_by_reservation",
+        lambda *_a, **_k: existing,
+    )
+    monkeypatch.setattr("app.api.routes.storage.record_storage_upload_complete", lambda **_kwargs: None)
+    monkeypatch.setattr(
+        "app.api.routes.storage.upsert_source_document_for_storage_object",
+        lambda _admin, **kwargs: calls.append(kwargs),
+    )
+
+    result = await finalize_upload("res-1", CompleteUploadRequest(actual_bytes=None), AuthStub("user-1"))
+
+    assert result == existing
+    assert calls == [
+        {
+            "owner_id": "user-1",
+            "project_id": "project-1",
+            "source_uid": "abc123",
+            "source_type": "pdf",
+            "doc_title": "Folder/Outline.pdf",
+            "object_key": "users/user-1/assets/projects/project-1/sources/abc123/source/outline.pdf",
+            "bytes_used": 1234,
+        }
+    ]
+
+
+@pytest.mark.asyncio
+async def test_finalize_source_upload_returns_retryable_error_when_bridge_write_fails(monkeypatch):
+    reservation = {
+        "reservation_id": "res-1",
+        "owner_user_id": "user-1",
+        "project_id": "project-1",
+        "bucket": "unit-bucket",
+        "object_key": "users/user-1/assets/projects/project-1/sources/abc123/source/outline.pdf",
+        "requested_bytes": 1234,
+        "content_type": "application/pdf",
+        "original_filename": "outline.pdf",
+        "storage_kind": "source",
+        "source_uid": "abc123",
+        "source_type": "pdf",
+        "doc_title": "Folder/Outline.pdf",
+        "status": "pending",
+    }
+
+    monkeypatch.setattr("app.api.routes.storage._fetch_reservation", lambda *_a, **_k: reservation)
+    monkeypatch.setattr("app.api.routes.storage.get_object_size_bytes", lambda *_a, **_k: 1234)
+    monkeypatch.setattr("app.api.routes.storage.record_storage_upload_complete", lambda **_kwargs: None)
+    monkeypatch.setattr(
+        "app.api.routes.storage.upsert_source_document_for_storage_object",
+        lambda *_a, **_k: (_ for _ in ()).throw(RuntimeError("bridge failed")),
+    )
+
+    class _Admin:
+        def rpc(self, *_args, **_kwargs):
+            class _Exec:
+                data = {
+                    "storage_object_id": "obj-1",
+                    "reservation_id": "res-1",
+                    "object_key": "users/user-1/assets/projects/project-1/sources/abc123/source/outline.pdf",
+                    "byte_size": 1234,
+                    "storage_kind": "source",
+                }
+
+                def execute(self):
+                    return self
+
+            return _Exec()
+
+    monkeypatch.setattr("app.api.routes.storage.get_supabase_admin", lambda: _Admin())
+
+    with pytest.raises(HTTPException) as exc:
+        await finalize_upload(
+            "res-1",
+            CompleteUploadRequest(actual_bytes=1234),
+            AuthStub("user-1"),
+        )
+
+    assert exc.value.status_code == 503
+    assert exc.value.detail == "Upload completed but source document finalization failed; retry completion"
 
 
 @pytest.mark.asyncio

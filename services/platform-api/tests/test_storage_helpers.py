@@ -38,7 +38,22 @@ def test_build_object_key_uses_storage_kind_paths():
         source_uid="src/a",
         artifact_name="artifact.pdf",
     )
-    assert source_key == "users/u1/projects/project-1/sources/a/source/artifact.pdf"
+    assert source_key == "users/u1/assets/projects/project-1/sources/a/source/artifact.pdf"
+
+    pipeline_source_key = build_object_key(
+        user_id="u1",
+        project_id="project-1",
+        filename="notes.txt",
+        storage_kind="source",
+        source_uid="src/a",
+        artifact_name="artifact.pdf",
+        storage_surface="pipeline-services",
+        storage_service_slug="index-builder",
+    )
+    assert (
+        pipeline_source_key
+        == "users/u1/pipeline-services/index-builder/projects/project-1/sources/a/source/artifact.pdf"
+    )
 
     export_key = build_object_key(
         user_id="u1",

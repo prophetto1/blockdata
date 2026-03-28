@@ -16,7 +16,11 @@ from app.observability.pipeline_metrics import (
     record_pipeline_deliverable_download,
     record_pipeline_job_create,
 )
-from app.pipelines.registry import get_pipeline_definition, list_pipeline_definitions as _list_defs
+from app.pipelines.registry import (
+    get_pipeline_definition,
+    get_pipeline_worker_definition,
+    list_pipeline_definitions as _list_defs,
+)
 
 router = APIRouter(prefix="/pipelines", tags=["pipelines"])
 
@@ -250,6 +254,8 @@ async def create_pipeline_job(
         span.set_attribute("pipeline.kind", pipeline_kind)
         try:
             definition = _require_pipeline_definition(pipeline_kind)
+            if get_pipeline_worker_definition(pipeline_kind) is None:
+                raise HTTPException(status_code=503, detail="Pipeline kind is not executable yet")
             admin = get_supabase_admin()
             source = _load_owned_source(admin, auth.user_id, body.source_uid)
             if not source:

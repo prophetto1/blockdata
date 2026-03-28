@@ -8,10 +8,11 @@ from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 _logger = logging.getLogger("crypto")
 _fallback_counter = None
+_plaintext_fallback_counter = None
 
 
 def _b64url_encode(b: bytes) -> str:
-    return base64.b64encode(b).decode("ascii").rstrip("=").replace("+", "-").replace("/", "_")
+    return base64.urlsafe_b64encode(b).decode("ascii").rstrip("=")
 
 
 def _b64url_decode(s: str) -> bytes:
@@ -41,7 +42,8 @@ def encrypt_with_context(plaintext: str, secret: str, context: str) -> str:
 def decrypt_with_context(ciphertext: str, secret: str, context: str) -> str:
     """Decrypt a value encrypted by encryptWithContext (Deno or Python)."""
     if not ciphertext.startswith("enc:v1:"):
-        return ciphertext  # plaintext fallback
+        _record_plaintext_passthrough()
+        return ciphertext
 
     parts = ciphertext.split(":")
     if len(parts) != 4:
@@ -69,6 +71,7 @@ def get_envelope_key() -> str:
 def decrypt_with_fallback(ciphertext: str, context: str) -> str:
     """Decrypt with the primary envelope key, then the legacy service-role key."""
     if not ciphertext.startswith("enc:v1:"):
+        _record_plaintext_passthrough()
         return ciphertext
 
     primary = os.environ.get("APP_SECRET_ENVELOPE_KEY", "")
@@ -77,8 +80,12 @@ def decrypt_with_fallback(ciphertext: str, context: str) -> str:
     if primary:
         try:
             return decrypt_with_context(ciphertext, primary, context)
-        except Exception:
-            pass
+        except Exception as exc:
+            _logger.warning(
+                "crypto.decrypt_failed key_source=%s exc_type=%s",
+                "primary",
+                type(exc).__name__,
+            )
 
     if fallback:
         try:
@@ -86,8 +93,12 @@ def decrypt_with_fallback(ciphertext: str, context: str) -> str:
             _logger.debug("crypto.fallback_decrypt context=%s", context)
             _increment_fallback_counter()
             return plaintext
-        except Exception:
-            pass
+        except Exception as exc:
+            _logger.warning(
+                "crypto.decrypt_failed key_source=%s exc_type=%s",
+                "fallback",
+                type(exc).__name__,
+            )
 
     raise ValueError(
         f"Decryption failed with all available keys for context '{context}'"
@@ -112,3 +123,28 @@ def _increment_fallback_counter() -> None:
 
     if _fallback_counter is not None:
         _fallback_counter.add(1)
+
+
+def _record_plaintext_passthrough() -> None:
+    _logger.warning("crypto.plaintext_passthrough")
+    _increment_plaintext_fallback_counter()
+
+
+def _increment_plaintext_fallback_counter() -> None:
+    global _plaintext_fallback_counter
+    if _plaintext_fallback_counter is None:
+        try:
+            from opentelemetry import metrics
+
+            from app.observability.contract import CRYPTO_PLAINTEXT_FALLBACK_COUNTER_NAME
+
+            meter = metrics.get_meter("platform-api")
+            _plaintext_fallback_counter = meter.create_counter(
+                CRYPTO_PLAINTEXT_FALLBACK_COUNTER_NAME,
+                description="Count of plaintext values encountered in encrypted columns",
+            )
+        except Exception:
+            return
+
+    if _plaintext_fallback_counter is not None:
+        _plaintext_fallback_counter.add(1)

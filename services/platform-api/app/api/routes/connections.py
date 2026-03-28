@@ -4,7 +4,7 @@ All new connection types go through this route. The existing Deno
 provider-connections edge function stays for backward compat with the
 GCP Vertex SA connection but is NOT extended further.
 """
-import json as json_mod
+import json
 import logging
 from datetime import datetime, timezone
 from typing import Any
@@ -15,7 +15,7 @@ from pydantic import BaseModel, Field
 from app.auth.dependencies import require_user_auth
 from app.auth.principals import AuthPrincipal
 from app.domain.plugins.registry import resolve, resolve_by_function_name
-from app.infra.connection import resolve_connection_sync
+from app.infra.connection import resolve_connection
 from app.infra.crypto import encrypt_with_context, get_envelope_key
 from app.infra.supabase_client import get_supabase_admin
 
@@ -59,7 +59,7 @@ async def list_connections(auth: AuthPrincipal = Depends(require_user_auth)):
 async def connect(body: ConnectRequest, auth: AuthPrincipal = Depends(require_user_auth)):
     sb = get_supabase_admin()
     encrypted = encrypt_with_context(
-        json_mod.dumps(body.credentials), get_envelope_key(), CRYPTO_CONTEXT
+        json.dumps(body.credentials), get_envelope_key(), CRYPTO_CONTEXT
     )
 
     result = sb.table("user_provider_connections").upsert({
@@ -81,20 +81,22 @@ async def connect(body: ConnectRequest, auth: AuthPrincipal = Depends(require_us
 @router.post("/disconnect", summary="Revoke a saved connection")
 async def disconnect(body: DisconnectRequest, auth: AuthPrincipal = Depends(require_user_auth)):
     sb = get_supabase_admin()
-    sb.table("user_provider_connections").update({
+    result = sb.table("user_provider_connections").update({
         "status": "disconnected",
         "credential_encrypted": None,
         "updated_at": _now(),
     }).eq("user_id", auth.user_id).eq(
         "provider", body.provider
     ).eq("connection_type", body.connection_type).execute()
+    if not result.data:
+        raise HTTPException(404, "Connection not found")
     return {"ok": True, "status": "disconnected"}
 
 
 @router.post("/test", summary="Test a saved connection via plugin probe")
 async def test_connection(body: TestConnectionRequest, auth: AuthPrincipal = Depends(require_user_auth)):
     """Test a saved connection by calling the plugin's test_connection method."""
-    creds = resolve_connection_sync(body.connection_id, auth.user_id)
+    creds = await resolve_connection(body.connection_id, auth.user_id)
 
     task_type = resolve_by_function_name(body.function_name)
     if not task_type:

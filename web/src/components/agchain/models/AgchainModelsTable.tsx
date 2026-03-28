@@ -30,14 +30,19 @@ function formatLastChecked(value: string | null) {
 
 const HEALTH_BADGE: Record<string, 'green' | 'red' | 'yellow' | 'gray'> = {
   healthy: 'green',
+  error: 'red',
   unhealthy: 'red',
   degraded: 'yellow',
   unknown: 'gray',
 };
 
-const AUTH_BADGE: Record<string, 'green' | 'yellow' | 'gray'> = {
+const AUTH_BADGE: Record<string, 'green' | 'yellow' | 'red' | 'gray'> = {
+  ready: 'green',
   configured: 'green',
   missing: 'yellow',
+  disconnected: 'yellow',
+  invalid: 'red',
+  not_required: 'gray',
   unknown: 'gray',
 };
 

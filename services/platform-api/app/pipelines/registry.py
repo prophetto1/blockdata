@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import importlib
+from functools import lru_cache
 from typing import Any
 
 
@@ -15,6 +17,15 @@ _PIPELINE_DEFINITIONS: dict[str, dict[str, Any]] = {
         "handler_name": "run_markdown_index_builder",
     }
 }
+
+
+@lru_cache(maxsize=None)
+def _handler_exists(module_name: str, handler_name: str) -> bool:
+    try:
+        module = importlib.import_module(module_name)
+    except Exception:
+        return False
+    return getattr(module, handler_name, None) is not None
 
 
 def list_pipeline_definitions() -> list[dict[str, Any]]:
@@ -45,19 +56,19 @@ def get_pipeline_definition(pipeline_kind: str) -> dict[str, Any] | None:
 
 
 def list_pipeline_worker_definitions() -> list[dict[str, Any]]:
-    return [
-        {
-            "pipeline_kind": item["pipeline_kind"],
-            "handler_module": item["handler_module"],
-            "handler_name": item["handler_name"],
-        }
-        for item in _PIPELINE_DEFINITIONS.values()
-    ]
+    items: list[dict[str, Any]] = []
+    for item in _PIPELINE_DEFINITIONS.values():
+        worker = get_pipeline_worker_definition(item["pipeline_kind"])
+        if worker is not None:
+            items.append(worker)
+    return items
 
 
 def get_pipeline_worker_definition(pipeline_kind: str) -> dict[str, Any] | None:
     item = _PIPELINE_DEFINITIONS.get(pipeline_kind)
     if item is None:
+        return None
+    if not _handler_exists(item["handler_module"], item["handler_name"]):
         return None
     return {
         "pipeline_kind": item["pipeline_kind"],

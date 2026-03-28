@@ -109,6 +109,13 @@ describe('AppLayout route shells', () => {
     expect(screen.queryByTestId('app-page-shell')).not.toBeInTheDocument();
   });
 
+  it('renders pipeline services routes without AppPageShell so the workbench can fill the full height', () => {
+    renderAt('/app/rag/index-builder');
+
+    expect(screen.getByTestId('route-content')).toBeInTheDocument();
+    expect(screen.queryByTestId('app-page-shell')).not.toBeInTheDocument();
+  });
+
   it('keeps generic app routes inside AppPageShell', () => {
     renderAt('/app');
 

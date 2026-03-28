@@ -1,6 +1,7 @@
 """Tests for OpenTelemetry observability configuration and bootstrap."""
 
 import pytest
+from unittest.mock import MagicMock, patch
 from fastapi import FastAPI
 from app.core.config import Settings, get_settings, _parse_otlp_headers
 from app.observability import configure_telemetry, shutdown_telemetry, get_telemetry_status
@@ -202,6 +203,130 @@ def test_safe_attributes_filters_sensitive():
     assert "error.type" in filtered
     assert "authorization" not in filtered
     assert "token" not in filtered
+
+
+def test_set_span_attributes_filters_sensitive_and_none():
+    from unittest.mock import MagicMock
+
+    from app.observability.contract import set_span_attributes
+
+    span = MagicMock()
+    set_span_attributes(
+        span,
+        {
+            "plugin.name": "core_log",
+            "authorization": "Bearer xyz",
+            "missing": None,
+            "latency_ms": 12,
+        },
+    )
+
+    span.set_attribute.assert_any_call("plugin.name", "core_log")
+    span.set_attribute.assert_any_call("latency_ms", 12)
+    assert span.set_attribute.call_count == 2
+
+
+def test_decrypt_with_context_warns_and_counts_plaintext_fallback():
+    from app.infra.crypto import decrypt_with_context
+
+    with patch("app.infra.crypto._logger") as mock_logger, patch(
+        "app.infra.crypto._increment_plaintext_fallback_counter"
+    ) as mock_counter:
+        plaintext = decrypt_with_context("plain-secret", "unused-secret", "user-variables-v1")
+
+    assert plaintext == "plain-secret"
+    mock_logger.warning.assert_called_once_with("crypto.plaintext_passthrough")
+    mock_counter.assert_called_once()
+
+
+def test_plaintext_fallback_counter_uses_contract_name(monkeypatch):
+    import app.infra.crypto as crypto
+    import app.observability.contract as contract
+    from opentelemetry import metrics as otel_metrics
+
+    meter = MagicMock()
+    monkeypatch.setattr(contract, "CRYPTO_PLAINTEXT_FALLBACK_COUNTER_NAME", "test.plaintext.counter")
+    monkeypatch.setattr(otel_metrics, "get_meter", lambda _name: meter)
+    crypto._plaintext_fallback_counter = None
+
+    crypto._increment_plaintext_fallback_counter()
+
+    meter.create_counter.assert_called_once()
+    assert meter.create_counter.call_args.args[0] == "test.plaintext.counter"
+    crypto._plaintext_fallback_counter = None
+
+
+def test_decrypt_with_fallback_logs_primary_failure_before_legacy_success(monkeypatch):
+    from app.infra.crypto import decrypt_with_fallback
+
+    monkeypatch.setenv("APP_SECRET_ENVELOPE_KEY", "primary-key")
+    monkeypatch.setenv("SUPABASE_SERVICE_ROLE_KEY", "legacy-key")
+
+    with patch("app.infra.crypto.decrypt_with_context") as mock_decrypt, patch(
+        "app.infra.crypto._logger"
+    ) as mock_logger, patch("app.infra.crypto._increment_fallback_counter") as mock_counter:
+        mock_decrypt.side_effect = [RuntimeError("primary broke"), "plaintext"]
+
+        plaintext = decrypt_with_fallback("enc:v1:abc:def", "provider-connections-v1")
+
+    assert plaintext == "plaintext"
+    mock_logger.warning.assert_called_once_with(
+        "crypto.decrypt_failed key_source=%s exc_type=%s",
+        "primary",
+        "RuntimeError",
+    )
+    mock_counter.assert_called_once()
+
+
+def test_unknown_sampler_logs_warning_before_fallback():
+    from app.observability.otel import _build_sampler
+    from opentelemetry.sdk.trace.sampling import ALWAYS_ON
+
+    with patch("app.observability.otel.logger") as mock_logger:
+        sampler = _build_sampler("mystery", 1.0)
+
+    assert sampler is ALWAYS_ON
+    mock_logger.warning.assert_called_once_with("otel.unknown_sampler %s", "mystery")
+
+
+def test_storage_metrics_use_contract_names(monkeypatch):
+    import importlib
+
+    import app.observability.contract as contract
+    import app.observability.storage_metrics as storage_metrics
+    from opentelemetry import metrics as otel_metrics
+
+    meter = MagicMock()
+    monkeypatch.setattr(otel_metrics, "get_meter", lambda _name: meter)
+
+    monkeypatch.setattr(contract, "STORAGE_QUOTA_READ_COUNTER_NAME", "test.storage.quota.read.count")
+    monkeypatch.setattr(contract, "STORAGE_UPLOAD_RESERVE_COUNTER_NAME", "test.storage.upload.reserve.count")
+    monkeypatch.setattr(contract, "STORAGE_UPLOAD_RESERVE_FAILURE_COUNTER_NAME", "test.storage.upload.reserve.failure.count")
+    monkeypatch.setattr(contract, "STORAGE_UPLOAD_COMPLETE_COUNTER_NAME", "test.storage.upload.complete.count")
+    monkeypatch.setattr(contract, "STORAGE_UPLOAD_COMPLETE_FAILURE_COUNTER_NAME", "test.storage.upload.complete.failure.count")
+    monkeypatch.setattr(contract, "STORAGE_UPLOAD_CANCEL_COUNTER_NAME", "test.storage.upload.cancel.count")
+    monkeypatch.setattr(contract, "STORAGE_OBJECT_DELETE_COUNTER_NAME", "test.storage.object.delete.count")
+    monkeypatch.setattr(contract, "STORAGE_QUOTA_EXCEEDED_COUNTER_NAME", "test.storage.quota.exceeded.count")
+    monkeypatch.setattr(contract, "ADMIN_STORAGE_POLICY_UPDATE_COUNTER_NAME", "test.admin.storage.policy.update.count")
+    monkeypatch.setattr(contract, "ADMIN_STORAGE_PROVISIONING_INCOMPLETE_COUNTER_NAME", "test.admin.storage.provisioning.incomplete.count")
+    monkeypatch.setattr(contract, "STORAGE_UPLOAD_RESERVE_DURATION_MS_HISTOGRAM_NAME", "test.storage.upload.reserve.duration.ms")
+    monkeypatch.setattr(contract, "STORAGE_UPLOAD_COMPLETE_DURATION_MS_HISTOGRAM_NAME", "test.storage.upload.complete.duration.ms")
+    monkeypatch.setattr(contract, "ADMIN_STORAGE_POLICY_DURATION_MS_HISTOGRAM_NAME", "test.admin.storage.policy.duration.ms")
+    monkeypatch.setattr(contract, "ADMIN_STORAGE_PROVISIONING_QUERY_DURATION_MS_HISTOGRAM_NAME", "test.admin.storage.provisioning.query.duration.ms")
+
+    reloaded = importlib.reload(storage_metrics)
+
+    counter_names = [call.args[0] for call in meter.create_counter.call_args_list]
+    histogram_names = [call.args[0] for call in meter.create_histogram.call_args_list]
+
+    assert "test.storage.quota.read.count" in counter_names
+    assert "test.storage.upload.reserve.count" in counter_names
+    assert "test.storage.upload.complete.count" in counter_names
+    assert "test.admin.storage.policy.update.count" in counter_names
+    assert "test.storage.upload.reserve.duration.ms" in histogram_names
+    assert "test.admin.storage.provisioning.query.duration.ms" in histogram_names
+
+    importlib.reload(reloaded)
 
 
 def test_get_telemetry_status_shape():

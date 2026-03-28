@@ -29,9 +29,18 @@ export function useDirectUpload(projectId: string) {
   const [files, setFiles] = useState<StagedFile[]>([]);
   const [uploadStatus, setUploadStatus] = useState<UploadStatus>('idle');
   const abortRef = useRef(false);
+  const filesRef = useRef<StagedFile[]>([]);
+
+  const updateFiles = useCallback((updater: (prev: StagedFile[]) => StagedFile[]) => {
+    setFiles((prev) => {
+      const next = updater(prev);
+      filesRef.current = next;
+      return next;
+    });
+  }, []);
 
   const addFiles = useCallback((incoming: File[]) => {
-    setFiles((prev) => {
+    updateFiles((prev) => {
       const existing = new Set(prev.map((f) => `${f.file.name}:${f.file.size}`));
       const newFiles = incoming
         .filter((f) => !existing.has(`${f.name}:${f.size}`))
@@ -43,16 +52,16 @@ export function useDirectUpload(projectId: string) {
         }));
       return [...prev, ...newFiles];
     });
-  }, []);
+  }, [updateFiles]);
 
   const removeFile = useCallback((id: string) => {
-    setFiles((prev) => prev.filter((f) => f.id !== id));
-  }, []);
+    updateFiles((prev) => prev.filter((f) => f.id !== id));
+  }, [updateFiles]);
 
   const clearDone = useCallback(() => {
-    setFiles((prev) => prev.filter((f) => f.status !== 'done'));
+    updateFiles((prev) => prev.filter((f) => f.status !== 'done'));
     setUploadStatus('idle');
-  }, []);
+  }, [updateFiles]);
 
   const startUpload = useCallback(async (): Promise<string[]> => {
     abortRef.current = false;
@@ -60,22 +69,23 @@ export function useDirectUpload(projectId: string) {
 
     const sourceUids: string[] = [];
 
-    const pending = files.filter((f) => f.status === 'pending');
-    for (const staged of pending) {
+    while (true) {
+      const staged = filesRef.current.find((f) => f.status === 'pending');
+      if (!staged) break;
       if (abortRef.current) break;
 
-      setFiles((prev) =>
+      updateFiles((prev) =>
         prev.map((f) => (f.id === staged.id ? { ...f, status: 'uploading' as const, progress: 0 } : f)),
       );
 
       try {
         const resp = await uploadOneFile(staged.file, projectId);
         if (resp.source_uid) sourceUids.push(resp.source_uid);
-        setFiles((prev) =>
+        updateFiles((prev) =>
           prev.map((f) => (f.id === staged.id ? { ...f, status: 'done' as const, progress: 100 } : f)),
         );
       } catch (err) {
-        setFiles((prev) =>
+        updateFiles((prev) =>
           prev.map((f) =>
             f.id === staged.id
               ? { ...f, status: 'error' as const, error: err instanceof Error ? err.message : String(err) }
@@ -87,7 +97,7 @@ export function useDirectUpload(projectId: string) {
 
     setUploadStatus('done');
     return sourceUids;
-  }, [files, projectId]);
+  }, [projectId, updateFiles]);
 
   const pendingCount = files.filter((f) => f.status === 'pending').length;
 

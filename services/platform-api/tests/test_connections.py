@@ -54,7 +54,8 @@ def test_connect_rejects_missing_provider(client):
 
 
 def test_test_connection_calls_plugin(client):
-    with patch("app.api.routes.connections.resolve_connection_sync") as mock_resolve, \
+    with patch("app.api.routes.connections.resolve_connection", new_callable=AsyncMock, create=True) as mock_resolve, \
+         patch("app.api.routes.connections.resolve_connection_sync", side_effect=AssertionError("sync helper should not be called from async route"), create=True), \
          patch("app.api.routes.connections.resolve_by_function_name") as mock_fn, \
          patch("app.api.routes.connections.resolve") as mock_plugin_resolve:
         mock_resolve.return_value = {"endpoint": "https://x:8529", "database": "d", "username": "u", "password": "p"}
@@ -75,6 +76,37 @@ def test_test_connection_calls_plugin(client):
 
     assert resp.status_code == 200
     assert resp.json() == {"valid": True, "data": {"valid": True}}
+
+
+@pytest.mark.asyncio
+async def test_resolve_connection_uses_to_thread():
+    from app.infra.connection import resolve_connection, resolve_connection_sync
+
+    async def fake_to_thread(fn, *args):
+        assert fn is resolve_connection_sync
+        assert args == ("conn-1", "user-1")
+        return {"endpoint": "https://x:8529"}
+
+    with patch("app.infra.connection.asyncio.to_thread", side_effect=fake_to_thread) as mock_to_thread:
+        result = await resolve_connection("conn-1", "user-1")
+
+    assert result == {"endpoint": "https://x:8529"}
+    mock_to_thread.assert_called_once()
+
+
+def test_disconnect_returns_404_when_connection_missing(client):
+    with patch("app.api.routes.connections.get_supabase_admin") as mock_sb:
+        mock_sb.return_value.table.return_value.update.return_value.eq.return_value.eq.return_value.eq.return_value.execute.return_value = MagicMock(
+            data=[]
+        )
+
+        resp = client.post("/connections/disconnect", json={
+            "provider": "arangodb",
+            "connection_type": "arangodb_credential",
+        })
+
+    assert resp.status_code == 404
+    assert resp.json() == {"detail": "Connection not found"}
 
 
 def test_resolve_connection_uses_dual_key_fallback(client):
@@ -100,3 +132,35 @@ def test_resolve_connection_uses_dual_key_fallback(client):
     assert creds["endpoint"] == "https://x:8529"
     assert creds["username"] == "root"
     mock_decrypt.assert_called_once_with("enc:v1:iv:cipher", "provider-connections-v1")
+
+
+def test_resolve_connection_backfills_safe_metadata_without_allowing_poison_keys(client):
+    with patch("app.infra.connection.get_supabase_admin") as mock_sb, patch(
+        "app.infra.connection.decrypt_with_fallback", create=True
+    ) as mock_decrypt:
+        mock_sb.return_value.table.return_value.select.return_value.eq.return_value.single.return_value.execute.return_value = MagicMock(
+            data={
+                "credential_encrypted": "enc:v1:iv:cipher",
+                "metadata_jsonb": {
+                    "endpoint": "https://x:8529",
+                    "database": "_system",
+                    "api_key": "metadata-poison",
+                    "username": "metadata-user",
+                },
+                "provider": "arangodb",
+                "connection_type": "arangodb_credential",
+                "status": "connected",
+                "user_id": "user-1",
+            }
+        )
+        mock_decrypt.return_value = '{"username":"root","password":"secret"}'
+
+        from app.infra.connection import resolve_connection_sync
+
+        creds = resolve_connection_sync("conn-1", "user-1")
+
+    assert creds["endpoint"] == "https://x:8529"
+    assert creds["database"] == "_system"
+    assert creds["username"] == "root"
+    assert creds["password"] == "secret"
+    assert "api_key" not in creds

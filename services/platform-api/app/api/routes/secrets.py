@@ -2,10 +2,11 @@
 
 import logging
 from typing import Literal
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
 from opentelemetry import metrics, trace
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from app.auth.dependencies import require_user_auth
 from app.auth.principals import AuthPrincipal
@@ -86,7 +87,16 @@ class UpdateSecretRequest(BaseModel):
     name: str | None = Field(default=None, min_length=1)
     value: str | None = None
     description: str | None = None
-    value_kind: str | None = None
+    value_kind: SecretValueKind | None = None
+
+    @model_validator(mode="after")
+    def validate_non_empty(self) -> "UpdateSecretRequest":
+        if not any(
+            value is not None
+            for value in (self.name, self.value, self.description, self.value_kind)
+        ):
+            raise ValueError("At least one field must be provided")
+        return self
 
 
 class DeleteSecretResponse(BaseModel):
@@ -145,12 +155,13 @@ async def create_secret(
 
 @router.patch("/{secret_id}", response_model=SecretResponse, summary="Update a user secret")
 async def update_secret(
-    secret_id: str,
+    secret_id: UUID,
     body: UpdateSecretRequest,
     auth: AuthPrincipal = Depends(require_user_auth),
 ):
     with tracer.start_as_current_span(SECRETS_UPDATE_SPAN_NAME) as span:
         sb = get_supabase_admin()
+        secret_id_str = str(secret_id)
         updates = body.model_dump(exclude_none=True)
         if "name" in updates:
             updates["name"] = _canonicalize_name(str(updates["name"]))
@@ -163,7 +174,7 @@ async def update_secret(
         result = (
             sb.table("user_variables")
             .update(updates)
-            .eq("id", secret_id)
+            .eq("id", secret_id_str)
             .eq("user_id", auth.user_id)
             .execute()
         )
@@ -191,13 +202,14 @@ async def update_secret(
     response_model=DeleteSecretResponse,
     summary="Delete a user secret",
 )
-async def delete_secret(secret_id: str, auth: AuthPrincipal = Depends(require_user_auth)):
+async def delete_secret(secret_id: UUID, auth: AuthPrincipal = Depends(require_user_auth)):
     with tracer.start_as_current_span(SECRETS_DELETE_SPAN_NAME) as span:
         sb = get_supabase_admin()
+        secret_id_str = str(secret_id)
         result = (
             sb.table("user_variables")
             .delete()
-            .eq("id", secret_id)
+            .eq("id", secret_id_str)
             .eq("user_id", auth.user_id)
             .execute()
         )
@@ -212,4 +224,4 @@ async def delete_secret(secret_id: str, auth: AuthPrincipal = Depends(require_us
         _set_span_attrs(span, attrs)
         secrets_change_counter.add(1, safe_attributes(attrs))
         _log_secret_change("delete", "ok")
-        return {"ok": True, "id": secret_id}
+        return {"ok": True, "id": secret_id_str}

@@ -6,7 +6,6 @@ import { ToggleGroup } from '@ark-ui/react/toggle-group';
 import {
   IconChevronLeft,
   IconChevronRight,
-  IconBell,
   IconDots,
   IconDeviceDesktop,
   IconSun,
@@ -344,17 +343,17 @@ export function LeftRailShadcn({
 
   const userInitial = userLabel?.match(/[A-Za-z0-9]/)?.[0]?.toUpperCase() ?? '?';
   const isClassicView = navStyle === 'classic';
-  const railStackClass = isClassicView ? '-space-y-px' : 'space-y-0.5';
-  const railDividerClass = isClassicView ? 'my-0.5 mx-1.5 h-px bg-sidebar-border' : 'my-1.5 mx-2.5 h-px bg-sidebar-border';
+  const railStackClass = isClassicView ? '-space-y-px' : 'space-y-px';
+  const railDividerClass = isClassicView ? 'my-0.5 mx-1.5 h-px bg-sidebar-border' : 'my-1 mx-2 h-px bg-sidebar-border';
   const railItemClass = isClassicView
     ? 'flex w-full items-center gap-1.5 rounded-sm px-1.5 h-7 text-xs leading-tight transition-colors'
-    : 'flex w-full items-center gap-2.5 rounded-md px-2.5 h-9 text-sm leading-snug transition-colors';
+    : 'flex w-full items-center gap-2.5 rounded-md px-2 h-7 text-[13px] font-medium leading-[1.5] transition-colors';
   const drillBackClass = isClassicView
     ? 'flex w-full items-center gap-1 rounded-sm px-1.5 h-7 text-xs font-medium leading-tight text-sidebar-foreground/80 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
-    : 'flex w-full items-center gap-2 rounded-md px-2.5 h-9 text-sm font-medium leading-snug text-sidebar-foreground/80 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground';
+    : 'flex w-full items-center gap-2 rounded-md px-2 h-7 text-[13px] font-medium leading-[1.5] text-sidebar-foreground/80 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground';
   const drillSectionLabelClass = isClassicView
     ? 'mb-0 mt-1 px-1.5 text-[9px] font-semibold uppercase tracking-wide text-sidebar-foreground/50'
-    : 'mb-1 mt-2 px-2.5 text-[11px] font-semibold uppercase tracking-wide text-sidebar-foreground/50';
+    : 'mb-1 mt-2 px-2 text-[12px] font-normal tracking-normal text-sidebar-foreground/50';
 
   /* ------ Render helpers ------ */
 
@@ -383,11 +382,11 @@ export function LeftRailShadcn({
             className={cn(
               railItemClass,
               isActive
-                ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium'
-                : 'text-sidebar-foreground/80 font-normal hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+                ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                : 'text-sidebar-foreground/90 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
             )}
           >
-            <ItemIcon size={isClassicView ? 14 : 16} stroke={1.75} className="shrink-0" />
+            <ItemIcon size={14} stroke={1.75} className="shrink-0" />
             <span className="truncate">{item.label}</span>
             {hasDrill && (
               <IconChevronRight size={isClassicView ? 12 : 14} stroke={1.75} className="ml-auto shrink-0 text-sidebar-foreground/40" />
@@ -410,7 +409,7 @@ export function LeftRailShadcn({
           onClick={() => drillBack()}
           className={drillBackClass}
         >
-          <IconChevronLeft size={isClassicView ? 14 : 16} stroke={1.75} className="shrink-0" />
+          <IconChevronLeft size={14} stroke={1.75} className="shrink-0" />
           <span className="truncate">{config.id === 'superuser' ? 'Main Menu' : config.parentLabel}</span>
         </button>
 
@@ -456,12 +455,12 @@ export function LeftRailShadcn({
                     className={cn(
                       railItemClass,
                       isActive
-                        ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium'
-                        : 'text-sidebar-foreground/80 font-normal hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+                        ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                        : 'text-sidebar-foreground/90 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
                       isDisabled && 'cursor-not-allowed opacity-40',
                     )}
                   >
-                    <ItemIcon size={isClassicView ? 14 : 16} stroke={1.75} className="shrink-0" />
+                    <ItemIcon size={14} stroke={1.75} className="shrink-0" />
                     <span className="truncate">{item.label}</span>
                     {item.badge && (
                       <span className="ml-auto shrink-0 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
@@ -555,11 +554,11 @@ export function LeftRailShadcn({
             className={cn(
                 railItemClass,
                 isActive
-                  ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium'
-                  : 'text-sidebar-foreground/80 font-normal hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+                  ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                  : 'text-sidebar-foreground/90 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
               )}
             >
-              <ItemIcon size={16} stroke={1.75} className="shrink-0" />
+              <ItemIcon size={14} stroke={1.75} className="shrink-0" />
               <span className="truncate">{item.label}</span>
             </button>
           );
@@ -572,7 +571,7 @@ export function LeftRailShadcn({
     <div className="space-y-4">
       {sections.map((section) => (
         <div key={section.label}>
-          <div className="mb-1.5 px-2.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-sidebar-foreground/45">
+          <div className="mb-1.5 px-2.5 text-[12px] font-normal tracking-normal text-sidebar-foreground/50">
             {section.label}
           </div>
           <div className="space-y-0.5">
@@ -589,13 +588,13 @@ export function LeftRailShadcn({
                     navigateTo(item.path);
                   }}
                   className={cn(
-                    'flex w-full items-center gap-2.5 rounded-md px-2.5 h-9 text-sm leading-snug transition-colors',
+                    'flex w-full items-center gap-2.5 rounded-md px-2 h-7 text-[13px] font-medium leading-[1.5] transition-colors',
                     isActive
-                      ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium'
-                      : 'text-sidebar-foreground/80 font-normal hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+                      ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                      : 'text-sidebar-foreground/90 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
                   )}
                 >
-                  <ItemIcon size={16} stroke={1.75} className="shrink-0" />
+                  <ItemIcon size={14} stroke={1.75} className="shrink-0" />
                   <span className="truncate">{item.label}</span>
                   {hasDrill && (
                     <IconChevronRight size={14} stroke={1.75} className="ml-auto shrink-0 text-sidebar-foreground/40" />
@@ -787,18 +786,6 @@ export function LeftRailShadcn({
                 )}
               </MenuTrigger>
 
-              {/* Bell with notification dot */}
-              {!desktopCompact && (
-                <button
-                  type="button"
-                  className="relative inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-sidebar-foreground/50 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                  aria-label="Notifications"
-                  title="Notifications"
-                >
-                  <IconBell size={16} stroke={1.75} />
-                  <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-blue-500" />
-                </button>
-              )}
             </div>
             <MenuPositioner>
               <AccountMenuContent

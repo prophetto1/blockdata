@@ -127,6 +127,8 @@ export async function computeSourceUid(file: File, sourceType: string): Promise<
       if (value) hasher.update(value);
     }
   } else {
+    // Compatibility fallback for older File implementations; this reads the
+    // entire file into memory because streaming is not available.
     hasher.update(new Uint8Array(await file.arrayBuffer()));
   }
 

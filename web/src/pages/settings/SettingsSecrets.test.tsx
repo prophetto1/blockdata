@@ -159,6 +159,7 @@ describe('SettingsSecrets', () => {
   });
 
   it('deletes a secret and reloads the table', async () => {
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
     vi.mocked(listSecrets)
       .mockResolvedValueOnce([BASE_SECRET])
       .mockResolvedValueOnce([]);
@@ -180,6 +181,28 @@ describe('SettingsSecrets', () => {
       expect(deleteSecret).toHaveBeenCalledWith('secret-1');
     });
     expect(await screen.findByText('No secrets configured yet.')).toBeInTheDocument();
+    expect(confirmSpy).toHaveBeenCalledWith('Delete OPENAI_API_KEY? This cannot be undone.');
+  });
+
+  it('does not delete a secret when confirmation is declined', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(false);
+
+    render(
+      <MemoryRouter initialEntries={['/app/settings/secrets']}>
+        <HeaderCenterProvider>
+          <SettingsSecrets />
+        </HeaderCenterProvider>
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText('OPENAI_API_KEY')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Delete OPENAI_API_KEY' }));
+
+    await waitFor(() => {
+      expect(deleteSecret).not.toHaveBeenCalled();
+    });
+    expect(screen.getByText('OPENAI_API_KEY')).toBeInTheDocument();
   });
 
   it('keeps /app/secrets as a compatibility redirect to /app/settings/secrets', async () => {

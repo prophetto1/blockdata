@@ -16,6 +16,8 @@ UPDATE public.storage_upload_reservations
    AND storage_kind = 'source'
    AND source_type IS NULL;
 
+DROP FUNCTION IF EXISTS public.reserve_user_storage(UUID, UUID, TEXT, TEXT, BIGINT, TEXT, TEXT, TEXT, TEXT);
+
 CREATE OR REPLACE FUNCTION public.reserve_user_storage(
   p_user_id UUID,
   p_project_id UUID,

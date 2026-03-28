@@ -92,6 +92,17 @@ describe('LeftRailShadcn', () => {
     expect(screen.getAllByText('Settings').length).toBeGreaterThanOrEqual(1);
   });
 
+  it('does not render a placeholder notifications button', async () => {
+    render(
+      <MemoryRouter initialEntries={['/app/assets']}>
+        <LeftRailShadcn />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByRole('button', { name: 'Go to home' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Notifications' })).not.toBeInTheDocument();
+  });
+
   it('defaults to pipeline navigation when no preference is stored', async () => {
     render(
       <MemoryRouter initialEntries={['/app/assets']}>
@@ -186,6 +197,5 @@ describe('LeftRailShadcn', () => {
     expect(onToggleDesktopCompact).toHaveBeenCalledTimes(1);
   });
 });
-
 
 

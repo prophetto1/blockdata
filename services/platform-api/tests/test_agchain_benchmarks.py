@@ -1,3 +1,4 @@
+from pathlib import Path
 from unittest.mock import patch
 
 import pytest
@@ -6,7 +7,11 @@ from fastapi.testclient import TestClient
 
 from app.auth.dependencies import require_superuser, require_user_auth
 from app.auth.principals import AuthPrincipal
+from app.domain.agchain.benchmark_registry import create_benchmark, list_benchmarks, reorder_benchmark_steps
 from app.main import create_app
+
+
+MIGRATIONS_DIR = Path(__file__).resolve().parents[3] / "supabase" / "migrations"
 
 
 def _mock_user_principal():
@@ -415,3 +420,218 @@ def test_delete_benchmark_step_compacts_order(superuser_client):
         benchmark_slug="legal-10",
         benchmark_step_id="step-3",
     )
+
+
+class _RegistryQuery:
+    def __init__(self, admin, table_name: str):
+        self._admin = admin
+        self._table_name = table_name
+        self._filters: dict[str, object] = {}
+        self._in_filters: dict[str, set[object]] = {}
+        self._operation = "select"
+        self._payload = None
+        self._maybe_single = False
+
+    def select(self, *_args, **_kwargs):
+        self._operation = "select"
+        return self
+
+    def eq(self, key, value):
+        self._filters[key] = value
+        return self
+
+    def in_(self, key, values):
+        self._in_filters[key] = set(values)
+        return self
+
+    def order(self, *_args, **_kwargs):
+        return self
+
+    def maybe_single(self):
+        self._maybe_single = True
+        return self
+
+    def insert(self, payload):
+        self._operation = "insert"
+        self._payload = payload
+        return self
+
+    def update(self, payload):
+        self._operation = "update"
+        self._payload = payload
+        return self
+
+    def execute(self):
+        self._admin.calls.append((self._table_name, self._operation, dict(self._filters), dict(self._in_filters)))
+
+        if self._operation == "insert":
+            if self._table_name == "agchain_benchmarks" and self._admin.raise_duplicate_slug:
+                raise Exception('duplicate key value violates unique constraint "agchain_benchmarks_owner_user_id_benchmark_slug_key"')
+            return type("R", (), {"data": self._admin.insert_results.get(self._table_name, [])})()
+
+        if self._operation == "update":
+            self._admin.update_calls.append((self._table_name, self._payload, dict(self._filters)))
+            return type("R", (), {"data": []})()
+
+        rows = list(self._admin.tables.get(self._table_name, []))
+        rows = [
+            row
+            for row in rows
+            if all(row.get(key) == value for key, value in self._filters.items())
+            and all(row.get(key) in values for key, values in self._in_filters.items())
+        ]
+        data = rows[0] if self._maybe_single else rows
+        return type("R", (), {"data": data})()
+
+
+class _RegistryAdmin:
+    def __init__(self, *, tables=None, insert_results=None, raise_duplicate_slug=False):
+        self.tables = tables or {}
+        self.insert_results = insert_results or {}
+        self.raise_duplicate_slug = raise_duplicate_slug
+        self.calls: list[tuple[str, str, dict[str, object], dict[str, set[object]]]] = []
+        self.update_calls: list[tuple[str, object, dict[str, object]]] = []
+        self.rpc_calls: list[tuple[str, dict[str, object]]] = []
+
+    def table(self, name):
+        return _RegistryQuery(self, name)
+
+    def rpc(self, name, payload):
+        self.rpc_calls.append((name, payload))
+        return type("Exec", (), {"execute": lambda self_exec: type("R", (), {"data": {"step_count": len(payload.get("p_ordered_step_ids", []))}})()})()
+
+
+def test_list_benchmarks_batches_selected_eval_model_counts():
+    admin = _RegistryAdmin(
+        tables={
+            "agchain_benchmarks": [
+                {
+                    "benchmark_id": "benchmark-1",
+                    "benchmark_slug": "legal-10",
+                    "benchmark_name": "Legal-10",
+                    "description": "Legal analysis benchmark.",
+                    "owner_user_id": "user-1",
+                    "current_draft_version_id": "version-1",
+                    "current_published_version_id": None,
+                    "updated_at": "2026-03-27T08:15:00Z",
+                },
+                {
+                    "benchmark_id": "benchmark-2",
+                    "benchmark_slug": "finance-5",
+                    "benchmark_name": "Finance-5",
+                    "description": "Finance analysis benchmark.",
+                    "owner_user_id": "user-1",
+                    "current_draft_version_id": "version-2",
+                    "current_published_version_id": None,
+                    "updated_at": "2026-03-27T07:15:00Z",
+                },
+            ],
+            "agchain_benchmark_versions": [
+                {
+                    "benchmark_version_id": "version-1",
+                    "benchmark_id": "benchmark-1",
+                    "version_label": "v0.1.0",
+                    "version_status": "draft",
+                    "plan_family": "custom",
+                    "step_count": 3,
+                    "validation_status": "warn",
+                    "validation_issue_count": 2,
+                },
+                {
+                    "benchmark_version_id": "version-2",
+                    "benchmark_id": "benchmark-2",
+                    "version_label": "v0.1.0",
+                    "version_status": "draft",
+                    "plan_family": "custom",
+                    "step_count": 5,
+                    "validation_status": "pass",
+                    "validation_issue_count": 0,
+                },
+            ],
+            "agchain_runs": [],
+            "agchain_benchmark_model_targets": [
+                {"benchmark_version_id": "version-1", "selection_role": "evaluated"},
+                {"benchmark_version_id": "version-1", "selection_role": "evaluated"},
+                {"benchmark_version_id": "version-1", "selection_role": "judge"},
+                {"benchmark_version_id": "version-2", "selection_role": "evaluated"},
+            ],
+        }
+    )
+
+    with patch("app.domain.agchain.benchmark_registry.get_supabase_admin", return_value=admin):
+        items = list_benchmarks(user_id="user-1")
+
+    assert [item["selected_eval_model_count"] for item in items] == [2, 1]
+    assert [call[0] for call in admin.calls].count("agchain_benchmark_model_targets") == 1
+
+
+def test_create_benchmark_returns_conflict_for_duplicate_slug():
+    admin = _RegistryAdmin(raise_duplicate_slug=True)
+
+    with patch("app.domain.agchain.benchmark_registry.get_supabase_admin", return_value=admin):
+        with pytest.raises(HTTPException) as exc:
+            create_benchmark(
+                user_id="user-1",
+                payload={
+                    "benchmark_name": "Legal-10",
+                    "benchmark_slug": "legal-10",
+                    "description": "Legal analysis benchmark.",
+                },
+            )
+
+    assert exc.value.status_code == 409
+    assert exc.value.detail == "Benchmark slug already exists"
+
+
+def test_reorder_benchmark_steps_uses_atomic_rpc():
+    admin = _RegistryAdmin(
+        tables={
+            "agchain_benchmarks": [
+                {
+                    "benchmark_id": "benchmark-1",
+                    "benchmark_slug": "legal-10",
+                    "benchmark_name": "Legal-10",
+                    "owner_user_id": "user-1",
+                    "current_draft_version_id": "version-1",
+                    "current_published_version_id": None,
+                }
+            ],
+            "agchain_benchmark_versions": [
+                {
+                    "benchmark_version_id": "version-1",
+                    "benchmark_id": "benchmark-1",
+                    "version_status": "draft",
+                }
+            ],
+            "agchain_benchmark_steps": [
+                {"benchmark_step_id": "step-1", "benchmark_version_id": "version-1", "step_order": 1},
+                {"benchmark_step_id": "step-2", "benchmark_version_id": "version-1", "step_order": 2},
+                {"benchmark_step_id": "step-3", "benchmark_version_id": "version-1", "step_order": 3},
+            ],
+        }
+    )
+
+    with patch("app.domain.agchain.benchmark_registry.get_supabase_admin", return_value=admin):
+        result = reorder_benchmark_steps(
+            user_id="user-1",
+            benchmark_slug="legal-10",
+            ordered_step_ids=["step-2", "step-1", "step-3"],
+        )
+
+    assert result == {"step_count": 3}
+    assert len(admin.rpc_calls) == 1
+    rpc_name, rpc_payload = admin.rpc_calls[0]
+    assert rpc_name == "reorder_agchain_benchmark_steps_atomic"
+    assert rpc_payload["p_benchmark_version_id"] == "version-1"
+    assert rpc_payload["p_ordered_step_ids"] == ["step-2", "step-1", "step-3"]
+    assert isinstance(rpc_payload["p_updated_at"], str)
+    assert [call[0] for call in admin.update_calls if call[0] == "agchain_benchmark_steps"] == []
+
+
+def test_benchmark_reorder_atomic_rpc_migration_exists():
+    matches = sorted(MIGRATIONS_DIR.glob("*_agchain_benchmark_step_reorder_atomic_rpc.sql"))
+    assert len(matches) == 1
+
+    normalized = " ".join(matches[0].read_text(encoding="utf-8").split())
+    assert "CREATE OR REPLACE FUNCTION public.reorder_agchain_benchmark_steps_atomic(" in normalized
+    assert "ordered_step_ids must contain each step exactly once" in normalized

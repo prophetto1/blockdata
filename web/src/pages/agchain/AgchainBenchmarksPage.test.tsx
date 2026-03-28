@@ -34,7 +34,7 @@ describe('AgchainBenchmarksPage', () => {
     platformApiFetchMock.mockReset();
     navigateMock.mockReset();
     platformApiFetchMock.mockImplementation((path: string, init?: RequestInit) => {
-      if (path === '/agchain/benchmarks' && (!init?.method || init.method === 'GET')) {
+      if (path === '/agchain/benchmarks?limit=50&offset=0' && (!init?.method || init.method === 'GET')) {
         return Promise.resolve(
           jsonResponse({
             items: [
@@ -58,6 +58,9 @@ describe('AgchainBenchmarksPage', () => {
                 href: '/app/agchain/benchmarks/legal-10#steps',
               },
             ],
+            total: 1,
+            limit: 50,
+            offset: 0,
           }),
         );
       }
@@ -99,6 +102,7 @@ describe('AgchainBenchmarksPage', () => {
     expect(screen.getByRole('columnheader', { name: 'Validation' })).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: 'Activity' })).toBeInTheDocument();
     expect(screen.getAllByRole('link', { name: 'Open Workbench' }).length).toBeGreaterThan(0);
+    expect(platformApiFetchMock).toHaveBeenCalledWith('/agchain/benchmarks?limit=50&offset=0');
   });
 
   it('creates a benchmark from the catalog page and routes into its workbench', async () => {

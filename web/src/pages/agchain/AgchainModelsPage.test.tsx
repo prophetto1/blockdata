@@ -66,7 +66,7 @@ describe('AgchainModelsPage', () => {
         );
       }
 
-      if (path === '/agchain/models') {
+      if (path === '/agchain/models' || path === '/agchain/models?limit=50&offset=0') {
         return Promise.resolve(
           jsonResponse({
             items: [
@@ -94,6 +94,9 @@ describe('AgchainModelsPage', () => {
                 updated_at: '2026-03-26T18:11:00Z',
               },
             ],
+            total: 1,
+            limit: 50,
+            offset: 0,
           }),
         );
       }
@@ -216,5 +219,21 @@ describe('AgchainModelsPage', () => {
     const dialog = screen.getByRole('dialog');
     expect(within(dialog).getByText('Provider')).toBeInTheDocument();
     expect(within(dialog).queryByLabelText('Provider Slug')).not.toBeInTheDocument();
+  });
+
+  it('requests the model list with pagination defaults', async () => {
+    render(
+      <MemoryRouter>
+        <AgchainModelsPage />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('GPT-5.4 Default')).toBeInTheDocument();
+    });
+
+    expect(
+      platformApiFetchMock.mock.calls.some(([path]) => path === '/agchain/models?limit=50&offset=0'),
+    ).toBe(true);
   });
 });

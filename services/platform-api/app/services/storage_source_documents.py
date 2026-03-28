@@ -9,12 +9,9 @@ def upsert_source_document_for_storage_object(
     source_uid: str,
     source_type: str,
     doc_title: str,
-    storage_object_id: str,
     object_key: str,
     bytes_used: int,
 ) -> None:
-    del storage_object_id
-
     payload = {
         "source_uid": source_uid,
         "owner_id": owner_id,

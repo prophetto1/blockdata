@@ -101,6 +101,14 @@ async def test_create_pipeline_job_returns_queued_shape(monkeypatch):
 
     monkeypatch.setattr("app.api.routes.pipelines.get_supabase_admin", lambda: object())
     monkeypatch.setattr(
+        "app.api.routes.pipelines.get_pipeline_worker_definition",
+        lambda pipeline_kind: {
+            "pipeline_kind": pipeline_kind,
+            "handler_module": "app.pipelines.markdown_index_builder",
+            "handler_name": "run_markdown_index_builder",
+        },
+    )
+    monkeypatch.setattr(
         "app.api.routes.pipelines._load_owned_source",
         lambda *_a, **_k: {"source_uid": "src-1", "source_type": "md"},
     )
@@ -129,6 +137,24 @@ async def test_create_pipeline_job_returns_queued_shape(monkeypatch):
         "status": "queued",
         "stage": "queued",
     }
+
+
+@pytest.mark.asyncio
+async def test_create_pipeline_job_rejects_unimplemented_pipeline(monkeypatch):
+    from app.api.routes.pipelines import CreatePipelineJobRequest, create_pipeline_job
+
+    monkeypatch.setattr("app.api.routes.pipelines.get_supabase_admin", lambda: object())
+    monkeypatch.setattr("app.api.routes.pipelines.get_pipeline_worker_definition", lambda *_a, **_k: None)
+
+    with pytest.raises(HTTPException) as exc:
+        await create_pipeline_job(
+            "markdown_index_builder",
+            CreatePipelineJobRequest(source_uid="src-1"),
+            _user_auth(),
+        )
+
+    assert exc.value.status_code == 503
+    assert exc.value.detail == "Pipeline kind is not executable yet"
 
 
 @pytest.mark.asyncio

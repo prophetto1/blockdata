@@ -151,6 +151,26 @@ def _get_selected_eval_model_count(*, sb, benchmark_version_id: str | None) -> i
     return sum(1 for row in selections_result.data or [] if row.get("selection_role") == "evaluated")
 
 
+def _list_selected_eval_model_counts(*, sb, benchmark_version_ids: list[str]) -> dict[str, int]:
+    counts = {benchmark_version_id: 0 for benchmark_version_id in benchmark_version_ids}
+    if not benchmark_version_ids:
+        return counts
+
+    selections_result = (
+        sb.table("agchain_benchmark_model_targets")
+        .select("benchmark_version_id, selection_role")
+        .in_("benchmark_version_id", benchmark_version_ids)
+        .execute()
+    )
+    for row in selections_result.data or []:
+        if row.get("selection_role") != "evaluated":
+            continue
+        version_id = row.get("benchmark_version_id")
+        if isinstance(version_id, str):
+            counts[version_id] = counts.get(version_id, 0) + 1
+    return counts
+
+
 def _get_tested_model_count(*, benchmark_id: str, runs_by_benchmark: dict[str, list[dict[str, Any]]]) -> int:
     completed_runs = [
         row
@@ -228,6 +248,7 @@ def list_benchmarks(*, user_id: str) -> list[dict[str, Any]]:
             row["benchmark_version_id"]: row
             for row in (versions_result.data or [])
         }
+    selected_eval_counts = _list_selected_eval_model_counts(sb=sb, benchmark_version_ids=version_ids)
 
     benchmark_ids = [benchmark["benchmark_id"] for benchmark in benchmarks]
     runs_by_benchmark = _list_runs_by_benchmark(sb=sb, benchmark_ids=benchmark_ids)
@@ -256,10 +277,7 @@ def list_benchmarks(*, user_id: str) -> list[dict[str, Any]]:
                 "current_spec_version": version_label,
                 "version_status": version_status,
                 "step_count": int(version.get("step_count", 0)) if version else 0,
-                "selected_eval_model_count": _get_selected_eval_model_count(
-                    sb=sb,
-                    benchmark_version_id=version_id,
-                ),
+                "selected_eval_model_count": selected_eval_counts.get(version_id, 0) if version_id else 0,
                 "tested_model_count": _get_tested_model_count(
                     benchmark_id=benchmark["benchmark_id"],
                     runs_by_benchmark=runs_by_benchmark,
@@ -289,19 +307,25 @@ def create_benchmark(*, user_id: str, payload: dict[str, Any]) -> dict[str, Any]
     description = (payload.get("description") or "").strip()
     now = _utc_now_iso()
 
-    benchmark_insert = (
-        sb.table("agchain_benchmarks")
-        .insert(
-            {
-                "benchmark_slug": benchmark_slug,
-                "benchmark_name": benchmark_name,
-                "description": description,
-                "owner_user_id": user_id,
-                "updated_at": now,
-            }
+    try:
+        benchmark_insert = (
+            sb.table("agchain_benchmarks")
+            .insert(
+                {
+                    "benchmark_slug": benchmark_slug,
+                    "benchmark_name": benchmark_name,
+                    "description": description,
+                    "owner_user_id": user_id,
+                    "updated_at": now,
+                }
+            )
+            .execute()
         )
-        .execute()
-    )
+    except Exception as exc:
+        message = str(exc).lower()
+        if "agchain_benchmarks_owner_user_id_benchmark_slug_key" in message or "duplicate key value" in message:
+            raise HTTPException(status_code=409, detail="Benchmark slug already exists") from exc
+        raise
     benchmark_rows = benchmark_insert.data or []
     if not benchmark_rows:
         raise HTTPException(status_code=500, detail="Failed to create benchmark")
@@ -499,17 +523,20 @@ def reorder_benchmark_steps(*, user_id: str, benchmark_slug: str, ordered_step_i
         raise HTTPException(status_code=422, detail="ordered_step_ids must contain each step exactly once")
 
     now = _utc_now_iso()
-    for step_order, step_id in enumerate(ordered_step_ids, start=1):
-        sb.table("agchain_benchmark_steps").update(
-            {"step_order": step_order, "updated_at": now}
-        ).eq("benchmark_step_id", step_id).eq("benchmark_version_id", version["benchmark_version_id"]).execute()
-
-    _touch_benchmark_and_version(
-        sb=sb,
-        benchmark_id=benchmark["benchmark_id"],
-        benchmark_version_id=version["benchmark_version_id"],
-        now=now,
+    result = (
+        sb.rpc(
+            "reorder_agchain_benchmark_steps_atomic",
+            {
+                "p_benchmark_version_id": version["benchmark_version_id"],
+                "p_ordered_step_ids": ordered_step_ids,
+                "p_updated_at": now,
+            },
+        )
+        .execute()
+        .data
     )
+    if isinstance(result, dict) and "step_count" in result:
+        return {"step_count": int(result["step_count"])}
     return {"step_count": len(ordered_step_ids)}
 
 

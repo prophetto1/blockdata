@@ -280,12 +280,12 @@ const PIPELINE_SERVICES_DRILL: NavDrillConfig = {
   id: 'pipeline-services',
   parentLabel: 'Pipeline Services',
   parentPath: '/app/rag',
-  routePrefix: '/app/__pipeline-services__',
+  routePrefix: '/app/rag',
   sections: [
     {
       label: 'Pipeline Services',
       items: [
-        { label: 'RAG', icon: IconTransform, path: '/app/rag' },
+        { label: 'Index Builder', icon: IconTransform, path: '/app/rag/index-builder' },
       ],
     },
   ],

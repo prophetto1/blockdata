@@ -8,6 +8,8 @@ from app.auth.dependencies import require_user_auth
 from app.auth.principals import AuthPrincipal
 from app.main import create_app
 
+SECRET_ID = "11111111-1111-1111-1111-111111111111"
+
 
 def _mock_auth_principal():
     return AuthPrincipal(
@@ -46,7 +48,7 @@ def test_list_secrets_returns_empty_for_new_user(client):
 def test_create_secret_returns_metadata_only_and_uses_envelope_key(client):
     secrets_module = _secrets_module()
     inserted = {
-        "id": "secret-1",
+        "id": SECRET_ID,
         "name": "OPENAI_API_KEY",
         "description": "OpenAI key",
         "value_kind": "secret",
@@ -89,7 +91,7 @@ def test_create_secret_returns_metadata_only_and_uses_envelope_key(client):
 def test_update_secret_returns_metadata_only_and_canonicalizes_name(client):
     secrets_module = _secrets_module()
     updated = {
-        "id": "secret-1",
+        "id": SECRET_ID,
         "name": "OPENAI_API_KEY",
         "description": "Rotated key",
         "value_kind": "api_key",
@@ -108,7 +110,7 @@ def test_update_secret_returns_metadata_only_and_canonicalizes_name(client):
         )
 
         resp = client.patch(
-            "/secrets/secret-1",
+            f"/secrets/{SECRET_ID}",
             json={
                 "name": "openAi_api_key",
                 "description": "Rotated key",
@@ -134,10 +136,60 @@ def test_delete_secret_returns_ok(client):
     secrets_module = _secrets_module()
     with patch.object(secrets_module, "get_supabase_admin") as mock_sb:
         mock_sb.return_value.table.return_value.delete.return_value.eq.return_value.eq.return_value.execute.return_value = MagicMock(
-            data=[{"id": "secret-1"}]
+            data=[{"id": SECRET_ID}]
         )
 
-        resp = client.delete("/secrets/secret-1")
+        resp = client.delete(f"/secrets/{SECRET_ID}")
 
     assert resp.status_code == 200
-    assert resp.json() == {"ok": True, "id": "secret-1"}
+    assert resp.json() == {"ok": True, "id": SECRET_ID}
+
+
+def test_update_secret_rejects_invalid_value_kind_before_storage(client):
+    secrets_module = _secrets_module()
+    with patch.object(secrets_module, "get_supabase_admin", side_effect=AssertionError("storage should not be reached")):
+        resp = client.patch(
+            f"/secrets/{SECRET_ID}",
+            json={"value_kind": "invalid_kind"},
+        )
+
+    assert resp.status_code == 422
+
+
+def test_update_secret_rejects_empty_patch_body_before_storage(client):
+    secrets_module = _secrets_module()
+    with patch.object(secrets_module, "get_supabase_admin", side_effect=AssertionError("storage should not be reached")):
+        resp = client.patch(f"/secrets/{SECRET_ID}", json={})
+
+    assert resp.status_code == 422
+
+
+@pytest.mark.parametrize("method", ["patch", "delete"])
+def test_secret_routes_reject_invalid_secret_id(client, method):
+    secrets_module = _secrets_module()
+    request = getattr(client, method)
+    kwargs = {"json": {"description": "noop"}} if method == "patch" else {}
+
+    with patch.object(secrets_module, "get_supabase_admin", side_effect=AssertionError("storage should not be reached")):
+        resp = request("/secrets/not-a-uuid", **kwargs)
+
+    assert resp.status_code == 422
+
+
+def test_update_variable_rejects_invalid_value_kind_before_storage(client):
+    secrets_module = _secrets_module()
+    with patch.object(secrets_module, "get_supabase_admin", side_effect=AssertionError("storage should not be reached")):
+        resp = client.patch(
+            "/variables/var-1",
+            json={"value_kind": "invalid_kind"},
+        )
+
+    assert resp.status_code == 422
+
+
+def test_update_variable_rejects_empty_patch_body_before_storage(client):
+    secrets_module = _secrets_module()
+    with patch.object(secrets_module, "get_supabase_admin", side_effect=AssertionError("storage should not be reached")):
+        resp = client.patch("/variables/var-1", json={})
+
+    assert resp.status_code == 422

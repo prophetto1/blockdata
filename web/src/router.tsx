@@ -34,6 +34,7 @@ import Commands from '@/pages/Commands';
 import DatabasePlaceholder from '@/pages/DatabasePlaceholder';
 import ProjectAssetsPage from '@/pages/ProjectAssetsPage';
 import ParsePage from '@/pages/ParsePage';
+import PipelineServicesPage from '@/pages/PipelineServicesPage';
 import { Component as Workspace } from '@/pages/Workspace';
 import ExtractPage from '@/pages/ExtractPage';
 import ConvertPage from '@/pages/ConvertPage';
@@ -58,9 +59,8 @@ import { AgchainShellLayout } from '@/components/layout/AgchainShellLayout';
 
 
 function LegacyToTransform() {
-  const { projectId } = useParams<{ projectId: string }>();
-  const target = projectId ? `/app/transform` : '/app/transform';
-  return <Navigate to={target} replace />;
+  useParams<{ projectId: string }>();
+  return <Navigate to="/app/transform" replace />;
 }
 
 
@@ -124,6 +124,8 @@ export const router = createBrowserRouter([
           { path: '/app/database', element: <DatabasePlaceholder /> },
           { path: '/app/assets', element: <ProjectAssetsPage /> },
           { path: '/app/parse', element: <ParsePage /> },
+          { path: '/app/rag', element: <PipelineServicesPage /> },
+          { path: '/app/rag/:serviceSlug', element: <PipelineServicesPage /> },
           { path: '/app/workspace', element: <Workspace /> },
           { path: '/app/extract', element: <ExtractPage /> },
           { path: '/app/convert', element: <ConvertPage /> },

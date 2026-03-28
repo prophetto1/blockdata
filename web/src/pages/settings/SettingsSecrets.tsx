@@ -125,6 +125,9 @@ export default function SettingsSecrets() {
   };
 
   const handleDelete = async (secret: SecretMetadata) => {
+    if (!window.confirm(`Delete ${secret.name}? This cannot be undone.`)) {
+      return;
+    }
     setStatus(null);
     setDeletingId(secret.id);
     try {

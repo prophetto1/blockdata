@@ -37,54 +37,81 @@ def _health_query(sb):
     return sb.table("agchain_model_health_checks").select("*")
 
 
-def _resolve_credential_status(sb, user_id: str, row: dict[str, Any]) -> str:
-    auth_kind = row.get("auth_kind")
-    provider_slug = row.get("provider_slug")
-    if auth_kind == "none":
-        return "not_required"
+def _resolve_api_key_statuses(sb, user_id: str, rows: list[dict[str, Any]]) -> dict[str, str]:
+    api_key_rows = [row for row in rows if row.get("auth_kind") == "api_key"]
+    if not api_key_rows:
+        return {}
 
-    credential_source = row.get("credential_source_jsonb") or {}
-    source_kind = credential_source.get("source")
+    result = sb.table("user_api_keys").select("provider, is_valid").eq("user_id", user_id).execute()
+    keys_by_provider: dict[str, list[dict[str, Any]]] = {}
+    for item in result.data or []:
+        provider = item.get("provider")
+        if isinstance(provider, str):
+            keys_by_provider.setdefault(provider, []).append(item)
 
-    if auth_kind == "api_key":
-        result = (
-            sb.table("user_api_keys")
-            .select("id, provider, is_valid, base_url")
-            .eq("user_id", user_id)
-            .eq("provider", provider_slug)
-            .limit(1)
-            .execute()
-        )
-        match = (result.data or [None])[0]
-        if not match:
-            return "missing"
-        if match.get("is_valid") is False:
-            return "invalid"
-        return "ready"
+    statuses: dict[str, str] = {}
+    for row in api_key_rows:
+        matches = keys_by_provider.get(row.get("provider_slug"), [])
+        if not matches:
+            statuses[row["model_target_id"]] = "missing"
+        elif any(match.get("is_valid") is not False for match in matches):
+            statuses[row["model_target_id"]] = "ready"
+        else:
+            statuses[row["model_target_id"]] = "invalid"
+    return statuses
 
-    query = (
+
+def _resolve_connection_statuses(sb, user_id: str, rows: list[dict[str, Any]]) -> dict[str, str]:
+    connection_rows = [row for row in rows if row.get("auth_kind") not in {"none", "api_key"}]
+    if not connection_rows:
+        return {}
+
+    result = (
         sb.table("user_provider_connections")
-        .select("id, status, connection_type")
+        .select("provider, status, connection_type")
         .eq("user_id", user_id)
-        .eq("provider", provider_slug)
+        .execute()
     )
-    if source_kind == "user_provider_connections" and credential_source.get("connection_type"):
-        query = query.eq("connection_type", credential_source["connection_type"])
-    result = query.limit(1).execute()
-    match = (result.data or [None])[0]
-    if not match:
-        return "missing"
-    if match.get("status") != "connected":
-        return "disconnected"
-    return "ready"
+    connections_by_provider: dict[str, list[dict[str, Any]]] = {}
+    for item in result.data or []:
+        provider = item.get("provider")
+        if isinstance(provider, str):
+            connections_by_provider.setdefault(provider, []).append(item)
+
+    statuses: dict[str, str] = {}
+    for row in connection_rows:
+        credential_source = row.get("credential_source_jsonb") or {}
+        matches = list(connections_by_provider.get(row.get("provider_slug"), []))
+        if credential_source.get("source") == "user_provider_connections" and credential_source.get("connection_type"):
+            matches = [
+                match for match in matches if match.get("connection_type") == credential_source["connection_type"]
+            ]
+
+        if not matches:
+            statuses[row["model_target_id"]] = "missing"
+        elif any(match.get("status") == "connected" for match in matches):
+            statuses[row["model_target_id"]] = "ready"
+        else:
+            statuses[row["model_target_id"]] = "disconnected"
+    return statuses
 
 
-def _normalize_row(sb, user_id: str, row: dict[str, Any]) -> dict[str, Any]:
+def _resolve_credential_statuses(sb, user_id: str, rows: list[dict[str, Any]]) -> dict[str, str]:
+    statuses = {
+        row["model_target_id"]: "not_required"
+        for row in rows
+        if row.get("auth_kind") == "none"
+    }
+    statuses.update(_resolve_api_key_statuses(sb, user_id, rows))
+    statuses.update(_resolve_connection_statuses(sb, user_id, rows))
+    return statuses
+
+
+def _normalize_row(row: dict[str, Any], credential_status: str) -> dict[str, Any]:
     provider = resolve_provider_definition(row["provider_slug"]) or {
         "display_name": row["provider_slug"],
         "default_probe_strategy": row.get("probe_strategy") or "provider_default",
     }
-    credential_status = _resolve_credential_status(sb, user_id, row)
     return {
         "model_target_id": row["model_target_id"],
         "label": row["label"],
@@ -151,12 +178,18 @@ def list_model_targets(
     health_status: str | None = None,
     enabled: bool | None = None,
     search: str | None = None,
-) -> list[dict[str, Any]]:
+    limit: int = 50,
+    offset: int = 0,
+) -> dict[str, Any]:
     sb = get_supabase_admin()
     result = _row_query(sb).order("updated_at", desc=True).execute()
     rows = result.data or []
-    normalized = [_normalize_row(sb, user_id, row) for row in rows]
-    return _apply_filters(
+    credential_statuses = _resolve_credential_statuses(sb, user_id, rows)
+    normalized = [
+        _normalize_row(row, credential_statuses.get(row["model_target_id"], "missing"))
+        for row in rows
+    ]
+    filtered = _apply_filters(
         normalized,
         provider_slug=provider_slug,
         compatibility=compatibility,
@@ -164,6 +197,13 @@ def list_model_targets(
         enabled=enabled,
         search=search,
     )
+    page = filtered[offset : offset + limit]
+    return {
+        "items": page,
+        "total": len(filtered),
+        "limit": limit,
+        "offset": offset,
+    }
 
 
 def load_model_detail(*, user_id: str, model_target_id: str) -> tuple[dict[str, Any] | None, list[dict[str, Any]]]:

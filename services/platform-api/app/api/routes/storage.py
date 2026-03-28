@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from datetime import datetime, timedelta, timezone
 from functools import lru_cache
 from pathlib import PurePosixPath
@@ -31,6 +32,7 @@ StorageSurface = Literal["assets", "pipeline-services"]
 
 SIGNED_URL_MINUTES = 30
 router = APIRouter(prefix="/storage", tags=["storage"])
+logger = logging.getLogger(__name__)
 
 
 @lru_cache(maxsize=1)
@@ -203,6 +205,39 @@ def _fetch_storage_object_by_reservation(admin, owner_user_id: str, reservation_
         .execute()
     )
     return res.data
+
+
+def _bridge_failure_http_error() -> HTTPException:
+    return HTTPException(
+        status_code=503,
+        detail="Upload completed but source document finalization failed; retry completion",
+    )
+
+
+def _sync_source_document_bridge(
+    admin,
+    *,
+    owner_id: str,
+    reservation: dict,
+    storage_object: dict,
+) -> None:
+    if reservation.get("storage_kind") != "source":
+        return
+
+    source_uid = reservation.get("source_uid")
+    if not source_uid:
+        raise RuntimeError("source reservation missing source_uid")
+
+    upsert_source_document_for_storage_object(
+        admin,
+        owner_id=owner_id,
+        project_id=reservation.get("project_id"),
+        source_uid=source_uid,
+        source_type=reservation.get("source_type") or "binary",
+        doc_title=reservation.get("doc_title") or reservation.get("original_filename") or "file",
+        object_key=storage_object["object_key"],
+        bytes_used=storage_object["byte_size"],
+    )
 
 
 def _assert_project_ownership(admin, user_id: str, project_id: str) -> None:
@@ -443,6 +478,24 @@ async def finalize_upload(
                     http_status_code=http_exc.status_code,
                 )
                 raise http_exc
+            try:
+                _sync_source_document_bridge(
+                    admin,
+                    owner_id=auth.user_id,
+                    reservation=reservation,
+                    storage_object=existing,
+                )
+            except Exception as exc:
+                logger.exception("storage.source_document_bridge_repair_failed")
+                http_exc = _bridge_failure_http_error()
+                record_storage_upload_complete(
+                    result="error",
+                    storage_kind=storage_kind,
+                    actual_bytes=existing.get("byte_size"),
+                    duration_ms=(perf_counter() - started) * 1000.0,
+                    http_status_code=http_exc.status_code,
+                )
+                raise http_exc from exc
             record_storage_upload_complete(
                 result="ok",
                 storage_kind=storage_kind,
@@ -525,20 +578,27 @@ async def finalize_upload(
                     "p_checksum_sha256": body.checksum_sha256,
                 },
             ).execute().data
-            if storage_kind == "source":
-                upsert_source_document_for_storage_object(
-                    admin,
-                    owner_id=auth.user_id,
-                    project_id=reservation.get("project_id"),
-                    source_uid=reservation["source_uid"],
-                    source_type=reservation.get("source_type") or "binary",
-                    doc_title=reservation.get("doc_title") or reservation["original_filename"],
-                    storage_object_id=result["storage_object_id"],
-                    object_key=result["object_key"],
-                    bytes_used=result["byte_size"],
-                )
         except Exception as exc:
             http_exc = _http_from_supabase_error(exc)
+            record_storage_upload_complete(
+                result="error",
+                storage_kind=storage_kind,
+                actual_bytes=uploaded_size,
+                duration_ms=(perf_counter() - started) * 1000.0,
+                http_status_code=http_exc.status_code,
+            )
+            raise http_exc from exc
+
+        try:
+            _sync_source_document_bridge(
+                admin,
+                owner_id=auth.user_id,
+                reservation=reservation,
+                storage_object=result,
+            )
+        except Exception as exc:
+            logger.exception("storage.source_document_bridge_finalization_failed")
+            http_exc = _bridge_failure_http_error()
             record_storage_upload_complete(
                 result="error",
                 storage_kind=storage_kind,

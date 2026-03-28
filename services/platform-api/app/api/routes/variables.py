@@ -3,10 +3,11 @@
 from typing import Literal
 
 from fastapi import APIRouter, Depends, Response
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from app.api.routes.secrets import (
     CreateSecretRequest,
+    SecretValueKind,
     UpdateSecretRequest,
     create_secret,
     delete_secret,
@@ -46,14 +47,23 @@ class CreateVariableRequest(BaseModel):
     name: str = Field(min_length=1)
     value: str
     description: str | None = None
-    value_kind: str = Field(default="secret")
+    value_kind: SecretValueKind = Field(default="secret")
 
 
 class UpdateVariableRequest(BaseModel):
     name: str | None = Field(default=None, min_length=1)
     value: str | None = None
     description: str | None = None
-    value_kind: str | None = None
+    value_kind: SecretValueKind | None = None
+
+    @model_validator(mode="after")
+    def validate_non_empty(self) -> "UpdateVariableRequest":
+        if not any(
+            value is not None
+            for value in (self.name, self.value, self.description, self.value_kind)
+        ):
+            raise ValueError("At least one field must be provided")
+        return self
 
 
 class DeleteVariableResponse(BaseModel):

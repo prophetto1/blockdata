@@ -177,6 +177,16 @@ describe('drill configs', () => {
     expect(paths).toContain('/app/logs');
   });
 
+  it('pipeline services drill exposes Index Builder as a dedicated service route', () => {
+    const pipelineServices = getDrillConfig('pipeline-services')!;
+    const labels = pipelineServices.sections.flatMap((section) => section.items.map((item) => item.label));
+    const paths = pipelineServices.sections.flatMap((section) => section.items.map((item) => item.path));
+
+    expect(labels).toContain('Index Builder');
+    expect(paths).toContain('/app/rag/index-builder');
+    expect(labels).not.toContain('RAG');
+  });
+
   it('build ai drill omits integration options', () => {
     const buildAi = getDrillConfig('build-ai')!;
     const labels = buildAi.sections.flatMap((section) => section.items.map((item) => item.label));
@@ -219,6 +229,8 @@ describe('drill configs', () => {
     expect(findDrillByRoute('/app/settings/secrets')?.id).toBe('settings');
     expect(findDrillByRoute('/app/logs')?.id).toBe('observability');
     expect(findDrillByRoute('/app/transform')?.id).toBe('workbench');
+    expect(findDrillByRoute('/app/rag')?.id).toBe('pipeline-services');
+    expect(findDrillByRoute('/app/rag/index-builder')?.id).toBe('pipeline-services');
     expect(findDrillByRoute('/app/elt')).toBeNull();
     expect(findDrillByRoute('/app/database')?.id).toBe('ingest');
   });

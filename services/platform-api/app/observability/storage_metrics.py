@@ -2,29 +2,47 @@ from __future__ import annotations
 
 from opentelemetry import metrics, trace
 
-from app.observability.contract import STORAGE_METER_NAME, STORAGE_TRACER_NAME, safe_attributes
+from app.observability.contract import (
+    ADMIN_STORAGE_POLICY_DURATION_MS_HISTOGRAM_NAME,
+    ADMIN_STORAGE_POLICY_UPDATE_COUNTER_NAME,
+    ADMIN_STORAGE_PROVISIONING_INCOMPLETE_COUNTER_NAME,
+    ADMIN_STORAGE_PROVISIONING_QUERY_DURATION_MS_HISTOGRAM_NAME,
+    STORAGE_METER_NAME,
+    STORAGE_OBJECT_DELETE_COUNTER_NAME,
+    STORAGE_QUOTA_EXCEEDED_COUNTER_NAME,
+    STORAGE_QUOTA_READ_COUNTER_NAME,
+    STORAGE_TRACER_NAME,
+    STORAGE_UPLOAD_CANCEL_COUNTER_NAME,
+    STORAGE_UPLOAD_COMPLETE_COUNTER_NAME,
+    STORAGE_UPLOAD_COMPLETE_DURATION_MS_HISTOGRAM_NAME,
+    STORAGE_UPLOAD_COMPLETE_FAILURE_COUNTER_NAME,
+    STORAGE_UPLOAD_RESERVE_COUNTER_NAME,
+    STORAGE_UPLOAD_RESERVE_DURATION_MS_HISTOGRAM_NAME,
+    STORAGE_UPLOAD_RESERVE_FAILURE_COUNTER_NAME,
+    safe_attributes,
+)
 
 storage_tracer = trace.get_tracer(STORAGE_TRACER_NAME)
 _meter = metrics.get_meter(STORAGE_METER_NAME)
 
-_storage_quota_read_count = _meter.create_counter("platform.storage.quota.read.count")
-_storage_upload_reserve_count = _meter.create_counter("platform.storage.upload.reserve.count")
-_storage_upload_reserve_failure_count = _meter.create_counter("platform.storage.upload.reserve.failure.count")
-_storage_upload_complete_count = _meter.create_counter("platform.storage.upload.complete.count")
-_storage_upload_complete_failure_count = _meter.create_counter("platform.storage.upload.complete.failure.count")
-_storage_upload_cancel_count = _meter.create_counter("platform.storage.upload.cancel.count")
-_storage_object_delete_count = _meter.create_counter("platform.storage.object.delete.count")
-_storage_quota_exceeded_count = _meter.create_counter("platform.storage.quota.exceeded.count")
-_admin_storage_policy_update_count = _meter.create_counter("platform.admin.storage.policy.update.count")
+_storage_quota_read_count = _meter.create_counter(STORAGE_QUOTA_READ_COUNTER_NAME)
+_storage_upload_reserve_count = _meter.create_counter(STORAGE_UPLOAD_RESERVE_COUNTER_NAME)
+_storage_upload_reserve_failure_count = _meter.create_counter(STORAGE_UPLOAD_RESERVE_FAILURE_COUNTER_NAME)
+_storage_upload_complete_count = _meter.create_counter(STORAGE_UPLOAD_COMPLETE_COUNTER_NAME)
+_storage_upload_complete_failure_count = _meter.create_counter(STORAGE_UPLOAD_COMPLETE_FAILURE_COUNTER_NAME)
+_storage_upload_cancel_count = _meter.create_counter(STORAGE_UPLOAD_CANCEL_COUNTER_NAME)
+_storage_object_delete_count = _meter.create_counter(STORAGE_OBJECT_DELETE_COUNTER_NAME)
+_storage_quota_exceeded_count = _meter.create_counter(STORAGE_QUOTA_EXCEEDED_COUNTER_NAME)
+_admin_storage_policy_update_count = _meter.create_counter(ADMIN_STORAGE_POLICY_UPDATE_COUNTER_NAME)
 _admin_storage_provisioning_incomplete_count = _meter.create_counter(
-    "platform.admin.storage.provisioning.incomplete.count"
+    ADMIN_STORAGE_PROVISIONING_INCOMPLETE_COUNTER_NAME
 )
 
-_storage_upload_reserve_duration_ms = _meter.create_histogram("platform.storage.upload.reserve.duration.ms")
-_storage_upload_complete_duration_ms = _meter.create_histogram("platform.storage.upload.complete.duration.ms")
-_admin_storage_policy_duration_ms = _meter.create_histogram("platform.admin.storage.policy.duration.ms")
+_storage_upload_reserve_duration_ms = _meter.create_histogram(STORAGE_UPLOAD_RESERVE_DURATION_MS_HISTOGRAM_NAME)
+_storage_upload_complete_duration_ms = _meter.create_histogram(STORAGE_UPLOAD_COMPLETE_DURATION_MS_HISTOGRAM_NAME)
+_admin_storage_policy_duration_ms = _meter.create_histogram(ADMIN_STORAGE_POLICY_DURATION_MS_HISTOGRAM_NAME)
 _admin_storage_provisioning_query_duration_ms = _meter.create_histogram(
-    "platform.admin.storage.provisioning.query.duration.ms"
+    ADMIN_STORAGE_PROVISIONING_QUERY_DURATION_MS_HISTOGRAM_NAME
 )
 
 
