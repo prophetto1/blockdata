@@ -44,6 +44,7 @@ from runtime.audit import hash_file, hash_bytes, emit_audit_record, emit_run_rec
 from runtime.state import CandidateState
 from runtime.execution_backend import ExecutionBackend, resolve_backend
 from runtime.execution_result import ExecutionResult
+from runtime.runtime_config import RuntimeConfig
 from scorers.d1_known_authority_scorer import score_d1_known_authority
 from scorers.citation_integrity import score_citation_integrity
 from adapters.model_adapter import create_adapter, ModelAdapter
@@ -165,6 +166,7 @@ async def run_single_eu(
     run_id: str,
     profile: Any = None,
     build_messages_fn: Any = None,
+    runtime_config: RuntimeConfig | None = None,
 ) -> dict[str, Any]:
     """Execute the 3-step chain for one EU."""
     benchmark = _load_json(benchmark_dir / "benchmark.json")
@@ -422,6 +424,13 @@ async def run_single_eu(
     summary_path = runs_dir / run_id / "summary.json"
     summary_path.write_text(json.dumps(summary, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
+    # Write runtime config
+    if runtime_config is not None:
+        rc_path = runs_dir / run_id / "runtime_config.json"
+        rc_path.write_text(
+            runtime_config.model_dump_json(indent=2) + "\n", encoding="utf-8"
+        )
+
     # Run manifest
     run_dir = runs_dir / run_id
     file_hashes = {}
@@ -438,10 +447,13 @@ async def run_single_eu(
         "judge_model": resolved_judge_model_name,
         "step_count": len(plan["steps"]),
         "execution_backend": execution_backend_name,
-        "session_strategy": "Replay_Minimal",
+        "session_strategy": runtime_config.session_strategy if runtime_config else "replay_minimal",
         "runner_version": "run_3s_v1",
         "file_hashes": file_hashes,
-        "reproducibility_key": f"{resolved_eval_model_name}|{resolved_judge_model_name}|temp=0.0|Replay_Minimal",
+        "reproducibility_key": (
+            f"{resolved_eval_model_name}|{resolved_judge_model_name}"
+            f"|temp=0.0|{runtime_config.session_strategy if runtime_config else 'replay_minimal'}"
+        ),
         "created_at": datetime.now(timezone.utc).isoformat(),
     }
     manifest_path = runs_dir / run_id / "run_manifest.json"
@@ -497,6 +509,18 @@ def main() -> None:
             _profile_obj = get_baseline_profile()
         else:
             _profile_obj = Profile.model_validate_json(Path(args.profile).read_text())
+
+    # Resolve runtime config
+    if _profile_obj is not None:
+        runtime_config = RuntimeConfig.from_profile(
+            _profile_obj, backend=args.execution_backend
+        )
+    else:
+        runtime_config = RuntimeConfig.baseline()
+        if args.execution_backend != "direct":
+            runtime_config = runtime_config.model_copy(
+                update={"backend": args.execution_backend}
+            )
 
     judge_provider = args.judge_provider or args.provider
     eval_model_name = _resolve_model_name(args.provider, args.model)
@@ -560,6 +584,7 @@ def main() -> None:
                     run_id=run_id,
                     profile=_profile_obj,
                     build_messages_fn=_bm_fn,
+                    runtime_config=runtime_config,
                 )
             except Exception as e:
                 print(f"  ERROR running EU {eu_dir.name}: {e}", file=sys.stderr)

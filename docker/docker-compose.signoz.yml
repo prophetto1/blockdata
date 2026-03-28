@@ -1,3 +1,10 @@
+# ── Optional OTLP development sink ──────────────────────────────────
+# SigNoz is one possible OTLP-compatible backend for local development.
+# It receives traces, metrics, and logs via standard OTLP HTTP on :4318.
+# Production code must remain sink-agnostic — no application code may
+# import or branch on SigNoz-specific SDKs or APIs.
+# See services/platform-api/OBSERVABILITY.md for the product-owned
+# OpenTelemetry contract.
 version: "3"
 
 x-common: &common

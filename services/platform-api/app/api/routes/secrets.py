@@ -11,15 +11,24 @@ from app.auth.dependencies import require_user_auth
 from app.auth.principals import AuthPrincipal
 from app.infra.crypto import encrypt_with_context, get_envelope_key
 from app.infra.supabase_client import get_supabase_admin
-from app.observability.otel import safe_attributes
+from app.observability.contract import (
+    SECRETS_CHANGE_COUNTER_NAME,
+    SECRETS_CHANGED_LOG_EVENT,
+    SECRETS_CREATE_SPAN_NAME,
+    SECRETS_DELETE_SPAN_NAME,
+    SECRETS_LIST_COUNTER_NAME,
+    SECRETS_LIST_SPAN_NAME,
+    SECRETS_UPDATE_SPAN_NAME,
+    safe_attributes,
+)
 
 router = APIRouter(prefix="/secrets", tags=["secrets"])
 logger = logging.getLogger("secrets")
 tracer = trace.get_tracer(__name__)
 meter = metrics.get_meter(__name__)
 
-secrets_list_counter = meter.create_counter("platform.secrets.list.count")
-secrets_change_counter = meter.create_counter("platform.secrets.change.count")
+secrets_list_counter = meter.create_counter(SECRETS_LIST_COUNTER_NAME)
+secrets_change_counter = meter.create_counter(SECRETS_CHANGE_COUNTER_NAME)
 
 CRYPTO_CONTEXT = "user-variables-v1"
 METADATA_COLUMNS = "id,name,description,value_kind,value_suffix,created_at,updated_at"
@@ -45,7 +54,7 @@ def _set_span_attrs(span, attrs: dict[str, object]) -> None:
 
 def _log_secret_change(action: str, result: str, value_kind: str | None = None) -> None:
     attrs = {"action": action, "result": result, "value_kind": value_kind}
-    logger.info("secrets.changed", extra=safe_attributes(attrs))
+    logger.info(SECRETS_CHANGED_LOG_EVENT, extra=safe_attributes(attrs))
 
 
 class SecretMetadata(BaseModel):
@@ -87,7 +96,7 @@ class DeleteSecretResponse(BaseModel):
 
 @router.get("", response_model=ListSecretsResponse, summary="List current user secrets")
 async def list_secrets(auth: AuthPrincipal = Depends(require_user_auth)):
-    with tracer.start_as_current_span("secrets.list") as span:
+    with tracer.start_as_current_span(SECRETS_LIST_SPAN_NAME) as span:
         sb = get_supabase_admin()
         result = (
             sb.table("user_variables")
@@ -107,7 +116,7 @@ async def create_secret(
     body: CreateSecretRequest,
     auth: AuthPrincipal = Depends(require_user_auth),
 ):
-    with tracer.start_as_current_span("secrets.create") as span:
+    with tracer.start_as_current_span(SECRETS_CREATE_SPAN_NAME) as span:
         sb = get_supabase_admin()
         canonical_name = _canonicalize_name(body.name)
         encrypted = encrypt_with_context(body.value, get_envelope_key(), CRYPTO_CONTEXT)
@@ -140,7 +149,7 @@ async def update_secret(
     body: UpdateSecretRequest,
     auth: AuthPrincipal = Depends(require_user_auth),
 ):
-    with tracer.start_as_current_span("secrets.update") as span:
+    with tracer.start_as_current_span(SECRETS_UPDATE_SPAN_NAME) as span:
         sb = get_supabase_admin()
         updates = body.model_dump(exclude_none=True)
         if "name" in updates:
@@ -183,7 +192,7 @@ async def update_secret(
     summary="Delete a user secret",
 )
 async def delete_secret(secret_id: str, auth: AuthPrincipal = Depends(require_user_auth)):
-    with tracer.start_as_current_span("secrets.delete") as span:
+    with tracer.start_as_current_span(SECRETS_DELETE_SPAN_NAME) as span:
         sb = get_supabase_admin()
         result = (
             sb.table("user_variables")

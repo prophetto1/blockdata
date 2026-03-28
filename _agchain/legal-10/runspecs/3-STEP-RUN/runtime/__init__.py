@@ -3,6 +3,7 @@ from .input_assembler import build_messages
 from .staging import create_staging, stage_files, cleanup_staging
 from .audit import hash_file, hash_bytes, emit_audit_record
 from .state import CandidateState
+from .runtime_config import RuntimeConfig, RuntimeLimits
 
 __all__ = [
     "get_admitted_payloads",
@@ -14,4 +15,6 @@ __all__ = [
     "hash_bytes",
     "emit_audit_record",
     "CandidateState",
+    "RuntimeConfig",
+    "RuntimeLimits",
 ]

@@ -1,7 +1,8 @@
 """Tests for OpenTelemetry observability configuration and bootstrap."""
 
+import pytest
 from fastapi import FastAPI
-from app.core.config import Settings, get_settings
+from app.core.config import Settings, get_settings, _parse_otlp_headers
 from app.observability import configure_telemetry, shutdown_telemetry, get_telemetry_status
 from app.observability.otel import safe_attributes
 
@@ -49,6 +50,71 @@ def test_otel_signal_exports_parse_env_flags(monkeypatch):
     assert settings.otel_metrics_enabled is False
     assert settings.otel_logs_enabled is False
     get_settings.cache_clear()
+
+
+# --- OTLP header parsing tests ---
+
+
+def test_otlp_headers_none_when_unset():
+    assert _parse_otlp_headers(None) is None
+
+
+def test_otlp_headers_none_when_empty():
+    assert _parse_otlp_headers("") is None
+    assert _parse_otlp_headers("   ") is None
+
+
+def test_otlp_headers_parses_valid_pairs():
+    result = _parse_otlp_headers("api-key=abc123,x-org=myorg")
+    assert result == {"api-key": "abc123", "x-org": "myorg"}
+
+
+def test_otlp_headers_trims_whitespace():
+    result = _parse_otlp_headers("  api-key = abc123 , x-org = myorg  ")
+    assert result == {"api-key": "abc123", "x-org": "myorg"}
+
+
+def test_otlp_headers_allows_equals_in_value():
+    result = _parse_otlp_headers("Authorization=Basic dXNlcjpwYXNz")
+    assert result == {"Authorization": "Basic dXNlcjpwYXNz"}
+
+
+def test_otlp_headers_rejects_missing_equals():
+    with pytest.raises(ValueError, match="missing '='"):
+        _parse_otlp_headers("api-key-without-value")
+
+
+def test_otlp_headers_rejects_empty_key():
+    with pytest.raises(ValueError, match="Empty key"):
+        _parse_otlp_headers("=somevalue")
+
+
+def test_otlp_headers_rejects_duplicate_key():
+    with pytest.raises(ValueError, match="Duplicate key"):
+        _parse_otlp_headers("api-key=abc,api-key=def")
+
+
+def test_otlp_headers_loaded_from_env(monkeypatch):
+    monkeypatch.setenv("OTEL_EXPORTER_OTLP_HEADERS", "api-key=test123")
+    get_settings.cache_clear()
+    settings = get_settings()
+    assert settings.otel_exporter_otlp_headers == {"api-key": "test123"}
+    get_settings.cache_clear()
+
+
+def test_otlp_headers_default_none():
+    get_settings.cache_clear()
+    settings = get_settings()
+    assert settings.otel_exporter_otlp_headers is None
+    get_settings.cache_clear()
+
+
+def test_telemetry_status_does_not_expose_headers():
+    settings = _make_settings(otel_enabled=True)
+    status = get_telemetry_status(settings)
+    assert "headers" not in str(status).lower()
+    for key in status:
+        assert "header" not in key.lower()
 
 
 # --- Task 3: Bootstrap tests ---

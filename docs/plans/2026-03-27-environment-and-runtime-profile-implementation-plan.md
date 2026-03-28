@@ -6,7 +6,7 @@
 
 **Tech Stack:** Python 3.12+, Pydantic v2 (for schema validation and serialization), pytest.
 
-**Status:** Draft
+**Status:** Superseded — implemented by `2026-03-27-profile-types-and-registry-implementation-plan.md`. Code lives in `_agchain/profiles/`.
 **Author:** AI worker
 **Date:** 2026-03-27
 

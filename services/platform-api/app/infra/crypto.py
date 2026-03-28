@@ -100,9 +100,11 @@ def _increment_fallback_counter() -> None:
         try:
             from opentelemetry import metrics
 
+            from app.observability.contract import CRYPTO_FALLBACK_COUNTER_NAME
+
             meter = metrics.get_meter("platform-api")
             _fallback_counter = meter.create_counter(
-                "platform.crypto.fallback.count",
+                CRYPTO_FALLBACK_COUNTER_NAME,
                 description="Count of decryptions that required legacy key fallback",
             )
         except Exception:

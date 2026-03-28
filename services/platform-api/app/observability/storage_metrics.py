@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from opentelemetry import metrics, trace
 
-from app.observability.otel import safe_attributes
+from app.observability.contract import STORAGE_METER_NAME, STORAGE_TRACER_NAME, safe_attributes
 
-storage_tracer = trace.get_tracer("platform.storage")
-_meter = metrics.get_meter("platform.storage")
+storage_tracer = trace.get_tracer(STORAGE_TRACER_NAME)
+_meter = metrics.get_meter(STORAGE_METER_NAME)
 
 _storage_quota_read_count = _meter.create_counter("platform.storage.quota.read.count")
 _storage_upload_reserve_count = _meter.create_counter("platform.storage.upload.reserve.count")

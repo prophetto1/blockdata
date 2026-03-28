@@ -12,6 +12,13 @@ BEGIN
     RETURN NEW;
   END IF;
 
+  -- Workspace B was later removed from the active schema. On clean resets,
+  -- keep project inserts working by leaving workspace_id nullable.
+  IF to_regclass('public.workspace_b_v2') IS NULL
+     OR to_regclass('public.workspace_b_memberships_v2') IS NULL THEN
+    RETURN NEW;
+  END IF;
+
   INSERT INTO public.workspace_b_v2 (owner_id, workspace_name)
   VALUES (NEW.owner_id, 'Default Workspace')
   ON CONFLICT (owner_id, workspace_name) DO NOTHING;

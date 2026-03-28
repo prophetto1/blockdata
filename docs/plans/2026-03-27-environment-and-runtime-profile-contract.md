@@ -2,6 +2,8 @@
 
 **Date:** 2026-03-27
 **Status:** Draft
+
+> **Authority:** Secondary schema/modeling companion. The primary runtime/environment contract is `2026-03-27-runtime-and-environment-contract-inventory.md`. This document provides the configuration shape and selectable modes; it does not override the flat inventory's ownership or invariant declarations.
 **Source of truth:** `_agchain/legal-10/docs/_essentials/`
 
 ## Purpose

@@ -20,6 +20,7 @@ if str(RUNSPEC_ROOT) not in sys.path:
 from adapters.model_adapter import ModelAdapter
 from runtime.execution_backend import DirectBackend, resolve_backend
 from runtime.execution_result import ExecutionResult
+from runtime.runtime_config import RuntimeConfig
 
 
 class DummyAdapter(ModelAdapter):
@@ -239,6 +240,7 @@ def test_run_single_eu_emits_execution_metadata_and_manifest(tmp_path: Path, mon
             judge_model_name="cli-judge-model",
             execution_backend_name="inspect",
             run_id="run_test",
+            runtime_config=RuntimeConfig(backend="inspect"),
         )
     )
 
@@ -260,7 +262,21 @@ def test_run_single_eu_emits_execution_metadata_and_manifest(tmp_path: Path, mon
     assert summary["eval_model"] == "resolved-eval-model"
     assert summary["judge_model"] == "resolved-judge-model"
     assert manifest["execution_backend"] == "inspect"
-    assert manifest["reproducibility_key"] == "resolved-eval-model|resolved-judge-model|temp=0.0|Replay_Minimal"
+    assert manifest["reproducibility_key"] == "resolved-eval-model|resolved-judge-model|temp=0.0|replay_minimal"
+
+    # Verify runtime_config.json written and included in manifest
+    rc_path = runs_dir / "run_test" / "runtime_config.json"
+    assert rc_path.exists(), "runtime_config.json should be written"
+    rc_data = json.loads(rc_path.read_text(encoding="utf-8"))
+    assert rc_data["backend"] == "inspect"
+    assert rc_data["session_strategy"] == "replay_minimal"
+    assert rc_data["supporting_logs_enabled"] is False
+    assert rc_data["supporting_log_paths"] is None
+    assert "runtime_config.json" in manifest["file_hashes"]
+
+    # Verify manifest provenance derived from RuntimeConfig, not hard-coded
+    assert manifest["session_strategy"] == "replay_minimal"
+    assert "replay_minimal" in manifest["reproducibility_key"]
 
 
 def _make_fake_inspect_model_module(captured: dict[str, Any]) -> types.SimpleNamespace:

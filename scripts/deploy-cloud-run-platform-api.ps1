@@ -36,7 +36,41 @@ param(
 
   [string]$SupabaseServiceRoleSecretName = 'supabase-service-role-key',
 
-  [switch]$UseExistingSupabaseServiceRoleSecret
+  [switch]$UseExistingSupabaseServiceRoleSecret,
+
+  [string]$AppSecretEnvelopeKey,
+
+  [string]$AppSecretEnvelopeKeySecretName = 'app-secret-envelope-key',
+
+  [switch]$UseExistingAppSecretEnvelopeKeySecret,
+
+  # ── OpenTelemetry contract (first-class OTEL inputs) ──
+  [string]$OtelEnabled = 'false',
+
+  [string]$OtelServiceName = 'platform-api',
+
+  [string]$OtelServiceNamespace = 'blockdata',
+
+  [string]$OtelDeploymentEnv = 'production',
+
+  [string]$OtelExporterOtlpEndpoint = 'http://localhost:4318',
+
+  [string]$OtelExporterOtlpProtocol = 'http/protobuf',
+
+  [string]$OtelLogCorrelation = 'true',
+
+  [string]$OtelMetricsEnabled = 'true',
+
+  [string]$OtelLogsEnabled = 'true',
+
+  [string]$SignozUiUrl = '',
+
+  [string]$JaegerUiUrl = '',
+
+  # Optional: Secret Manager secret for OTLP auth headers (comma-delimited key=value).
+  [string]$OtelHeadersSecretName = '',
+
+  [switch]$UseExistingOtelHeadersSecret
 )
 
 $ErrorActionPreference = 'Stop'
@@ -261,6 +295,23 @@ if ($UseExistingSupabaseServiceRoleSecret) {
   Ensure-Secret -Name $SupabaseServiceRoleSecretName -ServiceAccountEmail $runtimeServiceAccountEmail -SecretValue $SupabaseServiceRoleKey
 }
 
+if ($UseExistingAppSecretEnvelopeKeySecret) {
+  Write-Host "Using existing Secret Manager secret for APP_SECRET_ENVELOPE_KEY: $AppSecretEnvelopeKeySecretName"
+  Ensure-ExistingSecretAccess -Name $AppSecretEnvelopeKeySecretName -ServiceAccountEmail $runtimeServiceAccountEmail
+} else {
+  if (-not $AppSecretEnvelopeKey) {
+    $AppSecretEnvelopeKey = $env:APP_SECRET_ENVELOPE_KEY
+  }
+  if (-not $AppSecretEnvelopeKey) {
+    if (Is-InteractiveShell) {
+      $AppSecretEnvelopeKey = Read-SecretPlaintext -Prompt 'Enter APP_SECRET_ENVELOPE_KEY (input hidden)'
+    } else {
+      throw "Missing app secret envelope key. Provide -AppSecretEnvelopeKey or set `$env:APP_SECRET_ENVELOPE_KEY."
+    }
+  }
+  Ensure-Secret -Name $AppSecretEnvelopeKeySecretName -ServiceAccountEmail $runtimeServiceAccountEmail -SecretValue $AppSecretEnvelopeKey
+}
+
 $deployArgs = @(
   'run', 'deploy', $ServiceName,
   '--project', $ProjectId,
@@ -277,8 +328,50 @@ $deployArgs = @(
   '--ingress', 'all'
 )
 
-$secretMappings = @("SUPABASE_SERVICE_ROLE_KEY=${SupabaseServiceRoleSecretName}:latest")
-$envVarEntries = @("SUPABASE_URL=$SupabaseUrl", 'CONVERSION_MAX_WORKERS=2')
+$secretMappings = @(
+  "SUPABASE_SERVICE_ROLE_KEY=${SupabaseServiceRoleSecretName}:latest",
+  "APP_SECRET_ENVELOPE_KEY=${AppSecretEnvelopeKeySecretName}:latest"
+)
+
+# ── OTEL env: emitted as a complete config set on every deploy ──
+$envVarEntries = @(
+  "SUPABASE_URL=$SupabaseUrl",
+  'CONVERSION_MAX_WORKERS=2',
+  "OTEL_ENABLED=$OtelEnabled",
+  "OTEL_SERVICE_NAME=$OtelServiceName",
+  "OTEL_SERVICE_NAMESPACE=$OtelServiceNamespace",
+  "OTEL_DEPLOYMENT_ENV=$OtelDeploymentEnv",
+  "OTEL_EXPORTER_OTLP_ENDPOINT=$OtelExporterOtlpEndpoint",
+  "OTEL_EXPORTER_OTLP_PROTOCOL=$OtelExporterOtlpProtocol",
+  "OTEL_LOG_CORRELATION=$OtelLogCorrelation",
+  "OTEL_METRICS_ENABLED=$OtelMetricsEnabled",
+  "OTEL_LOGS_ENABLED=$OtelLogsEnabled"
+)
+if ($SignozUiUrl) {
+  $envVarEntries += @("SIGNOZ_UI_URL=$SignozUiUrl")
+}
+if ($JaegerUiUrl) {
+  $envVarEntries += @("JAEGER_UI_URL=$JaegerUiUrl")
+}
+
+# ── Optional: OTLP auth headers via Secret Manager ──
+if ($OtelHeadersSecretName) {
+  if ($UseExistingOtelHeadersSecret) {
+    Write-Host "Using existing Secret Manager secret for OTEL_EXPORTER_OTLP_HEADERS: $OtelHeadersSecretName"
+    Ensure-ExistingSecretAccess -Name $OtelHeadersSecretName -ServiceAccountEmail $runtimeServiceAccountEmail
+  } else {
+    $headersValue = $env:OTEL_EXPORTER_OTLP_HEADERS
+    if (-not $headersValue) {
+      if (Is-InteractiveShell) {
+        $headersValue = Read-SecretPlaintext -Prompt 'Enter OTEL_EXPORTER_OTLP_HEADERS (comma-delimited key=value, input hidden)'
+      } else {
+        throw "Missing OTLP headers value. Provide `$env:OTEL_EXPORTER_OTLP_HEADERS or use -UseExistingOtelHeadersSecret."
+      }
+    }
+    Ensure-Secret -Name $OtelHeadersSecretName -ServiceAccountEmail $runtimeServiceAccountEmail -SecretValue $headersValue
+  }
+  $secretMappings += @("OTEL_EXPORTER_OTLP_HEADERS=${OtelHeadersSecretName}:latest")
+}
 
 if ($UseSecretManager) {
   if ($UseExistingSecret) {
@@ -309,6 +402,7 @@ Write-Host "Next: set Supabase secrets:"
 Write-Host "  PLATFORM_API_URL=$url"
 Write-Host "  SUPABASE_URL=$SupabaseUrl"
 Write-Host "  SUPABASE_SERVICE_ROLE_KEY -> Secret Manager secret '$SupabaseServiceRoleSecretName'"
+Write-Host "  APP_SECRET_ENVELOPE_KEY -> Secret Manager secret '$AppSecretEnvelopeKeySecretName'"
 Write-Host "  PLATFORM_API_M2M_TOKEN=<same shared secret>"
 Write-Host "  (CONVERSION_SERVICE_URL=$url for backward compat)"
 Write-Host "  (CONVERSION_SERVICE_KEY=<same shared secret> for backward compat)"

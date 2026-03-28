@@ -10,6 +10,8 @@
 **Author:** Codex
 **Date:** 2026-03-27
 
+> **Authority:** This is the primary runtime/environment contract. See `2026-03-27-environment-and-runtime-profile-contract.md` for the secondary schema/modeling companion. See `2026-03-27-inspect-ai-substrate-gap-analysis.md` for the InspectAI comparison analysis.
+
 ## Manifest
 
 ### Platform API
@@ -120,14 +122,17 @@ This contract is only complete when all of the following are true:
 | Run Manifest | `run_manifest.json` provenance snapshot for one run. | Runtime | benchmark id, eu id, model settings, input hashes, strategy info | run provenance artifact | reproducibility and run identity | Active | AGChain-owned |
 | Summary | `summary.json` deterministic rollup of run results. | Runtime | run records | score aggregation and completion summary | deterministic rollup | Active | AGChain-owned |
 | Trace Stream | `trace.jsonl` execution-event stream. | Runtime | step lifecycle events | structured timeline/debug trace | write-only; must not affect execution | Defined | Wrapped InspectAI capability with AGChain mapping |
-| Sandbox Lifecycle | Sandbox/environment setup and teardown around execution. | Runtime | sandbox spec, staged/sample files | isolated execution environment | useful where tool/file execution is needed; not owner of benchmark semantics | Planned | Delegated to InspectAI |
+| Sandbox Lifecycle | Sandbox/environment setup and teardown around execution. | Runtime | sandbox spec, staged/sample files | isolated execution environment | useful where tool/file execution is needed; not owner of benchmark semantics; Legal-10 baseline uses no sandbox; binding is per-run when enabled; network access default-off; cleanup mandatory | Planned | Delegated to InspectAI |
 | Sample / Task Lifecycle | Execution-local task/sample substrate used to drive model calls. | Runtime | sample input, files, model config, scoring hooks | substrate for one execution path | should be reused rather than reimplemented where compatible | Planned | Delegated to InspectAI |
-| Approval Policy | Tool-use approval policy surface. | Runtime | approval configuration and tool policies | approved or blocked tool execution | relevant only for tool-enabled profiles | Planned | Delegated to InspectAI |
-| Tool-Assisted Execution | Runtime mode that allows standard tool usage under runner control. | Runtime | approved tools, sandbox/task substrate, runner policy | candidate can use tools as configured | AGChain still owns fairness, visibility, and audit semantics | Planned | Wrapped InspectAI capability |
-| MCP-Enabled Execution | Runtime mode that allows MCP-backed tools/connectors. | Runtime | MCP tool registry, approval, sandbox/task substrate | MCP-backed tool access during execution | AGChain still owns benchmark-visible semantics and canonical audit | Planned | Wrapped InspectAI capability |
-| Sandbox Execution | Runtime mode where candidate execution occurs inside a sandboxed environment rather than plain model-only calls. | Runtime | sandbox environment, staged files/sample files, approval/tool config | sandbox-backed candidate execution | benchmark semantics remain runner-owned | Planned | Wrapped InspectAI capability |
+| Approval Policy | Tool-use approval policy surface. | Runtime | approval configuration and tool policies | approved or blocked tool execution | relevant only for tool-enabled profiles; governs tool calls only; must not replace or override payload admission; default is no-approval for no-tools baseline | Planned | Delegated to InspectAI |
+| Tool-Assisted Execution | Runtime mode that allows standard tool usage under runner control. | Runtime | approved tools, sandbox/task substrate, runner policy | candidate can use tools as configured | AGChain still owns fairness, visibility, and audit semantics; standard tools require explicit allowlist | Planned | Wrapped InspectAI capability |
+| MCP-Enabled Execution | Runtime mode that allows MCP-backed tools/connectors. | Runtime | MCP tool registry, approval, sandbox/task substrate | MCP-backed tool access during execution | AGChain still owns benchmark-visible semantics and canonical audit; MCP tools require explicit server config; remote MCP is default-off unless explicitly permitted by contract revision | Planned | Wrapped InspectAI capability |
+| Sandbox Execution | Runtime mode where candidate execution occurs inside a sandboxed environment rather than plain model-only calls. | Runtime | sandbox environment, staged files/sample files, approval/tool config | sandbox-backed candidate execution | benchmark semantics remain runner-owned; Legal-10 baseline uses no sandbox; network access default-off; cleanup mandatory | Planned | Wrapped InspectAI capability |
 | No-Runtime-Retrieval Rule | Sealed-evidence rule that runtime must not perform retrieval against the benchmark corpus for sealed runs. | Runtime | sealed bundle only | fixed model-visible evidence bytes | no hidden retrieval path | Active | AGChain-owned |
 | Per-EU Isolation | Hard boundary that state, evidence, and execution context do not leak across EUs. | Runtime | EU-scoped run inputs | isolated run behavior per EU | no global learning; no cross-EU carry-forward | Active | AGChain-owned |
+| Eval Runtime Config | Typed configuration object capturing resolved execution settings for a benchmark run: backend, session strategy, state provider, tool mode, approval mode, sandbox mode, limits, supporting log policy | Runtime | CLI flags, optional Profile, defaults | Resolved config recorded in `runtime_config.json`; used by runner to select behavior paths | `baseline()` must reproduce current 3-step MVP behavior exactly; invalid combinations rejected at resolution time | Defined | AGChain-owned |
+| Supporting Execution Logs | Execution log artifacts produced by InspectAI (eval log, transcript, trace) that are distinct from canonical AGChain audit proof | Runtime (InspectAI backend) | InspectAI execution outputs | Optional log file references recorded in `runtime_config.json` via `supporting_log_paths` | Never required for baseline direct runs; canonical `audit_log.jsonl` remains admissibility proof; supporting logs are additive evidence only | Planned | InspectAI-produced, AGChain-referenced |
+| Runtime Limits | Execution resource limits applied to benchmark runs | Runtime | Limit configuration from RuntimeConfig or Profile constraints | Execution bounded by token/message/time/cost/retry limits | Limits must be benchmark-valid; fail-on-error behavior explicit; retry behavior must not change benchmark semantics | Defined | AGChain-owned policy, InspectAI-backed enforcement |
 
 ## Locked Ownership Rules
 
@@ -137,6 +142,34 @@ This contract is only complete when all of the following are true:
 4. AGChain owns canonical audit/provenance artifacts.
 5. InspectAI is the preferred substrate for task/sample/model/sandbox/tool/approval mechanics where those mechanics do not conflict with AGChain benchmark semantics.
 6. InspectAI logs are supporting evidence; AGChain `audit_log.jsonl` remains canonical for benchmark proof.
+
+## InspectAI Integration Boundary
+
+### AGChain Owns
+
+- Payload admission (`inject_payloads` / `payload_gate.py`)
+- Structured message window assembly (`input_assembler.py`)
+- Candidate state sanitization and carry-forward (`state.py`)
+- Candidate/judge isolation rules (runner enforces what each role sees)
+- Canonical audit proof (`audit_log.jsonl`, staged file hashes, message hashes)
+- Bundle sealing, manifest, and signature verification
+- Eval Runtime Config resolution and validation
+- Runtime limit policy
+- Profile identity and version tracking
+
+### Wrapped From InspectAI
+
+- Model execution via `Model.generate()` (`execution_backend.py` / `inspect_backend.py`)
+- Model roles (evaluated vs judge) — InspectAI provides the mechanism, AGChain defines the policy
+- Token accounting and execution timing from `ModelOutput`
+- Future: tool execution pipeline, approval policy enforcement, sandbox lifecycle, eval logging
+
+### Out of Scope (Current Phase)
+
+- Remote MCP transport (default-off, requires explicit future contract revision)
+- Networked sandbox execution (default-off)
+- Full InspectAI `eval()` pipeline integration (only `Model.generate()` is used)
+- Solver/task/sample framework (AGChain's runner owns the execution lifecycle)
 
 ## Zero-Case Statements
 

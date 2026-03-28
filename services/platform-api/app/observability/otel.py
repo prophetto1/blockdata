@@ -6,6 +6,10 @@ from typing import Any
 from fastapi import FastAPI
 
 from app.core.config import Settings
+from app.observability.contract import (  # noqa: F401 – re-exported for backwards compat
+    SENSITIVE_ATTRIBUTE_KEYS,
+    safe_attributes,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -17,24 +21,6 @@ _httpx_instrumented = False
 _logging_instrumented = False
 _meter_provider_initialized = False
 _logger_provider_initialized = False
-
-# ---------------------------------------------------------------------------
-# Sensitive attribute filtering
-# ---------------------------------------------------------------------------
-SENSITIVE_ATTRIBUTE_KEYS = {
-    "authorization",
-    "token",
-    "jwt",
-    "prompt",
-    "body",
-    "content",
-    "secret",
-}
-
-
-def safe_attributes(attrs: dict[str, Any]) -> dict[str, Any]:
-    """Return attrs with sensitive keys removed."""
-    return {k: v for k, v in attrs.items() if k.lower() not in SENSITIVE_ATTRIBUTE_KEYS}
 
 
 def configure_telemetry(app: FastAPI, settings: Settings) -> dict[str, object]:
@@ -70,7 +56,12 @@ def configure_telemetry(app: FastAPI, settings: Settings) -> dict[str, object]:
     if not _provider_initialized:
         sampler = _build_sampler(settings.otel_traces_sampler, settings.otel_traces_sampler_arg)
         provider = TracerProvider(resource=resource, sampler=sampler)
-        provider.add_span_processor(BatchSpanProcessor(OTLPSpanExporter(endpoint=f"{settings.otel_exporter_otlp_endpoint}/v1/traces")))
+        _trace_exporter_kwargs: dict[str, object] = {
+            "endpoint": f"{settings.otel_exporter_otlp_endpoint}/v1/traces",
+        }
+        if settings.otel_exporter_otlp_headers:
+            _trace_exporter_kwargs["headers"] = settings.otel_exporter_otlp_headers
+        provider.add_span_processor(BatchSpanProcessor(OTLPSpanExporter(**_trace_exporter_kwargs)))
         trace.set_tracer_provider(provider)
         _provider_initialized = True
         logger.info(
@@ -166,8 +157,13 @@ def _setup_metrics_export(resource, settings: Settings) -> None:
         logger.warning("OTel metrics export unavailable: %s", err)
         return
 
+    _metric_exporter_kwargs: dict[str, object] = {
+        "endpoint": f"{settings.otel_exporter_otlp_endpoint}/v1/metrics",
+    }
+    if settings.otel_exporter_otlp_headers:
+        _metric_exporter_kwargs["headers"] = settings.otel_exporter_otlp_headers
     reader = PeriodicExportingMetricReader(
-        OTLPMetricExporter(endpoint=f"{settings.otel_exporter_otlp_endpoint}/v1/metrics"),
+        OTLPMetricExporter(**_metric_exporter_kwargs),
         export_interval_millis=15_000,
     )
     from opentelemetry import metrics
@@ -186,10 +182,13 @@ def _setup_logs_export(resource, settings: Settings) -> None:
         logger.warning("OTel logs export unavailable: %s", err)
         return
 
+    _log_exporter_kwargs: dict[str, object] = {
+        "endpoint": f"{settings.otel_exporter_otlp_endpoint}/v1/logs",
+    }
+    if settings.otel_exporter_otlp_headers:
+        _log_exporter_kwargs["headers"] = settings.otel_exporter_otlp_headers
     provider = LoggerProvider(resource=resource)
     provider.add_log_record_processor(
-        BatchLogRecordProcessor(
-            OTLPLogExporter(endpoint=f"{settings.otel_exporter_otlp_endpoint}/v1/logs")
-        )
+        BatchLogRecordProcessor(OTLPLogExporter(**_log_exporter_kwargs))
     )
     set_logger_provider(provider)

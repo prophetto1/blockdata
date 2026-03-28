@@ -344,16 +344,16 @@ export function LeftRailShadcn({
 
   const userInitial = userLabel?.match(/[A-Za-z0-9]/)?.[0]?.toUpperCase() ?? '?';
   const isClassicView = navStyle === 'classic';
-  const railStackClass = isClassicView ? 'space-y-0' : 'space-y-0.5';
-  const railDividerClass = isClassicView ? 'my-1 mx-2 h-px bg-sidebar-border' : 'my-1.5 mx-2.5 h-px bg-sidebar-border';
+  const railStackClass = isClassicView ? '-space-y-px' : 'space-y-0.5';
+  const railDividerClass = isClassicView ? 'my-0.5 mx-1.5 h-px bg-sidebar-border' : 'my-1.5 mx-2.5 h-px bg-sidebar-border';
   const railItemClass = isClassicView
-    ? 'flex w-full items-center gap-2 rounded-md px-2 h-8 text-[13px] leading-snug transition-colors'
+    ? 'flex w-full items-center gap-1.5 rounded-sm px-1.5 h-7 text-xs leading-tight transition-colors'
     : 'flex w-full items-center gap-2.5 rounded-md px-2.5 h-9 text-sm leading-snug transition-colors';
   const drillBackClass = isClassicView
-    ? 'flex w-full items-center gap-1.5 rounded-md px-2 h-8 text-[13px] font-medium leading-snug text-sidebar-foreground/80 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
+    ? 'flex w-full items-center gap-1 rounded-sm px-1.5 h-7 text-xs font-medium leading-tight text-sidebar-foreground/80 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
     : 'flex w-full items-center gap-2 rounded-md px-2.5 h-9 text-sm font-medium leading-snug text-sidebar-foreground/80 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground';
   const drillSectionLabelClass = isClassicView
-    ? 'mb-0.5 mt-1.5 px-2 text-[10px] font-semibold uppercase tracking-wide text-sidebar-foreground/50'
+    ? 'mb-0 mt-1 px-1.5 text-[9px] font-semibold uppercase tracking-wide text-sidebar-foreground/50'
     : 'mb-1 mt-2 px-2.5 text-[11px] font-semibold uppercase tracking-wide text-sidebar-foreground/50';
 
   /* ------ Render helpers ------ */
@@ -387,10 +387,10 @@ export function LeftRailShadcn({
                 : 'text-sidebar-foreground/80 font-normal hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
             )}
           >
-            <ItemIcon size={16} stroke={1.75} className="shrink-0" />
+            <ItemIcon size={isClassicView ? 14 : 16} stroke={1.75} className="shrink-0" />
             <span className="truncate">{item.label}</span>
             {hasDrill && (
-              <IconChevronRight size={14} stroke={1.75} className="ml-auto shrink-0 text-sidebar-foreground/40" />
+              <IconChevronRight size={isClassicView ? 12 : 14} stroke={1.75} className="ml-auto shrink-0 text-sidebar-foreground/40" />
             )}
           </button>
         );
@@ -410,7 +410,7 @@ export function LeftRailShadcn({
           onClick={() => drillBack()}
           className={drillBackClass}
         >
-          <IconChevronLeft size={16} stroke={1.75} className="shrink-0" />
+          <IconChevronLeft size={isClassicView ? 14 : 16} stroke={1.75} className="shrink-0" />
           <span className="truncate">{config.id === 'superuser' ? 'Main Menu' : config.parentLabel}</span>
         </button>
 
@@ -461,7 +461,7 @@ export function LeftRailShadcn({
                       isDisabled && 'cursor-not-allowed opacity-40',
                     )}
                   >
-                    <ItemIcon size={16} stroke={1.75} className="shrink-0" />
+                    <ItemIcon size={isClassicView ? 14 : 16} stroke={1.75} className="shrink-0" />
                     <span className="truncate">{item.label}</span>
                     {item.badge && (
                       <span className="ml-auto shrink-0 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">

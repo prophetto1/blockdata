@@ -30,6 +30,45 @@ def _env_csv(name: str) -> tuple[str, ...]:
     return tuple(part for part in parts if part)
 
 
+def _parse_otlp_headers(raw: str | None) -> dict[str, str] | None:
+    """Parse ``OTEL_EXPORTER_OTLP_HEADERS`` into a dict.
+
+    Rules (from the approved OTel contract plan):
+    - ``None`` or empty/whitespace-only → ``None`` (unset).
+    - Comma-delimited ``key=value`` pairs; whitespace trimmed around keys
+      and values.
+    - Empty keys are invalid → ``ValueError``.
+    - Duplicate keys are rejected → ``ValueError``.
+    - Segments without exactly one ``=`` are malformed → ``ValueError``.
+    """
+    if raw is None:
+        return None
+    raw = raw.strip()
+    if not raw:
+        return None
+
+    result: dict[str, str] = {}
+    for segment in raw.split(","):
+        segment = segment.strip()
+        if not segment:
+            continue
+        if "=" not in segment:
+            raise ValueError(
+                f"Malformed OTLP header segment (missing '='): {segment!r}"
+            )
+        key, _, value = segment.partition("=")
+        key = key.strip()
+        value = value.strip()
+        if not key:
+            raise ValueError("Empty key in OTEL_EXPORTER_OTLP_HEADERS")
+        if key in result:
+            raise ValueError(
+                f"Duplicate key {key!r} in OTEL_EXPORTER_OTLP_HEADERS"
+            )
+        result[key] = value
+    return result if result else None
+
+
 @dataclass(frozen=True)
 class Settings:
     supabase_url: Optional[str] = None
@@ -49,6 +88,7 @@ class Settings:
     otel_deployment_env: str = "local"
     otel_exporter_otlp_endpoint: str = "http://localhost:4318"
     otel_exporter_otlp_protocol: str = "http/protobuf"
+    otel_exporter_otlp_headers: dict[str, str] | None = None
     otel_traces_sampler: str = "parentbased_traceidratio"
     otel_traces_sampler_arg: float = 1.0
     otel_log_correlation: bool = True
@@ -78,6 +118,7 @@ class Settings:
             otel_deployment_env=os.environ.get("OTEL_DEPLOYMENT_ENV", "local"),
             otel_exporter_otlp_endpoint=os.environ.get("OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:4318"),
             otel_exporter_otlp_protocol=os.environ.get("OTEL_EXPORTER_OTLP_PROTOCOL", "http/protobuf"),
+            otel_exporter_otlp_headers=_parse_otlp_headers(os.environ.get("OTEL_EXPORTER_OTLP_HEADERS")),
             otel_traces_sampler=os.environ.get("OTEL_TRACES_SAMPLER", "parentbased_traceidratio"),
             otel_traces_sampler_arg=float(os.environ.get("OTEL_TRACES_SAMPLER_ARG", "1.0")),
             otel_log_correlation=_env_bool("OTEL_LOG_CORRELATION", True),

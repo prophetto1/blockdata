@@ -114,9 +114,9 @@ describe('LeftRailShadcn', () => {
 
     const assetsButton = await screen.findByRole('button', { name: 'Assets' });
 
-    expect(assetsButton.className).toContain('h-8');
-    expect(assetsButton.className).toContain('text-[13px]');
-    expect(assetsButton.className).toContain('px-2');
+    expect(assetsButton.className).toContain('h-7');
+    expect(assetsButton.className).toContain('text-xs');
+    expect(assetsButton.className).toContain('px-1.5');
   });
 
   it('shows drill view when on a settings route', async () => {

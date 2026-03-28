@@ -86,6 +86,8 @@ export const TOP_LEVEL_NAV: Array<NavItem | 'divider'> = [
   { label: 'API', icon: IconTerminal2, path: '/app/api-editor' },
   'divider',
   { label: 'Tests', icon: IconTestPipe, path: '/app/tests' },
+  { label: 'Telemetry', icon: IconActivity, path: '/app/observability/telemetry' },
+  { label: 'Traces', icon: IconArrowsShuffle, path: '/app/observability/traces' },
   { label: 'Logs', icon: IconFileText, path: '/app/logs' },
   'divider',
   { label: 'Settings', icon: IconSettings, path: '/app/settings', drillId: 'settings' },
