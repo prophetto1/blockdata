@@ -24,13 +24,13 @@ Issues identified by blind implementation review of 15 commits (`78ebb2e3..daef1
 
 ## Significant
 
-- [ ] **S1. Protocol whitelist guard is uncommitted.** The `_SUPPORTED_PROTOCOLS` check in `services/platform-api/app/observability/otel.py` (rejects gRPC) and its two tests exist only in the working tree. Commit them.
+- [x] **S1. Protocol whitelist guard is uncommitted.** Resolved. The `_SUPPORTED_PROTOCOLS` check in `services/platform-api/app/observability/otel.py` (rejects gRPC) and its two tests are now committed.
 
 - [ ] **S2. Duplicate sampler imports in otel.py.** `configure_telemetry()` at `services/platform-api/app/observability/otel.py:48-53` imports `ALWAYS_OFF`, `ALWAYS_ON`, `ParentBased`, `TraceIdRatioBased` but they are unused — `_build_sampler()` at line 140-145 does its own imports. Remove the dead imports.
 
 - [ ] **S3. `from_profile()` silently translates values it will immediately reject.** `_agchain/legal-10/runspecs/3-STEP-RUN/runtime/runtime_config.py:74-101` maps `"standard"` and `"mcp"` through `_TOOL_MODE_MAP`, then the phase-gate validator rejects them. Either raise with a phase-specific message in `from_profile()` before construction, or document the behavior and add a test for the rejection path.
 
-- [ ] **S4. SigNoz cluster.xml hostname mismatch is uncommitted.** Committed `docker/signoz/clickhouse/cluster.xml` references `zookeeper-1` but docker-compose names the service `zookeeper`. The fix exists only in the working tree. Commit it.
+- [x] **S4. SigNoz cluster.xml hostname mismatch is uncommitted.** Resolved. `docker/signoz/clickhouse/cluster.xml` now matches the compose service name.
 
 - [ ] **S5. `get_settings()` cache leaks between tests.** `lru_cache(maxsize=1)` on `get_settings()` with manual `cache_clear()` in tests is fragile. Add a `conftest.py` auto-clearing fixture.
 
@@ -54,7 +54,7 @@ Issues identified by blind implementation review of 15 commits (`78ebb2e3..daef1
 
 - [ ] **S15. Source document upsert failure silently loses the bridge.** `services/platform-api/app/api/routes/storage.py:506-517` — if `upsert_source_document` fails after the `complete_user_storage_upload` RPC succeeds, the upload is marked done but the `source_documents` row is never written. No recovery mechanism exists.
 
-- [ ] **S16. Bulk uppercase rename migration has no collision handling.** `supabase/migrations/20260327110000_user_secret_store_hardening.sql:3-4` — `UPDATE SET name = upper(name)` will fail with a unique constraint violation if two secrets for the same user differ only by case (e.g., `api_key` and `API_KEY`).
+- [x] **S16. Bulk uppercase rename migration has no collision handling.** Obsolete. The `user_variables` unique index on `(user_id, lower(name))` already prevents case-colliding rows at insert time, so the uppercase migration is safe.
 
 - [ ] **S17. `OpenAIAdapter` and `AnthropicAdapter` create new HTTP clients on every call.** `_agchain/legal-10/runspecs/3-STEP-RUN/adapters/model_adapter.py:56,91` — wastes connection pools, prevents reuse. Move client creation to `__init__`.
 
@@ -68,7 +68,7 @@ Issues identified by blind implementation review of 15 commits (`78ebb2e3..daef1
 
 - [ ] **S22. `decrypt_with_fallback` swallows all exceptions silently.** `services/platform-api/app/infra/crypto.py:78-81,87-90` — bare `except Exception: pass` blocks swallow unexpected errors. Log the exception type at minimum.
 
-- [ ] **S23. Settings Connections panel uses stale `function_name` values for live test calls.** `web/src/pages/settings/ConnectionsPanel.tsx:36,50,157` still sends `gcs_list` and `arangodb_load` to `POST /connections/test`, but the current backend registry resolves `load_gcs_list_objects` and `load_arango_batch_insert`. In production this makes the UI Test action fail with `Function ... not found` even though the backend fallback path itself works.
+- [x] **S23. Settings Connections panel uses stale `function_name` values for live test calls.** Resolved. `web/src/pages/settings/ConnectionsPanel.tsx` now sends the backend-aligned `load_gcs_list_objects` and `load_arango_batch_insert` values to `POST /connections/test`.
 
 ## Minor
 

@@ -105,4 +105,4 @@ async def test_connection(body: TestConnectionRequest, auth: AuthPrincipal = Dep
         raise HTTPException(400, f"No handler for '{body.function_name}'")
 
     result = await plugin.test_connection(creds)
-    return {"valid": result.state == "SUCCESS", "data": result.data, "logs": result.logs}
+    return {"valid": result.state == "SUCCESS", "data": result.data}

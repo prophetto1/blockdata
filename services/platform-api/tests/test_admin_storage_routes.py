@@ -109,6 +109,24 @@ def test_patch_storage_policy_updates_value(superuser_client, monkeypatch):
     assert recorded[0]["result"] == "ok"
 
 
+def test_patch_storage_policy_hides_internal_error_detail(superuser_client, monkeypatch):
+    monkeypatch.setattr(
+        "app.api.routes.admin_storage.update_default_new_user_quota_bytes",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("db exploded")),
+    )
+
+    response = superuser_client.patch(
+        "/admin/storage/policy",
+        json={
+            "default_new_user_quota_bytes": 5368709120,
+            "reason": "Set free-tier signup quota to 5 GB for verification",
+        },
+    )
+
+    assert response.status_code == 500
+    assert response.json() == {"detail": "Failed to update storage policy"}
+
+
 def test_get_recent_storage_provisioning_returns_rows(superuser_client, monkeypatch):
     recorded: list[dict] = []
 

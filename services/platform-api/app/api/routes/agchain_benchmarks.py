@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, Query
 from opentelemetry import metrics, trace
 from pydantic import BaseModel, Field
 
-from app.auth.dependencies import require_user_auth
+from app.auth.dependencies import require_superuser, require_user_auth
 from app.auth.principals import AuthPrincipal
 from app.domain.agchain.benchmark_registry import (
     create_benchmark,
@@ -129,7 +129,7 @@ async def list_benchmarks_route(
 @router.post("", summary="Create an AG chain benchmark")
 async def create_benchmark_route(
     body: BenchmarkCreateRequest,
-    auth: AuthPrincipal = Depends(require_user_auth),
+    auth: AuthPrincipal = Depends(require_superuser),
 ):
     with tracer.start_as_current_span("agchain.benchmarks.create") as span:
         result = create_benchmark(user_id=auth.user_id, payload=body.model_dump())
@@ -194,7 +194,7 @@ async def get_benchmark_steps_route(
 async def create_benchmark_step_route(
     benchmark_slug: str,
     body: BenchmarkStepWriteRequest,
-    auth: AuthPrincipal = Depends(require_user_auth),
+    auth: AuthPrincipal = Depends(require_superuser),
 ):
     start = time.perf_counter()
     with tracer.start_as_current_span("agchain.benchmarks.steps.create") as span:
@@ -230,7 +230,7 @@ async def update_benchmark_step_route(
     benchmark_slug: str,
     benchmark_step_id: str,
     body: BenchmarkStepUpdateRequest,
-    auth: AuthPrincipal = Depends(require_user_auth),
+    auth: AuthPrincipal = Depends(require_superuser),
 ):
     start = time.perf_counter()
     with tracer.start_as_current_span("agchain.benchmarks.steps.update") as span:
@@ -267,7 +267,7 @@ async def update_benchmark_step_route(
 async def reorder_benchmark_steps_route(
     benchmark_slug: str,
     body: BenchmarkStepReorderRequest,
-    auth: AuthPrincipal = Depends(require_user_auth),
+    auth: AuthPrincipal = Depends(require_superuser),
 ):
     start = time.perf_counter()
     with tracer.start_as_current_span("agchain.benchmarks.steps.reorder") as span:
@@ -300,7 +300,7 @@ async def reorder_benchmark_steps_route(
 async def delete_benchmark_step_route(
     benchmark_slug: str,
     benchmark_step_id: str,
-    auth: AuthPrincipal = Depends(require_user_auth),
+    auth: AuthPrincipal = Depends(require_superuser),
 ):
     start = time.perf_counter()
     with tracer.start_as_current_span("agchain.benchmarks.steps.delete") as span:

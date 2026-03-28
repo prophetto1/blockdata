@@ -232,7 +232,7 @@ async def patch_storage_policy(
                 http_status_code=500,
             )
             logger.exception("Failed to update storage policy")
-            raise HTTPException(status_code=500, detail=f"Failed to update storage policy: {exc}") from exc
+            raise HTTPException(status_code=500, detail="Failed to update storage policy") from exc
 
 
 @router.get("/provisioning/recent", openapi_extra={"x-required-role": "platform_admin"})
@@ -269,4 +269,4 @@ async def get_recent_storage_provisioning(
                 http_status_code=500,
             )
             logger.exception("Failed to load recent storage provisioning")
-            raise HTTPException(status_code=500, detail=f"Failed to load recent storage provisioning: {exc}") from exc
+            raise HTTPException(status_code=500, detail="Failed to load recent storage provisioning") from exc

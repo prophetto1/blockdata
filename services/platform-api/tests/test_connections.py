@@ -60,7 +60,11 @@ def test_test_connection_calls_plugin(client):
         mock_resolve.return_value = {"endpoint": "https://x:8529", "database": "d", "username": "u", "password": "p"}
 
         mock_plugin = AsyncMock()
-        mock_plugin.test_connection.return_value = MagicMock(state="SUCCESS", data={"valid": True}, logs=[])
+        mock_plugin.test_connection.return_value = MagicMock(
+            state="SUCCESS",
+            data={"valid": True},
+            logs=["internal probe detail"],
+        )
         mock_fn.return_value = "blockdata.load.arango.batch_insert"
         mock_plugin_resolve.return_value = mock_plugin
 
@@ -70,7 +74,7 @@ def test_test_connection_calls_plugin(client):
         })
 
     assert resp.status_code == 200
-    assert resp.json()["valid"] is True
+    assert resp.json() == {"valid": True, "data": {"valid": True}}
 
 
 def test_resolve_connection_uses_dual_key_fallback(client):

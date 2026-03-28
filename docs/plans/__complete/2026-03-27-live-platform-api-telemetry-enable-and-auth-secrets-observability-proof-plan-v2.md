@@ -6,9 +6,45 @@
 
 **Tech Stack:** Cloud Run, existing `scripts/deploy-cloud-run-platform-api.ps1`, SigNoz collector VM, SigNoz UI Metrics Explorer, Cloud Logging, Supabase, Playwright or equivalent authenticated browser verification, `gcloud`, PowerShell.
 
-**Status:** Draft
+**Status:** Completed
 **Author:** Codex (requested by user)
 **Date:** 2026-03-27
+
+## Execution Outcome
+
+- Completed on March 27, 2026 (America/Phoenix) with production Cloud Run revision `blockdata-platform-api-00061-tjq` serving `100%` traffic.
+- Production `blockdata-platform-api` is attached to the live SigNoz collector with these deployed values:
+  - `OTEL_ENABLED=true`
+  - `OTEL_SERVICE_NAME=platform-api`
+  - `OTEL_SERVICE_NAMESPACE=blockdata`
+  - `OTEL_DEPLOYMENT_ENV=production`
+  - `OTEL_EXPORTER_OTLP_ENDPOINT=http://34.171.202.230:4318`
+  - `OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf`
+  - `OTEL_LOG_CORRELATION=true`
+  - `OTEL_METRICS_ENABLED=true`
+  - `OTEL_LOGS_ENABLED=true`
+  - `SIGNOZ_UI_URL=http://34.171.202.230:8080`
+  - `JAEGER_UI_URL=http://34.171.202.230:8080`
+  - `OTEL_EXPORTER_OTLP_HEADERS` unset
+- Superuser-authenticated `GET /observability/telemetry-status` returned the exact non-local production values above with `enabled=true`.
+
+## Final Evidence Summary
+
+- Live authenticated `/secrets` CRUD succeeded against the deployed Cloud Run service and remained metadata-only.
+- Live authenticated `/variables` list/create/update/delete succeeded and preserved the legacy `variables` / `variable` body keys.
+- Live fallback decrypt proof succeeded through `POST /connections/test` against the existing GCS connection using the current backend function name `load_gcs_list_objects`.
+- `platform.secrets.list.count`, `platform.secrets.change.count`, and `platform.crypto.fallback.count` were observed in the live SigNoz store for the new production revision.
+- `secrets.changed` was observed in Cloud Logging for the CRUD window and did not include secret names or raw values.
+- Browser no-regression proof succeeded: `/app/secrets` redirected to `/app/settings/secrets`, and authenticated Settings / Secrets loaded correctly.
+- Live Supabase spot checks passed:
+  - `name <> upper(name)` count is `0`
+  - only `service_role` retains table grants on `public.user_variables`
+  - migrations `create_user_variables` and `user_secret_store_hardening` are present
+
+## Post-Execution Deviations And Follow-Ups
+
+- SigNoz UI at `http://34.171.202.230:8080` required workspace login, so the metric proof path for this rollout used the live SigNoz store rather than an anonymous Metrics Explorer session.
+- Follow-up issue discovered during rollout: [ConnectionsPanel.tsx](/E:/writing-system/web/src/pages/settings/ConnectionsPanel.tsx) still sends stale `function_name` values (`gcs_list`, `arangodb_load`) to `POST /connections/test`, while the backend currently resolves `load_gcs_list_objects` and `load_arango_batch_insert`. The live UI Test action is therefore a separate post-rollout fix.
 
 ## Current Verified Starting State
 

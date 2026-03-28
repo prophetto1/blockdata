@@ -113,7 +113,7 @@ def test_submit_rejects_unowned_project(client):
     """submit_load should reject a project_id the caller does not own."""
     with patch("app.api.routes.load_runs.get_supabase_admin") as mock_sb:
         # _validate_owned_project query returns no data
-        mock_sb.return_value.table.return_value.select.return_value.eq.return_value.eq.return_value.maybeSingle.return_value.execute.return_value = MagicMock(data=None)
+        mock_sb.return_value.table.return_value.select.return_value.eq.return_value.eq.return_value.maybe_single.return_value.execute.return_value = MagicMock(data=None)
         resp = client.post("/load-runs", json={
             "source_function_name": "gcs_list",
             "source_download_function": "gcs_download_csv",
@@ -149,7 +149,7 @@ def test_submit_step_finalize_happy_path(client):
             src_fn_mock, dst_fn_mock,
         ]
         # _validate_owned_project
-        mock_sb.table.return_value.select.return_value.eq.return_value.eq.return_value.maybeSingle.return_value.execute.return_value = project_mock
+        mock_sb.table.return_value.select.return_value.eq.return_value.eq.return_value.maybe_single.return_value.execute.return_value = project_mock
 
         # Mock plugin list execution
         from unittest.mock import AsyncMock

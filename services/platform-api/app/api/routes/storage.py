@@ -27,6 +27,7 @@ from app.observability.storage_metrics import (
 from app.services.storage_source_documents import upsert_source_document_for_storage_object
 
 StorageKind = Literal["source", "converted", "parsed", "export"]
+StorageSurface = Literal["assets", "pipeline-services"]
 
 SIGNED_URL_MINUTES = 30
 router = APIRouter(prefix="/storage", tags=["storage"])
@@ -60,11 +61,28 @@ def build_object_key(
     source_uid: str | None = None,
     upload_id: str | None = None,
     artifact_name: str | None = None,
+    storage_surface: StorageSurface | None = None,
+    storage_service_slug: str | None = None,
 ) -> str:
     safe_filename = _safe_object_name(filename)
     safe_project_id = _safe_path_segment(project_id, field_name="project_id")
 
-    if storage_kind in {"source", "converted", "parsed"}:
+    if storage_kind == "source":
+        safe_source_uid = _safe_path_segment(source_uid, field_name="source_uid")
+        artifact = _safe_object_name(artifact_name or safe_filename)
+        surface = storage_surface or "assets"
+        if surface == "assets":
+            return (
+                f"users/{user_id}/assets/projects/{safe_project_id}/sources/{safe_source_uid}/"
+                f"{storage_kind}/{artifact}"
+            )
+        safe_service_slug = _safe_path_segment(storage_service_slug, field_name="storage_service_slug")
+        return (
+            f"users/{user_id}/pipeline-services/{safe_service_slug}/projects/{safe_project_id}/"
+            f"sources/{safe_source_uid}/{storage_kind}/{artifact}"
+        )
+
+    if storage_kind in {"converted", "parsed"}:
         safe_source_uid = _safe_path_segment(source_uid, field_name="source_uid")
         artifact = _safe_object_name(artifact_name or safe_filename)
         return (
@@ -210,6 +228,8 @@ class CreateUploadRequest(BaseModel):
     source_type: str | None = None
     doc_title: str | None = None
     artifact_name: str | None = None
+    storage_surface: StorageSurface | None = None
+    storage_service_slug: str | None = None
 
 
 class CompleteUploadRequest(BaseModel):
@@ -299,6 +319,8 @@ async def create_upload(body: CreateUploadRequest, auth=Depends(require_user_aut
                 source_uid=body.source_uid,
                 upload_id=upload_id,
                 artifact_name=body.artifact_name,
+                storage_surface=body.storage_surface,
+                storage_service_slug=body.storage_service_slug,
             )
         except ValueError as exc:
             http_exc = HTTPException(status_code=422, detail=str(exc))
@@ -356,7 +378,7 @@ async def create_upload(body: CreateUploadRequest, auth=Depends(require_user_aut
                 ).execute()
             except Exception:
                 pass
-            http_exc = HTTPException(status_code=502, detail=f"Failed to create signed upload URL: {exc}")
+            http_exc = HTTPException(status_code=502, detail="Failed to create signed upload URL")
             record_storage_upload_reserve(
                 result="error",
                 storage_kind=body.storage_kind,

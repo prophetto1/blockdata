@@ -9,6 +9,7 @@ from app.domain.plugins.registry import discover_plugins, FUNCTION_NAME_MAP
 from app.core.reserved_routes import check_collisions
 from app.observability import configure_telemetry, shutdown_telemetry
 from app.workers.conversion_pool import init_pool, shutdown_pool
+from app.workers.pipeline_jobs import start_pipeline_jobs_worker, stop_pipeline_jobs_worker
 from app.workers.storage_cleanup import start_storage_cleanup_worker, stop_storage_cleanup_worker
 
 _logging_configured = False
@@ -64,10 +65,12 @@ def create_app() -> FastAPI:
 
         # Start storage cleanup worker
         start_storage_cleanup_worker()
+        start_pipeline_jobs_worker()
 
         yield
 
         # Shutdown background workers gracefully
+        stop_pipeline_jobs_worker()
         stop_storage_cleanup_worker()
         shutdown_pool()
         # Flush any pending telemetry spans
@@ -87,7 +90,7 @@ def create_app() -> FastAPI:
 
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
+        allow_origins=list(settings.auth_redirect_origins),
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
@@ -140,27 +143,31 @@ def create_app() -> FastAPI:
     from app.api.routes.storage import router as storage_router
     app.include_router(storage_router)
 
-    # 5f. Observability endpoints (superuser, before plugin catch-all)
+    # 5f. Pipeline services routes (user-scoped, before plugin catch-all)
+    from app.api.routes.pipelines import router as pipelines_router
+    app.include_router(pipelines_router)
+
+    # 5g. Observability endpoints (superuser, before plugin catch-all)
     from app.api.routes.telemetry import router as telemetry_router
     app.include_router(telemetry_router)
 
-    # 5g. User variables (user-scoped, before plugin catch-all)
+    # 5h. User variables (user-scoped, before plugin catch-all)
     from app.api.routes.variables import router as variables_router
     app.include_router(variables_router)
 
-    # 5g2. Canonical secrets surface (user-scoped, before plugin catch-all)
+    # 5h2. Canonical secrets surface (user-scoped, before plugin catch-all)
     from app.api.routes.secrets import router as secrets_router
     app.include_router(secrets_router)
 
-    # 5h. OAuth observability endpoints (anonymous + superuser, before plugin catch-all)
+    # 5i. OAuth observability endpoints (anonymous + superuser, before plugin catch-all)
     from app.api.routes.auth_oauth import router as auth_oauth_router
     app.include_router(auth_oauth_router)
 
-    # 5i. AG chain model registry (user + superuser, before plugin catch-all)
+    # 5j. AG chain model registry (user + superuser, before plugin catch-all)
     from app.api.routes.agchain_models import router as agchain_models_router
     app.include_router(agchain_models_router)
 
-    # 5j. AG chain benchmark catalog (user-scoped, before plugin catch-all)
+    # 5k. AG chain benchmark catalog (user-scoped, before plugin catch-all)
     from app.api.routes.agchain_benchmarks import router as agchain_benchmarks_router
     app.include_router(agchain_benchmarks_router)
 

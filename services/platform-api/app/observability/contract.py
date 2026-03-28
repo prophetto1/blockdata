@@ -51,3 +51,8 @@ SECRETS_DELETE_SPAN_NAME: str = "secrets.delete"
 
 STORAGE_TRACER_NAME: str = "platform.storage"
 STORAGE_METER_NAME: str = "platform.storage"
+
+# Pipeline meter/tracer identity
+
+PIPELINE_TRACER_NAME: str = "platform.pipeline"
+PIPELINE_METER_NAME: str = "platform.pipeline"

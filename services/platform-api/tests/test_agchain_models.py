@@ -3,6 +3,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from fastapi import HTTPException
 from fastapi.testclient import TestClient
+import httpx
 
 from app.auth.dependencies import require_superuser, require_user_auth
 from app.auth.principals import AuthPrincipal
@@ -263,3 +264,36 @@ def test_refresh_health_writes_history_and_updates_status(superuser_client):
         "message": "probe ok",
         "probe_strategy": "http_openai_models",
     }
+
+
+@pytest.mark.asyncio
+async def test_run_provider_probe_hides_internal_exception_detail(monkeypatch):
+    from app.domain.agchain.model_registry import _run_provider_probe
+
+    class _BoomAsyncClient:
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc, tb):
+            return False
+
+        async def get(self, *_args, **_kwargs):
+            raise httpx.ConnectError("http://10.0.0.4:11434 exploded")
+
+    monkeypatch.setattr("app.domain.agchain.model_registry.httpx.AsyncClient", lambda **_kwargs: _BoomAsyncClient())
+
+    result = await _run_provider_probe(
+        sb=None,
+        row={
+            "provider_slug": "openai",
+            "auth_kind": "none",
+            "api_base": "http://127.0.0.1:11434",
+            "probe_strategy": "http_openai_models",
+        },
+        provider_definition={"default_probe_strategy": "http_openai_models"},
+        user_id="user-1",
+        credential_status="ready",
+    )
+
+    assert result["health_status"] == "error"
+    assert result["message"] == "ConnectError: probe failed"

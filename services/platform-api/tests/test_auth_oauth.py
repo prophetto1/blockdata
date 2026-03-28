@@ -18,6 +18,8 @@ def _make_app(monkeypatch):
     get_settings.cache_clear()
     monkeypatch.setattr(main_module, "init_pool", lambda: MagicMock(status=lambda: "stubbed"))
     monkeypatch.setattr(main_module, "shutdown_pool", lambda: None)
+    monkeypatch.setattr(main_module, "start_pipeline_jobs_worker", lambda: None)
+    monkeypatch.setattr(main_module, "stop_pipeline_jobs_worker", lambda: None)
     monkeypatch.setattr(main_module, "start_storage_cleanup_worker", lambda: None)
     monkeypatch.setattr(main_module, "stop_storage_cleanup_worker", lambda: None)
     return create_app()

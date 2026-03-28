@@ -33,7 +33,7 @@ const CONNECTION_TYPES = [
       { name: 'private_key', label: 'Private Key (PEM)', type: 'textarea', required: true },
     ],
     metadataFields: ['project_id', 'client_email'],
-    testFunction: 'gcs_list',
+    testFunction: 'load_gcs_list_objects',
   },
   {
     id: 'arangodb',
@@ -47,7 +47,7 @@ const CONNECTION_TYPES = [
       { name: 'password', label: 'Password', type: 'password', required: true },
     ],
     metadataFields: ['endpoint', 'database', 'username'],
-    testFunction: 'arangodb_load',
+    testFunction: 'load_arango_batch_insert',
   },
 ] as const;
 

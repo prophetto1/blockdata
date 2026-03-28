@@ -1,9 +1,10 @@
 from unittest.mock import patch
 
 import pytest
+from fastapi import HTTPException
 from fastapi.testclient import TestClient
 
-from app.auth.dependencies import require_user_auth
+from app.auth.dependencies import require_superuser, require_user_auth
 from app.auth.principals import AuthPrincipal
 from app.main import create_app
 
@@ -18,10 +19,34 @@ def _mock_user_principal():
     )
 
 
+def _mock_superuser_principal():
+    return AuthPrincipal(
+        subject_type="user",
+        subject_id="user-1",
+        roles=frozenset({"authenticated", "platform_admin"}),
+        auth_source="test",
+        email="admin@example.com",
+    )
+
+
+def _reject_superuser():
+    raise HTTPException(status_code=403, detail="Role required: platform_admin")
+
+
 @pytest.fixture
 def client():
     app = create_app()
     app.dependency_overrides[require_user_auth] = _mock_user_principal
+    app.dependency_overrides[require_superuser] = _reject_superuser
+    yield TestClient(app)
+    app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def superuser_client():
+    app = create_app()
+    app.dependency_overrides[require_user_auth] = _mock_user_principal
+    app.dependency_overrides[require_superuser] = _mock_superuser_principal
     yield TestClient(app)
     app.dependency_overrides.clear()
 
@@ -113,7 +138,20 @@ def test_list_benchmarks_applies_filters_and_returns_empty_state(client):
     assert empty_response.json() == {"items": []}
 
 
-def test_create_benchmark_creates_identity_and_initial_draft(client):
+def test_create_benchmark_requires_superuser(client):
+    response = client.post(
+        "/agchain/benchmarks",
+        json={
+            "benchmark_name": "Legal-10",
+            "benchmark_slug": "legal-10",
+            "description": "Three-step benchmark package for legal analysis.",
+        },
+    )
+
+    assert response.status_code == 403
+
+
+def test_create_benchmark_creates_identity_and_initial_draft(superuser_client):
     with patch("app.api.routes.agchain_benchmarks.create_benchmark") as mock_create:
         mock_create.return_value = {
             "benchmark_id": "benchmark-1",
@@ -122,7 +160,7 @@ def test_create_benchmark_creates_identity_and_initial_draft(client):
             "redirect_path": "/app/agchain/benchmarks/legal-10#steps",
         }
 
-        response = client.post(
+        response = superuser_client.post(
             "/agchain/benchmarks",
             json={
                 "benchmark_name": "Legal-10",
@@ -241,14 +279,36 @@ def test_get_benchmark_steps_returns_sorted_rows(client):
     mock_get_steps.assert_called_once_with(user_id="user-1", benchmark_slug="legal-10")
 
 
-def test_create_benchmark_step_appends_to_draft_version(client):
+def test_create_benchmark_step_requires_superuser(client):
+    response = client.post(
+        "/agchain/benchmarks/legal-10/steps",
+        json={
+            "step_id": "d2",
+            "display_name": "Rule Synthesis",
+            "step_kind": "model",
+            "api_call_boundary": "continue_call",
+            "inject_payloads": ["p2"],
+            "scoring_mode": "deterministic",
+            "output_contract": "irac_rule_v1",
+            "scorer_ref": "irac_rule_scorer_v1",
+            "judge_prompt_ref": None,
+            "judge_grades_step_ids": [],
+            "enabled": True,
+            "step_config": {"system_prompt_ref": "rule_synthesis_v1"},
+        },
+    )
+
+    assert response.status_code == 403
+
+
+def test_create_benchmark_step_appends_to_draft_version(superuser_client):
     with patch("app.api.routes.agchain_benchmarks.create_benchmark_step") as mock_create_step:
         mock_create_step.return_value = {
             "benchmark_step_id": "step-3",
             "step_order": 3,
         }
 
-        response = client.post(
+        response = superuser_client.post(
             "/agchain/benchmarks/legal-10/steps",
             json={
                 "step_id": "d2",
@@ -277,11 +337,24 @@ def test_create_benchmark_step_appends_to_draft_version(client):
     assert mock_create_step.call_args.kwargs["user_id"] == "user-1"
 
 
-def test_update_benchmark_step_updates_current_draft_step(client):
+def test_update_benchmark_step_requires_superuser(client):
+    response = client.patch(
+        "/agchain/benchmarks/legal-10/steps/step-1",
+        json={
+            "display_name": "Updated Issue Spotting",
+            "enabled": False,
+            "step_config": {"system_prompt_ref": "issue_spotting_v2"},
+        },
+    )
+
+    assert response.status_code == 403
+
+
+def test_update_benchmark_step_updates_current_draft_step(superuser_client):
     with patch("app.api.routes.agchain_benchmarks.update_benchmark_step") as mock_update_step:
         mock_update_step.return_value = {"benchmark_step_id": "step-1"}
 
-        response = client.patch(
+        response = superuser_client.patch(
             "/agchain/benchmarks/legal-10/steps/step-1",
             json={
                 "display_name": "Updated Issue Spotting",
@@ -296,11 +369,20 @@ def test_update_benchmark_step_updates_current_draft_step(client):
     assert mock_update_step.call_args.kwargs["benchmark_step_id"] == "step-1"
 
 
-def test_reorder_benchmark_steps_rewrites_dense_order(client):
+def test_reorder_benchmark_steps_requires_superuser(client):
+    response = client.post(
+        "/agchain/benchmarks/legal-10/steps/reorder",
+        json={"ordered_step_ids": ["step-2", "step-1", "step-3"]},
+    )
+
+    assert response.status_code == 403
+
+
+def test_reorder_benchmark_steps_rewrites_dense_order(superuser_client):
     with patch("app.api.routes.agchain_benchmarks.reorder_benchmark_steps") as mock_reorder:
         mock_reorder.return_value = {"step_count": 3}
 
-        response = client.post(
+        response = superuser_client.post(
             "/agchain/benchmarks/legal-10/steps/reorder",
             json={"ordered_step_ids": ["step-2", "step-1", "step-3"]},
         )
@@ -314,11 +396,17 @@ def test_reorder_benchmark_steps_rewrites_dense_order(client):
     )
 
 
-def test_delete_benchmark_step_compacts_order(client):
+def test_delete_benchmark_step_requires_superuser(client):
+    response = client.delete("/agchain/benchmarks/legal-10/steps/step-3")
+
+    assert response.status_code == 403
+
+
+def test_delete_benchmark_step_compacts_order(superuser_client):
     with patch("app.api.routes.agchain_benchmarks.delete_benchmark_step") as mock_delete:
         mock_delete.return_value = {"deleted_step_id": "step-3"}
 
-        response = client.delete("/agchain/benchmarks/legal-10/steps/step-3")
+        response = superuser_client.delete("/agchain/benchmarks/legal-10/steps/step-3")
 
     assert response.status_code == 200
     assert response.json() == {"ok": True, "deleted_step_id": "step-3"}

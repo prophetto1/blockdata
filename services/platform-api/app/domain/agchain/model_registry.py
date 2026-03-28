@@ -395,7 +395,7 @@ async def _run_provider_probe(
             return {
                 "health_status": "error",
                 "latency_ms": None,
-                "message": str(exc),
+                "message": f"{type(exc).__name__}: probe failed",
                 "probe_strategy": effective_strategy,
                 "error_code": type(exc).__name__,
             }
