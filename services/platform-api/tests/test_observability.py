@@ -117,6 +117,18 @@ def test_telemetry_status_does_not_expose_headers():
         assert "header" not in key.lower()
 
 
+def test_protocol_http_protobuf_accepted():
+    app = FastAPI()
+    state = configure_telemetry(app, _make_settings(otel_enabled=True, otel_exporter_otlp_protocol="http/protobuf"))
+    assert state["enabled"] is True
+
+
+def test_protocol_grpc_rejected():
+    app = FastAPI()
+    with pytest.raises(ValueError, match="Unsupported OTEL_EXPORTER_OTLP_PROTOCOL"):
+        configure_telemetry(app, _make_settings(otel_enabled=True, otel_exporter_otlp_protocol="grpc"))
+
+
 # --- Task 3: Bootstrap tests ---
 
 

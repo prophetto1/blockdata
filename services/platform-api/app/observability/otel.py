@@ -28,6 +28,13 @@ def configure_telemetry(app: FastAPI, settings: Settings) -> dict[str, object]:
     if not settings.otel_enabled:
         return {"enabled": False}
 
+    _SUPPORTED_PROTOCOLS = {"http/protobuf"}
+    if settings.otel_exporter_otlp_protocol not in _SUPPORTED_PROTOCOLS:
+        raise ValueError(
+            f"Unsupported OTEL_EXPORTER_OTLP_PROTOCOL: {settings.otel_exporter_otlp_protocol!r}. "
+            f"Supported: {_SUPPORTED_PROTOCOLS}"
+        )
+
     global _provider_initialized, _httpx_instrumented, _logging_instrumented
     global _meter_provider_initialized, _logger_provider_initialized
 

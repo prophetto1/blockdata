@@ -123,7 +123,7 @@ The observability changes in scope are limited to benchmark artifacts written by
 | `docs/plans/2026-03-27-runtime-and-environment-contract-inventory.md` | Promote to primary authority and add the six missing InspectAI-facing inventory items plus wrapper boundary section |
 | `docs/plans/2026-03-27-environment-and-runtime-profile-contract.md` | Mark as secondary companion doc and trim/annotate duplicated authority claims |
 | `docs/plans/2026-03-27-inspect-ai-gap-analysis.md` | Mark superseded by the substrate gap analysis |
-| `docs/plans/2026-03-27-environment-and-runtime-profile-implementation-plan.md` | Mark superseded by this consolidation plan or rewrite header to secondary historical status |
+| `docs/plans/stale/2026-03-27-environment-and-runtime-profile-implementation-plan.md` | Mark superseded by this consolidation plan or rewrite header to secondary historical status |
 | `_agchain/legal-10/runspecs/3-STEP-RUN/run_3s.py` | Accept runtime config, resolve backend, preserve baseline semantics, and emit runtime-config-aware run records |
 | `_agchain/legal-10/runspecs/3-STEP-RUN/adapters/model_adapter.py` | Reuse as baseline direct backend implementation surface or adapt to backend protocol |
 | `_agchain/legal-10/runspecs/3-STEP-RUN/runtime/input_assembler.py` | Make explicit which message windows are controlled by runtime config while preserving current assembly logic |
@@ -153,7 +153,7 @@ The observability changes in scope are limited to benchmark artifacts written by
 - `docs/plans/2026-03-27-runtime-and-environment-contract-inventory.md`
 - `docs/plans/2026-03-27-environment-and-runtime-profile-contract.md`
 - `docs/plans/2026-03-27-inspect-ai-gap-analysis.md`
-- `docs/plans/2026-03-27-environment-and-runtime-profile-implementation-plan.md`
+- `docs/plans/stale/2026-03-27-environment-and-runtime-profile-implementation-plan.md`
 
 **Step 1:** Promote the flat inventory doc to explicit primary-authority status in its header and pre-implementation sections.
 
