@@ -39,7 +39,7 @@ describe('pipelineService', () => {
     vi.unstubAllGlobals();
   });
 
-  it('lists pipeline definitions and owned markdown sources', async () => {
+  it('lists pipeline definitions and uploaded sources', async () => {
     platformApiFetchMock
       .mockResolvedValueOnce(jsonResponse({
         items: [

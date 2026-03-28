@@ -55,8 +55,8 @@ function renderAt(pathname: string) {
   render(
     <MemoryRouter initialEntries={[pathname]}>
       <Routes>
-        <Route path="/app/rag" element={<PipelineServicesPage />} />
-        <Route path="/app/rag/:serviceSlug" element={<PipelineServicesPage />} />
+        <Route path="/app/pipeline-services" element={<PipelineServicesPage />} />
+        <Route path="/app/pipeline-services/:serviceSlug" element={<PipelineServicesPage />} />
       </Routes>
     </MemoryRouter>,
   );
@@ -106,7 +106,7 @@ describe('PipelineServicesPage', () => {
   });
 
   it('renders the pipeline services landing surface and loads definitions', async () => {
-    renderAt('/app/rag');
+    renderAt('/app/pipeline-services');
 
     expect(screen.getByRole('heading', { name: 'Pipeline Services' })).toBeInTheDocument();
     await waitFor(() => {
@@ -118,7 +118,7 @@ describe('PipelineServicesPage', () => {
   });
 
   it('renders the dedicated Index Builder route as the selected service', async () => {
-    renderAt('/app/rag/index-builder');
+    renderAt('/app/pipeline-services/index-builder');
 
     await waitFor(() => {
       expect(screen.getByRole('heading', { name: 'Index Builder' })).toBeInTheDocument();
@@ -168,7 +168,7 @@ describe('PipelineServicesPage', () => {
       },
     });
 
-    renderAt('/app/rag/index-builder');
+    renderAt('/app/pipeline-services/index-builder');
 
     const input = await screen.findByLabelText('Upload markdown source');
     fireEvent.change(input, {

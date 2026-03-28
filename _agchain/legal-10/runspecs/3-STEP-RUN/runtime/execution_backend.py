@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from abc import ABC, abstractmethod
 
 from adapters.model_adapter import ModelAdapter
@@ -29,7 +30,8 @@ class DirectBackend(ExecutionBackend):
         temperature: float = 0.0,
         max_tokens: int = 4096,
     ) -> ExecutionResult:
-        response_text = self._adapter.call_model(
+        response_text = await asyncio.to_thread(
+            self._adapter.call_model,
             messages,
             temperature=temperature,
             max_tokens=max_tokens,

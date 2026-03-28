@@ -199,7 +199,7 @@ function AppShellInner() {
   const isTestIntegrationsRoute = location.pathname === '/app/superuser/test-integrations';
   const isAssetsRoute = location.pathname === '/app/assets';
   const isParseRoute = location.pathname === '/app/parse';
-  const isPipelineServicesRoute = /^\/app\/rag(?:\/|$)/.test(location.pathname);
+  const isPipelineServicesRoute = /^\/app\/(?:pipeline-services|rag|knowledge-bases)(?:\/|$)/.test(location.pathname);
   const isExtractRoute = location.pathname === '/app/extract';
   const isConvertRoute = location.pathname === '/app/convert';
   const isSchemasRoute = /^\/app\/schemas(?:\/|$)/.test(location.pathname);

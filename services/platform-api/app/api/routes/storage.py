@@ -207,6 +207,104 @@ def _fetch_storage_object_by_reservation(admin, owner_user_id: str, reservation_
     return res.data
 
 
+def _fetch_pending_reservation_by_object(
+    admin,
+    *,
+    owner_user_id: str,
+    bucket: str,
+    object_key: str,
+) -> dict | None:
+    res = (
+        admin.table("storage_upload_reservations")
+        .select("*")
+        .eq("owner_user_id", owner_user_id)
+        .eq("bucket", bucket)
+        .eq("object_key", object_key)
+        .eq("status", "pending")
+        .maybe_single()
+        .execute()
+    )
+    return res.data
+
+
+def _pending_reservation_conflict_http_error(existing: dict) -> HTTPException:
+    return HTTPException(
+        status_code=409,
+        detail={
+            "code": "pending_reservation_exists",
+            "reservation_id": existing.get("reservation_id"),
+            "object_key": existing.get("object_key"),
+            "requested_bytes": existing.get("requested_bytes"),
+            "created_at": existing.get("created_at"),
+            "expires_at": existing.get("expires_at"),
+        },
+    )
+
+
+def _reserve_upload_with_duplicate_recovery(
+    admin,
+    *,
+    owner_user_id: str,
+    project_id: str,
+    bucket: str,
+    object_key: str,
+    requested_bytes: int,
+    content_type: str,
+    original_filename: str,
+    storage_kind: str,
+    source_uid: str | None,
+    source_type: str | None,
+    doc_title: str | None,
+) -> tuple[dict, bool]:
+    payload = {
+        "p_user_id": owner_user_id,
+        "p_project_id": project_id,
+        "p_bucket": bucket,
+        "p_object_key": object_key,
+        "p_requested_bytes": requested_bytes,
+        "p_content_type": content_type,
+        "p_original_filename": original_filename,
+        "p_storage_kind": storage_kind,
+        "p_source_uid": source_uid,
+        "p_source_type": source_type,
+        "p_doc_title": doc_title,
+    }
+
+    for _attempt in range(2):
+        try:
+            return admin.rpc("reserve_user_storage", payload).execute().data, True
+        except Exception as exc:
+            http_exc = _http_from_supabase_error(exc)
+            if http_exc.status_code != 409 or http_exc.detail != "Duplicate pending reservation":
+                raise http_exc from exc
+
+            existing = _fetch_pending_reservation_by_object(
+                admin,
+                owner_user_id=owner_user_id,
+                bucket=bucket,
+                object_key=object_key,
+            )
+            if not existing:
+                raise http_exc from exc
+
+            if _is_reservation_expired(existing):
+                try:
+                    admin.rpc(
+                        "cancel_user_storage_reservation",
+                        {
+                            "p_reservation_id": existing["reservation_id"],
+                            "p_owner_user_id": owner_user_id,
+                        },
+                    ).execute()
+                except Exception:
+                    pass
+                continue
+
+            raise _pending_reservation_conflict_http_error(existing) from exc
+
+    raise HTTPException(status_code=409, detail="Duplicate pending reservation")
+
+
 def _bridge_failure_http_error() -> HTTPException:
     return HTTPException(
         status_code=503,
@@ -370,24 +468,21 @@ async def create_upload(body: CreateUploadRequest, auth=Depends(require_user_aut
             raise http_exc from exc
 
         try:
-            reservation = admin.rpc(
-                "reserve_user_storage",
-                {
-                    "p_user_id": auth.user_id,
-                    "p_project_id": body.project_id,
-                    "p_bucket": settings.gcs_user_storage_bucket,
-                    "p_object_key": object_key,
-                    "p_requested_bytes": body.expected_bytes,
-                    "p_content_type": body.content_type,
-                    "p_original_filename": body.filename,
-                    "p_storage_kind": body.storage_kind,
-                    "p_source_uid": body.source_uid,
-                    "p_source_type": body.source_type,
-                    "p_doc_title": body.doc_title,
-                },
-            ).execute().data
-        except Exception as exc:
-            http_exc = _http_from_supabase_error(exc)
+            reservation, created_new_reservation = _reserve_upload_with_duplicate_recovery(
+                admin,
+                owner_user_id=auth.user_id,
+                project_id=body.project_id,
+                bucket=settings.gcs_user_storage_bucket,
+                object_key=object_key,
+                requested_bytes=body.expected_bytes,
+                content_type=body.content_type,
+                original_filename=body.filename,
+                storage_kind=body.storage_kind,
+                source_uid=body.source_uid,
+                source_type=body.source_type,
+                doc_title=body.doc_title,
+            )
+        except HTTPException as http_exc:
             record_storage_upload_reserve(
                 result="error",
                 storage_kind=body.storage_kind,
@@ -396,7 +491,7 @@ async def create_upload(body: CreateUploadRequest, auth=Depends(require_user_aut
                 duration_ms=(perf_counter() - started) * 1000.0,
                 http_status_code=http_exc.status_code,
             )
-            raise http_exc from exc
+            raise
 
         try:
             with storage_tracer.start_as_current_span("storage.upload.sign_url"):
@@ -406,13 +501,14 @@ async def create_upload(body: CreateUploadRequest, auth=Depends(require_user_aut
                     content_type=body.content_type,
                 )
         except Exception as exc:
-            try:
-                admin.rpc(
-                    "cancel_user_storage_reservation",
-                    {"p_reservation_id": reservation["reservation_id"], "p_owner_user_id": auth.user_id},
-                ).execute()
-            except Exception:
-                pass
+            if created_new_reservation:
+                try:
+                    admin.rpc(
+                        "cancel_user_storage_reservation",
+                        {"p_reservation_id": reservation["reservation_id"], "p_owner_user_id": auth.user_id},
+                    ).execute()
+                except Exception:
+                    pass
             http_exc = HTTPException(status_code=502, detail="Failed to create signed upload URL")
             record_storage_upload_reserve(
                 result="error",

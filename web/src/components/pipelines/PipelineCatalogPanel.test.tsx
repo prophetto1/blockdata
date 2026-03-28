@@ -26,6 +26,6 @@ describe('PipelineCatalogPanel', () => {
 
     expect(screen.getByRole('heading', { name: 'Pipeline Services' })).toBeInTheDocument();
     expect(screen.getByText('markdown_index_builder')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Open Index Builder' })).toHaveAttribute('href', '/app/rag/index-builder');
+    expect(screen.getByRole('link', { name: 'Open Index Builder' })).toHaveAttribute('href', '/app/pipeline-services/index-builder');
   });
 });

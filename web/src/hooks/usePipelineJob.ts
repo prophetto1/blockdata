@@ -63,7 +63,7 @@ export function usePipelineJob({
       return items;
     } catch (error) {
       setSources([]);
-      setSourcesError(toErrorMessage(error, 'Unable to load owned markdown sources.'));
+      setSourcesError(toErrorMessage(error, 'Unable to load your sources.'));
       setSelectedSourceUid(null);
       return [];
     } finally {

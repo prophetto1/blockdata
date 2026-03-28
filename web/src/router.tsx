@@ -77,6 +77,14 @@ function LegacySettingsAdminRedirect() {
   return <Navigate to={targetByCategory[category ?? ''] ?? '/app/superuser/instance-config'} replace />;
 }
 
+function LegacyPipelineServicesRedirect() {
+  const { serviceSlug } = useParams<{ serviceSlug?: string }>();
+  const target = serviceSlug
+    ? `/app/pipeline-services/${encodeURIComponent(serviceSlug)}`
+    : '/app/pipeline-services';
+  return <Navigate to={target} replace />;
+}
+
 export const router = createBrowserRouter([
   // Marketing pages: full-width with PublicNav
   {
@@ -124,8 +132,12 @@ export const router = createBrowserRouter([
           { path: '/app/database', element: <DatabasePlaceholder /> },
           { path: '/app/assets', element: <ProjectAssetsPage /> },
           { path: '/app/parse', element: <ParsePage /> },
-          { path: '/app/rag', element: <PipelineServicesPage /> },
-          { path: '/app/rag/:serviceSlug', element: <PipelineServicesPage /> },
+          { path: '/app/pipeline-services', element: <PipelineServicesPage /> },
+          { path: '/app/pipeline-services/knowledge-bases', lazy: () => import('@/pages/KnowledgeBases') },
+          { path: '/app/pipeline-services/:serviceSlug', element: <PipelineServicesPage /> },
+          { path: '/app/rag', element: <LegacyPipelineServicesRedirect /> },
+          { path: '/app/rag/:serviceSlug', element: <LegacyPipelineServicesRedirect /> },
+          { path: '/app/knowledge-bases', element: <Navigate to="/app/pipeline-services/knowledge-bases" replace /> },
           { path: '/app/workspace', element: <Workspace /> },
           { path: '/app/extract', element: <ExtractPage /> },
           { path: '/app/convert', element: <ConvertPage /> },
@@ -161,7 +173,6 @@ export const router = createBrowserRouter([
           { path: '/app/load', element: <LoadPage /> },
 
           // Pipeline nav pages
-          { path: '/app/knowledge-bases', lazy: () => import('@/pages/KnowledgeBases') },
           { path: '/app/skills', lazy: () => import('@/pages/Skills') },
           { path: '/app/mcp-tools', lazy: () => import('@/pages/McpTools') },
           { path: '/app/observability', element: <Navigate to="/app/observability/telemetry" replace /> },

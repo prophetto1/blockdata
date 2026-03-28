@@ -38,7 +38,7 @@ export function PipelineUploadPanel({
   const [uploadNotice, setUploadNotice] = useState<string | null>(null);
 
   const options = useMemo(() => {
-    const base = [{ value: '', label: 'Select an owned markdown source', disabled: sources.length === 0 }];
+    const base = [{ value: '', label: 'Select a previously uploaded source', disabled: sources.length === 0 }];
     return base.concat(
       sources.map((source) => ({
         value: source.source_uid,
@@ -138,18 +138,18 @@ export function PipelineUploadPanel({
 
           <div className="space-y-3">
             <label htmlFor="pipeline-owned-source" className="text-sm font-medium text-foreground">
-              Owned markdown source
+              Your sources
             </label>
             <NativeSelect
               id="pipeline-owned-source"
-              aria-label="Owned markdown source"
+              aria-label="Your sources"
               value={selectedSourceUid ?? ''}
               onChange={(event) => onSelectSource(event.currentTarget.value)}
               options={options}
             />
-            {sourcesLoading ? <div className="text-sm text-muted-foreground">Loading owned markdown sources...</div> : null}
+            {sourcesLoading ? <div className="text-sm text-muted-foreground">Loading your sources...</div> : null}
             {!sourcesLoading && sources.length === 0 ? (
-              <div className="text-sm text-muted-foreground">No owned markdown sources are available yet.</div>
+              <div className="text-sm text-muted-foreground">No sources uploaded yet.</div>
             ) : null}
             {sourcesError ? <div className="text-sm text-destructive">{sourcesError}</div> : null}
             <Button

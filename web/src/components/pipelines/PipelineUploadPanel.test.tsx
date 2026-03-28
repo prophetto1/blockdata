@@ -45,7 +45,7 @@ describe('PipelineUploadPanel', () => {
     const input = screen.getByLabelText('Upload markdown source') as HTMLInputElement;
     expect(input.accept).toBe('.md,.markdown,text/markdown');
 
-    fireEvent.change(screen.getByLabelText('Owned markdown source'), {
+    fireEvent.change(screen.getByLabelText('Your sources'), {
       target: { value: 'source-1' },
     });
     expect(onSelectSource).toHaveBeenCalledWith('source-1');

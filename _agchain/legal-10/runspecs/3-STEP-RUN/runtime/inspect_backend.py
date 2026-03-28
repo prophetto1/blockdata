@@ -15,6 +15,7 @@ class InspectBackend(ExecutionBackend):
             self._get_model,
             self._generate_config_cls,
             self._system_message_cls,
+            self._assistant_message_cls,
             self._user_message_cls,
         ) = _load_inspect_components()
         self._runtime_model = self._get_model(
@@ -29,7 +30,15 @@ class InspectBackend(ExecutionBackend):
         temperature: float = 0.0,
         max_tokens: int = 4096,
     ) -> ExecutionResult:
-        inspect_messages = [_to_inspect_message(msg, self._system_message_cls, self._user_message_cls) for msg in messages]
+        inspect_messages = [
+            _to_inspect_message(
+                msg,
+                self._system_message_cls,
+                self._assistant_message_cls,
+                self._user_message_cls,
+            )
+            for msg in messages
+        ]
         output = await self._runtime_model.generate(
             inspect_messages,
             config=self._generate_config_cls(temperature=temperature, max_tokens=max_tokens),
@@ -46,7 +55,7 @@ class InspectBackend(ExecutionBackend):
         )
 
 
-def _load_inspect_components() -> tuple[Any, type[Any], type[Any], type[Any]]:
+def _load_inspect_components() -> tuple[Any, type[Any], type[Any], type[Any], type[Any]]:
     try:
         module = importlib.import_module("inspect_ai.model")
     except ImportError as exc:
@@ -58,6 +67,7 @@ def _load_inspect_components() -> tuple[Any, type[Any], type[Any], type[Any]]:
         module.get_model,
         module.GenerateConfig,
         module.ChatMessageSystem,
+        module.ChatMessageAssistant,
         module.ChatMessageUser,
     )
 
@@ -65,12 +75,15 @@ def _load_inspect_components() -> tuple[Any, type[Any], type[Any], type[Any]]:
 def _to_inspect_message(
     message: dict[str, str],
     system_message_cls: type[Any],
+    assistant_message_cls: type[Any],
     user_message_cls: type[Any],
 ) -> Any:
     role = message["role"]
     content = message["content"]
     if role == "system":
         return system_message_cls(content=content)
+    if role == "assistant":
+        return assistant_message_cls(content=content)
     if role == "user":
         return user_message_cls(content=content)
     raise ValueError(f"Unsupported message role for InspectAI backend: {role}")

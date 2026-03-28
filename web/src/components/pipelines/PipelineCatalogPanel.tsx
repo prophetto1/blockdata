@@ -61,7 +61,7 @@ export function PipelineCatalogPanel({
                   </div>
                 </div>
                 <Link
-                  to={`/app/rag/${service.slug}`}
+                  to={`/app/pipeline-services/${service.slug}`}
                   className="inline-flex items-center rounded-md border border-primary/30 bg-primary/10 px-3 py-2 text-sm font-medium text-primary transition-colors hover:bg-primary/15"
                 >
                   Open {service.label}

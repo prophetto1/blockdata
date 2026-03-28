@@ -70,6 +70,7 @@ class RuntimeConfig(BaseModel):
         "standard": "standard",
         "mcp": "mcp",
     }
+    _CURRENT_PHASE_PROFILE_TOOL_IDS: ClassVar[frozenset[str]] = frozenset({"no_tools"})
 
     @classmethod
     def from_profile(cls, profile: Any, *, backend: str = "direct") -> "RuntimeConfig":
@@ -77,12 +78,16 @@ class RuntimeConfig(BaseModel):
         session_id = profile.session_strategy.strategy_id
         state_id = profile.state_provider.provider_id
         raw_tool_id = profile.tool_strategy.strategy_id
-        tool_mode = cls._TOOL_MODE_MAP.get(raw_tool_id)
-        if tool_mode is None:
+        if raw_tool_id not in cls._TOOL_MODE_MAP:
             raise ValueError(
                 f"Unknown profile tool_strategy '{raw_tool_id}'. "
                 f"Known mappings: {list(cls._TOOL_MODE_MAP)}"
             )
+        if raw_tool_id not in cls._CURRENT_PHASE_PROFILE_TOOL_IDS:
+            raise ValueError(
+                f"Profile tool_strategy '{raw_tool_id}' is not permitted in the current phase"
+            )
+        tool_mode = cls._TOOL_MODE_MAP[raw_tool_id]
 
         limits = RuntimeLimits(
             max_tokens_per_step=profile.constraints.max_tokens_per_step,

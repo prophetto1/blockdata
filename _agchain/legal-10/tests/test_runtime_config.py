@@ -110,6 +110,28 @@ def test_from_profile() -> None:
     assert cfg.limits.max_cost_per_run is None
 
 
+@pytest.mark.parametrize("tool_strategy_id", ["standard", "mcp"])
+def test_from_profile_rejects_future_phase_tool_modes_early(tool_strategy_id: str) -> None:
+    _agchain_root = Path(__file__).resolve().parents[2]
+    if str(_agchain_root) not in sys.path:
+        sys.path.insert(0, str(_agchain_root))
+
+    from profiles.baseline import BASELINE_PROFILE
+    from profiles.types import ToolStrategyConfig
+
+    future_profile = BASELINE_PROFILE.model_copy(
+        update={"tool_strategy": ToolStrategyConfig(strategy_id=tool_strategy_id)}
+    )
+
+    with pytest.raises(
+        ValueError,
+        match=(
+            f"Profile tool_strategy '{tool_strategy_id}' is not permitted in the current phase"
+        ),
+    ):
+        RuntimeConfig.from_profile(future_profile)
+
+
 def test_custom_limits() -> None:
     limits = RuntimeLimits(
         max_tokens_per_step=2048,

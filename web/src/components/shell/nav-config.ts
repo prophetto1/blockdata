@@ -1,36 +1,35 @@
 import type { Icon } from '@tabler/icons-react';
 import {
+  IconActivity,
   IconApps,
-  IconAtom2,
+  IconArrowsShuffle,
+  IconChartBar,
+  IconClipboardList,
+  IconClock,
   IconDatabase,
+  IconEdit,
   IconFileCode,
+  IconFileExport,
+  IconFileText,
   IconFolder,
   IconFolderPlus,
   IconGitBranch,
   IconLayoutDashboard,
+  IconLock,
   IconPalette,
   IconPlayerPlay,
   IconPlugConnected,
+  IconRobot,
+  IconScan,
   IconSchema,
   IconServer,
   IconSettings,
   IconTerminal2,
   IconTestPipe,
   IconTopologyRing3,
+  IconTransform,
   IconUserCircle,
   IconWand,
-  IconEdit,
-  IconClock,
-  IconFileText,
-  IconChartBar,
-  IconArrowsShuffle,
-  IconLock,
-  IconClipboardList,
-  IconScan,
-  IconTransform,
-  IconFileExport,
-  IconRobot,
-  IconActivity,
 } from '@tabler/icons-react';
 
 export type NavItem = {
@@ -42,10 +41,13 @@ export type NavItem = {
   children?: NavItem[];
 };
 
-export type NavGroup = {
+export type ClassicNavSection = {
+  type: 'section-heading';
   label: string;
   items: NavItem[];
 };
+
+export type ClassicNavEntry = NavItem | ClassicNavSection | 'divider';
 
 export type NavDrillSection = {
   label?: string;
@@ -62,52 +64,198 @@ export type NavDrillConfig = {
   pathTemplate?: string;
 };
 
-export const TOP_LEVEL_NAV: Array<NavItem | 'divider'> = [
-  { label: 'Assets', icon: IconFolder, path: '/app/assets' },
-  { label: 'Ingest', icon: IconScan, path: '/app/parse' },
-  { label: 'Extract', icon: IconWand, path: '/app/extract' },
-  { label: 'Transform', icon: IconArrowsShuffle, path: '/app/transform' },
-  { label: 'Convert', icon: IconFileExport, path: '/app/convert' },
-  { label: 'RAG', icon: IconTransform, path: '/app/rag' },
-  { label: 'Knowledge Bases', icon: IconDatabase, path: '/app/knowledge-bases' },
-  { label: 'Agent Onboarding', icon: IconRobot, path: '/app/onboarding/agents' },
+type SharedNavSection = {
+  id: string;
+  label: string;
+  icon: Icon;
+  parentPath: string;
+  routePrefix: string;
+  routeAliases?: string[];
+  items: NavItem[];
+};
+
+export function isNavItem(entry: ClassicNavEntry | NavItem | 'divider'): entry is NavItem {
+  return entry !== 'divider' && !('type' in entry);
+}
+
+export function isClassicNavSection(entry: ClassicNavEntry): entry is ClassicNavSection {
+  return entry !== 'divider' && 'type' in entry && entry.type === 'section-heading';
+}
+
+function createClassicSection(section: SharedNavSection): ClassicNavSection {
+  return {
+    type: 'section-heading',
+    label: section.label,
+    items: section.items,
+  };
+}
+
+function createStaticDrill(section: SharedNavSection): NavDrillConfig {
+  return {
+    id: section.id,
+    parentLabel: section.label,
+    parentPath: section.parentPath,
+    routePrefix: section.routePrefix,
+    routeAliases: section.routeAliases,
+    sections: [{ items: section.items }],
+  };
+}
+
+function dedupeNavItems(items: NavItem[]): NavItem[] {
+  const seen = new Set<string>();
+  const deduped: NavItem[] = [];
+
+  for (const item of items) {
+    if (seen.has(item.path)) continue;
+    seen.add(item.path);
+    deduped.push(item);
+  }
+
+  return deduped;
+}
+
+const ASSETS_ITEM: NavItem = { label: 'Assets', icon: IconFolder, path: '/app/assets' };
+const FLOWS_ITEM: NavItem = { label: 'Flows', icon: IconFolderPlus, path: '/app/flows', drillId: 'flows' };
+const TRANSFORM_ITEM: NavItem = { label: 'Transform', icon: IconArrowsShuffle, path: '/app/transform' };
+const WORKBENCH_ITEM: NavItem = { label: 'Workbench', icon: IconFileCode, path: '/app/workspace', drillId: 'workbench' };
+const API_ITEM: NavItem = { label: 'API', icon: IconTerminal2, path: '/app/api-editor' };
+const TESTS_ITEM: NavItem = { label: 'Tests', icon: IconTestPipe, path: '/app/tests' };
+
+const INGEST_SECTION: SharedNavSection = {
+  id: 'ingest',
+  label: 'Ingest',
+  icon: IconScan,
+  parentPath: '/app/parse',
+  routePrefix: '/app/parse',
+  items: [
+    { label: 'Parse', icon: IconScan, path: '/app/parse' },
+    { label: 'Extract', icon: IconWand, path: '/app/extract' },
+    { label: 'Convert', icon: IconFileExport, path: '/app/convert' },
+    { label: 'Database', icon: IconDatabase, path: '/app/database' },
+    { label: 'Load', icon: IconPlayerPlay, path: '/app/load' },
+    { label: 'Schema', icon: IconSchema, path: '/app/schemas' },
+  ],
+};
+
+const BUILD_AI_SECTION: SharedNavSection = {
+  id: 'build-ai',
+  label: 'Build AI / Agents',
+  icon: IconRobot,
+  parentPath: '/app/onboarding/agents',
+  routePrefix: '/app/onboarding/agents',
+  routeAliases: ['/app/agents'],
+  items: [
+    { label: 'Agent Onboarding', icon: IconRobot, path: '/app/onboarding/agents' },
+    { label: 'Skills', icon: IconWand, path: '/app/skills' },
+    { label: 'MCP', icon: IconPlugConnected, path: '/app/mcp-tools' },
+  ],
+};
+
+const CONNECTIONS_SECTION: SharedNavSection = {
+  id: 'connections',
+  label: 'Connections',
+  icon: IconPlugConnected,
+  parentPath: '/app/marketplace/integrations',
+  routePrefix: '/app/marketplace/integrations',
+  items: [
+    { label: 'Integrations', icon: IconApps, path: '/app/marketplace/integrations' },
+    { label: 'Services', icon: IconServer, path: '/app/marketplace/services' },
+  ],
+};
+
+const PIPELINE_SERVICES_SECTION: SharedNavSection = {
+  id: 'pipeline-services',
+  label: 'Pipeline Services',
+  icon: IconTransform,
+  parentPath: '/app/pipeline-services',
+  routePrefix: '/app/pipeline-services',
+  routeAliases: ['/app/rag', '/app/knowledge-bases'],
+  items: [
+    { label: 'Knowledge Bases', icon: IconDatabase, path: '/app/pipeline-services/knowledge-bases' },
+    { label: 'Index Builder', icon: IconTransform, path: '/app/pipeline-services/index-builder' },
+  ],
+};
+
+const OBSERVABILITY_SECTION: SharedNavSection = {
+  id: 'observability',
+  label: 'Observability',
+  icon: IconActivity,
+  parentPath: '/app/observability',
+  routePrefix: '/app/observability',
+  items: [
+    { label: 'Telemetry', icon: IconActivity, path: '/app/observability/telemetry' },
+    { label: 'Traces', icon: IconArrowsShuffle, path: '/app/observability/traces' },
+    { label: 'Logs', icon: IconFileText, path: '/app/logs' },
+  ],
+};
+
+const SETTINGS_SECTION: SharedNavSection = {
+  id: 'settings',
+  label: 'Settings',
+  icon: IconSettings,
+  parentPath: '/app/settings',
+  routePrefix: '/app/settings',
+  items: [
+    { label: 'Account', icon: IconUserCircle, path: '/app/settings/profile' },
+    { label: 'Themes', icon: IconPalette, path: '/app/settings/themes' },
+    { label: 'Secrets', icon: IconLock, path: '/app/settings/secrets' },
+  ],
+};
+
+const SHARED_STATIC_SECTIONS: SharedNavSection[] = [
+  INGEST_SECTION,
+  BUILD_AI_SECTION,
+  CONNECTIONS_SECTION,
+  PIPELINE_SERVICES_SECTION,
+  OBSERVABILITY_SECTION,
+  SETTINGS_SECTION,
+];
+
+export const CLASSIC_LEAF_ITEMS: NavItem[] = [
+  ASSETS_ITEM,
+  FLOWS_ITEM,
+  TRANSFORM_ITEM,
+  WORKBENCH_ITEM,
+  API_ITEM,
+  TESTS_ITEM,
+];
+
+export const TOP_LEVEL_NAV: ClassicNavEntry[] = [
+  ASSETS_ITEM,
   'divider',
-  { label: 'Flows', icon: IconFolderPlus, path: '/app/flows' },
+  createClassicSection(INGEST_SECTION),
   'divider',
-  { label: 'Database', icon: IconDatabase, path: '/app/database' },
-  { label: 'Load', icon: IconPlayerPlay, path: '/app/load' },
-  { label: 'Schema', icon: IconSchema, path: '/app/schemas' },
+  createClassicSection(BUILD_AI_SECTION),
+  FLOWS_ITEM,
   'divider',
-  { label: 'Workbench', icon: IconFileCode, path: '/app/workspace' },
+  TRANSFORM_ITEM,
+  WORKBENCH_ITEM,
+  API_ITEM,
+  TESTS_ITEM,
   'divider',
-  { label: 'Integrations', icon: IconApps, path: '/app/marketplace/integrations' },
-  { label: 'Services', icon: IconServer, path: '/app/marketplace/services' },
-  { label: 'Secrets', icon: IconLock, path: '/app/settings/secrets' },
-  { label: 'API', icon: IconTerminal2, path: '/app/api-editor' },
+  createClassicSection(CONNECTIONS_SECTION),
   'divider',
-  { label: 'Tests', icon: IconTestPipe, path: '/app/tests' },
-  { label: 'Telemetry', icon: IconActivity, path: '/app/observability/telemetry' },
-  { label: 'Traces', icon: IconArrowsShuffle, path: '/app/observability/traces' },
-  { label: 'Logs', icon: IconFileText, path: '/app/logs' },
+  createClassicSection(PIPELINE_SERVICES_SECTION),
   'divider',
-  { label: 'Settings', icon: IconSettings, path: '/app/settings', drillId: 'settings' },
+  createClassicSection(OBSERVABILITY_SECTION),
+  'divider',
+  createClassicSection(SETTINGS_SECTION),
 ];
 
 export const PIPELINE_NAV: Array<NavItem | 'divider'> = [
-  { label: 'Assets', icon: IconFolder, path: '/app/assets' },
-  { label: 'Ingest', icon: IconScan, path: '/app/parse', drillId: 'ingest' },
-  { label: 'Knowledge Bases', icon: IconDatabase, path: '/app/knowledge-bases' },
+  ASSETS_ITEM,
+  { label: INGEST_SECTION.label, icon: INGEST_SECTION.icon, path: INGEST_SECTION.parentPath, drillId: INGEST_SECTION.id },
   'divider',
-  { label: 'Build AI / Agents', icon: IconRobot, path: '/app/onboarding/agents', drillId: 'build-ai' },
-  { label: 'Define Workflows', icon: IconFolderPlus, path: '/app/flows', drillId: 'flows' },
+  { label: BUILD_AI_SECTION.label, icon: BUILD_AI_SECTION.icon, path: BUILD_AI_SECTION.parentPath, drillId: BUILD_AI_SECTION.id },
+  FLOWS_ITEM,
   'divider',
-  { label: 'Connections', icon: IconPlugConnected, path: '/app/marketplace/integrations', drillId: 'connections' },
-  { label: 'Workbench', icon: IconFileCode, path: '/app/workspace', drillId: 'workbench' },
+  { label: CONNECTIONS_SECTION.label, icon: CONNECTIONS_SECTION.icon, path: CONNECTIONS_SECTION.parentPath, drillId: CONNECTIONS_SECTION.id },
+  WORKBENCH_ITEM,
   'divider',
-  { label: 'Pipeline Services', icon: IconTransform, path: '/app/rag', drillId: 'pipeline-services' },
-  { label: 'Observability', icon: IconActivity, path: '/app/observability', drillId: 'observability' },
+  { label: PIPELINE_SERVICES_SECTION.label, icon: PIPELINE_SERVICES_SECTION.icon, path: PIPELINE_SERVICES_SECTION.parentPath, drillId: PIPELINE_SERVICES_SECTION.id },
+  { label: OBSERVABILITY_SECTION.label, icon: OBSERVABILITY_SECTION.icon, path: OBSERVABILITY_SECTION.parentPath, drillId: OBSERVABILITY_SECTION.id },
   'divider',
-  { label: 'Settings', icon: IconSettings, path: '/app/settings', drillId: 'settings' },
+  { label: SETTINGS_SECTION.label, icon: SETTINGS_SECTION.icon, path: SETTINGS_SECTION.parentPath, drillId: SETTINGS_SECTION.id },
 ];
 
 /* ---- Nav style toggle (classic vs pipeline) ---- */
@@ -126,12 +274,21 @@ export function setNavStyle(style: NavStyle) {
 }
 
 export function getActiveNav(): Array<NavItem | 'divider'> {
-  return getNavStyle() === 'pipeline' ? PIPELINE_NAV : TOP_LEVEL_NAV;
+  return PIPELINE_NAV;
 }
 
-export const ALL_TOP_LEVEL_ITEMS: NavItem[] = [...TOP_LEVEL_NAV, ...PIPELINE_NAV].filter(
-  (entry): entry is NavItem => entry !== 'divider',
-);
+const CLASSIC_ROUTE_ITEMS = TOP_LEVEL_NAV.flatMap((entry) => {
+  if (entry === 'divider') return [];
+  if (isClassicNavSection(entry)) return entry.items;
+  return [entry];
+});
+
+const PIPELINE_TOP_LEVEL_ITEMS = PIPELINE_NAV.filter(isNavItem);
+
+export const ALL_TOP_LEVEL_ITEMS: NavItem[] = dedupeNavItems([
+  ...CLASSIC_ROUTE_ITEMS,
+  ...PIPELINE_TOP_LEVEL_ITEMS,
+]);
 
 const TOP_LEVEL_DRILL_BY_PATH = new Map(
   ALL_TOP_LEVEL_ITEMS
@@ -149,7 +306,6 @@ const FLOWS_DRILL: NavDrillConfig = {
   pathTemplate: '/app/flows/:flowId/:tab',
   sections: [
     {
-      label: 'Flow',
       items: [
         { label: 'Overview', icon: IconLayoutDashboard, path: 'overview' },
         { label: 'Topology', icon: IconTopologyRing3, path: 'topology' },
@@ -167,87 +323,13 @@ const FLOWS_DRILL: NavDrillConfig = {
   ],
 };
 
-const SETTINGS_DRILL: NavDrillConfig = {
-  id: 'settings',
-  parentLabel: 'Settings',
-  parentPath: '/app/settings',
-  routePrefix: '/app/settings',
-  sections: [
-    {
-      label: 'General',
-      items: [
-        { label: 'Account', icon: IconUserCircle, path: '/app/settings/profile' },
-        { label: 'Themes', icon: IconPalette, path: '/app/settings/themes' },
-        { label: 'Secrets', icon: IconLock, path: '/app/settings/secrets' },
-      ],
-    },
-  ],
-};
-
-/* ---- Pipeline drill configs ---- */
-
-const INGEST_DRILL: NavDrillConfig = {
-  id: 'ingest',
-  parentLabel: 'Ingest',
-  parentPath: '/app/parse',
-  routePrefix: '/app/__ingest__',
-  sections: [
-    {
-      label: 'Ingest',
-      items: [
-        { label: 'Parse', icon: IconScan, path: '/app/parse' },
-        { label: 'Extract', icon: IconWand, path: '/app/extract' },
-        { label: 'Convert', icon: IconFileExport, path: '/app/convert' },
-        { label: 'Database', icon: IconDatabase, path: '/app/database' },
-        { label: 'Load', icon: IconPlayerPlay, path: '/app/load' },
-        { label: 'Schema', icon: IconSchema, path: '/app/schemas' },
-      ],
-    },
-  ],
-};
-
-const BUILD_AI_DRILL: NavDrillConfig = {
-  id: 'build-ai',
-  parentLabel: 'Build AI / Agents',
-  parentPath: '/app/onboarding/agents',
-  routePrefix: '/app/__build-ai__',
-  routeAliases: ['/app/onboarding/agents', '/app/agents'],
-  sections: [
-    {
-      label: 'Build AI / Agents',
-      items: [
-        { label: 'Agent Onboarding', icon: IconRobot, path: '/app/onboarding/agents' },
-        { label: 'Skills', icon: IconWand, path: '/app/skills' },
-        { label: 'MCP', icon: IconPlugConnected, path: '/app/mcp-tools' },
-      ],
-    },
-  ],
-};
-
-const CONNECTIONS_DRILL: NavDrillConfig = {
-  id: 'connections',
-  parentLabel: 'Connections',
-  parentPath: '/app/marketplace/integrations',
-  routePrefix: '/app/__connections__',
-  sections: [
-    {
-      label: 'Connections',
-      items: [
-        { label: 'Integrations', icon: IconApps, path: '/app/marketplace/integrations' },
-        { label: 'Services', icon: IconServer, path: '/app/marketplace/services' },
-      ],
-    },
-  ],
-};
-
 const WORKBENCH_DRILL: NavDrillConfig = {
   id: 'workbench',
   parentLabel: 'Workbench',
   parentPath: '/app/workspace',
-  routePrefix: '/app/__workbench__',
+  routePrefix: '/app/workspace',
   sections: [
     {
-      label: 'Workbench',
       items: [
         { label: 'Flows', icon: IconFolderPlus, path: '/app/flows' },
         { label: 'Transform', icon: IconArrowsShuffle, path: '/app/transform' },
@@ -259,65 +341,18 @@ const WORKBENCH_DRILL: NavDrillConfig = {
   ],
 };
 
-const OBSERVABILITY_DRILL: NavDrillConfig = {
-  id: 'observability',
-  parentLabel: 'Observability',
-  parentPath: '/app/observability',
-  routePrefix: '/app/__observability__',
-  sections: [
-    {
-      label: 'Observability',
-      items: [
-        { label: 'Telemetry', icon: IconActivity, path: '/app/observability/telemetry' },
-        { label: 'Traces', icon: IconArrowsShuffle, path: '/app/observability/traces' },
-        { label: 'Logs', icon: IconFileText, path: '/app/logs' },
-      ],
-    },
-  ],
-};
+export const DRILL_CONFIGS: NavDrillConfig[] = [
+  FLOWS_DRILL,
+  createStaticDrill(SETTINGS_SECTION),
+  createStaticDrill(INGEST_SECTION),
+  createStaticDrill(BUILD_AI_SECTION),
+  createStaticDrill(CONNECTIONS_SECTION),
+  WORKBENCH_DRILL,
+  createStaticDrill(PIPELINE_SERVICES_SECTION),
+  createStaticDrill(OBSERVABILITY_SECTION),
+];
 
-const PIPELINE_SERVICES_DRILL: NavDrillConfig = {
-  id: 'pipeline-services',
-  parentLabel: 'Pipeline Services',
-  parentPath: '/app/rag',
-  routePrefix: '/app/rag',
-  sections: [
-    {
-      label: 'Pipeline Services',
-      items: [
-        { label: 'Index Builder', icon: IconTransform, path: '/app/rag/index-builder' },
-      ],
-    },
-  ],
-};
-
-const BENCHMARK_DRILL: NavDrillConfig = {
-  id: 'benchmark',
-  parentLabel: 'Benchmarks',
-  parentPath: '/app/agchain/benchmarks',
-  routePrefix: '/app/agchain/benchmarks/',
-  pathTemplate: '/app/agchain/benchmarks/:benchmarkId',
-  sections: [
-    {
-      label: '',
-      items: [
-        { label: 'Steps',      icon: IconClipboardList,  path: '#steps' },
-        { label: 'Questions',  icon: IconFileText,        path: '#questions' },
-        { label: 'Context',    icon: IconLayoutDashboard, path: '#context' },
-        { label: 'State',      icon: IconDatabase,        path: '#state' },
-        { label: 'Scoring',    icon: IconChartBar,        path: '#scoring' },
-        { label: 'Models',     icon: IconAtom2,           path: '#models' },
-        { label: 'Runner',     icon: IconPlayerPlay,      path: '#runner' },
-        { label: 'Validation', icon: IconTestPipe,        path: '#validation' },
-        { label: 'Runs',       icon: IconActivity,        path: '#runs' },
-      ],
-    },
-  ],
-};
-
-export const DRILL_CONFIGS: NavDrillConfig[] = [FLOWS_DRILL, SETTINGS_DRILL, INGEST_DRILL, BUILD_AI_DRILL, CONNECTIONS_DRILL, WORKBENCH_DRILL, PIPELINE_SERVICES_DRILL, OBSERVABILITY_DRILL, BENCHMARK_DRILL];
-
-const DRILL_BY_ID = new Map(DRILL_CONFIGS.map((c) => [c.id, c]));
+const DRILL_BY_ID = new Map(DRILL_CONFIGS.map((config) => [config.id, config]));
 
 export function getDrillConfig(drillId: string): NavDrillConfig | undefined {
   return DRILL_BY_ID.get(drillId);
@@ -333,11 +368,9 @@ export function findDrillByRoute(pathname: string): NavDrillConfig | null {
     if (!config.pathTemplate && pathname === config.parentPath) {
       return config;
     }
-    // Check if any item in this drill owns the current route
     for (const section of config.sections) {
       for (const item of section.items) {
         const owningTopLevelDrillId = TOP_LEVEL_DRILL_BY_PATH.get(item.path);
-        // Cross-links inside other drills should not steal a top-level drill landing page.
         if (pathname === item.path && owningTopLevelDrillId && owningTopLevelDrillId !== config.id) {
           continue;
         }
@@ -353,42 +386,3 @@ export function findDrillByRoute(pathname: string): NavDrillConfig | null {
 export function resolveFlowDrillPath(tabSlug: string, flowId: string): string {
   return `/app/flows/${encodeURIComponent(flowId)}/${tabSlug}`;
 }
-
-export function resolveBenchmarkDrillPath(hashSlug: string, benchmarkId: string): string {
-  return `/app/agchain/benchmarks/${encodeURIComponent(benchmarkId)}${hashSlug}`;
-}
-
-export const GLOBAL_MENUS: NavItem[] = [
-  { label: 'Flows', icon: IconFolderPlus, path: '/app/flows' },
-  { label: 'RAG', icon: IconTransform, path: '/app/rag' },
-  { label: 'Database', icon: IconDatabase, path: '/app/database' },
-];
-
-export const NAV_GROUPS: NavGroup[] = [
-  {
-    label: 'Editor',
-    items: [
-      { label: 'Schema', icon: IconSchema, path: '/app/schemas' },
-      { label: 'Workspace', icon: IconFileCode, path: '/app/workspace' },
-      { label: 'API', icon: IconTerminal2, path: '/app/api-editor' },
-    ],
-  },
-  {
-    label: 'Catalog',
-    items: [
-      { label: 'Integrations', icon: IconApps, path: '/app/marketplace/integrations' },
-      { label: 'Services', icon: IconServer, path: '/app/marketplace/services' },
-    ],
-  },
-  {
-    label: 'System',
-    items: [
-      { label: 'Tests', icon: IconTestPipe, path: '/app/tests' },
-    ],
-  },
-];
-
-
-
-
-

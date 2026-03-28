@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 import importlib.util
+import sys
 from pathlib import Path
 
 
 def _load_citation_integrity_module():
     repo_root = Path(__file__).resolve().parents[1]
-    module_path = repo_root / "runspecs" / "3-STEP-RUN" / "citation_integrity.py"
+    module_path = (
+        repo_root / "runspecs" / "3-STEP-RUN" / "scorers" / "citation_integrity.py"
+    )
     if not module_path.exists():
         raise AssertionError(f"Missing module file: {module_path}")
 
@@ -15,6 +18,7 @@ def _load_citation_integrity_module():
         raise AssertionError(f"Failed to load module spec for: {module_path}")
 
     module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
     spec.loader.exec_module(module)
     return module
 
@@ -42,16 +46,16 @@ def test_score_citation_integrity_basic_validity_and_rp_usage() -> None:
         citations_field="citations",
     )
 
-    assert out["citations_used_d2"] == ["118 U.S. 425", "84 F.2d 285"]
-    assert out["citations_used_j3"] == ["268 U.S. 397", "84 F.2d 285"]
+    assert out["citations_used_d9"] == ["118 U.S. 425", "84 F.2d 285"]
+    assert out["citations_used_j10"] == ["268 U.S. 397", "84 F.2d 285"]
 
-    assert out["anchor_validity"]["d2"]["invalid"] == []
-    assert out["anchor_validity"]["j3"]["invalid"] == []
+    assert out["anchor_validity"]["d9"]["invalid"] == []
+    assert out["anchor_validity"]["j10"]["invalid"] == []
 
-    assert out["rp_usage"]["j3"]["in_rp"] == ["84 F.2d 285"]
-    assert out["rp_usage"]["j3"]["not_in_rp"] == ["268 U.S. 397"]
+    assert out["rp_usage"]["j10"]["in_rp"] == ["84 F.2d 285"]
+    assert out["rp_usage"]["j10"]["not_in_rp"] == ["268 U.S. 397"]
 
-    assert out["out_of_scope"]["d2"] == ["122 Fla. 454"]
+    assert out["out_of_scope"]["d9"] == ["122 Fla. 454"]
     assert out["errors"] == []
 
 
@@ -77,7 +81,7 @@ def test_score_citation_integrity_falls_back_when_citations_field_missing() -> N
         citations_field="citations",
     )
 
-    assert out["citations_used_d2"] == ["118 U.S. 425", "84 F.2d 285"]
+    assert out["citations_used_d9"] == ["118 U.S. 425", "84 F.2d 285"]
     assert any("fallback" in e.lower() or "missing" in e.lower() for e in out["errors"])
 
 
@@ -95,5 +99,5 @@ def test_score_citation_integrity_handles_nominative_us_reports_format() -> None
         citations_field="citations",
     )
 
-    assert out["citations_used_d2"] == ["35 U.S. 368"]
-    assert out["anchor_validity"]["d2"]["invalid"] == []
+    assert out["citations_used_d9"] == ["35 U.S. 368"]
+    assert out["anchor_validity"]["d9"]["invalid"] == []

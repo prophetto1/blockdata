@@ -2,9 +2,11 @@ from __future__ import annotations
 
 from pathlib import Path
 
+REPO_ROOT = Path(__file__).resolve().parents[1]
 
-def _read(path: str) -> str:
-    return Path(path).read_text(encoding="utf-8")
+
+def _read(relative_path: str) -> str:
+    return (REPO_ROOT / relative_path).read_text(encoding="utf-8")
 
 
 def test_irac_steps_are_marked_judge_required() -> None:
@@ -19,4 +21,3 @@ def test_irac_steps_are_marked_judge_required() -> None:
 def test_irac_scoring_does_not_claim_deterministic_only() -> None:
     s6 = _read("chain/scoring/s6_composite.py")
     assert "DETERMINISTIC ONLY" not in s6
-

@@ -4,8 +4,10 @@ import asyncio
 import importlib
 import importlib.util
 import json
+import os
 import subprocess
 import sys
+import threading
 import types
 from pathlib import Path
 from typing import Any, get_type_hints
@@ -17,7 +19,7 @@ RUNSPEC_ROOT = Path(__file__).resolve().parents[1] / "runspecs" / "3-STEP-RUN"
 if str(RUNSPEC_ROOT) not in sys.path:
     sys.path.insert(0, str(RUNSPEC_ROOT))
 
-from adapters.model_adapter import ModelAdapter
+from adapters.model_adapter import AnthropicAdapter, ModelAdapter, OpenAIAdapter
 from runtime.execution_backend import DirectBackend, resolve_backend
 from runtime.execution_result import ExecutionResult
 from runtime.runtime_config import RuntimeConfig
@@ -90,6 +92,31 @@ def test_direct_backend_forwards_temperature_and_max_tokens() -> None:
             "max_tokens": 123,
         }
     ]
+
+
+def test_direct_backend_offloads_sync_adapter_call_to_worker_thread() -> None:
+    class ThreadRecordingAdapter(DummyAdapter):
+        def __init__(self) -> None:
+            super().__init__(response="threaded")
+            self.thread_ids: list[int] = []
+
+        def call_model(
+            self,
+            messages: list[dict[str, str]],
+            *,
+            temperature: float = 0.0,
+            max_tokens: int = 4096,
+        ) -> str:
+            self.thread_ids.append(threading.get_ident())
+            return super().call_model(messages, temperature=temperature, max_tokens=max_tokens)
+
+    adapter = ThreadRecordingAdapter()
+    backend = DirectBackend(adapter)
+
+    asyncio.run(backend.execute([{"role": "user", "content": "hello"}]))
+
+    assert adapter.thread_ids
+    assert adapter.thread_ids[0] != threading.get_ident()
 
 
 def test_resolve_backend_inspect_raises_actionable_import_error() -> None:
@@ -168,6 +195,112 @@ def test_inspect_backend_execute_maps_model_output(monkeypatch: pytest.MonkeyPat
             "max_tokens": 321,
         }
     ]
+
+
+def test_inspect_backend_execute_supports_assistant_messages(monkeypatch: pytest.MonkeyPatch) -> None:
+    captured: dict[str, Any] = {}
+    model_module = _make_fake_inspect_model_module(captured)
+    real_import_module = importlib.import_module
+
+    def fake_import_module(name: str) -> Any:
+        if name == "inspect_ai.model":
+            return model_module
+        return real_import_module(name)
+
+    monkeypatch.setattr(importlib, "import_module", fake_import_module)
+
+    from runtime.inspect_backend import InspectBackend
+
+    backend = InspectBackend(provider="openai", model="gpt-4o")
+    messages = [
+        {"role": "system", "content": "system prompt"},
+        {"role": "assistant", "content": "previous answer"},
+        {"role": "user", "content": "follow-up"},
+    ]
+
+    asyncio.run(backend.execute(messages))
+
+    assert captured["generate_calls"] == [
+        {
+            "messages": [
+                {"role": "system", "content": "system prompt"},
+                {"role": "assistant", "content": "previous answer"},
+                {"role": "user", "content": "follow-up"},
+            ],
+            "temperature": 0.0,
+            "max_tokens": 4096,
+        }
+    ]
+
+
+def test_openai_adapter_reuses_client_across_calls(monkeypatch: pytest.MonkeyPatch) -> None:
+    client_inits: list[dict[str, Any]] = []
+    create_calls: list[dict[str, Any]] = []
+
+    class FakeOpenAI:
+        def __init__(self, *, api_key: str, base_url: str | None = None) -> None:
+            client_inits.append({"api_key": api_key, "base_url": base_url})
+            self.chat = types.SimpleNamespace(
+                completions=types.SimpleNamespace(create=self._create)
+            )
+
+        def _create(self, **kwargs: Any) -> Any:
+            create_calls.append(kwargs)
+            return types.SimpleNamespace(
+                choices=[types.SimpleNamespace(message=types.SimpleNamespace(content="ok"))]
+            )
+
+    monkeypatch.setitem(sys.modules, "openai", types.SimpleNamespace(OpenAI=FakeOpenAI))
+
+    adapter = OpenAIAdapter(model="gpt-4o-mini", api_key="test-key", base_url="http://localhost")
+    messages = [{"role": "user", "content": "hello"}]
+
+    assert adapter.call_model(messages) == "ok"
+    assert adapter.call_model(messages, temperature=0.2, max_tokens=128) == "ok"
+
+    assert client_inits == [{"api_key": "test-key", "base_url": "http://localhost"}]
+    assert [call["temperature"] for call in create_calls] == [0.0, 0.2]
+    assert [call["max_tokens"] for call in create_calls] == [4096, 128]
+
+
+def test_anthropic_adapter_reuses_client_and_preserves_all_system_messages(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client_inits: list[str] = []
+    create_calls: list[dict[str, Any]] = []
+
+    class FakeAnthropic:
+        def __init__(self, *, api_key: str) -> None:
+            client_inits.append(api_key)
+            self.messages = types.SimpleNamespace(create=self._create)
+
+        def _create(self, **kwargs: Any) -> Any:
+            create_calls.append(kwargs)
+            return types.SimpleNamespace(
+                content=[types.SimpleNamespace(text="anthropic ok")]
+            )
+
+    monkeypatch.setitem(sys.modules, "anthropic", types.SimpleNamespace(Anthropic=FakeAnthropic))
+
+    adapter = AnthropicAdapter(model="claude-test", api_key="anthropic-key")
+    messages = [
+        {"role": "system", "content": "system one"},
+        {"role": "user", "content": "user one"},
+        {"role": "system", "content": "system two"},
+        {"role": "assistant", "content": "assistant one"},
+    ]
+
+    assert adapter.call_model(messages) == "anthropic ok"
+    assert adapter.call_model(messages, temperature=0.5, max_tokens=99) == "anthropic ok"
+
+    assert client_inits == ["anthropic-key"]
+    assert create_calls[0]["system"] == "system one\n\nsystem two"
+    assert create_calls[0]["messages"] == [
+        {"role": "user", "content": "user one"},
+        {"role": "assistant", "content": "assistant one"},
+    ]
+    assert create_calls[1]["temperature"] == 0.5
+    assert create_calls[1]["max_tokens"] == 99
 
 
 def test_run_3s_help_includes_execution_backend_flag() -> None:
@@ -279,6 +412,26 @@ def test_run_single_eu_emits_execution_metadata_and_manifest(tmp_path: Path, mon
     assert "replay_minimal" in manifest["reproducibility_key"]
 
 
+def test_run_3s_load_repo_env_uses_compat_parser_without_overwriting_existing_env(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    module = _load_run_3s_module()
+    env_file = tmp_path / ".env"
+    env_file.write_text(
+        "# comment\nNEW_FROM_FILE=new-value\nEXISTING_FROM_ENV=from-file\nINVALID\n",
+        encoding="utf-8",
+    )
+    monkeypatch.delenv("NEW_FROM_FILE", raising=False)
+    monkeypatch.setenv("EXISTING_FROM_ENV", "from-env")
+
+    loaded = module._load_repo_env(env_file)
+
+    assert loaded is True
+    assert os.environ["NEW_FROM_FILE"] == "new-value"
+    assert os.environ["EXISTING_FROM_ENV"] == "from-env"
+
+
 def _make_fake_inspect_model_module(captured: dict[str, Any]) -> types.SimpleNamespace:
     class FakeGenerateConfig:
         def __init__(self, *, temperature: float, max_tokens: int) -> None:
@@ -293,6 +446,11 @@ def _make_fake_inspect_model_module(captured: dict[str, Any]) -> types.SimpleNam
     class FakeChatMessageUser:
         def __init__(self, content: str) -> None:
             self.role = "user"
+            self.content = content
+
+    class FakeChatMessageAssistant:
+        def __init__(self, content: str) -> None:
+            self.role = "assistant"
             self.content = content
 
     class FakeUsage:
@@ -330,6 +488,7 @@ def _make_fake_inspect_model_module(captured: dict[str, Any]) -> types.SimpleNam
         GenerateConfig=FakeGenerateConfig,
         ChatMessageSystem=FakeChatMessageSystem,
         ChatMessageUser=FakeChatMessageUser,
+        ChatMessageAssistant=FakeChatMessageAssistant,
     )
 
 

@@ -2,8 +2,11 @@ import { describe, expect, it } from 'vitest';
 
 import {
   TOP_LEVEL_NAV,
+  PIPELINE_NAV,
   ALL_TOP_LEVEL_ITEMS,
   BOTTOM_RAIL_NAV,
+  isNavItem,
+  isClassicNavSection,
   getDrillConfig,
   findDrillByRoute,
   resolveFlowDrillPath,
@@ -14,14 +17,15 @@ describe('nav-config side rail', () => {
     const paths = ALL_TOP_LEVEL_ITEMS.map((item) => item.path);
 
     expect(paths).toContain('/app/assets');
-    expect(paths).toContain('/app/knowledge-bases');
+    expect(paths).toContain('/app/pipeline-services');
+    expect(paths).toContain('/app/pipeline-services/knowledge-bases');
     expect(paths).toContain('/app/onboarding/agents');
     expect(paths).toContain('/app/parse');
     expect(paths).toContain('/app/extract');
-    expect(paths).toContain('/app/rag');
+    expect(paths).not.toContain('/app/rag');
+    expect(paths).not.toContain('/app/knowledge-bases');
     expect(paths).toContain('/app/flows');
     expect(paths).toContain('/app/database');
-    expect(paths).toContain('/app/settings/secrets');
     expect(paths).toContain('/app/logs');
     expect(paths).toContain('/app/settings');
     expect(paths).not.toContain('/app/elt');
@@ -42,43 +46,20 @@ describe('nav-config side rail', () => {
 
     expect(paths).toContain('/app/extract');
     expect(paths).toContain('/app/transform');
-    expect(paths).toContain('/app/knowledge-bases');
+    expect(paths).toContain('/app/pipeline-services/knowledge-bases');
     expect(paths).toContain('/app/onboarding/agents');
     expect(paths).toContain('/app/schemas');
     expect(paths).toContain('/app/api-editor');
     expect(paths).toContain('/app/marketplace/integrations');
     expect(paths).toContain('/app/marketplace/services');
-    expect(paths).toContain('/app/settings/secrets');
     expect(paths).toContain('/app/tests');
     expect(paths).not.toContain('/app/docs');
   });
 
-
-  it('places Workspace in its own rail section, above Integrations', () => {
-    const schemaIndex = TOP_LEVEL_NAV.findIndex(
-      (entry) => entry !== 'divider' && entry.path === '/app/schemas',
-    );
-    const workspaceIndex = TOP_LEVEL_NAV.findIndex(
-      (entry) => entry !== 'divider' && entry.path === '/app/workspace',
-    );
-    const integrationsIndex = TOP_LEVEL_NAV.findIndex(
-      (entry) => entry !== 'divider' && entry.path === '/app/marketplace/integrations',
-    );
-
-    expect(schemaIndex).toBeGreaterThanOrEqual(0);
-    expect(workspaceIndex).toBe(schemaIndex + 2); // divider between schema and workspace
-    expect(TOP_LEVEL_NAV[workspaceIndex - 1]).toBe('divider');
-    expect(TOP_LEVEL_NAV[workspaceIndex + 1]).toBe('divider');
-    expect(integrationsIndex).toBe(workspaceIndex + 2); // divider then integrations
-  });
-  it('places Extract, Transform, Convert, RAG in sequence in the top-level nav', () => {
+  it('does not expose RAG as a user-facing nav label', () => {
     const labels = ALL_TOP_LEVEL_ITEMS.map((item) => item.label);
-    const extractIdx = labels.indexOf('Extract');
 
-    expect(extractIdx).toBeGreaterThanOrEqual(0);
-    expect(labels.indexOf('Transform')).toBe(extractIdx + 1);
-    expect(labels.indexOf('Convert')).toBe(extractIdx + 2);
-    expect(labels.indexOf('RAG')).toBe(extractIdx + 3);
+    expect(labels).not.toContain('RAG');
   });
 
   it('has dividers in TOP_LEVEL_NAV', () => {
@@ -94,8 +75,20 @@ describe('nav-config side rail', () => {
     expect(drillIds).toContain('settings');
   });
 
+  it('uses the flows drill in classic view and keeps secrets out of classic top-level nav', () => {
+    const classicFlows = TOP_LEVEL_NAV.find(
+      (entry) => isNavItem(entry) && entry.path === '/app/flows',
+    );
+    const classicSecrets = TOP_LEVEL_NAV.find(
+      (entry) => isNavItem(entry) && entry.path === '/app/settings/secrets',
+    );
+
+    expect(classicFlows && classicFlows !== 'divider' ? classicFlows.drillId : null).toBe('flows');
+    expect(classicSecrets).toBeUndefined();
+  });
+
   it('keeps Assets label aligned across classic and pipeline nav', () => {
-    const classicAssets = TOP_LEVEL_NAV.find((entry) => entry !== 'divider' && entry.path === '/app/assets');
+    const classicAssets = TOP_LEVEL_NAV.find((entry) => isNavItem(entry) && entry.path === '/app/assets');
     const activeAssets = ALL_TOP_LEVEL_ITEMS.filter((item) => item.path === '/app/assets').map((item) => item.label);
 
     expect(classicAssets && classicAssets !== 'divider' ? classicAssets.label : null).toBe('Assets');
@@ -104,27 +97,60 @@ describe('nav-config side rail', () => {
   });
 
   it('exposes Agent Onboarding in classic view', () => {
-    const classicOnboarding = TOP_LEVEL_NAV.find(
-      (entry) => entry !== 'divider' && entry.path === '/app/onboarding/agents',
+    const classicBuildAi = TOP_LEVEL_NAV.find(
+      (entry) => isClassicNavSection(entry) && entry.label === 'Build AI / Agents',
     );
 
-    expect(classicOnboarding && classicOnboarding !== 'divider' ? classicOnboarding.label : null).toBe('Agent Onboarding');
+    expect(classicBuildAi && classicBuildAi !== 'divider' ? classicBuildAi.items.some((item) => item.path === '/app/onboarding/agents') : false).toBe(true);
   });
 
   it('uses Ingest as the classic top-level label for /app/parse', () => {
     const classicParse = TOP_LEVEL_NAV.find(
-      (entry) => entry !== 'divider' && entry.path === '/app/parse',
+      (entry) => isClassicNavSection(entry) && entry.label === 'Ingest',
     );
 
-    expect(classicParse && classicParse !== 'divider' ? classicParse.label : null).toBe('Ingest');
+    expect(classicParse && classicParse !== 'divider' ? classicParse.items.some((item) => item.path === '/app/parse') : false).toBe(true);
   });
 
   it('uses Workbench as the classic top-level label for /app/workspace', () => {
     const classicWorkspace = TOP_LEVEL_NAV.find(
-      (entry) => entry !== 'divider' && entry.path === '/app/workspace',
+      (entry) => isNavItem(entry) && entry.path === '/app/workspace',
     );
 
     expect(classicWorkspace && classicWorkspace !== 'divider' ? classicWorkspace.label : null).toBe('Workbench');
+  });
+
+  it('renders pipeline services as a classic section heading instead of a RAG leaf', () => {
+    const pipelineServicesSection = TOP_LEVEL_NAV.find(
+      (entry) => isClassicNavSection(entry) && entry.label === 'Pipeline Services',
+    );
+    const classicRag = TOP_LEVEL_NAV.find(
+      (entry) => isNavItem(entry) && entry.label === 'RAG',
+    );
+
+    expect(pipelineServicesSection && pipelineServicesSection !== 'divider'
+      ? pipelineServicesSection.items.map((item) => item.path)
+      : []).toEqual([
+      '/app/pipeline-services/knowledge-bases',
+      '/app/pipeline-services/index-builder',
+    ]);
+    expect(classicRag).toBeUndefined();
+  });
+
+  it('uses Flows as the pipeline label and nests knowledge bases under Pipeline Services', () => {
+    const pipelineFlows = PIPELINE_NAV.find(
+      (entry) => entry !== 'divider' && entry.path === '/app/flows',
+    );
+    const pipelineServices = PIPELINE_NAV.find(
+      (entry) => entry !== 'divider' && entry.drillId === 'pipeline-services',
+    );
+    const pipelineKnowledgeBases = PIPELINE_NAV.find(
+      (entry) => entry !== 'divider' && entry.label === 'Knowledge Bases',
+    );
+
+    expect(pipelineFlows && pipelineFlows !== 'divider' ? pipelineFlows.label : null).toBe('Flows');
+    expect(pipelineServices && pipelineServices !== 'divider' ? pipelineServices.path : null).toBe('/app/pipeline-services');
+    expect(pipelineKnowledgeBases).toBeUndefined();
   });
 });
 
@@ -152,20 +178,12 @@ describe('drill configs', () => {
     const sectionLabels = settings.sections.map((s) => s.label);
     const allPaths = settings.sections.flatMap((section) => section.items.map((item) => item.path));
 
-    expect(sectionLabels).toEqual(['General']);
+    expect(sectionLabels).toEqual([undefined]);
     expect(allPaths).toEqual([
       '/app/settings/profile',
       '/app/settings/themes',
       '/app/settings/secrets',
     ]);
-  });
-
-  it('exposes secrets in classic view', () => {
-    const classicSecrets = TOP_LEVEL_NAV.find(
-      (entry) => entry !== 'divider' && entry.path === '/app/settings/secrets',
-    );
-
-    expect(classicSecrets && classicSecrets !== 'divider' ? classicSecrets.label : null).toBe('Secrets');
   });
 
   it('observability drill exposes logs', () => {
@@ -182,8 +200,10 @@ describe('drill configs', () => {
     const labels = pipelineServices.sections.flatMap((section) => section.items.map((item) => item.label));
     const paths = pipelineServices.sections.flatMap((section) => section.items.map((item) => item.path));
 
+    expect(labels).toContain('Knowledge Bases');
+    expect(paths).toContain('/app/pipeline-services/knowledge-bases');
     expect(labels).toContain('Index Builder');
-    expect(paths).toContain('/app/rag/index-builder');
+    expect(paths).toContain('/app/pipeline-services/index-builder');
     expect(labels).not.toContain('RAG');
   });
 
@@ -229,6 +249,10 @@ describe('drill configs', () => {
     expect(findDrillByRoute('/app/settings/secrets')?.id).toBe('settings');
     expect(findDrillByRoute('/app/logs')?.id).toBe('observability');
     expect(findDrillByRoute('/app/transform')?.id).toBe('workbench');
+    expect(findDrillByRoute('/app/pipeline-services')?.id).toBe('pipeline-services');
+    expect(findDrillByRoute('/app/pipeline-services/knowledge-bases')?.id).toBe('pipeline-services');
+    expect(findDrillByRoute('/app/pipeline-services/index-builder')?.id).toBe('pipeline-services');
+    expect(findDrillByRoute('/app/knowledge-bases')?.id).toBe('pipeline-services');
     expect(findDrillByRoute('/app/rag')?.id).toBe('pipeline-services');
     expect(findDrillByRoute('/app/rag/index-builder')?.id).toBe('pipeline-services');
     expect(findDrillByRoute('/app/elt')).toBeNull();

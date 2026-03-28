@@ -1,6 +1,7 @@
 {
   "scripts": {
-    "capture-server": "node scripts/capture-server.mjs"
+    "capture-server": "node scripts/capture-server.mjs",
+    "platform-api:dev": "powershell -ExecutionPolicy Bypass -File scripts/start-platform-api.ps1"
   },
   "dependencies": {
     "pg": "^8.19.0",

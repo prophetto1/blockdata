@@ -1,6 +1,6 @@
 # services/platform-api/tests/test_routes.py
 import pytest
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 from fastapi.testclient import TestClient
 
 
@@ -188,5 +188,36 @@ def test_two_apps_with_otel_enabled(monkeypatch):
         assert c1.get("/health").status_code == 200
     with TestClient(app2) as c2:
         assert c2.get("/health").status_code == 200
+
+    get_settings.cache_clear()
+
+
+def test_app_skips_background_workers_without_supabase_admin_env(monkeypatch):
+    monkeypatch.setenv("CONVERSION_SERVICE_KEY", "test-key")
+    monkeypatch.delenv("SUPABASE_URL", raising=False)
+    monkeypatch.delenv("SUPABASE_SERVICE_ROLE_KEY", raising=False)
+
+    from app.core.config import get_settings
+    get_settings.cache_clear()
+
+    import app.main as main_module
+
+    started: list[str] = []
+    warnings: list[str] = []
+
+    monkeypatch.setattr(main_module, "init_pool", lambda: MagicMock(status=lambda: "stubbed"))
+    monkeypatch.setattr(main_module, "shutdown_pool", lambda: None)
+    monkeypatch.setattr(main_module, "start_pipeline_jobs_worker", lambda: started.append("pipeline"))
+    monkeypatch.setattr(main_module, "stop_pipeline_jobs_worker", lambda: None)
+    monkeypatch.setattr(main_module, "start_storage_cleanup_worker", lambda: started.append("storage"))
+    monkeypatch.setattr(main_module, "stop_storage_cleanup_worker", lambda: None)
+    monkeypatch.setattr(main_module.logger, "warning", lambda message, *args, **kwargs: warnings.append(str(message)))
+
+    app = main_module.create_app()
+    with TestClient(app) as client:
+        assert client.get("/health").status_code == 200
+
+    assert started == []
+    assert "Skipping background workers because SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY is not set" in warnings
 
     get_settings.cache_clear()

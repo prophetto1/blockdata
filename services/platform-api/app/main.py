@@ -48,6 +48,16 @@ def configure_logging(settings) -> None:
 logger = logging.getLogger("platform-api")
 
 
+def _can_start_supabase_workers(settings) -> bool:
+    if settings.supabase_url and settings.supabase_service_role_key:
+        return True
+
+    logger.warning(
+        "Skipping background workers because SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY is not set"
+    )
+    return False
+
+
 def create_app() -> FastAPI:
     settings = get_settings()
     configure_logging(settings)
@@ -64,8 +74,9 @@ def create_app() -> FastAPI:
         logger.info(f"Conversion pool: {pool.status()}")
 
         # Start storage cleanup worker
-        start_storage_cleanup_worker()
-        start_pipeline_jobs_worker()
+        if _can_start_supabase_workers(settings):
+            start_storage_cleanup_worker()
+            start_pipeline_jobs_worker()
 
         yield
 

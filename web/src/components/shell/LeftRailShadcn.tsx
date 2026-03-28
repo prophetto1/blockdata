@@ -26,6 +26,7 @@ import {
   PIPELINE_NAV,
   ALL_TOP_LEVEL_ITEMS,
   BOTTOM_RAIL_NAV,
+  CLASSIC_LEAF_ITEMS,
   findDrillByRoute,
   getDrillConfig,
   resolveFlowDrillPath,
@@ -33,7 +34,10 @@ import {
   getNavStyle,
   setNavStyle,
   getActiveNav,
+  isClassicNavSection,
+  isNavItem,
   type NavItem,
+  type ClassicNavEntry,
   type NavDrillConfig,
   type NavStyle,
 } from '@/components/shell/nav-config';
@@ -265,6 +269,7 @@ export function LeftRailShadcn({
 
   const [navStyle, setNavStyleState] = useState<NavStyle>(getNavStyle);
   const activeNav = navStyle === 'pipeline' ? getActiveNav() : TOP_LEVEL_NAV;
+  const compactNav = navStyle === 'pipeline' ? PIPELINE_NAV.filter(isNavItem) : CLASSIC_LEAF_ITEMS;
   const toggleNavStyle = () => {
     const next: NavStyle = navStyle === 'classic' ? 'pipeline' : 'classic';
     setNavStyle(next);
@@ -277,7 +282,7 @@ export function LeftRailShadcn({
   const validDrillIds = useMemo(() => {
     const nav = navStyle === 'pipeline' ? PIPELINE_NAV : TOP_LEVEL_NAV;
     const topLevelIds = nav
-      .filter((entry): entry is NavItem => entry !== 'divider' && !!entry.drillId)
+      .filter((entry): entry is NavItem => isNavItem(entry) && !!entry.drillId)
       .map((item) => item.drillId!);
     const sectionIds = navSections
       ? navSections.flatMap((s) => s.items).filter((i) => !!i.drillId).map((i) => i.drillId!)
@@ -357,6 +362,73 @@ export function LeftRailShadcn({
 
   /* ------ Render helpers ------ */
 
+  const renderClassicEntry = (entry: ClassicNavEntry, key: string) => {
+    if (entry === 'divider') {
+      return <div key={key} className={railDividerClass} />;
+    }
+
+    if (isClassicNavSection(entry)) {
+      return (
+        <div key={key}>
+          <div className={drillSectionLabelClass}>{entry.label}</div>
+          <div className={railStackClass}>
+            {entry.items.map((item) => {
+              const ItemIcon = item.icon;
+              const isActive = activeMenuPath === item.path;
+
+              return (
+                <button
+                  key={item.path}
+                  type="button"
+                  onClick={() => navigateTo(item.path)}
+                  className={cn(
+                    railItemClass,
+                    isActive
+                      ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                      : 'text-sidebar-foreground/90 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+                  )}
+                >
+                  <ItemIcon size={14} stroke={1.75} className="shrink-0" />
+                  <span className="truncate">{item.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      );
+    }
+
+    const item = entry;
+    const ItemIcon = item.icon;
+    const isActive = activeMenuPath === item.path;
+    const hasDrill = Boolean(item.drillId);
+
+    return (
+      <button
+        key={item.path}
+        type="button"
+        onClick={() => {
+          if (hasDrill) {
+            setActiveDrillId(item.drillId!);
+          }
+          navigateTo(item.path);
+        }}
+        className={cn(
+          railItemClass,
+          isActive
+            ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+            : 'text-sidebar-foreground/90 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+        )}
+      >
+        <ItemIcon size={14} stroke={1.75} className="shrink-0" />
+        <span className="truncate">{item.label}</span>
+        {hasDrill && (
+          <IconChevronRight size={isClassicView ? 12 : 14} stroke={1.75} className="ml-auto shrink-0 text-sidebar-foreground/40" />
+        )}
+      </button>
+    );
+  };
+
   const renderTopLevelNav = () => (
     <div className={railStackClass}>
       {activeNav.map((entry, index) => {
@@ -364,7 +436,11 @@ export function LeftRailShadcn({
           return <div key={`divider-${index}`} className={railDividerClass} />;
         }
 
-        const item = entry;
+        if (navStyle === 'classic') {
+          return renderClassicEntry(entry as ClassicNavEntry, `classic-${index}`);
+        }
+
+        const item = entry as NavItem;
         const ItemIcon = item.icon;
         const isActive = activeMenuPath === item.path;
         const hasDrill = Boolean(item.drillId);
@@ -415,15 +491,10 @@ export function LeftRailShadcn({
 
         <div className={railDividerClass} />
 
-        {/* Sections */}
+        {/* Flat child list */}
         {config.sections.map((section, sectionIndex) => (
           <div key={section.label ?? sectionIndex}>
             {sectionIndex > 0 && <div className={railDividerClass} />}
-            {section.label && (
-              <div className={drillSectionLabelClass}>
-                {section.label}
-              </div>
-            )}
             <div className={railStackClass}>
               {section.items.map((item) => {
                 const ItemIcon = item.icon;
@@ -479,12 +550,10 @@ export function LeftRailShadcn({
 
   const renderCompactNav = () => (
     <div className="flex flex-col items-center gap-0.5 pt-1">
-      {activeNav.map((entry, index) => {
-        if (entry === 'divider') {
+      {compactNav.map((item, index) => {
+        if (!item) {
           return <div key={`divider-${index}`} className="my-1 h-px w-6 bg-sidebar-border" />;
         }
-
-        const item = entry;
         const ItemIcon = item.icon;
         const isActive = activeMenuPath === item.path;
 

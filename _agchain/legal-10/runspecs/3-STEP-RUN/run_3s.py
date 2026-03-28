@@ -23,14 +23,37 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-# Load .env from repo root (E:\agchain\.env)
+def _load_repo_env(env_file: Path) -> bool:
+    """Load a repo-local .env without overriding an already configured process env.
+
+    Prefer python-dotenv when it is available. Fall back to a small compatibility
+    parser so local CLI runs do not depend on an extra package.
+    """
+    if not env_file.exists():
+        return False
+
+    try:
+        from dotenv import load_dotenv
+    except ImportError:
+        for raw_line in env_file.read_text(encoding="utf-8").splitlines():
+            line = raw_line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, value = line.split("=", 1)
+            value = value.strip()
+            if len(value) >= 2 and value[0] == value[-1] and value[0] in {'"', "'"}:
+                value = value[1:-1]
+            os.environ.setdefault(key.strip(), value)
+        return True
+
+    load_dotenv(env_file, override=False)
+    return True
+
+
+# Load .env from the repo root for local runner invocations.
 _REPO_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 _ENV_FILE = _REPO_ROOT / ".env"
-if _ENV_FILE.exists():
-    for _line in _ENV_FILE.read_text(encoding="utf-8").splitlines():
-        if "=" in _line and not _line.startswith("#"):
-            _k, _v = _line.split("=", 1)
-            os.environ.setdefault(_k.strip(), _v.strip())
+_load_repo_env(_ENV_FILE)
 
 # Ensure the runspec root is on sys.path for imports
 _RUNSPEC_ROOT = Path(__file__).resolve().parent

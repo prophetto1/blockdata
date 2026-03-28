@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 
@@ -55,3 +56,41 @@ def test_deploy_script_owns_otel_contract() -> None:
 
     # Secret-backed OTLP headers support
     assert "OTEL_EXPORTER_OTLP_HEADERS=" in script_text
+
+
+def test_windows_start_dev_script_loads_root_env_and_runs_uvicorn() -> None:
+    script_path = Path(__file__).resolve().parents[3] / "scripts" / "start-platform-api.ps1"
+    script_text = script_path.read_text(encoding="utf-8")
+
+    assert script_path.exists(), "Windows dev startup should have a dedicated PowerShell launcher"
+    assert ".env" in script_text
+    assert "services\\platform-api" in script_text or "services/platform-api" in script_text
+    assert "uvicorn" in script_text
+    assert "app.main:app" in script_text
+
+
+def test_windows_start_dev_script_declares_param_block_before_executable_statements() -> None:
+    script_path = Path(__file__).resolve().parents[3] / "scripts" / "start-platform-api.ps1"
+    lines = script_path.read_text(encoding="utf-8").splitlines()
+
+    first_meaningful = next(
+        (line.strip() for line in lines if line.strip() and not line.strip().startswith("#")),
+        "",
+    )
+
+    assert first_meaningful.startswith("param("), "PowerShell launcher must declare param() before executable statements"
+
+
+def test_windows_start_dev_script_avoids_reserved_host_parameter_name() -> None:
+    script_path = Path(__file__).resolve().parents[3] / "scripts" / "start-platform-api.ps1"
+    script_text = script_path.read_text(encoding="utf-8")
+
+    assert "[string]$Host" not in script_text
+
+
+def test_root_package_json_exposes_platform_api_dev_script() -> None:
+    package_json = Path(__file__).resolve().parents[3] / "package.json"
+    package = json.loads(package_json.read_text(encoding="utf-8"))
+
+    assert "platform-api:dev" in package.get("scripts", {})
+    assert "start-platform-api.ps1" in package["scripts"]["platform-api:dev"]

@@ -518,3 +518,223 @@ async def test_create_upload_hides_signed_url_internal_error(monkeypatch):
 
     assert exc.value.status_code == 502
     assert exc.value.detail == "Failed to create signed upload URL"
+
+
+@pytest.mark.asyncio
+async def test_create_upload_returns_structured_conflict_for_active_pending_duplicate(monkeypatch):
+    monkeypatch.setattr("app.api.routes.storage.get_settings", lambda: type("S", (), {
+        "gcs_user_storage_bucket": "unit-bucket",
+        "user_storage_max_file_bytes": 1024,
+    })())
+    monkeypatch.setattr("app.api.routes.storage._assert_project_ownership", lambda *_a, **_k: None)
+    signed_url_calls: list[dict] = []
+    monkeypatch.setattr(
+        "app.api.routes.storage.create_signed_upload_url",
+        lambda **kwargs: signed_url_calls.append(kwargs) or "https://upload.test/unused",
+    )
+
+    existing_reservation = {
+        "reservation_id": "res-existing",
+        "bucket": "unit-bucket",
+        "object_key": "users/user-1/assets/projects/project-1/sources/src-1/source/a.txt",
+        "requested_bytes": 1,
+        "status": "pending",
+        "created_at": "2026-03-28T01:00:00+00:00",
+        "expires_at": "2999-01-01T00:00:00+00:00",
+    }
+
+    class _TableQuery:
+        def __init__(self, data):
+            self.data = data
+
+        def select(self, *_args, **_kwargs):
+            return self
+
+        def eq(self, *_args, **_kwargs):
+            return self
+
+        def maybe_single(self):
+            return self
+
+        def execute(self):
+            return self
+
+    class _Admin:
+        def rpc(self, function_name, _payload):
+            if function_name == "reserve_user_storage":
+                raise RuntimeError("pending reservation already exists for this object")
+            raise AssertionError(f"unexpected rpc {function_name}")
+
+        def table(self, table_name):
+            assert table_name == "storage_upload_reservations"
+            return _TableQuery(existing_reservation)
+
+    monkeypatch.setattr("app.api.routes.storage.get_supabase_admin", lambda: _Admin())
+
+    with pytest.raises(HTTPException) as exc:
+        await create_upload(
+            CreateUploadRequest(
+                project_id="project-1",
+                filename="a.txt",
+                content_type="text/plain",
+                expected_bytes=1,
+                storage_kind="source",
+                source_uid="src-1",
+                source_type="txt",
+                doc_title="folder/a.txt",
+            ),
+            AuthStub("user-1"),
+        )
+
+    assert exc.value.status_code == 409
+    assert exc.value.detail == {
+        "code": "pending_reservation_exists",
+        "reservation_id": "res-existing",
+        "object_key": "users/user-1/assets/projects/project-1/sources/src-1/source/a.txt",
+        "requested_bytes": 1,
+        "created_at": "2026-03-28T01:00:00+00:00",
+        "expires_at": "2999-01-01T00:00:00+00:00",
+    }
+    assert signed_url_calls == []
+
+
+@pytest.mark.asyncio
+async def test_create_upload_cancels_expired_duplicate_then_retries(monkeypatch):
+    monkeypatch.setattr("app.api.routes.storage.get_settings", lambda: type("S", (), {
+        "gcs_user_storage_bucket": "unit-bucket",
+        "user_storage_max_file_bytes": 1024,
+    })())
+    monkeypatch.setattr("app.api.routes.storage._assert_project_ownership", lambda *_a, **_k: None)
+    monkeypatch.setattr("app.api.routes.storage.create_signed_upload_url", lambda **_k: "https://upload.test/new")
+
+    existing_reservation = {
+        "reservation_id": "res-expired",
+        "bucket": "unit-bucket",
+        "object_key": "users/user-1/assets/projects/project-1/sources/src-1/source/a.txt",
+        "requested_bytes": 1,
+        "status": "pending",
+        "created_at": "2026-03-28T01:00:00+00:00",
+        "expires_at": "2000-01-01T00:00:00+00:00",
+    }
+    rpc_calls: list[tuple[str, dict]] = []
+
+    class _TableQuery:
+        def __init__(self, data):
+            self.data = data
+
+        def select(self, *_args, **_kwargs):
+            return self
+
+        def eq(self, *_args, **_kwargs):
+            return self
+
+        def maybe_single(self):
+            return self
+
+        def execute(self):
+            return self
+
+    class _Admin:
+        def __init__(self):
+            self.reserve_attempts = 0
+
+        def rpc(self, function_name, payload):
+            rpc_calls.append((function_name, payload))
+            if function_name == "reserve_user_storage":
+                self.reserve_attempts += 1
+                if self.reserve_attempts == 1:
+                    raise RuntimeError("pending reservation already exists for this object")
+
+                class _Exec:
+                    data = {
+                        "reservation_id": "res-new",
+                        "bucket": "unit-bucket",
+                        "object_key": payload["p_object_key"],
+                        "requested_bytes": payload["p_requested_bytes"],
+                        "status": "pending",
+                    }
+
+                    def execute(self):
+                        return self
+
+                return _Exec()
+
+            if function_name == "cancel_user_storage_reservation":
+                class _VoidExec:
+                    def execute(self):
+                        return self
+
+                return _VoidExec()
+
+            raise AssertionError(f"unexpected rpc {function_name}")
+
+        def table(self, table_name):
+            assert table_name == "storage_upload_reservations"
+            return _TableQuery(existing_reservation)
+
+    monkeypatch.setattr("app.api.routes.storage.get_supabase_admin", lambda: _Admin())
+
+    result = await create_upload(
+        CreateUploadRequest(
+            project_id="project-1",
+            filename="a.txt",
+            content_type="text/plain",
+            expected_bytes=1,
+            storage_kind="source",
+            source_uid="src-1",
+            source_type="txt",
+            doc_title="folder/a.txt",
+        ),
+        AuthStub("user-1"),
+    )
+
+    assert result == {
+        "reservation_id": "res-new",
+        "bucket": "unit-bucket",
+        "object_key": "users/user-1/assets/projects/project-1/sources/src-1/source/a.txt",
+        "requested_bytes": 1,
+        "status": "pending",
+        "signed_upload_url": "https://upload.test/new",
+        "expires_in_seconds": 1800,
+    }
+    assert rpc_calls == [
+        (
+            "reserve_user_storage",
+            {
+                "p_user_id": "user-1",
+                "p_project_id": "project-1",
+                "p_bucket": "unit-bucket",
+                "p_object_key": "users/user-1/assets/projects/project-1/sources/src-1/source/a.txt",
+                "p_requested_bytes": 1,
+                "p_content_type": "text/plain",
+                "p_original_filename": "a.txt",
+                "p_storage_kind": "source",
+                "p_source_uid": "src-1",
+                "p_source_type": "txt",
+                "p_doc_title": "folder/a.txt",
+            },
+        ),
+        (
+            "cancel_user_storage_reservation",
+            {
+                "p_reservation_id": "res-expired",
+                "p_owner_user_id": "user-1",
+            },
+        ),
+        (
+            "reserve_user_storage",
+            {
+                "p_user_id": "user-1",
+                "p_project_id": "project-1",
+                "p_bucket": "unit-bucket",
+                "p_object_key": "users/user-1/assets/projects/project-1/sources/src-1/source/a.txt",
+                "p_requested_bytes": 1,
+                "p_content_type": "text/plain",
+                "p_original_filename": "a.txt",
+                "p_storage_kind": "source",
+                "p_source_uid": "src-1",
+                "p_source_type": "txt",
+                "p_doc_title": "folder/a.txt",
+            },
+        ),
+    ]

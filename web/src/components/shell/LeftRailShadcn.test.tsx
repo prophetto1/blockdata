@@ -89,7 +89,12 @@ describe('LeftRailShadcn', () => {
     expect(screen.getByText('Workbench')).toBeInTheDocument();
     expect(screen.getByText('Ingest')).toBeInTheDocument();
     expect(screen.getByText('Assets')).toBeInTheDocument();
+    expect(screen.getByText('Pipeline Services')).toBeInTheDocument();
+    expect(screen.getByText('Knowledge Bases')).toBeInTheDocument();
+    expect(screen.getByText('Index Builder')).toBeInTheDocument();
     expect(screen.getAllByText('Settings').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText('Secrets')).toBeInTheDocument();
+    expect(screen.queryByText('RAG')).not.toBeInTheDocument();
   });
 
   it('does not render a placeholder notifications button', async () => {
@@ -111,6 +116,10 @@ describe('LeftRailShadcn', () => {
     );
 
     expect(await screen.findByText('Ingest')).toBeInTheDocument();
+    expect(screen.getByText('Flows')).toBeInTheDocument();
+    expect(screen.getByText('Pipeline Services')).toBeInTheDocument();
+    expect(screen.queryByText('Define Workflows')).not.toBeInTheDocument();
+    expect(screen.queryByText('Knowledge Bases')).not.toBeInTheDocument();
     expect(screen.queryByText('Parse')).not.toBeInTheDocument();
   });
 
@@ -139,9 +148,35 @@ describe('LeftRailShadcn', () => {
 
     expect(await screen.findByText('Account')).toBeInTheDocument();
     expect(screen.getByText('Themes')).toBeInTheDocument();
+    expect(screen.getByText('Secrets')).toBeInTheDocument();
   });
 
-  it('renders Flows as a plain classic nav item without a drill chevron', async () => {
+  it('shows ingest drill items on ingest routes in pipeline view', async () => {
+    render(
+      <MemoryRouter initialEntries={['/app/parse']}>
+        <LeftRailShadcn />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText('Parse')).toBeInTheDocument();
+    expect(screen.getByText('Extract')).toBeInTheDocument();
+    expect(screen.getByText('Load')).toBeInTheDocument();
+    expect(screen.getAllByText('Ingest')).toHaveLength(1);
+  });
+
+  it('shows pipeline services drill items on knowledge base routes in pipeline view', async () => {
+    render(
+      <MemoryRouter initialEntries={['/app/pipeline-services/knowledge-bases']}>
+        <LeftRailShadcn />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText('Knowledge Bases')).toBeInTheDocument();
+    expect(screen.getByText('Index Builder')).toBeInTheDocument();
+    expect(screen.getAllByText('Pipeline Services')).toHaveLength(1);
+  });
+
+  it('renders Flows as a classic drill entry with a chevron', async () => {
     window.localStorage.setItem('blockdata.nav.style', 'classic');
 
     render(
@@ -152,7 +187,7 @@ describe('LeftRailShadcn', () => {
 
     const flowsButton = await screen.findByRole('button', { name: 'Flows' });
 
-    expect(flowsButton.querySelector('.ml-auto')).toBeNull();
+    expect(flowsButton.querySelector('.ml-auto')).not.toBeNull();
   });
 
   it('renders compact mode with icon-only buttons', () => {
@@ -197,5 +232,3 @@ describe('LeftRailShadcn', () => {
     expect(onToggleDesktopCompact).toHaveBeenCalledTimes(1);
   });
 });
-
-
