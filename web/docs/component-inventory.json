@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-03-27T21:34:19.949Z",
+  "generatedAt": "2026-03-30T12:25:25.090Z",
   "scope": "auth",
   "pages": [
     {
@@ -744,6 +744,24 @@
       ]
     },
     {
+      "page": "src/pages/IndexBuilderPage.tsx",
+      "componentCount": 1,
+      "categoryCounts": {
+        "local-components": 1
+      },
+      "components": [
+        {
+          "component": "Workbench",
+          "usedAs": "Workbench",
+          "source": "@/components/workbench/Workbench",
+          "importKind": "named",
+          "importedAs": "Workbench",
+          "category": "local-components",
+          "definition": "Workbench comes from @/components/workbench/Workbench (named import of Workbench)"
+        }
+      ]
+    },
+    {
       "page": "src/pages/kestra/LogsPage.tsx",
       "componentCount": 1,
       "categoryCounts": {
@@ -1303,6 +1321,24 @@
           "importedAs": "Workbench",
           "category": "local-components",
           "definition": "Workbench comes from @/components/workbench/Workbench (named import of Workbench)"
+        }
+      ]
+    },
+    {
+      "page": "src/pages/PipelineServicesPage.tsx",
+      "componentCount": 1,
+      "categoryCounts": {
+        "local-components": 1
+      },
+      "components": [
+        {
+          "component": "PipelineCatalogPanel",
+          "usedAs": "PipelineCatalogPanel",
+          "source": "@/components/pipelines/PipelineCatalogPanel",
+          "importKind": "named",
+          "importedAs": "PipelineCatalogPanel",
+          "category": "local-components",
+          "definition": "PipelineCatalogPanel comes from @/components/pipelines/PipelineCatalogPanel (named import of PipelineCatalogPanel)"
         }
       ]
     },
@@ -2196,6 +2232,44 @@
           "importedAs": "Navigate",
           "category": "external-package",
           "definition": "Navigate comes from react-router-dom (named import of Navigate)"
+        }
+      ]
+    },
+    {
+      "page": "src/pages/settings/ConnectionsPanel.test.tsx",
+      "componentCount": 3,
+      "categoryCounts": {
+        "relative-local": 1,
+        "local-components": 1,
+        "external-package": 1
+      },
+      "components": [
+        {
+          "component": "ConnectionsPanel",
+          "usedAs": "ConnectionsPanel",
+          "source": "./ConnectionsPanel",
+          "importKind": "default",
+          "importedAs": "default",
+          "category": "relative-local",
+          "definition": "ConnectionsPanel comes from ./ConnectionsPanel (default import of default)"
+        },
+        {
+          "component": "HeaderCenterProvider",
+          "usedAs": "HeaderCenterProvider",
+          "source": "@/components/shell/HeaderCenterContext",
+          "importKind": "named",
+          "importedAs": "HeaderCenterProvider",
+          "category": "local-components",
+          "definition": "HeaderCenterProvider comes from @/components/shell/HeaderCenterContext (named import of HeaderCenterProvider)"
+        },
+        {
+          "component": "MemoryRouter",
+          "usedAs": "MemoryRouter",
+          "source": "react-router-dom",
+          "importKind": "named",
+          "importedAs": "MemoryRouter",
+          "category": "external-package",
+          "definition": "MemoryRouter comes from react-router-dom (named import of MemoryRouter)"
         }
       ]
     },
@@ -4368,14 +4442,14 @@
       ]
     }
   ],
-  "totalComponentUsages": 428,
+  "totalComponentUsages": 433,
   "categoryTotals": {
     "local-pages": 2,
-    "local-components": 134,
+    "local-components": 137,
     "tabler-icons": 74,
     "in-file component": 20,
     "ark-ui": 153,
-    "external-package": 22,
-    "relative-local": 23
+    "external-package": 23,
+    "relative-local": 24
   }
 }

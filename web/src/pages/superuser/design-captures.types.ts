@@ -1,4 +1,4 @@
-export type CaptureStatus = 'pending' | 'capturing' | 'complete' | 'failed';
+export type CaptureStatus = 'pending' | 'capturing' | 'auth-needed' | 'complete' | 'failed';
 
 export type PageType = 'settings' | 'editor' | 'dashboard' | 'workbench' | 'marketing';
 

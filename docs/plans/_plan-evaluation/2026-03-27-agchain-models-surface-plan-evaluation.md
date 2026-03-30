@@ -1,6 +1,6 @@
 # Plan Evaluation: AG chain Models Surface Implementation Plan
 
-**Plan reviewed:** `_agchain/docs/plans/2026-03-26-agchain-models-surface-implementation-plan.md`
+**Plan reviewed:** `docs/plans/__complete/2026-03-26-agchain-models-surface-implementation-plan.md`
 **Evaluation date:** 2026-03-27
 **Evaluator context:** Full read of the plan, the InspectAI reference analysis, the platform requirements doc, the existing on-disk migration, the existing `AgchainModelsPage` placeholder, `platform-api` auth/route/OTel patterns, the router and shell layout, and all seam directories listed in the evaluation request.
 

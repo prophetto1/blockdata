@@ -132,6 +132,7 @@ def _run_pipeline_job_sync(job_id: str, pipeline_kind: str) -> None:
             record_pipeline_job_complete(
                 pipeline_kind=pipeline_kind,
                 deliverable_count=len(deliverable_kinds),
+                source_set_member_count=result.get("source_set_member_count"),
                 section_count=result.get("section_count"),
                 chunk_count=result.get("chunk_count"),
             )
@@ -139,6 +140,7 @@ def _run_pipeline_job_sync(job_id: str, pipeline_kind: str) -> None:
             log_pipeline_job_completed(
                 pipeline_kind=pipeline_kind,
                 deliverable_kinds=deliverable_kinds,
+                source_set_member_count=result.get("source_set_member_count"),
                 section_count=result.get("section_count"),
                 chunk_count=result.get("chunk_count"),
             )

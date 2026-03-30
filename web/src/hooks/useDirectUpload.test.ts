@@ -2,6 +2,7 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { useDirectUpload } from './useDirectUpload';
 import { uploadWithReservation } from '@/lib/storageUploadService';
+import type { UploadWithReservationResult } from '@/lib/storageUploadService';
 
 vi.mock('@/lib/storageUploadService', () => ({
   uploadWithReservation: vi.fn(),
@@ -19,8 +20,8 @@ function createDeferred<T>() {
 
 describe('useDirectUpload', () => {
   it('uploads files added after the upload loop starts', async () => {
-    const firstUpload = createDeferred<{ sourceUid: string }>();
-    const secondUpload = createDeferred<{ sourceUid: string }>();
+    const firstUpload = createDeferred<UploadWithReservationResult>();
+    const secondUpload = createDeferred<UploadWithReservationResult>();
     vi.mocked(uploadWithReservation)
       .mockImplementationOnce(() => firstUpload.promise)
       .mockImplementationOnce(() => secondUpload.promise);
@@ -46,7 +47,18 @@ describe('useDirectUpload', () => {
     });
 
     await act(async () => {
-      firstUpload.resolve({ sourceUid: 'source-a' });
+      firstUpload.resolve({
+        sourceUid: 'source-a',
+        reservation: {
+          reservation_id: 'reservation-a',
+          signed_upload_url: 'https://example.test/upload-a',
+        },
+        completed: {
+          storage_object_id: 'storage-a',
+          object_key: 'uploads/source-a',
+          byte_size: 1,
+        },
+      });
       await Promise.resolve();
     });
 
@@ -55,7 +67,18 @@ describe('useDirectUpload', () => {
     });
 
     await act(async () => {
-      secondUpload.resolve({ sourceUid: 'source-b' });
+      secondUpload.resolve({
+        sourceUid: 'source-b',
+        reservation: {
+          reservation_id: 'reservation-b',
+          signed_upload_url: 'https://example.test/upload-b',
+        },
+        completed: {
+          storage_object_id: 'storage-b',
+          object_key: 'uploads/source-b',
+          byte_size: 1,
+        },
+      });
       await expect(uploadPromise).resolves.toEqual(['source-a', 'source-b']);
     });
   });

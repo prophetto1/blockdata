@@ -21,9 +21,14 @@ beforeAll(() => {
 });
 
 const platformApiFetchMock = vi.fn();
+const useAgchainProjectFocusMock = vi.fn();
 
 vi.mock('@/lib/platformApi', () => ({
   platformApiFetch: (...args: unknown[]) => platformApiFetchMock(...args),
+}));
+
+vi.mock('@/hooks/agchain/useAgchainProjectFocus', () => ({
+  useAgchainProjectFocus: () => useAgchainProjectFocusMock(),
 }));
 
 function jsonResponse(body: unknown, status = 200) {
@@ -36,6 +41,17 @@ function jsonResponse(body: unknown, status = 200) {
 describe('AgchainModelsPage', () => {
   beforeEach(() => {
     platformApiFetchMock.mockReset();
+    useAgchainProjectFocusMock.mockReset();
+    useAgchainProjectFocusMock.mockReturnValue({
+      focusedProject: {
+        benchmark_id: 'benchmark-1',
+        benchmark_slug: 'legal-10',
+        benchmark_name: 'Legal-10',
+        description: 'Three-step benchmark package for legal analysis.',
+      },
+      loading: false,
+    });
+
     platformApiFetchMock.mockImplementation((path: string, init?: RequestInit) => {
       if (path === '/agchain/models/providers') {
         return Promise.resolve(
@@ -175,14 +191,15 @@ describe('AgchainModelsPage', () => {
     cleanup();
   });
 
-  it('renders a table-first models surface with provider-backed inspector and create affordances', async () => {
+  it('renders a project-scoped table-first models surface with provider-backed inspector and create affordances', async () => {
     render(
       <MemoryRouter>
         <AgchainModelsPage />
       </MemoryRouter>,
     );
 
-    expect(screen.getByRole('heading', { name: 'Models' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: 'Models' })).toBeInTheDocument();
+    expect(screen.getByText(/legal-10 owns this models page/i)).toBeInTheDocument();
 
     await waitFor(() => {
       expect(screen.getByText('Label')).toBeInTheDocument();
@@ -199,7 +216,6 @@ describe('AgchainModelsPage', () => {
     expect(screen.getByText('Health')).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: 'Last Checked' })).toBeInTheDocument();
     expect(screen.getByText('GPT-5.4 Default')).toBeInTheDocument();
-    expect(screen.queryByText('Model selection must be a first-class platform feature, not a hidden CLI argument.')).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: /open model gpt-5.4 default/i }));
 
@@ -235,5 +251,21 @@ describe('AgchainModelsPage', () => {
     expect(
       platformApiFetchMock.mock.calls.some(([path]) => path === '/agchain/models?limit=50&offset=0'),
     ).toBe(true);
+  });
+
+  it('routes users back toward the project registry when no AGChain project is available', () => {
+    useAgchainProjectFocusMock.mockReturnValue({
+      focusedProject: null,
+      loading: false,
+    });
+
+    render(
+      <MemoryRouter>
+        <AgchainModelsPage />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole('heading', { name: 'Choose an AGChain project' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Open project registry' })).toHaveAttribute('href', '/app/agchain/projects');
   });
 });

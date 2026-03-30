@@ -396,7 +396,7 @@ export function AgchainModelsToolbar({
       <section className="rounded-3xl border border-border/70 bg-card/70 p-6 shadow-sm">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex-1">
-            <h1 className="text-3xl font-semibold tracking-tight text-foreground">Models</h1>
+            <h2 className="text-3xl font-semibold tracking-tight text-foreground">Models</h2>
             <p className="mt-2 max-w-3xl text-sm leading-7 text-muted-foreground">
               Global provider-backed model targets supported by AG chain, including auth readiness and
               lightweight health checks.

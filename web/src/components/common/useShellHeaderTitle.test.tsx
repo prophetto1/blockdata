@@ -97,12 +97,33 @@ describe('useShellHeaderTitle classic breadcrumb resolution', () => {
     expect(screen.getByText('Knowledge Bases')).toBeInTheDocument();
   });
 
+  it('keeps the overview route titled as Pipeline Services when the drill includes an explicit overview child', () => {
+    renderHeaderAt('/app/pipeline-services', {
+      title: 'Pipeline Services',
+      breadcrumbs: ['Pipeline Services'],
+    });
+
+    expect(screen.getByText('Pipeline Services')).toBeInTheDocument();
+    expect(screen.queryByText('Overview')).not.toBeInTheDocument();
+  });
+
   it('uses the drill child label for pipeline service routes', () => {
     renderHeaderAt('/app/pipeline-services/index-builder', { title: 'Index Builder Workspace' });
 
     expect(screen.getByText('Pipeline Services')).toBeInTheDocument();
     expect(screen.getByText('Index Builder')).toBeInTheDocument();
     expect(screen.queryByText('Index Builder Workspace')).not.toBeInTheDocument();
+  });
+
+  it('rejects a generic service-overview title on the dedicated index builder route', () => {
+    renderHeaderAt('/app/pipeline-services/index-builder', {
+      title: 'Service Overview',
+      breadcrumbs: ['Pipeline Services', 'Index Builder'],
+    });
+
+    expect(screen.getByText('Pipeline Services')).toBeInTheDocument();
+    expect(screen.getByText('Index Builder')).toBeInTheDocument();
+    expect(screen.queryByText('Service Overview')).not.toBeInTheDocument();
   });
 
   it('prefers explicit breadcrumbs over legacy flattened labels for pipeline services landing routes', () => {

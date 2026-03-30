@@ -26,6 +26,7 @@ def _job_row(**overrides):
         "owner_id": "user-1",
         "project_id": "project-1",
         "source_uid": "src-1",
+        "source_set_id": "set-1",
     }
     row.update(overrides)
     return row
@@ -127,9 +128,13 @@ More text here.
         document_row = conn.execute(
             "SELECT source_uid, pipeline_kind, section_count, chunk_count FROM document"
         ).fetchone()
+        chunk_row = conn.execute(
+            "SELECT source_uid, source_title, source_order, source_heading_path FROM chunks ORDER BY ordinal LIMIT 1"
+        ).fetchone()
 
     assert {"document", "sections", "chunks", "chunks_fts", "manifest"} <= tables
     assert document_row == ("src-1", "markdown_index_builder", len(prepared.sections), len(prepared.chunks))
+    assert chunk_row == ("src-1", "Document", 1, "[]")
 
 
 def test_build_semantic_zip_artifact_contains_required_files(tmp_path: Path):
@@ -162,6 +167,7 @@ More text here.
         chunk_map = json.loads(archive.read("chunk_id_map.json"))
         loaded_embeddings = np.load(io.BytesIO(archive.read("embeddings.npy")))
         chunk_lines = archive.read("chunks.jsonl").decode("utf-8").strip().splitlines()
+        first_chunk = json.loads(chunk_lines[0])
 
     assert {"manifest.json", "chunks.jsonl", "embeddings.npy", "chunk_id_map.json"} <= members
     assert manifest["embedding_provider"] == "openai"
@@ -170,17 +176,27 @@ More text here.
     assert chunk_map[prepared.chunks[0].chunk_id] == 0
     assert loaded_embeddings.shape == embeddings.shape
     assert len(chunk_lines) == len(prepared.chunks)
+    assert first_chunk["source_uid"] == "src-1"
+    assert first_chunk["source_title"] == "Document"
+    assert first_chunk["source_order"] == 1
 
 
 def test_run_markdown_index_builder_fails_at_embedding_when_no_credential(monkeypatch):
     stages: list[str] = []
 
     monkeypatch.setattr(
-        "app.pipelines.markdown_index_builder.load_pipeline_source_markdown",
-        lambda **_kwargs: b"""# Intro
+        "app.pipelines.markdown_index_builder.load_pipeline_source_set_markdown_members",
+        lambda **_kwargs: [
+            {
+                "source_uid": "src-1",
+                "doc_title": "Intro.md",
+                "source_order": 1,
+                "markdown_bytes": b"""# Intro
 
 Short body.
 """,
+            }
+        ],
     )
     monkeypatch.setattr(
         "app.pipelines.markdown_index_builder.resolve_embedding_selection",
@@ -194,7 +210,7 @@ Short body.
             heartbeat=lambda: None,
         )
 
-    assert stages[:4] == ["parsing", "normalizing", "structuring", "chunking"]
+    assert stages[:6] == ["loading_sources", "consolidating", "parsing", "normalizing", "structuring", "chunking"]
     assert stages[-1] == "embedding"
 
 
@@ -206,15 +222,27 @@ def test_run_markdown_index_builder_returns_deliverables_and_embedding_snapshot(
     stored_artifacts: dict[str, dict] = {}
 
     monkeypatch.setattr(
-        "app.pipelines.markdown_index_builder.load_pipeline_source_markdown",
-        lambda **_kwargs: b"""# Intro
+        "app.pipelines.markdown_index_builder.load_pipeline_source_set_markdown_members",
+        lambda **_kwargs: [
+            {
+                "source_uid": "src-1",
+                "doc_title": "Intro.md",
+                "source_order": 1,
+                "markdown_bytes": b"""# Intro
 
 Short body.
-
-## Followup
+""",
+            },
+            {
+                "source_uid": "src-2",
+                "doc_title": "Followup.md",
+                "source_order": 2,
+                "markdown_bytes": b"""# Followup
 
 More text here.
 """,
+            },
+        ],
     )
     monkeypatch.setattr(
         "app.pipelines.markdown_index_builder.resolve_embedding_selection",
@@ -251,6 +279,8 @@ More text here.
     )
 
     assert stages == [
+        "loading_sources",
+        "consolidating",
         "parsing",
         "normalizing",
         "structuring",
@@ -264,6 +294,7 @@ More text here.
     assert result["embedding_model"] == "text-embedding-3-small"
     assert result["section_count"] >= 2
     assert result["chunk_count"] >= 2
+    assert result["source_set_member_count"] == 2
     assert stored_artifacts["lexical_sqlite"]["content_type"] == "application/vnd.sqlite3"
     assert stored_artifacts["semantic_zip"]["content_type"] == "application/zip"
     assert stored_artifacts["lexical_sqlite"]["path"].name == "asset.lexical.sqlite"

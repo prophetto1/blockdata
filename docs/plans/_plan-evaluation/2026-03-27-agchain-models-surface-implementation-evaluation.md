@@ -2,7 +2,7 @@
 
 ## Reviewed Inputs
 
-- Approved plan: `_agchain/docs/plans/2026-03-26-agchain-models-surface-implementation-plan.md`
+- Approved plan: `docs/plans/__complete/2026-03-26-agchain-models-surface-implementation-plan.md`
 - Pre-implementation evaluation: `_agchain/docs/plan-evaluation/2026-03-27-agchain-models-surface-plan-evaluation.md`
 - Code reviewed: all 14 changed files in the working tree
 - Tests reviewed: `pytest services/platform-api/tests/test_agchain_models.py -q` (8 passed), `npm test -- src/pages/agchain/AgchainModelsPage.test.tsx` (1 passed)

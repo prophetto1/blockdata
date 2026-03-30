@@ -66,4 +66,22 @@ describe('TopCommandBar', () => {
     expect(within(right).getByRole('button', { name: /toggle color scheme/i })).toBeInTheDocument();
     expect(within(right).getByRole('button', { name: /workspace selector/i })).toBeInTheDocument();
   });
+
+  it('renders a caller-provided primary context in place of the default project switcher', () => {
+    render(
+      <MemoryRouter initialEntries={['/app/agchain/benchmarks']}>
+        <TopCommandBar
+          onToggleNav={vi.fn()}
+          hideSearch
+          primaryContext={<div data-testid="agchain-project-context">Focused AGChain Project</div>}
+        />
+      </MemoryRouter>,
+    );
+
+    const left = screen.getByTestId('top-command-bar-left');
+
+    expect(within(left).getByTestId('agchain-project-context')).toHaveTextContent('Focused AGChain Project');
+    expect(within(left).queryByTestId('project-switcher')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /workspace selector/i })).toBeInTheDocument();
+  });
 });

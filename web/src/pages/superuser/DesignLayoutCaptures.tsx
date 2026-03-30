@@ -525,6 +525,7 @@ export function Component() {
                         variant={
                           row.status === 'complete' ? 'green'
                           : row.status === 'failed' ? 'red'
+                          : row.status === 'auth-needed' ? 'yellow'
                           : row.status === 'capturing' ? 'blue'
                           : 'gray'
                         }

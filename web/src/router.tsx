@@ -35,6 +35,7 @@ import DatabasePlaceholder from '@/pages/DatabasePlaceholder';
 import ProjectAssetsPage from '@/pages/ProjectAssetsPage';
 import ParsePage from '@/pages/ParsePage';
 import PipelineServicesPage from '@/pages/PipelineServicesPage';
+import IndexBuilderPage from '@/pages/IndexBuilderPage';
 import { Component as Workspace } from '@/pages/Workspace';
 import ExtractPage from '@/pages/ExtractPage';
 import ConvertPage from '@/pages/ConvertPage';
@@ -56,6 +57,7 @@ import { SuperuserGuard } from '@/pages/superuser/SuperuserGuard';
 import NotFound from '@/pages/NotFound';
 import { AdminShellLayout } from '@/components/layout/AdminShellLayout';
 import { AgchainShellLayout } from '@/components/layout/AgchainShellLayout';
+import { useAgchainProjectFocus } from '@/hooks/agchain/useAgchainProjectFocus';
 
 
 function LegacyToTransform() {
@@ -83,6 +85,24 @@ function LegacyPipelineServicesRedirect() {
     ? `/app/pipeline-services/${encodeURIComponent(serviceSlug)}`
     : '/app/pipeline-services';
   return <Navigate to={target} replace />;
+}
+
+function UnsupportedPipelineServiceRedirect() {
+  return <Navigate to="/app/pipeline-services" replace />;
+}
+
+function AgchainIndexRedirect() {
+  const { focusedProject, loading } = useAgchainProjectFocus();
+
+  if (loading) {
+    return (
+      <div className="flex min-h-full items-center justify-center bg-background px-6 py-12 text-sm text-muted-foreground">
+        Loading AGChain project context...
+      </div>
+    );
+  }
+
+  return <Navigate to={focusedProject ? '/app/agchain/overview' : '/app/agchain/projects'} replace />;
 }
 
 export const router = createBrowserRouter([
@@ -133,8 +153,9 @@ export const router = createBrowserRouter([
           { path: '/app/assets', element: <ProjectAssetsPage /> },
           { path: '/app/parse', element: <ParsePage /> },
           { path: '/app/pipeline-services', element: <PipelineServicesPage /> },
+          { path: '/app/pipeline-services/index-builder', element: <IndexBuilderPage /> },
           { path: '/app/pipeline-services/knowledge-bases', lazy: () => import('@/pages/KnowledgeBases') },
-          { path: '/app/pipeline-services/:serviceSlug', element: <PipelineServicesPage /> },
+          { path: '/app/pipeline-services/:serviceSlug', element: <UnsupportedPipelineServiceRedirect /> },
           { path: '/app/rag', element: <LegacyPipelineServicesRedirect /> },
           { path: '/app/rag/:serviceSlug', element: <LegacyPipelineServicesRedirect /> },
           { path: '/app/knowledge-bases', element: <Navigate to="/app/pipeline-services/knowledge-bases" replace /> },
@@ -277,20 +298,43 @@ export const router = createBrowserRouter([
             children: [
               {
                 index: true,
-                element: <Navigate to="/app/agchain/benchmarks" replace />,
+                element: <AgchainIndexRedirect />,
+              },
+              {
+                path: 'overview',
+                lazy: async () => ({ Component: (await import('@/pages/agchain/AgchainOverviewPage')).default }),
+              },
+              {
+                path: 'projects',
+                lazy: async () => ({ Component: (await import('@/pages/agchain/AgchainProjectsPage')).default }),
+              },
+              {
+                path: 'datasets',
+                lazy: async () => ({ Component: (await import('@/pages/agchain/AgchainDatasetsPage')).default }),
+              },
+              {
+                path: 'prompts',
+                lazy: async () => ({ Component: (await import('@/pages/agchain/AgchainPromptsPage')).default }),
+              },
+              {
+                path: 'scorers',
+                lazy: async () => ({ Component: (await import('@/pages/agchain/AgchainScorersPage')).default }),
+              },
+              {
+                path: 'parameters',
+                lazy: async () => ({ Component: (await import('@/pages/agchain/AgchainParametersPage')).default }),
+              },
+              {
+                path: 'tools',
+                lazy: async () => ({ Component: (await import('@/pages/agchain/AgchainToolsPage')).default }),
               },
               {
                 path: 'benchmarks',
-                children: [
-                  {
-                    index: true,
-                    lazy: async () => ({ Component: (await import('@/pages/agchain/AgchainBenchmarksPage')).default }),
-                  },
-                  {
-                    path: ':benchmarkId',
-                    lazy: async () => ({ Component: (await import('@/pages/agchain/AgchainBenchmarkWorkbenchPage')).default }),
-                  },
-                ],
+                element: <Navigate to="/app/agchain/settings/project/benchmark-definition" replace />,
+              },
+              {
+                path: 'benchmarks/:benchmarkId',
+                lazy: async () => ({ Component: (await import('@/pages/agchain/AgchainBenchmarkWorkbenchPage')).default }),
               },
               {
                 path: 'models',
@@ -308,10 +352,22 @@ export const router = createBrowserRouter([
                 path: 'observability',
                 lazy: async () => ({ Component: (await import('@/pages/agchain/AgchainObservabilityPage')).default }),
               },
+              {
+                path: 'settings',
+                children: [
+                  {
+                    index: true,
+                    lazy: async () => ({ Component: (await import('@/pages/agchain/AgchainSettingsPage')).default }),
+                  },
+                  {
+                    path: 'project/benchmark-definition',
+                    lazy: async () => ({ Component: (await import('@/pages/agchain/AgchainBenchmarksPage')).default }),
+                  },
+                ],
+              },
               // Removed routes — redirect to nearest equivalent
-              { path: 'build',     element: <Navigate to="/app/agchain/benchmarks" replace /> },
+              { path: 'build',     element: <Navigate to="/app/agchain/settings/project/benchmark-definition" replace /> },
               { path: 'artifacts', element: <Navigate to="/app/agchain/observability" replace /> },
-              { path: 'settings',  element: <Navigate to="/app/agchain/benchmarks" replace /> },
             ],
           },
         ],

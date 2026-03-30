@@ -101,7 +101,7 @@ describe('pipelineService', () => {
       .mockResolvedValueOnce(jsonResponse({
         job_id: 'job-1',
         pipeline_kind: 'markdown_index_builder',
-        source_uid: 'source-1',
+        source_set_id: 'set-1',
         status: 'queued',
         stage: 'queued',
       }, 202))
@@ -109,9 +109,9 @@ describe('pipelineService', () => {
         job: {
           job_id: 'job-1',
           pipeline_kind: 'markdown_index_builder',
-          source_uid: 'source-1',
+          source_set_id: 'set-1',
           status: 'complete',
-          stage: 'complete',
+          stage: 'packaging',
           deliverables: [],
         },
       }))
@@ -122,24 +122,24 @@ describe('pipelineService', () => {
 
     await expect(createPipelineJob({
       pipelineKind: 'markdown_index_builder',
-      sourceUid: 'source-1',
+      sourceSetId: 'set-1',
     })).resolves.toEqual({
       job_id: 'job-1',
       pipeline_kind: 'markdown_index_builder',
-      source_uid: 'source-1',
+      source_set_id: 'set-1',
       status: 'queued',
       stage: 'queued',
     });
 
     await expect(getLatestPipelineJob({
       pipelineKind: 'markdown_index_builder',
-      sourceUid: 'source-1',
+      sourceSetId: 'set-1',
     })).resolves.toEqual({
       job_id: 'job-1',
       pipeline_kind: 'markdown_index_builder',
-      source_uid: 'source-1',
+      source_set_id: 'set-1',
       status: 'complete',
-      stage: 'complete',
+      stage: 'packaging',
       deliverables: [],
     });
 
@@ -158,7 +158,7 @@ describe('pipelineService', () => {
     );
     expect(platformApiFetchMock).toHaveBeenNthCalledWith(
       2,
-      '/pipelines/markdown_index_builder/jobs/latest?source_uid=source-1',
+      '/pipelines/markdown_index_builder/jobs/latest?source_set_id=set-1',
     );
     expect(platformApiFetchMock).toHaveBeenNthCalledWith(
       3,
@@ -233,6 +233,126 @@ describe('pipelineService', () => {
     expect(platformApiFetchMock).not.toHaveBeenCalledWith(
       expect.stringContaining('/pipelines/markdown_index_builder/jobs'),
       expect.anything(),
+    );
+  });
+
+  it('cancels its reservation when the signed upload request throws', async () => {
+    const file = new File(['# hello'], 'notes.md', { type: 'text/markdown' });
+    prepareSourceUploadMock.mockResolvedValue({
+      filename: 'notes.md',
+      content_type: 'text/markdown',
+      expected_bytes: 7,
+      storage_kind: 'source',
+      source_type: 'md',
+      source_uid: 'source-1',
+      doc_title: 'notes.md',
+    });
+    platformApiFetchMock
+      .mockResolvedValueOnce(jsonResponse({
+        reservation_id: 'res-1',
+        signed_upload_url: 'https://upload.example/res-1',
+      }))
+      .mockResolvedValueOnce(new Response(null, { status: 204 }));
+    fetchMock.mockRejectedValueOnce(new Error('network down'));
+
+    await expect(uploadPipelineSource({
+      projectId: 'project-1',
+      serviceSlug: 'index-builder',
+      file,
+    })).rejects.toThrow('network down');
+
+    expect(platformApiFetchMock).toHaveBeenNthCalledWith(
+      1,
+      '/storage/uploads',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({
+          project_id: 'project-1',
+          filename: 'notes.md',
+          content_type: 'text/markdown',
+          expected_bytes: 7,
+          storage_kind: 'source',
+          source_type: 'md',
+          source_uid: 'source-1',
+          doc_title: 'notes.md',
+          storage_surface: 'pipeline-services',
+          storage_service_slug: 'index-builder',
+        }),
+      }),
+    );
+    expect(platformApiFetchMock).toHaveBeenNthCalledWith(
+      2,
+      '/storage/uploads/res-1',
+      { method: 'DELETE' },
+    );
+  });
+
+  it('cancels a conflicting pending reservation and retries pipeline uploads once', async () => {
+    const file = new File(['# hello'], 'notes.md', { type: 'text/markdown' });
+    prepareSourceUploadMock.mockResolvedValue({
+      filename: 'notes.md',
+      content_type: 'text/markdown',
+      expected_bytes: 7,
+      storage_kind: 'source',
+      source_type: 'md',
+      source_uid: 'source-1',
+      doc_title: 'notes.md',
+    });
+    platformApiFetchMock
+      .mockResolvedValueOnce(jsonResponse({
+        detail: {
+          code: 'pending_reservation_exists',
+          reservation_id: 'res-stale',
+        },
+      }, 409))
+      .mockResolvedValueOnce(new Response(null, { status: 204 }))
+      .mockResolvedValueOnce(jsonResponse({
+        reservation_id: 'res-2',
+        signed_upload_url: 'https://upload.example/res-2',
+      }))
+      .mockResolvedValueOnce(jsonResponse({
+        storage_object_id: 'obj-2',
+        object_key: 'users/user-1/pipeline-services/index-builder/projects/project-1/sources/source-1/source/notes.md',
+        byte_size: 7,
+      }));
+    fetchMock.mockResolvedValue(new Response(null, { status: 200 }));
+
+    await expect(uploadPipelineSource({
+      projectId: 'project-1',
+      serviceSlug: 'index-builder',
+      file,
+    })).resolves.toEqual({
+      sourceUid: 'source-1',
+      reservation: {
+        reservation_id: 'res-2',
+        signed_upload_url: 'https://upload.example/res-2',
+      },
+      completed: {
+        storage_object_id: 'obj-2',
+        object_key: 'users/user-1/pipeline-services/index-builder/projects/project-1/sources/source-1/source/notes.md',
+        byte_size: 7,
+      },
+    });
+
+    expect(platformApiFetchMock).toHaveBeenNthCalledWith(
+      1,
+      '/storage/uploads',
+      expect.objectContaining({ method: 'POST' }),
+    );
+    expect(platformApiFetchMock).toHaveBeenNthCalledWith(
+      2,
+      '/storage/uploads/res-stale',
+      { method: 'DELETE' },
+    );
+    expect(platformApiFetchMock).toHaveBeenNthCalledWith(
+      3,
+      '/storage/uploads',
+      expect.objectContaining({ method: 'POST' }),
+    );
+    expect(platformApiFetchMock).toHaveBeenNthCalledWith(
+      4,
+      '/storage/uploads/res-2/complete',
+      expect.objectContaining({ method: 'POST' }),
     );
   });
 });

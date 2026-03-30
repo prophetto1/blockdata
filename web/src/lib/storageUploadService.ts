@@ -1,6 +1,10 @@
 import { sha256 } from '@noble/hashes/sha2';
 
-import { platformApiFetch } from '@/lib/platformApi';
+import {
+  cancelUploadReservation,
+  postUploadApiJson,
+  reserveUploadWithConflictRecovery,
+} from '@/lib/uploadReservationRecovery';
 
 const SOURCE_TYPE_BY_EXTENSION: Record<string, string> = {
   adoc: 'asciidoc',
@@ -153,50 +157,40 @@ export async function prepareSourceUpload(
   };
 }
 
-async function postJson<T>(path: string, body: unknown): Promise<T> {
-  const response = await platformApiFetch(path, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
-
-  if (!response.ok) {
-    const message = await response.text().catch(() => '');
-    throw new Error(message || `storage upload request failed: ${response.status}`);
-  }
-
-  return await response.json() as T;
-}
-
 export async function uploadWithReservation(params: {
   projectId: string;
   file: File;
   docTitle?: string;
 }): Promise<UploadWithReservationResult> {
   const prepared = await prepareSourceUpload(params.file, { docTitle: params.docTitle });
-  const reservation = await postJson<UploadReservation>('/storage/uploads', {
-    project_id: params.projectId,
-    ...prepared,
-  });
+  const reservation = await reserveUploadWithConflictRecovery(() => (
+    postUploadApiJson<UploadReservation>('/storage/uploads', {
+      project_id: params.projectId,
+      ...prepared,
+    })
+  ));
 
-  const uploadResponse = await fetch(reservation.signed_upload_url, {
-    method: 'PUT',
-    headers: { 'Content-Type': prepared.content_type },
-    body: params.file,
-  });
+  let uploadResponse: Response;
+  try {
+    uploadResponse = await fetch(reservation.signed_upload_url, {
+      method: 'PUT',
+      headers: { 'Content-Type': prepared.content_type },
+      body: params.file,
+    });
+  } catch (error) {
+    await cancelUploadReservation(reservation.reservation_id);
+    throw error;
+  }
 
   if (!uploadResponse.ok) {
-    try {
-      await platformApiFetch(`/storage/uploads/${reservation.reservation_id}`, { method: 'DELETE' });
-    } catch {
-      // Best-effort cleanup only. The server-side sweeper still handles abandoned reservations.
-    }
+    await cancelUploadReservation(reservation.reservation_id);
     throw new Error(`signed upload failed: ${uploadResponse.status}`);
   }
 
-  const completed = await postJson<CompletedUpload>(
+  const completed = await postUploadApiJson<CompletedUpload>(
     `/storage/uploads/${reservation.reservation_id}/complete`,
     { actual_bytes: params.file.size },
+    'storage upload completion failed',
   );
 
   return {

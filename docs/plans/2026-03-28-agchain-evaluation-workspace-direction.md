@@ -119,7 +119,7 @@ Current page owners:
 Current shell direction:
 
 - `web/src/components/layout/AgchainShellLayout.tsx`
-- `docs/plans/2026-03-28-agchain-two-rail-shell-redesign-plan.md`
+- `docs/plans/__prev/2026-03-28-agchain-two-rail-shell-redesign-plan.md`
 
 ### Backend / Database
 

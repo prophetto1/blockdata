@@ -8,7 +8,6 @@ import {
   IconClock,
   IconDatabase,
   IconEdit,
-  IconFileCode,
   IconFileExport,
   IconFileText,
   IconFolder,
@@ -41,14 +40,6 @@ export type NavItem = {
   children?: NavItem[];
 };
 
-export type ClassicNavSection = {
-  type: 'section-heading';
-  label: string;
-  items: NavItem[];
-};
-
-export type ClassicNavEntry = NavItem | ClassicNavSection | 'divider';
-
 export type NavDrillSection = {
   label?: string;
   items: NavItem[];
@@ -74,20 +65,8 @@ type SharedNavSection = {
   items: NavItem[];
 };
 
-export function isNavItem(entry: ClassicNavEntry | NavItem | 'divider'): entry is NavItem {
-  return entry !== 'divider' && !('type' in entry);
-}
-
-export function isClassicNavSection(entry: ClassicNavEntry): entry is ClassicNavSection {
-  return entry !== 'divider' && 'type' in entry && entry.type === 'section-heading';
-}
-
-function createClassicSection(section: SharedNavSection): ClassicNavSection {
-  return {
-    type: 'section-heading',
-    label: section.label,
-    items: section.items,
-  };
+export function isNavItem(entry: NavItem | 'divider'): entry is NavItem {
+  return entry !== 'divider';
 }
 
 function createStaticDrill(section: SharedNavSection): NavDrillConfig {
@@ -116,10 +95,7 @@ function dedupeNavItems(items: NavItem[]): NavItem[] {
 
 const ASSETS_ITEM: NavItem = { label: 'Assets', icon: IconFolder, path: '/app/assets' };
 const FLOWS_ITEM: NavItem = { label: 'Flows', icon: IconFolderPlus, path: '/app/flows', drillId: 'flows' };
-const TRANSFORM_ITEM: NavItem = { label: 'Transform', icon: IconArrowsShuffle, path: '/app/transform' };
-const WORKBENCH_ITEM: NavItem = { label: 'Workbench', icon: IconFileCode, path: '/app/workspace', drillId: 'workbench' };
-const API_ITEM: NavItem = { label: 'API', icon: IconTerminal2, path: '/app/api-editor' };
-const TESTS_ITEM: NavItem = { label: 'Tests', icon: IconTestPipe, path: '/app/tests' };
+
 
 const INGEST_SECTION: SharedNavSection = {
   id: 'ingest',
@@ -127,10 +103,12 @@ const INGEST_SECTION: SharedNavSection = {
   icon: IconScan,
   parentPath: '/app/parse',
   routePrefix: '/app/parse',
+  routeAliases: ['/app/transform'],
   items: [
     { label: 'Parse', icon: IconScan, path: '/app/parse' },
     { label: 'Extract', icon: IconWand, path: '/app/extract' },
     { label: 'Convert', icon: IconFileExport, path: '/app/convert' },
+    { label: 'Transform', icon: IconArrowsShuffle, path: '/app/transform' },
     { label: 'Database', icon: IconDatabase, path: '/app/database' },
     { label: 'Load', icon: IconPlayerPlay, path: '/app/load' },
     { label: 'Schema', icon: IconSchema, path: '/app/schemas' },
@@ -157,9 +135,11 @@ const CONNECTIONS_SECTION: SharedNavSection = {
   icon: IconPlugConnected,
   parentPath: '/app/marketplace/integrations',
   routePrefix: '/app/marketplace/integrations',
+  routeAliases: ['/app/api-editor'],
   items: [
     { label: 'Integrations', icon: IconApps, path: '/app/marketplace/integrations' },
     { label: 'Services', icon: IconServer, path: '/app/marketplace/services' },
+    { label: 'API', icon: IconTerminal2, path: '/app/api-editor' },
   ],
 };
 
@@ -171,8 +151,20 @@ const PIPELINE_SERVICES_SECTION: SharedNavSection = {
   routePrefix: '/app/pipeline-services',
   routeAliases: ['/app/rag', '/app/knowledge-bases'],
   items: [
+    { label: 'Overview', icon: IconLayoutDashboard, path: '/app/pipeline-services' },
     { label: 'Knowledge Bases', icon: IconDatabase, path: '/app/pipeline-services/knowledge-bases' },
     { label: 'Index Builder', icon: IconTransform, path: '/app/pipeline-services/index-builder' },
+  ],
+};
+
+const TESTS_SECTION: SharedNavSection = {
+  id: 'tests',
+  label: 'Tests',
+  icon: IconTestPipe,
+  parentPath: '/app/tests',
+  routePrefix: '/app/tests',
+  items: [
+    { label: 'Tests', icon: IconTestPipe, path: '/app/tests' },
   ],
 };
 
@@ -202,44 +194,14 @@ const SETTINGS_SECTION: SharedNavSection = {
   ],
 };
 
-const SHARED_STATIC_SECTIONS: SharedNavSection[] = [
+export const SHARED_STATIC_SECTIONS: SharedNavSection[] = [
   INGEST_SECTION,
   BUILD_AI_SECTION,
   CONNECTIONS_SECTION,
   PIPELINE_SERVICES_SECTION,
+  TESTS_SECTION,
   OBSERVABILITY_SECTION,
   SETTINGS_SECTION,
-];
-
-export const CLASSIC_LEAF_ITEMS: NavItem[] = [
-  ASSETS_ITEM,
-  FLOWS_ITEM,
-  TRANSFORM_ITEM,
-  WORKBENCH_ITEM,
-  API_ITEM,
-  TESTS_ITEM,
-];
-
-export const TOP_LEVEL_NAV: ClassicNavEntry[] = [
-  ASSETS_ITEM,
-  'divider',
-  createClassicSection(INGEST_SECTION),
-  'divider',
-  createClassicSection(BUILD_AI_SECTION),
-  FLOWS_ITEM,
-  'divider',
-  TRANSFORM_ITEM,
-  WORKBENCH_ITEM,
-  API_ITEM,
-  TESTS_ITEM,
-  'divider',
-  createClassicSection(CONNECTIONS_SECTION),
-  'divider',
-  createClassicSection(PIPELINE_SERVICES_SECTION),
-  'divider',
-  createClassicSection(OBSERVABILITY_SECTION),
-  'divider',
-  createClassicSection(SETTINGS_SECTION),
 ];
 
 export const PIPELINE_NAV: Array<NavItem | 'divider'> = [
@@ -250,43 +212,17 @@ export const PIPELINE_NAV: Array<NavItem | 'divider'> = [
   FLOWS_ITEM,
   'divider',
   { label: CONNECTIONS_SECTION.label, icon: CONNECTIONS_SECTION.icon, path: CONNECTIONS_SECTION.parentPath, drillId: CONNECTIONS_SECTION.id },
-  WORKBENCH_ITEM,
   'divider',
   { label: PIPELINE_SERVICES_SECTION.label, icon: PIPELINE_SERVICES_SECTION.icon, path: PIPELINE_SERVICES_SECTION.parentPath, drillId: PIPELINE_SERVICES_SECTION.id },
+  { label: TESTS_SECTION.label, icon: TESTS_SECTION.icon, path: TESTS_SECTION.parentPath, drillId: TESTS_SECTION.id },
   { label: OBSERVABILITY_SECTION.label, icon: OBSERVABILITY_SECTION.icon, path: OBSERVABILITY_SECTION.parentPath, drillId: OBSERVABILITY_SECTION.id },
   'divider',
   { label: SETTINGS_SECTION.label, icon: SETTINGS_SECTION.icon, path: SETTINGS_SECTION.parentPath, drillId: SETTINGS_SECTION.id },
 ];
 
-/* ---- Nav style toggle (classic vs pipeline) ---- */
-
-export type NavStyle = 'classic' | 'pipeline';
-const NAV_STYLE_KEY = 'blockdata.nav.style';
-
-export function getNavStyle(): NavStyle {
-  if (typeof window === 'undefined') return 'pipeline';
-  const stored = window.localStorage.getItem(NAV_STYLE_KEY);
-  return stored === 'classic' ? 'classic' : 'pipeline';
-}
-
-export function setNavStyle(style: NavStyle) {
-  window.localStorage.setItem(NAV_STYLE_KEY, style);
-}
-
-export function getActiveNav(): Array<NavItem | 'divider'> {
-  return PIPELINE_NAV;
-}
-
-const CLASSIC_ROUTE_ITEMS = TOP_LEVEL_NAV.flatMap((entry) => {
-  if (entry === 'divider') return [];
-  if (isClassicNavSection(entry)) return entry.items;
-  return [entry];
-});
-
 const PIPELINE_TOP_LEVEL_ITEMS = PIPELINE_NAV.filter(isNavItem);
 
 export const ALL_TOP_LEVEL_ITEMS: NavItem[] = dedupeNavItems([
-  ...CLASSIC_ROUTE_ITEMS,
   ...PIPELINE_TOP_LEVEL_ITEMS,
 ]);
 
@@ -323,31 +259,13 @@ const FLOWS_DRILL: NavDrillConfig = {
   ],
 };
 
-const WORKBENCH_DRILL: NavDrillConfig = {
-  id: 'workbench',
-  parentLabel: 'Workbench',
-  parentPath: '/app/workspace',
-  routePrefix: '/app/workspace',
-  sections: [
-    {
-      items: [
-        { label: 'Flows', icon: IconFolderPlus, path: '/app/flows' },
-        { label: 'Transform', icon: IconArrowsShuffle, path: '/app/transform' },
-        { label: 'Secrets', icon: IconLock, path: '/app/settings/secrets' },
-        { label: 'API', icon: IconTerminal2, path: '/app/api-editor' },
-        { label: 'Tests', icon: IconTestPipe, path: '/app/tests' },
-      ],
-    },
-  ],
-};
-
 export const DRILL_CONFIGS: NavDrillConfig[] = [
   FLOWS_DRILL,
   createStaticDrill(SETTINGS_SECTION),
   createStaticDrill(INGEST_SECTION),
   createStaticDrill(BUILD_AI_SECTION),
   createStaticDrill(CONNECTIONS_SECTION),
-  WORKBENCH_DRILL,
+  createStaticDrill(TESTS_SECTION),
   createStaticDrill(PIPELINE_SERVICES_SECTION),
   createStaticDrill(OBSERVABILITY_SECTION),
 ];
@@ -383,6 +301,8 @@ export function findDrillByRoute(pathname: string): NavDrillConfig | null {
   return null;
 }
 
-export function resolveFlowDrillPath(tabSlug: string, flowId: string): string {
-  return `/app/flows/${encodeURIComponent(flowId)}/${tabSlug}`;
+export function resolveFlowDrillPath(pathOrTab: string, flowIdOrPrefix: string): string {
+  // If the first arg is already a full path (starts with /), return it as-is.
+  if (pathOrTab.startsWith('/')) return pathOrTab;
+  return `/app/flows/${encodeURIComponent(flowIdOrPrefix)}/${pathOrTab}`;
 }

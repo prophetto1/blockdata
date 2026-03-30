@@ -13,7 +13,7 @@ describe('PipelineDeliverablesPanel', () => {
         job={{
           job_id: 'job-1',
           pipeline_kind: 'markdown_index_builder',
-          source_uid: 'source-1',
+          source_set_id: 'set-1',
           status: 'running',
           stage: 'embedding',
           deliverables: [
@@ -26,12 +26,22 @@ describe('PipelineDeliverablesPanel', () => {
             },
           ],
         }}
+        sourceSetLabel="Release corpus"
+        selectedSources={[
+          {
+            source_uid: 'source-1',
+            project_id: 'project-1',
+            doc_title: 'Guide.md',
+            source_type: 'md',
+          },
+        ]}
         onDownload={vi.fn()}
         downloadError={null}
         downloadingKind={null}
       />,
     );
 
+    expect(screen.getByText('Release corpus')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Download asset.semantic.zip' })).toBeDisabled();
   });
 
@@ -43,7 +53,7 @@ describe('PipelineDeliverablesPanel', () => {
         job={{
           job_id: 'job-1',
           pipeline_kind: 'markdown_index_builder',
-          source_uid: 'source-1',
+          source_set_id: 'set-1',
           status: 'complete',
           stage: 'complete',
           deliverables: [
@@ -56,6 +66,15 @@ describe('PipelineDeliverablesPanel', () => {
             },
           ],
         }}
+        sourceSetLabel="Release corpus"
+        selectedSources={[
+          {
+            source_uid: 'source-1',
+            project_id: 'project-1',
+            doc_title: 'Guide.md',
+            source_type: 'md',
+          },
+        ]}
         onDownload={onDownload}
         downloadError={null}
         downloadingKind={null}

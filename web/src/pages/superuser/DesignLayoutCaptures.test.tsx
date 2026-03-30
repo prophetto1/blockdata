@@ -24,6 +24,12 @@ const sampleCapture = {
   status: 'complete' as const,
 };
 
+const authNeededCapture = {
+  ...sampleCapture,
+  id: 'capture-auth-needed',
+  status: 'auth-needed' as const,
+};
+
 afterEach(() => {
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
@@ -54,5 +60,22 @@ describe('DesignLayoutCaptures responsiveness', () => {
     expect(urlCell?.className).toContain('whitespace-normal');
     expect(urlCell?.className).toContain('break-all');
     expect(actionStack?.className).toContain('flex-wrap');
+  });
+
+  it('renders auth-needed captures with a warning badge instead of the generic gray state', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => [authNeededCapture],
+      }),
+    );
+
+    render(<DesignLayoutCaptures />);
+
+    const statusBadge = await screen.findByText('auth-needed');
+
+    expect(statusBadge.className).toContain('bg-amber-700');
+    expect(statusBadge.className).not.toContain('bg-stone-700');
   });
 });

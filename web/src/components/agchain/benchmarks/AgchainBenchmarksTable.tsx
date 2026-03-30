@@ -17,7 +17,7 @@ function formatValidation(item: AgchainBenchmarkListRow) {
 function formatActivity(item: AgchainBenchmarkListRow) {
   const lastRun = item.last_run_at ? new Date(item.last_run_at).toLocaleString() : 'No runs yet';
   const updated = new Date(item.updated_at).toLocaleString();
-  return `${lastRun} · updated ${updated}`;
+  return `${lastRun} | updated ${updated}`;
 }
 
 export function AgchainBenchmarksTable({
@@ -27,9 +27,10 @@ export function AgchainBenchmarksTable({
   return (
     <section className="rounded-3xl border border-border/70 bg-card/70 shadow-sm">
       <div className="border-b border-border/70 px-6 py-4">
-        <h2 className="text-lg font-semibold text-foreground">Benchmark Catalog</h2>
+        <h2 className="text-lg font-semibold text-foreground">Project registry</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          One row per benchmark identity. Entering a row opens its benchmark-scoped workbench.
+          One row per AGChain project or evaluation, backed by benchmark-derived registry data. Entering a row opens
+          its focused child pages.
         </p>
       </div>
       <div className="overflow-x-auto">
@@ -50,13 +51,13 @@ export function AgchainBenchmarksTable({
             {loading ? (
               <tr>
                 <td className="px-6 py-8 text-muted-foreground" colSpan={8}>
-                  Loading benchmarks...
+                  Loading AGChain projects...
                 </td>
               </tr>
             ) : items.length === 0 ? (
               <tr>
                 <td className="px-6 py-8 text-muted-foreground" colSpan={8}>
-                  No benchmarks have been created yet.
+                  No AGChain projects have been created yet.
                 </td>
               </tr>
             ) : (
@@ -73,7 +74,7 @@ export function AgchainBenchmarksTable({
                         className="font-medium text-foreground underline-offset-4 hover:underline"
                         to={item.href}
                       >
-                        Open Workbench
+                        Open Project
                       </Link>
                     </div>
                   </td>

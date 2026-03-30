@@ -1,75 +1,37 @@
-import { useCallback, useRef, useState, type CSSProperties, type MouseEvent as ReactMouseEvent } from 'react';
-import { Outlet, useNavigate } from 'react-router-dom';
+import type { CSSProperties } from 'react';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/auth/AuthContext';
 import { AGCHAIN_NAV_SECTIONS } from '@/components/agchain/AgchainLeftNav';
+import { AgchainBenchmarkNav } from '@/components/agchain/AgchainBenchmarkNav';
+import { AgchainProjectSwitcher } from '@/components/agchain/AgchainProjectSwitcher';
 import { LeftRailShadcn as AgchainChromeRail } from '@/components/shell/LeftRailShadcn';
 import { TopCommandBar } from '@/components/shell/TopCommandBar';
 import { styleTokens } from '@/lib/styleTokens';
 
-const SIDEBAR_WIDTH_KEY = 'blockdata.shell.agchain_sidebar_width';
+const AGCHAIN_RAIL_1_WIDTH = 224;
+const AGCHAIN_RAIL_2_WIDTH = 224;
 const AGCHAIN_HEADER_HEIGHT = styleTokens.shell.headerHeight;
+const AGCHAIN_BENCHMARK_DEFINITION_PATH = '/app/agchain/settings/project/benchmark-definition';
 
 export function AgchainShellLayout() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, profile, signOut } = useAuth();
-  const [sidebarWidth, setSidebarWidth] = useState<number>(() => {
-    if (typeof window === 'undefined') return styleTokens.shell.navbarWidth;
-    const stored = window.localStorage.getItem(SIDEBAR_WIDTH_KEY);
-    if (stored) {
-      const parsed = Number(stored);
-      if (Number.isFinite(parsed)) {
-        return Math.max(styleTokens.shell.navbarMinWidth, Math.min(parsed, styleTokens.shell.navbarMaxWidth));
-      }
-    }
-    return styleTokens.shell.navbarWidth;
-  });
-  const isResizingRef = useRef(false);
+
+  const showRail2 = location.pathname === AGCHAIN_BENCHMARK_DEFINITION_PATH;
+  const totalRailWidth = AGCHAIN_RAIL_1_WIDTH + (showRail2 ? AGCHAIN_RAIL_2_WIDTH : 0);
 
   const handleSignOut = async () => {
     await signOut();
     navigate('/login');
   };
 
-  const handleResizeStart = useCallback((event: ReactMouseEvent) => {
-    event.preventDefault();
-    isResizingRef.current = true;
-    const startX = event.clientX;
-    const startWidth = sidebarWidth;
-
-    const onMouseMove = (moveEvent: MouseEvent) => {
-      if (!isResizingRef.current) return;
-      const delta = moveEvent.clientX - startX;
-      const nextWidth = Math.max(
-        styleTokens.shell.navbarMinWidth,
-        Math.min(startWidth + delta, styleTokens.shell.navbarMaxWidth),
-      );
-      setSidebarWidth(nextWidth);
-    };
-
-    const onMouseUp = () => {
-      isResizingRef.current = false;
-      document.removeEventListener('mousemove', onMouseMove);
-      document.removeEventListener('mouseup', onMouseUp);
-      document.body.style.cursor = '';
-      document.body.style.userSelect = '';
-      setSidebarWidth((width) => {
-        window.localStorage.setItem(SIDEBAR_WIDTH_KEY, String(width));
-        return width;
-      });
-    };
-
-    document.body.style.cursor = 'col-resize';
-    document.body.style.userSelect = 'none';
-    document.addEventListener('mousemove', onMouseMove);
-    document.addEventListener('mouseup', onMouseUp);
-  }, [sidebarWidth]);
-
   const mainStyle: CSSProperties = {
     position: 'absolute',
     insetBlockStart: `${AGCHAIN_HEADER_HEIGHT}px`,
     insetBlockEnd: 0,
     insetInlineEnd: 0,
-    insetInlineStart: `${sidebarWidth}px`,
+    insetInlineStart: `${totalRailWidth}px`,
     overflow: 'auto',
     backgroundColor: 'var(--background)',
   };
@@ -80,19 +42,20 @@ export function AgchainShellLayout() {
         data-testid="agchain-top-header"
         style={{
           position: 'fixed',
-          insetInlineStart: `${sidebarWidth}px`,
+          insetInlineStart: `${totalRailWidth}px`,
           insetInlineEnd: 0,
           top: 0,
           height: `${AGCHAIN_HEADER_HEIGHT}px`,
           zIndex: 30,
           backgroundColor: 'var(--chrome, var(--background))',
         }}
-      >
-        <TopCommandBar
-          onToggleNav={() => {}}
-          hideProjectSwitcher
-          hideSearch
-        />
+        >
+          <TopCommandBar
+            onToggleNav={() => {}}
+            hideProjectSwitcher
+            hideSearch
+            primaryContext={<AgchainProjectSwitcher />}
+          />
         <div
           data-testid="agchain-shell-top-divider"
           aria-hidden
@@ -113,7 +76,7 @@ export function AgchainShellLayout() {
           position: 'fixed',
           insetInlineStart: 0,
           insetBlock: 0,
-          width: `${sidebarWidth}px`,
+          width: `${AGCHAIN_RAIL_1_WIDTH}px`,
           borderInlineEnd: '1px solid var(--border)',
           backgroundColor: 'var(--chrome, var(--background))',
           zIndex: 20,
@@ -131,24 +94,23 @@ export function AgchainShellLayout() {
             </span>
           )}
         />
-        <div
-          role="separator"
-          aria-orientation="vertical"
-          onMouseDown={handleResizeStart}
-          style={{
-            position: 'absolute',
-            top: 0,
-            bottom: 0,
-            insetInlineEnd: -2,
-            width: 4,
-            cursor: 'col-resize',
-            zIndex: 21,
-          }}
-          className="group"
-        >
-          <div className="mx-auto h-full w-px bg-transparent transition-colors group-hover:bg-primary/30" />
-        </div>
       </aside>
+
+      {showRail2 && (
+        <aside
+          data-testid="agchain-secondary-rail"
+          style={{
+            position: 'fixed',
+            top: `${AGCHAIN_HEADER_HEIGHT}px`,
+            bottom: 0,
+            insetInlineStart: `${AGCHAIN_RAIL_1_WIDTH}px`,
+            width: `${AGCHAIN_RAIL_2_WIDTH}px`,
+            zIndex: 19,
+          }}
+        >
+          <AgchainBenchmarkNav />
+        </aside>
+      )}
 
       <main style={mainStyle}>
         <div data-testid="agchain-shell-frame" className="h-full min-h-0">

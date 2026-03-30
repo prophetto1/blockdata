@@ -25,6 +25,20 @@ class PipelineSourceDocument:
     byte_size: int
 
 
+@dataclass(frozen=True)
+class PipelineSourceMarkdownMember:
+    source_uid: str
+    project_id: str | None
+    source_type: str
+    doc_title: str | None
+    source_order: int
+    bucket: str
+    object_key: str
+    content_type: str
+    byte_size: int
+    markdown_bytes: bytes
+
+
 @lru_cache(maxsize=1)
 def _gcs_client() -> gcs.Client:
     return gcs.Client()
@@ -40,6 +54,48 @@ def load_pipeline_source_markdown(*, owner_id: str, source_uid: str) -> bytes:
         return blob.download_as_bytes()
     except NotFound as exc:
         raise RuntimeError("Source markdown object not found in GCS") from exc
+
+
+def load_pipeline_source_set_markdown_members(*, owner_id: str, source_set_id: str) -> list[PipelineSourceMarkdownMember]:
+    admin = get_supabase_admin()
+    rows = (
+        admin.table("pipeline_source_set_items")
+        .select("source_uid, source_order, doc_title, source_type, byte_size, object_key")
+        .eq("owner_id", owner_id)
+        .eq("source_set_id", source_set_id)
+        .order("source_order", desc=False)
+        .execute()
+        .data
+        or []
+    )
+    if not rows:
+        raise RuntimeError("Source set has no markdown members")
+
+    members: list[PipelineSourceMarkdownMember] = []
+    for row in rows:
+        source = _load_owned_source_document(owner_id=owner_id, source_uid=str(row["source_uid"]))
+        if source.source_type not in {"md", "markdown"}:
+            raise RuntimeError("Source type is not eligible for markdown_index_builder")
+        blob = _gcs_client().bucket(source.bucket).blob(source.object_key)
+        try:
+            markdown_bytes = blob.download_as_bytes()
+        except NotFound as exc:
+            raise RuntimeError("Source markdown object not found in GCS") from exc
+        members.append(
+            PipelineSourceMarkdownMember(
+                source_uid=source.source_uid,
+                project_id=source.project_id,
+                source_type=source.source_type,
+                doc_title=row.get("doc_title") or source.doc_title,
+                source_order=int(row.get("source_order") or len(members) + 1),
+                bucket=source.bucket,
+                object_key=source.object_key,
+                content_type=source.content_type,
+                byte_size=int(row.get("byte_size") or source.byte_size),
+                markdown_bytes=markdown_bytes,
+            )
+        )
+    return members
 
 
 def store_pipeline_artifact(

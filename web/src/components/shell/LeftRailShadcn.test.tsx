@@ -75,9 +75,7 @@ describe('LeftRailShadcn', () => {
     });
   });
 
-  it('renders the brand logo and top-level nav items', async () => {
-    window.localStorage.setItem('blockdata.nav.style', 'classic');
-
+  it('renders the brand logo and top-level nav items without inline drill children', async () => {
     render(
       <MemoryRouter initialEntries={['/app/assets']}>
         <LeftRailShadcn />
@@ -86,14 +84,11 @@ describe('LeftRailShadcn', () => {
 
     expect(await screen.findByRole('button', { name: 'Go to home' })).toBeInTheDocument();
     expect(screen.getByText('Flows')).toBeInTheDocument();
-    expect(screen.getByText('Workbench')).toBeInTheDocument();
     expect(screen.getByText('Ingest')).toBeInTheDocument();
     expect(screen.getByText('Assets')).toBeInTheDocument();
     expect(screen.getByText('Pipeline Services')).toBeInTheDocument();
-    expect(screen.getByText('Knowledge Bases')).toBeInTheDocument();
-    expect(screen.getByText('Index Builder')).toBeInTheDocument();
-    expect(screen.getAllByText('Settings').length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText('Secrets')).toBeInTheDocument();
+    expect(screen.queryByText('Knowledge Bases')).not.toBeInTheDocument();
+    expect(screen.queryByText('Secrets')).not.toBeInTheDocument();
     expect(screen.queryByText('RAG')).not.toBeInTheDocument();
   });
 
@@ -121,22 +116,6 @@ describe('LeftRailShadcn', () => {
     expect(screen.queryByText('Define Workflows')).not.toBeInTheDocument();
     expect(screen.queryByText('Knowledge Bases')).not.toBeInTheDocument();
     expect(screen.queryByText('Parse')).not.toBeInTheDocument();
-  });
-
-  it('uses denser item sizing in classic view', async () => {
-    window.localStorage.setItem('blockdata.nav.style', 'classic');
-
-    render(
-      <MemoryRouter initialEntries={['/app/assets']}>
-        <LeftRailShadcn />
-      </MemoryRouter>,
-    );
-
-    const assetsButton = await screen.findByRole('button', { name: 'Assets' });
-
-    expect(assetsButton.className).toContain('h-7');
-    expect(assetsButton.className).toContain('text-xs');
-    expect(assetsButton.className).toContain('px-1.5');
   });
 
   it('shows drill view when on a settings route', async () => {
@@ -171,16 +150,43 @@ describe('LeftRailShadcn', () => {
       </MemoryRouter>,
     );
 
-    expect(await screen.findByText('Knowledge Bases')).toBeInTheDocument();
+    expect(await screen.findByText('Overview')).toBeInTheDocument();
+    expect(screen.getByText('Knowledge Bases')).toBeInTheDocument();
     expect(screen.getByText('Index Builder')).toBeInTheDocument();
     expect(screen.getAllByText('Pipeline Services')).toHaveLength(1);
   });
 
-  it('renders Flows as a classic drill entry with a chevron', async () => {
-    window.localStorage.setItem('blockdata.nav.style', 'classic');
-
+  it('shows pipeline services overview as the active drill item on overview routes in pipeline view', async () => {
     render(
-      <MemoryRouter initialEntries={['/app/flows']}>
+      <MemoryRouter initialEntries={['/app/pipeline-services']}>
+        <LeftRailShadcn />
+      </MemoryRouter>,
+    );
+
+    const overviewButton = await screen.findByRole('button', { name: 'Overview' });
+
+    expect(overviewButton.className).toContain('bg-sidebar-accent');
+    expect(screen.getByText('Index Builder')).toBeInTheDocument();
+    expect(screen.getByText('Knowledge Bases')).toBeInTheDocument();
+    expect(screen.getAllByText('Pipeline Services')).toHaveLength(1);
+  });
+
+  it('shows pipeline services drill items on index builder routes in pipeline view', async () => {
+    render(
+      <MemoryRouter initialEntries={['/app/pipeline-services/index-builder']}>
+        <LeftRailShadcn />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText('Overview')).toBeInTheDocument();
+    expect(screen.getByText('Knowledge Bases')).toBeInTheDocument();
+    expect(screen.getByText('Index Builder')).toBeInTheDocument();
+    expect(screen.getAllByText('Pipeline Services')).toHaveLength(1);
+  });
+
+  it('renders Flows as a drill entry with a chevron', async () => {
+    render(
+      <MemoryRouter initialEntries={['/app/assets']}>
         <LeftRailShadcn />
       </MemoryRouter>,
     );

@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import type { ReactNode } from 'react';
 import { Combobox, createListCollection } from '@ark-ui/react/combobox';
 import { Menu02Icon, SparklesIcon, Moon02Icon, Sun03Icon, Search01Icon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
@@ -24,6 +25,7 @@ type TopCommandBarProps = {
   onToggleAssistant?: () => void;
   hideProjectSwitcher?: boolean;
   hideSearch?: boolean;
+  primaryContext?: ReactNode;
 };
 
 type TopSearchOption = {
@@ -47,6 +49,7 @@ export function TopCommandBar({
   onToggleAssistant,
   hideProjectSwitcher = false,
   hideSearch = false,
+  primaryContext,
 }: TopCommandBarProps) {
   const { center, shellTopSlots } = useHeaderCenter();
   const { isDark, toggle: toggleColorScheme } = useTheme();
@@ -137,6 +140,7 @@ export function TopCommandBar({
   const resolvedMiddleNode = shellGuides ? (shellTopSlots?.middle ?? null) : center;
   const rightNode = shellTopSlots?.right ?? null;
   const showRightSlot = shellGuides || Boolean(shellTopSlots?.showRightInMinimal);
+  const primaryContextNode = primaryContext ?? (!hideProjectSwitcher ? <ProjectSwitcher /> : null);
 
   return (
     <div
@@ -153,7 +157,7 @@ export function TopCommandBar({
           <HugeiconsIcon icon={Menu02Icon} size={24} strokeWidth={1.8} />
         </button>
         {shellGuides ? leftNode : null}
-        {!hideProjectSwitcher && <ProjectSwitcher />}
+        {primaryContextNode}
       </div>
       {!isMobile && (
         <div className="top-command-bar-center">

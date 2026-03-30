@@ -5,13 +5,11 @@ import {
   getPipelineJob,
   type PipelineJob,
   type PipelineJobSummary,
-  listPipelineSources,
-  type PipelineSource,
 } from '@/lib/pipelineService';
 
 type UsePipelineJobOptions = {
-  projectId: string | null;
   pipelineKind: string | null;
+  sourceSetId: string | null;
   pollIntervalMs?: number;
 };
 
@@ -28,14 +26,10 @@ function toTrackedJob(job: PipelineJobSummary): PipelineJob {
 }
 
 export function usePipelineJob({
-  projectId,
   pipelineKind,
+  sourceSetId,
   pollIntervalMs = 2000,
 }: UsePipelineJobOptions) {
-  const [sources, setSources] = useState<PipelineSource[]>([]);
-  const [sourcesLoading, setSourcesLoading] = useState(false);
-  const [sourcesError, setSourcesError] = useState<string | null>(null);
-  const [selectedSourceUid, setSelectedSourceUid] = useState<string | null>(null);
   const [job, setJob] = useState<PipelineJob | null>(null);
   const [jobLoading, setJobLoading] = useState(false);
   const [jobError, setJobError] = useState<string | null>(null);
@@ -43,40 +37,9 @@ export function usePipelineJob({
   const [isTriggering, setIsTriggering] = useState(false);
   const [isPolling, setIsPolling] = useState(false);
 
-  const refreshSources = useCallback(async () => {
-    if (!projectId || !pipelineKind) {
-      setSources([]);
-      setSourcesError(null);
-      setSelectedSourceUid(null);
-      return [];
-    }
-
-    try {
-      setSourcesLoading(true);
-      setSourcesError(null);
-      const items = await listPipelineSources({ projectId, pipelineKind });
-      setSources(items);
-      setSelectedSourceUid((current) => {
-        if (current && items.some((item) => item.source_uid === current)) return current;
-        return items[0]?.source_uid ?? null;
-      });
-      return items;
-    } catch (error) {
-      setSources([]);
-      setSourcesError(toErrorMessage(error, 'Unable to load your sources.'));
-      setSelectedSourceUid(null);
-      return [];
-    } finally {
-      setSourcesLoading(false);
-    }
-  }, [pipelineKind, projectId]);
-
-  useEffect(() => {
-    void refreshSources();
-  }, [refreshSources]);
-
-  const refreshLatestJob = useCallback(async () => {
-    if (!pipelineKind || !selectedSourceUid) {
+  const refreshLatestJob = useCallback(async (sourceSetIdOverride?: string | null) => {
+    const resolvedSourceSetId = sourceSetIdOverride ?? sourceSetId;
+    if (!pipelineKind || !resolvedSourceSetId) {
       setJob(null);
       setJobError(null);
       return null;
@@ -87,7 +50,7 @@ export function usePipelineJob({
       setJobError(null);
       const latest = await getLatestPipelineJob({
         pipelineKind,
-        sourceUid: selectedSourceUid,
+        sourceSetId: resolvedSourceSetId,
       });
       setJob(latest);
       return latest;
@@ -98,7 +61,7 @@ export function usePipelineJob({
     } finally {
       setJobLoading(false);
     }
-  }, [pipelineKind, selectedSourceUid]);
+  }, [pipelineKind, sourceSetId]);
 
   useEffect(() => {
     void refreshLatestJob();
@@ -135,15 +98,16 @@ export function usePipelineJob({
     };
   }, [job?.job_id, job?.status, pollIntervalMs]);
 
-  const triggerJob = useCallback(async () => {
-    if (!pipelineKind || !selectedSourceUid) return;
+  const triggerJob = useCallback(async (sourceSetIdOverride?: string | null) => {
+    const resolvedSourceSetId = sourceSetIdOverride ?? sourceSetId;
+    if (!pipelineKind || !resolvedSourceSetId) return;
 
     try {
       setIsTriggering(true);
       setTriggerError(null);
       const created = await createPipelineJob({
         pipelineKind,
-        sourceUid: selectedSourceUid,
+        sourceSetId: resolvedSourceSetId,
       });
       setJob(toTrackedJob(created));
     } catch (error) {
@@ -151,21 +115,15 @@ export function usePipelineJob({
     } finally {
       setIsTriggering(false);
     }
-  }, [pipelineKind, selectedSourceUid]);
+  }, [pipelineKind, sourceSetId]);
 
   return {
-    sources,
-    sourcesLoading,
-    sourcesError,
-    selectedSourceUid,
-    setSelectedSourceUid,
     job,
     jobLoading,
     jobError,
     triggerError,
     isTriggering,
     isPolling,
-    refreshSources,
     refreshLatestJob,
     triggerJob,
   };

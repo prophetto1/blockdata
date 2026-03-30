@@ -26,17 +26,17 @@ const BENCHMARK_SECTIONS: BenchmarkSection[] = [
   { label: 'Runs',       icon: IconActivity,        hash: '#runs' },
 ];
 
-export function AgchainBenchmarkNav({ benchmarkId }: { benchmarkId: string }) {
+export function AgchainBenchmarkNav() {
   const { hash } = useLocation();
   const activeHash = hash || '#steps';
-  const basePath = `/app/agchain/benchmarks/${encodeURIComponent(benchmarkId)}`;
+  const basePath = '/app/agchain/settings/project/benchmark-definition';
 
   return (
     <nav
       aria-label="Benchmark sections"
-      data-testid="agchain-secondary-rail"
-      className="flex h-full flex-col overflow-y-auto overflow-x-hidden px-2 py-3"
-      style={{ backgroundColor: 'var(--background)' }}
+      data-testid="agchain-benchmark-nav"
+      className="flex h-full flex-col overflow-y-auto overflow-x-hidden border-r border-sidebar-border px-2 py-3"
+      style={{ backgroundColor: 'var(--sidebar-accent)' }}
     >
       <div className="flex flex-col space-y-0 px-1">
         {BENCHMARK_SECTIONS.map((section) => {

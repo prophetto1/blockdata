@@ -3,9 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { PipelineUploadPanel } from './PipelineUploadPanel';
 
 describe('PipelineUploadPanel', () => {
-  it('supports markdown upload and manual source-trigger selection', async () => {
-    const onSelectSource = vi.fn();
-    const onTrigger = vi.fn().mockResolvedValue(undefined);
+  it('supports bulk markdown upload for the locked upload phase', async () => {
     const onUpload = vi.fn().mockResolvedValue(undefined);
 
     render(
@@ -19,53 +17,36 @@ describe('PipelineUploadPanel', () => {
           deliverableKinds: ['lexical_sqlite', 'semantic_zip'],
         }}
         projectId="project-1"
-        sources={[
-          {
-            source_uid: 'source-1',
-            project_id: 'project-1',
-            doc_title: 'Guide.md',
-            source_type: 'md',
-          },
-        ]}
-        sourcesLoading={false}
-        sourcesError={null}
-        selectedSourceUid="source-1"
-        onSelectSource={onSelectSource}
-        onTrigger={onTrigger}
         onUpload={onUpload}
-        isTriggering={false}
       />,
     );
 
     expect(screen.getByRole('heading', { name: 'Index Builder' })).toBeInTheDocument();
-    expect(screen.getByText('markdown_index_builder')).toBeInTheDocument();
-    expect(screen.getByText('lexical_sqlite, semantic_zip')).toBeInTheDocument();
-    expect(screen.getByText('md, markdown')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Upload' })).toBeInTheDocument();
+    expect(screen.getByText('Drop markdown files here or click to upload')).toBeInTheDocument();
+    expect(screen.queryByText('Import From URL')).not.toBeInTheDocument();
 
-    const input = screen.getByLabelText('Upload markdown source') as HTMLInputElement;
+    const input = screen.getByLabelText('Add markdown files') as HTMLInputElement;
     expect(input.accept).toBe('.md,.markdown,text/markdown');
-
-    fireEvent.change(screen.getByLabelText('Your sources'), {
-      target: { value: 'source-1' },
-    });
-    expect(onSelectSource).toHaveBeenCalledWith('source-1');
+    expect(input.multiple).toBe(true);
 
     fireEvent.change(input, {
       target: {
-        files: [new File(['# Hello'], 'guide.md', { type: 'text/markdown' })],
+        files: [
+          new File(['# Hello'], 'guide.md', { type: 'text/markdown' }),
+          new File(['# Notes'], 'notes.md', { type: 'text/markdown' }),
+        ],
       },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Upload file' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Upload files' }));
 
     await waitFor(() => {
-      expect(onUpload).toHaveBeenCalledWith(expect.any(File));
+      expect(onUpload).toHaveBeenCalledWith([
+        expect.any(File),
+        expect.any(File),
+      ]);
     });
-    expect(onTrigger).not.toHaveBeenCalled();
+    expect(screen.getByText('2 files ready for upload.')).toBeInTheDocument();
     expect(screen.getByText('Upload complete.')).toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Start processing' }));
-    await waitFor(() => {
-      expect(onTrigger).toHaveBeenCalled();
-    });
   });
 });

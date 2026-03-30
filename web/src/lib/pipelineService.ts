@@ -5,6 +5,11 @@ import {
   type PreparedSourceUpload,
   type UploadReservation,
 } from '@/lib/storageUploadService';
+import {
+  cancelUploadReservation,
+  postUploadApiJson,
+  reserveUploadWithConflictRecovery,
+} from '@/lib/uploadReservationRecovery';
 
 export type PipelineDefinition = {
   pipeline_kind: string;
@@ -35,7 +40,8 @@ export type PipelineDeliverable = {
 export type PipelineJob = {
   job_id: string;
   pipeline_kind: string;
-  source_uid: string;
+  source_set_id: string;
+  source_uid?: string | null;
   status: string;
   stage: string;
   failure_stage?: string | null;
@@ -55,7 +61,7 @@ export type PipelineJob = {
 export type PipelineJobSummary = {
   job_id: string;
   pipeline_kind: string;
-  source_uid: string;
+  source_set_id: string;
   status: string;
   stage: string;
 };
@@ -129,21 +135,21 @@ export async function listPipelineSources(params: {
 
 export async function createPipelineJob(params: {
   pipelineKind: string;
-  sourceUid: string;
+  sourceSetId: string;
 }): Promise<PipelineJobSummary> {
   return postJson<PipelineJobSummary>(
     `/pipelines/${params.pipelineKind}/jobs`,
-    { source_uid: params.sourceUid },
+    { source_set_id: params.sourceSetId },
     'pipeline job create failed',
   );
 }
 
 export async function getLatestPipelineJob(params: {
   pipelineKind: string;
-  sourceUid: string;
+  sourceSetId: string;
 }): Promise<PipelineJob | null> {
   const response = await platformApiFetch(
-    `/pipelines/${params.pipelineKind}/jobs/latest${buildQuery({ source_uid: params.sourceUid })}`,
+    `/pipelines/${params.pipelineKind}/jobs/latest${buildQuery({ source_set_id: params.sourceSetId })}`,
   );
   const payload = await parseJsonResponse<{ job?: PipelineJob | null }>(
     response,
@@ -193,16 +199,18 @@ async function reservePipelineUpload(params: {
   prepared: PreparedSourceUpload;
   serviceSlug: string;
 }): Promise<UploadReservation> {
-  return postJson<UploadReservation>(
-    '/storage/uploads',
-    {
-      project_id: params.projectId,
-      ...params.prepared,
-      storage_surface: 'pipeline-services',
-      storage_service_slug: params.serviceSlug,
-    },
-    'pipeline upload reservation failed',
-  );
+  return reserveUploadWithConflictRecovery(() => (
+    postUploadApiJson<UploadReservation>(
+      '/storage/uploads',
+      {
+        project_id: params.projectId,
+        ...params.prepared,
+        storage_surface: 'pipeline-services',
+        storage_service_slug: params.serviceSlug,
+      },
+      'pipeline upload reservation failed',
+    )
+  ));
 }
 
 export async function uploadPipelineSource(params: {
@@ -218,22 +226,24 @@ export async function uploadPipelineSource(params: {
     serviceSlug: params.serviceSlug,
   });
 
-  const uploadResponse = await fetch(reservation.signed_upload_url, {
-    method: 'PUT',
-    headers: { 'Content-Type': prepared.content_type },
-    body: params.file,
-  });
+  let uploadResponse: Response;
+  try {
+    uploadResponse = await fetch(reservation.signed_upload_url, {
+      method: 'PUT',
+      headers: { 'Content-Type': prepared.content_type },
+      body: params.file,
+    });
+  } catch (error) {
+    await cancelUploadReservation(reservation.reservation_id);
+    throw error;
+  }
 
   if (!uploadResponse.ok) {
-    try {
-      await platformApiFetch(`/storage/uploads/${reservation.reservation_id}`, { method: 'DELETE' });
-    } catch {
-      // Best-effort cleanup only.
-    }
+    await cancelUploadReservation(reservation.reservation_id);
     throw new Error(`signed upload failed: ${uploadResponse.status}`);
   }
 
-  const completed = await postJson<CompletedUpload>(
+  const completed = await postUploadApiJson<CompletedUpload>(
     `/storage/uploads/${reservation.reservation_id}/complete`,
     { actual_bytes: params.file.size },
     'pipeline upload completion failed',

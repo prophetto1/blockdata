@@ -14,6 +14,7 @@ from zipfile import ZIP_DEFLATED, ZipFile
 import mistune
 import numpy as np
 
+from app.observability.contract import PIPELINE_STAGE_EXECUTE_SPAN_NAME, set_span_attributes
 from app.observability.pipeline_metrics import (
     pipeline_tracer,
     record_pipeline_chunk_count,
@@ -24,7 +25,11 @@ from app.services.pipeline_embeddings import (
     embed_pipeline_chunks,
     resolve_embedding_selection,
 )
-from app.services.pipeline_storage import load_pipeline_source_markdown, store_pipeline_artifact
+from app.services.pipeline_storage import (
+    PipelineSourceMarkdownMember,
+    load_pipeline_source_set_markdown_members,
+    store_pipeline_artifact,
+)
 
 
 # Keep the runnable worker entrypoint out of this module until Task 5 adds
@@ -43,6 +48,10 @@ class SectionRecord:
     section_id: str
     heading_level: int
     heading_path: list[str]
+    source_uid: str
+    source_title: str
+    source_order: int
+    source_heading_path: list[str]
     title: str
     order: int
     markdown: str
@@ -54,6 +63,10 @@ class ChunkRecord:
     chunk_id: str
     section_id: str
     heading_path: list[str]
+    source_uid: str
+    source_title: str
+    source_order: int
+    source_heading_path: list[str]
     title: str
     text: str
     ordinal: int
@@ -75,104 +88,105 @@ def run_markdown_index_builder(
     heartbeat: Callable[[], None],
 ) -> dict[str, object]:
     pipeline_kind = str(job.get("pipeline_kind") or "markdown_index_builder")
-
-    with pipeline_tracer.start_as_current_span("pipeline.stage.execute") as span:
-        span.set_attribute("pipeline.kind", pipeline_kind)
-
-        markdown_bytes = load_pipeline_source_markdown(
+    source_members = _run_timed_stage(
+        pipeline_kind=pipeline_kind,
+        stage="loading_sources",
+        set_stage=set_stage,
+        heartbeat=heartbeat,
+        fn=lambda: load_pipeline_source_set_markdown_members(
             owner_id=str(job["owner_id"]),
-            source_uid=str(job["source_uid"]),
+            source_set_id=str(job["source_set_id"]),
+        ),
+    )
+    prepared = prepare_source_set_markdown_index_data(
+        source_members,
+        stage_callback=set_stage,
+        pipeline_kind=pipeline_kind,
+        heartbeat=heartbeat,
+    )
+    record_pipeline_chunk_count(pipeline_kind=pipeline_kind, chunk_count=len(prepared.chunks))
+    heartbeat()
+
+    with TemporaryDirectory(prefix="markdown-index-builder-") as temp_dir_name:
+        temp_dir = Path(temp_dir_name)
+        lexical_path = temp_dir / "asset.lexical.sqlite"
+        semantic_path = temp_dir / "asset.semantic.zip"
+
+        _run_timed_stage(
+            pipeline_kind=pipeline_kind,
+            stage="lexical_indexing",
+            set_stage=set_stage,
+            heartbeat=heartbeat,
+            fn=lambda: build_lexical_sqlite_artifact(
+                prepared,
+                output_path=lexical_path,
+                source_uid=str(job["source_uid"]),
+                pipeline_kind=pipeline_kind,
+            ),
         )
-        prepared = prepare_markdown_index_data(markdown_bytes, stage_callback=set_stage)
-        record_pipeline_chunk_count(pipeline_kind=pipeline_kind, chunk_count=len(prepared.chunks))
-        heartbeat()
 
-        with TemporaryDirectory(prefix="markdown-index-builder-") as temp_dir_name:
-            temp_dir = Path(temp_dir_name)
-            lexical_path = temp_dir / "asset.lexical.sqlite"
-            semantic_path = temp_dir / "asset.semantic.zip"
-
-            _run_timed_stage(
-                pipeline_kind=pipeline_kind,
-                stage="lexical_indexing",
-                set_stage=set_stage,
+        selection, embeddings = _run_timed_stage(
+            pipeline_kind=pipeline_kind,
+            stage="embedding",
+            set_stage=set_stage,
+            heartbeat=heartbeat,
+            fn=lambda: _resolve_and_embed(
+                owner_id=str(job["owner_id"]),
+                prepared=prepared,
                 heartbeat=heartbeat,
-                fn=lambda: build_lexical_sqlite_artifact(
-                    prepared,
-                    output_path=lexical_path,
-                    source_uid=str(job["source_uid"]),
-                    pipeline_kind=pipeline_kind,
-                ),
+            ),
+        )
+
+        def _package_and_store() -> list[str]:
+            build_semantic_zip_artifact(
+                prepared,
+                embeddings=embeddings,
+                output_path=semantic_path,
+                pipeline_kind=pipeline_kind,
+                source_uid=str(job["source_uid"]),
+                embedding_provider=selection.provider,
+                embedding_model=selection.model_id,
             )
 
-            selection = _run_timed_stage(
-                pipeline_kind=pipeline_kind,
-                stage="embedding",
-                set_stage=set_stage,
-                heartbeat=heartbeat,
-                fn=lambda: resolve_embedding_selection(owner_id=str(job["owner_id"])),
+            store_pipeline_artifact(
+                job=job,
+                deliverable_kind="lexical_sqlite",
+                filename="asset.lexical.sqlite",
+                content_type="application/vnd.sqlite3",
+                local_path=lexical_path,
+                metadata_jsonb={
+                    "section_count": len(prepared.sections),
+                    "chunk_count": len(prepared.chunks),
+                },
             )
-            embeddings = _run_timed_stage(
-                pipeline_kind=pipeline_kind,
-                stage="embedding",
-                set_stage=None,
-                heartbeat=heartbeat,
-                fn=lambda: embed_pipeline_chunks(
-                    chunks=prepared.chunks,
-                    selection=selection,
-                    heartbeat=heartbeat,
-                ),
+            store_pipeline_artifact(
+                job=job,
+                deliverable_kind="semantic_zip",
+                filename="asset.semantic.zip",
+                content_type="application/zip",
+                local_path=semantic_path,
+                metadata_jsonb={
+                    "chunk_count": len(prepared.chunks),
+                    "embedding_provider": selection.provider,
+                    "embedding_model": selection.model_id,
+                    "dimensions": int(embeddings.shape[1]) if embeddings.ndim == 2 else None,
+                },
             )
+            return ["lexical_sqlite", "semantic_zip"]
 
-            def _package_and_store() -> list[str]:
-                build_semantic_zip_artifact(
-                    prepared,
-                    embeddings=embeddings,
-                    output_path=semantic_path,
-                    pipeline_kind=pipeline_kind,
-                    source_uid=str(job["source_uid"]),
-                    embedding_provider=selection.provider,
-                    embedding_model=selection.model_id,
-                )
-
-                store_pipeline_artifact(
-                    job=job,
-                    deliverable_kind="lexical_sqlite",
-                    filename="asset.lexical.sqlite",
-                    content_type="application/vnd.sqlite3",
-                    local_path=lexical_path,
-                    metadata_jsonb={
-                        "section_count": len(prepared.sections),
-                        "chunk_count": len(prepared.chunks),
-                    },
-                )
-                store_pipeline_artifact(
-                    job=job,
-                    deliverable_kind="semantic_zip",
-                    filename="asset.semantic.zip",
-                    content_type="application/zip",
-                    local_path=semantic_path,
-                    metadata_jsonb={
-                        "chunk_count": len(prepared.chunks),
-                        "embedding_provider": selection.provider,
-                        "embedding_model": selection.model_id,
-                        "dimensions": int(embeddings.shape[1]) if embeddings.ndim == 2 else None,
-                    },
-                )
-                return ["lexical_sqlite", "semantic_zip"]
-
-            deliverable_kinds = _run_timed_stage(
-                pipeline_kind=pipeline_kind,
-                stage="packaging",
-                set_stage=set_stage,
-                heartbeat=heartbeat,
-                fn=_package_and_store,
-            )
+        deliverable_kinds = _run_timed_stage(
+            pipeline_kind=pipeline_kind,
+            stage="packaging",
+            set_stage=set_stage,
+            heartbeat=heartbeat,
+            fn=_package_and_store,
+        )
 
     return {
         "deliverable_kinds": deliverable_kinds,
         "section_count": len(prepared.sections),
         "chunk_count": len(prepared.chunks),
+        "source_set_member_count": len(source_members),
         "embedding_provider": selection.provider,
         "embedding_model": selection.model_id,
     }
@@ -182,6 +196,8 @@ def prepare_markdown_index_data(
     markdown_bytes: bytes,
     *,
     stage_callback: Callable[[str], None] | None = None,
+    pipeline_kind: str | None = None,
+    heartbeat: Callable[[], None] | None = None,
     target_chunk_tokens: int = 512,
     max_chunk_tokens: int = 1024,
 ) -> PreparedMarkdownIndexData:
@@ -190,21 +206,116 @@ def prepare_markdown_index_data(
     if max_chunk_tokens < target_chunk_tokens:
         raise ValueError("max_chunk_tokens must be greater than or equal to target_chunk_tokens")
 
-    _emit_stage(stage_callback, "parsing")
-    source_markdown = _decode_markdown_bytes(markdown_bytes)
-    _MARKDOWN_PARSER(source_markdown)
+    source_markdown = _run_processing_stage(
+        pipeline_kind=pipeline_kind,
+        stage="parsing",
+        stage_callback=stage_callback,
+        heartbeat=heartbeat,
+        fn=lambda: _parse_markdown_bytes(markdown_bytes),
+    )
+    normalized_markdown = _run_processing_stage(
+        pipeline_kind=pipeline_kind,
+        stage="normalizing",
+        stage_callback=stage_callback,
+        heartbeat=heartbeat,
+        fn=lambda: _normalize_markdown(source_markdown),
+    )
+    sections = _run_processing_stage(
+        pipeline_kind=pipeline_kind,
+        stage="structuring",
+        stage_callback=stage_callback,
+        heartbeat=heartbeat,
+        fn=lambda: _derive_sections(normalized_markdown),
+    )
+    chunks = _run_processing_stage(
+        pipeline_kind=pipeline_kind,
+        stage="chunking",
+        stage_callback=stage_callback,
+        heartbeat=heartbeat,
+        fn=lambda: _build_chunks(
+            sections=sections,
+            target_chunk_tokens=target_chunk_tokens,
+            max_chunk_tokens=max_chunk_tokens,
+        ),
+    )
 
-    _emit_stage(stage_callback, "normalizing")
-    normalized_markdown = _normalize_markdown(source_markdown)
-
-    _emit_stage(stage_callback, "structuring")
-    sections = _derive_sections(normalized_markdown)
-
-    _emit_stage(stage_callback, "chunking")
-    chunks = _build_chunks(
+    return PreparedMarkdownIndexData(
+        normalized_markdown=normalized_markdown,
+        document_title=_derive_document_title(sections),
         sections=sections,
-        target_chunk_tokens=target_chunk_tokens,
-        max_chunk_tokens=max_chunk_tokens,
+        chunks=chunks,
+    )
+
+
+def prepare_source_set_markdown_index_data(
+    source_members: list[PipelineSourceMarkdownMember | dict],
+    *,
+    stage_callback: Callable[[str], None] | None = None,
+    pipeline_kind: str | None = None,
+    heartbeat: Callable[[], None] | None = None,
+    target_chunk_tokens: int = 512,
+    max_chunk_tokens: int = 1024,
+) -> PreparedMarkdownIndexData:
+    if target_chunk_tokens <= 0:
+        raise ValueError("target_chunk_tokens must be greater than zero")
+    if max_chunk_tokens < target_chunk_tokens:
+        raise ValueError("max_chunk_tokens must be greater than or equal to target_chunk_tokens")
+    if not source_members:
+        raise ValueError("Source set must contain at least one markdown source")
+
+    decoded_members = _run_processing_stage(
+        pipeline_kind=pipeline_kind,
+        stage="consolidating",
+        stage_callback=stage_callback,
+        heartbeat=heartbeat,
+        fn=lambda: [
+            (
+                member,
+                _decode_markdown_bytes(
+                    member["markdown_bytes"] if isinstance(member, dict) else member.markdown_bytes
+                ),
+            )
+            for member in source_members
+        ],
+    )
+
+    _run_processing_stage(
+        pipeline_kind=pipeline_kind,
+        stage="parsing",
+        stage_callback=stage_callback,
+        heartbeat=heartbeat,
+        fn=lambda: [_MARKDOWN_PARSER(decoded) for _, decoded in decoded_members],
+    )
+
+    normalized_members = _run_processing_stage(
+        pipeline_kind=pipeline_kind,
+        stage="normalizing",
+        stage_callback=stage_callback,
+        heartbeat=heartbeat,
+        fn=lambda: [
+            (member, _normalize_markdown(decoded))
+            for member, decoded in decoded_members
+        ],
+    )
+
+    normalized_markdown, sections = _run_processing_stage(
+        pipeline_kind=pipeline_kind,
+        stage="structuring",
+        stage_callback=stage_callback,
+        heartbeat=heartbeat,
+        fn=lambda: _structure_source_set_members(normalized_members),
+    )
+
+    chunks = _run_processing_stage(
+        pipeline_kind=pipeline_kind,
+        stage="chunking",
+        stage_callback=stage_callback,
+        heartbeat=heartbeat,
+        fn=lambda: _build_chunks(
+            sections=sections,
+            target_chunk_tokens=target_chunk_tokens,
+            max_chunk_tokens=max_chunk_tokens,
+        ),
     )
 
     return PreparedMarkdownIndexData(
@@ -218,6 +329,82 @@ def prepare_markdown_index_data(
 def _emit_stage(stage_callback: Callable[[str], None] | None, stage: str) -> None:
     if stage_callback is not None:
         stage_callback(stage)
+
+
+def _run_processing_stage(
+    *,
+    pipeline_kind: str | None,
+    stage: str,
+    stage_callback: Callable[[str], None] | None,
+    heartbeat: Callable[[], None] | None,
+    fn: Callable[[], object],
+) -> object:
+    if pipeline_kind is None or heartbeat is None:
+        _emit_stage(stage_callback, stage)
+        return fn()
+    return _run_timed_stage(
+        pipeline_kind=pipeline_kind,
+        stage=stage,
+        set_stage=stage_callback,
+        heartbeat=heartbeat,
+        fn=fn,
+    )
+
+
+def _parse_markdown_bytes(markdown_bytes: bytes) -> str:
+    source_markdown = _decode_markdown_bytes(markdown_bytes)
+    _MARKDOWN_PARSER(source_markdown)
+    return source_markdown
+
+
+def _structure_source_set_members(
+    normalized_members: list[tuple[PipelineSourceMarkdownMember | dict, str]],
+) -> tuple[str, list[SectionRecord]]:
+    sections: list[SectionRecord] = []
+    normalized_parts: list[str] = []
+    order = 1
+    for member, normalized in normalized_members:
+        source_uid = member["source_uid"] if isinstance(member, dict) else member.source_uid
+        source_title = (
+            member.get("doc_title") if isinstance(member, dict) else member.doc_title
+        ) or "Document"
+        source_order = int(member["source_order"] if isinstance(member, dict) else member.source_order)
+        normalized_parts.append(f"<!-- source:{source_order}:{source_uid}:{source_title} -->\n{normalized.strip()}\n")
+        member_sections = _derive_sections(normalized)
+        for section in member_sections:
+            sections.append(
+                SectionRecord(
+                    section_id=_make_section_id(order, section.heading_level, section.heading_path),
+                    heading_level=section.heading_level,
+                    heading_path=list(section.heading_path),
+                    source_uid=str(source_uid),
+                    source_title=str(source_title),
+                    source_order=source_order,
+                    source_heading_path=list(section.heading_path),
+                    title=section.title,
+                    order=order,
+                    markdown=section.markdown,
+                    text=section.text,
+                )
+            )
+            order += 1
+    normalized_markdown = "\n\n".join(part.strip() for part in normalized_parts).strip() + "\n"
+    return normalized_markdown, sections
+
+
+def _resolve_and_embed(
+    *,
+    owner_id: str,
+    prepared: PreparedMarkdownIndexData,
+    heartbeat: Callable[[], None],
+) -> tuple[EmbeddingSelection, np.ndarray]:
+    selection = resolve_embedding_selection(owner_id=owner_id)
+    embeddings = embed_pipeline_chunks(
+        chunks=prepared.chunks,
+        selection=selection,
+        heartbeat=heartbeat,
+    )
+    return selection, embeddings
 
 
 def _decode_markdown_bytes(markdown_bytes: bytes) -> str:
@@ -253,6 +440,10 @@ def _derive_sections(markdown: str) -> list[SectionRecord]:
                 section_id=_make_section_id(order, 0, []),
                 heading_level=0,
                 heading_path=[],
+                source_uid="src-1",
+                source_title="Document",
+                source_order=1,
+                source_heading_path=[],
                 title="Document",
                 order=order,
                 markdown=markdown.strip("\n"),
@@ -268,6 +459,10 @@ def _derive_sections(markdown: str) -> list[SectionRecord]:
                 section_id=_make_section_id(order, 0, []),
                 heading_level=0,
                 heading_path=[],
+                source_uid="src-1",
+                source_title="Document",
+                source_order=1,
+                source_heading_path=[],
                 title="Document",
                 order=order,
                 markdown=preamble_markdown,
@@ -293,6 +488,10 @@ def _derive_sections(markdown: str) -> list[SectionRecord]:
                 section_id=_make_section_id(order, heading.level, heading_path),
                 heading_level=heading.level,
                 heading_path=heading_path,
+                source_uid="src-1",
+                source_title="Document",
+                source_order=1,
+                source_heading_path=[],
                 title=heading.title,
                 order=order,
                 markdown=section_markdown,
@@ -443,6 +642,10 @@ def _build_chunks(
                     chunk_id=_make_chunk_id(section.section_id, ordinal, chunk_text),
                     section_id=section.section_id,
                     heading_path=list(section.heading_path),
+                    source_uid=section.source_uid,
+                    source_title=section.source_title,
+                    source_order=section.source_order,
+                    source_heading_path=list(section.source_heading_path),
                     title=section.title,
                     text=chunk_text,
                     ordinal=ordinal,
@@ -468,6 +671,10 @@ def _build_chunks(
                             chunk_id=_make_chunk_id(section.section_id, ordinal, chunk_text),
                             section_id=section.section_id,
                             heading_path=list(section.heading_path),
+                            source_uid=section.source_uid,
+                            source_title=section.source_title,
+                            source_order=section.source_order,
+                            source_heading_path=list(section.source_heading_path),
                             title=section.title,
                             text=chunk_text,
                             ordinal=ordinal,
@@ -531,6 +738,10 @@ def build_lexical_sqlite_artifact(
               section_id TEXT PRIMARY KEY,
               heading_level INTEGER NOT NULL,
               heading_path TEXT NOT NULL,
+              source_uid TEXT NOT NULL,
+              source_title TEXT NOT NULL,
+              source_order INTEGER NOT NULL,
+              source_heading_path TEXT NOT NULL,
               title TEXT NOT NULL,
               section_order INTEGER NOT NULL,
               markdown TEXT NOT NULL,
@@ -540,6 +751,10 @@ def build_lexical_sqlite_artifact(
               chunk_id TEXT PRIMARY KEY,
               section_id TEXT NOT NULL,
               heading_path TEXT NOT NULL,
+              source_uid TEXT NOT NULL,
+              source_title TEXT NOT NULL,
+              source_order INTEGER NOT NULL,
+              source_heading_path TEXT NOT NULL,
               title TEXT NOT NULL,
               text TEXT NOT NULL,
               ordinal INTEGER NOT NULL,
@@ -576,14 +791,18 @@ def build_lexical_sqlite_artifact(
         conn.executemany(
             """
             INSERT INTO sections (
-              section_id, heading_level, heading_path, title, section_order, markdown, text
-            ) VALUES (?, ?, ?, ?, ?, ?, ?)
+              section_id, heading_level, heading_path, source_uid, source_title, source_order, source_heading_path, title, section_order, markdown, text
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             [
                 (
                     section.section_id,
                     section.heading_level,
                     json.dumps(section.heading_path),
+                    section.source_uid,
+                    section.source_title,
+                    section.source_order,
+                    json.dumps(section.source_heading_path),
                     section.title,
                     section.order,
                     section.markdown,
@@ -595,14 +814,18 @@ def build_lexical_sqlite_artifact(
         conn.executemany(
             """
             INSERT INTO chunks (
-              chunk_id, section_id, heading_path, title, text, ordinal, token_count
-            ) VALUES (?, ?, ?, ?, ?, ?, ?)
+              chunk_id, section_id, heading_path, source_uid, source_title, source_order, source_heading_path, title, text, ordinal, token_count
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             [
                 (
                     chunk.chunk_id,
                     chunk.section_id,
                     json.dumps(chunk.heading_path),
+                    chunk.source_uid,
+                    chunk.source_title,
+                    chunk.source_order,
+                    json.dumps(chunk.source_heading_path),
                     chunk.title,
                     chunk.text,
                     chunk.ordinal,
@@ -629,6 +852,7 @@ def build_lexical_sqlite_artifact(
             "document_title": prepared.document_title or "",
             "section_count": str(len(prepared.sections)),
             "chunk_count": str(len(prepared.chunks)),
+            "source_set_member_count": str(len({section.source_uid for section in prepared.sections})),
         }
         conn.executemany(
             "INSERT INTO manifest (key, value) VALUES (?, ?)",
@@ -658,6 +882,7 @@ def build_semantic_zip_artifact(
         "document_title": prepared.document_title,
         "section_count": len(prepared.sections),
         "chunk_count": len(prepared.chunks),
+        "source_set_member_count": len({section.source_uid for section in prepared.sections}),
         "embedding_provider": embedding_provider,
         "embedding_model": embedding_model,
         "dimensions": int(embeddings.shape[1]) if embeddings.ndim == 2 else 0,
@@ -669,6 +894,10 @@ def build_semantic_zip_artifact(
                 "chunk_id": chunk.chunk_id,
                 "section_id": chunk.section_id,
                 "heading_path": chunk.heading_path,
+                "source_uid": chunk.source_uid,
+                "source_title": chunk.source_title,
+                "source_order": chunk.source_order,
+                "source_heading_path": chunk.source_heading_path,
                 "title": chunk.title,
                 "text": chunk.text,
                 "ordinal": chunk.ordinal,
@@ -702,12 +931,27 @@ def _run_timed_stage(
     started = perf_counter()
     if set_stage is not None:
         set_stage(stage)
-    heartbeat()
-    result = fn()
-    heartbeat()
-    record_pipeline_stage_duration(
-        pipeline_kind=pipeline_kind,
-        stage=stage,
-        duration_ms=(perf_counter() - started) * 1000.0,
-    )
-    return result
+    with pipeline_tracer.start_as_current_span(PIPELINE_STAGE_EXECUTE_SPAN_NAME) as span:
+        set_span_attributes(
+            span,
+            {
+                "pipeline.kind": pipeline_kind,
+                "stage": stage,
+            },
+        )
+        heartbeat()
+        try:
+            result = fn()
+            set_span_attributes(span, {"result": "ok"})
+            return result
+        except Exception as exc:
+            span.record_exception(exc)
+            set_span_attributes(span, {"result": "error"})
+            raise
+        finally:
+            heartbeat()
+            record_pipeline_stage_duration(
+                pipeline_kind=pipeline_kind,
+                stage=stage,
+                duration_ms=(perf_counter() - started) * 1000.0,
+            )

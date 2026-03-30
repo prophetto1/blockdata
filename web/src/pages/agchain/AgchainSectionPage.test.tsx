@@ -20,5 +20,6 @@ describe('AgchainSectionPage', () => {
     expect(frame).toHaveClass('w-full', 'px-4');
     expect(frame.className).not.toContain('max-w-');
     expect(frame.className).not.toContain('mx-auto');
+    expect(screen.getByText('Project-scoped placeholder surface')).toBeInTheDocument();
   });
 });

@@ -12,21 +12,37 @@ from app.auth.dependencies import require_user_auth
 from app.auth.principals import AuthPrincipal
 from app.infra.supabase_client import get_supabase_admin
 from app.observability.pipeline_metrics import (
+    log_pipeline_source_set_changed,
     pipeline_tracer,
     record_pipeline_deliverable_download,
     record_pipeline_job_create,
+    record_pipeline_source_set_create,
+    record_pipeline_source_set_member_count,
+    record_pipeline_source_set_update,
 )
 from app.pipelines.registry import (
     get_pipeline_definition,
     get_pipeline_worker_definition,
     list_pipeline_definitions as _list_defs,
 )
+from app.services import pipeline_source_sets as pipeline_source_sets_service
 
 router = APIRouter(prefix="/pipelines", tags=["pipelines"])
 
 
+class CreatePipelineSourceSetRequest(BaseModel):
+    project_id: str = Field(min_length=1)
+    label: str = Field(min_length=1)
+    source_uids: list[str] = Field(min_length=1, max_length=100)
+
+
+class UpdatePipelineSourceSetRequest(BaseModel):
+    label: str | None = Field(default=None, min_length=1)
+    source_uids: list[str] | None = Field(default=None, min_length=1, max_length=100)
+
+
 class CreatePipelineJobRequest(BaseModel):
-    source_uid: str = Field(min_length=1)
+    source_set_id: str = Field(min_length=1)
 
 
 def _require_pipeline_definition(pipeline_kind: str) -> dict:
@@ -49,25 +65,13 @@ def _query_project_sources(admin, owner_id: str, project_id: str, search: str | 
     return query.execute().data or []
 
 
-def _load_owned_source(admin, owner_id: str, source_uid: str) -> dict | None:
-    return (
-        admin.table("source_documents")
-        .select("source_uid, project_id, source_type, doc_title, source_locator")
-        .eq("owner_id", owner_id)
-        .eq("source_uid", source_uid)
-        .maybe_single()
-        .execute()
-        .data
-    )
-
-
-def _load_active_pipeline_job(admin, owner_id: str, pipeline_kind: str, source_uid: str) -> dict | None:
+def _load_active_pipeline_job(admin, owner_id: str, pipeline_kind: str, source_set_id: str) -> dict | None:
     return (
         admin.table("pipeline_jobs")
         .select("job_id, status")
         .eq("owner_id", owner_id)
         .eq("pipeline_kind", pipeline_kind)
-        .eq("source_uid", source_uid)
+        .eq("source_set_id", source_set_id)
         .in_("status", ["queued", "running"])
         .order("created_at", desc=True)
         .limit(1)
@@ -77,12 +81,22 @@ def _load_active_pipeline_job(admin, owner_id: str, pipeline_kind: str, source_u
     )
 
 
-def _insert_pipeline_job(admin, owner_id: str, pipeline_kind: str, source: dict) -> dict:
+def _load_owned_source_set(admin, owner_id: str, pipeline_kind: str, source_set_id: str) -> dict | None:
+    return pipeline_source_sets_service.get_source_set_detail(
+        admin,
+        owner_id=owner_id,
+        pipeline_kind=pipeline_kind,
+        source_set_id=source_set_id,
+    )
+
+
+def _insert_pipeline_job(admin, owner_id: str, pipeline_kind: str, source_set: dict) -> dict:
     payload = {
         "pipeline_kind": pipeline_kind,
         "owner_id": owner_id,
-        "project_id": source.get("project_id"),
-        "source_uid": source["source_uid"],
+        "project_id": source_set.get("project_id"),
+        "source_uid": source_set["items"][0]["source_uid"] if source_set.get("items") else None,
+        "source_set_id": source_set["source_set_id"],
         "status": "queued",
         "stage": "queued",
     }
@@ -103,13 +117,13 @@ def _load_deliverables_for_job(admin, job_id: str) -> list[dict]:
     )
 
 
-def _load_latest_job(admin, owner_id: str, pipeline_kind: str, source_uid: str) -> dict | None:
+def _load_latest_job(admin, owner_id: str, pipeline_kind: str, source_set_id: str) -> dict | None:
     return (
         admin.table("pipeline_jobs")
         .select("*")
         .eq("owner_id", owner_id)
         .eq("pipeline_kind", pipeline_kind)
-        .eq("source_uid", source_uid)
+        .eq("source_set_id", source_set_id)
         .order("created_at", desc=True)
         .limit(1)
         .maybe_single()
@@ -177,7 +191,8 @@ def _serialize_job(row: dict, deliverables: list[dict]) -> dict:
     return {
         "job_id": row["job_id"],
         "pipeline_kind": row["pipeline_kind"],
-        "source_uid": row["source_uid"],
+        "source_uid": row.get("source_uid"),
+        "source_set_id": row.get("source_set_id"),
         "status": row["status"],
         "stage": row["stage"],
         "failure_stage": row.get("failure_stage"),
@@ -220,14 +235,13 @@ async def list_pipeline_sources(
         definition = _require_pipeline_definition(pipeline_kind)
         admin = get_supabase_admin()
         _assert_project_ownership(admin, auth.user_id, project_id)
-        service_prefix = f"users/{auth.user_id}/pipeline-services/{definition['storage_service_slug']}/"
         rows = _query_project_sources(admin, auth.user_id, project_id, search)
         items = []
         for row in rows:
             if row.get("source_type") not in definition["eligible_source_types"]:
                 continue
-            if not str(row.get("object_key") or row.get("source_locator") or "").startswith(service_prefix):
-                continue
+            object_key = str(row.get("object_key") or row.get("source_locator") or "")
+            source_origin = "pipeline-services" if "/pipeline-services/" in object_key else "assets"
             items.append(
                 {
                     "source_uid": row["source_uid"],
@@ -237,10 +251,151 @@ async def list_pipeline_sources(
                     "content_type": row.get("content_type"),
                     "byte_size": row.get("byte_size", row.get("source_filesize")),
                     "created_at": row.get("created_at", row.get("uploaded_at")),
+                    "source_origin": source_origin,
+                    "object_key": object_key,
                 }
             )
         items.sort(key=lambda item: item["created_at"] or "", reverse=True)
         return {"items": items}
+
+
+@router.get("/{pipeline_kind}/source-sets")
+async def list_pipeline_source_sets(
+    pipeline_kind: str,
+    project_id: str,
+    auth: AuthPrincipal = Depends(require_user_auth),
+):
+    with pipeline_tracer.start_as_current_span("pipeline.source_sets.list") as span:
+        span.set_attribute("pipeline.kind", pipeline_kind)
+        _require_pipeline_definition(pipeline_kind)
+        admin = get_supabase_admin()
+        _assert_project_ownership(admin, auth.user_id, project_id)
+        items = pipeline_source_sets_service.list_source_sets(
+            admin,
+            owner_id=auth.user_id,
+            pipeline_kind=pipeline_kind,
+            project_id=project_id,
+        )
+        return {"items": items}
+
+
+@router.post("/{pipeline_kind}/source-sets", status_code=201)
+async def create_pipeline_source_set(
+    pipeline_kind: str,
+    body: CreatePipelineSourceSetRequest,
+    auth: AuthPrincipal = Depends(require_user_auth),
+):
+    with pipeline_tracer.start_as_current_span("pipeline.source_sets.create") as span:
+        span.set_attribute("pipeline.kind", pipeline_kind)
+        try:
+            definition = _require_pipeline_definition(pipeline_kind)
+            admin = get_supabase_admin()
+            _assert_project_ownership(admin, auth.user_id, body.project_id)
+            source_set = pipeline_source_sets_service.create_source_set(
+                admin,
+                owner_id=auth.user_id,
+                pipeline_kind=pipeline_kind,
+                project_id=body.project_id,
+                label=body.label,
+                source_uids=body.source_uids,
+                eligible_source_types=definition["eligible_source_types"],
+            )
+            member_count = int(source_set.get("member_count") or len(body.source_uids))
+            has_project_id = bool(source_set.get("project_id") or body.project_id)
+            record_pipeline_source_set_create(result="ok", pipeline_kind=pipeline_kind, http_status_code=201)
+            record_pipeline_source_set_member_count(
+                pipeline_kind=pipeline_kind,
+                member_count=member_count,
+            )
+            log_pipeline_source_set_changed(
+                pipeline_kind=pipeline_kind,
+                change_kind="create",
+                member_count=member_count,
+                has_project_id=has_project_id,
+            )
+            span.set_attribute("result", "ok")
+            span.set_attribute("http.status_code", 201)
+            span.set_attribute("member.count", member_count)
+            span.set_attribute("has_project_id", has_project_id)
+            return {"source_set": source_set}
+        except Exception as exc:
+            status = 400 if isinstance(exc, ValueError) else _http_status_code(exc)
+            record_pipeline_source_set_create(result="error", pipeline_kind=pipeline_kind, http_status_code=status)
+            span.set_attribute("result", "error")
+            span.set_attribute("http.status_code", status)
+            span.set_attribute("has_project_id", bool(body.project_id))
+            if isinstance(exc, ValueError):
+                raise HTTPException(status_code=400, detail=str(exc)) from exc
+            raise
+
+
+@router.get("/{pipeline_kind}/source-sets/{source_set_id}")
+async def get_pipeline_source_set(
+    pipeline_kind: str,
+    source_set_id: str,
+    auth: AuthPrincipal = Depends(require_user_auth),
+):
+    with pipeline_tracer.start_as_current_span("pipeline.source_sets.read") as span:
+        span.set_attribute("pipeline.kind", pipeline_kind)
+        _require_pipeline_definition(pipeline_kind)
+        admin = get_supabase_admin()
+        source_set = pipeline_source_sets_service.get_source_set_detail(
+            admin,
+            owner_id=auth.user_id,
+            pipeline_kind=pipeline_kind,
+            source_set_id=source_set_id,
+        )
+        if not source_set:
+            raise HTTPException(status_code=404, detail="Source set not found")
+        return {"source_set": source_set}
+
+
+@router.patch("/{pipeline_kind}/source-sets/{source_set_id}")
+async def update_pipeline_source_set(
+    pipeline_kind: str,
+    source_set_id: str,
+    body: UpdatePipelineSourceSetRequest,
+    auth: AuthPrincipal = Depends(require_user_auth),
+):
+    with pipeline_tracer.start_as_current_span("pipeline.source_sets.update") as span:
+        span.set_attribute("pipeline.kind", pipeline_kind)
+        try:
+            definition = _require_pipeline_definition(pipeline_kind)
+            admin = get_supabase_admin()
+            source_set = pipeline_source_sets_service.update_source_set(
+                admin,
+                owner_id=auth.user_id,
+                pipeline_kind=pipeline_kind,
+                source_set_id=source_set_id,
+                label=body.label,
+                source_uids=body.source_uids,
+                eligible_source_types=definition["eligible_source_types"],
+            )
+            member_count = int(source_set.get("member_count") or len(body.source_uids or []))
+            has_project_id = bool(source_set.get("project_id"))
+            record_pipeline_source_set_update(result="ok", pipeline_kind=pipeline_kind, http_status_code=200)
+            record_pipeline_source_set_member_count(
+                pipeline_kind=pipeline_kind,
+                member_count=member_count,
+            )
+            log_pipeline_source_set_changed(
+                pipeline_kind=pipeline_kind,
+                change_kind="update",
+                member_count=member_count,
+                has_project_id=has_project_id,
+            )
+            span.set_attribute("result", "ok")
+            span.set_attribute("http.status_code", 200)
+            span.set_attribute("member.count", member_count)
+            span.set_attribute("has_project_id", has_project_id)
+            return {"source_set": source_set}
+        except ValueError as exc:
+            detail = str(exc)
+            status = 404 if "not found" in detail.lower() else 400
+            record_pipeline_source_set_update(result="error", pipeline_kind=pipeline_kind, http_status_code=status)
+            span.set_attribute("result", "error")
+            span.set_attribute("http.status_code", status)
+            raise HTTPException(status_code=status, detail=detail) from exc
 
 
 @router.post("/{pipeline_kind}/jobs", status_code=202)
@@ -253,18 +408,16 @@ async def create_pipeline_job(
     with pipeline_tracer.start_as_current_span("pipeline.job.create") as span:
         span.set_attribute("pipeline.kind", pipeline_kind)
         try:
-            definition = _require_pipeline_definition(pipeline_kind)
+            _require_pipeline_definition(pipeline_kind)
             if get_pipeline_worker_definition(pipeline_kind) is None:
                 raise HTTPException(status_code=503, detail="Pipeline kind is not executable yet")
             admin = get_supabase_admin()
-            source = _load_owned_source(admin, auth.user_id, body.source_uid)
-            if not source:
-                raise HTTPException(status_code=404, detail="Source not found")
-            if source.get("source_type") not in definition["eligible_source_types"]:
-                raise HTTPException(status_code=400, detail="Source type not eligible for pipeline")
-            if _load_active_pipeline_job(admin, auth.user_id, pipeline_kind, body.source_uid):
-                raise HTTPException(status_code=409, detail="Active job already exists for source")
-            row = _insert_pipeline_job(admin, auth.user_id, pipeline_kind, source)
+            source_set = _load_owned_source_set(admin, auth.user_id, pipeline_kind, body.source_set_id)
+            if not source_set:
+                raise HTTPException(status_code=404, detail="Source set not found")
+            if _load_active_pipeline_job(admin, auth.user_id, pipeline_kind, body.source_set_id):
+                raise HTTPException(status_code=409, detail="Active job already exists for source set")
+            row = _insert_pipeline_job(admin, auth.user_id, pipeline_kind, source_set)
             record_pipeline_job_create(result="ok", pipeline_kind=pipeline_kind, http_status_code=202)
             span.set_attribute("result", "ok")
             span.set_attribute("http.status_code", 202)
@@ -272,7 +425,7 @@ async def create_pipeline_job(
             return {
                 "job_id": row["job_id"],
                 "pipeline_kind": row["pipeline_kind"],
-                "source_uid": row["source_uid"],
+                "source_set_id": row["source_set_id"],
                 "status": row["status"],
                 "stage": row["stage"],
             }
@@ -287,17 +440,17 @@ async def create_pipeline_job(
 @router.get("/{pipeline_kind}/jobs/latest")
 async def get_latest_pipeline_job(
     pipeline_kind: str,
-    source_uid: str,
+    source_set_id: str,
     auth: AuthPrincipal = Depends(require_user_auth),
 ):
     with pipeline_tracer.start_as_current_span("pipeline.job.read") as span:
         span.set_attribute("pipeline.kind", pipeline_kind)
         _require_pipeline_definition(pipeline_kind)
         admin = get_supabase_admin()
-        source = _load_owned_source(admin, auth.user_id, source_uid)
-        if not source:
-            raise HTTPException(status_code=404, detail="Source not found")
-        row = _load_latest_job(admin, auth.user_id, pipeline_kind, source_uid)
+        source_set = _load_owned_source_set(admin, auth.user_id, pipeline_kind, source_set_id)
+        if not source_set:
+            raise HTTPException(status_code=404, detail="Source set not found")
+        row = _load_latest_job(admin, auth.user_id, pipeline_kind, source_set_id)
         if not row:
             return {"job": None}
         deliverables = _load_deliverables_for_job(admin, row["job_id"])

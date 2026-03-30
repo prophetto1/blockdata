@@ -7,7 +7,7 @@
 ## Inherited Inputs
 
 - Existing AG chain models implementation plan:
-  - `E:\writing-system\_agchain\docs\plans\2026-03-26-agchain-models-surface-implementation-plan.md`
+  - `E:\writing-system\docs\plans\__complete\2026-03-26-agchain-models-surface-implementation-plan.md`
 - Live AG chain placeholder page:
   - `E:\writing-system\web\src\pages\agchain\AgchainModelsPage.tsx`
 - InspectAI provider registry and provider implementations:

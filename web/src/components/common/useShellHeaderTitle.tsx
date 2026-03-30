@@ -1,6 +1,6 @@
 import { useEffect, useMemo, type ReactNode } from 'react';
 import { useLocation } from 'react-router-dom';
-import { ALL_TOP_LEVEL_ITEMS, CLASSIC_LEAF_ITEMS, DRILL_CONFIGS } from '@/components/shell/nav-config';
+import { ALL_TOP_LEVEL_ITEMS, DRILL_CONFIGS } from '@/components/shell/nav-config';
 import { useHeaderCenter } from '@/components/shell/HeaderCenterContext';
 import './ShellHeaderTitle.css';
 
@@ -71,7 +71,7 @@ function resolveStructuredSegments(pathname: string): { segments: string[]; sour
     };
   }
 
-  const topLevelMatch = CLASSIC_LEAF_ITEMS.find((item) => pathname === item.path);
+  const topLevelMatch = ALL_TOP_LEVEL_ITEMS.find((item) => pathname === item.path);
   if (topLevelMatch) {
     return {
       segments: [topLevelMatch.label],

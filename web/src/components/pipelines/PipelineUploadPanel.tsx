@@ -1,7 +1,5 @@
 import { useMemo, useState } from 'react';
-import type { PipelineSource } from '@/lib/pipelineService';
 import { Button } from '@/components/ui/button';
-import { NativeSelect } from '@/components/ui/native-select';
 import type { PipelineServiceViewModel } from './PipelineCatalogPanel';
 
 function toErrorMessage(error: unknown, fallback: string) {
@@ -12,52 +10,32 @@ function toErrorMessage(error: unknown, fallback: string) {
 export function PipelineUploadPanel({
   service,
   projectId,
-  sources,
-  sourcesLoading,
-  sourcesError,
-  selectedSourceUid,
-  onSelectSource,
-  onTrigger,
   onUpload,
-  isTriggering,
 }: {
   service: PipelineServiceViewModel;
   projectId: string | null;
-  sources: PipelineSource[];
-  sourcesLoading: boolean;
-  sourcesError: string | null;
-  selectedSourceUid: string | null;
-  onSelectSource: (sourceUid: string) => void;
-  onTrigger: () => Promise<void>;
-  onUpload: (file: File) => Promise<void>;
-  isTriggering: boolean;
+  onUpload: (files: File[]) => Promise<void>;
 }) {
-  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadNotice, setUploadNotice] = useState<string | null>(null);
 
-  const options = useMemo(() => {
-    const base = [{ value: '', label: 'Select a previously uploaded source', disabled: sources.length === 0 }];
-    return base.concat(
-      sources.map((source) => ({
-        value: source.source_uid,
-        label: source.doc_title,
-      })),
-    );
-  }, [sources]);
+  const readySummary = useMemo(() => {
+    if (pendingFiles.length === 0) return null;
+    return `${pendingFiles.length} file${pendingFiles.length === 1 ? '' : 's'} ready for upload.`;
+  }, [pendingFiles]);
 
   async function handleUpload() {
-    if (!pendingFile) return;
+    if (pendingFiles.length === 0) return;
     try {
       setIsUploading(true);
       setUploadError(null);
       setUploadNotice(null);
-      await onUpload(pendingFile);
+      await onUpload(pendingFiles);
       setUploadNotice('Upload complete.');
-      setPendingFile(null);
     } catch (error) {
-      setUploadError(toErrorMessage(error, 'Unable to upload the selected markdown file.'));
+      setUploadError(toErrorMessage(error, 'Unable to upload the selected markdown files.'));
     } finally {
       setIsUploading(false);
     }
@@ -103,63 +81,77 @@ export function PipelineUploadPanel({
           </article>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-2">
-          <div className="space-y-3">
-            <label htmlFor="pipeline-upload-input" className="text-sm font-medium text-foreground">
-              Upload markdown source
-            </label>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between gap-4">
+            <h2 className="text-xl font-semibold text-foreground">Upload</h2>
+            <div className="text-sm text-muted-foreground">
+              Upload stays manual in this phase and does not auto-start processing.
+            </div>
+          </div>
+
+          <label
+            htmlFor="pipeline-upload-input"
+            className="flex cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-border bg-background/70 px-6 py-10 text-center"
+          >
+            <div className="text-sm font-medium text-foreground">
+              Drop markdown files here or click to upload
+            </div>
+            <div className="text-sm text-muted-foreground">
+              Markdown only: `.md`, `.markdown`, or `text/markdown`
+            </div>
             <input
               id="pipeline-upload-input"
+              aria-label="Add markdown files"
               type="file"
+              multiple
               accept=".md,.markdown,text/markdown"
               onChange={(event) => {
-                setPendingFile(event.currentTarget.files?.[0] ?? null);
+                setPendingFiles(Array.from(event.currentTarget.files ?? []));
                 setUploadNotice(null);
                 setUploadError(null);
               }}
-              className="block w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground"
+              className="sr-only"
             />
-            <div className="text-sm text-muted-foreground">
-              Upload stays manual in this phase and does not auto-start processing.
+          </label>
+
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-background/60 px-4 py-3">
+            <div className="space-y-1">
+              <div className="text-sm font-medium text-foreground">
+                {readySummary ?? 'No files selected yet.'}
+              </div>
+              <div className="text-xs text-muted-foreground">
+                {projectId
+                  ? 'Upload several markdown files now, then compose the processing set below.'
+                  : 'Select a project before uploading markdown files.'}
+              </div>
             </div>
             <Button
               type="button"
               onClick={() => { void handleUpload(); }}
-              disabled={!projectId || !pendingFile || isUploading}
+              disabled={!projectId || pendingFiles.length === 0 || isUploading}
             >
-              {isUploading ? 'Uploading...' : 'Upload file'}
+              {isUploading ? 'Uploading...' : 'Upload files'}
             </Button>
-            {!projectId ? (
-              <div className="text-sm text-muted-foreground">Select a project to upload or process sources.</div>
-            ) : null}
-            {uploadNotice ? <div className="text-sm text-foreground">{uploadNotice}</div> : null}
-            {uploadError ? <div className="text-sm text-destructive">{uploadError}</div> : null}
           </div>
 
-          <div className="space-y-3">
-            <label htmlFor="pipeline-owned-source" className="text-sm font-medium text-foreground">
-              Your sources
-            </label>
-            <NativeSelect
-              id="pipeline-owned-source"
-              aria-label="Your sources"
-              value={selectedSourceUid ?? ''}
-              onChange={(event) => onSelectSource(event.currentTarget.value)}
-              options={options}
-            />
-            {sourcesLoading ? <div className="text-sm text-muted-foreground">Loading your sources...</div> : null}
-            {!sourcesLoading && sources.length === 0 ? (
-              <div className="text-sm text-muted-foreground">No sources uploaded yet.</div>
-            ) : null}
-            {sourcesError ? <div className="text-sm text-destructive">{sourcesError}</div> : null}
-            <Button
-              type="button"
-              onClick={() => { void onTrigger(); }}
-              disabled={!projectId || !selectedSourceUid || isTriggering}
-            >
-              {isTriggering ? 'Starting...' : 'Start processing'}
-            </Button>
-          </div>
+          {pendingFiles.length > 0 ? (
+            <div className="rounded-xl border border-border bg-background/40 px-4 py-3">
+              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                Ready to upload
+              </div>
+              <ul className="mt-3 space-y-2 text-sm text-foreground">
+                {pendingFiles.map((file) => (
+                  <li key={`${file.name}-${file.size}`} className="flex items-center justify-between gap-3">
+                    <span>{file.name}</span>
+                    <span className="text-xs text-muted-foreground">{file.type || 'text/markdown'}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+
+          {uploadNotice ? <div className="text-sm text-foreground">{uploadNotice}</div> : null}
+          {uploadError ? <div className="text-sm text-destructive">{uploadError}</div> : null}
         </div>
       </div>
     </section>

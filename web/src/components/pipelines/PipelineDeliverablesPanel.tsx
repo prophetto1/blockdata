@@ -1,4 +1,4 @@
-import type { PipelineDeliverable, PipelineJob } from '@/lib/pipelineService';
+import type { PipelineDeliverable, PipelineJob, PipelineSource } from '@/lib/pipelineService';
 import { Button } from '@/components/ui/button';
 
 function formatBytes(value: number | undefined) {
@@ -11,11 +11,15 @@ function formatBytes(value: number | undefined) {
 
 export function PipelineDeliverablesPanel({
   job,
+  sourceSetLabel,
+  selectedSources,
   onDownload,
   downloadError,
   downloadingKind,
 }: {
   job: PipelineJob | null;
+  sourceSetLabel: string;
+  selectedSources: PipelineSource[];
   onDownload: (deliverable: PipelineDeliverable) => Promise<void>;
   downloadError: string | null;
   downloadingKind: string | null;
@@ -31,6 +35,16 @@ export function PipelineDeliverablesPanel({
           <p className="mt-1 text-sm text-muted-foreground">
             Download lexical and semantic artifacts when the selected job completes.
           </p>
+        </div>
+
+        <div className="rounded-xl border border-border bg-background/60 px-4 py-4">
+          <div className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+            Processing set
+          </div>
+          <div className="mt-2 text-sm font-medium text-foreground">{sourceSetLabel}</div>
+          <div className="mt-1 text-xs text-muted-foreground">
+            {selectedSources.length} markdown file{selectedSources.length === 1 ? '' : 's'} selected
+          </div>
         </div>
 
         {!job ? (

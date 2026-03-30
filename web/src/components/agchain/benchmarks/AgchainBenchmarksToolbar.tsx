@@ -61,15 +61,15 @@ export function AgchainBenchmarksToolbar({
       <section className="rounded-3xl border border-border/70 bg-card/70 p-6 shadow-sm">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex-1">
-            <h1 className="text-3xl font-semibold tracking-tight text-foreground">Benchmarks</h1>
+            <h2 className="text-3xl font-semibold tracking-tight text-foreground">Projects and evaluations</h2>
             <p className="mt-2 max-w-3xl text-sm leading-7 text-muted-foreground">
-              Benchmark catalog, versioned spec summaries, model-coverage aggregates, and direct entry into
-              benchmark workbenches.
+              AGChain project registry backed by benchmark-derived rows. Create a project or evaluation here, then
+              open its focused child pages across the shell.
             </p>
           </div>
           <div className="flex items-center">
             <Button type="button" onClick={() => setCreateOpen(true)}>
-              New Benchmark
+              New Project
             </Button>
           </div>
         </div>
@@ -80,16 +80,17 @@ export function AgchainBenchmarksToolbar({
       <Sheet open={createOpen} onOpenChange={setCreateOpen}>
         <SheetContent className="sm:max-w-xl" side="right">
           <SheetHeader>
-            <SheetTitle>Create Benchmark</SheetTitle>
+            <SheetTitle>Create Project</SheetTitle>
             <SheetDescription>
-              Create a benchmark identity and its initial draft version, then enter the workbench.
+              Create an AGChain project or evaluation backed by a benchmark identity, then enter its focused child
+              pages.
             </SheetDescription>
           </SheetHeader>
 
           <div className="mt-6 grid gap-4">
             <div className="grid gap-2">
               <label className="text-sm font-medium text-foreground" htmlFor="benchmark-name">
-                Benchmark Name
+                Project Name
               </label>
               <input
                 id="benchmark-name"
@@ -101,7 +102,7 @@ export function AgchainBenchmarksToolbar({
 
             <div className="grid gap-2">
               <label className="text-sm font-medium text-foreground" htmlFor="benchmark-slug">
-                Benchmark Slug
+                Project Slug
               </label>
               <input
                 id="benchmark-slug"
@@ -133,7 +134,7 @@ export function AgchainBenchmarksToolbar({
               onClick={handleCreate}
               disabled={creating || !draft.benchmark_name.trim()}
             >
-              {creating ? 'Creating...' : 'Create Benchmark'}
+              {creating ? 'Creating...' : 'Create Project'}
             </Button>
           </SheetFooter>
         </SheetContent>

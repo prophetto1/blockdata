@@ -7,6 +7,7 @@ from unittest.mock import ANY
 
 import pytest
 
+from app.pipelines import markdown_index_builder
 from app.workers import pipeline_jobs
 
 
@@ -16,6 +17,7 @@ def _job_row(**overrides):
         "pipeline_kind": "markdown_index_builder",
         "status": "running",
         "stage": "queued",
+        "source_set_id": "set-1",
         "section_count": None,
         "chunk_count": None,
         "embedding_provider": None,
@@ -42,6 +44,7 @@ def test_run_pipeline_job_sync_marks_complete(monkeypatch):
             lambda *, job, set_stage, heartbeat: {
                 "section_count": 4,
                 "chunk_count": 9,
+                "source_set_member_count": 2,
                 "embedding_provider": "openai",
                 "embedding_model": "text-embedding-3-small",
                 "deliverable_kinds": ["lexical_sqlite", "semantic_zip"],
@@ -72,6 +75,7 @@ def test_run_pipeline_job_sync_marks_complete(monkeypatch):
         {
             "pipeline_kind": "markdown_index_builder",
             "deliverable_kinds": ["lexical_sqlite", "semantic_zip"],
+            "source_set_member_count": 2,
             "section_count": 4,
             "chunk_count": 9,
         }
@@ -190,3 +194,68 @@ async def test_supervisor_iteration_claims_and_dispatches(monkeypatch):
 
     assert result == {"claimed": 1, "reaped": 0, "dispatched": 1}
     assert dispatched == [(pipeline_jobs._run_pipeline_job_sync, "job-1", "markdown_index_builder")]
+
+
+def test_run_timed_stage_emits_pipeline_stage_span(monkeypatch):
+    span_events: list[dict] = []
+    stage_durations: list[dict] = []
+    stage_updates: list[str] = []
+    heartbeats: list[str] = []
+
+    class _FakeSpan:
+        def __init__(self, name: str):
+            self.event = {"name": name, "attributes": {}, "exceptions": []}
+
+        def __enter__(self):
+            span_events.append(self.event)
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+        def set_attribute(self, key, value):
+            self.event["attributes"][key] = value
+
+        def record_exception(self, exc):
+            self.event["exceptions"].append(type(exc).__name__)
+
+    class _FakeTracer:
+        def start_as_current_span(self, name: str):
+            return _FakeSpan(name)
+
+    monkeypatch.setattr(markdown_index_builder, "pipeline_tracer", _FakeTracer())
+    monkeypatch.setattr(
+        markdown_index_builder,
+        "record_pipeline_stage_duration",
+        lambda **kwargs: stage_durations.append(dict(kwargs)),
+    )
+
+    result = markdown_index_builder._run_timed_stage(
+        pipeline_kind="markdown_index_builder",
+        stage="consolidating",
+        set_stage=stage_updates.append,
+        heartbeat=lambda: heartbeats.append("beat"),
+        fn=lambda: "ok",
+    )
+
+    assert result == "ok"
+    assert stage_updates == ["consolidating"]
+    assert len(heartbeats) == 2
+    assert span_events == [
+        {
+            "name": "pipeline.stage.execute",
+            "attributes": {
+                "pipeline.kind": "markdown_index_builder",
+                "stage": "consolidating",
+                "result": "ok",
+            },
+            "exceptions": [],
+        }
+    ]
+    assert stage_durations == [
+        {
+            "pipeline_kind": "markdown_index_builder",
+            "stage": "consolidating",
+            "duration_ms": ANY,
+        }
+    ]

@@ -113,4 +113,99 @@ describe('storageUploadService', () => {
     expect(result.sourceUid).toMatch(/^[0-9a-f]{64}$/);
     expect(result.completed.storage_object_id).toBe('obj-1');
   });
+
+  it('cancels its reservation when the signed upload request throws', async () => {
+    const fetchMock = vi.fn<typeof fetch>()
+      .mockRejectedValueOnce(new Error('network down'));
+    vi.stubGlobal('fetch', fetchMock);
+
+    platformApiFetchMock
+      .mockResolvedValueOnce(jsonResponse({
+        reservation_id: 'res-1',
+        signed_upload_url: 'https://upload.example/res-1',
+      }))
+      .mockResolvedValueOnce(new Response(null, { status: 204 }));
+
+    const file = new File(['hello'], 'outline.pdf', { type: 'application/pdf' });
+
+    await expect(uploadWithReservation({
+      projectId: 'project-1',
+      file,
+      docTitle: 'Folder/Outline.pdf',
+    })).rejects.toThrow('network down');
+
+    expect(platformApiFetchMock).toHaveBeenNthCalledWith(
+      1,
+      '/storage/uploads',
+      expect.objectContaining({ method: 'POST' }),
+    );
+    expect(platformApiFetchMock).toHaveBeenNthCalledWith(
+      2,
+      '/storage/uploads/res-1',
+      { method: 'DELETE' },
+    );
+  });
+
+  it('cancels a conflicting pending reservation and retries once', async () => {
+    const fetchMock = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(new Response(null, { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    platformApiFetchMock
+      .mockResolvedValueOnce(jsonResponse({
+        detail: {
+          code: 'pending_reservation_exists',
+          reservation_id: 'res-stale',
+        },
+      }, 409))
+      .mockResolvedValueOnce(new Response(null, { status: 204 }))
+      .mockResolvedValueOnce(jsonResponse({
+        reservation_id: 'res-2',
+        signed_upload_url: 'https://upload.example/res-2',
+      }))
+      .mockResolvedValueOnce(jsonResponse({
+        storage_object_id: 'obj-2',
+        object_key: 'users/user-1/projects/project-1/sources/abc/source/outline.pdf',
+        byte_size: 5,
+      }));
+
+    const file = new File(['hello'], 'outline.pdf', { type: 'application/pdf' });
+
+    const result = await uploadWithReservation({
+      projectId: 'project-1',
+      file,
+      docTitle: 'Folder/Outline.pdf',
+    });
+
+    expect(platformApiFetchMock).toHaveBeenNthCalledWith(
+      1,
+      '/storage/uploads',
+      expect.objectContaining({
+        method: 'POST',
+      }),
+    );
+    expect(platformApiFetchMock).toHaveBeenNthCalledWith(
+      2,
+      '/storage/uploads/res-stale',
+      { method: 'DELETE' },
+    );
+    expect(platformApiFetchMock).toHaveBeenNthCalledWith(
+      3,
+      '/storage/uploads',
+      expect.objectContaining({
+        method: 'POST',
+      }),
+    );
+    expect(platformApiFetchMock).toHaveBeenNthCalledWith(
+      4,
+      '/storage/uploads/res-2/complete',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ actual_bytes: 5 }),
+      },
+    );
+    expect(result.sourceUid).toMatch(/^[0-9a-f]{64}$/);
+    expect(result.completed.storage_object_id).toBe('obj-2');
+  });
 });

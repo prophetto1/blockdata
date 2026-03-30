@@ -2,7 +2,7 @@
 
 **Goal:** Define a repeatable method for turning Braintrust-inspired product surfaces into low-level AGChain implementation design plans without collapsing AGChain semantics into Braintrust or Inspect.
 
-**Architecture:** Use Braintrust as the default frontend/product reference when the object and workflow align, use Inspect as the default execution/runtime substrate when the capability already exists there, and keep AGChain as the semantic authority where benchmark/runtime behavior materially differs.
+**Architecture:** Use Braintrust as the default frontend/product reference when the object and workflow align, use Inspect as the default execution/runtime substrate when the capability already exists there, and keep AGChain as the semantic authority where benchmark/runtime behavior materially differs. When a planned change has frontend ramifications but the backend/control-plane seam is already locked or intentionally unchanged, frontend shape and visual verification must be designed first rather than treated as the last implementation pass.
 
 **Tech Stack:** React + TypeScript frontend surfaces under `web/src`, FastAPI + Supabase control plane under `services/platform-api`, benchmark/runtime owners under `_agchain`, Inspect docs/runtime patterns as substrate references, Braintrust docs/screens as product-facing reference.
 
@@ -96,6 +96,23 @@ That plan must follow the full repo plan contract:
 - completion criteria
 - bite-sized tasks
 
+If the plan changes or adds frontend pages, shell states, or visible interaction surfaces, the execution-ready plan must also make the frontend shape explicit enough for visual approval before deeper implementation proceeds.
+
+Required additions for frontend-bearing plans:
+
+- locked frontend design contract
+  - shell ownership
+  - page/frame hierarchy
+  - visible scope labeling
+  - empty/loading/populated/error states
+  - static copy or placeholder contract where backend seams are unchanged
+- frontend-first verification gate
+  - a task near the start of the plan that renders the intended shell/page shape
+  - a manual or browser-driven visual verification step that the user can approve
+  - explicit statement of whether backend changes are locked, deferred, or unnecessary
+
+Do not write frontend-bearing plans where backend detail is precise but frontend shape is left to implementation judgment. If backend is unchanged, say so plainly and design the frontend first.
+
 ## Current Recommended Order
 
 Use two sequences:
@@ -114,7 +131,7 @@ This is optimized for visual confirmation and shell coherence:
 
 ### Execution-order sequence
 
-This is optimized for object spine and backend leverage:
+This is optimized for object spine and backend leverage when backend/control-plane work is genuinely the moving constraint:
 
 1. `Datasets`
 2. `Overview`
@@ -123,6 +140,16 @@ This is optimized for object spine and backend leverage:
 5. `Parameters`
 6. `Tools`
 7. `Settings shell` refinements
+
+### Frontend-first override
+
+Use this override whenever the backend/control-plane seam is already locked, already implemented, or intentionally unchanged:
+
+1. Lock shell/page design and visible states first.
+2. Get visual confirmation on the intended frontend shape.
+3. Only then wire the frontend to the already-locked backend seam or confirm that no backend change is needed.
+
+For this project, frontend-bearing plans should default to this override unless the plan proves that backend uncertainty is the real blocker.
 
 ## Borrowability Guidance For Current Surfaces
 
@@ -150,6 +177,7 @@ Do not:
 - let Inspect define product UX
 - choose AGChain-owned implementations before proving that direct use or composition around Inspect is insufficient
 - write plans that skip visible verification states
+- treat frontend shape as something to improvise after backend details are already locked
 
 ## Working Rule For This Project
 

@@ -11,12 +11,15 @@ import {
   type AgchainBenchmarkStepsDetail,
   updateAgchainBenchmarkStep,
 } from '@/lib/agchainBenchmarks';
+import { useAgchainProjectFocus } from './useAgchainProjectFocus';
 
 function getErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : 'Unknown error';
 }
 
-export function useAgchainBenchmarkSteps(benchmarkSlug: string | undefined) {
+export function useAgchainBenchmarkSteps() {
+  const { focusedProject, loading: focusLoading } = useAgchainProjectFocus();
+  const benchmarkSlug = focusedProject?.benchmark_slug;
   const [detail, setDetail] = useState<AgchainBenchmarkDetail | null>(null);
   const [stepsDetail, setStepsDetail] = useState<AgchainBenchmarkStepsDetail | null>(null);
   const [selectedStepId, setSelectedStepId] = useState<string | null>(null);
@@ -26,10 +29,17 @@ export function useAgchainBenchmarkSteps(benchmarkSlug: string | undefined) {
   const [dirtyOrder, setDirtyOrder] = useState(false);
 
   const load = useCallback(async () => {
+    if (focusLoading) {
+      setLoading(true);
+      return;
+    }
+
     if (!benchmarkSlug) {
       setDetail(null);
       setStepsDetail(null);
       setSelectedStepId(null);
+      setError(null);
+      setDirtyOrder(false);
       setLoading(false);
       return;
     }
@@ -58,7 +68,7 @@ export function useAgchainBenchmarkSteps(benchmarkSlug: string | undefined) {
     } finally {
       setLoading(false);
     }
-  }, [benchmarkSlug]);
+  }, [benchmarkSlug, focusLoading]);
 
   useEffect(() => {
     void load();
@@ -206,5 +216,7 @@ export function useAgchainBenchmarkSteps(benchmarkSlug: string | undefined) {
     updateSelectedStep,
     deleteSelectedStep,
     reload: load,
+    focusedProject,
+    hasProjectFocus: Boolean(focusedProject),
   };
 }

@@ -16,30 +16,20 @@ import {
   IconLogout,
   IconSettings,
   IconShieldCog,
-  IconSwitchHorizontal,
 } from '@tabler/icons-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useSuperuserProbe } from '@/hooks/useSuperuserProbe';
 
 import {
-  TOP_LEVEL_NAV,
   PIPELINE_NAV,
   ALL_TOP_LEVEL_ITEMS,
   BOTTOM_RAIL_NAV,
-  CLASSIC_LEAF_ITEMS,
   findDrillByRoute,
   getDrillConfig,
   resolveFlowDrillPath,
-  resolveBenchmarkDrillPath,
-  getNavStyle,
-  setNavStyle,
-  getActiveNav,
-  isClassicNavSection,
   isNavItem,
   type NavItem,
-  type ClassicNavEntry,
   type NavDrillConfig,
-  type NavStyle,
 } from '@/components/shell/nav-config';
 import type { AdminNavSection } from '@/components/admin/AdminLeftNav';
 import {
@@ -92,10 +82,6 @@ function extractFlowId(pathname: string): string | null {
   return match ? decodeURIComponent(match[1]!) : null;
 }
 
-function extractBenchmarkId(pathname: string): string | null {
-  const match = pathname.match(/^\/app\/agchain\/benchmarks\/([^/]+)/);
-  return match ? decodeURIComponent(match[1]!) : null;
-}
 
 /* ------------------------------------------------------------------ */
 /*  Theme toggle (inline, Vercel-style 3-option row)                   */
@@ -267,28 +253,19 @@ export function LeftRailShadcn({
   const superuserProbe = useSuperuserProbe();
   const isSuperuser = superuserProbe === true || superuserProbe === null;
 
-  const [navStyle, setNavStyleState] = useState<NavStyle>(getNavStyle);
-  const activeNav = navStyle === 'pipeline' ? getActiveNav() : TOP_LEVEL_NAV;
-  const compactNav = navStyle === 'pipeline' ? PIPELINE_NAV.filter(isNavItem) : CLASSIC_LEAF_ITEMS;
-  const toggleNavStyle = () => {
-    const next: NavStyle = navStyle === 'classic' ? 'pipeline' : 'classic';
-    setNavStyle(next);
-    setNavStyleState(next);
-  };
+  const activeNav = PIPELINE_NAV;
+  const compactNav = PIPELINE_NAV.filter(isNavItem);
 
-  // Drill IDs reachable from the current nav style — prevents auto-drill from
-  // activating pipeline-only drills while in classic view (and vice-versa).
-  // When navSections is provided (custom shell), also include those drillIds.
+  // Drill IDs reachable from the nav — both classic and pipeline use PIPELINE_NAV.
   const validDrillIds = useMemo(() => {
-    const nav = navStyle === 'pipeline' ? PIPELINE_NAV : TOP_LEVEL_NAV;
-    const topLevelIds = nav
+    const topLevelIds = PIPELINE_NAV
       .filter((entry): entry is NavItem => isNavItem(entry) && !!entry.drillId)
       .map((item) => item.drillId!);
     const sectionIds = navSections
       ? navSections.flatMap((s) => s.items).filter((i) => !!i.drillId).map((i) => i.drillId!)
       : [];
     return new Set([...topLevelIds, ...sectionIds]);
-  }, [navStyle, navSections]);
+  }, [navSections]);
 
   const navigateTo = (path: string) => {
     navigate(path);
@@ -347,97 +324,18 @@ export function LeftRailShadcn({
   }, [location.pathname]);
 
   const userInitial = userLabel?.match(/[A-Za-z0-9]/)?.[0]?.toUpperCase() ?? '?';
-  const isClassicView = navStyle === 'classic';
-  const railStackClass = isClassicView ? '-space-y-px' : 'space-y-px';
-  const railDividerClass = isClassicView ? 'my-0.5 mx-1.5 h-px bg-sidebar-border' : 'my-1 mx-2 h-px bg-sidebar-border';
-  const railItemClass = isClassicView
-    ? 'flex w-full items-center gap-1.5 rounded-sm px-1.5 h-7 text-xs leading-tight transition-colors'
-    : 'flex w-full items-center gap-2.5 rounded-md px-2 h-7 text-[13px] font-medium leading-[1.5] transition-colors';
-  const drillBackClass = isClassicView
-    ? 'flex w-full items-center gap-1 rounded-sm px-1.5 h-7 text-xs font-medium leading-tight text-sidebar-foreground/80 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
-    : 'flex w-full items-center gap-2 rounded-md px-2 h-7 text-[13px] font-medium leading-[1.5] text-sidebar-foreground/80 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground';
-  const drillSectionLabelClass = isClassicView
-    ? 'mb-0 mt-1 px-1.5 text-[9px] font-semibold uppercase tracking-wide text-sidebar-foreground/50'
-    : 'mb-1 mt-2 px-2 text-[12px] font-normal tracking-normal text-sidebar-foreground/50';
+  const railStackClass = 'space-y-px';
+  const railDividerClass = 'my-1 mx-2 h-px bg-sidebar-border';
+  const railItemClass = 'flex w-full items-center gap-2.5 rounded-md px-2 h-7 text-[13px] font-medium leading-[1.5] transition-colors';
+  const drillBackClass = 'flex w-full items-center gap-2 rounded-md px-2 h-7 text-[13px] font-medium leading-[1.5] text-sidebar-foreground/80 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground';
 
   /* ------ Render helpers ------ */
-
-  const renderClassicEntry = (entry: ClassicNavEntry, key: string) => {
-    if (entry === 'divider') {
-      return <div key={key} className={railDividerClass} />;
-    }
-
-    if (isClassicNavSection(entry)) {
-      return (
-        <div key={key}>
-          <div className={drillSectionLabelClass}>{entry.label}</div>
-          <div className={railStackClass}>
-            {entry.items.map((item) => {
-              const ItemIcon = item.icon;
-              const isActive = activeMenuPath === item.path;
-
-              return (
-                <button
-                  key={item.path}
-                  type="button"
-                  onClick={() => navigateTo(item.path)}
-                  className={cn(
-                    railItemClass,
-                    isActive
-                      ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-                      : 'text-sidebar-foreground/90 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
-                  )}
-                >
-                  <ItemIcon size={14} stroke={1.75} className="shrink-0" />
-                  <span className="truncate">{item.label}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      );
-    }
-
-    const item = entry;
-    const ItemIcon = item.icon;
-    const isActive = activeMenuPath === item.path;
-    const hasDrill = Boolean(item.drillId);
-
-    return (
-      <button
-        key={item.path}
-        type="button"
-        onClick={() => {
-          if (hasDrill) {
-            setActiveDrillId(item.drillId!);
-          }
-          navigateTo(item.path);
-        }}
-        className={cn(
-          railItemClass,
-          isActive
-            ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-            : 'text-sidebar-foreground/90 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
-        )}
-      >
-        <ItemIcon size={14} stroke={1.75} className="shrink-0" />
-        <span className="truncate">{item.label}</span>
-        {hasDrill && (
-          <IconChevronRight size={isClassicView ? 12 : 14} stroke={1.75} className="ml-auto shrink-0 text-sidebar-foreground/40" />
-        )}
-      </button>
-    );
-  };
 
   const renderTopLevelNav = () => (
     <div className={railStackClass}>
       {activeNav.map((entry, index) => {
         if (entry === 'divider') {
           return <div key={`divider-${index}`} className={railDividerClass} />;
-        }
-
-        if (navStyle === 'classic') {
-          return renderClassicEntry(entry as ClassicNavEntry, `classic-${index}`);
         }
 
         const item = entry as NavItem;
@@ -465,7 +363,7 @@ export function LeftRailShadcn({
             <ItemIcon size={14} stroke={1.75} className="shrink-0" />
             <span className="truncate">{item.label}</span>
             {hasDrill && (
-              <IconChevronRight size={isClassicView ? 12 : 14} stroke={1.75} className="ml-auto shrink-0 text-sidebar-foreground/40" />
+              <IconChevronRight size={14} stroke={1.75} className="ml-auto shrink-0 text-sidebar-foreground/40" />
             )}
           </button>
         );
@@ -475,7 +373,6 @@ export function LeftRailShadcn({
 
   const renderDrillView = (config: NavDrillConfig) => {
     const flowId = config.id === 'flows' ? extractFlowId(location.pathname) : null;
-    const benchmarkId = config.id === 'benchmark' ? extractBenchmarkId(location.pathname) : null;
 
     return (
       <div className={railStackClass}>
@@ -501,18 +398,14 @@ export function LeftRailShadcn({
                 // Resolve item path to full URL depending on drill type
                 const resolvedPath = flowId
                   ? resolveFlowDrillPath(item.path, flowId)
-                  : benchmarkId
-                    ? resolveBenchmarkDrillPath(item.path, benchmarkId)
-                    : item.path;
+                  : item.path;
                 const isActive = flowId
                   ? location.pathname === resolvedPath || location.pathname.startsWith(resolvedPath + '/')
-                  : benchmarkId
-                    ? location.pathname + location.hash === resolvedPath
-                    : item.path === config.parentPath
-                      ? location.pathname === item.path
-                      : isItemActive(item, location.pathname);
+                  : item.path === config.parentPath
+                    ? location.pathname === item.path
+                    : isItemActive(item, location.pathname);
 
-                const isDisabled = (config.id === 'flows' && !flowId) || (config.id === 'benchmark' && !benchmarkId);
+                const isDisabled = config.id === 'flows' && !flowId;
 
                 return (
                   <button
@@ -812,20 +705,6 @@ export function LeftRailShadcn({
           </div>
         )}
 
-        {/* ---- Nav style toggle ---- */}
-        {!navSections && !desktopCompact && (
-          <div className="px-3 pb-1">
-            <button
-              type="button"
-              onClick={toggleNavStyle}
-              className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs text-sidebar-foreground/50 transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground"
-              title={`Switch to ${navStyle === 'classic' ? 'pipeline' : 'classic'} navigation`}
-            >
-              <IconSwitchHorizontal size={14} stroke={1.75} className="shrink-0" />
-              <span>{navStyle === 'classic' ? 'Pipeline view' : 'Classic view'}</span>
-            </button>
-          </div>
-        )}
 
         {/* ---- Footer: Account card (Vercel-style) ---- */}
         <SidebarFooter className="border-0 px-0 pt-0">

@@ -1,21 +1,21 @@
 # Component Inventory
 
-Generated: 2026-03-27T21:34:19.954Z
+Generated: 2026-03-30T12:25:25.097Z
 Scope: auth
 
-Pages scanned: 52
-Unique component usages: 428
+Pages scanned: 55
+Unique component usages: 433
 
 ## Category Totals
 
 | Category | Count |
 | --- | ---: |
 | ark-ui | 153 |
-| external-package | 22 |
+| external-package | 23 |
 | in-file component | 20 |
-| local-components | 134 |
+| local-components | 137 |
 | local-pages | 2 |
-| relative-local | 23 |
+| relative-local | 24 |
 | tabler-icons | 74 |
 
 ## src/pages/AgentOnboarding.tsx
@@ -172,6 +172,14 @@ Component usages: 38
 | `SortIcon` | `(in-file or unresolved)` | in-file component | SortIcon is defined in the same page file |
 | `StatusCell` | `(in-file or unresolved)` | in-file component | StatusCell is defined in the same page file |
 
+## src/pages/IndexBuilderPage.tsx
+
+Component usages: 1
+
+| Used As | Source | Category | Definition |
+| --- | --- | --- | --- |
+| `Workbench` | `@/components/workbench/Workbench` | local-components | Workbench comes from @/components/workbench/Workbench (named import of Workbench) |
+
 ## src/pages/kestra/LogsPage.tsx
 
 Component usages: 1
@@ -293,6 +301,14 @@ Component usages: 1
 | Used As | Source | Category | Definition |
 | --- | --- | --- | --- |
 | `Workbench` | `@/components/workbench/Workbench` | local-components | Workbench comes from @/components/workbench/Workbench (named import of Workbench) |
+
+## src/pages/PipelineServicesPage.tsx
+
+Component usages: 1
+
+| Used As | Source | Category | Definition |
+| --- | --- | --- | --- |
+| `PipelineCatalogPanel` | `@/components/pipelines/PipelineCatalogPanel` | local-components | PipelineCatalogPanel comes from @/components/pipelines/PipelineCatalogPanel (named import of PipelineCatalogPanel) |
 
 ## src/pages/ProjectAssetsPage.tsx
 
@@ -421,6 +437,16 @@ Component usages: 1
 | Used As | Source | Category | Definition |
 | --- | --- | --- | --- |
 | `Navigate` | `react-router-dom` | external-package | Navigate comes from react-router-dom (named import of Navigate) |
+
+## src/pages/settings/ConnectionsPanel.test.tsx
+
+Component usages: 3
+
+| Used As | Source | Category | Definition |
+| --- | --- | --- | --- |
+| `ConnectionsPanel` | `./ConnectionsPanel` | relative-local | ConnectionsPanel comes from ./ConnectionsPanel (default import of default) |
+| `HeaderCenterProvider` | `@/components/shell/HeaderCenterContext` | local-components | HeaderCenterProvider comes from @/components/shell/HeaderCenterContext (named import of HeaderCenterProvider) |
+| `MemoryRouter` | `react-router-dom` | external-package | MemoryRouter comes from react-router-dom (named import of MemoryRouter) |
 
 ## src/pages/settings/ConnectionsPanel.tsx
 

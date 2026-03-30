@@ -32,6 +32,9 @@ export function PipelineCatalogPanel({
             <p className="max-w-3xl text-sm leading-6 text-muted-foreground">
               Launch focused backend pipelines that turn owned sources into reusable retrieval artifacts.
             </p>
+            <p className="max-w-3xl text-sm leading-6 text-muted-foreground">
+              Open a dedicated workbench for each service from the catalog below.
+            </p>
           </div>
         </section>
 
