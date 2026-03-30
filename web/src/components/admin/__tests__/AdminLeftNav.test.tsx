@@ -1,7 +1,7 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, describe, it, expect } from 'vitest';
-import { AdminLeftNav } from '../AdminLeftNav';
+import { AdminLeftNav, NAV_SECTIONS } from '../AdminLeftNav';
 
 afterEach(cleanup);
 
@@ -43,5 +43,16 @@ describe('AdminLeftNav', () => {
     expect(screen.getByRole('link', { name: /profiles/i })).toHaveAttribute('href', '/app/superuser/parsers-docling');
     expect(screen.getByRole('link', { name: /block types/i })).toHaveAttribute('href', '/app/superuser/document-views');
     expect(screen.getByRole('link', { name: /profiles/i })).toHaveAttribute('aria-current', 'page');
+  });
+
+  it('exports the operational status entry for the primary admin rail', () => {
+    const operationalStatus = NAV_SECTIONS
+      .flatMap((section) => section.items)
+      .find((item) => item.path === '/app/superuser/operational-readiness');
+
+    expect(operationalStatus).toMatchObject({
+      label: 'Operational Status',
+      path: '/app/superuser/operational-readiness',
+    });
   });
 });

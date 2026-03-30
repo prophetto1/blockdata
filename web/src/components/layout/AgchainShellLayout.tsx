@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
+import { useCallback, useRef, useState, type CSSProperties } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/auth/AuthContext';
 import { AGCHAIN_NAV_SECTIONS } from '@/components/agchain/AgchainLeftNav';
@@ -8,18 +8,10 @@ import { LeftRailShadcn as AgchainChromeRail } from '@/components/shell/LeftRail
 import { TopCommandBar } from '@/components/shell/TopCommandBar';
 import { styleTokens } from '@/lib/styleTokens';
 
-const AGCHAIN_DESKTOP_NAV_OPEN_KEY = 'agchain.shell.nav_open_desktop';
 const AGCHAIN_SIDEBAR_WIDTH_KEY = 'agchain.shell.sidebar_width';
 const AGCHAIN_RAIL_2_WIDTH = 224;
 const AGCHAIN_HEADER_HEIGHT = styleTokens.shell.headerHeight;
 const AGCHAIN_BENCHMARK_DEFINITION_PATH = '/app/agchain/settings/project/benchmark-definition';
-
-function readStoredBoolean(key: string, defaultValue: boolean): boolean {
-  if (typeof window === 'undefined') return defaultValue;
-  const raw = window.localStorage.getItem(key);
-  if (raw === null) return defaultValue;
-  return raw === 'true';
-}
 
 function readStoredWidth(): number {
   if (typeof window === 'undefined') return styleTokens.shell.navbarWidth;
@@ -34,22 +26,17 @@ export function AgchainShellLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, profile, signOut } = useAuth();
-  const [desktopNavOpened, setDesktopNavOpened] = useState<boolean>(() => readStoredBoolean(AGCHAIN_DESKTOP_NAV_OPEN_KEY, true));
   const [sidebarWidth, setSidebarWidth] = useState<number>(() => readStoredWidth());
   const isResizingRef = useRef(false);
 
   const showRail2 = location.pathname === AGCHAIN_BENCHMARK_DEFINITION_PATH;
-  const rail1Width = desktopNavOpened ? sidebarWidth : styleTokens.shell.navbarCompactWidth;
+  const rail1Width = sidebarWidth;
   const totalRailWidth = rail1Width + (showRail2 ? AGCHAIN_RAIL_2_WIDTH : 0);
 
   const handleSignOut = async () => {
     await signOut();
     navigate('/login');
   };
-
-  const toggleDesktopCompact = useCallback(() => {
-    setDesktopNavOpened((current) => !current);
-  }, []);
 
   const handleResizeStart = useCallback((event: React.MouseEvent) => {
     event.preventDefault();
@@ -84,11 +71,6 @@ export function AgchainShellLayout() {
     document.addEventListener('mousemove', onMouseMove);
     document.addEventListener('mouseup', onMouseUp);
   }, [sidebarWidth]);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    window.localStorage.setItem(AGCHAIN_DESKTOP_NAV_OPEN_KEY, String(desktopNavOpened));
-  }, [desktopNavOpened]);
 
   const mainStyle: CSSProperties = {
     position: 'absolute',
@@ -157,28 +139,24 @@ export function AgchainShellLayout() {
             </span>
           )}
           headerContent={<AgchainProjectSwitcher />}
-          desktopCompact={!desktopNavOpened}
-          onToggleDesktopCompact={toggleDesktopCompact}
         />
-        {desktopNavOpened ? (
-          <div
-            role="separator"
-            aria-orientation="vertical"
-            onMouseDown={handleResizeStart}
-            style={{
-              position: 'absolute',
-              top: 0,
-              bottom: 0,
-              insetInlineEnd: -2,
-              width: 4,
-              cursor: 'col-resize',
-              zIndex: 21,
-            }}
-            className="group"
-          >
-            <div className="mx-auto h-full w-px bg-transparent transition-colors group-hover:bg-primary/30" />
-          </div>
-        ) : null}
+        <div
+          role="separator"
+          aria-orientation="vertical"
+          onMouseDown={handleResizeStart}
+          style={{
+            position: 'absolute',
+            top: 0,
+            bottom: 0,
+            insetInlineEnd: -2,
+            width: 4,
+            cursor: 'col-resize',
+            zIndex: 21,
+          }}
+          className="group"
+        >
+          <div className="mx-auto h-full w-px bg-transparent transition-colors group-hover:bg-primary/30" />
+        </div>
       </aside>
 
       {showRail2 && (

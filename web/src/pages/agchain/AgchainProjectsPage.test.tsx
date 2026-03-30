@@ -97,6 +97,10 @@ describe('AgchainProjectsPage', () => {
       expect(screen.getByRole('heading', { name: 'Project registry' })).toBeInTheDocument();
     });
 
+    const frame = screen.getByTestId('agchain-page-frame');
+    expect(frame).toHaveClass('w-full', 'px-4');
+    expect(frame.className).not.toContain('max-w-');
+
     expect(screen.getByRole('columnheader', { name: 'Project' })).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: 'Slug' })).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: 'Description' })).toBeInTheDocument();

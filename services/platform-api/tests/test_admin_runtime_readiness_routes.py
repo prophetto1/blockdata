@@ -1,0 +1,126 @@
+from __future__ import annotations
+
+from fastapi.testclient import TestClient
+import pytest
+
+from app.auth.dependencies import require_superuser
+from app.auth.principals import AuthPrincipal
+from app.main import create_app
+
+
+def _superuser_principal() -> AuthPrincipal:
+    return AuthPrincipal(
+        subject_type="user",
+        subject_id="admin-user",
+        roles=frozenset({"authenticated", "platform_admin"}),
+        auth_source="test",
+        email="admin@example.com",
+    )
+
+
+@pytest.fixture
+def client(monkeypatch):
+    monkeypatch.setenv("CONVERSION_SERVICE_KEY", "test-key")
+    monkeypatch.setenv("SUPABASE_URL", "http://localhost:54321")
+    monkeypatch.setenv("SUPABASE_SERVICE_ROLE_KEY", "fake-key")
+
+    from app.core.config import get_settings
+
+    get_settings.cache_clear()
+    app = create_app()
+    with TestClient(app) as test_client:
+      yield test_client
+    get_settings.cache_clear()
+
+
+@pytest.fixture
+def superuser_client(monkeypatch):
+    monkeypatch.setenv("CONVERSION_SERVICE_KEY", "test-key")
+    monkeypatch.setenv("SUPABASE_URL", "http://localhost:54321")
+    monkeypatch.setenv("SUPABASE_SERVICE_ROLE_KEY", "fake-key")
+
+    from app.core.config import get_settings
+
+    get_settings.cache_clear()
+    app = create_app()
+    app.dependency_overrides[require_superuser] = _superuser_principal
+    with TestClient(app) as test_client:
+        yield test_client
+    app.dependency_overrides.clear()
+    get_settings.cache_clear()
+
+
+def test_get_runtime_readiness_requires_superuser(client):
+    response = client.get("/admin/runtime/readiness")
+    assert response.status_code in (401, 403)
+
+
+def test_get_runtime_readiness_returns_grouped_snapshot(superuser_client, monkeypatch):
+    captured: dict[str, str] = {}
+    snapshot = {
+        "generated_at": "2026-03-30T16:00:00Z",
+        "summary": {"ok": 3, "warn": 1, "fail": 1, "unknown": 0},
+        "surfaces": [
+            {
+                "id": "shared",
+                "label": "Shared",
+                "summary": {"ok": 2, "warn": 1, "fail": 0, "unknown": 0},
+                "checks": [
+                    {
+                        "id": "shared.platform_api.ready",
+                        "category": "process",
+                        "status": "ok",
+                        "label": "Platform API readiness",
+                        "summary": "Platform API process is ready.",
+                        "evidence": {"ready": True},
+                        "remediation": "No action required.",
+                        "checked_at": "2026-03-30T16:00:00Z",
+                    }
+                ],
+            },
+            {
+                "id": "blockdata",
+                "label": "BlockData",
+                "summary": {"ok": 1, "warn": 0, "fail": 1, "unknown": 0},
+                "checks": [
+                    {
+                        "id": "blockdata.storage.bucket_cors",
+                        "category": "connectivity",
+                        "status": "fail",
+                        "label": "Bucket CORS",
+                        "summary": "Browser upload CORS is not configured.",
+                        "evidence": {"cors_configured": False},
+                        "remediation": "Apply bucket CORS rules.",
+                        "checked_at": "2026-03-30T16:00:00Z",
+                    }
+                ],
+            },
+            {
+                "id": "agchain",
+                "label": "AGChain",
+                "summary": {"ok": 0, "warn": 0, "fail": 0, "unknown": 0},
+                "checks": [],
+            },
+        ],
+    }
+
+    def _mock_snapshot(*, surface: str, actor_id: str):
+        captured["surface"] = surface
+        captured["actor_id"] = actor_id
+        return snapshot
+
+    monkeypatch.setattr(
+        "app.api.routes.admin_runtime_readiness.get_runtime_readiness_snapshot",
+        _mock_snapshot,
+    )
+
+    response = superuser_client.get("/admin/runtime/readiness?surface=all")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert captured["surface"] == "all"
+    assert captured["actor_id"] == "admin-user"
+    assert body["summary"] == {"ok": 3, "warn": 1, "fail": 1, "unknown": 0}
+    assert [surface["id"] for surface in body["surfaces"]] == ["shared", "blockdata", "agchain"]
+    assert body["surfaces"][0]["checks"][0]["label"] == "Platform API readiness"
+    assert body["surfaces"][1]["checks"][0]["evidence"] == {"cors_configured": False}

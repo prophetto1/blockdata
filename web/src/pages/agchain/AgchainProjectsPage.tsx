@@ -8,6 +8,7 @@ import {
   broadcastAgchainProjectListChanged,
   setStoredAgchainProjectFocusSlug,
 } from '@/lib/agchainProjectFocus';
+import { AgchainPageFrame } from './AgchainPageFrame';
 
 function overviewPathForProject(projectSlug: string) {
   return `/app/agchain/overview?project=${encodeURIComponent(projectSlug)}`;
@@ -51,37 +52,35 @@ export default function AgchainProjectsPage() {
   }
 
   return (
-    <div className="min-h-full bg-background" data-testid="agchain-projects-page">
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-8 py-8">
-        <header className="flex flex-col gap-2">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-            AGChain Projects
+    <AgchainPageFrame className="gap-6 py-8">
+      <header className="flex flex-col gap-2" data-testid="agchain-projects-page">
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+          AGChain Projects
+        </p>
+        <div className="space-y-1">
+          <h1 className="text-3xl font-semibold tracking-tight text-foreground">Projects and evaluations</h1>
+          <p className="max-w-3xl text-sm text-muted-foreground">
+            This route owns the multi-project AGChain registry. Choose or create the project or evaluation that the
+            rest of the AGChain shell will scope itself around.
           </p>
-          <div className="space-y-1">
-            <h1 className="text-3xl font-semibold tracking-tight text-foreground">Projects and evaluations</h1>
-            <p className="max-w-3xl text-sm text-muted-foreground">
-              This route owns the multi-project AGChain registry. Choose or create the project or evaluation that the
-              rest of the AGChain shell will scope itself around.
-            </p>
-          </div>
-          <div className="pt-2">
-            <Button type="button" onClick={() => setCreateOpen(true)}>
-              New Project
-            </Button>
-          </div>
-        </header>
-        <AgchainProjectCreateDialog
-          open={createOpen}
-          onOpenChange={setCreateOpen}
-          creating={creating}
-          error={error}
-          onCreate={handleCreateBenchmark}
-        />
-        <AgchainBenchmarksTable
-          items={tableItems}
-          loading={loading}
-        />
-      </div>
-    </div>
+        </div>
+        <div className="pt-2">
+          <Button type="button" onClick={() => setCreateOpen(true)}>
+            New Project
+          </Button>
+        </div>
+      </header>
+      <AgchainProjectCreateDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        creating={creating}
+        error={error}
+        onCreate={handleCreateBenchmark}
+      />
+      <AgchainBenchmarksTable
+        items={tableItems}
+        loading={loading}
+      />
+    </AgchainPageFrame>
   );
 }

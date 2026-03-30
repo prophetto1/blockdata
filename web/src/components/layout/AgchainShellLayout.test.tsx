@@ -37,7 +37,12 @@ vi.mock('@/auth/AuthContext', () => ({
 }));
 
 vi.mock('@/components/shell/LeftRailShadcn', () => ({
-  LeftRailShadcn: (props: { headerBrand?: React.ReactNode; headerContent?: React.ReactNode; desktopCompact?: boolean }) => {
+  LeftRailShadcn: (props: {
+    headerBrand?: React.ReactNode;
+    headerContent?: React.ReactNode;
+    desktopCompact?: boolean;
+    onToggleDesktopCompact?: () => void;
+  }) => {
     leftRailMock(props);
     return (
       <div data-testid="agchain-primary-rail-content" data-compact={props.desktopCompact ? 'true' : 'false'}>
@@ -128,7 +133,7 @@ describe('AgchainShellLayout', () => {
     expect(screen.getByTestId('agchain-platform-rail')).toHaveStyle({ width: '312px' });
   });
 
-  it('restores AGChain-owned persisted desktop compact state from local storage', () => {
+  it('ignores stale AGChain compact-state storage and keeps the rail expanded', () => {
     window.localStorage.setItem(AGCHAIN_DESKTOP_NAV_OPEN_KEY, 'false');
 
     render(
@@ -141,7 +146,24 @@ describe('AgchainShellLayout', () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByTestId('agchain-primary-rail-content')).toHaveAttribute('data-compact', 'true');
+    expect(screen.getByTestId('agchain-primary-rail-content')).toHaveAttribute('data-compact', 'false');
+    const lastCall = leftRailMock.mock.calls.at(-1)?.[0] as { desktopCompact?: boolean } | undefined;
+    expect(lastCall?.desktopCompact).not.toBe(true);
+  });
+
+  it('does not wire the shared compact-toggle affordance into the AGChain rail', () => {
+    render(
+      <MemoryRouter initialEntries={['/app/agchain/overview']}>
+        <Routes>
+          <Route element={<AgchainShellLayout />}>
+            <Route path="/app/agchain/*" element={<div data-testid="agchain-route-content" />} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    const lastCall = leftRailMock.mock.calls.at(-1)?.[0] as { onToggleDesktopCompact?: () => void } | undefined;
+    expect(lastCall?.onToggleDesktopCompact).toBeUndefined();
   });
 
   it('renders the benchmark secondary rail only on the hidden benchmark-definition route', () => {

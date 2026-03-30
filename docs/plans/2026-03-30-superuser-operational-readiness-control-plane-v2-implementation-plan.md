@@ -1,4 +1,4 @@
-# Superuser Operational Readiness Control Plane Implementation Plan
+# Superuser Operational Readiness Control Plane v2 Implementation Plan
 
 **Goal:** Build a unified operational-readiness surface inside super/admin so the user can see, before debugging any feature flow, whether the required shared platform, BlockData, and AGChain dependencies are actually up, configured, and usable.
 
@@ -31,6 +31,14 @@
   - `services/platform-api/app/api/routes/storage.py`
   - `services/platform-api/app/main.py`
   - `services/platform-api/app/core/config.py`
+
+## Revision Basis
+
+This v2 revision addresses the pre-implementation evaluation findings against the original draft:
+
+1. The page design is now locked explicitly enough to lead implementation instead of being improvised during backend work.
+2. Task order is now frontend-first so the page contract defines the backend-facing view model rather than the reverse.
+3. Status semantics, browser-diagnostics placement, and manual refresh behavior are now explicitly locked.
 
 ## Current-State Assessment
 
@@ -242,20 +250,71 @@ No major product, API, observability, or inventory decision may be improvised du
 6. The page must group statuses by `Shared`, `BlockData`, and `AGChain` so one admin area can support both products without needing a final ownership split first.
 7. Existing point solutions such as storage provisioning monitor, extract readiness hook, and connections management remain in place, but they are not the new unified readiness source of truth.
 
+### Locked Frontend Page Contract
+
+1. The mounted page remains a single route: `/app/superuser/operational-readiness`.
+2. The page is a read-only operator dashboard, not a settings form and not a workbench.
+3. The page header has a fixed two-part structure:
+   - left: page title plus one-sentence operator framing
+   - right: one manual `Refresh Status` action
+4. Directly below the header is one summary strip showing:
+   - total `ok`, `warn`, `fail`, and `unknown` counts
+   - last refresh timestamp
+5. The main body renders exactly three surface sections in this order:
+   - `Shared`
+   - `BlockData`
+   - `AGChain`
+6. Each surface section renders:
+   - section title
+   - section-level count summary
+   - responsive check-card grid
+7. Each readiness card has a fixed anatomy:
+   - status badge
+   - check label
+   - one-sentence summary
+   - compact evidence block
+   - remediation text
+8. The browser/local diagnostics area is not mixed into the three runtime sections. It renders as one separate full-width `Client Environment` panel below all surface sections.
+9. Phase 1 does not introduce tabs, submenus, drill-in drawers, or per-surface filters. The first version is one page with one scroll flow.
+10. Responsive contract:
+    - mobile: single-column vertical flow
+    - desktop: summary strip on top, then vertically stacked sections, with per-section cards allowed to flow into multiple columns
+11. State contract:
+    - initial mount auto-loads one snapshot
+    - manual refresh re-runs both backend snapshot and client diagnostics together
+    - no polling in phase 1
+
+### Locked Status Semantics
+
+1. `ok` = prerequisite is satisfied and the operator should assume the dependent flow is available.
+2. `warn` = prerequisite is present but degraded, partial, or risky; the operator may proceed, but the page must communicate that the flow is not fully healthy.
+3. `fail` = prerequisite is missing or unusable; the operator should assume the dependent flow is blocked or broken.
+4. `unknown` = the check could not be executed or did not produce enough evidence to classify safely.
+
+### Locked Refresh Contract
+
+1. The page exposes one manual refresh control in the upper-right page header.
+2. Clicking refresh re-runs the backend readiness snapshot and the client/browser diagnostics as one user-visible action.
+3. The refresh button is disabled while a refresh is in flight.
+4. The page must visibly show the latest successful snapshot time after refresh completes.
+
 ### Locked Acceptance Contract
 
 The implementation is only complete when all of the following are true:
 
 1. A superuser can open `/app/superuser/operational-readiness`.
-2. The page shows grouped readiness sections for `Shared`, `BlockData`, and `AGChain`.
-3. The page shows a backend-owned readiness status for platform-api readiness, Supabase admin connectivity, background worker configuration, and telemetry configuration.
-4. The page shows explicit BlockData upload-path prerequisites, including whether the server can sign a GCS upload URL and whether the bucket has browser-upload CORS configured.
-5. The page shows explicit AGChain runtime checks for benchmark catalog and models readiness.
-6. The page shows browser/local diagnostics including current frontend origin, resolved platform-api base mode, and auth-bypass mode.
-7. A failed or degraded check includes visible remediation guidance so the user can tell “not on yet” apart from “broken.”
-8. The admin nav exposes the new page in the same super/admin area used by other operational tooling.
-9. No database migrations or edge-function changes are introduced.
-10. Locked inventory counts match the actual changed file set.
+2. The page header shows the locked title/description structure and an upper-right `Refresh Status` action.
+3. The page shows one summary strip with `ok`, `warn`, `fail`, and `unknown` totals plus last refresh time.
+4. The page shows grouped readiness sections for `Shared`, `BlockData`, and `AGChain` in that fixed order.
+5. Each rendered check shows status badge, label, summary, evidence, and remediation text.
+6. The page shows a backend-owned readiness status for platform-api readiness, Supabase admin connectivity, background worker configuration, and telemetry configuration.
+7. The page shows explicit BlockData upload-path prerequisites, including whether the server can sign a GCS upload URL and whether the bucket has browser-upload CORS configured.
+8. The page shows explicit AGChain runtime checks for benchmark catalog and models readiness.
+9. The page shows browser/local diagnostics including current frontend origin, resolved platform-api base mode, and auth-bypass mode in a separate `Client Environment` panel below the runtime sections.
+10. A failed or degraded check includes visible remediation guidance so the user can tell “not on yet” apart from “broken.”
+11. The admin nav exposes the new page in the same super/admin area used by other operational tooling.
+12. No database migrations or edge-function changes are introduced.
+13. Locked inventory counts match the actual changed file set.
 
 ### Locked Platform API Surface
 
@@ -380,43 +439,7 @@ The work is complete only when all of the following are true:
 8. The inventory counts in this plan match the actual created and modified files.
 9. No database migrations or edge-function changes are introduced.
 
-## Task 1: Lock the failing backend readiness contract tests
-
-**File(s):**
-
-- `services/platform-api/tests/test_admin_runtime_readiness_routes.py`
-- `services/platform-api/tests/test_runtime_readiness_service.py`
-
-**Step 1:** Write the route-level failing tests for `GET /admin/runtime/readiness`, including superuser auth, response shape, and grouped `shared` / `blockdata` / `agchain` sections.
-**Step 2:** Write the service-level failing tests for the phase-1 readiness checks, including sign-capability and bucket-CORS classification behavior.
-**Step 3:** Run the backend tests and confirm they fail for the missing route/service.
-
-**Test command:** `cd services/platform-api && pytest -q tests/test_admin_runtime_readiness_routes.py tests/test_runtime_readiness_service.py`
-**Expected output:** New readiness tests fail because the route and service do not exist yet.
-
-**Commit:** `test: lock operational readiness backend contract`
-
-## Task 2: Implement the backend-owned readiness control plane
-
-**File(s):**
-
-- `services/platform-api/app/api/routes/admin_runtime_readiness.py`
-- `services/platform-api/app/services/runtime_readiness.py`
-- `services/platform-api/app/observability/runtime_readiness_metrics.py`
-- `services/platform-api/app/main.py`
-
-**Step 1:** Create the code-owned readiness registry/service with the locked phase-1 check ids, grouped by `shared`, `blockdata`, and `agchain`.
-**Step 2:** Implement the concrete probe logic for process readiness, Supabase connectivity, worker config, telemetry config, GCS bucket presence, GCS sign-capability, bucket CORS, pipeline definitions, AGChain benchmarks, and AGChain models.
-**Step 3:** Add the locked readiness traces, metrics, and structured log emission.
-**Step 4:** Add the `GET /admin/runtime/readiness` route and mount it in `app/main.py`.
-**Step 5:** Re-run the backend tests and make them pass.
-
-**Test command:** `cd services/platform-api && pytest -q tests/test_admin_runtime_readiness_routes.py tests/test_runtime_readiness_service.py`
-**Expected output:** The new readiness route and service tests pass.
-
-**Commit:** `feat: add superuser runtime readiness api`
-
-## Task 3: Lock the failing frontend route, nav, and page contract tests
+## Task 1: Lock the failing frontend route, nav, and page contract tests
 
 **File(s):**
 
@@ -424,8 +447,8 @@ The work is complete only when all of the following are true:
 - `web/src/hooks/useOperationalReadiness.test.tsx`
 - `web/src/components/admin/__tests__/AdminLeftNav.test.tsx`
 
-**Step 1:** Write the failing page test proving the new readiness page renders summary counts, grouped sections, remediation text, and browser diagnostics.
-**Step 2:** Write the failing hook test proving backend snapshot data and browser diagnostics are merged into one consumable state model.
+**Step 1:** Write the failing page test proving the page header, summary strip, fixed section order, card anatomy, and separate client diagnostics panel all render according to the locked page contract.
+**Step 2:** Write the failing hook test proving backend snapshot data and browser diagnostics are merged into one consumable state model with the locked status semantics.
 **Step 3:** Extend the admin nav test to fail until the new `Operational Status` link is present.
 **Step 4:** Run the targeted frontend tests and confirm they fail before implementation.
 
@@ -434,7 +457,7 @@ The work is complete only when all of the following are true:
 
 **Commit:** `test: lock operational readiness frontend contract`
 
-## Task 4: Implement the super/admin operational-status page
+## Task 2: Implement the frontend-first page contract and admin navigation
 
 **File(s):**
 
@@ -448,16 +471,53 @@ The work is complete only when all of the following are true:
 - `web/src/components/admin/AdminLeftNav.tsx`
 - `web/src/components/admin/__tests__/AdminLeftNav.test.tsx`
 
-**Step 1:** Implement the shared frontend types and browser/local diagnostics helper in `operationalReadiness.ts`.
-**Step 2:** Implement `useOperationalReadiness` to fetch the backend snapshot and collect browser diagnostics without duplicating backend dependency probes in the browser.
-**Step 3:** Build the new page and supporting components so the page shows summary counts, grouped checks, remediation text, and client diagnostics.
+**Step 1:** Implement the frontend-facing readiness view model and browser/local diagnostics helper in `operationalReadiness.ts`.
+**Step 2:** Implement `useOperationalReadiness` against the locked endpoint contract and locked page semantics, with tests using mocked API responses.
+**Step 3:** Build the page so the visual structure matches the locked page contract before backend work begins.
 **Step 4:** Add the `/app/superuser/operational-readiness` route and admin-nav entry.
 **Step 5:** Re-run the targeted frontend tests and make them pass.
 
 **Test command:** `cd web && npm exec vitest run src/pages/superuser/SuperuserOperationalReadiness.test.tsx src/hooks/useOperationalReadiness.test.tsx src/components/admin/__tests__/AdminLeftNav.test.tsx --reporter=verbose`
 **Expected output:** The new readiness page, hook, and nav tests pass.
 
-**Commit:** `feat: add superuser operational readiness page`
+**Commit:** `feat: add superuser operational readiness page contract`
+
+## Task 3: Lock the failing backend readiness contract tests
+
+**File(s):**
+
+- `services/platform-api/tests/test_admin_runtime_readiness_routes.py`
+- `services/platform-api/tests/test_runtime_readiness_service.py`
+
+**Step 1:** Write the route-level failing tests for `GET /admin/runtime/readiness`, including superuser auth, response shape, grouped `shared` / `blockdata` / `agchain` sections, and the frontend-defined card fields.
+**Step 2:** Write the service-level failing tests for the phase-1 readiness checks, including sign-capability and bucket-CORS classification behavior.
+**Step 3:** Run the backend tests and confirm they fail for the missing route/service.
+
+**Test command:** `cd services/platform-api && pytest -q tests/test_admin_runtime_readiness_routes.py tests/test_runtime_readiness_service.py`
+**Expected output:** New readiness tests fail because the route and service do not exist yet.
+
+**Commit:** `test: lock operational readiness backend contract`
+
+## Task 4: Implement the backend-owned readiness control plane and satisfy the frontend contract
+
+**File(s):**
+
+- `services/platform-api/app/api/routes/admin_runtime_readiness.py`
+- `services/platform-api/app/services/runtime_readiness.py`
+- `services/platform-api/app/observability/runtime_readiness_metrics.py`
+- `services/platform-api/app/main.py`
+
+**Step 1:** Create the code-owned readiness registry/service with the locked phase-1 check ids, grouped by `shared`, `blockdata`, and `agchain`.
+**Step 2:** Implement the concrete probe logic for process readiness, Supabase connectivity, worker config, telemetry config, GCS bucket presence, GCS sign-capability, bucket CORS, pipeline definitions, AGChain benchmarks, and AGChain models.
+**Step 3:** Add the locked readiness traces, metrics, and structured log emission.
+**Step 4:** Add the `GET /admin/runtime/readiness` route and mount it in `app/main.py`.
+**Step 5:** Ensure the response shape satisfies the already-built frontend page contract without changing the locked frontend structure.
+**Step 6:** Re-run the backend tests and make them pass.
+
+**Test command:** `cd services/platform-api && pytest -q tests/test_admin_runtime_readiness_routes.py tests/test_runtime_readiness_service.py`
+**Expected output:** The new readiness route and service tests pass.
+
+**Commit:** `feat: add superuser runtime readiness api`
 
 ## Task 5: Run the final operational-readiness regression sweep
 
@@ -481,4 +541,3 @@ The work is complete only when all of the following are true:
 **Expected output:** Backend tests pass, frontend tests pass, and the web build completes successfully.
 
 **Commit:** `test: verify superuser operational readiness control plane`
-
