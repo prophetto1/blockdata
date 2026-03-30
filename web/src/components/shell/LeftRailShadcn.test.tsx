@@ -221,6 +221,41 @@ describe('LeftRailShadcn', () => {
 
     expect(onToggleDesktopCompact).toHaveBeenCalledTimes(1);
   });
+
+  it('renders optional header content below the brand and above the nav items', async () => {
+    render(
+      <MemoryRouter initialEntries={['/app/assets']}>
+        <LeftRailShadcn
+          {...({
+            navSections: [
+              {
+                label: 'Project',
+                items: [
+                  {
+                    label: 'Overview',
+                    path: '/app/assets',
+                    icon: () => null,
+                  },
+                ],
+              },
+            ],
+            headerBrand: <div data-testid="rail-brand">Brand</div>,
+            headerContent: <div data-testid="rail-header-content">Selector</div>,
+          } as Record<string, unknown>)}
+        />
+      </MemoryRouter>,
+    );
+
+    const brand = await screen.findByTestId('rail-brand');
+    const headerContent = screen.getByTestId('rail-header-content');
+    const navButton = screen.getByRole('button', { name: 'Overview' });
+
+    expect(headerContent).toBeInTheDocument();
+    expect(navButton).toBeInTheDocument();
+    expect(brand.compareDocumentPosition(headerContent) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(headerContent.compareDocumentPosition(navButton) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   it('uses the compact header button to expand the side rail', async () => {
     const onToggleDesktopCompact = vi.fn();
 

@@ -37,7 +37,9 @@ export function AgchainBenchmarksTable({
         <table className="min-w-full border-collapse text-left text-sm">
           <thead className="bg-muted/30 text-xs uppercase tracking-[0.16em] text-muted-foreground">
             <tr>
-              <th className="px-6 py-3 font-medium">Benchmark</th>
+              <th className="px-6 py-3 font-medium">Project</th>
+              <th className="px-6 py-3 font-medium">Slug</th>
+              <th className="px-6 py-3 font-medium">Description</th>
               <th className="px-6 py-3 font-medium">State</th>
               <th className="px-6 py-3 font-medium">Current Spec</th>
               <th className="px-6 py-3 font-medium">Steps</th>
@@ -45,39 +47,28 @@ export function AgchainBenchmarksTable({
               <th className="px-6 py-3 font-medium">Tested Models</th>
               <th className="px-6 py-3 font-medium">Validation</th>
               <th className="px-6 py-3 font-medium">Activity</th>
+              <th className="px-6 py-3 font-medium">Action</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td className="px-6 py-8 text-muted-foreground" colSpan={8}>
+                <td className="px-6 py-8 text-muted-foreground" colSpan={11}>
                   Loading AGChain projects...
                 </td>
               </tr>
             ) : items.length === 0 ? (
               <tr>
-                <td className="px-6 py-8 text-muted-foreground" colSpan={8}>
+                <td className="px-6 py-8 text-muted-foreground" colSpan={11}>
                   No AGChain projects have been created yet.
                 </td>
               </tr>
             ) : (
               items.map((item) => (
                 <tr key={item.benchmark_id} className="border-t border-border/60 align-top">
-                  <td className="px-6 py-4">
-                    <div className="grid gap-2">
-                      <div>
-                        <p className="font-medium text-foreground">{item.benchmark_name}</p>
-                        <p className="text-xs text-muted-foreground">{item.benchmark_slug}</p>
-                      </div>
-                      <p className="max-w-sm text-sm text-muted-foreground">{item.description}</p>
-                      <Link
-                        className="font-medium text-foreground underline-offset-4 hover:underline"
-                        to={item.href}
-                      >
-                        Open Project
-                      </Link>
-                    </div>
-                  </td>
+                  <td className="px-6 py-4 font-medium text-foreground">{item.benchmark_name}</td>
+                  <td className="px-6 py-4 text-muted-foreground">{item.benchmark_slug}</td>
+                  <td className="max-w-sm px-6 py-4 text-muted-foreground">{item.description}</td>
                   <td className="px-6 py-4 text-foreground">{formatState(item.state)}</td>
                   <td className="px-6 py-4 text-foreground">{item.current_spec_label}</td>
                   <td className="px-6 py-4 text-foreground">{item.step_count}</td>
@@ -85,6 +76,14 @@ export function AgchainBenchmarksTable({
                   <td className="px-6 py-4 text-foreground">{item.tested_model_count}</td>
                   <td className="px-6 py-4 text-foreground">{formatValidation(item)}</td>
                   <td className="px-6 py-4 text-muted-foreground">{formatActivity(item)}</td>
+                  <td className="px-6 py-4">
+                    <Link
+                      className="font-medium text-foreground underline-offset-4 hover:underline"
+                      to={item.href}
+                    >
+                      Open Project
+                    </Link>
+                  </td>
                 </tr>
               ))
             )}

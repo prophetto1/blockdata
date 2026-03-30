@@ -37,6 +37,18 @@
   padding-inline-start: 0.625rem;
 }
 
+.project-switcher-trigger {
+  min-width: 132px;
+  max-width: 148px;
+  flex: 0 0 148px;
+  justify-content: space-between;
+}
+
+.project-switcher-trigger > span:first-child {
+  min-width: 0;
+  max-width: 100%;
+}
+
 .top-command-bar--minimal .top-command-bar-left,
 .top-command-bar--minimal .top-command-bar-center {
   transform: translateX(var(--top-command-bar-leading-offset));
@@ -50,6 +62,14 @@
 
 .top-command-bar--minimal .top-command-bar-left {
   overflow: visible;
+}
+
+.agchain-project-switcher-trigger {
+  width: calc(100% - 16px);
+  max-width: none;
+  margin: 8px 8px 0;
+  border-radius: 10px;
+  flex: 1 1 auto;
 }
 
 @media (max-width: 767px) {

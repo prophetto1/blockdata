@@ -1,7 +1,13 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { AgchainShellLayout } from './AgchainShellLayout';
+
+const topCommandBarMock = vi.fn();
+const leftRailMock = vi.fn();
+
+const AGCHAIN_DESKTOP_NAV_OPEN_KEY = 'agchain.shell.nav_open_desktop';
+const AGCHAIN_SIDEBAR_WIDTH_KEY = 'agchain.shell.sidebar_width';
 
 vi.mock('@/hooks/useTheme', () => ({
   useTheme: () => ({
@@ -31,11 +37,30 @@ vi.mock('@/auth/AuthContext', () => ({
 }));
 
 vi.mock('@/components/shell/LeftRailShadcn', () => ({
-  LeftRailShadcn: ({ headerBrand }: { headerBrand?: React.ReactNode }) => (
-    <div data-testid="agchain-primary-rail-content">
-      {headerBrand}
-    </div>
-  ),
+  LeftRailShadcn: (props: { headerBrand?: React.ReactNode; headerContent?: React.ReactNode; desktopCompact?: boolean }) => {
+    leftRailMock(props);
+    return (
+      <div data-testid="agchain-primary-rail-content" data-compact={props.desktopCompact ? 'true' : 'false'}>
+        <div data-testid="agchain-primary-rail-brand">{props.headerBrand}</div>
+        <div data-testid="agchain-primary-rail-header-content">{props.headerContent}</div>
+      </div>
+    );
+  },
+}));
+
+vi.mock('@/components/shell/TopCommandBar', () => ({
+  TopCommandBar: (props: { primaryContext?: React.ReactNode; hideProjectSwitcher?: boolean; hideSearch?: boolean }) => {
+    topCommandBarMock(props);
+    return (
+      <div data-testid="top-command-bar">
+        <div data-testid="top-command-bar-left">{props.primaryContext}</div>
+        <div data-testid="top-command-bar-flags">
+          {props.hideProjectSwitcher ? 'hide-project-switcher' : 'show-project-switcher'}
+          {props.hideSearch ? ' hide-search' : ' show-search'}
+        </div>
+      </div>
+    );
+  },
 }));
 
 vi.mock('@/components/agchain/AgchainProjectSwitcher', () => ({
@@ -44,6 +69,9 @@ vi.mock('@/components/agchain/AgchainProjectSwitcher', () => ({
 
 afterEach(() => {
   cleanup();
+  leftRailMock.mockReset();
+  topCommandBarMock.mockReset();
+  window.localStorage.clear();
 });
 
 describe('AgchainShellLayout', () => {
@@ -60,14 +88,60 @@ describe('AgchainShellLayout', () => {
 
     expect(screen.getByTestId('agchain-platform-rail')).toBeInTheDocument();
     expect(screen.queryByTestId('agchain-secondary-rail')).not.toBeInTheDocument();
-    expect(screen.getByTestId('agchain-primary-rail-content')).toHaveTextContent('BlockDataBench');
-    expect(screen.getByTestId('agchain-project-context')).toHaveTextContent('Focused AGChain project');
+    expect(screen.getByTestId('agchain-primary-rail-brand')).toHaveTextContent('BlockDataBench');
     expect(screen.queryByTestId('project-switcher')).not.toBeInTheDocument();
-    expect(screen.queryByLabelText(/search/i)).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /workspace selector/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /toggle color scheme/i })).toBeInTheDocument();
+    expect(screen.getByTestId('top-command-bar-flags')).toHaveTextContent('hide-project-switcher');
+    expect(screen.getByTestId('top-command-bar-flags')).toHaveTextContent('hide-search');
     expect(screen.getByTestId('agchain-shell-top-divider')).toBeInTheDocument();
     expect(screen.getByTestId('agchain-route-content')).toBeInTheDocument();
+  });
+
+  it('renders the AGChain selector in the rail header content instead of the top command bar', () => {
+    render(
+      <MemoryRouter initialEntries={['/app/agchain/overview']}>
+        <Routes>
+          <Route element={<AgchainShellLayout />}>
+            <Route path="/app/agchain/*" element={<div data-testid="agchain-route-content" />} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    const railContent = screen.getByTestId('agchain-primary-rail-header-content');
+    expect(within(railContent).getByTestId('agchain-project-context')).toBeInTheDocument();
+    expect(within(screen.getByTestId('top-command-bar-left')).queryByTestId('agchain-project-context')).not.toBeInTheDocument();
+  });
+
+  it('restores AGChain-owned persisted desktop rail width from local storage', () => {
+    window.localStorage.setItem(AGCHAIN_SIDEBAR_WIDTH_KEY, '312');
+
+    render(
+      <MemoryRouter initialEntries={['/app/agchain/overview']}>
+        <Routes>
+          <Route element={<AgchainShellLayout />}>
+            <Route path="/app/agchain/*" element={<div data-testid="agchain-route-content" />} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByTestId('agchain-platform-rail')).toHaveStyle({ width: '312px' });
+  });
+
+  it('restores AGChain-owned persisted desktop compact state from local storage', () => {
+    window.localStorage.setItem(AGCHAIN_DESKTOP_NAV_OPEN_KEY, 'false');
+
+    render(
+      <MemoryRouter initialEntries={['/app/agchain/overview']}>
+        <Routes>
+          <Route element={<AgchainShellLayout />}>
+            <Route path="/app/agchain/*" element={<div data-testid="agchain-route-content" />} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByTestId('agchain-primary-rail-content')).toHaveAttribute('data-compact', 'true');
   });
 
   it('renders the benchmark secondary rail only on the hidden benchmark-definition route', () => {

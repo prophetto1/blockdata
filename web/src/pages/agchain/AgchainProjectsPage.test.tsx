@@ -90,17 +90,18 @@ describe('AgchainProjectsPage', () => {
 
     expect(screen.getByRole('heading', { level: 1, name: 'Projects and evaluations' })).toBeInTheDocument();
     expect(screen.getByText(/multi-project AGChain registry/i)).toBeInTheDocument();
+    expect(platformApiFetchMock).toHaveBeenCalledWith('/agchain/benchmarks?limit=50&offset=0');
 
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'New Project' })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: 'Project registry' })).toBeInTheDocument();
     });
 
-    expect(screen.getByRole('heading', { name: 'Project registry' })).toBeInTheDocument();
-    expect(screen.getByRole('columnheader', { name: 'Benchmark' })).toBeInTheDocument();
-    const openProjectLinks = screen.getAllByRole('link', { name: 'Open Project' });
-    expect(openProjectLinks.length).toBeGreaterThan(0);
-    expect(openProjectLinks[0]).toHaveAttribute('href', '/app/agchain/overview?project=legal-10');
-    expect(platformApiFetchMock).toHaveBeenCalledWith('/agchain/benchmarks?limit=50&offset=0');
+    expect(screen.getByRole('columnheader', { name: 'Project' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Slug' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Description' })).toBeInTheDocument();
+    expect(screen.queryByRole('columnheader', { name: 'Benchmark' })).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Open Project' })).toHaveAttribute('href', '/app/agchain/overview?project=legal-10');
   });
 
   it('shows an empty registry state when no benchmark-backed projects exist yet', async () => {
@@ -142,6 +143,11 @@ describe('AgchainProjectsPage', () => {
     });
 
     fireEvent.click(screen.getByRole('button', { name: 'New Project' }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Create Project' })).toBeInTheDocument();
+    });
+
     fireEvent.change(screen.getByLabelText('Project Name'), { target: { value: 'New Benchmark' } });
     fireEvent.change(screen.getByLabelText('Project Slug'), { target: { value: 'new-benchmark' } });
     fireEvent.change(screen.getByLabelText('Description'), { target: { value: 'Catalog-created benchmark.' } });
@@ -155,5 +161,20 @@ describe('AgchainProjectsPage', () => {
     });
 
     expect(navigateMock).toHaveBeenCalledWith('/app/agchain/overview?project=new-benchmark');
+  });
+
+  it('opens the create dialog immediately from the ?new=1 query parameter', async () => {
+    render(
+      <MemoryRouter initialEntries={['/app/agchain/projects?new=1']}>
+        <AgchainProjectsPage />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Create Project' })).toBeInTheDocument();
+    });
+
+    expect(screen.getByLabelText('Project Name')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Create Project' })).toBeInTheDocument();
   });
 });

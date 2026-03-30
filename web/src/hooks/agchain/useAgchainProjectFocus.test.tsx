@@ -1,4 +1,4 @@
-import { renderHook, waitFor } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAgchainProjectFocus } from './useAgchainProjectFocus';
 
@@ -69,10 +69,9 @@ describe('useAgchainProjectFocus', () => {
     const { result } = renderHook(() => useAgchainProjectFocus());
 
     await waitFor(() => {
-      expect(result.current.focusedProjectSlug).toBe('finance-eval');
+      expect(result.current.focusedProject?.benchmark_name).toBe('Finance Eval');
     });
-
-    expect(result.current.focusedProject?.benchmark_name).toBe('Finance Eval');
+    expect(result.current.focusedProjectSlug).toBe('finance-eval');
   });
 
   it('falls back to the first available benchmark row when no stored focus exists', async () => {
@@ -96,5 +95,33 @@ describe('useAgchainProjectFocus', () => {
 
     expect(window.localStorage.getItem('agchain.projectFocusSlug')).toBe('legal-10');
     expect(result.current.focusedProject?.benchmark_name).toBe('Legal-10');
+  });
+
+  it('hydrates the stored AGChain focus immediately before the benchmark list finishes loading', () => {
+    window.localStorage.setItem('agchain.projectFocusSlug', 'finance-eval');
+    fetchAgchainBenchmarksMock.mockReturnValue(new Promise(() => {}));
+
+    const { result } = renderHook(() => useAgchainProjectFocus());
+
+    expect(result.current.focusedProjectSlug).toBe('finance-eval');
+    expect(result.current.loading).toBe(true);
+  });
+
+  it('synchronizes focus changes across mounted hook instances', async () => {
+    const first = renderHook(() => useAgchainProjectFocus());
+    const second = renderHook(() => useAgchainProjectFocus());
+
+    await waitFor(() => {
+      expect(first.result.current.focusedProjectSlug).toBe('legal-10');
+      expect(second.result.current.focusedProjectSlug).toBe('legal-10');
+    });
+
+    act(() => {
+      first.result.current.setFocusedProjectSlug('finance-eval');
+    });
+
+    await waitFor(() => {
+      expect(second.result.current.focusedProjectSlug).toBe('finance-eval');
+    });
   });
 });

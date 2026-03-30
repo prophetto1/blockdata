@@ -29,21 +29,20 @@ describe('AgchainOverviewPage', () => {
     });
   });
 
-  it('renders the project overview page with the locked major regions', () => {
+  it('renders the reduced four-section overview layout', () => {
     render(
       <MemoryRouter initialEntries={['/app/agchain/overview']}>
         <AgchainOverviewPage />
       </MemoryRouter>,
     );
 
-    expect(screen.getByRole('heading', { level: 1, name: 'Project overview' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Configure project' })).toHaveAttribute('href', '/app/agchain/settings');
-    expect(screen.getByTestId('agchain-overview-ask-loop')).toBeInTheDocument();
     expect(screen.getByText('Observability')).toBeInTheDocument();
     expect(screen.getByText('Evaluation')).toBeInTheDocument();
     expect(screen.getByText('Recently created')).toBeInTheDocument();
     expect(screen.getByText('Project description')).toBeInTheDocument();
-    expect(screen.getByText(/legal-10 is the active AGChain project context/i)).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { level: 1, name: 'Project overview' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Configure project' })).not.toBeInTheDocument();
+    expect(screen.queryByTestId('agchain-overview-ask-loop')).not.toBeInTheDocument();
   });
 
   it('syncs focused project selection from the overview query parameter', async () => {
@@ -64,6 +63,27 @@ describe('AgchainOverviewPage', () => {
     await waitFor(() => {
       expect(setFocusedProjectSlug).toHaveBeenCalledWith('legal-10');
     });
+  });
+
+  it('keeps the four-box overview layout visible while project focus is still loading', () => {
+    useAgchainProjectFocusMock.mockReturnValue({
+      focusedProject: null,
+      focusedProjectSlug: 'legal-10',
+      loading: true,
+      setFocusedProjectSlug: vi.fn(),
+    });
+
+    render(
+      <MemoryRouter initialEntries={['/app/agchain/overview']}>
+        <AgchainOverviewPage />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('Observability')).toBeInTheDocument();
+    expect(screen.getByText('Evaluation')).toBeInTheDocument();
+    expect(screen.getByText('Recently created')).toBeInTheDocument();
+    expect(screen.getByText('Project description')).toBeInTheDocument();
+    expect(screen.queryByText('Loading project overview...')).not.toBeInTheDocument();
   });
 
   it('routes users back toward the project registry when no AGChain project is available', () => {

@@ -63,6 +63,7 @@ type LeftRailShadcnProps = {
   hideNav?: boolean;
   navSections?: AdminNavSection[];
   headerBrand?: ReactNode;
+  headerContent?: ReactNode;
 };
 
 /* ------------------------------------------------------------------ */
@@ -245,6 +246,7 @@ export function LeftRailShadcn({
   hideNav = false,
   navSections,
   headerBrand,
+  headerContent,
 }: LeftRailShadcnProps) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -669,6 +671,11 @@ export function LeftRailShadcn({
               </button>
             )}
           </div>
+          {!desktopCompact && headerContent ? (
+            <div className="px-1 pb-2">
+              {headerContent}
+            </div>
+          ) : null}
           {!desktopCompact && <div className="h-px w-full bg-sidebar-border" />}
         </SidebarHeader>
 
@@ -754,7 +761,6 @@ export function LeftRailShadcn({
     </SidebarProvider>
   );
 }
-
 
 
 

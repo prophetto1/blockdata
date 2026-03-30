@@ -1,7 +1,13 @@
-import { useNavigate } from 'react-router-dom';
+import { useMemo } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { AgchainProjectCreateDialog } from '@/components/agchain/AgchainProjectCreateDialog';
 import { AgchainBenchmarksTable } from '@/components/agchain/benchmarks/AgchainBenchmarksTable';
-import { AgchainBenchmarksToolbar } from '@/components/agchain/benchmarks/AgchainBenchmarksToolbar';
 import { useAgchainBenchmarks } from '@/hooks/agchain/useAgchainBenchmarks';
+import {
+  broadcastAgchainProjectListChanged,
+  setStoredAgchainProjectFocusSlug,
+} from '@/lib/agchainProjectFocus';
 
 function overviewPathForProject(projectSlug: string) {
   return `/app/agchain/overview?project=${encodeURIComponent(projectSlug)}`;
@@ -9,7 +15,27 @@ function overviewPathForProject(projectSlug: string) {
 
 export default function AgchainProjectsPage() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { items, loading, creating, error, createBenchmark } = useAgchainBenchmarks();
+  const createOpen = searchParams.get('new') === '1';
+
+  const tableItems = useMemo(
+    () => items.map((item) => ({
+      ...item,
+      href: overviewPathForProject(item.benchmark_slug),
+    })),
+    [items],
+  );
+
+  function setCreateOpen(open: boolean) {
+    const next = new URLSearchParams(searchParams);
+    if (open) {
+      next.set('new', '1');
+    } else {
+      next.delete('new');
+    }
+    setSearchParams(next, { replace: !open });
+  }
 
   async function handleCreateBenchmark(payload: {
     benchmark_name: string;
@@ -17,7 +43,11 @@ export default function AgchainProjectsPage() {
     description: string;
   }) {
     const result = await createBenchmark(payload) as { benchmark_slug?: string };
-    navigate(result.benchmark_slug ? overviewPathForProject(result.benchmark_slug) : '/app/agchain/overview');
+    const nextSlug = result.benchmark_slug ?? payload.benchmark_slug ?? null;
+    setStoredAgchainProjectFocusSlug(nextSlug);
+    broadcastAgchainProjectListChanged(nextSlug);
+    setCreateOpen(false);
+    navigate(nextSlug ? overviewPathForProject(nextSlug) : '/app/agchain/overview');
   }
 
   return (
@@ -34,17 +64,21 @@ export default function AgchainProjectsPage() {
               rest of the AGChain shell will scope itself around.
             </p>
           </div>
+          <div className="pt-2">
+            <Button type="button" onClick={() => setCreateOpen(true)}>
+              New Project
+            </Button>
+          </div>
         </header>
-        <AgchainBenchmarksToolbar
-          onCreate={handleCreateBenchmark}
+        <AgchainProjectCreateDialog
+          open={createOpen}
+          onOpenChange={setCreateOpen}
           creating={creating}
           error={error}
+          onCreate={handleCreateBenchmark}
         />
         <AgchainBenchmarksTable
-          items={items.map((item) => ({
-            ...item,
-            href: overviewPathForProject(item.benchmark_slug),
-          }))}
+          items={tableItems}
           loading={loading}
         />
       </div>

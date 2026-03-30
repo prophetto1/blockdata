@@ -5,12 +5,29 @@ import { AgchainProjectSwitcher } from './AgchainProjectSwitcher';
 
 const useAgchainProjectFocusMock = vi.fn();
 
+class ResizeObserverMock {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+
+class IntersectionObserverMock {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+  takeRecords() { return []; }
+   root = null;
+   rootMargin = '';
+   thresholds = [];
+}
+
 vi.mock('@/hooks/agchain/useAgchainProjectFocus', () => ({
   useAgchainProjectFocus: () => useAgchainProjectFocusMock(),
 }));
 
 afterEach(() => {
   cleanup();
+  vi.unstubAllGlobals();
 });
 
 describe('AgchainProjectSwitcher', () => {
@@ -50,6 +67,10 @@ describe('AgchainProjectSwitcher', () => {
   beforeEach(() => {
     useAgchainProjectFocusMock.mockReset();
     useAgchainProjectFocusMock.mockReturnValue(buildFocusState());
+    vi.stubGlobal('ResizeObserver', ResizeObserverMock);
+    vi.stubGlobal('IntersectionObserver', IntersectionObserverMock);
+    window.ResizeObserver = ResizeObserverMock as unknown as typeof ResizeObserver;
+    window.IntersectionObserver = IntersectionObserverMock as unknown as typeof IntersectionObserver;
   });
 
   it('shows the focused AGChain project or evaluation', () => {
@@ -60,6 +81,20 @@ describe('AgchainProjectSwitcher', () => {
     );
 
     expect(screen.getByRole('button', { name: /legal-10/i })).toBeInTheDocument();
+  });
+
+  it('uses a searchable dropdown-style selector like the primary project switcher', async () => {
+    render(
+      <MemoryRouter>
+        <AgchainProjectSwitcher />
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /legal-10/i }));
+
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText(/find project/i)).toBeInTheDocument();
+    });
   });
 
   it('lists available AGChain project rows and allows focus switching', async () => {
@@ -86,7 +121,25 @@ describe('AgchainProjectSwitcher', () => {
     expect(setFocusedProjectSlug).toHaveBeenCalledWith('finance-eval');
   });
 
-  it('exposes navigation into the AGChain project registry route', async () => {
+  it('keeps the last focused slug visible during refresh instead of falling back to a loading-only label', () => {
+    useAgchainProjectFocusMock.mockReturnValue({
+      ...buildFocusState(),
+      loading: true,
+      focusedProject: null,
+      focusedProjectSlug: 'ss',
+    });
+
+    render(
+      <MemoryRouter>
+        <AgchainProjectSwitcher />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole('button', { name: /^ss$/i })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /loading agchain projects/i })).not.toBeInTheDocument();
+  });
+
+  it('uses the create-manage footer entry for the AGChain registry dialog route', async () => {
     render(
       <MemoryRouter>
         <AgchainProjectSwitcher />
@@ -96,7 +149,7 @@ describe('AgchainProjectSwitcher', () => {
     fireEvent.click(screen.getByRole('button', { name: /legal-10/i }));
 
     await waitFor(() => {
-      expect(screen.getByRole('link', { name: /open project registry/i })).toHaveAttribute('href', '/app/agchain/projects');
+      expect(screen.getByRole('link', { name: /open project registry|create project|manage projects/i })).toHaveAttribute('href', '/app/agchain/projects?new=1');
     });
   });
 });
