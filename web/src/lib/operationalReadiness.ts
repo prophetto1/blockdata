@@ -85,6 +85,7 @@ export type OperationalReadinessCheck = {
   next_if_still_failing: OperationalReadinessNextStep[];
   actionability: OperationalReadinessActionability;
   evidence: Record<string, unknown>;
+  remediation: string;
   checked_at: string;
 };
 
@@ -327,21 +328,6 @@ function normalizeCheck(value: unknown, surfaceId: OperationalReadinessSurfaceId
   const summary = normalizeString(value.summary);
   if (!checkId || !label || !summary) return null;
 
-  const nextSteps = Array.isArray(value.next_if_still_failing)
-    ? value.next_if_still_failing.map(normalizeNextStep).filter(Boolean) as OperationalReadinessNextStep[]
-    : [];
-  const remediation = normalizeString(value.remediation);
-  const fallbackNextSteps =
-    nextSteps.length > 0 || !remediation
-      ? nextSteps
-      : [
-          {
-            step_kind: 'manual_fix' as const,
-            label: 'Manual follow-up',
-            description: remediation,
-          },
-        ];
-
   return {
     check_id: checkId,
     surface_id: surfaceId,
@@ -363,9 +349,12 @@ function normalizeCheck(value: unknown, surfaceId: OperationalReadinessSurfaceId
     verify_after: Array.isArray(value.verify_after)
       ? value.verify_after.map(normalizeVerifyTarget).filter(Boolean) as OperationalReadinessVerifyTarget[]
       : [],
-    next_if_still_failing: fallbackNextSteps,
+    next_if_still_failing: Array.isArray(value.next_if_still_failing)
+      ? value.next_if_still_failing.map(normalizeNextStep).filter(Boolean) as OperationalReadinessNextStep[]
+      : [],
     actionability: normalizeActionability(value.actionability),
     evidence: normalizeEvidence(value.evidence),
+    remediation: normalizeString(value.remediation),
     checked_at: normalizeString(value.checked_at),
   };
 }

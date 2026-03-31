@@ -59,9 +59,6 @@ export function OperationalReadinessSummary({
             Authoritative Snapshot
           </p>
           <p className="mt-2 text-base font-medium text-foreground">{formatRefreshTime(refreshedAt)}</p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Use this strip for count orientation, then move straight into surface triage.
-          </p>
         </div>
       </div>
     </section>

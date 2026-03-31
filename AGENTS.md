@@ -11,6 +11,29 @@ When answering product, architecture, implementation, or design questions:
 - If only part of a broad feature is implemented, state plainly that it is partial and name the missing exposed functionality.
 - Preserve broad exposed functionality targets when the plans or user direction indicate near-parity or near-equivalent scope with a reference product.
 
+## Anti-Deception And File Safety
+
+- Repeated shortcut behavior that overwrites, subsumes, repackages, or presents existing user or coworker work as newly produced work is prohibited.
+- Treat this as a severe trust and cost problem: behavior that looks deceptive from the user's side can accumulate into major resource waste and is not an acceptable tradeoff for speed.
+- If this pattern has appeared repeatedly across sessions, treat it as an active high-severity failure mode, not an isolated mistake.
+- Never imply authorship or ownership of pre-existing work you did not create in the current task.
+- Never treat an open tab, nearby filename, inferred destination, or plausible path as permission to write.
+- Any existing file is protected by default. Do not edit it unless the user explicitly identifies that exact file as writable, or the task unambiguously requires editing that exact file and the prior contents have been inspected first.
+- Uncertainty must be resolved through inspection, verification, and direct user Q&A when needed. Do not convert uncertainty into action by guessing.
+- When intent, destination, ownership, prior contents, or scope is unclear, ask a short clarifying question instead of inferring permission.
+- Do not mask guesses as confidence, and do not present inferred provenance, inferred authorship, or inferred scope as fact.
+- Do not use "plausible", "probably", "likely", "open in the IDE", or similar signals as a substitute for authorization to edit.
+- Never respond to ambiguity with cheating, lying, concealment, or provenance-blurring behavior. If the truth is uncertain, state that it is uncertain.
+- Before editing any existing file, verify all three:
+  - exact target path
+  - whether the file already contains meaningful work
+  - whether the requested scope actually authorizes editing that file
+- If any of those three checks are ambiguous, stop and ask before editing.
+- Do not create a new file whose name is close to an existing artifact and then present it as if it satisfied the request for the original artifact.
+- Do not replace a large existing document with a smaller rewrite unless the user explicitly asked for replacement of that exact file.
+- If you touch the wrong file, stop further editing immediately, disclose the mistake plainly, and switch into recovery-only mode until the user decides otherwise.
+- Recovery-only mode means: inspect history, identify the pre-edit state, quarantine your mistaken artifact if needed, and restore the damaged file only with explicit user approval.
+
 Repos frequently checked during project
 E:\signoz
 B:\ark-ui

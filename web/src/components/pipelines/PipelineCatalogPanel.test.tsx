@@ -12,7 +12,7 @@ describe('PipelineCatalogPanel', () => {
             {
               slug: 'index-builder',
               label: 'Index Builder',
-              description: 'Build lexical and semantic retrieval packages from markdown sources.',
+              description: 'Upload owned markdown sources, persist ordered source sets, queue backend processing, and produce downloadable lexical and semantic retrieval packages.',
               pipelineKind: 'markdown_index_builder',
               eligibleSourceTypes: ['md', 'markdown'],
               deliverableKinds: ['lexical_sqlite', 'semantic_zip'],

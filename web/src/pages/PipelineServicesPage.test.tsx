@@ -64,7 +64,7 @@ describe('PipelineServicesPage', () => {
     });
 
     expect(platformApiFetchMock).toHaveBeenCalledWith('/pipelines/definitions');
-    expect(screen.getByText('Build lexical and semantic retrieval packages from markdown sources.')).toBeInTheDocument();
+    expect(screen.getByText('Upload owned markdown sources, persist ordered source sets, queue backend processing, and produce downloadable lexical and semantic retrieval packages.')).toBeInTheDocument();
     expect(useShellHeaderTitleMock).toHaveBeenCalledWith({
       breadcrumbs: ['Pipeline Services'],
     });

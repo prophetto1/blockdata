@@ -16,41 +16,16 @@ const surface: OperationalReadinessSurface = {
       status: 'fail',
       label: 'Bucket CORS',
       summary: 'Browser upload CORS is missing.',
-      cause: 'The bucket does not expose the browser upload origin in the active CORS policy.',
-      cause_confidence: 'high',
-      depends_on: [
-        {
-          check_id: 'shared.storage.bucket_exists',
-          label: 'Storage bucket exists',
-          status: 'ok',
-        },
-      ],
+      cause: null,
+      cause_confidence: null,
+      depends_on: [],
       blocked_by: [],
-      available_actions: [
-        {
-          action_kind: 'storage_browser_upload_cors_reconcile',
-          label: 'Reconcile browser upload CORS',
-          description: 'Apply the backend-owned browser upload CORS policy to the target bucket.',
-          route: '/admin/runtime/storage/browser-upload-cors/reconcile',
-          requires_confirmation: true,
-        },
-      ],
-      verify_after: [
-        {
-          probe_kind: 'storage_signed_upload',
-          label: 'Run signed upload browser probe',
-          route: '/admin/runtime/storage/browser-upload/verify',
-        },
-      ],
-      next_if_still_failing: [
-        {
-          step_kind: 'inspect_dependency',
-          label: 'Inspect bucket dependency',
-          description: 'Confirm the configured bucket name resolves to the expected environment.',
-        },
-      ],
-      actionability: 'backend_action',
+      available_actions: [],
+      verify_after: [],
+      next_if_still_failing: [],
+      actionability: 'info_only',
       evidence: { cors_configured: false },
+      remediation: 'Apply the browser upload CORS policy to the bucket.',
       checked_at: '2026-03-30T16:00:00Z',
     },
     {
@@ -69,54 +44,97 @@ const surface: OperationalReadinessSurface = {
       next_if_still_failing: [],
       actionability: 'info_only',
       evidence: { has_bucket: true },
+      remediation: 'No action required.',
+      checked_at: '2026-03-30T16:00:00Z',
+    },
+  ],
+};
+
+const allOkSurface: OperationalReadinessSurface = {
+  id: 'shared',
+  label: 'Shared',
+  summary: { ok: 2, warn: 0, fail: 0, unknown: 0 },
+  checks: [
+    {
+      check_id: 'shared.platform_api.ready',
+      surface_id: 'shared',
+      category: 'process',
+      status: 'ok',
+      label: 'Platform API readiness',
+      summary: 'Healthy and ready.',
+      cause: null,
+      cause_confidence: null,
+      depends_on: [],
+      blocked_by: [],
+      available_actions: [],
+      verify_after: [],
+      next_if_still_failing: [],
+      actionability: 'info_only',
+      evidence: { ready: true },
+      remediation: 'No action required.',
+      checked_at: '2026-03-30T16:00:00Z',
+    },
+    {
+      check_id: 'shared.supabase.connectivity',
+      surface_id: 'shared',
+      category: 'connectivity',
+      status: 'ok',
+      label: 'Supabase connectivity',
+      summary: 'Reachable.',
+      cause: null,
+      cause_confidence: null,
+      depends_on: [],
+      blocked_by: [],
+      available_actions: [],
+      verify_after: [],
+      next_if_still_failing: [],
+      actionability: 'info_only',
+      evidence: { reachable: true },
+      remediation: 'No action required.',
       checked_at: '2026-03-30T16:00:00Z',
     },
   ],
 };
 
 describe('OperationalReadinessCheckGrid', () => {
-  it('renders a compact table with collapsed rows that expand into the locked control-plane composition', () => {
-    const { container } = render(<OperationalReadinessCheckGrid surface={surface} />);
+  it('renders check labels, summaries, and remediation text', () => {
+    render(<OperationalReadinessCheckGrid surface={surface} />);
 
-    expect(screen.getByRole('table')).toBeInTheDocument();
-    expect(screen.getByRole('columnheader', { name: 'Status' })).toBeInTheDocument();
-    expect(screen.getByRole('columnheader', { name: 'Check' })).toBeInTheDocument();
-    expect(screen.getByRole('columnheader', { name: 'Summary' })).toBeInTheDocument();
-    expect(container.querySelectorAll('article')).toHaveLength(0);
-
-    expect(screen.queryByText('Cause')).not.toBeInTheDocument();
-    expect(screen.queryByText('Available Actions')).not.toBeInTheDocument();
-    expect(screen.queryByText('Probe History')).not.toBeInTheDocument();
-
-    const bucketCorsButton = screen.getByRole('button', { name: /bucket cors/i });
-    fireEvent.click(bucketCorsButton);
-
-    expect(bucketCorsButton).toHaveAttribute('aria-expanded', 'true');
-    expect(screen.getByText('Cause')).toBeInTheDocument();
-    expect(screen.getByText('Dependencies')).toBeInTheDocument();
-    expect(screen.getByText('Next if still failing')).toBeInTheDocument();
-    expect(screen.getByText('Available Actions')).toBeInTheDocument();
-    expect(screen.getByText('Verification')).toBeInTheDocument();
-    expect(screen.getByText('Probe History')).toBeInTheDocument();
-    expect(
-      screen.getByText('The bucket does not expose the browser upload origin in the active CORS policy.'),
-    ).toBeInTheDocument();
-    expect(screen.getByText('Reconcile browser upload CORS')).toBeInTheDocument();
-    expect(screen.getByText('Run signed upload browser probe')).toBeInTheDocument();
-    expect(screen.getByText('Inspect bucket dependency')).toBeInTheDocument();
-    expect(screen.getByText('No probe run recorded yet.')).toBeInTheDocument();
-
-    const failedRow = screen.getByText('Bucket CORS').closest('tr');
-    expect(failedRow).toHaveClass('bg-rose-500/5');
+    expect(screen.getByText('Bucket CORS')).toBeInTheDocument();
+    expect(screen.getByText('Browser upload CORS is missing.')).toBeInTheDocument();
+    expect(screen.getByText('Apply the browser upload CORS policy to the bucket.')).toBeInTheDocument();
+    expect(screen.getByText('Storage bucket config')).toBeInTheDocument();
   });
 
-  it('renders the empty-state row when no checks are returned', () => {
+  it('expands evidence on row click', () => {
+    render(<OperationalReadinessCheckGrid surface={surface} />);
+
+    expect(screen.queryByText('Cors Configured')).not.toBeInTheDocument();
+
+    const corsRow = screen.getAllByRole('button', { name: /bucket cors/i });
+    fireEvent.click(corsRow[0]!);
+
+    expect(screen.getByText(/evidence/i)).toBeInTheDocument();
+    expect(screen.getByText('Cors Configured')).toBeInTheDocument();
+  });
+
+  it('auto-expands surfaces with failures and collapses all-ok surfaces', () => {
+    const { container } = render(<OperationalReadinessCheckGrid surface={surface} />);
+    const failDetails = container.querySelector('details');
+    expect(failDetails).toHaveAttribute('open');
+
+    const { container: okContainer } = render(<OperationalReadinessCheckGrid surface={allOkSurface} />);
+    const okDetails = okContainer.querySelector('details');
+    expect(okDetails).not.toHaveAttribute('open');
+  });
+
+  it('renders empty state when no checks returned', () => {
     render(
       <OperationalReadinessCheckGrid
         surface={{ ...surface, checks: [], summary: { ok: 0, warn: 0, fail: 0, unknown: 0 } }}
       />,
     );
 
-    expect(screen.getByText('No checks returned for this surface in the current snapshot.')).toBeInTheDocument();
+    expect(screen.getByText('No checks returned for this surface.')).toBeInTheDocument();
   });
 });

@@ -9,7 +9,7 @@ export const PIPELINE_SERVICES: PipelineServiceViewModel[] = [
     slug: 'index-builder',
     pipelineKind: 'markdown_index_builder',
     label: 'Index Builder',
-    description: 'Build lexical and semantic retrieval packages from markdown sources.',
+    description: 'Upload owned markdown sources, persist ordered source sets, queue backend processing, and produce downloadable lexical and semantic retrieval packages.',
     eligibleSourceTypes: ['md', 'markdown'],
     deliverableKinds: ['lexical_sqlite', 'semantic_zip'],
   },
