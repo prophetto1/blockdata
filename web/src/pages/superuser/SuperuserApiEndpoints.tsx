@@ -165,119 +165,118 @@ export function Component() {
   const pluginCount = endpoints.filter((e) => e.source === 'plugin').length;
 
   return (
-    <div className="h-full min-h-0 overflow-hidden">
-      <div className="min-w-0 h-full overflow-hidden">
-        {error && <ErrorAlert message={error} />}
-        {loading && !error && (
-          <p className="p-4 text-sm text-muted-foreground">Loading API endpoints...</p>
-        )}
+    <div className="flex h-full min-h-0 flex-col overflow-hidden">
+      {error && <ErrorAlert message={error} />}
+      {loading && !error && (
+        <p className="p-4 text-sm text-muted-foreground">Loading API endpoints...</p>
+      )}
 
-        {!loading && !error && (
-          <ScrollArea className="h-full" contentClass="p-3 md:p-4">
-            <div className="space-y-4">
-              {/* Summary */}
-              <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                <span>{endpoints.length} endpoints</span>
-                <span>{routeCount} routes</span>
-                <span>{pluginCount} plugins</span>
-              </div>
+      {!loading && !error && (
+        <>
+          {/* Summary + Filters — pinned */}
+          <div className="space-y-3 px-3 pt-3 md:px-4 md:pt-4">
+            <div className="flex items-center gap-4 text-xs text-muted-foreground">
+              <span>{endpoints.length} endpoints</span>
+              <span>{routeCount} routes</span>
+              <span>{pluginCount} plugins</span>
+            </div>
 
-              {/* Filters */}
-              <div className="grid gap-2 md:grid-cols-[1fr_160px_180px]">
-                <input
-                  className={inputClass}
-                  value={search}
-                  onChange={(e) => setSearch(e.currentTarget.value)}
-                  placeholder="Search method, path, group, summary..."
-                />
-                <select
-                  className={inputClass}
-                  value={sourceFilter}
-                  onChange={(e) => setSourceFilter(e.currentTarget.value as typeof sourceFilter)}
-                >
-                  <option value="all">All sources</option>
-                  <option value="route">Routes only</option>
-                  <option value="plugin">Plugins only</option>
-                </select>
-                <select
-                  className={inputClass}
-                  value={groupFilter}
-                  onChange={(e) => setGroupFilter(e.currentTarget.value)}
-                >
-                  {groups.map((g) => (
-                    <option key={g} value={g}>
-                      {g === 'all' ? 'All groups' : g}
-                    </option>
-                  ))}
-                </select>
-              </div>
+            <div className="grid gap-2 md:grid-cols-[1fr_160px_180px]">
+              <input
+                className={inputClass}
+                value={search}
+                onChange={(e) => setSearch(e.currentTarget.value)}
+                placeholder="Search method, path, group, summary..."
+              />
+              <select
+                className={inputClass}
+                value={sourceFilter}
+                onChange={(e) => setSourceFilter(e.currentTarget.value as typeof sourceFilter)}
+              >
+                <option value="all">All sources</option>
+                <option value="route">Routes only</option>
+                <option value="plugin">Plugins only</option>
+              </select>
+              <select
+                className={inputClass}
+                value={groupFilter}
+                onChange={(e) => setGroupFilter(e.currentTarget.value)}
+              >
+                {groups.map((g) => (
+                  <option key={g} value={g}>
+                    {g === 'all' ? 'All groups' : g}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
 
-              {/* Table */}
-              <ScrollArea className="rounded-md border border-border">
-                <table className="min-w-full border-collapse text-left text-xs">
-                  <thead className="bg-muted/50 text-muted-foreground">
-                    <tr>
-                      <th className="w-[70px] px-3 py-2 font-medium">Method</th>
-                      <th className="px-3 py-2 font-medium">Path</th>
-                      <th className="w-[100px] px-3 py-2 font-medium">Group</th>
-                      <th className="px-3 py-2 font-medium">Summary</th>
-                      <th className="w-[100px] px-3 py-2 font-medium">Auth</th>
-                      <th className="w-[70px] px-3 py-2 font-medium">Source</th>
+          {/* Table — scrolls within container */}
+          <div className="min-h-0 flex-1 px-3 pb-3 pt-3 md:px-4 md:pb-4">
+            <ScrollArea className="h-full rounded-md border border-border">
+              <table className="min-w-full border-collapse text-left text-xs">
+                <thead className="sticky top-0 z-[1] bg-muted/50 text-muted-foreground">
+                  <tr>
+                    <th className="w-[70px] px-3 py-2 font-medium">Method</th>
+                    <th className="px-3 py-2 font-medium">Path</th>
+                    <th className="w-[100px] px-3 py-2 font-medium">Group</th>
+                    <th className="px-3 py-2 font-medium">Summary</th>
+                    <th className="w-[100px] px-3 py-2 font-medium">Auth</th>
+                    <th className="w-[70px] px-3 py-2 font-medium">Source</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map((row, i) => (
+                    <tr
+                      key={`${row.method}-${row.path}`}
+                      className={cn(
+                        'border-t border-border align-top hover:bg-accent/40',
+                        i % 2 === 0 && 'bg-muted/20',
+                      )}
+                    >
+                      <td className={cn('whitespace-nowrap px-3 py-2 font-mono font-semibold', METHOD_COLORS[row.method])}>
+                        {row.method}
+                      </td>
+                      <td className="px-3 py-2 font-mono text-foreground">{row.path}</td>
+                      <td className="px-3 py-2 text-muted-foreground">{row.group}</td>
+                      <td className="max-w-[400px] truncate px-3 py-2 text-muted-foreground" title={row.summary}>
+                        {row.summary}
+                      </td>
+                      <td className="px-3 py-2">
+                        <span
+                          className={cn(
+                            'inline-block rounded-full px-2 py-0.5 text-[10px] font-medium',
+                            row.auth === 'none' && 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400',
+                            row.auth === 'bearer' && 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
+                            row.auth === 'platform_admin' && 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300',
+                          )}
+                        >
+                          {row.auth}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2">
+                        <span
+                          className={cn(
+                            'inline-block rounded-full px-2 py-0.5 text-[10px] font-medium',
+                            row.source === 'route' && 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300',
+                            row.source === 'plugin' && 'bg-violet-100 text-violet-700 dark:bg-violet-900 dark:text-violet-300',
+                          )}
+                        >
+                          {row.source}
+                        </span>
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {filtered.map((row, i) => (
-                      <tr
-                        key={`${row.method}-${row.path}`}
-                        className={cn(
-                          'border-t border-border align-top hover:bg-accent/40',
-                          i % 2 === 0 && 'bg-muted/20',
-                        )}
-                      >
-                        <td className={cn('whitespace-nowrap px-3 py-2 font-mono font-semibold', METHOD_COLORS[row.method])}>
-                          {row.method}
-                        </td>
-                        <td className="px-3 py-2 font-mono text-foreground">{row.path}</td>
-                        <td className="px-3 py-2 text-muted-foreground">{row.group}</td>
-                        <td className="max-w-[400px] truncate px-3 py-2 text-muted-foreground" title={row.summary}>
-                          {row.summary}
-                        </td>
-                        <td className="px-3 py-2">
-                          <span
-                            className={cn(
-                              'inline-block rounded-full px-2 py-0.5 text-[10px] font-medium',
-                              row.auth === 'none' && 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400',
-                              row.auth === 'bearer' && 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
-                              row.auth === 'platform_admin' && 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300',
-                            )}
-                          >
-                            {row.auth}
-                          </span>
-                        </td>
-                        <td className="px-3 py-2">
-                          <span
-                            className={cn(
-                              'inline-block rounded-full px-2 py-0.5 text-[10px] font-medium',
-                              row.source === 'route' && 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300',
-                              row.source === 'plugin' && 'bg-violet-100 text-violet-700 dark:bg-violet-900 dark:text-violet-300',
-                            )}
-                          >
-                            {row.source}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </ScrollArea>
+                  ))}
+                </tbody>
+              </table>
 
               {filtered.length === 0 && (
-                <p className="text-sm text-muted-foreground">No endpoints match current filters.</p>
+                <p className="p-3 text-sm text-muted-foreground">No endpoints match current filters.</p>
               )}
-            </div>
-          </ScrollArea>
-        )}
-      </div>
+            </ScrollArea>
+          </div>
+        </>
+      )}
     </div>
   );
 }

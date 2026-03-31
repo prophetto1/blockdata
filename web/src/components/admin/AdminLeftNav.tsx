@@ -92,23 +92,9 @@ const WORKER_SECTIONS: SecondarySection[] = [
   },
 ];
 
-const DOCLING_SECTIONS: SecondarySection[] = [
-  {
-    label: 'DOCLING',
-    items: [
-      { label: 'Profiles', href: '/app/superuser/parsers-docling' },
-      { label: 'Block Types', href: '/app/superuser/document-views' },
-    ],
-  },
-];
-
-function getSecondaryNav(pathname: string): SecondarySection[] {
+export function getSecondaryNav(pathname: string): SecondarySection[] {
   if (pathname.startsWith('/app/superuser/instance-config')) return INSTANCE_SECTIONS;
   if (pathname.startsWith('/app/superuser/worker-config')) return WORKER_SECTIONS;
-  if (
-    pathname.startsWith('/app/superuser/parsers-docling')
-    || pathname.startsWith('/app/superuser/document-views')
-  ) return DOCLING_SECTIONS;
   return [];
 }
 

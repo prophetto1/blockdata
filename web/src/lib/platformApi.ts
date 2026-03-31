@@ -6,11 +6,34 @@
  * the platform-api base URL instead.
  */
 import { requireAccessToken } from '@/lib/edge';
+import type { PlatformApiBaseMode } from '@/lib/operationalReadiness';
 import { supabase } from '@/lib/supabase';
 
-const PLATFORM_API_URL = (
-  import.meta.env.VITE_PLATFORM_API_URL ?? '/platform-api'
-).replace(/\/+$/, '');
+export function resolvePlatformApiTarget(): {
+  platformApiTarget: string;
+  baseMode: PlatformApiBaseMode;
+} {
+  const configured = import.meta.env.VITE_PLATFORM_API_URL?.trim();
+  if (configured) {
+    return {
+      platformApiTarget: configured.replace(/\/+$/, ''),
+      baseMode: 'absolute_direct',
+    };
+  }
+
+  return {
+    platformApiTarget: '/platform-api',
+    baseMode: 'relative_proxy',
+  };
+}
+
+export function buildPlatformApiUrl(
+  path: string,
+  platformApiTarget = resolvePlatformApiTarget().platformApiTarget,
+): string {
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+  return `${platformApiTarget}${normalizedPath}`;
+}
 
 /**
  * Authenticated fetch against platform-api. Automatically attaches
@@ -20,8 +43,11 @@ const PLATFORM_API_URL = (
 export async function platformApiFetch(
   path: string,
   init: RequestInit = {},
+  options: {
+    platformApiTarget?: string;
+  } = {},
 ): Promise<Response> {
-  const url = `${PLATFORM_API_URL}${path}`;
+  const url = buildPlatformApiUrl(path, options.platformApiTarget);
 
   const doFetch = async (token: string): Promise<Response> => {
     const headers = new Headers(init.headers);

@@ -396,7 +396,7 @@ Re-certify `Pipeline Services` only by real end-to-end operational behavior:
 
 ### Track C
 
-Remove or hide AGChain shell pages that do not have a declared backend/data contract, and only re-expose them after backend-first contract definition.
+Keep AGChain shell pages that do not have a declared backend/data contract exposed only as explicit stubs, and only promote them to real product surfaces after backend-first contract definition.
 
 ### Track D
 
@@ -418,7 +418,7 @@ Inclusion boundaries:
 
 1. correct the backend surface for `Operational Readiness`
 2. re-certify `Pipeline Services` only through end-to-end backend truth
-3. withdraw AGChain shell surfaces that do not have a declared backend/data contract
+3. convert exposed AGChain shell surfaces without a declared backend/data contract into explicit stubs and stop counting them as implementation progress
 4. replace config-only or plumbing-only telemetry claims with probe-backed proof
 5. invalidate contaminated plans from March 27-30 where this failure pattern appears
 
@@ -438,6 +438,7 @@ Construction rules:
 4. no placeholder page, generic section page, or static shell filler may count as implementation progress for a product domain
 5. no telemetry/readiness claim may be counted as operational proof if it is based only on config presence, bootstrap success, or mocked/unit-only assertions
 6. no file outside the locked file inventory may be modified without revising this plan first
+7. any backend-owned frontend control surface must have a frozen type contract, component inventory, layout contract, and explicit test inventory before implementation begins; if the frontend contract is underspecified, the plan is not executable
 
 ## Locked acceptance contract
 
@@ -450,11 +451,12 @@ The implementation is not acceptable unless all of the following are true:
 3. backend probe routes exist for every operational claim that must be proven rather than inferred
 4. probe runs and action runs are persisted through explicit database tables and migrations
 5. the readiness frontend renders the corrected backend contract rather than shallow evidence/remediation text
-6. `Pipeline Services` is proven by successful upload, source-set persistence, job execution, and deliverable verification, not by route or UI presence alone
-7. AGChain pages without backend contracts are removed from exposed navigation and are no longer counted as implementation progress
-8. telemetry status reflects export/probe truth and not only settings or instrumentation bootstrap
-9. the contaminated plans listed later in this document are explicitly superseded, invalidated, or demoted according to their disposition
-10. all locked tests and runtime verification commands pass against the corrected semantics
+6. the readiness frontend implementation includes every required component and test seam declared in `11.5.1`; no panel, layout, or interaction may be left to implementer interpretation
+7. `Pipeline Services` is proven by successful upload, source-set persistence, job execution, and deliverable verification, not by route or UI presence alone
+8. AGChain pages without backend contracts may remain exposed only as explicit stubs and are no longer counted as implementation progress
+9. telemetry status reflects export/probe truth and not only settings or instrumentation bootstrap
+10. the contaminated plans listed later in this document are explicitly superseded, invalidated, or demoted according to their disposition
+11. all locked tests and runtime verification commands pass against the corrected semantics
 
 ## 10. Required target state
 
@@ -465,11 +467,63 @@ At the end of this correction program:
 3. action endpoints exist for remediations the backend can own safely
 4. external-change cases still surface exact required changes without pretending to be backend actions
 5. `Pipeline Services` is certified by end-to-end probes and tests, not by UI presence
-6. AGChain placeholder pages are no longer exposed in the primary shell
+6. AGChain placeholder pages may remain in the primary shell only as explicit stubs
 7. OTEL status includes real export/probe proof, not only settings
 8. contaminated plans are explicitly superseded
 
 ## 11. Manifest
+
+### 11.0 Manifest-first summary
+
+This summary front-loads the implementation authority for fast inspection. Detailed frozen contracts remain in `11.1` through `11.6`.
+
+#### Platform API manifest
+
+| Verb | Path | Action | Status |
+| --- | --- | --- | --- |
+| `GET` | `/admin/runtime/readiness` | keep the snapshot route, but upgrade it into a typed control-plane snapshot seam | modified existing |
+| `GET` | `/observability/telemetry-status` | keep the path, but make it proof-backed instead of config-only | modified existing |
+| `GET`, `POST` | `/admin/runtime/readiness/checks/{check_id}` | add targeted detail and verify seams for one readiness check | new |
+| `GET` | `/admin/runtime/probe-runs/{probe_run_id}` | expose persisted probe-run audit lookup | new |
+| `GET` | `/admin/runtime/action-runs/{action_run_id}` | expose persisted action-run audit lookup | new |
+| `POST` | `/admin/runtime/{storage|supabase|background-workers|telemetry|pipeline-services}/*` | add explicit backend-owned remediation and proof routes only where this correction owns the seam | new |
+| `GET`, `POST`, `PATCH` | `/pipelines/...` | retain already-real pipeline product routes and re-certify them by end-to-end proof | retained existing |
+| `GET`, `POST` | `/agchain/benchmarks...` | keep the benchmark-registry seam explicit; do not introduce a new `/agchain/projects` backend domain in this correction | reused existing |
+| various | future AGChain route families in `11.1.4` | remain out of current implementation scope and act only as stub-promotion gates | future gate / out of scope |
+
+#### Observability manifest summary
+
+| Type | Scope | Status | Detail |
+| --- | --- | --- | --- |
+| Traces | `2` retained, `12` new route/service spans | locked | `11.2.0` through `11.2.3` |
+| Metrics | `11` retained counters, `15` new counters, `5` histograms total | locked | `11.2.0` through `11.2.4` |
+| Structured logs | `4` retained, `6` new | locked | `11.2.0` and `11.2.5` |
+| Proof semantics | config, instrumentation, export reachability, and proof are distinct states | locked | `11.2`, telemetry contract in `11.1.1` |
+
+#### Database migrations manifest
+
+| Migration | Creates / Alters | Existing-data impact | Status |
+| --- | --- | --- | --- |
+| `supabase/migrations/<timestamp>_admin_runtime_probe_runs.sql` | creates persisted readiness and proof audit records in `admin_runtime_probe_runs` | none; new audit table only | new required |
+| `supabase/migrations/<timestamp>_admin_runtime_action_runs.sql` | creates persisted remediation audit records in `admin_runtime_action_runs` | none; new audit table only | new required |
+| Pipeline Services track | no new persistence seams in this correction | existing pipeline tables remain authoritative | zero-case |
+| AGChain shell decontamination track | no new persistence seams in this correction | frontend exposure correction only | zero-case |
+| Telemetry proof state | reuse `admin_runtime_probe_runs` with `probe_kind = 'telemetry_export'` | no separate telemetry-proof table in this correction | locked design choice |
+
+#### Edge Functions manifest
+
+None. No new edge functions are added, and no existing edge function is the primary owned correction seam in this plan.
+
+#### Frontend surface summary
+
+| Track | Pages modified | New pages | Pages forced to stub state | Exposed-route effect |
+| --- | --- | --- | --- | --- |
+| Operational Readiness | `1` | `0` | `0` | existing superuser readiness page becomes a backend-owned control plane; no new frontend route |
+| Pipeline Services | `2` | `0` | `0` | existing product routes remain exposed and gain proof/certification panels; no new frontend route |
+| AGChain shell decontamination | `2` | `0` | `0` | AGChain overview/projects remain, and placeholder families may remain exposed only as explicit stubs with non-authoritative copy |
+| Telemetry / admin | `2` | `0` | `0` | existing settings and superuser pages show proof-backed telemetry state; no new frontend route |
+
+Detailed component, hook, lib, and file-level frontend contracts remain locked in `11.5` and the inventory sections.
 
 ## Locked platform API surface
 
@@ -483,7 +537,7 @@ Included API surface families:
 4. backend-owned admin action routes
 5. run-record lookup routes for probe and action executions
 6. existing pipeline product routes that already represent real product behavior
-7. future AGChain domain routes only where this plan explicitly requires them before page re-exposure
+7. future AGChain domain routes only where this plan explicitly requires them before a stub page is promoted to a real surface
 
 Intentionally excluded API shapes:
 
@@ -799,6 +853,12 @@ type TelemetryStatusResponse = {
   last_probe_failure_reason: string | null;
 };
 ```
+
+[Added per evaluation finding #8] Locked telemetry proof semantics:
+
+1. `collector_reachable` proves exporter-path reachability only; it does not by itself prove downstream sink UI visibility
+2. `last_probe_result` proves the most recent backend-owned export probe result recorded by this correction seam
+3. `GET /observability/telemetry-status` is authoritative for backend proof state in this plan, but sink-query proof remains out of scope unless a follow-on plan explicitly adds it
 
 [Added per evaluation finding #2] #### Existing AGChain benchmark-registry endpoints to keep explicit in this correction
 
@@ -1238,15 +1298,15 @@ type RuntimePipelineServicesJobExecutionProbeResponse = {
 };
 ```
 
-### 11.1.4 Future required backend contracts before AGChain page re-exposure
+### 11.1.4 Future required backend contracts before AGChain stub pages become real surfaces
 
-These contracts are not optional if those shell pages remain exposed.
+These contracts are not optional if those shell pages remain exposed, even as stubs.
 
-[Added per evaluation finding #1] This subsection is a re-exposure gate, not current implementation scope. No file in the locked inventory may add these endpoint families during this correction. Before any listed AGChain page is re-exposed, a follow-on plan must lock each family with the same contract depth used above: auth, request shape, response shape, touched tables/services, observability, tests, and acceptance proof.
+[Added per evaluation finding #1] This subsection is a stub-promotion gate, not current implementation scope. No file in the locked inventory may add these endpoint families during this correction. Before any listed AGChain page is promoted from stub status to a real surface, a follow-on plan must lock each family with the same contract depth used above: auth, request shape, response shape, touched tables/services, observability, tests, and acceptance proof.
 
 #### Datasets
 
-Required before `AgchainDatasetsPage` is re-exposed as a real surface:
+Required before `AgchainDatasetsPage` is promoted from stub status to a real surface:
 
 1. `GET /agchain/datasets`
 2. `GET /agchain/datasets/{dataset_id}`
@@ -1255,7 +1315,7 @@ Required before `AgchainDatasetsPage` is re-exposed as a real surface:
 
 #### Prompts
 
-Required before `AgchainPromptsPage` is re-exposed:
+Required before `AgchainPromptsPage` is promoted from stub status:
 
 1. `GET /agchain/prompts`
 2. `POST /agchain/prompts`
@@ -1264,7 +1324,7 @@ Required before `AgchainPromptsPage` is re-exposed:
 
 #### Runs
 
-Required before `AgchainRunsPage` is re-exposed:
+Required before `AgchainRunsPage` is promoted from stub status:
 
 1. `GET /agchain/runs`
 2. `POST /agchain/runs`
@@ -1273,7 +1333,7 @@ Required before `AgchainRunsPage` is re-exposed:
 
 #### Results
 
-Required before `AgchainResultsPage` is re-exposed:
+Required before `AgchainResultsPage` is promoted from stub status:
 
 1. `GET /agchain/results`
 2. `GET /agchain/results/{result_id}`
@@ -1281,7 +1341,7 @@ Required before `AgchainResultsPage` is re-exposed:
 
 #### Scorers
 
-Required before `AgchainScorersPage` is re-exposed:
+Required before `AgchainScorersPage` is promoted from stub status:
 
 1. `GET /agchain/scorers`
 2. `POST /agchain/scorers`
@@ -1289,7 +1349,7 @@ Required before `AgchainScorersPage` is re-exposed:
 
 #### Parameters
 
-Required before `AgchainParametersPage` is re-exposed:
+Required before `AgchainParametersPage` is promoted from stub status:
 
 1. `GET /agchain/runtime-profiles`
 2. `POST /agchain/runtime-profiles`
@@ -1297,7 +1357,7 @@ Required before `AgchainParametersPage` is re-exposed:
 
 #### Tools
 
-Required before `AgchainToolsPage` is re-exposed:
+Required before `AgchainToolsPage` is promoted from stub status:
 
 1. `GET /agchain/tools`
 2. `POST /agchain/tools`
@@ -1305,7 +1365,7 @@ Required before `AgchainToolsPage` is re-exposed:
 
 #### Build
 
-Required before `AgchainBuildPage` is re-exposed:
+Required before `AgchainBuildPage` is promoted from stub status:
 
 1. `GET /agchain/builds`
 2. `POST /agchain/builds`
@@ -1313,7 +1373,7 @@ Required before `AgchainBuildPage` is re-exposed:
 
 #### Artifacts
 
-Required before `AgchainArtifactsPage` is re-exposed:
+Required before `AgchainArtifactsPage` is promoted from stub status:
 
 1. `GET /agchain/artifacts`
 2. `GET /agchain/artifacts/{artifact_id}`
@@ -1321,7 +1381,7 @@ Required before `AgchainArtifactsPage` is re-exposed:
 
 #### Observability
 
-Required before `AgchainObservabilityPage` is re-exposed:
+Required before `AgchainObservabilityPage` is promoted from stub status:
 
 1. `GET /agchain/observability/runs/{run_id}/timeline`
 2. `GET /agchain/observability/runs/{run_id}/events`
@@ -1646,7 +1706,7 @@ Columns:
 
 1. no third migration is required for persisted readiness-check definitions in this correction because the corrected readiness check object remains computed live from backend-owned runtime state and is only audited through the latest persisted probe/action runs
 2. telemetry export proof uses `admin_runtime_probe_runs` with `probe_kind = 'telemetry_export'`; this correction does not introduce a separate telemetry-proof table
-3. AGChain work in this plan is shell withdrawal and decontamination only; re-exposure tables remain out of current implementation scope and belong to a follow-on plan
+3. AGChain work in this plan is shell stub-retention and decontamination only; promotion-to-real-surface tables remain out of current implementation scope and belong to a follow-on plan
 
 ### 11.3.2 Existing migrations to audit, not recreate
 
@@ -1866,7 +1926,7 @@ Modified files required:
 14. [Added per evaluation finding #3] `web/src/pages/agchain/AgchainProjectsPage.tsx`
 15. [Added per evaluation finding #3] `web/src/pages/agchain/AgchainProjectsPage.test.tsx`
 
-Pages to withdraw from primary exposed navigation until backend contracts exist:
+Pages that may remain exposed as explicit stubs until backend contracts exist:
 
 1. `web/src/pages/agchain/AgchainArtifactsPage.tsx`
 2. `web/src/pages/agchain/AgchainBuildPage.tsx`
@@ -1882,7 +1942,7 @@ Pages to withdraw from primary exposed navigation until backend contracts exist:
 
 The pages may remain on disk during the correction period.
 
-They must not remain exposed as if they are implemented surfaces.
+If they remain exposed, they must be presented as explicit stubs and must not remain exposed as if they are implemented surfaces.
 
 ### 11.5.4 Telemetry frontend
 
@@ -1970,9 +2030,9 @@ Frontend files to remove from exposed nav or route exposure: `11`
 
 Reason:
 
-The immediate correction is decontamination of false exposed surfaces.
+The immediate correction is decontamination of false exposed surfaces while allowing honest stub exposure where that is the better near-term operator state.
 
-The missing backend contracts are listed in this plan and must be implemented before re-exposure.
+The missing backend contracts are listed in this plan and must be implemented before any listed stub is promoted into a real product surface.
 
 [Added per evaluation finding #2] The only backend work allowed immediately in this track is to make the already-real benchmark registry seam explicit so the AGChain projects surface stops implying a broader dedicated project-registry backend than actually exists.
 
@@ -2037,12 +2097,13 @@ The frontend must not silently talk to the wrong backend instance.
 1. `Operational Readiness` is a control plane, not a read-only dashboard.
 2. The correction plan does not permit a generic “run any script” backend endpoint.
 3. Explicit action endpoints are required for backend-owned remediations.
-4. Telemetry status is not allowed to claim health based on configuration alone.
-5. Placeholder AGChain pages cannot remain exposed as if they are implemented surfaces.
-6. `Pipeline Services` is judged by end-to-end behavior only.
-7. Passing tests are not enough when runtime export or runtime targeting is still broken.
-8. This plan supersedes contaminated March 27-30 readiness/remediation planning.
-9. [Added per evaluation finding #4] The correction does not replace the AGChain local-storage focus seam in this tranche; it keeps it only as a non-authoritative UI convenience over the benchmark-backed registry.
+4. `GET /observability/telemetry-status` remains the authoritative route for telemetry status in this correction, but it is not allowed to claim health based on configuration alone.
+5. `Pipeline Services` remains a real product surface in scope, but it is judged only by end-to-end behavior and probe-backed certification.
+6. Placeholder AGChain pages may remain exposed only as explicit stubs and cannot be represented as implemented surfaces.
+7. `AGChain Projects` remains a benchmark-registry projection in this correction; no new distinct `/agchain/projects` backend domain is introduced here.
+8. Passing tests are not enough when runtime export or runtime targeting is still broken.
+9. This plan supersedes contaminated March 27-30 readiness/remediation planning.
+10. [Added per evaluation finding #4] The correction does not replace the AGChain local-storage focus seam in this tranche; it keeps it only as a non-authoritative UI convenience over the benchmark-backed registry.
 
 ## Explicit risks
 
@@ -2056,11 +2117,11 @@ Use explicit endpoints per owned remediation class.
 
 ### Risk 2
 
-The plan preserves placeholder AGChain exposure because hiding them feels like regression.
+The plan either overcorrects by forcing placeholder AGChain exposure to disappear, or leaves it exposed without explicit stub semantics.
 
 Control:
 
-Treat false exposure as a bug.
+Treat false exposure as a bug, but allow honest stub exposure when it is clearly labeled and not counted as implementation progress.
 
 ### Risk 3
 
@@ -2088,6 +2149,14 @@ This plan uses code and runtime evidence first and demotes the contaminated plan
 
 ## 16. Completion criteria
 
+At-a-glance completion summary:
+
+1. `Operational Readiness` behaves as a real backend-owned control plane with persisted probe and action runs
+2. telemetry status is proof-backed rather than config-only
+3. `Pipeline Services` passes end-to-end operational certification
+4. AGChain placeholder-only pages are exposed, if at all, only as explicit stubs and not as functional product surfaces
+5. contaminated plans carry their final correction dispositions
+
 The correction program is complete only when all of the following are true:
 
 1. `Operational Readiness` exposes explicit cause, dependency, actionability, and verification fields.
@@ -2098,7 +2167,7 @@ The correction program is complete only when all of the following are true:
 6. OTEL exporter proof succeeds against a real collector in the intended environment.
 7. the locked traces, counters, histograms, and structured logs in `11.2.0` through `11.2.6` exist exactly as specified.
 8. Pipeline Services passes end-to-end probes for upload, source-set persistence, job execution, and deliverable retrieval.
-9. AGChain placeholder pages are no longer exposed in the primary shell.
+9. AGChain placeholder pages, if still exposed in the primary shell, carry explicit stub semantics and do not imply backend-backed functionality.
 10. the pipeline-services breadcrumb regression is fixed.
 11. contaminated plans listed in this file are explicitly marked non-authoritative.
 12. the readiness snapshot, readiness detail, verify, run-lookup, remediation/probe, and telemetry-status routes return the frozen typed request and response shapes declared in `11.1`.
@@ -2289,14 +2358,14 @@ No implementation work should begin outside these tasks.
 4. `web/src/components/layout/AgchainShellLayout.test.tsx`
 5. `web/src/router.tsx`
 
-**Step 1:** Remove placeholder-only pages from the primary AGChain rail and route affordances that imply implementation completeness.
-**Step 2:** Keep only pages with real backend/data contracts exposed.
-**Step 3:** Add tests proving placeholder pages are no longer presented as functional product surfaces.
+**Step 1:** Keep exposed AGChain placeholder pages only behind explicit stub semantics in the rail and route affordances.
+**Step 2:** Distinguish backend-backed pages from stub pages so the shell no longer implies implementation completeness.
+**Step 3:** Add tests proving placeholder pages, if still exposed, are presented only as non-authoritative stubs.
 
 **Test command:** `cd E:\writing-system\web && npm exec vitest run src/components/agchain/AgchainLeftNav.test.tsx src/components/layout/AgchainShellLayout.test.tsx`
 **Expected output:** navigation tests reflect the decontaminated shell.
 
-**Commit:** `fix: remove false AGChain surface exposure`
+**Commit:** `fix: decontaminate AGChain stub exposure semantics`
 
 ### Task 10: Remove AGChain overview placeholder data or replace it with runtime-backed content
 
@@ -2385,7 +2454,7 @@ No implementation work should begin outside these tasks.
 1. backend correction tests pass
 2. frontend correction tests pass
 3. no OTEL exporter connection failures occur in the intended verified environment
-4. AGChain placeholder-only pages are no longer presented as functional surfaces
+4. AGChain placeholder-only pages, if still exposed, are clearly presented as stubs rather than functional surfaces
 5. readiness shows real action/probe behavior
 
 **Commit:** `test: verify emergency backend-surface correction`
@@ -2950,25 +3019,25 @@ This appendix covers the frontend shell files, targeting seams, AGChain page fil
 [Added per evaluation finding #3] **File:** `web/src/components/agchain/AgchainLeftNav.tsx`  
 **Current role:** primary AGChain navigation rail  
 **Current defect:** currently participates in exposing placeholder-only AGChain product domains as if they were implemented  
-**Required correction:** remove withdrawn placeholder surfaces from the exposed rail and keep only backend-backed AGChain domains visible  
+**Required correction:** keep exposed placeholder surfaces only as clearly labeled stubs and keep backend-backed AGChain domains visually distinct  
 **Disposition:** modify
 
 [Added per evaluation finding #3] **File:** `web/src/components/agchain/AgchainLeftNav.test.tsx`  
 **Current role:** AGChain left-rail coverage  
 **Current defect:** does not yet enforce the corrected backend-truth exposure rules  
-**Required correction:** update tests to lock the withdrawn-shell navigation state  
+**Required correction:** update tests to lock the stub-safe navigation state  
 **Disposition:** modify
 
 [Added per evaluation finding #3] **File:** `web/src/components/layout/AgchainShellLayout.tsx`  
 **Current role:** AGChain shell layout and routed content frame  
-**Current defect:** layout affordances can still imply that withdrawn placeholder surfaces remain part of the live product shell  
-**Required correction:** align shell structure and affordances with the reduced backend-backed AGChain surface set  
+**Current defect:** layout affordances can still imply that placeholder surfaces are fully implemented rather than stubbed  
+**Required correction:** align shell structure and affordances with a mixed backend-backed plus explicit-stub AGChain surface set  
 **Disposition:** modify
 
 [Added per evaluation finding #3] **File:** `web/src/components/layout/AgchainShellLayout.test.tsx`  
 **Current role:** shell layout coverage  
 **Current defect:** does not yet lock the corrected AGChain shell exposure rules  
-**Required correction:** update tests to enforce the post-withdrawal shell contract  
+**Required correction:** update tests to enforce the post-decontamination stub contract  
 **Disposition:** modify
 
 ### D2. AGChain shell and overview files
@@ -2976,7 +3045,7 @@ This appendix covers the frontend shell files, targeting seams, AGChain page fil
 **File:** `web/src/pages/agchain/AgchainOverviewPage.tsx`  
 **Current role:** AGChain overview shell page with static or semi-static summary cards  
 **Current defect:** blends real benchmark/project context with placeholder overview content, which makes the page look more complete than the actual backend support justifies  
-**Required correction:** downgrade or restructure the page so every visible panel is backed by a declared backend/data contract, and move any remaining speculative content out of the exposed operator surface  
+**Required correction:** downgrade or restructure the page so every visible panel is either backed by a declared backend/data contract or explicitly marked as stub/non-authoritative content  
 **Disposition:** modify
 
 **File:** `web/src/pages/agchain/AgchainOverviewPage.test.tsx`  
@@ -3024,7 +3093,7 @@ This appendix covers the frontend shell files, targeting seams, AGChain page fil
 **File:** `web/src/pages/agchain/AgchainBenchmarksPage.tsx`  
 **Current role:** benchmark catalog page  
 **Current defect:** closer to real than the placeholder pages, but it still lives inside a shell that overstates adjacent domain readiness  
-**Required correction:** preserve the page as a real backed surface, while making its contract explicit and severing any dependency on placeholder AGChain domain pages being visible  
+**Required correction:** preserve the page as a real backed surface, while making its contract explicit and severing any dependency on placeholder AGChain domain pages reading as more than stub surfaces  
 **Disposition:** modify
 
 **File:** `web/src/pages/agchain/AgchainBenchmarksPage.test.tsx`  
@@ -3036,7 +3105,7 @@ This appendix covers the frontend shell files, targeting seams, AGChain page fil
 **File:** `web/src/pages/agchain/AgchainModelsPage.tsx`  
 **Current role:** model catalog page backed by platform-api  
 **Current defect:** similar to benchmarks: the page itself has backend truth, but the surrounding shell state can mislead operators into treating the broader AGChain domain as implemented  
-**Required correction:** preserve the backed page, but pair it with corrected route exposure and backend-manifest enforcement  
+**Required correction:** preserve the backed page, but pair it with corrected stub semantics and backend-manifest enforcement  
 **Disposition:** modify
 
 **File:** `web/src/pages/agchain/AgchainModelsPage.test.tsx`  
@@ -3048,79 +3117,79 @@ This appendix covers the frontend shell files, targeting seams, AGChain page fil
 **File:** `web/src/pages/agchain/AgchainSectionPage.tsx`  
 **Current role:** generic placeholder page renderer for multiple AGChain domains  
 **Current defect:** this file is the central placeholder shortcut. It allowed many pages to be “implemented” as shell-preserving cards with placeholder copy instead of backend-owned functionality  
-**Required correction:** remove it from the exposed AGChain operator product path. Either delete it outright after route withdrawal or restrict it to non-production internal documentation/demo usage only  
-**Disposition:** remove or isolate
+**Required correction:** if retained in the exposed AGChain operator path, constrain it to an unmistakable stub renderer with non-authoritative copy and visual treatment that cannot be mistaken for backend-owned functionality  
+**Disposition:** modify or isolate
 
 **File:** `web/src/pages/agchain/AgchainSectionPage.test.tsx`  
 **Current role:** placeholder page coverage  
-**Current defect:** currently validates the existence of the placeholder pattern instead of the absence of it from the operator-facing shell  
-**Required correction:** replace with tests that ensure unbacked AGChain domains are not exposed as functional pages  
+**Current defect:** currently validates the existence of the placeholder pattern instead of enforcing honest stub semantics in the operator-facing shell  
+**Required correction:** replace with tests that ensure unbacked AGChain domains, if exposed, are never presented as functional pages  
 **Disposition:** replace
 
 **File:** `web/src/pages/agchain/AgchainRunsPage.tsx`  
 **Current role:** runs domain page routed through the placeholder surface  
 **Current defect:** declares a product domain without a real backend/data contract for AGChain runs management  
-**Required correction:** withdraw from primary navigation until a real runs backend contract, persistence model, and page-specific tests exist  
-**Disposition:** withdraw then replace later
+**Required correction:** keep exposed only as an explicit stub until a real runs backend contract, persistence model, and page-specific tests exist  
+**Disposition:** modify as stub, then replace later
 
 **File:** `web/src/pages/agchain/AgchainResultsPage.tsx`  
 **Current role:** results domain placeholder page  
 **Current defect:** same failure pattern as runs  
-**Required correction:** withdraw until backed by a real backend contract  
-**Disposition:** withdraw then replace later
+**Required correction:** keep exposed only as an explicit stub until backed by a real backend contract  
+**Disposition:** modify as stub, then replace later
 
 **File:** `web/src/pages/agchain/AgchainPromptsPage.tsx`  
 **Current role:** prompts domain placeholder page  
 **Current defect:** same failure pattern as runs/results  
-**Required correction:** withdraw until a real prompts backend contract exists  
-**Disposition:** withdraw then replace later
+**Required correction:** keep exposed only as an explicit stub until a real prompts backend contract exists  
+**Disposition:** modify as stub, then replace later
 
 **File:** `web/src/pages/agchain/AgchainScorersPage.tsx`  
 **Current role:** scorers domain placeholder page  
 **Current defect:** same failure pattern as prompts  
-**Required correction:** withdraw until a real scorers backend contract exists  
-**Disposition:** withdraw then replace later
+**Required correction:** keep exposed only as an explicit stub until a real scorers backend contract exists  
+**Disposition:** modify as stub, then replace later
 
 **File:** `web/src/pages/agchain/AgchainParametersPage.tsx`  
 **Current role:** parameters domain placeholder page  
 **Current defect:** same failure pattern as prompts/scorers  
-**Required correction:** withdraw until a real parameters backend contract exists  
-**Disposition:** withdraw then replace later
+**Required correction:** keep exposed only as an explicit stub until a real parameters backend contract exists  
+**Disposition:** modify as stub, then replace later
 
 **File:** `web/src/pages/agchain/AgchainToolsPage.tsx`  
 **Current role:** tools domain placeholder page  
 **Current defect:** same failure pattern as parameters  
-**Required correction:** withdraw until a real tools backend contract exists  
-**Disposition:** withdraw then replace later
+**Required correction:** keep exposed only as an explicit stub until a real tools backend contract exists  
+**Disposition:** modify as stub, then replace later
 
 **File:** `web/src/pages/agchain/AgchainDatasetsPage.tsx`  
 **Current role:** datasets domain placeholder page  
 **Current defect:** exposes a critical product domain without declaring the backend data model, dataset inventory contract, build-state contract, or ingestion endpoints  
-**Required correction:** withdraw until the platform has a real datasets contract, or replace only after the backend manifest described earlier in this plan is implemented  
-**Disposition:** withdraw then replace later
+**Required correction:** keep exposed only as an explicit stub until the platform has a real datasets contract, or replace only after the backend manifest described earlier in this plan is implemented  
+**Disposition:** modify as stub, then replace later
 
 **File:** `web/src/pages/agchain/AgchainObservabilityPage.tsx`  
 **Current role:** observability domain placeholder page  
 **Current defect:** particularly misleading because it suggests a future relationship to host OTEL patterns while the actual observability stack is not yet operationally provable  
-**Required correction:** withdraw until real AGChain observability APIs, traces, metrics, and operator workflows are implemented and verified  
-**Disposition:** withdraw then replace later
+**Required correction:** keep exposed only as an explicit stub until real AGChain observability APIs, traces, metrics, and operator workflows are implemented and verified  
+**Disposition:** modify as stub, then replace later
 
 **File:** `web/src/pages/agchain/AgchainArtifactsPage.tsx`  
 **Current role:** artifacts domain placeholder page  
 **Current defect:** exposes a domain without artifact catalog, delivery, or provenance contracts  
-**Required correction:** withdraw until backed by real artifact APIs  
-**Disposition:** withdraw then replace later
+**Required correction:** keep exposed only as an explicit stub until backed by real artifact APIs  
+**Disposition:** modify as stub, then replace later
 
 **File:** `web/src/pages/agchain/AgchainBuildPage.tsx`  
 **Current role:** build domain placeholder page  
 **Current defect:** exposes the core benchmark-build domain without build pipeline APIs, status models, or artifact ownership  
-**Required correction:** withdraw until the build backend surface exists  
-**Disposition:** withdraw then replace later
+**Required correction:** keep exposed only as an explicit stub until the build backend surface exists  
+**Disposition:** modify as stub, then replace later
 
 **File:** `web/src/pages/agchain/AgchainDashboardPage.tsx`  
 **Current role:** dashboard-level shell page  
-**Current defect:** must be audited against the same backend-truth rule so that no dashboard card suggests implemented coverage for withdrawn or unbacked domains  
-**Required correction:** revise after route withdrawal and backend contract declaration  
+**Current defect:** must be audited against the same backend-truth rule so that no dashboard card suggests implemented coverage beyond backed or explicit-stub domains  
+**Required correction:** revise so dashboard content distinguishes backend-backed domains from stub domains until backend contract declaration catches up  
 **Disposition:** modify
 
 **File:** `web/src/pages/agchain/AgchainBenchmarkWorkbenchPage.tsx`  
@@ -3138,20 +3207,20 @@ This appendix covers the frontend shell files, targeting seams, AGChain page fil
 **File:** `web/src/pages/agchain/AgchainLevelOnePlaceholderPages.test.tsx`  
 **Current role:** coverage for exposed placeholder pages  
 **Current defect:** validates a failure pattern that this plan explicitly rejects  
-**Required correction:** remove or rewrite as a withdrawal test ensuring those pages are not exposed without backend ownership  
+**Required correction:** remove or rewrite as a stub-semantics test ensuring those pages are not exposed as functional surfaces without backend ownership  
 **Disposition:** replace
 
 **File:** `web/src/pages/agchain/AgchainProjectScopedPlaceholderPages.test.tsx`  
 **Current role:** coverage for project-scoped placeholder pages  
 **Current defect:** same failure pattern as the level-one placeholder coverage  
-**Required correction:** remove or rewrite as a withdrawal test  
+**Required correction:** remove or rewrite as a stub-semantics test  
 **Disposition:** replace
 
 **File:** `web/src/components/agchain/overview/agchainOverviewPlaceholderData.ts`  
 **Current role:** static placeholder content feeding the overview surface  
 **Current defect:** hardcoded product-domain claims and descriptions were used to fill shell space in place of backend-driven data  
-**Required correction:** delete or quarantine the placeholder data from the exposed overview path  
-**Disposition:** remove or isolate
+**Required correction:** delete, quarantine, or explicitly label the placeholder data so it cannot read as backend-driven content in the exposed overview path  
+**Disposition:** modify or isolate
 
 ### D3. OpenTelemetry and observability files
 
@@ -3323,12 +3392,12 @@ The following sequence is mandatory. It translates the plan into the first corre
 3. Fix any remaining runtime-target, storage, or delivery failures before the surface is considered operational.
 4. Update the readiness control plane so pipeline-services dependencies are visible there as well.
 
-### F5. Sequence 5 — Withdraw misleading AGChain shell surfaces
+### F5. Sequence 5 — Retain AGChain shell placeholders only as explicit stubs
 
-1. Remove placeholder domain pages from exposed navigation.
-2. Keep only the AGChain surfaces that have real backend ownership.
+1. Keep placeholder domain pages exposed only where the shell can present them as unmistakable stubs.
+2. Distinguish AGChain surfaces that have real backend ownership from stub-only surfaces.
 3. Rewrite overview/dashboard content so no static placeholder copy implies missing functionality exists.
-4. Replace placeholder-page tests with withdrawal and backend-truth tests.
+4. Replace placeholder-page tests with stub-semantics and backend-truth tests.
 
 ### F6. Sequence 6 — Rebuild telemetry proof
 

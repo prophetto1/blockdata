@@ -1,7 +1,7 @@
 import { useCallback, useRef, useState, type CSSProperties, type MouseEvent as ReactMouseEvent } from 'react';
-import { Outlet, useNavigate } from 'react-router-dom';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/auth/AuthContext';
-import { AdminLeftNav, NAV_SECTIONS } from '@/components/admin/AdminLeftNav';
+import { AdminLeftNav, getSecondaryNav, NAV_SECTIONS } from '@/components/admin/AdminLeftNav';
 import { LeftRailShadcn as AdminChromeRail } from '@/components/shell/LeftRailShadcn';
 import { styleTokens } from '@/lib/styleTokens';
 
@@ -10,7 +10,9 @@ const ADMIN_SECONDARY_RAIL_WIDTH = 184;
 
 export function AdminShellLayout() {
   const navigate = useNavigate();
+  const { pathname } = useLocation();
   const { user, profile, signOut } = useAuth();
+  const hasSecondaryRail = getSecondaryNav(pathname).length > 0;
   const [sidebarWidth, setSidebarWidth] = useState<number>(() => {
     if (typeof window === 'undefined') return styleTokens.shell.navbarWidth;
     const stored = window.localStorage.getItem(SIDEBAR_WIDTH_KEY);
@@ -67,7 +69,9 @@ export function AdminShellLayout() {
     position: 'absolute',
     insetBlock: 0,
     insetInlineEnd: 0,
-    insetInlineStart: `${sidebarWidth + ADMIN_SECONDARY_RAIL_WIDTH}px`,
+    insetInlineStart: hasSecondaryRail
+      ? `${sidebarWidth + ADMIN_SECONDARY_RAIL_WIDTH}px`
+      : `${sidebarWidth}px`,
     overflow: 'auto',
     backgroundColor: 'var(--background)',
   };
@@ -111,17 +115,19 @@ export function AdminShellLayout() {
         </div>
       </aside>
 
-      <aside
-        style={{
-          position: 'fixed',
-          insetBlock: 0,
-          insetInlineStart: `${sidebarWidth}px`,
-          width: `${ADMIN_SECONDARY_RAIL_WIDTH}px`,
-          zIndex: 19,
-        }}
-      >
-        <AdminLeftNav />
-      </aside>
+      {hasSecondaryRail && (
+        <aside
+          style={{
+            position: 'fixed',
+            insetBlock: 0,
+            insetInlineStart: `${sidebarWidth}px`,
+            width: `${ADMIN_SECONDARY_RAIL_WIDTH}px`,
+            zIndex: 19,
+          }}
+        >
+          <AdminLeftNav />
+        </aside>
+      )}
 
       <main style={mainStyle}>
         <div data-testid="admin-shell-frame" className="h-full min-h-0">

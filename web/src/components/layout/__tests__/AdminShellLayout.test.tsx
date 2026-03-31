@@ -21,12 +21,13 @@ vi.mock('@/components/shell/LeftRailShadcn', () => ({
 
 afterEach(cleanup);
 
-function renderWithRouter() {
+function renderWithRouter(path = '/app/superuser') {
   return render(
-    <MemoryRouter initialEntries={['/app/superuser']}>
+    <MemoryRouter initialEntries={[path]}>
       <Routes>
         <Route path="/app/superuser" element={<AdminShellLayout />}>
           <Route index element={<div data-testid="outlet-child">outlet</div>} />
+          <Route path="*" element={<div data-testid="outlet-child">outlet</div>} />
         </Route>
       </Routes>
     </MemoryRouter>,
@@ -34,11 +35,19 @@ function renderWithRouter() {
 }
 
 describe('AdminShellLayout', () => {
-  it('renders the platform rail, admin rail, and main area', () => {
+  it('renders the platform rail and main area on the index route', () => {
     renderWithRouter();
-    expect(screen.getByRole('navigation')).toBeInTheDocument();
     expect(screen.getByRole('main')).toBeInTheDocument();
     expect(screen.getByTestId('admin-platform-rail')).toBeInTheDocument();
+  });
+
+  it('does not render the secondary rail on routes without secondary nav', () => {
+    renderWithRouter('/app/superuser/audit');
+    expect(screen.queryByTestId('admin-secondary-rail')).not.toBeInTheDocument();
+  });
+
+  it('renders the secondary rail on routes with secondary nav', () => {
+    renderWithRouter('/app/superuser/instance-config');
     expect(screen.getByTestId('admin-secondary-rail')).toBeInTheDocument();
   });
 

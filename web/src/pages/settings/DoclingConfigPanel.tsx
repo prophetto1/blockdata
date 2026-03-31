@@ -15,6 +15,8 @@ import { CollapsibleRoot, CollapsibleTrigger, CollapsibleIndicator, CollapsibleC
 import { NumberInputRoot, NumberInputInput } from '@/components/ui/number-input';
 import { FieldRoot, FieldLabel, FieldHelperText } from '@/components/ui/field';
 import { useShellHeaderTitle } from '@/components/common/useShellHeaderTitle';
+import { platformApiFetch } from '@/lib/platformApi';
+import { normalizeDocumentViewMode, DEFAULT_DOCUMENT_VIEW_MODE, type DocumentViewMode } from '@/pages/superuser/documentViews';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -523,6 +525,46 @@ export function DoclingConfigPanel() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Block presentation mode (from platform-api, not profile config)
+  const [blockMode, setBlockMode] = useState<DocumentViewMode>(DEFAULT_DOCUMENT_VIEW_MODE);
+  const [blockModeServer, setBlockModeServer] = useState<DocumentViewMode>(DEFAULT_DOCUMENT_VIEW_MODE);
+  const [blockModeSaving, setBlockModeSaving] = useState(false);
+  const blockModeDirty = blockMode !== blockModeServer;
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const resp = await platformApiFetch('/admin/config/docling');
+        if (!resp.ok) return;
+        const data = await resp.json() as { docling_blocks_mode?: unknown };
+        const mode = normalizeDocumentViewMode(data.docling_blocks_mode);
+        setBlockMode(mode);
+        setBlockModeServer(mode);
+      } catch { /* fallback to default */ }
+    })();
+  }, []);
+
+  const handleBlockModeSave = useCallback(async () => {
+    if (blockModeSaving || !blockModeDirty) return;
+    setBlockModeSaving(true);
+    try {
+      const resp = await platformApiFetch('/admin/config/docling', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ docling_blocks_mode: blockMode, reason: 'Block presentation mode update' }),
+      });
+      if (!resp.ok) {
+        const text = await resp.text();
+        throw new Error(text || `HTTP ${resp.status}`);
+      }
+      setBlockModeServer(blockMode);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save block presentation mode');
+    } finally {
+      setBlockModeSaving(false);
+    }
+  }, [blockMode, blockModeDirty, blockModeSaving]);
+
   const isDirty = useMemo(() => {
     if (!editConfig || !savedConfig) return false;
     return JSON.stringify(editConfig) !== JSON.stringify(savedConfig);
@@ -808,6 +850,34 @@ export function DoclingConfigPanel() {
               <IconDeviceFloppy size={13} />
               {saving ? 'Saving...' : 'Save'}
             </button>
+          </div>
+        </div>
+
+        {/* Block presentation mode (absorbed from former Block Types page) */}
+        <div className="flex items-center justify-between border-b border-border px-3 py-2">
+          <div className="min-w-0">
+            <div className="text-sm font-medium text-foreground">Block Presentation</div>
+            <div className="text-xs text-muted-foreground">Parse Blocks uses Docling-native labels and reading order.</div>
+          </div>
+          <div className="flex items-center gap-2">
+            <select
+              value={blockMode}
+              onChange={(e) => setBlockMode(e.currentTarget.value as DocumentViewMode)}
+              className="h-8 rounded-md border border-input bg-background px-2 text-xs text-foreground"
+            >
+              <option value="raw_docling">Docling Native</option>
+            </select>
+            {blockModeDirty && (
+              <button
+                type="button"
+                onClick={() => { void handleBlockModeSave(); }}
+                disabled={blockModeSaving}
+                className="inline-flex h-7 items-center gap-1 rounded-md bg-primary px-2.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+              >
+                <IconDeviceFloppy size={13} />
+                {blockModeSaving ? 'Saving...' : 'Save'}
+              </button>
+            )}
           </div>
         </div>
 

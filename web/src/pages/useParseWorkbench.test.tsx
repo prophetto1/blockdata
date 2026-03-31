@@ -70,7 +70,7 @@ const defaultTreeSitterState = {
 function createArtifacts(overrides: Partial<ParseArtifactBundle> = {}): ParseArtifactBundle {
   return {
     cacheKey: 'doc-1',
-    mode: 'normalized',
+    mode: 'raw_docling',
     markdown: {
       markdown: '# Sample',
       loading: false,

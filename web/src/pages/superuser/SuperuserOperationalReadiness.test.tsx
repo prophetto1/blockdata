@@ -24,13 +24,21 @@ vi.mock('@/hooks/useOperationalReadiness', () => ({
         summary: { ok: 2, warn: 1, fail: 1, unknown: 0 },
         checks: [
           {
-            id: 'shared.platform_api.ready',
+            check_id: 'shared.platform_api.ready',
+            surface_id: 'shared',
             category: 'process',
             status: 'ok',
             label: 'Platform API readiness',
             summary: 'Platform API process is healthy and ready.',
+            cause: null,
+            cause_confidence: null,
+            depends_on: [],
+            blocked_by: [],
+            available_actions: [],
+            verify_after: [],
+            next_if_still_failing: [],
+            actionability: 'info_only',
             evidence: { ready: true },
-            remediation: 'No action required.',
             checked_at: '2026-03-30T16:00:00Z',
           },
         ],
@@ -41,13 +49,47 @@ vi.mock('@/hooks/useOperationalReadiness', () => ({
         summary: { ok: 1, warn: 0, fail: 1, unknown: 0 },
         checks: [
           {
-            id: 'blockdata.storage.bucket_cors',
+            check_id: 'blockdata.storage.bucket_cors',
+            surface_id: 'blockdata',
             category: 'connectivity',
             status: 'fail',
             label: 'Bucket CORS',
             summary: 'Browser upload CORS is missing for the configured bucket.',
+            cause: 'The bucket CORS policy does not allow browser-origin uploads.',
+            cause_confidence: 'high',
+            depends_on: [],
+            blocked_by: [
+              {
+                check_id: 'shared.storage.bucket_exists',
+                label: 'Shared storage bucket exists',
+                status: 'ok',
+              },
+            ],
+            available_actions: [
+              {
+                action_kind: 'storage_browser_upload_cors_reconcile',
+                label: 'Reconcile browser upload CORS',
+                description: 'Apply the backend-owned browser upload CORS policy to the active bucket.',
+                route: '/admin/runtime/storage/browser-upload-cors/reconcile',
+                requires_confirmation: true,
+              },
+            ],
+            verify_after: [
+              {
+                probe_kind: 'storage_signed_upload',
+                label: 'Run signed upload browser probe',
+                route: '/admin/runtime/storage/browser-upload/verify',
+              },
+            ],
+            next_if_still_failing: [
+              {
+                step_kind: 'escalate',
+                label: 'Escalate to storage configuration owner',
+                description: 'Escalate if the bucket policy reverts after reconcile.',
+              },
+            ],
+            actionability: 'backend_action',
             evidence: { cors_configured: false },
-            remediation: 'Apply browser upload CORS rules to the bucket.',
             checked_at: '2026-03-30T16:00:00Z',
           },
         ],
@@ -58,13 +100,27 @@ vi.mock('@/hooks/useOperationalReadiness', () => ({
         summary: { ok: 1, warn: 0, fail: 0, unknown: 1 },
         checks: [
           {
-            id: 'agchain.models.targets',
+            check_id: 'agchain.models.targets',
+            surface_id: 'agchain',
             category: 'product',
             status: 'unknown',
             label: 'Model targets',
             summary: 'Model target readiness could not be determined safely.',
+            cause: 'The backend did not return a trusted target-count proof.',
+            cause_confidence: 'low',
+            depends_on: [],
+            blocked_by: [],
+            available_actions: [],
+            verify_after: [],
+            next_if_still_failing: [
+              {
+                step_kind: 'manual_fix',
+                label: 'Inspect AGChain benchmark registry',
+                description: 'Inspect benchmark-backed registry data before promoting this surface.',
+              },
+            ],
+            actionability: 'info_only',
             evidence: { total: null },
-            remediation: 'Retry after confirming AGChain model registry availability.',
             checked_at: '2026-03-30T16:00:00Z',
           },
         ],
@@ -99,7 +155,7 @@ describe('SuperuserOperationalReadiness', () => {
     render(<SuperuserOperationalReadiness />);
 
     expect(screen.getByRole('heading', { level: 1, name: 'Operational Readiness' })).toBeInTheDocument();
-    expect(screen.getByText(/see what is working vs not working before debugging a flow/i)).toBeInTheDocument();
+    expect(screen.getByText(/proof-backed runtime control surface/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Refresh Status' })).toBeInTheDocument();
 
     expect(screen.getByText('OK')).toBeInTheDocument();
@@ -118,7 +174,12 @@ describe('SuperuserOperationalReadiness', () => {
     expect(screen.getByText('Platform API process is healthy and ready.')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /platform api readiness/i }));
     expect(screen.getByText((value, element) => element?.tagName === 'DT' && value === 'ready')).toBeInTheDocument();
-    expect(screen.getByText('No action required.')).toBeInTheDocument();
+    expect(screen.getByText('No backend-owned actions available.')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /bucket cors/i }));
+    expect(screen.getByText('Available Actions')).toBeInTheDocument();
+    expect(screen.getByText('Reconcile browser upload CORS')).toBeInTheDocument();
+    expect(screen.getByText('Escalate to storage configuration owner')).toBeInTheDocument();
 
     const clientPanelHeading = screen.getByRole('heading', { level: 2, name: 'Client Environment' });
     expect(agchainHeading.compareDocumentPosition(clientPanelHeading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();

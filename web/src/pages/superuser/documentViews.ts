@@ -1,7 +1,7 @@
-import { edgeFetch } from '@/lib/edge';
+import { platformApiFetch } from '@/lib/platformApi';
 
 export const DOCUMENT_VIEW_MODE_POLICY_KEY = 'platform.docling_blocks_mode';
-export type DocumentViewMode = 'normalized' | 'raw_docling';
+export type DocumentViewMode = 'raw_docling';
 
 export const DEFAULT_DOCUMENT_VIEW_MODE: DocumentViewMode = 'raw_docling';
 
@@ -18,7 +18,7 @@ type DocumentViewPayload = {
 };
 
 export function normalizeDocumentViewMode(value: unknown): DocumentViewMode {
-  return value === 'normalized' || value === 'raw_docling' ? value as DocumentViewMode : DEFAULT_DOCUMENT_VIEW_MODE;
+  return value === 'raw_docling' ? value : DEFAULT_DOCUMENT_VIEW_MODE;
 }
 
 export function getDocumentViewModeValue(payload: DocumentViewPayload | null | undefined): DocumentViewMode {
@@ -30,12 +30,12 @@ export function getDocumentViewModeValue(payload: DocumentViewPayload | null | u
 
 export async function loadDocumentViewMode(): Promise<DocumentViewMode> {
   try {
-    const resp = await edgeFetch('upload-policy', { method: 'GET' });
+    const resp = await platformApiFetch('/admin/config/docling');
     const text = await resp.text();
     if (!resp.ok) return DEFAULT_DOCUMENT_VIEW_MODE;
 
-    const payload = text ? JSON.parse(text) as DocumentViewPayload : {};
-    return getDocumentViewModeValue(payload);
+    const data = text ? JSON.parse(text) as { docling_blocks_mode?: unknown } : {};
+    return normalizeDocumentViewMode(data.docling_blocks_mode);
   } catch {
     return DEFAULT_DOCUMENT_VIEW_MODE;
   }

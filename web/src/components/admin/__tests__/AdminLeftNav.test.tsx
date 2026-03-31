@@ -1,7 +1,7 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, describe, it, expect } from 'vitest';
-import { AdminLeftNav, NAV_SECTIONS } from '../AdminLeftNav';
+import { AdminLeftNav, NAV_SECTIONS, getSecondaryNav } from '../AdminLeftNav';
 
 afterEach(cleanup);
 
@@ -37,12 +37,17 @@ describe('AdminLeftNav', () => {
     expect(screen.getByRole('link', { name: /workers/i })).toHaveAttribute('aria-current', 'page');
   });
 
-  it('renders docling secondary links for docling pages', () => {
-    renderNav('/app/superuser/parsers-docling');
+  it('getSecondaryNav returns sections for routes with secondary nav', () => {
+    expect(getSecondaryNav('/app/superuser/instance-config').length).toBeGreaterThan(0);
+    expect(getSecondaryNav('/app/superuser/worker-config').length).toBeGreaterThan(0);
+  });
 
-    expect(screen.getByRole('link', { name: /profiles/i })).toHaveAttribute('href', '/app/superuser/parsers-docling');
-    expect(screen.getByRole('link', { name: /block types/i })).toHaveAttribute('href', '/app/superuser/document-views');
-    expect(screen.getByRole('link', { name: /profiles/i })).toHaveAttribute('aria-current', 'page');
+  it('getSecondaryNav returns empty array for routes without secondary nav', () => {
+    expect(getSecondaryNav('/app/superuser')).toHaveLength(0);
+    expect(getSecondaryNav('/app/superuser/audit')).toHaveLength(0);
+    expect(getSecondaryNav('/app/superuser/operational-readiness')).toHaveLength(0);
+    expect(getSecondaryNav('/app/superuser/ai-providers')).toHaveLength(0);
+    expect(getSecondaryNav('/app/superuser/parsers-docling')).toHaveLength(0);
   });
 
   it('exports the operational status entry for the primary admin rail', () => {
