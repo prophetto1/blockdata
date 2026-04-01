@@ -1,0 +1,11 @@
+
+Capture server running on http://localhost:4488
+  GET  /captures        — list all captures
+  POST /capture         — start new { url, width, height, theme, pageType }
+  POST /captures/delete — remove capture and artifacts (payload id)
+  POST /captures/:id/delete — remove capture and artifacts
+  DELETE /captures/:id    — remove capture and artifacts (legacy)
+  GET  /status/:id      — check one capture
+
+[capture] Starting example-com-foo-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx--ff07010a4b7a--1280x720--light--marketing → https://example.com/?foo=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx at 1280x720 theme=light
+[capture] Complete: example-com-foo-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx--ff07010a4b7a--1280x720--light--marketing
