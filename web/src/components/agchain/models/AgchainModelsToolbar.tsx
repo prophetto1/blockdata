@@ -362,18 +362,18 @@ export function AgchainModelsToolbar({
   error,
 }: AgchainModelsToolbarProps) {
   return (
-    <section className="rounded-3xl border border-border/70 bg-card/70 p-6 shadow-sm">
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex-1">
-          <h2 className="text-lg font-semibold text-foreground">Providers</h2>
-          <p className="mt-1 max-w-3xl text-sm leading-7 text-muted-foreground">
-            Configure provider access, review readiness, and open a provider&apos;s detail panel to inspect its
-            curated global targets.
+    <section className="space-y-3">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+        <div className="min-w-0 flex-1">
+          <h2 className="text-xl font-semibold text-foreground">Providers</h2>
+          <p className="mt-1 max-w-3xl text-sm leading-6 text-muted-foreground">
+            Configure provider access, review readiness, and open Configure to inspect each provider&apos;s curated
+            targets.
           </p>
         </div>
         <input
           aria-label="Search providers"
-          className={`${inputClass} min-w-72`}
+          className={`${inputClass} lg:w-80 lg:min-w-80 lg:flex-none`}
           placeholder="Search provider or target"
           value={search}
           onChange={(event) => onSearchChange(event.target.value)}

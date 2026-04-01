@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-03-31T04:48:48.316Z",
+  "generatedAt": "2026-04-01T08:04:57.439Z",
   "scope": "auth",
   "pages": [
     {
@@ -745,19 +745,56 @@
     },
     {
       "page": "src/pages/IndexBuilderPage.tsx",
-      "componentCount": 1,
+      "componentCount": 5,
       "categoryCounts": {
-        "local-components": 1
+        "local-components": 4,
+        "tabler-icons": 1
       },
       "components": [
         {
-          "component": "Workbench",
-          "usedAs": "Workbench",
-          "source": "@/components/workbench/Workbench",
+          "component": "Button",
+          "usedAs": "Button",
+          "source": "@/components/ui/button",
           "importKind": "named",
-          "importedAs": "Workbench",
+          "importedAs": "Button",
           "category": "local-components",
-          "definition": "Workbench comes from @/components/workbench/Workbench (named import of Workbench)"
+          "definition": "Button comes from @/components/ui/button (named import of Button)"
+        },
+        {
+          "component": "IconPlus",
+          "usedAs": "IconPlus",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconPlus",
+          "category": "tabler-icons",
+          "definition": "IconPlus comes from @tabler/icons-react (named import of IconPlus)"
+        },
+        {
+          "component": "PipelineNewRunForm",
+          "usedAs": "PipelineNewRunForm",
+          "source": "@/components/pipelines/PipelineNewRunForm",
+          "importKind": "named",
+          "importedAs": "PipelineNewRunForm",
+          "category": "local-components",
+          "definition": "PipelineNewRunForm comes from @/components/pipelines/PipelineNewRunForm (named import of PipelineNewRunForm)"
+        },
+        {
+          "component": "PipelineRunDetailPanel",
+          "usedAs": "PipelineRunDetailPanel",
+          "source": "@/components/pipelines/PipelineRunDetailPanel",
+          "importKind": "named",
+          "importedAs": "PipelineRunDetailPanel",
+          "category": "local-components",
+          "definition": "PipelineRunDetailPanel comes from @/components/pipelines/PipelineRunDetailPanel (named import of PipelineRunDetailPanel)"
+        },
+        {
+          "component": "PipelineRunsTable",
+          "usedAs": "PipelineRunsTable",
+          "source": "@/components/pipelines/PipelineRunsTable",
+          "importKind": "named",
+          "importedAs": "PipelineRunsTable",
+          "category": "local-components",
+          "definition": "PipelineRunsTable comes from @/components/pipelines/PipelineRunsTable (named import of PipelineRunsTable)"
         }
       ]
     },
@@ -4442,11 +4479,11 @@
       ]
     }
   ],
-  "totalComponentUsages": 433,
+  "totalComponentUsages": 437,
   "categoryTotals": {
     "local-pages": 2,
-    "local-components": 137,
-    "tabler-icons": 74,
+    "local-components": 140,
+    "tabler-icons": 75,
     "in-file component": 20,
     "ark-ui": 153,
     "external-package": 23,

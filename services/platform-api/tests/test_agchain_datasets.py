@@ -37,6 +37,59 @@ def client():
     app.dependency_overrides.clear()
 
 
+class _DatasetRegistryQuery:
+    def __init__(self, admin, table_name: str):
+        self._admin = admin
+        self._table_name = table_name
+        self._filters: dict[str, object] = {}
+        self._in_filters: dict[str, set[object]] = {}
+        self._maybe_single = False
+        self._limit: int | None = None
+
+    def select(self, *_args, **_kwargs):
+        return self
+
+    def eq(self, key: str, value: object):
+        self._filters[key] = value
+        return self
+
+    def in_(self, key: str, values):
+        self._in_filters[key] = set(values)
+        return self
+
+    def order(self, *_args, **_kwargs):
+        return self
+
+    def limit(self, value: int):
+        self._limit = value
+        return self
+
+    def maybe_single(self):
+        self._maybe_single = True
+        return self
+
+    def execute(self):
+        rows = list(self._admin.tables.get(self._table_name, []))
+        rows = [
+            row
+            for row in rows
+            if all(row.get(key) == value for key, value in self._filters.items())
+            and all(row.get(key) in values for key, values in self._in_filters.items())
+        ]
+        if self._limit is not None:
+            rows = rows[:self._limit]
+        data = rows[0] if self._maybe_single and rows else (None if self._maybe_single else rows)
+        return type("R", (), {"data": data})()
+
+
+class _DatasetRegistryAdmin:
+    def __init__(self, *, tables=None):
+        self.tables = tables or {}
+
+    def table(self, name: str):
+        return _DatasetRegistryQuery(self, name)
+
+
 def test_list_datasets_returns_wrapped_rows(client):
     with patch("app.api.routes.agchain_datasets.list_datasets") as mock_list:
         mock_list.return_value = {
@@ -121,6 +174,42 @@ def test_get_dataset_bootstrap_returns_defaults(client):
     assert response.json()["allowed_source_types"] == ["csv", "json", "jsonl", "huggingface"]
 
 
+def test_list_datasets_route_telemetry_uses_presence_flags_not_raw_ids(client):
+    with patch("app.api.routes.agchain_datasets.list_datasets") as mock_list, patch(
+        "app.api.routes.agchain_datasets.set_span_attributes"
+    ) as mock_set_attrs:
+        mock_list.return_value = {"items": [], "next_cursor": None}
+
+        response = client.get("/agchain/datasets", params={"project_id": PROJECT_ID})
+
+    assert response.status_code == 200
+    _, attrs = mock_set_attrs.call_args.args
+    assert attrs["project_id_present"] is True
+    assert "agchain.project_id" not in attrs
+
+
+def test_get_dataset_bootstrap_telemetry_uses_presence_flags_not_raw_ids(client):
+    with patch("app.api.routes.agchain_datasets.get_dataset_bootstrap") as mock_bootstrap, patch(
+        "app.api.routes.agchain_datasets.set_span_attributes"
+    ) as mock_set_attrs:
+        mock_bootstrap.return_value = {
+            "allowed_source_types": ["csv"],
+            "field_spec_defaults": {},
+            "source_config_defaults": {},
+            "materialization_defaults": {},
+            "upload_limits": {},
+            "validation_rules": {},
+        }
+
+        response = client.get("/agchain/datasets/new/bootstrap", params={"project_id": PROJECT_ID})
+
+    assert response.status_code == 200
+    _, attrs = mock_set_attrs.call_args.args
+    assert attrs["project_id_present"] is True
+    assert "agchain.project_id" not in attrs
+    assert "agchain.project_access_enforced" not in attrs
+
+
 def test_get_dataset_detail_returns_workspace_contract(client):
     with patch("app.api.routes.agchain_datasets.get_dataset_detail") as mock_detail:
         mock_detail.return_value = {
@@ -170,6 +259,30 @@ def test_get_dataset_detail_returns_workspace_contract(client):
         dataset_id=DATASET_ID,
         version_id=VERSION_ID,
     )
+
+
+def test_get_dataset_detail_telemetry_does_not_emit_raw_dataset_ids(client):
+    with patch("app.api.routes.agchain_datasets.get_dataset_detail") as mock_detail, patch(
+        "app.api.routes.agchain_datasets.set_span_attributes"
+    ) as mock_set_attrs:
+        mock_detail.return_value = {
+            "dataset": {"dataset_id": DATASET_ID, "slug": "legal-qa"},
+            "selected_version": {"dataset_version_id": VERSION_ID},
+            "tab_counts": {"samples": 0, "warnings": 0, "versions": 1},
+            "warnings_summary": {"warning_count": 0},
+            "available_actions": [],
+        }
+
+        response = client.get(
+            f"/agchain/datasets/{DATASET_ID}/detail",
+            params={"project_id": PROJECT_ID, "version_id": VERSION_ID},
+        )
+
+    assert response.status_code == 200
+    _, attrs = mock_set_attrs.call_args.args
+    assert attrs["project_id_present"] is True
+    assert "agchain.project_id" not in attrs
+    assert "agchain.dataset_id" not in attrs
 
 
 def test_list_dataset_versions_returns_envelope(client):
@@ -347,3 +460,165 @@ def test_get_dataset_sample_detail_returns_contract(client):
     assert response.status_code == 200
     assert response.json()["sample_id"] == SAMPLE_ID
     assert response.json()["sandbox"] == {"profile": "python"}
+
+
+def test_list_datasets_rejects_cross_project_access(client):
+    admin = _DatasetRegistryAdmin(
+        tables={
+            "user_projects": [
+                {"project_id": PROJECT_ID, "organization_id": "org-1"},
+                {"project_id": "project-2", "organization_id": "org-1"},
+            ],
+            "agchain_project_memberships": [
+                {
+                    "project_id": PROJECT_ID,
+                    "organization_id": "org-1",
+                    "user_id": "user-1",
+                    "membership_role": "project_admin",
+                    "membership_status": "active",
+                }
+            ],
+            "agchain_organization_members": [
+                {
+                    "organization_id": "org-1",
+                    "user_id": "user-1",
+                    "membership_role": "organization_member",
+                    "membership_status": "active",
+                }
+            ],
+        }
+    )
+
+    with (
+        patch("app.domain.agchain.dataset_registry.get_supabase_admin", return_value=admin),
+        patch("app.domain.agchain.project_access.get_supabase_admin", return_value=admin),
+    ):
+        response = client.get("/agchain/datasets", params={"project_id": "project-2"})
+
+    assert response.status_code == 403
+
+
+def test_get_dataset_bootstrap_rejects_cross_project_access_when_project_id_is_supplied(client):
+    admin = _DatasetRegistryAdmin(
+        tables={
+            "user_projects": [
+                {"project_id": PROJECT_ID, "organization_id": "org-1"},
+                {"project_id": "project-2", "organization_id": "org-1"},
+            ],
+            "agchain_project_memberships": [
+                {
+                    "project_id": PROJECT_ID,
+                    "organization_id": "org-1",
+                    "user_id": "user-1",
+                    "membership_role": "project_admin",
+                    "membership_status": "active",
+                }
+            ],
+        }
+    )
+
+    with patch("app.domain.agchain.project_access.get_supabase_admin", return_value=admin):
+        response = client.get("/agchain/datasets/new/bootstrap", params={"project_id": "project-2"})
+
+    assert response.status_code == 403
+
+
+def test_get_dataset_detail_rejects_cross_project_access(client):
+    admin = _DatasetRegistryAdmin(
+        tables={
+            "user_projects": [
+                {"project_id": PROJECT_ID, "organization_id": "org-1"},
+                {"project_id": "project-2", "organization_id": "org-1"},
+            ],
+            "agchain_project_memberships": [
+                {
+                    "project_id": PROJECT_ID,
+                    "organization_id": "org-1",
+                    "user_id": "user-1",
+                    "membership_role": "project_admin",
+                    "membership_status": "active",
+                }
+            ],
+        }
+    )
+
+    with (
+        patch("app.domain.agchain.dataset_registry.get_supabase_admin", return_value=admin),
+        patch("app.domain.agchain.project_access.get_supabase_admin", return_value=admin),
+    ):
+        response = client.get(
+            f"/agchain/datasets/{DATASET_ID}/detail",
+            params={"project_id": "project-2"},
+        )
+
+    assert response.status_code == 403
+
+
+def test_get_dataset_version_source_rejects_cross_project_access(client):
+    admin = _DatasetRegistryAdmin(
+        tables={
+            "user_projects": [
+                {"project_id": PROJECT_ID, "organization_id": "org-1"},
+                {"project_id": "project-2", "organization_id": "org-1"},
+            ],
+            "agchain_project_memberships": [
+                {
+                    "project_id": PROJECT_ID,
+                    "organization_id": "org-1",
+                    "user_id": "user-1",
+                    "membership_role": "project_admin",
+                    "membership_status": "active",
+                }
+            ],
+            "agchain_datasets": [
+                {"dataset_id": DATASET_ID, "project_id": "project-2"},
+            ],
+            "agchain_dataset_versions": [
+                {"dataset_version_id": VERSION_ID, "dataset_id": DATASET_ID},
+            ],
+        }
+    )
+
+    with (
+        patch("app.domain.agchain.dataset_registry.get_supabase_admin", return_value=admin),
+        patch("app.domain.agchain.project_access.get_supabase_admin", return_value=admin),
+    ):
+        response = client.get(f"/agchain/datasets/{DATASET_ID}/versions/{VERSION_ID}/source")
+
+    assert response.status_code == 403
+
+
+def test_get_dataset_sample_detail_rejects_cross_project_access(client):
+    admin = _DatasetRegistryAdmin(
+        tables={
+            "user_projects": [
+                {"project_id": PROJECT_ID, "organization_id": "org-1"},
+                {"project_id": "project-2", "organization_id": "org-1"},
+            ],
+            "agchain_project_memberships": [
+                {
+                    "project_id": PROJECT_ID,
+                    "organization_id": "org-1",
+                    "user_id": "user-1",
+                    "membership_role": "project_admin",
+                    "membership_status": "active",
+                }
+            ],
+            "agchain_datasets": [
+                {"dataset_id": DATASET_ID, "project_id": "project-2"},
+            ],
+            "agchain_dataset_versions": [
+                {"dataset_version_id": VERSION_ID, "dataset_id": DATASET_ID},
+            ],
+        }
+    )
+
+    with (
+        patch("app.domain.agchain.dataset_registry.get_supabase_admin", return_value=admin),
+        patch("app.domain.agchain.project_access.get_supabase_admin", return_value=admin),
+    ):
+        response = client.get(
+            f"/agchain/datasets/{DATASET_ID}/versions/{VERSION_ID}/samples/{SAMPLE_ID}"
+        )
+
+    assert response.status_code == 403

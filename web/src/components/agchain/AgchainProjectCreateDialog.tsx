@@ -9,11 +9,11 @@ import {
   DialogRoot,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { type AgchainBenchmarkCreateRequest } from '@/lib/agchainBenchmarks';
+import { type AgchainProjectCreateRequest } from '@/lib/agchainWorkspaces';
 
-type BenchmarkDraft = {
-  benchmark_name: string;
-  benchmark_slug: string;
+type ProjectDraft = {
+  project_name: string;
+  project_slug: string;
   description: string;
 };
 
@@ -22,16 +22,16 @@ type AgchainProjectCreateDialogProps = {
   onOpenChange: (open: boolean) => void;
   creating: boolean;
   error: string | null;
-  onCreate: (payload: AgchainBenchmarkCreateRequest) => Promise<void>;
+  onCreate: (payload: AgchainProjectCreateRequest) => Promise<void>;
 };
 
 const inputClass =
   'w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground outline-none ring-offset-background transition focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1';
 
-function createEmptyDraft(): BenchmarkDraft {
+function createEmptyDraft(): ProjectDraft {
   return {
-    benchmark_name: '',
-    benchmark_slug: '',
+    project_name: '',
+    project_slug: '',
     description: '',
   };
 }
@@ -43,7 +43,7 @@ export function AgchainProjectCreateDialog({
   error,
   onCreate,
 }: AgchainProjectCreateDialogProps) {
-  const [draft, setDraft] = useState<BenchmarkDraft>(createEmptyDraft());
+  const [draft, setDraft] = useState<ProjectDraft>(createEmptyDraft());
 
   useEffect(() => {
     if (!open) {
@@ -53,8 +53,8 @@ export function AgchainProjectCreateDialog({
 
   async function handleCreate() {
     await onCreate({
-      benchmark_name: draft.benchmark_name,
-      benchmark_slug: draft.benchmark_slug,
+      project_name: draft.project_name,
+      project_slug: draft.project_slug,
       description: draft.description,
     });
   }
@@ -65,7 +65,8 @@ export function AgchainProjectCreateDialog({
         <DialogCloseTrigger />
         <DialogTitle>Create Project</DialogTitle>
         <DialogDescription>
-          Create an AGChain project or evaluation backed by a benchmark identity, then enter its focused child pages.
+          Create an AGChain project workspace. This first pass still seeds an initial benchmark so the current
+          definition workflow keeps working while benchmark remains a child resource under the project.
         </DialogDescription>
         <DialogBody>
           <div className="grid gap-4">
@@ -76,8 +77,8 @@ export function AgchainProjectCreateDialog({
               <input
                 id="agchain-project-name"
                 className={inputClass}
-                value={draft.benchmark_name}
-                onChange={(event) => setDraft({ ...draft, benchmark_name: event.target.value })}
+                value={draft.project_name}
+                onChange={(event) => setDraft({ ...draft, project_name: event.target.value })}
                 autoFocus
               />
             </div>
@@ -89,8 +90,8 @@ export function AgchainProjectCreateDialog({
               <input
                 id="agchain-project-slug"
                 className={inputClass}
-                value={draft.benchmark_slug}
-                onChange={(event) => setDraft({ ...draft, benchmark_slug: event.target.value })}
+                value={draft.project_slug}
+                onChange={(event) => setDraft({ ...draft, project_slug: event.target.value })}
               />
             </div>
 
@@ -116,7 +117,7 @@ export function AgchainProjectCreateDialog({
           <Button
             type="button"
             onClick={handleCreate}
-            disabled={creating || !draft.benchmark_name.trim()}
+            disabled={creating || !draft.project_name.trim()}
           >
             {creating ? 'Creating...' : 'Create Project'}
           </Button>

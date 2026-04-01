@@ -44,7 +44,7 @@ export function AgchainSectionPage({
         <p className="text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">Selected AGChain project</p>
         <h1 className="mt-3 text-3xl font-semibold tracking-tight text-foreground">{title}</h1>
         <p className="mt-3 max-w-3xl text-sm leading-7 text-muted-foreground">
-          {(focusedProject?.benchmark_name ?? 'Selected project')} owns this {title.toLowerCase()} page. {description}
+          {(focusedProject?.project_name ?? focusedProject?.benchmark_name ?? 'Selected project')} owns this {title.toLowerCase()} page. {description}
         </p>
         <p className="mt-4 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
           {statusLabel}

@@ -118,6 +118,10 @@ _agchain/**/__pycache__/
 # Dev output (logs, playwright, scripts)
 output/
 docs/design-layouts/logs/
+.codex-*.log
+.codex-*.err.log
+.playwright-cli/
+braintrust-*.json
 
 # Windows admin/network scratch files
 *.jfm

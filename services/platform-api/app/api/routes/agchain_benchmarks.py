@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, Query
 from opentelemetry import metrics, trace
 from pydantic import BaseModel, Field
 
-from app.auth.dependencies import require_superuser, require_user_auth
+from app.auth.dependencies import require_user_auth
 from app.auth.principals import AuthPrincipal
 from app.domain.agchain.benchmark_registry import (
     create_benchmark,
@@ -42,6 +42,7 @@ benchmarks_steps_write_duration_ms = meter.create_histogram("platform.agchain.be
 
 
 class BenchmarkCreateRequest(BaseModel):
+    project_id: str = Field(min_length=1)
     benchmark_name: str = Field(min_length=1)
     benchmark_slug: str | None = None
     description: str = ""
@@ -82,52 +83,50 @@ class BenchmarkStepReorderRequest(BaseModel):
 
 @router.get("", summary="List AG chain benchmarks")
 async def list_benchmarks_route(
+    project_id: str | None = Query(default=None),
     search: str | None = Query(default=None),
     state: str | None = Query(default=None),
     validation_status: str | None = Query(default=None),
     has_active_runs: bool | None = Query(default=None),
+    limit: int = Query(default=25, ge=1, le=100),
+    cursor: str | None = Query(default=None),
+    offset: int = Query(default=0, ge=0),
     auth: AuthPrincipal = Depends(require_user_auth),
 ):
     start = time.perf_counter()
     with tracer.start_as_current_span("agchain.benchmarks.list") as span:
-        items = list_benchmarks(user_id=auth.user_id)
-        if search:
-            needle = search.lower()
-            items = [
-                item
-                for item in items
-                if needle in item["benchmark_name"].lower()
-                or needle in item["benchmark_slug"].lower()
-                or needle in item["description"].lower()
-            ]
-        if state:
-            items = [item for item in items if item["state"] == state]
-        if validation_status:
-            items = [item for item in items if item["validation_status"] == validation_status]
-        if has_active_runs is not None:
-            items = [item for item in items if (item["state"] == "running") is has_active_runs]
-
+        result = list_benchmarks(
+            user_id=auth.user_id,
+            project_id=project_id,
+            search=search,
+            state=state,
+            validation_status=validation_status,
+            has_active_runs=has_active_runs,
+            limit=limit,
+            cursor=cursor,
+            offset=offset,
+        )
         duration_ms = max(0, int((time.perf_counter() - start) * 1000))
         attrs = {
-            "row_count": len(items),
-            "validation_status": validation_status,
-            "has_active_runs": has_active_runs,
+            "project_id_present": project_id is not None,
+            "row_count": len(result["items"]),
+            "latency_ms": duration_ms,
         }
         set_span_attributes(span, attrs)
         benchmarks_list_counter.add(1, safe_attributes(attrs))
         benchmarks_list_duration_ms.record(duration_ms, safe_attributes(attrs))
-        return {"items": items}
+        return result
 
 
 @router.post("", summary="Create an AG chain benchmark")
 async def create_benchmark_route(
     body: BenchmarkCreateRequest,
-    auth: AuthPrincipal = Depends(require_superuser),
+    auth: AuthPrincipal = Depends(require_user_auth),
 ):
     with tracer.start_as_current_span("agchain.benchmarks.create") as span:
         result = create_benchmark(user_id=auth.user_id, payload=body.model_dump())
         attrs = {
-            "benchmark_slug": result["benchmark_slug"],
+            "project_id_present": True,
             "result": "created",
         }
         set_span_attributes(span, attrs)
@@ -137,6 +136,7 @@ async def create_benchmark_route(
             extra={
                 "benchmark_id": result["benchmark_id"],
                 "benchmark_version_id": result["benchmark_version_id"],
+                "project_id": body.project_id,
                 "subject_id": auth.user_id,
                 **safe_attributes(attrs),
             },
@@ -153,10 +153,8 @@ async def get_benchmark_route(
         result = get_benchmark_summary(user_id=auth.user_id, benchmark_slug=benchmark_slug)
         current_version = result.get("current_version") or {}
         attrs = {
-            "benchmark_slug": benchmark_slug,
-            "version_status": current_version.get("version_status"),
-            "validation_status": current_version.get("validation_status"),
-            "step_count": current_version.get("step_count"),
+            "project_id_present": bool((result.get("benchmark") or {}).get("project_id")),
+            "status": current_version.get("version_status"),
         }
         set_span_attributes(span, attrs)
         benchmarks_get_counter.add(1, safe_attributes(attrs))
@@ -173,9 +171,10 @@ async def get_benchmark_steps_route(
         result = get_benchmark_steps(user_id=auth.user_id, benchmark_slug=benchmark_slug)
         duration_ms = max(0, int((time.perf_counter() - start) * 1000))
         attrs = {
-            "benchmark_slug": benchmark_slug,
-            "version_status": (result.get("current_version") or {}).get("version_status"),
+            "project_id_present": bool((result.get("benchmark") or {}).get("project_id")),
+            "status": (result.get("current_version") or {}).get("version_status"),
             "step_count": len(result.get("steps") or []),
+            "latency_ms": duration_ms,
         }
         set_span_attributes(span, attrs)
         benchmarks_steps_get_counter.add(1, safe_attributes(attrs))
@@ -187,7 +186,7 @@ async def get_benchmark_steps_route(
 async def create_benchmark_step_route(
     benchmark_slug: str,
     body: BenchmarkStepWriteRequest,
-    auth: AuthPrincipal = Depends(require_superuser),
+    auth: AuthPrincipal = Depends(require_user_auth),
 ):
     start = time.perf_counter()
     with tracer.start_as_current_span("agchain.benchmarks.steps.create") as span:
@@ -198,11 +197,8 @@ async def create_benchmark_step_route(
         )
         duration_ms = max(0, int((time.perf_counter() - start) * 1000))
         attrs = {
-            "benchmark_slug": benchmark_slug,
-            "step_kind": body.step_kind,
-            "scoring_mode": body.scoring_mode,
-            "api_call_boundary": body.api_call_boundary,
             "result": "created",
+            "latency_ms": duration_ms,
         }
         set_span_attributes(span, attrs)
         benchmarks_steps_create_counter.add(1, safe_attributes(attrs))
@@ -223,7 +219,7 @@ async def update_benchmark_step_route(
     benchmark_slug: str,
     benchmark_step_id: str,
     body: BenchmarkStepUpdateRequest,
-    auth: AuthPrincipal = Depends(require_superuser),
+    auth: AuthPrincipal = Depends(require_user_auth),
 ):
     start = time.perf_counter()
     with tracer.start_as_current_span("agchain.benchmarks.steps.update") as span:
@@ -236,11 +232,8 @@ async def update_benchmark_step_route(
         )
         duration_ms = max(0, int((time.perf_counter() - start) * 1000))
         attrs = {
-            "benchmark_slug": benchmark_slug,
-            "step_kind": payload.get("step_kind"),
-            "scoring_mode": payload.get("scoring_mode"),
-            "api_call_boundary": payload.get("api_call_boundary"),
             "result": "updated",
+            "latency_ms": duration_ms,
         }
         set_span_attributes(span, attrs)
         benchmarks_steps_update_counter.add(1, safe_attributes(attrs))
@@ -260,7 +253,7 @@ async def update_benchmark_step_route(
 async def reorder_benchmark_steps_route(
     benchmark_slug: str,
     body: BenchmarkStepReorderRequest,
-    auth: AuthPrincipal = Depends(require_superuser),
+    auth: AuthPrincipal = Depends(require_user_auth),
 ):
     start = time.perf_counter()
     with tracer.start_as_current_span("agchain.benchmarks.steps.reorder") as span:
@@ -271,9 +264,9 @@ async def reorder_benchmark_steps_route(
         )
         duration_ms = max(0, int((time.perf_counter() - start) * 1000))
         attrs = {
-            "benchmark_slug": benchmark_slug,
             "step_count": result["step_count"],
             "result": "reordered",
+            "latency_ms": duration_ms,
         }
         set_span_attributes(span, attrs)
         benchmarks_steps_reorder_counter.add(1, safe_attributes(attrs))
@@ -283,7 +276,7 @@ async def reorder_benchmark_steps_route(
             extra={
                 "subject_id": auth.user_id,
                 "step_count": result["step_count"],
-                **safe_attributes({"benchmark_slug": benchmark_slug, "result": "reordered"}),
+                **safe_attributes({"result": "reordered"}),
             },
         )
         return {"ok": True, **result}
@@ -293,7 +286,7 @@ async def reorder_benchmark_steps_route(
 async def delete_benchmark_step_route(
     benchmark_slug: str,
     benchmark_step_id: str,
-    auth: AuthPrincipal = Depends(require_superuser),
+    auth: AuthPrincipal = Depends(require_user_auth),
 ):
     start = time.perf_counter()
     with tracer.start_as_current_span("agchain.benchmarks.steps.delete") as span:
@@ -304,8 +297,8 @@ async def delete_benchmark_step_route(
         )
         duration_ms = max(0, int((time.perf_counter() - start) * 1000))
         attrs = {
-            "benchmark_slug": benchmark_slug,
             "result": "deleted",
+            "latency_ms": duration_ms,
         }
         set_span_attributes(span, attrs)
         benchmarks_steps_delete_counter.add(1, safe_attributes(attrs))

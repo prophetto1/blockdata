@@ -1,20 +1,20 @@
 import { Link } from 'react-router-dom';
-import { type AgchainProjectRegistryRow } from '@/lib/agchainBenchmarks';
+import { type AgchainBenchmarkRegistryRow } from '@/lib/agchainBenchmarks';
 
 type AgchainBenchmarksTableProps = {
-  items: AgchainProjectRegistryRow[];
+  items: AgchainBenchmarkRegistryRow[];
   loading: boolean;
 };
 
-function formatState(value: AgchainProjectRegistryRow['state']) {
+function formatState(value: AgchainBenchmarkRegistryRow['state']) {
   return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
-function formatValidation(item: AgchainProjectRegistryRow) {
+function formatValidation(item: AgchainBenchmarkRegistryRow) {
   return `${item.validation_status} (${item.validation_issue_count})`;
 }
 
-function formatActivity(item: AgchainProjectRegistryRow) {
+function formatActivity(item: AgchainBenchmarkRegistryRow) {
   const lastRun = item.last_run_at ? new Date(item.last_run_at).toLocaleString() : 'No runs yet';
   const updated = new Date(item.updated_at).toLocaleString();
   return `${lastRun} | updated ${updated}`;
@@ -27,17 +27,17 @@ export function AgchainBenchmarksTable({
   return (
     <section className="rounded-3xl border border-border/70 bg-card/70 shadow-sm">
       <div className="border-b border-border/70 px-6 py-4">
-        <h2 className="text-lg font-semibold text-foreground">Project registry</h2>
+        <h2 className="text-lg font-semibold text-foreground">Benchmark registry</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          One row per AGChain project or evaluation, backed by benchmark-derived registry data. Entering a row opens
-          its focused child pages.
+          One row per AGChain benchmark child resource. Use it to inspect benchmark status, version posture, and recent
+          activity inside the selected project.
         </p>
       </div>
       <div className="overflow-x-auto">
         <table className="min-w-full border-collapse text-left text-sm">
           <thead className="bg-muted/30 text-xs uppercase tracking-[0.16em] text-muted-foreground">
             <tr>
-              <th className="px-6 py-3 font-medium">Project</th>
+              <th className="px-6 py-3 font-medium">Benchmark</th>
               <th className="px-6 py-3 font-medium">Slug</th>
               <th className="px-6 py-3 font-medium">Description</th>
               <th className="px-6 py-3 font-medium">State</th>
@@ -60,7 +60,7 @@ export function AgchainBenchmarksTable({
             ) : items.length === 0 ? (
               <tr>
                 <td className="px-6 py-8 text-muted-foreground" colSpan={11}>
-                  No AGChain projects have been created yet.
+                  No AGChain benchmarks have been created yet.
                 </td>
               </tr>
             ) : (
@@ -81,7 +81,7 @@ export function AgchainBenchmarksTable({
                       className="font-medium text-foreground underline-offset-4 hover:underline"
                       to={item.href}
                     >
-                      Open Project
+                      Open Benchmark
                     </Link>
                   </td>
                 </tr>

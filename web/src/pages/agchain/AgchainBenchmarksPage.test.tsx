@@ -4,8 +4,8 @@ import { MemoryRouter } from 'react-router-dom';
 import * as agchainBenchmarkContracts from '@/lib/agchainBenchmarks';
 import type {
   AgchainBenchmarkDetail,
+  AgchainBenchmarkRegistryRow,
   AgchainBenchmarkWorkbenchDetail,
-  AgchainProjectRegistryRow,
 } from '@/lib/agchainBenchmarks';
 import AgchainBenchmarksPage from './AgchainBenchmarksPage';
 
@@ -15,7 +15,14 @@ vi.mock('@/hooks/agchain/useAgchainBenchmarkSteps', () => ({
   useAgchainBenchmarkSteps: () => useAgchainBenchmarkStepsMock(),
 }));
 
-const PROJECT_ROW: AgchainProjectRegistryRow = {
+const PROJECT_ROW: AgchainBenchmarkRegistryRow & {
+  project_id: string;
+  project_slug: string;
+  project_name: string;
+} = {
+  project_id: 'project-1',
+  project_slug: 'legal-evals',
+  project_name: 'Legal Evals',
   benchmark_id: 'benchmark-1',
   benchmark_slug: 'legal-10',
   benchmark_name: 'Legal-10',
@@ -155,6 +162,7 @@ describe('AgchainBenchmarksPage', () => {
   it('renders benchmark definition as a selected-project child page rather than a multi-project registry', () => {
     expect(agchainBenchmarkContracts).toBeTypeOf('object');
     expect(PROJECT_ROW.benchmark_slug).toBe('legal-10');
+    expect(PROJECT_ROW.project_slug).toBe('legal-evals');
     expect(BENCHMARK_DETAIL.current_draft_version?.dataset_version_id).toBe('dataset-version-1');
     expect(WORKBENCH_DETAIL.current_version?.step_count).toBe(2);
 
@@ -165,7 +173,7 @@ describe('AgchainBenchmarksPage', () => {
     );
 
     expect(screen.getByRole('heading', { name: 'Benchmark definition' })).toBeInTheDocument();
-    expect(screen.getByText(/legal-10 owns this benchmark definition page/i)).toBeInTheDocument();
+    expect(screen.getByText(/legal evals owns this benchmark definition page/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'New Step' })).toBeInTheDocument();
     expect(screen.getByText('Issue Spotting')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'New Project' })).not.toBeInTheDocument();

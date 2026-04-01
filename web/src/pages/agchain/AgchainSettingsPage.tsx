@@ -63,7 +63,8 @@ export default function AgchainSettingsPage() {
         <p className="text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">Selected AGChain project</p>
         <h1 className="mt-3 text-3xl font-semibold tracking-tight text-foreground">Settings</h1>
         <p className="mt-3 max-w-3xl text-sm leading-7 text-muted-foreground">
-          {(focusedProject?.benchmark_name ?? 'Selected project')} owns this settings surface. The landing page locks
+          {(focusedProject?.project_name ?? focusedProject?.benchmark_name ?? 'Selected project')} owns this settings
+          surface. The landing page locks
           the `Project`, `Organization`, and `Personal` partitions before deeper configuration pages arrive.
         </p>
       </section>

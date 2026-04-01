@@ -4,6 +4,7 @@ from typing import Any
 
 from fastapi import HTTPException
 
+from app.domain.agchain.project_access import require_project_access
 from app.infra.supabase_client import get_supabase_admin
 
 
@@ -116,6 +117,29 @@ def _get_dataset_version_row(*, sb, dataset_id: str, dataset_version_id: str) ->
     return row
 
 
+def _resolve_dataset_project(
+    *,
+    sb,
+    user_id: str,
+    dataset_id: str,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    dataset = _get_dataset_row(sb=sb, dataset_id=dataset_id)
+    project = require_project_access(user_id=user_id, project_id=dataset["project_id"], sb=sb)
+    return dataset, project
+
+
+def _resolve_dataset_version_project(
+    *,
+    sb,
+    user_id: str,
+    dataset_id: str,
+    dataset_version_id: str,
+) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
+    version = _get_dataset_version_row(sb=sb, dataset_id=dataset_id, dataset_version_id=dataset_version_id)
+    dataset, project = _resolve_dataset_project(sb=sb, user_id=user_id, dataset_id=dataset_id)
+    return dataset, version, project
+
+
 def list_datasets(
     *,
     user_id: str,
@@ -128,8 +152,8 @@ def list_datasets(
     cursor: str | None,
     offset: int,
 ) -> dict[str, Any]:
-    del user_id
     sb = get_supabase_admin()
+    require_project_access(user_id=user_id, project_id=project_id, sb=sb)
     dataset_rows = (
         sb.table("agchain_datasets")
         .select("*")
@@ -190,9 +214,8 @@ def list_datasets(
     }
 
 
-def get_dataset_bootstrap(*, user_id: str) -> dict[str, Any]:
-    del user_id
-    return {
+def get_dataset_bootstrap(*, user_id: str, project_id: str | None = None) -> dict[str, Any]:
+    payload = {
         "allowed_source_types": ALLOWED_SOURCE_TYPES,
         "field_spec_defaults": {
             "input": None,
@@ -227,6 +250,14 @@ def get_dataset_bootstrap(*, user_id: str) -> dict[str, Any]:
             "optional_fields": ["target", "choices", "metadata", "sandbox", "files", "setup"],
         },
     }
+    if project_id is not None:
+        project = require_project_access(user_id=user_id, project_id=project_id)
+        payload["project_defaults"] = {
+            "project_id": project["project_id"],
+            "project_slug": project.get("project_slug"),
+            "project_name": project.get("project_name"),
+        }
+    return payload
 
 
 def get_dataset_detail(
@@ -236,8 +267,8 @@ def get_dataset_detail(
     dataset_id: str,
     version_id: str | None,
 ) -> dict[str, Any]:
-    del user_id
     sb = get_supabase_admin()
+    require_project_access(user_id=user_id, project_id=project_id, sb=sb)
     dataset = _get_dataset_row(sb=sb, dataset_id=dataset_id, project_id=project_id)
 
     version_rows = (
@@ -304,8 +335,8 @@ def list_dataset_versions(
     cursor: str | None,
     offset: int,
 ) -> dict[str, Any]:
-    del user_id
     sb = get_supabase_admin()
+    require_project_access(user_id=user_id, project_id=project_id, sb=sb)
     _get_dataset_row(sb=sb, dataset_id=dataset_id, project_id=project_id)
     version_rows = (
         sb.table("agchain_dataset_versions")
@@ -337,9 +368,13 @@ def get_dataset_version_source(
     dataset_id: str,
     dataset_version_id: str,
 ) -> dict[str, Any]:
-    del user_id
     sb = get_supabase_admin()
-    row = _get_dataset_version_row(sb=sb, dataset_id=dataset_id, dataset_version_id=dataset_version_id)
+    _, row, _ = _resolve_dataset_version_project(
+        sb=sb,
+        user_id=user_id,
+        dataset_id=dataset_id,
+        dataset_version_id=dataset_version_id,
+    )
     return {
         "dataset_version_id": row["dataset_version_id"],
         "source_type": row["source_type"],
@@ -354,9 +389,13 @@ def get_dataset_version_mapping(
     dataset_id: str,
     dataset_version_id: str,
 ) -> dict[str, Any]:
-    del user_id
     sb = get_supabase_admin()
-    row = _get_dataset_version_row(sb=sb, dataset_id=dataset_id, dataset_version_id=dataset_version_id)
+    _, row, _ = _resolve_dataset_version_project(
+        sb=sb,
+        user_id=user_id,
+        dataset_id=dataset_id,
+        dataset_version_id=dataset_version_id,
+    )
     parse_summary = _as_dict(row.get("parse_summary_jsonb"))
     return {
         "dataset_version_id": row["dataset_version_id"],
@@ -371,9 +410,13 @@ def get_dataset_version_validation(
     dataset_id: str,
     dataset_version_id: str,
 ) -> dict[str, Any]:
-    del user_id
     sb = get_supabase_admin()
-    _get_dataset_version_row(sb=sb, dataset_id=dataset_id, dataset_version_id=dataset_version_id)
+    _resolve_dataset_version_project(
+        sb=sb,
+        user_id=user_id,
+        dataset_id=dataset_id,
+        dataset_version_id=dataset_version_id,
+    )
     row = (
         sb.table("agchain_dataset_version_validations")
         .select("*")
@@ -426,8 +469,8 @@ def list_dataset_samples(
     cursor: str | None,
     offset: int,
 ) -> dict[str, Any]:
-    del user_id
     sb = get_supabase_admin()
+    require_project_access(user_id=user_id, project_id=project_id, sb=sb)
     _get_dataset_row(sb=sb, dataset_id=dataset_id, project_id=project_id)
     _get_dataset_version_row(sb=sb, dataset_id=dataset_id, dataset_version_id=dataset_version_id)
     rows = (
@@ -483,9 +526,13 @@ def get_dataset_sample_detail(
     dataset_version_id: str,
     sample_id: str,
 ) -> dict[str, Any]:
-    del user_id
     sb = get_supabase_admin()
-    _get_dataset_version_row(sb=sb, dataset_id=dataset_id, dataset_version_id=dataset_version_id)
+    _resolve_dataset_version_project(
+        sb=sb,
+        user_id=user_id,
+        dataset_id=dataset_id,
+        dataset_version_id=dataset_version_id,
+    )
     row = (
         sb.table("agchain_dataset_samples")
         .select("*")

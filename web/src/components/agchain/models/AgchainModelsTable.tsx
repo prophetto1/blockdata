@@ -37,11 +37,11 @@ export function AgchainModelsTable({
   onConfigure,
 }: AgchainModelsTableProps) {
   return (
-    <section className="flex flex-col rounded-3xl border border-border/70 bg-card/70 shadow-sm">
+    <section className="flex flex-col overflow-hidden rounded-3xl border border-border/70 bg-card/70 shadow-sm">
       <div className="border-b border-border/70 px-6 py-4">
-        <h2 className="text-lg font-semibold text-foreground">Provider configuration</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          One row per supported provider, with curated targets and health detail available from Configure.
+        <h2 className="text-base font-semibold text-foreground">Provider configuration</h2>
+        <p className="mt-1 text-sm leading-6 text-muted-foreground">
+          One row per supported provider. Use Configure to manage credentials and inspect curated targets.
         </p>
       </div>
       <ScrollArea className="min-h-0 flex-1">

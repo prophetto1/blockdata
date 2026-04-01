@@ -49,11 +49,11 @@ export default function AgchainModelsPage() {
   }, [providerRows, search]);
 
   return (
-    <AgchainPageFrame className="gap-6 py-8">
-      <section className="rounded-3xl border border-border/70 bg-card/70 p-6 shadow-sm">
+    <AgchainPageFrame className="gap-4 py-6">
+      <section className="rounded-3xl border border-border/70 bg-card/70 px-6 py-5 shadow-sm">
         <p className="text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">AGChain platform</p>
-        <h1 className="mt-3 text-3xl font-semibold tracking-tight text-foreground">Models</h1>
-        <p className="mt-3 max-w-3xl text-sm leading-7 text-muted-foreground">
+        <h1 className="mt-2 text-3xl font-semibold tracking-tight text-foreground">Models</h1>
+        <p className="mt-2 max-w-4xl text-sm leading-6 text-muted-foreground">
           Configure provider access and inspect the curated global model targets available under each provider.
         </p>
       </section>

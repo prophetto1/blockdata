@@ -72,6 +72,10 @@ vi.mock('@/components/agchain/AgchainProjectSwitcher', () => ({
   AgchainProjectSwitcher: () => <div data-testid="agchain-project-context">Focused AGChain project</div>,
 }));
 
+vi.mock('@/components/agchain/AgchainOrganizationSwitcher', () => ({
+  AgchainOrganizationSwitcher: () => <div data-testid="agchain-organization-context">Focused AGChain organization</div>,
+}));
+
 afterEach(() => {
   cleanup();
   leftRailMock.mockReset();
@@ -101,7 +105,7 @@ describe('AgchainShellLayout', () => {
     expect(screen.getByTestId('agchain-route-content')).toBeInTheDocument();
   });
 
-  it('renders the AGChain selector in the rail header content instead of the top command bar', () => {
+  it('renders the AGChain organization and project selectors in the rail header content instead of the top command bar', () => {
     render(
       <MemoryRouter initialEntries={['/app/agchain/overview']}>
         <Routes>
@@ -113,7 +117,9 @@ describe('AgchainShellLayout', () => {
     );
 
     const railContent = screen.getByTestId('agchain-primary-rail-header-content');
+    expect(within(railContent).getByTestId('agchain-organization-context')).toBeInTheDocument();
     expect(within(railContent).getByTestId('agchain-project-context')).toBeInTheDocument();
+    expect(within(screen.getByTestId('top-command-bar-left')).queryByTestId('agchain-organization-context')).not.toBeInTheDocument();
     expect(within(screen.getByTestId('top-command-bar-left')).queryByTestId('agchain-project-context')).not.toBeInTheDocument();
   });
 

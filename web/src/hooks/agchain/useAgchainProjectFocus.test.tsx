@@ -2,60 +2,56 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAgchainProjectFocus } from './useAgchainProjectFocus';
 
-const fetchAgchainBenchmarksMock = vi.fn();
+const fetchAgchainOrganizationsMock = vi.fn();
+const fetchAgchainProjectsMock = vi.fn();
 
-vi.mock('@/lib/agchainBenchmarks', () => ({
-  fetchAgchainBenchmarks: (...args: unknown[]) => fetchAgchainBenchmarksMock(...args),
+vi.mock('@/lib/agchainWorkspaces', () => ({
+  fetchAgchainOrganizations: (...args: unknown[]) => fetchAgchainOrganizationsMock(...args),
+  fetchAgchainProjects: (...args: unknown[]) => fetchAgchainProjectsMock(...args),
 }));
 
 describe('useAgchainProjectFocus', () => {
   beforeEach(() => {
-    fetchAgchainBenchmarksMock.mockReset();
+    fetchAgchainOrganizationsMock.mockReset();
+    fetchAgchainProjectsMock.mockReset();
     window.localStorage.clear();
-    fetchAgchainBenchmarksMock.mockResolvedValue({
+    fetchAgchainOrganizationsMock.mockResolvedValue({
       items: [
         {
-          benchmark_id: 'benchmark-1',
-          benchmark_slug: 'legal-10',
-          benchmark_name: 'Legal-10',
-          description: 'Legal benchmark package',
-          state: 'draft',
-          current_spec_label: 'draft v0.1.0',
-          current_spec_version: 'v0.1.0',
-          version_status: 'draft',
-          step_count: 3,
-          selected_eval_model_count: 2,
-          tested_model_count: 0,
-          tested_policy_bundle_count: 0,
-          validation_status: 'warn',
-          validation_issue_count: 2,
-          last_run_at: null,
-          updated_at: '2026-03-27T08:15:00Z',
-          href: '/app/agchain/benchmarks/legal-10#steps',
-        },
-        {
-          benchmark_id: 'benchmark-2',
-          benchmark_slug: 'finance-eval',
-          benchmark_name: 'Finance Eval',
-          description: 'Finance evaluation package',
-          state: 'ready',
-          current_spec_label: 'ready v1.0.0',
-          current_spec_version: 'v1.0.0',
-          version_status: 'published',
-          step_count: 5,
-          selected_eval_model_count: 3,
-          tested_model_count: 1,
-          tested_policy_bundle_count: 0,
-          validation_status: 'pass',
-          validation_issue_count: 0,
-          last_run_at: null,
-          updated_at: '2026-03-28T08:15:00Z',
-          href: '/app/agchain/benchmarks/finance-eval#steps',
+          organization_id: 'org-1',
+          organization_slug: 'personal-user-1',
+          display_name: 'Personal Workspace',
+          membership_role: 'organization_admin',
+          is_personal: true,
+          project_count: 2,
         },
       ],
-      total: 2,
-      limit: 50,
-      offset: 0,
+    });
+    fetchAgchainProjectsMock.mockResolvedValue({
+      items: [
+        {
+          project_id: 'project-1',
+          organization_id: 'org-1',
+          project_slug: 'legal-evals',
+          project_name: 'Legal Evals',
+          description: 'Legal benchmark package',
+          membership_role: 'project_admin',
+          updated_at: '2026-03-27T08:15:00Z',
+          primary_benchmark_slug: 'legal-10',
+          primary_benchmark_name: 'Legal-10',
+        },
+        {
+          project_id: 'project-2',
+          organization_id: 'org-1',
+          project_slug: 'finance-workspace',
+          project_name: 'Finance Workspace',
+          description: 'Finance evaluation package',
+          membership_role: 'project_admin',
+          updated_at: '2026-03-28T08:15:00Z',
+          primary_benchmark_slug: 'finance-eval',
+          primary_benchmark_name: 'Finance Eval',
+        },
+      ],
     });
   });
 
@@ -63,43 +59,44 @@ describe('useAgchainProjectFocus', () => {
     window.localStorage.clear();
   });
 
-  it('resolves persisted AGChain project focus when the stored slug is still valid', async () => {
+  it('resolves persisted AGChain project focus from the stored project id', async () => {
+    window.localStorage.setItem('agchain.organizationFocusId', 'org-1');
+    window.localStorage.setItem('agchain.projectFocusId', 'project-2');
+
+    const { result } = renderHook(() => useAgchainProjectFocus());
+
+    await waitFor(() => {
+      expect(result.current.focusedProject?.project_name).toBe('Finance Workspace');
+    });
+    expect(result.current.focusedProjectSlug).toBe('finance-workspace');
+  });
+
+  it('falls back to the first available project row when no stored focus exists', async () => {
+    const { result } = renderHook(() => useAgchainProjectFocus());
+
+    await waitFor(() => {
+      expect(result.current.focusedProjectSlug).toBe('legal-evals');
+    });
+
+    expect(result.current.focusedProject?.project_name).toBe('Legal Evals');
+  });
+
+  it('accepts a legacy benchmark slug and resolves it to the owning project row', async () => {
     window.localStorage.setItem('agchain.projectFocusSlug', 'finance-eval');
 
     const { result } = renderHook(() => useAgchainProjectFocus());
 
     await waitFor(() => {
-      expect(result.current.focusedProject?.benchmark_name).toBe('Finance Eval');
-    });
-    expect(result.current.focusedProjectSlug).toBe('finance-eval');
-  });
-
-  it('falls back to the first available benchmark row when no stored focus exists', async () => {
-    const { result } = renderHook(() => useAgchainProjectFocus());
-
-    await waitFor(() => {
-      expect(result.current.focusedProjectSlug).toBe('legal-10');
+      expect(result.current.focusedProjectSlug).toBe('finance-workspace');
     });
 
-    expect(result.current.focusedProject?.benchmark_name).toBe('Legal-10');
+    expect(window.localStorage.getItem('agchain.projectFocusId')).toBe('project-2');
+    expect(result.current.focusedProject?.project_name).toBe('Finance Workspace');
   });
 
-  it('clears invalid stored focus and replaces it with the first available benchmark row', async () => {
-    window.localStorage.setItem('agchain.projectFocusSlug', 'missing-benchmark');
-
-    const { result } = renderHook(() => useAgchainProjectFocus());
-
-    await waitFor(() => {
-      expect(result.current.focusedProjectSlug).toBe('legal-10');
-    });
-
-    expect(window.localStorage.getItem('agchain.projectFocusSlug')).toBe('legal-10');
-    expect(result.current.focusedProject?.benchmark_name).toBe('Legal-10');
-  });
-
-  it('hydrates the stored AGChain focus immediately before the benchmark list finishes loading', () => {
+  it('hydrates the stored AGChain focus immediately before the project list finishes loading', () => {
     window.localStorage.setItem('agchain.projectFocusSlug', 'finance-eval');
-    fetchAgchainBenchmarksMock.mockReturnValue(new Promise(() => {}));
+    fetchAgchainProjectsMock.mockReturnValue(new Promise(() => {}));
 
     const { result } = renderHook(() => useAgchainProjectFocus());
 
@@ -112,8 +109,8 @@ describe('useAgchainProjectFocus', () => {
     const second = renderHook(() => useAgchainProjectFocus());
 
     await waitFor(() => {
-      expect(first.result.current.focusedProjectSlug).toBe('legal-10');
-      expect(second.result.current.focusedProjectSlug).toBe('legal-10');
+      expect(first.result.current.focusedProjectSlug).toBe('legal-evals');
+      expect(second.result.current.focusedProjectSlug).toBe('legal-evals');
     });
 
     act(() => {
@@ -121,7 +118,7 @@ describe('useAgchainProjectFocus', () => {
     });
 
     await waitFor(() => {
-      expect(second.result.current.focusedProjectSlug).toBe('finance-eval');
+      expect(second.result.current.focusedProjectSlug).toBe('finance-workspace');
     });
   });
 });

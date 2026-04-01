@@ -8,6 +8,10 @@ from app.core.config import get_settings
 from app.domain.plugins.registry import discover_plugins, FUNCTION_NAME_MAP
 from app.core.reserved_routes import check_collisions
 from app.observability import configure_telemetry, shutdown_telemetry
+from app.workers.agchain_operations import (
+    start_agchain_operations_worker,
+    stop_agchain_operations_worker,
+)
 from app.workers.conversion_pool import init_pool, shutdown_pool
 from app.workers.pipeline_jobs import start_pipeline_jobs_worker, stop_pipeline_jobs_worker
 from app.workers.storage_cleanup import start_storage_cleanup_worker, stop_storage_cleanup_worker
@@ -77,10 +81,13 @@ def create_app() -> FastAPI:
         if _can_start_supabase_workers(settings):
             start_storage_cleanup_worker()
             start_pipeline_jobs_worker()
+            if settings.agchain_operations_worker_enabled:
+                start_agchain_operations_worker()
 
         yield
 
         # Shutdown background workers gracefully
+        stop_agchain_operations_worker()
         stop_pipeline_jobs_worker()
         stop_storage_cleanup_worker()
         shutdown_pool()
@@ -182,13 +189,21 @@ def create_app() -> FastAPI:
     from app.api.routes.agchain_models import router as agchain_models_router
     app.include_router(agchain_models_router)
 
-    # 5k. AG chain dataset registry (user-scoped, before plugin catch-all)
+    # 5k. AG chain workspace registry (user-scoped, before plugin catch-all)
+    from app.api.routes.agchain_workspaces import router as agchain_workspaces_router
+    app.include_router(agchain_workspaces_router)
+
+    # 5l. AG chain dataset registry (user-scoped, before plugin catch-all)
     from app.api.routes.agchain_datasets import router as agchain_datasets_router
     app.include_router(agchain_datasets_router)
 
-    # 5l. AG chain benchmark catalog (user-scoped, before plugin catch-all)
+    # 5m. AG chain benchmark catalog (user-scoped, before plugin catch-all)
     from app.api.routes.agchain_benchmarks import router as agchain_benchmarks_router
     app.include_router(agchain_benchmarks_router)
+
+    # 5n. AG chain operations surface (user-scoped, before plugin catch-all)
+    from app.api.routes.agchain_operations import router as agchain_operations_router
+    app.include_router(agchain_operations_router)
 
     # 6. Plugin catch-all MUST be last
     from app.api.routes.plugin_execution import router as plugin_router

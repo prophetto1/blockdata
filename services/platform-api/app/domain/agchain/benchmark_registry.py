@@ -5,6 +5,11 @@ from typing import Any
 
 from fastapi import HTTPException
 
+from app.domain.agchain.project_access import (
+    load_accessible_projects,
+    require_project_access,
+    require_project_write_access,
+)
 from app.infra.supabase_client import get_supabase_admin
 
 
@@ -20,11 +25,24 @@ def _slugify(value: str) -> str:
     return '-'.join(pieces)
 
 
-def _get_benchmark_row(*, sb, user_id: str, benchmark_slug: str) -> dict[str, Any]:
+def _page_offset(*, cursor: str | None, offset: int) -> int:
+    if cursor is None:
+        return offset
+    try:
+        return max(0, int(cursor))
+    except ValueError:
+        return offset
+
+
+def _next_cursor(*, start: int, limit: int, total: int) -> str | None:
+    next_offset = start + limit
+    return str(next_offset) if next_offset < total else None
+
+
+def _get_benchmark_row(*, sb, benchmark_slug: str) -> dict[str, Any]:
     result = (
         sb.table("agchain_benchmarks")
         .select("*")
-        .eq("owner_user_id", user_id)
         .eq("benchmark_slug", benchmark_slug)
         .maybe_single()
         .execute()
@@ -70,6 +88,7 @@ def _normalize_version(version: dict[str, Any] | None) -> dict[str, Any] | None:
 def _normalize_benchmark(benchmark: dict[str, Any]) -> dict[str, Any]:
     return {
         "benchmark_id": benchmark["benchmark_id"],
+        "project_id": benchmark.get("project_id"),
         "benchmark_slug": benchmark["benchmark_slug"],
         "benchmark_name": benchmark["benchmark_name"],
         "description": benchmark.get("description") or "",
@@ -200,6 +219,29 @@ def _load_step_rows(*, sb, benchmark_version_id: str) -> list[dict[str, Any]]:
     return result.data or []
 
 
+def _count_scorer_refs(step_rows: list[dict[str, Any]]) -> int:
+    return len({row["scorer_ref"] for row in step_rows if row.get("scorer_ref")})
+
+
+def _require_benchmark_project(
+    *,
+    sb,
+    user_id: str,
+    benchmark_slug: str,
+    write: bool,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    benchmark = _get_benchmark_row(sb=sb, benchmark_slug=benchmark_slug)
+    project_id = benchmark.get("project_id")
+    if not isinstance(project_id, str) or not project_id:
+        raise HTTPException(status_code=409, detail="AG chain benchmark project is not initialized")
+    project = (
+        require_project_write_access(user_id=user_id, project_id=project_id, sb=sb)
+        if write
+        else require_project_access(user_id=user_id, project_id=project_id, sb=sb)
+    )
+    return benchmark, project
+
+
 def _touch_benchmark_and_version(*, sb, benchmark_id: str, benchmark_version_id: str, now: str) -> None:
     sb.table("agchain_benchmark_versions").update({"updated_at": now}).eq(
         "benchmark_version_id",
@@ -218,18 +260,42 @@ def _refresh_step_count(*, sb, benchmark_id: str, benchmark_version_id: str, now
     return step_count
 
 
-def list_benchmarks(*, user_id: str) -> list[dict[str, Any]]:
+def list_benchmarks(
+    *,
+    user_id: str,
+    project_id: str | None,
+    search: str | None,
+    state: str | None,
+    validation_status: str | None,
+    has_active_runs: bool | None,
+    limit: int,
+    cursor: str | None,
+    offset: int,
+) -> dict[str, Any]:
     sb = get_supabase_admin()
+    accessible_project_ids: list[str]
+    if project_id is not None:
+        require_project_access(user_id=user_id, project_id=project_id, sb=sb)
+        accessible_project_ids = [project_id]
+    else:
+        accessible_project_ids = [
+            row["project_id"]
+            for row in load_accessible_projects(user_id=user_id, sb=sb)
+            if row.get("project_id")
+        ]
+    if not accessible_project_ids:
+        return {"items": [], "next_cursor": None}
+
     benchmarks_result = (
         sb.table("agchain_benchmarks")
         .select("*")
-        .eq("owner_user_id", user_id)
+        .in_("project_id", accessible_project_ids)
         .order("updated_at", desc=True)
         .execute()
     )
     benchmarks = benchmarks_result.data or []
     if not benchmarks:
-        return []
+        return {"items": [], "next_cursor": None}
 
     version_ids = [
         version_id
@@ -248,12 +314,26 @@ def list_benchmarks(*, user_id: str) -> list[dict[str, Any]]:
             row["benchmark_version_id"]: row
             for row in (versions_result.data or [])
         }
-    selected_eval_counts = _list_selected_eval_model_counts(sb=sb, benchmark_version_ids=version_ids)
+    step_rows_by_version: dict[str, list[dict[str, Any]]] = {version_id: [] for version_id in version_ids}
+    if version_ids:
+        step_rows = (
+            sb.table("agchain_benchmark_steps")
+            .select("benchmark_version_id, scorer_ref")
+            .in_("benchmark_version_id", version_ids)
+            .execute()
+            .data
+            or []
+        )
+        for row in step_rows:
+            version_id = row.get("benchmark_version_id")
+            if isinstance(version_id, str):
+                step_rows_by_version.setdefault(version_id, []).append(row)
 
     benchmark_ids = [benchmark["benchmark_id"] for benchmark in benchmarks]
     runs_by_benchmark = _list_runs_by_benchmark(sb=sb, benchmark_ids=benchmark_ids)
 
     items: list[dict[str, Any]] = []
+    needle = (search or "").strip().lower()
     for benchmark in benchmarks:
         version_id = _get_current_version_id(benchmark)
         version = versions_by_id.get(version_id) if version_id else None
@@ -264,41 +344,49 @@ def list_benchmarks(*, user_id: str) -> list[dict[str, Any]]:
         ]
         version_status = version.get("version_status", "draft") if version else "draft"
         version_label = version.get("version_label", "v0.1.0") if version else "v0.1.0"
-        current_spec_label = f"{version_status} {version_label}"
+        item = {
+            "benchmark_id": benchmark["benchmark_id"],
+            "project_id": benchmark.get("project_id"),
+            "benchmark_slug": benchmark["benchmark_slug"],
+            "benchmark_name": benchmark["benchmark_name"],
+            "description": benchmark.get("description") or "",
+            "latest_version_id": version_id,
+            "latest_version_label": version_label if version else None,
+            "dataset_version_id": None,
+            "scorer_count": _count_scorer_refs(step_rows_by_version.get(version_id, [])) if version_id else 0,
+            "tool_count": 0,
+            "status": _derive_state(benchmark, version, has_active_runs=bool(active_runs)),
+            "validation_status": version.get("validation_status", "unknown") if version else "unknown",
+            "updated_at": benchmark["updated_at"],
+        }
+        haystack = " ".join(
+            str(part)
+            for part in (item["benchmark_slug"], item["benchmark_name"], item["description"])
+            if part
+        ).lower()
+        if needle and needle not in haystack:
+            continue
+        if state and item["status"] != state:
+            continue
+        if validation_status and item["validation_status"] != validation_status:
+            continue
+        if has_active_runs is not None and (item["status"] == "running") is not has_active_runs:
+            continue
+        items.append(item)
 
-        items.append(
-            {
-                "benchmark_id": benchmark["benchmark_id"],
-                "benchmark_slug": benchmark["benchmark_slug"],
-                "benchmark_name": benchmark["benchmark_name"],
-                "description": benchmark.get("description") or "",
-                "state": _derive_state(benchmark, version, has_active_runs=bool(active_runs)),
-                "current_spec_label": current_spec_label,
-                "current_spec_version": version_label,
-                "version_status": version_status,
-                "step_count": int(version.get("step_count", 0)) if version else 0,
-                "selected_eval_model_count": selected_eval_counts.get(version_id, 0) if version_id else 0,
-                "tested_model_count": _get_tested_model_count(
-                    benchmark_id=benchmark["benchmark_id"],
-                    runs_by_benchmark=runs_by_benchmark,
-                ),
-                "tested_policy_bundle_count": 0,
-                "validation_status": version.get("validation_status", "unknown") if version else "unknown",
-                "validation_issue_count": int(version.get("validation_issue_count", 0)) if version else 0,
-                "last_run_at": _get_last_run_at(
-                    benchmark_id=benchmark["benchmark_id"],
-                    runs_by_benchmark=runs_by_benchmark,
-                ),
-                "updated_at": benchmark["updated_at"],
-                "href": f"/app/agchain/benchmarks/{benchmark['benchmark_slug']}#steps",
-            }
-        )
-
-    return items
+    start = _page_offset(cursor=cursor, offset=offset)
+    return {
+        "items": items[start:start + limit],
+        "next_cursor": _next_cursor(start=start, limit=limit, total=len(items)),
+    }
 
 
 def create_benchmark(*, user_id: str, payload: dict[str, Any]) -> dict[str, Any]:
     sb = get_supabase_admin()
+    project_id = (payload.get("project_id") or "").strip()
+    if not project_id:
+        raise HTTPException(status_code=422, detail="project_id is required")
+    require_project_write_access(user_id=user_id, project_id=project_id, sb=sb)
     benchmark_name = (payload.get("benchmark_name") or "").strip()
     if not benchmark_name:
         raise HTTPException(status_code=422, detail="benchmark_name is required")
@@ -312,6 +400,7 @@ def create_benchmark(*, user_id: str, payload: dict[str, Any]) -> dict[str, Any]
             sb.table("agchain_benchmarks")
             .insert(
                 {
+                    "project_id": project_id,
                     "benchmark_slug": benchmark_slug,
                     "benchmark_name": benchmark_name,
                     "description": description,
@@ -367,14 +456,18 @@ def create_benchmark(*, user_id: str, payload: dict[str, Any]) -> dict[str, Any]
 
 def get_benchmark_summary(*, user_id: str, benchmark_slug: str) -> dict[str, Any]:
     sb = get_supabase_admin()
-    benchmark = _get_benchmark_row(sb=sb, user_id=user_id, benchmark_slug=benchmark_slug)
+    benchmark, project = _require_benchmark_project(sb=sb, user_id=user_id, benchmark_slug=benchmark_slug, write=False)
     version = _get_version_row(sb=sb, benchmark=benchmark)
     runs_by_benchmark = _list_runs_by_benchmark(sb=sb, benchmark_ids=[benchmark["benchmark_id"]])
+    can_edit = bool(
+        _is_editable_version(version)
+        and project["membership_role"] in {"project_admin", "project_editor", "organization_admin"}
+    )
 
     return {
         "benchmark": _normalize_benchmark(benchmark),
         "current_version": _normalize_version(version),
-        "permissions": {"can_edit": _is_editable_version(version)},
+        "permissions": {"can_edit": can_edit},
         "counts": {
             "selected_eval_model_count": _get_selected_eval_model_count(
                 sb=sb,
@@ -390,7 +483,7 @@ def get_benchmark_summary(*, user_id: str, benchmark_slug: str) -> dict[str, Any
 
 def get_benchmark_steps(*, user_id: str, benchmark_slug: str) -> dict[str, Any]:
     sb = get_supabase_admin()
-    benchmark = _get_benchmark_row(sb=sb, user_id=user_id, benchmark_slug=benchmark_slug)
+    benchmark, project = _require_benchmark_project(sb=sb, user_id=user_id, benchmark_slug=benchmark_slug, write=False)
     version = _get_version_row(sb=sb, benchmark=benchmark)
     if not version:
         raise HTTPException(status_code=404, detail="AG chain benchmark version not found")
@@ -399,14 +492,17 @@ def get_benchmark_steps(*, user_id: str, benchmark_slug: str) -> dict[str, Any]:
     return {
         "benchmark": _normalize_benchmark(benchmark),
         "current_version": _normalize_version(version),
-        "can_edit": _is_editable_version(version),
+        "can_edit": bool(
+            _is_editable_version(version)
+            and project["membership_role"] in {"project_admin", "project_editor", "organization_admin"}
+        ),
         "steps": [_normalize_step(step) for step in steps],
     }
 
 
 def create_benchmark_step(*, user_id: str, benchmark_slug: str, payload: dict[str, Any]) -> dict[str, Any]:
     sb = get_supabase_admin()
-    benchmark = _get_benchmark_row(sb=sb, user_id=user_id, benchmark_slug=benchmark_slug)
+    benchmark, _ = _require_benchmark_project(sb=sb, user_id=user_id, benchmark_slug=benchmark_slug, write=True)
     version = _require_editable_version(_get_version_row(sb=sb, benchmark=benchmark))
     now = _utc_now_iso()
     step_rows = _load_step_rows(sb=sb, benchmark_version_id=version["benchmark_version_id"])
@@ -460,7 +556,7 @@ def update_benchmark_step(
     payload: dict[str, Any],
 ) -> dict[str, Any]:
     sb = get_supabase_admin()
-    benchmark = _get_benchmark_row(sb=sb, user_id=user_id, benchmark_slug=benchmark_slug)
+    benchmark, _ = _require_benchmark_project(sb=sb, user_id=user_id, benchmark_slug=benchmark_slug, write=True)
     version = _require_editable_version(_get_version_row(sb=sb, benchmark=benchmark))
     step_result = (
         sb.table("agchain_benchmark_steps")
@@ -515,7 +611,7 @@ def update_benchmark_step(
 
 def reorder_benchmark_steps(*, user_id: str, benchmark_slug: str, ordered_step_ids: list[str]) -> dict[str, Any]:
     sb = get_supabase_admin()
-    benchmark = _get_benchmark_row(sb=sb, user_id=user_id, benchmark_slug=benchmark_slug)
+    benchmark, _ = _require_benchmark_project(sb=sb, user_id=user_id, benchmark_slug=benchmark_slug, write=True)
     version = _require_editable_version(_get_version_row(sb=sb, benchmark=benchmark))
     step_rows = _load_step_rows(sb=sb, benchmark_version_id=version["benchmark_version_id"])
     existing_step_ids = [row["benchmark_step_id"] for row in step_rows]
@@ -542,7 +638,7 @@ def reorder_benchmark_steps(*, user_id: str, benchmark_slug: str, ordered_step_i
 
 def delete_benchmark_step(*, user_id: str, benchmark_slug: str, benchmark_step_id: str) -> dict[str, Any]:
     sb = get_supabase_admin()
-    benchmark = _get_benchmark_row(sb=sb, user_id=user_id, benchmark_slug=benchmark_slug)
+    benchmark, _ = _require_benchmark_project(sb=sb, user_id=user_id, benchmark_slug=benchmark_slug, write=True)
     version = _require_editable_version(_get_version_row(sb=sb, benchmark=benchmark))
     step_result = (
         sb.table("agchain_benchmark_steps")

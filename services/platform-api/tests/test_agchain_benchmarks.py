@@ -56,94 +56,63 @@ def superuser_client():
     app.dependency_overrides.clear()
 
 
-def test_list_benchmarks_returns_catalog_rows(client):
+def test_list_benchmarks_returns_child_rows(client):
     with patch("app.api.routes.agchain_benchmarks.list_benchmarks") as mock_list:
-        mock_list.return_value = [
-            {
-                "benchmark_id": "benchmark-1",
-                "benchmark_slug": "legal-10",
-                "benchmark_name": "Legal-10",
-                "description": "Three-step benchmark package for legal analysis.",
-                "state": "draft",
-                "current_spec_label": "draft v0.1.0",
-                "current_spec_version": "v0.1.0",
-                "version_status": "draft",
-                "step_count": 3,
-                "selected_eval_model_count": 2,
-                "tested_model_count": 0,
-                "tested_policy_bundle_count": 0,
-                "validation_status": "warn",
-                "validation_issue_count": 2,
-                "last_run_at": None,
-                "updated_at": "2026-03-27T08:15:00Z",
-                "href": "/app/agchain/benchmarks/legal-10#steps",
-            }
-        ]
+        mock_list.return_value = {
+            "items": [
+                {
+                    "benchmark_id": "benchmark-1",
+                    "project_id": "project-1",
+                    "benchmark_slug": "legal-10",
+                    "benchmark_name": "Legal-10",
+                    "description": "Three-step benchmark package for legal analysis.",
+                    "latest_version_id": "version-1",
+                    "latest_version_label": "v0.1.0",
+                    "dataset_version_id": None,
+                    "scorer_count": 2,
+                    "tool_count": 1,
+                    "status": "draft",
+                    "validation_status": "warn",
+                    "updated_at": "2026-03-27T08:15:00Z",
+                }
+            ],
+            "next_cursor": "cursor-2",
+        }
 
-        response = client.get("/agchain/benchmarks")
+        response = client.get(
+            "/agchain/benchmarks",
+            params={"project_id": "project-1", "limit": 25, "offset": 0},
+        )
 
     assert response.status_code == 200
     body = response.json()
     assert body["items"][0]["benchmark_slug"] == "legal-10"
-    assert body["items"][0]["benchmark_name"] == "Legal-10"
+    assert body["items"][0]["project_id"] == "project-1"
+    assert body["next_cursor"] == "cursor-2"
 
 
-def test_list_benchmarks_applies_filters_and_returns_empty_state(client):
+def test_list_benchmarks_passes_query_filters(client):
     with patch("app.api.routes.agchain_benchmarks.list_benchmarks") as mock_list:
-        mock_list.return_value = [
-            {
-                "benchmark_id": "benchmark-1",
-                "benchmark_slug": "legal-10",
-                "benchmark_name": "Legal-10",
-                "description": "Three-step benchmark package for legal analysis.",
-                "state": "draft",
-                "current_spec_label": "draft v0.1.0",
-                "current_spec_version": "v0.1.0",
-                "version_status": "draft",
-                "step_count": 3,
-                "selected_eval_model_count": 2,
-                "tested_model_count": 0,
-                "tested_policy_bundle_count": 0,
-                "validation_status": "warn",
-                "validation_issue_count": 2,
-                "last_run_at": None,
-                "updated_at": "2026-03-27T08:15:00Z",
-                "href": "/app/agchain/benchmarks/legal-10#steps",
-            },
-            {
-                "benchmark_id": "benchmark-2",
-                "benchmark_slug": "finance-5",
-                "benchmark_name": "Finance-5",
-                "description": "Finance benchmark package.",
-                "state": "ready",
-                "current_spec_label": "published v1.0.0",
-                "current_spec_version": "v1.0.0",
-                "version_status": "published",
-                "step_count": 5,
-                "selected_eval_model_count": 1,
-                "tested_model_count": 1,
-                "tested_policy_bundle_count": 0,
-                "validation_status": "pass",
-                "validation_issue_count": 0,
-                "last_run_at": "2026-03-26T22:00:00Z",
-                "updated_at": "2026-03-27T07:15:00Z",
-                "href": "/app/agchain/benchmarks/finance-5#steps",
-            },
-        ]
+        mock_list.return_value = {"items": [], "next_cursor": None}
 
-        filtered_response = client.get(
+        response = client.get(
             "/agchain/benchmarks",
-            params={"search": "legal", "state": "draft", "validation_status": "warn"},
+            params={
+                "project_id": "project-1",
+                "search": "legal",
+                "state": "draft",
+                "validation_status": "warn",
+                "has_active_runs": False,
+                "limit": 25,
+                "offset": 0,
+            },
         )
-        empty_response = client.get("/agchain/benchmarks", params={"search": "missing"})
 
-    assert filtered_response.status_code == 200
-    assert [item["benchmark_slug"] for item in filtered_response.json()["items"]] == ["legal-10"]
-    assert empty_response.status_code == 200
-    assert empty_response.json() == {"items": []}
+    assert response.status_code == 200
+    assert response.json() == {"items": [], "next_cursor": None}
 
 
-def test_create_benchmark_requires_superuser(client):
+def test_create_benchmark_requires_project_id(client):
     response = client.post(
         "/agchain/benchmarks",
         json={
@@ -153,10 +122,10 @@ def test_create_benchmark_requires_superuser(client):
         },
     )
 
-    assert response.status_code == 403
+    assert response.status_code == 422
 
 
-def test_create_benchmark_creates_identity_and_initial_draft(superuser_client):
+def test_create_benchmark_creates_identity_and_initial_draft(client):
     with patch("app.api.routes.agchain_benchmarks.create_benchmark") as mock_create:
         mock_create.return_value = {
             "benchmark_id": "benchmark-1",
@@ -165,9 +134,10 @@ def test_create_benchmark_creates_identity_and_initial_draft(superuser_client):
             "redirect_path": "/app/agchain/benchmarks/legal-10#steps",
         }
 
-        response = superuser_client.post(
+        response = client.post(
             "/agchain/benchmarks",
             json={
+                "project_id": "project-1",
                 "benchmark_name": "Legal-10",
                 "benchmark_slug": "legal-10",
                 "description": "Three-step benchmark package for legal analysis.",
@@ -182,6 +152,8 @@ def test_create_benchmark_creates_identity_and_initial_draft(superuser_client):
         "benchmark_version_id": "version-1",
         "redirect_path": "/app/agchain/benchmarks/legal-10#steps",
     }
+    assert mock_create.call_args.kwargs["user_id"] == "user-1"
+    assert mock_create.call_args.kwargs["payload"]["project_id"] == "project-1"
 
 
 def test_get_benchmark_returns_current_version_summary(client):
@@ -189,6 +161,7 @@ def test_get_benchmark_returns_current_version_summary(client):
         mock_get.return_value = {
             "benchmark": {
                 "benchmark_id": "benchmark-1",
+                "project_id": "project-1",
                 "benchmark_slug": "legal-10",
                 "benchmark_name": "Legal-10",
                 "description": "Three-step benchmark package for legal analysis.",
@@ -223,6 +196,7 @@ def test_get_benchmark_steps_returns_sorted_rows(client):
         mock_get_steps.return_value = {
             "benchmark": {
                 "benchmark_id": "benchmark-1",
+                "project_id": "project-1",
                 "benchmark_slug": "legal-10",
                 "benchmark_name": "Legal-10",
                 "description": "Three-step benchmark package for legal analysis.",
@@ -284,36 +258,14 @@ def test_get_benchmark_steps_returns_sorted_rows(client):
     mock_get_steps.assert_called_once_with(user_id="user-1", benchmark_slug="legal-10")
 
 
-def test_create_benchmark_step_requires_superuser(client):
-    response = client.post(
-        "/agchain/benchmarks/legal-10/steps",
-        json={
-            "step_id": "d2",
-            "display_name": "Rule Synthesis",
-            "step_kind": "model",
-            "api_call_boundary": "continue_call",
-            "inject_payloads": ["p2"],
-            "scoring_mode": "deterministic",
-            "output_contract": "irac_rule_v1",
-            "scorer_ref": "irac_rule_scorer_v1",
-            "judge_prompt_ref": None,
-            "judge_grades_step_ids": [],
-            "enabled": True,
-            "step_config": {"system_prompt_ref": "rule_synthesis_v1"},
-        },
-    )
-
-    assert response.status_code == 403
-
-
-def test_create_benchmark_step_appends_to_draft_version(superuser_client):
+def test_create_benchmark_step_appends_to_draft_version(client):
     with patch("app.api.routes.agchain_benchmarks.create_benchmark_step") as mock_create_step:
         mock_create_step.return_value = {
             "benchmark_step_id": "step-3",
             "step_order": 3,
         }
 
-        response = superuser_client.post(
+        response = client.post(
             "/agchain/benchmarks/legal-10/steps",
             json={
                 "step_id": "d2",
@@ -337,29 +289,15 @@ def test_create_benchmark_step_appends_to_draft_version(superuser_client):
         "benchmark_step_id": "step-3",
         "step_order": 3,
     }
-    mock_create_step.assert_called_once()
     assert mock_create_step.call_args.kwargs["benchmark_slug"] == "legal-10"
     assert mock_create_step.call_args.kwargs["user_id"] == "user-1"
 
 
-def test_update_benchmark_step_requires_superuser(client):
-    response = client.patch(
-        "/agchain/benchmarks/legal-10/steps/step-1",
-        json={
-            "display_name": "Updated Issue Spotting",
-            "enabled": False,
-            "step_config": {"system_prompt_ref": "issue_spotting_v2"},
-        },
-    )
-
-    assert response.status_code == 403
-
-
-def test_update_benchmark_step_updates_current_draft_step(superuser_client):
+def test_update_benchmark_step_updates_current_draft_step(client):
     with patch("app.api.routes.agchain_benchmarks.update_benchmark_step") as mock_update_step:
         mock_update_step.return_value = {"benchmark_step_id": "step-1"}
 
-        response = superuser_client.patch(
+        response = client.patch(
             "/agchain/benchmarks/legal-10/steps/step-1",
             json={
                 "display_name": "Updated Issue Spotting",
@@ -370,24 +308,14 @@ def test_update_benchmark_step_updates_current_draft_step(superuser_client):
 
     assert response.status_code == 200
     assert response.json() == {"ok": True, "benchmark_step_id": "step-1"}
-    mock_update_step.assert_called_once()
     assert mock_update_step.call_args.kwargs["benchmark_step_id"] == "step-1"
 
 
-def test_reorder_benchmark_steps_requires_superuser(client):
-    response = client.post(
-        "/agchain/benchmarks/legal-10/steps/reorder",
-        json={"ordered_step_ids": ["step-2", "step-1", "step-3"]},
-    )
-
-    assert response.status_code == 403
-
-
-def test_reorder_benchmark_steps_rewrites_dense_order(superuser_client):
+def test_reorder_benchmark_steps_rewrites_dense_order(client):
     with patch("app.api.routes.agchain_benchmarks.reorder_benchmark_steps") as mock_reorder:
         mock_reorder.return_value = {"step_count": 3}
 
-        response = superuser_client.post(
+        response = client.post(
             "/agchain/benchmarks/legal-10/steps/reorder",
             json={"ordered_step_ids": ["step-2", "step-1", "step-3"]},
         )
@@ -401,17 +329,11 @@ def test_reorder_benchmark_steps_rewrites_dense_order(superuser_client):
     )
 
 
-def test_delete_benchmark_step_requires_superuser(client):
-    response = client.delete("/agchain/benchmarks/legal-10/steps/step-3")
-
-    assert response.status_code == 403
-
-
-def test_delete_benchmark_step_compacts_order(superuser_client):
+def test_delete_benchmark_step_compacts_order(client):
     with patch("app.api.routes.agchain_benchmarks.delete_benchmark_step") as mock_delete:
         mock_delete.return_value = {"deleted_step_id": "step-3"}
 
-        response = superuser_client.delete("/agchain/benchmarks/legal-10/steps/step-3")
+        response = client.delete("/agchain/benchmarks/legal-10/steps/step-3")
 
     assert response.status_code == 200
     assert response.json() == {"ok": True, "deleted_step_id": "step-3"}
@@ -480,7 +402,7 @@ class _RegistryQuery:
             if all(row.get(key) == value for key, value in self._filters.items())
             and all(row.get(key) in values for key, values in self._in_filters.items())
         ]
-        data = rows[0] if self._maybe_single else rows
+        data = rows[0] if self._maybe_single and rows else (None if self._maybe_single else rows)
         return type("R", (), {"data": data})()
 
 
@@ -501,26 +423,26 @@ class _RegistryAdmin:
         return type("Exec", (), {"execute": lambda self_exec: type("R", (), {"data": {"step_count": len(payload.get("p_ordered_step_ids", []))}})()})()
 
 
-def test_list_benchmarks_batches_selected_eval_model_counts():
+def test_list_benchmarks_batches_scorer_counts():
     admin = _RegistryAdmin(
         tables={
             "agchain_benchmarks": [
                 {
                     "benchmark_id": "benchmark-1",
+                    "project_id": "project-1",
                     "benchmark_slug": "legal-10",
                     "benchmark_name": "Legal-10",
                     "description": "Legal analysis benchmark.",
-                    "owner_user_id": "user-1",
                     "current_draft_version_id": "version-1",
                     "current_published_version_id": None,
                     "updated_at": "2026-03-27T08:15:00Z",
                 },
                 {
                     "benchmark_id": "benchmark-2",
+                    "project_id": "project-2",
                     "benchmark_slug": "finance-5",
                     "benchmark_name": "Finance-5",
                     "description": "Finance analysis benchmark.",
-                    "owner_user_id": "user-1",
                     "current_draft_version_id": "version-2",
                     "current_published_version_id": None,
                     "updated_at": "2026-03-27T07:15:00Z",
@@ -549,30 +471,56 @@ def test_list_benchmarks_batches_selected_eval_model_counts():
                 },
             ],
             "agchain_runs": [],
-            "agchain_benchmark_model_targets": [
-                {"benchmark_version_id": "version-1", "selection_role": "evaluated"},
-                {"benchmark_version_id": "version-1", "selection_role": "evaluated"},
-                {"benchmark_version_id": "version-1", "selection_role": "judge"},
-                {"benchmark_version_id": "version-2", "selection_role": "evaluated"},
+            "agchain_benchmark_steps": [
+                {"benchmark_version_id": "version-1", "scorer_ref": "scorer-a"},
+                {"benchmark_version_id": "version-1", "scorer_ref": "scorer-b"},
+                {"benchmark_version_id": "version-1", "scorer_ref": None},
+                {"benchmark_version_id": "version-2", "scorer_ref": "scorer-c"},
             ],
         }
     )
 
-    with patch("app.domain.agchain.benchmark_registry.get_supabase_admin", return_value=admin):
-        items = list_benchmarks(user_id="user-1")
+    with (
+        patch("app.domain.agchain.benchmark_registry.get_supabase_admin", return_value=admin),
+        patch(
+            "app.domain.agchain.benchmark_registry.load_accessible_projects",
+            return_value=[
+                {"project_id": "project-1", "membership_role": "project_admin"},
+                {"project_id": "project-2", "membership_role": "project_viewer"},
+            ],
+        ),
+    ):
+        payload = list_benchmarks(
+            user_id="user-1",
+            project_id=None,
+            search=None,
+            state=None,
+            validation_status=None,
+            has_active_runs=None,
+            limit=50,
+            cursor=None,
+            offset=0,
+        )
 
-    assert [item["selected_eval_model_count"] for item in items] == [2, 1]
-    assert [call[0] for call in admin.calls].count("agchain_benchmark_model_targets") == 1
+    assert [item["scorer_count"] for item in payload["items"]] == [2, 1]
+    assert [call[0] for call in admin.calls].count("agchain_benchmark_steps") == 1
 
 
 def test_create_benchmark_returns_conflict_for_duplicate_slug():
     admin = _RegistryAdmin(raise_duplicate_slug=True)
 
-    with patch("app.domain.agchain.benchmark_registry.get_supabase_admin", return_value=admin):
+    with (
+        patch("app.domain.agchain.benchmark_registry.get_supabase_admin", return_value=admin),
+        patch(
+            "app.domain.agchain.benchmark_registry.require_project_write_access",
+            return_value={"project_id": "project-1", "membership_role": "project_admin"},
+        ),
+    ):
         with pytest.raises(HTTPException) as exc:
             create_benchmark(
                 user_id="user-1",
                 payload={
+                    "project_id": "project-1",
                     "benchmark_name": "Legal-10",
                     "benchmark_slug": "legal-10",
                     "description": "Legal analysis benchmark.",
@@ -589,9 +537,9 @@ def test_reorder_benchmark_steps_uses_atomic_rpc():
             "agchain_benchmarks": [
                 {
                     "benchmark_id": "benchmark-1",
+                    "project_id": "project-1",
                     "benchmark_slug": "legal-10",
                     "benchmark_name": "Legal-10",
-                    "owner_user_id": "user-1",
                     "current_draft_version_id": "version-1",
                     "current_published_version_id": None,
                 }
@@ -611,7 +559,13 @@ def test_reorder_benchmark_steps_uses_atomic_rpc():
         }
     )
 
-    with patch("app.domain.agchain.benchmark_registry.get_supabase_admin", return_value=admin):
+    with (
+        patch("app.domain.agchain.benchmark_registry.get_supabase_admin", return_value=admin),
+        patch(
+            "app.domain.agchain.benchmark_registry.require_project_write_access",
+            return_value={"project_id": "project-1", "membership_role": "project_admin"},
+        ),
+    ):
         result = reorder_benchmark_steps(
             user_id="user-1",
             benchmark_slug="legal-10",

@@ -3,6 +3,7 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/auth/AuthContext';
 import { AGCHAIN_NAV_SECTIONS } from '@/components/agchain/AgchainLeftNav';
 import { AgchainBenchmarkNav } from '@/components/agchain/AgchainBenchmarkNav';
+import { AgchainOrganizationSwitcher } from '@/components/agchain/AgchainOrganizationSwitcher';
 import { AgchainProjectSwitcher } from '@/components/agchain/AgchainProjectSwitcher';
 import { LeftRailShadcn as AgchainChromeRail } from '@/components/shell/LeftRailShadcn';
 import { TopCommandBar } from '@/components/shell/TopCommandBar';
@@ -138,7 +139,12 @@ export function AgchainShellLayout() {
               <span className="ml-1.5 text-sidebar-foreground">Bench</span>
             </span>
           )}
-          headerContent={<AgchainProjectSwitcher />}
+          headerContent={(
+            <div className="flex w-full flex-col gap-2">
+              <AgchainOrganizationSwitcher />
+              <AgchainProjectSwitcher />
+            </div>
+          )}
         />
         <div
           role="separator"

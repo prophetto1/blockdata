@@ -46,7 +46,7 @@ export default function AgchainOverviewPage() {
   const projectDescription = focusedProject?.description
     || (loading
       ? 'Loading focused AGChain project details...'
-      : 'This project currently uses a benchmark-backed AGChain definition while the broader project shell is being promoted into first-class level-one surfaces.');
+      : 'This workspace now acts as the shared AGChain parent surface. Benchmark definition remains a child resource inside the selected project.');
 
   return (
     <AgchainPageFrame className="gap-6 py-8" data-testid="agchain-overview-page">

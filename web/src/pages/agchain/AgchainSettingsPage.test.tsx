@@ -18,7 +18,9 @@ describe('AgchainSettingsPage', () => {
     useAgchainProjectFocusMock.mockReset();
     useAgchainProjectFocusMock.mockReturnValue({
       focusedProject: {
-        benchmark_id: 'benchmark-1',
+        project_id: 'project-1',
+        project_slug: 'legal-evals',
+        project_name: 'Legal Evals',
         benchmark_slug: 'legal-10',
         benchmark_name: 'Legal-10',
         description: 'Three-step benchmark package for legal analysis.',
@@ -35,7 +37,7 @@ describe('AgchainSettingsPage', () => {
     );
 
     expect(screen.getByRole('heading', { level: 1, name: 'Settings' })).toBeInTheDocument();
-    expect(screen.getByText(/legal-10 owns this settings surface/i)).toBeInTheDocument();
+    expect(screen.getByText(/legal evals owns this settings surface/i)).toBeInTheDocument();
     expect(screen.getByText('Project settings')).toBeInTheDocument();
     expect(screen.getByText('Organization settings')).toBeInTheDocument();
     expect(screen.getByText('Personal settings')).toBeInTheDocument();

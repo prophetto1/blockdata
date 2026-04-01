@@ -35,28 +35,31 @@ describe('AgchainProjectSwitcher', () => {
     return {
       loading: false,
       error: null,
-      focusedProjectSlug: 'legal-10',
+      focusedProjectSlug: 'legal-evals',
       focusedProject: {
-        benchmark_id: 'benchmark-1',
+        project_id: 'project-1',
+        project_slug: 'legal-evals',
+        project_name: 'Legal Evals',
         benchmark_slug: 'legal-10',
-        benchmark_name: 'Legal-10',
         description: 'Legal benchmark package',
-        href: '/app/agchain/benchmarks/legal-10#steps',
+        href: '/app/agchain/overview?project=legal-evals',
       },
       items: [
         {
-          benchmark_id: 'benchmark-1',
+          project_id: 'project-1',
+          project_slug: 'legal-evals',
+          project_name: 'Legal Evals',
           benchmark_slug: 'legal-10',
-          benchmark_name: 'Legal-10',
           description: 'Legal benchmark package',
-          href: '/app/agchain/benchmarks/legal-10#steps',
+          href: '/app/agchain/overview?project=legal-evals',
         },
         {
-          benchmark_id: 'benchmark-2',
+          project_id: 'project-2',
+          project_slug: 'finance-workspace',
+          project_name: 'Finance Workspace',
           benchmark_slug: 'finance-eval',
-          benchmark_name: 'Finance Eval',
           description: 'Finance evaluation package',
-          href: '/app/agchain/benchmarks/finance-eval#steps',
+          href: '/app/agchain/overview?project=finance-workspace',
         },
       ],
       setFocusedProjectSlug: vi.fn(),
@@ -80,7 +83,7 @@ describe('AgchainProjectSwitcher', () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByRole('button', { name: /legal-10/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /legal evals/i })).toBeInTheDocument();
   });
 
   it('uses a searchable dropdown-style selector like the primary project switcher', async () => {
@@ -90,7 +93,7 @@ describe('AgchainProjectSwitcher', () => {
       </MemoryRouter>,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: /legal-10/i }));
+    fireEvent.click(screen.getByRole('button', { name: /legal evals/i }));
 
     await waitFor(() => {
       expect(screen.getByPlaceholderText(/find project/i)).toBeInTheDocument();
@@ -110,15 +113,15 @@ describe('AgchainProjectSwitcher', () => {
       </MemoryRouter>,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: /legal-10/i }));
+    fireEvent.click(screen.getByRole('button', { name: /legal evals/i }));
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /finance eval/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /finance workspace/i })).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getByRole('button', { name: /finance eval/i }));
+    fireEvent.click(screen.getByRole('button', { name: /finance workspace/i }));
 
-    expect(setFocusedProjectSlug).toHaveBeenCalledWith('finance-eval');
+    expect(setFocusedProjectSlug).toHaveBeenCalledWith('finance-workspace');
   });
 
   it('keeps the last focused slug visible during refresh instead of falling back to a loading-only label', () => {
@@ -126,7 +129,7 @@ describe('AgchainProjectSwitcher', () => {
       ...buildFocusState(),
       loading: true,
       focusedProject: null,
-      focusedProjectSlug: 'ss',
+      focusedProjectSlug: 'legal-evals',
     });
 
     render(
@@ -135,7 +138,7 @@ describe('AgchainProjectSwitcher', () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByRole('button', { name: /^ss$/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^legal-evals$/i })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /loading agchain projects/i })).not.toBeInTheDocument();
   });
 
@@ -146,7 +149,7 @@ describe('AgchainProjectSwitcher', () => {
       </MemoryRouter>,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: /legal-10/i }));
+    fireEvent.click(screen.getByRole('button', { name: /legal evals/i }));
 
     await waitFor(() => {
       expect(screen.getByRole('link', { name: /open project registry|create project|manage projects/i })).toHaveAttribute('href', '/app/agchain/projects?new=1');

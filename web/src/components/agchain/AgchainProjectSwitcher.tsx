@@ -15,16 +15,16 @@ export function AgchainProjectSwitcher() {
 
   const selectorItems = useMemo(
     () => items.map((item) => ({
-      id: item.benchmark_slug,
-      label: item.benchmark_name,
+      id: item.project_slug,
+      label: item.project_name,
       description: item.description,
-      searchText: `${item.benchmark_slug} ${item.description}`,
-      leadingText: item.benchmark_name[0]?.toUpperCase() ?? '?',
+      searchText: `${item.project_slug} ${item.benchmark_slug ?? ''} ${item.description}`.trim(),
+      leadingText: item.project_name[0]?.toUpperCase() ?? '?',
     })),
     [items],
   );
 
-  const triggerLabel = focusedProject?.benchmark_name
+  const triggerLabel = focusedProject?.project_name
     ?? focusedProjectSlug
     ?? 'Select AGChain project';
 

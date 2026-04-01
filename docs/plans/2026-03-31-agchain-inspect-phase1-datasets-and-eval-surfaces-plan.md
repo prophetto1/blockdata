@@ -11,6 +11,15 @@
 **Date:** 2026-03-31  
 **Supersedes for Phase 1:** [2026-03-31-agchain-datasets-integration-and-frontend-plan.md](/E:/writing-system/docs/plans/2026-03-31-agchain-datasets-integration-and-frontend-plan.md)
 
+### Amendment 2026-04-01: Workspace scope and durable operations prerequisites
+
+Before any further Task 5 dataset `202` work resumes in this plan, the prerequisite tranche from [2026-03-31-agchain-workspace-scope-and-phase1-unblock-plan.md](/E:/writing-system/docs/plans/2026-03-31-agchain-workspace-scope-and-phase1-unblock-plan.md) must be treated as landed requirements:
+
+- Task 4.1 auth hardening: project access must be explicitly enforced before AGChain service-role dataset reads or writes.
+- Durable operations prerequisite tranche: the `agchain_operations` migration, operations routes, queue-domain substrate, and worker lease contract must land before any new dataset preview or commit path returns `202`.
+
+Execution rule: only that prerequisite Phase A backend tranche gates resumption of backend Task 5 work. The later workspace-shell productization work may continue afterward, but it is not a prerequisite for dataset preview or materialization backend execution.
+
 ### Platform API
 
 | Module | Endpoints | Status |
@@ -2164,6 +2173,8 @@ The following seams are frozen for this plan. They are not optional implementati
 **Commit:** `feat(platform-api): add agchain dataset read routes`
 
 ### Task 5: Build dataset preview, draft, and materialization flows
+
+Prerequisite amendment: do not implement Task 5 Step 4 or any other new dataset `202` path until the auth hardening and durable operations prerequisites above are already landed and verified.
 
 **File(s):** `services/platform-api/app/api/routes/agchain_datasets.py`, `services/platform-api/app/domain/agchain/dataset_registry.py`, `services/platform-api/app/domain/agchain/inspect_dataset_materializer.py`, `services/platform-api/tests/test_agchain_datasets.py`
 

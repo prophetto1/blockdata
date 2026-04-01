@@ -128,7 +128,7 @@ export type AgchainBenchmarkValidationResponse = {
   compatibility_summary: Record<string, unknown>;
 };
 
-export type AgchainProjectRegistryRow = {
+export type AgchainBenchmarkRegistryRow = {
   benchmark_id: string;
   benchmark_slug: string;
   benchmark_name: string;
@@ -148,8 +148,8 @@ export type AgchainProjectRegistryRow = {
   href: string;
 };
 
-export type AgchainProjectRegistryListResponse = {
-  items: AgchainProjectRegistryRow[];
+export type AgchainBenchmarkRegistryListResponse = {
+  items: AgchainBenchmarkRegistryRow[];
   total: number;
   limit: number;
   offset: number;
@@ -408,16 +408,16 @@ export function parseStepConfigJson(stepConfigJson: string): Record<string, unkn
   }
 }
 
-export async function fetchAgchainProjectRegistry(
+export async function fetchAgchainBenchmarkRegistry(
   limit = 50,
   offset = 0,
-): Promise<AgchainProjectRegistryListResponse> {
+): Promise<AgchainBenchmarkRegistryListResponse> {
   const params = new URLSearchParams({
     limit: String(limit),
     offset: String(offset),
   });
   const response = await platformApiFetch(`/agchain/benchmarks?${params.toString()}`);
-  const data = await parseJsonResponse<Partial<AgchainProjectRegistryListResponse>>(response);
+  const data = await parseJsonResponse<Partial<AgchainBenchmarkRegistryListResponse>>(response);
   const items = data.items ?? [];
   return {
     items,
@@ -427,7 +427,7 @@ export async function fetchAgchainProjectRegistry(
   };
 }
 
-export const fetchAgchainBenchmarks = fetchAgchainProjectRegistry;
+export const fetchAgchainBenchmarks = fetchAgchainBenchmarkRegistry;
 
 export async function createAgchainBenchmark(
   payload: AgchainBenchmarkCreateRequest,

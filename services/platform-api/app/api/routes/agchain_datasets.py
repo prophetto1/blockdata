@@ -60,7 +60,7 @@ async def list_datasets_route(
         set_span_attributes(
             span,
             {
-                "agchain.project_id": project_id,
+                "project_id_present": True,
                 "row_count": len(payload["items"]),
                 "latency_ms": duration_ms,
             },
@@ -69,10 +69,19 @@ async def list_datasets_route(
 
 
 @router.get("/new/bootstrap", summary="Load AG chain dataset bootstrap defaults")
-async def get_dataset_bootstrap_route(auth: AuthPrincipal = Depends(require_user_auth)):
+async def get_dataset_bootstrap_route(
+    project_id: str | None = Query(default=None),
+    auth: AuthPrincipal = Depends(require_user_auth),
+):
     with tracer.start_as_current_span("agchain.datasets.new.bootstrap") as span:
-        payload = get_dataset_bootstrap(user_id=auth.user_id)
-        set_span_attributes(span, {"row_count": len(payload["allowed_source_types"])})
+        payload = get_dataset_bootstrap(user_id=auth.user_id, project_id=project_id)
+        set_span_attributes(
+            span,
+            {
+                "project_id_present": project_id is not None,
+                "row_count": len(payload["allowed_source_types"]),
+            },
+        )
         return payload
 
 
@@ -94,8 +103,7 @@ async def get_dataset_detail_route(
         )
         duration_ms = max(0, int((time.perf_counter() - start) * 1000))
         attrs = {
-            "agchain.project_id": project_id,
-            "agchain.dataset_id": dataset_id_str,
+            "project_id_present": True,
             "latency_ms": duration_ms,
         }
         set_span_attributes(span, attrs)
@@ -125,8 +133,7 @@ async def list_dataset_versions_route(
         set_span_attributes(
             span,
             {
-                "agchain.project_id": project_id,
-                "agchain.dataset_id": dataset_id_str,
+                "project_id_present": True,
                 "row_count": len(payload["items"]),
             },
         )
@@ -153,8 +160,7 @@ async def get_dataset_version_source_route(
         set_span_attributes(
             span,
             {
-                "agchain.dataset_id": dataset_id_str,
-                "agchain.dataset_version_id": dataset_version_id_str,
+                "project_id_present": False,
             },
         )
         return payload
@@ -180,8 +186,7 @@ async def get_dataset_version_mapping_route(
         set_span_attributes(
             span,
             {
-                "agchain.dataset_id": dataset_id_str,
-                "agchain.dataset_version_id": dataset_version_id_str,
+                "project_id_present": False,
             },
         )
         return payload
@@ -207,8 +212,7 @@ async def get_dataset_version_validation_route(
         )
         duration_ms = max(0, int((time.perf_counter() - start) * 1000))
         attrs = {
-            "agchain.dataset_id": dataset_id_str,
-            "agchain.dataset_version_id": dataset_version_id_str,
+            "project_id_present": False,
             "latency_ms": duration_ms,
         }
         set_span_attributes(span, attrs)
@@ -254,9 +258,7 @@ async def list_dataset_samples_route(
         set_span_attributes(
             span,
             {
-                "agchain.project_id": project_id,
-                "agchain.dataset_id": dataset_id_str,
-                "agchain.dataset_version_id": dataset_version_id_str,
+                "project_id_present": True,
                 "row_count": len(payload["items"]),
             },
         )
@@ -285,8 +287,7 @@ async def get_dataset_sample_route(
         set_span_attributes(
             span,
             {
-                "agchain.dataset_id": dataset_id_str,
-                "agchain.dataset_version_id": dataset_version_id_str,
+                "project_id_present": False,
             },
         )
         return payload

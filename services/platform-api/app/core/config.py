@@ -96,6 +96,10 @@ class Settings:
     otel_logs_enabled: bool = True
     signoz_ui_url: str = "http://localhost:8080"
     jaeger_ui_url: str = "http://localhost:16686"
+    agchain_operations_worker_enabled: bool = False
+    agchain_operations_worker_poll_interval_seconds: int = 5
+    agchain_operations_worker_batch_size: int = 5
+    agchain_operations_worker_lease_seconds: int = 60
 
     @classmethod
     def from_env(cls) -> "Settings":
@@ -127,6 +131,16 @@ class Settings:
             signoz_ui_url=os.environ.get("SIGNOZ_UI_URL", "http://localhost:8080"),
             # Keep JAEGER_UI_URL as a compatibility alias for one migration pass.
             jaeger_ui_url=os.environ.get("JAEGER_UI_URL", "http://localhost:16686"),
+            agchain_operations_worker_enabled=_env_bool("AGCHAIN_OPERATIONS_WORKER_ENABLED", False),
+            agchain_operations_worker_poll_interval_seconds=int(
+                os.environ.get("AGCHAIN_OPERATIONS_WORKER_POLL_INTERVAL_SECONDS", "5")
+            ),
+            agchain_operations_worker_batch_size=int(
+                os.environ.get("AGCHAIN_OPERATIONS_WORKER_BATCH_SIZE", "5")
+            ),
+            agchain_operations_worker_lease_seconds=int(
+                os.environ.get("AGCHAIN_OPERATIONS_WORKER_LEASE_SECONDS", "60")
+            ),
         )
 
 

@@ -74,8 +74,9 @@ export default function AgchainBenchmarksPage() {
         </p>
         <h1 className="mt-3 text-3xl font-semibold tracking-tight text-foreground">Benchmark definition</h1>
         <p className="mt-3 max-w-3xl text-sm leading-7 text-muted-foreground">
-          {focusedProject?.benchmark_name ?? benchmark?.benchmark_name ?? 'Selected project'} owns this benchmark
-          definition page. The multi-project registry lives at the projects route, not here.
+          {focusedProject?.project_name ?? focusedProject?.benchmark_name ?? 'Selected project'} owns this benchmark
+          definition page. Benchmarks remain child resources under the selected project, and the multi-project registry
+          lives at the projects route, not here.
         </p>
       </section>
 

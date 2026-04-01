@@ -10,6 +10,22 @@ from .model_registry import (
     refresh_model_target_health,
     update_model_target,
 )
+from .project_access import (
+    load_accessible_projects,
+    require_project_access,
+    require_project_write_access,
+)
+from .operation_queue import (
+    cancel_operation,
+    complete_operation,
+    create_operation,
+    fail_operation,
+    heartbeat_operation,
+    lease_operation,
+    load_operation_row,
+    load_operation_status,
+    retry_operation,
+)
 from .types import (
     AgchainDatasetSourceConfig,
     AgchainFieldSpec,
@@ -23,6 +39,13 @@ from .types import (
     AgchainScorerDefinition,
     AgchainTaskDefinition,
     AgchainToolDefinition,
+)
+from .workspace_registry import (
+    create_project,
+    get_project,
+    list_organizations,
+    list_projects,
+    update_project,
 )
 
 __all__ = [
@@ -38,13 +61,30 @@ __all__ = [
     "AgchainScorerDefinition",
     "AgchainTaskDefinition",
     "AgchainToolDefinition",
+    "cancel_operation",
+    "complete_operation",
     "connect_model_key",
+    "create_operation",
+    "create_project",
     "create_model_target",
     "disconnect_model_key",
+    "fail_operation",
+    "get_project",
+    "heartbeat_operation",
+    "lease_operation",
+    "list_accessible_projects",
+    "list_organizations",
+    "list_projects",
     "list_model_targets",
     "list_supported_providers",
     "load_model_detail",
+    "load_operation_row",
+    "load_operation_status",
+    "require_project_access",
+    "require_project_write_access",
     "refresh_model_target_health",
     "resolve_provider_definition",
+    "retry_operation",
+    "update_project",
     "update_model_target",
 ]
